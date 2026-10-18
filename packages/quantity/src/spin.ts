@@ -1,12 +1,17 @@
+import { endlessAllows, endlessAt, endlessTrack, type Endless } from './endless';
+
 /** The bounds a spin key moves a value within. */
 export interface SpinBounds {
   step: number;
   min?: number;
   max?: number;
+  /** The ends that stand for infinity: a step past one reaches it, as an endless slider's stop does. */
+  endless?: Endless;
 }
 
-/** `n` held within the bounds. */
-export function clampToBounds(n: number, { min, max }: SpinBounds): number {
+/** `n` held within the bounds, except an infinity an endless end stands for. */
+export function clampToBounds(n: number, { min, max, endless }: SpinBounds): number {
+  if (endlessAllows(endless, n)) return n;
   return Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
 }
 
@@ -38,6 +43,18 @@ export function snapToStep(n: number, step: number | undefined, origin = 0): num
  * its operands carry, so `0.1 + 0.2` lands on `0.3`.
  */
 export function spinKey(key: string, from: number, bounds: SpinBounds): number | null {
+  const { endless, step, min, max } = bounds;
+  if (endless === undefined) return finiteSpin(key, from, bounds);
+  const track = endlessTrack(min ?? -Infinity, max ?? Infinity, step, endless);
+  const at = finiteSpin(key, track.toTrack(from), {
+    step,
+    ...(min === undefined && !endlessAt(endless, -1) ? {} : { min: track.min }),
+    ...(max === undefined && !endlessAt(endless, 1) ? {} : { max: track.max }),
+  });
+  return at === null ? null : track.fromTrack(at);
+}
+
+function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
     const places = Math.max(placesOf(from), placesOf(bounds.step));
     return clampToBounds(Number((from + n * bounds.step).toFixed(places)), bounds);

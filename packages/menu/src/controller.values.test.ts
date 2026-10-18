@@ -94,10 +94,27 @@ describe('a number row', () => {
   });
 });
 
+describe('an endless number row', () => {
+  it('keeps the infinity its endless end stands for, and steps one past its bound to reach it', () => {
+    const { c, zoom, set } = setup(16, { endless: 'max' });
+    c.setNumber(zoom, Infinity);
+    expect(set).toHaveBeenLastCalledWith(Infinity);
+    c.spin(zoom, 'ArrowDown');
+    expect(c.numberValue(zoom)).toBe(16);
+    c.spin(zoom, 'ArrowUp');
+    expect(c.numberValue(zoom)).toBe(Infinity);
+  });
+});
+
 describe('menuNumberText', () => {
+  it('reads infinity as the row\'s word for it, with no unit after it', () => {
+    expect(menuNumberText(Infinity, { suffix: 'ms', infinity: 'never' })).toBe('never');
+    expect(menuNumberText(Infinity, { suffix: 'ms' })).toBe('∞');
+  });
+
   it('reads a value with its unit, and a dash for none', () => {
-    expect(menuNumberText(8, '×')).toBe('8×');
+    expect(menuNumberText(8, { suffix: '×' })).toBe('8×');
     expect(menuNumberText(0.25)).toBe('0.25');
-    expect(menuNumberText(undefined, '×')).toBe('—');
+    expect(menuNumberText(undefined, { suffix: '×' })).toBe('—');
   });
 });

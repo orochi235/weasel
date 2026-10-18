@@ -133,12 +133,10 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
-  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
-  panel run past the right edge of the stage. Not compared against the lab before its text moved
-  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
-  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
-  hand-rolled ones.
+- **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
+  (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
+  `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
+  looked at in a browser on 2026-10-18, but no card was dragged.
 
 ### Cursor package follow-ups
 
@@ -470,10 +468,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A layer hidden only in one view still shows its diagram ports.** `sceneParticipants`
-  (`packages/diagram/src/portLayer.ts`) gates ports on the scene's own hidden and locked flags
-  through `nodeGates`, but a canvas's `layerVisibility` (read by `pickWalk.ts` and
-  `sceneViewRender.ts`) never reaches the port layer, so ports float over a layer that view hides.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -574,11 +568,6 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
   `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
 
-- **(P3) A loop played backward ends after its current pass.** With a time scale below 0, a
-  `loop` runs its pass in flight back to its start and stops there rather than replaying the
-  passes before it backward, because nothing can start a primitive at its end. Timelines already
-  run back through their laps (`timeScale.composites.test.tsx`).
-
 ### Earlier deferrals
 
 From `docs/specs/2026-05-04-animation-primitive-design.md`:
@@ -612,12 +601,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A `minAt` or `maxAt` on a field of an `object` leaf is not resolved.** `SelectionPanel`
-  resolves them on a top-level number leaf per node (`SelectionPanel/nodeBounds.ts`), and
-  `PrefsForm` and labkit on a top-level row. A field of an object (`data.stroke.width`) is drawn
-  by `objectField.tsx`, whose context has no nodes, and written as the whole object, which the
-  per-node clamp in `commitLeaf.ts` does not walk into. No schema bounds a field that way yet.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -628,9 +611,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
   - A string shows as `Name: value`, read-only. The DOM menu could hold a text field the way it
     holds a number one; the HUD menu has no text entry at all.
-  - A number row ignores the leaf's `endless` and `infinity`, so no menu reaches ±Infinity, and
-    the DOM field takes no typed units: `prefUnitAccepts`, which reads them off the leaf, lives in
-    `@weasel-js/ui`, below where `resolveMenu` can reach.
   - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
@@ -695,10 +675,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
   now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
   file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
-
-- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
-  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
-  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:

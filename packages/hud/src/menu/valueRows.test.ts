@@ -45,6 +45,14 @@ describe('drawPanel: value rows', () => {
     expect(textOf(drawPanel(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null, m))).toContain('50%');
   });
 
+  it('draws infinity as its word with no unit, and keeps the step chip live at an endless end', () => {
+    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, m, undefined, () => value);
+    expect(textOf(at(Infinity))).toContain('never');
+    const plusColor = (cmds: readonly DrawCommand[]) => JSON.stringify(cmds.filter((c) => c.kind === 'path' && c.stroke && !c.fill).at(-1));
+    expect(plusColor(at(16))).toContain('#eee');
+    expect(plusColor(at(Infinity))).toContain('#888');
+  });
+
   it('draws a color row as its label, a swatch of the color in the icon column, and the hex, muted', () => {
     const cmds = drawPanel(ctx, b, [color], null, m);
     expect(textOf(cmds)).toEqual(['Color', '#336699']);

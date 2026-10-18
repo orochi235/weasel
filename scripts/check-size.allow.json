@@ -1,6 +1,6 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 144
+    "longestFunction": 141
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
@@ -182,7 +182,7 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 523,
+    "lines": 519,
     "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
@@ -274,7 +274,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 159
+    "longestFunction": 156
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -292,7 +292,7 @@
     "longestFunction": 189
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 161
+    "longestFunction": 158
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 496,

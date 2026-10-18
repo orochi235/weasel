@@ -196,8 +196,8 @@ export function CanvasView(props: CanvasViewProps): null {
     boundsOfPose,
     ...own,
     selection: selection.current,
-    getIsVisible: () =>
-      inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
+    layerIsPainted,
+    getIsVisible: () => inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
   const helpersRef = useLatest(helpers);
 

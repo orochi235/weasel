@@ -37,6 +37,7 @@ function EffectCard({ effect, index, dragging, dropAbove, dropBelow, onGripDown,
         <div className={s.cardHead}>
           <code className={s.ordinal}>{index + 1}.</code>
           <select
+            aria-label={`Effect ${index + 1} type`}
             className={s.typeSelect}
             value={effect.type}
             onChange={(e) => onEffects((list) => setEffectType(list, effect.id, e.target.value as BadgeEffect))}
@@ -78,6 +79,7 @@ export function EffectsSection({ effects, onAdd, onEffects }: {
         <h3 className={s.effectsTitle}>Effects ({effects.length})</h3>
         <div className={s.add}>
           <select
+            aria-label="Add effect"
             className={s.addSelect}
             value=""
             onChange={(e) => {

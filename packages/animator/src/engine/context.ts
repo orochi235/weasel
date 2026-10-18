@@ -29,6 +29,9 @@ export interface ActiveAnimation extends Waiting {
   anchor: number;
   /** Counts registrations: a frame ticks in this order. */
   seq: number;
+  /** Where its clock starts, in virtual ms: its end, for one started there to play backward.
+   *  Default 0. */
+  startAt?: number;
   /** Ticked every frame for playing backward, where it would otherwise wait for its `due`. */
   rewinding: boolean;
   /** Returns true when finished. Called once per frame with the current
@@ -62,6 +65,11 @@ export interface AnimationContext {
   readonly codec: Codec;
   readonly targets: TargetBook;
   nextId(): number;
+  /** Whether an animation starting now starts at its end, to play backward: a loop run back
+   *  is starting the pass before. One with no end starts at its start all the same. */
+  atEnd(): boolean;
+  /** Runs `start`, with `atEnd` answering `end` for whatever it starts. */
+  starting<T>(end: boolean, start: () => T): T;
   /** Seeds the codec's clock where `register` seeds a call's, so both charge the same wait. */
   seedClock(): void;
   register(seed: AnimationSeed): AnimationHandle;

@@ -1,6 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
-import { menuNumberText, type MenuColorEntry, type MenuEntry, type MenuNumberEntry } from '@weasel-js/menu';
+import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry, type MenuNumberEntry } from '@weasel-js/menu';
 import type { WidgetBounds } from '../widget';
 import type { MenuMetrics } from './drawPanel';
 
@@ -47,12 +47,12 @@ export function numberCommands(
   const cy = b.y + r.y + r.h / 2;
   const color = (live: boolean) => (live && !e.disabled ? ink.fg : ink.muted);
   const cx = (s: Span) => b.x + s.x + s.w / 2;
-  const low = value !== undefined && e.min !== undefined && value <= e.min;
-  const high = value !== undefined && e.max !== undefined && value >= e.max;
+  const low = value !== undefined && !menuNumberCanStep(e, value, -1);
+  const high = value !== undefined && !menuNumberCanStep(e, value, 1);
   return [
     mark(`M ${cx(minus) - 4} ${cy} L ${cx(minus) + 4} ${cy}`, color(!low)),
     textCommandFromRuns(
-      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e.suffix, e.display), fill: solid(color(true)) }],
+      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e), fill: solid(color(true)) }],
       { ...ink.font, align: 'center' }, undefined, r.h, 'center', undefined, cell.w,
     ),
     mark(`M ${cx(plus) - 4} ${cy} L ${cx(plus) + 4} ${cy} M ${cx(plus)} ${cy - 4} L ${cx(plus)} ${cy + 4}`, color(!high)),

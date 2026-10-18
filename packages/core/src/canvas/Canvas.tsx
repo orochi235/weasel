@@ -19,6 +19,7 @@ import type React from 'react';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { registerMountedCanvas } from './mountedCanvases';
 import { useViewHelpers } from './useViewHelpers';
+import { useViewLayerGate } from './useViewLayerGate';
 import { useSurfaceInput } from './useSurfaceInput';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
@@ -105,16 +106,17 @@ function CanvasInner<TPose>(
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
+  const layers = useSlotLayers(props.layers, tools, props.backgroundFill, props.decorationLayer);
   const { helpers: viewHelpers } = useViewHelpers<TPose>({
     adapter: props.adapter, geometry, boundsOf: props.boundsOf, boundsOfPose: props.boundsOfPose,
     nodes: props.nodes, gestureSource: props.gestureSource, previewPoseExtra: props.previewPoseExtra,
     getScale: () => viewRef.current.scale,
     selection: props.selection?.current ?? NO_SELECTION,
     getIsVisible: () => gateRef.current.getIsVisible?.() ?? alwaysVisible,
+    layerIsPainted: useViewLayerGate(layerVisibility, layerOrder, () => layers),
   });
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, getDebug: () => debugSink, viewId: null };
 
-  const layers = useSlotLayers(props.layers, tools, props.backgroundFill, props.decorationLayer);
   useViewRegistrySurface(viewRegistry, layers, frame, { requestRedraw, hitTestExtrasIn, clientToWorld: toWorld });
   const layersWithDebug = useComposedLayers(layers, {
     viewRegistry, debugOverlay, extrasRef, extrasVersion, cursorLayer: paintedCursorLayer,

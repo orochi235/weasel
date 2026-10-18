@@ -98,9 +98,11 @@ export type FractionOptions = {
   /**
    * `inline` (default) writes `1/12`. `diagonal` writes `¹⁄₁₂` — superscript
    * digits, the fraction slash, subscript digits — so the text itself is
-   * diagonal wherever it is drawn, CSS or not.
+   * diagonal wherever it is drawn, CSS or not. `stacked` writes the text and
+   * HTML `inline` does and asks to be drawn as its MathML form, numerator over
+   * denominator, wherever a renderer draws MathML (`QuantityText` does).
    */
-  form?: 'inline' | 'diagonal';
+  form?: 'inline' | 'diagonal' | 'stacked';
 } & (
   | { mixed?: boolean; of?: never }
   | {

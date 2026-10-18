@@ -30,6 +30,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
 
   ctx.targets.attach(s as never);
   s.set(o.to);
+  const atEnd = ctx.atEnd();
   ctx.seedClock();
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);
   /** Its offset at its start, where a run backward ends. */
@@ -39,8 +40,8 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const behind = goBehind(s, own, () => times(own(), share), share);
   const on = runsOn(s as never, behind);
   seat(s as never, on, path
-    ? codec.path({ id, on, ms, axes: ax.count, at: offsetAt })
-    : codec.tween({ id, on, ms, ease: easing, from: first, to: new Array<number>(ax.count).fill(0) }));
+    ? codec.path({ id, on, ms, axes: ax.count, at: offsetAt, atEnd })
+    : codec.tween({ id, on, ms, ease: easing, from: first, to: new Array<number>(ax.count).fill(0), atEnd }));
   bumpOn(s as never, behind, own(), 1);
 
   let left = false;
@@ -72,6 +73,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     return true;
   };
 
+  if (atEnd) seed.startAt = Math.max(o.ms, 0);
   seed.progress = (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, Math.max(0, virtualNow / o.ms)));
   // With no `onTick` to call it has nothing to do until it ends.
   if (!o.onTick) seed.due = Math.max(o.ms, 0);

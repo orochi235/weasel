@@ -6,13 +6,25 @@ import s from './controls.stories.module.css';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
+/** Past this many options a segmented bar outgrows a lab column, so the choice draws as a select. */
+const MAX_SEGMENTS = 4;
+
 /** The kit's segmented control over a fixed list of strings, which the lab never deselects. */
-export function LabToggle<T extends string>({ value, options, labels, onChange }: {
+export function LabToggle<T extends string>({ value, options, labels, name, onChange }: {
   value: T;
   options: readonly T[];
   labels?: readonly string[];
+  /** The control's accessible name, for a row that is a `group` rather than a label. */
+  name?: string;
   onChange: (value: T) => void;
 }): ReactElement {
+  if (options.length > MAX_SEGMENTS) {
+    return (
+      <select aria-label={name} className={s.select} value={value} onChange={(e) => onChange(e.target.value as T)}>
+        {options.map((option, i) => <option key={option} value={option}>{labels?.[i] ?? option}</option>)}
+      </select>
+    );
+  }
   return (
     <ToggleBar<T>
       items={options.map((option, i) => ({ value: option, label: labels?.[i] ?? option }))}
@@ -23,8 +35,24 @@ export function LabToggle<T extends string>({ value, options, labels, onChange }
   );
 }
 
-/** A labeled row: the label, then whatever controls fill the rest of `columns`. */
-export function Field({ label, columns, children }: { label: string; columns: string; children: ReactNode }) {
+/**
+ * A labeled row: the label, then whatever controls fill the rest of `columns`. A row of several
+ * controls, each labeled itself, is a `group` instead, since a label may name only one.
+ */
+export function Field({ label, columns, group, children }: {
+  label: string;
+  columns: string;
+  group?: boolean;
+  children: ReactNode;
+}) {
+  if (group) {
+    return (
+      <div role="group" aria-label={label} className={`${s.row} ${columns}`}>
+        <span className={s.label}>{label}</span>
+        {children}
+      </div>
+    );
+  }
   return (
     <label className={`${s.row} ${columns}`}>
       <span className={s.label}>{label}</span>

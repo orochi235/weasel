@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
-  prefNumberAt,
   prefValueAtPath,
   type PrefAction,
   type PrefActions,
@@ -9,7 +8,6 @@ import {
   type PrefAliasTargets,
   type PrefLeaf,
   type PrefMap,
-  type PrefNumber,
   type PrefUnion,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
@@ -23,6 +21,7 @@ import { rowWidthOf } from './compound';
 import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
+import { leafAtValues } from './leafAtValues';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
@@ -181,7 +180,7 @@ export function prefRenderContext(
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
-    pref: pref.kind === 'number' ? prefNumberAt(pref as PrefNumber, (p) => prefValueAtPath(ctx.values, p)) : pref,
+    pref: leafAtValues(pref, ctx.values),
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     values: ctx.values,
     ...(ctx.changed?.has(path) ? { changed: true } : {}),

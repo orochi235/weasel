@@ -64,6 +64,20 @@ describe('resolveSchemaMenu: number leaves', () => {
     expect(e).toMatchObject({ kind: 'number', display });
   });
 
+  it('carries its endless ends and word for infinity, and holds an infinity stored at one', () => {
+    const leaf = pref.number('Cap', 10, { min: 0, max: 100, endless: 'max', infinity: 'uncapped' });
+    const e = only(resolveSchemaMenu(menu({ cap: leaf }), valued({ cap: Infinity }))) as MenuNumberEntry;
+    expect(e).toMatchObject({ value: Infinity, endless: 'max', infinity: 'uncapped' });
+    expect(only(resolveSchemaMenu(menu({ cap: pref.number('Cap', 10, { max: 100 }) }), valued({ cap: Infinity }))))
+      .toMatchObject({ value: undefined });
+  });
+
+  it('carries the units its field reads typed, its own suffix among them', () => {
+    const leaf = pref.number('Width', 10, { unit: { suffix: 'cm', scale: 10, accepts: { mm: 0.1 } } });
+    const e = only(resolveSchemaMenu(menu({ w: leaf }), valued({ w: 10 }))) as MenuNumberEntry;
+    expect(e.accepts).toEqual({ cm: 1, mm: 0.1 });
+  });
+
   it('is left out without onChange, as a boolean is', () => {
     expect(resolveSchemaMenu(menu({ a: pref.number('A', 1) }), valued({ a: 1 }, false))).toEqual([]);
   });

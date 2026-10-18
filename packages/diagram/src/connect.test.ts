@@ -59,6 +59,21 @@ describe('createConnectAction', () => {
     }
   });
 
+  it('never lands on a port on a layer the view it started in does not paint', () => {
+    const onFx = () => PARTICIPANTS().map((p) => (p.node.id === 'b' ? { ...p, layer: 'fx' } : p));
+    for (const [painted, lands] of [[false, 0], [true, 1]] as const) {
+      const commit = vi.fn();
+      const start = ctxAt(100, 20, portPress());
+      (start as { deps: Record<string, unknown> }).deps = {
+        view: { layerIsPainted: (layer: string) => layer !== 'fx' || painted },
+      };
+      const invoker = createConnectAction<Rect>({ participants: onFx, commit }).invoker!;
+      if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+      invoker.start(start).onEnd!(ctxAt(300, 20), 'commit');
+      expect(commit).toHaveBeenCalledTimes(lands);
+    }
+  });
+
   it('declines a press that carries no port', () => {
     const action = createConnectAction<Rect>({ participants: PARTICIPANTS, commit: vi.fn() });
     const invoker = action.invoker!;

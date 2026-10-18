@@ -88,6 +88,7 @@ export type { PrefChange, PrefsStore } from './store';
 export {
   isPrefLinearUnit,
   prefUnit,
+  prefUnitAccepts,
   resolvePrefUnit,
   type PrefFunctionUnit,
   type PrefLinearUnit,

@@ -9,7 +9,8 @@ import type { SceneCanvasProps } from './props';
 import { useNodeAtPoint } from './useNodeAtPoint';
 import { useNodeKinds } from './useNodeKinds';
 import { useSceneSelectTool, type UseSceneSelectToolArgs } from './useSceneSelectTool';
-import { useViewLayerGate } from './useViewLayerGate';
+import { useOptionalViewRegistry } from '../viewRegistry';
+import { useViewLayerGate } from '../useViewLayerGate';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
@@ -39,7 +40,10 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     () => composeAlphaFor(scene, alphaFor),
     [scene, alphaFor],
   );
-  const viewLayerGate = useViewLayerGate(layerVisibility, layerOrder);
+  const surfaceViewRegistry = useOptionalViewRegistry();
+  const viewLayerGate = useViewLayerGate(
+    layerVisibility, layerOrder, () => surfaceViewRegistry?.surface()?.layers() ?? [],
+  );
 
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.

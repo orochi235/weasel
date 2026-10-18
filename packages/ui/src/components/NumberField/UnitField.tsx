@@ -1,5 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
-import { clampToBounds, decimal, parseAs, parseNumber, qty, spinKey, type Display, type UnitTable } from '@weasel-js/quantity';
+import {
+  clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
+} from '@weasel-js/quantity';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';
@@ -33,6 +35,8 @@ export interface UnitFieldProps {
   onClear?: () => void;
   minValue?: number;
   maxValue?: number;
+  /** The ends that stand for infinity: typed, or stepped to one step past the bound, the field holds it. */
+  endless?: Endless;
   /** What an arrow key, a stepper or a wheel notch adds or takes away; Page Up
    *  and Page Down move ten. Defaults to 1. */
   step?: number;
@@ -65,6 +69,12 @@ export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
+/** What a step starts from: the text as typed where it reads as a value the field can hold, else the value. */
+function stepStart(typed: number, value: number, endless: Endless | undefined): number {
+  const holds = (n: number) => Number.isFinite(n) || endlessAllows(endless, n);
+  return holds(typed) ? typed : holds(value) ? value : 0;
+}
+
 /**
  * A number typed as text, so it can carry a unit: `12mm` in a field showing
  * centimeters commits `1.2`. Commits on blur or Enter, reverts on Escape or on
@@ -82,6 +92,7 @@ export function UnitField({
   onClear,
   minValue,
   maxValue,
+  endless,
   step = 1,
   accepts,
   display = FULL_PRECISION,
@@ -107,13 +118,9 @@ export function UnitField({
     const n = accepts ? parseNumber(typed, accepts) : Number.NaN;
     return Number.isNaN(n) ? parseAs(typed, display) : n;
   };
-  const bounds = { step, min: minValue, max: maxValue };
+  const bounds = { step, min: minValue, max: maxValue, endless };
 
-  // What a step starts from: the text as typed where it reads, else the value.
-  const from = (): number => {
-    const typed = draft === null ? value : read(draft);
-    return Number.isFinite(typed) ? typed : Number.isFinite(value) ? value : 0;
-  };
+  const from = (): number => stepStart(draft === null ? value : read(draft), value, endless);
   const stepTo = (next: number) => {
     setDraft(null);
     typing.current = null;

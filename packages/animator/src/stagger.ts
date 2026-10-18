@@ -221,7 +221,8 @@ function runStagger<TItem>(
     supervisor.finish();
     return composite;
   }
-  items.forEach((item, i) => {
+  // Its items start at their own starts whenever the stagger does.
+  supervisor.starting(false, () => items.forEach((item, i) => {
     const ms = delayFor(delay, i);
     const fire = (): void => {
       const child = factory(item, i);
@@ -233,7 +234,7 @@ function runStagger<TItem>(
     };
     if (ms <= 0) fire();
     else composite.schedule(ms, fire);
-  });
+  }));
   return composite;
 }
 

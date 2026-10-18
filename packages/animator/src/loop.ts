@@ -12,7 +12,8 @@ import type {
  * animation. The factory is responsible for wiring its returned handle's
  * `onDone` to call `next` — that's how the loop advances. Pause/resume/
  * setTimeScale reach the current child and each later one; cancel stops the
- * in-flight child and prevents future iterations.
+ * in-flight child and prevents future iterations. Played backward, it starts each pass before
+ * the one in flight at that pass's end, and ends at the start of pass 0.
  *
  * The loop is registered with the animator under a supervisor entry, so
  * `animator.cancel(handle)`, `animator.cancelKey(key)`, and
@@ -24,7 +25,6 @@ export function createLoop(
   opts: LoopOptions = {},
 ): AnimationHandle {
   const max = opts.count ?? Infinity;
-  let iteration = 0;
   let canceled = false;
   let current: AnimationHandle | null = null;
 
@@ -45,10 +45,19 @@ export function createLoop(
   };
   supervisor.setOnRate(applyRate);
 
+  // Started at its end inside a loop run back, it starts its last pass at that pass's end.
+  const fromEnd = supervisor.atEnd && max < Infinity;
+  /** The pass in flight. */
+  let pass = fromEnd ? max : -1;
+  let first = true;
+
   const next = (): void => {
     if (canceled) return;
-    // Played backward, it ends once the pass in flight has run back to its start.
-    if (iteration >= max || (iteration > 0 && supervisor.rate() < 0)) {
+    // Played backward, it starts each pass before at its end, and ends at the start of pass 0.
+    const back = first ? fromEnd : supervisor.rate() < 0;
+    first = false;
+    const i = back ? pass - 1 : pass + 1;
+    if (i < 0 || i >= max) {
       current = null;
       // Natural completion: deregister the supervisor so isActive() goes
       // false. `canceled` makes a late `next` a no-op.
@@ -57,8 +66,8 @@ export function createLoop(
       opts.onDone?.();
       return;
     }
-    const i = iteration++;
-    current = factory(i, next);
+    pass = i;
+    current = supervisor.starting(back, () => factory(i, next));
     if (supervisor.isPaused() || supervisor.timeScale() !== 1) {
       applyRate(supervisor.isPaused(), supervisor.timeScale());
     }
