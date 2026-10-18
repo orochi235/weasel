@@ -1,6 +1,6 @@
 import type { MenuEntry, MenuItemEntry } from '@weasel-js/menu';
 import {
-  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
+  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt, prefNumberAt,
   resolvePrefUnit,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
@@ -123,9 +123,10 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
 
 /** A number row, in the units the leaf shows: its value, bounds, and step convert from the stored unit, and
  *  what is set converts back. */
-function numberRows(ctx: Ctx, leaf: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
+function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
   const { values, onChange } = ctx.src;
   if (!values || !onChange) return [];
+  const leaf = prefNumberAt(given, values);
   const unit = leaf.unit && resolvePrefUnit(leaf.unit);
   const stored = values(path);
   const { min, max, step } = prefDisplayBounds(leaf);

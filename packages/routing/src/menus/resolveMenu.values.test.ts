@@ -25,6 +25,13 @@ describe('resolveSchemaMenu: number leaves', () => {
     expect(src.onChange).toHaveBeenCalledWith('zoom', 12);
   });
 
+  it('bounds a number by the minAt and maxAt it reads from the values beside it', () => {
+    const src = valued({ w: 30, floor: 25, ceiling: 40 });
+    const leaf = pref.number('Width', 0, { min: 0, max: 100, minAt: (read) => read('floor') as number, maxAt: (read) => read('ceiling') as number });
+    const e = only(resolveSchemaMenu(menu({ w: leaf }), src)) as MenuNumberEntry;
+    expect(e).toMatchObject({ min: 25, max: 40 });
+  });
+
   it('shows and takes a value in its display unit, and stores it in its own', () => {
     const src = valued({ angle: Math.PI / 2 });
     const leaf = pref.number('Angle', 0, { min: 0, max: Math.PI, step: Math.PI / 180, unit: { suffix: '°', scale: Math.PI / 180 } });
