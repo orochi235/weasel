@@ -5,9 +5,8 @@ const QUARTER = Math.PI / 2;
 
 /**
  * A rotate's angle targets: every quarter turn, and the world rotation of
- * every other visible node that can turn. The Shift step is not a source:
- * it is the rotate's `snap.constrain` role, which applies with no source
- * at all.
+ * every other visible node that can turn. Shift's step is the rotate's own.
+ * Every `<SceneCanvas>` asks it, under the id `'rotation'`.
  */
 export function rotationSnapSource(): SnapSource {
   return {

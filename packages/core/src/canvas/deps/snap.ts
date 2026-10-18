@@ -29,6 +29,7 @@ import type { SnapSourceRegistry } from 'features/snap/registry';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
+import { rotationSnapSource } from 'features/snap/rotationSource';
 import type { SnapSource } from 'features/snap/types';
 
 type Point = { x: number; y: number };
@@ -53,10 +54,21 @@ export interface SnapSessionSources {
   sources: readonly SnapSource[];
   /** Sources `useSnapSource` adds, after `sources`. */
   registry?: SnapSourceRegistry;
+  /** Ids of {@link DEFAULT_SNAP_SOURCES} to leave out. */
+  omit?: readonly string[];
   /** Overrides the kit setting `targets.snapPx`. */
   reachPx?: number;
   /** How a node's rotation is read, for angle targets. */
   poseDescriptor?: PoseDescriptor<unknown>;
+}
+
+/** The sources every canvas asks after its own, unless one of its own has
+ *  the same id or `omit` names it. */
+const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [rotationSnapSource()];
+
+function withDefaults(listed: readonly SnapSource[], omit: readonly string[] = []): SnapSource[] {
+  const taken = new Set([...listed.map((s) => s.id), ...omit]);
+  return [...listed, ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
 }
 
 export function useSnapDepSource(
@@ -86,7 +98,7 @@ export function useSnapDepSource(
       ...(s ? {
         begin: (req) => {
           const view = viewRef.current;
-          const sources = [...s.sources, ...(s.registry?.list() ?? [])];
+          const sources = withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit);
           const wantsGeometry = sources.some((src) => src.roles.includes('geometry'));
           return sceneSession2d({
             req,

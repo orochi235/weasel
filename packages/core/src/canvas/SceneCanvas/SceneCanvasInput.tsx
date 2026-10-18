@@ -9,7 +9,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import { useContext, useEffect, type MutableRefObject, type RefObject } from 'react';
 import { SnapSourceRegistryContext } from 'features/snap/registry';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
-import { rotationSnapSource } from 'features/snap/rotationSource';
 import type { SnapSource } from 'features/snap/types';
 import { dlog } from '../../debug/flag';
 import { useDeviceProfile } from '../../core/device/useDeviceProfile';
@@ -28,9 +27,6 @@ import {
   useSceneStandardActions, type SceneStandardActionsInputs, type StandardActionsProps,
 } from './useSceneStandardActions';
 import { useToolKeybindings } from './useToolKeybindings';
-
-/** Every canvas's snap sources, after the consumer's and the presets'. */
-const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [rotationSnapSource()];
 
 type Props = SceneCanvasProps<unknown, string, unknown>;
 type Picking = ReturnType<typeof useScenePicking<unknown, string, unknown>>;
@@ -106,7 +102,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,
     viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state, pathSnapper: p.pathEdit.snapper,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
-    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources, ...DEFAULT_SNAP_SOURCES], registry: useContext(SnapSourceRegistryContext), store: p.snapStore },
+    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: useContext(SnapSourceRegistryContext), store: p.snapStore },
   });
 
   // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the

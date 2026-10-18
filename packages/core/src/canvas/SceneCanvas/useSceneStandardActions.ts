@@ -187,6 +187,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
       scene, boxes: () => drawnBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
       ...(snap.registry ? { registry: snap.registry } : {}),
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
+      ...(props.snap?.omit ? { omit: props.snap.omit } : {}),
       poseDescriptor,
     },
     snap.store,

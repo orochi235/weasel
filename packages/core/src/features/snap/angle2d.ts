@@ -9,25 +9,31 @@ import type { AngleCollect, SnapMark, SnapMarks, SnapSource } from './types';
 
 const TURN = Math.PI * 2;
 const PROBE = 'angle';
+/** A press near the pivot turns px reach into a wide angle; it reaches no
+ *  further than this. */
+const MAX_REACH_RAD = Math.PI / 4;
 
 /** Where `theta` lands, and what it met. Writes the marks to the store. */
 export function angleAt(
   inputs: Session2dInputs, sources: readonly SnapSource[], theta: number, mods: SnapMods,
 ): { theta: number; marks: readonly SnapMark[] } {
   const { req, store } = inputs;
-  const candidates = collectAngles(inputs, sources, theta, mods);
+  // Screen px per radian, or 1 when the gesture gives its reach in radians.
+  const scale = req.reachRad !== undefined ? 1 : pressRadiusPx(inputs);
+  const reachOf = (s: SnapSource) => req.reachRad
+    ?? Math.min(s.reachPx ?? inputs.reachPx, MAX_REACH_RAD * scale);
+  const candidates = collectAngles(inputs, sources, theta, mods, reachOf);
   if (candidates.length === 0) {
     store.set([]);
     return { theta, marks: [] };
   }
-  const radiusPx = pressRadiusPx(inputs);
   const res = resolveSnap({
     probes: [{ id: PROBE, at: [0], role: 'pointer' }],
     input: { at: [0], dirs: [[1]] },
     delta0: [theta],
     candidates,
     // No radius, no reach: only a required angle can win.
-    toScreen: ([t]) => [radiusPx > 0 ? t * radiusPx : NaN],
+    toScreen: ([t]) => [scale > 0 ? t * scale : NaN],
   });
   const out = res.delta[0];
   const marks = distinct(res.satisfied.flatMap((c) => {
@@ -41,22 +47,16 @@ export function angleAt(
 
 function collectAngles(
   inputs: Session2dInputs, sources: readonly SnapSource[], theta: number, mods: SnapMods,
+  reachOf: (s: SnapSource) => number,
 ): SnapCandidate<SnapMarks>[] {
   const { req } = inputs;
   const out: SnapCandidate<SnapMarks>[] = [];
-  const add = (angle: number, source: string, order: number, reachPx: number, required: boolean, tier: SnapSource['tier'], mark?: SnapMarks) => {
-    // The whole turn of `angle` nearest `theta`: 0 catches 359°.
-    const at = angle + TURN * Math.round((theta - angle) / TURN);
-    out.push({
-      probe: PROBE, locus: { at: [at], dirs: [] }, source, order, tier: tier ?? 'target', reachPx,
-      ...(required ? { required: true } : {}),
-      ...(mark ? { mark } : {}),
-    });
-  };
   const c = req.constrain;
   if (mods.constrain && typeof c === 'object' && c.step > 0) {
-    const n = Math.round(TURN / c.step);
-    for (let k = 0; k < n; k++) add(k * c.step, 'constrain', -1, 0, true, 'target');
+    const k = Math.round(theta / c.step);
+    for (const at of [k - 1, k, k + 1].map((i) => i * c.step)) {
+      out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'constrain', order: -1, tier: 'target', reachPx: 0, required: true });
+    }
   }
   if (mods.suspend) return out;
   const q: AngleCollect = {
@@ -71,8 +71,16 @@ function collectAngles(
   };
   sources.forEach((source, order) => {
     if (!source.angles) return;
-    const reach = source.reachPx ?? inputs.reachPx;
-    for (const a of source.angles(q)) add(a.angle, source.id, order, reach, a.required === true, source.tier, a.mark);
+    const reachPx = reachOf(source);
+    for (const a of source.angles(q)) {
+      // The whole turn of the angle nearest `theta`: 0 catches 359°.
+      const at = a.angle + TURN * Math.round((theta - a.angle) / TURN);
+      out.push({
+        probe: PROBE, locus: { at: [at], dirs: [] }, source: source.id, order, tier: source.tier ?? 'target', reachPx,
+        ...(a.required ? { required: true } : {}),
+        ...(a.mark ? { mark: a.mark } : {}),
+      });
+    }
   });
   return out;
 }

@@ -77,4 +77,34 @@ describe('<SceneCanvas snap>', () => {
     const s = snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } });
     expect(s.at({ x: 38, y: 43 }, FREE).point).toEqual({ x: 38, y: 43 });
   });
+
+  describe('default sources', () => {
+    const DEG = Math.PI / 180;
+    const rotate = (snap: SnapDep) =>
+      snap.begin!({ gesture: 'rotate', press: { x: 100, y: 0 }, pivot: { x: 0, y: 0 } });
+    const fortyFive: SnapSource = {
+      id: 'rotation', roles: [], gestures: ['rotate'], collect: () => [],
+      *angles() { yield { angle: 45 * DEG }; },
+    };
+
+    it('snaps a rotate to a quarter turn with no source named', () => {
+      expect(rotate(mount(null, {})).angle(88 * DEG, FREE).theta).toBeCloseTo(90 * DEG, 9);
+    });
+
+    it('leaves out a default source `omit` names', () => {
+      const snap = mount(null, { snap: { omit: ['rotation'] } });
+      expect(rotate(snap).angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
+    });
+
+    it('replaces a default source with a consumer source of the same id', () => {
+      const s = rotate(mount(null, { snap: { sources: [fortyFive] } }));
+      expect(s.angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
+      expect(s.angle(44 * DEG, FREE).theta).toBeCloseTo(45 * DEG, 9);
+    });
+
+    it('replaces a default source with one useSnapSource adds', () => {
+      const s = rotate(mount(<Contribute source={fortyFive} />, {}));
+      expect(s.angle(88 * DEG, FREE).theta).toBeCloseTo(88 * DEG, 9);
+    });
+  });
 });

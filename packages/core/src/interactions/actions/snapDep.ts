@@ -57,10 +57,13 @@ export interface SnapBegin {
   /** Resize: the box `handle` belongs to. Default: the subject's drawn box,
    *  axis-aligned. */
   box?: SnapResizeBox;
-  /** Rotate: the point the angle turns about. Default `press`. */
+  /** Rotate, handle: the point the angle turns about. Default `press`. */
   pivot?: Point;
   /** Rotate: the subject's angle at press, radians. Default 0. */
   theta0?: number;
+  /** Angle gestures: the reach as an angle, radians, for every source, in
+   *  place of screen px through the press radius. */
+  reachRad?: number;
   /** Point gestures: the previous anchor, a line's start. */
   origin?: Point;
   also?: SnapGeometry;

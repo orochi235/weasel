@@ -31,7 +31,9 @@ export interface SourceCandidate<P = Point> {
   mark?: SnapMarks<P> | ((delta: P) => SnapMarks<P>);
 }
 
-export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate';
+/** `'handle'` is an angle about an anchor, as `'rotate'` is about a pivot,
+ *  but asks only sources that name it. */
+export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate' | 'handle';
 
 /** The sides of a box a gesture moves on one axis; null for neither. */
 export type SnapEdge = 'min' | 'max' | 'both' | null;
@@ -124,10 +126,10 @@ export interface SnapSource<P = Point> {
   reachPx?: number;
   /** The probe roles it matches; it is never offered a probe of another. */
   roles: readonly ProbeRole[];
-  /** Default: every gesture but `'rotate'`. */
+  /** Default: every gesture but `'rotate'` and `'handle'`. */
   gestures?: readonly SnapGesture[];
   collect(q: SnapCollect<P>): Iterable<SourceCandidate<P>>;
-  /** Angle targets, for a source whose `gestures` include `'rotate'`. */
+  /** Angle targets, for a source whose `gestures` include `'rotate'` or `'handle'`. */
   angles?(q: AngleCollect): Iterable<AngleCandidate>;
 }
 
@@ -143,8 +145,14 @@ export type SnapMark<P = Point> =
 
 /** `<SceneCanvas snap>`. */
 export interface SceneCanvasSnap {
-  /** Sources ahead of the presets' `snapSources` and any `useSnapSource`. */
+  /** Sources ahead of the presets' `snapSources` and any `useSnapSource`.
+   *  One with the id of a canvas default (`'rotation'`, `rotationSnapSource`)
+   *  replaces that default, as does a preset's or a `useSnapSource` one. */
   sources?: readonly SnapSource[];
+  /** Ids of canvas defaults to leave out: `['rotation']` stops a rotate
+   *  snapping to quarter turns and other nodes' angles. Shift's step is the
+   *  rotate's own and stays. */
+  omit?: readonly string[];
   /** The reach of a source that sets none, in screen px. Default: the kit
    *  setting `targets.snapPx`. */
   reachPx?: number;

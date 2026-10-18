@@ -50,6 +50,7 @@ export function buildProbes(req: SnapBegin, reads: ProbeReads): SnapProbeAt[] {
     case 'move':
       return moveProbes(req.press, ids, reads);
     case 'rotate':
+    case 'handle':
       return [];
   }
 }

@@ -22,11 +22,15 @@ const DEG = Math.PI / 180;
 const PIVOT = { x: 50, y: 50 };
 const RADIUS = 50;
 
-function rig(opts: { rotation?: number; others?: readonly number[]; snap?: boolean } = {}) {
+function rig(opts: { rotation?: number; others?: readonly number[]; selected?: readonly number[]; snap?: boolean } = {}) {
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
   const id = scene.add({
     kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: opts.rotation ?? 0 },
   }) as string;
+  // More selected nodes on the same box, so the pivot stays put.
+  const ids = [id, ...(opts.selected ?? []).map((r) => scene.add({
+    kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 100, height: 100, rotation: r },
+  }) as string)];
   for (const [i, r] of (opts.others ?? []).entries()) {
     scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 300 + i * 50, y: 0, width: 10, height: 10, rotation: r } });
   }
@@ -38,7 +42,7 @@ function rig(opts: { rotation?: number; others?: readonly number[]; snap?: boole
     }),
   };
   const deps = {
-    scene, selection: { get: () => [id], set: () => {} } as unknown as SelectionApi,
+    scene, selection: { get: () => ids, set: () => {} } as unknown as SelectionApi,
     ...(opts.snap === false ? {} : { snap }),
   };
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) => ({
@@ -57,7 +61,8 @@ function rig(opts: { rotation?: number; others?: readonly number[]; snap?: boole
     h.onEnd!(ctx, 'commit');
     return ((scene.get(asNodeId(id))!.pose as Pose).rotation) / DEG;
   };
-  return { scene, store, press, turnedTo, turn };
+  const rotationOf = (i: number) => (scene.get(asNodeId(ids[i]))!.pose as Pose).rotation / DEG;
+  return { scene, store, press, turnedTo, turn, rotationOf };
 }
 
 describe('rotate snapping', () => {
@@ -75,6 +80,16 @@ describe('rotate snapping', () => {
 
   it("snaps 31° to another node's 30°", () => {
     expect(rig({ others: [30 * DEG] }).turn(31)).toBeCloseTo(30, 6);
+  });
+
+  it('snaps the angle the node ends at, not the amount turned', () => {
+    expect(rig({ rotation: 10 * DEG }).turn(22, { shift: true })).toBeCloseTo(30, 6);
+  });
+
+  it('steps the first node of a selection and turns the rest by as much', () => {
+    const r = rig({ selected: [5 * DEG] });
+    expect(r.turn(22, { shift: true })).toBeCloseTo(15, 6);
+    expect(r.rotationOf(1)).toBeCloseTo(20, 6);
   });
 
   it('suspends while Ctrl is held', () => {
