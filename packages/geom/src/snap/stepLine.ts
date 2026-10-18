@@ -3,7 +3,7 @@ import type { Flat, Vec } from './flat';
 /**
  * The line through `about` whose direction, measured in the plane `basis`
  * spans (as an angle from `basis[0]` toward `basis[1]`), is the multiple of
- * `step` nearest the direction from `about` to `toward`. A Shift-held
+ * `step` nearest the direction from `about` to `toward`: a constrained
  * gesture's input subspace, in any dimension. `basis` is orthonormal.
  */
 export function stepLine(about: Vec, toward: Vec, basis: readonly [Vec, Vec], step: number): Flat {

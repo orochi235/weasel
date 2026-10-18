@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createScene, insertAction, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
+  createScene, insertAction, placeAction,
+  type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
 } from '@weasel-js/core';
 import { add, intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
 import { MAX_PITCH, createCamera } from '../camera';
@@ -200,6 +201,47 @@ describe('createSnap: a 3D insert', () => {
     expect(f!.center.x + f!.width / 2).toBeCloseTo(3, 6);
     expect(f!.center.z - f!.depth / 2).toBeCloseTo(-1, 6);
     expect(f!.center.z + f!.depth / 2).toBeCloseTo(1, 6);
+  });
+
+  it('grows an Alt-drag footprint from the press out to the end', () => {
+    const { world } = worldOf([]);
+    const vp = world.viewport();
+    let minted: Footprint | null = null;
+    const deps = {
+      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap(world),
+    };
+    const ctx = (p: Vec3): InvocationCtx => {
+      const s = projectPoint(p, vp)!;
+      return { world: s, screen: s, modifiers: { alt: true, ctrl: false, meta: false, shift: false }, deps };
+    };
+    const handle = (insertAction.invoker as OngoingInvoker).start(ctx({ x: 1.3, y: 0, z: -0.8 }), undefined);
+    const end = ctx({ x: 2.1, y: 0, z: 0.4 });
+    handle.onMove!(end);
+    handle.onEnd!(end, 'commit');
+    const f = minted as Footprint | null;
+    expect(f!.center.x).toBeCloseTo(1.3, 6);
+    expect(f!.center.z).toBeCloseTo(-0.8, 6);
+    expect(f!.center.x + f!.width / 2).toBeCloseTo(2.1, 6);
+    expect(f!.center.z + f!.depth / 2).toBeCloseTo(0.4, 6);
+  });
+
+  it('centers a click-placed footprint on the ground grid point the click snapped to', () => {
+    const { world } = worldOf([]);
+    const vp = world.viewport();
+    let minted: Footprint | null = null;
+    const deps = {
+      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap(world, { sources: [groundGridSource({ step: 1 })] }),
+    };
+    const click = projectPoint({ x: 1.3, y: 0, z: -0.8 }, vp)!;
+    (placeAction.invoker as ImmediateInvoker).run(deps as never, {
+      kind: 'rect', size: { width: 40, height: 30 }, worldX: click.x, worldY: click.y,
+    });
+    const f = minted as Footprint | null;
+    expect(f).not.toBeNull();
+    expect(f!.center.x).toBeCloseTo(1, 6);
+    expect(f!.center.z).toBeCloseTo(-1, 6);
   });
 
   it('snaps an insert onto a box corner on the ground ahead of the grid', () => {

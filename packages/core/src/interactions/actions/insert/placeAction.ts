@@ -53,7 +53,8 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
-      const id = dep.commit(bounds, extras as InsertExtras);
+      const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
+      const id = dep.commit(bounds, extras as InsertExtras, ends);
       enterInsertedText(deps.textEdit, id === null ? null : String(id), extras.kind as string);
     },
   },
