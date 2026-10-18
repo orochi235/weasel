@@ -61,6 +61,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
   `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
   spreads `groupNodeRouting` ahead of it.
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+  and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
 ## Scene, move, and history
 
