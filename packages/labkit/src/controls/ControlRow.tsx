@@ -29,7 +29,7 @@ import {
   prefListTexts,
   withRowControl,
 } from '@weasel-js/ui';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
@@ -52,6 +52,8 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   /** Where the values an edit passes through go, a typed number's keystrokes or a slider's drag, while
    *  `setConfig` hears the one it settles on. Without it a typed field writes only that settled value. */
   draftConfig?: (path: string, value: unknown) => void;
+  /** What is wrong with the row's value, shown under it. */
+  error?: ReactNode;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
@@ -228,6 +230,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   shown,
   setConfig,
   draftConfig,
+  error,
   renderers,
   pack,
   layout,
@@ -276,6 +279,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       setAuto,
       fields: choices,
       disabled,
+      error,
     });
 
   const label = leaf.name;
@@ -283,7 +287,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   // `auto` gives the whole width to the controls that read badly at half of a
   // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
   const wide = pack === 'auto';
-  const row = { label, description, layout, readout: autoReadout, ...autoProps };
+  const row = { label, description, layout, readout: autoReadout, error, ...autoProps };
 
   if (leaf.kind === 'action') {
     return (
@@ -294,6 +298,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         description={description}
         layout={layout}
         disabled={disabled}
+        error={error}
       >
         <PrefActionButton pref={leaf as PrefAction} path={path} disabled={disabled} />
       </PropertyRow>
@@ -310,6 +315,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         layout={layout}
         description={description}
         disabled={disabled}
+        error={error}
         {...autoProps}
         value={value}
         setValue={write}

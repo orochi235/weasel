@@ -40,6 +40,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
    * or blur, and Escape writes nothing; a slider writes as it moves.
    */
   draftConfig?: (path: string, value: unknown) => void;
+  /** What is wrong with a value, by its path: each shows under its row, as an alert, and a custom row is
+   *  handed its own as `error`. A paired row shows its cells'. */
+  errors?: Readonly<Record<string, ReactNode>>;
   /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
@@ -150,6 +153,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   config,
   setConfig,
   draftConfig,
+  errors,
   renderers,
   over,
   pack = 'pairs',
@@ -206,6 +210,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     shown,
     setConfig,
     draftConfig,
+    errors,
     renderers,
     over,
     showHidden,

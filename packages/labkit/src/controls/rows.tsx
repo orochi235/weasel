@@ -5,7 +5,7 @@ import {
   PropertyRow,
   type PropertyRowLayout,
 } from '@weasel-js/ui';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
 
 const noDrafts = (): void => {};
@@ -48,6 +48,21 @@ export function DebouncedTextRow({
   return <PropertyField {...field} {...row} onInput={drafts.type} />;
 }
 
+/** The messages of a pair's cells, as one. */
+function pairError(
+  cells: readonly PairCellSpec[],
+  errors: Readonly<Record<string, ReactNode>> | undefined,
+): ReactNode {
+  const said = cells.filter(({ path }) => errors?.[path] != null);
+  if (said.length < 2) return said[0] && errors?.[said[0].path];
+  return said.map(({ path }, i) => (
+    <Fragment key={path}>
+      {i > 0 && ' '}
+      {errors?.[path]}
+    </Fragment>
+  ));
+}
+
 /** One cell of a paired row, with its path and the leaf it draws. */
 export interface PairCellSpec {
   path: string;
@@ -70,6 +85,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
   shown,
   setConfig,
   draftConfig,
+  errors,
   layout,
   span,
 }: {
@@ -78,6 +94,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   draftConfig?: (path: string, value: unknown) => void;
+  errors?: Readonly<Record<string, ReactNode>>;
   layout?: PropertyRowLayout;
   span?: boolean;
 }) {
@@ -88,6 +105,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
       label={label}
       layout={layout}
       disabled={cells.every((cell) => cell.disabled)}
+      error={pairError(cells, errors)}
     >
       {cells.map(({ path, leaf, disabled }) => (
         // The row is named by the pair, so a cell that shares it says which

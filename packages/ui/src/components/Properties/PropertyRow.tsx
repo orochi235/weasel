@@ -73,6 +73,9 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  last line of the ⓘ tooltip, after the word `auto`; with no `description`
    *  the tooltip is that line alone. */
   autoValue?: ReactNode;
+  /** What is wrong with the row's value — a validation message, shown under the control as an alert. The
+   *  row carries `data-invalid` while it has one. */
+  error?: ReactNode;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -99,6 +102,7 @@ export function PropertyRow({
   mixed = false,
   disabled = false,
   autoValue,
+  error,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -144,12 +148,19 @@ export function PropertyRow({
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
-  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(mixed ? { 'data-mixed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}) };
+  const invalid = error != null && error !== false && error !== '';
+  const message = invalid ? (
+    <span className={s.rowError} role="alert">
+      {error}
+    </span>
+  ) : null;
+  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(mixed ? { 'data-mixed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}), ...(invalid ? { 'data-invalid': '' } : {}) };
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}
       {children}
       {tail}
+      {message}
     </div>
   ) : (
     <label
@@ -161,6 +172,7 @@ export function PropertyRow({
       {head}
       {children}
       {tail}
+      {message}
     </label>
   );
 }

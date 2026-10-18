@@ -50,6 +50,7 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   draftConfig: ((path: string, value: unknown) => void) | undefined;
+  errors: Readonly<Record<string, ReactNode>> | undefined;
   renderers: Record<string, ControlRenderer> | undefined;
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
@@ -74,6 +75,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     shown,
     setConfig,
     draftConfig,
+    errors,
     renderers,
     over,
     showHidden,
@@ -142,6 +144,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           shown={shown}
           setConfig={setConfig}
           draftConfig={draftConfig}
+          error={errors?.[path]}
           renderers={renderers}
           pack={rows.pack}
           layout={rows.layout}
@@ -293,6 +296,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           shown={shown}
           setConfig={setConfig}
           draftConfig={draftConfig}
+          errors={errors}
           layout={rows.layout}
           // A segmented cell carries every choice at once, so a pair holding
           // one needs the whole row the way a segmented row of its own does.

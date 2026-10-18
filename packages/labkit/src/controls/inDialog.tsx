@@ -86,6 +86,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
         onAutoChange={manual ? undefined : setAuto}
         value={value}
         setValue={ctx.setValue}
+        error={ctx.error}
       >
         {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}
       </DraftDialogRow>
