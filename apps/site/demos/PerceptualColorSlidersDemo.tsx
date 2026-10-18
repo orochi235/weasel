@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@weasel-js/ui';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
-import type { RenderLayer } from '@weasel-js/core';
+import type { Dims, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import s from './PerceptualColorSlidersDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
@@ -121,12 +122,19 @@ function OutputSwatchRow({ indices, params }: { indices: number[]; params: RampP
 const DIAGRAM_W = 512;
 const DIAGRAM_H = 352;
 const DIAGRAM_PAD = { l: 28, r: 12, t: 24, b: 28 };
-const PLOT_W = DIAGRAM_W - DIAGRAM_PAD.l - DIAGRAM_PAD.r;
-const PLOT_H = DIAGRAM_H - DIAGRAM_PAD.t - DIAGRAM_PAD.b;
 const MAX_C = 0.22;
 
-const xAt = (L: number) => DIAGRAM_PAD.l + L * PLOT_W;
-const yAt = (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * PLOT_H;
+/** The plot's box and its L → x and C → y scales, for a diagram `size` big. */
+function plotIn(size: Dims) {
+  const plotW = size.width - DIAGRAM_PAD.l - DIAGRAM_PAD.r;
+  const plotH = size.height - DIAGRAM_PAD.t - DIAGRAM_PAD.b;
+  return {
+    plotW,
+    plotH,
+    xAt: (L: number) => DIAGRAM_PAD.l + L * plotW,
+    yAt: (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * plotH,
+  };
+}
 
 /** Chroma curve diagram. Triangle interior is rendered via the kit's WebGL
  *  renderer with per-vertex colors (`PathDrawCommand.vertexColors`) — each
@@ -146,7 +154,8 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: 'chroma-curve-fill',
     label: 'Chroma curve (vertex colors)',
-    draw: () => {
+    draw: (_data, _view, dims) => {
+      const { xAt, yAt } = plotIn(dims);
       const path = polygonFromPoints(points.map(p => ({ x: xAt(p.L), y: yAt(p.C) })));
       const colors = points.flatMap(p => hexToRgba(p.color));
       // The vertex-color render path is gated by `cmd.fill` being truthy
@@ -168,33 +177,30 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
     initial: [],
   });
 
+  const [size, setSize] = useState<Dims>({ width: DIAGRAM_W, height: DIAGRAM_H });
+  const { plotW, plotH, xAt, yAt } = plotIn(size);
   const pathD = `M ${xAt(points[0].L)} ${yAt(points[0].C)} L ${xAt(points[1].L)} ${yAt(points[1].C)} L ${xAt(points[2].L)} ${yAt(points[2].C)}`;
 
   return (
-    <div style={{ position: 'relative', width: DIAGRAM_W, height: DIAGRAM_H }}>
+    <DemoStage width={DIAGRAM_W} height={DIAGRAM_H} className={s.diagram}>
       <SceneCanvas
-        width={DIAGRAM_W}
-        height={DIAGRAM_H}
         className="ckd-canvas"
         scene={scene}
+        onResize={setSize}
         layers={{
           scene: { drawOne: () => [] },
           curve: { layer, after: 'scene' },
         }}
       />
-      <svg
-        width={DIAGRAM_W}
-        height={DIAGRAM_H}
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-      >
+      <svg width={size.width} height={size.height} className={s.overlay}>
         {/* Plot frame */}
-        <rect x={DIAGRAM_PAD.l} y={DIAGRAM_PAD.t} width={PLOT_W} height={PLOT_H} fill="none" stroke="var(--wzl-border)" />
+        <rect x={DIAGRAM_PAD.l} y={DIAGRAM_PAD.t} width={plotW} height={plotH} fill="none" stroke="var(--wzl-border)" />
         {/* Y gridlines */}
         {[0.05, 0.10, 0.15, 0.20].map(c => (
-          <line key={c} x1={DIAGRAM_PAD.l} y1={yAt(c)} x2={DIAGRAM_PAD.l + PLOT_W} y2={yAt(c)} stroke="rgba(255,255,255,0.07)" />
+          <line key={c} x1={DIAGRAM_PAD.l} y1={yAt(c)} x2={DIAGRAM_PAD.l + plotW} y2={yAt(c)} stroke="rgba(255,255,255,0.07)" />
         ))}
         {/* X marker at midL */}
-        <line x1={xAt(params.midL)} y1={DIAGRAM_PAD.t} x2={xAt(params.midL)} y2={DIAGRAM_PAD.t + PLOT_H} stroke="rgba(255,255,255,0.10)" strokeDasharray="2 3" />
+        <line x1={xAt(params.midL)} y1={DIAGRAM_PAD.t} x2={xAt(params.midL)} y2={DIAGRAM_PAD.t + plotH} stroke="rgba(255,255,255,0.10)" strokeDasharray="2 3" />
         {/* Per-vertex slider-range tracks: dashed vertical line at each
          *  point's L, spanning [0, maxBound] of that thumb's chroma slider,
          *  with small perpendicular tails at each end. Drawn before the
@@ -222,11 +228,11 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
           </g>
         ))}
         {/* Axis labels */}
-        <text x={DIAGRAM_PAD.l} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)">L: 0</text>
-        <text x={DIAGRAM_PAD.l + PLOT_W} y={DIAGRAM_H - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" textAnchor="end">1</text>
-        <text x={8} y={DIAGRAM_PAD.t + PLOT_H / 2} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" transform={`rotate(-90 8 ${DIAGRAM_PAD.t + PLOT_H / 2})`} textAnchor="middle">C</text>
+        <text x={DIAGRAM_PAD.l} y={size.height - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)">L: 0</text>
+        <text x={DIAGRAM_PAD.l + plotW} y={size.height - 8} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" textAnchor="end">1</text>
+        <text x={8} y={DIAGRAM_PAD.t + plotH / 2} fontSize={10} fontFamily="ui-monospace, monospace" fill="var(--wzl-fg-subtle)" transform={`rotate(-90 8 ${DIAGRAM_PAD.t + plotH / 2})`} textAnchor="middle">C</text>
       </svg>
-    </div>
+    </DemoStage>
   );
 }
 
@@ -267,7 +273,7 @@ export function PerceptualColorSlidersDemo() {
   const params: RampParams = { hue, midL, lRange, chroma };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${DIAGRAM_W}px`, gap: 24, padding: 16, alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 24, padding: 16, alignItems: 'start' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <section>
           <h3 style={{ margin: '0 0 8px' }}>Output swatch</h3>

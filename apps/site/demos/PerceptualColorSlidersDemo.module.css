@@ -13,3 +13,13 @@
   font-size: 12px;
   margin-top: var(--wzl-space-4);
 }
+
+.diagram {
+  position: relative;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

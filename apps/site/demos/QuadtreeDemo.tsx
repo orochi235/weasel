@@ -1,15 +1,16 @@
-import { useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import type { RenderLayer, CanvasHelpers, Fill } from '@weasel-js/core';
+import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 480, H = 360;
-const GRID_LAYER = createGridLayer({
+const gridLayer = (size: Dims) => createGridLayer({
   spacing: 20,
-  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+  bounds: () => ({ x: 0, y: 0, ...size }),
   accentEvery: 5,
 });
 
@@ -59,19 +60,19 @@ function createQuadtreeLayer(
   getRects: () => Rect[],
   helpersRef: React.RefObject<CanvasHelpers<Rect> | null>,
 ): RenderLayer<unknown> {
-  const buildLiveTree = () => {
+  const buildLiveTree = (dims: Dims) => {
     const live = helpersRef.current;
     const rects = getRects().map((r) => {
       const b = live?.getEffectiveBounds(r.id);
       return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, fill: r.fill } : r;
     });
-    return buildTree({ x: 0, y: 0, width: W, height: H }, rects);
+    return buildTree({ x: 0, y: 0, ...dims }, rects);
   };
   return {
     id: 'quadtree',
     label: 'Quadtree',
-    draw: () => {
-      const tree = buildLiveTree();
+    draw: (_data, _view, dims) => {
+      const tree = buildLiveTree(dims);
       const cmds: DrawCommand[] = [];
       function walk(n: QuadNode) {
         if (!n.children) return;
@@ -92,25 +93,28 @@ function createQuadtreeLayer(
 export function QuadtreeDemo() {
   const scene = useScene({ items: INITIAL });
   const helpersRef = useRef<CanvasHelpers<Rect> | null>(null);
+  const [size, setSize] = useState<Dims>({ width: W, height: H });
+  const grid = useMemo(() => gridLayer(size), [size]);
 
   return (
-    <SceneCanvas
-      features={['pick', 'move', 'transform']}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      helpersRef={helpersRef}
-      layers={{
-        grid: { layer: GRID_LAYER },
-        quadtree: {
-          layer: createQuadtreeLayer(
-            () => [...scene.renderOrder()].map((id) => scene.get(id)!.data),
-            helpersRef,
-          ),
-          after: 'scene',
-        },
-      }}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        features={['pick', 'move', 'transform']}
+        className="ckd-canvas"
+        scene={scene}
+        helpersRef={helpersRef}
+        onResize={setSize}
+        layers={{
+          grid: { layer: grid },
+          quadtree: {
+            layer: createQuadtreeLayer(
+              () => [...scene.renderOrder()].map((id) => scene.get(id)!.data),
+              helpersRef,
+            ),
+            after: 'scene',
+          },
+        }}
+      />
+    </DemoStage>
   );
 }
