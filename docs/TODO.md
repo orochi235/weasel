@@ -788,12 +788,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
-  `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
-  `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and
-  View's four toggles, preview without them. Register the same set the
-  app does, or have the probe take it as a prop.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 

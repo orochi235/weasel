@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { DRAW_MENU_BAR } from '../menuBar';
+import { DRAW_MENUS } from '../menus';
 import { RegistryProbe } from './registryProbe';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally so
@@ -152,5 +155,29 @@ describe('RegistryProbe', () => {
       if (!expected) continue; // consumer-authored / unknown tools tolerated
       expect(t.hookName, `tool id '${t.id}' missing hookName on its def`).toBe(expected);
     }
+  });
+
+  // The asset editor previews the app's menus against what the probe registers, so a row the app
+  // shows and the probe lacks previews as missing.
+  it('registers every action the app\'s menus name', async () => {
+    const snapshots: { actions: readonly { id: string }[] }[] = [];
+    render(
+      <ActionsProvider>
+        <RegistryProbe onSnapshot={(s) => { snapshots.push(s); }} />
+      </ActionsProvider>,
+    );
+    const named: string[] = [];
+    const walk = (g: PrefGroup) => {
+      for (const child of Object.values(g.children)) {
+        if (!isPrefLeaf(child)) walk(child);
+        else if (child.kind === 'action' && 'action' in child && child.action) named.push(child.action.split(':')[0]!);
+      }
+    };
+    walk(DRAW_MENU_BAR);
+    for (const m of DRAW_MENUS) walk(m.menu);
+    await waitFor(() => {
+      const registered = new Set(snapshots.at(-1)?.actions.map((a) => a.id));
+      expect(named.filter((id) => !registered.has(id))).toEqual([]);
+    });
   });
 });
