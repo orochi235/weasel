@@ -5,5 +5,5 @@
  * @packageDocumentation
  */
 export { usePref, usePrefsValues } from './hooks';
-export { usePrefsStore } from './usePrefsStore';
+export { usePrefsStore, type UsePrefsStoreOptions } from './usePrefsStore';
 export { KitSettingsFromPrefs } from './KitSettingsFromPrefs';

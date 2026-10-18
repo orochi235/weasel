@@ -3,6 +3,7 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { Hud } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
+import { SiteThemeProvider } from '../SiteThemeProvider';
 
 const W = 640, H = 264;
 const COL = [24, 232, 440], ROW = [24, 144];
@@ -37,6 +38,10 @@ function cell(hud: Hud, col: number, row: number, caption: string) {
 }
 
 export function HudGalleryDemo() {
+  return <SiteThemeProvider className="ckd-canvas-wrap"><Demo /></SiteThemeProvider>;
+}
+
+function Demo() {
   const hud = useHud();
   const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
   const scene = useScene<Empty>({ items: [] });
@@ -79,7 +84,7 @@ export function HudGalleryDemo() {
   }, [hud]);
 
   return (
-    <div className="ckd-canvas-wrap">
+    <>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={['pick']}
           className="ckd-canvas"
@@ -87,6 +92,6 @@ export function HudGalleryDemo() {
           ambient={[hudEntry]}
         />
       </DemoStage>
-    </div>
+    </>
   );
 }

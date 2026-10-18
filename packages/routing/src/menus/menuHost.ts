@@ -2,19 +2,18 @@ import type { MenuEntry, Rect } from '@weasel-js/menu';
 import { mergeMenuDefs, pickMenu } from './pickMenu';
 import { resolveMenu, type MenuSources } from './resolveMenu';
 import type { MenuDef, MenuHit, OwnedMenuDef } from './types';
-
-type XY = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** Ask to open a menu: by id (chrome) or by what was hit (canvas). */
 export interface MenuOpenRequest {
   menu?: string;
   hit?: MenuHit;
   /** Viewport point the menu is placed at, unless `under` is set. */
-  client: XY;
+  client: Point;
   /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
   under?: Rect;
   /** World point, passed to `enabled` and to every item. */
-  world?: XY;
+  world?: Point;
   params?: Record<string, unknown>;
   source?: 'pointer' | 'keyboard';
 }
@@ -23,9 +22,9 @@ export interface MenuOpenRequest {
 export interface OpenMenu {
   seq: number;
   entries: readonly MenuEntry[];
-  client: XY;
+  client: Point;
   under?: Rect;
-  world?: XY;
+  world?: Point;
   source: 'pointer' | 'keyboard';
 }
 

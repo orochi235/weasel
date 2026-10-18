@@ -5,7 +5,7 @@
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
-import { circlePath, handleBalances, linePath, type AnchorSet } from '@weasel-js/geom';
+import { circlePath, handleBalances, linePath, type AnchorSet, type Point } from '@weasel-js/geom';
 import type { PathEditExtension } from '@weasel-js/core';
 
 /** Chrome-caps id the balance lines and their grips are drawn and hit-tested
@@ -28,10 +28,8 @@ const BALANCE_DEFAULTS: Required<PathEditBalanceStyle> = {
   gripRadiusPx: 4,
 };
 
-type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
-
 /** Draw commands for `set`'s balance lines and their grips, in screen space. */
-export function balanceCommands(set: AnchorSet, toScreen: ToScreen, style: PathEditBalanceStyle = {}): DrawCommand[] {
+export function balanceCommands(set: AnchorSet, toScreen: (p: Point) => Point, style: PathEditBalanceStyle = {}): DrawCommand[] {
   const { color, gripFill, gripRadiusPx } = { ...BALANCE_DEFAULTS, ...style };
   const paint = { kind: 'solid' as const, color };
   const out: DrawCommand[] = [];

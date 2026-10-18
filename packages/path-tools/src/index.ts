@@ -89,7 +89,7 @@ export { useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/use
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
   useDistortTool, useEnvelopeTool, usePuppetTool,
-  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool,
+  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool, type WarpToolOptions,
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {

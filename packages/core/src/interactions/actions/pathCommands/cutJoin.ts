@@ -62,7 +62,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
 };
 
 /** What a join would do to the selection, or null when it cannot. */
-interface JoinPlan {
+export interface JoinPlan {
   keep: PathNode;
   drop: PathNode | null;
   path: PolygonPath;
@@ -97,16 +97,15 @@ export function planJoin(nodes: readonly PathNode[], options: JoinOptions = {}):
   return { keep, drop, path: anchorsToPath(set.anchors, set.closed, keep.path) };
 }
 
-type Params = Record<string, unknown> | undefined;
 
 /** A command joining the selected paths by {@link planJoin} as one undo step,
  *  spanning gaps as `options` reads from its params. Disabled in path edit,
  *  where joins act on the selected anchors. */
 export function joinPathsCommand(
   base: Pick<Action, 'id' | 'label' | 'icon' | 'defaultBinding'>,
-  options: (params: Params) => JoinOptions,
+  options: (params: Record<string, unknown> | undefined) => JoinOptions,
 ): Action & { requires: string[] } {
-  const plan = (deps: ActionDeps | undefined, params?: Params) => planJoin(selectedPathNodes(deps), options(params));
+  const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(selectedPathNodes(deps), options(params));
   return {
     ...base,
     group: 'path',

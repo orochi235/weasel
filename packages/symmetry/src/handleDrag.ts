@@ -1,6 +1,7 @@
 import type { Action, InvocationCtx, NodeId, OngoingHandle } from '@weasel-js/core';
 import type { SymmetryChange, SymmetryController } from './controller';
 import type { SymmetryHandlePress } from './guide';
+import type { Point } from '@weasel-js/geom';
 
 /** The id of the action that drags a guide handle. */
 export const SYMMETRY_HANDLE_ACTION_ID = 'symmetry.dragHandle';
@@ -8,16 +9,14 @@ export const SYMMETRY_HANDLE_ACTION_ID = 'symmetry.dragHandle';
 /** Shift holds an axis to steps of this many radians. */
 const ANGLE_STEP = Math.PI / 12;
 
-type Pt = { x: number; y: number };
-
 /** The change one frame of a handle drag makes, from where the press began. */
 export function handleChange(
   press: SymmetryHandlePress,
-  origin: { center: Pt },
-  from: Pt,
-  to: Pt,
+  origin: { center: Point },
+  from: Point,
+  to: Point,
   stepped: boolean,
-  snap: (p: Pt) => Pt,
+  snap: (p: Point) => Point,
 ): SymmetryChange {
   if (press.handle === 'center') {
     return { center: snap({ x: origin.center.x + to.x - from.x, y: origin.center.y + to.y - from.y }) };
@@ -51,7 +50,7 @@ export function handleDragAction(ctrl: SymmetryController): Action & { requires:
         const origin = ctrl.read(id);
         if (!origin) return {};
         const snapDep = ctx.deps.snap;
-        const snap = (p: Pt) => (snapDep ? snapDep.point(p) : p);
+        const snap = (p: Point) => (snapDep ? snapDep.point(p) : p);
         const from = { x: ctx.world.x, y: ctx.world.y };
         let last: SymmetryChange | null = null;
         const back: SymmetryChange = { spec: origin.spec, center: origin.center };

@@ -10,7 +10,6 @@ import type { PrefBoolean, PrefColor, PrefEnumBase, PrefLeaf, PrefNumber, PrefSt
 type Rest<L> = Partial<Omit<L, 'kind' | 'name' | 'default'>>;
 
 /** One option of an enum, or its value alone, which is labeled with the value's first letter raised. */
-type OptionOf<T extends string> = T | PrefEnumBase<T>['options'][number];
 
 const leaf = <L extends PrefLeaf>(kind: L['kind'], name: string, def: unknown, rest: object | undefined): L =>
   ({ kind, name, description: '', default: def, ...rest }) as L;
@@ -51,7 +50,7 @@ export const pref = {
   enum<const T extends string>(
     name: string,
     def: NoInfer<T>,
-    options: readonly OptionOf<T>[],
+    options: readonly (T | PrefEnumBase<T>['options'][number])[],
     rest?: Omit<Rest<PrefEnumBase<T>>, 'options'>,
   ): PrefEnumBase<T> & { default: T; clearable?: false } {
     const full = options.map((option) => (typeof option === 'string' ? { value: option, label: labeled(option) } : option));

@@ -1,7 +1,7 @@
 import { asNodeId } from './types';
 
 /** The layer-record field the predicates below read. */
-interface AnnotationFlag {
+export interface AnnotationFlag {
   readonly id: string;
   readonly annotation?: boolean;
 }

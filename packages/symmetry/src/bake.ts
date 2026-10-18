@@ -3,8 +3,6 @@ import { UNION_OF_CHILDREN, unionOfChildren, type NodeId, type Scene } from '@we
 import { isSymmetryGroup } from './group';
 import { keepContentsPut, localPoseUnder, worldPoseOf } from './frames';
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** What {@link bakeSymmetry} did. */
 export interface BakeResult {
   /** The plain group that replaced the symmetry group. */
@@ -14,7 +12,8 @@ export interface BakeResult {
   skipped: NodeId[];
 }
 
-interface BoxPose {
+/** A box pose {@link carryPose} carries: its bounds and any turn or linear frame it already has. */
+export interface BoxPose {
   x: number;
   y: number;
   width: number;
@@ -70,12 +69,12 @@ export function carryPose<P extends BoxPose>(pose: P, m: Affine): P {
  * symmetry group. In a scene that composes frames, every node stays where it
  * drew.
  */
-export function bakeSymmetry(scene: AnyScene, id: NodeId, label = 'Bake symmetry'): BakeResult | null {
+export function bakeSymmetry(scene: Scene<unknown, string, unknown>, id: NodeId, label = 'Bake symmetry'): BakeResult | null {
   if (!isSymmetryGroup(scene, id)) return null;
   return scene.batch(label, () => bakeInBatch(scene, id));
 }
 
-function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
+function bakeInBatch(scene: Scene<unknown, string, unknown>, id: NodeId): BakeResult {
   const skipped: NodeId[] = [];
   for (const child of [...scene.childrenOf(id)]) {
     for (const inner of [...descendantGroups(scene, child)].reverse()) skipped.push(...bakeInBatch(scene, inner).skipped);
@@ -105,7 +104,7 @@ function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
   return { group: plain, skipped: [...new Set(skipped)] };
 }
 
-function descendantGroups(scene: AnyScene, id: NodeId): NodeId[] {
+function descendantGroups(scene: Scene<unknown, string, unknown>, id: NodeId): NodeId[] {
   const out: NodeId[] = [];
   const walk = (n: NodeId): void => {
     if (isSymmetryGroup(scene, n)) out.push(n);
@@ -116,7 +115,7 @@ function descendantGroups(scene: AnyScene, id: NodeId): NodeId[] {
 }
 
 /** Add `id`, carried through `m`, under `parent`. */
-function copySubtree(scene: AnyScene, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
+function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
   const node = scene.get(id);
   if (!node) return;
   if (node.kind === 'container') {

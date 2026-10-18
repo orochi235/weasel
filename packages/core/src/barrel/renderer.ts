@@ -158,7 +158,7 @@ export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
 } from '../core/shapeKinds';
 export type { BuiltinToolOptions } from '../canvas/SceneCanvas/useBuiltinShapeTools';
-export type { InsertNodeFactory, InsertPaint } from '../canvas/deps';
+export type { InsertNodeFactory, InsertPaint, PreviewPathsDep } from '../canvas/deps';
 export { paletteInsertPaint } from '../canvas/deps';
 export type {
   SceneToAdapterOptions,
@@ -196,6 +196,7 @@ export type {
   DefaultTextData,
   UseSceneTextEditReturn,
 } from '../features/text/useSceneTextEdit';
+export type { EditingDrawOne } from '../features/text/editingDrawOne';
 export { textBoxOf, type TextNodeData } from '../canvas/nodeShapes/textPainter';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';

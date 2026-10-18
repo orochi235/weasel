@@ -8,15 +8,15 @@ import {
   nextCornerShape,
   type CornerPiece,
   type CornerShapeFrame,
-  type Vec,
 } from './cornerShape';
+import type { Point } from './cubicMath';
 
 // A right-angle corner at (100, 0) with a setback of 10 along each edge.
 const FRAME: CornerShapeFrame = { start: { x: 90, y: 0 }, end: { x: 100, y: 10 }, outer: { x: 100, y: 0 } };
 
 /** Points along the pieces, starting from the frame's start. */
-function trace(pieces: CornerPiece[], from: Vec, steps = 2000): Vec[] {
-  const out: Vec[] = [];
+function trace(pieces: CornerPiece[], from: Point, steps = 2000): Point[] {
+  const out: Point[] = [];
   let p0 = from;
   for (const piece of pieces) {
     for (let i = 1; i <= steps; i++) {
@@ -37,7 +37,7 @@ function trace(pieces: CornerPiece[], from: Vec, steps = 2000): Vec[] {
   return out;
 }
 
-const near = (pts: Vec[], q: Vec) => Math.min(...pts.map((p) => Math.hypot(p.x - q.x, p.y - q.y)));
+const near = (pts: Point[], q: Point) => Math.min(...pts.map((p) => Math.hypot(p.x - q.x, p.y - q.y)));
 
 describe('corner-shape keywords', () => {
   it('are the points CSS puts them on the superellipse parameter', () => {

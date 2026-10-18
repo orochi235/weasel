@@ -232,17 +232,17 @@ export {
   withPath,
   type PathNode,
 } from '../interactions/actions/pathCommands/pathNodes';
-export { joinPathsCommand, planJoin } from '../interactions/actions/pathCommands/cutJoin';
+export { joinPathsCommand, planJoin, type JoinPlan } from '../interactions/actions/pathCommands/cutJoin';
 export { DEFAULT_SIMPLIFY_TOLERANCE } from '../interactions/actions/pathCommands/simplifyOffset';
 export { livePathEdit, type LivePathEditSpec } from '../interactions/actions/pathCommands/livePathEdit';
 export {
   anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from '../interactions/actions/defaults/anchorEditing';
 export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
-export { joinSelectedAnchors } from '../interactions/actions/defaults/anchorJoin';
+export { joinSelectedAnchors, type AnchorEdit } from '../interactions/actions/defaults/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
-export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
+export { pathEditPreview, type PathEditPreview, type PathStorageKind } from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {

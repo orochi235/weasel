@@ -109,7 +109,7 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
  * Segments that overlap along a stretch report at most a few points of it.
  * Sorted by `ta`.
  */
-export function intersectSegments(a: Seg, b: Seg): SegmentCrossing[] {
+export function intersectSegments(a: Point[], b: Point[]): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
     const uv = chordCross(a[0], a[1], b[0], b[1], 1e-12);
     if (!uv) return [];

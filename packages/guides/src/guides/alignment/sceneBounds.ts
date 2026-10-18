@@ -10,7 +10,6 @@ import {
   visualBoundsViaDescriptor,
 } from '@weasel-js/core';
 
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Options shared by the scene readers below. */
 export interface SceneBoundsOptions {
@@ -22,7 +21,7 @@ export interface SceneBoundsOptions {
 /** The world box each id is drawn in, rotation included, skipping ids the
  *  scene no longer holds. Read through the scene's composition. */
 export function worldBoundsOf(
-  scene: AnyScene,
+  scene: Scene<unknown, string, unknown>,
   ids: Iterable<NodeId>,
   opts: SceneBoundsOptions = {},
 ): Bounds[] {
@@ -38,7 +37,7 @@ export function worldBoundsOf(
 
 /** The union of `ids`' world boxes, or null when none is in the scene. */
 export function worldUnionOf(
-  scene: AnyScene,
+  scene: Scene<unknown, string, unknown>,
   ids: Iterable<NodeId>,
   opts: SceneBoundsOptions = {},
 ): Bounds | null {
@@ -53,7 +52,7 @@ export function worldUnionOf(
  * `getSpacingTargets`.
  */
 export function siblingBounds(
-  scene: AnyScene,
+  scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   opts: SceneBoundsOptions = {},
 ): Bounds[] {

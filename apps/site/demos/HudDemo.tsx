@@ -3,12 +3,17 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { ButtonWidget } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
+import { SiteThemeProvider } from '../SiteThemeProvider';
 
 const W = 600, H = 400;
 
 interface Empty { id: string }
 
 export function HudDemo() {
+  return <SiteThemeProvider><Demo /></SiteThemeProvider>;
+}
+
+function Demo() {
   const hud = useHud();
   // One ambient entry installs the whole HUD: its layer, and input routing
   // gated on the affordance that layer's hit-test produces, so it never

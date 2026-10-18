@@ -1090,14 +1090,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) The older hud demos draw in dark mode whatever the site shows.** The hud reads its colors
-  from a `ThemeProvider`, not the cascade, and the demo shell provides none, so `hud`, `hud-gallery`
-  and `loupe` keep the theme's default mode when the site is switched to light.
-  `HudContextMenuDemo` follows the site by putting `SiteColorModeContext` (`apps/site/colorMode.ts`)
-  into its own `ThemeProvider`; the others can do the same. A provider around every demo would
-  reach the lab demos too: `LabRoot` (`packages/labkit/src/lab/LabRoot.tsx`) applies
-  `interstellarTheme` only when `useThemeOptional()` finds no outer theme.
-
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
   write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
@@ -1118,13 +1110,10 @@ only story runner in the repo.
   own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
   2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
 
-- **(P3) Package pages: a public signature names types the reference has no page for.** Every
-  published package has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`,
-  "Package pages"), and only geom, gestures, and labkit have guides. `npm run build:api` warns for
-  each type a public signature names that its package does not export, and the page writes that
-  name unlinked: symmetry's `Pt` and `AnyScene`, geom's `Side` and `Anchors`, prefs'
-  `SyncOptions`, diagram's `Rect`, and core's `ViewPoseAdapter`, among others. About 420 exports
-  have no doc comment, so their row in a module's list has no description. A page's "Declared in"
+- **(P3) Package pages: undescribed exports and unchecked source links.** Every published package
+  has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and
+  only geom, gestures, and labkit have guides. About 420 exports have no doc comment, so their row
+  in a module's list has no description. A page's "Declared in"
   line links to GitHub only where TypeDoc found the repository, which it cannot from a git
   worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 

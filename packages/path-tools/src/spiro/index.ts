@@ -2,6 +2,8 @@
  * Spiro curves: a curve drawn by its on-curve points alone, solved by
  * `@weasel-js/geom`'s `solveSpiro`. A spiro node keeps its solved curve on
  * `data.path` and its points' kinds on `data.representation`.
+ *
+ * @packageDocumentation
  */
 export { spiroPreset } from './spiroPreset';
 export { useSpiroTool, type UseSpiroToolOptions } from './useSpiroTool';

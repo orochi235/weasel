@@ -11,6 +11,7 @@ import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
 import { isDev } from '@weasel-js/react';
 import type { MenuDef } from './types';
+import type { Point } from '@weasel-js/geom';
 
 /** What resolving reads: the registered actions, each one's deps, how to run
  *  one, and the values behind the schema's boolean and enum leaves. */
@@ -27,14 +28,12 @@ export interface MenuSources {
   over?: PrefGroup;
 }
 
-type XY = { x: number; y: number };
-
 type Ctx = {
   src: MenuSources;
   byId: Map<string, Action>;
   root: PrefGroup;
   read?: PrefConditionReader;
-  at?: XY;
+  at?: Point;
   params?: Record<string, unknown>;
 };
 
@@ -190,7 +189,7 @@ function tidy(entries: MenuEntry[]): MenuEntry[] {
 export function resolveSchemaMenu(
   schema: PrefGroup,
   src: MenuSources,
-  at?: XY,
+  at?: Point,
   params?: Record<string, unknown>,
 ): MenuEntry[] {
   const values = src.values;
@@ -209,7 +208,7 @@ export function resolveSchemaMenu(
 export function resolveMenu(
   def: MenuDef,
   src: MenuSources,
-  at?: XY,
+  at?: Point,
   params?: Record<string, unknown>,
 ): MenuEntry[] {
   return resolveSchemaMenu(def.menu, src, at, params);

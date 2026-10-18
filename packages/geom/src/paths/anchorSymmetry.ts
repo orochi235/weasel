@@ -1,8 +1,8 @@
 import { applyToPoint, type Affine } from '../affine';
 import { anchorAt, anchorCount, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import { isAnchorSmooth, type PenAnchor } from './anchors';
+import type { Point } from './cubicMath';
 
-type Pt = { x: number; y: number };
 type Side = 'in' | 'out';
 
 /**
@@ -18,20 +18,20 @@ export interface AnchorSymmetry {
   readonly flips: readonly boolean[];
 }
 
-function near(a: Pt | undefined, b: Pt | undefined, tol: number): boolean {
+function near(a: Point | undefined, b: Point | undefined, tol: number): boolean {
   if (!a || !b) return a === b;
   return Math.abs(a.x - b.x) <= tol && Math.abs(a.y - b.y) <= tol;
 }
 
-function image(m: Affine, p: Pt): Pt;
-function image(m: Affine, p: Pt | undefined): Pt | undefined;
-function image(m: Affine, p: Pt | undefined): Pt | undefined {
+function image(m: Affine, p: Point): Point;
+function image(m: Affine, p: Point | undefined): Point | undefined;
+function image(m: Affine, p: Point | undefined): Point | undefined {
   if (!p) return undefined;
   const [x, y] = applyToPoint(m, p.x, p.y);
   return { x, y };
 }
 
-function linear(m: Affine, d: Pt): Pt {
+function linear(m: Affine, d: Point): Point {
   return { x: m[0] * d.x + m[2] * d.y, y: m[1] * d.x + m[3] * d.y };
 }
 
@@ -89,7 +89,7 @@ export function anchorSymmetries(set: AnchorSet, group: readonly Affine[], toler
  * hold it. Exact when `syms` is a group less its identity — an anchor on a
  * mirror axis slides along it, an anchor at a center of rotation stays put.
  */
-function averaged(d: Pt, syms: readonly AnchorSymmetry[], fixes: (s: AnchorSymmetry) => boolean, apply: (m: Affine, p: Pt) => Pt): Pt {
+function averaged(d: Point, syms: readonly AnchorSymmetry[], fixes: (s: AnchorSymmetry) => boolean, apply: (m: Affine, p: Point) => Point): Point {
   let x = d.x;
   let y = d.y;
   let k = 1;
@@ -119,7 +119,7 @@ export function translateAnchorsSymmetric(
   syms: readonly AnchorSymmetry[],
 ): boolean {
   const dragged = new Set(flats);
-  const moves = new Map<number, Pt>();
+  const moves = new Map<number, Point>();
   for (const flat of flats) {
     const d = averaged({ x: dx, y: dy }, syms, (s) => s.partners[flat] === flat, linear);
     moves.set(flat, d);
@@ -151,7 +151,7 @@ const other = (side: Side): Side => (side === 'in' ? 'out' : 'in');
 export function moveHandleSymmetric(
   set: AnchorSet,
   flat: number,
-  side: Side,
+  side: 'in' | 'out',
   toX: number,
   toY: number,
   breakSmoothness: boolean,
@@ -163,8 +163,8 @@ export function moveHandleSymmetric(
   const fixesHandle = (s: AnchorSymmetry) => s.partners[flat] === flat && sideUnder(s, side) === side;
   const to = averaged({ x: toX, y: toY }, syms, fixesHandle, image);
 
-  const targets = new Map<string, { flat: number; side: Side; to: Pt }>();
-  const put = (f: number, sd: Side, p: Pt): void => {
+  const targets = new Map<string, { flat: number; side: Side; to: Point }>();
+  const put = (f: number, sd: Side, p: Point): void => {
     const key = `${f}:${sd}`;
     if (!targets.has(key)) targets.set(key, { flat: f, side: sd, to: p });
   };

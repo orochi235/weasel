@@ -78,6 +78,7 @@ export {
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
 export type { CanvasProps } from '../canvas/Canvas';
+export type { ViewPoseAdapter } from '../canvas/useViewHelpers';
 export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';
 export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';
 export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';

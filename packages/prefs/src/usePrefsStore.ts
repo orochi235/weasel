@@ -16,7 +16,8 @@ interface Shared {
   bySchema: Map<PrefGroup, Held>;
 }
 
-type SyncOptions = PrefsOptions & { storage: SyncStorageAdapter };
+/** The store options `usePrefsStore` takes: a store's, with the synchronous storage it reads at once. */
+export type UsePrefsStoreOptions = PrefsOptions & { storage: SyncStorageAdapter };
 
 const shared = new WeakMap<StorageAdapter, Map<string, Shared>>();
 
@@ -66,7 +67,7 @@ function closeUnheldSoon(storage: StorageAdapter, prefix: string, schema: PrefGr
   });
 }
 
-function acquire<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsStore<S> {
+function acquire<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions): PrefsStore<S> {
   const { storage, prefix } = options;
   const at = sharedAt(storage, prefix);
   const entry = heldAt(at, schema);
@@ -104,7 +105,7 @@ function acquire<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsSto
  * object itself may be new every render: `migrations` and `validators` are
  * read when a store opens, and a change to either alone opens nothing.
  */
-export function usePrefsStore<S extends PrefGroup>(schema: S, options: SyncOptions): PrefsStore<S> {
+export function usePrefsStore<S extends PrefGroup>(schema: S, options: UsePrefsStoreOptions): PrefsStore<S> {
   const { storage, prefix } = options;
   const hold = useCallback(() => {
     const entry = heldAt(sharedAt(storage, prefix), schema);

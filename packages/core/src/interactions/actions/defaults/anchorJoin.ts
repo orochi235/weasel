@@ -9,7 +9,8 @@ import { anchorEditWouldChange, commitAnchorEdit, depOf } from './anchorEditing'
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
 
-type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
+/** An edit of an anchor set at its selected anchors, answering whether it changed anything. */
+export type AnchorEdit = (set: AnchorSet, selected: number[]) => boolean;
 
 const axisOf = (params: Record<string, unknown> | undefined): AverageAxis => {
   const axis = params?.axis;

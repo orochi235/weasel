@@ -5,8 +5,8 @@ import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, ty
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
+import type { Point } from '@weasel-js/geom';
 
-type XY = { x: number; y: number };
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
 
 /** What {@link createMenuWidget} needs: the open menu, how to close it, and the canvas it draws on. */
@@ -15,7 +15,7 @@ export interface MenuWidgetOptions {
   /** The menu is done: an item was chosen, or it was dismissed. */
   close(): void;
   /** Viewport point to canvas CSS pixels, for `open.client` and `open.under`. */
-  toCanvas(client: XY): XY;
+  toCanvas(client: Point): Point;
   canvasSize(): { width: number; height: number };
   /** Width of a label in the family the hud draws with. Defaults to the
    *  registered face's own advances, which is what the text is laid out with. */
@@ -24,7 +24,7 @@ export interface MenuWidgetOptions {
   onChange(): void;
 }
 
-function underOnCanvas(r: Rect, toCanvas: (client: XY) => XY): Rect {
+function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
   const a = toCanvas({ x: r.x, y: r.y });
   const b = toCanvas({ x: r.x + r.w, y: r.y + r.h });
   return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };

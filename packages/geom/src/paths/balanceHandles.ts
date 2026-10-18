@@ -1,8 +1,7 @@
 import { flatAnchorIndex, type AnchorSet } from './anchorEdits';
 import { isStraightSegment, segmentEnds, type PenAnchor } from './anchors';
 import { moveHandleSymmetric, type AnchorSymmetry } from './anchorSymmetry';
-
-type Point = { x: number; y: number };
+import type { Point } from './cubicMath';
 
 /** A curved segment's balance line: from its first handle's tip to its
  *  second's, with a grip at the middle. */

@@ -2,12 +2,12 @@
 
 import type { Path } from '../path';
 import { parseSubpaths } from '../booleans/contours';
-import type { Seg } from '../booleans/contourSegments';
+import type { Point } from '../paths/cubicMath';
 
 /** One segment of a path's stroke, in the order the path draws them. */
 export interface PathSegment {
   /** Control points: 2 for a line, 3 for a quadratic, 4 for a cubic. */
-  pts: Seg;
+  pts: Point[];
   /** Index of its subpath among the path's subpaths. */
   sub: number;
   /** Index within its subpath. */

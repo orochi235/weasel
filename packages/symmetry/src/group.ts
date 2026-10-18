@@ -1,4 +1,4 @@
-import type { Affine } from '@weasel-js/geom';
+import type { Affine, Point } from '@weasel-js/geom';
 import type { AddNodeSpec, CopiesFromPoseFn, NodeId, Scene, SceneRegistry } from '@weasel-js/core';
 import { DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetrySpec } from './kinds';
 
@@ -15,16 +15,14 @@ export interface SymmetryPose {
   height: number;
 }
 
-type Pt = { x: number; y: number };
-
 /** Where a group's copies turn and reflect about: the middle of its pose. */
-export function centerOfPose(pose: unknown): Pt {
+export function centerOfPose(pose: unknown): Point {
   const p = pose as Partial<SymmetryPose>;
   return { x: (p.x ?? 0) + (p.width ?? 0) / 2, y: (p.y ?? 0) + (p.height ?? 0) / 2 };
 }
 
 /** The pose that puts a group's center at `c`. */
-export function poseAtCenter(c: Pt): SymmetryPose {
+export function poseAtCenter(c: Point): SymmetryPose {
   return { x: c.x, y: c.y, width: 0, height: 0 };
 }
 
@@ -59,7 +57,7 @@ export const symmetryRegistry: SceneRegistry<unknown> = {
 /** What {@link symmetryGroupSpec} builds a group from. */
 export interface SymmetryGroupOptions<TLayer extends string = string> {
   layer: TLayer;
-  center: Pt;
+  center: Point;
   symmetry?: Partial<SymmetrySpec>;
   id?: NodeId;
   parent?: NodeId | null;
@@ -83,17 +81,16 @@ export function symmetryGroupSpec<TLayer extends string>(
   };
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Whether `id` names a symmetry group in `scene`. */
-export function isSymmetryGroup(scene: AnyScene, id: NodeId | string | null | undefined): boolean {
+export function isSymmetryGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null | undefined): boolean {
   if (id == null) return false;
   const node = scene.get(id as NodeId);
   return node?.kind === 'container' && node.copiesFromPose === symmetryCopies;
 }
 
 /** The nearest symmetry group holding `id`, or `id` itself when it is one. */
-export function symmetryGroupOf(scene: AnyScene, id: NodeId | string): NodeId | null {
+export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: NodeId | string): NodeId | null {
   let cur: NodeId | null = id as NodeId;
   const seen = new Set<string>();
   while (cur !== null && !seen.has(cur)) {
@@ -105,7 +102,7 @@ export function symmetryGroupOf(scene: AnyScene, id: NodeId | string): NodeId | 
 }
 
 /** The spec and center of group `id`, or `null` when it is not one. */
-export function readGroup(scene: AnyScene, id: NodeId | string | null): { spec: SymmetrySpec; center: Pt } | null {
+export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
   return { spec: specOfData(node.data), center: centerOfPose(scene.overrides.read(node.id)?.pose ?? node.pose) };
@@ -116,7 +113,7 @@ export function readGroup(scene: AnyScene, id: NodeId | string | null): { spec: 
  * while it is edited, or none for a kind that is not a group. In world
  * coordinates, for the `pathSymmetry` dep.
  */
-export function editSymmetries(scene: AnyScene, id: NodeId | string | null): Affine[] {
+export function editSymmetries(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): Affine[] {
   const g = readGroup(scene, id);
   if (g === null || !SYMMETRY_KINDS[g.spec.kind].group) return [];
   return symmetryTransforms(g.spec, g.center);

@@ -1,4 +1,4 @@
-import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
+import { multiply, rotate, translate, type Affine, type Point } from '@weasel-js/geom';
 
 /** Which copies a symmetry group draws. */
 export type SymmetryKind = 'mirror' | 'both' | 'point' | 'radial' | 'kaleidoscope' | 'repeat';
@@ -41,43 +41,41 @@ export const DEFAULT_SYMMETRY: SymmetrySpec = {
   glide: false,
 };
 
-type Pt = { x: number; y: number };
-
 /** `Math.cos` and `Math.sin` leave 1e-16 where a quarter turn has an exact
  *  0, which a preset axis then carries into every coordinate it mirrors. */
 const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
 
-const about = (c: Pt, m: Affine): Affine => multiply(translate(c.x, c.y), multiply(m, translate(-c.x, -c.y)));
+const about = (c: Point, m: Affine): Affine => multiply(translate(c.x, c.y), multiply(m, translate(-c.x, -c.y)));
 
 /** The reflection across the line through `c` at `angle`. */
-export function mirrorAcross(c: Pt, angle: number): Affine {
+export function mirrorAcross(c: Point, angle: number): Affine {
   const cos = exact(Math.cos(2 * angle));
   const sin = exact(Math.sin(2 * angle));
   return about(c, [cos, sin, sin, -cos, 0, 0]);
 }
 
 /** The rotation by `angle` about `c`. */
-export function turnAbout(c: Pt, angle: number): Affine {
+export function turnAbout(c: Point, angle: number): Affine {
   const [a, b, cc, d] = rotate(angle);
   return about(c, [exact(a), exact(b), exact(cc), exact(d), 0, 0]);
 }
 
-const turns = (c: Pt, n: number): Affine[] =>
+const turns = (c: Point, n: number): Affine[] =>
   Array.from({ length: Math.max(0, n - 1) }, (_, k) => turnAbout(c, (2 * Math.PI * (k + 1)) / n));
 
 /** One kind: how its copies are built, and whether they form a finite group —
  *  one a path can be its own image under, which a repeat's never can. */
-interface KindDef {
+export interface SymmetryKindDef {
   readonly label: string;
   readonly group: boolean;
-  transforms(spec: SymmetrySpec, c: Pt): Affine[];
+  transforms(spec: SymmetrySpec, c: Point): Affine[];
 }
 
 /**
  * Every kind, by name. A new kind, a wallpaper tiling say, is a row here: the
  * group, the guide layer and the controls all read the table.
  */
-export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, KindDef>> = {
+export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
   mirror: { label: 'Mirror', group: true, transforms: (s, c) => [mirrorAcross(c, s.angle)] },
   both: {
     label: 'Both axes',
@@ -120,6 +118,6 @@ function wedges(s: SymmetrySpec): number {
  * among them. For a kind that forms a group this is the whole group less its
  * identity.
  */
-export function symmetryTransforms(spec: SymmetrySpec, center: Pt): Affine[] {
+export function symmetryTransforms(spec: SymmetrySpec, center: Point): Affine[] {
   return SYMMETRY_KINDS[spec.kind].transforms(spec, center);
 }

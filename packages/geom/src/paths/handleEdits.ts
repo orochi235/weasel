@@ -1,7 +1,6 @@
 import { anchorAt, locateAnchor, type AnchorSet } from './anchorEdits';
 import type { PenAnchor } from './anchors';
-
-type Point = { x: number; y: number };
+import type { Point } from './cubicMath';
 
 /**
  * Collapse the handles of the anchors at `flatIndexes` onto their anchors,

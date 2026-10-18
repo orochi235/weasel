@@ -8,20 +8,19 @@ import { keepContentsPut } from './frames';
 import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
 import { SYMMETRY_HANDLE_KIND, symmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
+import type { Point } from '@weasel-js/geom';
 
-type AnyScene = Scene<unknown, string, unknown>;
-type Pt = { x: number; y: number };
 
 /** What changes on a group: its spec, its center, or both. */
 export interface SymmetryChange {
   spec?: Partial<SymmetrySpec>;
-  center?: Pt;
+  center?: Point;
 }
 
 /** Live symmetry on one scene: which group is being drawn into, the edits a
  *  group takes, and the canvas entry that wires it all up. */
 export interface SymmetryController {
-  readonly scene: AnyScene;
+  readonly scene: Scene<unknown, string, unknown>;
   /** The group new shapes are drawn into, or null for none. Answers null
    *  once that group is gone, an undone create say. */
   active(): NodeId | null;
@@ -30,9 +29,9 @@ export interface SymmetryController {
   subscribe(listener: () => void): () => void;
   /** Add an empty group, one undo step, and make it the active one. Its layer
    *  defaults to the scene's first. */
-  create(opts: { center: Pt; symmetry?: Partial<SymmetrySpec>; layer?: string; parent?: NodeId | null }): NodeId;
+  create(opts: { center: Point; symmetry?: Partial<SymmetrySpec>; layer?: string; parent?: NodeId | null }): NodeId;
   /** Group `id`'s spec and center, or null when it is not a symmetry group. */
-  read(id: NodeId | null): { spec: SymmetrySpec; center: Pt } | null;
+  read(id: NodeId | null): { spec: SymmetrySpec; center: Point } | null;
   /** Change a group, one undo step. */
   update(id: NodeId, change: SymmetryChange, label?: string): void;
   /** Change a group with no undo step, for the frames of a drag. */
@@ -66,7 +65,7 @@ const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: '
 const onHandle = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === SYMMETRY_HANDLE_KIND);
 
 /** Live symmetry for `scene`. Pass `symmetryRegistry` to the scene too, so its groups save. */
-export function createSymmetry(scene: AnyScene, opts: CreateSymmetryOptions = {}): SymmetryController {
+export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: CreateSymmetryOptions = {}): SymmetryController {
   let activeId: NodeId | null = null;
   const listeners = new Set<() => void>();
   const notify = () => { for (const l of [...listeners]) l(); };

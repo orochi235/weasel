@@ -3,12 +3,11 @@ import { createGuidesLayer, type GuidesLayerOpts } from '../guides/layer';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 
-type Modifier = 'alt' | 'ctrl' | 'meta' | 'shift';
 
 /** Options for `distanceReadout`. */
 export interface DistanceReadoutOptions extends Pick<GuidesLayerOpts, 'color' | 'gapLabels' | 'lineWidth' | 'ticks'> {
   /** The key held to show the readout. Default `'alt'`. */
-  modifier?: Modifier;
+  modifier?: 'alt' | 'ctrl' | 'meta' | 'shift';
   /** Contribution id, and the prefix of its action's. Default `'distanceReadout'`. */
   id?: string;
 }
@@ -21,7 +20,7 @@ export interface DistanceReadoutContribution extends SurfaceContribution {
 }
 
 const EMPTY: DistanceReadout = { gaps: [], leaders: [] };
-const MODIFIERS: readonly Modifier[] = ['alt', 'ctrl', 'meta', 'shift'];
+const MODIFIERS: readonly NonNullable<DistanceReadoutOptions['modifier']>[] = ['alt', 'ctrl', 'meta', 'shift'];
 
 /** The ids and every node under them: what the pick under the pointer skips. */
 function subtreeOf(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[]): Set<NodeId> {

@@ -25,15 +25,13 @@ export function pathEffectOf(node: { data?: unknown } | undefined): PathEffect |
   return effect && typeof effect === 'object' && typeof effect.kind === 'string' ? effect : null;
 }
 
-type Deps = readonly (DerivedDep<unknown> | undefined)[];
-
 /** A path-effect node's two derivations. */
 export interface PathEffectDerivations {
   /** What it paints and picks by. */
-  derivePath(node: { data?: unknown }, deps: Deps): Path | null;
+  derivePath(node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): Path | null;
   /** The bounds of what it paints, or `null` — its authored pose — while it
    *  paints nothing. */
-  derivePose(node: { data?: unknown }, deps: Deps): { x: number; y: number; width: number; height: number } | null;
+  derivePose(node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): { x: number; y: number; width: number; height: number } | null;
 }
 
 interface Derived {
@@ -52,7 +50,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
    *  its cost. Checked against everything it read, by value for poses — a
    *  drag's override mutates its pose in place. */
   const results = new WeakMap<object, Derived>();
-  const derive = (node: { data?: unknown }, deps: Deps): Derived => {
+  const derive = (node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): Derived => {
     const held = results.get(node);
     if (held !== undefined && current(held, node, deps)) return held;
     const effect = pathEffectOf(node);
@@ -81,7 +79,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
   };
 }
 
-function current(held: Derived, node: { data?: unknown }, deps: Deps): boolean {
+function current(held: Derived, node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): boolean {
   if (held.data !== node.data || held.nodes.length !== deps.length) return false;
   for (let i = 0; i < deps.length; i++) {
     const d = deps[i];
@@ -97,7 +95,7 @@ function current(held: Derived, node: { data?: unknown }, deps: Deps): boolean {
  *  it has no derivation or nothing to paint. */
 export function pathEffectParts(
   node: { data?: unknown; derivePath?: unknown },
-  deps: Deps,
+  deps: readonly (DerivedDep<unknown> | undefined)[],
 ): readonly DerivedPart[] | null {
   if (typeof node.derivePath !== 'function') return null;
   return derivedPartsOf((node.derivePath as PathEffectDerivations['derivePath'])(node, deps)) ?? null;

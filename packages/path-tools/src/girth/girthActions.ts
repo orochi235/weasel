@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { meanScale, pathToAnchors, pxExtent, type PolygonPath } from '@weasel-js/geom';
+import { meanScale, pathToAnchors, pxExtent, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
 import {
@@ -9,7 +9,6 @@ import {
 } from './widthEdit';
 
 type AnyScene = Scene<unknown, string, unknown>;
-type Point = { x: number; y: number };
 
 /** What the Girth tool's overlay shows, in world space: the anchors of the
  *  stroke last hovered or pressed on, each with its unit normal toward its
