@@ -1,6 +1,7 @@
 # @weasel-js/menu
 
-The headless model behind weasel's context menus: entries (items, separators, submenus), a
+The headless model behind weasel's context menus: entries (items, separators, submenus, number rows
+edited in place, and read-only color rows), a
 controller that owns the highlight, open submenus, keyboard and typeahead behavior, and placement
 that keeps a menu on screen. No React, no DOM.
 
@@ -44,7 +45,8 @@ These are not visible in the code; each was a choice between alternatives.
 - An action naming a parametric action lists every variant in a menu or an `actions` group, but a
   bar `action` leaf naming the bare id draws a dead button: a button is one thing, so a bar names
   the variant (`viewport.zoom:in`).
-- An enum draws as radio rows between separators, not as a submenu. Menus sharing an id append
+- An enum draws as radio rows between separators, not as a submenu. A number draws as a row edited
+  in place, stepped by `+` and `-` while highlighted, and the menu stays open. Menus sharing an id append
   their children in order with a separator between (a later duplicate key gets `~n`).
 - `useCommand`'s `variants` are `ActionVariant`s, so a command's variants carry `tags` like any action's.
 - labkit's trials stay separate action roots. The lab's own dispatcher still hears only its own
