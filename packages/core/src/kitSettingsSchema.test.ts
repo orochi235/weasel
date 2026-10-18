@@ -8,10 +8,12 @@ import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
 import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
-import { ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX } from 'features/paths/penPreviewLayer';
+import {
+  ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_ANCHOR_SNAP_PX, PEN_CLOSE_HIT_PX,
+} from 'features/paths/penPreviewLayer';
 import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
 import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
-import { VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
+import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 import { coreKitSettingsSchema } from './kitSettingsSchema';
 
 const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<string, number> } = {
@@ -32,9 +34,12 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     penAnchorRadiusPx: ANCHOR_RADIUS_PX,
     penHandleDotRadiusPx: HANDLE_DOT_RADIUS_PX,
     penCloseHintRadiusPx: CLOSE_HINT_RADIUS_PX,
+    penCloseHitPx: PEN_CLOSE_HIT_PX,
+    penAnchorSnapPx: PEN_ANCHOR_SNAP_PX,
     boneJointRadiusPx: JOINT_RADIUS_PX,
     weightPointRadiusPx: POINT_RADIUS_PX,
     sliceVertexRadiusPx: VERTEX_RADIUS_PX,
+    sliceCloseHitPx: SLICE_CLOSE_HIT_PX,
   },
   view: { animationMs: DEFAULT_VIEW_ANIMATION_MS },
 };

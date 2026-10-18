@@ -5,6 +5,7 @@ import { weaselAliases } from './scripts/vite-aliases.ts';
 import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas.ts';
 import { forgeAliases, frameConfig as forgeFrameConfig, stories as forgeStories } from './apps/forge/viteShared.ts';
 import { forgeTest } from './packages/forge/src/vite/forgeTest.ts';
+import { ownEntries as forgeOwnEntries } from './packages/forge/src/vite/ownEntries.ts';
 import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
@@ -222,7 +223,9 @@ export default defineConfig({
         ...shared,
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
-        // fix: with it the browser session never connected on two fleet nodes.
+        // fix: with it the browser session never connected on two fleet nodes. `info` puts vite's
+        // "Re-optimizing dependencies" line in the log, which vitest's default `warn` drops.
+        logLevel: 'info',
         optimizeDeps: {
           entries: BROWSER_TESTS,
           include: browserDeps(import.meta.dirname, { entries: BROWSER_TESTS, setupFiles: [BROWSER_SETUP] }),
@@ -264,6 +267,14 @@ export default defineConfig({
         ],
         resolve: { alias: forgeAliases(import.meta.dirname) },
         define: weaselDefines(import.meta.dirname),
+        // The same guard as the `browser` project's: every story and the frame they render through.
+        logLevel: 'info',
+        optimizeDeps: {
+          include: browserDeps(import.meta.dirname, {
+            entries: forgeStories,
+            setupFiles: [forgeFrameConfig, ...forgeOwnEntries(['test'])],
+          }),
+        },
         test: {
           name: 'forge-stories',
           include: forgeStories,

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { prefersReducedMotion } from '../../reducedMotion';
+import { prefersReducedMotion } from '@weasel-js/react';
 import { dropSlot, isDropPath } from './drop';
 import { hiddenAttrs, marksHidden } from './hidden';
 import './selection.css';

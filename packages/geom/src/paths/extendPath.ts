@@ -6,38 +6,43 @@
 import type { Path, PolygonPath } from '../path';
 import type { Point } from './cubicMath';
 import type { Seg } from '../booleans/contourSegments';
-import { parseSubpaths } from '../booleans/contours';
 import { intersectSegments } from '../intersect/segmentIntersections';
-import { pathSegments } from '../intersect/pathSegments';
+import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { editAnchorSetTracked } from './anchorOrigins';
-import { lengthenPathEnd } from './lengthenPathEnd';
+import { anchorsToPath, pathToAnchors } from './anchors';
+import { resolveCorners } from './corners';
+import { lengthenPathEnd, pathEndFrame } from './lengthenPathEnd';
 
-/** One end of an open subpath. */
+/** One end of an open subpath. `sub` counts subpaths as the path's anchor set
+ *  (`pathToAnchors`) does, a bare `M` included. */
 export interface OpenPathEnd {
   sub: number;
   end: 'first' | 'last';
 }
 
-/** Every end of every open subpath of `path` that has a segment behind it. */
+/** Every end of every open subpath of `path` that has a direction to grow in. */
 export function openPathEnds(path: Path): OpenPathEnd[] {
-  return parseSubpaths(path, false).flatMap(({ segs, closed }, sub) =>
-    closed || segs.length === 0 ? [] : [{ sub, end: 'first' as const }, { sub, end: 'last' as const }]);
+  if (path.kind !== 'polygon') return [];
+  const set = pathToAnchors(path);
+  return set.anchors.flatMap((_, sub) =>
+    (['first', 'last'] as const).map((end) => ({ sub, end })).filter((e) => pathEndFrame(set, e)));
 }
 
 /** Where `end` sits and the unit direction it points out along, or null when
- *  its segment has no length to point with. */
+ *  it is no open end or has no direction there. */
 export function openEndRay(path: Path, end: OpenPathEnd): { at: Point; dir: Point } | null {
-  const sp = parseSubpaths(path, false)[end.sub];
-  if (!sp || sp.closed || sp.segs.length === 0) return null;
-  const s = end.end === 'last' ? sp.segs[sp.segs.length - 1] : sp.segs[0].slice().reverse();
-  const at = s[s.length - 1];
-  // The tangent at an end runs to the nearest control point that is not on it.
-  for (let i = s.length - 2; i >= 0; i--) {
-    const dx = at.x - s[i].x, dy = at.y - s[i].y;
-    const len = Math.hypot(dx, dy);
-    if (len > 1e-9) return { at: { ...at }, dir: { x: dx / len, y: dy / len } };
-  }
-  return null;
+  if (path.kind !== 'polygon') return null;
+  const frame = pathEndFrame(pathToAnchors(path), end);
+  return frame && { at: frame.point, dir: frame.tangent };
+}
+
+/** `path`'s stroke segments but the one at `end`. */
+function segmentsBesideEnd(path: PolygonPath, end: OpenPathEnd): PathSegment[] {
+  const set = pathToAnchors(resolveCorners(path));
+  return set.anchors.flatMap((sub, s) => {
+    const segs = pathSegments(anchorsToPath([sub], [set.closed[s]]));
+    return s === end.sub ? segs.filter((g) => g.index !== (end.end === 'last' ? g.count - 1 : 0)) : segs;
+  });
 }
 
 /**
@@ -71,12 +76,8 @@ export function extendToMeet(
   opts: ExtendToMeetOptions = {},
 ): { path: PolygonPath; at: Point; distance: number } | null {
   const ray = openEndRay(path, end);
-  if (!ray) return null;
-  const others = boundaries.flatMap((b) => pathSegments(b));
-  const own = pathSegments(path);
-  const ownEnd = (s: (typeof own)[number]) =>
-    s.sub === end.sub && s.index === (end.end === 'last' ? s.count - 1 : 0);
-  const all = [...others, ...own.filter((s) => !ownEnd(s))];
+  if (!ray || path.kind !== 'polygon') return null;
+  const all = [...boundaries.flatMap((b) => pathSegments(b)), ...segmentsBesideEnd(path, end)];
   let reach = opts.maxDistance ?? 0;
   if (opts.maxDistance === undefined) {
     for (const s of all) {

@@ -2,10 +2,10 @@
  * Path constraints in path edit: their marks on the open path, a click
  * selecting one, Delete removing it, and every edit finished so they hold.
  */
-import { pathAnchorPoints, unsatisfiedConstraints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
+import { pathAnchorPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathEditExtension, PathEditTarget } from '@weasel-js/core';
 import { constraintGlyphs, constraintMarkAt, type ConstraintGlyphStyle } from './constraintGlyphs';
-import { constrainNodeEdit, constraintAxisOf, constraintsOf, solveNodeConstraints } from './pathConstraints';
+import { conflictsIn, constrainNodeEdit, constraintAxisOf, constraintsOf, solveNodeConstraints } from './pathConstraints';
 
 /** Owner id of the constraint marks, as `EditAnchorsDep.selectedMark` names them. */
 export const CONSTRAINTS_EXTENSION_ID = 'constraints';
@@ -26,15 +26,30 @@ export function editedPath(dep: EditAnchorsDep): PolygonPath | null {
  * entry, moving it the least that makes them all hold. When they cannot all
  * hold the path stays as it is and the list is stored all the same, the
  * conflict left for the marks to show. Clears the selected mark, since the
- * list is renumbered. False when the dep cannot store.
+ * list is renumbered. Answers the indices in conflict, as
+ * `constraintConflictsOf` names them — empty when every one holds — or null
+ * when the dep cannot store.
  */
-export function setConstraints(dep: EditAnchorsDep, constraints: readonly PathConstraint[], label: string): boolean {
+export function setConstraints(dep: EditAnchorsDep, constraints: readonly PathConstraint[], label: string): number[] | null {
   const node = dep.getNodeShape(dep.editingId);
   const solved = node && dep.store ? solveNodeConstraints(node, constraints) : null;
-  if (!solved) return false;
+  if (!solved) return null;
   dep.setSelectedMark?.(null);
   dep.store!(dep.editingId, solved.path, label, { constraints: [...constraints] });
-  return true;
+  return solved.conflicts;
+}
+
+/** The last answer per constraint list, so a frame that repaints an unchanged path asks for none. */
+const conflictCache = new WeakMap<readonly PathConstraint[], { key: string; conflicts: ReadonlySet<number> }>();
+
+/** {@link conflictsIn} for `path`, answered from the cache when the list and its anchors are as last asked. */
+function conflictsOf(path: PolygonPath, constraints: readonly PathConstraint[], axisAngle: number): ReadonlySet<number> {
+  const key = `${axisAngle};${Array.from(path.commands).join(',')};${Array.from(path.coords).join(',')}`;
+  const hit = conflictCache.get(constraints);
+  if (hit?.key === key) return hit.conflicts;
+  const conflicts = new Set(conflictsIn(path, constraints, axisAngle));
+  conflictCache.set(constraints, { key, conflicts });
+  return conflicts;
 }
 
 /** The constraint selected in path edit, as an index into the open path's list, or null. */
@@ -55,9 +70,8 @@ export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> 
       const constraints = constraintsOf(ctx.node.data);
       if (constraints.length === 0) return [];
       const world = pathAnchorPoints(ctx.path);
-      const axisAngle = constraintAxisOf(ctx.node);
-      const unsatisfied = new Set(unsatisfiedConstraints(world, constraints, { axisAngle }));
-      return constraintGlyphs(world.map(ctx.toScreen), constraints, unsatisfied, colors, ctx.selected);
+      const conflicts = conflictsOf(ctx.path, constraints, constraintAxisOf(ctx.node));
+      return constraintGlyphs(world.map(ctx.toScreen), constraints, conflicts, colors, ctx.selected);
     },
     markAt(target, toScreen, screen) {
       const constraints = constraintsOf(target.node.data);

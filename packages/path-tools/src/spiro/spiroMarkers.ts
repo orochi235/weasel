@@ -1,7 +1,7 @@
 /**
  * How a spiro point is marked, by its kind: a circle for a smooth point, a
- * square for a corner, and a half-disc for a point beside a straight
- * segment, its flat side toward the line.
+ * diamond for a g4 point, a square for a corner, and a half-disc for a point
+ * beside a straight segment, its flat side toward the line.
  */
 import { circlePath, polygonFromPoints, squarePath, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
 import type { AnchorMarkerShape } from '@weasel-js/core';
@@ -30,6 +30,14 @@ function halfDisc(x: number, y: number, r: number, toward: Point): PolygonPath {
 export function spiroMarker(kind: SpiroKind): AnchorMarkerShape {
   if (kind === 'smooth') return (at, size) => circlePath(at.x, at.y, size / 2);
   if (kind === 'corner') return (at, size) => squarePath(at.x, at.y, size);
+  if (kind === 'g4') {
+    return (at, size) => {
+      const r = (size / 2) * 1.25;
+      return polygonFromPoints([
+        { x: at.x, y: at.y - r }, { x: at.x + r, y: at.y }, { x: at.x, y: at.y + r }, { x: at.x - r, y: at.y },
+      ]);
+    };
+  }
   return (at, size, prev, next) => {
     const from = kind === 'left' ? prev : next;
     const away = from ? { x: at.x - from.x, y: at.y - from.y } : { x: 1, y: 0 };

@@ -11,15 +11,16 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { scenePoseFrame } from '../poseFrame';
-import { moveSources, translateTargets } from '../selectionSubtree';
+import { moveSources, storedDelta, translateTargets } from '../selectionSubtree';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { recordTransform } from '../transform-again/memory';
 
 /**
- * Apply a translation of (dx, dy) to the selected nodes and the descendants
- * that do not ride on one of them, as one undo entry labeled `label`.
- * Translates through the `poseDescriptor` dep, so any pose shape moves.
- * Returns whether anything moved.
+ * Apply a world translation of (dx, dy) to the selected nodes and the
+ * descendants that do not ride on one of them, as one undo entry labeled
+ * `label` — on screen, the way a drag moves them, whatever frame each is
+ * stored in. Translates through the `poseDescriptor` dep, so any pose shape
+ * moves. Returns whether anything moved.
  */
 export function translateSelection(
   selection: Pick<SelectionApi, 'get' | 'adapterMethods'>,
@@ -32,22 +33,22 @@ export function translateSelection(
   label = 'Nudge',
 ): boolean {
   const descriptorOf = nodeDescriptors(scene, d);
-  const ids = translateTargets(
-    scene, scenePoseFrame(scene), moveSources(scene, selection.get()),
-  );
+  const frame = scenePoseFrame(scene);
+  const ids = translateTargets(scene, frame, moveSources(scene, selection.get()));
   if (ids.length === 0) return false;
-  // Pushed alongside each transform op so a wired geometryProjection moves
-  // the node's data-held geometry too.
-  const m: Affine = [1, 0, 0, 1, dx, dy];
 
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id);
     if (!node) continue;
+    const l = storedDelta(frame, descriptorOf(id), id, dx, dy);
+    // Pushed alongside each transform op so a wired geometryProjection moves
+    // the node's data-held geometry too.
+    const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: node.pose,
-      to: translatePoseViaDescriptor(node.pose, dx, dy, descriptorOf(id)),
+      to: translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id)),
       label,
     }));
     const dataOp = geometryDataOp(

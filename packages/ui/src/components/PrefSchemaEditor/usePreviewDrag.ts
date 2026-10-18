@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import { swallowNextClick } from '../../useReorderDragList';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { aliasOf, canAlias, carried, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
@@ -36,6 +37,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
 }): { ghost: PreviewGhost | null; onPointerDown(e: ReactPointerEvent): void } {
   const [ghost, setGhost] = useState<PreviewGhost | null>(null);
   const drag = useRef<ThresholdDragHandle | null>(null);
+  const dragPx = useKitSetting('gestures.dragPx');
   // Its end also tells `place` the drag is over, which stops what `place` had waiting on it.
   useEffect(() => () => { drag.current?.cancel(); }, []);
 
@@ -83,6 +85,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     };
     drag.current = startThresholdDrag(e, {
       origin: box,
+      threshold: dragPx,
       onActivate: update,
       onMove: update,
       onCommit: (ev) => {

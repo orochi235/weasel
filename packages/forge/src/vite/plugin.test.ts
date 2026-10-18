@@ -21,6 +21,12 @@ const FOLLOWS = { timeout: 15_000, interval: 50 };
 /** macOS file events for a temp directory can go missing for longer than `FOLLOWS` waits. */
 const POLLED = { usePolling: true, interval: 50 };
 
+/**
+ * No test here needs prebundled dependencies, and `server.close()` resolves while rolldown is still writing them
+ * under the root: removing it then fails the run with an unhandled `Failed to write file`, or rmSync with ENOTEMPTY.
+ */
+const NO_PREBUNDLE = { noDiscovery: true };
+
 const story = (title: string, ...names: string[]) =>
   `export default { title: '${title}' };\n${names.map((n) => `export const ${n} = {};`).join('\n')}\n`;
 
@@ -58,8 +64,7 @@ describe('forge vite plugin', () => {
       plugins: [forge({ stories: ['*.stories.tsx'] })],
       server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
-      // The dependency crawl writes into root after close, so rmSync meets ENOTEMPTY.
-      optimizeDeps: { noDiscovery: true },
+      optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
     });
     http = createHttpServer(server.middlewares);
@@ -132,6 +137,7 @@ describe('forge vite plugin', () => {
       plugins: [forge({ stories: ['*/*.stories.tsx'] })],
       server: { middlewareMode: true, ws: false, watch: POLLED },
       appType: 'custom',
+      optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
     });
     try {
@@ -176,6 +182,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
       plugins: [forge({ stories: ['*.stories.tsx'] })],
       server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
+      optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
       ...config,
     });
@@ -254,7 +261,6 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
   // The workshop entry imports forge's and labkit's published modules, which a temp root cannot resolve.
   const served = (): InlineConfig => ({
     plugins: [stubs, forge({ stories: ['*.stories.tsx'] })],
-    optimizeDeps: { noDiscovery: true },
   });
 
   /** Fetches what an opening workshop page fetches, which is what puts those modules in vite's graph under the page's URLs. */
@@ -368,7 +374,7 @@ describe('forge vite plugin, with a config module per realm', () => {
       ],
       server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
-      optimizeDeps: { noDiscovery: true },
+      optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
     });
   });
@@ -437,6 +443,7 @@ describe('forge vite plugin, with a config module per realm', () => {
       plugins: [forge({ stories: ['*.stories.tsx'] })],
       server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
+      optimizeDeps: NO_PREBUNDLE,
       logLevel: 'silent',
     });
     try {
