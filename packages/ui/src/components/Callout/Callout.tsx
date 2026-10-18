@@ -1,4 +1,14 @@
-import { useCallback, useContext, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest } from '@weasel-js/core';
 import {
@@ -213,19 +223,19 @@ export function Callout(props: CalloutProps) {
                 <path d="M0 0 L6 6 L12 0" />
               </svg>
             </OverlayArrow>
-            <RACDialog
-              role={modal ? 'alertdialog' : 'dialog'}
-              className={s.dialog}
+            <CalloutDialog
+              modal={modal}
               aria-label={ariaLabel}
               aria-labelledby={ariaLabelledby}
-              ref={dialogRef}
+              titleId={title !== undefined ? titleId : undefined}
+              dialogRef={dialogRef}
             >
               {({ close }) => (
                 <>
                   {(title !== undefined || showClose) && (
                     <header className={s.header}>
                       {title !== undefined && (
-                        <Heading id={titleId} slot="title" className={s.title}>
+                        <Heading id={titleId} slot={modal ? 'title' : undefined} className={s.title}>
                           {title}
                         </Heading>
                       )}
@@ -250,10 +260,62 @@ export function Callout(props: CalloutProps) {
                   {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
                 </>
               )}
-            </RACDialog>
+            </CalloutDialog>
           </RACPopover>
         </OverlayTriggerStateContext.Provider>
       )}
     </>
+  );
+}
+
+type CalloutDialogProps = {
+  modal: boolean;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  /** The heading's id, when there is a heading. */
+  titleId?: string;
+  dialogRef: (node: HTMLElement | null) => void;
+  children: (renderProps: { close: () => void }) => ReactNode;
+};
+
+/**
+ * React Aria's Dialog contains focus wherever it is mounted: it flips its overlay's FocusScope to `contain`, which
+ * would make a non-modal callout pull focus back from every input clicked outside it. So only a modal callout gets
+ * one; a non-modal one is a plain `role="dialog"` that takes focus when it opens and lets it go.
+ */
+function CalloutDialog({ modal, titleId, dialogRef, children, ...labels }: CalloutDialogProps) {
+  const trigger = useContext(OverlayTriggerStateContext);
+  const ref = useRef<HTMLElement | null>(null);
+  const setRef = useCallback(
+    (node: HTMLElement | null) => {
+      ref.current = node;
+      dialogRef(node);
+    },
+    [dialogRef],
+  );
+  useEffect(() => {
+    if (modal) return;
+    const node = ref.current;
+    if (node && !node.contains(document.activeElement)) node.focus({ preventScroll: true });
+  }, [modal]);
+  if (modal) {
+    return (
+      <RACDialog role="alertdialog" className={s.dialog} {...labels} ref={setRef}>
+        {children}
+      </RACDialog>
+    );
+  }
+  const labelledby = labels['aria-labelledby'] ?? (labels['aria-label'] === undefined ? titleId : undefined);
+  return (
+    <section
+      role="dialog"
+      tabIndex={-1}
+      className={s.dialog}
+      aria-label={labels['aria-label']}
+      aria-labelledby={labelledby}
+      ref={setRef}
+    >
+      {children({ close: () => trigger?.close() })}
+    </section>
   );
 }
