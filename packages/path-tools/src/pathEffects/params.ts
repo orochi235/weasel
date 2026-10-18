@@ -28,6 +28,9 @@ export function effectSettings(kind: PathEffect['kind'], params: Params): Partia
         startOffset: num(p.startOffset) === undefined ? undefined : Math.round(num(p.startOffset)!),
         reverse: bool(p.reverse),
         rotate: bool(p.rotate),
+        spaceBy: oneOf(p.spaceBy, ['count', 'distance'] as const),
+        distance: num(p.distance) === undefined ? undefined : Math.max(num(p.distance)!, 0.01),
+        orient: bool(p.orient),
       });
     case 'bendAlong':
       return defined<Partial<BendAlongEffect>>({

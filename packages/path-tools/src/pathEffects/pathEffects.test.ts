@@ -112,6 +112,74 @@ describe('blend', () => {
   });
 });
 
+describe('a blend spaced by distance', () => {
+  it('puts a step every `distance` from the first source, as many as fit short of the second', () => {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    // Middles at 10 and 210: a run of 200.
+    run(blendAction, deps, { spaceBy: 'distance', distance: 60 });
+    const middles = partsOf(scene, selected()[0]!).map((p) => {
+      const b = boundsOfPath(p.path);
+      return b.x + b.width / 2;
+    });
+    expect(middles.map((x) => Math.round(x * 1000) / 1000)).toEqual([70, 130, 190]);
+    // Far enough apart that none fits.
+    run(editPathEffectAction, deps, { ids: selected(), distance: 250 });
+    expect(partsOf(scene, selected()[0]!)).toBeNull();
+    // Back to its count.
+    run(editPathEffectAction, deps, { ids: selected(), spaceBy: 'count' });
+    expect(partsOf(scene, selected()[0]!)).toHaveLength(4);
+  });
+});
+
+describe('a blend along a spine', () => {
+  const middleOf = (path: Parameters<typeof boundsOfPath>[0]) => {
+    const b = boundsOfPath(path);
+    return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), width: Math.round(b.width), height: Math.round(b.height) };
+  };
+
+  it('lays its steps along a third selected path, and follows it', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { steps: 3, rotate: false });
+    const id = selected()[0]!;
+    expect(scene.get(id as NodeId)!.dependsOn).toEqual(['a', 'b', 'spine']);
+    // The spine runs (0,100)-(200,100).
+    expect(partsOf(scene, id).map((p) => middleOf(p.path))).toMatchObject([
+      { x: 50, y: 100 }, { x: 100, y: 100 }, { x: 150, y: 100 },
+    ]);
+    scene.setPose('spine' as NodeId, { x: 0, y: 300, width: 200, height: 0 });
+    expect(middleOf(partsOf(scene, id)[1]!.path)).toMatchObject({ x: 100, y: 300 });
+  });
+
+  it('turns its steps to the spine with orient', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    // A spine running down, across a run that goes right.
+    scene.setPose('spine' as NodeId, { x: 0, y: 0, width: 0, height: 200 });
+    scene.update('spine' as NodeId, { data: {
+      ...(scene.get('spine' as NodeId)!.data as object),
+      path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 0, 200]), fillRule: 'nonzero' },
+    } });
+    scene.setPose('b' as NodeId, { x: 200, y: 0, width: 60, height: 20 });
+    run(blendAction, deps, { steps: 1, rotate: false });
+    const id = selected()[0]!;
+    expect(middleOf(partsOf(scene, id)[0]!.path)).toEqual({ x: 0, y: 100, width: 40, height: 20 });
+    run(editPathEffectAction, deps, { ids: [id], orient: true });
+    expect(middleOf(partsOf(scene, id)[0]!.path)).toEqual({ x: 0, y: 100, width: 20, height: 40 });
+  });
+
+  it('spaces by distance along the spine', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { spaceBy: 'distance', distance: 90 });
+    expect(partsOf(scene, selected()[0]!).map((p) => middleOf(p.path).x)).toEqual([90, 180]);
+  });
+
+  it('paints nothing while its spine is gone', () => {
+    const { scene, deps, selected } = setup(['a', 'b', 'spine']);
+    run(blendAction, deps, { steps: 2 });
+    const node = scene.get(selected()[0] as NodeId)!;
+    expect(pathEffectParts(node, [derivedDepOf(scene, 'a' as NodeId), derivedDepOf(scene, 'b' as NodeId), undefined])).toBeNull();
+  });
+});
+
 describe('bend and repeat along a path', () => {
   it('bends the first selected shape along the second', () => {
     const { scene, deps, selected } = setup(['a', 'spine']);

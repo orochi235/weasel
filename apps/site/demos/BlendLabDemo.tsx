@@ -31,22 +31,28 @@ import { icon } from '../icons.gen';
 const FEATURES = ['draw', pathEffectsPreset] as const;
 
 const config = f.schema({
+  spaceBy: f.enum('count', ['count', 'distance']).label('Space steps by'),
   steps: f.number(5).range(0, 24).step(1).label('Steps'),
+  distance: f.number(40).range(4, 200).step(1).label('Distance'),
   autoAlign: f.boolean(true).label('Match start points'),
   startOffset: f.number(0).range(-8, 8).step(1).label('Start offset'),
   direction: f.enum('auto', ['auto', 'forward', 'backward']).label('Second shape runs'),
   rotate: f.boolean(true).label('Turn between rotations'),
+  orient: f.boolean(false).label('Turn to spine'),
 });
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
 /** The control panel as `blend` and `editPathEffect` params. */
 const settingsOf = (c: Config) => ({
+  spaceBy: c.spaceBy,
   steps: c.steps,
+  distance: c.distance,
   autoAlign: c.autoAlign,
   startOffset: c.startOffset,
   reverse: c.direction === 'auto' ? ('auto' as const) : c.direction === 'backward',
   rotate: c.rotate,
+  orient: c.orient,
 });
 
 const BLEND = asNodeId('blend');
@@ -60,9 +66,9 @@ function createLabScene() {
     fill: { paint: solid('#2e86ab') },
     stroke: strokeOf('#123f52', 6),
   }, Math.PI / 4);
-  const { steps, autoAlign, startOffset, rotate } = config.defaults();
+  const { spaceBy, steps, distance, autoAlign, startOffset, rotate, orient } = config.defaults();
   const blend = {
-    ...pathEffectNode({ kind: 'blend', steps, autoAlign, startOffset, rotate }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
+    ...pathEffectNode({ kind: 'blend', spaceBy, steps, distance, autoAlign, startOffset, rotate, orient }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
     id: BLEND,
   };
   return createScene<unknown, 'default', RectPose>({

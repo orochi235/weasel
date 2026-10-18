@@ -391,9 +391,6 @@ Priority tags:
   (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
   is not carried across, so an effect of an effect in another container reads that path where
   its own container would put it.
-- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
-  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
-  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
 - **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
   Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
   a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a

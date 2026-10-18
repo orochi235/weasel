@@ -16,16 +16,16 @@ type AnyNode = Node<unknown, string, unknown>;
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';
 
-/** The first two selected leaves, in the order they were selected. `null`
- *  too in a scene whose registry holds no path effects, which could not save
- *  one. */
-function selectedPair(deps: ActionDeps | undefined): [AnyNode, AnyNode] | null {
+/** The selected leaves, in the order they were selected, when there are at
+ *  least two. `null` too in a scene whose registry holds no path effects,
+ *  which could not save one. */
+function selectedLeaves(deps: ActionDeps | undefined): AnyNode[] | null {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene || registeredPathEffects(scene.registry) === null) return null;
   const leaves = (deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
     .filter((n): n is AnyNode => n !== undefined && n.kind === 'leaf');
-  return leaves.length >= 2 ? [leaves[0]!, leaves[1]!] : null;
+  return leaves.length >= 2 ? leaves : null;
 }
 
 /** The selected nodes holding a path effect. */
@@ -46,6 +46,8 @@ interface CreateSpec {
   code: string;
   /** Where the new node goes: between its two sources, or over both. */
   between: boolean;
+  /** Take a third selected leaf as a source too. */
+  third?: boolean;
 }
 
 function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
@@ -65,17 +67,18 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
       timing: 'immediate',
       run: (deps, params) => {
         const scene = deps.scene as AnyScene | undefined;
-        const pair = selectedPair(deps);
-        if (!scene || !pair) return;
+        const leaves = selectedLeaves(deps);
+        if (!scene || !leaves) return;
         const derivations = registeredPathEffects(scene.registry)!;
-        const [a, b] = pair;
+        const [a, b, c] = leaves as [AnyNode, AnyNode, AnyNode?];
+        const sources = spec.third && c ? [a.id, b.id, c.id] : [a.id, b.id];
         const effect = withEffectSettings(EFFECT_DEFAULTS[spec.kind], params as Record<string, unknown> | undefined);
         const sameParent = a.parent === b.parent;
         const slots = [slotOf(scene, a.id), slotOf(scene, b.id)];
         // Inserting at the upper source's slot puts the steps just under it.
         const index = !sameParent ? -1 : spec.between ? Math.max(...slots) : Math.max(...slots) + 1;
         const node = {
-          ...pathEffectNode(effect, [a.id, b.id], a.layer, derivations),
+          ...pathEffectNode(effect, sources, a.layer, derivations),
           id: scene.mintId(),
           parent: sameParent ? a.parent : null,
         } as unknown as AnyNode;
@@ -86,7 +89,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
     enabled: (deps) => {
       const scene = deps?.scene as AnyScene | undefined;
       if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
-      return selectedPair(deps) ? true : ActionDisabledReason.SelectionRequired;
+      return selectedLeaves(deps) ? true : ActionDisabledReason.SelectionRequired;
     },
   };
 }
@@ -94,12 +97,12 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
 /**
  * Steps between the first two selected shapes, in the order they were
  * selected: `params.steps` of them, each shape, fill, stroke and turn
- * interpolated. The blend is live — editing either source moves its steps —
- * and goes just under the upper source. Its other params are
- * `BlendEffect`'s.
+ * interpolated, laid along a third selected path where there is one. The
+ * blend is live — editing a source moves its steps — and goes just under the
+ * upper of the first two. Its other params are `BlendEffect`'s.
  */
 export const blendAction = createEffectAction({
-  id: 'blend', label: 'Blend', icon: icon('blend'), kind: 'blend', key: 'b', code: 'KeyB', between: true,
+  id: 'blend', label: 'Blend', icon: icon('blend'), kind: 'blend', key: 'b', code: 'KeyB', between: true, third: true,
 });
 
 /**
