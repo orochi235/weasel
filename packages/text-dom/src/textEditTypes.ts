@@ -63,6 +63,13 @@ export interface TextEditScreenPose {
    * the box before it. Absent is the identity.
    */
   frame?: readonly [a: number, b: number, c: number, d: number];
+  /**
+   * Cut the overlay's text at the box `x`/`y`/`width`/`height` name, grown by
+   * these on each side, in the same pre-scale units. It turns with `frame`,
+   * so it holds to the box as the canvas draws it. Absent, the text may run
+   * past the box, cut only by `getClipRect`.
+   */
+  clip?: { top: number; right: number; bottom: number; left: number };
 }
 
 /** A box in CSS pixels relative to `useTextEdit`'s `container`. */

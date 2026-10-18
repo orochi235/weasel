@@ -652,6 +652,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) The Properties W and H fields go under a node's `data.minSize`.** The insert and place
+  actions, the resize handles, and a replayed scale all hold a node to it (`core/scene/minSize.ts`,
+  `resize/minimum.ts`); typing a smaller W into the `pose.width` field does not, because a
+  `PrefNumber`'s `min` is one static number for every node, and the field's write sees the pose,
+  not the data the minimum lives in. Needs a per-node bound in `@weasel-js/prefs` that the
+  selection panel resolves against the node.
+
 - **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
   blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
   page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`

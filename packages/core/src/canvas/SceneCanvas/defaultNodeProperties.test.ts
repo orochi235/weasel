@@ -314,9 +314,21 @@ describe('inferredNodeProperties', () => {
   it('offers the padding and the box alignment beside the style, as fields of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.members.text as PrefSection;
-    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign']);
+    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign', 'data.overflow']);
     const vertical = text.members['data.verticalAlign'] as PrefEnum;
     expect(vertical.options.map((o) => o.value)).toEqual(['top', 'center', 'bottom']);
+  });
+
+  it('offers clipping the text to its box as a switch over `data.overflow`', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const clip = (entry.schema.members.text as PrefSection).members['data.overflow'] as PrefBoolean;
+    expect(clip.control).toBe('switch');
+    const { read, write } = clip.encoding!;
+    expect(read('clip', undefined)).toBe(true);
+    expect(read('visible', undefined)).toBe(false);
+    expect(read(undefined, undefined)).toBe(false);
+    expect(write(true, undefined)).toBe('clip');
+    expect(write(false, undefined)).toBeUndefined();
   });
 
   it('asks for italic, the decorations and the scripts as one row of glyph toggles', () => {

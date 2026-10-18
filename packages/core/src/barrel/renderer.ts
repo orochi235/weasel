@@ -197,7 +197,7 @@ export type {
   UseSceneTextEditReturn,
 } from '../features/text/useSceneTextEdit';
 export type { EditingDrawOne } from '../features/text/editingDrawOne';
-export { textBoxOf, type TextNodeData } from '../canvas/nodeShapes/textPainter';
+export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';
 export type { Rect } from '@weasel-js/geom';

@@ -31,6 +31,7 @@ import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { composesFrames, composeWorldPose } from 'core/scene/composeFrame';
 import { definesFrame } from 'core/scene/effectivePose';
 import { stickyData, type StickyStyle } from '../../tools/builtin/sticky/stickyNode';
+import { minSizeOf } from 'core/scene/minSize';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -251,6 +252,8 @@ export function useInsertDepSource(
         }
 
         data = withFillRule(data, asked?.fillRule);
+        const min = minSizeOf(extras);
+        if (min) data = { ...(data as object), minSize: min };
         return {
           id,
           ops: [createInsertOp({ node: { id, kind: 'leaf', layer, parent, pose: local(pose), data } as unknown as { id: string }, label: `Insert ${kind}` })],

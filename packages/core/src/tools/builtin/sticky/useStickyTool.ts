@@ -15,7 +15,8 @@ export interface UseStickyToolOptions extends InsertToolOptions, StickyStyle {}
 /**
  * Sticky-note tool. A drag draws a note through `insertAction`, a click
  * places one of `size` through `placeAction`, and either drops into the new
- * note's caret. A click on a selected note edits it.
+ * note's caret. Neither makes a note smaller than `minSize`, and the note
+ * keeps it as the floor a resize stops at. A click on a selected note edits it.
  *
  * The note is minted by the `insert` dep's `sticky` kind, as a text node with
  * a `background` (see `stickyData`); the look rides on the bindings' params
@@ -23,15 +24,22 @@ export interface UseStickyToolOptions extends InsertToolOptions, StickyStyle {}
  * (`insertNodeFactories.sticky`), not the tool.
  */
 export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
-  const { behaviors, size = STICKY_DEFAULTS.size, background, fill, padding, style, verticalAlign } = options;
+  const {
+    behaviors, size = STICKY_DEFAULTS.size, minSize = STICKY_DEFAULTS.minSize,
+    background, fill, padding, style, verticalAlign, overflow,
+  } = options;
   return useMemo(() => {
+    // `minSize` rides on both inserts: the drag grows to it, and the note
+    // keeps it as its own minimum.
     const look = {
       kind: 'sticky',
+      minSize,
       ...(background !== undefined ? { background } : {}),
       ...(fill !== undefined ? { fill } : {}),
       ...(padding !== undefined ? { padding } : {}),
       ...(style !== undefined ? { style } : {}),
       ...(verticalAlign !== undefined ? { verticalAlign } : {}),
+      ...(overflow !== undefined ? { overflow } : {}),
     };
     return defineTool({
       id: 'sticky',
@@ -51,5 +59,5 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
         INSERT_REPOSITION_BINDING,
       ],
     });
-  }, [behaviors, size, background, fill, padding, style, verticalAlign]);
+  }, [behaviors, size, minSize, background, fill, padding, style, verticalAlign, overflow]);
 }

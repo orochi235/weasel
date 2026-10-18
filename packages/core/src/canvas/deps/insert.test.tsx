@@ -70,6 +70,24 @@ describe('useInsertDepSource', () => {
     expect(ops[0].args.node.pose).toEqual({ x: 2, y: 3, width: 40, height: 20 });
   });
 
+  it('keeps the minimum an insert was drawn to on a kit-built node', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const minSize = { width: 30, height: 30 };
+    (reg.get as any)('insert').commit({ x: 0, y: 0, width: 40, height: 40 }, { kind: 'rect', minSize });
+    expect(applyOps.mock.calls[0][0][0].args.node.data.minSize).toEqual(minSize);
+  });
+
   it('threads text content through from extras.text (e.g. a text/plain ingest)', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;

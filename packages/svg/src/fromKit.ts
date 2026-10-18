@@ -55,6 +55,8 @@ export interface SvgKitLeafData {
   background?: Fill | null;
   /** A text node's inset from its box to its text, on every side. */
   padding?: number;
+  /** `'clip'` cuts a text node's text at its box. */
+  overflow?: 'visible' | 'clip';
   image?: ImageNodeData['image'];
 }
 
@@ -128,6 +130,7 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
  * Write one leaf as the `SvgNode` its built-in painter draws — image, text or
  * path, in the order the painters claim a node. `null` for data none of them
  * draws. A text node with a `background` is a group: the box, then the text.
+ * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
  * A path with no `fill` takes `kit:path`'s fallback: the default shape fill
  * when it has no stroke, and no fill when it has one. Under a pose `transform`
@@ -141,12 +144,11 @@ export function svgLeafFromKit(
   if (data.image) return svgImageFromKit(data.image, pose);
   if (data.text != null) {
     const text = svgTextFromKit({ ...data, text: data.text }, pose);
-    if (!data.background?.paint) return text;
-    const box = svgLeafFromKit({
-      path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-      fill: data.background,
-    }, pose) as SvgPathNode;
-    return { kind: 'group', children: [box, text] };
+    const boxPath: Path = { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+    const clip = data.overflow === 'clip' ? { clip: pathThroughPoseFrame(boxPath, pose) } : {};
+    if (!data.background?.paint) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
+    const box = svgLeafFromKit({ path: boxPath, fill: data.background }, pose) as SvgPathNode;
+    return { kind: 'group', children: [box, text], ...clip };
   }
   if (!data.path) return null;
   const stroke = svgStrokeFromKit(data.stroke, pose);

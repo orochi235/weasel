@@ -24,7 +24,8 @@ function drag(canvas: HTMLCanvasElement, [x0, y0]: number[], [x1, y1]: number[])
 
 type Note = { id: string; pose: { x: number; y: number; width: number; height: number }; data: { text?: string; background?: unknown } };
 const notes = (): Note[] => window.__weaselTest!.getScene().nodes as unknown as Note[];
-const added = (): Note[] => notes().filter((n) => n.id !== 'a' && n.id !== 'b');
+const SEEDED = new Set(['a', 'b', 'c']);
+const added = (): Note[] => notes().filter((n) => !SEEDED.has(n.id));
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');

@@ -30,6 +30,24 @@ export interface TextNodeData {
   /** World units between the pose box and the box the text lays out in, on
    *  every side. */
   padding?: number;
+  /** What happens to text that runs past the pose box: `'visible'` (the
+   *  default) draws it there, `'clip'` cuts it at the box's edge. */
+  overflow?: TextOverflow;
+}
+
+/** How a text node treats lines that run past its box. */
+export type TextOverflow = 'visible' | 'clip';
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/** `cmd` cut to `box`: a group whose clip is the box as a rect, which the
+ *  renderer cuts on the CPU when the frame keeps it axis-aligned. */
+export function clippedToBox(cmd: DrawCommand, box: Box): DrawCommand {
+  return {
+    kind: 'group',
+    clip: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
+    children: [cmd],
+  };
 }
 
 /** The box a text node's lines lay out in: its pose box, inset by
@@ -76,7 +94,8 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // `y` is the top of the first line box, not a baseline — see `TextDrawCommand.y`.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, (): DrawCommand[] => {
     const d = node.data as TextNodeData;
-    const text = textCommandFromPose(textPoseOf(d, pose));
+    const laid = textCommandFromPose(textPoseOf(d, pose));
+    const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
     const bg = resolveNodeFill(d.background, null);
     if (!bg) return [text];
     const fill = commandFill(bg, pose);
@@ -93,11 +112,14 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // node pickable.
   //
   // A background is ink across the whole box, so a node with one is its box.
+  // A clipped node's lines are cut to the box, as they are drawn.
   silhouette: (node, pose) => {
-    if (resolveNodeFill((node.data as TextNodeData).background, null)) {
+    const d = node.data as TextNodeData;
+    if (resolveNodeFill(d.background, null)) {
       return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
     }
-    const boxes = textLineBoxes(textPoseOf(node.data as TextNodeData, pose));
+    const lines = textLineBoxes(textPoseOf(d, pose));
+    const boxes = d.overflow === 'clip' ? cutRects(lines, pose) : lines;
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
   },
@@ -114,6 +136,19 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose)), strokeOutsetPerAxis(stroke, ctx)) : null;
   },
 };
+
+/** Each of `rects` cut to `box`, leaving out any it does not overlap. */
+function cutRects(rects: readonly Box[], box: Box): Box[] {
+  const out: Box[] = [];
+  for (const r of rects) {
+    const x0 = Math.max(r.x, box.x);
+    const y0 = Math.max(r.y, box.y);
+    const x1 = Math.min(r.x + r.width, box.x + box.width);
+    const y1 = Math.min(r.y + r.height, box.y + box.height);
+    if (x1 > x0 && y1 > y0) out.push({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 });
+  }
+  return out;
+}
 
 /**
  * The layout box grown where a stroked line reaches it: each line box, cut to
