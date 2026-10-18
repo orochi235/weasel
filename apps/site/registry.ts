@@ -106,6 +106,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/InsertDemo.tsx',
   },
   {
+    id: 'sticky-notes',
+    title: 'Sticky notes',
+    category: 'Tools',
+    description: 'The sticky tool, mounted as `defaultTools={[\'sticky\', \'pencil\', \'text\']}` beside the pencil and the text tool. A drag draws a note through the `insert` action and a click places one of the tool\'s `size` through `place`; either opens the new note\'s caret. A note is an ordinary text node with a `background` and `padding`, so the kit\'s text painter draws it and `useSceneTextEdit` edits it with no sticky case of its own. Its look (paper, ink, padding, type, click size) is `toolOptions.sticky`. `edit.drawOne` keeps the paper painted while the overlay stands in for the text.',
+    hint: 'Drag or click to make a note and type. Double-click a note to edit it. <kbd>N</kbd> draws with the pencil, <kbd>T</kbd> sets text, <kbd>S</kbd> returns to notes.',
+    load: () => import('./demos/StickyNotesDemo').then((m) => m.StickyNotesDemo),
+    path: 'apps/site/demos/StickyNotesDemo.tsx',
+  },
+  {
     id: 'slice',
     title: 'Slice',
     category: 'Tools',

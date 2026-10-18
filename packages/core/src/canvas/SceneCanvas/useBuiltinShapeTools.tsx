@@ -16,6 +16,8 @@ import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
 import { useTextTool } from 'tools/builtin/text/useTextTool';
+import { useStickyTool } from 'tools/builtin/sticky/useStickyTool';
+import type { StickyStyle } from 'tools/builtin/sticky/stickyNode';
 import type { Tool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
@@ -30,7 +32,7 @@ import type { RigEditState } from 'tools/builtin/bone/rigEditState';
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
   /** Insert-action options for every drag-to-insert tool (rect / ellipse /
-   *  line / polygon / star / pencil / text): `behaviors` become each insert
+   *  line / polygon / star / pencil / text / sticky): `behaviors` become each insert
    *  binding's `opts.behaviors`, the way `selectTool.move.behaviors` do for
    *  move. */
   insert?: InsertToolOptions;
@@ -49,6 +51,9 @@ export interface BuiltinToolOptions {
    *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
    *  a move's base point and to a dragged anchor. Absent, off. */
   pathSnap?: PathSnapOptions;
+  /** The look of the notes the sticky tool makes: paper, ink, padding,
+   *  typography, and the size a click places. */
+  sticky?: StickyStyle;
   /** The knife: screen px around the first point within which a click closes the cut. */
   slice?: { closeHitRadius?: number };
   /** The bone and weight tools. `rig` names the node they edit; by default the one
@@ -94,5 +99,6 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const pen = usePenTool();
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
-  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
+  const sticky = useStickyTool({ ...insert, ...options?.sticky });
+  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text, sticky };
 }

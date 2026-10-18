@@ -157,6 +157,14 @@ describe('svgLeafFromKit', () => {
     expect(node.runs?.[0].fill).toMatchObject({ paint: { from: { x: 10, y: 20 }, units: 'local' } });
   });
 
+  it('writes a text leaf with a background as its box under its text, inset by its padding', () => {
+    const node = svgLeafFromKit({ text: 'hi', background: { paint: solid('#ffee00') }, padding: 5 }, BOX) as SvgGroupNode;
+    expect(node.kind).toBe('group');
+    const [box, text] = node.children as [SvgPathNode, SvgTextNode];
+    expect(box).toMatchObject({ kind: 'path', path: rect, fill: { kind: 'solid', color: '#ffee00' } });
+    expect(text).toMatchObject({ kind: 'text', text: 'hi', x: 15, y: 25, width: 90, height: 40 });
+  });
+
   it('writes an image leaf, and null for data no built-in painter draws', () => {
     expect(svgLeafFromKit({ image: { src: 'a.png' } }, BOX)).toMatchObject({ kind: 'image', href: 'a.png' });
     expect(svgLeafFromKit({}, BOX)).toBeNull();

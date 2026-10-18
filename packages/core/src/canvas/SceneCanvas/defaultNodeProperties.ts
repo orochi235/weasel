@@ -1,6 +1,6 @@
 import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+import { KIT_SHAPE_KINDS, shapeKindInfo } from 'core/shapeKinds';
 import { listMarkers, markerGeneration } from '@weasel-js/stroke';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign } from '@weasel-js/text';
@@ -146,6 +146,18 @@ const FILL_LEAF: PrefLeaf = {
   },
 };
 
+/** A text node's `data.background`: a `Fill`, as `data.fill` is, painted over
+ *  the whole box rather than the glyphs. */
+const BACKGROUND_LEAF: PrefLeaf = {
+  ...FILL_LEAF,
+  name: 'Background',
+  description: 'Paint behind the text, over the whole box.',
+  default: { paint: { kind: 'solid', color: '#ffffffff' } },
+  children: {
+    paint: { kind: 'paint', name: 'Background', description: 'Paint behind the text.', default: { kind: 'solid', color: '#ffffffff' }, alpha: true, block: true },
+  },
+};
+
 /** A whole `Stroke`: paint and line geometry, one value. */
 const STROKE_LEAF: PrefLeaf = {
   kind: 'object',
@@ -226,6 +238,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
         name: '',
         members: {
           'data.fill': FILL_LEAF,
+          ...(opts.text ? { 'data.background': BACKGROUND_LEAF } : {}),
           // An object leaf: `data.stroke` is a whole `Stroke`, and its fields
           // belong to one value. Sibling leaves addressing into it would each
           // write one field of a value they can only half see.
@@ -287,6 +300,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                     },
                   },
                 },
+                'data.padding': { kind: 'number', display: TWO_PLACES, name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
                 'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
               },
             },
@@ -307,7 +321,7 @@ function shapeEntry(name: string): NodePropertiesEntry {
   const generators = GENERATED_KINDS[name];
   return {
     name,
-    schema: shapeSchema({ text: name === 'text', ...(generators ? { generators } : {}) }),
+    schema: shapeSchema({ text: shapeKindInfo(name)?.text ?? false, ...(generators ? { generators } : {}) }),
     ...(generators ? { settle: settleShapeGenerator } : {}),
   };
 }

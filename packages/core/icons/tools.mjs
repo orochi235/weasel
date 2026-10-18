@@ -81,6 +81,12 @@ export const TOOLS = {
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <polygon points="10,2.5 12.1,7.9 17.8,8.3 13.4,12 14.8,17.5 10,14.4 5.2,17.5 6.6,12 2.2,8.3 7.9,7.9" stroke-linejoin="round"/>
     </g>`,
+  sticky: `
+    <g stroke-linecap="butt" stroke-linejoin="round">
+      <path d="M 3.5 3.5 L 16.5 3.5 L 16.5 12 L 12 16.5 L 3.5 16.5 Z"/>
+      <path d="M 16.5 12 L 12 12 L 12 16.5"/>
+      <path d="M 6.5 7.5 L 13.5 7.5 M 6.5 10.5 L 9.5 10.5" stroke-linecap="round"/>
+    </g>`,
   text: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <path d="M 4 5 L 16 5 M 10 5 L 10 16 M 7 16 L 13 16" stroke-linecap="round"/>

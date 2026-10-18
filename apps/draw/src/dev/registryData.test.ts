@@ -98,13 +98,13 @@ describe('collectRoutingTrait', () => {
   });
 
   it('marks consumer-only kinds with source "consumer" at the end', () => {
-    const custom: NodeRoutingEntry = { name: 'sticky', matches: (d) => (d as { kind?: string })?.kind === 'sticky' };
+    const custom: NodeRoutingEntry = { name: 'stamp', matches: (d) => (d as { kind?: string })?.kind === 'stamp' };
     const entries = collectRoutingTrait([...defaultNodeRouting, custom]);
-    const sticky = entries.find((e) => e.id === 'sticky');
-    expect(sticky?.source).toBe('consumer');
-    expect(sticky?.shapeKindId).toBeUndefined();
+    const stamp = entries.find((e) => e.id === 'stamp');
+    expect(stamp?.source).toBe('consumer');
+    expect(stamp?.shapeKindId).toBeUndefined();
     // Consumer entries trail the defaults.
-    expect(entries[entries.length - 1]?.id).toBe('sticky');
+    expect(entries[entries.length - 1]?.id).toBe('stamp');
   });
 
   it('marks a default kind with a replaced matches as source "override"', () => {
@@ -179,12 +179,12 @@ describe('collectPropertiesTrait', () => {
 
   it('uses a supplied live registry instead of the defaults', () => {
     const custom: NodePropertiesEntry = {
-      name: 'sticky',
+      name: 'stamp',
       schema: { name: 'Sticky', members: {} },
     };
     const entries = collectPropertiesTrait([custom]);
     expect(entries.length).toBe(1);
-    expect(entries[0].id).toBe('sticky');
+    expect(entries[0].id).toBe('stamp');
     expect(entries[0].leafPaths).toEqual([]);
   });
 });

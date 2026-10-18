@@ -15,15 +15,17 @@ import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
+import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
+import { textHitAt } from './textHitAt';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { poseFrameOf } from '@weasel-js/geom';
-import { caretIndexAt, pointInTextPose, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { textBoxOf } from '../../canvas/nodeShapes/textPainter';
 import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
 
 /** Shape the default projections expect `data` to satisfy. All fields
@@ -36,6 +38,7 @@ export interface DefaultTextData {
   fill?: Fill | null;
   stroke?: Stroke | null;
   verticalAlign?: TextVerticalAlign;
+  padding?: number;
 }
 
 /** All-optional projections + fontSize fallback. */
@@ -56,6 +59,8 @@ export interface UseSceneTextEditOptions<TData> {
   getRuns?: (data: TData) => readonly StyledRun[] | undefined;
   /** Read the box vertical alignment from `data`. Default: `data.verticalAlign`. */
   getVerticalAlign?: (data: TData) => TextVerticalAlign | undefined;
+  /** Read the inset from the node's box to its text from `data`. Default: `data.padding`. */
+  getPadding?: (data: TData) => number | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
   setText?: (data: TData, text: string) => TData;
   /** Produce updated data with new runs. Default: `{ ...data, runs }`. */
@@ -116,6 +121,14 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
+  /**
+   * `defaultDrawOne`, less the glyphs of the node being edited: the overlay
+   * stands in for its text, and the rest of the node, a `background` among
+   * it, goes on painting. Pass it as `layers.scene.drawOne`, with
+   * `paintBounds: defaultPaintBounds`, in place of an `alphaFor` that hides
+   * the whole node.
+   */
+  drawOne: EditingDrawOne;
 }
 
 /** How each field is read from a node's `data`: the option's projection, else the default shape. */
@@ -131,6 +144,8 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
       opts.current.getRuns ? opts.current.getRuns(data) : data.runs,
     verticalAlign: (data: TData): TextVerticalAlign | undefined =>
       opts.current.getVerticalAlign ? opts.current.getVerticalAlign(data) : data.verticalAlign,
+    padding: (data: TData): number | undefined =>
+      opts.current.getPadding ? opts.current.getPadding(data) : data.padding,
   };
 }
 
@@ -200,7 +215,9 @@ export function useSceneTextEdit<
       const scene = sceneRef.current;
       const node = scene.get(asNodeId(id));
       if (!node) return null;
-      const pose = scenePaintedPoseOf(scene)(node);
+      const painted = scenePaintedPoseOf(scene)(node);
+      // Inset about the box center, which is all the overlay's frame needs.
+      const pose = { ...painted, ...textBoxOf({ padding: read.padding(node.data) }, painted) };
       const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
@@ -242,39 +259,18 @@ export function useSceneTextEdit<
     // span whose box the click would be measured against as if it were a canvas.
     if (canvas.closest('[contenteditable="true"]')) return;
 
-    // `pointInTextPose` and `caretIndexAt` work in the node's own box: the click
-    // is un-projected here, then taken back through the frame the node is drawn in.
+    // The click is un-projected here; `textHitAt` takes it back through the
+    // frame the node is drawn in.
     const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
     const root = containerRef.current;
     const view = resolveView(optsRef.current.view)
       ?? (root ? findMountedCanvas(root, canvas)?.getView() : undefined);
     const cx = view ? canvasX / view.scale.x + view.x : canvasX;
     const cy = view ? canvasY / view.scale.y + view.y : canvasY;
-    // Top-most-first hit test: renderOrder() is back-to-front, so iterate
-    // in reverse and break on the first hit.
-    const order = sceneRef.current.renderOrderNodes();
-    const paintedPoseOf = scenePaintedPoseOf(sceneRef.current);
-    for (let i = order.length - 1; i >= 0; i--) {
-      const node = order[i];
-      if (sceneRef.current.isLocked(node.id)) continue;
-      if (!read.isText(node.data)) continue;
-      const text = read.text(node.data);
-      const at = paintedPoseOf(node);
-      const p = worldToLocal(targetTransformOf(at), cx, cy);
-      if (!p) continue;
-      const pose = {
-        x: at.x, y: at.y, width: at.width, height: at.height,
-        text,
-        runs: read.runs(node.data) as StyledRun[] | undefined,
-        style: read.style(node.data),
-        verticalAlign: read.verticalAlign(node.data),
-      };
-      if (!pointInTextPose(p.x, p.y, pose)) continue;
-
-      openedOnRef.current = canvas;
-      edit.startEdit(String(node.id), { caret: caretIndexAt(p.x, p.y, pose) });
-      return;
-    }
+    const hit = textHitAt(sceneRef.current, read, cx, cy);
+    if (!hit) return;
+    openedOnRef.current = canvas;
+    edit.startEdit(hit.id, { caret: hit.caret });
   }, [edit, containerRef, optsRef, read, sceneRef]);
 
   const isTextNode = useCallback((id: string): boolean => {
@@ -282,7 +278,8 @@ export function useSceneTextEdit<
     return node !== undefined && read.isText(node.data);
   }, [read, sceneRef]);
 
-  return { ...edit, onDoubleClick, isTextNode };
+  const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
+  return { ...edit, onDoubleClick, isTextNode, drawOne };
 }
 
 /**

@@ -1089,10 +1089,11 @@ convenience layer shipped inside core. The items below are what survives that.
     the contribution binding them to the arrow and page keys; (2) a frame tool, a drag-rect
     binding whose action adds a page, which waits on the undoable page list under "Multi-page
     documents"; (3) a presenting state that holds the view on the current page.
-  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
-    note, as an `insert` node factory minting a filled rect that carries text, bound by a
-    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
-    their whiteboard defaults.
+  - Whiteboard. The tools are all in core: `usePencilTool`, `useTextTool`, and `useStickyTool`
+    (built-in id `sticky`, a text node with a `background`; its look is `toolOptions.sticky`).
+    The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
+    of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
+    SVG import reads a written note back as a rect and a text node.
 - **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
   `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
   has absorbed: separating finished, stable tools' test surface from core's. It

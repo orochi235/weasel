@@ -61,6 +61,12 @@ read the same property.
 Related: never mipmap the GL texture cache for MSDF atlases — mipmapping
 destroys the distance field.
 
+A text node may carry `background`, a fill over its whole box under the
+glyphs, and `padding`, the inset its lines lay out in (`textBoxOf`). The
+sticky note is nothing more than that. The editor opens over the inset box, and
+`useSceneTextEdit`'s `drawOne` keeps the background painted while the overlay
+stands in for the glyphs.
+
 ## Measurement
 
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are

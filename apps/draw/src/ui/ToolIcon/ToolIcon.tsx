@@ -17,6 +17,7 @@ const BY_TOOL = {
   pencil: icon('core:pencil'),
   lasso: icon('core:lasso'),
   text: icon('core:text'),
+  sticky: icon('core:sticky'),
   image: icon('core:image'),
 } satisfies Record<ShapeToolId, IconRef>;
 
