@@ -61,8 +61,9 @@ export interface SnapBegin {
   pivot?: Point;
   /** Rotate: the subject's angle at press, radians. Default 0. */
   theta0?: number;
-  /** Angle gestures: the reach as an angle, radians, for every source, in
-   *  place of screen px through the press radius. */
+  /** Angle gestures: the reach as an angle, radians, in place of screen px
+   *  through the press radius; it overrides each source's `reachPx` and is
+   *  not capped. */
   reachRad?: number;
   /** Point gestures: the previous anchor, a line's start. */
   origin?: Point;

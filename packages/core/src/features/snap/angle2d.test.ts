@@ -33,10 +33,10 @@ describe('SnapSession.angle', () => {
     expect(session({}, [at(0)]).angle(5 * DEG, FREE).theta).toBeCloseTo(5 * DEG, 9);
   });
 
-  it('reaches no more than an eighth of a turn from a press near the pivot', () => {
+  it('reaches no more than a twelfth of a turn from a press near the pivot', () => {
     const s = session({ press: { x: 2, y: 0 } }, [at(0)]);
-    expect(s.angle(40 * DEG, FREE).theta).toBeCloseTo(0, 9);
-    expect(s.angle(60 * DEG, FREE).theta).toBeCloseTo(60 * DEG, 9);
+    expect(s.angle(25 * DEG, FREE).theta).toBeCloseTo(0, 9);
+    expect(s.angle(40 * DEG, FREE).theta).toBeCloseTo(40 * DEG, 9);
   });
 
   it('takes its reach as an angle when the gesture names one', () => {

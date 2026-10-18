@@ -54,7 +54,7 @@ export interface SnapSessionSources {
   sources: readonly SnapSource[];
   /** Sources `useSnapSource` adds, after `sources`. */
   registry?: SnapSourceRegistry;
-  /** Ids of {@link DEFAULT_SNAP_SOURCES} to leave out. */
+  /** Ids of the canvas's default sources to leave out. */
   omit?: readonly string[];
   /** Overrides the kit setting `targets.snapPx`. */
   reachPx?: number;
@@ -62,13 +62,15 @@ export interface SnapSessionSources {
   poseDescriptor?: PoseDescriptor<unknown>;
 }
 
-/** The sources every canvas asks after its own, unless one of its own has
- *  the same id or `omit` names it. */
+/** The sources every canvas asks after its own, unless `omit` names one. */
 const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [rotationSnapSource()];
 
+/** `listed`, one source per id (the last one listed, where it stands),
+ *  then each default whose id is neither listed nor in `omit`. */
 function withDefaults(listed: readonly SnapSource[], omit: readonly string[] = []): SnapSource[] {
-  const taken = new Set([...listed.map((s) => s.id), ...omit]);
-  return [...listed, ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
+  const last = new Map(listed.map((s, i) => [s.id, i]));
+  const taken = new Set([...last.keys(), ...omit]);
+  return [...listed.filter((s, i) => last.get(s.id) === i), ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
 }
 
 export function useSnapDepSource(

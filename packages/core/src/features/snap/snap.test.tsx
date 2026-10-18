@@ -78,6 +78,18 @@ describe('<SceneCanvas snap>', () => {
     expect(s.at({ x: 38, y: 43 }, FREE).point).toEqual({ x: 38, y: 43 });
   });
 
+  it('keeps one source per id: the last one listed', () => {
+    const asked: string[] = [];
+    const preset: FeaturePreset = { id: 'snaps', snapSources: [pointAt('shared', { x: 0, y: 0 }, asked)] };
+    const hook = { ...pointAt('shared', { x: 0, y: 0 }, asked), collect: (q: Parameters<SnapSource['collect']>[0]) => {
+      asked.push('hook');
+      return pointAt('shared', { x: 0, y: 0 }, []).collect(q);
+    } };
+    const snap = mount(<Contribute source={hook} />, { features: [preset] });
+    snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
+    expect(asked).toEqual(['hook']);
+  });
+
   describe('default sources', () => {
     const DEG = Math.PI / 180;
     const rotate = (snap: SnapDep) =>

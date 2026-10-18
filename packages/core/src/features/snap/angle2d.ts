@@ -11,7 +11,7 @@ const TURN = Math.PI * 2;
 const PROBE = 'angle';
 /** A press near the pivot turns px reach into a wide angle; it reaches no
  *  further than this. */
-const MAX_REACH_RAD = Math.PI / 4;
+const MAX_REACH_RAD = Math.PI / 6;
 
 /** Where `theta` lands, and what it met. Writes the marks to the store. */
 export function angleAt(
