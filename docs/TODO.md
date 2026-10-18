@@ -842,14 +842,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `8`), and `thresholdDrag`, a plain function with no store in reach. `view.animationMs` ignores
   `prefers-reduced-motion`. See `docs/conventions.md` ("Kit settings").
 
-- **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
-  off the page that holds it and scrolls to a section that follows it"
-  (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
-  run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
-  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
-  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
-  that settles a frame later would still name the section above.
-
 - **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
   (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page
   (`ThemePrefs.tsx`, "Theme prefs" in the lab menu): a rail page per token group, a color that
