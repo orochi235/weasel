@@ -1,5 +1,302 @@
 # @weasel-js/routing
 
+## 1.11.0
+
+### Patch Changes
+
+- 304f53a: Actions and prefs carry `tags`: words they are also found by and gathered under. `Action.tags` and `ActionVariant.tags` (a variant carries its action's and its own, as `ActionItem.tags`); `tags` on every pref leaf, `PrefGroup`, and `PrefSection` (a leaf carries every group's above it). One matcher, `matchQuery` in `@weasel-js/registry`, now serves the command palette's search and `filterPrefSubtree`, so a query matches a tag as it matches a label, and `hasTag` is the exact test. Gathering by tag: `actionsTagged`, `taggedActionItems`, and `matchActionItem` (routing, re-exported by core), and `prefLeavesTagged` / `prefLeafTags` (prefs). `<ActionBar tag="…">` draws a bar from a tag in place of a `group`. A `CommandPalette` row found by a tag and not its label names that tag beside the label. The schema editor edits `tags` on leaves, groups, and sections; its structure, settings, unplaced, and action trees find rows by tag through the same matcher; and an `EditorAction` carries its registered action's tags, shown among what the registry says of the action a pref fires. `flip` is tagged `mirror`. Additive.
+- 3ffe020: An action can say what it would do before it runs. `Action.preview(deps, params)` shows it and returns what takes it down; `ActionsRegistry.preview(id, params)` asks for it under the same `enabled` check and tuned params `trigger` uses, and returns that function. A bar's action button shows its action's preview while it is hovered or focused, and takes it down on leaving or pressing. `<SceneCanvas>` sources a `previewPaths` dep, `show(paths)` over the canvas (`createPreviewPaths`, `usePreviewPathsDepSource`), and every Pathfinder action previews the outlines of the pieces it would make on it. Additive, except for anything implementing `ActionsRegistry` by hand, which now needs `preview`.
+- ed0e096: Path edit can show balance lines: one per curved segment, from the tip of its first handle to the tip of its second, with a grip at the middle. Dragging a grip (`balanceHandles`) scales both handles together, each along its own direction, so the segment fills out or flattens without either end turning; double-clicking it (`equalizeHandles`) gives the two handles the same proportion of the way to the corner their lines meet at. Under a `pathSymmetry` dep the grip drag carries every image of both handles with it, as an anchor or handle drag does. The grip drag keeps every handle's angle, and a length lock in force for handle drags, from `handleLock.length` or Mod, holds it still. The lines and grips show, and the grips hit-test as `balance:N` affordances, while chrome-caps shows the new `path-edit.balance` id (`PATH_BALANCE_CHROME_ID`), which is off by default. Their look comes from the `<SceneCanvas>` layer slot `layers.pathEditingOverlay`'s new `balance` option. Both actions are in the standard actions and the `paths` feature preset. Additive.
+  
+  `@weasel-js/routing` adds `isBalanceGrip`, and `isPathEditPart` now matches a balance grip too, so `move` turns a press on one down. `@weasel-js/geom` adds the geometry: `handleBalances`, `scaleSegmentHandles`, `balanceFactorToward`, and `equalizeSegmentHandles`.
+- 65be8d3: A group or a section can name a glyph: `icon?: IconRef`, as a pref leaf's `icon` already does. A bar with `lead: 'icon'` (new beside `'label'`) starts its line with that glyph, in `Bar`, `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`. The button a bar opens a `menu`, `page`, `tab` or `panel` group from draws the glyph before its name, and so does that group's submenu row in a menu built by `resolveSchemaMenu`. `BarMenu` takes an `icon` as `BarPopover` does, and `BarLayout` and `Bar` take an `icon` prop. The schema editor offers `icon` for those groups and `icon` as a lead.
+- cf7b009: A press that begins on one element and is released over a canvas is a gesture of its own, `carry` (`CarrySpec`), the in-app sibling of an OS drop. `startCarry(origin, pointerdown, { type, value }, callbacks)` opens one from any element; every dispatcher's element is a surface for it unless `channels={{ carry: false }}`, and the surface under the pointer dispatches it through its bindings. An ongoing action bound to `{ kind: 'carry', types }` starts as the carry comes over the surface and reads the payload from `ctx.carry`: moves update it, the release commits it, and leaving the surface or a canceled press cancels it. An immediate action fires on the release, with the payload in `params.carry`. `onEnd` tells the source whether a binding took the drop.
+  
+  labkit's palette drag-drop is a carry now, and a drop routes through the trial canvas's dispatcher beside its pan, zoom, and tap, as the `labkit.paletteDrop` action. This is breaking for a direct `useDragDrop` caller: it no longer takes `canvasContainerRef`, `view`, or `worldSpec`, and its result carries a `target` to render inside the `<CanvasStack>` the palette drops onto. A drop now lands only where nothing else on the page covers the canvas.
+- 1322a03: `<ContextMenuHost>` draws the open context menu in the DOM: rows with menu roles, shortcut chips, submenus that open beside their row, keyboard navigation and typeahead, and placement that keeps every panel on screen. It closes on a choice, Escape, a press or wheel outside, and window blur, and gives focus back to where it was. Core now re-exports `useMenuHost`, `useMenus` and the menu types (`MenuDef`, `MenuHost`, `OpenMenu`, `MenuOpenRequest`, `MenuHit`).
+  
+  The gesture dispatcher leaves a key pressed inside an element with `role="menu"` to that menu, so menu keys never fire canvas bindings, even from a `keyboard: 'first'` dispatcher.
+  
+  `<LayerList>` takes `onRowContextMenu(id, event)`, called on a right-click on a row, so an app can open a context menu for a layer.
+  
+  `PropertyGroup` and `MotifFrame` take an `onContextMenu` prop.
+  
+  `@weasel-js/ui` exports `actionIcon`, which turns an action's icon name into the node to draw.
+- 275714b: A `contextmenu` event makes the canvas it reached the active input scope, as a press or a wheel does. The keyboard ContextMenu key sends one with no press before it, so on a page with several sibling canvases the menu's rows used to resolve and run against whichever scope was newest rather than the canvas the menu opened on.
+- 7162a7a: Corner shape: any corner anchor of a path takes a CSS `corner-shape`, and its radius can be changed later. Additive: `PolygonPath` gains `corners`, an optional `CornerSpec` (`{ shape, radius }`) per flat anchor index, where `shape` is one of the six `corner-shape` keywords (`square`, `squircle`, `round`, `bevel`, `scoop`, `notch`) or a finite `superellipse()` parameter, and `radius` is how far along each edge the cut starts. Following CSS Borders 4, every keyword is a point on one parameter, k: `square` is ∞, `squircle` 2, `round` 1, `bevel` 0, `scoop` -1, `notch` -∞. `cornerShapePieces(k, frame)` draws a corner for any k as the quarter superellipse `|u|^n + |v|^n = 1`, `n = 2^|k|`, spanned from the corner's center for k > 0 and from the outer corner for k < 0, fitted with cubics within `CORNER_FIT_TOLERANCE` of the setback and exact at k = 0, ±1, and ±∞. The command stream keeps the bare anchors, and `resolveCorners` expands the specs into plain geometry, each cut clamped so that the two cuts on a segment never overlap; `resolveCornersWithSources` also answers which source anchor each expanded anchor came from, and `remapPerAnchor` carries a per-anchor array across, so the renderer draws `vertexColors` on a cornered path with every point of a cut in its corner's color. Every reader of a path's geometry calls it first: tessellation, `extractPolylines`, the hit tests, `boundsOfPath`, `pathDistanceToPoint`, the booleans, `offsetPath`, the renderer's path draw, and `serializePathD`, which `@weasel-js/svg` now exports. A spec rides on its anchor through `pathToAnchors` / `anchorsToPath` (`PenAnchor.corner`), so anchor inserts and deletes keep it in place, and `transformPath` scales radii with the geometry. Also new: `cornerFrames` and `cornerFrameAt` (where each corner anchor can be cut, and how far), `withCorner`, `cornerAt`, `cornerSpecAt`, `cornerShapeK`, `cornerKeywordOf`, `isCornerShape`, `nextCornerShape`, and `CORNER_KEYWORDS`.
+  
+  `@weasel-js/path-tools` adds `cornerShapePreset` (and `createCornerShapePreset(style)`), which edits corners in path edit. Each corner anchor shows a widget just inside it, a small tile cut in the corner's shape, drawn and pressed as `corner:N` (matched by routing's new `isCornerWidget`) while chrome-caps shows `path-edit.corners`, which is on by default. A drag on one (`editCornerAction`) sets the corner's radius live and commits one undo step; pressing the widget of a selected anchor sets every selected corner. `cycleCornerShapeAction`, in the `anchors` group, steps the selected corners through the keywords, and `setCornersAction` sets their shape or radius from its `shape` and `radius` params, typed for `<SceneCanvas tune>`. `CORNER_CONTROLS`, `cornerControlsState`, `cornerControlsParams`, and the `useCornerControls` hook are a prefs-form panel over the selected corners: the keywords, a curvature slider from -4 to 4, and the radius, mixed where the corners differ.
+  
+  A path-edit extension's part (`PathEditPart`) can carry its own `hitRadiusPx` and a `standoff`, a screen-pixel push along a world-space normal, so it keeps its distance from the path at any zoom.
+  
+  A `PathEditHost` can own the anchor selection too, through optional `selectedAnchors` and `setSelectedAnchors`, so an app seeds which anchors start selected and shows what is selected. Giving a sharp corner a shape, through `setCorners` or `cycleCornerShape`, also gives it a radius: the call's own, or a quarter of the room the corner has.
+- 1774dc4: `useGestureDispatcher` takes a `clientToLocal` option: the host's mapping from a client point to CSS pixels from the canvas's corner. The painted cursor, a wheel or pinch zoom's anchor, and a pending long-press's position use it; without it the element's rect is subtracted as before. `<SceneCanvas>` supplies its own, so on a canvas with a `clientToWorld` override — one drawn under a CSS transform, say — the painted cursor sits under the pointer and a zoom holds the point under it still.
+- 0a30bde: `useGestureDispatcher` takes `hears: 'own'`, which matches only the actions registered at its registry's own node and not those of the canvases nested under it.
+- 8ff3b4b: A double-click on a grouped member names its outermost group, so `modeTriggers` enters isolation on it, and repeated double-clicks drill one group further in each time. `<SceneCanvas isolatedGroup>` says which group isolation is working inside; a double-click names the outermost group below it, or the node hit where no group stands between them. `doubleClickTarget` is the one rule, applied by the canvas's body classification: `BodyClassification.doubleClick` carries the named node, a press carries it as `doubleClickBody` to the double click it completes, whose `kind:` targets match it, and the `hitAt` dep reports it as `doubleClick`. `enterPathEdit` stands aside when a double-click names a group. Single clicks are unchanged. Behavior change: a double-click on a grouped path used to open the path in path-edit.
+- d2749ce: A selection now has a resize handle at the middle of each edge as well as each corner. Dragging one resizes along that axis only, with the opposite edge pinned; on a rotated node it moves along the node's own axis, and shift keeps the aspect, growing the other axis about its center. The handles report `handle:top`, `handle:right`, `handle:bottom`, and `handle:left`, carry a resize cursor along their axis turned with the node, are drawn by the selection overlay alongside the corners, and are hit ahead of any node body, so a press just outside a selected node's edge resizes it rather than moving the node behind. A side under six handle radii on screen (48 px at the default size) gets no edge handles, so a small node keeps its corners and a body to grab.
+  
+  On by default. `<SceneCanvas selectTool={{ resize: { edgeHandles: false } }}>` turns them off; `createCornerResizeAffordance({ edges })` and the selection overlay's `resizeHandles: { edges }` do the same where those are used directly. Whether a node gets edge handles is decided by `resizeHandlesFor` from the handles' hit radius alone, never the painted size: `<SceneCanvas>` resolves one `ResizeHandleLayout` (`selectTool.handleHitRadius`, else the device-scaled default) and its overlay, its own hit-test and every added view's read it, so no setting of `handleHitRadius` or `handles.size` draws a handle that can't be grabbed or takes a press where none is drawn. A `<SceneCanvas>` view added with `views` now also honors `selectTool.handleHitRadius`, which it used to ignore. The handle layout is one table, `RESIZE_HANDLE_ANCHORS` (corners first, then edges), placed by `handlePoint`; `CORNER_ANCHORS` is its corner half and `cornerPoint` is deprecated in favor of `handlePoint`. Behavior change: `fixedCornerOf` now pins the center on a `'free'` anchor axis instead of the bounds origin, which only differs when a constraint resizes that axis.
+  
+  <!-- bump-approved: minor: maintainer — 1.11.0 release requested 2026-10-18 -->
+- 6525caa: An ongoing gesture can take the wheel while it is in flight. `OngoingHandle.onWheel(ctx)` is called with each wheel event before any wheel binding sees it, newest gesture first; returning `true` claims the event, so the viewport neither zooms nor pans, and anything else lets it through to the bindings as before.
+  
+  `OngoingHandle.overlay()` may now answer a list of overlays as well as one, for a gesture showing several runs at once. This is breaking for code that reads `overlay()` directly and expects a single overlay: read it through the new `overlaysOf(handle)`, exported from routing and core, which always answers a list. Core's overlay painter, gesture bounds and parallax-plane mapping, and kernel3d's `collectOverlayBoxes`, all read it that way.
+  
+  `OverlayRole` names one more kit role, with a stroke in core's overlay painter: `falloff`, the reach of a soft-selection drag.
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- c6a0a52: Kit settings for gestures, targets, the camera, orbit and the loupe. Under a `<KitSettingsProvider>` a consumer can now set `gestures.doubleClickMs`, `doubleClickPx`, `longPressMs`, `tapPx` and `dragPx` (read by the dispatcher, the move action and `useDragHandle`; an explicit `longPress` prop or `dragThresholdPx` param still wins); core's `targets` leaves `handlePx`, `anchorHitPx` and `rotationDistancePx` (the base that device scaling multiplies, under an explicit `handleHitRadius`), `segmentHitPx`, `anchorClickPx`, `pickTolerancePx` (under `geometry.pickTolerancePx`), and the pen, bone, weight and slice overlay dot radii; `view.animationMs` (under a move's own `ms`); `orbit3d.orbitRate` and `dollyRate` in kernel3d; and `loupe.wheelRate` in labkit. `coreKitSettingsSchema`, `kernel3dKitSettingsSchema` and `labkitKitSettingsSchema` describe these as prefs groups whose paths are the settings' paths, each default being the existing constant. Underneath: `createPointerRecognizer` takes `doubleClickMs`, `doubleClickPx`, `tapPx` and `dragPx` thunks; `<SceneCanvas>` publishes the provider's store as the `kitSettings` dep; `targetSizesPx` and `mergeLayersWithDefaults` take optional base sizes; `createPenPreviewLayer`, `createBoneOverlay` and `createWeightOverlay` take optional size readers; `@weasel-js/react` declares `KitTargetSettings`, the shared `targets` area. Additive.
+- 98870f1: labkit gets a 3D orbit camera as an instrument capability, the sibling of
+  `canvas` and `stage`.
+  
+  **`orbit`.** An instrument declaring `orbit: { initialView, limits, gestures,
+  overlay }` gets a trial-owned kernel3d `Camera3d` in the trial's `view`, so the
+  camera persists, Clone copies it and Reset restores it. A drag turns it,
+  Shift+drag pans its target, the wheel and both pinches dolly, and a double
+  click goes home, all through the gesture dispatcher. `useTrialOrbit()` reads and
+  moves it from anywhere in the trial, and `as3DView` reads it off a stored view.
+  `<Orbit>` is exported for use outside a lab. `orbit` beside `canvas` or `stage`
+  throws. labkit now depends on `@weasel-js/kernel3d`.
+  
+  **One camera surface for 2D and 3D.** The lab's zoom controls drive an orbit as
+  they drive a 2D camera, reading its zoom as home distance over distance, and
+  `RenderContext.trial.zoom` means the same. `CameraGestures` serves every camera
+  and gains `home`, a double click back to where the camera opened — on by
+  default for an orbit, opt-in for a 2D camera through `onHome` on `<Stage>`,
+  `<CanvasStack>` and `<CameraInput>`.
+  
+  **Breaking.** `CameraGestures.pan` is renamed `drag`, since on an orbit a drag
+  turns rather than pans. `CameraView` gains a required `zoomOf(view)`, so a
+  `CameraView` built by hand needs one. `useViewPlacement` returns `{ place, home }`
+  rather than the placement function.
+  
+  **kernel3d.** `orbitBy` and `dollyBy` take an `OrbitLimits`, and `clampCamera`
+  applies one; distance limits were fixed at 0.5..500, which is the default now.
+  `panBy` and the `camera.pan`, `camera.pinchDolly` and `camera.home` actions are
+  new, and `Camera3dDep` takes optional `limits()` and `home()`. `camera.dolly`
+  now binds the ctrl+wheel a trackpad pinch arrives as, which used to zoom the
+  page, and Safari's pinch. `useOrbitTool` binds Shift+drag to `camera.pan`.
+  
+  **routing.** A wheel reported in lines or pages — Firefox's mouse wheel — is
+  converted to pixels before it reaches an action, so per-pixel rates are no
+  longer about a sixteenth as fast there.
+  
+  **Icons.** labkit draws its glyphs from the app's icon registry, which it does
+  not mount: a lab with none draws placeholders and warns. Mount
+  `<IconRegistryProvider icons={kitIcons}>` (`@weasel-js/ui/kit-icons`) or the
+  trimmed `virtual:weasel-icons` set at the app root; labkit's examples now do.
+- 3246831: Declared menus. A `MenuDef` lists action ids in sections; tools and contributions carry them as `menus`, and `useMenus` declares them from any component. `<ActionsProvider>` now creates a `MenuHost` — or, with none above it, a canvas's own input scope does — reachable with `useMenuHost()` and as the `menuHost` dep, that picks the menu for a right-click, resolves its rows from the registry, and holds the open menu for a renderer to draw. Its rows are resolved and run with the deps of the canvas last used, the same ones `trigger` runs an action with.
+- 5eda461: A number row in a schema menu now honors the leaf's `minAt` and `maxAt`, read from the menu's values the way a form or a selection panel reads them, so a menu cannot set a value those panels would refuse.
+- 90851d1: A schema drawn as a menu keeps its number, color, and string leaves. `resolveSchemaMenu` turns a number leaf into a new `number` menu entry, in the units the leaf shows, and a color leaf into a new `color` entry; a string reads as a disabled `Name: value` row. Both are new `MenuEntry` kinds, so code that switches over every kind needs a case for each.
+  
+  A number row edits in place and the menu stays open. The DOM menu holds a field in the row: Enter on the highlighted row moves focus into it, the arrow keys step it there, and Enter or Escape hands focus back to the menu. The HUD menu draws a minus and a plus chip either side of the value. In both, `+` and `-` step the highlighted row. The menu controller's new `numberValue`, `setNumber`, and `spin` hold what was set while the menu is open, and `menuNumberText` prints a value as a renderer with no field does.
+  
+  A color row shows a swatch and the hex and is read-only in both menus.
+  
+  `clampToBounds`, `snapToStep`, and `spinKey` move from `@weasel-js/ui`'s internals to `@weasel-js/quantity`, where the menu model steps with them too.
+- 797bf34: A number row in a menu drawn from a schema now honors the leaf's `endless` and `infinity`. An endless end sits one step past its bound, as it does on an endless slider, so stepping up from the bound reaches infinity, and an infinity stored there shows as the leaf's word for it, with no unit after it. This holds in the DOM menu and the HUD menu alike. The DOM menu's field also reads typed units now, in any unit the leaf's `unit` accepts.
+  
+  `clampToBounds` and `spinKey` in `@weasel-js/quantity` take an `endless` bound. `endlessAllows`, `endlessAt`, `endlessTrack`, and the `Endless` type have moved there from `@weasel-js/ui`, which still re-exports `Endless`. `UnitField` takes `endless` as well, so a property row's plain number field keeps an infinity typed at an endless end where it used to clamp it to the bound. `prefUnitAccepts` is now exported from `@weasel-js/prefs`, which ui and routing both use. `prefDisplayBounds` returns the leaf's `endless`, with its ends swapped under a unit that runs backward. `MenuNumberEntry` gains `endless`, `infinity`, and `accepts`. `menuNumberText` now takes the entry in place of a suffix and a display.
+- e901a2b: `actionShortcuts` now lives in `@weasel-js/routing` (core still exports it). `evaluateEnabled` takes an optional point and passes it to `Action.enabled`, so a menu can ask whether an action applies where it was opened. `ActionsRegistry.trigger` asks `enabled` at `{ x: params.worldX, y: params.worldY }` when both are numbers, so a menu row runs under the same question it was shown enabled for. `ActionShortcut` is now an alias of `@weasel-js/menu`'s `MenuShortcut`.
+- da45b33: `MenuShortcut` is now the one shortcut shape, and `@weasel-js/gestures`' `ShortcutInput` is an alias of it rather than a wider copy: a key list naming spellings of one keycap, optional modifiers, and `shift: 'optional'`. A tool's `keybinding` can be a menu row's shortcut as-is. `@weasel-js/gestures` now depends on `@weasel-js/menu`, for that type only; menu still needs no React and no DOM. routing's `ActionShortcut` is the same type under a third name.
+- 57725cc: Menus hang under a rect and register commands from callbacks. `placeMenuUnder` in `@weasel-js/menu` is new public API: it places a menu under a rect, flips it above, and right-aligns it at the right edge. `MenuOpenRequest.under` is an additive field, honored by the DOM and WebGL menu renderers, and `BarMenu` passes its button's rect. `BarMenu` takes an additive `defaultOpen` prop: it opens the menu once on mount, without taking focus, retrying as commands register until the menu has rows. `useCommand(id, label, run, options?)` is new public API in `@weasel-js/routing/react` and `@weasel-js/core`; its `icon` option takes an `IconRef`. The asset editor files menu roots under a "Menus" heading and previews them open.
+- 2f51085: Menus take access letters and links. `access` on `PrefBase`, `PrefGroup` and `PrefSection` names a menu item's letter; the resolver carries it, and an alias's own letter wins over its target's. `@weasel-js/menu` gains `accessMatch` (finds the item a typed letter selects), `withLinks` (runs a link row's `href` through a navigator the host passes), and `href` and `current` on items. `onEdge` is new on the menu controller, called when Left or Right is pressed at a boundary. Link rows now navigate in the WebGL host. `KeyEffect` gained an `edge` variant, and `keyStep` now returns it for Left and Right at a boundary, which breaks a consumer that switches exhaustively over the effect: add a case for it.
+- 86725ed: An ongoing action can name the modifiers it reads mid-gesture as roles: `Action.modifierRoles` declares each role's default keys, a tuning's `roles` or a binding's `opts.roles` moves one to other keys, and the dispatcher resolves them into `InvocationCtx.roles` on the press, every move, and the release. `roleReader` reads them, falling back to the default keys where nothing resolved them.
+  
+  Path edit's modifiers are roles now. `editAnchors` declares `selection.add` (Shift), `mirror.break` (Alt), `handle.holdAngle` (Shift), and `handle.holdLength` (Cmd or Ctrl); `marqueeAnchors` declares `selection.add`; the pen's handle drag declares `mirror.break`, `snap.constrain` (Shift) and `snap.suspend` (Ctrl); and `balanceHandles` declares the two handle locks. So `<SceneCanvas tune={{ editAnchors: { roles: { 'handle.holdLength': ['alt'] } } }}>` moves the length lock to Alt.
+  
+  Breaking: `locksInForce` takes the invocation context in place of its `ModifierState`, so it can read the roles.
+- d4d28ad: The command palette titles a variant with its action's label and its own ("New: A4"), and a search matches that title. A variant whose label already opens with the action's keeps it ("Zoom In"). `actionItemTitle` gives the title; menus and bars still show the variant's own label. `@weasel-js/core` also exports `ActionDisabledReasonValue`.
+- 616a4b2: Path edit's handle drags gain a length lock beside the angle lock. Mod (Cmd or Ctrl) held while dragging a control handle keeps its length and changes only its angle, as Shift keeps its angle and changes only its length; both together freeze it. The lock in force draws what it holds the handle to — the line, or the circle round the anchor — as a `polyline` overlay of the new `lock` role.
+  
+  Two toggle actions, `handleLock.angle` and `handleLock.length` (group `anchors`, no default binding, in the `paths` preset), hold a lock for every handle drag without a modifier. They set `handleLocks` on the `editAnchors` dep, which `EditAnchorsDep` gains with `setHandleLocks`, so a bar, the command palette, and `<SceneCanvas tune>` reach one value: `editAnchors`'s new `handleLock: 'angle' | 'length'` param (`EditAnchorsParams`) is where the locks start until a toggle is pressed.
+  
+  `@weasel-js/geom` adds `handleAtItsLength`, the length-holding counterpart of `handleAlongItsAngle`.
+- 974682d: Three live path effects: a blend between two shapes, a shape bent along a path, and copies of a shape along a path. Each is one scene node whose `dependsOn` names its sources and whose path and pose both derive from them, so editing a source — moving it, or dragging its anchors — updates the effect, and it saves and loads under the registry key `kit:pathEffect`. A scene holds path effects when it registers them — `createScene({ registry: withPathEffectsRegistry() })` — since reading a source's outline needs the painters; without that the actions are disabled. `pathEffectNode(effect, sources, layer, PATH_EFFECT_DERIVATIONS)` makes one; `data.pathEffect` holds its settings. Dragging an effect drags its sources; resizing or turning it resizes or turns them, as `shapeSources` now reaches through any node whose pose derives from named dependencies, not only a container's children.
+  
+  The actions are in the standard set and the `paths` preset, in the `pathEffects` group (`PATH_EFFECTS_GROUP`): `blend` (Alt+Shift+B) over the first two selected shapes, `bendAlong` (Alt+Shift+W) and `repeatAlong` (Alt+Shift+R) laying the first selected shape along the second, `editPathEffect` changing an effect's settings as one coalescing undo step, and `expandPathEffect` (Alt+Shift+E, "Expand to Paths") replacing an effect with the ordinary paths it shows. `ActionParamSchema` types their params for `<SceneCanvas tune>`.
+  
+  A blend matches anchors contour to contour, splitting the shape with fewer at its longest segments until the counts agree, and picks the second shape's start point and direction to keep matched anchors closest; `startOffset` and `reverse` override that. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them.
+  
+  A `derivePath` can now paint in several parts, each in its own fill and stroke: return `pathFromParts(parts)`, and the `kit:derived` painter draws each part as itself while picking and bounds see one path.
+  
+  `@weasel-js/routing` adds `BROWSER_RESERVED_CHORDS` and `browserReservedChord(spec)`: the key chords a major browser or desktop takes before the page does. The new bindings stay clear of them.
+  
+  `@weasel-js/geom` adds the geometry: `prepareBlend` and `blendPaths`, `bendAlongPath` (refit to a tolerance, corners kept), `stationsAlongPath` and `repeatAlongPath`, `measurePath` (arc length measured once, with an optional smoothed heading, which `pointAlongPath` now uses), and `pathToCubicContours` / `cubicContoursToPath`. `@weasel-js/paint` adds `lerpPaint`, `lerpFill` and `lerpStroke`.
+- dcca70c: Three warp tools bend the selected paths and keep the warp editable until it is expanded. `useDistortTool` drags the four corners of the selection's box on their own, mapped bilinearly (`mode: 'free'`) or projectively (`'perspective'`, which keeps straight lines straight). `useEnvelopeTool` drags the points of a mesh over the box (`rows`, `cols`), interpolated as a bicubic surface or as one Coons patch per cell (`mapping`). `usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged, moving everything else as rigidly as the pins allow; Alt-click takes a pin out. Pass them through `<SceneCanvas tools>`; their keys are F, M, and B, and `keybinding` overrides or (with `null`) omits one. Their drag and pin actions read the same settings as params, so `<SceneCanvas tune>` can set them too, and the controls drawn over a path holding no warp yet are drawn from those tuned settings. `ActionsRegistry.paramsOf(id, given)` answers the params an invocation would start with, tunings included, and `<SceneCanvas>` publishes it as the `actionParams` dep.
+  
+  A warp is held on each path as `data.warp`, beside the geometry it made, and survives moving, resizing and rotating the node. Two new actions in the `paths` preset work on whatever warp the selection holds: `expandWarp` drops it, leaving plain geometry, and `configureWarp` remakes it with new settings. Editing the path's anchors, or any path command, also drops it. `withPathWarp` builds a node that opens already warped; `heldPathWarpOf` and `resolvePathWarp` read one back.
+  
+  `@weasel-js/geom` adds the maps underneath — `bilinearQuad`, `projectiveQuad`, `bicubicMesh`, `coonsMesh`, and `rigidPuppetMap` — and `warpPath(path, map, { tolerance })`, which carries any path through any point map and refits each segment as cubics within the tolerance, keeping every anchor. `PathWarp` describes a warp as data, with `applyPathWarp`, `warpControls` and `moveWarpControl` over it.
+- cc54285: `ActionVariant` and `ActionDisabledReason` are now public API, no longer tagged `@experimental`. `useCommand`'s `variants` option takes `ActionVariant`s, so a command's variants can carry `tags`; the unreleased `CommandVariant` type is gone.
+- 36eca7a: Breaking: `useAnimator` moved to `@weasel-js/animator/react`; the root entry has no React. `@weasel-js/core/math` no longer reaches routing or animator in its types. geom exports `FramedBox`. New `@weasel-js/font/metrics` entry carries `parseBmFont`, the face-metric readers and `cssFamilyName` with no DOM in its types, and `@weasel-js/diagram/layout` measures through it, so neither it nor `@weasel-js/diagram-elk` needs a browser. `faceMetricsOf` takes any value with `entry` and `outlineFace`, a `ResolveResult` included.
+- 1be2ea9: New `deepEqual(a, b, { undefinedAsAbsent? })` in `@weasel-js/registry`: structural equality over arrays and plain objects from any realm, with every other value — a function, a class instance, a `Date` — equal only to itself. `undefinedAsAbsent` reads a key holding `undefined` as missing. `useCommand`, the schema editor's attribute aggregation, the selection panel's shared value, and text's range styles now all compare with it, in place of four private copies. Two of those copies compared a class instance field by field, and now compare it by identity: `useCommand`'s options and the schema editor's attribute values.
+- f3398d4: The `@experimental` designation is retired. Everything that carried it is now ordinary public API: the actions registry and its built-in action descriptors and icons, the ambient pointer and selection contexts, `CanvasView`, the canvas extension API, the view resolver and viewport layer, the affordance helpers, path-tools' commands and icons, and `registerEffect`. No signatures changed.
+- 9073669: Path edit has tools: a set of named tools, one active at a time, that each change what a plain drag in path edit does. With none on, a drag edits anchors as before. The `editAnchors` dep carries the active one as `tool` and switches it with `setTool(id | null)`; a `<SceneCanvas pathEdit>` host may own it by also giving `tool()` and `setTool(id)`, as it already owns the open path. A tool belongs to the open path, so leaving path edit puts it down. `pathEditToolAction(tool, label, icon)` makes a bar toggle for one (id `pathEditTool.<tool>`, group `anchors`, pressed while on), and `pathEditTool.exit` puts the tool down on Escape, so a second Escape leaves path edit. While any tool is on, `editAnchors`, `bendSegment`, `marqueeAnchors`, and `selectAnchor` stand aside; Alt-click still inserts an anchor.
+  
+  The first tool is the Simplify brush, a local version of the Simplify command. Its toggle, `pathEditTool.simplifyBrush`, sits in the `anchors` bar with the icon `core:simplifyBrush`. While it is on, a plain drag gathers every anchor a round brush passes over, and each unbroken stretch of them along a subpath is refitted as one span by Simplify's own fitter, at a tolerance in world units (default 1, as for Simplify). Only the anchors the shape does not need within that tolerance go, corners stay, and anchors outside the brush are left exactly as they were. The path previews the result during the stroke, release commits one undo step, and Escape mid-stroke cancels it. The action is `simplifyBrush`, in the standard actions and the `paths` feature preset; `ActionParamSchema` types its `radiusPx` (screen pixels, default 12) and `tolerance` for `<SceneCanvas tune>`. The cursor over the canvas is the brush ring, as wide as the brush a drag there would start, a tuned radius included.
+  
+  An action's hover `cursor` may now be a function of the params the winning binding would start it with, tunings included; `actionCursor(action, params)` reads either form, and `resolveOnly` reports the winning binding's `params`.
+  
+  Path edit draws the open path's outline as a thin accent line over its own paint, so a path stays visible under its markers, and an unselected anchor that sits closer to a neighbor on screen than a marker is wide is drawn as a small dot, so a dense freehand run reads as a line of dots rather than a solid band. `PathEditingOverlayStyle` takes `outlineStroke`, `outlineWidthPx`, and `denseDotRadiusPx`.
+  
+  `@weasel-js/routing` adds a `brush` overlay variant: `{ kind: 'brush', points, radiusPx }`, the world path a round brush has taken and its radius on screen. `<SceneCanvas>`'s dispatcher overlay paints it as the swept band and a rim at the brush's position, gated by the `action.brush` chrome-caps id.
+  
+  `@weasel-js/geom` factors Simplify's fitter onto a span: `simplifySpan(sub, closed, from, to, tolerance)` refits one stretch of a subpath and `simplifySubpath` a whole one, both of which `simplifyPath` now runs on. `simplifyAnchorsAt(set, flatIndexes, tolerance)` refits each unbroken run of the named anchors, and `anchorsUnderBrush(set, from, to, { radiusPx, scale })` answers the anchors within `radiusPx` of a segment, measured on screen.
+- db8c16e: One snap pipeline for every gesture. Move, resize, rotate, insert (drag and click-place), pen and spiro placement, pen handles, anchor and handle drags in path edit, measure, and the symmetry center all begin a session on the `snap` dep at press and ask it each frame where their point lands. Every kind of target is a snap source, and one resolver ranks all of their candidates together: a point beats a line, a real target beats a fallback such as the grid, then the smaller move on screen wins, then source order. One readout layer draws what the result met. `docs/snapping.md` is the reference.
+  
+  **Breaking: removed APIs, with their replacements.**
+  
+  - `SnapDep.point` is gone: the `snap` dep is `begin(req)`, which returns a `SnapSession` (`at`, `angle`, `end`).
+  - `<SceneCanvas toolOptions={{ snapPoint }}>` is gone: register a source in `<SceneCanvas snap={{ sources }}>`, `gridSnapSource` for a grid.
+  - `selectTool.snap`, `SnapStrategy`, and core's `snap()` behavior adapter are gone: a grid is `gridSnapSource({ spacing, origin?, unitSystem? })`, ruler guides `guideSnapSource(getGuides)`. A pose that is neither a rect nor a `Path` passes its `OriginProjection` as `snap={{ originProjection }}`. Moving from `selectTool.snap: gridSnapStrategy(…)` to `gridSnapSource` also snaps resize corners, inserts and pen clicks to the grid, not only a move's origin.
+  - `@weasel-js/guides`: `gridSnapStrategy`, `guideSnapStrategy`, `GuideSnapOptions`, `DEFAULT_GUIDE_TOLERANCE_PX`, and `pointSnapToGrid` are gone, and so are the `@weasel-js/guides/move`, `/resize` and `/insert` subpaths with their `snapToGrid`, `snapToGuides`, `SnapToGuidesMoveArgs`, `SnapToGuidesResizeArgs` and `SnapToGuidesInsertArgs`: use `gridSnapSource` and `guideSnapSource`. An import of `snapToGrid` from `@weasel-js/core/move` (a subpath that no longer had it) becomes `gridSnapSource` from `@weasel-js/guides`.
+  - `@weasel-js/guides`: `alignMoveBehavior`, `alignInsertBehavior`, `alignResizeBehavior`, `AlignMoveArgs`, `AlignmentBehaviorBase`, `matchAlignment`, `MOVE_ANCHORS`, `AlignAnchor` and `AlignMatchResult` are gone: `alignmentSnapSource(opts)` snaps to siblings' edges and centers and `spacingSnapSource(opts)` to equal gaps, on move, resize and insert alike. `matchSpacing` and `measureGaps` stay.
+  - `PointSnapBehavior`, `PointSnapContext`, `PointSnapResult`, `PointSnapFrame`, `ResizePolicy.pointSnap`, `useResizePolicy`'s `pointSnap`, and the resize option `pointSnapBehaviors` are gone: a resize snaps its dragged corner or edges through the session, so any source snaps it.
+  - `lockAspectWithModifier` (with its `{ key }` option) and `DEFAULT_RESIZE_BEHAVIORS` are gone from `@weasel-js/core/resize`: Shift's aspect lock is the resize's `snap.constrain` role.
+  - `snapRotationWithModifier`, `DEFAULT_ROTATION_SNAP_STEP` and `DEFAULT_ROTATE_BEHAVIORS` are gone: rotation snaps through `rotationSnapSource`, which every canvas asks, and the `snap.constrain` role (Shift) adds the 15° steps. `rotate: { behaviors: [] }` no longer turns rotation snapping off; `<SceneCanvas snap={{ omit: ['rotation'] }}>` does, and a source with the id `'rotation'` replaces the default.
+  - `constrainTo45` is gone from `@weasel-js/core`: the pen's handle Shift is the session's angle step.
+  - `usePenTool`'s `snapPoint` and `anchorSnapRadius` options are gone, and `useDragRect`'s and `useDragRadial`'s `snapPoint`: the pen and the drag gestures snap through the `snap` dep (`pathSnapSource` for anchors, `gridSnapSource` for a grid). A pen anchor joins an open end within `targets.penCloseHitPx` of the press before any snap.
+  - kernel3d's `createSnap()` took nothing and snapped nothing; `createSnap(world, { sources?, reachPx?, store? })` takes the world and snaps.
+  
+  **New.**
+  
+  - `<SceneCanvas snap={{ sources, omit, reachPx, originProjection, readout, readoutStyle }}>` (`SceneCanvasSnap`), a feature preset's `snapSources`, and `useSnapSource(source)`.
+  - One reach for every source that sets none, the kit setting `targets.snapPx` (8 screen px; `DEFAULT_SNAP_PX`).
+  - The snap source contract: `SnapSource`, `SnapCollect`, `SourceCandidate`, `Locus`, `SnapProbeAt`, `SnapGesture` (with `'handle'`), `SnapEdge`, `SnapEdges`, `AngleCollect`, `AngleCandidate`, `SnapMark` and `SnapMarks`; the session types `SnapBegin` (with `reachRad` and `theta0`), `SnapConstrain`, `SnapMods`, `SnapOutcome`, `SnapResizeBox`, `SnapSession`.
+  - Sources: `pathSnapSource` with `PathSnapSourceOptions` (and `only`), `measureEndSource` with `MeasureEndSourceOptions` (`reachPx`), and `rotationSnapSource` in core; `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource` and `spacingSnapSource` in guides; `handleSnapSource` and `HandleSnapOptionsInput` in path-tools (`createHandleSnapPreset` and `createHandleSnapExtension` take options or a thunk of them, and the preset registers the source); `boxSnapSource`, `alignPlaneSource`, `groundGridSource` and `GroundGridSourceOptions` in kernel3d.
+  - The modifier roles `snap.suspend` (Ctrl) and `snap.constrain` (Shift), declared by every snapping action: `SNAP_ROLES`, `snapMods`, `SNAP_ANGLE_STEP` (the one 15° step for a line insert, a measurement, a rotate and the symmetry axis), `SNAP_AXIS_STEP`, and `stepAngles`.
+  - The readout: `createSnapReadoutLayer`, `SnapReadoutStyle`, `createSnapOutcomeStore`, the `snapReadout` dep (`SnapReadoutDep`), and the drawing helpers `tickedSegment`, `pillCommands` and `measuredSegmentCommands`. The debug overlay's `snap` feature draws every candidate the resolver weighed.
+  - Building blocks for a host's own session: `resolveSnap` and its types in `@weasel-js/geom/nd`, with `stepLine` and the flat math under it (`Flat`, `Vec`, `flatDim`, `closestOnFlat`, `closestBetweenFlats`, `intersectFlats`); `gatherSnapCandidates`, `resolvedSnapMarks`, `snapSourcesFor`, `GatherSnapOptions`, `SnapCandidateMark` and `SnapGeometry` in core; `pointSnap`/`PointSnap` for a tool placing points.
+  - `@weasel-js/geom/3d` gains `vec3`, `distance`, `lerp`, `pointOnRay`, `aabbOfPoints`, `closestPointOnLine`, `closestPointOnSegment` and `closestPointsRayLine`.
+  - `@weasel-js/core/test-seams` gains `createSnapSession2dForTests` (with `SnapSession2dOptions`), a 2D session for tests outside core; it is not public API.
+  - kernel3d: `projectSnapMarks` with `ScreenLine` and `ScreenPoint`, `projectPoint`, and `Snap3dOptions`.
+  - `InsertDep.commit` and `InsertDep.build` take an optional `ends: InsertEnds` (the drag's start, end and `fromCenter`); click-place passes them too. kernel3d's `createInsert` builds its footprint from the two ends cast onto the ground, so a 3D click-place centers its footprint on the snapped ground point.
+  - path edit: `PathEditDragStart.snap`, `PathEditDrag.end`, `SnapMods.hold`.
+  
+  **Behavior changes.**
+  
+  - Every `<SceneCanvas>` snaps point gestures to other nodes' anchors — rect and text corners, ellipse quadrants, path anchors — through a default source with `pathSnapSource`'s id, `'path-snap'`: pen placement and handle tips, spiro points, anchor drags, line and box insert, click-place, measure ends and the measurement end drag, and the symmetry center; not move, resize or rotate. `snap={{ omit: ['path-snap'] }}` drops it, and a consumer's own `pathSnapSource()` replaces it rather than doubling. A point target on the gesture's own `origin` is never offered, so a handle tip does not stick to its anchor.
+  - A grid gives way to a target in reach on its axis, where alignment used to add its delta on top of the grid's. Guides and alignment reach 8px, not 6.
+  - Ties between equally good results break by source order, then by the order a source yields its targets.
+  - Ctrl suspends snapping on every snapping gesture, a pen drag and an anchor drag included; a handle drag keeps Ctrl as its length lock.
+  - A rotate snaps to quarter turns and to other nodes' angles without Shift (new); near the pivot its reach is capped at 30°.
+  - Shift on a move locks it to the horizontal, vertical or 45° line through the press (new), and so does Shift on an anchor drag (new).
+  - Shift on a line insert, a measurement or a pen handle puts the end at the pointer's nearest point on the stepped line through the start (it used to keep the drag's length), and that line meets snap targets.
+  - An anchor drag meets every point-gesture source, a grid included.
+  - A multi-root move snaps each root's origin, the nearest winning, not only the first node's.
+  - A move's behaviors run on the snapped delta, and a behavior's translate stands, so a container's slot preview wins over a snap target in reach.
+  - A measurement end drag keeps its offset from the press (it used to jump the end to the pointer), and no longer snaps to its own measurement's ends.
+  - kernel3d's `translate` puts its plane at `up · position`, the same as before for +y up.
+- e287da2: Spacing hints, as one preset. `createSpacingHintsPreset()` is a `<SceneCanvas features>` entry: a move snaps the selection so its gap to a neighbor equals one already between its siblings and marks the equal gaps, and holding Alt over a shape measures its distance from the selection. Options turn off the spacing snap or the readout, add snapping to siblings' edges and centers, and set the snap distance and color. Turning it off is leaving it out of `features`.
+  
+  A `FeaturePreset` can now carry `moveBehaviors`, folded into every move the presets' ambient bindings run, after the select tool's own.
+  
+  The pieces are exported too. `measureDistances(from, to)` returns the gaps between two boxes on each axis where they separate, or from an inner box to the edges of the one holding it, as `SpacingGap`s, with leader lines where a gap runs past its target. `distanceReadout()`, which the preset brings, is a surface contribution for `<SceneCanvas ambient>`: while Alt (or the `modifier` given) is held over a shape, it draws the distances from the selection to that shape. `siblingBounds`, `worldBoundsOf`, and `worldUnionOf` read world boxes off a scene; `siblingBounds` is the boxes equal spacing measures while some ids move.
+  
+  A modifier going down or up over a resting pointer now dispatches a `hover`, with the new modifiers, so a hover binding that needs a key held answers it without waiting for the pointer to move.
+  
+  Core exports `scenePoseFrame` and `PoseFrame`: world reads and local writes over a scene's own composition.
+- c4e499e: A declared menu is now a prefs schema. `MenuDef` holds `menu: PrefGroup` in place of `sections`, and `MenuDefEntry` and the `actionVariants` entry are gone: an action leaf naming a parametric action already lists one row per variant, and one naming `id:variant` lists that variant alone. `resolveSchemaMenu(schema, sources, at?, params?)` draws any schema subtree as menu entries, so a toolbar can open one as a menu; `resolveMenu` calls it, and core re-exports it with the `MenuSources` type. An `actions` leaf lists every action in its registry group, a group drawn `as` a `menu`, `page`, `tab`, or `panel` is a submenu, and any other group sits inline between separators. Booleans become checked items and enums radio rows, read through the new optional `MenuSources.values` and written through `MenuSources.onChange`; a `readout` one is a disabled row showing its state. An `action` leaf naming no registered action is a disabled row that warns in development, since a menu holds no code. A `label` leaf is a disabled row, a `separator` leaf a separator, an `alias` the leaf it points at (in `MenuSources.over`, else the menu's own schema), and `showIf`/`enableIf` hide and disable rows when `values` is given. Leaves a menu cannot edit, such as numbers and colors, are left out. Menus contributed under one id merge as each contribution's children in turn with a separator between, keeping their keys, so value paths do not move. `pref` gains `action`, `actions`, `label`, and `separator` builders. Breaking for any declared menu written with `sections`.
+- e40a56f: `useCommand`'s `keys` takes the `{ spec, opts: { params } }` form an action's `defaultBinding` does, alone or in a list, so a variant gets its own key: `{ spec: { kind: 'key', key: '=' }, opts: { params: { dir: 'in' } } }` runs the command with `{ dir: 'in' }`, and that variant's menu row and palette entry show `=`.
+- 15fbffb: `useCommand` takes `variants`, and its callback receives the params it was triggered with, so a parametric command — one entry per variant in a bar, menu or palette — needs no hand-built `Action`. Additive.
+- Updated dependencies [304f53a]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [65be8d3]
+- Updated dependencies [10b67bb]
+- Updated dependencies [95d22f1]
+- Updated dependencies [5338358]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [4da5998]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [8374354]
+- Updated dependencies [5adbb76]
+- Updated dependencies [681c3f9]
+- Updated dependencies [63b310c]
+- Updated dependencies [b36ceac]
+- Updated dependencies [34f8b09]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [628c62d]
+- Updated dependencies [ad0b069]
+- Updated dependencies [d32cb70]
+- Updated dependencies [fb75358]
+- Updated dependencies [90851d1]
+- Updated dependencies [797bf34]
+- Updated dependencies [fe20dc4]
+- Updated dependencies [da45b33]
+- Updated dependencies [57725cc]
+- Updated dependencies [2f51085]
+- Updated dependencies [c6d61e0]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [71c079d]
+- Updated dependencies [dcca70c]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [c2048de]
+- Updated dependencies [7947fdf]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [59b5936]
+- Updated dependencies [c4e499e]
+- Updated dependencies [5ebf7e7]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1faab2d]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [329aa39]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/prefs@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/gestures@1.11.0
+  - @weasel-js/history@1.11.0
+  - @weasel-js/icons@1.11.0
+  - @weasel-js/react@1.11.0
+  - @weasel-js/menu@1.11.0
+  - @weasel-js/quantity@1.11.0
+  - @weasel-js/modes@1.11.0
+  - @weasel-js/cursor@1.11.0
+  - @weasel-js/select@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/icons",
-  "version": "1.10.1",
+  "version": "1.11.0",
   "description": "Namespaced icon names and the icon registry. No React, no DOM, no glyphs of its own.",
   "license": "MIT",
   "type": "module",
@@ -19,6 +19,6 @@
   "engines": { "node": ">=22" },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": { "build": "tsup" },
-  "dependencies": { "@weasel-js/registry": "1.10.1" },
+  "dependencies": { "@weasel-js/registry": "1.11.0" },
   "publishConfig": { "access": "public", "provenance": true }
 }

@@ -1,5 +1,84 @@
 # @weasel-js/animator
 
+## 1.11.0
+
+### Patch Changes
+
+- 6a53aaa: Holds cost a frame much less. A hold on a target table's row keeps its value and weight in the table's own arrays, and the table shows its held rows in the same pass that shows its moving ones: at 10,000 rows, a hold whose value is a function went from about 730 to 100 ns a row a frame, and one of plain values from 12 to 4. A timeline track or rig clip with a constant weight is read only when the playhead moves it.
+  
+  `animator.holdRows({ table, rows?, weight?, axes? })` holds many rows of a table at once. Its handle's `values` (laid out as `table.committed`) and `weights` (one a row) are written in place, then shown with `touch()`; each row is a hold like any other, mixed with the row's other holds, covering the moves behind it, and committing what it showed when released or canceled. A row stopped through its target, or removed from the table, is let go of.
+- 193ba96: A loop played backward now runs back through every pass before the one in flight, not just that one. Once the pass in flight is back at its start, the loop starts the pass before it at its end and plays it back, down to the start of pass 0, where it ends and `onDone` runs. The factory is handed each earlier pass's own index, and turning the loop forward again partway carries on from there. A tween, with `onTick` or on a target, starts at its end when a loop playing backward starts it, and a loop with a `count` started that way starts its last pass at that pass's end. A spring, a decay, a timeline, or a stagger started by such a pass starts at its start as before.
+- 09c3e5f: A time scale below 0 plays an animation backward. `setTimeScale(-1)` on a handle, by key with `setTimeScaleByKey`, or on the animator runs each animation's clock back toward its start, while the animator's own clock goes on forward. Run back to its start, an animation ends there as it ends at its end going forward: a tween or spring on a target commits its start value, one with `onTick` is handed its `from` last, and `onDone` runs. A timeline's playhead runs back through the laps it has looped and ends at 0, firing no events on the way; a stagger ends once what it has in flight is back at its start. An animation started while the animator plays backward is at its start already, and ends at once. A time scale that is not a finite number is still refused.
+- 535aaaa: A target table row with a tween or spring behind a hold is shown by the table's own pass. Such a row was read by itself every frame, at a single target's cost, and so was one where a hold had been released over a move or a stopped animation had left something beside a hold; at 10,000 rows a tween under a hold went from about 5.6 µs a row a frame to 0.04.
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- 36eca7a: Breaking: `useAnimator` moved to `@weasel-js/animator/react`; the root entry has no React. `@weasel-js/core/math` no longer reaches routing or animator in its types. geom exports `FramedBox`. New `@weasel-js/font/metrics` entry carries `parseBmFont`, the face-metric readers and `cssFamilyName` with no DOM in its types, and `@weasel-js/diagram/layout` measures through it, so neither it nor `@weasel-js/diagram-elk` needs a browser. `faceMetricsOf` takes any value with `entry` and `outlineFace`, a `ResolveResult` included.
+- Updated dependencies [304f53a]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [5338358]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [8374354]
+- Updated dependencies [5adbb76]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [ad0b069]
+- Updated dependencies [d32cb70]
+- Updated dependencies [fb75358]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [71c079d]
+- Updated dependencies [dcca70c]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [c2048de]
+- Updated dependencies [9073669]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1faab2d]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [329aa39]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/react@1.11.0
+  - @weasel-js/paint@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

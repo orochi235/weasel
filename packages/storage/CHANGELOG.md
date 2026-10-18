@@ -1,5 +1,14 @@
 # @weasel-js/storage
 
+## 1.11.0
+
+### Patch Changes
+
+- Updated dependencies [304f53a]
+- Updated dependencies [63b310c]
+- Updated dependencies [1be2ea9]
+  - @weasel-js/registry@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

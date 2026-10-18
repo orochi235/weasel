@@ -1,5 +1,15 @@
 # @weasel-js/history
 
+## 1.11.0
+
+### Patch Changes
+
+- 681c3f9: `createHistory`'s `coalesceWindowMs` also takes a function, called at each push, so the window can change after the history is made; a journal the history begins reads the same function. `PrefSchemaEditor` passes one, so a change to the `history.coalesceMs` kit setting reaches an editor that is already open instead of waiting for it to remount.
+- Updated dependencies [304f53a]
+- Updated dependencies [63b310c]
+- Updated dependencies [1be2ea9]
+  - @weasel-js/registry@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes
