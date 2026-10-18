@@ -5,12 +5,14 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import {
+  applyToPoint,
   boundsOfPath,
   distortOver,
   envelopeOver,
   identity,
   resizeEnvelope,
   transformPath,
+  warpControls,
   type Affine,
   type DistortMode,
   type EnvelopeMapping,
@@ -114,10 +116,32 @@ function freshWarpId(): string {
   return `warp-${Date.now().toString(36)}-${(++freshIds).toString(36)}`;
 }
 
+/** Whether two targets' warps put the same controls in the same places. */
+function samePlacement(a: WarpTarget, b: WarpTarget): boolean {
+  const ca = warpControls(a.held.warp), cb = warpControls(b.held.warp);
+  if (ca.length !== cb.length) return false;
+  const m = a.toWorld, n = b.toWorld;
+  const scale = Math.max(1, Math.abs(m[0]) + Math.abs(m[1]) + Math.abs(m[2]) + Math.abs(m[3]));
+  for (let i = 0; i < 4; i++) if (Math.abs(m[i] - n[i]) > 1e-4 * scale) return false;
+  const box = worldBoxOf([a.node]);
+  const tol = 1e-3 * Math.max(1, box ? Math.abs(box.x) + box.width + Math.abs(box.y) + box.height : 1);
+  if (Math.hypot(m[4] - n[4], m[5] - n[5]) > tol * scale) return false;
+  return ca.every((p, i) => {
+    const [ax, ay] = applyToPoint(m, p.x, p.y);
+    const [bx, by] = applyToPoint(n, cb[i].x, cb[i].y);
+    return Math.hypot(ax - bx, ay - by) <= tol;
+  });
+}
+
 /**
  * `nodes` split into those holding a warp of `kind` that still matches their
  * geometry, and the rest, with the box around the rest — where a fresh warp
  * for them goes.
+ *
+ * Paths warped together share their warp's id, but each keeps its own copy,
+ * carried with it. Once one is moved or edited alone its copy no longer sits
+ * where the others' do, and it is no longer driven with them: it comes back
+ * under an id of its own, which the next edit writes to it.
  */
 export function splitByWarp(
   nodes: readonly PathNode[],
@@ -125,10 +149,25 @@ export function splitByWarp(
 ): { held: WarpTarget[]; bare: PathNode[]; box: WarpBox | null } {
   const held: WarpTarget[] = [];
   const bare: PathNode[] = [];
+  const groups = new Map<string, WarpTarget[]>();
   for (const node of nodes) {
     const resolved = resolvePathWarp(node.node);
-    if (resolved && resolved.held.warp.kind === kind) held.push({ node, ...resolved, fresh: false });
-    else bare.push(node);
+    if (!resolved || resolved.held.warp.kind !== kind) {
+      bare.push(node);
+      continue;
+    }
+    let target: WarpTarget = { node, ...resolved, fresh: false };
+    const id = resolved.held.id;
+    const firsts = groups.get(id) ?? [];
+    const joined = firsts.find((f) => samePlacement(f, target));
+    const groupId = joined ? joined.held.id : firsts.length > 0 ? `${id}~${node.id}` : id;
+    if (groupId !== id) {
+      const parted = { ...resolved.held, id: groupId };
+      rememberWarpResult(parted, heldWarpResult(resolved.held));
+      target = { ...target, held: parted };
+    }
+    if (!joined) groups.set(id, [...firsts, target]);
+    held.push(target);
   }
   return { held, bare, box: worldBoxOf(bare) };
 }

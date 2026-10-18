@@ -414,10 +414,6 @@ Priority tags:
   a triangulation of the filled region (`tessellate` already triangulates it) would weigh
   distance through the shape; it needs a mesh solve per drag frame and a way to map the path's
   sample points through the deformed triangles.
-- **(P3) Paths warped together drift apart once one is moved alone.** Each path holds its own
-  copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
-  first path holding an id, and a drag moves every path with it by the same world delta. After
-  one of them is moved on its own, its controls no longer sit under the ones shown.
 - **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
