@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
-import React from 'react';
 import { ThemeProvider } from './react';
 
 type Listener = (e: { matches: boolean }) => void;

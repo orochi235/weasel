@@ -21,7 +21,7 @@ describe('<ControlPanel> renderer context', () => {
         unit: f.string('px'),
         a: f.number(1).render(note('a')),
         b: f.custom('thing', 0),
-        c: f.list<string>([]).label('Items').dialog(note('c')),
+        c: f.list<string>([], f.string('')).label('Items').dialog(note('c')),
       }),
       [],
     );

@@ -16,7 +16,7 @@ describe('<ControlPanel> changed', () => {
       size: f.number(1).label('Size'),
       blur: f.number(0.5).range(0, 1).label('Blur'),
       title: f.string('x').label('Title'),
-      tags: f.list<string>([]).label('Tags'),
+      tags: f.list<string>([], f.string('')).label('Tags'),
       mode: f.enum('a', ['a', 'b']).label('Mode'),
       look: f.group({ tint: f.color('#ffffff').label('Tint') }),
       alias: f.alias('size').label('Size again'),
@@ -57,7 +57,7 @@ describe('<ControlPanel> changed', () => {
       own: f.number(1).render((ctx) => (seen.push(ctx.changed), <span>own</span>)),
       plain: f.number(1).render((ctx) => (seen.push(ctx.changed), <span>plain</span>)),
       notes: f
-        .list<string>([])
+        .list<string>([], f.string(''))
         .label('Notes')
         .dialog(() => null),
     });
