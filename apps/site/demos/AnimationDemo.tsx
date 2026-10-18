@@ -333,7 +333,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   const tracker = useVelocityTracker();
   const flight = useRef<PhysicsHandle<Vec2> | null>(null);
   const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });
-  const gridLayer = useMemo(flickGridLayer, []);
+  const gridLayer = useMemo(() => flickGridLayer(), []);
   useEffect(() => () => {
     flight.current?.cancel();
     flight.current = null;
