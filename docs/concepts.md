@@ -334,6 +334,11 @@ and the animator fills `table.shown` for every moving row in one pass over flat
 arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
 `shown: Float32Array`, for a painter that uploads it as it stands.
 
+A row's holds fold in the same pass. `animator.holdRows({ table })` holds many rows at once
+from two flat arrays the caller writes, `values` laid out as `committed` and one weight a row,
+then `touch()`es: a hold on each row, mixed with the row's other holds, with no function asked
+per row.
+
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
 define `add` and `write` let a read skip the array of axes as well; the ones the

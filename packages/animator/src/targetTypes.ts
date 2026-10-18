@@ -1,6 +1,7 @@
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 import type { AxisRef } from './axisNames';
 import type { Target } from './target';
+import type { ShownArray, TargetTable } from './targetTable';
 import type { AnimationHandle, Interpolate, InterpolatorFactory } from './types';
 
 /** What every animation on a {@link Target} takes. */
@@ -96,6 +97,39 @@ export interface HoldHandle extends AnimationHandle {
    *  it is; with `commit: false` the committed value is left alone and the target falls back
    *  to it. */
   release(opts?: { commit?: boolean }): void;
+}
+
+/** What `animator.holdRows` takes. */
+export interface HoldRowsOptions {
+  /** The table whose rows it holds. */
+  table: TargetTable<ShownArray>;
+  /** The rows to hold. Default: every row the table has as the hold starts. */
+  rows?: ArrayLike<number>;
+  /** The weight each row starts at, 0 to 1. Default 1. */
+  weight?: number;
+  /** The axes of each row it holds, by index. Default: all of them. */
+  axes?: readonly number[];
+  /** Any new animation passed the same cancelKey cancels this one. */
+  cancelKey?: string;
+  /** Names it in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
+  /** With `false`, it takes its `cancelKey` without canceling whoever holds it. Default true. */
+  interrupt?: boolean;
+}
+
+/**
+ * What `animator.holdRows` returns: a hold on each of its rows, which shows that row's value in
+ * `values` at its weight in `weights`, mixed with the row's other holds as `hold`'s are. Write
+ * either in place and call `touch()`. A row stopped through its target, or removed from the
+ * table, is let go of; the rest stay held until the hold is released or canceled, each
+ * committing what it showed, as `release()` does.
+ */
+export interface RowsHoldHandle extends HoldHandle {
+  /** Each row's value to hold, laid out as `table.committed`: row `r` at `r * table.axes`.
+   *  A held row starts at its committed value. A new array once the table grows. */
+  readonly values: Float64Array;
+  /** Each held row's weight, 0 to 1, row `r` at `r`. A new array once the table grows. */
+  readonly weights: Float64Array;
 }
 
 /** A coast on a {@link Target}: it commits where it stops. */

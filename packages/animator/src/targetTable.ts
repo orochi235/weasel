@@ -83,6 +83,37 @@ function rowTarget(
   return target;
 }
 
+/** Every moving or held row's value on screen into `shown`: its committed value, what the
+ *  animator's `columns` add to it, and what its holds do. */
+function pass(
+  shown: ShownArray, committed: Float64Array, n: number, holds: HoldStore | null, columns: LaneColumns | null,
+): void {
+  const delta = holds && holds.size > 0 ? holds.delta : null;
+  if (delta) {
+    const { held, size } = holds!;
+    for (let j = 0; j < size; j++) {
+      const at = held[j]! * n;
+      for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + delta[at + k]!;
+    }
+  }
+  if (!columns) return;
+  const { cols, tags, count } = columns;
+  for (let j = 0; j < count; j++) {
+    const at = tags[j]! * n;
+    if (delta) for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]! + delta[at + k]!;
+    else for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]!;
+  }
+}
+
+const tables = new WeakMap<TargetTable<ShownArray>, RowTable>();
+
+/** The animator's side of a table `createTargetTable` made. */
+export function rowTableOf(table: TargetTable<ShownArray>): RowTable {
+  const rows = tables.get(table);
+  if (!rows) throw new Error('animator: `table` was not made by createTargetTable');
+  return rows;
+}
+
 /** Make a {@link TargetTable} whose rows each hold `axes` numbers. */
 export function createTargetTable<S extends ShownArray = Float64Array>(opts: TargetTableOptions<S>): TargetTable<S> {
   const n = opts.axes;
@@ -102,6 +133,8 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
   const marks = new Set<number>();
   /** The holds on its rows, once any has been held. */
   let holds: HoldStore | null = null;
+  /** What the last frame gave the pass, until a row joins or leaves the animator's lane. */
+  let last: LaneColumns | null = null;
 
   const flush = (): void => {
     for (const row of marks) {
@@ -130,31 +163,26 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       }
     },
     fill(columns: LaneColumns | null) {
-      const delta = holds && holds.size > 0 ? holds.delta : null;
-      if (delta) {
-        const { held, size } = holds!;
-        for (let j = 0; j < size; j++) {
-          const at = held[j]! * n;
-          for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + delta[at + k]!;
-        }
-      }
-      if (columns) {
-        const { cols, tags, count } = columns;
-        for (let j = 0; j < count; j++) {
-          const at = tags[j]! * n;
-          if (delta) for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]! + delta[at + k]!;
-          else for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]!;
-        }
-      }
+      last = columns;
+      pass(shown, committed, n, holds, columns);
       flush();
       opts.show?.();
+    },
+    refill() {
+      const { show } = opts;
+      opts.show = undefined;
+      try { rows.fill(last); } finally { opts.show = show; }
+    },
+    rows() {
+      const gone = new Set(free);
+      return Array.from({ length: high }, (_, r) => r).filter((r) => !gone.has(r));
     },
     holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {
       for (let k = 0; k < n; k++) out[at + k] = committed[row * n + k]!;
     })),
   };
 
-  return {
+  const table: TargetTable<S> = {
     axes: n,
     get size() { return size; },
     get committed() { return committed; },
@@ -201,4 +229,6 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       return target;
     },
   };
+  tables.set(table, rows);
+  return table;
 }

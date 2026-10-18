@@ -1,7 +1,7 @@
 import { axisIndexes } from '../axisNames';
 import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
-import { createHoldStore, type HoldLayer, type HoldStore } from './holdStore';
+import { createHoldStore, type HoldLayer, type HoldSources, type HoldStore } from './holdStore';
 import { absorb, axesFor, shortWay } from './offsets';
 
 /** What {@link openHold} takes. */
@@ -79,11 +79,48 @@ function dim(s: TargetState, before: readonly number[], after: readonly number[]
   }
 }
 
-function coverOf(wanted: readonly (number | string)[] | undefined, axes: TargetState['axes']): Uint8Array | null {
+export function coverOf(wanted: readonly (number | string)[] | undefined, axes: TargetState['axes']): Uint8Array | null {
   if (!wanted) return null;
   const covers = new Uint8Array(axes.count);
   for (const a of axisIndexes(axes, wanted)) covers[a] = 1;
   return covers;
+}
+
+/** Puts a hold on `s` in `layer` of the store its holds fold in. The caller folds it in. */
+export function enterHold(
+  ctx: AnimationContext, s: TargetState, layer: (store: HoldStore, row: number) => HoldLayer, sources: HoldSources,
+): { store: HoldStore; row: number; layer: HoldLayer } {
+  ctx.targets.attach(s);
+  s.held += 1;
+  const { store, row } = holdsOf(s);
+  const l = layer(store, row);
+  store.join(l, row, sources);
+  ctx.targets.holding(store, 1);
+  return { store, row, layer: l };
+}
+
+/** Takes `s`'s hold in `layer` off it. With `commit`, the committed value moves so that what
+ *  `s` shows stays where it was. The caller shows what is left. */
+export function leaveHold(ctx: AnimationContext, s: TargetState, layer: HoldLayer, covers: Uint8Array | null, commit: boolean): void {
+  const { store, row } = s.holds!;
+  if (commit && !s.discard) {
+    store.refold(row);
+    const committed = s.axes.to(s.get());
+    const f = both(s, layer, committed);
+    absorb(s, settle(s, f, covers, committed));
+    dim(s, f.all.total, f.rest.total);
+  }
+  store.part(layer, row);
+  ctx.targets.holding(store, -1);
+  s.held -= 1;
+  if (s.held === 0) {
+    s.holds = null;
+    // Nothing stands in front of the committed value now, so it takes what waited beside it.
+    const beside = s.beside;
+    s.beside = null;
+    if (beside) absorb(s, beside);
+  }
+  ctx.targets.detach(s);
 }
 
 /** Holds a value on a target: it shows `value` where the committed value would show. */
@@ -94,12 +131,7 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   axesFor(ax, o.value(), 'value');
   let gone = false;
   const covers = coverOf(o.axes, ax);
-
-  ctx.targets.attach(state);
-  s.held += 1;
-  const { store, row } = holdsOf(state);
-  const layer = store.free(row);
-  store.join(layer, row, {
+  const { layer } = enterHold(ctx, state, (store, row) => store.free(row), {
     value: ax.write
       ? (out, at) => ax.write!(o.value(), out, at)
       : (out, at) => out.set(ax.to(o.value()), at),
@@ -107,32 +139,14 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
     covers,
     fixed: o.fixed === true,
   });
-  ctx.targets.holding(store, 1);
   ctx.touch(state, true);
 
   return {
     touch: () => { if (!gone) ctx.touch(state); },
     leave(commit) {
       if (gone) return;
-      if (commit && !s.discard) {
-        store.refold(row);
-        const committed = ax.to(s.get());
-        const f = both(state, layer, committed);
-        absorb(s, settle(state, f, covers, committed));
-        dim(state, f.all.total, f.rest.total);
-      }
       gone = true;
-      store.part(layer, row);
-      ctx.targets.holding(store, -1);
-      s.held -= 1;
-      if (s.held === 0) {
-        s.holds = null;
-        // Nothing stands in front of the committed value now, so it takes what waited beside it.
-        const beside = s.beside;
-        s.beside = null;
-        if (beside) absorb(s, beside);
-      }
-      ctx.targets.detach(state);
+      leaveHold(ctx, state, layer, covers, commit);
       ctx.touch(state, true);
     },
   };

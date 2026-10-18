@@ -16,6 +16,8 @@ export type OpenTrackHold = (
   value: () => unknown,
   weight: () => number,
   axes?: readonly (number | string)[],
+  /** True where `weight` answers the same throughout: the hold is then read only when touched. */
+  fixed?: boolean,
 ) => TrackHold;
 
 /** A timeline's sampled tracks: sampled at the playhead, and held on the targets they name. */
@@ -53,7 +55,9 @@ export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
   const openOn = (st: SampledTrack<unknown>, h: Held): TrackHold => {
     if (!open) throw new Error('timeline: a track with a `target` needs a timeline made by an animator');
     const w = st.weight ?? 1;
-    return open(st.target!, () => h.value, typeof w === 'function' ? w : () => w, st.axes);
+    return typeof w === 'function'
+      ? open(st.target!, () => h.value, w, st.axes)
+      : open(st.target!, () => h.value, () => w, st.axes, true);
   };
 
   const place = (st: SampledTrack<unknown>, value: unknown, t: number): void => {

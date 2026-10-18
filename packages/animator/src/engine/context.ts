@@ -77,6 +77,8 @@ export interface AnimationContext {
   /** Says a voice on `target` reads something that changed outside the frame's own reading. It
    *  is read again once the frame's ticks are done; with `now`, or between frames, at once. */
   touch(target: TargetState, now?: boolean): void;
+  /** Asks for a frame, where one is not running: something it shows has changed. */
+  wake(): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   /** Retires whoever holds `key` as interrupted by `by`, ahead of `by`'s own registration. */

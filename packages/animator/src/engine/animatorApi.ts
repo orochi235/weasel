@@ -16,6 +16,7 @@ import type { ActiveAnimation, AnimationContext } from './context';
 import { decayAsPhysics } from './decay';
 import type { AnimatorClock } from './frame';
 import { startHold } from './holdAnimation';
+import { startHoldRows } from './holdRows';
 import { openHold } from './holds';
 import { startOffsetPhysics } from './offsetPhysics';
 import { startOffsetTween } from './offsetTween';
@@ -68,8 +69,8 @@ function startTimeline(host: ApiHost, o: TimelineOptions): ReturnType<Animator['
     const a = table.animations.get(id);
     return a && table.infoOf(a);
   };
-  const hold: OpenTrackHold = (target, value, weight, axes) =>
-    openHold(ctx, { target: stateOf(target), value, weight, axes });
+  const hold: OpenTrackHold = (target, value, weight, axes, fixed) =>
+    openHold(ctx, { target: stateOf(target), value, weight, axes, fixed });
   return createTimeline(table.register, id, o, {
     get watched() { return hub.watched; },
     fire: (track, path, event, lateBy) => {
@@ -111,6 +112,7 @@ export function createAnimatorApi(host: ApiHost): Animator {
       physics<T>(decayAsPhysics(o), 'decay'),
     physics,
     hold: (o) => startHold(ctx, o),
+    holdRows: (o) => startHoldRows(ctx, o),
     cancel: (handle) => table.retire(handle.id),
     cancelKey: (key) => table.cancelByKey(key),
     cancelAll: () => {

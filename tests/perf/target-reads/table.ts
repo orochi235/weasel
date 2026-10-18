@@ -1,8 +1,9 @@
 // A frame of N moving [x, y] values, read every frame: as targets read one at a time, and as
 // rows of a target table. Steady, then with rows stopping and starting every frame.
-// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held | heldfn>`.
+// Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held | heldfn | heldrows>`.
 // `held` is N table rows with a hold each and no animation; `heldfn` gives each hold its value
-// as a function, which is asked every frame.
+// as a function, which is asked every frame; `heldrows` holds them all with `animator.holdRows`,
+// whose values are written in place and touched every frame.
 // `idle` is the frame with nothing read, to take off the other two.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
@@ -142,9 +143,33 @@ function heldCase(asked: boolean): void {
   if (table.shown[row * AXES] !== want[0] || want[0] !== row / 2) throw new Error(`held: row ${row} shows ${table.shown[row * AXES]}`);
 }
 
-// One case a process (argv[2]: idle | targets | table | held | heldfn): three sets of targets alive together
+/** N rows of a table held by one `holdRows`, their values written and touched every frame. */
+function heldRowsCase(): void {
+  const m = mount();
+  const table = createTargetTable({ axes: AXES });
+  for (let row = 0; row < N; row++) table.add([0, 0]);
+  const h = m.api.holdRows({ table, weight: 0.5 });
+  let k = 0;
+  const write = (): void => {
+    k += 1;
+    const v = h.values;
+    for (let row = 0; row < N; row++) { v[row * AXES] = row + k; v[row * AXES + 1] = 100; }
+    h.touch();
+  };
+  for (let f = 0; f < 5; f++) { write(); m.frame(); }
+  time('held by holdRows, written a frame', () => { write(); m.frame(); void table.shown; });
+  const row = N >> 1;
+  const want = table.target(row).read();
+  if (table.shown[row * AXES] !== want[0] || want[0] !== (row + k) / 2) throw new Error(`heldrows: row ${row} shows ${table.shown[row * AXES]}`);
+}
+
+// One case a process (argv[2]: idle | targets | table | held | heldfn | heldrows): three sets of targets alive together
 // push each other out of cache, and a frame at 100k rows is bound by memory.
 const which = process.argv[2] ?? 'table';
+if (which === 'heldrows') {
+  heldRowsCase();
+  process.exit(0);
+}
 if (which === 'held' || which === 'heldfn') {
   heldCase(which === 'heldfn');
   process.exit(0);

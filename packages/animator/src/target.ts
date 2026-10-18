@@ -105,6 +105,11 @@ export interface RowTable {
   fill(columns: LaneColumns | null): void;
   /** The holds on the table's rows, made the first time they are asked for. */
   holds(): HoldStore;
+  /** The rows in use. */
+  rows(): number[];
+  /** Fills its rows' values on screen again from the columns the last frame gave it, for holds
+   *  written since. */
+  refill(): void;
 }
 
 /** An animation's share in moving a target's committed value, which its holds stand in front of. */
@@ -144,6 +149,9 @@ export interface TargetState<T = unknown> {
    *  had gone, or what was left of a `from` away from the committed value. It waits here, on
    *  screen, until the holds go or an animation with a destination takes it up. */
   beside: number[] | null;
+  /** What animations over many targets, which the table of animations does not file under
+   *  this one, do to let it go when it is stopped. */
+  parts: Set<() => void>;
   /** Its place in a table of targets, for a row of one. */
   row: { readonly table: RowTable; readonly index: number } | null;
   /** How many animations are moving it. */
@@ -281,6 +289,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     behind: new Set(),
     dimmed: false,
     beside: null,
+    parts: new Set(),
     row: null,
     live: 0,
     slot: null,

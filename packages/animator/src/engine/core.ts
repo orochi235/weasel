@@ -67,6 +67,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const targets = createTargetBook({
     stop: (s) => {
       for (const a of [...table.on(s)]) table.retire(a.id);
+      for (const part of [...s.parts]) part();
     },
     columns: (table) => codec.columns(table),
   });
@@ -91,6 +92,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       refold(target);
       if (!frame.framing()) host.requestFrame();
     },
+    wake: () => { if (!frame.framing()) host.requestFrame(); },
     tripwire: host.tripwire,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
     velocityUnder: (key, target) => {
