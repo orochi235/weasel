@@ -59,7 +59,7 @@ export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSour
       }
       const step = (opts.stepDeg ?? DEFAULT_STEP_DEG) * DEG;
       if (step <= 0) return;
-      for (const angle of stepAngles(q.theta, step)) yield { angle, mark: stepLine(pivot, angle, reach) };
+      for (const angle of stepAngles(q.theta, step)) yield { angle, mark: guideLine(pivot, angle, reach) };
     },
   };
 }
@@ -114,6 +114,6 @@ function along(from: Point, angle: number, len: number): Point {
 }
 
 /** The line through `pivot` at `angle`, `reach` either side of it. */
-function stepLine(pivot: Point, angle: number, reach: number): SnapMark {
+function guideLine(pivot: Point, angle: number, reach: number): SnapMark {
   return { kind: 'line', from: along(pivot, angle + Math.PI, reach), to: along(pivot, angle, reach) };
 }

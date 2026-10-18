@@ -6,9 +6,10 @@
  * put it back. Path edit's dep source and a stub of its dep let a package
  * building on path edit test against the real thing, and a fake adapter's
  * flat tree lets one test a commit through ops. A snap session built straight
- * from a scene lets a package's snap source be tested without mounting a canvas. These live here rather
- * than on the package barrel so that reaching for them is a deliberate import
- * of a test surface, not something an application finds by autocomplete.
+ * from a scene lets a package's snap source be tested without mounting a
+ * canvas. These live here rather than on the package barrel so that reaching
+ * for them is a deliberate import of a test surface, not something an
+ * application finds by autocomplete.
  *
  * @packageDocumentation
  */

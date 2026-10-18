@@ -9,6 +9,13 @@ export function snapSourcesFor<S extends Pick<SnapSource<unknown>, 'gestures'>>(
   return sources.filter((s) => (s.gestures ?? DEFAULT_GESTURES).includes(gesture));
 }
 
+/** `sources` with one source per id: the last one listed, where it stands.
+ *  A later source with an id replaces an earlier one rather than doubling it. */
+export function distinctSnapSources<S extends Pick<SnapSource<unknown>, 'id'>>(sources: readonly S[]): S[] {
+  const last = new Map(sources.map((s, i) => [s.id, i]));
+  return sources.filter((s, i) => last.get(s.id) === i);
+}
+
 /** What a candidate draws when the result meets it. */
 export type SnapCandidateMark<P> = NonNullable<SourceCandidate<P>['mark']>;
 
