@@ -423,17 +423,10 @@ Priority tags:
   sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
   rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
-  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
-  per-path origin in `@weasel-js/geom`'s tessellation.
-
-- **(P3) Curve flattening ignores zoom on the live canvas.** `<Canvas>` leaves `flattenTolerance`
-  unset unless a consumer passes one, and WeaselDraw doesn't, so every curve flattens at
-  `DEFAULT_FLATTEN_TOLERANCE`, 0.5 world units, whatever the zoom: 4 px of chord error at 8x.
-  `renderSceneToPixels` already derives the tolerance from the output scale. The live path
-  needs the same, with the fill and stroke mesh caches keyed on a quantized tolerance, so that
-  a continuous zoom doesn't rebuild every mesh on every frame. Thick strokes already cap each
-  flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
-  look like at a tight bend but not this.
+  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first cannot be
+  fixed in tessellation alone: `PolygonPath.coords` is a `Float32Array`, so the grid is already in
+  the path before the tessellator reads it. It needs the path itself to carry an origin (or
+  double coords), which every reader of `coords` would then honor.
 
 ---
 
@@ -1192,9 +1185,10 @@ only story runner in the repo.
   main-thread `OffscreenCanvas` that rasterizes pattern tiles in
   `packages/core/src/features/patterns/` is not worker offload.
 - **(P3) Headless server-side rendering in Node.** `renderSceneToPixels`
-  (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`. Left: verify
-  it against a `gl` from `headless-gl` (untested there), or wire up a worker + `OffscreenCanvas`
-  path for a Node-hosted consumer.
+  (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
+  be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3
+  only, vertex arrays through `OES_vertex_array_object`, and Node has no `OffscreenCanvas`. Left:
+  find a Node binding that provides WebGL2, or host the render in headless Chromium.
 - **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
   `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
   smaller, so only an image that is drawn small pays for them. The screen path still builds its
