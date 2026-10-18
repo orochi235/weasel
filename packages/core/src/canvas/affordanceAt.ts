@@ -119,7 +119,7 @@ export function anchorStateFrom(
 }
 
 /**
- * Build the `affordanceAt` thunk for `GestureDispatcherMounter`. The point is
+ * Build the `affordanceAt` thunk for `useSceneGestureDispatcher`. The point is
  * **world-space**; callers convert from client coords first. Priority follows
  * the order of {@link chromeAffordances}, topmost first.
  */

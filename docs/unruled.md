@@ -26,7 +26,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-07: `gestureViewReader` and `gesturePlaneReader` type their `view`; `FEATURE_ACTION_IDS`
   lost its `pick` and `transform` keys; callback types are bivariant.
 - 2026-10-13 (pass 6): One `heldPointers(element)` in `@weasel-js/gestures` answers for the
-  dispatcher's hover, `useSurfaceInput`, and `PointerPublisher`. A move with a secondary or middle
+  dispatcher's hover, `useSurfaceInput`, and `usePointerPublisher`. A move with a secondary or middle
   button held is no longer a `hover`, the `pointer` dep no longer reports a drag that began off the
   canvas, and `PointerInput.heldCount` is gone.
 - 2026-10-13 (pass 6): `BehaviorResult.pose` and `BehaviorMoveResult` are gone; `transform` is the

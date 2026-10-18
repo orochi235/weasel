@@ -2,7 +2,7 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
 > A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. F, G, I, J, and N have landed and are deleted, F except for the item still listed
+> written as found. E, F, G, I, J, and N have landed and are deleted, F except for the item still listed
 > under it, and H has landed except for the item still listed under it. Every other lettered
 > section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
@@ -47,10 +47,10 @@ tools, ambient entry, and chrome. What is left is the rotate opt-out, which was 
 collapsed, because the three sites do not agree and the difference can be observed
 (`SceneCanvas.rotateOff.test.tsx`, run against the code):
 
-- `resolvedActions` mutes the `rotate` action. That also covers a tool that binds `rotate`, and it
+- `useSceneStandardActions` mutes the `rotate` action. That also covers a tool that binds `rotate`, and it
   yields to a consumer's own `actions.rotate`, which stays registered and merged.
 - `chromeRules` hides `selection.rotation-handle`, and a consumer `chromeVisibility` rule can put it back.
-- `rotateOptions` turns `false` into `undefined`, and the rotate preset's ambient entry stays installed.
+- `useSceneCanvasTools` turns `false` into `undefined` for the rotate binding, and the rotate preset's ambient entry stays installed.
   With the handle put back, a drag on it resolves the `rotate` binding, finds the action muted, and the
   dispatcher warns `binding resolved actionId "rotate" which has no registered action`.
 
@@ -68,15 +68,6 @@ The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context,
 - **One ref stays in `SceneCanvasInner`:** the selection as of the last commit. `selection.current` is
   a live getter on the kit's own selection, so reading it at rule time would run ahead of the painted
   chrome.
-
-### E. Mounter children and the refs that feed them
-
-Lines 757, 762-768, 1099, 1263-1333.
-
-- **The registrar takes 37 props (1263-1299)**, mostly values this function computed only to hand down.
-- **`ToolKeybindingsMounter`** is misnamed: it also installs every contribution's actions, deps, and `attach` (`useContributionRoles`). It needs two `useKeybindings` calls because the takeover branch is decided above it.
-- **Mounter props that are constant gates** (evidence): `boundsOf` is read only in `if (!selectionRef || !boundsOf || !viewRef) return undefined` (`GestureDispatcherMounter.tsx:151`), and all three are always passed.
-- **Safe to convert to hooks when:** `PointerProviderIfRoot` moves into the wrapper (the registrar calls `usePointerContext()`), and the ordering the registrar relies on is kept. The registrar's own comment at 264-270 depends on child effects running before parent effects.
 
 ### F. View state mirror
 
@@ -179,7 +170,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 1. Landed: path-edit state, mask, live path, and overlay to `features/paths` (A).
 2. Landed: chrome-caps rule context to `features/chrome-caps`, and preset chrome and bindings to the preset table (C, D).
-3. Mounters become hooks, removing the 37-prop call (E). Landed ahead of it: the dispatcher and `ingest` read the actions registry from scope, where `getActionRef` and `actionsRegistryRef` carried it up from the registrar.
+3. Landed: the mounters are hooks, called from one `SceneCanvasInput` component ahead of the canvas's children (E).
 4. Landed: one camera, made in SceneCanvas and handed to `<Canvas>` (F).
 5. Landed: ingestion hook (J).
 6. Landed: selection read-only view and kind labels to `core/selection` (H). The two kind classifiers stay two.
@@ -200,8 +191,7 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 
 ## (c) Not determined
 
-- **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, most of E disappears, but that is a design question I could not settle by reading.
-- **Effect ordering.** I did not trace every dep registration to confirm that turning the registrar into a hook keeps the child-before-parent order its comment relies on.
+- **View zero as a `CanvasView`.** I read `CanvasView.tsx` only at 245-405. If view zero could be one, `SceneCanvasInput` could go, but that is a design question I could not settle by reading.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
 - **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, or `insertTool` are unknown.
 ## From the Canvas.tsx pass

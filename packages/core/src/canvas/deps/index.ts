@@ -1,5 +1,5 @@
 /**
- * Per-dep wiring modules — extracted from `StandardActionsRegistrar` so each
+ * Per-dep wiring modules — extracted from `useSceneStandardActions` so each
  * kit-standard dep source lives in its own file. Consumers augmenting
  * `DepSchema` can use these as templates for their own dep modules.
  *

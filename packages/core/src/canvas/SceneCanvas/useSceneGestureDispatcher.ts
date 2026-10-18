@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/react';
 import { createLongPressStore, type Dispatcher } from '@weasel-js/routing';
-import { useActionsRegistry, useDepRegistry, useGestureDispatcher } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
@@ -15,37 +15,13 @@ import { useChromeAffordances } from './useChromeAffordances';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
-import { useOptionalViewRegistry } from '../viewRegistry';
+import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
 import { traceConversion } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
-export function GestureDispatcherMounter({
-  canvasRef,
-  canvasApiRef,
-  tools,
-  contributions,
-  enabled,
-  keyboard,
-  claimKeys,
-  selectionRef,
-  boundsOf,
-  planeOfNode,
-  pickEvery,
-  pickBest,
-  kindOfNode,
-  viewRef,
-  dispatcher,
-  getIsVisibleForCanvas,
-  getRuleCtx,
-  targetScale,
-  handleHitRadius,
-  rotationBadge,
-  chromeAffordancesRef,
-  onDoubleClick,
-  onClick,
-  longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
-}: {
+/** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
+export interface SceneGestureDispatcherInputs {
   canvasRef: React.RefObject<HTMLElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
    *  `requestRedraw()` between pointer events. */
@@ -107,29 +83,21 @@ export function GestureDispatcherMounter({
   onClick?: (world: { x: number; y: number }) => void;
   /** Backs `<SceneCanvas longPress>`. */
   longPress?: SceneCanvasLongPress;
-}) {
-  const registry = useActionsRegistry();
-  const depRegistry = useDepRegistry();
-  const viewRegistry = useOptionalViewRegistry();
-  const entriesById = useMemo<ReadonlyMap<string, Contribution>>(() => {
-    const m = new Map<string, Contribution>();
-    for (const [id, tool] of Object.entries(tools.registry)) {
-      m.set(id, tool);
-    }
-    for (const entry of contributions) m.set(entry.id, entry);
-    // Ambient entries too — their bindings assemble at ambient scope, and the
-    // dispatcher resolves them through this same map.
-    for (const entry of tools.ambient) m.set(entry.id, entry);
-    return m;
-  }, [tools.registry, tools.ambient, contributions]);
+}
 
+type AffordanceInputs = Pick<
+  SceneGestureDispatcherInputs,
+  | 'canvasApiRef' | 'selectionRef' | 'boundsOf' | 'planeOfNode' | 'viewRef' | 'getIsVisibleForCanvas'
+  | 'targetScale' | 'handleHitRadius' | 'rotationBadge' | 'chromeAffordancesRef'
+>;
 
-  // Stable refs for the optional thunk inputs so the thunks themselves are
-  // stable function identities across renders (no need to pass them as deps).
-  const pickEveryRef = useLatest(pickEvery);
-  const pickBestRef = useLatest(pickBest);
-  const kindOfNodeRef = useLatest(kindOfNode);
-
+/** What a press on the canvas grabs: a registered layer's widget, else a piece of the
+ *  selection chrome. */
+function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, viewRegistry: ViewRegistry | null) {
+  const {
+    canvasApiRef, selectionRef, boundsOf, planeOfNode, viewRef, getIsVisibleForCanvas,
+    targetScale, handleHitRadius, rotationBadge, chromeAffordancesRef,
+  } = inputs;
   // `getAnchorState` thunk for `buildAffordanceAt` — reads the live
   // `editAnchors` dep from the registry at call time.
   const depRegistryRef = useLatest(depRegistry);
@@ -163,9 +131,36 @@ export function GestureDispatcherMounter({
     });
   }, [selectionRef, boundsOf, viewRef, affordances, getIsVisibleForCanvas, viewRegistry]);
 
+  return useMemo(() => {
+    // Note this is NOT gated on `affordanceAt` being built: registered layers
+    // produce affordances of their own, and a consumer with no selection
+    // chrome (a canvas that is nothing but a HUD, say) still needs those.
+    return (worldPoint: { x: number; y: number }) => {
+      // Registered layers first: they draw on top of the kit's own chrome, so
+      // they get first refusal on the point. A hit becomes an `AffordanceHit`
+      // whose kind names the layer, carrying whatever the layer's hit-test
+      // resolved — which is how `@weasel-js/hud` routes a press on one of its
+      // widgets to its own action instead of the active tool.
+      const extra = canvasApiRef.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
+      if (extra) return layerAffordance(extra.layerId, extra.hit);
+      return affordanceAt ? affordanceAt(worldPoint) : null;
+    };
+  }, [affordanceAt, canvasApiRef]);
+}
+
+/** Which body a world point lands on, its selection state, and its routing kind. */
+function useClassifyTarget(
+  inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef'>,
+  kindOfNodeRef: { readonly current: SceneGestureDispatcherInputs['kindOfNode'] },
+) {
+  const { selectionRef, pickEvery, pickBest, viewRef } = inputs;
+  // Stable refs for the optional thunk inputs so the thunks themselves are
+  // stable function identities across renders (no need to pass them as deps).
+  const pickEveryRef = useLatest(pickEvery);
+  const pickBestRef = useLatest(pickBest);
   // Build the `classifyTarget` thunk. Takes world coords and delegates to
   // `buildClassifyTarget`.
-  const classifyTarget = useMemo(() => {
+  return useMemo(() => {
     if (!selectionRef || !pickEvery || !viewRef) return undefined;
     return buildClassifyTarget(
       () => selectionRef.current?.current ?? [],
@@ -185,6 +180,34 @@ export function GestureDispatcherMounter({
       (id: string) => kindOfNodeRef.current?.(id),
     );
   }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef]);
+}
+
+/** Runs this canvas's gesture dispatcher over its tools, contributions, and chrome. */
+export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs): void {
+  const {
+    canvasRef, canvasApiRef, tools, contributions, enabled, keyboard, claimKeys, viewRef,
+    kindOfNode, dispatcher, getRuleCtx, onDoubleClick, onClick,
+    longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
+  } = inputs;
+  const registry = useActionsRegistry();
+  const depRegistry = useDepRegistry();
+  const viewRegistry = useOptionalViewRegistry();
+  const entriesById = useMemo<ReadonlyMap<string, Contribution>>(() => {
+    const m = new Map<string, Contribution>();
+    for (const [id, tool] of Object.entries(tools.registry)) {
+      m.set(id, tool);
+    }
+    for (const entry of contributions) m.set(entry.id, entry);
+    // Ambient entries too — their bindings assemble at ambient scope, and the
+    // dispatcher resolves them through this same map.
+    for (const entry of tools.ambient) m.set(entry.id, entry);
+    return m;
+  }, [tools.registry, tools.ambient, contributions]);
+
+  const kindOfNodeRef = useLatest(kindOfNode);
+
+  const affordanceWithLayers = useAffordanceAt(inputs, depRegistry, viewRegistry);
+  const classifyTarget = useClassifyTarget(inputs, kindOfNodeRef);
 
   // Through the handle, so a `clientToWorld` override on the canvas applies.
   const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
@@ -194,22 +217,6 @@ export function GestureDispatcherMounter({
     traceConversion(clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
   }, [canvasRef, canvasApiRef, viewRef]);
-
-  const affordanceWithLayers = useMemo(() => {
-    // Note this is NOT gated on `affordanceAt` being built: registered layers
-    // produce affordances of their own, and a consumer with no selection
-    // chrome (a canvas that is nothing but a HUD, say) still needs those.
-    return (worldPoint: { x: number; y: number }) => {
-      // Registered layers first: they draw on top of the kit's own chrome, so
-      // they get first refusal on the point. A hit becomes an `AffordanceHit`
-      // whose kind names the layer, carrying whatever the layer's hit-test
-      // resolved — which is how `@weasel-js/hud` routes a press on one of its
-      // widgets to its own action instead of the active tool.
-      const extra = canvasApiRef.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
-      if (extra) return layerAffordance(extra.layerId, extra.hit);
-      return affordanceAt ? affordanceAt(worldPoint) : null;
-    };
-  }, [affordanceAt, canvasApiRef]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
@@ -258,5 +265,4 @@ export function GestureDispatcherMounter({
   });
   useDispatchDepSources(longPressState, classifyTarget, kindOfNodeRef);
   useKitSettingsDepSource();
-  return null;
 }
