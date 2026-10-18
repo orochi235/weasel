@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import { Palette } from './Palette';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -54,5 +55,17 @@ describe('Palette', () => {
     fireEvent.pointerUp(panel, { clientX: 5, clientY: 5 });
     expect(onDrag).not.toHaveBeenCalled();
     expect(onDrop).not.toHaveBeenCalled();
+  });
+
+  it('picks a tool up only past the gestures.dragPx kit setting', () => {
+    const onDrag = vi.fn();
+    renderWithIcons(<KitSettingsProvider value={{ gestures: { dragPx: 40 } }}><Palette onDrag={onDrag} onDrop={vi.fn()} /></KitSettingsProvider>);
+    const panel = screen.getByRole('button', { name: 'Panel' });
+    fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerMove(panel, { clientX: 25, clientY: 5 });
+    expect(onDrag).not.toHaveBeenCalled();
+    fireEvent.pointerMove(panel, { clientX: 50, clientY: 5 });
+    expect(onDrag).toHaveBeenCalled();
+    fireEvent.pointerUp(panel, { clientX: 50, clientY: 5 });
   });
 });

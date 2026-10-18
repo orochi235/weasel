@@ -1,4 +1,5 @@
 import {
+  type GestureContext,
   type SnapStrategy,
   screenTolerance,
   type OriginProjection,
@@ -10,12 +11,18 @@ import { nearestGuideDelta } from './onPlane';
 /** Default snap tolerance (screen pixels). */
 export const DEFAULT_GUIDE_TOLERANCE_PX = 6;
 
+/** A guide snap's reach in screen px: its own `tolerance`, else the gesture's
+ *  `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
+export function guideTolerance(own: number | undefined, ctx: Pick<GestureContext<unknown>, 'kitSettings'>): number {
+  return own ?? ctx.kitSettings?.get('targets.guideSnapPx') ?? DEFAULT_GUIDE_TOLERANCE_PX;
+}
+
 /** Options for `guideSnapStrategy`. */
 export interface GuideSnapOptions<TPose> {
   /**
    * Tolerance in screen pixels, divided by the gesture view's scale so the
-   * trigger zone stays the same on screen at every zoom. Defaults to
-   * `DEFAULT_GUIDE_TOLERANCE_PX`.
+   * trigger zone stays the same on screen at every zoom. Defaults to the
+   * `targets.guideSnapPx` kit setting, else `DEFAULT_GUIDE_TOLERANCE_PX`.
    */
   tolerance?: number;
   /**
@@ -51,7 +58,6 @@ export function guideSnapStrategy<TPose>(
   getGuides: () => readonly Guide[],
   options: GuideSnapOptions<TPose> = {},
 ): SnapStrategy<TPose> {
-  const tolerance = options.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
   const proj: OriginProjection<TPose> =
     options.origin ?? (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
 
@@ -62,7 +68,7 @@ export function guideSnapStrategy<TPose>(
 
       // Per axis: a guide on the x axis is matched by a horizontal distance,
       // so it answers to `scale.x` alone.
-      const tol = screenTolerance(tolerance, ctx);
+      const tol = screenTolerance(guideTolerance(options.tolerance, ctx), ctx);
 
       const o = proj.getOrigin(pose);
       const dx = nearestGuideDelta(guides, 'x', o.x, tol.x, ctx.plane) ?? 0;

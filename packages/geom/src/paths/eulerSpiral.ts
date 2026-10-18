@@ -1,12 +1,14 @@
 /**
- * One Euler-spiral segment: a curve whose curvature changes linearly with arc
- * length, fitted between two points so it leaves the first and reaches the
- * second at given angles to the chord. `solveSpiro` joins these into a
- * curvature-continuous spline.
+ * One spiral segment, fitted between two points so it leaves the first and
+ * reaches the second at given angles to the chord. `solveSpiro` joins these
+ * into a curvature-continuous spline.
  *
- * In its normalized frame the segment has unit arc length and tangent angle
- * `φ(s) = k0·(s − ½) + (k1 / 2)·(s − ½)²`, so `k0` is the total turn and `k1`
- * how fast the curvature changes along it.
+ * In its normalized frame the segment has unit arc length and, with
+ * `u = s − ½`, tangent angle `φ = k0·u + (k1/2)·u² + (k2/6)·u³ + (k3/24)·u⁴`,
+ * so its curvature is `k0 + k1·u + (k2/2)·u² + (k3/6)·u³`. An Euler spiral has
+ * `k2 = k3 = 0`: its curvature changes linearly along it. A cubic-curvature
+ * segment uses all four, which is what lets a G4 point keep the curvature's
+ * first two derivatives continuous as well.
  */
 import type { Point } from './cubicMath';
 
@@ -14,6 +16,9 @@ import type { Point } from './cubicMath';
 export interface EulerFit {
   k0: number;
   k1: number;
+  /** Zero on an Euler spiral; set on a cubic-curvature segment. */
+  k2: number;
+  k3: number;
   /** Chord over arc length: the normalized segment's chord length. */
   ratio: number;
   /** The normalized chord's angle, which the world chord is rotated onto. */
@@ -27,15 +32,15 @@ const MAX_ANGLE = Math.PI * 0.95;
 
 const clampAngle = (a: number): number => Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, a));
 
-/** `∫₀^upTo e^{iφ(s)} ds` for the normalized segment `(k0, k1)`. */
-export function integrateEuler(k0: number, k1: number, upTo = 1): Point {
+/** `∫₀^upTo e^{iφ(s)} ds` for the normalized segment `(k0, k1, k2, k3)`. */
+export function integrateEuler(k0: number, k1: number, upTo = 1, k2 = 0, k3 = 0): Point {
   const n = Math.max(2, Math.ceil((STEPS * upTo) / 2) * 2);
   const h = upTo / n;
   let x = 0;
   let y = 0;
   for (let i = 0; i <= n; i++) {
     const u = i * h - 0.5;
-    const phi = k0 * u + 0.5 * k1 * u * u;
+    const phi = k0 * u + u * u * (k1 / 2 + u * (k2 / 6 + (u * k3) / 24));
     const w = i === 0 || i === n ? 1 : i % 2 === 1 ? 4 : 2;
     x += w * Math.cos(phi);
     y += w * Math.sin(phi);
@@ -43,31 +48,34 @@ export function integrateEuler(k0: number, k1: number, upTo = 1): Point {
   return { x: (x * h) / 3, y: (y * h) / 3 };
 }
 
-/** How far the start angle `(k0, k1)` makes is from `th0`. */
-function startError(k0: number, k1: number, th0: number): number {
-  const c = integrateEuler(k0, k1);
-  return -k0 / 2 + k1 / 8 - Math.atan2(c.y, c.x) - th0;
+/** How far the start angle of `(k0, k1, k2, k3)` is from `th0`. */
+function startError(k0: number, k1: number, k2: number, k3: number, th0: number): number {
+  const c = integrateEuler(k0, k1, 1, k2, k3);
+  return -k0 / 2 + k1 / 8 - k2 / 48 + k3 / 384 - Math.atan2(c.y, c.x) - th0;
 }
 
 /**
- * The Euler spiral leaving its chord at angle `th0` and reaching the far end
- * at angle `th1`, both measured from the chord, counterclockwise positive.
+ * The spiral leaving its chord at angle `th0` and reaching the far end at
+ * angle `th1`, both measured from the chord, counterclockwise positive. With
+ * `k2` and `k3` left at zero it is an Euler spiral; given, they are the
+ * cubic-curvature segment's higher terms, and `k0` and `k1` are fitted around them.
  */
-export function fitEulerSegment(th0: number, th1: number): EulerFit {
+export function fitEulerSegment(th0: number, th1: number, k2 = 0, k3 = 0): EulerFit {
   const t0 = clampAngle(th0);
   const t1 = clampAngle(th1);
-  const k0 = t1 - t0;
+  // The odd terms set the total turn; the even ones bow the segment.
+  const k0 = t1 - t0 - k2 / 24;
   // The small-angle solution, then Newton on the one remaining unknown.
-  let k1 = 6 * (t0 + t1);
+  let k1 = 6 * (t0 + t1) - k3 / 40;
   for (let iter = 0; iter < 12; iter++) {
-    const e = startError(k0, k1, t0);
+    const e = startError(k0, k1, k2, k3, t0);
     if (Math.abs(e) < 1e-12) break;
-    const d = (startError(k0, k1 + 1e-6, t0) - e) / 1e-6;
+    const d = (startError(k0, k1 + 1e-6, k2, k3, t0) - e) / 1e-6;
     if (!Number.isFinite(d) || Math.abs(d) < 1e-12) break;
     k1 -= e / d;
   }
-  const c = integrateEuler(k0, k1);
-  return { k0, k1, ratio: Math.hypot(c.x, c.y), chordAngle: Math.atan2(c.y, c.x) };
+  const c = integrateEuler(k0, k1, 1, k2, k3);
+  return { k0, k1, k2, k3, ratio: Math.hypot(c.x, c.y), chordAngle: Math.atan2(c.y, c.x) };
 }
 
 /** A fitted segment placed between two world points. */
@@ -90,7 +98,7 @@ export function placeEulerSegment(fit: EulerFit, p0: Point, p1: Point): EulerSeg
 
 /** The point at fraction `s` of the arc length along `seg`. */
 export function eulerPointAt(seg: EulerSegment, s: number): Point {
-  const c = integrateEuler(seg.k0, seg.k1, s);
+  const c = integrateEuler(seg.k0, seg.k1, s, seg.k2, seg.k3);
   const cos = Math.cos(seg.rotation);
   const sin = Math.sin(seg.rotation);
   return {
@@ -102,14 +110,28 @@ export function eulerPointAt(seg: EulerSegment, s: number): Point {
 /** World tangent angle at fraction `s` of `seg`'s arc length. */
 export function eulerAngleAt(seg: EulerSegment, s: number): number {
   const u = s - 0.5;
-  return seg.rotation + seg.k0 * u + 0.5 * seg.k1 * u * u;
+  return seg.rotation + seg.k0 * u + u * u * (seg.k1 / 2 + u * (seg.k2 / 6 + (u * seg.k3) / 24));
 }
+
+/** Normalized curvature at `u = s − ½`. */
+const bendAt = (f: EulerFit, u: number): number => f.k0 + u * (f.k1 + u * (f.k2 / 2 + (u * f.k3) / 6));
 
 /** Signed world curvature at fraction `s` of `seg`'s arc length;
  *  positive turns counterclockwise. */
 export function eulerCurvatureAt(seg: EulerSegment, s: number): number {
   if (seg.length < 1e-12) return 0;
-  return (seg.k0 + seg.k1 * (s - 0.5)) / seg.length;
+  return bendAt(seg, s - 0.5) / seg.length;
+}
+
+/** The first and second derivatives of `seg`'s world curvature with respect
+ *  to world arc length, at fraction `s` of it. */
+export function eulerCurvatureDerivativesAt(seg: EulerSegment, s: number): [number, number] {
+  if (seg.length < 1e-12) return [0, 0];
+  const u = s - 0.5;
+  return [
+    (seg.k1 + u * (seg.k2 + (u * seg.k3) / 2)) / seg.length ** 2,
+    (seg.k2 + u * seg.k3) / seg.length ** 3,
+  ];
 }
 
 const SAMPLES = 16;
@@ -204,11 +226,14 @@ export function eulerSegmentCubic(seg: EulerSegment): { c1: Point; c2: Point } {
  *  segment of its own: a piece of an Euler spiral is one. */
 export function subEulerSegment(seg: EulerSegment, s0: number, s1: number): EulerSegment {
   const d = s1 - s0;
-  const mid = (s0 + s1) / 2 - 0.5;
-  const k0 = (seg.k0 + seg.k1 * mid) * d;
-  const k1 = seg.k1 * d * d;
-  const c = integrateEuler(k0, k1);
-  const fit: EulerFit = { k0, k1, ratio: Math.hypot(c.x, c.y), chordAngle: Math.atan2(c.y, c.x) };
+  const m = (s0 + s1) / 2 - 0.5;
+  // The curvature polynomial re-centered on the piece and scaled to its length.
+  const k0 = bendAt(seg, m) * d;
+  const k1 = (seg.k1 + m * (seg.k2 + (m * seg.k3) / 2)) * d ** 2;
+  const k2 = (seg.k2 + m * seg.k3) * d ** 3;
+  const k3 = seg.k3 * d ** 4;
+  const c = integrateEuler(k0, k1, 1, k2, k3);
+  const fit: EulerFit = { k0, k1, k2, k3, ratio: Math.hypot(c.x, c.y), chordAngle: Math.atan2(c.y, c.x) };
   return placeEulerSegment(fit, eulerPointAt(seg, s0), eulerPointAt(seg, s1));
 }
 

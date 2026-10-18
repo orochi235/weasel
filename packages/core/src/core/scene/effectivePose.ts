@@ -7,6 +7,8 @@
  * dragged or derived node is.
  */
 import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
+import type { PoseComposition } from './composeFrame';
+import { depFrameRebase } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -39,6 +41,8 @@ export interface PosedNode<TPose> {
   /** Read only by the memo, which keys on its reference alongside the pose. */
   data?: unknown;
   dependsOn?: readonly NodeId[] | 'children';
+  /** Read under a composing strategy, to find the frame its pose is in. */
+  parent?: NodeId | null;
   derivePose?: DerivePoseFn<TPose>;
   /** Read only when something asks a dependency for its `path`. */
   derivePath?: DerivePathFn<TPose>;
@@ -50,6 +54,9 @@ export interface PoseSource<TPose> {
   readonly overrides: Pick<PoseOverrides<TPose>, 'read'>;
   get(id: NodeId): PosedNode<TPose> | undefined;
   childrenOf(id: NodeId): readonly NodeId[];
+  /** When it composes frames, a derivation reads each dependency in the
+   *  frame of the node deriving. */
+  readonly composition?: PoseComposition<TPose>;
 }
 
 /** A cached derived pose, with what it was derived from. */
@@ -99,7 +106,7 @@ function derivedPoseIn<TPose>(
   resolving.add(node.id);
   const hitsBefore = cycleHits;
   try {
-    const depOf = (id: NodeId) => depIn(source, id, reading);
+    const depOf = depsAsRead(source, node, reading);
     // Keyed on the authored pose, which only sees a change someone pushed, so
     // the record also carries what the derivation read and re-checks it by
     // value on a hit — see `depMemo.ts`.
@@ -143,8 +150,38 @@ function run<TPose>(
 export function derivedDepOf<TPose>(
   source: PoseSource<TPose>,
   id: NodeId,
+  reader?: PosedNode<TPose>,
 ): DerivedDep<TPose> | undefined {
-  return depIn(source, id, 'effective');
+  return reader === undefined ? depIn(source, id, 'effective') : depsAsRead(source, reader, 'effective')(id);
+}
+
+/** `(id) => that dependency as `reader`'s derivation is handed it`: its pose
+ *  in `reader`'s frame where the scene composes frames. A `'children'`
+ *  dependent shares its children's frame, so it reads them as they are. */
+function depsAsRead<TPose>(
+  source: PoseSource<TPose>,
+  reader: PosedNode<TPose>,
+  reading: Reading,
+): (id: NodeId) => DerivedDep<TPose> | undefined {
+  const plain = (id: NodeId) => depIn(source, id, reading);
+  if (reader.dependsOn === 'children') return plain;
+  const rebase = depFrameRebase(
+    source.composition,
+    reader,
+    (id) => source.get(id),
+    (id) => poseIn(source, source.get(id)!, reading),
+    (id) => {
+      const n = source.get(id);
+      return n === undefined || definesFrame(n);
+    },
+  );
+  if (rebase === null) return plain;
+  return (id) => {
+    const dep = plain(id);
+    if (dep === undefined) return undefined;
+    const pose = rebase(id, dep.pose);
+    return pose === dep.pose ? dep : { node: dep.node, pose, get path() { return dep.path; } };
+  };
 }
 
 function depIn<TPose>(

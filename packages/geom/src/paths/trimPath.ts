@@ -10,6 +10,7 @@ import { parseSubpaths } from '../booleans/contours';
 import { nearestOnCubic, nearestOnLine, nearestOnQuadratic } from '../nearest';
 import { crossingStops } from '../intersect/pathCrossings';
 import { writeSubpaths, type SegmentRun } from '../intersect/writeSubpaths';
+import { keepCorners } from './cornerRestore';
 
 /** Options for {@link trimPathAt}. */
 export interface TrimPathOptions {
@@ -110,7 +111,7 @@ export function trimPathAt(
     else runs.push({ segs: s.segs, closed: s.closed });
   });
   return {
-    path: writeSubpaths(runs, path),
+    path: keepCorners([path], writeSubpaths(runs, path)),
     removed: writeSubpaths([{ segs: removed, closed: false }], path),
   };
 }

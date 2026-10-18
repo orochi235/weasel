@@ -145,8 +145,8 @@ function anchorDragSnap(
   snap: SnapDep | undefined,
   press: { id: string; origin: Point; originPose: PolygonPath; dragging: readonly number[] },
 ): (world: Point) => Point {
-  const toPaths = snap?.toPaths;
-  if (!toPaths) return (world) => world;
+  const toTargets = snap?.toTargets;
+  if (!toTargets) return (world) => world;
   // Built on the first move, and the same object after, so the snapper indexes it once.
   let still: SnapGeometry | undefined;
   return (world) => {
@@ -154,7 +154,7 @@ function anchorDragSnap(
       const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
       still = { paths: [path], anchors };
     }
-    return toPaths(world, { origin: press.origin, exclude: [press.id], also: still }) ?? world;
+    return toTargets(world, { origin: press.origin, exclude: [press.id], also: still }) ?? world;
   };
 }
 

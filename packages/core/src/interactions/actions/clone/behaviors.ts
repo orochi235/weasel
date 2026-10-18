@@ -34,7 +34,7 @@ export function startCloneBehaviors(
   descriptorOf: (id: NodeId) => PoseDescriptor<unknown>,
 ): CloneBehaviors {
   const list = (opts?.behaviors ?? []) as CloneBehavior<unknown>[];
-  const readers: GestureReaders = gestureReaders(ctx.deps as Pick<ActionDeps, 'view'>);
+  const readers: GestureReaders = gestureReaders(ctx.deps as Pick<ActionDeps, 'view' | 'kitSettings'>);
   const origin = new Map<string, unknown>(origins as ReadonlyMap<string, unknown>);
   const gctx: GestureContext<unknown> = {
     draggedIds: roots as unknown as string[],
@@ -45,6 +45,7 @@ export function startCloneBehaviors(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
     adapter: defaultCommitAdapter(scene, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},

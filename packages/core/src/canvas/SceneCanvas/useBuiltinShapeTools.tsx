@@ -21,6 +21,7 @@ import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 import type { PathSnapOptions } from 'features/paths/pathSnap/pathSnapper';
+import type { SnapQuery } from 'interactions/actions/snapDep';
 import type { NodeId } from 'core/scene/types';
 import type { RigEditState } from 'tools/builtin/bone/rigEditState';
 
@@ -49,6 +50,12 @@ export interface BuiltinToolOptions {
    *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
    *  a move's base point and to a dragged anchor. Absent, off. */
   pathSnap?: PathSnapOptions;
+  /** Points to lock to that are in no path — a measurement's ends, say
+   *  (`nearestMeasureEnd`): the nearest within reach of `p`, or null. They
+   *  apply wherever a path target does, a move and an anchor drag included,
+   *  and a path target in range wins over them. `at` is the asking gesture's
+   *  query; its `exclude` names what that gesture is moving. */
+  snapTargets?: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number } | null;
   /** The knife: screen px around the first point within which a click closes the cut. */
   slice?: { closeHitRadius?: number };
   /** The bone and weight tools. `rig` names the node they edit; by default the one

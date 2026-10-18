@@ -9,7 +9,8 @@ import { openPointerSession, pastDragThreshold } from '@weasel-js/routing';
  * and missed-release recovery, teardown — belongs to `openPointerSession`.
  */
 export interface ThresholdDragOptions {
-  /** Travel, in CSS pixels, that makes the press a drag. Default `DRAG_THRESHOLD_PX`. */
+  /** Travel, in CSS pixels, that makes the press a drag. Default `DRAG_THRESHOLD_PX`. A component
+   *  passes `useKitSetting('gestures.dragPx')` here, which falls through to that default when unset. */
   threshold?: number;
   /** Element the session opens on. Defaults to `e.currentTarget`; a list must
    *  pass its container, since a grabbed row unmounting drops capture. */

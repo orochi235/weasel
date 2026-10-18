@@ -393,7 +393,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
         insertNodeFactories={insertNodeFactories}
         insertPaint={insertPaint}
-        snap={{ snapPoint: toolOptions?.snapPoint, paths: pathSnapper }}
+        snap={{ snapPoint: toolOptions?.snapPoint, targets: toolOptions?.snapTargets, paths: pathSnapper }}
         canvasRef={internalCanvasRef}
         canvasApiRef={canvasApiRef}
         ingestionResolveSrc={ingestion?.resolveSrc}
