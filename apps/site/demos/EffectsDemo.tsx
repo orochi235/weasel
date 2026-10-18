@@ -3,6 +3,7 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import { blur, vignette, type DrawCommand, type Effect } from '@weasel-js/renderer';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 720;
 const H = 360;
@@ -49,7 +50,7 @@ export function EffectsDemo() {
     id: 'effects-hud',
     label: 'HUD',
     space: 'screen',
-    draw: (): DrawCommand[] => {
+    draw: (_data, _view, { width, height }): DrawCommand[] => {
       const rule = (x: number, y: number, w: number, h: number): DrawCommand => ({
         kind: 'path',
         path: { kind: 'rect', x, y, width: w, height: h },
@@ -60,11 +61,11 @@ export function EffectsDemo() {
       return [
         // Corner brackets, one hairline thick.
         rule(inset, inset, arm, 1), rule(inset, inset, 1, arm),
-        rule(W - inset - arm, inset, arm, 1), rule(W - inset - 1, inset, 1, arm),
-        rule(inset, H - inset - 1, arm, 1), rule(inset, H - inset - arm, 1, arm),
-        rule(W - inset - arm, H - inset - 1, arm, 1), rule(W - inset - 1, H - inset - arm, 1, arm),
+        rule(width - inset - arm, inset, arm, 1), rule(width - inset - 1, inset, 1, arm),
+        rule(inset, height - inset - 1, arm, 1), rule(inset, height - inset - arm, 1, arm),
+        rule(width - inset - arm, height - inset - 1, arm, 1), rule(width - inset - 1, height - inset - arm, 1, arm),
         // Center crosshair.
-        rule(W / 2 - 12, H / 2, 25, 1), rule(W / 2, H / 2 - 12, 1, 25),
+        rule(width / 2 - 12, height / 2, 25, 1), rule(width / 2, height / 2 - 12, 1, 25),
       ];
     },
   }), []);
@@ -76,17 +77,17 @@ export function EffectsDemo() {
 
   return (
     <div className="ckd-stack">
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        layers={{
-          scene: { drawOne: () => [] },
-          world: { layer: world, after: 'scene' },
-          hud: { layer: hud, after: 'world' },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          layers={{
+            scene: { drawOne: () => [] },
+            world: { layer: world, after: 'scene' },
+            hud: { layer: hud, after: 'world' },
+          }}
+        />
+      </DemoStage>
       <div className="ckd-controls">
         <label className="ckd-control">
           Blur radius
