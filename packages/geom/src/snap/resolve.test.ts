@@ -82,6 +82,23 @@ describe('resolveSnap', () => {
     expect(r.members).toEqual([guide]);
   });
 
+  it('reach is measured from delta0 projected into H', () => {
+    const a = Math.PI / 12;
+    const u = [Math.cos(a), Math.sin(a)];
+    const n = [-Math.sin(a), Math.cos(a)];
+    const seen = [20 * u[0], 20 * u[1]];
+    // 5px along H from the point the user sees; 20px off H from the raw δ0.
+    const gx = seen[0] + 5 * Math.cos(a);
+    const guide = cand(vline(gx));
+    const r = resolveSnap(problem({
+      input: { at: [0, 0], dirs: [u] },
+      delta0: [seen[0] + 20 * n[0], seen[1] + 20 * n[1]],
+      candidates: [guide],
+    }));
+    expectVecClose(r.delta, [gx, gx * Math.tan(a)]);
+    expect(r.members).toEqual([guide]);
+  });
+
   it('span rejects off-segment solutions', () => {
     const seg = cand(hline(5), { span: [[0, 10]] });
     expectVecClose(resolveSnap(problem({ delta0: [15, 4], candidates: [seg] })).delta, [15, 4]);
@@ -135,7 +152,13 @@ describe('resolveSnap', () => {
     const r4 = resolveSnap(problem({ delta0: [4, 0], toScreen: () => [NaN, NaN], candidates: [cand(vline(4.5))] }));
     expectVecClose(r4.delta, [4, 0]);
 
-    for (const r of [r1, r2, r3, r4]) for (const v of r.delta) expect(Number.isFinite(v)).toBe(true);
+    const unlimited = cand(vline(6), { tier: 'fallback', reachPx: Infinity });
+    const r5 = resolveSnap(problem({ delta0: [4, 0], toScreen: behind, candidates: [unlimited] }));
+    expectVecClose(r5.delta, [4, 0]);
+    expect(r5.members).toEqual([]);
+    expect(r5.satisfied).toEqual([]);
+
+    for (const r of [r1, r2, r3, r4, r5]) for (const v of r.delta) expect(Number.isFinite(v)).toBe(true);
   });
 
   it('satisfied lists every coincident in-reach candidate', () => {

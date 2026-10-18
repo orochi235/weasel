@@ -94,20 +94,21 @@ function distance(a: Vec, b: Vec): number {
 
 /** What the resolver needs to measure a candidate against a trial δ. */
 interface Measure {
-  /** Screen pixels the probe moves going from δ0 to `delta`; Infinity when unmeasurable. */
+  /** Screen pixels the probe moves going from δ0 (projected into `H`) to
+   *  `delta`; NaN when either end has no finite screen position. */
   move(probeId: string, probe: Vec, delta: Vec): number;
   eps: number;
 }
 
-function makeMeasure<M>(problem: SnapProblem<M>, eps: number): Measure {
+function makeMeasure<M>(problem: SnapProblem<M>, base: Vec, eps: number): Measure {
   const home = new Map<string, Vec>();
   return {
     eps,
     move(probeId, probe, delta) {
       let h = home.get(probeId);
-      if (!h) home.set(probeId, (h = problem.toScreen(plus(probe, problem.delta0))));
+      if (!h) home.set(probeId, (h = problem.toScreen(plus(probe, base))));
       const d = distance(problem.toScreen(plus(probe, delta)), h);
-      return Number.isFinite(d) ? d : Infinity;
+      return Number.isFinite(d) ? d : NaN;
     },
   };
 }
@@ -120,8 +121,9 @@ function spanHolds<M>(c: SnapCandidate<M>, world: Vec, eps: number): boolean {
 
 /** The probe's screen move under `delta`, or null when it is out of reach or off the span. */
 function meets<M>(m: Measure, c: SnapCandidate<M>, probe: Vec, delta: Vec): number | null {
-  const px = m.move(c.probe, probe, delta);
-  if (!c.required && !(px <= c.reachPx)) return null;
+  const measured = m.move(c.probe, probe, delta);
+  if (!c.required && (Number.isNaN(measured) || !(measured <= c.reachPx))) return null;
+  const px = Number.isNaN(measured) ? Infinity : measured;
   return spanHolds(c, plus(probe, delta), m.eps) ? px : null;
 }
 
@@ -227,10 +229,10 @@ function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, m: Measure): SnapCa
 }
 
 export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
-  const m = makeMeasure(problem, problem.eps ?? DEFAULT_EPS);
   const { input, delta0 } = problem;
   let base = closestOnFlat(input, delta0);
   if (!isFiniteVec(base)) base = isFiniteVec(input.at) ? input.at : input.at.map(() => 0);
+  const m = makeMeasure(problem, base, problem.eps ?? DEFAULT_EPS);
   const hDim = flatDim(input);
   const root: Combo<M> = {
     members: [], flat: input, dim: hDim, targetFlat: input, delta: base, codim: 0, targetCodim: 0, px: 0,
