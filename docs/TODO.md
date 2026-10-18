@@ -730,13 +730,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   before redrawing it, so moving it onto a lab clock is an agnew library change, and the owner's
   call.
 
-### labkit's deprecated snapshot undo
-
-- **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**
-  (`emptyStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo`, `UndoStack`) once
-  sherpa's studio (`apps/studio/src/Studio.tsx`), the last user, moves its
-  document undo onto `createHistory`. Still imported there at sherpa `7ad02eb` (2026-10-08).
-
 ## Audio
 
 - **(P3) Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`

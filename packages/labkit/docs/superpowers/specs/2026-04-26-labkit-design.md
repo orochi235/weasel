@@ -378,7 +378,7 @@ Consumers using primitives directly (no `<Lab>`) get OS-following behavior autom
 
 | Layer | What | Examples |
 |---|---|---|
-| Pure functions | Geometry, schema validation, undo stack ops, storage adapters | `pushSnapshot`, `gridDims`, `validateConfigSchema` |
+| Pure functions | Geometry, schema validation, storage adapters | `gridDims`, `validateConfigSchema` |
 | Hooks | `useExperimentState`, per-Lab Zustand store, undo runtime | snapshot-on-event, restore-from-snapshot, max-depth eviction |
 | Components | Primitives in isolation with controlled props | `<LayerList>` reorder, `<ControlPanel>` for all `ConfigField` types |
 | Integration | One full Lab+Instrument flow per major capability | drag-drop instrument: drop, undo, redo, save, load, clone |
