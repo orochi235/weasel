@@ -803,11 +803,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
-  `close` gives focus to its button only when focus is inside a menu, but it checks with
-  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
-  own panel ids.
-
 - **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
   splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
   split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
