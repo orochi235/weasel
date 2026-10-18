@@ -32,7 +32,7 @@ const passes: Record<string, () => void> = {
   // The pieces of a read, each alone, to see which one a read cannot do without paying for.
   get: () => { for (let i = 0; i < N; i++) sink[i] = states[i]!.get(); },
   live: () => { let n = 0; for (let i = 0; i < N; i++) n += states[i]!.live; out[0] = n; },
-  slot: () => { let n = 0; for (let i = 0; i < N; i++) { const s = states[i]!.slot!; n += s.cols[s.at]! + s.cols[s.at + 1]!; } out[0] = n; },
+  slot: () => { let n = 0; for (let i = 0; i < N; i++) { const s = states[i]!.behind[0]!.slot!; n += s.cols[s.at]! + s.cols[s.at + 1]!; } out[0] = n; },
   adjust: () => { let n = 0; for (let i = 0; i < N; i++) { const a = states[i]!.adjust; n += a[0]! + a[1]!; } out[0] = n; },
   write: () => { for (let i = 0; i < N; i++) { const s = states[i]!; s.axes.write!(s.get(), out, i * 2); } },
   add: () => { for (let i = 0; i < N; i++) { const s = states[i]!; sink[i] = s.axes.add!(s.get(), out); } },

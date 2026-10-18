@@ -2,10 +2,9 @@ import {
   glide, patch as fnPatch, spring as springPatch, tween as tweenPatch,
   type Handle, type Motion, type Patch,
 } from '@msb235/blits';
-import { createHoldVoices, type HoldStart, type HoldVoice } from './holdVoices';
 import { createLanes, type LaneColumns, type LanePlace, type Out, type Reader, type Slot } from './lanes';
+import { createRewinds } from './rewinds';
 
-export type { HoldStart } from './holdVoices';
 export type { Reader } from './lanes';
 
 export interface TweenStart {
@@ -41,21 +40,15 @@ export interface Codec {
   tween(s: TweenStart): Reader;
   spring(s: SpringStart): SpringReader;
   path(s: PathStart): Reader;
-  /** A voice with no clock: it reads `at` for as long as it is cued. */
-  hold(s: HoldStart): Reader;
-  /** Says whether hold `id` is {@link HoldStart.still} from here on. */
-  still(id: number, still: boolean): void;
-  /** Says what a voice on subject `on` reads from outside has changed since the last `frame`. */
-  touch(on: unknown): void;
-  /** Reads each touched subject again without moving the clock. `reread` is told the subject
-   *  and the sum of its voices that reading left out: tweens waiting for the next `frame`. */
-  refresh(reread: (on: unknown, queued: number[]) => void): void;
   retarget(id: number, to: number[] | null): void;
   /** Starts spring `id` over from `from` at `velocity`, toward `to` or coasting. */
   recue(id: number, from: number[], velocity: number[], to: number[] | null): void;
   push(id: number, velocity: number[]): void;
   /** Plays `id` at rate `rate` from where it is, without a jump. */
   rate(id: number, rate: number): void;
+  /** Whether `id`, played backward, has got back to its start: its subject shows its first
+   *  frame from then until it stops. */
+  rewound(id: number): boolean;
   stop(id: number): void;
   /** Whether `id` is one of the codec's voices. */
   has(id: number): boolean;
@@ -75,9 +68,9 @@ interface Moves {
 }
 
 interface Voice {
-  kind: 'tween' | 'spring' | 'path' | 'hold';
+  kind: 'tween' | 'spring' | 'path';
   slot: Slot;
-  /** `handle` and `patch` are absent while a tween is `queued` and for a hold, and a path has
+  /** `handle` and `patch` are absent while a tween is `queued`, and a path has
    *  no `patch`. */
   handle: Handle<unknown>;
   patch: Moves;
@@ -91,8 +84,22 @@ interface Voice {
   queuedRate?: number;
   /** A path's axes as its patch last answered. */
   last?: number[];
-  /** A hold's voice. */
-  held?: HoldVoice;
+}
+
+// A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
+// at `from`, and the codec releases it with a `to` or `push` timed at 0.
+function springVoice(slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } {
+  // With no target the spring force is zero whatever the stiffness, leaving damping alone:
+  // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
+  const patch: Moves & Patch<unknown, Out, void> = sp.to == null
+    ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
+    : springPatch<unknown, Out, number[]>('v', {
+      from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
+    });
+  const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
+  if (sp.to) patch.to!(slot.key, sp.to, 0);
+  patch.push!(slot.key, sp.velocity, 0);
+  return { handle, patch };
 }
 
 /** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
@@ -102,24 +109,8 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
   const queue: Voice[] = [];
-  const holds = createHoldVoices();
+  const rewinds = createRewinds<Voice>();
   let time = 0;
-
-  // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
-  // at `from`, and the codec releases it with a `to` or `push` timed at 0.
-  const springVoice = (slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } => {
-    // With no target the spring force is zero whatever the stiffness, leaving damping alone:
-    // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
-    const patch: Moves & Patch<unknown, Out, void> = sp.to == null
-      ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
-      : springPatch<unknown, Out, number[]>('v', {
-        from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
-      });
-    const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
-    if (sp.to) patch.to!(slot.key, sp.to, 0);
-    patch.push!(slot.key, sp.velocity, 0);
-    return { handle, patch };
-  };
 
   const get = (id: number): Voice => {
     const v = voices.get(id);
@@ -138,14 +129,15 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     v.handle = handle;
     v.patch = patch;
     v.spring = next;
+    rewinds.recued(v);
   };
 
   function stop(id: number): void {
     const v = voices.get(id);
     if (!v) return;
-    if (v.held) holds.remove(v.held);
-    else if (v.queued) v.queued = undefined;
+    if (v.queued) v.queued = undefined;
     else v.handle.fade({ over: 0 });
+    rewinds.remove(v);
     lanes.leave(v.slot);
     voices.delete(id);
   }
@@ -164,9 +156,9 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
-      holds.frame();
       time += dtMs;
       lanes.frame(time);
+      rewinds.frame();
     },
     tween(s) {
       if (s.to.length !== s.from.length) {
@@ -208,31 +200,6 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       voices.set(s.id, v);
       return slot;
     },
-    hold(s) {
-      const zeros = new Array<number>(s.axes).fill(0);
-      const slot = lanes.join(s.axes, s.on, zeros);
-      voices.set(s.id, { kind: 'hold', slot, from: zeros, held: holds.add(slot, s) } as Voice);
-      return slot;
-    },
-    still(id, still) {
-      const v = get(id);
-      if (!v.held) throw new Error(`codec: subject ${id} is a ${v.kind}, not a hold`);
-      holds.still(v.held, still);
-    },
-    touch(on) {
-      holds.touch(on);
-      lanes.touch(on);
-    },
-    refresh(reread) {
-      holds.settle();
-      lanes.refresh((slot) => {
-        const queued = new Array<number>(slot.lane.axes).fill(0);
-        for (const v of queue) {
-          if (v.queued && v.slot === slot) v.queued.from.forEach((x, i) => { queued[i] += x; });
-        }
-        reread(slot.key, queued);
-      });
-    },
     retarget(id, to) {
       const v = get(id);
       if (v.kind !== 'spring') throw new Error(`codec: subject ${id} is a ${v.kind}; ${v.kind}s are not retargeted`);
@@ -259,18 +226,19 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     },
     rate(id, rate) {
       const v = get(id);
-      if (v.kind === 'hold') return;
+      rewinds.rate(v, rate);
       if (v.queued) v.queuedRate = rate;
       else v.handle.rate = rate;
     },
+    rewound: (id) => { const v = voices.get(id); return v !== undefined && rewinds.has(v); },
     stop,
     has: (id) => voices.has(id),
     own(id) {
       const v = voices.get(id);
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
-      if (v.kind === 'path' || v.kind === 'hold') {
-        return { value: v.held?.last ?? v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+      if (v.kind === 'path') {
+        return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
       }
       return (!v.queued && v.patch.read(v.slot.key))
         || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };

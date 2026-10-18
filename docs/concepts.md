@@ -290,6 +290,12 @@ A pose move can follow an undo instead: `tweenPose` and `springPose` given
 `rewind: true` travel back to where they began when the move is undone mid-flight,
 and forward again if it is redone on the way.
 
+A time scale below 0 plays an animation back to its start, where it ends as it would at its
+end going forward: a tween on a target commits its start value, and `onDone` runs. The
+motion a redirect gave a spring plays back only as far as the redirect, where blits started
+its clock, and holds there; a loop and a stagger end once what they have in flight is back at
+its start.
+
 What is built on it:
 
 | Value | Its target | Moved by |
@@ -306,9 +312,10 @@ and shows its travel through a pose override. A hand-written adapter's store has
 no overrides, so `createWrittenPoseTarget` writes it the pose on screen each frame
 while the target keeps the committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
-public. blits clocks the voices and sums them; how a target's holds share it is
-folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. blits stays a repository of its own, not a
+public. blits clocks the voices and sums them. Holds are not voices: they are folded
+here, in `engine/holdStore.ts`, since blits weighs a voice whole and a hold can
+cover some axes and turn an angle, and a table's rows keep their holds' values and
+weights in flat arrays of the table's, which its pass reads. blits stays a repository of its own, not a
 `@weasel-js` package. A target is moved by one animator at a time.
 
 Thousands of like values go in a **target table**, where a target apiece would
@@ -324,8 +331,16 @@ upload(dots.shown);
 
 A row is a target like any other. Its committed value lives in `table.committed`,
 and the animator fills `table.shown` for every moving row in one pass over flat
-arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+arrays, about 5 ns a row. `shown` is a `Float64Array` unless the table is made with
 `shown: Float32Array`, for a painter that uploads it as it stands.
+
+A row's holds fold in the same pass, and so does what they cover of a move behind them: an
+animation with a destination on a row runs its voices on a lane subject of its own, which the
+pass scales by what the row's holds leave showing. A target alone keeps such voices among its
+own, which reads faster while nothing holds it, and takes the covered share off as it is read.
+`animator.holdRows({ table })` holds many rows at once from two flat arrays the caller writes,
+`values` laid out as `committed` and one weight a row, then `touch()`es: a hold on each row,
+mixed with the row's other holds, with no function asked per row.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that

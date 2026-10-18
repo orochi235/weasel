@@ -1,12 +1,12 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 183
+    "longestFunction": 144
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 172
+    "longestFunction": 165
   },
   "packages/audio/src/createAudioEngine.ts": {
     "lines": 765,
