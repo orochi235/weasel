@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
 import { FONT, moved } from './diagram/shared';
+import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
 const BOX = { width: 96, height: 32 };
@@ -49,15 +50,15 @@ export function DiagramLiveDemo() {
           Shake
         </button>
       </div>
-      <DiagramView
-        ref={view}
-        specs={specs}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        live={live}
-        onMove={(moves) => setNodes((ns) => moved(ns, moves))}
-      />
+      <DemoStage width={W} height={H}>
+        <DiagramView
+          ref={view}
+          specs={specs}
+          className="ckd-canvas"
+          live={live}
+          onMove={(moves) => setNodes((ns) => moved(ns, moves))}
+        />
+      </DemoStage>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui';
 import styles from './EasingsDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 
@@ -166,24 +167,24 @@ export function EasingsDemo() {
           <span className={styles.duration}>{duration} ms</span>
         </label>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selectable={false}
-        layers={{
-          tracks: { layer: trackLayer, before: 'scene' },
-          scene: {
-            drawOne: (_n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { color: (p as Marker).color } },
-            }],
-          },
-          selectionOverlay: null,
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selectable={false}
+          layers={{
+            tracks: { layer: trackLayer, before: 'scene' },
+            scene: {
+              drawOne: (_n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { color: (p as Marker).color } },
+              }],
+            },
+            selectionOverlay: null,
+          }}
+        />
+      </DemoStage>
       <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
         Click <strong>play all</strong> to fire one tween per easing simultaneously, all sharing
         the same duration. Each marker's x is driven by its named curve from <code>EASINGS</code>;

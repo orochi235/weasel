@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/font';
 import { ToggleBar } from '@weasel-js/ui';
 import s from './FontFallbackDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 520;
 const ROW = 60;
@@ -85,7 +86,9 @@ export function FontFallbackDemo() {
           size="sm"
         />
       </div>
-      <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas className="ckd-canvas" scene={scene} />
+      </DemoStage>
       <table className={s.readout}>
         <thead>
           <tr><th>Requested</th><th>Set up with</th><th>Drawn from</th></tr>

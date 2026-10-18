@@ -6,6 +6,7 @@ import {
   useTools,
 } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 // Per-shape data the kit's insert dep mints: `{ path, fill }` (see
 // `useInsertDepSource`). Pose is plain `{ x, y, width, height }`.
@@ -27,13 +28,13 @@ function InsertDemoInner() {
   const tools = useTools({ active: 'rect', registry: { rect } });
 
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      tools={tools}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        className="ckd-canvas"
+        scene={scene}
+        tools={tools}
+      />
+    </DemoStage>
   );
 }
 
