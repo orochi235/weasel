@@ -22,7 +22,7 @@
     "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 581
+    "lines": 535
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 144
@@ -52,8 +52,8 @@
     "lines": 514
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 654,
-    "longestFunction": 451
+    "lines": 644,
+    "longestFunction": 438
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
     "longestFunction": 123
@@ -125,7 +125,6 @@
     "longestFunction": 235
   },
   "packages/kernel3d/src/deps.ts": {
-    "lines": 488,
     "longestFunction": 161
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {

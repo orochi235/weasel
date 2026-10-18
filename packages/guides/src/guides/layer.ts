@@ -6,20 +6,19 @@
  * (`SpacingGap`) as ticked segments labeled with their size.
  *
  * Guides are not scene objects; they live outside the scene and are managed
- * via `useGuides`. Pair with `guideSnapStrategy` (snap behavior) to keep
+ * via `useGuides`. Pair with `guideSnapSource` (snap source) to keep
  * the visual guide and the snap target in lockstep.
  */
 
-import { textCommandFromRuns, type DrawCommand, type RenderLayer, type CommandStroke } from '@weasel-js/core';
-import { PATH_L, PATH_M, rectPath, type PolygonPath } from '@weasel-js/geom';
+import { measuredSegmentCommands, tickedSegment, type DrawCommand, type RenderLayer, type CommandStroke } from '@weasel-js/core';
 import type { Guide, SpacingGap } from './types';
 
 /** Options for `createGuidesLayer`. */
 export interface GuidesLayerOpts {
   /** Stable getter for the live guide list — typically `useGuides().getGuides`. */
   getGuides: () => readonly Guide[];
-  /** Stable getter for the equal-spacing gaps to draw — typically what an
-   *  alignment behavior's `setActiveGaps` last published. */
+  /** Stable getter for the equal-spacing gaps to draw, such as
+   *  `matchSpacing`'s. */
   getGaps?: () => readonly SpacingGap[];
   /** `'span'` (default) draws a guide that carries a `span` as a segment over
    *  it; `'full'` draws every guide across the whole canvas. */
@@ -47,31 +46,6 @@ export interface GuidesLayerOpts {
 }
 
 const DEFAULT_COLOR = '#3aa0ff';
-const LABEL_FONT = { fontSize: 10 };
-// No text measurer in a layer: a 10px digit advances about 6px.
-const LABEL_CHAR_W = 6;
-const LABEL_H = 14;
-const LABEL_PAD_X = 4;
-
-/** A straight segment from (x0, y0) to (x1, y1), with a tick of length `t`
- *  across each end. Screen px. */
-function tickedSegment(x0: number, y0: number, x1: number, y1: number, t: number): PolygonPath {
-  const h = t / 2;
-  const vertical = x0 === x1;
-  const ends = t <= 0 ? [] : vertical
-    ? [x0 - h, y0, x0 + h, y0, x1 - h, y1, x1 + h, y1]
-    : [x0, y0 - h, x0, y0 + h, x1, y1 - h, x1, y1 + h];
-  const coords = [x0, y0, x1, y1, ...ends];
-  const commands: number[] = [];
-  for (let i = 0; i < coords.length; i += 4) commands.push(PATH_M, PATH_L);
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array(commands),
-    coords: new Float32Array(coords),
-    fillRule: 'nonzero',
-  };
-}
-
 /** Build a `RenderLayer` that draws guide lines and spacing gaps in screen
  *  space, projected from world coordinates via the active view. */
 export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
@@ -121,19 +95,7 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
         const [x0, y0, x1, y1] = g.axis === 'x'
           ? [sx(g.min), sy(g.at), sx(g.max), sy(g.at)]
           : [sx(g.at), sy(g.min), sx(g.at), sy(g.max)];
-        out.push({ kind: 'path', path: tickedSegment(x0, y0, x1, y1, ticks), stroke: gapStroke });
-        if (format === null) continue;
-        const text = format(g.max - g.min);
-        const w = text.length * LABEL_CHAR_W + LABEL_PAD_X * 2;
-        const left = (x0 + x1) / 2 - w / 2;
-        const top = (y0 + y1) / 2 - LABEL_H / 2;
-        out.push({ kind: 'path', path: rectPath(left, top, w, LABEL_H), fill: { paint: { kind: 'solid', color: gapColor } } });
-        out.push(textCommandFromRuns(
-          left + LABEL_PAD_X,
-          top + 2,
-          [{ text, fill: { paint: { kind: 'solid', color: '#fff' } } }],
-          LABEL_FONT,
-        ));
+        out.push(...measuredSegmentCommands(x0, y0, x1, y1, ticks, gapStroke, format?.(g.max - g.min) ?? null, gapColor));
       }
       return out;
     },

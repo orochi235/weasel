@@ -103,7 +103,7 @@ describe('editAnchors path-edit extension drags', () => {
   });
 
   it("draws the lock guide, then each extension's overlays on the moved path", () => {
-    const mark: OngoingOverlay = { kind: 'polyline', points: [], role: 'snap' };
+    const mark: OngoingOverlay = { kind: 'polyline', points: [], role: 'falloff' };
     const overlays = vi.fn((_current: AnchorSet): OngoingOverlay[] => [mark]);
     const drag = start(curve(), 'controlOut:0', { x: 10, y: 0 }, [ext('a', (): PathEditDrag => ({ overlays }))]);
     drag.move({ x: 30, y: 12 }, { ...NO_MODS, shift: true });

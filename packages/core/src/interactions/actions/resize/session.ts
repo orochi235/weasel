@@ -5,7 +5,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { BoundsConstraint, GestureContext, PointSnapBehavior, ResizeAnchor } from '../../gestures/types';
+import type { BoundsConstraint, GestureContext, ResizeAnchor } from '../../gestures/types';
 import type { GeometryProjection } from '../geometryProjection';
 import { readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -16,6 +16,11 @@ import type { InkExtents } from 'core/geometry/inkExtents';
 import { drawnBoxes } from '../drawnBoxes';
 import type { MinSize } from 'core/scene/minSize';
 import { boxMinimum } from './minimum';
+import { boxFrame } from './boxFrame';
+import { localToWorld } from 'core/geometry/targetFrame';
+import { outsetBox } from 'core/geometry/inkExtents';
+import type { SnapBegin, SnapSession } from '../snapDep';
+import { inputSession } from 'features/snap/session2d';
 
 /** The box the drag resizes, as the press found it. */
 export interface ResizeBox {
@@ -59,7 +64,6 @@ export interface ResizeSession {
    *  minimums: a floor under every constraint. `null` for none. */
   readonly minimum: MinSize | null;
   readonly constraints: readonly BoundsConstraint<Bounds>[];
-  readonly pointSnap: readonly PointSnapBehavior<Bounds>[];
   /** Reused across the drag; constraints mutate its `scratch`. */
   readonly gestureCtx: GestureContext<Bounds>;
   readonly applyOps?: (ops: Op[], label: string) => void;
@@ -69,6 +73,9 @@ export interface ResizeSession {
   readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
   /** Label, history, and callbacks from the `resizePolicy` dep. */
   readonly lifecycle: GestureLifecycle;
+  /** The drag's snapping: the `snap` dep's session, else one that only holds
+   *  the handle to its axis and Shift to the aspect. */
+  readonly snap: SnapSession;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -98,11 +105,10 @@ export function captureResize(
   ruleOrigin: Bounds;
   policy: ActionDeps['resizePolicy'];
   constraints: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
 } | null {
   const geometry = poseDescriptorOf(deps.poseDescriptor);
   const policy = deps.resizePolicy;
-  const { constraints, pointSnap, expandIds } = resolvePolicy(policy);
+  const { constraints, expandIds } = resolvePolicy(policy);
   const geometryOf = nodeDescriptors(scene, geometry);
 
   const targets = captureTargets(scene, ids, expandIds);
@@ -137,8 +143,21 @@ export function captureResize(
     ruleOrigin,
     policy,
     constraints,
-    pointSnap,
   };
+}
+
+/** The drag's snap session, over the box as drawn in its own frame. */
+function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: number; y: number }, box: ResizeBox): SnapSession {
+  const frame = boxFrame(box, box.bounds);
+  const req: SnapBegin = {
+    gesture: 'resize',
+    ids,
+    press,
+    handle: box.anchor,
+    constrain: 'aspect',
+    box: { bounds: outsetBox(box.bounds, box.extents), toWorld: (p) => localToWorld(frame, p.x, p.y) },
+  };
+  return ctx.deps.snap?.begin(req) ?? inputSession(req);
 }
 
 /** Capture a resize at press. Null when nothing is selected, the press is not
@@ -159,7 +178,7 @@ export function beginResize(
 
   const captured = captureResize(scene, ids, anchor, ctx.deps);
   if (!captured) return null;
-  const { place, ruleOrigin, policy, constraints, pointSnap } = captured;
+  const { place, ruleOrigin, policy, constraints } = captured;
   const startWorld = { x: ctx.drag?.start.x ?? 0, y: ctx.drag?.start.y ?? 0 };
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, ids, ruleOrigin, startWorld, readers);
@@ -169,12 +188,12 @@ export function beginResize(
     ...place,
     startWorld,
     constraints,
-    pointSnap,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
     geometryProjection: ctx.deps.geometryProjection,
     selectionMethods: selection.adapterMethods,
     lifecycle: readGestureLifecycle(policy, 'Resize', constraints),
+    snap: beginSnap(ctx, ids, startWorld, place.box),
   };
   return { session, readers };
 }

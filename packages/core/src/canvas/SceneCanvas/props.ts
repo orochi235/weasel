@@ -11,28 +11,27 @@ import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import { KIT_SHAPE_KINDS, type BuiltinShapeToolId } from 'core/shapeKinds';
 import type { ContentHandlerEntry } from 'features/ingestion';
+import type { SceneCanvasSnap } from 'features/snap/types';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
-import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
 import type { PoseTransitionSeat } from '../../animation/poseTransition';
-import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
+import { HANDLE_BASE_PX } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
-import type { DrawCommand, FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
+import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
-import { isCustomEntry, type LayersMap } from '../layerSlots';
+import type { LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
-import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import type { InsertNodeFactory, InsertPaint } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
@@ -80,52 +79,6 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
   TPose,
   Partial<SceneSlotConfig<TNode, TPose>>
 >;
-
-/** Deep-merge user-supplied `layers` with kit defaults. Slots the user
- *  doesn't mention get filled with defaults; slots explicitly set to
- *  `null` are dropped. Partial slot configs are shallow-spread on top of the
- *  default slot config. `targetScale` (from the {@link DeviceProfile}) and `baseSizes` go to `targetSizesPx`. */
-export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
-  user: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined,
-  targetScale = 1, baseSizes: Partial<TargetSizesPx> = {},
-): LayersMap<Node<TData, TLayer, TPose>, TPose> {
-  const defaults = {
-    scene: {
-      drawOne: defaultDrawOne as (
-        node: Node<TData, TLayer, TPose>,
-        pose: TPose,
-      ) => DrawCommand[],
-      paintBounds: defaultPaintBounds<TData, TLayer, TPose>,
-    },
-    selectionOverlay: { handles: { size: targetSizesPx(targetScale, baseSizes).handle } },
-  };
-
-  if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
-
-  // Start from a shallow copy of the user map so unknown slots pass through.
-  const result = { ...user } as LayersMap<Node<TData, TLayer, TPose>, TPose>;
-
-  if (!('scene' in user)) {
-    result.scene = defaults.scene;
-  } else if (user.scene === null || isCustomEntry(user.scene)) {
-    result.scene = user.scene;
-  } else {
-    const scene = { ...defaults.scene, ...user.scene };
-    result.scene = user.scene && 'paintBounds' in user.scene
-      ? scene
-      : { ...scene, paintBounds: paintBoundsFor<TData, TLayer, TPose>(scene.drawOne) };
-  }
-
-  if (!('selectionOverlay' in user)) {
-    result.selectionOverlay = defaults.selectionOverlay;
-  } else if (user.selectionOverlay === null || isCustomEntry(user.selectionOverlay)) {
-    result.selectionOverlay = user.selectionOverlay;
-  } else {
-    result.selectionOverlay = { ...defaults.selectionOverlay, ...user.selectionOverlay };
-  }
-
-  return result;
-}
 
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied, via `defaultTools`. */
@@ -223,7 +176,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     // --- Selection options. `pickBest` and `handleHitRadius` configure the
     //     internal select tool, and are ignored under a `tools` takeover;
-    //     `move`, `snap`, `resize` and `rotate` configure the `move`,
+    //     `move`, `resize` and `rotate` configure the `move`,
     //     `resize` and `rotate` presets, and apply either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
@@ -231,7 +184,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /** Rotation options, or `false` to disable rotation entirely — drops the
        *  `rotate` action AND hides the selection rotation-handle chrome. */
       rotate?: UseRotateOptions<TPose> | false;
-      snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
        *  the live alt state + current selection so consumers can implement
@@ -404,6 +356,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  narrow subset of the underlying hook's options surface — `lasso.mode`,
      *  `rig.state`, etc. */
     toolOptions?: BuiltinToolOptions;
+    /** What gestures snap to, and how near it pulls. */
+    snap?: SceneCanvasSnap;
 
     /** Initial active-slot tool id. Default: `'select'` when it is
      *  registered, otherwise none — a canvas can run on ambient bindings

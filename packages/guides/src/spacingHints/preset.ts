@@ -1,23 +1,19 @@
-import type { ContributionDepReader, FeaturePreset, MoveBehavior, SurfaceContribution } from '@weasel-js/core';
-import { alignMoveBehavior } from '../guides/alignment/behaviors';
-import { deriveAlignmentGuides } from '../guides/alignment/derive';
-import { siblingBounds } from '../guides/alignment/sceneBounds';
-import { createGuidesLayer } from '../guides/layer';
-import type { Guide, SpacingGap } from '../guides/types';
+import type { FeaturePreset, SnapSource, SurfaceContribution } from '@weasel-js/core';
+import { alignmentSnapSource } from '../sources/alignment';
+import { spacingSnapSource } from '../sources/spacing';
 import { distanceReadout, type DistanceReadoutOptions } from './distanceReadout';
 
 /** Options for `createSpacingHintsPreset`. */
 export interface SpacingHintsOptions {
-  /** Preset id, and the id of the layer marking the gaps. Default `'spacingHints'`. */
+  /** Preset id. Default `'spacingHints'`. */
   id?: string;
   /** Snap a move so its gap to a neighbor equals one already between its
    *  siblings, and mark the equal gaps. Default true. */
   spacing?: boolean;
-  /** Snap a move to its siblings' edges and centers too, and draw the line it
-   *  meets. Default false. */
+  /** Snap to the siblings' edges and centers too, and mark the line met.
+   *  Default false. */
   align?: boolean;
-  /** Snap distance in screen px. Default the `targets.guideSnapPx` kit
-   *  setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
+  /** Snap distance in screen px. Default the canvas's reach. */
   tolerance?: number;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
    *  on, with the preset's `color`. */
@@ -27,56 +23,20 @@ export interface SpacingHintsOptions {
 }
 
 /**
- * Spacing hints as one `<SceneCanvas features>` preset: a move snaps the
- * selection to the spacing between its siblings and marks the equal gaps, and
- * holding Alt over a shape measures its distance from the selection. The move
- * snap rides any move a preset binds (`'move'`, `'draw'`), after the select
- * tool's own snap.
- *
- * Build one per canvas, in a `useMemo`: the preset holds what it last
- * published, and reads that canvas's `scene` and `selection` deps.
+ * Spacing hints as one `<SceneCanvas features>` preset: snap sources for
+ * equal spacing between siblings and, if asked, alignment to their edges
+ * and centers, whose marks the canvas's snap readout draws; and holding Alt
+ * over a shape measures its distance from the selection.
  */
 export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): FeaturePreset {
   const id = opts.id ?? 'spacingHints';
-  const spacing = opts.spacing ?? true;
-  const align = opts.align ?? false;
-  let deps: ContributionDepReader | null = null;
-  let guides: readonly Guide[] = [];
-  let gaps: readonly SpacingGap[] = [];
-
-  const siblings = () => {
-    const scene = deps?.get('scene');
-    const selection = deps?.get('selection');
-    return scene && selection ? siblingBounds(scene, selection.get()) : [];
-  };
-
-  const moveBehaviors: MoveBehavior<unknown>[] = spacing || align
-    ? [alignMoveBehavior<unknown>({
-      tolerance: opts.tolerance,
-      getCandidates: () => (align ? deriveAlignmentGuides(siblings()) : []),
-      setActiveGuides: (g) => { guides = g; },
-      ...(spacing ? { getSpacingTargets: siblings, setActiveGaps: (g: readonly SpacingGap[]) => { gaps = g; } } : {}),
-    })]
-    : [];
-
-  const marks: SurfaceContribution = {
-    id: `${id}.marks`,
-    eligibility: { always: true },
-    overlay: createGuidesLayer({
-      id,
-      label: 'Spacing hints',
-      getGuides: () => guides,
-      getGaps: () => gaps,
-      color: opts.color,
-    }),
-    attach: (_api, reader) => {
-      deps = reader;
-      return () => { deps = null; };
-    },
-  };
-
-  const contributions: SurfaceContribution[] = [marks];
-  if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, color: opts.color }));
-
-  return { id, moveBehaviors, contributions };
+  const color = opts.color === undefined ? {} : { color: opts.color };
+  const own = { ...color, ...(opts.tolerance === undefined ? {} : { reachPx: opts.tolerance }) };
+  const snapSources: SnapSource[] = [
+    ...((opts.spacing ?? true) ? [spacingSnapSource(own)] : []),
+    ...((opts.align ?? false) ? [alignmentSnapSource(own)] : []),
+  ];
+  const contributions: SurfaceContribution[] = [];
+  if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, ...color }));
+  return { id, snapSources, contributions };
 }

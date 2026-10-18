@@ -6,7 +6,7 @@ import {
   useScene,
   useSelection,
 } from '@weasel-js/core';
-import { gridSnapStrategy } from '@weasel-js/guides';
+import { gridSnapSource } from '@weasel-js/guides';
 import type {
   Path,
   DebugConfig,
@@ -30,6 +30,7 @@ const btn: React.CSSProperties = {
 };
 
 const W = 400, H = 300;
+const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
 const ID = 'p';
 
 const INITIAL_PATH: Path = polygonFromPoints([
@@ -75,9 +76,7 @@ export function PathPoseDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          selectTool={{
-            snap: gridSnapStrategy<Path>(20),
-          }}
+          snap={SNAP}
           debug={debug}
           layers={{
             scene: {

@@ -1,4 +1,5 @@
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
+import { SNAP_ROLES, snapMods } from 'features/snap/roles';
 import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText } from './commit';
@@ -6,12 +7,16 @@ import { insertKind } from './shape';
 import { minSizeOf } from 'core/scene/minSize';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
-const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance'] as const;
+const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance', 'mods'] as const;
+
+const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
 
 /**
  * Click-to-insert: the companion to `insertAction` for a click, which draws
  * no box. It commits a node of `params.kind` at `params.size`, centered on the
- * click, through the same `insert` dep a drag commits through. The rest of the
+ * click, snapped through a `point` session of the `snap` dep unless the
+ * click held `snap.suspend` (Ctrl), and commits
+ * through the same `insert` dep a drag commits through. The rest of the
  * binding's params are the insert's extras, as a drag's are.
  *
  * A `minSize` in the params floors the size, and goes on to the node.
@@ -24,6 +29,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
   label: 'Place',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
+  modifierRoles: SNAP_ROLES,
   requires: ['insert', 'selection', 'snap', 'textEdit'],
   invoker: {
     timing: 'immediate',
@@ -40,12 +46,15 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       if (!(size.width > 0 && size.height > 0)) return;
 
       deps.selection?.clear();
-      const at = deps.snap ? deps.snap.point({ x, y }) : { x, y };
-      deps.snap?.release?.();
+      const snap = deps.snap?.begin({ gesture: 'point', press: { x, y } });
+      const mods = snapMods({ modifiers: (params?.['mods'] as ModifierState | undefined) ?? NO_KEYS });
+      const at = snap ? snap.at({ x, y }, mods).point : { x, y };
+      snap?.end();
       const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
-      const id = dep.commit(bounds, extras as InsertExtras);
+      const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
+      const id = dep.commit(bounds, extras as InsertExtras, ends);
       enterInsertedText(deps.textEdit, id === null ? null : String(id), extras.kind as string);
     },
   },

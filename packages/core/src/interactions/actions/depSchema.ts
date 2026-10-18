@@ -14,7 +14,7 @@ import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type { PointSnapBehavior, BoundsConstraint } from '../gestures/types';
+import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
@@ -23,7 +23,7 @@ import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 
 export type { EditAnchorsDep, FinishedEditFrame };
-export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
+export type { SnapDep, SnapGeometry } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
@@ -136,11 +136,8 @@ export type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep };
  * inscription for unknown kinds.
  *
  * `bounds` is still passed alongside as a useful AABB pose hint — factories
- * may use it as the node's pose even when richer geometry is available.
- *
- * Any of them may carry a `minSize` (`{ width, height }`): the size the
- * insert was held to, which the kit's own factories keep as `data.minSize`
- * so a resize holds the node to it too.
+ * may use it as the node's pose even when richer geometry is available. Any may carry a `minSize`
+ * (`{ width, height }`), which the kit's factories keep as `data.minSize` so a resize holds to it.
  */
 export type InsertExtras =
   | { kind: 'rect' }
@@ -173,13 +170,13 @@ export type InsertExtras =
   | { kind: string; [extra: string]: unknown };
 
 
-import type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
-export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
+import type { InsertDep, InsertEnds, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
+export type { InsertDep, InsertEnds, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
- * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
- * `@weasel-js/guides`' `pointSnapToGrid`), and group-expansion (`expandIds`).
+ * `clampMinSize`) and group-expansion (`expandIds`). Snapping is the `snap`
+ * dep's.
  *
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site.
@@ -188,9 +185,6 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
   /** Bounds-frame constraints. Constrained to `TPose extends Bounds` since
    *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
   constraints: TPose extends Bounds ? BoundsConstraint<TPose>[] : never[];
-  /** World-space anchor-point snap behaviors. Same TPose constraint as
-   *  `constraints`. */
-  pointSnap: TPose extends Bounds ? PointSnapBehavior<TPose>[] : never[];
   /** Group-expansion at gesture start. Identity (`ids => ids`) when group
    *  resize isn't wanted. */
   expandIds: (ids: string[]) => string[];
@@ -264,10 +258,11 @@ declare module '@weasel-js/routing' {
      *  tool draws and every dropped image or text. Absent, or answering
      *  `null`: the top of the tree. */
     insertInto?: InsertIntoDep;
-    /** Snap dep — world-space point snapping (path geometry, grid, guides).
-     *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
-     *  `toolOptions.snapPoint`. Absent means no snapping. */
+    /** Snap dep: the sessions a gesture snaps through, over `<SceneCanvas
+     *  snap>`'s sources. Absent means no snapping. */
     snap?: SnapDep;
+    /** The store the snap readout layer draws, for an action's own marks. Sourced by `<SceneCanvas>`. */
+    snapReadout?: import('../../features/snap/readoutDep').SnapReadoutDep;
     /**
      * The canvas's debug sink.
      * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.

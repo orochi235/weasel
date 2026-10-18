@@ -2,8 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { type PolygonPath, pathFromD } from '@weasel-js/geom';
-import { createPenPreviewLayer, PEN_ANCHOR_SNAP_PX, PEN_CLOSE_HIT_PX } from 'features/paths/penPreviewLayer';
+import { createPenPreviewLayer, PEN_CLOSE_HIT_PX } from 'features/paths/penPreviewLayer';
 import { usePenTool } from './usePenTool';
 import { setup } from './testing/penHarness';
 
@@ -48,18 +47,5 @@ describe('usePenTool reach', () => {
     expect([closesAt(PEN_CLOSE_HIT_PX - 1), closesAt(PEN_CLOSE_HIT_PX + 1)]).toEqual([true, false]);
     expect(closesAt(15, { kitSettings: { targets: { penCloseHitPx: 20 } } })).toBe(true);
     expect(closesAt(15, { closeHitRadius: 4, kitSettings: { targets: { penCloseHitPx: 20 } } })).toBe(false);
-  });
-
-  /** Where a click `d` px right of another path's interior anchor lands. */
-  const landsAt = (d: number, over: Parameters<typeof setup>[0] = {}) => {
-    const p = setup({ paths: { n1: pathFromD('M 300 0 L 400 0 L 500 0') as PolygonPath }, ...over });
-    p.click(400 + d, 0);
-    return p.scratch.current!.anchors[0]!.x;
-  };
-
-  it('snaps to an anchor within targets.penAnchorSnapPx, else PEN_ANCHOR_SNAP_PX, and an option beats both', () => {
-    expect([landsAt(PEN_ANCHOR_SNAP_PX - 1), landsAt(PEN_ANCHOR_SNAP_PX + 1)]).toEqual([400, 400 + PEN_ANCHOR_SNAP_PX + 1]);
-    expect(landsAt(15, { kitSettings: { targets: { penAnchorSnapPx: 20 } } })).toBe(400);
-    expect(landsAt(15, { anchorSnapRadius: 0, kitSettings: { targets: { penAnchorSnapPx: 20 } } })).toBe(415);
   });
 });

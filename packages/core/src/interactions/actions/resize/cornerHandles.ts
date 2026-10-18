@@ -175,3 +175,20 @@ export function fixedCornerOf(
 }
 
 const PINNED: Record<ResizeAnchor['x'], HandleEdge> = { min: 'min', max: 'max', free: 'mid' };
+
+/** The corner or edge midpoint of `bounds` a resize pinning `anchor` moves. */
+export function movingPoint(bounds: Bounds, anchor: ResizeAnchor): { x: number; y: number } {
+  return handlePoint(bounds, { xEdge: MOVING[anchor.x], yEdge: MOVING[anchor.y] });
+}
+
+const MOVING: Record<ResizeAnchor['x'], HandleEdge> = { min: 'max', max: 'min', free: 'mid' };
+
+/** `bounds` with the edges `anchor` leaves free moved by `(dx, dy)`, in its own axes. */
+export function movedEdges(bounds: Bounds, anchor: ResizeAnchor, dx: number, dy: number): Bounds {
+  let { x, y, width, height } = bounds;
+  if (anchor.x === 'min') width += dx;
+  else if (anchor.x === 'max') { x += dx; width -= dx; }
+  if (anchor.y === 'min') height += dy;
+  else if (anchor.y === 'max') { y += dy; height -= dy; }
+  return { x, y, width, height };
+}

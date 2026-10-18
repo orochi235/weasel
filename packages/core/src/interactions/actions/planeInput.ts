@@ -23,7 +23,6 @@ import type {
   Action, ActionDeps, AffordanceHit, BindingOpts, DragSample, InvocationCtx, OngoingHandle,
   OngoingOverlay,
 } from '@weasel-js/routing';
-import type { Path } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import {
@@ -32,7 +31,8 @@ import {
 } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { NodeAtPointDep, SnapDep, SnapGeometry, SnapQuery, ViewApi } from './depSchema';
+import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
+import type { SnapBegin } from './snapDep';
 
 type Point = { x: number; y: number };
 
@@ -193,26 +193,8 @@ function livePlane(
   }
   const snap = declared.includes('snap') ? bag.snap as SnapDep | undefined : undefined;
   if (snap) {
-    const query = (at: SnapQuery | undefined): SnapQuery | undefined => {
-      if (!at?.origin && !at?.also) return at;
-      const m = map();
-      return {
-        ...at,
-        ...(at.origin ? { origin: fromPlane(m, at.origin) } : {}),
-        ...(at.also ? { also: alsoFromPlane(at.also, m) } : {}),
-      };
-    };
-    const toTargets = snap.toTargets;
-    override('snap', {
-      point: (p: Point, at?: SnapQuery) => toPlane(map(), snap.point(fromPlane(map(), p), query(at))),
-      ...(toTargets ? {
-        toTargets: (p: Point, at?: SnapQuery) => {
-          const hit = toTargets(fromPlane(map(), p), query(at));
-          return hit && toPlane(map(), hit);
-        },
-      } : {}),
-      ...(snap.release ? { release: () => snap.release!() } : {}),
-    } satisfies SnapDep);
+    // A session runs in the plane, and carries the camera's targets into it.
+    override('snap', { begin: (req: SnapBegin) => snap.begin({ ...req, plane: map }) } satisfies SnapDep);
   }
 
   // The drag's origin, fixed in the plane at the moment it was pressed,
@@ -326,31 +308,5 @@ function insertExtrasFromPlane(extras: unknown, m: PlaneMap): unknown {
   if (Array.isArray(e['samples'])) {
     out['samples'] = (e['samples'] as DragSample[]).map((s) => ({ ...s, ...pt(s) }));
   }
-  return out;
-}
-
-const alsoInCamera = new WeakMap<SnapGeometry, { m: PlaneMap; out: SnapGeometry }>();
-
-/** `g` carried out of a plane into the camera's world, kept per object so a
- *  snapper indexing it once per object still does. */
-function alsoFromPlane(g: SnapGeometry, m: PlaneMap): SnapGeometry {
-  const held = alsoInCamera.get(g);
-  if (held && held.m.scale.x === m.scale.x && held.m.scale.y === m.scale.y
-    && held.m.offset.x === m.offset.x && held.m.offset.y === m.offset.y) return held.out;
-  const pathOut = (p: Path): Path => {
-    if (p.kind === 'rect') return rectFromPlane(m, p);
-    const coords = new Float32Array(p.coords.length);
-    for (let i = 0; i < coords.length; i += 2) {
-      const q = fromPlane(m, { x: p.coords[i], y: p.coords[i + 1] });
-      coords[i] = q.x;
-      coords[i + 1] = q.y;
-    }
-    return { ...p, coords };
-  };
-  const out: SnapGeometry = {
-    ...(g.paths ? { paths: g.paths.map(pathOut) } : {}),
-    ...(g.anchors ? { anchors: g.anchors.map((a) => fromPlane(m, a)) } : {}),
-  };
-  alsoInCamera.set(g, { m, out });
   return out;
 }

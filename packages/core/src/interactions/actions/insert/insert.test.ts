@@ -5,6 +5,8 @@ import { overlaysOf, type InvocationCtx, type BindingOpts } from '@weasel-js/rou
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';
+import { createScene } from 'core/scene/scene';
+import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 
 // ---------------------------------------------------------------------------
 // Stub insert dep
@@ -45,12 +47,7 @@ function makeCtx(overrides: {
 
 /** Snaps every coord to a `size` grid. */
 function gridSnap(size: number): SnapDep {
-  return {
-    point: (p) => ({
-      x: Math.round(p.x / size) * size,
-      y: Math.round(p.y / size) * size,
-    }),
-  };
+  return sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(size)]);
 }
 
 function getOngoingInvoker(action: typeof insertAction) {
@@ -455,14 +452,14 @@ describe('insertAction — line modifiers', () => {
     const dep = makeInsertDep();
     const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
     const handle = invoker.start(ctx, { params: { kind: 'line' } });
-    // 100,10 is ~5.7° off horizontal — shift rounds it down to 0°, keeping
-    // the drag length (hypot ≈ 100.5).
+    // 100,10 is ~5.7° off horizontal — shift rounds it down to 0°, and the
+    // end is the pointer's nearest point on that line.
     handle.onMove!({ ...ctx, world: { x: 100, y: 10 }, modifiers: { ...ctx.modifiers, shift: true } });
     handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
 
     const extras = dep.calls[0].extras as { b: { x: number; y: number } };
     expect(extras.b.y).toBeCloseTo(0, 6);
-    expect(extras.b.x).toBeCloseTo(Math.hypot(100, 10), 6);
+    expect(extras.b.x).toBeCloseTo(100, 6);
   });
 
   it('shift is not applied to non-line kinds', () => {
@@ -492,7 +489,7 @@ describe('insertAction — line modifiers', () => {
     });
   });
 
-  it('shift constrains before snap, so the angle survives grid alignment', () => {
+  it('shift holds the angle through a grid snap', () => {
     const invoker = getOngoingInvoker(insertAction);
     const dep = makeInsertDep();
     const ctx = makeCtx({ world: { x: 0, y: 0 }, dep, snap: gridSnap(10) });
@@ -500,8 +497,8 @@ describe('insertAction — line modifiers', () => {
     handle.onMove!({ ...ctx, world: { x: 100, y: 10 }, modifiers: { ...ctx.modifiers, shift: true } });
     handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
 
-    // Constrained to 0° → (100.5, 0), then snapped to the 10-grid → (100, 0).
-    // Snapping first would have given (100, 10) — a 5.7° line.
+    // The grid's x = 100 met on the 0° line: (100, 0). The grid alone would
+    // have given (100, 10) — a 5.7° line.
     expect(dep.calls[0].extras).toMatchObject({
       kind: 'line',
       a: { x: 0, y: 0 },

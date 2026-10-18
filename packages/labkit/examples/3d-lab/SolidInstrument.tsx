@@ -13,6 +13,7 @@ import {
   buildRuleCtx,
   createDispatcher,
   createPoseFeed,
+  createSnapOutcomeStore,
   useAction,
   useActionsRegistry,
   useActiveToolContext,
@@ -32,7 +33,10 @@ import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
 import { useTrialOrbit } from '../../src/trial/useTrialOrbit';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import {
+  alignPlaneSource,
+  boxSnapSource,
   collectOverlayBoxes,
   createAreaSelect,
   createCamera,
@@ -40,7 +44,9 @@ import {
   createNodeAtPoint,
   createPoseDescriptor,
   createSnap,
+  groundGridSource,
   pose3,
+  projectSnapMarks,
   screenBoxOf,
   useOrbitTool,
   orbitAction,
@@ -138,6 +144,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // through the feed instead; this is what drives a frame for the rest.
   useEffect(() => dispatcher.subscribe(repaint), [dispatcher, repaint]);
 
+  // What the snap in flight met, drawn beside the chrome.
+  const snapMarks = useMemo(() => createSnapOutcomeStore<Vec3>(), []);
+  useEffect(() => snapMarks.subscribe(repaint), [snapMarks, repaint]);
+
   // Everything the kernel needs told about this world: the scene, where the
   // camera is, and — because a sphere's box does not widen when it turns — how
   // wide a solid actually is.
@@ -208,10 +218,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // lab's identity `clientToWorld` leaves as the client rect.
       chrome.push(...collectOverlayBoxes(dispatcher.getInFlightHandles(), originRef.current));
 
+      // Projected without the pane's origin, so they land in the tile as drawn.
+      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });
+
       renderer.draw(solids, cameraRef.current, device, chrome, {
         width: rect.w,
         height: rect.h,
-      });
+      }, snap);
     });
 
     return () => {
@@ -220,7 +233,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef]);
+  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef, snapMarks]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
@@ -274,7 +287,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, viewportSource],
   );
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
-  const snap = useMemo(() => createSnap(), []);
+  const snap = useMemo(
+    () => createSnap(world, {
+      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
+      store: snapMarks,
+    }),
+    [world, snapMarks],
+  );
 
   const camera3d = useMemo(
     () => ({

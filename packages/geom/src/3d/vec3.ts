@@ -62,6 +62,16 @@ export function normalize(a: Vec3): Vec3 {
   return l > 0 && l < Infinity ? scale(a, 1 / l) : { x: 0, y: 0, z: 0 };
 }
 
+/** Euclidean distance between two points. */
+export function distance(a: Vec3, b: Vec3): number {
+  return len(sub(a, b));
+}
+
+/** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
+export function lerp(a: Vec3, b: Vec3, t: number): Vec3 {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+}
+
 /** `Vec3` from loose components — the shape `Mat4`'s row math produces. */
 export function vec3(x: number, y: number, z: number): Vec3 {
   return { x, y, z };

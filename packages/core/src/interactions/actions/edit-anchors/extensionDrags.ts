@@ -61,3 +61,8 @@ export function claimWheel(drags: readonly PathEditDrag[], wheel: Wheel): boolea
 export function extensionOverlays(drags: readonly PathEditDrag[], current: AnchorSet): OngoingOverlay[] {
   return drags.flatMap((drag) => drag.overlays?.(current) ?? []);
 }
+
+/** Tell every extension the drag is over. */
+export function endExtensionDrags(drags: readonly PathEditDrag[]): void {
+  for (const drag of drags) drag.end?.();
+}

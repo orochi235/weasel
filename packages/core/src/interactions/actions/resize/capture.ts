@@ -7,12 +7,11 @@ import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { BoundsConstraint, GestureContext, PointSnapBehavior, ResizeAnchor } from '../../gestures/types';
+import type { BoundsConstraint, GestureContext, ResizeAnchor } from '../../gestures/types';
 import type { ResizePolicy } from '../depSchema';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import type { PoseFrame } from '../poseFrame';
 import { shapeSources } from '../selectionSubtree';
-import { DEFAULT_RESIZE_BEHAVIORS } from './behaviors';
 import { fixedCornerOf } from './cornerHandles';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
@@ -28,26 +27,20 @@ import {
 } from 'core/geometry/inkExtents';
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_POINT_SNAP: PointSnapBehavior<Bounds>[] = [];
 
 /** The `resizePolicy` dep's rules, or the defaults when it is unsourced. */
 export function resolvePolicy(dep: ResizePolicy<unknown> | undefined): {
   constraints: BoundsConstraint<Bounds>[];
-  pointSnap: PointSnapBehavior<Bounds>[];
   expandIds: (ids: string[]) => string[];
 } {
   if (!dep) {
     return {
-      // Standard kit behaviors (shift = aspect lock) apply even with no
-      // policy wired; consumers opt out via an explicit `constraints: []`.
-      constraints: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<Bounds>[],
-      pointSnap: EMPTY_POINT_SNAP,
+      constraints: [],
       expandIds: IDENTITY_EXPAND,
     };
   }
   return {
     constraints: dep.constraints as unknown as BoundsConstraint<Bounds>[],
-    pointSnap: dep.pointSnap as unknown as PointSnapBehavior<Bounds>[],
     expandIds: dep.expandIds,
   };
 }

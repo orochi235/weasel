@@ -48,7 +48,7 @@ function drag(scene: Scene<unknown, string, unknown>, from: { x: number; y: numb
 }
 
 function policy(constraint: BoundsConstraint<Bounds>) {
-  return { resizePolicy: { constraints: [constraint], pointSnap: [], expandIds: (ids: string[]) => ids } };
+  return { resizePolicy: { constraints: [constraint], expandIds: (ids: string[]) => ids } };
 }
 
 describe('resizing a stroked rect', () => {

@@ -129,11 +129,8 @@ export {
   createPathSnapIndex,
   findPathSnap,
   PATH_SNAP_KINDS,
-  createPathSnapper,
-  createPathSnapMarkerLayer,
   pathSnapGlyph,
   PATH_SNAP_LABELS,
-  DEFAULT_PATH_SNAP_RADIUS,
 } from '../features/paths';
 export { hasEditablePath } from '../features/paths/editablePath';
 export type {
@@ -194,10 +191,6 @@ export type {
   PathSnapIndex,
   PathSnapKind,
   PathSnapQuery,
-  PathSnapMark,
-  PathSnapOptions,
-  PathSnapper,
-  PathSnapMarkerStyle,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,
@@ -308,9 +301,6 @@ export type {
   CurveRepresentation,
   Discriminator,
 } from '@weasel-js/geom/curves';
-
-// ─── Utility: 45° axis constraint ───────────────────────────────────────────
-export { constrainTo45 } from '../util/constrainTo45';
 
 // ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
 export {

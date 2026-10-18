@@ -25,7 +25,7 @@ function setup(poses: RectPose[] = [box(0, 0)]) {
     set: (next: string[]) => { current = [...next]; },
   } as unknown as SelectionApi;
   const s = scene as unknown as AnyScene;
-  const deps = { scene: s, selection, resizePolicy: { constraints: [], pointSnap: [], expandIds: (x: string[]) => x } };
+  const deps = { scene: s, selection, resizePolicy: { constraints: [], expandIds: (x: string[]) => x } };
   const pose = (id: string) => scene.get(id as never)!.pose as RectPose;
   const ctx = (world: { x: number; y: number }, extra: Record<string, unknown> = {}) => ({
     world,

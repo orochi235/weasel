@@ -8,6 +8,7 @@ import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
 import { nextFrame } from './frame';
 import { commitMove } from './commit';
 import { recordTransform } from '../transform-again/memory';
+import { SNAP_ROLES } from 'features/snap/roles';
 export type { ReparentOnDrop };
 
 /**
@@ -35,6 +36,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // through.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
+  modifierRoles: SNAP_ROLES,
   requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
@@ -75,7 +77,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               if (committed) recordTransform(session.scene, { kind: 'translate', ...frame.delta }, subject);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
-            session.pathSnap?.snap.release?.();
+            session.snap?.end();
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);

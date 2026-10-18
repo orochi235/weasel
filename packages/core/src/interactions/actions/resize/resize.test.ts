@@ -371,7 +371,7 @@ describe('resizeAction descriptor', () => {
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 
-  describe('default aspect lock (no resizePolicy dep)', () => {
+  describe('aspect lock with no resizePolicy or snap dep', () => {
     const startPose: RectPose = { x: 0, y: 0, width: 100, height: 50 };
 
     function dragCorner(shift: boolean): RectPose {

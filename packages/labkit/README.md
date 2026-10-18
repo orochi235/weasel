@@ -323,6 +323,7 @@ over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
 import { createScene } from '@weasel-js/core';
+import { gridSnapSource } from '@weasel-js/guides';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
   type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
@@ -333,10 +334,10 @@ const config = f.schema({ snap: f.boolean(true).label('Snap to grid') });
 
 function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof config>> }) {
   const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
-  const toolOptions = useMemo(() => ({ snapPoint: ctx.config.snap ? toGrid : undefined }), [ctx.config.snap]);
+  const snap = useMemo(() => ({ sources: ctx.config.snap ? [gridSnapSource({ spacing: 20 })] : [] }), [ctx.config.snap]);
   return (
     <TrialSceneCanvas features={['draw']} defaultTools={['rect', 'pen']}
-      scene={scene} trial={ctx.trial} toolOptions={toolOptions} />
+      scene={scene} trial={ctx.trial} snap={snap} />
   );
 }
 

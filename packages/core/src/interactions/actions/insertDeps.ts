@@ -3,6 +3,16 @@ import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { InsertExtras } from './depSchema';
 
+/** The gesture an insert's bounds came from, in the same coordinates: `bounds`
+ *  is the box `start` and `end` span, or with `fromCenter`, the box centered
+ *  on `start` reaching `end`. A host whose bounds lose information on the
+ *  way, a 3D one casting them onto a plane, reads the ends instead. */
+export interface InsertEnds {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  fromCenter?: boolean;
+}
+
 /** Adapter dep for `insertAction`. The `extras` carry the active tool's kind
  *  + per-kind geometry. */
 export interface InsertDep {
@@ -14,6 +24,10 @@ export interface InsertDep {
   commit(
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
+    /** Absent when no gesture made the bounds: a path the pen or spiro
+     *  drew, or content a paste ingests. A click-place reads as a drag out
+     *  from its center. */
+    ends?: InsertEnds,
   ): NodeId | null;
   /**
    * What `commit` would apply, unapplied: the new node's id and the ops that
@@ -23,6 +37,7 @@ export interface InsertDep {
   build?(
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
+    ends?: InsertEnds,
   ): { id: NodeId; ops: Op[] } | null;
   /** The scene layer `commit` puts the node on. An insert on a layer carrying
    *  `parallax` is dragged out in that plane's world, so `bounds` arrive

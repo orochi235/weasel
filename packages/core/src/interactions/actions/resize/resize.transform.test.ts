@@ -9,8 +9,7 @@ import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { PointSnapBehavior, PointSnapContext } from '../../gestures/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { SnapDep } from '../snapDep';
 import { resizeAction } from './action';
 
 const ID = asNodeId('n');
@@ -38,7 +37,7 @@ const corners = (p: RectPose) => ({
 function dragBottomRight(
   scene: Scene<unknown, string, unknown>,
   d: { x: number; y: number },
-  pointSnap: PointSnapBehavior<Bounds>[] = [],
+  snap?: SnapDep,
 ): RectPose {
   const start = corners(scene.get(ID)!.pose as RectPose).br;
   const ctxAt = (at: { x: number; y: number }) => ({
@@ -48,7 +47,8 @@ function dragBottomRight(
     deps: {
       selection: { get: () => [ID] as NodeId[] },
       scene,
-      resizePolicy: { constraints: [], pointSnap, expandIds: (ids: string[]) => ids },
+      resizePolicy: { constraints: [], expandIds: (ids: string[]) => ids },
+      ...(snap ? { snap } : {}),
     },
     drag: {
       start,
@@ -95,25 +95,16 @@ describe.each([
   });
 });
 
-describe('point snaps on a skewed, turned node', () => {
+describe('snapping on a skewed, turned node', () => {
   const pose: RectPose = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 6, transform: SKEW };
 
-  it('tells a rule where the corners are drawn', () => {
-    let seen: PointSnapContext<Bounds> | null = null;
-    const next = dragBottomRight(makeScene(pose), { x: 30, y: 12 }, [{ onMove: (c) => { seen = c; return null; } }]);
-    const c = corners(next);
-    expect(seen!.draggedCorner!.worldX).toBeCloseTo(c.br.x, 6);
-    expect(seen!.draggedCorner!.worldY).toBeCloseTo(c.br.y, 6);
-    expect(seen!.fixedCorner!.worldX).toBeCloseTo(c.tl.x, 6);
-    expect(seen!.fixedCorner!.worldY).toBeCloseTo(c.tl.y, 6);
-  });
-
-  it('lands the drawn dragged corner on the point a rule snaps it to', () => {
+  it('lands the drawn dragged corner on the point the snap session puts it', () => {
     const before = corners(pose);
     const target = { x: before.br.x + 40, y: before.br.y + 25 };
-    const next = dragBottomRight(makeScene(pose), { x: 30, y: 12 }, [{
-      onMove: () => ({ frame: 'dragged-corner', worldX: target.x, worldY: target.y }),
-    }]);
+    const snap: SnapDep = {
+      begin: () => ({ at: () => ({ point: target, held: true, marks: [] }), angle: (theta) => ({ theta, marks: [] }), end: () => {} }),
+    };
+    const next = dragBottomRight(makeScene(pose), { x: 30, y: 12 }, snap);
     const after = corners(next);
     expect(after.br.x).toBeCloseTo(target.x, 6);
     expect(after.br.y).toBeCloseTo(target.y, 6);

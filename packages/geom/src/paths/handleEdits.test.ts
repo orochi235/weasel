@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles, snapHandleAngle } from './handleEdits';
+import { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './handleEdits';
 import { anchorsToPath, isAnchorSmooth, pathToAnchors } from './anchors';
 import { PATH_L } from '../commands';
 import type { AnchorSet } from './anchorEdits';
@@ -120,35 +120,5 @@ describe('handleAtItsLength', () => {
 
   it('stays put when the pointer sits on the anchor', () => {
     expect(handleAtItsLength({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0 })).toEqual({ x: 10, y: 0 });
-  });
-});
-
-describe('snapHandleAngle', () => {
-  const anchor = { x: 0, y: 0 };
-
-  it('snaps to the nearest step within tolerance, keeping the length', () => {
-    const to = { x: 10 * Math.cos(0.75), y: 10 * Math.sin(0.75) }; // ~43 degrees
-    const { point, snapped } = snapHandleAngle(anchor, to, { stepDeg: 45, toleranceDeg: 5 });
-    expect(snapped).toEqual({ kind: 'step', angle: Math.PI / 4 });
-    expect(Math.hypot(point.x, point.y)).toBeCloseTo(10);
-    expect(point.x).toBeCloseTo(point.y);
-  });
-
-  it('leaves a handle outside the tolerance free', () => {
-    const to = { x: 10 * Math.cos(0.6), y: 10 * Math.sin(0.6) }; // ~34 degrees
-    expect(snapHandleAngle(anchor, to, { stepDeg: 45, toleranceDeg: 5 })).toEqual({ point: to, snapped: null });
-  });
-
-  it('snaps onto the line through the opposite handle ahead of a farther step', () => {
-    const opposite = { x: -10, y: -10 * Math.tan(0.1) };
-    const to = { x: 10, y: 10 * Math.tan(0.1) + 0.2 };
-    const { snapped } = snapHandleAngle(anchor, to, { stepDeg: 45, toleranceDeg: 8, opposite });
-    expect(snapped?.kind).toBe('opposite');
-    expect(snapped?.angle).toBeCloseTo(0.1);
-  });
-
-  it('wraps round the half turn', () => {
-    const { snapped } = snapHandleAngle(anchor, { x: -10, y: -0.1 }, { stepDeg: 90, toleranceDeg: 3 });
-    expect(Math.abs(snapped!.angle)).toBeCloseTo(Math.PI);
   });
 });

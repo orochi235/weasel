@@ -37,7 +37,7 @@ spacing without one is a configuration error, not a silent fallback.
 
 ## Related
 
-Cell snapping during gestures lives in the snap strategy
-(`../strategies/grid.ts`), not here — this module owns drawing and hover.
-`useGridCellHover` calls into `pointToGridCell` from there, so the two agree on
-where cell boundaries are.
+Snapping to the grid during gestures is `gridSnapSource`
+(`../sources/grid.ts`), not here — this module owns drawing and hover, and
+`pointToGridCell`, which `useGridCellHover` uses to find the cell under the
+pointer.

@@ -11,6 +11,8 @@ import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import type { InsertExtras } from 'interactions/actions/depSchema';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
+import type { SnapSource } from 'features/snap/types';
+import { sceneOfPaths, sessionDep } from 'features/snap/testing/sessionDep';
 
 // `setup` reads the pen's state off the preview layer's recorded calls, so a
 // test file calling it must mock 'features/paths/penPreviewLayer' with the real
@@ -99,8 +101,8 @@ export function setup(over: {
   autoSelect?: boolean;
   autoCommitOnClose?: boolean;
   closeHitRadius?: number;
-  anchorSnapRadius?: number;
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** A `snap` dep running these sources over `paths`. Absent, no snap dep. */
+  snap?: readonly SnapSource[];
   /** Uniform view scale, to exercise the zoom-relative close-hit radius. */
   scale?: number;
   /** Paths already in the scene, in world coords, keyed by node id and
@@ -113,7 +115,7 @@ export function setup(over: {
   /** Mount the pen under a `KitSettingsProvider` holding these. */
   kitSettings?: KitSettingsOverrides;
 } = {}) {
-  const { scale = 1, paths = {}, deps: depsOver, noMakeNode, kitSettings, ...toolOpts } = over;
+  const { scale = 1, paths = {}, deps: depsOver, noMakeNode, kitSettings, snap, ...toolOpts } = over;
   const adapter = makeAdapter();
   const wrapper = kitSettings
     ? ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: kitSettings }, children)
@@ -131,6 +133,7 @@ export function setup(over: {
     scene: { get: (id: string) => (scene[id] ? { id, kind: 'leaf', parent: null, data: { path: scene[id] } } : undefined) },
     applyOps,
     ...penDeps(adapter, noMakeNode),
+    ...(snap ? { snap: sessionDep(sceneOfPaths(Object.values(paths)), snap, scale) } : {}),
     ...depsOver,
   } as unknown as ActionDeps;
 

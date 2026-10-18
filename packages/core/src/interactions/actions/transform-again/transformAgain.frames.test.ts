@@ -20,7 +20,7 @@ function setup() {
     get: () => current,
     set: (next: string[]) => { current = [...next]; },
   } as unknown as SelectionApi;
-  const deps = { scene, selection, resizePolicy: { constraints: [], pointSnap: [], expandIds: (x: string[]) => x } };
+  const deps = { scene, selection, resizePolicy: { constraints: [], expandIds: (x: string[]) => x } };
   const world = (id: string) => scenePoseFrame(scene).world(id as never) as RectPose;
   const ctx = (p: { x: number; y: number }, extra: Record<string, unknown> = {}) => ({
     world: p, screen: { x: 0, y: 0 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps, ...extra,

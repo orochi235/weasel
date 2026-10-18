@@ -3,6 +3,7 @@ import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '
 import { resolveParams } from '@weasel-js/routing';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
+import { SNAP_ROLES } from 'features/snap/roles';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
 import { copiesWithin } from 'canvas/copiesAbove';
@@ -16,9 +17,11 @@ import { insertKind, insertShape } from './shape';
 /**
  * Drag-to-insert. The node `kind` is read from `opts.params.kind`.
  *
- * Grid snapping comes from the optional `snap` dep, applied to the drag's
- * start and current point (never to freehand pencil samples). Behaviors from
- * the binding's `opts.behaviors` (`InsertBehavior[]`) run over the two points
+ * The drag's start and current point snap through the `snap` dep's `point`
+ * sessions (never freehand pencil samples). While `snap.constrain` (Shift) is
+ * held, a line's end stays on the 15° line through the snapped start nearest
+ * the pointer, and lands where that line meets a target. Behaviors from the
+ * binding's `opts.behaviors` (`InsertBehavior[]`) run over the two points
  * after that; on release the first answer wins (`null` aborts, `Op[]` commits
  * in place of the insert).
  *
@@ -31,6 +34,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   label: 'Insert',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
+  modifierRoles: SNAP_ROLES,
   requires: ['insert', 'insertLive', 'insertInto', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
@@ -50,7 +54,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       return {
         kind: 'insert',
         onMove(moveCtx: InvocationCtx): void {
-          if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world);
+          if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world, moveCtx);
           frame = nextFrame(session, readers, frame, moveCtx);
         },
         overlay(): OngoingOverlay | null {
@@ -79,7 +83,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             if (reason === 'cancel') cancelInsert(session);
             else committed = commitInsert(session, frame, endCtx.drag?.points ?? frame.points, gesture.userRotation);
           } finally {
-            session.releaseSnap();
+            session.snap.close();
             runBehaviorSettled(session.behaviors, session.gestureCtx, committed);
           }
         },

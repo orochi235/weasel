@@ -2,6 +2,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
 import { nodeGates } from 'core/scene/nodeGates';
+import type { SnapSource } from 'features/snap/types';
 
 /** Which part of which measurement lies under a point. */
 export interface MeasureHit {
@@ -45,32 +46,34 @@ export function measureAt(
   return null;
 }
 
-/**
- * The end of a shown measurement nearest `p` within `tolerance` world units, or null —
- * what a snap rule offers other tools so they can start or end on one.
- * Hand it to `<SceneCanvas toolOptions={{ snapTargets }}>`, where the drawing
- * tools, a move and an anchor drag all reach it.
- */
-export function nearestMeasureEnd(
-  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers'>,
-  ms: Pick<Measurements, 'layer'>,
-  p: MeasurePoint,
-  tolerance: number,
-): MeasurePoint | null {
-  const gates = nodeGates(scene);
-  let best: MeasurePoint | null = null;
-  let bestD = tolerance;
-  for (const id of measureIds(scene, ms)) {
-    if (gates.hidden(id)) continue;
-    const ends = measureEndsOf(scene.get(id));
-    if (!ends) continue;
-    for (const end of [ends.start, ends.end]) {
-      const d = Math.hypot(p.x - end.x, p.y - end.y);
-      if (d <= bestD) {
-        bestD = d;
-        best = { x: end.x, y: end.y };
+/** Options for `measureEndSource`. */
+export interface MeasureEndSourceOptions {
+  /** Overrides the canvas's reach for measurement ends, in screen px. */
+  reachPx?: number;
+}
+
+/** The ends of every shown measurement as snap targets for a pointer probe. */
+export function measureEndSource(opts: MeasureEndSourceOptions = {}): SnapSource {
+  return {
+    id: 'measure-ends',
+    roles: ['pointer'],
+    ...(opts.reachPx !== undefined ? { reachPx: opts.reachPx } : {}),
+    *collect(q) {
+      if (!q.scene) return;
+      const gates = nodeGates(q.scene);
+      const skip = new Set(q.exclude);
+      const reach = q.reachWorld(q.reachPx);
+      for (const node of q.scene.renderOrderNodes()) {
+        const ends = measureEndsOf(node);
+        if (!ends || skip.has(node.id) || gates.hidden(node.id)) continue;
+        for (const end of [ends.start, ends.end]) {
+          const at = { x: end.x, y: end.y };
+          for (const p of q.probes) {
+            if (Math.hypot(at.x - p.at.x, at.y - p.at.y) > reach) continue;
+            yield { probe: p.id, locus: { at, dirs: [] }, mark: { kind: 'point', at, glyph: 'center' } };
+          }
+        }
       }
-    }
-  }
-  return best;
+    },
+  };
 }

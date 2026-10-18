@@ -1,7 +1,7 @@
 /** Rays, axis-aligned boxes, and the intersections picking is built from. */
 
 import { SINGULAR_RATIO } from '../scalar';
-import { dot, len, type Vec3 } from './vec3';
+import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
 import { transformPoint, type Mat4 } from './mat4';
 
 /** A ray from `origin` along `direction`, which need not be unit length: the
@@ -79,4 +79,66 @@ export function aabbAround(center: Vec3, radius: number): Aabb {
     min: { x: center.x - radius, y: center.y - radius, z: center.z - radius },
     max: { x: center.x + radius, y: center.y + radius, z: center.z + radius },
   };
+}
+
+/** The point `t` direction-lengths along the ray. */
+export function pointOnRay(ray: Ray, t: number): Vec3 {
+  return add(ray.origin, scale(ray.direction, t));
+}
+
+/** The smallest box containing every point. No points gives an inverted
+ *  box, `min` at +Infinity and `max` at -Infinity. */
+export function aabbOfPoints(points: readonly Vec3[]): Aabb {
+  const min = { x: Infinity, y: Infinity, z: Infinity };
+  const max = { x: -Infinity, y: -Infinity, z: -Infinity };
+  for (const p of points) {
+    for (const axis of ['x', 'y', 'z'] as const) {
+      if (p[axis] < min[axis]) min[axis] = p[axis];
+      if (p[axis] > max[axis]) max[axis] = p[axis];
+    }
+  }
+  return { min, max };
+}
+
+/** The point of the infinite line through `origin` along `direction` nearest
+ *  `p`. A zero direction makes the line the point `origin`. */
+export function closestPointOnLine(p: Vec3, origin: Vec3, direction: Vec3): Vec3 {
+  const d2 = len2(direction);
+  if (!(d2 > 0)) return origin;
+  return add(origin, scale(direction, dot(sub(p, origin), direction) / d2));
+}
+
+/** The point of segment `a`–`b` nearest `p`. */
+export function closestPointOnSegment(p: Vec3, a: Vec3, b: Vec3): Vec3 {
+  const ab = sub(b, a);
+  const d2 = len2(ab);
+  if (!(d2 > 0)) return a;
+  const t = Math.min(1, Math.max(0, dot(sub(p, a), ab) / d2));
+  return add(a, scale(ab, t));
+}
+
+/**
+ * The nearest pair of points between a ray and the infinite line through
+ * `origin` along `direction`. `t` is the ray parameter (never negative) and
+ * `s` the line's. A line parallel to the ray pairs with the ray's origin.
+ */
+export function closestPointsRayLine(
+  ray: Ray,
+  origin: Vec3,
+  direction: Vec3,
+): { onRay: Vec3; onLine: Vec3; t: number; s: number } {
+  const u = ray.direction;
+  const v = direction;
+  const w = sub(ray.origin, origin);
+  const a = len2(u);
+  const b = dot(u, v);
+  const c = len2(v);
+  const d = dot(u, w);
+  const e = dot(v, w);
+  const denom = a * c - b * b;
+  let t = 0;
+  if (a > 0 && denom > SINGULAR_RATIO * a * c) t = Math.max(0, (b * e - c * d) / denom);
+  const onRay = pointOnRay(ray, t);
+  const s = c > 0 ? dot(sub(onRay, origin), v) / c : 0;
+  return { onRay, onLine: add(origin, scale(v, s)), t, s };
 }

@@ -125,7 +125,9 @@ export {
 } from './pathStructure/directionMarks';
 
 // ─── Path-edit drags ───────────────────────────────────────────────────────
-export { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+export {
+  createHandleSnapExtension, handleSnapSource, type HandleSnapOptions, type HandleSnapOptionsInput,
+} from './handleSnap/handleSnap';
 export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 
 // ─── Panels ────────────────────────────────────────────────────────────────

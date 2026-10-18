@@ -11,7 +11,6 @@ import { resizeAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type {
-  PointSnapBehavior,
   ResizeAnchor,
   BoundsConstraint,
   RotatedPose,
@@ -22,16 +21,6 @@ import { clampMinSize } from './behaviors/clampMinSize';
 import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 
 type RectPose = Bounds;
-
-/** Rounds the dragged corner to a 20-unit lattice. */
-const draggedCornerTo20: PointSnapBehavior<Bounds> = {
-  id: 'draggedCornerTo20',
-  onMove: (ctx) => ctx.draggedCorner && {
-    frame: 'dragged-corner',
-    worldX: Math.round(ctx.draggedCorner.worldX / 20) * 20,
-    worldY: Math.round(ctx.draggedCorner.worldY / 20) * 20,
-  },
-};
 
 const ANCHOR_BR: ResizeAnchor = { x: 'min', y: 'min' };
 
@@ -104,7 +93,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [clampMinSize<RectPose>({ minWidth: 40, minHeight: 40 })] as BoundsConstraint<Bounds>[],
-          pointSnap: [],
+         
           expandIds: (ids: string[]) => ids,
         },
         poseDescriptor: { getBounds: (p) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
@@ -138,7 +127,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [behavior],
-          pointSnap: [],
+         
           expandIds: (ids: string[]) => ids,
         },
         poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
@@ -158,7 +147,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [{ onEnd: () => null }],
-          pointSnap: [],
+         
           expandIds: (ids: string[]) => ids,
         },
         poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
@@ -177,36 +166,6 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
   });
 });
 
-describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
-  it('snaps the dragged corner to a 20px grid', () => {
-    const invoker = getOngoing(resizeAction);
-    const ctx = makeCtx({
-      selectionIds: ['a'],
-      sceneNodes: { a: { pose: { x: 0, y: 0, width: 100, height: 100 } } },
-      anchor: ANCHOR_BR,
-      start: { x: 100, y: 100 },
-      deps: {
-        resizePolicy: {
-          constraints: [],
-          pointSnap: [draggedCornerTo20] as PointSnapBehavior<Bounds>[],
-          expandIds: (ids: string[]) => ids,
-        },
-        poseDescriptor: { getBounds: (p: Bounds) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
-      },
-    });
-    const handle = invoker.start(ctx, undefined);
-    // The dragged bottom-right corner lands at (133,117); grid snap rounds it
-    // to (140,120), and width/height back-solve from the fixed (0,0).
-    handle.onMove!({
-      ...ctx,
-      drag: { start: { x: 100, y: 100 }, current: { x: 133, y: 117 }, delta: { x: 33, y: 17 } },
-    });
-    const preview = handle.previewPose!('a') as RectPose;
-    expect(preview.width).toBeCloseTo(140);
-    expect(preview.height).toBeCloseTo(120);
-  });
-});
-
 describe('resizeAction — expandIds via resizePolicy dep', () => {
   it('takes the group path when expandIds returns a different id set', () => {
     const invoker = getOngoing(resizeAction);
@@ -222,7 +181,7 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
       deps: {
         resizePolicy: {
           constraints: [],
-          pointSnap: [],
+         
           // Map group id 'g' → leaf set.
           expandIds: (ids: string[]) => ids[0] === 'g' ? ['leaf1', 'leaf2'] : ids,
         },
@@ -350,7 +309,7 @@ describe('resizeAction — a rotated leaf inside a group', () => {
       deps: {
         resizePolicy: {
           constraints: [],
-          pointSnap: [],
+         
           expandIds: (ids: string[]) => (ids[0] === 'g' ? ['upright', 'turned'] : ids),
         },
         poseDescriptor: naiveProjection,

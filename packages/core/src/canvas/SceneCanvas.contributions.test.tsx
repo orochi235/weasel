@@ -19,7 +19,7 @@ type P = { x: number; y: number; width: number; height: number };
 
 const ROOT_VIEW: View = { x: 5, y: 6, scale: { x: 1, y: 1 } };
 const PANEL_VIEW: View = { x: 1000, y: 2000, scale: { x: 2, y: 2 } };
-const snap = { snapPoint: (p: unknown) => p } as unknown as SnapDep;
+const snap = { begin: () => ({}) } as unknown as SnapDep;
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

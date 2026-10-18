@@ -2,7 +2,7 @@ import {
   BUILTIN_TOOL_IDS,
   type Measurements,
   measurementsContribution,
-  nearestMeasureEnd,
+  measureEndSource,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -47,9 +47,6 @@ import { useSpacingHints } from './useSpacingHints';
  *  and the sticky tool, whose `background` and `padding` the document's
  *  SVG round trip does not carry. */
 const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
-
-/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
-const END_SNAP_PX = 6;
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -128,14 +125,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Measurement ends snap a drawing or a move within a few screen pixels;
-  // past them, a drawing takes the grid.
-  const gridSnap = grid.snapPoint;
-  const perPx = 1 / (view.scale.x || 1);
-  const toolOptions = useMemo(() => ({
-    snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx),
-    ...(gridSnap ? { snapPoint: gridSnap } : {}),
-  }), [scene, measurements, gridSnap, perPx]);
+  // Measurement ends, and the canvas's default path anchors, snap a gesture
+  // within a few screen pixels; past them it takes the grid.
+  const gridSource = grid.snapSource;
+  const snap = useMemo(
+    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
+    [gridSource],
+  );
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -196,8 +192,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           pickHud
           modalityHud
           onToolsCreated={props.onToolsCreated}
-          selectTool={grid.snap ? { snap: grid.snap } : undefined}
-          toolOptions={toolOptions}
+          snap={snap}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),

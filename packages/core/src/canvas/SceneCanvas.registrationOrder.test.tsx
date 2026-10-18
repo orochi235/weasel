@@ -26,7 +26,7 @@ beforeAll(() => {
 
 const textEdit = { startEdit: () => {}, isTextNode: () => true } as unknown as TextEditDep;
 const insert = { build: () => null } as unknown as InsertDep;
-const snap = { snapPoint: (p: unknown) => p } as unknown as SnapDep;
+const snap = { begin: () => ({}) } as unknown as SnapDep;
 const selectAll: Action = { id: 'selectAll', label: 'mine', invoker: { kind: 'immediate', run: () => {} } } as unknown as Action;
 
 let deps: DepRegistry | null = null;

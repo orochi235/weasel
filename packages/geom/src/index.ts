@@ -68,7 +68,7 @@ export { intersectSegments, type SegmentCrossing } from './intersect/segmentInte
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
 export {
-  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  createPathSnapIndex, findPathSnap, findPathSnaps, PATH_SNAP_KINDS,
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
   type StaticPathSnapKind,
 } from './snap/pathSnap';
@@ -158,10 +158,7 @@ export {
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
-export {
-  handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles, snapHandleAngle,
-  type HandleAngleSnap, type HandleAngleSnapOptions,
-} from './paths/handleEdits';
+export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export {
   measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
   type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,

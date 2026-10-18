@@ -81,5 +81,8 @@ describe('PathSnapLabDemo', () => {
     drag(canvas, [650, 450], [283, 228]);
     const [x, y] = lastEnd();
     expect(Math.hypot(x - 280, y - 230)).toBeGreaterThan(0.5);
+    // Still snapped, to the nearest point on a diagonal: the pointer is 0.2 off the rising one.
+    const offLine = Math.min(Math.abs(3 * x + 4 * y - 1760), Math.abs(3 * x - 4 * y + 80)) / 5;
+    expect(offLine).toBeLessThan(1e-6);
   });
 });

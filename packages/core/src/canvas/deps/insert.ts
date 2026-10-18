@@ -177,10 +177,7 @@ export function useInsertDepSource(
     const ad = adapterRef.current;
 
     const site = () => insertSite(sc, registry.get('insertInto')?.get());
-    const build = (
-      bounds: { x: number; y: number; width: number; height: number },
-      extras: InsertExtras,
-    ): { id: NodeId; ops: Op[] } | null => {
+    const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
         const kind = extras.kind;
         const { parent, layer, local } = site();
         const seq = ++insertSeqRef.current;
@@ -262,8 +259,8 @@ export function useInsertDepSource(
     return {
       layer: () => site().layer,
       build,
-      commit(bounds, extras): NodeId | null {
-        const built = build(bounds, extras);
+      commit(bounds, extras, ends): NodeId | null {
+        const built = build(bounds, extras, ends);
         if (built === null) return null;
         ad.applyOps(built.ops, `Insert ${extras.kind}`);
         return built.id;

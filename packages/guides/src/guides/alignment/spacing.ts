@@ -36,13 +36,17 @@ function hitsStrip(g: SpacingGap, b: Bounds, span: [number, number]): boolean {
  * equal-spacing snap can reproduce.
  */
 export function measureGaps(targets: readonly Bounds[], axis: 'x' | 'y'): SpacingGap[] {
-  return measure(targets, axis).map((m) => m.gap);
+  return measureGapSpans(targets, axis).map((m) => m.gap);
 }
 
-interface Measured { gap: SpacingGap; span: [number, number] }
+/** A measured gap, and the stretch of the other axis its two boxes share. */
+export interface MeasuredGap { gap: SpacingGap; span: [number, number] }
 
-function measure(targets: readonly Bounds[], axis: Axis): Measured[] {
-  const out: Measured[] = [];
+/** `measureGaps`, keeping each gap's shared span: what `referenceGaps`
+ *  filters. Quadratic in `targets`, so a caller matching every frame keeps
+ *  the result while the targets stand still. */
+export function measureGapSpans(targets: readonly Bounds[], axis: Axis): MeasuredGap[] {
+  const out: MeasuredGap[] = [];
   for (const a of targets) {
     let next: Bounds | null = null;
     for (const c of targets) {
@@ -59,17 +63,19 @@ function measure(targets: readonly Bounds[], axis: Axis): Measured[] {
   return out.sort((p, q) => p.gap.min - q.gap.min || p.gap.at - q.gap.at);
 }
 
-interface AxisHit { delta: number; size: number }
+/** A placement on one axis: the move that gives an equal gap of `size`. */
+export interface SpacingOffer { delta: number; size: number }
 
-/** The best equal-spacing placement on one axis, or null. */
-function bestAxis(
+/** Every equal-spacing placement on one axis, unfiltered by reach: each
+ *  reference gap reproduced beside a neighbor, and centering between the two
+ *  neighbors. */
+export function spacingOffers(
   b: Bounds,
   axis: Axis,
   edge: SpacingEdge,
   targets: readonly Bounds[],
   refs: readonly SpacingGap[],
-  tol: number,
-): AxisHit | null {
+): SpacingOffer[] {
   const bLo = lo(b, axis);
   const bHi = hi(b, axis);
   const size = bHi - bLo;
@@ -83,10 +89,9 @@ function bestAxis(
   }
   const sizes = refs.map((g) => g.max - g.min);
 
-  let best: AxisHit | null = null;
+  const out: SpacingOffer[] = [];
   const offer = (delta: number, gap: number): void => {
-    if (gap <= EPS || Math.abs(delta) > tol) return;
-    if (best === null || Math.abs(delta) < Math.abs(best.delta)) best = { delta, size: gap };
+    if (gap > EPS) out.push({ delta, size: gap });
   };
 
   const L = left === null ? null : hi(left, axis);
@@ -107,12 +112,29 @@ function bestAxis(
     const own = R !== null ? [R - bHi] : [];
     for (const g of [...sizes, ...own]) if (L + g < bHi - EPS) offer(L + g - bLo, g);
   }
+  return out;
+}
+
+/** The nearest equal-spacing placement on one axis within `tol`, or null. */
+function bestAxis(
+  b: Bounds,
+  axis: Axis,
+  edge: SpacingEdge,
+  targets: readonly Bounds[],
+  refs: readonly SpacingGap[],
+  tol: number,
+): SpacingOffer | null {
+  let best: SpacingOffer | null = null;
+  for (const o of spacingOffers(b, axis, edge, targets, refs)) {
+    if (Math.abs(o.delta) > tol) continue;
+    if (best === null || Math.abs(o.delta) < Math.abs(best.delta)) best = o;
+  }
   return best;
 }
 
 /** Every gap of `size` on `axis` once the box sits at `b`: the matching
  *  reference gaps, plus the box's own gaps to its two neighbors. */
-function markers(
+export function equalGaps(
   b: Bounds,
   axis: Axis,
   size: number,
@@ -121,9 +143,18 @@ function markers(
 ): SpacingGap[] {
   const eq = (g: SpacingGap) => Math.abs(g.max - g.min - size) < 1e-3;
   const out = refs.filter(eq);
-  const own = measureGaps([...targets, b], axis).filter((g) =>
+  // Only a box overlapping the gap-wide margins beside b can bound or block
+  // one of b's own gaps, so the quadratic measure runs on those alone.
+  const near = targets.filter((t) => hi(t, axis) > lo(b, axis) - size - EPS && lo(t, axis) < hi(b, axis) + size + EPS);
+  const own = measureGaps([...near, b], axis).filter((g) =>
     (Math.abs(g.max - lo(b, axis)) < EPS || Math.abs(g.min - hi(b, axis)) < EPS) && eq(g));
   return [...out, ...own];
+}
+
+/** The measured gaps a box at `bounds` can reproduce: all but those it
+ *  stands inside. */
+export function referenceGaps(bounds: Bounds, measured: readonly MeasuredGap[]): SpacingGap[] {
+  return measured.filter((m) => !hitsStrip(m.gap, bounds, m.span)).map((m) => m.gap);
 }
 
 /**
@@ -145,11 +176,8 @@ export function matchSpacing(
   worldTolerance: { x: number; y: number },
   moving: { x: SpacingEdge | null; y: SpacingEdge | null } = { x: 'both', y: 'both' },
 ): SpacingMatchResult {
-  const refsFor = (axis: Axis) => measure(targets, axis)
-    .filter((m) => !hitsStrip(m.gap, bounds, m.span))
-    .map((m) => m.gap);
-  const refsX = refsFor('x');
-  const refsY = refsFor('y');
+  const refsX = referenceGaps(bounds, measureGapSpans(targets, 'x'));
+  const refsY = referenceGaps(bounds, measureGapSpans(targets, 'y'));
   const x = moving.x === null ? null : bestAxis(bounds, 'x', moving.x, targets, refsX, worldTolerance.x);
   const y = moving.y === null ? null : bestAxis(bounds, 'y', moving.y, targets, refsY, worldTolerance.y);
   const dx = x?.delta ?? 0;
@@ -158,8 +186,8 @@ export function matchSpacing(
   return {
     dx,
     dy,
-    gapsX: x === null ? [] : markers(final, 'x', x.size, targets, refsX),
-    gapsY: y === null ? [] : markers(final, 'y', y.size, targets, refsY),
+    gapsX: x === null ? [] : equalGaps(final, 'x', x.size, targets, refsX),
+    gapsY: y === null ? [] : equalGaps(final, 'y', y.size, targets, refsY),
   };
 }
 
