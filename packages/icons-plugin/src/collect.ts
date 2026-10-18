@@ -1,5 +1,5 @@
 import { Visitor, type ParseResult } from 'oxc-parser';
-import { parseModule } from './parse';
+import { parseModule } from './parse.ts';
 
 const ANNOTATED = /\/\*\s*@icon\s*\*\/\s*(['"])([^'"]+)\1/g;
 const ANNOTATION = /^\s*@icon\s*$/;

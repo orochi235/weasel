@@ -288,3 +288,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `watchProbe()` is a new export of `@weasel-js/forge/vite`, and the site,
   draw, and theme-editor dev servers load it. An isolated story keeps its iframe through a viewport
   change where `moveBefore` exists.
+- 2026-10-18: icons-plugin's relative imports carry `.ts`, not the `.js` its TODO entry asked for:
+  Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
+  and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
+  on `packages/icons-plugin/src` requires the extension.

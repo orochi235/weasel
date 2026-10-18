@@ -289,6 +289,21 @@ export default [
     },
   },
   {
+    // The root vite and vitest configs load this from source, and vite's native config loader
+    // resolves a relative specifier only with its extension. The rule replaces the one above.
+    files: ['packages/icons-plugin/src/**/*.ts'],
+    ignores: ['**/*.test.ts', 'packages/icons-plugin/src/fixtures/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{ name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' }],
+        patterns: [
+          { group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' },
+          { regex: '^\\.\\.?/(?!.*\\.ts$)', message: 'Write the .ts extension on a relative import here.' },
+        ],
+      }],
+    },
+  },
+  {
     /**
      * A CSF story's `render` is not a component, so every hook it calls reads as a violation.
      * Stories aren't shipped, and a handler that logs is how you see a story fire.
