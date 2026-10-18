@@ -35,6 +35,7 @@ import {
   type PaintSlot,
 } from '@weasel-js/ui';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 420;
 
@@ -189,19 +190,19 @@ function StrokeAndFill() {
       <div className="ckd-stack">
         {tools && <ToolPalette tools={tools} orientation="horizontal" />}
         <div className="ckd-canvas-frame" ref={hostRef}>
-          <SceneCanvas
-            features={['pick', 'edit', 'paths']}
-            width={W}
-            height={H}
-            className="ckd-canvas"
-            scene={scene}
-            selection={selection}
-            view={view}
-            onViewChange={setView}
-            defaultTools={['pencil']}
-            onToolsCreated={setTools}
-            insertNodeFactories={insertNodeFactories}
-          />
+          <DemoStage width={W} height={H}>
+            <SceneCanvas
+              features={['pick', 'edit', 'paths']}
+              className="ckd-canvas"
+              scene={scene}
+              selection={selection}
+              view={view}
+              onViewChange={setView}
+              defaultTools={['pencil']}
+              onToolsCreated={setTools}
+              insertNodeFactories={insertNodeFactories}
+            />
+          </DemoStage>
           <SceneGradientHandles
             scene={scene}
             containerRef={hostRef}

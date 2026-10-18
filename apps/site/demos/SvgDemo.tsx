@@ -10,6 +10,7 @@ import {
   type SvgKitPose,
 } from '@weasel-js/svg';
 import s from './SvgDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 420, H = 320;
 const VIEW = { x: 0, y: 0, width: W, height: H };
@@ -171,15 +172,15 @@ function SvgRoundTrip() {
           />
           <Warnings label="parseSvg" items={importWarnings} />
         </div>
-        <SceneCanvas
-          features={['pick', 'move', 'transform']}
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          backgroundFill={{ color: '#ffffff' }}
-          scene={scene}
-          selection={selection}
-        />
+        <DemoStage width={W} height={H} className={s.stage}>
+          <SceneCanvas
+            features={['pick', 'move', 'transform']}
+            className="ckd-canvas"
+            backgroundFill={{ color: '#ffffff' }}
+            scene={scene}
+            selection={selection}
+          />
+        </DemoStage>
       </div>
       <div className={s.output}>
         <div className={s.heading}>serializeSvg</div>
