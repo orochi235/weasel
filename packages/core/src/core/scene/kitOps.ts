@@ -9,6 +9,7 @@ import type { ParallaxOpts } from 'core/viewport/parallax';
 import { dwarn } from 'debug/flag';
 import type { LayoutStrategy } from '../../layout/types';
 import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields';
+import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
 import type {
   ContainerNode, LayerRecord, LeafNode, Node, NodeId, RegisteredOp, UserLayerRecord,
@@ -49,8 +50,8 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   rebuildLayerIndex(): void;
   invalidateOrder(): void;
   fnFields: readonly NodeFnField[];
-  /** Drop from the selection whatever a layer lock just put out of reach, and
-   *  the ids in `gone`. */
+  /** Drop from the selection whatever a lock or a hide just put out of
+   *  reach, and the ids in `gone`. */
   narrowSelection(gone?: ReadonlySet<NodeId>): void;
   /** Drop the pose override of a node that is about to leave the scene: ids
    *  are reusable, and one left behind would attach itself to whatever is
@@ -89,7 +90,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
     parent: NodeId | null; index: number;
     dependsOn?: readonly NodeId[] | 'children';
-    pickable?: boolean;
+    pickable?: boolean; hidden?: boolean; locked?: boolean;
     units?: UnitScope;
   } & Record<string, unknown>>('kit:add', {
     apply: (p) => {
@@ -102,8 +103,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
       if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
-      if (p.pickable !== undefined) node.pickable = p.pickable;
-      if (p.units !== undefined) (node as ContainerNode<TData, TLayer, TPose>).units = p.units;
+      Object.assign(node, statedFields(p));
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);
       // Two ways a function field comes back. Redo of a live add reads
@@ -261,7 +261,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   });
 
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerVisible', {
-    apply: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.to; },
+    apply: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.to; if (!p.to) env.narrowSelection(); },
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.from; },
   });
 

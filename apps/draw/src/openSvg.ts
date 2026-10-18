@@ -18,7 +18,7 @@ export interface OpenedSvg {
 }
 
 function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; drafts: SceneDraft[] } {
-  const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
+  const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES, keepHidden: true });
   for (const w of parsed.warnings) onWarn(w);
   let seq = 0;
   return { parsed, drafts: svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`) };
@@ -41,7 +41,11 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
       skipped.add(draft.id);
       continue;
     }
-    const at = { id: sceneIdOf.get(draft.id)!, ...(draft.parentId != null ? { parent: sceneIdOf.get(draft.parentId)! } : {}) };
+    const at = {
+      id: sceneIdOf.get(draft.id)!,
+      ...(draft.parentId != null ? { parent: sceneIdOf.get(draft.parentId)! } : {}),
+      ...(draft.hidden ? { hidden: true } : {}),
+    };
     if (draft.kind === 'effect' && live(draft)) {
       skipped.add(draft.id);
       const sources = draft.dependsOn.map((s) => sceneIdOf.get(s)!);

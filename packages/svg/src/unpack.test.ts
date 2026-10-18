@@ -320,6 +320,17 @@ describe('unpackSvgFiles', () => {
     expect(nodes.every((n) => n.layer === 'main')).toBe(true);
   });
 
+  it('keeps hidden content, flagged hidden on the node that hid it', async () => {
+    const { c, batches } = ctx({ point: { x: 400, y: 300 } });
+    await unpackSvgFiles([asFile(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect x="10" y="10" width="30" height="20"/>
+      <g display="none"><rect x="60" y="60" width="20" height="20"/></g>
+    </svg>`)], c);
+    const nodes = batches[0].ops as (InsertedNode & { hidden?: boolean })[];
+    expect(nodes).toHaveLength(4);
+    expect(nodes.map((n) => n.hidden)).toEqual([undefined, undefined, true, undefined]);
+  });
+
   it('centers the dropped subtree on the point (translate-only when it fits)', async () => {
     const { c, batches } = ctx({ point: { x: 400, y: 300 } });
     await unpackSvgFiles([asFile(SVG)], c);

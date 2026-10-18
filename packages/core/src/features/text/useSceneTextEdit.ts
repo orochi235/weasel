@@ -256,7 +256,7 @@ export function useSceneTextEdit<
     const paintedPoseOf = scenePaintedPoseOf(sceneRef.current);
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
-      if (sceneRef.current.isLocked(node.id)) continue;
+      if (sceneRef.current.isLocked(node.id) || sceneRef.current.isHidden(node.id)) continue;
       if (!read.isText(node.data)) continue;
       const text = read.text(node.data);
       const at = paintedPoseOf(node);

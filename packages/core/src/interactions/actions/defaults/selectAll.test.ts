@@ -48,6 +48,15 @@ describe('selectAllAction (behavior)', () => {
     expect(run(scene)).toEqual(['shown']);
   });
 
+  it('skips a hidden or locked node, and what sits under one', () => {
+    const scene = sceneWithHiddenLayer();
+    const box = scene.add({ kind: 'container', id: asNodeId('box'), layer: 'base', data: { v: 3 }, pose: { x: 0 } });
+    scene.add({ kind: 'leaf', id: asNodeId('kid'), layer: 'base', data: { v: 4 }, pose: { x: 0 }, parent: box });
+    scene.setHidden(box, true);
+    scene.setLocked(asNodeId('hidden'), true);
+    expect(run(scene)).toEqual(['shown']);
+  });
+
   it('skips nodes on a locked layer, and takes them again once unlocked', () => {
     const scene = sceneWithHiddenLayer();
     scene.setLayerLocked('fx', true);

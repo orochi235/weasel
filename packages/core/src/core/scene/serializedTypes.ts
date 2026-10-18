@@ -44,6 +44,10 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
   dependsOn?: readonly string[] | 'children';
   /** Mirrors `SceneNode.pickable`. Omitted when the node is pickable. */
   pickable?: boolean;
+  /** Mirrors `SceneNode.hidden`. Omitted when the node is shown. */
+  hidden?: boolean;
+  /** Mirrors `SceneNode.locked`. Omitted when the node is unlocked. */
+  locked?: boolean;
   /** Registry key for the node's `derivePath` function. Omitted when it has none. */
   derivePathKey?: string;
   /** Registry key for the node's `derivePose` function. Omitted when it has none. */

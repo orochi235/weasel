@@ -198,18 +198,8 @@ Priority tags:
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
-- **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
-  keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
-  `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
-  ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
-  `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
-
 ### Path editing tricks
 
-- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
-  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
-  measurement row offers select and remove only; the annotation layer's own row can be hidden,
-  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
 - **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
   `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
   is an export, and so skips them, or a view of the canvas, and so keeps them.
@@ -534,6 +524,10 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A hidden or locked diagram node's ports still draw and take a drag.** `portLayer`
+  walks every node `sceneParticipants` yields (`packages/diagram/src/portLayer.ts`) and asks
+  neither `nodeGates` nor the layer, so ports float over a node on a hidden layer, or one hidden
+  on its own, and a locked node's ports can still be dragged from.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

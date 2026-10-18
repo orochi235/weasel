@@ -2,6 +2,7 @@ import {
   AUTO_POSE_DESCRIPTOR,
   type Bounds,
   type NodeId,
+  nodeGates,
   type PoseDescriptor,
   type Scene,
   scenePoseFrame,
@@ -47,7 +48,7 @@ export function worldUnionOf(
 
 /**
  * The world boxes of `ids`' siblings — every node sharing a parent with one
- * of them, outside the set, on a visible layer. What an equal-spacing snap
+ * of them, outside the set, and not hidden (`nodeGates`). What an equal-spacing snap
  * measures gaps between while `ids` move: `alignMoveBehavior`'s
  * `getSpacingTargets`.
  */
@@ -57,7 +58,7 @@ export function siblingBounds(
   opts: SceneBoundsOptions = {},
 ): Bounds[] {
   const moving = new Set(ids);
-  const hidden = new Set(scene.layers.filter((l) => !l.visible).map((l) => l.id));
+  const gates = nodeGates(scene);
   const parents = new Set<NodeId | null>();
   for (const id of ids) {
     const node = scene.get(id);
@@ -67,7 +68,7 @@ export function siblingBounds(
   for (const parent of parents) {
     for (const id of parent === null ? scene.roots : scene.childrenOf(parent)) {
       const node = scene.get(id);
-      if (moving.has(id) || node === undefined || hidden.has(node.layer)) continue;
+      if (moving.has(id) || node === undefined || gates.hidden(id)) continue;
       siblings.push(id);
     }
   }

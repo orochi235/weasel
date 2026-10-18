@@ -118,4 +118,8 @@ export type { ReorderDirection } from '../core/ops/reorder';
 
 // ─── Annotation layers, and the measurements kept on them ───────────────────
 export { isAnnotationLayer, isAnnotationNode, annotationLayerIds } from 'core/scene/annotation';
+
+// ─── Whether a node is shown and in reach ────────────────────────────────────
+export { nodeGates, isNodeHidden, isNodeLocked, hidesSubtree } from 'core/scene/nodeGates';
+export type { NodeGates, GateSource, GatedNode, GatedLayer } from 'core/scene/nodeGates';
 export * from '../features/measure';

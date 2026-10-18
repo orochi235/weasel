@@ -157,6 +157,21 @@ describe('picking and the current measurement', () => {
     expect(rig.ms.picked.get()).toBeNull();
   });
 
+  it('passes over a hidden or locked measurement to the one under it', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 100, y: 0 });
+    rig.measure({ x: 0, y: 2 }, { x: 100, y: 2 });
+    const [a, b] = rig.ids();
+    rig.scene.setHidden(b!, true);
+    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 2 });
+    expect(rig.ms.picked.get()).toBe(a);
+    rig.scene.setHidden(b!, false);
+    rig.scene.setLocked(b!, true);
+    rig.ms.picked.set(null);
+    rig.run(MEASURE_ACTION_IDS.pickAt, { pressX: 50, pressY: 2 });
+    expect(rig.ms.picked.get()).toBe(a);
+  });
+
   it('acts on the picked measurement, else the newest', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 10, y: 0 });
@@ -281,6 +296,13 @@ describe('measurements in the document', () => {
     rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
     expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 32, y: 37 }, 5)).toEqual({ x: 30, y: 40 });
     expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 50, y: 50 }, 5)).toBeNull();
+  });
+
+  it('offers no snap target from a hidden measurement', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
+    rig.scene.setHidden(rig.ids()[0]!, true);
+    expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 32, y: 37 }, 5)).toBeNull();
   });
 
   it('tells a content node from an annotation', () => {

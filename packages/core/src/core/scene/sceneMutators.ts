@@ -28,6 +28,10 @@ export interface SceneMutators<TData, TLayer extends string, TPose> {
   setData(id: string, data: TData): void;
   setLayer(id: string, layer: TLayer): void;
   setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
+  /** What a `setHidden` op writes through. */
+  setHidden(id: string, hidden: boolean): void;
+  /** What a `setLocked` op writes through. */
+  setLocked(id: string, locked: boolean): void;
   removeNode(id: string): void;
   /** Re-add `node` as it was, at sibling `index` when one is given. */
   insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
@@ -57,6 +61,8 @@ export function sceneMutators<TData, TLayer extends string, TPose>(
     setData: (id, data) => scene.update(asNodeId(id), { data }),
     setLayer: (id, layer) => scene.setLayer(asNodeId(id), layer),
     setLayout: (id, layout) => scene.setLayout(asNodeId(id), layout),
+    setHidden: (id, hidden) => scene.setHidden(asNodeId(id), hidden),
+    setLocked: (id, locked) => scene.setLocked(asNodeId(id), locked),
     removeNode: (id) => scene.remove(asNodeId(id)),
     insertNode: (node, index) => {
       scene.add({

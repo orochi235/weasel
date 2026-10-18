@@ -109,7 +109,7 @@
   box-shadow: 0 2px 0 var(--wzl-accent);
 }
 
-/* One width for the grip and the lock, so a locked row's label lines up. */
+/* One width for the grip and the lock, so a fixed row's label lines up. */
 .grip,
 .lock {
   display: inline-flex;
@@ -120,11 +120,11 @@
   color: var(--wzl-fg-muted);
 }
 
-.row:not([data-locked]) {
+.row:not([data-fixed]):not([data-locked]) {
   cursor: grab;
 }
 
-.row:not([data-locked]):active {
+.row:not([data-fixed]):not([data-locked]):active {
   cursor: grabbing;
 }
 
@@ -140,7 +140,7 @@
   width: var(--wzl-disclosure-target, var(--wzl-control-h-sm));
 }
 
-/* Sized, so the empty column a locked row keeps is the checkbox's width. */
+/* Sized, so the empty column a fixed row keeps is the checkbox's width. */
 .check {
   flex: 0 0 auto;
   width: 13px;
@@ -193,4 +193,35 @@
   margin-inline-start: auto;
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size-xs);
+}
+
+/* The lock column, beside the checkbox column. */
+.lockToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+}
+
+.lockToggle[aria-pressed='true'] {
+  color: var(--wzl-fg);
+}
+
+/* The field a rename opens in place of the label. */
+.rename {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  padding: 0 var(--wzl-space-1);
+  border: 1px solid var(--wzl-accent);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
 }
