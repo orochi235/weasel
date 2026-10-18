@@ -6,11 +6,9 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
-  type PrefNumber,
   type PrefSection,
   prefAliasName,
   prefIsCompound,
-  resolvePrefUnit,
 } from '@weasel-js/prefs';
 import {
   DialogRow,
@@ -30,8 +28,6 @@ import {
   prefListTexts,
   withRowControl,
 } from '@weasel-js/ui';
-import { useMemo } from 'react';
-import { autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
@@ -39,7 +35,8 @@ import { boundAction } from './boundAction';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
-import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
+import { inDialog, summarizeLeaf } from './inDialog';
+import { useRowAuto } from './rowAuto';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
 export interface ControlRowProps<TC extends Record<string, unknown>> {
@@ -59,19 +56,11 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   setRowAuto?: (path: string, next: boolean, value: unknown) => void;
   /** The row takes no input: its `enableIf`, or that of a group above it, does not hold. */
   disabled?: boolean;
+  /** Paths whose rows are marked as changed. */
+  changed?: ReadonlySet<string>;
   /** The schema an alias points into, where that is not `resolved`'s: the row is drawn as the leaf of it at the
    *  alias's path, and reads and writes `config` there. A condition inside the row's leaf may read its settings. */
   over?: PrefGroup | PrefSection;
-}
-
-/** An auto value as tooltip text. A number with a unit reads as its field shows it. Any other computed
- *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
-function summarizeAuto(value: unknown, leaf: PrefLeaf): string {
-  if (typeof value !== 'number') return summarizeLeaf(leaf, value);
-  const unit = leaf.kind === 'number' ? (leaf as PrefNumber).unit : undefined;
-  return unit === undefined
-    ? summarizeValue(Number(value.toPrecision(6)))
-    : resolvePrefUnit(unit).format(value);
 }
 
 /** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
@@ -189,37 +178,6 @@ function customRow(
   );
 }
 
-/** What a row would read as auto, pinned or not; `cycles` where unpinning it would close a resolver cycle. */
-function useUnpinned<TC extends Record<string, unknown>>({
-  resolves,
-  isAutoRow,
-  shown,
-  resolved,
-  config,
-  auto,
-  path,
-}: Pick<ControlRowProps<TC>, 'shown' | 'resolved' | 'config' | 'auto' | 'path'> & {
-  resolves: boolean;
-  isAutoRow: boolean;
-}): { value?: unknown; cycles?: true } {
-  return useMemo(() => {
-    if (!resolves) return {};
-    if (isAutoRow) return { value: valueAtPath(shown, path) };
-    try {
-      return {
-        value: valueAtPath(
-          resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
-          path,
-        ),
-      };
-    } catch {
-      // Unpinning this path would close a resolver cycle: the row has no auto
-      // value to quote, and going auto would throw out of the panel's render.
-      return { cycles: true };
-    }
-  }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
-}
-
 function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
@@ -235,33 +193,17 @@ function LeafRow<TC extends Record<string, unknown>>({
   disabled = false,
   over,
   inside,
+  changed: changedPaths,
 }: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
   const choices = useFieldChoices();
   const fallback = extra<unknown>(leaf, 'default');
   const pinned = valueAtPath(config, path) ?? fallback;
 
-  const isAutoRow = auto?.has(path) ?? false;
-  const canAuto = setRowAuto !== undefined && leafCanAuto(leaf);
-  // Read out of the resolved config rather than re-running this leaf's own
-  // resolver, so the row reports the value the instrument actually got — the
-  // two diverge as soon as a resolver reads another auto path.
-  const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
-  // An auto row draws what the resolver decided, not the value underneath it —
-  // a handle sitting at the pinned number while the readout says something else
-  // reads as a rendering bug. Pinning then keeps what you were looking at.
-  const value = resolvedValue ?? pinned;
-  const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
-  // An auto row hides its control, so the word is all the row has to say.
-  const autoReadout = isAutoRow ? 'auto' : undefined;
-  // What the row would read as auto, pinned or not: the config resolved with
-  // this path unpinned beside the ones that already are.
-  const resolves = canAuto && autoResolverOf(leaf) !== undefined;
-  const unpinned = useUnpinned({ resolves, isAutoRow, shown, resolved, config, auto, path });
-  const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
-  const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value, leaf);
-  const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
+  const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, pinned, auto, setRowAuto });
+  const { isAutoRow, value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
 
+  const changed = changedPaths?.has(path) === true;
   const custom = customRow(resolved, renderers, path, leaf);
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
@@ -271,6 +213,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       pref: boundAction(leaf, config, setConfig),
       value,
       values: config,
+      changed,
       setValue: write,
       auto: isAutoRow,
       setAuto,
@@ -283,7 +226,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   // `auto` gives the whole width to the controls that read badly at half of a
   // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
   const wide = pack === 'auto';
-  const row = { label, description, layout, readout: autoReadout, ...autoProps };
+  const row = { label, description, layout, readout: autoReadout, changed, ...autoProps };
 
   if (leaf.kind === 'action') {
     return (
@@ -314,6 +257,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         layout={layout}
         description={description}
         disabled={disabled}
+        changed={changed}
         {...autoProps}
       >
         {() => (

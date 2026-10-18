@@ -42,6 +42,7 @@ export function DebouncedTextRow({
   readout?: ReactNode;
   auto?: boolean;
   onAutoChange?: (next: boolean) => void;
+  changed?: boolean;
 }) {
   // The lab's policy leaves text live, so its writer is `onInput`.
   const text = useDebouncedText(
@@ -75,6 +76,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
   setConfig,
   layout,
   span,
+  changed,
 }: {
   label: string;
   cells: readonly PairCellSpec[];
@@ -82,11 +84,13 @@ export function PairedRow<TC extends Record<string, unknown>>({
   setConfig: (path: string, value: unknown) => void;
   layout?: PropertyRowLayout;
   span?: boolean;
+  changed?: boolean;
 }) {
   return (
     <PropertyRow
       group
       span={span}
+      changed={changed}
       label={label}
       layout={layout}
       disabled={cells.every((cell) => cell.disabled)}

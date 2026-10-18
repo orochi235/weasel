@@ -47,6 +47,8 @@ export interface PrefRenderContext {
   /** Everything the surface edits, from its root: a form's `values`, a control panel's `config`. What a row
    *  reads of another setting. */
   values?: unknown;
+  /** The surface marks this leaf's row as changed: a renderer drawing its whole row passes it to `PropertyRow`. */
+  changed?: boolean;
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
@@ -177,6 +179,7 @@ export function prefRenderContext(
     pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     values: ctx.values,
+    ...(ctx.changed?.has(path) ? { changed: true } : {}),
     mixed,
     setValue: (v) => ctx.onChange(path, v),
     mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),

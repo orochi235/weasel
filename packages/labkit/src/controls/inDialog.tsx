@@ -84,6 +84,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
         readout={auto ? 'auto' : undefined}
         auto={auto}
         onAutoChange={pinned ? undefined : setAuto}
+        changed={ctx.changed}
       >
         {() => body(ctx)}
       </DialogRow>
