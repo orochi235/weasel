@@ -389,11 +389,6 @@ Priority tags:
 - **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
   `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
   third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
-- **(P3) A move under a rotated parent repeats in the parent's axes.** Nudge, duplicate, and
-  Transform Again (`interactions/actions/transform-again/`) offset a node along its parent's axes;
-  a drag and an Alt-drag clone measure on screen. So inside a group drawn turned, Cmd+D after a
-  drag steps in a different direction from the drag. Recording the move in world space and
-  mapping it through each node's parent on replay would make the two agree.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
