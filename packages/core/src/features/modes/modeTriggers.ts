@@ -19,8 +19,9 @@ export interface ModeTriggerHandlers {
  * kind its `entry.targets` names, entering the mode on the node double-clicked. Install it with
  * `<SceneCanvas ambient>`, beside `modeShortcuts`.
  *
- * The target is the node the dispatcher classified the double-click on (the `hitAt` dep), the
- * one the binding's `kind:` target matched. The action is live in every mode, the target mode
+ * The target is the node the dispatcher classified the double-click on (the `hitAt` dep's
+ * `doubleClick`, else its hit), the one the binding's `kind:` target matched: a double-click on
+ * a grouped member names its outermost group inside `<SceneCanvas isolatedGroup>`. The action is live in every mode, the target mode
  * included, so a double-click on another node moves a mode onto it; `canEnter` and `enter`
  * decide what a switch from the current mode means.
  *
@@ -48,8 +49,9 @@ function triggerAction(
   const targetAt = (deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null => {
     if (!at) return null;
     const hit = deps?.hitAt?.(at);
-    if (hit?.id === undefined) return null;
-    return canEnter?.(mode.id, hit.id) === false ? null : hit.id;
+    const id = (hit?.doubleClick ?? hit)?.id;
+    if (id === undefined) return null;
+    return canEnter?.(mode.id, id) === false ? null : id;
   };
   return {
     id: `mode.${mode.id}.trigger`,

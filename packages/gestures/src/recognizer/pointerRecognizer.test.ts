@@ -182,6 +182,22 @@ describe('a double click', () => {
     expect(h.kinds().filter((k) => k === 'doubleclick')).toHaveLength(1);
   });
 
+  it('lands on what the press says a double-click names, where the click keeps the hit', () => {
+    const h = harness();
+    const press = {
+      bodyTarget: 'unselected-body', bodyKind: 'path',
+      doubleClickBody: { bodyTarget: 'unselected-body', bodyKind: 'group' },
+    } as const;
+    for (let i = 0; i < 2; i++) {
+      h.down(1, 0, press);
+      h.recognizer.release(h.at(1, 0));
+    }
+    const click = h.events.find((e) => e.kind === 'click');
+    const double = h.events.find((e) => e.kind === 'doubleclick');
+    expect(click).toMatchObject({ bodyKind: 'path' });
+    expect(double).toMatchObject({ bodyTarget: 'unselected-body', bodyKind: 'group' });
+  });
+
   it('spans two recognizers that share a click memory', () => {
     const clicks = { last: null };
     harness({ more: { clicks } }).click();

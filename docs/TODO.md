@@ -63,14 +63,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) A double-click never isolates a group in draw.** A container routes as `'group'` now, and
-  `ISOLATION`'s trigger binds `kind:group`, but the hit under a double-click on a group is never
-  the group: `pickTopMostHit` drops an ancestor whenever one of its children is also hit, and draw
-  selects members directly, so the double-click lands on the member and opens it in path-edit
-  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). Needs a decision on what a
-  double-click on a grouped member names — the member, as now, or its group, Illustrator-style,
-  which would also mean asking whether a single click selects the group.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
