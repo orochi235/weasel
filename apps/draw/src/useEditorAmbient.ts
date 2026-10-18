@@ -5,6 +5,7 @@ import { type AppCommands, appCommandsContribution } from './appCommands';
 import type { DrawScene } from './drawDocument';
 import { useRecording } from './recording/useRecording';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
+import { useChromeCommands } from './surfaces/surfaceState';
 import { colorContribution, useColorContext } from './tools/colorContext';
 
 export interface EditorAmbientArgs {
@@ -34,10 +35,12 @@ export function useEditorAmbient(args: EditorAmbientArgs): readonly SurfaceContr
   const colorsRef = useLatest(useColorContext());
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
 
+  const chrome = useChromeCommands();
   const appCommands: AppCommands = {
     ...args.grid,
     ...args.pathDirection,
     ...args.symmetry.commands,
+    ...chrome,
     canReleaseCompound: hasCompoundPath(scene, selection.current),
     releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
     openPrefs: args.openPrefs,

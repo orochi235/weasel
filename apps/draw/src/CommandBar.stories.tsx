@@ -51,6 +51,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     releaseCompound: noop,
     openPrefs: noop,
     openPalette: noop,
+    chromeHidden: () => false,
+    toggleChrome: noop,
   };
   useDepSource('appCommands', () => commands);
   useAction(toggleGridAction);

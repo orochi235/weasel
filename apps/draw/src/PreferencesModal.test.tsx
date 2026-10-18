@@ -29,6 +29,15 @@ describe('SurfacesEditor', () => {
     expect(setValue).toHaveBeenCalledWith({ layers: { collapsed: true, hidden: true } });
   });
 
+  it('lists the chrome that is not a surface asset, with a hidden flag and no collapsed one', () => {
+    const setValue = vi.fn();
+    render(<SurfacesEditor ctx={ctxFor({ statusBar: { hidden: true } }, setValue)} />);
+    expect((screen.getByLabelText('Hide Status bar') as HTMLInputElement).checked).toBe(true);
+    expect(screen.queryByLabelText('Collapse Status bar')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Hide Tools'));
+    expect(setValue).toHaveBeenCalledWith({ statusBar: { hidden: true }, tools: { hidden: true } });
+  });
+
   it('offers a surface choice only for an asset that allows more than one', () => {
     render(<SurfacesEditor ctx={ctxFor({ path: { surface: 'menu' } })} />);
     expect(screen.getByRole('button', { name: /Show Path as/ }).textContent).toMatch(/Menu/);
