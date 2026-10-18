@@ -12,7 +12,7 @@ import { aggregateAttributes, catalogAttributes, isObjectField, setObjectField }
 import { ATTR_RENDERERS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
+import { entryHolderAt, keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -82,13 +82,17 @@ export interface AttributesPaneProps {
 
 /**
  * Draws a `showIf` or an `enableIf` as its editor. `holder` is the selected list or map: the condition of its
- * entry may read the entry's own fields, where the node's own reads the schema's.
+ * entry may read the entry's own fields, where the node's own reads the schema's. A node at one of `targets` that is
+ * a field of an entry may read that entry's other fields, where every target is a field of the same one.
  */
-function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, over: SchemaRoot | undefined): PrefRenderer {
+function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, targets: ReadonlyArray<string | null>, over: SchemaRoot | undefined): PrefRenderer {
+  const holders = targets.map((p) => entryHolderAt(schema, p));
+  const within = holders.every((h) => h === holders[0]) ? holders[0] : undefined;
   return Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(({ path, pref, value, setValue }) => {
-    const entryOf = path.startsWith(`${ENTRY}.`) ? holder : undefined;
+    const ofEntry = path.startsWith(`${ENTRY}.`);
+    const entryOf = ofEntry ? holder : within;
     return (
-      <PrefConditionEditor aria-label={entryOf ? `Entry ${pref.name.toLowerCase()}` : pref.name} schema={schema} over={over} exclude={exclude}
+      <PrefConditionEditor aria-label={ofEntry ? `Entry ${pref.name.toLowerCase()}` : pref.name} schema={schema} over={over} exclude={exclude}
         entryOf={entryOf} value={value as PrefCondition | undefined} onChange={setValue} />
     );
   }, { group: true, wide: true });
@@ -174,7 +178,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
         </fieldset>
       </span>
     ), { group: true }),
-    [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, over),
+    [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, targets, over),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
         onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />

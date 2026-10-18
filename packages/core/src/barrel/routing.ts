@@ -224,6 +224,7 @@ export type {
   DragSpec,
   MultiTouchSpec,
   DropSpec,
+  CarrySpec,
   PasteSpec,
   GestureSpec,
 } from '../interactions/gestures/spec';

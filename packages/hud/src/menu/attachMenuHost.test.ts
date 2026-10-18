@@ -267,6 +267,22 @@ describe('attachMenuHost on an attached hud', () => {
     expect(ev.defaultPrevented).toBe(true);
     expect(host.current()).not.toBeNull();
   });
+
+  it('mirrors the open menu as hidden DOM with menu roles, kept in step with its highlight', () => {
+    const mirror = document.querySelector<HTMLElement>('[role="menu"][aria-label="Context menu"]');
+    expect(mirror).not.toBeNull();
+    expect(el.getAttribute('aria-owns')).toBe(mirror!.id);
+    const row = mirror!.querySelector<HTMLElement>('[role="menuitem"]')!;
+    expect(row.textContent).toBe('Cut');
+    expect(el.getAttribute('aria-activedescendant')).toBeNull();
+    keydown(el, 'ArrowDown');
+    expect(mirror!.getAttribute('aria-activedescendant')).toBe(row.id);
+    expect(el.getAttribute('aria-activedescendant')).toBe(row.id);
+    keydown(el, 'Escape');
+    expect(document.querySelector('[role="menu"][aria-label="Context menu"]')).toBeNull();
+    expect(el.getAttribute('aria-owns')).toBeNull();
+    expect(el.getAttribute('aria-activedescendant')).toBeNull();
+  });
 });
 
 describe('attachMenuHost with a hud drawing in another font', () => {

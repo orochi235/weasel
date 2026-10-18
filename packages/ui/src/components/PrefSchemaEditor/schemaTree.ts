@@ -1,4 +1,4 @@
-import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefSection } from '@weasel-js/prefs';
 
 /** A schema the editor opens: a preferences schema, or a node's property schema. */
 export type SchemaRoot = PrefGroup | PrefSection;
@@ -18,21 +18,47 @@ export interface SchemaTarget {
   index: number;
 }
 
+/** Whether `node` is an `object` leaf whose fields the tree draws: one made from a type has its type's to say. */
+const isOpenObject = (node: SchemaNode | undefined): boolean => !!node && isPrefLeaf(node) && node.kind === 'object' && node.type === undefined;
+
 /**
- * The attribute a node keeps the nodes under it in, or `undefined` for a node the tree shows as one row: a leaf
- * of any kind but `object`, and an `object` leaf made from a type, whose fields are its type's to say.
+ * Where a node keeps the nodes under it, or `undefined` for a node the tree shows as one row. `item` is a list's
+ * or a map's entry that is an open `object` leaf: its fields are drawn under the list, each in no entry but the
+ * one every entry is made from.
  */
-export function slotOf(node: SchemaNode): 'children' | 'members' | undefined {
+export function slotOf(node: SchemaNode): 'children' | 'members' | 'item' | undefined {
   if (isPrefSection(node)) return 'members';
   if (!isPrefLeaf(node)) return 'children';
-  return node.kind === 'object' && node.type === undefined ? 'children' : undefined;
+  if (node.kind === 'list' || node.kind === 'map') return isOpenObject((node as { item?: PrefLeaf }).item) ? 'item' : undefined;
+  return isOpenObject(node) ? 'children' : undefined;
 }
 
-/** The nodes under `node`, by key: a group's or an `object` leaf's children, or a section's members. `undefined`
- *  for anything that holds none. */
+/** {@link slotOf} for a node that keeps what is under it in an attribute of its own; `undefined` for an entry's fields. */
+export function ownSlotOf(node: SchemaNode): 'children' | 'members' | undefined {
+  const slot = slotOf(node);
+  return slot === 'item' ? undefined : slot;
+}
+
+/** The nodes under `node`, by key: a group's or an `object` leaf's children, a section's members, or the fields
+ *  of a list's or a map's object entry. `undefined` for anything that holds none. */
 export function childrenOf(node: SchemaNode): ChildMap | undefined {
   const slot = slotOf(node);
+  if (slot === 'item') return (node as unknown as { item: { children: ChildMap } }).item.children;
   return slot === undefined ? undefined : ((node as unknown as Record<string, unknown>)[slot] as ChildMap);
+}
+
+/** The nodes `node` keeps in an attribute of its own: {@link childrenOf} less an entry's fields, which the entry keeps. */
+export function ownChildrenOf(node: SchemaNode): ChildMap | undefined {
+  return ownSlotOf(node) === undefined ? undefined : childrenOf(node);
+}
+
+/** The list or map whose entry the node at `path` sits in, the nearest one above it; `undefined` in none. */
+export function entryHolderAt(root: SchemaRoot, path: string | null): PrefList | PrefMap | undefined {
+  for (let at = path === null ? null : parentPath(path); at !== null; at = parentPath(at)) {
+    const node = nodeAt(root, at);
+    if (node && slotOf(node) === 'item') return node as PrefList | PrefMap;
+  }
+  return undefined;
 }
 
 /** The leaves a leaf keeps where the tree draws no row for them: a list's or a map's entry, and a union's variants. */
@@ -113,7 +139,12 @@ export function nodeAt(root: SchemaRoot, path: string | null): SchemaNode | unde
 }
 
 export function withChildren(node: SchemaNode, kids: ChildMap): SchemaNode {
-  return { ...node, [slotOf(node)!]: kids } as SchemaNode;
+  const slot = slotOf(node)!;
+  if (slot === 'item') {
+    const item = (node as unknown as { item: PrefLeaf }).item;
+    return { ...node, item: { ...item, children: kids } } as SchemaNode;
+  }
+  return { ...node, [slot]: kids } as SchemaNode;
 }
 
 /** `root` with the children of the node at `parent` replaced by `edit` of them. */

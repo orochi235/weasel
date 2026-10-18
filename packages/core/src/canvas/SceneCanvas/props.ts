@@ -45,7 +45,7 @@ import type { VersionCheck } from './useContributionRoles';
 import type { SceneCanvasViewport } from './viewportProp';
 
 /** The adapter surface delete / duplicate / group / ungroup need, narrowed from
- *  `SceneCanvasAdapter` because `StandardActionsRegistrar` is non-generic. */
+ *  `SceneCanvasAdapter` because `useSceneStandardActions` is non-generic. */
 export interface BridgeAdapter {
   applyOps(ops: Op[], label?: string): void;
   insertNode(node: { id: string; [k: string]: unknown }): void;

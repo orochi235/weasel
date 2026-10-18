@@ -38,4 +38,33 @@ describe('BarMenu', () => {
     act(() => { fireEvent.click(trigger); });
     expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
   });
+
+  it('leaves focus in another menu when a menu that opened itself closes', async () => {
+    await renderSettled(
+      <ActionsProvider>
+        <Command />
+        <BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen />
+        <div role="menu" tabIndex={-1} aria-label="Other" />
+      </ActionsProvider>,
+    );
+    const other = screen.getByRole('menu', { name: 'Other' });
+    act(() => other.focus());
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    expect(screen.queryByRole('menuitem', { name: 'Open' })).toBeNull();
+    expect(document.activeElement).toBe(other);
+  });
+
+  it('takes focus back when focus is in its own submenu as it closes', async () => {
+    const NESTED: PrefGroup = {
+      name: 'File', description: '', as: 'menu',
+      children: { more: { name: 'More', description: '', as: 'menu', children: FILE.children } },
+    };
+    await renderSettled(<ActionsProvider><Command /><BarMenu label="File" schema={NESTED} values={() => undefined} defaultOpen /></ActionsProvider>);
+    act(() => { fireEvent.click(screen.getByRole('menuitem', { name: /^More/ })); });
+    const sub = screen.getAllByRole('menu').at(-1)!;
+    act(() => sub.focus());
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /File/ }));
+  });
 });
+

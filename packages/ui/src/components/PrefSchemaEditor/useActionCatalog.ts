@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { dissolve, filed, NO_CATALOG } from './actionCatalog';
+import { pathsIn, scopedPath } from './assetScope';
 import type { EditorAction } from './editorActions';
 import { addNode, childrenOf, joinPath, keyOf, moveNodes, nodeAt, parentPath, uniqueKey, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { useEditorSelection } from './useEditorSelection';
@@ -22,6 +23,10 @@ export interface ActionCatalog {
   /** Take what the pane's tree reports as selected. */
   pick(ids: Iterable<string>): void;
   clear(): void;
+  /** The rows selected as an undo step records them, beside the shown asset's: none where the catalog is no asset. */
+  recorded(): string[];
+  /** Select the rows a step of the history restores, of what {@link ActionCatalog.recorded} gave. */
+  restore(recorded: readonly string[]): void;
   /** Set `next` in place of `root`, as one step back; steps that share a `coalesceKey` close together are one. */
   commit(next: SchemaRoot, coalesceKey?: string): void;
   move(paths: readonly string[], target: SchemaTarget): void;
@@ -63,6 +68,10 @@ export function useActionCatalog({ workspace, current, actions, write, onPick }:
       onPick();
     },
     clear: () => selection.set([]),
+    recorded: () => (asset ? selection.paths.map((path) => scopedPath(asset.id, path)) : []),
+    restore(recorded) {
+      if (asset) selection.set(pathsIn(asset.id, recorded));
+    },
     commit,
     move(paths, target) {
       const moved = moveNodes(root, paths, target);

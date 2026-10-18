@@ -23,6 +23,7 @@ export {
 } from './builder';
 export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { fromConfigFields } from './fromConfigField';
+export { configFromPrefs } from './fromPrefs';
 export {
   fillConfigDefaults,
   hasConfigPath,

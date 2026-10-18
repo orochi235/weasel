@@ -1,8 +1,9 @@
 import { createMenuController, withLinks, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
-import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
-import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
+import { createRevision, type HudAccessibleTree, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
+import { accessibleMenu } from './accessibleMenu';
+import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
 import type { Point } from '@weasel-js/geom';
@@ -21,6 +22,8 @@ export interface MenuWidgetOptions {
    *  registered face's own advances, which is what the text is laid out with. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
   metrics?: MenuMetrics;
+  /** Where a row's icon is looked up; without it no row draws one. */
+  icons?: MenuIcons;
   onChange(): void;
 }
 
@@ -100,6 +103,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     return true;
   };
 
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c), subscribe: c.subscribe };
+
   return {
     id: `weasel-menu-${opts.open.seq}`,
     get bounds() { return union(); },
@@ -109,11 +114,12 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     focusable: true,
     focusRing: false,
     accessibleName: 'Context menu',
-    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration()],
+    accessibleTree,
+    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration(), opts.icons?.getVersion()],
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m));
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,
     cursorAt: () => 'default',

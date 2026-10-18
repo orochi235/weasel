@@ -2,7 +2,8 @@ import {
   PATH_L,
   PATH_M,
   PATH_Z,
-  type PolygonPath
+  type PolygonPath,
+  type Rect,
 } from '@weasel-js/geom';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import type { StyledRun, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
@@ -12,7 +13,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { inkReach, resolveNodeFill, resolveNodeStroke } from './nodePaint';
+import { inkReach, resolveNodeFill, resolveNodeStroke, strokeOutsetPerAxis } from './nodePaint';
 import { paintsPose } from './poseBox';
 
 /** The `data` a `kit:text` node carries. */
@@ -107,7 +108,30 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { stroke?: Stroke | null };
     return { filled: true, ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale) };
   },
+  drawnBounds: (node, pose, ctx) => {
+    const d = node.data as TextNodeData;
+    const stroke = resolveNodeStroke(d.stroke);
+    return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose)), strokeOutsetPerAxis(stroke, ctx)) : null;
+  },
 };
+
+/**
+ * The layout box grown where a stroked line reaches it: each line box, cut to
+ * the layout box, then outset by the stroke's reach. A line that overflows the
+ * layout box is left to it — the layout box is what a text node claims.
+ */
+function strokedLinesBox(pose: RectPose, lines: readonly Rect[], reach: { x: number; y: number }): Rect | null {
+  if (!(reach.x > 0 || reach.y > 0)) return null;
+  let x0 = pose.x, y0 = pose.y, x1 = pose.x + pose.width, y1 = pose.y + pose.height;
+  for (const l of lines) {
+    const lx0 = Math.max(l.x, pose.x), ly0 = Math.max(l.y, pose.y);
+    const lx1 = Math.min(l.x + l.width, pose.x + pose.width), ly1 = Math.min(l.y + l.height, pose.y + pose.height);
+    if (lx1 <= lx0 || ly1 <= ly0) continue;
+    x0 = Math.min(x0, lx0 - reach.x); y0 = Math.min(y0, ly0 - reach.y);
+    x1 = Math.max(x1, lx1 + reach.x); y1 = Math.max(y1, ly1 + reach.y);
+  }
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
 
 /**
  * Union of axis-aligned rects as one multi-contour `PolygonPath`.

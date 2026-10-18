@@ -92,6 +92,7 @@ export type {
   MultiTouchEvent,
   MultiTouchTapEvent,
   DropEvent,
+  CarryEvent,
   PasteEvent,
 } from './ui/inputEvent';
 export { stylusOf } from './ui/stylus';
@@ -102,7 +103,7 @@ export type {
   KeySpec, KeyHeldSpec, WheelSpec, PinchSpec, ClickSpec, DoubleClickSpec, DragSpec,
   PointerDownSpec, HoverSpec, LongPressSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
-  DropSpec, PasteSpec,
+  DropSpec, CarrySpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
 } from './ui/spec';
 export { hitPredicate, bodyPredicate } from './ui/spec';

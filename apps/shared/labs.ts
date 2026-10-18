@@ -14,5 +14,10 @@ export const PALETTE_LAB: LabPage = {
   href: dev ? `http://localhost:${ports.themeEditor}/weasel/theme-editor` : '/weasel/theme-editor',
 };
 
+export const THEME_PREFS_LAB: LabPage = {
+  label: 'Theme prefs',
+  href: `${PALETTE_LAB.href}#/prefs`,
+};
+
 /** The project's labs, in the order each one's title menu lists them. */
-export const LABS: readonly LabPage[] = [FORGE_LAB, PALETTE_LAB];
+export const LABS: readonly LabPage[] = [FORGE_LAB, PALETTE_LAB, THEME_PREFS_LAB];

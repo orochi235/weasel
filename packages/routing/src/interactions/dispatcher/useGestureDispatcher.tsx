@@ -37,6 +37,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
   const ingestChannel = channels?.ingest !== false;
+  const carryChannel = channels?.carry !== false;
   const onClickRef = useLatest(onClick);
   const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
@@ -122,7 +123,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       pinch: pinchChannel,
       contextMenu: contextMenuChannel,
       ingest: ingestChannel,
+      carry: carryChannel,
     });
-  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
+  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

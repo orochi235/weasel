@@ -89,10 +89,17 @@ describe('a presented lab’s messages', () => {
   });
 
   it('starts an ended run over on play', async () => {
-    await mountLab({ duration: 4000, start: 'end' });
-    await send({ type: 'labkit:play' });
-    expect(c().elapsed).toBe(0);
-    expect(c().rate).toBe(1);
+    // On a real clock a slow mount outlasts the replay hold, and the replay has moved
+    // the run on from 0 by the time play arrives.
+    vi.useFakeTimers();
+    try {
+      await mountLab({ duration: 4000, start: 'end' });
+      await send({ type: 'labkit:play' });
+      expect(c().elapsed).toBe(0);
+      expect(c().rate).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('seeks within the pass', async () => {

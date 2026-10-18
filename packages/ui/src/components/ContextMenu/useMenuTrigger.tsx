@@ -45,8 +45,8 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
 
   const close = useCallback(() => {
     setOpen(null);
-    if (!quietNow.current || document.activeElement?.closest('[role="menu"]')) button.current?.focus();
-  }, []);
+    if (!quietNow.current || inMenuOf(document.activeElement, id)) button.current?.focus();
+  }, [id]);
 
   const show = useCallback((entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent = false): boolean => {
     if (entries.length === 0) return false;
@@ -81,4 +81,17 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
     ? createPortal(<OpenPanels key={open.seq} open={open} close={close} takeFocus={!quiet} labelledBy={id} inside={inside} />, target)
     : null;
   return { button, id, open: open !== null, show, close, press, click, anchor, portal };
+}
+
+/** Whether `el` is inside the menu `labelId` names, directly or through the rows its submenus hang from. */
+function inMenuOf(el: Element | null, labelId: string): boolean {
+  const doc = el?.ownerDocument;
+  let menu = el?.closest('[role="menu"]') ?? null;
+  while (menu) {
+    const by = menu.getAttribute('aria-labelledby');
+    if (by === labelId) return true;
+    const parent = (by ? doc?.getElementById(by) : null)?.closest('[role="menu"]') ?? null;
+    menu = parent === menu ? null : parent;
+  }
+  return false;
 }

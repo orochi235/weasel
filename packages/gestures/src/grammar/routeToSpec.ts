@@ -11,7 +11,7 @@ import { specKindForRouteGesture } from './specKinds';
  * Wildcards become omitted fields: a `*` target, direction or MIME list, and a
  * `[*:*]` phase slot. `[*]` is `[&:*]`, which an ambient binding never
  * matches, so it stays a phase atom. A `keyDown` / `keyHeld` arg is read as a
- * key route, so `keyDown(z?shift)` yields `mods.shift: 'optional'`; a drop or
+ * key route, so `keyDown(z?shift)` yields `mods.shift: 'optional'`; a drop, carry, or
  * paste arg is a `|`-separated MIME list.
  *
  * Throws on a route no spec can express: `keyUp`, a key or finger-count
@@ -80,6 +80,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
       if (arg === undefined) return fail(`a ${kind} spec needs concrete fingers`);
       return withMods({ kind, fingers: Number(arg) });
     case 'drop':
+    case 'carry':
     case 'paste':
       return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}) });
   }

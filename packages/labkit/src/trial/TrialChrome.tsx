@@ -22,7 +22,7 @@ import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
-import { as2DView, withZoom } from '../state/view';
+import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { editsText } from './editsText';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
@@ -80,6 +80,11 @@ const NO_OP = (): void => {};
 const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
 const noSubscribe = (): (() => void) => NO_OP;
 
+/** The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape and goes inert
+ *  when the trial holds something else — an orbit, say. An unplaced view reads as the default
+ *  its canvas paints, so the status strip is in before the first fit. */
+const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT_VIEW : null);
+
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
  *  each region its slice. */
@@ -118,9 +123,8 @@ export function TrialChrome({
     [undockedPanels, trialId],
   );
 
-  // The trial view is opaque to labkit. The trial's camera reads a zoom off it
-  // in its own shape; with no camera, only a 2D view has one.
-  const view2d = as2DView(record.view);
+  // The view is opaque to labkit: a trial's camera reads its zoom; without one, a 2D view has it.
+  const view2d = chromeView(record.view);
 
   const configSchema = useConfigSchema(instrument);
   const { auto } = useResolvedConfig(configSchema, record.config, record.auto);
@@ -135,8 +139,7 @@ export function TrialChrome({
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
 
-  // The trial's own camera, where it has one: zoom goes through it, about the
-  // middle of the view and inside the instrument's range, as the lab's does.
+  // A trial's own camera zooms about the view's middle, in the instrument's range, as the lab's does.
   const cameras = useContext(CameraRegistryContext);
   const camera = useSyncExternalStore(
     cameras?.subscribe ?? noSubscribe,

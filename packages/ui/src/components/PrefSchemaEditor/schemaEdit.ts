@@ -7,8 +7,8 @@ import {
 import { rebaseValuePaths, valueMove, valuePathsAt } from './valuePaths';
 
 export {
-  branchUnder, childrenOf, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, parentPath, pathOf,
-  slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
+  branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, ownChildrenOf,
+  ownSlotOf, parentPath, pathOf, slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
 export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
 export { heldValuePaths, rebaseValuePaths, valueMove, valuePathOf, valuePathsAt, type ValueMove } from './valuePaths';

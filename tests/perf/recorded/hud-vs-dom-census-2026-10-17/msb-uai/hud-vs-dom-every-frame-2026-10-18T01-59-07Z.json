@@ -1,0 +1,2066 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "hud-vs-dom-every-frame",
+  "git": {
+    "sha": "f32b06842f298e1977bb474a74702aebb0959d36",
+    "dirty": true
+  },
+  "timestamp": "2026-10-18T01:59:07.221Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M3 Max",
+    "cores": 14,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      4.66,
+      8.93,
+      8.35
+    ]
+  },
+  "params": {
+    "viewport": "1280x800",
+    "dpr": 1,
+    "glyphs": [
+      5000
+    ],
+    "glyphsPerLabel": 10,
+    "updates": [
+      "every-frame"
+    ],
+    "cameras": [
+      "fixed"
+    ],
+    "approaches": [
+      "hud",
+      "dom"
+    ],
+    "frames": 120,
+    "warmup": 30,
+    "passes": 2,
+    "order": "each configuration's approaches forward then backward (ABCCBA), reversed on alternate passes",
+    "backgroundRects": 200,
+    "gpuTimer": true
+  },
+  "items": [
+    {
+      "id": "none",
+      "params": {
+        "approach": "none",
+        "glyphs": 0,
+        "update": "static",
+        "camera": "fixed"
+      },
+      "metrics": {
+        "main": {
+          "value": 0.4934,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5081,
+            0.4355,
+            0.655,
+            0.4787
+          ]
+        },
+        "script": {
+          "value": 0.21894999999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2355,
+            0.1866,
+            0.3867,
+            0.2024
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.03765,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0386,
+            0.0367,
+            0.0364,
+            0.0401
+          ]
+        },
+        "otherMain": {
+          "value": 0.2325,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.2335,
+            0.2115,
+            0.2315,
+            0.2355
+          ]
+        },
+        "compositor": {
+          "value": 0.4589,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.467,
+            0.4822,
+            0.4508,
+            0.3922
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.8964499999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.6662,
+            2.157,
+            2.0927,
+            1.7002
+          ]
+        },
+        "total": {
+          "value": 2.8579499999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            2.6412,
+            3.0747,
+            3.1985,
+            2.5711
+          ]
+        },
+        "totalSpread": {
+          "value": 0.6273916666666666,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.666,
+            16.667,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.666,
+            16.666,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.2749691219512195,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.338460837398374,
+            0.18449982400000003,
+            0.21147740650406496,
+            0.3448804919354839
+          ]
+        },
+        "thread Browser/ThreadPoolForegroundWorker": {
+          "value": 1.60065,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.5955,
+            1.8502,
+            1.6032,
+            1.5981
+          ]
+        },
+        "thread GPU Process/CrGpuMain": {
+          "value": 1.36315,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.1447,
+            1.6215,
+            1.5718,
+            1.1545
+          ]
+        },
+        "thread Browser/CrBrowserMain": {
+          "value": 0.71925,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.6866,
+            0.7682,
+            0.7278,
+            0.7107
+          ]
+        },
+        "thread Renderer/CrRendererMain": {
+          "value": 0.4934,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.5081,
+            0.4355,
+            0.655,
+            0.4787
+          ]
+        },
+        "thread GPU Process/VizCompositorThread": {
+          "value": 0.49035,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.4862,
+            0.4945,
+            0.4813,
+            0.5158
+          ]
+        },
+        "thread Renderer/Compositor": {
+          "value": 0.4589,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.467,
+            0.4822,
+            0.4508,
+            0.3922
+          ]
+        },
+        "thread Renderer/Chrome_ChildIOThread": {
+          "value": 0.036199999999999996,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.037,
+            0.038,
+            0.0354,
+            0.0201
+          ]
+        },
+        "thread GPU Process/Chrome_ChildIOThread": {
+          "value": 0.034949999999999995,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0324,
+            0.0388,
+            0.0375,
+            0.0265
+          ]
+        },
+        "thread Browser/DevToolsPipeHandlerWriteThread": {
+          "value": 0.0291,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.025,
+            0.0357,
+            0.0332,
+            0.0212
+          ]
+        },
+        "thread Renderer/ThreadPoolForegroundWorker": {
+          "value": 0.0376,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.013,
+            0.0622,
+            0.1616,
+            0.0038
+          ]
+        },
+        "thread GPU Process/PerfettoTrace": {
+          "value": 0.00255,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0029,
+            0.0022,
+            0.002,
+            0.0035
+          ]
+        },
+        "thread Renderer/PerfettoTrace": {
+          "value": 0.00285,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0026,
+            0.0021,
+            0.0042,
+            0.0031
+          ]
+        },
+        "thread Browser/PerfettoTrace": {
+          "value": 0.00215,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0018,
+            0.0019,
+            0.0025,
+            0.0024
+          ]
+        },
+        "thread Browser/Chrome_IOThread": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "thread Renderer/ThreadPoolServiceThread": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0,
+            0,
+            0.0001,
+            0
+          ]
+        },
+        "stage ReceiveCompositorFrameToStartDraw": {
+          "value": 0.098,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            15.8343,
+            0.094,
+            0.0893,
+            0.102
+          ]
+        },
+        "stage Graphics.Pipeline.Draw": {
+          "value": 0.1001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.1097,
+            0.0907,
+            0.0874,
+            0.1095
+          ]
+        },
+        "stage DrawToScheduleOverlay": {
+          "value": 0.47714999999999996,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.5121,
+            0.4422,
+            0.4256,
+            0.5344
+          ]
+        },
+        "stage BeginImplFrameToSendBeginMainFrame": {
+          "value": 0.02405,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0611,
+            0.0226,
+            0.0211,
+            0.0255
+          ]
+        },
+        "stage StartDrawToSwapStart": {
+          "value": 0.9074500000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7128,
+            1.1021,
+            1.1034,
+            0.7084
+          ]
+        },
+        "stage BufferAvailableToBufferReady": {
+          "value": 0.0017,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0017,
+            0.0019,
+            0.0017,
+            0.0017
+          ]
+        },
+        "stage BufferReadyToLatch": {
+          "value": 0.0032500000000000003,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0033,
+            0.0032,
+            0.0032,
+            0.0033
+          ]
+        },
+        "stage Graphics.Pipeline.DrawAndSwap": {
+          "value": 0.92925,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7336,
+            1.1249,
+            1.1251,
+            0.7303
+          ]
+        },
+        "stage SubmitCompositorFrameToPresentationCompositorFrame": {
+          "value": 1.33175,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.6351,
+            1.3294,
+            1.3341,
+            0.903
+          ]
+        },
+        "stage PipelineReporter": {
+          "value": 13.99775,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            21.6408,
+            14.0217,
+            13.9738,
+            13.4935
+          ]
+        },
+        "stage LatchToSwapEnd": {
+          "value": 0.126,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.1297,
+            0.1372,
+            0.1223,
+            0.1194
+          ]
+        },
+        "stage Scheduler::Running": {
+          "value": 1.22025,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.1218,
+            1.3347,
+            1.3187,
+            1.084
+          ]
+        },
+        "stage DisplayScheduler:pending_swaps": {
+          "value": 1.00015,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7976,
+            1.2178,
+            1.2027,
+            0.7848
+          ]
+        },
+        "stage AnimationFrame::StyleAndLayout": {
+          "value": 0.05165,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.054,
+            0.0499,
+            0.0484,
+            0.0534
+          ]
+        },
+        "stage AnimationFrame::Render": {
+          "value": 0.28435,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.3207,
+            0.2715,
+            0.2598,
+            0.2972
+          ]
+        },
+        "stage AnimationFrame": {
+          "value": 16.57705,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.5783,
+            16.6379,
+            16.5758,
+            16.5368
+          ]
+        },
+        "stage SendBeginMainFrameToCommit": {
+          "value": 0.44635,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.4757,
+            0.4402,
+            0.4413,
+            0.4514
+          ]
+        },
+        "stage Commit": {
+          "value": 0.0364,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0383,
+            0.0375,
+            0.0353,
+            0.0344
+          ]
+        },
+        "stage EndCommitToActivation": {
+          "value": 0.02975,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0306,
+            0.0289,
+            0.0268,
+            0.0944
+          ]
+        },
+        "stage PendingTree:waiting": {
+          "value": 0.06434999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0652,
+            0.0635,
+            0.0591,
+            0.1259
+          ]
+        },
+        "stage Activation": {
+          "value": 0.022199999999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0225,
+            0.0219,
+            0.0205,
+            0.0225
+          ]
+        },
+        "stage EndActivateToSubmitCompositorFrame": {
+          "value": 8.1408,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.1593,
+            8.2625,
+            8.2208,
+            8.0608
+          ]
+        },
+        "stage SubmitToReceiveCompositorFrame": {
+          "value": 0.1076,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0852,
+            0.1282,
+            0.1367,
+            0.087
+          ]
+        },
+        "stage ScheduledTasks": {
+          "value": 0.06425,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0419,
+            0.0795,
+            0.0772,
+            0.0513
+          ]
+        },
+        "stage CopyOutputRequest": {
+          "value": 4.00985,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            4.2515,
+            3.7176,
+            3.7682,
+            4.2554
+          ]
+        },
+        "stage Scheduler:pending_submit_frames": {
+          "value": 0.19865,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            15.9,
+            0.1967,
+            0.2006,
+            0.1328
+          ]
+        },
+        "stage GLES2DecoderPassthroughImpl::DescheduleUntilFinished": {
+          "value": 2.6820000000000004,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            3.184,
+            2.18
+          ]
+        },
+        "stage Frame": {
+          "value": 16.3406,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.3406
+          ]
+        },
+        "stage JankV3": {
+          "value": 21.9801,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            21.9801
+          ]
+        },
+        "stage Frame ": {
+          "value": 16.5,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.5
+          ]
+        },
+        "stage Frame   ": {
+          "value": 17.0452,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            17.0452
+          ]
+        },
+        "load1": {
+          "value": 3.71,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            4.61,
+            3.74,
+            3.68,
+            3.12
+          ]
+        }
+      }
+    },
+    {
+      "id": "hud 5000 every-frame fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "every-frame",
+        "camera": "fixed",
+        "approach": "hud"
+      },
+      "metrics": {
+        "main": {
+          "value": 5.2051,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            5.3912,
+            5.5131,
+            5.019,
+            4.7119
+          ]
+        },
+        "script": {
+          "value": 5.055149999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            5.2265,
+            5.3524,
+            4.8838,
+            4.5844
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "paint": {
+          "value": 0.0204,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0231,
+            0.0223,
+            0.0185,
+            0.0178
+          ]
+        },
+        "otherMain": {
+          "value": 0.127,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.1409,
+            0.1377,
+            0.1163,
+            0.1094
+          ]
+        },
+        "compositor": {
+          "value": 0.3547,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.279,
+            0.2881,
+            0.5277,
+            0.4213
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.53335,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.8647,
+            1.3489,
+            1.5484,
+            1.5183
+          ]
+        },
+        "total": {
+          "value": 7.1226,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            7.5349,
+            7.1501,
+            7.0951,
+            6.6515
+          ]
+        },
+        "totalSpread": {
+          "value": 0.8833166666666674,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.806,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.736,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.806,
+            16.666,
+            16.806,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0.5,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            1,
+            0,
+            1,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.31457812260687135,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.3252034065040651,
+            0.3394138211382115,
+            0.30395283870967754,
+            0.30234326612903223
+          ]
+        },
+        "thread Renderer/CrRendererMain": {
+          "value": 5.2051,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            5.3912,
+            5.5131,
+            5.019,
+            4.7119
+          ]
+        },
+        "thread Renderer/ThreadPoolForegroundWorker": {
+          "value": 3.2336,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            3.6432,
+            3.7443,
+            2.824,
+            2.6293
+          ]
+        },
+        "thread Browser/ThreadPoolForegroundWorker": {
+          "value": 2.09825,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            2.217,
+            2.1264,
+            2.0701,
+            2.0161
+          ]
+        },
+        "thread GPU Process/CrGpuMain": {
+          "value": 1.2968,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.5487,
+            1.0348,
+            1.3049,
+            1.2887
+          ]
+        },
+        "thread Browser/CrBrowserMain": {
+          "value": 1.1633499999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.2902,
+            1.192,
+            1.1347,
+            1.1077
+          ]
+        },
+        "thread GPU Process/VizCompositorThread": {
+          "value": 0.25705,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.2916,
+            0.2927,
+            0.2225,
+            0.2102
+          ]
+        },
+        "thread Renderer/Compositor": {
+          "value": 0.3547,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.279,
+            0.2881,
+            0.5277,
+            0.4213
+          ]
+        },
+        "thread Browser/DevToolsPipeHandlerWriteThread": {
+          "value": 0.1095,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.1478,
+            0.1182,
+            0.1008,
+            0.0846
+          ]
+        },
+        "thread GPU Process/Chrome_ChildIOThread": {
+          "value": 0.01935,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0228,
+            0.0193,
+            0.0194,
+            0.0177
+          ]
+        },
+        "thread Renderer/Chrome_ChildIOThread": {
+          "value": 0.016300000000000002,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0207,
+            0.0148,
+            0.0168,
+            0.0158
+          ]
+        },
+        "thread Browser/PerfettoTrace": {
+          "value": 0.00165,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0016,
+            0.0019,
+            0.0012,
+            0.0017
+          ]
+        },
+        "thread GPU Process/PerfettoTrace": {
+          "value": 0.00165,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0015,
+            0.0021,
+            0.0016,
+            0.0017
+          ]
+        },
+        "thread Renderer/PerfettoTrace": {
+          "value": 0.00355,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0015,
+            0.0038,
+            0.0035,
+            0.0036
+          ]
+        },
+        "thread Browser/Chrome_IOThread": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0001,
+            0,
+            0,
+            0
+          ]
+        },
+        "thread Renderer/ThreadPoolServiceThread": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0.0001
+          ]
+        },
+        "stage EndActivateToSubmitCompositorFrame": {
+          "value": 6.1457,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            5.9649,
+            6.0743,
+            6.2171,
+            6.3498
+          ]
+        },
+        "stage SubmitToReceiveCompositorFrame": {
+          "value": 0.044649999999999995,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0475,
+            0.047,
+            0.0423,
+            0.0386
+          ]
+        },
+        "stage ScheduledTasks": {
+          "value": 0.02255,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0246,
+            0.0282,
+            0.0205,
+            0.0204
+          ]
+        },
+        "stage ReceiveCompositorFrameToStartDraw": {
+          "value": 0.05,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0554,
+            0.0545,
+            0.0455,
+            0.0424
+          ]
+        },
+        "stage Scheduler:pending_submit_frames": {
+          "value": 0.0684,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0758,
+            0.0742,
+            0.0626,
+            0.0556
+          ]
+        },
+        "stage Graphics.Pipeline.Draw": {
+          "value": 0.049600000000000005,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0551,
+            0.0575,
+            0.0441,
+            0.042
+          ]
+        },
+        "stage DrawToScheduleOverlay": {
+          "value": 0.22605,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.2531,
+            0.2467,
+            0.2054,
+            0.2035
+          ]
+        },
+        "stage StartDrawToSwapStart": {
+          "value": 1.0676999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.2715,
+            0.7284,
+            1.0686,
+            1.0668
+          ]
+        },
+        "stage BufferAvailableToBufferReady": {
+          "value": 0.0010500000000000002,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0012,
+            0.0011,
+            0.001,
+            0.001
+          ]
+        },
+        "stage BufferReadyToLatch": {
+          "value": 0.0018,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0019,
+            0.0019,
+            0.0017,
+            0.0017
+          ]
+        },
+        "stage Graphics.Pipeline.DrawAndSwap": {
+          "value": 1.07725,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.2828,
+            0.7398,
+            1.0784,
+            1.0761
+          ]
+        },
+        "stage SubmitCompositorFrameToPresentationCompositorFrame": {
+          "value": 1.15475,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.3775,
+            0.8328,
+            1.159,
+            1.1505
+          ]
+        },
+        "stage PipelineReporter": {
+          "value": 13.72955,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            14.5337,
+            13.7,
+            13.7591,
+            12.4827
+          ]
+        },
+        "stage LatchToSwapEnd": {
+          "value": 0.060700000000000004,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0644,
+            0.0704,
+            0.057,
+            0.0538
+          ]
+        },
+        "stage Scheduler::Running": {
+          "value": 0.7703,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.9523,
+            0.5482,
+            0.7676,
+            0.773
+          ]
+        },
+        "stage DisplayScheduler:pending_swaps": {
+          "value": 1.11335,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.3184,
+            0.7811,
+            1.1151,
+            1.1116
+          ]
+        },
+        "stage CopyOutputRequest": {
+          "value": 2.67675,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            2.6354,
+            2.846,
+            2.6692,
+            2.6843
+          ]
+        },
+        "stage AnimationFrame::StyleAndLayout": {
+          "value": 0.02775,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0324,
+            0.0299,
+            0.0256,
+            0.0241
+          ]
+        },
+        "stage AnimationFrame::Render": {
+          "value": 3.8544,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            4.0758,
+            3.9971,
+            3.7117,
+            3.6116
+          ]
+        },
+        "stage AnimationFrame": {
+          "value": 16.612499999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.445,
+            16.7986,
+            16.6133,
+            16.6117
+          ]
+        },
+        "stage BeginImplFrameToSendBeginMainFrame": {
+          "value": 0.1373,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.2754,
+            0.1797,
+            0.0668,
+            0.0949
+          ]
+        },
+        "stage SendBeginMainFrameToCommit": {
+          "value": 4.4885,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            4.6932,
+            4.7345,
+            4.2838,
+            4.0564
+          ]
+        },
+        "stage Commit": {
+          "value": 0.020249999999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0237,
+            0.022,
+            0.0185,
+            0.0179
+          ]
+        },
+        "stage EndCommitToActivation": {
+          "value": 0.01755,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0194,
+            0.0401,
+            0.0157,
+            0.015
+          ]
+        },
+        "stage PendingTree:waiting": {
+          "value": 0.03605,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0403,
+            0.0596,
+            0.0318,
+            0.0304
+          ]
+        },
+        "stage Activation": {
+          "value": 0.01205,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0138,
+            0.0129,
+            0.0112,
+            0.011
+          ]
+        },
+        "stage AnimationFrame::Script::Execute": {
+          "value": 5.46725,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            5.6,
+            5.3345
+          ]
+        },
+        "stage Frame ": {
+          "value": 16.80885,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            17.1504,
+            16.4673
+          ]
+        },
+        "stage Frame   ": {
+          "value": 16.3963,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.1137,
+            16.6789
+          ]
+        },
+        "stage Frame": {
+          "value": 16.80605,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.7487,
+            16.8634
+          ]
+        },
+        "stage JankV3": {
+          "value": 21.686,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            21.686
+          ]
+        },
+        "load1": {
+          "value": 3.62,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            4.4,
+            3.89,
+            3.35,
+            3.24
+          ]
+        }
+      }
+    },
+    {
+      "id": "dom 5000 every-frame fixed",
+      "params": {
+        "glyphs": 5000,
+        "update": "every-frame",
+        "camera": "fixed",
+        "approach": "dom"
+      },
+      "metrics": {
+        "main": {
+          "value": 3.2611499999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            3.3372,
+            3.1851,
+            3.3944,
+            2.8083
+          ]
+        },
+        "script": {
+          "value": 0.33140000000000003,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.3505,
+            0.3123,
+            0.368,
+            0.2842
+          ]
+        },
+        "style": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "layout": {
+          "value": 0.009000000000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.0091,
+            0.0089,
+            0.0095,
+            0.0085
+          ]
+        },
+        "paint": {
+          "value": 1.0332,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.0529,
+            1.0135,
+            1.0529,
+            0.904
+          ]
+        },
+        "otherMain": {
+          "value": 1.887,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.9241,
+            1.8499,
+            1.9635,
+            1.6112
+          ]
+        },
+        "compositor": {
+          "value": 0.51675,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0.5256,
+            0.5079,
+            0.5313,
+            0.4458
+          ]
+        },
+        "raster": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "gpuProcess": {
+          "value": 1.5342500000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            1.577,
+            1.4979,
+            1.5706,
+            1.3093
+          ]
+        },
+        "total": {
+          "value": 5.3153500000000005,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, per frame",
+          "samples": [
+            5.4398,
+            5.1909,
+            5.4963,
+            4.5634
+          ]
+        },
+        "totalSpread": {
+          "value": 0.9329333333333336,
+          "unit": "ms",
+          "stat": "max - min of total across 4 samples"
+        },
+        "frameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean rAF interval while tracing",
+          "samples": [
+            16.666,
+            16.666,
+            16.667,
+            16.666
+          ]
+        },
+        "untracedFrameInterval": {
+          "value": 16.666,
+          "unit": "ms",
+          "stat": "median of 4 untraced windows of 120 frames, mean rAF interval",
+          "samples": [
+            16.666,
+            16.666,
+            16.666,
+            16.666
+          ]
+        },
+        "untracedMissed": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 untraced windows of 120 frames, intervals over 25 ms",
+          "samples": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "longFrames": {
+          "value": 0,
+          "unit": "count",
+          "stat": "median of 4 traced windows of 120 frames, intervals over 1.5x the median"
+        },
+        "gpuTime": {
+          "value": 0.1981458387096774,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, EXT_disjoint_timer_query of the canvas render",
+          "samples": [
+            0.20109528225806447,
+            0.1951963951612903,
+            0.2155858306451613,
+            0.18246387903225814
+          ]
+        },
+        "thread Renderer/CrRendererMain": {
+          "value": 3.2611499999999998,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            3.3372,
+            3.1851,
+            3.3944,
+            2.8083
+          ]
+        },
+        "thread Browser/ThreadPoolForegroundWorker": {
+          "value": 2.09965,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            2.1897,
+            2.0164,
+            2.1829,
+            1.8926
+          ]
+        },
+        "thread Browser/CrBrowserMain": {
+          "value": 1.23395,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.2922,
+            1.1757,
+            1.3034,
+            1.0815
+          ]
+        },
+        "thread GPU Process/CrGpuMain": {
+          "value": 1.1795499999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            1.2132,
+            1.1545,
+            1.2046,
+            1.0325
+          ]
+        },
+        "thread Renderer/ThreadPoolForegroundWorker": {
+          "value": 0.87025,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.933,
+            0.8075,
+            1.0145,
+            0.7666
+          ]
+        },
+        "thread Renderer/Compositor": {
+          "value": 0.51675,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.5256,
+            0.5079,
+            0.5313,
+            0.4458
+          ]
+        },
+        "thread GPU Process/VizCompositorThread": {
+          "value": 0.3217,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.3317,
+            0.3117,
+            0.3339,
+            0.2463
+          ]
+        },
+        "thread Browser/DevToolsPipeHandlerWriteThread": {
+          "value": 0.12675,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.1316,
+            0.1237,
+            0.1298,
+            0.0992
+          ]
+        },
+        "thread GPU Process/Chrome_ChildIOThread": {
+          "value": 0.0298,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.03,
+            0.0296,
+            0.03,
+            0.0291
+          ]
+        },
+        "thread Renderer/Chrome_ChildIOThread": {
+          "value": 0.0258,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.026,
+            0.0256,
+            0.0272,
+            0.0238
+          ]
+        },
+        "thread Renderer/PerfettoTrace": {
+          "value": 0.0065,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.008,
+            0.0062,
+            0.0068,
+            0.0055
+          ]
+        },
+        "thread GPU Process/PerfettoTrace": {
+          "value": 0.0020499999999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0021,
+            0.002,
+            0.0021,
+            0.0014
+          ]
+        },
+        "thread Browser/PerfettoTrace": {
+          "value": 0.0018,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0.0018,
+            0.0018,
+            0.0018,
+            0.0014
+          ]
+        },
+        "thread Browser/Chrome_IOThread": {
+          "value": 0,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, busy per frame",
+          "samples": [
+            0,
+            0,
+            0,
+            0.0003
+          ]
+        },
+        "stage BeginImplFrameToSendBeginMainFrame": {
+          "value": 0.0116,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0116,
+            0.0117,
+            0.0116,
+            0.0103
+          ]
+        },
+        "stage EndActivateToSubmitCompositorFrame": {
+          "value": 6.5041,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            6.4702,
+            6.538,
+            6.4473,
+            6.7544
+          ]
+        },
+        "stage SubmitToReceiveCompositorFrame": {
+          "value": 0.05875,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0606,
+            0.0572,
+            0.0603,
+            0.0511
+          ]
+        },
+        "stage ReceiveCompositorFrameToStartDraw": {
+          "value": 0.060050000000000006,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0616,
+            0.0585,
+            0.0619,
+            0.0509
+          ]
+        },
+        "stage Scheduler:pending_submit_frames": {
+          "value": 0.08180000000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0843,
+            0.0806,
+            0.083,
+            0.0708
+          ]
+        },
+        "stage Graphics.Pipeline.Draw": {
+          "value": 0.06484999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0667,
+            0.063,
+            0.0684,
+            0.0543
+          ]
+        },
+        "stage DrawToScheduleOverlay": {
+          "value": 0.6293,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.6384,
+            0.6202,
+            0.6443,
+            0.5674
+          ]
+        },
+        "stage StartDrawToSwapStart": {
+          "value": 0.71265,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7334,
+            0.6971,
+            0.7282,
+            0.6301
+          ]
+        },
+        "stage BufferAvailableToBufferReady": {
+          "value": 0.0011,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0011,
+            0.0011,
+            0.0012,
+            0.0011
+          ]
+        },
+        "stage BufferReadyToLatch": {
+          "value": 0.0020499999999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0021,
+            0.0022,
+            0.002,
+            0.0018
+          ]
+        },
+        "stage Graphics.Pipeline.DrawAndSwap": {
+          "value": 0.7242999999999999,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7454,
+            0.7085,
+            0.7401,
+            0.6407
+          ]
+        },
+        "stage SubmitCompositorFrameToPresentationCompositorFrame": {
+          "value": 0.83465,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.8589,
+            0.8156,
+            0.8537,
+            0.735
+          ]
+        },
+        "stage PipelineReporter": {
+          "value": 13.63105,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            13.676,
+            13.5861,
+            13.8303,
+            13.2669
+          ]
+        },
+        "stage LatchToSwapEnd": {
+          "value": 0.07100000000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.074,
+            0.068,
+            0.074,
+            0.0545
+          ]
+        },
+        "stage DisplayScheduler:pending_swaps": {
+          "value": 0.75995,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.7839,
+            0.7429,
+            0.777,
+            0.6642
+          ]
+        },
+        "stage Scheduler::Running": {
+          "value": 0.59465,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.6124,
+            0.5826,
+            0.6067,
+            0.5199
+          ]
+        },
+        "stage AnimationFrame::StyleAndLayout": {
+          "value": 1.6732,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.689,
+            1.6574,
+            1.7044,
+            1.4326
+          ]
+        },
+        "stage AnimationFrame::Render": {
+          "value": 1.9692,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            1.9971,
+            1.9413,
+            2.0072,
+            1.6843
+          ]
+        },
+        "stage AnimationFrame": {
+          "value": 15.56825,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            15.5455,
+            15.5858,
+            15.5507,
+            15.7288
+          ]
+        },
+        "stage SendBeginMainFrameToCommit": {
+          "value": 3.1014,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            3.1529,
+            3.0499,
+            3.1608,
+            2.6723
+          ]
+        },
+        "stage Commit": {
+          "value": 0.0266,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.0278,
+            0.0258,
+            0.0274,
+            0.0224
+          ]
+        },
+        "stage CopyOutputRequest": {
+          "value": 3.4478999999999997,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            3.3377,
+            3.4007,
+            3.4951,
+            3.9138
+          ]
+        },
+        "stage ScheduledTasks": {
+          "value": 0.5126000000000001,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.535,
+            0.4902,
+            0.5367,
+            0.448
+          ]
+        },
+        "stage EndCommitToActivation": {
+          "value": 0.5696,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.593,
+            0.5462,
+            0.5957,
+            0.4996
+          ]
+        },
+        "stage PendingTree:waiting": {
+          "value": 0.5946,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.6191,
+            0.5701,
+            0.6214,
+            0.5201
+          ]
+        },
+        "stage Activation": {
+          "value": 0.1845,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            0.1881,
+            0.1809,
+            0.189,
+            0.1485
+          ]
+        },
+        "stage Frame": {
+          "value": 16.6011,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.6011
+          ]
+        },
+        "stage Frame ": {
+          "value": 16.4138,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            16.4138
+          ]
+        },
+        "stage Frame   ": {
+          "value": 17.0918,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            17.0918
+          ]
+        },
+        "stage JankV3": {
+          "value": 23.5252,
+          "unit": "ms",
+          "stat": "median of 4 traced windows of 120 frames, mean async span",
+          "samples": [
+            23.5252
+          ]
+        },
+        "load1": {
+          "value": 3.625,
+          "unit": "load",
+          "stat": "median 1-minute load average as each sample finished",
+          "samples": [
+            4.04,
+            3.79,
+            3.46,
+            3.22
+          ]
+        }
+      }
+    }
+  ]
+}

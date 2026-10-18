@@ -1,7 +1,12 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
+import { roundRectPath } from '@weasel-js/geom';
+import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
-import { resolveCurrentColor } from '@weasel-js/theme';
+import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
+import { toIconRef, type IconRegistry } from '@weasel-js/icons';
+import { boxShadowCommands } from '../boxShadow';
+import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
@@ -30,15 +35,25 @@ export function rowLayout(entries: readonly MenuEntry[], m: MenuMetrics): { y: n
   });
 }
 
-/** A panel's size: its widest label plus the icon and caret columns, never under `minWidth`. */
+/** A row's shortcut as the DOM menu prints it, or undefined. */
+const shortcutOf = (e: MenuEntry): string | undefined =>
+  (e.kind === 'item' ? formatShortcut(e.shortcut) : undefined);
+
+/** A panel's size: its widest row — label, then a shortcut or the caret column —
+ *  plus the icon column, never under `minWidth`. */
 export function panelSize(
   entries: readonly MenuEntry[], m: MenuMetrics, measure: (text: string, fontSize: number) => number,
 ): { w: number; h: number } {
   const rows = rowLayout(entries, m);
   const last = rows.at(-1);
-  const text = Math.max(0, ...entries.map((e) => (e.kind === 'separator' ? 0 : measure(e.label, m.fontSize))));
+  const rowWidth = (e: MenuEntry) => {
+    if (e.kind === 'separator') return 0;
+    const chip = shortcutOf(e);
+    return measure(e.label, m.fontSize) + Math.max(m.rowHeight, chip ? m.padX + measure(chip, m.fontSize) : 0);
+  };
+  const text = Math.max(0, ...entries.map(rowWidth));
   return {
-    w: Math.max(m.minWidth, Math.ceil(text) + m.padX * 2 + m.rowHeight * 2),
+    w: Math.max(m.minWidth, Math.ceil(text) + m.padX * 2 + m.rowHeight),
     h: (last ? last.y + last.h : 0) + m.padY,
   };
 }
@@ -58,19 +73,43 @@ function caret(cx: number, cy: number, color: string): DrawCommand {
   };
 }
 
-/** One panel's commands: its background, a highlight behind row `highlight`, and every row. */
+/** A check mark centered on (cx, cy), for a row whose action is on. */
+function check(cx: number, cy: number, color: string): DrawCommand {
+  return {
+    kind: 'path',
+    path: pathFromD(`M ${cx - 4} ${cy} L ${cx - 1.5} ${cy + 2.5} L ${cx + 4} ${cy - 3}`),
+    stroke: { paint: { kind: 'solid', color }, width: 1.5, cap: 'round', join: 'round' },
+  };
+}
+
+/** Where a menu finds the glyph a row's `icon` names: an icon registry, or anything answering as one. */
+export type MenuIcons = Pick<IconRegistry, 'get' | 'getVersion'>;
+
+/** The DOM row draws its icon at 16px. */
+const ICON_SIZE = 16;
+
+// The shadow `.surface` in ui's listbox.module.css gives the DOM panel.
+const PANEL_SHADOW = 'var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))';
+
+/** One panel's commands: its rounded face and the DOM panel's box shadow, a highlight behind row
+ *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. */
 export function drawPanel(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null, m: MenuMetrics,
+  icons?: MenuIcons,
 ): DrawCommand[] {
   const t = ctx.tokens;
   const fg = t['--wzl-fg'];
   const muted = resolveCurrentColor(t['--wzl-fg-muted'], fg);
-  const out: DrawCommand[] = [{
+  const radius = tokenPx('--wzl-radius-md', t);
+  const font = { fontFamily: ctx.defaultFont, fontSize: m.fontSize };
+  const shadow = boxShadowCommands(b, radius, parseBoxShadow(expandVars(PANEL_SHADOW, t)), fg,
+    { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 });
+  const out: DrawCommand[] = [...shadow.under, {
     kind: 'path',
-    path: { kind: 'rect', x: b.x, y: b.y, width: b.w, height: b.h },
+    path: roundRectPath(b.x, b.y, b.w, b.h, radius),
     fill: solid(t['--wzl-surface-popover']),
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
-  }];
+  }, ...shadow.over];
   const rows = rowLayout(entries, m);
   entries.forEach((e, i) => {
     const r = rows[i]!;
@@ -83,9 +122,21 @@ export function drawPanel(
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
-      { fontFamily: ctx.defaultFont, fontSize: m.fontSize },
-      undefined, r.h, 'center',
+      font, undefined, r.h, 'center',
     ));
+    const iconX = b.x + m.padX + m.rowHeight / 2;
+    const iconY = b.y + r.y + r.h / 2;
+    const ref = typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
+    const glyph = ref ? icons?.get(ref) : undefined;
+    if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
+    else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
+    const chip = shortcutOf(e);
+    if (chip) {
+      out.push(textCommandFromRuns(
+        b.x + m.padX, b.y + r.y, [{ text: chip, fill: solid(muted) }],
+        { ...font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
+      ));
+    }
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });
   return out;

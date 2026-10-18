@@ -10,6 +10,7 @@ import { returnToRenderTarget, drawFullscreenQuad } from './draw/effects';
 import { applyClipTest } from './draw/stencil';
 import { enterGroupClip, leaveClip, flushForOwnDraw } from './draw/clip';
 import { flushBatch } from './draw/flushBatch';
+import { drawRetainedGroup } from './draw/retained';
 import { drawPath } from './draw/pathPaint';
 import { drawText } from './draw/text';
 import { drawImage, drawSprites } from './draw/image';
@@ -132,6 +133,7 @@ function ownsSurface(cmd: GroupDrawCommand): boolean {
 }
 
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
+  if (cmd.retain !== undefined && drawRetainedGroup(ctx, cmd, ownsSurface(cmd), dispatch)) return;
   // A group with effects, or an isolated one, is a render-target boundary
   // rather than another accumulating frame. Without a renderer's buffer pool behind the context
   // there is nowhere to draw, so the effects are skipped and the children

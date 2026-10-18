@@ -15,6 +15,7 @@ import {
 import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ColorSourceContext, type ResolvedTheme } from '@weasel-js/theme';
 import { hudColor } from './colors';
+import { hideVisually, mirrorFocusedTree } from './accessibleMirror';
 
 /** Options for `attachHud`. */
 export interface AttachHudOptions {
@@ -294,6 +295,7 @@ function wireFocus(
   const unsubscribe = hud.subscribeFocus((w) => {
     region.textContent = w?.accessibleName ?? '';
   });
+  const unmirror = mirrorFocusedTree(element, hud);
 
   element.addEventListener('pointerdown', onPointerDown);
   element.addEventListener('keydown', onKeyDown);
@@ -305,25 +307,19 @@ function wireFocus(
     element.removeEventListener('keyup', onKeyUp);
     element.removeEventListener('blur', onBlur);
     unsubscribe();
+    unmirror();
     region.remove();
   };
 }
 
-/** A polite live region, visually hidden, that names the focused widget. The
- *  widgets are pixels with no DOM of their own, so there is nothing for
- *  `aria-activedescendant` to point at; announcing is the lightest correct
- *  way to tell assistive tech where focus went. */
+/** A polite live region, visually hidden, that names the focused widget. A widget that has
+ *  insides to show declares an `accessibleTree`, which `mirrorFocusedTree` puts in the DOM. */
 function createLiveRegion(doc: Document): HTMLElement {
   const el = doc.createElement('div');
   el.setAttribute('aria-live', 'polite');
   el.setAttribute('aria-atomic', 'true');
   el.dataset.weaselHud = 'focus';
-  // No stylesheet ships with this package; these are the standard
-  // visually-hidden declarations, on an element only this code owns.
-  Object.assign(el.style, {
-    position: 'absolute', width: '1px', height: '1px', margin: '-1px', padding: '0',
-    overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: '0',
-  });
+  hideVisually(el);
   doc.body.appendChild(el);
   return el;
 }

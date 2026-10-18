@@ -26,7 +26,7 @@ function listed(over: Partial<ActionCatalog> = {}, sought = '') {
   const onDrop = vi.fn<(drag: PaletteDrag) => void>();
   const catalog: ActionCatalog = {
     actions: ACTIONS, root: actionCatalog(ACTIONS), editable: true, selected: [],
-    pick: vi.fn(), clear: vi.fn(), commit: vi.fn(), move: vi.fn(), addGroup: vi.fn(), remove: vi.fn(), ...over,
+    pick: vi.fn(), clear: vi.fn(), recorded: () => [], restore: vi.fn(), commit: vi.fn(), move: vi.fn(), addGroup: vi.fn(), remove: vi.fn(), ...over,
   };
   render(<ActionList catalog={catalog} sought={sought} onDrag={onDrag} onDrop={onDrop} />);
   const props = () => tree.props as TreeProps;

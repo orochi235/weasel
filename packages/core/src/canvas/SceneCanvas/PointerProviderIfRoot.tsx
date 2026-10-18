@@ -3,7 +3,7 @@
  * when no parent provider is in scope — otherwise renders children unwrapped
  * so SceneCanvas defers to the host's existing scope.
  *
- * Pairs with `<PointerPublisher>` which attaches native pointermove/leave
+ * Pairs with `usePointerPublisher`, which attaches native pointermove/leave
  * listeners to the canvas element and writes world-space coords into the
  * surrounding context's `pointerRef`.
  */
@@ -24,19 +24,16 @@ export function PointerProviderIfRoot({ children }: { children: ReactNode }) {
 /**
  * Attaches native `pointermove` / `pointerleave` listeners to the supplied
  * canvas element and publishes the world-space pointer coordinates into the
- * surrounding `<PointerContextProvider>`. Renders nothing. No-op when no
- * provider is in scope (matches "publish if anyone is listening").
+ * surrounding `<PointerContextProvider>`. No-op when no provider is in scope
+ * (matches "publish if anyone is listening").
  *
- * Lives inside the provider scope so it sees both consumer-mounted providers
+ * Called inside the provider scope so it sees both consumer-mounted providers
  * and SceneCanvas's auto-mounted one.
  */
-export function PointerPublisher({
-  canvasRef,
-  canvasApiRef,
-}: {
-  canvasRef: MutableRefObject<HTMLElement | null>;
-  canvasApiRef: RefObject<CanvasExtensionApi | null>;
-}) {
+export function usePointerPublisher(
+  canvasRef: MutableRefObject<HTMLElement | null>,
+  canvasApiRef: RefObject<CanvasExtensionApi | null>,
+): void {
   const ctx = usePointerContext();
   const registry = useOptionalViewRegistry();
   useEffect(() => {
@@ -83,5 +80,4 @@ export function PointerPublisher({
     // canvasRef + registry + ctx identity are all stable across the lifetime
     // of the surrounding provider; effect runs once per mount.
   }, [ctx, canvasRef, canvasApiRef, registry]);
-  return null;
 }

@@ -78,6 +78,16 @@ describe('the action catalog in an asset editor', () => {
     expect(Object.keys(catalog().children)).toEqual(['editCopy', 'editPaste', 'group', 'save']);
   });
 
+  it('picks again, on a step back over an edit made in it, the rows that were picked in it', () => {
+    live();
+    pickAction('edit/editCopy');
+    fireEvent.change(name(), { target: { value: 'Duplicate' } });
+    pickRow('view');
+    fireEvent.click(tool('Undo'));
+    expect(within(list()).getByRole('treeitem', { selected: true })).toHaveAttribute('data-tree-id', 'edit/editCopy');
+    expect(name().value).toBe('Copy');
+  });
+
   it('removes what is picked among the actions on Delete, and nothing of the dialog', () => {
     const { catalog, workspace } = live();
     pickAction('edit');

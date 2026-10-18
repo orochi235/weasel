@@ -14,7 +14,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { pathTools, useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
+import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
@@ -34,6 +34,7 @@ import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { TextEditDepPublisher } from './TextEditDepPublisher';
 import { useColorContext } from './tools/colorContext';
+import { DRAW_FEATURES } from './drawFeatures';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { usePathDirection } from './usePathDirection';
@@ -173,7 +174,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
         onCancel={() => machine.cancelMode()}
       />
       {hostDims.width > 0 && hostDims.height > 0 && (
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools, ...(spacingHints ? [spacingHints] : [])]}
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={[...DRAW_FEATURES, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
           ref={props.onCanvas}
           ambient={ambientEntries}

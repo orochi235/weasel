@@ -1,0 +1,49 @@
+import type { Scene } from 'core/scene/types';
+import type { SelectionApi } from 'core/selection/useSelection';
+import type { Tool } from '../../tools/overlayBinding';
+import type { EnabledPresets, FeatureBindingOptions, PresetSource } from './features';
+import type { SceneCanvasProps } from './props';
+import { useCanvasTools, useFeatureBindings } from './useCanvasTools';
+
+type Props = SceneCanvasProps<unknown, string, unknown>;
+
+/** The `<SceneCanvas>` props its tools and preset bindings read. */
+export type SceneCanvasToolProps = Pick<
+  Props,
+  | 'tools' | 'defaultTools' | 'toolOptions' | 'viewport' | 'ambient' | 'longPress'
+  | 'initialActiveTool' | 'modes' | 'onToolsCreated' | 'selectTool'
+>;
+
+/** The canvas's tools, and the contributions and standard actions its presets bring. */
+export function useSceneCanvasTools(args: {
+  props: SceneCanvasToolProps;
+  select: Tool;
+  /** The select tool's move options, which the selection's `move` binding takes. */
+  move: unknown;
+  scene: Scene<unknown, string, unknown>;
+  selection: SelectionApi;
+  enabled: EnabledPresets;
+  presetSource: PresetSource;
+}) {
+  const { props, select, scene, selection, enabled } = args;
+  const { tools, internal, takeover } = useCanvasTools({
+    select, scene, selection,
+    enabled,
+    tools: props.tools,
+    defaultTools: props.defaultTools,
+    toolOptions: props.toolOptions,
+    inertia: props.viewport?.inertia,
+    ambient: props.ambient,
+    pressFeedback: props.longPress?.feedback,
+    initialActiveTool: props.initialActiveTool,
+    modes: props.modes,
+    onToolsCreated: props.onToolsCreated,
+  });
+  const { contributions, standardActions } = useFeatureBindings({
+    enabled, pool: args.presetSource.pool,
+    tools,
+    move: args.move as FeatureBindingOptions['move'],
+    rotate: (props.selectTool?.rotate || undefined) as FeatureBindingOptions['rotate'],
+  });
+  return { tools, internal, takeover, contributions, standardActions };
+}

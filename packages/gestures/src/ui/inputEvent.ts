@@ -346,6 +346,22 @@ export interface DropEvent extends EventModifiers {
   clientY?: number;
 }
 
+/** A carry over the canvas (`startCarry`). `stage` is what it did here: came
+ *  over, moved, was released, or left — off the surface, or canceled on it. */
+export interface CarryEvent extends EventModifiers {
+  kind: 'carry';
+  stage: 'enter' | 'move' | 'drop' | 'leave';
+  pointerId?: number;
+  /** The payload's type, which a spec's `types` globs filter, and the payload. */
+  type: string;
+  value: unknown;
+  /** World-space position (post view transform). */
+  x: number;
+  y: number;
+  clientX: number;
+  clientY: number;
+}
+
 /** External content pasted from the system clipboard. Carries no point. */
 export interface PasteEvent extends EventModifiers {
   kind: 'paste';
@@ -378,4 +394,5 @@ export type InputEvent =
   | MultiTouchEvent
   | MultiTouchTapEvent
   | DropEvent
+  | CarryEvent
   | PasteEvent;

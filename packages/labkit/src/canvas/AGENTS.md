@@ -101,7 +101,8 @@ hands it to the camera (`useCameraView`), to the scheduler, and to every `render
 **Every world↔screen path must go through the frame.** There are four, and each
 one is a silent wrong answer if it is missed: `worldToScreen` / `screenToWorld`,
 the camera (`applyCamera`), the camera as a weasel `View` (`cameraView.ts`), and
-`DragDropRuntime`'s drop position. A miss produces geometry that is off by a
+every action on the camera's dispatcher that reads a world point — the tap, and
+`DragDropRuntime`'s palette drop — through `frameLocalToWorld`. A miss produces geometry that is off by a
 constant, or a wheel that drifts — never an error.
 
 ## Coordinate conversions

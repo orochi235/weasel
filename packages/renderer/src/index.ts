@@ -10,7 +10,8 @@
 
 export {
   WeaselRenderer, type WeaselRendererOptions, type RenderTarget,
-  type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats,
+  type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats, type RetainedStats,
+  DEFAULT_RETAIN_BUDGET,
 } from './WeaselRenderer';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
 export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';
@@ -72,6 +73,7 @@ export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';
 export type { ShaderProgram, ShaderStage, UniformArray } from './shaders/ShaderProgram';
 export { strokeReachAt, boundsMissRect } from './cullDrawCommands';
+export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokedPathCommand } from './strokeLengths';
 export {
   registerPaintDrawKind,
   registerPaintDrawKindLoader,

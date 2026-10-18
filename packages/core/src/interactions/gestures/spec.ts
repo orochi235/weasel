@@ -10,6 +10,7 @@ export type {
   ContextMenuSpec,
   MultiTouchTapSpec,
   DropSpec,
+  CarrySpec,
   PasteSpec,
   ModSpec,
   TargetSpec,

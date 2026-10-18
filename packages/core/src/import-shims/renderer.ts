@@ -1,4 +1,5 @@
 export {
+  DEFAULT_RETAIN_BUDGET,
   EFFECT_KIT_UNIFORMS,
   EFFECT_VERT_SRC,
   IDENTITY_COLOR_MATRIX,
@@ -61,6 +62,7 @@ export type {
   RenderSpanStats,
   RenderStats,
   RenderTarget,
+  RetainedStats,
   ShaderDrawCommand,
   ShaderProgramHandle,
   ShaderUniform,

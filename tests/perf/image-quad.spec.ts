@@ -86,7 +86,7 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { paints, glRenderer } = await page.evaluate(
+  const { paints, glRenderer, drawCounts } = await page.evaluate(
     async ({ root, n, size: SIZE, runs, rawVariants, rendererVariants }) => {
       const report = (globalThis as unknown as {
         __imageReport: (m: unknown) => Promise<void>;
@@ -449,6 +449,7 @@ void main() { outColor = u_color; }`;
 
       /** Draw calls one untimed frame of each renderer variant makes. */
       const draws: string[] = [];
+      const drawCounts: Record<string, number> = {};
       for (const variant of rendererVariants) {
         let count = 0;
         const anyGl = gl as unknown as Record<string, unknown>;
@@ -460,6 +461,7 @@ void main() { outColor = u_color; }`;
         delete anyGl.drawElements;
         delete anyGl.drawArrays;
         draws.push(`${variant} ${count}`);
+        drawCounts[variant] = count;
       }
 
       // Pay this context's one-time costs before the first timed block.
@@ -490,7 +492,7 @@ void main() { outColor = u_color; }`;
       }
 
       renderer.dispose();
-      return { paints, glRenderer };
+      return { paints, glRenderer, drawCounts };
     },
     {
       root: repoRoot, n: N, size: SIZE, runs: RUNS,
@@ -559,6 +561,9 @@ void main() { outColor = u_color; }`;
     expect(ok, `${k}: rendered nothing`).toBe(true);
   }
   expect(cells.length).toBe(total);
+  if (drawCounts.unmerged !== undefined) {
+    expect(drawCounts.unmerged, 'each color matrix must close the run, or unmerged prices no break').toBeGreaterThanOrEqual(N);
+  }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   const groups = [

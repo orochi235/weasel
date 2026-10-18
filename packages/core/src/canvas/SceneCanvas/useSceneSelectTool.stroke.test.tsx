@@ -21,12 +21,13 @@ const initial: UseSceneOptions<object, 'default', RectPose>['initial'] = [
   },
 ];
 
-function render(boundsIncludeStroke?: boolean, scale = 1) {
+function render(boundsIncludeStroke?: boolean, scale: number | { x: number; y: number } = 1) {
+  const s = typeof scale === 'number' ? { x: scale, y: scale } : scale;
   return renderHook(() => {
     const scene = useScene<object, 'default', RectPose>({ systemLayers: [{ id: 'default' }], initial });
     const adapter = useSceneAdapter(scene);
     return useSceneSelectTool({
-      scene, adapter, getView: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }),
+      scene, adapter, getView: () => ({ x: 0, y: 0, scale: s }),
       ...(boundsIncludeStroke === undefined ? {} : { geometry: { boundsIncludeStroke } }),
     });
   }).result;
@@ -39,6 +40,10 @@ describe('chrome bounds of a stroked node', () => {
 
   it('resolve a screen-pixel stroke at the view scale', () => {
     expect(render(undefined, 4).current.boundsOf('px')).toEqual({ x: -1, y: -1, width: 102, height: 102 });
+  });
+
+  it('resolve a screen-pixel stroke per axis under a stretched view', () => {
+    expect(render(undefined, { x: 4, y: 1 }).current.boundsOf('px')).toEqual({ x: -1, y: -4, width: 102, height: 108 });
   });
 
   it('are the pose box under boundsIncludeStroke: false', () => {

@@ -1,6 +1,6 @@
 /** Pure gesture matcher — no React, no state, no DOM. */
 
-import type { GestureSpec, ModSpec, PhaseSpec } from './spec';
+import type { CarrySpec, DropSpec, GestureSpec, ModSpec, PasteSpec, PhaseSpec } from './spec';
 import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
@@ -268,17 +268,10 @@ export function matchSpec(
       return matchModifiers(e, spec.mods, isMac);
     }
 
-    case 'drop': {
-      if (e.kind !== 'drop') return false;
-      if (!matchIngestTypes(e.items, spec.types)) return false;
-      return matchModifiers(e, spec.mods, isMac);
-    }
-
-    case 'paste': {
-      if (e.kind !== 'paste') return false;
-      if (!matchIngestTypes(e.items, spec.types)) return false;
-      return matchModifiers(e, spec.mods, isMac);
-    }
+    case 'drop':
+    case 'carry':
+    case 'paste':
+      return matchArrival(e, spec, isMac);
 
     default: {
       // Exhaustiveness guard — new spec kinds are a compile error here.
@@ -287,6 +280,20 @@ export function matchSpec(
       return false;
     }
   }
+}
+
+/** Content arriving from off the surface: an OS drop, a paste, or a carry. A
+ *  carry starts as it comes over and, if nothing took it then, may still be
+ *  taken on release; its moves and its leave belong to the handle in flight. */
+function matchArrival(e: InputEvent, spec: DropSpec | CarrySpec | PasteSpec, isMac: boolean): boolean {
+  if (e.kind !== spec.kind) return false;
+  if (e.kind === 'carry') {
+    if (e.stage !== 'enter' && e.stage !== 'drop') return false;
+    if (!matchIngestTypes([{ mime: e.type }], spec.types)) return false;
+  } else if (e.kind === 'drop' || e.kind === 'paste') {
+    if (!matchIngestTypes(e.items, spec.types)) return false;
+  }
+  return matchModifiers(e, spec.mods, isMac);
 }
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();

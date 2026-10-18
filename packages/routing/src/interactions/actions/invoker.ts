@@ -149,6 +149,9 @@ export interface InvocationCtx {
     };
   };
   key?: { key: string; repeat: boolean };
+  /** What a carry over the surface brings: its payload, as `startCarry` was
+   *  handed it. Present for every event of a `carry` binding's gesture. */
+  carry?: { type: string; value: unknown };
   /**
    * The view the input landed in, as the surface's view resolver assigned it:
    * a view id, or `null` for the surface's own camera. Absent where no

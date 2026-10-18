@@ -29,6 +29,8 @@
   },
   "dependencies": {
     "@weasel-js/geom": "1.10.1",
+    "@weasel-js/gestures": "1.10.1",
+    "@weasel-js/icons": "1.10.1",
     "@weasel-js/loupe": "1.10.1",
     "@weasel-js/menu": "1.10.1",
     "@weasel-js/paint": "1.10.1",

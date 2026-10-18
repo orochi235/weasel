@@ -54,7 +54,7 @@ describe('GestureSpec', () => {
   it('GestureSpec is the union of all kinds', () => {
     expectTypeOf<GestureSpec['kind']>().toEqualTypeOf<
       | 'key' | 'key-held' | 'wheel' | 'pinch' | 'click' | 'doubleClick' | 'contextMenu' | 'drag'
-      | 'pointerDown' | 'hover' | 'longPress' | 'multiTouch' | 'multiTouchTap' | 'drop' | 'paste'
+      | 'pointerDown' | 'hover' | 'longPress' | 'multiTouch' | 'multiTouchTap' | 'drop' | 'carry' | 'paste'
     >();
   });
 });

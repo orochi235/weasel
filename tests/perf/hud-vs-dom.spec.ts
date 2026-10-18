@@ -34,6 +34,7 @@
  */
 import { test, expect, type Browser, type Page } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { asyncSpans, busy, markWindow, parseTrace, selfTimes, threadCensus, type TraceEvent } from './lib/trace';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import os from 'node:os';
@@ -75,12 +76,20 @@ const WARMUP = 30;
  *  (ABCCBA), so each gives every cell two samples. */
 const PASSES = rounds(2);
 
+/** `HVD_CENSUS=1` reports every thread in every process, and the frame
+ *  pipeline's stages, for each measurement — what the four counted groups
+ *  leave out. It traces more categories, so its busy figures are not
+ *  comparable with a run without it. */
+const CENSUS = process.env.HVD_CENSUS === '1';
+
 const CATEGORIES = [
   'toplevel',
   'devtools.timeline',
   'disabled-by-default-devtools.timeline',
   'blink.user_timing',
   'gpu',
+  // The frame pipeline's stages, per frame, for `HVD_CENSUS`.
+  ...(CENSUS ? ['cc', 'viz', 'benchmark', 'disabled-by-default-devtools.timeline.frame'] : []),
 ].join(',');
 
 interface Config { glyphs: number; update: typeof UPDATES[number]; camera: typeof CAMERAS[number] }
@@ -90,9 +99,15 @@ interface Breakdown {
   main: number; script: number; style: number; layout: number; paint: number; otherMain: number;
   compositor: number; raster: number; gpuProcess: number; total: number;
 }
+/** ms per frame. Threads by `process/thread`; stages the mean span. */
+interface Census {
+  threads: Record<string, { busy: number; cpu: number | null; count: number }>;
+  stages: Record<string, { mean: number; perFrame: number }>;
+}
 interface Sample extends Cell {
   pass: number;
   perFrame: Breakdown;
+  census: Census;
   frames: number;
   intervalMs: number;
   longFrames: number;
@@ -103,91 +118,22 @@ interface Sample extends Cell {
   freeMissed: number;
 }
 
-interface TraceEvent {
-  ph: string; name: string; cat?: string; pid: number; tid: number;
-  ts: number; dur?: number; args?: Record<string, unknown>;
-}
-
 const SCRIPT = /^(FunctionCall|EvaluateScript|FireAnimationFrame|TimerFire|EventDispatch|RunMicrotasks|v8\.|V8\.|MinorGC|MajorGC|BlinkGC|ThreadState::|CppGC|GCEvent)/;
 const STYLE = /^(UpdateLayoutTree|RecalculateStyles|ParseAuthorStyleSheet|ScheduleStyleRecalculation|InvalidateLayout)/;
 const LAYOUT = /^(Layout|LocalFrameView::layout|LayoutShift)$/;
 const PAINT = /^(Paint|PrePaint|PaintImage|Layerize|UpdateLayer|UpdateLayerTree|CompositeLayers|Commit|PaintSetup|RasterTask)$/;
 
-/** Busy time of a thread in [t0, t1]: the union of its complete events, so
- *  nesting is not counted twice. */
-function busy(events: TraceEvent[], t0: number, t1: number): number {
-  const spans = events
-    .map((e) => [Math.max(e.ts, t0), Math.min(e.ts + (e.dur ?? 0), t1)] as const)
-    .filter(([a, b]) => b > a)
-    .sort((x, y) => x[0] - y[0]);
-  let sum = 0;
-  let curA = -1;
-  let curB = -1;
-  for (const [a, b] of spans) {
-    if (a > curB) {
-      if (curB > curA) sum += curB - curA;
-      curA = a; curB = b;
-    } else if (b > curB) curB = b;
-  }
-  if (curB > curA) sum += curB - curA;
-  return sum;
-}
-
-/** Self time by event name on one thread, for events wholly inside the
- *  window. An event's self time is its duration less its direct children's. */
-function selfTimes(events: TraceEvent[], t0: number, t1: number): Map<string, number> {
-  const inside = events
-    .filter((e) => e.ts >= t0 && e.ts + (e.dur ?? 0) <= t1)
-    .sort((a, b) => a.ts - b.ts || (b.dur ?? 0) - (a.dur ?? 0));
-  const self = new Map<string, number>();
-  const stack: Array<{ e: TraceEvent; end: number; child: number }> = [];
-  const close = (f: { e: TraceEvent; child: number }) => {
-    self.set(f.e.name, (self.get(f.e.name) ?? 0) + Math.max(0, (f.e.dur ?? 0) - f.child));
-  };
-  for (const e of inside) {
-    const end = e.ts + (e.dur ?? 0);
-    while (stack.length && stack[stack.length - 1].end <= e.ts) close(stack.pop()!);
-    if (stack.length) stack[stack.length - 1].child += e.dur ?? 0;
-    stack.push({ e, end, child: 0 });
-  }
-  while (stack.length) close(stack.pop()!);
-  return self;
-}
-
-function analyze(trace: Buffer, frames: number): Breakdown & { found: string[] } {
-  const parsed = JSON.parse(trace.toString('utf8')) as { traceEvents?: TraceEvent[] } | TraceEvent[];
-  const events = Array.isArray(parsed) ? parsed : (parsed.traceEvents ?? []);
-  const threadName = new Map<string, string>();
-  const processName = new Map<number, string>();
-  for (const e of events) {
-    if (e.ph !== 'M') continue;
-    const name = String((e.args as { name?: string } | undefined)?.name ?? '');
-    if (e.name === 'thread_name') threadName.set(`${e.pid}:${e.tid}`, name);
-    if (e.name === 'process_name') processName.set(e.pid, name);
-  }
-  const start = events.find((e) => e.name === 'hvd-start');
-  const end = events.find((e) => e.name === 'hvd-end');
-  if (!start || !end) throw new Error('trace holds no hvd-start / hvd-end marks');
-  const t0 = start.ts;
-  const t1 = end.ts;
-  const rendererPid = start.pid;
-
-  const byThread = new Map<string, TraceEvent[]>();
-  for (const e of events) {
-    if (e.ph !== 'X' || e.dur === undefined) continue;
-    const k = `${e.pid}:${e.tid}`;
-    let list = byThread.get(k);
-    if (!list) { list = []; byThread.set(k, list); }
-    list.push(e);
-  }
+function analyze(buf: Buffer, frames: number): Breakdown & { found: string[]; census: Census } {
+  const trace = parseTrace(buf);
+  const { t0, t1, pid: rendererPid } = markWindow(trace, 'hvd-start', 'hvd-end');
 
   let main = 0; let compositor = 0; let raster = 0; let gpuProcess = 0;
   let mainEvents: TraceEvent[] = [];
   const found: string[] = [];
-  for (const [k, list] of byThread) {
+  for (const [k, list] of trace.byThread) {
     const pid = Number(k.split(':')[0]);
-    const tname = threadName.get(k) ?? '';
-    const pname = processName.get(pid) ?? '';
+    const tname = trace.threadName.get(k) ?? '';
+    const pname = trace.processName.get(pid) ?? '';
     if (pid === rendererPid) {
       if (tname === 'CrRendererMain') { main = busy(list, t0, t1); mainEvents = list; found.push('main'); }
       else if (tname === 'Compositor') { compositor += busy(list, t0, t1); found.push('compositor'); }
@@ -207,11 +153,19 @@ function analyze(trace: Buffer, frames: number): Breakdown & { found: string[] }
     else otherMain += us;
   }
   const ms = (us: number) => us / 1000 / frames;
+  const census: Census = { threads: {}, stages: {} };
+  for (const r of threadCensus(trace, t0, t1)) {
+    census.threads[`${r.process}/${r.thread}`] = { busy: ms(r.busyUs), cpu: r.cpuUs === null ? null : ms(r.cpuUs), count: r.count };
+  }
+  for (const [name, { count, us }] of asyncSpans(trace, t0, t1)) {
+    census.stages[name] = { mean: us / 1000 / count, perFrame: count / frames };
+  }
   return {
     main: ms(main), script: ms(script), style: ms(style), layout: ms(layout), paint: ms(paint),
     otherMain: ms(otherMain), compositor: ms(compositor), raster: ms(raster),
     gpuProcess: ms(gpuProcess), total: ms(main + compositor + raster + gpuProcess),
     found: [...new Set(found)],
+    census,
   };
 }
 
@@ -471,6 +425,32 @@ const PAGE = `<!doctype html>
 <body><canvas id="scene"></canvas><div id="overlay"></div></body></html>`;
 
 const fmt = (x: number, w = 6, d = 2) => x.toFixed(d).padStart(w);
+
+/** Threads busy over 0.05 ms a frame, and the ten longest pipeline stages. */
+function printCensus(c: Census, intervalMs: number): void {
+  console.log(`         threads, ms/frame busy (cpu), of a ${fmt(intervalMs, 5)} ms traced interval:`);
+  for (const [k, t] of Object.entries(c.threads).sort((a, b) => b[1].busy - a[1].busy)) {
+    if (t.busy < 0.05) continue;
+    console.log(`           ${fmt(t.busy)} (${t.cpu === null ? '    —' : fmt(t.cpu, 5)})  ${k}${t.count > 1 ? ` x${t.count}` : ''}`);
+  }
+  const stages = Object.entries(c.stages).sort((a, b) => b[1].mean - a[1].mean).slice(0, 10);
+  if (stages.length) console.log('         async stages, mean ms a span (spans a frame):');
+  for (const [k, st] of stages) console.log(`           ${fmt(st.mean)} (${fmt(st.perFrame, 5)})  ${k}`);
+}
+
+function censusMetrics(cs: Census[], stat: string): Record<string, ReturnType<typeof metric>> {
+  const out: Record<string, ReturnType<typeof metric>> = {};
+  const keys = (pick: (c: Census) => Record<string, unknown>) => [...new Set(cs.flatMap((c) => Object.keys(pick(c))))];
+  for (const k of keys((c) => c.threads)) {
+    const xs = cs.map((c) => +(c.threads[k]?.busy ?? 0).toFixed(4));
+    out[`thread ${k}`] = metric(med(xs), 'ms', `${stat}, busy per frame`, xs);
+  }
+  for (const k of keys((c) => c.stages)) {
+    const xs = cs.filter((c) => c.stages[k]).map((c) => +c.stages[k].mean.toFixed(4));
+    out[`stage ${k}`] = metric(med(xs), 'ms', `${stat}, mean async span`, xs);
+  }
+  return out;
+}
 const med = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
   const m = Math.floor(s.length / 2);
@@ -543,8 +523,8 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     for (const t of ['main', 'gpu']) {
       if (!breakdown.found.includes(t)) throw new Error(`trace has no ${t} thread; found ${breakdown.found.join(', ')}`);
     }
-    const { found: _found, ...perFrame } = breakdown;
-    samples.push({ ...cell, perFrame, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
+    const { found: _found, census, ...perFrame } = breakdown;
+    samples.push({ ...cell, perFrame, census, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
     const b = perFrame;
     console.log(
       `  ${String(idx + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(9)}`
@@ -555,6 +535,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
       + `${stats.gpuTimeMs !== null ? `  gpu ${fmt(stats.gpuTimeMs, 5)}` : ''}`
       + `  load ${fmt(os.loadavg()[0], 6, 1)}  ${((Date.now() - t0) / 1000).toFixed(0).padStart(5)}s`,
     );
+    if (CENSUS) printCensus(census, stats.intervalMs);
     console.log(`onto: progress ${idx + 1}/${plan.length}`);
   }
 
@@ -611,6 +592,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     metrics.longFrames = metric(med(ss.map((s) => s.longFrames)), 'count', `${stat}, intervals over 1.5x the median`);
     const gt = ss.map((s) => s.gpuTimeMs).filter((x): x is number => x !== null);
     if (gt.length) metrics.gpuTime = metric(med(gt), 'ms', `${stat}, EXT_disjoint_timer_query of the canvas render`, gt);
+    if (CENSUS) Object.assign(metrics, censusMetrics(ss.map((s) => s.census), stat));
     const id = c.approach === 'none' ? 'none' : `${c.approach} ${c.glyphs} ${c.update} ${c.camera}`;
     const loads = ss.map((s) => +s.load1.toFixed(2));
     metrics.load1 = metric(med(loads), 'load', 'median 1-minute load average as each sample finished', loads);

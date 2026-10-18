@@ -5,6 +5,7 @@ import {
   BATCH_FILL_MATRICES_SPEC, createBatchFill,
 } from './shaders/builtinPrograms';
 import {
+  glyphGeneration,
   markAllFontsNotUploaded,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
@@ -39,6 +40,17 @@ import {
 } from './shaders/customPrelude';
 import { getProgramSource, type ProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 import { EffectTargets } from './effects/EffectTargets';
+import { RetainedSurfaces } from './retain/RetainedSurfaces';
+import { paintDrawKindRegistry } from './paintKinds';
+import {
+  DEFAULT_RETAIN_BUDGET, type RenderOptions, type RenderSpanStats, type RenderStats,
+  type RenderTarget, type WeaselRendererOptions,
+} from './rendererTypes';
+
+export {
+  DEFAULT_RETAIN_BUDGET, type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats,
+  type RenderTarget, type RetainedStats, type WeaselRendererOptions,
+} from './rendererTypes';
 import { extractUniformArrays, extractUniformNames } from './shaders/extractUniformNames';
 
 /** Every uniform a custom program may be written through. Both stages, not
@@ -59,91 +71,10 @@ function compileCustomProgram(gl: WebGL2RenderingContext, src: ProgramSource): S
   return program;
 }
 
-/** A run of top-level commands, `[start, end)` by index, that
- *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
- *  layer's commands, say. Spans are in order and do not overlap. */
-export interface RenderSpan {
-  id: string;
-  start: number;
-  end: number;
-}
-
-/** Per-frame options for {@link WeaselRenderer.render}. */
-export interface RenderOptions {
-  spans?: readonly RenderSpan[];
-}
-
-/** What one span cost. A batched run is drawn when something closes it, so
- *  its draw call counts toward the span that closed it. */
-export interface RenderSpanStats {
-  id: string;
-  drawCalls: number;
-  ms: number;
-}
-
-/** What one `render()` cost. See {@link WeaselRenderer.lastFrameStats}. */
-export interface RenderStats {
-  drawCalls: number;
-  ms: number;
-  spans: RenderSpanStats[];
-}
+const NO_RETAINED = { composited: 0, redrawn: 0, declined: 0, bytes: 0 } as const;
 
 function now(): number {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
-}
-
-/** Construction options for {@link WeaselRenderer}. Pass `gl` or `canvas`;
- *  a context passed in must have a stencil buffer. */
-export interface WeaselRendererOptions {
-  /** A WebGL2 context to draw with. Wins over `canvas`. */
-  gl?: WebGL2RenderingContext;
-  /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
-   *  The renderer sets its drawing buffer and never its CSS size. */
-  canvas?: HTMLCanvasElement;
-  /** Drawing size in CSS pixels. */
-  width: number;
-  /** Drawing size in CSS pixels. */
-  height: number;
-  /** Device pixels per CSS pixel. */
-  dpr: number;
-  /** MIN_FILTER strategy for image textures (`GLImageCache`). Default
-   *  `'linear'`. `'mipmap'` builds mipmaps for every image at upload, as
-   *  the headless `renderSceneToPixels` path does; `'auto'` builds them
-   *  for an image the first time a frame draws it at half size or smaller. */
-  imageMinification?: ImageMinification;
-  /** How far a flattened curve may stray: in world units, or `{ px }` in
-   *  device pixels, which follows each path's transform so a zoom keeps
-   *  curves smooth. Default `{ px: DEFAULT_FLATTEN_TOLERANCE_PX }`. */
-  flattenTolerance?: FlattenTolerance;
-  /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.
-   *  Default DEFAULT_BAKE_BUDGET (16). The headless renderSceneToPixels
-   *  path passes Infinity so print never defers a glyph. */
-  bakeBudget?: number;
-  /** On-screen glyph size, in CSS pixels, at or above which text renders from
-   *  tessellated font outlines instead of a distance field — see
-   *  `OUTLINE_MIN_SCREEN_PX`. Only faces registered with
-   *  `registerFontOutlines` are affected; everything else keeps its SDF tier
-   *  whatever this says. Pass `Infinity` to disable the tier outright, or 0
-   *  to use outlines wherever they exist (what the headless path does, since
-   *  print has no reason to sample a field it could evaluate exactly). */
-  textOutlineMinScreenSize?: number;
-}
-
-/** Where a renderer draws inside a buffer it does not own.
- *
- *  The rect's SIZE is the renderer's own `width`/`height` — `resize()` owns
- *  that, and a second copy here could disagree with the one `DrawContext`
- *  reports to screen-space layers. */
-export interface RenderTarget {
-  /** Top-left of this renderer's output within the drawing buffer, in CSS
-   *  pixels, with the origin at the buffer's top-left. GL's bottom-left origin
-   *  is handled internally. */
-  origin: { x: number; y: number };
-  /** Clear colour and stencil within the rect before drawing. Default true.
-   *  Pass false only when the caller clears the whole buffer itself on behalf
-   *  of every co-tenant — a frame that clears neither inherits its neighbour's
-   *  stencil bits, and even-odd fills then fill their holes. */
-  clear?: boolean;
 }
 
 /** Each glyph-paint program's fragment stage and the uniforms it looks up. */
@@ -163,7 +94,7 @@ const GLYPH_PAINT_SOURCES: Record<GlyphPaintKind, readonly [string, readonly str
  */
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
-  private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [] };
+  private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [], retained: NO_RETAINED };
   /** Built on the first frame that draws with each, so a one-shot render of
    *  plain shapes builds the batch program alone. */
   private readonly pathFill: LazyProgram;
@@ -200,6 +131,10 @@ export class WeaselRenderer {
   /** Offscreen buffers for group effects. Allocates nothing until a group
    *  with effects asks, so a canvas without them pays no memory. */
   private readonly effectTargets: EffectTargets;
+  private readonly retained: RetainedSurfaces;
+  /** Advanced when a program is compiled again over one already drawn with,
+   *  which leaves every retained surface drawn by the old one stale. */
+  private programEpoch = 0;
   private readonly paintScratch: PaintScratch;
   private readonly imageMinification: ImageMinification;
   private flattenTolerance?: FlattenTolerance;
@@ -223,6 +158,7 @@ export class WeaselRenderer {
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
     this.effectTargets = new EffectTargets(this.gl);
+    this.retained = new RetainedSurfaces(this.gl, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
     this.paintScratch = new PaintScratch(this.gl);
 
     // Bits 0-7 are load-bearing: bit 0 for even-odd fills and stenciled
@@ -323,7 +259,10 @@ export class WeaselRenderer {
 
   private installProgram(id: string, src: ProgramSource, program: ShaderProgram): void {
     const previous = this.programRegistry.get(id);
-    if (previous) this.gl.deleteProgram(previous.handle);
+    if (previous) {
+      this.gl.deleteProgram(previous.handle);
+      this.programEpoch++;
+    }
     this.programRegistry.set(id, program);
     this.programSources.set(id, src);
   }
@@ -453,6 +392,7 @@ export class WeaselRenderer {
     // no-op, and drops the bookkeeping that would otherwise hand a dead FBO to
     // the next group with effects.
     this.effectTargets.releaseAll();
+    this.retained.releaseAll();
     this.paintScratch.release();
     this.paintResources.release();
     this.paintResources = createPaintResources();
@@ -517,6 +457,7 @@ export class WeaselRenderer {
     if (this.whiteTexture) gl.deleteTexture(this.whiteTexture);
     this.whiteTexture = null;
     this.effectTargets.releaseAll();
+    this.retained.releaseAll();
     this.paintScratch.release();
   }
 
@@ -533,7 +474,7 @@ export class WeaselRenderer {
     const t0 = now();
     const counters = { drawCalls: 0 };
     const spanStats: RenderSpanStats[] = [];
-    this.stats = { drawCalls: 0, ms: 0, spans: spanStats };
+    this.stats = { drawCalls: 0, ms: 0, spans: spanStats, retained: NO_RETAINED };
     const gl = this.gl;
     // Free GL resources whose Mesh was GC'd since the last frame. Done here,
     // before any draws, because GL state is known clean — deleting from the
@@ -542,6 +483,10 @@ export class WeaselRenderer {
     this.imageCache.beginFrame();
     this.textureCache.sweep(textureRegistry);
     this.refreshPrograms();
+    this.retained.beginFrame([
+      glyphGeneration(), textureRegistry.getVersion(), paintDrawKindRegistry.getVersion(),
+      this.programEpoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr,
+    ]);
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
     // A frame that threw part-way never unwound: its group stack, its staged
@@ -589,6 +534,7 @@ export class WeaselRenderer {
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
       effectTargets: this.effectTargets,
+      retained: this.retained,
       paintScratch: this.paintScratch,
       renderTarget: null,
       deviceWidth: device.width,
@@ -619,6 +565,12 @@ export class WeaselRenderer {
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
     this.meshCache.freeTransient();
+    const retained = this.retained;
+    retained.endFrame();
+    this.stats.retained = {
+      composited: retained.composited, redrawn: retained.redrawn,
+      declined: retained.declined, bytes: retained.bytes,
+    };
     this.stats.drawCalls = counters.drawCalls;
     this.stats.ms = now() - t0;
   }

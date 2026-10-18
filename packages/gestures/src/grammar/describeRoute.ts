@@ -153,6 +153,8 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       return userDoes(required, `drags${target}`);
     case 'drop':
       return userDoes(required, `drops ${arg ?? 'any'} content onto the canvas`);
+    case 'carry':
+      return userDoes(required, `carries ${arg ?? 'anything'} onto the canvas`);
     case 'paste':
       return userDoes(required, `pastes ${arg ?? 'any'} content`);
   }

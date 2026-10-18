@@ -2,8 +2,12 @@ import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import type { Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { groupMembership, wrapGroup, type LayerGroup } from './layerGroup';
+import { DEFAULT_LAYER_RETAIN, retainedId, type LayerRetainPolicy } from './retain';
+import type { RedrawSource } from './redrawSource';
 
-export type { LayerGroup };
+export type { LayerGroup, LayerRetainPolicy };
+export { DEFAULT_LAYER_RETAIN };
+export { subscribeToSources, type RedrawSource } from './redrawSource';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -35,28 +39,15 @@ function reportLayerFailure({ layerId, error }: LayerDrawFailure): void {
  *  calls `drawLayers`, not by `drawLayers` itself — the function is pure. */
 export type LayerCommandCache = Map<
   string,
-  { deps: readonly unknown[]; cmds: DrawCommand[] }
+  {
+    deps: readonly unknown[];
+    cmds: DrawCommand[];
+    /** Whether the last frame served `cmds` from here rather than drawing. */
+    reused?: boolean;
+    /** The view the last frame drew under. */
+    view?: View;
+  }
 >;
-
-/** Something outside React whose changes a paint reads — a mode registry, a
- *  scoping lookup. A notification repaints the canvas; the listener takes no
- *  arguments and the returned function unsubscribes. */
-export interface RedrawSource {
-  subscribe(listener: () => void): () => void;
-}
-
-/** The `subscribe` for a layer that draws `sources`: it notifies whenever any
- *  of them does. A thunk is read when the subscription is made. */
-export function subscribeToSources(
-  sources: readonly { subscribe?: RedrawSource['subscribe'] }[]
-    | (() => readonly { subscribe?: RedrawSource['subscribe'] }[]),
-): RedrawSource['subscribe'] {
-  return (listener) => {
-    const list = typeof sources === 'function' ? sources() : sources;
-    const offs = list.flatMap((l) => (l.subscribe ? [l.subscribe(listener)] : []));
-    return () => { for (const off of offs) off(); };
-  };
-}
 
 /**
  * One layer of a canvas: `draw` turns `data` and the view into draw commands;
@@ -121,6 +112,14 @@ export interface RenderLayer<TData> {
    */
   effects?: readonly Effect[];
   /**
+   * Whether the renderer may keep this layer's pixels between frames and
+   * composite them as one quad instead of drawing its commands again — see
+   * {@link LayerRetainPolicy} for when `drawLayers` does. `false` never
+   * retains it, `true` retains it whatever its size; either way only a layer
+   * with `deps`, drawn through a cache, and without `effects`.
+   */
+  retain?: boolean;
+  /**
    * Optional hit-test for **consumer-attached** layers.
    *
    * Only layers registered through `CanvasExtensionApi.registerLayer` are
@@ -184,7 +183,8 @@ function clockMs(): number {
  *
  * `groups` brackets runs of consecutive layers so they composite as one — see
  * `LayerGroup`. `spans`, when passed, receives one {@link LayerDrawSpan} per
- * layer drawn.
+ * layer drawn. `retain` decides which unchanged layers the renderer keeps
+ * as pixels between frames; `false` keeps none.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -197,6 +197,7 @@ export function drawLayers<TData>(
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
   groups?: readonly LayerGroup[],
   spans?: LayerDrawSpan[],
+  retain: LayerRetainPolicy | false = DEFAULT_LAYER_RETAIN,
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const v = view ?? IDENTITY_VIEW;
@@ -223,7 +224,7 @@ export function drawLayers<TData>(
 
   for (const layer of paintedLayers(layers, visibility, order)) {
     const t0 = spans ? clockMs() : 0;
-    const cmds = drawOneLayer(layer, data, v, dims, cache, onLayerError);
+    const cmds = drawLayerOnce(layer, data, v, dims, cache, onLayerError, retain);
     const buildMs = spans ? clockMs() - t0 : 0;
     // A layer that painted nothing neither joins a run nor breaks one.
     if (cmds.length === 0) {
@@ -324,6 +325,18 @@ export function drawOneLayer<TData>(
   cache?: LayerCommandCache,
   onLayerError: (failure: LayerDrawFailure) => void = reportLayerFailure,
 ): DrawCommand[] {
+  return drawLayerOnce(layer, data, view, dims, cache, onLayerError, false);
+}
+
+function drawLayerOnce<TData>(
+  layer: RenderLayer<TData>,
+  data: TData,
+  view: View,
+  dims: Dims,
+  cache: LayerCommandCache | undefined,
+  onLayerError: (failure: LayerDrawFailure) => void,
+  retain: LayerRetainPolicy | false,
+): DrawCommand[] {
   let cmds: DrawCommand[];
   try {
     cmds = layerCommands(layer, data, view, dims, cache);
@@ -334,10 +347,13 @@ export function drawOneLayer<TData>(
   }
   if (cmds.length === 0) return [];
   const effects = layer.effects && layer.effects.length > 0 ? layer.effects : undefined;
+  const kept = retain && !effects && cache ? retainedId(layer, cache, view, retain) : undefined;
+  const marked = kept ? { retain: kept } : {};
   if ((layer.space ?? 'world') === 'screen') {
-    return effects ? [{ kind: 'group', effects, children: cmds }] : cmds;
+    if (effects) return [{ kind: 'group', effects, children: cmds }];
+    return kept ? [{ kind: 'group', ...marked, children: cmds }] : cmds;
   }
-  return [{ kind: 'group', transform: viewToMat3(view), ...(effects ? { effects } : {}), children: cmds }];
+  return [{ kind: 'group', transform: viewToMat3(view), ...(effects ? { effects } : {}), ...marked, children: cmds }];
 }
 
 /**
@@ -359,10 +375,13 @@ function layerCommands<TData>(
 
   const deps = layer.deps(data, view, dims);
   const entry = cache.get(layer.id);
-  if (entry && depsUnchanged(entry.deps, deps)) return entry.cmds;
+  if (entry && depsUnchanged(entry.deps, deps)) {
+    entry.reused = true;
+    return entry.cmds;
+  }
 
   const cmds = layer.draw(data, view, dims);
-  cache.set(layer.id, { deps, cmds });
+  cache.set(layer.id, { deps, cmds, reused: false, view: entry?.view });
   return cmds;
 }
 

@@ -1,5 +1,4 @@
 import type { ActionDeps } from '@weasel-js/routing';
-import { meanScale } from '@weasel-js/geom';
 import { drawnBoundsOf, inkExtentsOf, type DrawnBoundsOptions, type DrawnBoundsScene } from 'canvas/drawnBounds';
 import type { InkExtents } from 'core/geometry/inkExtents';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
@@ -35,7 +34,7 @@ export function drawnBoxes(
     descriptor,
     worldPoseOf: (id) => (worlds ??= scenePoseFrame(deps.scene!)).world(id),
     includeStroke: deps.boundsIncludeStroke ?? true,
-    ...(view ? { scale: meanScale(view.scale) } : {}),
+    ...(view ? { scale: view.scale } : {}),
   };
   const framed = (id: NodeId | string, pose: unknown): Bounds =>
     drawnBoundsOf(scene, id as NodeId, pose, opts);

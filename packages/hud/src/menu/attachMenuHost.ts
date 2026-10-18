@@ -5,7 +5,7 @@ import { createMenuWidget, type MenuWidgetOptions } from './menuWidget';
 
 /** What {@link attachMenuHost} needs beyond the hud and host. */
 export type AttachMenuHostOptions =
-  Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize' | 'measure' | 'metrics'>;
+  Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize' | 'measure' | 'metrics' | 'icons'>;
 
 /** Draw `host`'s open menu as a widget on `hud`, focused while open. A press
  *  anywhere else takes focus from it, which closes the menu, as do a wheel

@@ -179,7 +179,7 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
       nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
       ), { values: (at: string) => prefValueAtPath(ctx.values, at), onChange: ctx.onChange }), shown)}
-      cells={(leaves) =>
+      cells={(leaves) => ctx.leaves ? ctx.leaves.cells(leaves) :
         leaves.flatMap(({ path: own, leaf, at }): Array<{ path: string; content: ReactNode }> => {
           // An alias still here shows nothing, or is a renderer's to draw.
           const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
