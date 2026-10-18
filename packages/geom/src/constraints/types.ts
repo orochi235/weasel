@@ -13,7 +13,8 @@ export type AnchorPair = readonly [number, number];
  * `vertical` read the axes of the frame the solve is given; `length` is in
  * the path's own units. `tangent` keeps an anchor's two handles on one line
  * through it, pointing apart (G1 continuity), their lengths free; it needs
- * both handles.
+ * both handles. `onPath` holds an anchor on the path's segment from
+ * `segment[0]` to `segment[1]`, anywhere along it.
  */
 export type PathConstraint =
   | { readonly kind: 'fixed' | 'tangent'; readonly anchor: number }
@@ -23,7 +24,8 @@ export type PathConstraint =
     readonly segments: readonly [AnchorPair, AnchorPair];
   }
   | { readonly kind: 'length'; readonly segment: AnchorPair; readonly length: number }
-  | { readonly kind: 'coincident'; readonly anchors: AnchorPair };
+  | { readonly kind: 'coincident'; readonly anchors: AnchorPair }
+  | { readonly kind: 'onPath'; readonly anchor: number; readonly segment: AnchorPair };
 
 /** Every kind of {@link PathConstraint}. */
 export type PathConstraintKind = PathConstraint['kind'];
@@ -37,6 +39,7 @@ export function constraintAnchors(c: PathConstraint): number[] {
     case 'vertical':
     case 'length': return [...c.segment];
     case 'coincident': return [...c.anchors];
+    case 'onPath': return [c.anchor, ...c.segment];
     default: return [...c.segments[0], ...c.segments[1]];
   }
 }
@@ -72,6 +75,11 @@ export function mapConstraintAnchors(
     case 'coincident': {
       const anchors = pair(c.anchors);
       return anchors && { kind: 'coincident', anchors };
+    }
+    case 'onPath': {
+      const anchor = to(c.anchor);
+      const segment = pair(c.segment);
+      return anchor === undefined || !segment ? null : { kind: 'onPath', anchor, segment };
     }
     default: {
       const first = pair(c.segments[0]);

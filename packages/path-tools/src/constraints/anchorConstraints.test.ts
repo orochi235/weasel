@@ -32,4 +32,9 @@ describe('constraintsForAnchors', () => {
       .build() as PolygonPath;
     expect(constraintsForAnchors('tangent', [0, 1, 2], wave)).toEqual([{ kind: 'tangent', anchor: 1 }]);
   });
+
+  it('holds the first of three anchors on the segment the other two end, and nothing when they end none', () => {
+    expect(constraintsForAnchors('onPath', [3, 2, 1], SQUARE)).toEqual([{ kind: 'onPath', anchor: 3, segment: [1, 2] }]);
+    expect(constraintsForAnchors('onPath', [3, 0, 2], SQUARE)).toEqual([]);
+  });
 });

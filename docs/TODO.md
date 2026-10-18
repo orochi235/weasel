@@ -427,10 +427,13 @@ Priority tags:
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
-- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
-  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
-  Constraints between two nodes also need a home other than one node's `data.constraints`, and
-  both nodes solved in one edit.
+- **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
+  its own path only. Across nodes the constraint needs a home other than either node's
+  `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
+  undone with the scene. Its solve packs every node a connected set of constraints reaches into one
+  coordinate vector — `solveConstraints` already takes any point list — and commits each moved
+  node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
+  the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
 - **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
   one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
   `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs

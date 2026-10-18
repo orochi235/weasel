@@ -10,7 +10,7 @@ import { pathToAnchors } from '../paths/anchors';
 import { unsatisfiedConstraints } from './check';
 import type { ConstraintPoint, HandleRef } from './points';
 import { solveConstraints, type SolveConstraintsOptions, type SolveConstraintsResult } from './solve';
-import { mapConstraintAnchors, type PathConstraint } from './types';
+import { mapConstraintAnchors, type AnchorPair, type PathConstraint } from './types';
 
 /** Every anchor of `path`, by flat index, with the handles it has. */
 export function pathAnchorPoints(path: PolygonPath): ConstraintPoint[] {
@@ -106,6 +106,25 @@ export function remapConstraints(
   return { constraints: out, from };
 }
 
+/**
+ * The segment of `path` joining anchors `a` and `b`, as the pair in the order
+ * the path runs it, or null when no segment joins them.
+ */
+export function segmentBetween(path: PolygonPath, a: number, b: number): AnchorPair | null {
+  const { anchors, closed } = pathToAnchors(path);
+  let base = 0;
+  for (let s = 0; s < anchors.length; s++) {
+    const n = anchors[s].length;
+    const next = (i: number) => (i + 1 < n ? i + 1 : closed[s] && n > 2 ? 0 : -1);
+    for (const [p, q] of [[a, b], [b, a]] as const) {
+      const i = p - base;
+      if (i >= 0 && i < n && next(i) >= 0 && base + next(i) === q) return [p, q];
+    }
+    base += n;
+  }
+  return null;
+}
+
 /** Options for {@link constrainPathEdit}. */
 export interface ConstrainPathEditOptions {
   /**
@@ -167,7 +186,11 @@ export function constrainPathEdit(
     ? anchorsBefore(before, after, opts.origins)
     : now.map((_, i) => (now.length === was.length ? i : undefined));
   const broken = new Set(unsatisfiedConstraints(was, constraints, { axisAngle }));
-  const { constraints: kept, from } = remapConstraints(constraints, wasAnchor);
+  // An `onPath` whose segment the edit split or broke has no segment left to hold its anchor on.
+  const remapped = remapConstraints(constraints, wasAnchor);
+  const joined = remapped.constraints.map((c) => c.kind !== 'onPath' || !!segmentBetween(after, ...c.segment));
+  const kept = remapped.constraints.filter((_, i) => joined[i]);
+  const from = remapped.from.filter((_, i) => joined[i]);
   const skip = from.flatMap((old, i) => (broken.has(old) ? [i] : []));
   const reference = wasAnchor.map((old) => (old === undefined ? undefined : was[old]));
   const held = now.flatMap((p, i) => {

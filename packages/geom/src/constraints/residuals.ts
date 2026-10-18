@@ -4,6 +4,7 @@
  * Each row's derivatives are analytic, handed out one nonzero at a time.
  */
 
+import { nearestOnCubic } from '../nearest';
 import type { AnchorPair, PathConstraint } from './types';
 
 /** The axes `horizontal` and `vertical` read: the x axis is `(cos, sin)`. */
@@ -39,7 +40,54 @@ export type Grad = (row: number, v: number, d: number) => void;
 
 /** How many residual rows `c` writes. */
 export function residualRows(c: PathConstraint): number {
-  return c.kind === 'coincident' ? 2 : c.kind === 'fixed' ? 0 : 1;
+  return c.kind === 'coincident' || c.kind === 'onPath' ? 2 : c.kind === 'fixed' ? 0 : 1;
+}
+
+/** The cubic from anchor `a` to anchor `b` of `x`, by `a`'s out handle and `b`'s in handle: [x0, y0, … x3, y3]. */
+function segmentCubic(x: ArrayLike<number>, count: number, [a, b]: AnchorPair): number[] {
+  const out = handleAt(count, a) + 2;
+  const inn = handleAt(count, b);
+  return [
+    x[2 * a], x[2 * a + 1],
+    x[2 * a] + x[out], x[2 * a + 1] + x[out + 1],
+    x[2 * b] + x[inn], x[2 * b + 1] + x[inn + 1],
+    x[2 * b], x[2 * b + 1],
+  ];
+}
+
+/** The parameter of the point on `c`'s segment nearest its anchor, in `x`. */
+export function nearestParam(c: PathConstraint & { kind: 'onPath' }, x: ArrayLike<number>, count: number): number {
+  const q = segmentCubic(x, count, c.segment);
+  return nearestOnCubic(x[2 * c.anchor], x[2 * c.anchor + 1], q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]).t;
+}
+
+/** The anchor less the point at parameter `x[param]` on the segment, as two rows. */
+function onPathRows(
+  c: PathConstraint & { kind: 'onPath' },
+  x: ArrayLike<number>,
+  count: number,
+  out: Float64Array,
+  at: number,
+  grad: Grad | undefined,
+  param: number,
+): void {
+  const t = x[param];
+  const s = 1 - t;
+  const q = segmentCubic(x, count, c.segment);
+  const w = [s * s * s, 3 * s * s * t, 3 * s * t * t, t * t * t];
+  for (let k = 0; k < 2; k++) {
+    out[at + k] = x[2 * c.anchor + k] - (w[0] * q[k] + w[1] * q[2 + k] + w[2] * q[4 + k] + w[3] * q[6 + k]);
+  }
+  if (!grad) return;
+  const [a, b] = c.segment;
+  for (let k = 0; k < 2; k++) {
+    grad(k, 2 * c.anchor + k, 1);
+    grad(k, 2 * a + k, -(w[0] + w[1]));
+    grad(k, 2 * b + k, -(w[2] + w[3]));
+    grad(k, handleAt(count, a) + 2 + k, -w[1]);
+    grad(k, handleAt(count, b) + k, -w[2]);
+    grad(k, param, -(3 * s * s * (q[2 + k] - q[k]) + 6 * s * t * (q[4 + k] - q[2 + k]) + 3 * t * t * (q[6 + k] - q[4 + k])));
+  }
 }
 
 /**
@@ -122,7 +170,8 @@ function angleRow(
 
 /**
  * Write `c`'s residual rows for coordinates `x`, laid out as `space` says, into
- * `out` at `at`, and hand each nonzero derivative to `grad` when given.
+ * `out` at `at`, and hand each nonzero derivative to `grad` when given. An
+ * `onPath` constraint reads its parameter from `x[param]`.
  */
 export function writeResiduals(
   c: PathConstraint,
@@ -131,10 +180,14 @@ export function writeResiduals(
   out: Float64Array,
   at: number,
   grad?: Grad,
+  param = -1,
 ): void {
   const { frame } = space;
   switch (c.kind) {
     case 'fixed': return;
+    case 'onPath':
+      onPathRows(c, x, space.count, out, at, grad, param);
+      return;
     case 'tangent':
       out[at] = tangentRow(x, space.count, c.anchor, grad);
       return;

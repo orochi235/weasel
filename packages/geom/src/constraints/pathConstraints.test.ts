@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints } from '../paths/builder';
-import { deleteAnchorsAt, moveHandleTo, translateAnchorBy } from '../paths/anchorEdits';
+import { deleteAnchorsAt, insertAnchorOnSegment, moveHandleTo, translateAnchorBy } from '../paths/anchorEdits';
 import { editAnchorSetTracked } from '../paths/anchorOrigins';
 import { pathToAnchors } from '../paths/anchors';
 import type { PolygonPath } from '../path';
-import { constrainPathEdit, pathAnchorPoints, remapConstraints, anchorsBefore, solvePathConstraints } from './pathConstraints';
+import {
+  constrainPathEdit, pathAnchorPoints, remapConstraints, anchorsBefore, segmentBetween, solvePathConstraints,
+} from './pathConstraints';
 import type { PathConstraint } from './types';
 
 const PARALLELOGRAM: PathConstraint[] = [
@@ -112,6 +114,47 @@ describe('constrainPathEdit', () => {
     const before = square();
     const after = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }]) as PolygonPath;
     expect(constrainPathEdit(before, after, PARALLELOGRAM).constraints).toEqual([]);
+  });
+});
+
+describe('onPath through an edit', () => {
+  // Anchor 3 is a tab off the square's top edge, which runs from anchor 2 to anchor 4.
+  const tabbed = () => polygonFromPoints([
+    { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 40, y: 120 }, { x: 0, y: 100 },
+  ]) as PolygonPath;
+  const ON: PathConstraint[] = [{ kind: 'onPath', anchor: 1, segment: [0, 4] }];
+
+  it('slides the dragged anchor along its segment, leaving the segment where it was', () => {
+    const before = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }, { x: 40, y: 0 },
+    ]) as PolygonPath;
+    const constraints: PathConstraint[] = [{ kind: 'onPath', anchor: 4, segment: [0, 1] }];
+    const edit = drag(before, 4, 10, 30);
+    const r = constrainPathEdit(before, edit.path, constraints, { origins: edit.origins });
+    expect(r.converged).toBe(true);
+    const pts = pathAnchorPoints(r.path);
+    expect(pts[4].x).toBeCloseTo(50, 1);
+    expect(pts[4].y).toBeCloseTo(pts[0].y + (pts[1].y - pts[0].y) * (pts[4].x / 100), 3);
+    expect(Math.abs(pts[0].y)).toBeLessThan(0.1);
+    expect(Math.abs(pts[1].y)).toBeLessThan(0.1);
+  });
+
+  it('drops an onPath whose segment an inserted anchor split', () => {
+    const before = tabbed();
+    const edit = editAnchorSetTracked(before, (set) => {
+      insertAnchorOnSegment(set, { sub: 0, segIdx: 4, t: 0.5 });
+    })!;
+    const r = constrainPathEdit(before, edit.path, ON, { origins: edit.origins });
+    expect(r.constraints).toEqual([]);
+  });
+});
+
+describe('segmentBetween', () => {
+  it('orders a pair as the path runs it, closing segment included', () => {
+    const path = square();
+    expect(segmentBetween(path, 2, 1)).toEqual([1, 2]);
+    expect(segmentBetween(path, 0, 3)).toEqual([3, 0]);
+    expect(segmentBetween(path, 0, 2)).toBeNull();
   });
 });
 

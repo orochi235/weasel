@@ -44,11 +44,15 @@ export class NormalSystem {
   private readonly env: Float64Array;
   /**
    * Each product one coordinate makes between two rows' entries:
-   * envelope position, the two rows, their slots, and the coordinate's mobility.
+   * envelope position, the two rows, their slots, and the coordinate.
    */
-  private readonly pairs: { pos: Int32Array; p: Int32Array; sp: Int32Array; q: Int32Array; sq: Int32Array; w: Float64Array };
+  private readonly pairs: { pos: Int32Array; p: Int32Array; sp: Int32Array; q: Int32Array; sq: Int32Array; v: Int32Array };
 
-  /** `rowCols[p]` lists the coordinates row `p` may read; one whose `mobility` is 0 is dropped. */
+  /**
+   * `rowCols[p]` lists the coordinates row `p` may read; one whose `mobility`
+   * is 0 here is dropped. `mobility` is read again at every solve, so a
+   * coordinate may be stilled for a step by zeroing it.
+   */
   constructor(rowCols: readonly Int32Array[], mobility: Float64Array) {
     this.mobility = mobility;
     this.cols = rowCols.map((c) => Int32Array.from(new Set(c)).filter((v) => mobility[v] > 0));
@@ -81,7 +85,7 @@ export class NormalSystem {
     const sps: number[] = [];
     const qs: number[] = [];
     const sqs: number[] = [];
-    const ws: number[] = [];
+    const vs: number[] = [];
     for (const [v, list] of readers) {
       for (const a of list) {
         for (const b of list) {
@@ -93,13 +97,13 @@ export class NormalSystem {
           sps.push(a.slot);
           qs.push(b.row);
           sqs.push(b.slot);
-          ws.push(mobility[v]);
+          vs.push(v);
         }
       }
     }
     this.pairs = {
       pos: Int32Array.from(pos), p: Int32Array.from(ps), sp: Int32Array.from(sps),
-      q: Int32Array.from(qs), sq: Int32Array.from(sqs), w: Float64Array.from(ws),
+      q: Int32Array.from(qs), sq: Int32Array.from(sqs), v: Int32Array.from(vs),
     };
   }
 
@@ -130,11 +134,11 @@ export class NormalSystem {
 
   /** `y` for `(J M Jᵀ + λI) y = b`, or null when the matrix will not factor. */
   solve(b: Float64Array, lambda: number): Float64Array | null {
-    const { env, first, offset, pairs, vals, rank } = this;
+    const { env, first, offset, pairs, vals, rank, mobility } = this;
     const m = this.m;
     env.fill(0);
     for (let k = 0; k < pairs.pos.length; k++) {
-      env[pairs.pos[k]] += vals[pairs.p[k]][pairs.sp[k]] * pairs.w[k] * vals[pairs.q[k]][pairs.sq[k]];
+      env[pairs.pos[k]] += vals[pairs.p[k]][pairs.sp[k]] * mobility[pairs.v[k]] * vals[pairs.q[k]][pairs.sq[k]];
     }
     for (let i = 0; i < m; i++) env[offset[i + 1] - 1] += lambda;
     // Cholesky in place, L sharing A's envelope.

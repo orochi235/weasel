@@ -141,6 +141,19 @@ describe('constrained path edits', () => {
     expect(p.x).toBeLessThan(0);
   });
 
+  it('slides an anchor held on a segment along it under a drag, the segment staying put', () => {
+    const tab = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }, { x: 40, y: 0 },
+    ]) as PolygonPath;
+    const t = setup([{ kind: 'onPath', anchor: 4, segment: [0, 1] }], tab);
+    const preview = t.drag(4, 20, 25);
+    const p = t.points();
+    expect(p).toEqual(preview);
+    expect(p[4].x).toBeCloseTo(60, 1);
+    expect(Math.abs(p[4].y)).toBeLessThan(0.1);
+    expect(Math.abs(p[0].y) + Math.abs(p[1].y)).toBeLessThan(0.1);
+  });
+
   it('renumbers its constraints when an anchor is deleted', () => {
     const t = setup([{ kind: 'horizontal', segment: [2, 3] }, { kind: 'fixed', anchor: 1 }]);
     t.select(1);

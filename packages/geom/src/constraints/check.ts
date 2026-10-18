@@ -4,7 +4,7 @@
  */
 
 import { constraintApplies, pack, type ConstraintPoint } from './points';
-import { frameAt, residualRows, writeResiduals } from './residuals';
+import { frameAt, nearestParam, residualRows, writeResiduals } from './residuals';
 import type { AnchorPair, PathConstraint } from './types';
 
 /** The residual, in the path's units, under which a constraint counts as holding. */
@@ -18,6 +18,7 @@ function segmentsOf(c: PathConstraint): AnchorPair[] {
     case 'coincident': return [];
     case 'horizontal':
     case 'vertical':
+    case 'onPath':
     case 'length': return [c.segment];
     default: return [...c.segments];
   }
@@ -80,7 +81,11 @@ export function unsatisfiedConstraints(
 ): number[] {
   const { tolerance = CONSTRAINT_TOLERANCE, reference } = opts;
   const space = { frame: frameAt(opts.axisAngle), count: points.length };
-  const x = pack(points);
+  const packed = pack(points);
+  // One slot past the points for an `onPath` parameter, set to the nearest point's each time.
+  const x = new Float64Array(packed.length + 1);
+  x.set(packed);
+  const param = packed.length;
   const r = new Float64Array(2);
   const out: number[] = [];
   constraints.forEach((c, i) => {
@@ -94,7 +99,8 @@ export function unsatisfiedConstraints(
       if (at && Math.hypot(at.x - p.x, at.y - p.y) > tolerance) out.push(i);
       return;
     }
-    writeResiduals(c, x, space, r, 0);
+    if (c.kind === 'onPath') x[param] = nearestParam(c, x, points.length);
+    writeResiduals(c, x, space, r, 0, undefined, param);
     for (let k = 0; k < residualRows(c); k++) {
       if (Math.abs(r[k]) > tolerance) {
         out.push(i);

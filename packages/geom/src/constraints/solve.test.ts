@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { unsatisfiedConstraints } from './check';
 import type { ConstraintPoint } from './points';
 import { solveConstraints } from './solve';
+import { nearestOnCubic } from '../nearest';
 import type { PathConstraint } from './types';
 
 const P = (x: number, y: number): ConstraintPoint => ({ x, y });
@@ -180,6 +181,57 @@ describe('tangent constraints', () => {
     expect(unsatisfiedConstraints([corner()], [{ kind: 'tangent', anchor: 0 }])).toEqual([0]);
     const smooth = { x: 0, y: 0, inHandle: { x: -30, y: -15 }, outHandle: { x: 20, y: 10 } };
     expect(unsatisfiedConstraints([smooth], [{ kind: 'tangent', anchor: 0 }])).toEqual([]);
+  });
+});
+
+describe('onPath constraints', () => {
+  /** A curved segment from anchor 1 to anchor 2, and anchor 0 off it. */
+  const curve = (): ConstraintPoint[] => [
+    P(40, 30),
+    { x: 0, y: 0, outHandle: { x: 30, y: -40 } },
+    { x: 100, y: 0, inHandle: { x: 70, y: -40 } },
+  ];
+  const offCurve = (pts: ConstraintPoint[]) => {
+    const [p, a, b] = pts;
+    return nearestOnCubic(p.x, p.y, a.x, a.y, a.outHandle!.x, a.outHandle!.y, b.inHandle!.x, b.inHandle!.y, b.x, b.y).dist;
+  };
+  const ON: PathConstraint = { kind: 'onPath', anchor: 0, segment: [1, 2] };
+  const ENDS: PathConstraint[] = [{ kind: 'fixed', anchor: 1 }, { kind: 'fixed', anchor: 2 }];
+
+  it('puts an anchor on a curved segment', () => {
+    const r = solveConstraints(curve(), [ON, ...ENDS]);
+    expect(r.converged).toBe(true);
+    expect(offCurve(r.points)).toBeLessThan(1e-4);
+    expect(r.points[1]).toEqual(curve()[1]);
+  });
+
+  it('slides a held anchor onto the segment rather than moving the segment to it', () => {
+    const r = solveConstraints(curve(), [ON], { held: [0] });
+    expect(r.converged).toBe(true);
+    expect(offCurve(r.points)).toBeLessThan(1e-4);
+    expect(dist(r.points[1], P(0, 0))).toBeLessThan(0.5);
+    expect(dist(r.points[2], P(100, 0))).toBeLessThan(0.5);
+  });
+
+  it('stops an anchor at the end of its segment', () => {
+    const pts = curve();
+    pts[0] = P(160, 10);
+    const r = solveConstraints(pts, [ON, ...ENDS]);
+    expect(r.converged).toBe(true);
+    expect(dist(r.points[0], P(100, 0))).toBeLessThan(1e-4);
+  });
+
+  it('reads a segment with no handles as the straight line between its ends', () => {
+    const r = solveConstraints([P(40, 30), P(0, 0), P(100, 0)], [ON, ...ENDS]);
+    expect(r.points[0].x).toBeCloseTo(40, 4);
+    expect(r.points[0].y).toBeCloseTo(0, 4);
+  });
+
+  it('is unsatisfied off its segment and satisfied on it', () => {
+    expect(unsatisfiedConstraints(curve(), [ON])).toEqual([0]);
+    const on = curve();
+    on[0] = P(50, -30);
+    expect(unsatisfiedConstraints(on, [ON])).toEqual([]);
   });
 });
 
