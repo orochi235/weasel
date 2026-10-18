@@ -157,10 +157,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 191
-  },
-  "packages/labkit/src/controls/MatrixCell.tsx": {
-    "longestFunction": 129
+    "longestFunction": 152
   },
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 254

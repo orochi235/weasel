@@ -1,10 +1,8 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import {
-  Button,
   type CollapseProps,
   Focusable,
   PropertyHelp,
-  PropertyList,
   PropertyPanel,
   type StanceProps,
   Tooltip,
@@ -13,14 +11,12 @@ import {
   useOverlayPortal,
 } from '@weasel-js/ui';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
-import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
-import { auto as autoValue } from '../config/auto';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
-import { clearable } from './MatrixCell';
-import { MatrixEditor, type OpenCell } from './MatrixEditor';
+import type { OpenCell } from './MatrixEditor';
+import { MatrixPopover } from './MatrixPopover';
 import { MatrixSlot } from './MatrixSlot';
 import { type MatrixTarget, matrixTargetAt } from './matrixTarget';
 
@@ -40,6 +36,9 @@ export interface ControlMatrixRow {
   key: string;
   /** Row label. Defaults to the leaf's own name from the schema. */
   label?: string;
+  /** What a cell of this row shows of its value. Defaults to the summary the leaf's `.dialog` declares, and
+   *  else to the built-in reading of its kind: for a custom leaf, which has none. */
+  summary?: (value: unknown) => ReactNode;
 }
 
 /** Props for `ControlMatrix`. */
@@ -56,7 +55,7 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
    *  itself: a matrix drawn from a layout over a dialog's settings. Its values are read from `config` at
    *  their own paths. */
   over?: PrefGroup | PrefSection;
-  /** The scopes. The first is the fallback the others inherit from: its cells
+  /** The scopes. Unless `inherit` is false, the first is the fallback the others inherit from: its cells
    *  never inherit, and its header is emphasized. */
   columns: readonly ControlMatrixColumn[];
   rows: readonly ControlMatrixRow[];
@@ -64,7 +63,10 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
    *  inherits. */
   config: Record<string, unknown>;
   /** Full dotted paths whose cells inherit, drawn ghosted. */
-  auto: ReadonlySet<string>;
+  auto?: ReadonlySet<string>;
+  /** Cells inherit from the first column until they are pinned. `false` makes a plain grid: no column is
+   *  a fallback, no cell inherits, and none can be unpinned. Default `true`. */
+  inherit?: boolean;
   /** Writes a value, which pins the cell, or labkit's `auto` sentinel, which
    *  unpins it. */
   setConfig: (path: string, value: unknown) => void;
@@ -76,6 +78,7 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 }
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
+const NO_AUTO: ReadonlySet<string> = new Set();
 
 /**
  * One setting across several config groups of the same shape: settings down
@@ -94,7 +97,8 @@ export function ControlMatrix({
   columns,
   rows,
   config,
-  auto,
+  auto = NO_AUTO,
+  inherit = true,
   setConfig,
   onColumnClick,
   inheritHint,
@@ -135,7 +139,7 @@ export function ControlMatrix({
   // With a title row to sit in, the headers leave the table for it.
   const lifted = title !== undefined;
   const headClass = (i: number): string =>
-    i === 0 ? 'lk-control-matrix__head is-first' : 'lk-control-matrix__head';
+    i === 0 && inherit ? 'lk-control-matrix__head is-first' : 'lk-control-matrix__head';
   const heads = (
     <div className="lk-control-matrix__heads">
       {columns.map((column, i) => (
@@ -172,8 +176,8 @@ export function ControlMatrix({
               {columns.map((column, i) => {
                 const path = `${column.key}.${row.key}`;
                 const cell = cells[i];
-                const first = i === 0;
-                const inherited = !first && cell?.own === true && auto.has(path);
+                const first = inherit && i === 0;
+                const inherited = inherit && !first && cell?.own === true && auto.has(path);
                 return (
                   <MatrixSlot
                     key={column.key}
@@ -184,7 +188,8 @@ export function ControlMatrix({
                     absent={`${nameOf(column)} has no ${label}`}
                     inherited={inherited}
                     hint={inherited ? hintFor(column) : undefined}
-                    canUnpin={!first && !inherited}
+                    canUnpin={inherit && !first && !inherited}
+                    summary={row.summary ?? (cell && schema.dialogs[cell.at]?.summary)}
                     disabled={!isLeafEnabled(schema, path, config, over)}
                     setConfig={setConfig}
                     onOpen={(el) => {
@@ -199,60 +204,19 @@ export function ControlMatrix({
         </tbody>
       </table>
       {ready && (
-        <RACPopover
+        <MatrixPopover
+          open={open}
+          close={() => setOpen(null)}
           triggerRef={triggerRef}
-          isOpen={open !== null}
-          onOpenChange={(next) => {
-            if (!next) setOpen(null);
-          }}
-          placement="bottom"
-          className="lk-control-matrix__popover"
-          data-weasel-overlay=""
-          {...portalProps}
-        >
-          {open ? (
-            <RACDialog
-              className="lk-control-matrix__editor"
-              aria-label={`${nameOf(open.column)} ${open.label}`}
-            >
-              <PropertyList pack="one-up">
-                <MatrixEditor
-                  open={open}
-                  schema={schema}
-                  over={over}
-                  config={config}
-                  setConfig={setConfig}
-                  close={() => setOpen(null)}
-                />
-              </PropertyList>
-              {clearable(open.cell.leaf) ? (
-                <div className="lk-control-matrix__editor-actions">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={!valueAtPath(config, open.cell.at) || auto.has(open.cell.at)}
-                    onClick={() => setConfig(open.cell.at, null)}
-                  >
-                    Clear
-                  </Button>
-                </div>
-              ) : null}
-              {open.first || !open.cell.own ? null : (
-                <div className="lk-control-matrix__editor-actions">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={auto.has(open.path)}
-                    tooltip={`Inherit ${hintFor(open.column)}`}
-                    onClick={() => setConfig(open.path, autoValue)}
-                  >
-                    Inherit
-                  </Button>
-                </div>
-              )}
-            </RACDialog>
-          ) : null}
-        </RACPopover>
+          portalProps={portalProps}
+          schema={schema}
+          over={over}
+          config={config}
+          auto={auto}
+          setConfig={setConfig}
+          inherit={inherit}
+          inheritHint={(cell) => hintFor(cell.column)}
+        />
       )}
     </div>
   );
