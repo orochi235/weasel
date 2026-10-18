@@ -57,8 +57,8 @@ function subtreeOf(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[
  * distances from the selection's box to that shape's, on each axis where they
  * separate, measured by `measureDistances` and drawn as labeled gaps. Pass it
  * in `<SceneCanvas ambient>`. It runs on `hover` bindings, so it claims no
- * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`, and
- * `poseDescriptor` deps. A press hides it.
+ * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`,
+ * `poseDescriptor`, and `snapReadout` deps. A press hides it.
  */
 export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
   const id = opts.id ?? 'distanceReadout';
@@ -74,7 +74,7 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
   const action: Action = {
     id: `${id}.measure`,
     label: 'Measure distance to the shape under the pointer',
-    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor', 'snapReadout'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
