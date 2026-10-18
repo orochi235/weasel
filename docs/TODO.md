@@ -1334,29 +1334,21 @@ only story runner in the repo.
   not traced inside Chromium: every socket and request of that page closes at once from the
   browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
   open:
-  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test fails `frame.evaluate: Frame was
-    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. One suspect is
-    Playwright's `page.frame('vitest-iframe')` returning the previous file's frame, since every
-    test frame has that name; in 18 runs a check at each file's start never found a second or a
-    detached one, but none of those runs had the failure, so that is unlikely, not ruled out.
-  - **A trial's canvas fits twice on first layout.** It is measured before the trial's status
-    strip takes its 30 px, placed at that height, then refit when the strip arrives. This made
-    `labkit/src/lab/presentation.browser.test.tsx` ("entering refits the view…") fail 3 of 6 runs
-    on main's code on teitou: it captured the tile's view between the two fits, and the pan came
-    back 5.2 px short. The test now waits for the settled box (10 of 10 passing, 2026-10-17); the
-    double fit itself is still there. Reserving the strip's room on first layout would remove it.
-  - **`labkit/src/lab/Lab.messages.test.tsx` ("starts an ended run over on play") failed once** in
-    the fleet run of `main` at `e167efc7c` (2026-10-16), and passed 13 of 13 run alone on orochi.
-    It failed again in a fleet run of the `menus-draw` branch (`6cc0ae6a2`, 2026-10-17), which
-    changed nothing in labkit. Two sightings; cause not looked into.
-  - **`ui/src/components/Keycaps/KeyBank.perf.browser.test.tsx` ("fits a workshop page…") took
-    545.6 ms against its 500 ms budget** in a fleet run of `menus-draw` (`f5fb7d108`, 2026-10-17),
-    which changed nothing in Keycaps, while another job's tests ran on the same node. A wall-clock
-    budget in the suite fails whenever the node is shared.
-  - **`site/demos/__tests__/ScoreDemo.browser.test.tsx` ("a playing score shows the bar in force…")
-    read the next bar's cue where it expected the current one** in a fleet run of `menus-draw`
-    (`09bbde42a`, 2026-10-17), which changed nothing in the site or audio. The check right after
-    the click assumes no bar line passes in between, and the score runs on a real clock.
+  - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test failed `frame.evaluate: Frame was
+    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. vitest finds the
+    frame a command acts on by name, `page.frame('vitest-iframe')`, and every test file's iframe has
+    that name, so while Playwright still lists the previous file's iframe it can return that one.
+    `vitest.browser.setup.ts` now waits at each file's start (`settleFrame`, in
+    `scripts/vitest-browser-commands.ts`) until the lookup returns the file's own frame. That this
+    lookup is the cause is inferred, never caught in a run; a sighting with the wait in place
+    means it is something else.
+  - **A trial's status strip grows 2 px when its numeric face arrives**, which refits the view a
+    second time. The strip itself now takes its room on the first layout (`TrialChrome` reads an
+    unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
+    loads the face first to test the structural half, and its "entering refits" test still waits
+    for the settled box. The readouts' boxes depend on the face because `ScaleIndicator` is
+    inline-flex inside a line box; made face-independent the strip would settle near 27 px (estimated)
+    rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
