@@ -7,7 +7,7 @@
  * the element's one context. Release frees only what that renderer created;
  * the context itself is never lost.
  */
-import { WeaselRenderer, type RenderOptions } from '@weasel-js/renderer';
+import { WeaselRenderer, type FlattenTolerance, type RenderOptions } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -43,7 +43,7 @@ export interface CanvasPaintOptions {
    *  resize it to its own pane. Omit to own the whole element. */
   tile?: { x: number; y: number } | null;
   /** `WeaselRendererOptions.flattenTolerance`, applied from this paint on. */
-  flattenTolerance?: number;
+  flattenTolerance?: FlattenTolerance;
   /** Custom programs to compile on the renderer. Compiled when the renderer
    *  is created, and again when the set of ids changes. */
   shaders?: readonly ShaderProgramHandle[];
@@ -95,7 +95,7 @@ interface Held {
   dpr: number;
   tileX: number | null;
   tileY: number | null;
-  flattenTolerance: number | undefined;
+  flattenTolerance: FlattenTolerance | undefined;
   shaderKey: string;
 }
 

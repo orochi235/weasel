@@ -425,15 +425,6 @@ Priority tags:
   paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
   per-path origin in `@weasel-js/geom`'s tessellation.
 
-- **(P3) Curve flattening ignores zoom on the live canvas.** `<Canvas>` leaves `flattenTolerance`
-  unset unless a consumer passes one, and WeaselDraw doesn't, so every curve flattens at
-  `DEFAULT_FLATTEN_TOLERANCE`, 0.5 world units, whatever the zoom: 4 px of chord error at 8x.
-  `renderSceneToPixels` already derives the tolerance from the output scale. The live path
-  needs the same, with the fill and stroke mesh caches keyed on a quantized tolerance, so that
-  a continuous zoom doesn't rebuild every mesh on every frame. Thick strokes already cap each
-  flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
-  look like at a tight bend but not this.
-
 ---
 
 ## Text

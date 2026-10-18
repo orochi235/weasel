@@ -1,25 +1,22 @@
 import type { Path } from '@weasel-js/geom';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import { getMesh } from '../cache/cache';
-import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
+import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { DrawContext } from './drawContext';
+import { worldFlattenTolerance } from './flattenTolerance';
 
-/**
- * Tessellate a fill honoring ctx.flattenTolerance: default route is the
- * persistent Path-identity cache; a custom tolerance tessellates fresh, because
- * the persistent cache's key does not include tolerance.
- */
-export function fillMesh(ctx: DrawContext, path: Path): Mesh {
-  if (ctx.flattenTolerance !== undefined) {
-    return tessellate(path, { flattenTolerance: ctx.flattenTolerance });
-  }
-  return getMesh(path);
+/** The curve-flattening tolerance for a path drawn now, in its own units. */
+export function flattenToleranceOf(ctx: DrawContext): number {
+  return worldFlattenTolerance(ctx.flattenTolerance, ctx.state.transform);
 }
 
-/** Upload a mesh for its own draw. A freshly tessellated one rides the
- *  transient pool, freed at end of frame. */
+/** The fill mesh for `path` at the tolerance it draws under now. */
+export function fillMesh(ctx: DrawContext, path: Path): Mesh {
+  return getMesh(path, flattenToleranceOf(ctx));
+}
+
+/** The persistent upload of a cached mesh. */
 export function meshHandle(ctx: DrawContext, mesh: Mesh): GLMeshHandle {
-  if (ctx.flattenTolerance !== undefined) return ctx.meshCache.uploadTransient(mesh);
   return ctx.meshCache.handleFor(mesh);
 }
 

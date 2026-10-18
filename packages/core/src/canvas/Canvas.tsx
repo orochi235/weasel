@@ -36,7 +36,7 @@ import {
   drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
-import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
+import { viewToMat3, type FlattenTolerance, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
@@ -67,12 +67,12 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  canvas reads `window.devicePixelRatio` per paint. */
   dpr?: number;
 
-  /** Flatness tolerance for curve tessellation, in world units. Forwarded to
-   *  `WeaselRendererOptions.flattenTolerance`. Leave unset for the cached
-   *  default (`DEFAULT_FLATTEN_TOLERANCE`, 0.5); a scene whose world unit is
-   *  not a pixel — feet, inches, millimetres — needs a value scaled to its
-   *  unit or sub-unit curves flatten to a handful of vertices. */
-  flattenTolerance?: number;
+  /** Flatness tolerance for curve tessellation, forwarded to
+   *  `WeaselRendererOptions.flattenTolerance`: world units, or `{ px }` in
+   *  device pixels. Unset, curves stay within half a device pixel at every
+   *  zoom, whatever the scene's world unit. A number holds a fixed world
+   *  tolerance instead. */
+  flattenTolerance?: FlattenTolerance;
 
   /** The version of whatever content this canvas draws, sampled at paint time
    *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.

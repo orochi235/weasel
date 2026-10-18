@@ -11,7 +11,7 @@ import { cachedMarkerCommands } from '../cache/markerCommandCache';
 import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
-import { fillMesh, meshHandle, fillMeshHandle } from './mesh';
+import { fillMesh, meshHandle, fillMeshHandle, flattenToleranceOf } from './mesh';
 import { setColorMatrixUniforms, setProjAndModel, setSolidPaintUniforms } from './uniforms';
 import { applyClipTest, ancestorMask, beginParityMask, endParityMask } from './stencil';
 import { flushForOwnDraw } from './clip';
@@ -224,7 +224,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   }
   // After the ribbon, so a head sits on top of the line it caps.
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  const heads = cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, ctx.flattenTolerance, spaces);
+  const heads = cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
   for (const marker of heads) drawPath(ctx, marker);
 }
 
@@ -233,7 +233,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
   const paint = stroke.paint;
   const isSolid = paint.kind === undefined || paint.kind === 'solid';
   const solid = paint as { color: string; opacity?: number };
-  const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance, spaces);
+  const mesh = strokeMesh(cmd.path, stroke, flattenToleranceOf(ctx), spaces);
   if (mesh.indices.length === 0) return;
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
@@ -315,7 +315,7 @@ function drawPathStrokeStenciled(
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
 
   const fillHandle = fillMeshHandle(ctx, cmd.path);
-  const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance, spaces);
+  const ribbonMesh = strokeMesh(cmd.path, widerStroke, flattenToleranceOf(ctx), spaces);
   if (ribbonMesh.indices.length === 0) return;
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.

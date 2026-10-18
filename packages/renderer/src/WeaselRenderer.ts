@@ -27,6 +27,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
+import { inCssPixels, type FlattenTolerance } from './draw/flattenTolerance';
 import type { GlMat3 } from '@weasel-js/geom';
 import {
   dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind,
@@ -110,14 +111,10 @@ export interface WeaselRendererOptions {
    *  the headless `renderSceneToPixels` path does; `'auto'` builds them
    *  for an image the first time a frame draws it at half size or smaller. */
   imageMinification?: ImageMinification;
-  /** Flatness tolerance for curve tessellation, in WORLD units (see
-   *  `TessellateOptions.flattenTolerance`). When set, path fills are
-   *  tessellated fresh at this tolerance per frame (transient pool) instead
-   *  of served from the Path-identity mesh cache — the cache key does not
-   *  include tolerance. Default: unset — the existing cached behavior at
-   *  `DEFAULT_FLATTEN_TOLERANCE`. The headless path derives this from the
-   *  requested output scale; screen callers normally leave it unset. */
-  flattenTolerance?: number;
+  /** How far a flattened curve may stray: in world units, or `{ px }` in
+   *  device pixels, which follows each path's transform so a zoom keeps
+   *  curves smooth. Default `{ px: DEFAULT_FLATTEN_TOLERANCE_PX }`. */
+  flattenTolerance?: FlattenTolerance;
   /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.
    *  Default DEFAULT_BAKE_BUDGET (16). The headless renderSceneToPixels
    *  path passes Infinity so print never defers a glyph. */
@@ -205,7 +202,7 @@ export class WeaselRenderer {
   private readonly effectTargets: EffectTargets;
   private readonly paintScratch: PaintScratch;
   private readonly imageMinification: ImageMinification;
-  private flattenTolerance?: number;
+  private flattenTolerance?: FlattenTolerance;
   private readonly bakeBudget: number;
   private readonly textOutlineMinScreenSize: number;
   private contextLost = false;
@@ -588,7 +585,7 @@ export class WeaselRenderer {
       heightCss: this.heightCss,
       clipDepth: 0,
       clipStack: [],
-      flattenTolerance: this.flattenTolerance,
+      flattenTolerance: inCssPixels(this.flattenTolerance, this.dpr),
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
       effectTargets: this.effectTargets,
@@ -633,9 +630,8 @@ export class WeaselRenderer {
     return this.stats;
   }
 
-  /** Change the curve-flattening tolerance after construction. `undefined`
-   *  restores the cached `DEFAULT_FLATTEN_TOLERANCE` route. */
-  setFlattenTolerance(tolerance: number | undefined): void {
+  /** Change `flattenTolerance` after construction; `undefined` restores the default. */
+  setFlattenTolerance(tolerance: FlattenTolerance | undefined): void {
     this.flattenTolerance = tolerance;
   }
 

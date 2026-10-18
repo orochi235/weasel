@@ -38,7 +38,7 @@
     "longestFunction": 240
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 604
+    "lines": 603
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 144
@@ -217,7 +217,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 688
+    "lines": 684
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608

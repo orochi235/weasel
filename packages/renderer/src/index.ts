@@ -13,6 +13,7 @@ export {
   type RenderOptions, type RenderSpan, type RenderSpanStats, type RenderStats,
 } from './WeaselRenderer';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
+export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';
 export type {
   DrawCommand,
   GroupDrawCommand,

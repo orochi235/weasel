@@ -23,6 +23,7 @@ export type {
   BlendFactors,
   GlMat3,
   ImageMinification,
+  FlattenTolerance,
   SpriteSheet,
   RenderTarget,
 } from '@weasel-js/renderer';
