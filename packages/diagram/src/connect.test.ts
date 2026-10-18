@@ -49,6 +49,16 @@ describe('createConnectAction', () => {
     expect(edge.to).toMatchObject({ nodeId: 'b', id: 'w' });
   });
 
+  it('never lands on a port whose node is hidden or locked', () => {
+    for (const gate of [{ hidden: true }, { locked: true }]) {
+      const commit = vi.fn();
+      const participants = () => PARTICIPANTS().map((p) => (p.node.id === 'b' ? { ...p, ...gate } : p));
+      const handle = open({ participants, commit });
+      handle!.onEnd!(ctxAt(300, 20), 'commit');
+      expect(commit).not.toHaveBeenCalled();
+    }
+  });
+
   it('declines a press that carries no port', () => {
     const action = createConnectAction<Rect>({ participants: PARTICIPANTS, commit: vi.fn() });
     const invoker = action.invoker!;

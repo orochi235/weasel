@@ -46,6 +46,17 @@ export const PORT_AFFORDANCE_KIND = `layer:${PORT_LAYER_ID}` as const;
 export interface ParticipantPose<TPose> {
   node: DiagramNodeLike;
   pose: TPose;
+  /** Not drawn: on a hidden layer, or hidden on its own or by an ancestor.
+   *  `sceneParticipants` answers it from the scene's `nodeGates`. */
+  hidden?: boolean;
+  /** Out of reach: locked, or on a locked layer. */
+  locked?: boolean;
+}
+
+/** Whether a participant's ports are drawn, grabbed and landed on. A hidden
+ *  or locked node gets none, as it gets no selection or hover chrome either. */
+export function offersPorts(p: { hidden?: boolean; locked?: boolean }): boolean {
+  return p.hidden !== true && p.locked !== true;
 }
 
 /** Where the affordance gets its participants. A thunk rather than a scene so
@@ -148,7 +159,9 @@ export function createPortAffordance<TPose>(
     id,
     regions(state: ChromeState): readonly AffordanceRegion[] {
       const out: AffordanceRegion[] = [];
-      for (const { node, pose } of participants()) {
+      for (const participant of participants()) {
+        if (!offersPorts(participant)) continue;
+        const { node, pose } = participant;
         if (opts.shows !== undefined && !opts.shows(node, state)) continue;
         for (const port of portsOf(node, pose, portOpts)) {
           if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;

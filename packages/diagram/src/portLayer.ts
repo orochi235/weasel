@@ -4,22 +4,32 @@
 import {
   composeAffordanceLayer,
   effectivePose,
+  nodeGates,
+  type GatedLayer,
   type RenderLayer,
 } from '@weasel-js/core';
 import {
   PORT_LAYER_ID,
   createPortAffordance,
+  type ParticipantPose,
   type ParticipantSource,
   type PortAffordanceOptions,
 } from './portAffordance';
-import type { GraphNodeLike, GraphSource } from './graph';
+import type { GraphNodeLike } from './graph';
 
 /** The minimum a participant source needs from a scene. Narrower than `Scene`
- *  so a consumer can pass anything that answers these two. */
+ *  so a consumer can pass anything that answers these. `layers` and each
+ *  node's `layer`, `parent`, `hidden` and `locked` feed `nodeGates`; a stand-in
+ *  without them gates nothing. */
 export interface ParticipantScene<TPose> {
+  readonly layers?: readonly GatedLayer[];
   renderOrderNodes(): readonly {
     id: string;
     kind: 'leaf' | 'container';
+    layer?: string;
+    parent?: string | null;
+    hidden?: boolean;
+    locked?: boolean;
     data: unknown;
     pose: TPose;
     dependsOn?: readonly string[] | 'children';
@@ -30,7 +40,9 @@ export interface ParticipantScene<TPose> {
 }
 
 /**
- * Every node in `scene`, at the pose it is **painted** at.
+ * Every node in `scene`, at the pose it is **painted** at, marked `hidden` or
+ * `locked` where the scene's `nodeGates` says so. The marks keep ports off
+ * such a node; the graph reads past them, so a hidden node is still laid out.
  *
  * `effectivePose`, not `node.pose`: an override is what a gesture is currently
  * showing, and a port that answers from the document pose while its node is
@@ -40,12 +52,17 @@ export interface ParticipantScene<TPose> {
  */
 export function sceneParticipants<TPose>(
   scene: ParticipantScene<TPose>,
-): GraphSource<TPose> {
+): () => Iterable<ParticipantPose<TPose> & { node: GraphNodeLike }> {
   return function* () {
+    const gates = nodeGates(scene as never);
     for (const node of scene.renderOrderNodes()) {
+      const hidden = gates.hidden(node.id);
+      const locked = gates.locked(node.id);
       yield {
         node: node as GraphNodeLike,
         pose: effectivePose(scene as never, node as never) as TPose,
+        ...(hidden ? { hidden } : {}),
+        ...(locked ? { locked } : {}),
       };
     }
   };

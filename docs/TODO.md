@@ -477,10 +477,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A hidden or locked diagram node's ports still draw and take a drag.** `portLayer`
-  walks every node `sceneParticipants` yields (`packages/diagram/src/portLayer.ts`) and asks
-  neither `nodeGates` nor the layer, so ports float over a node on a hidden layer, or one hidden
-  on its own, and a locked node's ports can still be dragged from.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
