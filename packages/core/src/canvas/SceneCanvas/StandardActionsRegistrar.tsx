@@ -21,6 +21,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,
   useDebugDepSource,
+  usePreviewPathsDepSource,
   useDepChangeNotices,
   useDispatcherDepSource,
   useEditAnchorsDepSource,
@@ -218,6 +219,7 @@ export function StandardActionsRegistrar({
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(snap, currentViewRef);
   useDebugDepSource(canvasApiRef);
+  usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);

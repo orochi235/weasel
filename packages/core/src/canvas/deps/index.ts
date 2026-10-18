@@ -18,6 +18,7 @@ export { useSliceDep, useSliceDepSource } from './slice';
 export { useBooleansAdapterSource } from './booleans';
 export { usePathLeafDepSources } from './pathLeafDeps';
 export { useDebugDepSource } from './debug';
+export { usePreviewPathsDepSource, createPreviewPaths, PREVIEW_PATHS_LAYER_ID, type PreviewPathsDep } from './previewPaths';
 export { useSurfaceDepSources } from './surface';
 export { useKitSettingsDepSource } from './kitSettings';
 export { useDepChangeNotices } from './changes';

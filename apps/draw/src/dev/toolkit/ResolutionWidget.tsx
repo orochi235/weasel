@@ -54,6 +54,7 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     paramsOf: (_id, given) => ({ ...given }),
     list: () => actions,
     trigger: () => false,
+    preview: () => () => {},
     subscribe: () => () => {},
     begin: () => null,
     setDispatcher: () => () => {},

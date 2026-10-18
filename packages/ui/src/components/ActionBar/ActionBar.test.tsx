@@ -369,3 +369,44 @@ describe('ActionBar kit glyphs', () => {
     }
   });
 });
+
+describe('ActionBar previews', () => {
+  function previewing(enabled = true) {
+    const hide = vi.fn();
+    const preview = vi.fn(() => hide);
+    const run = vi.fn();
+    renderWithIcons(
+      <Harness
+        actions={[makeAction({
+          id: 'demo.peek', preview, run, ...(enabled ? {} : { enabled: () => 'selection-required' as const }),
+        })]}
+        bar={<ActionBar group="demo" />}
+      />,
+    );
+    return { preview, hide, run };
+  }
+
+  it('shows the action\'s preview while its button is hovered', () => {
+    const { preview, hide } = previewing();
+    fireEvent.pointerEnter(item('demo.peek'));
+    expect(preview).toHaveBeenCalledTimes(1);
+    expect(hide).not.toHaveBeenCalled();
+    fireEvent.pointerLeave(item('demo.peek'));
+    expect(hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows it while the button is focused, and takes it down on a press', () => {
+    const { preview, hide, run } = previewing();
+    fireEvent.focus(item('demo.peek'));
+    expect(preview).toHaveBeenCalledTimes(1);
+    fireEvent.click(item('demo.peek'));
+    expect(hide).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows nothing for a disabled action', () => {
+    const { preview } = previewing(false);
+    fireEvent.pointerEnter(item('demo.peek'));
+    expect(preview).not.toHaveBeenCalled();
+  });
+});
