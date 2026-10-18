@@ -1139,13 +1139,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) Every vitest start prints vite's `configLoader: 'native'` warning.** The config loads
-  `packages/icons-plugin/src/index.ts` from source, and its relative imports (`./annotate`,
-  `./bundlers`, `./catalog`, …) have no file extension, which vite's planned native loader will
-  not resolve. It repeats several times per start and was most of the ~235 log lines of a one-file
-  browser run (measured 2026-10-17). The package is shipped source, so the fix has to survive
-  tsup's emit: `.js` specifiers resolved to `.ts` by the bundler resolution, not `.ts` ones.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check

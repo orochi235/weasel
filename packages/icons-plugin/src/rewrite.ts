@@ -1,7 +1,7 @@
 import MagicString, { type SourceMap } from 'magic-string';
 import { Visitor } from 'oxc-parser';
-import { qualify } from '../../icons/src/names';
-import { parseModule } from './parse';
+import { qualify } from '../../icons/src/names.ts';
+import { parseModule } from './parse.ts';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
 const NAME = /^[^'"`\s\\]+$/;

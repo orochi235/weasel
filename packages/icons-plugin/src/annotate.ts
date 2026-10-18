@@ -1,6 +1,6 @@
 import MagicString from 'magic-string';
-import { annotatedLiterals, stringLiterals } from './collect';
-import { parseModule } from './parse';
+import { annotatedLiterals, stringLiterals } from './collect.ts';
+import { parseModule } from './parse.ts';
 
 /** The start and value of each string literal in a chunk that is one of `refs` and has no `@icon` annotation. */
 function unannotated(code: string, id: string, refs: ReadonlySet<string>): [number, string][] {
