@@ -1,6 +1,7 @@
-import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
+import { PropertyRowContext } from './rowContext';
 import s from './Properties.module.css';
 
 /** Which control shape a row holds, which decides its intrinsic layout. */
@@ -143,12 +144,13 @@ export function PropertyRow({
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
+  const scope = useMemo(() => ({ label }), [label]);
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
   const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(mixed ? { 'data-mixed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}) };
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}
-      {children}
+      <PropertyRowContext.Provider value={scope}>{children}</PropertyRowContext.Provider>
       {tail}
     </div>
   ) : (
@@ -159,7 +161,7 @@ export function PropertyRow({
       {...multi}
     >
       {head}
-      {children}
+      <PropertyRowContext.Provider value={scope}>{children}</PropertyRowContext.Provider>
       {tail}
     </label>
   );
