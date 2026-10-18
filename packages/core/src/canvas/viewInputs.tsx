@@ -42,6 +42,8 @@ export interface SurfaceViewInputs
   pickBest?: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
   kindOfNode?: (id: string) => string | undefined;
+  /** The node a double-click on a hit names (`doubleClickTarget`). */
+  doubleClickNames?: ((hitId: string) => string) | undefined;
   /** The surface's chrome-caps rule table, evaluated against a view's own
    *  context. */
   chromeCaps?: ChromeCaps;

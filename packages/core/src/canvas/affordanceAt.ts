@@ -168,21 +168,29 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
  * @param kindOfNode - Resolver from a hit node id to its semantic kind.
  *   Omitting it leaves `kind` undefined, which makes every `kind:` TargetSpec
  *   form no-match.
+ * @param doubleClickNames - The node a double-click on a hit names
+ *   (`doubleClickTarget`). Where that is another node, it rides along as
+ *   `doubleClick`, classified the same way.
  */
 export function buildClassifyTarget(
   getSelection: () => readonly string[],
   pickBest: (wx: number, wy: number) => string | null,
   kindOfNode?: (id: string) => string | undefined,
+  doubleClickNames?: (hitId: string) => string,
 ): (worldPoint: { x: number; y: number }) => BodyClassification {
   return function classifyTarget({ x: wx, y: wy }) {
     const hitId = pickBest(wx, wy);
     if (!hitId) return { body: 'empty' };
     const sel = getSelection();
-    return {
-      body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
-      kind: kindOfNode?.(hitId),
-      id: hitId,
-    };
+    const classify = (id: string) => ({
+      body: sel.includes(id) ? 'selected-body' as const : 'unselected-body' as const,
+      kind: kindOfNode?.(id),
+      id,
+    });
+    const named = doubleClickNames?.(hitId);
+    return named !== undefined && named !== hitId
+      ? { ...classify(hitId), doubleClick: classify(named) }
+      : classify(hitId);
   };
 }
 
