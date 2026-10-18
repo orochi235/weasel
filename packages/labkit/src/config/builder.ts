@@ -1,6 +1,7 @@
 import type { PrefCondition, PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import { BaseNode, conditioned } from './baseNode';
+import { configFromPrefs } from './fromPrefs';
 import {
   ActionNode,
   AliasNode,
@@ -305,6 +306,9 @@ export const f = {
     def: T,
     validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[],
   ): CustomNode<T> => new CustomNode(kind, def, {}, validate ? { validate } : {}),
+
+  /** A property schema (`PrefSection`) as an instrument's config: see {@link configFromPrefs}. */
+  prefs: configFromPrefs,
 
   /** Collect leaves and groups into an instrument's config. */
   schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {

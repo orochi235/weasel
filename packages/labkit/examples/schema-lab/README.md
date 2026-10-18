@@ -1,7 +1,7 @@
 # schema-lab
 
 Two labkit instruments whose control panels are generated from schemas over
-weasel types, rather than from hand-written `ConfigField[]`.
+weasel types.
 
 ```bash
 npm run dev:schema -w @weasel-js/labkit
@@ -14,18 +14,18 @@ schema for its own node kinds — the one `<SelectionPanel>` reads. Its leaves a
 dotted node paths (`pose.x`, `data.fill`) carrying a `BuiltinPref` descriptor:
 kind, label, bounds, and an optional display unit.
 
-`prefsToFields.ts` translates that into labkit's `ConfigField[]`
-(number/slider/checkbox/select/text/color), and `applyConfig` writes each config
-value back at the path its leaf names. No field is handled by name in either
-direction, so the panel is whatever the schema says — including `pose.rotation`,
-stored in radians and edited in degrees through the leaf's `unit`.
+`f.prefs` (`@weasel-js/labkit`) takes that schema as the instrument's
+`config`: each leaf sits at the node path its key names, and the panel draws it
+as `PrefsForm` would, through `prefFieldProps`. `applyConfig` writes each
+config value back at that path. No field is handled by name in either
+direction, so the panel is whatever the schema says — including
+`pose.rotation`, stored in radians and edited in degrees through the leaf's
+`unit`, and a dash style stored as the lengths its `encoding` writes.
 
-An `object` leaf — `data.stroke`, whose value is a whole `Stroke` — flattens
-into one field per child, addressed under it (`data.stroke.width`). Its
-`paint` child has no labkit control to map onto: `Paint` is a tagged
-union, and a color swatch would write a solid over a gradient, so it is
-dropped rather than approximated. `data.fill` is an `object` leaf too, a
-`Fill` whose one field is its `paint`, and goes the same way.
+An `object` leaf — `data.stroke`, whose value is a whole `Stroke` — is one
+value in the config and opens in a dialog. Its `paint` field has no labkit
+control: the row says so rather than approximating a `Paint` union with a color
+swatch, which would write a solid over a gradient.
 
 ## Stroke
 

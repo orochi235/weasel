@@ -1037,15 +1037,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
 
-- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns.**
-  `packages/labkit/examples/schema-lab/prefsToFields.ts` turns each leaf of a property schema into
-  a `ConfigField` by hand, and a `field` leaf becomes free text there. `ControlPanel`'s `fields`
-  prop is marked deprecated in favor of `schema`: pass the schema, which goes through
-  `prefFieldProps`, and delete the file. Not a drop-in today: an instrument's `config` takes
-  labkit's own `ConfigSchema` (`packages/labkit/src/config/types.ts`), and nothing turns a
-  `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
-  way for an instrument to declare its config as a pref schema.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P2) Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
