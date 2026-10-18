@@ -1042,7 +1042,8 @@ only story runner in the repo.
      It has to tolerate a page running a different protocol version than it was built for.
 
   Production exposure is a per-app choice (2026-10-18): dev builds always expose the hook, and a
-  production build exposes it only when the app opts in.
+  production build exposes it only when the app opts in. Layer 1 is designed, unbuilt:
+  `docs/superpowers/specs/2026-10-18-devtools-hook-design.md`.
 
 ## Release-gate & build hygiene
 
