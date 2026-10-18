@@ -315,8 +315,12 @@ frame than this probe does; neither the buffer's size in Chromium nor weasel's
 commands per frame was measured.
 
 What this does not explain is the 0.15–3.7 s single-frame stalls of
-2026-10-04. The raw probe's slowest frame across every cell was 43 ms, a
-2048-draw frame.
+2026-10-04. They did not recur: the raw probe's slowest frame across every
+cell was 43 ms, a 2048-draw frame, and `flush-noise`'s `stall` and `stall-read`
+phases, 240 of weasel's frames in one task each, ending in `finish` and in a
+one-pixel read, peaked at 9 ms and 31 ms (teitou, 2026-10-17;
+`flush-noise-2026-10-18T03-01-59Z.json` in the same directory). If they come
+back, `stall-read` is the phase to run.
 
 ### Idle time before a frame slows the GPU
 

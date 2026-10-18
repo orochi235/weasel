@@ -1,0 +1,1279 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "flush-noise",
+  "git": {
+    "sha": "85d9e7a9ca28ad9e6c12e677d1c524e525f5481d",
+    "dirty": true
+  },
+  "timestamp": "2026-10-18T03:01:59.733Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      2.64,
+      7.31,
+      9.15
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "flushesPerFrame": 512,
+    "runs": 8,
+    "phases": [
+      "stall",
+      "stall-read",
+      "stall",
+      "stall-read"
+    ],
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "stall frames",
+      "params": {
+        "stalls": [
+          {
+            "frame": 8,
+            "ms": 9,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 1163.1,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 1163.083,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 1163.078,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 5.219,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 5.218,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 5.216,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 5.215,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 5.215,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 5.207,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBuffer::Flush",
+                "ms": 5.206,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferStub::OnAsyncFlush",
+                "ms": 5.206,
+                "args": {
+                  "put_offset": 124877
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferService:PutChanged",
+                "ms": 5.203,
+                "args": {
+                  "handler": ".WebGL-0x10c051c0c00",
+                  "put_offset": 124877
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::WaitForAvailableEntries1",
+                "ms": 5.101,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 5.101,
+                "args": {
+                  "end": 97479,
+                  "start": 97515
+                }
+              }
+            ]
+          },
+          {
+            "frame": 3,
+            "ms": 8.599999904632568,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 1163.1,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 1163.083,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 1163.078,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 8.61,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 8.609,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 8.607,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 8.604,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 8.603,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 8.596,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBuffer::Flush",
+                "ms": 8.595,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferStub::OnAsyncFlush",
+                "ms": 8.594,
+                "args": {
+                  "put_offset": 121693
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferService:PutChanged",
+                "ms": 8.592,
+                "args": {
+                  "handler": ".WebGL-0x10c051c0c00",
+                  "put_offset": 121693
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::WaitForAvailableEntries1",
+                "ms": 7.768,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 7.766,
+                "args": {
+                  "end": 83792,
+                  "start": 83828
+                }
+              }
+            ]
+          },
+          {
+            "frame": 4,
+            "ms": 7.200000047683716,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 1163.1,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 1163.083,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 1163.078,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 3.817,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 3.815,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 3.814,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 3.812,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 3.812,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 3.807,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBuffer::Flush",
+                "ms": 3.806,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferStub::OnAsyncFlush",
+                "ms": 3.806,
+                "args": {
+                  "put_offset": 176164
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "CommandBufferService:PutChanged",
+                "ms": 3.803,
+                "args": {
+                  "handler": ".WebGL-0x10c051c0c00",
+                  "put_offset": 176164
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::WaitForAvailableEntries1",
+                "ms": 3.664,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 3.664,
+                "args": {
+                  "end": 136202,
+                  "start": 136208
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "metrics": {
+        "median": {
+          "value": 4.899999976158142,
+          "unit": "ms",
+          "stat": "240 single frames",
+          "samples": [
+            0.5999999046325684,
+            0.6000000238418579,
+            0.8000000715255737,
+            8.599999904632568,
+            7.200000047683716,
+            3.700000047683716,
+            3.299999952316284,
+            4,
+            9,
+            4.200000047683716,
+            5.799999952316284,
+            4.799999952316284,
+            4,
+            3.8000000715255737,
+            7.100000023841858,
+            5.599999904632568,
+            4.300000071525574,
+            5.299999952316284,
+            5.300000071525574,
+            3.799999952316284,
+            4.799999952316284,
+            5,
+            5.200000047683716,
+            4.799999952316284,
+            5.400000095367432,
+            5.099999904632568,
+            4.5,
+            5,
+            5.5,
+            3.100000023841858,
+            4.899999976158142,
+            4.900000095367432,
+            5.099999904632568,
+            4.200000047683716,
+            5.600000023841858,
+            4.799999952316284,
+            4.899999976158142,
+            3.100000023841858,
+            5.5,
+            4.700000047683716,
+            4.799999952316284,
+            4.800000071525574,
+            5.199999928474426,
+            5.399999976158142,
+            4.900000095367432,
+            3.5,
+            5.799999952316284,
+            4.799999952316284,
+            4.800000071525574,
+            5.299999952316284,
+            4.700000047683716,
+            5.199999928474426,
+            4.200000047683716,
+            5.100000023841858,
+            4.5,
+            4.699999928474426,
+            4.600000023841858,
+            5.600000023841858,
+            4.700000047683716,
+            5.199999928474426,
+            6,
+            4.600000023841858,
+            5.899999976158142,
+            3.600000023841858,
+            4.600000023841858,
+            5.199999928474426,
+            4.900000095367432,
+            5.099999904632568,
+            4.800000071525574,
+            5.100000023841858,
+            4.199999928474426,
+            6.100000023841858,
+            3.100000023841858,
+            4.5,
+            5.199999928474426,
+            5.300000071525574,
+            4.799999952316284,
+            4.899999976158142,
+            5.100000023841858,
+            4.700000047683716,
+            5.199999928474426,
+            4.600000023841858,
+            4.600000023841858,
+            4.399999976158142,
+            4.300000071525574,
+            5.099999904632568,
+            4.900000095367432,
+            4.399999976158142,
+            5.399999976158142,
+            4.799999952316284,
+            5.100000023841858,
+            5,
+            4.100000023841858,
+            4.100000023841858,
+            4.600000023841858,
+            5.299999952316284,
+            3.899999976158142,
+            5.600000023841858,
+            5.100000023841858,
+            4.799999952316284,
+            5.200000047683716,
+            3.899999976158142,
+            4.899999976158142,
+            4.700000047683716,
+            4.699999928474426,
+            4.700000047683716,
+            5,
+            4.399999976158142,
+            5.600000023841858,
+            4.600000023841858,
+            4.399999976158142,
+            4.399999976158142,
+            4.899999976158142,
+            4.600000023841858,
+            5,
+            5.399999976158142,
+            4.400000095367432,
+            4.299999952316284,
+            5.5,
+            4.299999952316284,
+            3.8000000715255737,
+            4.899999976158142,
+            4.899999976158142,
+            5.200000047683716,
+            4.899999976158142,
+            5.299999952316284,
+            5,
+            5.100000023841858,
+            4.5,
+            4.800000071525574,
+            4.299999952316284,
+            4.899999976158142,
+            5.100000023841858,
+            5.399999976158142,
+            4.600000023841858,
+            4.899999976158142,
+            4.800000071525574,
+            5.399999976158142,
+            5.100000023841858,
+            3.5,
+            4.699999928474426,
+            5.200000047683716,
+            4.799999952316284,
+            4.600000023841858,
+            5.399999976158142,
+            4.300000071525574,
+            4.899999976158142,
+            4.199999928474426,
+            4.300000071525574,
+            4.600000023841858,
+            5.099999904632568,
+            5,
+            4.900000095367432,
+            4.599999904632568,
+            4.700000047683716,
+            5.899999976158142,
+            5.300000071525574,
+            4.699999928474426,
+            6.399999976158142,
+            4.899999976158142,
+            4.800000071525574,
+            5.799999952316284,
+            5.899999976158142,
+            5.300000071525574,
+            5,
+            4.799999952316284,
+            5.200000047683716,
+            4.699999928474426,
+            5.600000023841858,
+            4.300000071525574,
+            4.099999904632568,
+            5.400000095367432,
+            4.399999976158142,
+            4.799999952316284,
+            5.5,
+            4.899999976158142,
+            5.300000071525574,
+            4.899999976158142,
+            4.600000023841858,
+            4.799999952316284,
+            4.200000047683716,
+            5.199999928474426,
+            4.600000023841858,
+            4.700000047683716,
+            4.799999952316284,
+            4.800000071525574,
+            4.599999904632568,
+            4.800000071525574,
+            5.199999928474426,
+            3.3000000715255737,
+            4.799999952316284,
+            4.200000047683716,
+            5.299999952316284,
+            4.399999976158142,
+            5.200000047683716,
+            5,
+            4.600000023841858,
+            4.399999976158142,
+            5,
+            3.899999976158142,
+            5.300000071525574,
+            5.199999928474426,
+            4.5,
+            5.200000047683716,
+            4.899999976158142,
+            6.899999976158142,
+            6.100000023841858,
+            6,
+            5.899999976158142,
+            4.600000023841858,
+            4.299999952316284,
+            5,
+            5.900000095367432,
+            4.5,
+            5.799999952316284,
+            4.700000047683716,
+            4.799999952316284,
+            5,
+            4.100000023841858,
+            4.299999952316284,
+            5,
+            5.300000071525574,
+            5.099999904632568,
+            5.100000023841858,
+            4.5,
+            4.899999976158142,
+            4.800000071525574,
+            5.199999928474426,
+            4.300000071525574,
+            4,
+            5.100000023841858,
+            5.199999928474426,
+            5.200000047683716,
+            5.5,
+            4.600000023841858,
+            4.899999976158142,
+            5.100000023841858,
+            4.5,
+            5.299999952316284,
+            3.5
+          ]
+        }
+      }
+    },
+    {
+      "id": "stall-read frames",
+      "params": {
+        "stalls": [
+          {
+            "frame": 41,
+            "ms": 31,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 2089.009,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 2088.993,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 2088.987,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GLES2::ReadPixels",
+                "ms": 30.382,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ImplementationBase::WaitForCmd",
+                "ms": 30.381,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::Finish",
+                "ms": 30.381,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 30.376,
+                "args": {
+                  "end": 219766,
+                  "start": 219766
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GpuChannel::WaitForGetOffsetInRange",
+                "ms": 30.375,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 27.376,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 27.375,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 27.372,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 27.37,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 27.37,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 27.362,
+                "args": {}
+              }
+            ]
+          },
+          {
+            "frame": 3,
+            "ms": 11.900000095367432,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 2089.009,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 2088.993,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 2088.987,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GLES2::ReadPixels",
+                "ms": 11.365,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ImplementationBase::WaitForCmd",
+                "ms": 11.363,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::Finish",
+                "ms": 11.363,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 11.357,
+                "args": {
+                  "end": 191644,
+                  "start": 191644
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GpuChannel::WaitForGetOffsetInRange",
+                "ms": 11.357,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 8.713,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 8.713,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 8.712,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 8.709,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 8.709,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 8.701,
+                "args": {}
+              }
+            ]
+          },
+          {
+            "frame": 0,
+            "ms": 11.899999976158142,
+            "rows": [
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "RunTask",
+                "ms": 2089.009,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 2088.993,
+                "args": {
+                  "src_file": "ipc/ipc_mojo_bootstrap.cc",
+                  "src_func": "Accept",
+                  "src_line": 1138
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "Receive mojo message",
+                "ms": 2088.987,
+                "args": {
+                  "chrome_mojo_event_info": {
+                    "data_num_bytes": 776,
+                    "ipc_hash": 3544143186,
+                    "mojo_interface_method": {
+                      "native_symbol": {
+                        "mapping_id": 0,
+                        "rel_pc": 48353980
+                      }
+                    },
+                    "mojo_interface_tag": "blink.mojom.DevToolsSession",
+                    "payload_size": 720
+                  }
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GLES2::ReadPixels",
+                "ms": 11.229,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "ImplementationBase::WaitForCmd",
+                "ms": 11.228,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferHelper::Finish",
+                "ms": 11.226,
+                "args": {}
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "CommandBufferProxyImpl::WaitForGetOffset",
+                "ms": 11.222,
+                "args": {
+                  "end": 23863,
+                  "start": 23863
+                }
+              },
+              {
+                "thread": "Renderer/CrRendererMain",
+                "name": "GpuChannel::WaitForGetOffsetInRange",
+                "ms": 11.22,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "RunTask",
+                "ms": 9.777,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "ThreadControllerImpl::RunTask",
+                "ms": 9.776,
+                "args": {
+                  "src_file": "gpu/command_buffer/service/scheduler.cc",
+                  "src_func": "RunNextTask",
+                  "src_line": 654
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "Scheduler::RunTask",
+                "ms": 9.773,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GpuChannel::ExecuteDeferredRequest",
+                "ms": 9.771,
+                "args": {}
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "GPUTask",
+                "ms": 9.769,
+                "args": {
+                  "data": {
+                    "renderer_pid": 50347,
+                    "used_bytes": 21696512
+                  }
+                }
+              },
+              {
+                "thread": "GPU Process/CrGpuMain",
+                "name": "WebGL",
+                "ms": 9.757,
+                "args": {}
+              }
+            ]
+          }
+        ]
+      },
+      "metrics": {
+        "median": {
+          "value": 8.299999952316284,
+          "unit": "ms",
+          "stat": "240 single frames",
+          "samples": [
+            11.899999976158142,
+            10.899999976158142,
+            10.899999976158142,
+            11.900000095367432,
+            11.299999952316284,
+            11.200000047683716,
+            11,
+            10.699999928474426,
+            8.899999976158142,
+            7.900000095367432,
+            8.099999904632568,
+            8.600000023841858,
+            10.600000023841858,
+            10.799999952316284,
+            11,
+            11.200000047683716,
+            11.200000047683716,
+            11.099999904632568,
+            8.400000095367432,
+            8.299999952316284,
+            8.100000023841858,
+            8.399999976158142,
+            8,
+            8.100000023841858,
+            8.299999952316284,
+            7.899999976158142,
+            8.800000071525574,
+            8,
+            8.199999928474426,
+            8.400000095367432,
+            8,
+            8.5,
+            7.799999952316284,
+            7.899999976158142,
+            7.800000071525574,
+            8,
+            8.299999952316284,
+            7.899999976158142,
+            8.600000023841858,
+            7.600000023841858,
+            8.299999952316284,
+            31,
+            8.600000023841858,
+            8.100000023841858,
+            8.299999952316284,
+            8.800000071525574,
+            8.299999952316284,
+            8.100000023841858,
+            8.5,
+            8.299999952316284,
+            8.800000071525574,
+            8.199999928474426,
+            8.700000047683716,
+            8,
+            8.399999976158142,
+            8.600000023841858,
+            9.100000023841858,
+            9,
+            9,
+            8.5,
+            8.599999904632568,
+            7.900000095367432,
+            8.399999976158142,
+            8,
+            8.299999952316284,
+            8.600000023841858,
+            7.399999976158142,
+            8.600000023841858,
+            8.5,
+            8,
+            8.5,
+            7.799999952316284,
+            8.5,
+            8,
+            8.200000047683716,
+            8.199999928474426,
+            7.800000071525574,
+            8.299999952316284,
+            7.700000047683716,
+            8.199999928474426,
+            8,
+            7.900000095367432,
+            8.399999976158142,
+            7.699999928474426,
+            8.100000023841858,
+            8.300000071525574,
+            8.099999904632568,
+            8.400000095367432,
+            8,
+            8.099999904632568,
+            7.800000071525574,
+            7.799999952316284,
+            8.300000071525574,
+            7.799999952316284,
+            7.799999952316284,
+            7.800000071525574,
+            8.199999928474426,
+            7.800000071525574,
+            8,
+            8.299999952316284,
+            8.100000023841858,
+            8.600000023841858,
+            8,
+            8,
+            8.199999928474426,
+            8.100000023841858,
+            8.399999976158142,
+            8.600000023841858,
+            8.600000023841858,
+            8.200000047683716,
+            7.699999928474426,
+            8.300000071525574,
+            8.299999952316284,
+            8.299999952316284,
+            8,
+            8.5,
+            8.700000047683716,
+            7.799999952316284,
+            8.300000071525574,
+            8.199999928474426,
+            8.300000071525574,
+            8.799999952316284,
+            8.200000047683716,
+            8.5,
+            8.199999928474426,
+            8.5,
+            8.200000047683716,
+            8.200000047683716,
+            8.599999904632568,
+            8,
+            8.200000047683716,
+            8.399999976158142,
+            7.899999976158142,
+            8.5,
+            8,
+            8.100000023841858,
+            8.200000047683716,
+            8.100000023841858,
+            8.699999928474426,
+            7.800000071525574,
+            8.299999952316284,
+            7.799999952316284,
+            8.200000047683716,
+            8.399999976158142,
+            8.200000047683716,
+            8.199999928474426,
+            8.100000023841858,
+            8.600000023841858,
+            8.700000047683716,
+            8.199999928474426,
+            8.300000071525574,
+            8.299999952316284,
+            8.399999976158142,
+            9,
+            8,
+            8.100000023841858,
+            7.799999952316284,
+            8.400000095367432,
+            8.299999952316284,
+            7.899999976158142,
+            8.700000047683716,
+            8.600000023841858,
+            8.799999952316284,
+            10.5,
+            7.799999952316284,
+            8.300000071525574,
+            8.199999928474426,
+            8.600000023841858,
+            8.300000071525574,
+            7.5,
+            8.299999952316284,
+            8.200000047683716,
+            8,
+            8.299999952316284,
+            7.799999952316284,
+            8.400000095367432,
+            8,
+            9.199999928474426,
+            8,
+            8.300000071525574,
+            8.599999904632568,
+            8.5,
+            8,
+            7.900000095367432,
+            7.899999976158142,
+            8.199999928474426,
+            7.700000047683716,
+            8.299999952316284,
+            8.5,
+            7.899999976158142,
+            8.600000023841858,
+            7.700000047683716,
+            10.199999928474426,
+            11.100000023841858,
+            11.600000023841858,
+            8.299999952316284,
+            8.400000095367432,
+            7.5,
+            8,
+            10.799999952316284,
+            10.899999976158142,
+            8.100000023841858,
+            8.100000023841858,
+            7.899999976158142,
+            10.299999952316284,
+            10.5,
+            7.900000095367432,
+            8.199999928474426,
+            8.300000071525574,
+            9.599999904632568,
+            8,
+            7.5,
+            8.400000095367432,
+            8.399999976158142,
+            8,
+            11.100000023841858,
+            10.599999904632568,
+            8,
+            8.100000023841858,
+            8.399999976158142,
+            10.300000071525574,
+            8.399999976158142,
+            9.399999976158142,
+            8,
+            10.300000071525574,
+            10.699999928474426,
+            9,
+            8.899999976158142,
+            8.400000095367432,
+            8.399999976158142,
+            8.5,
+            8.5,
+            8.399999976158142,
+            8.5,
+            8.399999976158142,
+            8.600000023841858,
+            8.200000047683716,
+            8.5,
+            8.299999952316284,
+            7.700000047683716
+          ]
+        }
+      }
+    }
+  ]
+}
