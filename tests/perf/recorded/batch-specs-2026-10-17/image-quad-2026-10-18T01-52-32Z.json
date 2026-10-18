@@ -1,0 +1,281 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "image-quad",
+  "git": {
+    "sha": "f32b06842f298e1977bb474a74702aebb0959d36",
+    "dirty": true
+  },
+  "timestamp": "2026-10-18T01:52:32.613Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      4.24,
+      7.86,
+      8.27
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "quads": 512,
+    "sizePx": 48,
+    "runs": 3,
+    "variants": "all",
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "renderer/image",
+      "params": {
+        "group": "renderer",
+        "variant": "image"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.859375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.869140625,
+            0.6640625,
+            0.859375
+          ]
+        }
+      }
+    },
+    {
+      "id": "renderer/unmerged",
+      "params": {
+        "group": "renderer",
+        "variant": "unmerged"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 27.626953125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            27.919921875,
+            27.626953125,
+            26.3671875
+          ]
+        }
+      }
+    },
+    {
+      "id": "renderer/atlas",
+      "params": {
+        "group": "renderer",
+        "variant": "atlas"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.400390625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.400390625,
+            0.244140625,
+            0.458984375
+          ]
+        }
+      }
+    },
+    {
+      "id": "renderer/sprites",
+      "params": {
+        "group": "renderer",
+        "variant": "sprites"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.2734375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.2734375,
+            0.01953125,
+            0.283203125
+          ]
+        }
+      }
+    },
+    {
+      "id": "renderer/pattern",
+      "params": {
+        "group": "renderer",
+        "variant": "pattern"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 2.138671875,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.060546875,
+            2.138671875,
+            2.470703125
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/churn",
+      "params": {
+        "group": "raw",
+        "variant": "churn"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 3.291015625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.173828125,
+            3.349609375,
+            3.291015625
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/churn-uniform",
+      "params": {
+        "group": "raw",
+        "variant": "churn-uniform"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 3.056640625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.861328125,
+            3.056640625,
+            3.2421875
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/preloaded",
+      "params": {
+        "group": "raw",
+        "variant": "preloaded"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.087890625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.087890625,
+            0.087890625,
+            0.4296875
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/arena",
+      "params": {
+        "group": "raw",
+        "variant": "arena"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 7.32421875,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            8.408203125,
+            7.32421875,
+            7.314453125
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/subdata",
+      "params": {
+        "group": "raw",
+        "variant": "subdata"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 2.12890625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.265625,
+            1.9628906249999998,
+            2.12890625
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/uniform",
+      "params": {
+        "group": "raw",
+        "variant": "uniform"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.751953125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.751953125,
+            0.60546875,
+            0.8203125
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/orphan",
+      "params": {
+        "group": "raw",
+        "variant": "orphan"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 1.58203125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.58203125,
+            1.46484375,
+            1.728515625
+          ]
+        }
+      }
+    },
+    {
+      "id": "raw/ring",
+      "params": {
+        "group": "raw",
+        "variant": "ring"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 2.87109375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.10546875,
+            2.87109375,
+            2.763671875
+          ]
+        }
+      }
+    }
+  ]
+}
