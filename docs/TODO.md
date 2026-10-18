@@ -1064,15 +1064,11 @@ only story runner in the repo.
   line links to GitHub only where TypeDoc found the repository, which it cannot from a git
   worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
-- **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
-  `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
-  a wrapped node as one line per hard break. Exporting the laid-out lines needs fonts at serialize
-  time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with
-  `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify. The hard-break lines are
-  pitched at the node's font size times its line height (`linesXml` in `tspanLines.ts`), which is
-  where the layout puts them only when no run on the line is larger; a line holding a larger run
-  needs the same fonts. How a browser draws the `<tspan x dy>` lines has not been looked at in one.
+- **(P3) SVG text export: `rtl` and the default lines not seen in a browser.** Headless Chromium
+  drew an export written with `textLayout: layoutTextPose` (Inter from `assets/fonts/inter`) with
+  every glyph inside the cell weasel's layout gives it, for a wrapped, a justified, a centered node
+  and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
+  the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a

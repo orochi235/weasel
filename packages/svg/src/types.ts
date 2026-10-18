@@ -9,6 +9,7 @@ import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
+  TextPoseLayout,
   Fill,
   StrokeNib,
   VertexWidth,
@@ -341,4 +342,16 @@ export interface SerializeOptions {
    * line, since whitespace inside it is content.
    */
   pretty?: boolean;
+  /**
+   * The lines a text node lays out into — pass core's `layoutTextPose`, the
+   * layout the renderer draws with. With it, each line is written as a
+   * `<tspan>` at the layout's own `x` and baseline `y`, a justified line
+   * gives each word its own `x`, and a line holding a larger run is pitched
+   * as the renderer pitches it, so a reader that cannot wrap draws the lines
+   * where weasel does. A node it returns nothing for, or lays out to zero
+   * width because no face could measure it, is written without it: one line
+   * per hard break, at the node's own pitch. Fonts it reads must have loaded;
+   * `warmSvg(nodes, { textLayout })` loads them.
+   */
+  textLayout?: (node: SvgTextNode) => TextPoseLayout | null | undefined;
 }

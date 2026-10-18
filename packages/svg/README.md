@@ -37,6 +37,16 @@ answer, and the alternative is unrepresentable anyway (see above). It only
 shows up on foreign SVG that sets decoration on a group and cancels it on a
 child.
 
+**SVG text does not wrap.** By default a `<text>` is written one line per
+hard break, pitched at the node's font size times its line height, and a
+wrapping or justified node keeps that only in `data-weasel-*` attributes for
+weasel's own reader. Pass `serializeSvg(nodes, { textLayout: layoutTextPose })`
+to write the lines the renderer draws instead: each line is a `<tspan>` at the
+layout's `x` and baseline `y`, each word of a line the layout justified gets
+its own `x`, and a line holding a larger run sits where the renderer puts it.
+The layout measures with the registered fonts, so `await warmSvg(nodes, {
+textLayout })` first; a node no face could measure is written the default way.
+
 ## Paints SVG cannot express
 
 SVG has `<linearGradient>`, `<radialGradient>` and `<pattern>` and nothing

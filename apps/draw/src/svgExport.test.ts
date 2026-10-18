@@ -5,7 +5,9 @@
  * their bounds rather than the page.
  */
 
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { parseSvg } from '@weasel-js/svg';
 import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
@@ -714,5 +716,51 @@ describe('a paint kind that loads on demand', () => {
     const svg = await sceneToSvgString(scene, { ...PAGE, onWarn: (w) => warnings.push(w) });
     expect(svg).toContain('<svg');
     expect(warnings.join(' ')).toMatch(/offline/);
+  });
+});
+
+describe('text export with the canvas layout', () => {
+  const realFetch = global.fetch;
+  const realBitmap = global.createImageBitmap;
+
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
+      : Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      })) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/f/inter.json', '/f/inter.png');
+  });
+
+  afterEach(() => {
+    _resetFontRegistryForTests();
+    global.fetch = realFetch;
+    global.createImageBitmap = realBitmap;
+  });
+
+  // FIXTURE_FONT at 32: 'AB AB' is 96 wide, so a third word wraps at 100.
+  it('writes a wrapped node as the lines the canvas draws, and reads it back whole', async () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 100, height: 100 },
+        data: { text: 'AB AB AB', style: { fontFamily: 'inter', fontSize: 32, wrap: true } },
+      },
+    }, ['t']);
+    const svg = await selectionToSvgString(scene, ['t']);
+    const lines = [...svg.matchAll(/<tspan x="([\d.]+)" y="([\d.]+)" data-weasel-lines="0">([^<]*)</g)];
+    expect(lines.map((m) => m[3])).toEqual(['AB AB ', 'AB']);
+    expect(lines.map((m) => Number(m[1]))).toEqual([5, 5]);
+    expect(Number(lines[1][2])).toBeGreaterThan(Number(lines[0][2]));
+    const n = parseSvg(svg).nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.text).toBe('AB AB AB');
+    expect(n.style?.wrap).toBe(true);
   });
 });

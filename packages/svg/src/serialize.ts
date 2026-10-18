@@ -70,7 +70,7 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     said.add(m);
     opts.onWarn(m);
   };
-  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn)).join('');
+  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout)).join('');
 
   const titleXml = opts.title && opts.title.length > 0
     ? `<title>${escapeText(opts.title)}</title>`
@@ -121,10 +121,12 @@ function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'mar
   }
 }
 
+type LayoutOf = SerializeOptions['textLayout'];
+
 function nodeXml(
-  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
 ): string {
-  const xml = kindXml(node, registry, namespaces, warn);
+  const xml = kindXml(node, registry, namespaces, warn, layoutOf);
   if (!node.hidden) return xml;
   // A variable-width stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
@@ -132,13 +134,15 @@ function nodeXml(
 }
 
 function kindXml(
-  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
 ): string {
-  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
-  if (node.kind === 'text') return textXml(node, registry, namespaces, warn);
+  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf);
+  if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
   const drawn = pathAsSvgDraws(node);
-  return drawn.kind === 'group' ? groupXml(drawn, registry, namespaces, warn) : pathXml(drawn, registry, namespaces, warn);
+  return drawn.kind === 'group'
+    ? groupXml(drawn, registry, namespaces, warn, layoutOf)
+    : pathXml(drawn, registry, namespaces, warn);
 }
 
 
@@ -187,7 +191,7 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>): strin
 }
 
 function groupXml(
-  node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
 ): string {
   const attrs: string[] = [];
   if (node.transform) {
@@ -204,7 +208,7 @@ function groupXml(
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`
     : `<g${metaAttrs}>`;
-  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn)).join('');
+  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn, layoutOf)).join('');
   return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 

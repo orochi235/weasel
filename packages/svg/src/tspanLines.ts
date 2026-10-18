@@ -15,7 +15,11 @@ import { escapeText } from './xmlEscape';
  * own: it is folded into the next line's `dy`, and this says how many lines
  * that `dy` covers.
  */
-const LINES_ATTR = 'data-weasel-lines';
+export const LINES_ATTR = 'data-weasel-lines';
+
+/** The `<text>` attribute stating its line height where its lines' pitch
+ *  cannot, because a layout placed them. */
+export const LINE_HEIGHT_ATTR = 'data-weasel-line-height';
 
 /** Whether `tspan` says how many lines it steps down. */
 export const statesLines = (tspan: Element): boolean => tspan.hasAttribute(LINES_ATTR);
@@ -85,9 +89,10 @@ export class LineTracker {
     const dy = readLength(tspan, 'dy', 'y', 0, this.onWarn);
     this.at = (y != null ? readLength(tspan, 'y', 'y', from, this.onWarn) : from) + dy;
     if (!tspan.hasAttribute('x') || !(movedY || dy !== 0)) return 0;
-    const stated = Number(tspan.getAttribute(LINES_ATTR));
-    const lines = Number.isInteger(stated) && stated > 0 ? stated : 1;
-    if (afterText && this.at > from) this.pitches.push((this.at - from) / lines);
+    // `0` is a line a layout wrapped onto: it moves down and breaks nothing.
+    const stated = Number(tspan.getAttribute(LINES_ATTR) ?? NaN);
+    const lines = Number.isInteger(stated) && stated >= 0 ? stated : 1;
+    if (afterText && lines > 0 && this.at > from) this.pitches.push((this.at - from) / lines);
     return lines;
   }
 
