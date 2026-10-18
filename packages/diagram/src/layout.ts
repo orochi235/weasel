@@ -86,10 +86,22 @@ export interface LayoutFn {
   readonly plan?: (graph: Graph, opts?: LayoutOptions) => LayoutPlan;
 }
 
+/** A layout that answers with a whole plan, now or later: ELK's, say, or one
+ *  computed on a server. A live run asks it once, with the graph it will ease
+ *  from, and eases to the answer the way it eases to `layered`'s. */
+export interface LayoutPlanner {
+  plan(graph: Graph, opts?: LayoutOptions): LayoutPlan | Promise<LayoutPlan>;
+}
+
 /** A layout's plan: its own `plan`, or its moves alone. A node with a
  *  `margin` is laid out as its footprint, so neighbors keep clear of it. */
 export function planOf(layout: LayoutFn, graph: Graph, opts?: LayoutOptions): LayoutPlan {
   return planWithMargins(graph, (g) => (layout.plan !== undefined ? layout.plan(g, opts) : { moves: layout(g, opts) }));
+}
+
+/** `planner`'s plan for `graph`, laid out by footprint the way {@link planOf}'s is. */
+export function plannerPlan(planner: LayoutPlanner, graph: Graph, opts?: LayoutOptions): LayoutPlan | Promise<LayoutPlan> {
+  return planWithMargins(graph, (g) => planner.plan(g, opts));
 }
 
 /** `LayoutOptions.nodeGap`'s default, in world units. */

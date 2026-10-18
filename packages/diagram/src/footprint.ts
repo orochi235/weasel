@@ -57,16 +57,32 @@ export function footprintNode(node: GraphNode): GraphNode {
 }
 
 /** Run `plan` over `graph` with every node at its footprint, and hand back
- *  moves for the nodes' own boxes. */
-export function planWithMargins(graph: Graph, plan: (graph: Graph) => LayoutPlan): LayoutPlan {
+ *  moves for the nodes' own boxes, now or once `plan` answers. */
+export function planWithMargins(graph: Graph, plan: (graph: Graph) => LayoutPlan): LayoutPlan;
+export function planWithMargins(
+  graph: Graph,
+  plan: (graph: Graph) => LayoutPlan | Promise<LayoutPlan>,
+): LayoutPlan | Promise<LayoutPlan>;
+export function planWithMargins(
+  graph: Graph,
+  plan: (graph: Graph) => LayoutPlan | Promise<LayoutPlan>,
+): LayoutPlan | Promise<LayoutPlan> {
   if (!graph.nodes.some((n) => n.margin !== undefined)) return plan(graph);
   const nodes = graph.nodes.map(footprintNode);
   const byId = new Map(nodes.map((n) => [n.id, n]));
+  const back = (out: LayoutPlan): LayoutPlan => {
+    const moves = new Map<string, Vec2>();
+    for (const [id, at] of out.moves) {
+      const m = graph.node(id)?.margin;
+      moves.set(id, m === undefined ? at : { x: at.x + m.left, y: at.y + m.top });
+    }
+    return { ...out, moves };
+  };
   const out = plan({ ...graph, nodes, node: (id) => byId.get(id) });
-  const moves = new Map<string, Vec2>();
-  for (const [id, at] of out.moves) {
-    const m = graph.node(id)?.margin;
-    moves.set(id, m === undefined ? at : { x: at.x + m.left, y: at.y + m.top });
-  }
-  return { ...out, moves };
+  return isPromise(out) ? out.then(back) : back(out);
 }
+
+/** Whether `answer` is still to come. A thenable test, not `instanceof`: a
+ *  promise from another realm is no instance of this one's `Promise`. */
+export const isPromise = <T>(answer: T | Promise<T>): answer is Promise<T> =>
+  typeof (answer as { then?: unknown } | null)?.then === 'function';

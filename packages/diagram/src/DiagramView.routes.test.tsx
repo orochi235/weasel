@@ -4,6 +4,9 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiagramView, type DiagramViewApi, type EdgeRoute, type NodeMove } from './DiagramView';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
+import type { Graph } from './graph';
+import { layered } from './layered';
+import type { LayoutFn } from './layout';
 import { diagramLayoutOf } from './sceneSync';
 
 afterEach(() => { cleanup(); });
@@ -63,6 +66,33 @@ describe('DiagramView onMove routes', () => {
     };
     const again = diagramScene(kept, { layout: 'none' }).find((s) => s.id === (long!.id as never))!;
     expect((again.data as { diagram: { waypoints?: unknown } }).diagram.waypoints).toEqual(long!.waypoints);
+  });
+
+  it('reports what a planner answering later laid out, as it reports a built-in layout', async () => {
+    const reported = async (algorithm: Parameters<DiagramViewApi['layout']>[0]) => {
+      const calls: { moves: readonly NodeMove[]; routes: readonly EdgeRoute[] }[] = [];
+      const clock = makeClock();
+      const api = createRef<DiagramViewApi>();
+      const { unmount } = render(
+        <DiagramView
+          ref={api} specs={diagramScene(DATA, { layout: 'none' })} width={300} height={300}
+          onMove={(moves, routes) => { calls.push({ moves, routes }); }}
+          live={{ frames: 2, requestFrame: clock.requestFrame, cancelFrame: clock.cancelFrame }}
+        />,
+      );
+      await act(async () => { api.current!.layout(algorithm); });
+      await act(async () => { clock.run(); });
+      unmount();
+      return calls;
+    };
+    // Across, so an answer read as the default `layered` would show.
+    const across: LayoutFn = Object.assign((graph: Graph) => layered(graph, { direction: 'right' }), {
+      plan: (graph: Graph) => layered.plan!(graph, { direction: 'right' }),
+    });
+    const later = await reported({ plan: (graph) => Promise.resolve(across.plan!(graph)) });
+    expect(later.flatMap((c) => c.routes).length).toBeGreaterThan(0);
+    expect(later).toEqual(await reported(across));
+    expect(later).not.toEqual(await reported('layered'));
   });
 
   it('reports ports a consumer can store without renaming the edge', async () => {

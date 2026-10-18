@@ -17,7 +17,7 @@ import { diagramPorts, type DiagramContributionOptions } from './contribution';
 import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
 import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
-import type { LayoutFn } from './layout';
+import type { LayoutFn, LayoutPlanner } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
 import { useMirroredSelection } from './mirrorSelection';
 import { portLayer, sceneParticipants } from './portLayer';
@@ -101,11 +101,16 @@ export interface DiagramViewProps {
 export interface DiagramViewApi {
   /** Lay the diagram out again from where its nodes stand, animated. `'force'`
    *  (default) relaxes until it settles; any other layout eases to its answer.
-   *  What moved is reported to `onMove` once the run settles. */
-  layout(algorithm?: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn): void;
+   *  A `LayoutPlanner` is handed the diagram's graph and eased to once it
+   *  answers; a drag, an edit or another `layout` call before then drops the
+   *  answer. What moved is reported to `onMove` once the run settles. */
+  layout(algorithm?: DiagramLayout): void;
   /** The run `layout` started: stop it where it stands, or cancel it. */
   live: LiveLayout;
 }
+
+/** What {@link DiagramViewApi.layout} runs. */
+export type DiagramLayout = 'layered' | 'tree' | 'force' | 'chain' | LayoutFn | LayoutPlanner;
 
 const AMBIENT = [dragPanContribution()];
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -147,7 +152,7 @@ function Inner({
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
   // the live layout's options before the effect restarts it.
-  const [run, setRun] = useState<{ algorithm: 'layered' | 'tree' | 'force' | 'chain' | LayoutFn } | null>(null);
+  const [run, setRun] = useState<{ algorithm: DiagramLayout } | null>(null);
   const live = useLiveLayout<RectPose>({ ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force' });
   useEffect(() => {
     if (run !== null) live.restart();
