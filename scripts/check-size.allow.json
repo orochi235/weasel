@@ -30,13 +30,6 @@
     "lines": 407,
     "longestFunction": 262
   },
-  "packages/core/src/canvas/SceneCanvas.tsx": {
-    "lines": 502,
-    "longestFunction": 381
-  },
-  "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
-    "longestFunction": 240
-  },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 604
   },

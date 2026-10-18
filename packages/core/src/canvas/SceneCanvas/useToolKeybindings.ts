@@ -5,7 +5,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import { useContributionRoles, type VersionCheck } from './useContributionRoles';
 
 /**
- * Mounts `useKeybindings`, whose `tool.activate` / `tool.offhand` /
+ * Runs `useKeybindings`, whose `tool.activate` / `tool.offhand` /
  * `tool.resetToDefault` registrations land in this canvas's scope.
  *
  * Two calls: the hook snapshots the initial active tool for
@@ -13,7 +13,7 @@ import { useContributionRoles, type VersionCheck } from './useContributionRoles'
  * each need their own instance and the hook count has to stay stable across
  * the takeover branch.
  */
-export function ToolKeybindingsMounter({
+export function useToolKeybindings({
   internalTools,
   toolsTakeover,
   enableKeybindings,
@@ -27,7 +27,7 @@ export function ToolKeybindingsMounter({
   modes?: ModeRegistry;
   canvasApi: CanvasExtensionApi | null;
   versionCheck?: VersionCheck;
-}) {
+}): void {
   useKeybindings(internalTools, {
     disable: !!toolsTakeover || !enableKeybindings,
     modes,
@@ -40,5 +40,4 @@ export function ToolKeybindingsMounter({
   // run above the provider. Not gated on `enableKeybindings` — these back
   // wheel and pointer bindings too, not just keys.
   useContributionRoles(toolsTakeover ?? internalTools, canvasApi, versionCheck);
-  return null;
 }

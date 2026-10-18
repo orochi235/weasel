@@ -4,7 +4,6 @@
  * points, the published pointer position, and hover.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { createElement } from 'react';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
@@ -33,14 +32,13 @@ vi.mock('@weasel-js/routing/react', async (importOriginal) => {
   };
 });
 
-vi.mock('./SceneCanvas/GestureDispatcherMounter', async (importOriginal) => {
-  const real = await importOriginal<typeof import('./SceneCanvas/GestureDispatcherMounter')>();
-  type Props = Parameters<typeof real.GestureDispatcherMounter>[0];
+vi.mock('./SceneCanvas/useSceneGestureDispatcher', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./SceneCanvas/useSceneGestureDispatcher')>();
   return {
     ...real,
-    GestureDispatcherMounter: (props: Props) => {
+    useSceneGestureDispatcher: (props: Parameters<typeof real.useSceneGestureDispatcher>[0]) => {
       seen.getRuleCtx = props.getRuleCtx;
-      return createElement(real.GestureDispatcherMounter, props);
+      real.useSceneGestureDispatcher(props);
     },
   };
 });

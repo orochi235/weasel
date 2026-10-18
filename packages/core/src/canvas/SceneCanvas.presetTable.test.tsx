@@ -3,7 +3,7 @@
  * `FEATURE_PRESETS` row says, and nothing from another row.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { createElement, useEffect } from 'react';
+import { useEffect } from 'react';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
@@ -21,16 +21,15 @@ type P = { x: number; y: number; width: number; height: number; rotation: number
 
 const mounted: { ambient: string[] } = { ambient: [] };
 
-// The preset entries reach the dispatcher as this child's `contributions`
-// prop and are visible nowhere else.
-vi.mock('./SceneCanvas/GestureDispatcherMounter', async (importOriginal) => {
-  const real = await importOriginal<typeof import('./SceneCanvas/GestureDispatcherMounter')>();
-  type Props = Parameters<typeof real.GestureDispatcherMounter>[0];
+// The preset entries reach the dispatcher as the dispatcher hook's `contributions`
+// input and are visible nowhere else.
+vi.mock('./SceneCanvas/useSceneGestureDispatcher', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./SceneCanvas/useSceneGestureDispatcher')>();
   return {
     ...real,
-    GestureDispatcherMounter: (props: Props) => {
+    useSceneGestureDispatcher: (props: Parameters<typeof real.useSceneGestureDispatcher>[0]) => {
       mounted.ambient = props.contributions.map((c) => c.id);
-      return createElement(real.GestureDispatcherMounter, props);
+      real.useSceneGestureDispatcher(props);
     },
   };
 });

@@ -111,3 +111,29 @@ export function useSurfaceChromeCaps(args: {
   );
   return { chromeCaps, getIsVisible, getRuleCtx };
 }
+
+/**
+ * The surface's chrome: hover tracking, the visibility rules, and the chrome-caps answers they
+ * feed. `source` is the chrome-caps source minus the parts built here.
+ */
+export function useSceneCanvasChrome(args: {
+  source: Omit<ChromeCapsSource, 'rules' | 'getHover'>;
+  rules: Parameters<typeof useChromeRules>[0];
+  hover: Omit<Parameters<typeof useSceneHover>[0], 'enabled' | 'viewRef'>;
+  selection: readonly NodeId[];
+  viewRef: { readonly current: View };
+  dispatcher: Pick<Dispatcher, 'getActiveAction'>;
+}) {
+  const { rules, viewRef } = args;
+  const { getHover, canvasRef: trackHoverOn } = useSceneHover({
+    ...args.hover, viewRef, enabled: rules.chromeVisibility !== undefined,
+  });
+  const chromeRules = useChromeRules(rules);
+  const caps = useSurfaceChromeCaps({
+    source: { rules: chromeRules, getHover, ...args.source },
+    selection: args.selection,
+    viewRef,
+    dispatcher: args.dispatcher,
+  });
+  return { ...caps, trackHoverOn };
+}

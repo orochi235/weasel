@@ -1604,16 +1604,13 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `SceneCanvasInner` is one 386-line function.** It is most of the 508-line
-  `canvas/SceneCanvas.tsx`. What is left in it is the prop destructure and the JSX, most of that
-  the props of `StandardActionsRegistrar` and `GestureDispatcherMounter`; getting under the cap
-  means turning those mounters into hooks, the audit's section E, which first has to settle
-  whether the registrar's dep registrations still land after its children's once they are the
-  parent's own effects. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to another
-  owner; its dead-code pass and its sections on the built-in tool registry, the preset table, the
-  chrome-caps rule context, path editing, selection, ingestion, the device profile, the camera, the
-  layer slots, and the redraw subscriptions have landed. `canvas/Canvas.tsx` is 742 lines, 443 of them `CanvasInner`,
-  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas. Left open by the preset table and the rule context, and described in the audit:
+- **(P3) `CanvasInner` is one 422-line function.** It is most of the 720-line `canvas/Canvas.tsx`,
+  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas.
+  `SceneCanvasInner` is under the cap: its mounters are hooks, called from `SceneCanvasInput`, a
+  component kept ahead of the canvas's children because a child's dep or action override has to
+  register after the kit's (`SceneCanvas.registrationOrder.test.tsx`). `CanvasInner` has no mounters
+  to fold, so it needs its own split. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to
+  another owner. Left open by the preset table and the rule context, and described in the audit:
   `selectTool.rotate === false` is still decided in three places that do not agree, and making
   them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
   kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
