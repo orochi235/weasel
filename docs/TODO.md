@@ -533,8 +533,6 @@ Priority tags:
 - **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
-- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
-  center in such a scene moves its children too, and bake writes absolute poses.
 - **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
   the lab's petal is, and can cover a path-edit handle there.
 

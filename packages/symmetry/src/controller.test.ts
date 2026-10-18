@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  asNodeId, createScene, sceneFromJSON, type NodeId, type RectPose, type SceneRegistry,
+  asNodeId, createScene, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type SceneRegistry,
 } from '@weasel-js/core';
 import { rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
@@ -150,5 +150,48 @@ describe('bake', () => {
     const out = sym.bake(group)!;
     expect(out.skipped).toEqual([odd]);
     expect(scene.childrenOf(out.group)).toContain(odd);
+  });
+});
+
+describe('in a scene that composes frames', () => {
+  function composed() {
+    const scene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: symmetryRegistry as SceneRegistry<RectPose>,
+      composition: RECT_POSE_COMPOSITION,
+    });
+    const sym = createSymmetry(scene as never);
+    const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
+    // Stored in the group's frame: (20, 10) from its center is (120, 10) in the world.
+    const leaf = scene.add({
+      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('sq'),
+      pose: { x: 20, y: 10, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    });
+    return { scene, sym, group, leaf };
+  }
+
+  it('moves the center without moving the children, as one undo step', () => {
+    const { scene, sym, group, leaf } = composed();
+    sym.update(group, { center: { x: 150, y: 0 } });
+    expect(scene.get(leaf)!.pose).toMatchObject({ x: -30, y: 10 });
+    expect(copiesOf(scene as never, group)[0][4]).toBeCloseTo(300);
+    scene.undo();
+    expect(scene.get(leaf)!.pose).toMatchObject({ x: 20, y: 10 });
+  });
+
+  it('keeps the children put through a previewed drag of the center', () => {
+    const { scene, sym, group, leaf } = composed();
+    sym.preview(group, { center: { x: 110, y: 5 } });
+    sym.preview(group, { center: { x: 130, y: 0 } });
+    expect(scene.get(leaf)!.pose).toMatchObject({ x: -10, y: 10 });
+  });
+
+  it('bakes the original and its copy where they drew', () => {
+    const { scene, sym, group, leaf } = composed();
+    const out = sym.bake(group)!;
+    const [kept, copy] = scene.childrenOf(out.group);
+    expect(kept).toBe(leaf);
+    expect(scene.get(kept)!.pose).toMatchObject({ x: 120, y: 10 });
+    expect(scene.get(copy)!.pose).toMatchObject({ x: 70, y: 10 });
   });
 });

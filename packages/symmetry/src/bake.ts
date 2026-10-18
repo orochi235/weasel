@@ -1,6 +1,7 @@
 import { applyToPoint, multiply, poseFrameOf, type Affine, type PoseLinear } from '@weasel-js/geom';
 import { UNION_OF_CHILDREN, unionOfChildren, type NodeId, type Scene } from '@weasel-js/core';
 import { isSymmetryGroup } from './group';
+import { keepContentsPut, localPoseUnder, worldPoseOf } from './frames';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -66,9 +67,8 @@ export function carryPose<P extends BoxPose>(pose: P, m: Affine): P {
  * inside is baked first. A copy keeps its leaf's data, and its pose is
  * carried through the copy's transform by {@link carryPose}; a leaf whose pose
  * is not a box is reported in `skipped`. Returns `null` when `id` is not a
- * symmetry group.
- *
- * Written for a scene of absolute poses, the kit's default.
+ * symmetry group. In a scene that composes frames, every node stays where it
+ * drew.
  */
 export function bakeSymmetry(scene: AnyScene, id: NodeId, label = 'Bake symmetry'): BakeResult | null {
   if (!isSymmetryGroup(scene, id)) return null;
@@ -82,7 +82,7 @@ function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
   }
   const group = scene.get(id)!;
   const copies = group.kind === 'container' && group.copiesFromPose
-    ? group.copiesFromPose(group.pose, group) ?? [] : [];
+    ? group.copiesFromPose(worldPoseOf(scene, id), group) ?? [] : [];
   const index = (group.parent === null ? scene.roots : scene.childrenOf(group.parent)).indexOf(id);
   const plain = scene.add({
     kind: 'container',
@@ -95,7 +95,9 @@ function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
     derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
   });
   const children = [...scene.childrenOf(id)];
-  for (const child of children) scene.move(child, plain);
+  keepContentsPut(scene, id, () => {
+    for (const child of children) scene.move(child, plain);
+  });
   for (const m of copies) {
     for (const child of children) copySubtree(scene, child, m, plain, skipped);
   }
@@ -130,9 +132,11 @@ function copySubtree(scene: AnyScene, id: NodeId, m: Affine, parent: NodeId, ski
     for (const c of scene.childrenOf(id)) copySubtree(scene, c, m, sub, skipped);
     return;
   }
-  if (!isBox(node.pose)) {
+  const world = worldPoseOf(scene, id);
+  if (!isBox(world)) {
     skipped.push(id);
     return;
   }
-  scene.add({ kind: 'leaf', layer: node.layer, pose: carryPose(node.pose, m), data: node.data, parent });
+  const pose = localPoseUnder(scene, carryPose(world, m), parent);
+  scene.add({ kind: 'leaf', layer: node.layer, pose, data: node.data, parent });
 }
