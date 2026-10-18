@@ -477,6 +477,10 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A layer hidden only in one view still shows its diagram ports.** `sceneParticipants`
+  (`packages/diagram/src/portLayer.ts`) gates ports on the scene's own hidden and locked flags
+  through `nodeGates`, but a canvas's `layerVisibility` (read by `pickWalk.ts` and
+  `sceneViewRender.ts`) never reaches the port layer, so ports float over a layer that view hides.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
