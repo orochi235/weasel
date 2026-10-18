@@ -1,6 +1,8 @@
 /**
  * `@weasel-js/diagram/effect` — a chart of an effects pipeline: the stages,
  * what each reads and writes, and where a decision sends the signal.
+ *
+ * @packageDocumentation
  */
 export { checkPipeline } from './effect/check';
 export { COMPACT_PADDING, compact } from './effect/compact';

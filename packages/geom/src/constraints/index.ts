@@ -1,4 +1,8 @@
-/** Geometric constraints on a path's anchors and the solver that keeps them. */
+/**
+ * Geometric constraints on a path's anchors and the solver that keeps them.
+ *
+ * @packageDocumentation
+ */
 
 export {
   constraintAnchors, constraintFits, mapConstraintAnchors,

@@ -40,6 +40,9 @@ export const RULES = [
   ['packages/core/src/animation', 'Rendering'],
   ['packages/core/src/debug', 'Extension points'],
   ['packages/core/src/icons', 'Extension points'],
+  ['packages/core/src/iconRegistry', 'Extension points'],
+  ['packages/core/src/kitSettings', 'Extension points'],
+  ['packages/core/src/kitSettingsSchema', 'Extension points'],
   ['packages/core/src/features', 'Extension points'],
   ['packages/core/src/util', 'Extension points'],
   ['packages/core/src/WeaselProvider', 'Extension points'],
@@ -51,6 +54,7 @@ export const RULES = [
   ['packages/geom/src', 'Paths & geometry'],
   ['packages/gestures/src', 'Tools & gestures'],
   ['packages/history/src', 'History'],
+  ['packages/icons/src', 'Extension points'],
   ['packages/menu/src', 'Menu'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],
@@ -75,6 +79,8 @@ export const RULES = [
   ['packages/routing/src/ambient', 'Extension points'],
   ['packages/routing/src/index', 'Selection & actions'],
   ['packages/routing/src/vocabulary', 'Tools & gestures'],
+  ['packages/routing/src/menus', 'Menu'],
+  ['packages/routing/src/kitSettings', 'Tools & gestures'],
 ];
 
 /**
