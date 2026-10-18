@@ -10,7 +10,12 @@
   color: var(--wzl-fg-muted);
 }
 
-.spoken {
+/* A copy takes the hidden text form instead of the MathML's bare digits. */
+.math {
+  user-select: none;
+}
+
+.hidden {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;

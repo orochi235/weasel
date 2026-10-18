@@ -57,6 +57,9 @@ export interface Presentation {
   /** Unstyled: a `<data value>` wrapping one `<span data-part>` per named part. */
   html: string;
   mathml?: string;
+  /** The display's `form` is `stacked` and there is a `mathml` form: a
+   *  renderer that draws MathML draws it in place of `html`. */
+  stacked?: true;
 }
 
 const DEFAULT_DISPLAY: Display = { kind: 'decimal' };
@@ -100,7 +103,10 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
     html: partsToHtml(value, parts),
   };
   const mathml = kind.mathml?.(value, display, ctx);
-  if (mathml !== undefined) out.mathml = mathml;
+  if (mathml !== undefined) {
+    out.mathml = mathml;
+    if (display.form === 'stacked') out.stacked = true;
+  }
   return out;
 }
 

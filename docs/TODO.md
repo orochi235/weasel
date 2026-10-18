@@ -689,10 +689,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
   file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
 
-- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
-  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
-  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
-
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
