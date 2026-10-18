@@ -1,8 +1,9 @@
 import type { MenuEntry, MenuItemEntry } from '@weasel-js/menu';
 import {
-  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefIsEnabled, prefIsShown, prefLeafAt,
-  type PrefAction, type PrefBoolean, type PrefConditionReader, type PrefEnum, type PrefGroup,
-  type PrefGroupAs, type PrefLeaf,
+  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
+  resolvePrefUnit,
+  type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
+  type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs';
 import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
@@ -14,14 +15,14 @@ import type { MenuDef } from './types';
 import type { Point } from '@weasel-js/geom';
 
 /** What resolving reads: the registered actions, each one's deps, how to run
- *  one, and the values behind the schema's boolean and enum leaves. */
+ *  one, and the values behind the schema's value leaves. */
 export interface MenuSources {
   actions(): readonly Action[];
   depsFor(action: Action): ActionDeps | undefined;
   trigger(id: string, params?: Record<string, unknown>): boolean;
-  /** The value at a leaf's dotted path. Booleans and enums are left out of a
-   *  menu without both this and `onChange`, and `showIf`/`enableIf` are
-   *  checked only with it. */
+  /** The value at a leaf's dotted path. Booleans, enums, and numbers are left
+   *  out of a menu without both this and `onChange`, colors and strings without
+   *  this, and `showIf`/`enableIf` are checked only with it. */
   values?(path: string): unknown;
   onChange?(path: string, value: unknown): void;
   /** The schema an `alias` leaf's `of` is read in. Default: the menu's own. */
@@ -120,6 +121,46 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
   ];
 }
 
+/** A number row, in the units the leaf shows: its value, bounds, and step convert from the stored unit, and
+ *  what is set converts back. */
+function numberRows(ctx: Ctx, leaf: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
+  const { values, onChange } = ctx.src;
+  if (!values || !onChange) return [];
+  const unit = leaf.unit && resolvePrefUnit(leaf.unit);
+  const stored = values(path);
+  const { min, max, step } = prefDisplayBounds(leaf);
+  const disabled = off || leaf.readout === true;
+  return [{
+    kind: 'number', key, label: leaf.name, ...withAccess(leaf.access),
+    ...(leaf.icon ? { icon: leaf.icon } : {}),
+    ...(disabled ? { disabled } : {}),
+    value: typeof stored === 'number' && Number.isFinite(stored) ? (unit ? unit.toDisplay(stored) : stored) : undefined,
+    ...(min === undefined ? {} : { min }),
+    ...(max === undefined ? {} : { max }),
+    step,
+    ...(unit?.suffix === undefined ? {} : { suffix: unit.suffix }),
+    ...(leaf.display ? { display: leaf.display } : {}),
+    set: (shown) => onChange(path, unit ? unit.fromDisplay(shown) : shown),
+  }];
+}
+
+const textAt = (ctx: Ctx, path: string): string | undefined => {
+  const v = ctx.src.values?.(path);
+  return typeof v === 'string' && v !== '' ? v : undefined;
+};
+
+/** A color row: read-only, whether or not the leaf is a readout. */
+function colorRows(ctx: Ctx, leaf: PrefColor, key: string, path: string, off: boolean): MenuEntry[] {
+  if (!ctx.src.values) return [];
+  return [{ kind: 'color', key, label: leaf.name, ...withAccess(leaf.access), ...(off ? { disabled: true } : {}), value: textAt(ctx, path) }];
+}
+
+/** A string row reads as its name and value, read-only, as an enum readout does. */
+function stringRows(ctx: Ctx, leaf: PrefString, key: string, path: string): MenuEntry[] {
+  if (!ctx.src.values) return [];
+  return [{ kind: 'item', key, label: `${leaf.name}: ${textAt(ctx, path) ?? '—'}`, ...withAccess(leaf.access), disabled: true, run: noop }];
+}
+
 /** `key` names the row; `path` is where its value lives, which differs from
  *  `key` only for a leaf reached through an alias. */
 function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolean): MenuEntry[] {
@@ -133,6 +174,9 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
     }
     case 'boolean': return booleanRows(ctx, leaf as PrefBoolean, key, path, off);
     case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
+    case 'number': return numberRows(ctx, leaf as PrefNumber, key, path, off);
+    case 'color': return colorRows(ctx, leaf as PrefColor, key, path, off);
+    case 'string': return stringRows(ctx, leaf as PrefString, key, path);
     case 'separator': return [sep(key)];
     case 'label':
       return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
@@ -179,10 +223,11 @@ function tidy(entries: MenuEntry[]): MenuEntry[] {
 /**
  * Draw a prefs schema as menu entries. Action leaves become items from the
  * registry (one per variant for a parametric action), an `actions` leaf one
- * item per action in its group, a boolean a checked item and an enum radio
- * rows (both through `src.values`/`src.onChange`); a group drawn `as` a
+ * item per action in its group, a boolean a checked item, an enum radio
+ * rows, and a number a row edited in place (all through `src.values`/`src.onChange`);
+ * a color shows as a swatch and a string as a disabled row, both read-only. A group drawn `as` a
  * `menu`, `page`, `tab`, or `panel` is a submenu, and any other group's rows
- * sit inline between separators. Leaves a menu cannot edit are left out.
+ * sit inline between separators. Paint, field, compound, and app-defined leaves are left out.
  * `at` is the world point the menu was opened at and reaches `enabled` and
  * every action's params; `params` go to every action, under its own.
  */

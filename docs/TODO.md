@@ -691,12 +691,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) A schema drawn as a menu drops its number and color leaves.** `leafRows` in
-  `packages/routing/src/menus/resolveMenu.ts` turns actions, booleans, enums, separators, labels,
-  and aliases into rows and answers nothing for any other kind, so the same asset loses controls
-  when it moves from a bar or a panel to a menu. draw's Loupe asset shows this: as a menu it keeps
-  its switch, mode, and Copy, and loses magnification and the picked color. A number row (an inline
-  field, or steps) and a read-only color row would close it.
+- **(P3) A schema drawn as a menu still drops or flattens some leaves.** `leafRows` in
+  `packages/routing/src/menus/resolveMenu.ts` now draws a number as a row edited in place and a
+  color and a string as read-only rows. What is left:
+  - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
+    picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
+  - A string shows as `Name: value`, read-only. The DOM menu could hold a text field the way it
+    holds a number one; the HUD menu has no text entry at all.
+  - A number row ignores the leaf's `endless` and `infinity`, so no menu reaches ±Infinity, and
+    the DOM field takes no typed units: `prefUnitAccepts`, which reads them off the leaf, lives in
+    `@weasel-js/ui`, below where `resolveMenu` can reach.
+  - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a

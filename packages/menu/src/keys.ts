@@ -8,7 +8,8 @@ export type KeyEffect =
   | { kind: 'none' }
   | { kind: 'choose'; level: number; index: number }
   | { kind: 'close' }
-  | { kind: 'edge'; dir: -1 | 1 };
+  | { kind: 'edge'; dir: -1 | 1 }
+  | { kind: 'step'; level: number; index: number; dir: -1 | 1 };
 
 const NONE: KeyEffect = { kind: 'none' };
 
@@ -69,6 +70,14 @@ export function keyStep(
       if (e?.kind === 'submenu') return done(openSub(root, stack) ?? stack);
       if (e?.kind === 'item' && !e.disabled) return done(stack, { kind: 'choose', level, index: at! });
       return done(stack);
+    }
+    case '+':
+    case '=':
+    case '-': {
+      // A number row steps; anywhere else these are typed, as any other character is.
+      const e = at == null ? undefined : rows[at];
+      if (e?.kind !== 'number' || e.disabled) return { stack, effect: NONE, handled: false };
+      return done(stack, { kind: 'step', level, index: at!, dir: key === '-' ? -1 : 1 });
     }
     default: return { stack, effect: NONE, handled: false };
   }
