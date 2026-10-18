@@ -20,14 +20,14 @@ const NARROW = { width: 200, height: 600 };
 function place(initial: unknown = null, instrument: Instrument = staged) {
   return renderHook(() => {
     const [view, setView] = useState<unknown>(initial);
-    const onResize = useViewPlacement({
+    const { place: onResize, home } = useViewPlacement({
       instrument,
       view,
       setView,
       presented: false,
       viewport: { current: null },
     });
-    return { view, setView, onResize };
+    return { view, setView, onResize, home };
   });
 }
 
@@ -80,5 +80,38 @@ describe('a view placed by its viewport size', () => {
     act(() => result.current.onResize(WIDE));
     act(() => result.current.onResize(NARROW));
     expect(result.current.view).toBeNull();
+  });
+});
+
+const orbiting: Instrument = {
+  name: 'Orbiting',
+  defaultConfig: () => ({}),
+  initialState: () => ({}),
+  render: () => null,
+  // The distance follows the viewport's width, so the placement depends on it.
+  orbit: { initialView: (vp) => ({ distance: vp.width / 100, pitch: 0.3 }) },
+};
+
+describe('an orbit placed by its viewport size', () => {
+  it('is placed on the first measurement, and again while nobody has turned it', () => {
+    const { result } = place(null, orbiting);
+    act(() => result.current.onResize(WIDE));
+    expect(result.current.view).toMatchObject({ distance: 8, pitch: 0.3 });
+    act(() => result.current.onResize(NARROW));
+    expect(result.current.view).toMatchObject({ distance: 2 });
+  });
+
+  it('keeps a camera that has been turned', () => {
+    const { result } = place(null, orbiting);
+    act(() => result.current.onResize(WIDE));
+    act(() => result.current.setView({ ...(result.current.view as object), yaw: 1 }));
+    act(() => result.current.onResize(NARROW));
+    expect(result.current.view).toMatchObject({ distance: 8, yaw: 1 });
+  });
+
+  it('goes home to the camera the last measurement placed', () => {
+    const { result } = place(null, orbiting);
+    act(() => result.current.onResize(NARROW));
+    expect(result.current.home()).toMatchObject({ distance: 2, yaw: 0, pitch: 0.3 });
   });
 });

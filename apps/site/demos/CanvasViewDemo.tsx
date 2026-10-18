@@ -10,6 +10,7 @@ import {
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import styles from './CanvasViewDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -79,43 +80,43 @@ export function CanvasViewDemo() {
           <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
           <PointerReadout />
         </div>
-        <SceneCanvas
-          features={['view', 'pick', 'move']}
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          view={view}
-          onViewChange={setView}
-          layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: n.data.color } },
-              }],
-            },
-          }}
-        >
-          {/* A second camera on the same scene. Input inside it routes
-              through that camera: a click picks what it shows, a drag moves
-              a node in its world units, and the wheel pans it alone. */}
-          <CanvasView
-            id="pip"
-            bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h })}
-            defaultView={pipView(initial)}
-            background="rgba(0,0,0,0.4)"
-          />
-          {/* Paint only: input over it reaches the canvas beneath. */}
-          <CanvasView
-            id="overview"
-            interactive={false}
-            bounds={(_outer, dims) => ({ x: dims.width - 188, y: 8, w: 180, h: 120 })}
-            view={OVERVIEW}
-            background="rgba(0,0,0,0.4)"
-          />
-        </SceneCanvas>
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            features={['view', 'pick', 'move']}
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            view={view}
+            onViewChange={setView}
+            layers={{
+              scene: {
+                drawOne: (n, p): DrawCommand[] => [{
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { paint: { color: n.data.color } },
+                }],
+              },
+            }}
+          >
+            {/* A second camera on the same scene. Input inside it routes
+                through that camera: a click picks what it shows, a drag moves
+                a node in its world units, and the wheel pans it alone. */}
+            <CanvasView
+              id="pip"
+              bounds={(_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h })}
+              defaultView={pipView(initial)}
+              background="rgba(0,0,0,0.4)"
+            />
+            {/* Paint only: input over it reaches the canvas beneath. */}
+            <CanvasView
+              id="overview"
+              interactive={false}
+              bounds={(_outer, dims) => ({ x: dims.width - 188, y: 8, w: 180, h: 120 })}
+              view={OVERVIEW}
+              background="rgba(0,0,0,0.4)"
+            />
+          </SceneCanvas>
+        </DemoStage>
       </div>
     </PointerContextProvider>
   );

@@ -5,7 +5,7 @@ import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { springPose, tweenPose, type PoseAnimationAdapter } from './poseHelpers';
 import type { Animator } from '@weasel-js/animator';
 

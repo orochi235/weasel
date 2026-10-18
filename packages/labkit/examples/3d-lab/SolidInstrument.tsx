@@ -31,6 +31,7 @@ import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
+import { useTrialOrbit } from '../../src/trial/useTrialOrbit';
 import {
   collectOverlayBoxes,
   createAreaSelect,
@@ -42,8 +43,8 @@ import {
   pose3,
   screenBoxOf,
   useOrbitTool,
-  dollyAction,
   orbitAction,
+  panAction,
   type Camera3d,
   type ChromeBox,
   type Viewport3d,
@@ -65,6 +66,7 @@ interface SolidConfig {
 }
 
 const TILE = 'viewport';
+const HOME = createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } });
 
 /**
  * The lab's viewport. Everything interesting is in the wiring: core's
@@ -92,9 +94,12 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   if (!dispatcherRef.current) dispatcherRef.current = createDispatcher();
   const dispatcher = dispatcherRef.current;
 
-  const [camera, setCamera] = useState<Camera3d>(() =>
-    createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }),
-  );
+  // The trial owns the camera: it persists, Clone copies it and Reset puts it
+  // back. The wheel reaches it through the trial; the orbit tool below turns
+  // and pans it through this viewport's own `camera3d` dep.
+  const trialOrbit = useTrialOrbit();
+  const camera = trialOrbit?.camera ?? HOME;
+  const setCameraRef = useLatest(trialOrbit?.setCamera);
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
 
   const cameraRef = useLatest(camera);
@@ -274,10 +279,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const camera3d = useMemo(
     () => ({
       get: () => cameraRef.current,
-      set: (next: Camera3d) => setCamera(next),
+      set: (next: Camera3d) => setCameraRef.current?.(next),
       size: () => sizeRef.current,
     }),
-    [cameraRef],
+    [cameraRef, setCameraRef],
   );
 
   // `scene.history` is the same handle `<SceneCanvas>` registers, so Cmd+Z
@@ -290,7 +295,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   useDepSource('snap', () => snap);
   useDepSource('poseDescriptor', () => poseDescriptor as never);
   useAction(orbitAction);
-  useAction(dollyAction);
+  useAction(panAction);
 
   // ── Tools ──────────────────────────────────────────────────────────────
   const pickEvery = useCallback(
@@ -417,12 +422,16 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     requestRedraw: repaint,
   });
 
+  // The trial's camera anchors its dolly in this pane, under the toolbar,
+  // where the renderer projects.
+  const viewportRef = trialOrbit?.viewportRef;
   const attachPane = useCallback(
     (el: HTMLDivElement | null) => {
       paneRef.current = el;
       attachTile(el);
+      viewportRef?.(el);
     },
-    [attachTile],
+    [attachTile, viewportRef],
   );
 
   return (
@@ -457,6 +466,10 @@ export const SolidInstrument = defineInstrument<SolidState, SolidConfig>({
   name: 'Solids',
   initialState: () => ({ solidCount: 3 }),
   config: f.schema({ showChrome: f.boolean(true) }),
+  // The viewport runs its own dispatcher for its tools, so a press belongs to
+  // it, and two fingers with it: the trial's camera takes the wheel and the
+  // trackpad's pinch.
+  orbit: { initialView: HOME, gestures: { drag: false, home: false, pinch: 'trackpad' } },
   render: (ctx) => {
     const typed = ctx as RenderContext<SolidState, SolidConfig>;
     return (

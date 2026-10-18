@@ -73,6 +73,11 @@ describe('browserDeps', () => {
     expect(deps()).toEqual(before);
   });
 
+  it('passes over the directory a failed browser test leaves its screenshots in', () => {
+    put('packages/app/src/__screenshots__/Panel.browser.test.tsx/fails-1.png', '');
+    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
+  });
+
   it('counts what a setup file imports', () => {
     put('setup.ts', `import 'axe-core';\n`);
     expect(deps(['./setup.ts'])).toEqual(['@testing-library/react', 'axe-core', 'zustand/vanilla']);

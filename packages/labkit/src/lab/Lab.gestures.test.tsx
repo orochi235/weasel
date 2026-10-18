@@ -42,12 +42,12 @@ async function touchOf(instrument: Instrument, gestures?: CameraGestures) {
 
 describe('a trial camera’s gestures', () => {
   it('come from the instrument’s canvas or stage', async () => {
-    expect(await touchOf(canvas({ pan: false }))).toBe('scroll');
-    expect(await touchOf(stage({ pan: false, pinch: false }))).toBe('auto');
+    expect(await touchOf(canvas({ drag: false }))).toBe('scroll');
+    expect(await touchOf(stage({ drag: false, pinch: false }))).toBe('auto');
   });
 
   it('are overridden one by one by the lab’s', async () => {
-    expect(await touchOf(canvas({ pan: false, pinch: false }), { pinch: true })).toBe('scroll');
-    expect(await touchOf(stage(), { pan: false })).toBe('scroll');
+    expect(await touchOf(canvas({ drag: false, pinch: false }), { pinch: true })).toBe('scroll');
+    expect(await touchOf(stage(), { drag: false })).toBe('scroll');
   });
 });

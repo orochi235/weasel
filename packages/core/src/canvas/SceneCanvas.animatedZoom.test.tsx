@@ -23,7 +23,7 @@ vi.hoisted(() => {
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { Profiler, useState } from 'react';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';

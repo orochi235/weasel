@@ -1,100 +1,159 @@
 /**
- * What a source file imports, read from its text.
+ * What a module imports, read by parsing it with oxc.
  *
- * `check:imports` and the `browser` project's dependency list both read imports through this,
- * so the two cannot disagree about what counts as one.
+ * `check:imports`, `check:react-free`, the `browser` project's dependency list and the
+ * package docs all read imports through this, so they cannot disagree about what counts
+ * as one — and text that only looks like an import (a string, a template, a comment) is
+ * never read as one.
  */
+import { parseSync } from 'oxc-parser';
 
 export const SOURCE = /\.(ts|tsx|mts|js|mjs)$/;
 
-/** `from '…'`, `import '…'`, `import('…')`, and `require('…')`, on code with comments removed.
- *  A type-only import is erased at build and is not matched. */
-const SPECIFIER =
-  /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)(['"])([^'"\n]+)\1/g;
-const TYPE_ONLY = /\b(?:import|export)\s+type\b[^;'"]*?\bfrom\s*(['"])[^'"\n]+\1/g;
-/** A string literal, captured, or a comment. Strings come first so a glob such as `'**\/*.ts'` is not read as one. */
-const TOKEN = /('(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`)|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
-const STRING = /'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`/g;
-/** A string literal with nothing substituted into it, at the start of the text. */
-const LITERAL = /^(?:'((?:\\.|[^'\\\n])*)'|"((?:\\.|[^"\\\n])*)"|`((?:\\.|[^`\\$])*)`)/;
-const DYNAMIC = /(?<![.\w$])import\s*\(\s*/g;
-const GLOB = /\bimport\.meta\.glob\s*(?:<[^()]*?>)?\s*\(\s*/g;
-
-function stripComments(text) {
-  return text.replace(TOKEN, (match, string) => string ?? '');
+/** Every specifier `file` (named for its grammar) imports at run time, as written, a `?query`
+ *  included, in source order. A type-only import or re-export is erased at build and is not
+ *  listed. */
+export function importSpecifiers(source, file) {
+  return specifiers(source, file, false);
 }
 
-/** `text` with every string's contents blanked to spaces, so positions still line up with it. */
-function blankStrings(text) {
-  return text.replace(STRING, (match) => match[0] + ' '.repeat(match.length - 2) + match[match.length - 1]);
-}
-
-/** Every specifier `source` imports at run time, as written, a `?query` included. */
-export function importSpecifiers(source) {
-  return specifiersIn(stripComments(source).replace(TYPE_ONLY, ''));
-}
-
-/** Every specifier `source` names in an import, the type-only ones included: what it is written against. */
-export function namedSpecifiers(source) {
-  return specifiersIn(stripComments(source));
-}
-
-function specifiersIn(text) {
-  return [...text.matchAll(SPECIFIER)].map((match) => match[2]);
-}
-
-/** The value of the string literal at the start of `text`, or `undefined` if none is there. */
-function literalAt(text) {
-  const match = LITERAL.exec(text);
-  return match && { value: match[1] ?? match[2] ?? match[3], length: match[0].length };
-}
-
-/** The literal patterns of an `import.meta.glob` argument at the start of `text`: one string, or an array of them. */
-function globPatternsAt(text) {
-  const one = literalAt(text);
-  if (one) return { patterns: [one.value], length: one.length };
-  if (text[0] !== '[') return undefined;
-  const patterns = [];
-  let at = 1;
-  for (;;) {
-    at += /^[\s,]*/.exec(text.slice(at))[0].length;
-    if (text[at] === ']') return { patterns, length: at + 1 };
-    const next = literalAt(text.slice(at));
-    if (!next) return undefined;
-    patterns.push(next.value);
-    at += next.length;
-  }
+/** Every specifier `file` names in an import, the type-only ones included: what it is written
+ *  against. */
+export function namedSpecifiers(source, file) {
+  return specifiers(source, file, true);
 }
 
 /**
- * Every `import.meta.glob` in `source` with literal patterns, and whether it loads the files it matches
- * as modules or, through a `query`, as text or addresses.
+ * What a browser-test scan needs from `file` in one parse: its run-time specifiers, every
+ * `import.meta.glob` with literal patterns (and whether it loads the matches as modules or, through
+ * a `query`, as text or addresses), and the text of each `import()` or glob whose argument is not a
+ * literal.
  */
-export function globImports(source) {
-  const text = stripComments(source);
-  const out = [];
-  for (const match of blankStrings(text).matchAll(GLOB)) {
-    const rest = text.slice(match.index + match[0].length);
-    const found = globPatternsAt(rest);
-    if (!found) continue;
-    const options = /^\s*,\s*(\{[^)]*)/.exec(rest.slice(found.length))?.[1] ?? '';
-    out.push({ patterns: found.patterns, modules: !/\b(?:query|as)\s*:/.test(options) });
-  }
-  return out;
+export function scanImports(source, file) {
+  const result = parse(source, file);
+  const { globs, unreadable } = dynamicReads(result, source);
+  return { specifiers: collect(result, source, false), globs, unreadable };
 }
 
-/** The text of each `import()` or `import.meta.glob()` in `source` whose argument is not a literal. */
-export function unreadableImports(source) {
-  const text = stripComments(source);
-  const blanked = blankStrings(text);
-  const out = [];
-  for (const pattern of [DYNAMIC, GLOB]) {
-    for (const match of blanked.matchAll(pattern)) {
-      const rest = text.slice(match.index + match[0].length);
-      const readable = pattern === DYNAMIC ? literalAt(rest) : globPatternsAt(rest);
-      if (!readable) out.push(text.slice(match.index, match.index + match[0].length + 40).split('\n')[0]);
+function specifiers(source, file, withTypes) {
+  return collect(parse(source, file), source, withTypes);
+}
+
+function parse(source, file) {
+  const result = parseSync(file, source, { lang: langOf(file), sourceType: 'module' });
+  if (result.errors.length > 0) throw new Error(`${file}: ${result.errors[0].message}`);
+  return result;
+}
+
+function collect(result, source, withTypes) {
+  const { staticImports, staticExports, dynamicImports } = result.module;
+  const found = [];
+  for (const { start, moduleRequest, entries } of staticImports) {
+    // An import naming nothing is kept for its side effects.
+    if (withTypes || entries.length === 0 || entries.some((e) => !e.isType)) found.push([start, moduleRequest.value]);
+  }
+  for (const { start, entries } of staticExports) {
+    const from = entries.filter((e) => e.moduleRequest !== null);
+    if (from.length === 0) continue;
+    if (withTypes || from.some((e) => !e.isType)) found.push([start, from[0].moduleRequest.value]);
+  }
+  for (const { start, moduleRequest } of dynamicImports) {
+    const value = literal(source.slice(moduleRequest.start, moduleRequest.end));
+    if (value !== null) found.push([start, value]);
+  }
+  if (/\brequire\s*\(/.test(source)) found.push(...requires(result.program));
+  return found.sort((a, b) => a[0] - b[0]).map(([, value]) => value);
+}
+
+/** The grammar a file's extension names; anything unrecognized parses as JS. */
+function langOf(file) {
+  const m = /\.[cm]?([jt])s(x?)$/.exec(file);
+  return m ? `${m[1]}s${m[2]}` : 'js';
+}
+
+/** The value of a string or substitution-free template literal, or `null` for any other
+ *  expression. */
+function literal(text) {
+  const m = /^(['"])(.*)\1$/s.exec(text) ?? /^`([^`]*)`$/.exec(text);
+  if (m === null) return null;
+  const value = m[m.length - 1];
+  return m[0][0] === '`' && value.includes('${') ? null : value;
+}
+
+function dynamicReads(result, source) {
+  const globs = [];
+  const unreadable = [];
+  for (const { start, end, moduleRequest } of result.module.dynamicImports) {
+    if (literal(source.slice(moduleRequest.start, moduleRequest.end)) === null) {
+      unreadable.push(source.slice(start, end).split('\n')[0]);
     }
   }
+  walk(result.program, (node) => {
+    if (node.type !== 'CallExpression' || !isMetaGlob(node.callee)) return;
+    const patterns = globPatterns(node.arguments[0]);
+    if (patterns === null) {
+      unreadable.push(source.slice(node.start, node.end).split('\n')[0]);
+      return;
+    }
+    const options = node.arguments[1];
+    const loadsText =
+      options?.type === 'ObjectExpression' &&
+      options.properties.some((p) => p.type === 'Property' && ['query', 'as'].includes(p.key.name ?? p.key.value));
+    globs.push({ patterns, modules: !loadsText });
+  });
+  return { globs, unreadable };
+}
+
+function isMetaGlob(callee) {
+  return (
+    callee.type === 'MemberExpression' &&
+    !callee.computed &&
+    callee.property.name === 'glob' &&
+    callee.object.type === 'MetaProperty' &&
+    callee.object.meta.name === 'import' &&
+    callee.object.property.name === 'meta'
+  );
+}
+
+/** A glob argument's patterns: one string, or an array of them; `null` for anything else. */
+function globPatterns(arg) {
+  const one = stringOf(arg);
+  if (one !== null) return [one];
+  if (arg?.type !== 'ArrayExpression') return null;
+  const all = arg.elements.map(stringOf);
+  return all.includes(null) ? null : all;
+}
+
+function stringOf(node) {
+  if (node?.type === 'Literal' && typeof node.value === 'string') return node.value;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) return node.quasis[0].value.cooked;
+  return null;
+}
+
+function walk(node, visit) {
+  if (Array.isArray(node)) {
+    for (const child of node) walk(child, visit);
+    return;
+  }
+  if (node === null || typeof node !== 'object') return;
+  visit(node);
+  for (const key in node) if (key !== 'parent') walk(node[key], visit);
+}
+
+/** `[start, specifier]` for every `require('…')` call in `program`. */
+function requires(program) {
+  const out = [];
+  walk(program, (node) => {
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === 'require' &&
+      node.arguments.length > 0
+    ) {
+      const value = stringOf(node.arguments[0]);
+      if (value !== null) out.push([node.start, value]);
+    }
+  });
   return out;
 }
 

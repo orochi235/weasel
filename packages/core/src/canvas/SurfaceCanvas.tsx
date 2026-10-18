@@ -4,10 +4,17 @@ import { assignRef } from '@weasel-js/react';
 /** Where an element's styles come from. */
 type StyleRoot = Document | ShadowRoot;
 
-/** The CSS size of a canvas the kit renders: its `width` and `height` props.
- *  Zero specificity, so a class the consumer passes resizes the element. */
+/** The CSS size of a canvas the kit renders: its `width` and `height` props,
+ *  and its parent's box on an axis given neither. Zero specificity, so a class
+ *  the consumer passes resizes the element.
+ *
+ *  A filling canvas must give its parent no size back, or the parent could
+ *  never shrink. `contain: size` drops its buffer's size, but Chrome still
+ *  takes the buffer's aspect ratio for an auto height, so a near-flat ratio
+ *  replaces it. */
 export const SURFACE_RULE =
-  ':where([data-wzl-surface]) { width: var(--wzl-surface-width); height: var(--wzl-surface-height); }';
+  ':where([data-wzl-surface]) { width: var(--wzl-surface-width, 100%); height: var(--wzl-surface-height, 100%); }'
+  + " :where([data-wzl-surface='fill']) { display: block; contain: size; aspect-ratio: 1000000 / 1; }";
 
 let adopted = new WeakSet<StyleRoot>();
 
@@ -41,15 +48,17 @@ export function __resetSurfaceRule(): void {
 
 export interface SurfaceCanvasProps {
   /** CSS pixels. The renderer sizes only the drawing buffer, so without the
-   *  rule this element holds it is as large as its buffer: `dpr` times too big. */
-  width: number;
-  height: number;
+   *  rule this element holds it is as large as its buffer: `dpr` times too big.
+   *  Omitted, the element fills its parent on that axis. */
+  width?: number;
+  height?: number;
   className?: string;
   style?: CSSProperties;
   tabIndex?: number;
 }
 
-/** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels. */
+/** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels,
+ *  or its parent's size on an axis given neither. */
 export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
   function SurfaceCanvas({ width, height, className, style, tabIndex }, ref) {
     // Stable while `ref` is, so a commit does not detach the element.
@@ -57,7 +66,12 @@ export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
       if (el) adoptSurfaceRule(el);
       assignRef(ref, el);
     }, [ref]);
-    const sized = { ...style, '--wzl-surface-width': `${width}px`, '--wzl-surface-height': `${height}px` };
+    const sized = {
+      ...style,
+      ...(width !== undefined ? { '--wzl-surface-width': `${width}px` } : {}),
+      ...(height !== undefined ? { '--wzl-surface-height': `${height}px` } : {}),
+    };
+    const fills = width === undefined || height === undefined;
     return (
       <canvas
         ref={setRef}
@@ -66,7 +80,7 @@ export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
         tabIndex={tabIndex}
         className={className}
         style={sized as CSSProperties}
-        data-wzl-surface=""
+        data-wzl-surface={fills ? 'fill' : ''}
       />
     );
   },

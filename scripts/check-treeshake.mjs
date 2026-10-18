@@ -63,7 +63,7 @@ async function withRolldown(symbol, from) {
   const chunks = new Map(output.filter((o) => o.type === 'chunk').map((o) => [o.fileName, o]));
   return collect(
     [...chunks.values()].find((c) => c.isEntry).fileName,
-    (name) => chunks.get(name)?.imports ?? [],
+    (name) => (chunks.get(name)?.imports ?? []).filter((i) => chunks.has(i)),
     (name) => ({ code: chunks.get(name).code, modules: chunks.get(name).moduleIds }),
   );
 }
@@ -90,7 +90,7 @@ async function withEsbuild(symbol, from) {
   const files = new Map(result.outputFiles.map((f) => [f.path, f.text]));
   return collect(
     Object.keys(outputs).find((k) => outputs[k].entryPoint),
-    (name) => outputs[name].imports.filter((i) => i.kind === 'import-statement').map((i) => i.path),
+    (name) => outputs[name].imports.filter((i) => i.kind === 'import-statement' && !i.external).map((i) => i.path),
     (name) => ({ code: files.get(join(repoRoot, name)), modules: Object.keys(outputs[name].inputs) }),
   );
 }

@@ -17,6 +17,7 @@ function fakeCamera(
     },
     hostSize: () => host,
     zoomRange: () => range,
+    zoomOf: () => cam.view.scale.x,
   };
   return cam;
 }

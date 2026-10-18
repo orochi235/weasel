@@ -5,8 +5,7 @@ import { unruledConfigSchema } from '../instrument/serializers';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { newId } from '../state/helpers';
 import type { TrialRecord } from '../state/types';
-
-const DEFAULT_VIEW = { zoom: 1, pan: { x: 0, y: 0 } } as const;
+import { homeView } from './homeView';
 
 function findInstrument(instruments: InstrumentList, name: string): Instrument {
   const found = instruments.find((i) => i.name === name);
@@ -14,16 +13,6 @@ function findInstrument(instruments: InstrumentList, name: string): Instrument {
     throw new Error(`[labkit] Unknown instrument: "${name}"`);
   }
   return found;
-}
-
-function initialView(instrument: Instrument): TrialRecord['view'] {
-  const stage = instrument.canvas ? undefined : instrument.stage;
-  const declared = instrument.canvas?.initialView ?? stage?.initialView;
-  // A function needs the canvas size, which no trial has at creation. `null`
-  // is the unplaced marker; `Trial` resolves it on the first non-empty size.
-  // A stage that names no view is fitted, which needs that size too.
-  if (typeof declared === 'function' || (stage && declared === undefined)) return null;
-  return declared ? structuredClone(declared) : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
 }
 
 /** What a trial opens on beyond its instrument's own defaults. */
@@ -88,7 +77,7 @@ export function addTrial(
     instrumentName,
     config,
     state,
-    view: initialView(instrument),
+    view: homeView(instrument, null),
   };
   if (options.config) record.configSeed = seeded.config;
   if (seeded.autoPaths.length > 0) record.autoSeed = seeded.autoPaths;
@@ -140,7 +129,7 @@ export function resetTrial(
     ...kept,
     config,
     state,
-    view: initialView(instrument),
+    view: homeView(instrument, null),
   };
   if (autoPaths.length > 0) reset.auto = autoPaths;
   return [...trials.slice(0, idx), reset, ...trials.slice(idx + 1)];

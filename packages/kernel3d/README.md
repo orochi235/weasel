@@ -36,6 +36,18 @@ One thing does not:
 - **`ViewApi` has no orientation**, so an orbit camera cannot travel through
   the kit's `view`. The kernel declares a `camera3d` dep of its own.
 
+## The camera's actions
+
+`camera.orbit` turns the `camera3d` dep on a drag, `camera.pan` slides its
+target across the screen plane, `camera.dolly` answers the wheel and both
+trackpad pinches, `camera.pinchDolly` two fingers, and `camera.home` returns it
+to the dep's `home()`. Both dollies go through `dollyToward`, which keeps the
+point in the target's plane under the pointer still, as a 2D wheel zoom does,
+measured against the dep's `size()`. Each holds the camera inside the dep's `limits()` — an
+`OrbitLimits` in the scene's own units, defaulting to `DEFAULT_ORBIT_LIMITS` —
+through `clampCamera`, which `orbitBy` and `dollyBy` take as well. labkit's
+`orbit` capability is these actions on a dep the trial owns.
+
 ## The depth a screen rectangle does not name
 
 `PoseDescriptor` reads `Bounds` as the screen box a solid covers. `getBounds`

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import type { PluginOption } from 'vite';
+import { namedSpecifiers } from './lib/imports.mjs';
 
 /**
  * Virtual modules that expose each demo's source text to the code panel
@@ -9,7 +10,8 @@ import type { PluginOption } from 'vite';
  *   import DEMO_SOURCES from 'virtual:demo-sources';
  *   DEMO_SOURCES['apps/site/demos/SceneDemo.tsx']
  *   // → [{ path, language, load }, ...] — the demo's own TSX first, then
- *   //   a tab for each relative import that resolves to a readable file.
+ *   //   a tab for each relative import that resolves to a readable file
+ *   //   not marked `@site-chrome`.
  *
  * `load()` is a dynamic import of a per-file virtual module, so a demo's
  * source is a chunk of its own, fetched when the panel asks for it.
@@ -61,12 +63,11 @@ export function demoSources(opts: { root?: string } = {}): PluginOption {
 
 type Language = 'json' | 'tsx' | 'ts' | 'css' | 'md';
 
-function extToLang(ext: string): Language {
-  if (ext === 'json') return 'json';
-  if (ext === 'ts') return 'ts';
-  if (ext === 'css') return 'css';
-  if (ext === 'md') return 'md';
-  return 'tsx';
+const LANGUAGES: readonly string[] = ['json', 'tsx', 'ts', 'css', 'md'] satisfies Language[];
+
+/** The panel language for a file extension, or `undefined` for a file the panel cannot show. */
+function extToLang(ext: string): Language | undefined {
+  return LANGUAGES.includes(ext) ? (ext as Language) : undefined;
 }
 
 /** Resolve `./data/x.json` cited from `apps/site/demos/D.tsx` to
@@ -96,22 +97,32 @@ function findFile(root: string, resolved: string): { path: string; ext: string }
   return null;
 }
 
-const RELATIVE_IMPORT_RE = /from\s+['"]([./][^'"]+)['"]/g;
+/** Marks a file as the site's own furniture, left out of every code panel:
+ *  `@site-chrome` opening a comment line, as in a `/** @site-chrome *\/` header. */
+const SITE_CHROME = /^\s*(?:\/\/|\/\*\*?|\*)\s*@site-chrome\b/m;
 
-/** A demo's files as its code panel lists them: the demo itself, then each file it imports by relative path. */
+function isSiteChrome(root: string, path: string): boolean {
+  return SITE_CHROME.test(readFileSync(resolve(root, path), 'utf8'));
+}
+
+/** A demo's files as its code panel lists them: the demo itself, then each
+ *  file it imports by relative path, except one marked site chrome. */
 export function tabsFor(root: string, demoPath: string): { path: string; language: Language }[] {
   const src = readFileSync(resolve(root, demoPath), 'utf8');
   const tabs: { path: string; language: Language }[] = [
     { path: demoPath, language: 'tsx' },
   ];
   const seen = new Set([demoPath]);
-  for (const m of src.matchAll(RELATIVE_IMPORT_RE)) {
-    const resolved = resolveRelative(demoPath, m[1]);
+  for (const specifier of namedSpecifiers(src, demoPath)) {
+    if (!/^[./]/.test(specifier)) continue;
+    const resolved = resolveRelative(demoPath, specifier);
     if (seen.has(resolved)) continue;
     const found = findFile(root, resolved);
-    if (!found || seen.has(found.path)) continue;
+    const language = found && extToLang(found.ext);
+    if (!found || !language || seen.has(found.path)) continue;
     seen.add(found.path);
-    tabs.push({ path: found.path, language: extToLang(found.ext) });
+    if (isSiteChrome(root, found.path)) continue;
+    tabs.push({ path: found.path, language });
   }
   return tabs;
 }

@@ -12,9 +12,11 @@ import { gridSnapStrategy } from '@weasel-js/guides';
 import type {
   DebugConfig,
   DebugFeature,
+  Dims,
   SceneCanvasApi,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -68,9 +70,10 @@ export function DebugOverlayDemo() {
     ...NONE, bounds: true, origins: true,
   });
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
+  const [size, setSize] = useState<Dims>({ width: W, height: H });
+  const [shot, setShot] = useState<{ url: string; size: Dims } | null>(null);
   // One object URL at a time: revoke the last when a new one replaces it or the demo unmounts.
-  useEffect(() => () => { if (snapshotUrl) URL.revokeObjectURL(snapshotUrl); }, [snapshotUrl]);
+  useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
 
   const toggle = (k: DebugFeature) =>
     setEnabled((e) => ({ ...e, [k]: !e[k] }));
@@ -88,7 +91,7 @@ export function DebugOverlayDemo() {
       scene,
       drawOne: drawBox,
       view: api.getView(),
-      size: { width: W, height: H },
+      size,
       pixelRatio: window.devicePixelRatio || 1,
       background: '#6a6a6a', // .ckd-canvas's CSS background, which the GL canvas composites over
       debug: sink.snapshot(),
@@ -96,7 +99,7 @@ export function DebugOverlayDemo() {
     };
     await warmRender({ render: debugSnapshotArgs(args) }).catch(() => {});
     const image = renderDebugSnapshot(args);
-    setSnapshotUrl(URL.createObjectURL(await rasterToPng(image)));
+    setShot({ url: URL.createObjectURL(await rasterToPng(image)), size });
   };
 
   return (
@@ -116,22 +119,23 @@ export function DebugOverlayDemo() {
         <button style={btn} onClick={allOff}>all off</button>
         <button style={btn} onClick={snapshot} disabled={!debug}>snapshot</button>
       </div>
-      <SceneCanvas features={['view', 'pick', 'move', 'transform']}
-        ref={canvasRef}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selectTool={{
-          handleHitRadius: HANDLE,
-          snap: gridSnapStrategy<Box>(20),
-        }}
-        debug={debug}
-        layers={{
-          scene: { drawOne: drawBox },
-          selectionOverlay: { handles: { size: HANDLE } },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['view', 'pick', 'move', 'transform']}
+          ref={canvasRef}
+          className="ckd-canvas"
+          onResize={setSize}
+          scene={scene}
+          selectTool={{
+            handleHitRadius: HANDLE,
+            snap: gridSnapStrategy<Box>(20),
+          }}
+          debug={debug}
+          layers={{
+            scene: { drawOne: drawBox },
+            selectionOverlay: { handles: { size: HANDLE } },
+          }}
+        />
+      </DemoStage>
       <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
         Click a box to select; drag the body to move (snaps to a 20px grid); drag a
         corner to resize; wheel to pan and Cmd/Ctrl+wheel to zoom. Toggle features
@@ -139,9 +143,9 @@ export function DebugOverlayDemo() {
         description of what it shows. Snapshot rasterizes the scene and the overlay
         into one PNG, below.
       </div>
-      {snapshotUrl && (
-        <a href={snapshotUrl} download="weasel-debug-snapshot.png">
-          <img src={snapshotUrl} width={W} height={H} alt="Debug snapshot of the canvas above" />
+      {shot && (
+        <a href={shot.url} download="weasel-debug-snapshot.png">
+          <img src={shot.url} width={shot.size.width} height={shot.size.height} alt="Debug snapshot of the canvas above" />
         </a>
       )}
     </div>

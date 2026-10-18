@@ -18,6 +18,7 @@ import {
 } from '@weasel-js/routing';
 import type { DrawCommand } from '@weasel-js/renderer';
 import styles from './ToolReflectionDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -62,23 +63,23 @@ function ToolReflectionDemoInner() {
         </div>
         <div className={`${styles.panel} ${styles.canvasPanel}`}>
           <h3 className={styles.panelTitle}>Canvas (select + hand)</h3>
-          <SceneCanvas features={['outline', 'move']}
-            width={W}
-            height={H}
-            className="ckd-canvas"
-            scene={scene}
-            selection={selection}
-            tools={tools}
-            layers={{
-              scene: {
-                drawOne: (n, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: (n.data as Rect).color } },
-                }],
-              },
-            }}
-          />
+          <DemoStage width={W} height={H}>
+            <SceneCanvas features={['outline', 'move']}
+              className="ckd-canvas"
+              scene={scene}
+              selection={selection}
+              tools={tools}
+              layers={{
+                scene: {
+                  drawOne: (n, p): DrawCommand[] => [{
+                    kind: 'path',
+                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                    fill: { paint: { color: (n.data as Rect).color } },
+                  }],
+                },
+              }}
+            />
+          </DemoStage>
         </div>
       </div>
     </div>

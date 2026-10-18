@@ -636,6 +636,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramLayoutDemo.tsx',
   },
   {
+    id: 'diagram-elk',
+    title: 'Diagram layout with ELK',
+    package: 'diagram-elk',
+    description: "elkPlanner hands a diagram to ELK, the Eclipse Layout Kernel, and DiagramView's layout() eases to its answer the way it eases to layered's, reporting the moves, routes and ports to onMove. ELK answers asynchronously, so the view asks it once with the graph as it stands and drops the answer if a drag or another button press gets there first. ELK keeps each wire on the side of the port it leaves by, leaves room for edge labels beside their wires, and sizes the nested middle group inside the compiler group. elkjs loads the first time an ELK layout runs.",
+    hint: "Press elk, then elk right, then layered, and watch which side of check each wire leaves by.",
+    load: () => import('./demos/DiagramElkDemo').then((m) => m.DiagramElkDemo),
+    path: 'apps/site/demos/DiagramElkDemo.tsx',
+  },
+  {
     id: 'diagram-data',
     title: 'Diagram from data',
     package: 'diagram',

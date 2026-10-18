@@ -1,5 +1,5 @@
 import { normalizeZoom as clampToFloor, ZOOM_FLOOR } from '@weasel-js/geom';
-import { isDev } from '@weasel-js/react';
+import { isDev } from '@weasel-js/registry';
 
 /**
  * The kit's system-wide zoom clamp, in `View.scale` units (pixels per world

@@ -7,7 +7,7 @@
  * anything core does not already offer.
  */
 
-import type { Camera3d } from './camera';
+import type { Camera3d, OrbitLimits } from './camera';
 
 /** The `camera3d` dep: the orbit camera a 3D host owns, which the camera
  *  actions read and replace. */
@@ -16,6 +16,11 @@ export interface Camera3dDep {
   set(camera: Camera3d): void;
   /** Pane size in CSS pixels — what turns a screen point into a ray. */
   size(): { width: number; height: number };
+  /** How far the camera actions may turn and dolly it. Omitted,
+   *  `DEFAULT_ORBIT_LIMITS`. */
+  limits?(): Partial<OrbitLimits>;
+  /** Where `camera.home` returns it. Omitted, `camera.home` does nothing. */
+  home?(): Camera3d;
 }
 
 declare module '@weasel-js/core' {

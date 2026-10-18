@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import type { Ref } from 'react';
 import {
@@ -16,15 +17,16 @@ import {
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
 import { PointerProviderIfRoot } from '@weasel-js/core';
-import { usePointerContext, usePointerPosition } from '@weasel-js/routing/react';
+import { usePointerPosition } from '@weasel-js/routing/react';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
 } from './actions';
 import { createLinkedCursorLayer } from './layers';
-import type { ViewApi } from '@weasel-js/core';
+import type { CanvasSize, SurfaceSizeProps, ViewApi } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
 import { computeIndicatorCommand } from './minimapMath';
 import { useFitView } from './useFitView';
+import { usePublishPointer } from './usePublishPointer';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
 import type { SceneViewDrawOne, SceneViewLayers } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core';
@@ -36,7 +38,7 @@ import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
 import { accentColorOf } from '@weasel-js/core';
 
 /** Props for `<MinimapCanvas>`. */
-export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
+export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
   /** Same scene the main canvas is rendering. */
   scene: Scene<TData, TLayer, TPose>;
   /** Main canvas's view — used to position the visible-window indicator and
@@ -50,9 +52,6 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
    *  `(x, y)` shifted so the pointer's world point lands at the main
    *  canvas's center. */
   onMainViewChange: (next: View) => void;
-  /** Minimap's own CSS-pixel dims. */
-  width: number;
-  height: number;
   /** Consumer's draw callback. Applied through the derived fit view; same
    *  signature as `<SceneCanvas>`'s scene-slot `drawOne` so the consumer
    *  can reuse it (typically simplified — just colored AABBs). */
@@ -83,7 +82,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
   /** CSS class for the canvas. Its size is `width` × `height` unless a rule
-   *  on this class sizes it. */
+   *  on this class sizes it. Given neither, the minimap fills its parent and
+   *  fits the scene to the box it measures, again on every resize. */
   className?: string;
   /** Forwarded ref to the underlying `<canvas>`. */
   canvasRef?: Ref<HTMLCanvasElement>;
@@ -113,8 +113,6 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     mainView: mainViewProp,
     mainViewDims,
     onMainViewChange,
-    width,
-    height,
     drawOne,
     alphaFor,
     layerVisibility,
@@ -126,7 +124,15 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     className,
     canvasRef,
     id = 'minimap',
+    onResize,
   } = props;
+  const [measured, setMeasured] = useState<CanvasSize | null>(null);
+  const width = props.width ?? measured?.width ?? 0;
+  const height = props.height ?? measured?.height ?? 0;
+  const handleResize = useCallback((size: CanvasSize) => {
+    setMeasured(size);
+    onResize?.(size);
+  }, [onResize]);
   const mainView = normalizeView(mainViewProp);
 
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
@@ -176,25 +182,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     channels: CHANNELS,
   });
 
-  const pointerStore = usePointerContext();
-  useEffect(() => {
-    const el = localCanvasRef.current;
-    if (!el || !pointerStore) return;
-    const onMove = (e: PointerEvent): void => {
-      const w = clientToWorld(e.clientX, e.clientY);
-      pointerStore.set({ worldX: w.x, worldY: w.y, viewId: id });
-    };
-    const onLeave = (e: PointerEvent): void => {
-      if (e.buttons !== 0) return;
-      if (pointerStore.get()?.viewId === id) pointerStore.set(null);
-    };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    };
-  }, [pointerStore, clientToWorld, id]);
+  usePublishPointer(localCanvasRef, clientToWorld, id);
 
   const pointer = usePointerPosition();
   const cursorLayer = useMemo(() => createLinkedCursorLayer({
@@ -219,8 +207,9 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     <SceneViewCanvas
       scene={scene}
       view={fitView}
-      width={width}
-      height={height}
+      width={props.width}
+      height={props.height}
+      onResize={handleResize}
       drawOne={drawOne}
       extraCommands={extraCommands}
       alphaFor={alphaFor}

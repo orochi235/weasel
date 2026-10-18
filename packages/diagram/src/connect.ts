@@ -25,7 +25,8 @@ import {
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
-import { EDGE_DERIVE_PATH, ROUTERS, type DiagramEdge, type Router } from './edge';
+import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
+import type { DiagramEdge } from './edgeTrait';
 import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
 import { portsOf } from './ports';
 import type { DiagramNodeReader } from './trait';

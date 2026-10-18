@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { ButtonWidget } from '@weasel-js/hud';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
@@ -52,13 +53,13 @@ export function HudDemo() {
         <code> @weasel-js/hud</code>. Focus the canvas and press Tab to move
         between the buttons, and Enter or Space to press the focused one.
       </p>
-      <SceneCanvas features={['pick']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        ambient={[hudEntry]}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick']}
+          className="ckd-canvas"
+          scene={scene}
+          ambient={[hudEntry]}
+        />
+      </DemoStage>
       <p style={{ marginTop: 8, color: '#555' }}>
         React state counter: <strong>{count}</strong>
       </p>

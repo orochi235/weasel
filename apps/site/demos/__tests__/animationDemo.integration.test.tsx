@@ -1,7 +1,7 @@
 import { Profiler } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { WeaselProvider } from '@weasel-js/core';
 import { AnimationCards, AnimationDemo } from '../AnimationDemo';
 

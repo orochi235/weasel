@@ -6,6 +6,7 @@ const camera = (): CameraView => ({
   get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
   set: () => {},
   zoomRange: () => ({ min: 0.1, max: 32 }),
+  zoomOf: () => 1,
 });
 
 describe('createCameraRegistry', () => {

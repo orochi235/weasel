@@ -6,6 +6,7 @@ import {
 import type { AudioEngine, Score, ScoreMood, ScoreParams, ScoreState } from '@weasel-js/audio';
 import { scoreRoll } from './score/scoreRoll';
 import s from './ScoreDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const ROLL = { width: 560, height: 230 };
 /** The bar the roll shows while nothing plays: late enough into a cue that
@@ -104,11 +105,13 @@ export function ScoreDemo() {
       </div>
       <div className="ckd-row">
         <div className={s.stage}>
-          <DrawCanvas
-            width={ROLL.width} height={ROLL.height} className="ckd-canvas"
-            background={{ kind: 'solid', color: '#2a2622' }}
-            draw={scoreRoll(scoreBar(params, cueBar), ROLL)}
-          />
+          <DemoStage width={ROLL.width} height={ROLL.height}>
+            <DrawCanvas
+              className="ckd-canvas"
+              background={{ kind: 'solid', color: '#2a2622' }}
+              draw={(size) => scoreRoll(scoreBar(params, cueBar), size)}
+            />
+          </DemoStage>
           <div className={s.cue}>
             <strong data-testid="cue">{cue.name}</strong>
             <span data-testid="device">{device}</span>

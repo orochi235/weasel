@@ -263,6 +263,47 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
+/* Lay out as if they were not there. A group holds the resize delta its stages inherit. */
+.ckd-demo-frame,
+.ckd-stage-group { display: contents; }
+
+/* A demo's canvas box: its natural size plus however far its handles were
+ * dragged, never below 120px unless it started smaller. */
+.ckd-stage {
+  position: relative;
+  flex: none;
+  width: max(min(var(--demo-stage-w), 120px), calc(var(--demo-stage-w) + var(--demo-stage-dw, 0px)));
+  height: max(min(var(--demo-stage-h), 120px), calc(var(--demo-stage-h) + var(--demo-stage-dh, 0px)));
+}
+
+/* Outside the demo's box, so no handle takes a press meant for the canvas. */
+.ckd-demo-resize {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+  border-radius: 2px;
+}
+.ckd-demo-resize[data-axis='x'] { top: 0; bottom: 0; right: -9px; width: 7px; cursor: ew-resize; }
+.ckd-demo-resize[data-axis='y'] { left: 0; right: 0; bottom: -9px; height: 7px; cursor: ns-resize; }
+.ckd-demo-resize[data-axis='both'] {
+  right: -11px;
+  bottom: -11px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg,
+    transparent 0 40%, var(--wzl-fg-subtle) 40% 50%,
+    transparent 50% 65%, var(--wzl-fg-subtle) 65% 75%, transparent 75%);
+}
+.ckd-demo-resize[data-axis='x']:hover,
+.ckd-demo-resize[data-axis='y']:hover {
+  background: color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+}
+.ckd-demo-resize:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 1px;
+}
+
 /* A strip above a demo's canvas: as wide as the canvas, never wider. Zero
  * width keeps its controls out of the column's own width, so a strip with
  * more controls than fit scrolls instead of widening the demo. */
@@ -682,7 +723,7 @@ a:hover { text-decoration: underline; }
 }
 .curve-lab-grid {
   display: grid;
-  grid-template-columns: 360px 360px;
+  grid-template-columns: repeat(2, calc(360px + var(--demo-stage-dw, 0px)));
   grid-auto-rows: min-content;
   gap: var(--wzl-space-4);
 }

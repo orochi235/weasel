@@ -1,6 +1,14 @@
 import type { Yoke } from '@weasel-js/core';
 import { useLatest, watchDevicePixelRatio } from '@weasel-js/core';
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
@@ -31,10 +39,46 @@ export interface CanvasStackProps {
   /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
    *  and gesture in flight. Omitted, this one keeps its own. */
   yoke?: Yoke;
-  /** Which gestures the camera takes; the rest reach the page. Omitted, all of them. */
+  /** Which gestures the camera takes; the rest reach the page. Omitted, all
+   *  but `home`. */
   gestures?: CameraGestures;
+  /** Returns the camera to where it opened; what the `home` gesture runs. */
+  onHome?: () => void;
   /** Frames after each of which every `timed` layer repaints — a trial clock's. */
   ticks?: (fn: () => void) => () => void;
+}
+
+/** The element's CSS size and the display's pixel density, kept current. */
+function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
+  width: number;
+  height: number;
+  dpr: number;
+} {
+  const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const dpr = window.devicePixelRatio ?? 1;
+      setSize((prev) => {
+        if (prev.width === rect.width && prev.height === rect.height && prev.dpr === dpr) {
+          return prev;
+        }
+        return { width: rect.width, height: rect.height, dpr };
+      });
+    };
+    update();
+    // A window moved to a display of another density keeps its CSS box, so no observer fires.
+    const unwatchDensity = watchDevicePixelRatio(update);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    ro?.observe(el);
+    return () => {
+      unwatchDensity();
+      ro?.disconnect();
+    };
+  }, [ref]);
+  return size;
 }
 
 /** Stacks one `<canvas>` per layer and drives them from a shared view, so a
@@ -57,6 +101,7 @@ export function CanvasStack({
   yoke,
   ticks,
   gestures,
+  onHome,
 }: CanvasStackProps) {
   // Keyed on its numbers: a caller handing over an equal view in a new object
   // must not mark every layer dirty.
@@ -64,36 +109,12 @@ export function CanvasStack({
   const view = useMemo(() => ({ zoom, pan: { x: pan.x, y: pan.y } }), [zoom, pan.x, pan.y]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMap = useRef<Map<string, HTMLCanvasElement>>(new Map());
-  const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });
+  const size = useMeasuredBox(containerRef);
 
   const setCanvasRef = (id: string, el: HTMLCanvasElement | null): void => {
     if (el) canvasMap.current.set(id, el);
     else canvasMap.current.delete(id);
   };
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => {
-      const rect = el.getBoundingClientRect();
-      const dpr = window.devicePixelRatio ?? 1;
-      setSize((prev) => {
-        if (prev.width === rect.width && prev.height === rect.height && prev.dpr === dpr) {
-          return prev;
-        }
-        return { width: rect.width, height: rect.height, dpr };
-      });
-    };
-    update();
-    // A window moved to a display of another density keeps its CSS box, so no observer fires.
-    const unwatchDensity = watchDevicePixelRatio(update);
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
-    ro?.observe(el);
-    return () => {
-      unwatchDensity();
-      ro?.disconnect();
-    };
-  }, []);
 
   const onResizeRef = useLatest(onResize);
   useEffect(() => {
@@ -154,6 +175,7 @@ export function CanvasStack({
             frame={frame}
             onTap={onHitTest}
             gestures={gestures}
+            onHome={onHome}
           />
           <div
             ref={containerRef}

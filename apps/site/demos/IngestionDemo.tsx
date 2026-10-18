@@ -7,6 +7,7 @@ import {
   type SceneCanvasApi,
   type ContentHandlerEntry,
 } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
@@ -42,16 +43,16 @@ export function IngestionDemo() {
         </button>
         <span className="ckd-readout">{readout}</span>
       </div>
-      <SceneCanvas
-        ref={ref}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        features={['ingest']}
-        ingestion={{ handlers: textHandler }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          ref={ref}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          features={['ingest']}
+          ingestion={{ handlers: textHandler }}
+        />
+      </DemoStage>
     </div>
   );
 }

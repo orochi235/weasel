@@ -18,13 +18,13 @@ function BareCanvas<TPose>(
 ) {
   const { view, defaultView, onViewChange, viewBounds, ...rest } = props;
   const apiRef = useRef<CanvasExtensionApi | null>(null);
-  const size = useLatest({ width: rest.width, height: rest.height });
+  const size = useLatest({ width: rest.width ?? 0, height: rest.height ?? 0 });
   const viewState = useCanvasView({
     view,
     defaultView,
     onViewChange,
     viewBounds,
-    dims: () => size.current,
+    dims: () => apiRef.current?.getSurfaceRect() ?? size.current,
     requestRedraw: () => { apiRef.current?.requestRedraw(); },
   });
   const setApi = useCallback((api: CanvasExtensionApi | null) => {

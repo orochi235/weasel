@@ -4,7 +4,8 @@ import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
-import { useAnimator, type Animator } from '@weasel-js/animator';
+import { type Animator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 
 type Layer = 'main';
 interface Data { label: string }

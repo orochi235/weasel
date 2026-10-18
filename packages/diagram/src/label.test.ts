@@ -4,7 +4,8 @@ import {
 } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
-import { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
+import { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+import { diagramLabelOf } from './labelTrait';
 
 const box = (x: number, y: number, w = 20, h = 8): RectPose => ({ x, y, width: w, height: h });
 

@@ -8,6 +8,7 @@ import {
   type Fill,
 } from '@weasel-js/paint';
 import styles from './PaintDemo.module.css';
+import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 140, H = 100;
 const BOX: Path = pathFromD('M0 0 H112 V72 H0 Z');
@@ -76,14 +77,14 @@ function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
     }],
   });
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      backgroundFill={{ color: '#ffffff' }}
-      scene={scene}
-      selectable={false}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        className="ckd-canvas"
+        backgroundFill={{ color: '#ffffff' }}
+        scene={scene}
+        selectable={false}
+      />
+    </DemoStage>
   );
 }
 
@@ -94,16 +95,18 @@ function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
  */
 export function PaintDemo() {
   return (
-    <div className={styles.demo}>
-      {SWATCHES.map(({ id, label, path, paint }) => (
-        <div key={id} className={styles.row}>
-          <Swatch path={path} paint={paint} />
-          <div>
-            <div className={styles.label}>{label}</div>
-            <pre className={styles.json}>{JSON.stringify(paint, null, 2)}</pre>
+    <DemoStageGroup>
+      <div className={styles.demo}>
+        {SWATCHES.map(({ id, label, path, paint }) => (
+          <div key={id} className={styles.row}>
+            <Swatch path={path} paint={paint} />
+            <div>
+              <div className={styles.label}>{label}</div>
+              <pre className={styles.json}>{JSON.stringify(paint, null, 2)}</pre>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </DemoStageGroup>
   );
 }

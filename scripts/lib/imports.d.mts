@@ -1,7 +1,10 @@
 export const SOURCE: RegExp;
-export function importSpecifiers(source: string): string[];
-export function namedSpecifiers(source: string): string[];
+/** `file` names the grammar (`.ts`, `.tsx`, `.js`…) and the file in a parse error. */
+export function importSpecifiers(source: string, file: string): string[];
+export function namedSpecifiers(source: string, file: string): string[];
 export function packageOf(specifier: string): string;
 export function isBare(specifier: string): boolean;
-export function globImports(source: string): { patterns: string[]; modules: boolean }[];
-export function unreadableImports(source: string): string[];
+export function scanImports(
+  source: string,
+  file: string,
+): { specifiers: string[]; globs: { patterns: string[]; modules: boolean }[]; unreadable: string[] };

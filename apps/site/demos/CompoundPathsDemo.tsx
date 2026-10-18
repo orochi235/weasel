@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/core';
 import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
 interface ShapeData { fill: string; stroke?: string; label?: string }
@@ -174,47 +175,47 @@ export function CompoundPathsDemo() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-    <div style={{ position: 'relative', width: W, height: H }}>
-      <SceneCanvas features={['pick', 'move', 'transform']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        backgroundFill={{ color: '#87ceeb' }}
-        selectionOptions={{ mode: 'multi' }}
-        selectTool={{ handleHitRadius: HANDLE }}
-        layers={{
-          scene: {
-            drawOne: (node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: p,
-              fill: { paint: { color: node.data.fill } },
-              stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
-            }],
-            // drawOne: 'signature' is a custom screen-space RenderLayer
-            // (Comic Sans signature text) and remains 2D-only; defer to v2.
-          },
-          selectionOverlay: { handles: { size: HANDLE } },
-          signature: {
-            layer: {
-              id: 'signature',
-              label: 'Signature',
-              draw: () => {
-                // GL renders MSDF text from registered fonts only.
-                const text = 'original artwork by claude';
-                const charW = 7;
-                return [textCommandFromRuns(
-                  W - 10 - text.length * charW,
-                  H - 8 - 14,
-                  [{ text, fill: { paint: { kind: 'solid', color: '#ff3344' } } }],
-                  { fontFamily: 'sans-serif', fontSize: 14 },
-                )];
-              },
+    <div style={{ position: 'relative' }}>
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick', 'move', 'transform']}
+          className="ckd-canvas"
+          scene={scene}
+          backgroundFill={{ color: '#87ceeb' }}
+          selectionOptions={{ mode: 'multi' }}
+          selectTool={{ handleHitRadius: HANDLE }}
+          layers={{
+            scene: {
+              drawOne: (node, p): DrawCommand[] => [{
+                kind: 'path',
+                path: p,
+                fill: { paint: { color: node.data.fill } },
+                stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
+              }],
+              // drawOne: 'signature' is a custom screen-space RenderLayer
+              // (Comic Sans signature text) and remains 2D-only; defer to v2.
             },
-            after: 'selectionOverlay',
-          },
-        }}
-      />
+            selectionOverlay: { handles: { size: HANDLE } },
+            signature: {
+              layer: {
+                id: 'signature',
+                label: 'Signature',
+                draw: (_data, _view, dims) => {
+                  // GL renders MSDF text from registered fonts only.
+                  const text = 'original artwork by claude';
+                  const charW = 7;
+                  return [textCommandFromRuns(
+                    dims.width - 10 - text.length * charW,
+                    dims.height - 8 - 14,
+                    [{ text, fill: { paint: { kind: 'solid', color: '#ff3344' } } }],
+                    { fontFamily: 'sans-serif', fontSize: 14 },
+                  )];
+                },
+              },
+              after: 'selectionOverlay',
+            },
+          }}
+        />
+      </DemoStage>
       <HonkButton
         getBounds={honkBounds}
         onHonk={() => {

@@ -26,6 +26,7 @@ import {
   createInflectionsLayer,
 } from './overlays';
 import { ReadoutHud } from './ReadoutHud';
+import { DemoStage } from '../DemoStage';
 
 export interface OverlayFlags {
   anchors: boolean;
@@ -168,16 +169,16 @@ export function RepresentationPanel({
   return (
     <div className="curve-lab-panel">
       <div className="curve-lab-panel-title">{rep.label}</div>
-      <SceneCanvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        actions={actions}
-        layers={layers as never}
-      />
+      <DemoStage width={width} height={height}>
+        <SceneCanvas
+          ref={canvasRef}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          actions={actions}
+          layers={layers as never}
+        />
+      </DemoStage>
       <ReadoutHud rep={rep} anchors={anchors} />
     </div>
   );

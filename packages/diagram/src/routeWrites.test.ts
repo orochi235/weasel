@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, type RectPose } from '@weasel-js/core';
-import { withDiagramRegistry, type DiagramEdge } from './edge';
+import { withDiagramRegistry } from './edge';
+import type { DiagramEdge } from './edgeTrait';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { buildGraph } from './graph';
 import { layered } from './layered';

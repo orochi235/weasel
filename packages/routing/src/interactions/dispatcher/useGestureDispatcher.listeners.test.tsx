@@ -143,4 +143,22 @@ describe('useGestureDispatcher', () => {
     });
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  it('hands a wheel counted in lines or pages over in pixels', () => {
+    const seen: unknown[] = [];
+    const action: Action = {
+      id: 'demo.wheelDelta',
+      label: 'Demo wheel delta',
+      defaultBinding: { kind: 'wheel' },
+      invoker: { timing: 'immediate', run: (_d, p) => { seen.push(p?.deltaY); } },
+    };
+    const { container } = render(<Harness><Probe actionDef={action} /></Harness>);
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      // Firefox reports a mouse wheel's notches as lines.
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: 3, deltaMode: 1, bubbles: true }));
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: 3, deltaMode: 0, bubbles: true }));
+    });
+    expect(seen).toEqual([48, 3]);
+  });
 });

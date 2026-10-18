@@ -20,7 +20,7 @@ import {
   type RectPose,
   type ReflowTransition,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { tileGrid } from './tileGrid';
 
 type Drag = { start: { x: number; y: number }; current: { x: number; y: number }; delta: { x: number; y: number } };

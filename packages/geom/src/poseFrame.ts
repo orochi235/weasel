@@ -19,7 +19,13 @@ import { poseRotationOf, rotatePathAround } from './poseRotation';
  */
 export type PoseLinear = readonly [a: number, b: number, c: number, d: number];
 
-interface FramedBox {
+/**
+ * Axis-aligned rectangle in world space. The optional `rotation` (radians,
+ * around the AABB center) and `transform` (inside it, about the same center)
+ * let chrome carry the frame a box is drawn in without a parallel type;
+ * `poseFrameOf` composes the two. routing and core call it `Bounds`.
+ */
+export interface FramedBox {
   x: number;
   y: number;
   width: number;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bezier } from './edge';
 import { diagramScene, edgeIdOf, type DataEdge, type DiagramData, type DiagramSceneOptions } from './fromData';
-import type { DiagramEdge } from './edge';
+import type { DiagramEdge } from './edgeTrait';
 
 const traitOf = (data: DiagramData, edge: DataEdge, opts?: DiagramSceneOptions): DiagramEdge => {
   const spec = diagramScene(data, opts).find((s) => s.id === edgeIdOf(edge))!;
@@ -72,16 +72,29 @@ describe('layered routes', () => {
     expect(traitOf({ ...chain, edges: [chain.edges[0]!, chain.edges[1]!, drawn] }, drawn).laidOut).toBeUndefined();
   });
 
-  it('give no waypoints to an edge whose end is pinned away from its rank', () => {
-    // Every node pinned where the author put it, so layout's placeholders say
-    // nothing about where `a -> c` should run.
-    const at = { a: { x: 0, y: 0 }, b: { x: 300, y: 100 }, c: { x: 0, y: 200 } };
-    const clear: DiagramData = {
+  it('route an edge between pins around a pin between them', () => {
+    const at = { a: { x: 0, y: 0 }, b: { x: 0, y: 100 }, c: { x: 0, y: 200 } };
+    const pinned: DiagramData = {
       ...chain,
       nodes: chain.nodes.map((n) => ({ ...n, pinned: true, at: at[n.id as keyof typeof at] })),
     };
-    expect(traitOf(clear, skip)).toMatchObject({ from: { port: 's' }, to: { port: 'n' } });
-    expect(traitOf(clear, skip).waypoints).toBeUndefined();
+    const b = poseOf(pinned, 'b') as { x: number; y: number; width: number; height: number };
+    const { waypoints } = traitOf(pinned, skip);
+    expect(b.width).toBeGreaterThan(0);
+    expect(waypoints).toHaveLength(2);
+    for (const p of waypoints!) expect(p.x < b.x || p.x > b.x + b.width).toBe(true);
+  });
+
+  it('give no waypoints to an edge whose end is a pin layout could not hold', () => {
+    // `c` sits too close behind `b` for their ranks to fit, so layout's
+    // placeholders say nothing about where `a -> c` should run.
+    const at = { a: { x: 0, y: 0 }, b: { x: 300, y: 100 }, c: { x: 0, y: 110 } };
+    const crowded: DiagramData = {
+      ...chain,
+      nodes: chain.nodes.map((n) => ({ ...n, pinned: true, at: at[n.id as keyof typeof at] })),
+    };
+    expect(traitOf(crowded, skip)).toMatchObject({ from: { port: 's' }, to: { port: 'n' } });
+    expect(traitOf(crowded, skip).waypoints).toBeUndefined();
   });
 
   it('leave an author\'s ports and waypoints alone', () => {

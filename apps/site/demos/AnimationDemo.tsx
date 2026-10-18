@@ -13,13 +13,14 @@ import {
   useSelection,
   useVelocityTracker,
 } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createGridLayer } from '@weasel-js/guides';
-import type { MoveBehavior } from '@weasel-js/core';
+import type { Dims, MoveBehavior } from '@weasel-js/core';
 import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -36,10 +37,8 @@ const INITIAL: Card[] = [
 // Flick-snap panel: a second canvas below the cards, showing decay → snap.
 const FLICK_W = 600, FLICK_H = 160;
 const FLICK_GRID = 60;
-const FLICK_GRID_LAYER = createGridLayer({
-  spacing: FLICK_GRID,
-  bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
-});
+
+const FLICK_GRID_LAYER = createGridLayer({ spacing: FLICK_GRID });
 const FLICK_BLOCK = 40;
 const FLICK_COAST_MS = 180;
 
@@ -51,11 +50,11 @@ const v2 = {
   magnitude: (v: Vec2): number => Math.hypot(v.x, v.y),
 };
 
-function nearestGridCell(p: Vec2): Vec2 {
+function nearestGridCell(p: Vec2, area: Dims): Vec2 {
   const round = (v: number) => Math.round(v / FLICK_GRID) * FLICK_GRID;
   return {
-    x: Math.max(0, Math.min(FLICK_W - FLICK_BLOCK, round(p.x))),
-    y: Math.max(0, Math.min(FLICK_H - FLICK_BLOCK, round(p.y))),
+    x: Math.max(0, Math.min(area.width - FLICK_BLOCK, round(p.x))),
+    y: Math.max(0, Math.min(area.height - FLICK_BLOCK, round(p.y))),
   };
 }
 
@@ -63,6 +62,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const nextId = useRef(1);
+  const [size, setSize] = useState<Dims>({ width: W, height: H });
 
   // Per-card visual effects (multiplicative scale + alpha). Read by drawOne,
   // mutated by breathing-loop / stagger-fade onTick. A ref, so a tick renders
@@ -112,11 +112,11 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         momentum<Card>({
           animator,
           friction: 0.93,
-          bounds: { x: 0, y: 0, width: W - 60, height: H - 60 },
+          bounds: { x: 0, y: 0, width: size.width - 60, height: size.height - 60 },
         }),
       ],
     },
-  }), [animator]);
+  }), [animator, size]);
 
   const insertCard = (card: Card) => {
     adapter.insertNode({ id: asNodeId(card.id), kind: 'leaf', layer: 'default', pose: card, data: card, parent: null });
@@ -208,34 +208,35 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         </label>
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
-      <SceneCanvas features={['pick', 'move']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        selectTool={selectToolOpts}
-        redrawOn={redrawOn}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => {
-              const id = String(n.id);
-              const e = effects.current.get(id) ?? { scale: 1, alpha: 1 };
-              const r = p as Pose;
-              const cx = r.x + r.width / 2;
-              const cy = r.y + r.height / 2;
-              const w = r.width * e.scale;
-              const h = r.height * e.scale;
-              return [{
-                kind: 'path',
-                path: { kind: 'rect', x: cx - w / 2, y: cy - h / 2, width: w, height: h },
-                fill: { paint: { color: (n.data as Card).color, opacity: e.alpha } },
-              }];
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick', 'move']}
+          className="ckd-canvas"
+          onResize={setSize}
+          scene={scene}
+          selection={selection}
+          selectTool={selectToolOpts}
+          redrawOn={redrawOn}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => {
+                const id = String(n.id);
+                const e = effects.current.get(id) ?? { scale: 1, alpha: 1 };
+                const r = p as Pose;
+                const cx = r.x + r.width / 2;
+                const cy = r.y + r.height / 2;
+                const w = r.width * e.scale;
+                const h = r.height * e.scale;
+                return [{
+                  kind: 'path',
+                  path: { kind: 'rect', x: cx - w / 2, y: cy - h / 2, width: w, height: h },
+                  fill: { paint: { color: (n.data as Card).color, opacity: e.alpha } },
+                }];
+              },
             },
-          },
-          selectionOverlay: { handles: false },
-        }}
-      />
+            selectionOverlay: { handles: false },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }
@@ -249,8 +250,9 @@ function flickToGrid(args: {
   animator: Animator;
   tracker: ReturnType<typeof useVelocityTracker>;
   flight: React.MutableRefObject<PhysicsHandle<Vec2> | null>;
+  area: () => Dims;
 }): MoveBehavior<Pose> {
-  const { animator, tracker, flight } = args;
+  const { animator, tracker, flight, area } = args;
   const PREV = 'flickToGrid.prev';
   const pointer = (ctx: { pointer: { worldX: number; worldY: number } }): Vec2 =>
     ({ x: ctx.pointer.worldX, y: ctx.pointer.worldY });
@@ -304,7 +306,7 @@ function flickToGrid(args: {
       flight.current = handle;
       // A newer flick, or the demo unmounting, has already canceled this one.
       setTimeout(() => {
-        if (flight.current === handle) handle.setTarget(nearestGridCell(live));
+        if (flight.current === handle) handle.setTarget(nearestGridCell(live, area()));
       }, FLICK_COAST_MS);
       return null;
     },
@@ -325,13 +327,14 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   const selection = useSelection();
   const tracker = useVelocityTracker();
   const flight = useRef<PhysicsHandle<Vec2> | null>(null);
+  const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });
   useEffect(() => () => {
     flight.current?.cancel();
     flight.current = null;
   }, []);
 
   const behaviors = useMemo(
-    () => [flickToGrid({ animator, tracker, flight })],
+    () => [flickToGrid({ animator, tracker, flight, area: () => size.current })],
     [animator, tracker],
   );
 
@@ -339,25 +342,26 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   // and the card canvas each keep their own selection.
   return (
     <WeaselProvider isolate>
-      <SceneCanvas features={['pick', 'move']}
-        width={FLICK_W}
-        height={FLICK_H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        selectTool={{ move: { behaviors } }}
-        layers={{
-          grid: { layer: FLICK_GRID_LAYER },
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { color: n.data.color } },
-            }],
-          },
-          selectionOverlay: { handles: false },
-        }}
-      />
+      <DemoStage width={FLICK_W} height={FLICK_H}>
+        <SceneCanvas features={['pick', 'move']}
+          className="ckd-canvas"
+          onResize={(s) => { size.current = s; }}
+          scene={scene}
+          selection={selection}
+          selectTool={{ move: { behaviors } }}
+          layers={{
+            grid: { layer: FLICK_GRID_LAYER },
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { color: n.data.color } },
+              }],
+            },
+            selectionOverlay: { handles: false },
+          }}
+        />
+      </DemoStage>
     </WeaselProvider>
   );
 }

@@ -34,9 +34,9 @@ test('a camera that pans takes every touch', () => {
 });
 
 test('a camera that does not pan lets one finger scroll the page and keeps the pinch', () => {
-  expect(touchActions({ pan: false })).toEqual(['pan-x pan-y', 'pan-x pan-y']);
+  expect(touchActions({ drag: false })).toEqual(['pan-x pan-y', 'pan-x pan-y']);
 });
 
 test('a camera that takes no touch leaves it all to the browser', () => {
-  expect(touchActions({ pan: false, pinch: false })).toEqual(['auto', 'auto']);
+  expect(touchActions({ drag: false, pinch: false })).toEqual(['auto', 'auto']);
 });

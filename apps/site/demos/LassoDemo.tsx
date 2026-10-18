@@ -8,6 +8,7 @@ import {
   solid,
   type LassoHitMode,
 } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 480, H = 320;
 
@@ -68,17 +69,17 @@ export function LassoDemo() {
         ))}
         <span style={{ marginLeft: 'auto', opacity: 0.7 }}>Press <kbd>L</kbd> for lasso</span>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        features={['pick']}
-        defaultTools={['lasso']}
-        initialActiveTool="lasso"
-        toolOptions={{ lasso: { mode } }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          features={['pick']}
+          defaultTools={['lasso']}
+          initialActiveTool="lasso"
+          toolOptions={{ lasso: { mode } }}
+        />
+      </DemoStage>
     </div>
   );
 }

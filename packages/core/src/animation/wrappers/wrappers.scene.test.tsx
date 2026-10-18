@@ -5,7 +5,7 @@ import { createScene } from '../../core/scene/scene';
 import { effectivePose } from '../../core/scene/effectivePose';
 import { asNodeId, type RectPose } from '../../core/scene/types';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { animateLifecycle } from './animateLifecycle';
 import { animateOnSetPose } from './animateOnSetPose';
 import type { Animator } from '@weasel-js/animator';

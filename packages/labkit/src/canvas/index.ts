@@ -31,6 +31,8 @@ export {
 export { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 export { screenToWorld, worldToScreen } from './canvasCoords';
 export { LinkedCursor } from './LinkedCursor';
+export type { OrbitProps } from './Orbit';
+export { Orbit } from './Orbit';
 export type { StageProps } from './Stage';
 export { fitStage, Stage } from './Stage';
 export type { CanvasLayerDescriptor } from './useLayerScheduler';

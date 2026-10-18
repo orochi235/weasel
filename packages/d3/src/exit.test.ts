@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene, linear } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Animator } from '@weasel-js/animator';
 import { d3Bind } from './bind';
 import type { D3Selection, D3Transition } from './types';

@@ -13,9 +13,11 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 | `CanvasStack.tsx` | Layered `<canvas>` container; owns sizing and per-layer canvas refs |
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
-| `CameraInput.tsx` | Pan, zoom and tap routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `CameraInput.tsx` | Pan, zoom, tap and home routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `Orbit.tsx` / `Orbit.less` | The 3D camera: kernel3d's orbit actions on a `camera3d` dep, through the same dispatcher |
+| `orbitZoom.ts` | An orbit as a 2D `CameraView`, so the lab's zoom chrome dollies it |
 | `cameraGestures.ts` / `cameraTouch.less` | Which gestures a camera takes, and the `touch-action` that follows from them |
-| `cameraRegistry.ts` | Cameras by trial id, so chrome outside a trial (the lab header's zoom) can drive the focused one |
+| `cameraRegistry.ts` | Cameras by trial id, so chrome outside a trial (the lab header's zoom) can drive the focused one, 2D or orbit |
 | `cameraView.ts` | The camera as a weasel `View` over frame-local coordinates, and the anchored zoom clamp |
 | `LinkedCursor.tsx` | The crosshair on the camera's element while the pointer is over another view |
 | `camera.ts` | `zoomAt` (fixed-point zoom) and `centerOn` (put a world point at a viewport's middle) |
@@ -112,7 +114,7 @@ All pure, and all default to `DEFAULT_FRAME` (top-left, y down).
 
 ## Pan/zoom behavior
 
-Implemented in `usePanZoom`. Mouse-wheel zoom is anchored at the cursor; primary-button drag pans. `isDragging()` is exposed so consumers can suppress click handlers during a pan.
+Routed through the dispatcher by `<CameraInput>`. Mouse-wheel zoom is anchored at the cursor; primary-button drag pans.
 
 The anchor is taken **in frame space** (`cursor - frame.originPx`), because
 `pan` is measured from the frame's origin. Anchoring at the raw cursor instead
@@ -132,13 +134,34 @@ measured and places it from `onResize` — so an instrument framing content it c
 only size against the viewport does not need a "have I centred yet" sentinel of
 its own. Reset nulls the view again, which re-frames.
 
-`gestures` (on `<CanvasStack>`, `<Stage>`, `<CameraInput>`, an instrument's
-`canvas` or `stage`, and `<Lab>`, whose keys win) turns each gesture off on its
-own: a drag pan, the wheel (`'plain'`, `'mod'` or `false`), a pinch — the
-trackpad's and two fingers' — and a tap. A gesture the camera does not bind is
-never claimed, so the page gets it: an unbound wheel scrolls, and the host's
+`gestures` (on `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, an
+instrument's `canvas`, `stage` or `orbit`, and `<Lab>`, whose keys win) turns
+each gesture off on its own: a drag, the wheel (`'plain'`, `'mod'` or `false`),
+a pinch (`true`, or `'trackpad'` or `'touch'` alone — two fingers are pointers,
+so a camera leaving every press to its content keeps the trackpad's), a tap,
+and `home`, a double click
+back to where the camera opened. A gesture the camera does not bind is never
+claimed, so the page gets it: an unbound wheel scrolls, and the host's
 `touch-action` (from `data-lk-touch`) hands one finger to the page once the
-camera does not pan.
+camera does not take a drag. `home` defaults on only for an orbit; a 2D
+camera's double clicks usually belong to its content.
+
+## The orbit
+
+`<Orbit>` is the 3D camera, the sibling of `<Stage>`. Its view is kernel3d's
+`Camera3d`, and its gestures are kernel3d's actions — `camera.orbit`,
+`camera.pan` (Shift+drag), `camera.dolly`, `camera.pinchDolly`, `camera.home` —
+on a `camera3d` dep its input scope provides, with an identity `clientToWorld`
+as kernel3d expects. Its `viewport` prop names the element the scene is
+drawn in when that is less than the orbit's own: the dispatcher binds there,
+`data-lk-touch` goes there, and `camera3d.size()` measures it, which is what
+`camera.pan` and `camera.dolly` scale and anchor against. It provides no
+`CameraContext`, whose `view` is 2D, so the
+loupe, the overview and `LinkedCursor` stay out of it; it publishes itself to
+the camera registry as an `orbitZoomView`, whose scale is home distance over
+distance, so the lab's zoom steps dolly it and its reset returns to the home
+distance. `CameraView.zoomOf(view)` reads that zoom off a stored view rather
+than the camera, so chrome rendering beside the trial is never a change late.
 
 Zoom is clamped to `[minZoom, maxZoom]` (defaults 0.1 / 32), settable via `CanvasStack`'s props and, for an instrument's own canvas, `CanvasCapability.minZoom` / `maxZoom`. The clamp always widens to admit whatever zoom the canvas opened at — an instrument declaring `initialView.zoom: 1600` with the default range is not clamped down to 32 on the first wheel event.
 

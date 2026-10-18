@@ -2,6 +2,7 @@ import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui';
 import type { CSSProperties } from 'react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -32,21 +33,22 @@ export function LayerListDemo() {
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <SceneCanvas features={['pick']}
-        width={W} height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { color: (n.data as Rect).color } },
-            }],
-          },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { color: (n.data as Rect).color } },
+              }],
+            },
+          }}
+        />
+      </DemoStage>
       <LayerList {...layerList} />
     </div>
   );

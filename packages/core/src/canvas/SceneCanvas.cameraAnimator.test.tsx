@@ -8,8 +8,8 @@ import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 const built = new Set<Animator>();
 
-vi.mock('@weasel-js/animator', async (importOriginal) => {
-  const real = await importOriginal<typeof import('@weasel-js/animator')>();
+vi.mock('@weasel-js/animator/react', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/animator/react')>();
   return {
     ...real,
     useAnimator: (...args: Parameters<typeof real.useAnimator>) => {

@@ -13,6 +13,7 @@ import {
   type ToolsApi,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
+import { DemoStage } from './DemoStage';
 
 const W = 480, H = 320;
 
@@ -44,17 +45,17 @@ export function SliceDemo() {
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        features={['pick', 'move', 'edit']}
-        defaultTools={['slice']}
-        initialActiveTool="slice"
-        onToolsCreated={setTools}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          features={['pick', 'move', 'edit']}
+          defaultTools={['slice']}
+          initialActiveTool="slice"
+          onToolsCreated={setTools}
+        />
+      </DemoStage>
     </div>
   );
 }

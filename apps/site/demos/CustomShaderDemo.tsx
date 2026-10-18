@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SceneCanvas, useFrameClock, useHandleDrag, useLatest, useScene } from '@weasel-js/core';
-import type { Action, FrameClock, RenderLayer } from '@weasel-js/core';
+import type { Action, Dims, FrameClock, RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
 } from '@weasel-js/renderer';
 import weaselMarkUrl from '../assets/weasel-mark.png';
+import { DemoStage } from './DemoStage';
 
 const PANEL_W = 240;
 const PANEL_H = 240;
@@ -134,19 +135,22 @@ function Panel({
   uniforms: (seconds: number) => ShaderUniforms;
   onPointerMove?: (x: number, y: number) => void;
   onPress?: (x: number, y: number) => void;
-  overlay?: React.ReactNode;
+  /** Drawn over the canvas, at the size it paints. */
+  overlay?: (size: Dims) => React.ReactNode;
   disabled?: boolean;
 }) {
   const uniformsRef = useLatest(uniforms);
+  const [size, setSize] = useState<Dims>({ width: PANEL_W, height: PANEL_H });
+  const sizeRef = useLatest(size);
 
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
     label: title,
     subscribe: clock.subscribe,
-    draw: (): DrawCommand[] => disabled ? [] : [{
+    draw: (_data, _view, dims): DrawCommand[] => disabled ? [] : [{
       kind: 'shader',
       program,
-      bounds: { x: 0, y: 0, w: PANEL_W, h: PANEL_H },
+      bounds: { x: 0, y: 0, w: dims.width, h: dims.height },
       uniforms: uniformsRef.current(clock.seconds()),
     }],
   }), [program, disabled, title, uniformsRef, clock]);
@@ -163,7 +167,7 @@ function Panel({
         timing: 'immediate',
         run: (_deps, params) => {
           const p = params as { worldX: number; worldY: number };
-          onPointerMoveRef.current?.(p.worldX / PANEL_W, p.worldY / PANEL_H);
+          onPointerMoveRef.current?.(p.worldX / sizeRef.current.width, p.worldY / sizeRef.current.height);
         },
       },
     };
@@ -174,7 +178,7 @@ function Panel({
         timing: 'immediate',
         run: (_deps, params) => {
           const p = params as { worldX: number; worldY: number };
-          onPressRef.current?.(p.worldX / PANEL_W, p.worldY / PANEL_H);
+          onPressRef.current?.(p.worldX / sizeRef.current.width, p.worldY / sizeRef.current.height);
         },
       },
     };
@@ -187,7 +191,7 @@ function Panel({
         { spec: { kind: 'hover' as const }, actionId: follow.id },
       ],
     }];
-  }, [onPressRef, onPointerMoveRef]);
+  }, [onPressRef, onPointerMoveRef, sizeRef]);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],
@@ -197,20 +201,21 @@ function Panel({
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <strong style={{ color: '#ddd', marginBottom: 4 }}>{title}</strong>
-      <div style={{ position: 'relative', width: PANEL_W, height: PANEL_H }}>
-        <SceneCanvas
-          width={PANEL_W}
-          height={PANEL_H}
-          className="ckd-canvas"
-          scene={scene}
-          shaders={SHADERS}
-          ambient={ambient}
-          layers={{
-            scene: { drawOne: () => [] },
-            shader: { layer, after: 'scene' },
-          }}
-        />
-        {overlay}
+      <div style={{ position: 'relative' }}>
+        <DemoStage width={PANEL_W} height={PANEL_H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            onResize={setSize}
+            scene={scene}
+            shaders={SHADERS}
+            ambient={ambient}
+            layers={{
+              scene: { drawOne: () => [] },
+              shader: { layer, after: 'scene' },
+            }}
+          />
+        </DemoStage>
+        {overlay?.(size)}
       </div>
     </div>
   );
@@ -335,9 +340,9 @@ export function CustomShaderDemo() {
             u_seeds: mutableSeeds.flatMap((s) => [s.x, s.y]),
             u_seedCount: mutableSeeds.length,
           })}
-          overlay={
-            <SeedHandles seeds={mutableSeeds} setSeeds={setMutableSeeds} width={PANEL_W} height={PANEL_H} />
-          }
+          overlay={(size) => (
+            <SeedHandles seeds={mutableSeeds} setSeeds={setMutableSeeds} width={size.width} height={size.height} />
+          )}
         />
       </div>
     </div>

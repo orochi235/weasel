@@ -4,6 +4,7 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 
@@ -158,27 +159,27 @@ export function LoupeDemo() {
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
-      <SceneCanvas features={['pick', 'move']}
-        ref={ref}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        backgroundFill={{ kind: 'solid', color: PAPER }}
-        ambient={[hudTool]}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { kind: 'solid', color: n.data.color } },
-            }],
-          },
-          // Not registerLayer: extras draw after the hud's own registered
-          // layer, so the outer scene would paint over the loupe window.
-          detail: { layer: detail, after: 'scene' },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick', 'move']}
+          ref={ref}
+          className="ckd-canvas"
+          scene={scene}
+          backgroundFill={{ kind: 'solid', color: PAPER }}
+          ambient={[hudTool]}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { kind: 'solid', color: n.data.color } },
+              }],
+            },
+            // Not registerLayer: extras draw after the hud's own registered
+            // layer, so the outer scene would paint over the loupe window.
+            detail: { layer: detail, after: 'scene' },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chain } from './chain';
-import { graphOf } from './groupFixture';
+import { buildGraph, type GraphNodeLike } from './graph';
+import { graphOf, type Rect } from './groupFixture';
 import type { LayoutResult } from './layout';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.
@@ -54,5 +55,46 @@ describe('chain', () => {
 
   it('answers an empty graph with nothing', () => {
     expect(chain(graphOf([], [], {}), OPTS).size).toBe(0);
+  });
+});
+
+describe('chain side routes', () => {
+  // `hub` on the line has three ports along its bottom; `x` feeds the right
+  // one, `y` the left one, and `hub` sends to `z` from the middle one.
+  const bottom = (id: string, u: number) => ({ id, at: { u, v: 1 } });
+  const top = (id: string) => ({ id, at: { u: 0.5, v: 0 } });
+  const node = (id: string, ports: object[], i: number) => ({
+    node: { id, kind: 'leaf', data: { diagram: { ports } } } as GraphNodeLike,
+    pose: { x: i, y: i, width: 100, height: 40 },
+  });
+  const edge = (i: number, from: [string, string], to: [string, string]) => ({
+    node: { id: `e${i}`, kind: 'leaf', data: { diagram: { from: { port: from[1] }, to: { port: to[1] } } }, dependsOn: [from[0], to[0]] } as GraphNodeLike,
+    pose: { x: 0, y: 0, width: 0, height: 0 },
+  });
+  const graph = buildGraph<Rect>(() => [
+    node('hub', [bottom('p1', 0.25), bottom('send', 0.5), bottom('p2', 0.75)], 0),
+    node('x', [top('out')], 1), node('y', [top('out')], 2), node('z', [top('in')], 3),
+    edge(0, ['x', 'out'], ['hub', 'p2']), edge(1, ['y', 'out'], ['hub', 'p1']), edge(2, ['hub', 'send'], ['z', 'in']),
+  ]);
+  const plan = chain.plan!(graph, { direction: 'right', chain: ['hub'] });
+  const x = (id: string) => plan.moves.get(id)?.x ?? graph.node(id)!.bounds.x;
+
+  it('hangs each node under the port it meets, in that port\'s order', () => {
+    expect(['y', 'z', 'x'].map(x)).toEqual(['y', 'z', 'x'].map(x).sort((a, b) => a - b));
+  });
+
+  it('routes a side edge through a track between the line and the hung row, from its own end', () => {
+    const lineBottom = 40;
+    const hungTop = (plan.moves.get('x') ?? graph.node('x')!.bounds).y;
+    for (const id of ['e0', 'e1', 'e2']) {
+      const via = plan.waypoints!.get(id);
+      if (via === undefined) continue;
+      expect(via).toHaveLength(2);
+      expect(via[0]!.y).toBe(via[1]!.y);
+      expect(via[0]!.y).toBeGreaterThan(lineBottom);
+      expect(via[0]!.y).toBeLessThan(hungTop);
+    }
+    const [first] = plan.waypoints!.get('e1')!;
+    expect(Math.abs(first!.x - x('y'))).toBeLessThan(Math.abs(first!.x - (x('hub') + 25)));
   });
 });

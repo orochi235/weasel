@@ -9,8 +9,9 @@
  */
 
 export {
-  MAX_PITCH, createCamera, cameraEye, cameraView, cameraViewProjection, orbitBy, dollyBy,
-  type Camera3d,
+  MAX_PITCH, DEFAULT_ORBIT_LIMITS, createCamera, cameraEye, cameraView, cameraViewProjection,
+  clampCamera, orbitBy, dollyBy, dollyToward, panBy,
+  type Camera3d, type OrbitLimits,
 } from './camera';
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';
 export {
@@ -24,7 +25,9 @@ export {
   type ViewportSource, type World3d,
 } from './deps';
 export { collectOverlayBoxes } from './overlays';
-export { orbitAction, dollyAction, useOrbitTool } from './tools';
+export {
+  orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
+} from './tools';
 export type { Camera3dDep } from './cameraDep';
 export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSettings';
 // Reaches the `declare module '@weasel-js/core'` block that adds `camera3d` to
