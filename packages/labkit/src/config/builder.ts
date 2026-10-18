@@ -1,7 +1,6 @@
 import type { PrefCondition, PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import { BaseNode, conditioned } from './baseNode';
-import { configFromPrefs } from './fromPrefs';
 import {
   ActionNode,
   AliasNode,
@@ -13,6 +12,7 @@ import {
   SeparatorNode,
   UnionNode,
 } from './compound';
+import { configFromPrefs } from './fromPrefs';
 import type {
   Annotations,
   BranchAnnotations,

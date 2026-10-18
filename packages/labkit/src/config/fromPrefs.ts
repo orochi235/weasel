@@ -1,10 +1,19 @@
-import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefLeaf, type PrefSection, prefSectionLeaves } from '@weasel-js/prefs';
 import { withValueAtPath } from './path';
-import type { Annotations, ConfigBranch, ConfigEntry, ConfigNode, ConfigSchema, ConfigShape, NodeOptions } from './types';
+import type {
+  Annotations,
+  ConfigBranch,
+  ConfigEntry,
+  ConfigNode,
+  ConfigSchema,
+  ConfigShape,
+  NodeOptions,
+} from './types';
 
 type OpenShape = Record<string, ConfigEntry>;
 
-const encoded = (leaf: PrefLeaf): boolean => (leaf as { encoding?: unknown }).encoding !== undefined;
+const encoded = (leaf: PrefLeaf): boolean =>
+  (leaf as { encoding?: unknown }).encoding !== undefined;
 
 function nodeOf(leaf: PrefLeaf, options: NodeOptions): ConfigNode {
   const { kind, default: def, ...annotations } = leaf as PrefLeaf & Record<string, unknown>;
@@ -57,6 +66,11 @@ export function configFromPrefs(schema: PrefSection): ConfigSchema<Record<string
   return {
     nodes: nodes as ConfigShape,
     // An encoded leaf's default is the option it reads as, not what is stored, and holding nothing reads as it.
-    defaults: () => leaves.reduce<Record<string, unknown>>((config, [path, leaf]) => (encoded(leaf) ? config : withValueAtPath(config, path, leaf.default)), {}),
+    defaults: () =>
+      leaves.reduce<Record<string, unknown>>(
+        (config, [path, leaf]) =>
+          encoded(leaf) ? config : withValueAtPath(config, path, leaf.default),
+        {},
+      ),
   };
 }
