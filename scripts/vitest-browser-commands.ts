@@ -2,6 +2,7 @@ import type { BrowserCommand } from 'vitest/node';
 import type {} from '@vitest/browser-playwright';
 import type { Download } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
+import { waitForOwnFrame } from './vitest-own-frame.ts';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -81,7 +82,14 @@ const collectGarbage: BrowserCommand<[]> = async (ctx) => {
   }
 };
 
-export const browserCommands = { grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage };
+/** Wait until vitest's own commands, `userEvent.keyboard` among them, find this file's frame. */
+const settleFrame: BrowserCommand<[]> = async (ctx) => {
+  if (ctx.testPath) await waitForOwnFrame(ctx.page, ctx.testPath);
+};
+
+export const browserCommands = {
+  grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
+};
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
@@ -91,5 +99,6 @@ declare module 'vitest/browser' {
     armDownload: (timeoutMs: number) => Promise<void>;
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
     collectGarbage: () => Promise<void>;
+    settleFrame: () => Promise<void>;
   }
 }
