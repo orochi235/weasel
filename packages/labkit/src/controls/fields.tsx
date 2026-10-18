@@ -8,6 +8,7 @@ import {
   useParamsPolicy,
 } from '@weasel-js/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hasConfigPath, valueAtPath } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -23,6 +24,15 @@ export function isSliderLeaf(leaf: PrefLeaf): boolean {
  *  and extra keys survive the resolve pass at runtime. */
 export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
+}
+
+/** What the row of `leaf` at `path` shows of `config`: the value there, else the leaf's default. A clearable
+ *  number held unset stays unset. */
+export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
+  const held = valueAtPath(config, path);
+  if (held !== undefined || (extra<boolean>(leaf, 'clearable') && hasConfigPath(config, path)))
+    return held;
+  return extra<unknown>(leaf, 'default');
 }
 
 /**
@@ -46,7 +56,11 @@ export function labField(
     case 'number':
       // `prefFieldProps` clamps what it stores, so an instrument is never
       // handed a value outside the range it asked for.
-      return { ...field, unit: extra<string>(leaf, 'suffix') ?? field.unit };
+      return {
+        ...field,
+        unit: extra<string>(leaf, 'suffix') ?? field.unit,
+        placeholder: extra<string>(leaf, 'placeholder'),
+      };
     case 'string':
       return {
         ...field,

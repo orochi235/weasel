@@ -28,6 +28,10 @@ export interface UnitFieldProps {
    *  starting value back, and alone when the field began at NaN, which is no
    *  value to send. */
   onCancel?: () => void;
+  /** The field was emptied and left, by blur or Enter: the value is to be unset. Without it an emptied field
+   *  puts its value back, as it does for any text it cannot read. Not called on Escape, nor for a field that
+   *  showed no value to begin with. */
+  onClear?: () => void;
   minValue?: number;
   maxValue?: number;
   /** What an arrow key, a stepper or a wheel notch adds or takes away; Page Up
@@ -76,6 +80,7 @@ export function UnitField({
   onInput,
   onCancel,
   onOffset,
+  onClear,
   minValue,
   maxValue,
   step = 1,
@@ -212,6 +217,12 @@ export function UnitField({
           }}
           onBlur={() => {
             const typedText = canceled.current ? null : draft;
+            if (typedText !== null && typedText.trim() === '' && known && onClear) {
+              typing.current = null;
+              setDraft(null);
+              onClear();
+              return;
+            }
             const by = typedText === null ? null : offsetIn(typedText, read);
             if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
             else commit(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText));

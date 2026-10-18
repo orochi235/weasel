@@ -6,8 +6,7 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
-import { valueAtPath } from '../config/path';
-import { BareControl, extra, useDebouncedText, useTextWaitMs } from './fields';
+import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -99,7 +98,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
           {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
           <BareControl
             leaf={leaf}
-            value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+            value={leafValueAt(shown, path, leaf)}
             write={(value) => setConfig(path, value)}
             disabled={disabled}
           />

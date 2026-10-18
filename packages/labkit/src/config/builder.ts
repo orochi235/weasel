@@ -45,13 +45,34 @@ export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
   return 'children' in entry;
 }
 
-/** A numeric leaf, built by `f.number`. */
-export class NumberNode extends BaseNode<number> {
+/** A numeric leaf, built by `f.number`. `T` takes `undefined` once the leaf is {@link NumberNode.clearable}. */
+export class NumberNode<T extends number | undefined = number> extends BaseNode<T> {
   readonly kind = 'number';
 
   /** Bound the value. A number with both bounds renders as a slider. */
   range(min: number, max: number): this {
     return this.ann({ min, max });
+  }
+
+  /** Bound the value from below only. The row stays a typed field. */
+  min(min: number): this {
+    return this.ann({ min });
+  }
+
+  /** Bound the value from above only. The row stays a typed field. */
+  max(max: number): this {
+    return this.ann({ max });
+  }
+
+  /** Let the value be unset: emptying the field writes `undefined`, and an unset value draws as an empty field
+   *  showing the {@link NumberNode.placeholder}. Without it an emptied field puts its value back. */
+  clearable(): NumberNode<T | undefined> {
+    return this.ann({ clearable: true }) as NumberNode<T | undefined>;
+  }
+
+  /** What an empty field shows: what an unset value stands for. */
+  placeholder(placeholder: string): this {
+    return this.ann({ placeholder });
   }
 
   step(step: number): this {
@@ -249,6 +270,12 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
   }
 }
 
+function numberLeaf(def: number): NumberNode;
+function numberLeaf(): NumberNode<number | undefined>;
+function numberLeaf(def?: number): NumberNode<number | undefined> {
+  return def === undefined ? new NumberNode<number | undefined>(undefined).clearable() : new NumberNode(def);
+}
+
 /** Every default in a shape, nested the way the shape is. */
 function shapeDefaults(shape: ConfigShape): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -277,7 +304,8 @@ const expand = <T extends string>(
  * ```
  */
 export const f = {
-  number: (def: number): NumberNode => new NumberNode(def),
+  /** A number. Given no default, it starts unset and is {@link NumberNode.clearable}. */
+  number: numberLeaf,
   boolean: (def: boolean): BooleanNode => new BooleanNode(def),
   string: (def: string): StringNode => new StringNode(def),
   color: (def: string): ColorNode => new ColorNode(def),

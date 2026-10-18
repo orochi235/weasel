@@ -19,13 +19,13 @@ import {
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
-import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import { schemaNodeAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
-import { BareControl, extra, isSliderLeaf, labField } from './fields';
+import { BareControl, extra, isSliderLeaf, labField, leafValueAt } from './fields';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 
@@ -114,7 +114,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       control: visible(path) ? (
         <BareControl
           leaf={leaf}
-          value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+          value={leafValueAt(shown, path, leaf)}
           write={(value) => setConfig(path, value)}
           name={typeof heading === 'string' ? heading : undefined}
           disabled={!enabled(path)}
@@ -156,7 +156,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           path={path}
           visible={visible}
           enabled={enabled}
-          value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
+          value={(p, leaf) => leafValueAt(shown, p, leaf)}
           write={setConfig}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (

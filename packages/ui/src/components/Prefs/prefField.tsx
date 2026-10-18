@@ -149,6 +149,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
           leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
         endless,
         onChange: store,
+        ...(leaf.clearable ? { onClear: () => setValue(undefined) } : {}),
       };
     }
     case 'string':

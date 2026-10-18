@@ -37,7 +37,7 @@ import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField } from './fields';
+import { extra, labField, leafValueAt } from './fields';
 import { inDialog, summarizeLeaf, summarizeValue } from './inDialog';
 import { DebouncedTextRow, UnwiredRow } from './rows';
 
@@ -235,8 +235,7 @@ function LeafRow<TC extends Record<string, unknown>>({
 }: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
   const choices = useFieldChoices();
-  const fallback = extra<unknown>(leaf, 'default');
-  const pinned = valueAtPath(config, path) ?? fallback;
+  const pinned = leafValueAt(config, path, leaf);
 
   const isAutoRow = auto?.has(path) ?? false;
   const canAuto = setRowAuto !== undefined && !extra<boolean>(leaf, 'manual');

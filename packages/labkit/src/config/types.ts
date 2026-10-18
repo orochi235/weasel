@@ -48,6 +48,8 @@ export interface Annotations {
   min?: number;
   max?: number;
   step?: number;
+  /** A number leaf may be unset: emptying its field writes `undefined`. */
+  clearable?: boolean;
   suffix?: string;
   /** How a number's value shows, speaks and reads back — `compact()` reads `2.00M`. */
   display?: Display;
