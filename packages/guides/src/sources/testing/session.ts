@@ -1,7 +1,6 @@
 import { expect } from 'vitest';
 import {
   createScene,
-  createSnapSession2d,
   type Bounds,
   type OriginProjection,
   type PlaneMap,
@@ -12,6 +11,7 @@ import {
   type SnapOutcome,
   type SnapSource,
 } from '@weasel-js/core';
+import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 
 type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
@@ -52,7 +52,7 @@ interface DriveOpts {
 /** A snap session over `opts.scene`, as a host without `<SceneCanvas>` runs one. */
 export function drive(opts: DriveOpts) {
   const scale = opts.scale ?? 1;
-  const session = createSnapSession2d({
+  const session = createSnapSession2dForTests({
     scene: opts.scene ?? sceneOf().scene,
     view: { x: 0, y: 0, scale: { x: scale, y: scale } },
     sources: opts.sources,

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   createScene,
   createSnapOutcomeStore,
-  createSnapSession2d,
   resizeAction,
   rotatePoint,
   type InvocationCtx,
@@ -12,6 +11,7 @@ import {
   type Scene,
   type SnapDep,
 } from '@weasel-js/core';
+import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import type { Guide } from '../guides/types';
 import { alignmentSnapSource } from './alignment';
 
@@ -37,7 +37,7 @@ function run(
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
     point: (p) => p,
-    begin: (req) => createSnapSession2d({
+    begin: (req) => createSnapSession2dForTests({
       scene,
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       sources: [alignmentSnapSource({ getCandidates: () => candidates })],

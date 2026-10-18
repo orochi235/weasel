@@ -10,7 +10,6 @@ export { SNAP_ROLES, snapMods } from '../features/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';
 export { useSnapSource } from '../features/snap/registry';
 export { DEFAULT_SNAP_PX } from '../features/snap/session2d';
-export { createSnapSession2d, type SnapSession2dOptions } from '../features/snap/sceneSession2d';
 export { createSnapReadoutLayer, type SnapReadoutStyle } from '../features/snap/readoutLayer';
 export { measuredSegmentCommands, pillCommands, tickedSegment } from '../features/snap/readoutDraw';
 export type { SnapReadoutDep } from '../features/snap/readoutDep';
