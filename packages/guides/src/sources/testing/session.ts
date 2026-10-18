@@ -3,6 +3,8 @@ import {
   createScene,
   createSnapSession2d,
   type Bounds,
+  type OriginProjection,
+  type PlaneMap,
   type ResizeAnchor,
   type Scene,
   type SnapGesture,
@@ -43,6 +45,8 @@ interface DriveOpts {
   /** The view's zoom. Default 1. */
   scale?: number;
   reachPx?: number;
+  plane?: PlaneMap;
+  originProjection?: OriginProjection<unknown>;
 }
 
 /** A snap session over `opts.scene`, as a host without `<SceneCanvas>` runs one. */
@@ -57,6 +61,8 @@ export function drive(opts: DriveOpts) {
     ...(opts.ids ? { ids: opts.ids } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
     ...(opts.reachPx !== undefined ? { reachPx: opts.reachPx } : {}),
+    ...(opts.plane ? { plane: opts.plane } : {}),
+    ...(opts.originProjection ? { originProjection: opts.originProjection } : {}),
   });
   return { session, at: (p: Point, mods: SnapMods = FREE): SnapOutcome => session.at(p, mods) };
 }

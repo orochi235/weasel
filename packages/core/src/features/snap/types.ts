@@ -4,6 +4,7 @@
 import type { ProbeRole, SnapTier } from '@weasel-js/geom/nd';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapReadoutStyle } from './readoutLayer';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
 
@@ -68,6 +69,10 @@ export interface SnapCollect<P = Point> {
   reachPx: number;
   /** Absent in a host with no 2D scene. */
   scene?: Scene<unknown, string, unknown>;
+  /** How the camera's world maps into the parallax plane the probes are in.
+   *  Absent in the camera's own world. A target the camera draws, a grid or
+   *  a ruler guide, is carried through it. */
+  plane?: PlaneMap | null;
 }
 
 /** What a rotate or handle drag asks a source for. Task 8 implements the

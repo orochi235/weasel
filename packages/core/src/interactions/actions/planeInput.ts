@@ -33,6 +33,7 @@ import {
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeAtPointDep, SnapDep, SnapGeometry, SnapQuery, ViewApi } from './depSchema';
+import type { SnapBegin } from './snapDep';
 
 type Point = { x: number; y: number };
 
@@ -212,6 +213,8 @@ function livePlane(
         },
       } : {}),
       ...(snap.release ? { release: () => snap.release!() } : {}),
+      // A session runs in the plane, and carries the camera's targets into it.
+      ...(snap.begin ? { begin: (req: SnapBegin) => snap.begin!({ ...req, plane: map }) } : {}),
     } satisfies SnapDep);
   }
 

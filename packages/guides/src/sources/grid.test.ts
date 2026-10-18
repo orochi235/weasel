@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { IMPERIAL_INCHES, type SnapCollect } from '@weasel-js/core';
+import { IMPERIAL_INCHES, type Bounds, type OriginProjection, type SnapCollect } from '@weasel-js/core';
+import { polygonFromPoints } from '@weasel-js/geom';
 import { gridSnapSource } from './grid';
-import { drive, expectNear, moveBy } from './testing/session';
+import { drive, expectNear, moveBy, sceneOf } from './testing/session';
 
 type Point = { x: number; y: number };
 
@@ -80,7 +81,31 @@ describe('gridSnapSource', () => {
     expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box }).by(6, 0).point, { x: 10, y: 0 });
   });
 
-  it.todo('rounds a node on a parallax plane to the camera\'s grid (Task 6)');
+  it('rounds a node on a parallax plane to the camera\'s grid', () => {
+    // plane = 2 * camera - 100 on x, 2 * camera on y. A 12, 4 drag puts the
+    // origin at plane (112, 34): camera (106, 17), which rounds to (110, 20),
+    // plane (120, 40).
+    const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
+    const box = { x: 100, y: 30, width: 20, height: 20 };
+    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box, plane }).by(12, 4).point, { x: 20, y: 10 });
+  });
+
+  it('lands a path\'s bounds corner on the grid', () => {
+    const { scene } = sceneOf([]);
+    const id = scene.add({ kind: 'leaf', layer: 'default', pose: polygonFromPoints([{ x: 7, y: 13 }, { x: 17, y: 13 }, { x: 12, y: 23 }]), data: {} }) as string;
+    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], scene, ids: [id] }).by(0, 0).point, { x: 3, y: -3 });
+  });
+
+  it('reads the origin through the session\'s OriginProjection', () => {
+    // The origin is the box's bottom-right corner, at (19, 27); its top-left
+    // would round the other way.
+    const corner: OriginProjection<unknown> = {
+      getOrigin: (p) => { const b = p as Bounds; return { x: b.x + b.width, y: b.y + b.height }; },
+      translate: (p, dx, dy) => { const b = p as Bounds; return { ...b, x: b.x + dx, y: b.y + dy }; },
+    };
+    const box = { x: 7, y: 13, width: 12, height: 14 };
+    expectNear(moveBy({ sources: [gridSnapSource({ spacing: 10 })], box, originProjection: corner }).by(0, 0).point, { x: 1, y: 3 });
+  });
 
   it('moves the snapped point steadily as the pointer sweeps, zoomed far out', () => {
     // At 0.05 a 10-unit cell is half a pixel; step the pointer 0.1px (2 units).

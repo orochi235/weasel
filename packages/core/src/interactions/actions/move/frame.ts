@@ -4,7 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BehaviorResult, GroupTransform } from '../../gestures/types';
 import { draggedStoredPose } from './delta';
-import { snapMoveDelta } from './pathSnap';
+import { snapMods } from 'features/snap/roles';
 import type { MoveFrame, MoveSession } from './session';
 
 function foldBehaviors(
@@ -48,11 +48,21 @@ function foldBehaviors(
   return { dx, dy, posed, opaque };
 }
 
+/** The pointer's delta, moved so the subject lands on what the snap session
+ *  holds it to; `held` says something does. */
+function snapDelta(session: MoveSession, moveCtx: InvocationCtx): { dx: number; dy: number; held: boolean } {
+  const d = moveCtx.drag!.delta;
+  if (!session.snap) return { dx: d.x, dy: d.y, held: false };
+  const { press } = session;
+  const out = session.snap.at({ x: press.x + d.x, y: press.y + d.y }, snapMods(moveCtx));
+  return { dx: out.point.x - press.x, dy: out.point.y - press.y, held: out.held };
+}
+
 /** One move's delta and previews: the pointer's delta as the behaviors shaped
  *  it, every displaced id's stored pose under it, and whatever else the
  *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
-  const snapped = snapMoveDelta(session.pathSnap, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
+  const snapped = snapDelta(session, moveCtx);
   const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy, snapped.held);
 
   // The delta stays in the frame — no scene writes, no history entries.

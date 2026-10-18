@@ -1,6 +1,6 @@
 /**
- * `useSnapDepSource` — wires the `snap` dep that `insertAction`, the pen, a
- * move and an anchor drag consume.
+ * `useSnapDepSource` — wires the `snap` dep that `insertAction`, the pen and
+ * an anchor drag consume, and whose `begin` a move runs.
  *
  * `point` / `toTargets` are sourced from `<SceneCanvas toolOptions={{ pathSnap, snapTargets, snapPoint }} />`.
  * A path target in range wins, then a point `snapTargets` offers; otherwise

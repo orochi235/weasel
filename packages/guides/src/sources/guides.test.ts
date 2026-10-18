@@ -65,5 +65,13 @@ describe('guideSnapSource', () => {
     expectNear(out.point, { x: 11, y: 0 });
   });
 
-  it.todo('meets a camera guide with a node on a parallax plane (Task 6)');
+  it('meets a camera guide with a node on a parallax plane', () => {
+    // plane = 2 * camera - 100: the guide at camera 60 lies at plane 20, and
+    // the canvas's 8px reach is 16 plane units at zoom 1.
+    const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
+    const at = (dx: number) =>
+      moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 60 }])], box: ORIGIN, plane }).by(dx, 5).point;
+    expectNear(at(32), { x: 20, y: 5 });
+    expectNear(at(37), { x: 37, y: 5 });
+  });
 });

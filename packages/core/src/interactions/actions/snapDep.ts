@@ -2,6 +2,7 @@
 
 import type { Path } from '@weasel-js/geom';
 import type { ResizeAnchor } from '@weasel-js/routing';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapGesture, SnapMark } from 'features/snap/types';
 
 type Point = { x: number; y: number };
@@ -49,6 +50,9 @@ export interface SnapBegin {
   origin?: Point;
   also?: SnapGeometry;
   constrain?: SnapConstrain;
+  /** How the camera's world maps into the parallax plane the gesture's points
+   *  are in, read each frame; absent or null in the camera's own world. */
+  plane?: () => PlaneMap | null;
 }
 
 /** The snap roles held this frame. */
@@ -85,8 +89,8 @@ export interface SnapDep {
   /** Snap a world-space point. Return `p` unchanged to opt out. */
   point(p: Point, at?: SnapQuery): Point;
   /** Snap `p` to a target alone — path geometry, or a point
-   *  `toolOptions.snapTargets` offers — or null when none is in range. A move
-   *  and an anchor drag read this, so a grid that the drawing tools follow
+   *  `toolOptions.snapTargets` offers — or null when none is in range. An
+   *  anchor drag reads this, so a grid that the drawing tools follow
    *  does not start pulling dragged shapes too. */
   toTargets?(p: Point, at?: SnapQuery): Point | null;
   /** The gesture that asked is over: drop whatever marks its last snap. */

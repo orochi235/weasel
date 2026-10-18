@@ -1,4 +1,4 @@
-import { resolveAxes, type PlaneUnits, type PlaneValue, type SnapSource } from '@weasel-js/core';
+import { resolveAxes, type PlaneMap, type PlaneUnits, type PlaneValue, type SnapSource } from '@weasel-js/core';
 import { roundToGridOn } from '../strategies/onPlane';
 import { axisLine } from './lines';
 
@@ -17,14 +17,17 @@ export interface GridSnapSourceOptions {
  * A grid as snap targets: for each origin or pointer probe, the grid line on
  * either side of it on each axis. Its reach is unlimited and it is a
  * fallback, so it holds every axis no target claims and never displaces one.
- * Its lines are in the camera's world, as every snap target is.
+ * Its lines are the camera's, carried into the plane a gesture runs in.
  */
 export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
   const pitch = resolveAxes(opts.spacing, opts.unitSystem);
   const o = opts.origin ?? { x: 0, y: 0 };
-  const lines = (v: number, axis: 'x' | 'y'): [number, number] => {
-    const near = roundToGridOn(v - o[axis], axis, pitch[axis], null) + o[axis];
-    return [near, near + (v >= near ? pitch[axis] : -pitch[axis])];
+  // The lattice is the camera's; on a parallax plane it lies at `scale * c + offset`.
+  const lines = (v: number, axis: 'x' | 'y', plane: PlaneMap | null): [number, number] => {
+    const s = plane ? plane.scale[axis] : 1;
+    const near = roundToGridOn(v - o[axis] * s, axis, pitch[axis], plane) + o[axis] * s;
+    const step = pitch[axis] * s;
+    return [near, near + (v >= near ? step : -step)];
   };
   return {
     id: 'grid',
@@ -34,7 +37,7 @@ export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
     *collect(q) {
       for (const p of q.probes) {
         for (const axis of ['x', 'y'] as const) {
-          for (const at of lines(p.at[axis], axis)) yield { probe: p.id, locus: axisLine(axis, at, p.at) };
+          for (const at of lines(p.at[axis], axis, q.plane ?? null)) yield { probe: p.id, locus: axisLine(axis, at, p.at) };
         }
       }
     },

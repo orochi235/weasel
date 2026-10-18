@@ -1,5 +1,6 @@
 import type { SnapSource } from '@weasel-js/core';
 import type { Guide } from '../guides/types';
+import { guideOffsetOn } from '../strategies/onPlane';
 import { axisLine } from './lines';
 
 /**
@@ -17,8 +18,9 @@ export function guideSnapSource(getGuides: () => readonly Guide[]): SnapSource {
       const reach = q.reachWorld(q.reachPx);
       for (const p of q.probes) {
         for (const g of guides) {
-          if (Math.abs(p.at[g.axis] - g.offset) > reach) continue;
-          yield { probe: p.id, locus: axisLine(g.axis, g.offset, p.at) };
+          const offset = guideOffsetOn(g, q.plane ?? null);
+          if (Math.abs(p.at[g.axis] - offset) > reach) continue;
+          yield { probe: p.id, locus: axisLine(g.axis, offset, p.at) };
         }
       }
     },

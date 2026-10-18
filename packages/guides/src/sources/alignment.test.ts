@@ -43,6 +43,21 @@ describe('alignmentSnapSource', () => {
     expect(union(181)).toBeCloseTo(1, 9);
   });
 
+  it('measures a turned subject by its ink, not its stored box', () => {
+    // 40x10 turned a quarter turn: ink spans x 55..65, the stored box 40..80.
+    const { scene, ids } = sceneOf([{ x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 }]);
+    const out = moveBy({ sources: [lines([{ id: 'L', axis: 'x', offset: 50 }])], scene, ids, reachPx: 6 }).by(0, 0);
+    expectNear(out.point, { x: -5, y: 0 });
+  });
+
+  it('measures the dragged box as it is drawn, stroke included', () => {
+    // A 10-wide stroke reaches 5 past the box: its drawn left edge is at 95.
+    const stroked = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } };
+    const { scene, ids } = sceneOf([{ ...BOX, data: stroked }]);
+    const out = moveBy({ sources: [lines([{ id: 'L', axis: 'x', offset: 92 }])], scene, ids, reachPx: 3 }).by(0, 0);
+    expectNear(out.point, { x: -3, y: 0 });
+  });
+
   it('snaps an inserted point to a line', () => {
     const out = drive({ sources: [lines([{ id: 'gx', axis: 'x', offset: 200 }])], reachPx: 5 }).at({ x: 197, y: 80 });
     expectNear(out.point, { x: 200, y: 80 });

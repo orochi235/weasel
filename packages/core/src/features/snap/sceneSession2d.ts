@@ -2,11 +2,13 @@ import type { ResizeAnchor } from '@weasel-js/routing';
 import type { View } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Scene } from 'core/scene/types';
+import type { PlaneMap } from 'core/viewport/parallax';
+import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectBox } from './probes2d';
-import { sceneProbeReads } from './sceneReads';
+import { sceneProbeReads, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
 
@@ -24,12 +26,18 @@ export interface SceneSessionInputs {
   reachPx: number;
   store: SnapOutcomeStore;
   geometryAt?: (press: Point, ids: readonly string[]) => Point | null;
+  /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
+  originProjection?: OriginProjection<unknown>;
   onEnd?: () => void;
 }
 
 /** A 2D session whose probes are the subject's, read from the scene at press. */
 export function sceneSession2d(i: SceneSessionInputs): SnapSession {
-  const reads = sceneProbeReads({ scene: i.scene, boxes: i.boxes, ...(i.geometryAt ? { geometryAt: i.geometryAt } : {}) });
+  const reads = sceneProbeReads({
+    scene: i.scene, boxes: i.boxes,
+    ...(i.geometryAt ? { geometryAt: i.geometryAt } : {}),
+    ...(i.originProjection ? { originProjection: i.originProjection } : {}),
+  });
   return createSession2d({
     req: i.req,
     sources: i.sources,
@@ -39,6 +47,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
       const pose = reads.pose(id);
       return pose === undefined ? undefined : reads.drawnBox(id, pose);
     },
+    ...(i.req.ids ? { exclude: withSubtrees(i.scene, i.req.ids) } : {}),
     view: i.view,
     reachPx: i.reachPx,
     scene: i.scene,
@@ -72,6 +81,12 @@ export interface SnapSession2dOptions {
   poseDescriptor?: PoseDescriptor<unknown>;
   /** Whether drawn boxes include the stroke. Default `true`. */
   boundsIncludeStroke?: boolean;
+  /** How a pose's origin, the point a grid or a guide snaps, is read.
+   *  Default `AUTO_ORIGIN_PROJECTION`: a rect's `{x, y}`, a path's bounds. */
+  originProjection?: OriginProjection<unknown>;
+  /** How `view`'s world maps into the parallax plane the gesture's points
+   *  are in. Default: they are in `view`'s own world. */
+  plane?: PlaneMap | null;
 }
 
 /**
@@ -90,6 +105,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
     ...(opts.also ? { also: opts.also } : {}),
+    ...(opts.plane ? { plane: () => opts.plane ?? null } : {}),
   };
   return sceneSession2d({
     req,
@@ -104,5 +120,6 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     view: () => view,
     reachPx: opts.reachPx ?? DEFAULT_SNAP_PX,
     store: opts.store ?? createSnapOutcomeStore(),
+    ...(opts.originProjection ? { originProjection: opts.originProjection } : {}),
   });
 }
