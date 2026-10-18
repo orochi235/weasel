@@ -48,9 +48,19 @@ interface AssetBase {
   defaultSurface: SurfaceKind;
 }
 
+/** What a host binds a schema asset's leaves to, by dotted path within the asset's schema. Each surface reads and
+ *  writes the same paths. */
+export interface SchemaBinding {
+  values?: Readonly<Record<string, unknown>>;
+  onChange?: (path: string, value: unknown) => void;
+}
+
 /** An asset drawn from a prefs schema, on any surface it allows. */
 export interface SchemaAsset extends AssetBase {
   schema: PrefGroup;
+  /** A hook binding the schema's value leaves to state the asset shows. Unset for an asset of actions alone. Called
+   *  by whichever surface draws the asset, so every surface shows the same state. */
+  useBinding?: () => SchemaBinding;
   render?: never;
 }
 

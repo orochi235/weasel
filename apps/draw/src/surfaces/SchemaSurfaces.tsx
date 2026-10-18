@@ -2,17 +2,20 @@ import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { Bar, BarMenu, PrefsForm, resolveIcon, SidebarPanel, useContextMenu } from '@weasel-js/ui';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
-import type { PanelChrome, SchemaAsset } from './types';
+import type { PanelChrome, SchemaAsset, SchemaBinding } from './types';
 import s from './SchemaSurfaces.module.css';
 
-/** What a host binds a schema asset's leaves to, by dotted path within the asset's schema. Each surface reads and
- *  writes the same paths. */
-export interface SchemaBinding {
-  values?: Readonly<Record<string, unknown>>;
-  onChange?: (path: string, value: unknown) => void;
-}
-
 const ignore = (): void => {};
+
+const UNBOUND: SchemaBinding = {};
+const useUnbound = (): SchemaBinding => UNBOUND;
+
+/** What `asset`'s leaves are bound to, from its own binding hook. Each surface asks, so moving an asset between
+ *  surfaces keeps what it shows. */
+function useAssetBinding(asset: SchemaAsset): SchemaBinding {
+  const useBinding = asset.useBinding ?? useUnbound;
+  return useBinding();
+}
 
 /** Where the menu surface puts its switch among the asset's own children: a key no asset uses. */
 const SWITCH_KEY = '$surface';
@@ -30,7 +33,8 @@ function nest(values: Readonly<Record<string, unknown>> | undefined): Record<str
 }
 
 /** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. */
-export function SchemaPanel({ asset, chrome, values, onChange }: { asset: SchemaAsset; chrome: PanelChrome } & SchemaBinding) {
+export function SchemaPanel({ asset, chrome }: { asset: SchemaAsset; chrome: PanelChrome }) {
+  const { values, onChange } = useAssetBinding(asset);
   const tree = useMemo(() => nest(values), [values]);
   return (
     <SidebarPanel
@@ -46,7 +50,8 @@ export function SchemaPanel({ asset, chrome, values, onChange }: { asset: Schema
 }
 
 /** A schema asset drawn as a labeled bar in the command strip; its context menu offers the other surfaces. */
-export function SchemaBar({ asset, values, onChange }: { asset: SchemaAsset } & SchemaBinding) {
+export function SchemaBar({ asset }: { asset: SchemaAsset }) {
+  const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
@@ -57,7 +62,8 @@ export function SchemaBar({ asset, values, onChange }: { asset: SchemaAsset } & 
 
 /** A schema asset drawn as a menu button in the command strip, the other surfaces offered at the menu's end and
  *  from the button's context menu. */
-export function SchemaMenu({ asset, values, onChange }: { asset: SchemaAsset } & SchemaBinding) {
+export function SchemaMenu({ asset }: { asset: SchemaAsset }) {
+  const { values, onChange } = useAssetBinding(asset);
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   const schema = useMemo(
     (): PrefGroup => ({
