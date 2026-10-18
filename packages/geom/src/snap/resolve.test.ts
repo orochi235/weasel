@@ -161,6 +161,37 @@ describe('resolveSnap', () => {
     for (const r of [r1, r2, r3, r4, r5]) for (const v of r.delta) expect(Number.isFinite(v)).toBe(true);
   });
 
+  it('drops a candidate with a non-finite locus dir rather than reading it as a point', () => {
+    const broken = cand({ at: [3, 0], dirs: [[NaN, 1]] });
+    expectVecClose(resolveSnap(problem({ delta0: [2, 5], candidates: [broken] })).delta, [2, 5]);
+  });
+
+  it('pools the nearest poolSize candidates per probe', () => {
+    const line = cand(vline(1));
+    const pt = cand(point(3, 3));
+    expectVecClose(resolveSnap(problem({ candidates: [line, pt] })).delta, [3, 3]);
+    expectVecClose(resolveSnap(problem({ candidates: [line, pt], poolSize: 1 })).delta, [1, 0]);
+  });
+
+  it('keeps every required candidate past the pool, however many nearer ones there are', () => {
+    const near = cand(point(1, 0));
+    const required = cand(point(6, 0), { required: true });
+    const r = resolveSnap(problem({ candidates: [near, required], poolSize: 1 }));
+    expectVecClose(r.delta, [6, 0]);
+    expect(r.members).toEqual([required]);
+  });
+
+  it('meets a line across a 3D input plane at the point where they cross', () => {
+    const ground: Flat = { at: [0, 0, 0], dirs: [[1, 0, 0], [0, 0, 1]] };
+    const post = cand({ at: [2, 5, 1], dirs: [[0, 1, 0]] });
+    const r = resolveSnap({
+      probes: [{ id: 'o', at: [0, 0, 0], role: 'origin' }], input: ground, delta0: [1.5, 0, 0.8],
+      candidates: [post], toScreen: identity,
+    });
+    expectVecClose(r.delta, [2, 0, 1]);
+    expect(r.codim).toBe(2);
+  });
+
   it('satisfied lists every coincident in-reach candidate', () => {
     const lines = [cand(hline(5)), cand(hline(5), { source: 's2' }), cand(hline(5), { source: 's3' })];
     const far = cand(vline(50));

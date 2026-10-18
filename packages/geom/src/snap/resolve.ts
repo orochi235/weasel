@@ -45,7 +45,8 @@ export interface SnapProblem<M> {
   candidates: readonly SnapCandidate<M>[];
   /** World to screen pixels. A non-finite result puts that position out of reach. */
   toScreen(world: Vec): Vec;
-  /** Candidates kept per probe, nearest first. Default 24. */
+  /** Candidates kept per probe, nearest first, besides the required ones,
+   *  which are all kept. Default 24. */
   poolSize?: number;
   /** World-space tolerance for "on the locus". Default 1e-6. */
   eps?: number;
@@ -136,7 +137,7 @@ function liveCandidates<M>(problem: SnapProblem<M>, m: Measure): Live<M>[] {
   const live: Live<M>[] = [];
   for (const c of problem.candidates) {
     const probe = probes.get(c.probe);
-    if (!probe || !isFiniteVec(probe) || !isFiniteVec(c.locus.at)) continue;
+    if (!probe || !isFiniteVec(probe) || !isFiniteVec(c.locus.at) || !c.locus.dirs.every(isFiniteVec)) continue;
     const within = intersectFlats(problem.input, { at: minus(c.locus.at, probe), dirs: c.locus.dirs }, m.eps);
     if (!within) continue;
     const px = meets(m, c, probe, closestOnFlat(within, problem.delta0));
@@ -155,7 +156,7 @@ function pool<M>(live: Live<M>[], size: number): Live<M>[] {
   const out: Live<M>[] = [];
   for (const list of byProbe.values()) {
     list.sort((a, b) => (Math.abs(a.px - b.px) > SAME_PX ? a.px - b.px : a.c.order - b.c.order));
-    out.push(...list.slice(0, size));
+    out.push(...list.filter((l, i) => i < size || l.c.required));
   }
   return out;
 }
