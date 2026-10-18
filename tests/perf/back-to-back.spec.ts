@@ -20,7 +20,7 @@ import type { Cell, CellResult } from './lib/backToBack.page';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const RUNS = rounds(3);
 const BACKENDS = (process.env.WEASEL_B2B_BACKENDS ?? 'metal,gl,swiftshader').split(',');
-const PHASES = (process.env.WEASEL_B2B_PHASES ?? 'shape,sync,gap,buffer,size,discard,timer,trace').split(',');
+const PHASES = (process.env.WEASEL_B2B_PHASES ?? 'shape,sync,fill,gap,buffer,size,discard,timer,trace').split(',');
 
 const BASE: Cell = {
   kind: 'subdata', draws: 512, perTask: 0, yieldBy: 'message', sync: 'read', spinMs: 0,
@@ -46,6 +46,11 @@ const cells = (phase: string): Array<[string, Partial<Cell>]> => {
       ['ring offsets', { kind: 'ring' }],
     ];
     case 'size': return [64, 2048].map((draws) => [`${draws} draws`, { draws }]);
+    case 'fill': return [
+      ...[64, 128, 512, 2048].map((draws): [string, Partial<Cell>] => [`flush, ${draws} draws`, { sync: 'flush', draws }]),
+      ['flush, 1/task timeout', { sync: 'flush', perTask: 1, yieldBy: 'timeout' }],
+      ['flush, 4/task timeout', { sync: 'flush', perTask: 4, yieldBy: 'timeout' }],
+    ];
     case 'discard': return [['rasterizer discard', { discard: true }]];
     case 'timer': return [['timer 1/task message', { gpuTimer: true, perTask: 1 }], ['timer all in one task', { gpuTimer: true }]];
     default: return [];
@@ -113,8 +118,8 @@ const CATEGORIES = [
   'gpu.angle', 'disabled-by-default-gpu.angle', 'viz', 'cc', 'ipc', 'mojom',
 ];
 
-/** Per-name self time on the GPU process's threads, per frame, over frames [a, b). */
-function gpuSelf(buf: Buffer, a: number, b: number): { perFrame: Map<string, SelfTime>; busyFrac: Map<string, number> } {
+/** Per-name self time on the threads of processes `proc` matches, per frame, over frames [a, b). */
+function threadSelf(buf: Buffer, proc: RegExp, a: number, b: number): { perFrame: Map<string, SelfTime>; busyFrac: Map<string, number> } {
   const events = parseTrace(buf);
   const names = threadNames(events);
   const marks = new Map<number, number>();
@@ -126,8 +131,7 @@ function gpuSelf(buf: Buffer, a: number, b: number): { perFrame: Map<string, Sel
   const edge = (k: number) => marks.get(k) ?? end!;
   const perFrame = new Map<string, SelfTime>(); const busyFrac = new Map<string, number>();
   for (const [k, list] of byThread(events)) {
-    const proc = names.process.get(Number(k.split(':')[0])) ?? '';
-    if (!/gpu/i.test(proc)) continue;
+    if (!proc.test(names.process.get(Number(k.split(':')[0])) ?? '')) continue;
     const thread = names.thread.get(k) ?? k;
     let wall = 0; let on = 0;
     for (let i = a; i < b; i++) {
@@ -140,26 +144,35 @@ function gpuSelf(buf: Buffer, a: number, b: number): { perFrame: Map<string, Sel
   return { perFrame, busyFrac };
 }
 
+function printSelf(buf: Buffer, proc: RegExp): Record<string, unknown> {
+  const fast = threadSelf(buf, proc, 1, 7); const slow = threadSelf(buf, proc, 40, 79);
+  for (const [t, frac] of slow.busyFrac) console.log(`      ${(frac * 100).toFixed(0).padStart(3)}% busy late (${((fast.busyFrac.get(t) ?? 0) * 100).toFixed(0)}% early)  ${t}`);
+  const rows = [...slow.perFrame].sort((x, y) => y[1].dur - x[1].dur).slice(0, 10)
+    .map(([name, late]) => ({ name, early: fast.perFrame.get(name) ?? { dur: 0, tdur: 0, count: 0 }, late }));
+  console.log('      self us/frame early → late (cpu early → late) [calls/frame]');
+  for (const { name, early, late } of rows) {
+    console.log(`      ${early.dur.toFixed(0).padStart(6)} → ${late.dur.toFixed(0).padStart(6)}  (${early.tdur.toFixed(0).padStart(6)} → ${late.tdur.toFixed(0).padStart(6)})`
+      + `  [${early.count.toFixed(0)} → ${late.count.toFixed(0)}]  ${name}`);
+  }
+  return { self: rows, busyLate: Object.fromEntries(slow.busyFrac), busyEarly: Object.fromEntries(fast.busyFrac) };
+}
+
+const TRACED: Array<[string, Partial<Cell>]> = [
+  ['all in one task', {}], ['1/task message', { perTask: 1 }], ['flush, all in one task', { sync: 'flush' }],
+];
+
 async function tracePhase(page: Page, browser: Browser, run: PerfRun, backend: string): Promise<void> {
-  for (const [label, over] of [['all in one task', {}], ['1/task message', { perTask: 1 }]] as const) {
+  for (const [label, over] of TRACED) {
     await browser.startTracing(page, { categories: CATEGORIES });
     const r = await runCell(page, { ...BASE, ...over, frames: 80 });
     const buf = await browser.stopTracing();
     const m = summarize(r);
     console.log(`  trace ${line(label, m)}`);
-    const fast = gpuSelf(buf, 1, 7); const slow = gpuSelf(buf, 40, 79);
-    for (const [t, frac] of slow.busyFrac) console.log(`      ${(frac * 100).toFixed(0).padStart(3)}% busy late (${((fast.busyFrac.get(t) ?? 0) * 100).toFixed(0)}% early)  ${t}`);
-    const top = [...slow.perFrame].sort((x, y) => y[1].dur - x[1].dur).slice(0, 14);
-    const rows = top.map(([name, s]) => {
-      const e = fast.perFrame.get(name) ?? { dur: 0, tdur: 0, count: 0 };
-      return { name, early: e, late: s };
-    });
-    console.log('      self us/frame early → late (cpu early → late) [calls/frame]');
-    for (const { name, early, late } of rows) {
-      console.log(`      ${early.dur.toFixed(0).padStart(6)} → ${late.dur.toFixed(0).padStart(6)}  (${early.tdur.toFixed(0).padStart(6)} → ${late.tdur.toFixed(0).padStart(6)})`
-        + `  [${early.count.toFixed(0)} → ${late.count.toFixed(0)}]  ${name}`);
-    }
-    run.item(`${backend} trace ${label}`, m, { gpuSelf: rows, busyLate: Object.fromEntries(slow.busyFrac), busyEarly: Object.fromEntries(fast.busyFrac) });
+    console.log('    GPU process');
+    const gpu = printSelf(buf, /gpu/i);
+    console.log('    renderer');
+    const renderer = printSelf(buf, /renderer/i);
+    run.item(`${backend} trace ${label}`, m, { gpu, renderer });
   }
 }
 
