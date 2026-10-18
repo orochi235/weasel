@@ -611,12 +611,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A `minAt` or `maxAt` on a field of an `object` leaf is not resolved.** `SelectionPanel`
-  resolves them on a top-level number leaf per node (`SelectionPanel/nodeBounds.ts`), and
-  `PrefsForm` and labkit on a top-level row. A field of an object (`data.stroke.width`) is drawn
-  by `objectField.tsx`, whose context has no nodes, and written as the whole object, which the
-  per-node clamp in `commitLeaf.ts` does not walk into. No schema bounds a field that way yet.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 

@@ -4,6 +4,7 @@ import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { rowWidthOf, type RowWidth } from './compound';
 import { HiddenBadge, hiddenAttrs } from './hidden';
+import { leafAtValues } from './leafAtValues';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
@@ -39,7 +40,7 @@ export function ObjectLeaf({
     const mixed = ctx.mixed === true || mixedAt?.(path) === true;
     return {
       path,
-      pref: child,
+      pref: leafAtValues(child, ctx.values),
       value: mixed ? undefined : held?.[key],
       mixed,
       setValue: split ? (v) => setValueAt(path, v) : (v) => setValue(prefObjectWithField(pref, value, key, v)),
