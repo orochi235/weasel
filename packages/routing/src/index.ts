@@ -155,6 +155,8 @@ export type {
 export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
 export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
+export { startCarry } from './interactions/carry';
+export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
 } from './interactions/pointerSession';

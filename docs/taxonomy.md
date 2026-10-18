@@ -285,6 +285,18 @@ filtered by a MIME-glob `types` field) — external content *arriving* is a form
 input like any other. Their default routing targets the ambient `ingest` action,
 which fans out to the content-handler registry.
 
+A press that begins on one element of the page and is released over a canvas is
+a gesture of its own, `carry` (`CarrySpec`): a palette item dragged in, a row
+dragged out of a list. It is the in-app sibling of an OS drop, and its payload
+is a `{ type, value }` that the spec's `types` globs filter. The source begins
+one with `startCarry`, which holds the press captured to the source as any drag
+is; every dispatcher's element is a surface, and the innermost one under the
+pointer, with nothing covering it, dispatches the carry through its bindings. An
+ongoing action bound to `carry` starts as the carry comes over the surface, and
+reads the payload as `ctx.carry`. Its moves update it, the release commits it,
+and leaving the surface or a canceled press cancels it. An immediate action
+fires once, on the release, with the payload as `params.carry`.
+
 The pointer moving with nothing pressed is a gesture too, `hover` (`HoverSpec`).
 It is the one gesture that claims nothing. It has no press to own, so it binds
 only an immediate action, never an ongoing one; every live `hover` binding that

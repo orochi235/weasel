@@ -100,6 +100,8 @@ export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undef
     return undefined;
   }
 
+  if (event.kind === 'carry') return pumpCarry(run, event);
+
   if (event.kind === 'pointerup') return ended('commit');
   if (event.kind === 'pointercancel') return ended('cancel');
 
@@ -127,6 +129,28 @@ export function pumpGesture(run: GestureRun, event: InputEvent): Outcome | undef
   return undefined;
 }
 
+/** A carry's moves, release and leave go to the handle its coming over
+ *  started. A release with none in flight may still be taken by the walk. */
+function pumpCarry(run: GestureRun, event: InputEvent & { kind: 'carry' }): Outcome | undefined {
+  if (event.stage === 'enter') return undefined;
+  const gestureId = gestureIdFor(event);
+  const handle = run.inFlight.handles.get(gestureId);
+  if (!handle) return event.stage === 'drop' ? undefined : 'unhandled';
+  if (event.stage === 'move') {
+    handle.onMove?.(ctxFor(run, event, {}, gestureId));
+    return 'handled';
+  }
+  return endGesture(run, gestureId, event, event.stage === 'drop' ? 'commit' : 'cancel') ? 'handled' : 'unhandled';
+}
+
+/** Whether a carry's stage is the one an action of this timing runs at: an
+ *  ongoing action starts as the carry comes over, an immediate one fires on
+ *  the release. */
+function carryStageFits(event: InputEvent, timing: 'immediate' | 'ongoing'): boolean {
+  if (event.kind !== 'carry') return true;
+  return event.stage === (timing === 'immediate' ? 'drop' : 'enter');
+}
+
 /** Run the candidate the walk chose. */
 export function invokeAction(
   run: GestureRun,
@@ -135,6 +159,8 @@ export function invokeAction(
   action: Action,
   deps: ActionDeps,
 ): AttemptResult {
+  if (action.invoker && !carryStageFits(event, action.invoker.timing)) return 'empty-handle';
+
   if (action.invoker?.timing === 'immediate') {
     try {
       const params = immediateParams(event, resolveParams(match.binding.opts?.params));

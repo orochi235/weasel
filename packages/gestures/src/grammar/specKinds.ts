@@ -20,6 +20,7 @@ const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   multiTouch: 'multiTouch',
   multiTouchTap: 'multiTouchTap',
   drop: 'drop',
+  carry: 'carry',
   paste: 'paste',
 };
 

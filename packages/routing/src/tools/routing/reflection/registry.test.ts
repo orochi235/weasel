@@ -175,6 +175,7 @@ const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
   multiTouch: { kind: 'multiTouch', fingers: 2 },
   multiTouchTap: { kind: 'multiTouchTap', fingers: 2 },
   drop: { kind: 'drop' },
+  carry: { kind: 'carry' },
   paste: { kind: 'paste' },
 };
 

@@ -7,6 +7,7 @@
  *   with no `pointerId` (a synthesized probe, a programmatic drag, most tests)
  *   keys to `pointer-mouse`.
  * - `multitouch`: `multitouch-<fingers>`.
+ * - `carry`: `carry-<pointerId>`, keyed as a pointer is.
  * - any other kind that starts an ongoing invoker: `ongoing-<kind>`.
  */
 import type { InputEvent } from './matcher';
@@ -47,6 +48,9 @@ export function gestureIdFor(event: InputEvent): string {
   }
   if (event.kind === 'multitouch') {
     return multiTouchGestureId(event.fingers);
+  }
+  if (event.kind === 'carry') {
+    return `carry-${event.pointerId ?? 'mouse'}`;
   }
   return `ongoing-${event.kind}`;
 }

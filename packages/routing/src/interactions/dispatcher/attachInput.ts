@@ -8,6 +8,7 @@ import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import { createDispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
 import { dispatcherWatch } from './dispatcherWatch';
+import { carryInput } from './channels/carry';
 import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
@@ -36,6 +37,7 @@ export interface InputChannels {
   pinch: boolean;
   contextMenu: boolean;
   ingest: boolean;
+  carry: boolean;
 }
 
 export function attachInput(
@@ -120,9 +122,11 @@ export function attachInput(
     listeners.on(canvas, 'drop', ingest.onDrop);
     listeners.on(window, 'paste', ingest.onPaste);
   }
+  const offCarry = channels.carry ? carryInput(core) : null;
 
   return () => {
     listeners.removeAll();
+    offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     // The registry in use at teardown is the one holding the keys.
     src.actions().dropKeys();
