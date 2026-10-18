@@ -10,9 +10,9 @@ import {
   prefVariantOf,
   resolvePrefUnit,
 } from '@weasel-js/prefs';
-import { DialogRow } from '@weasel-js/ui';
 import { leafCanAuto } from '../config/autoConfig';
 import type { ControlRenderer, InDialogOptions } from '../config/types';
+import { DraftDialogRow } from './DraftDialogRow';
 
 export type { InDialogOptions };
 
@@ -68,7 +68,8 @@ export function summarizeLeaf(leaf: PrefLeaf, value: unknown): string {
  * Moves a control into a modal: the row becomes a button showing a summary of
  * the value, and the button opens a dialog whose body is `body`, handed the
  * same context a row renderer gets. For a leaf whose editor will never fit a
- * sidebar row.
+ * sidebar row. The body edits a draft, which Done writes and Cancel or Escape
+ * drops.
  */
 export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): ControlRenderer {
   return (ctx) => {
@@ -76,7 +77,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
     const summary = opts.summary ?? ((v: unknown) => summarizeLeaf(pref, v));
     const pinned = !leafCanAuto(pref);
     return (
-      <DialogRow
+      <DraftDialogRow
         label={pref.name}
         description={pref.description}
         summary={summary(value)}
@@ -85,9 +86,12 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
         auto={auto}
         onAutoChange={pinned ? undefined : setAuto}
         changed={ctx.changed}
+        value={value}
+        setValue={ctx.setValue}
+        error={ctx.error}
       >
-        {() => body(ctx)}
-      </DialogRow>
+        {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}
+      </DraftDialogRow>
     );
   };
 }

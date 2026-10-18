@@ -157,7 +157,7 @@
     "longestFunction": 152
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 254
+    "longestFunction": 249
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197
@@ -283,7 +283,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 169
+    "longestFunction": 159
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138

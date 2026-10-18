@@ -11,7 +11,6 @@ import {
   prefIsCompound,
 } from '@weasel-js/prefs';
 import {
-  DialogRow,
   entriesDisabled,
   entryDisabledAt,
   ListEditor,
@@ -28,14 +27,15 @@ import {
   prefListTexts,
   withRowControl,
 } from '@weasel-js/ui';
-import { valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import type { ReactNode } from 'react';
+import { withValueAtPath } from '../config/path';
+import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField } from './fields';
+import { extra, labField, leafValueAt } from './fields';
+import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { inDialog, summarizeLeaf } from './inDialog';
 import { useRowAuto } from './rowAuto';
 import { DebouncedTextRow, UnwiredRow } from './rows';
@@ -48,6 +48,11 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   /** `config` with every auto path resolved -- what the instrument reads. */
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  /** Where the values an edit passes through go, a typed number's keystrokes or a slider's drag, while
+   *  `setConfig` hears the one it settles on. Without it a typed field writes only that settled value. */
+  draftConfig?: (path: string, value: unknown) => void;
+  /** What is wrong with the row's value, shown under it. */
+  error?: ReactNode;
   renderers?: Record<string, ControlRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
@@ -162,6 +167,35 @@ function CompoundControl({
   );
 }
 
+type CompoundControlProps = Parameters<typeof CompoundControl>[0];
+
+/** A compound leaf's row: a dialog whose control edits a draft of the value. */
+function CompoundRow({
+  dialog,
+  control,
+  value,
+  setValue,
+}: {
+  dialog: Omit<DraftDialogRowProps, 'value' | 'setValue' | 'children'>;
+  control: Omit<CompoundControlProps, 'value' | 'onChange'>;
+  value: unknown;
+  setValue: (value: unknown) => void;
+}) {
+  return (
+    <DraftDialogRow {...dialog} value={value} setValue={setValue}>
+      {(draft, setDraft) => (
+        <CompoundControl
+          {...control}
+          // A condition inside the leaf reads the value being edited, not the one stored.
+          config={withValueAtPath(control.config, control.path, draft)}
+          value={draft}
+          onChange={setDraft}
+        />
+      )}
+    </DraftDialogRow>
+  );
+}
+
 /** What draws the row at `path` in place of the built-in. Most specific wins, and within a tier the lab's entry
  *  beats the instrument's: controls[path] -> node .render/.dialog -> controls[kind]. */
 function customRow(
@@ -191,6 +225,8 @@ function LeafRow<TC extends Record<string, unknown>>({
   config,
   shown,
   setConfig,
+  draftConfig,
+  error,
   renderers,
   pack,
   layout,
@@ -202,9 +238,9 @@ function LeafRow<TC extends Record<string, unknown>>({
   changed: changedPaths,
 }: ControlRowProps<TC> & { inside?: PrefAliasTargets }) {
   const write = (value: unknown): void => setConfig(path, value);
+  const draft = draftConfig && ((value: unknown): void => draftConfig(path, value));
   const choices = useFieldChoices();
-  const fallback = extra<unknown>(leaf, 'default');
-  const pinned = valueAtPath(config, path) ?? fallback;
+  const pinned = leafValueAt(config, path, leaf);
 
   const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, pinned, auto, setRowAuto });
   const { isAutoRow, value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
@@ -224,6 +260,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       setAuto,
       fields: choices,
       disabled,
+      error,
     }));
 
   const label = leaf.name;
@@ -231,7 +268,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   // `auto` gives the whole width to the controls that read badly at half of a
   // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
   const wide = pack === 'auto';
-  const row = { label, description, layout, readout: autoReadout, changed, ...autoProps };
+  const row = { label, description, layout, readout: autoReadout, changed, error, ...autoProps };
 
   if (leaf.kind === 'action') {
     return (
@@ -242,6 +279,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         description={description}
         layout={layout}
         disabled={disabled}
+        error={error}
       >
         <PrefActionButton
           pref={boundAction(leaf, config, setConfig) as PrefAction}
@@ -254,41 +292,28 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
+    const summary = summarizeLeaf(leaf, value);
+    const dialog = { label, summary, readout: autoReadout, layout, description, disabled, changed, error };
     return (
-      <DialogRow
-        label={label}
-        summary={summarizeLeaf(leaf, value)}
-        readout={autoReadout}
-        layout={layout}
-        description={description}
-        disabled={disabled}
-        changed={changed}
-        {...autoProps}
-      >
-        {() => (
-          <CompoundControl
-            path={path}
-            leaf={leaf}
-            resolved={resolved}
-            config={config}
-            label={label}
-            value={value}
-            onChange={write}
-            renderers={renderers}
-            over={over}
-            given={inside}
-          />
-        )}
-      </DialogRow>
+      <CompoundRow
+        dialog={{ ...dialog, ...autoProps }}
+        control={{ path, leaf, resolved, config, label, renderers, over, given: inside }}
+        value={value}
+        setValue={write}
+      />
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled);
+  const field = labField(leaf, value, write, choices, disabled, draft);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
     case 'string':
-      return <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />;
+      return draft ? (
+        <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />
+      ) : (
+        <PropertyField {...field} {...row} span={wide} />
+      );
     case 'number':
       return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
     case 'enum':

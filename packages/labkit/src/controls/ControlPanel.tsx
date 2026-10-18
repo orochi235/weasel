@@ -29,8 +29,20 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   fields?: ConfigField[];
   config: TC;
   /** Writes one value. The path is dotted for a leaf inside an `f.group`, and
-   *  the bare key for one at the root. */
+   *  the bare key for one at the root. A `.resettable()` group's reset is one
+   *  write too, of the group's whole value at the group's own path. */
   setConfig: (path: string, value: unknown) => void;
+  /**
+   * Writes a value an edit is passing through: each keystroke of a typed
+   * number or text, each move of a slider's drag. Given, the instrument can
+   * follow the edit while `setConfig` hears only the value it settles on,
+   * once, which is one undo step. Omitted, a typed field writes only on Enter
+   * or blur, and Escape writes nothing; a slider writes as it moves.
+   */
+  draftConfig?: (path: string, value: unknown) => void;
+  /** What is wrong with a value, by its path: each shows under its row, as an alert, and a custom row is
+   *  handed its own as `error`. A paired row shows its cells'. */
+  errors?: Readonly<Record<string, ReactNode>>;
   /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
@@ -144,6 +156,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   fields,
   config,
   setConfig,
+  draftConfig,
+  errors,
   renderers,
   over,
   pack = 'pairs',
@@ -200,6 +214,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     config,
     shown,
     setConfig,
+    draftConfig,
+    errors,
     renderers,
     over,
     showHidden,

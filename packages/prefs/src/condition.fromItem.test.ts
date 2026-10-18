@@ -75,7 +75,7 @@ describe('checking a test that reads from the entry', () => {
   it('holds the path to the schema of the nearest item, and reports one read where there is no item', () => {
     expect(checkPrefConditions(schema).map(({ at, field, code, path, problem }) => ({ at, field, code, path, problem }))).toEqual([
       { at: 'loose', field: 'showIf', code: 'no-item', path: 'mode', problem: '"mode" is read from an entry, and this is inside no list or map' },
-      { at: 'phases.item.ease', field: 'showIf', code: 'value', path: 'mode', problem: `the entry's "mode" never holds 'bounce': its options are 'ease', 'hold'` },
+      { at: 'phases.item.ease', field: 'showIf', code: 'option', path: 'mode', problem: `the entry's "mode" never holds 'bounce': its options are 'ease', 'hold'` },
       { at: 'phases.item.lost', field: 'showIf', code: 'no-leaf', path: 'nope', problem: 'no leaf holds a value at "nope" in the entry' },
       { at: 'phases.item.rows.item.out', field: 'showIf', code: 'no-leaf', path: 'mode', problem: 'no leaf holds a value at "mode" in the entry' },
     ]);

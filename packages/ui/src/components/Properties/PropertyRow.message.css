@@ -1,0 +1,25 @@
+/* ── Row message: what is wrong with the row's value, under its control. ── */
+
+.rowError {
+  font-size: var(--wzl-font-size-sm);
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-danger);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A row that lays its label beside its control wraps, so the message takes a line of its own beneath both. */
+.rowInline[data-invalid],
+.rowCheckbox:not(.rowBlock)[data-invalid] {
+  flex-wrap: wrap;
+}
+
+.rowInline[data-invalid] > .rowError,
+.rowCheckbox:not(.rowBlock)[data-invalid] > .rowError {
+  flex: 1 0 100%;
+}
+
+.rowColor > .rowError {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}

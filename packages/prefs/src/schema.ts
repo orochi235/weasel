@@ -126,9 +126,8 @@ export type PrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
 export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
 
-/** A numeric pref, optionally bounded and stepped, and optionally stored in a
- *  different unit from the one shown. */
-export interface PrefNumber extends PrefValueBase<'number', number> {
+/** What every number leaf carries; {@link PrefNumber} adds `clearable`. */
+export interface PrefNumberBase extends PrefValueBase<'number', number | undefined> {
   min?: number;
   max?: number;
   step?: number;
@@ -142,6 +141,17 @@ export interface PrefNumber extends PrefValueBase<'number', number> {
   /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */
   infinity?: InfinityText;
 }
+
+/**
+ * A numeric pref, optionally bounded and stepped, and optionally stored in a
+ * different unit from the one shown.
+ *
+ * `clearable` says the field may hold no number, which a person sets by
+ * emptying it: the value is then `undefined`, which the owner reads as unset,
+ * and its default may be too.
+ */
+export type PrefNumber = PrefNumberBase & ({ clearable?: false; default: number } | { clearable: true });
+
 /**
  * Stored-value bridge for a boolean leaf whose field is not a boolean — the
  * flag counterpart of {@link PrefEnumEncoding}. `TextStyle.fontStyle` is

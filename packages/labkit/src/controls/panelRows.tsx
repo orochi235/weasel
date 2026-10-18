@@ -19,14 +19,14 @@ import {
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
-import { schemaNodeAtPath, valueAtPath } from '../config/path';
+import { schemaNodeAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
-import { BareControl, extra, isSliderLeaf, labField } from './fields';
+import { BareControl, extra, isSliderLeaf, labField, leafValueAt } from './fields';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 
@@ -50,6 +50,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   /** `config` with every auto path resolved. */
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  draftConfig: ((path: string, value: unknown) => void) | undefined;
+  errors: Readonly<Record<string, ReactNode>> | undefined;
   renderers: Record<string, ControlRenderer> | undefined;
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
@@ -75,6 +77,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     config,
     shown,
     setConfig,
+    draftConfig,
+    errors,
     renderers,
     over,
     showHidden,
@@ -97,13 +101,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     </PropertyList>
   );
 
-  /** A group's paths that no section inside it claims, in schema order. */
-  const loosePaths = (group: PrefGroup, at: string): string[] => {
-    const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
-    return Object.keys(group.children)
-      .map((key) => (at === '' ? key : `${at}.${key}`))
-      .filter((p) => !sectioned.has(p));
-  };
+  const drawsAny = (path: string): boolean => drawsAnyAt(resolved, visible, path);
+  const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
 
   /** The control a heading carries in its title row, lifted out of the rows
    *  beneath it — see `headingLeaf`. */
@@ -116,8 +115,9 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       control: visible(path) ? (
         <BareControl
           leaf={leaf}
-          value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+          value={leafValueAt(shown, path, leaf)}
           write={(value) => setConfig(path, value)}
+          draft={draftConfig && ((value) => draftConfig(path, value))}
           name={typeof heading === 'string' ? heading : undefined}
           disabled={!enabled(path)}
         />
@@ -129,7 +129,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const node = (path: string, rows: Rows): ReactNode => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found) return null;
-    if (!visible(path)) return null;
+    if (!drawsAny(path)) return null;
     if (isPrefLeaf(found)) {
       return (
         <ControlRow
@@ -140,6 +140,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           config={config}
           shown={shown}
           setConfig={setConfig}
+          draftConfig={draftConfig}
+          error={errors?.[path]}
           renderers={renderers}
           pack={rows.pack}
           layout={rows.layout}
@@ -159,9 +161,10 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           path={path}
           visible={visible}
           enabled={enabled}
-          value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
+          value={(p, leaf) => leafValueAt(shown, p, leaf)}
           write={setConfig}
           bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
+          draft={draftConfig}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => listOf(rows, node(p, rows))}
           open={(inner, at) => listOf(rows, body(inner, at, rows))}
@@ -199,16 +202,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
         // two-column grid leaves it laying its own rows out inside a cell,
         // which overlaps them.
         span
-        actions={
-          lifted.control && reset ? (
-            <>
-              {lifted.control}
-              {reset}
-            </>
-          ) : (
-            (lifted.control ?? reset)
-          )
-        }
+        actions={headingActions(lifted.control, reset)}
         {...fold(path, undefined, rows.grid)}
       >
         {body(found, path, rows, lifted.path)}
@@ -244,7 +238,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const out: ReactNode[] = [];
     for (const step of prefTabRuns(runs, tabGroup)) {
       if (step.tabs) {
-        const tabs = step.tabs.flatMap((run) => run.items).filter(visible);
+        const tabs = step.tabs.flatMap((run) => run.items).filter(drawsAny);
         if (tabs.length === 0) continue;
         out.push(
           <GroupTabs
@@ -279,6 +273,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           cells={cells}
           shown={shown}
           setConfig={setConfig}
+          draftConfig={draftConfig}
+          errors={errors}
           layout={rows.layout}
           changed={items.some((path) => changed?.has(path) === true)}
           // A segmented cell carries every choice at once, so a pair holding
@@ -301,6 +297,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           rows,
         )}
         {sections.map((section) => {
+          if (!section.paths.some(drawsAny)) return null;
           const inner = sectionRows(section, rows);
           const heading = lift(section.label, section.paths);
           return (
@@ -322,6 +319,37 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   };
 
   return { body, lift, loosePaths };
+}
+
+/** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
+function drawsAnyAt(
+  resolved: ResolvedConfig,
+  visible: (path: string) => boolean,
+  path: string,
+): boolean {
+  if (!visible(path)) return false;
+  const found = schemaNodeAtPath(resolved.group, path);
+  if (!found || isPrefLeaf(found)) return found !== undefined;
+  return Object.keys(found.children).some((key) => drawsAnyAt(resolved, visible, `${path}.${key}`));
+}
+
+/** A group's paths that no section inside it claims, in schema order. */
+function loosePathsIn(resolved: ResolvedConfig, group: PrefGroup, at: string): string[] {
+  const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
+  return Object.keys(group.children)
+    .map((key) => (at === '' ? key : `${at}.${key}`))
+    .filter((p) => !sectioned.has(p));
+}
+
+/** What a group's heading carries: its lifted control, its reset button, or both. */
+function headingActions(control: ReactNode, reset: ReactNode): ReactNode {
+  if (!control || !reset) return control ?? reset;
+  return (
+    <>
+      {control}
+      {reset}
+    </>
+  );
 }
 
 /** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */

@@ -11,12 +11,14 @@ import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './
 import type { PrefUnion } from './union';
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
- *  holds a value at, it compares a leaf against a value it never holds, it
+ *  holds a value at, it compares a leaf against a value it never holds — an
+ *  enum against a string none of its options is being `option`, which a
+ *  surface may take as a test that never matches — it
  *  never holds whatever the leaf does, as an `in` of no values, it is the
  *  `showIf` of a list's or a map's item, which is drawn with each entry, or
  *  it reads from the entry on a node that no list or map draws. */
 export interface PrefConditionProblem {
-  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never' | 'item-show' | 'no-item';
+  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'option' | 'never' | 'item-show' | 'no-item';
   /** The path read, where the problem is with one. */
   path?: string;
   problem: string;
@@ -93,7 +95,9 @@ function leafProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, o
   const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
   for (const value of compared) {
     const why = neverHolds(leaf, value);
-    if (why !== undefined) out.push({ code: 'value', path, problem: `${named} never holds ${show(value)}: ${why}` });
+    if (why === undefined) continue;
+    const code = leaf.kind === 'enum' && typeof value === 'string' ? 'option' : 'value';
+    out.push({ code, path, problem: `${named} never holds ${show(value)}: ${why}` });
   }
   const ordering = ORDERINGS.find((op) => test[op] !== undefined);
   if (ordering !== undefined && isBuiltinPref(leaf) && leaf.kind !== 'number') {

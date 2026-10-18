@@ -2,8 +2,10 @@ import {
   checkPrefConditions,
   type PrefGroup,
   type PrefLeaf,
+  type PrefSchemaConditionProblem,
   type PrefSection,
 } from '@weasel-js/prefs';
+import { isDev } from '@weasel-js/react';
 import { isConfigBranch } from './builder';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
@@ -62,14 +64,14 @@ export function resolveConfigSchema<TC>(
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
+  const said = ({ field, at, problem }: PrefSchemaConditionProblem) =>
+    `[labkit] ${field} of "${at}": ${problem}`;
   const problems = checkPrefConditions(group, over);
-  if (problems.length > 0) {
-    throw new Error(
-      problems
-        .map(({ field, at, problem }) => `[labkit] ${field} of "${at}": ${problem}`)
-        .join('\n'),
-    );
-  }
+  // An enum's options can change under a condition written against them; a test of one it no
+  // longer has never matches, and is no reason to take the whole panel down.
+  const faults = problems.filter((p) => p.code !== 'option');
+  if (faults.length > 0) throw new Error(faults.map(said).join('\n'));
+  if (isDev()) for (const p of problems) if (p.code === 'option') console.warn(said(p));
   return {
     group,
     sections: sink.sections,
