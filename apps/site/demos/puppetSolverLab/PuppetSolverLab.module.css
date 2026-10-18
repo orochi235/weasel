@@ -13,12 +13,15 @@
 
 .panel {
   position: absolute;
+  top: var(--wzl-space-4);
   right: var(--wzl-space-4);
-  bottom: var(--wzl-space-4);
+  max-height: calc(100% - 2 * var(--wzl-space-4));
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-3);
-  width: 250px;
+  width: 270px;
+  box-sizing: border-box;
   padding: var(--wzl-space-3) var(--wzl-space-4);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
@@ -39,6 +42,24 @@
   display: flex;
   justify-content: space-between;
   gap: var(--wzl-space-5);
+}
+
+.scrub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.scrub input {
+  width: 100%;
+  margin: 0;
+}
+
+/* Fixed width, so a growing step count never shoves the stage name. */
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 7ch;
+  text-align: end;
 }
 
 .row dt {

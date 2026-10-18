@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../../canvas-kit-demo.css';
 import { asNodeId, type EditableShape } from '@weasel-js/core';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { createLabScene, PuppetSolverLabDemo, SHAPE_ID } from '../PuppetSolverLabDemo';
@@ -9,6 +9,9 @@ import { meshModelOf } from '../puppetSolverLab/meshModel';
 import { withIcons } from '../../testIcons';
 
 afterEach(cleanup);
+
+/** Index 1 of the trace is the second linear step: what the two-step solve alone returns. */
+const TWO_STEP = 1;
 
 /** How many of the scene canvas's pixels are magenta inside a CSS-pixel rect, read back from its GL context. */
 function magentaIn(canvas: HTMLCanvasElement, x0 = 0, y0 = 0, x1 = Infinity, y1 = Infinity): number {
@@ -31,23 +34,33 @@ async function mount() {
   await page.viewport(1100, 800);
   const { container } = render(<PuppetSolverLabDemo />, { wrapper: withIcons });
   await expect.poll(() => container.querySelector('.lk-trial-scene canvas'), { timeout: 8000 }).toBeTruthy();
+  await expect.poll(() => screen.queryByTestId('step')?.textContent, { timeout: 8000 }).toMatch(/^\d+\/\d+$/);
   return { container, canvas: () => container.querySelector<HTMLCanvasElement>('.lk-trial-scene canvas')! };
 }
 
-test('the squashed disc paints its turned-over triangle magenta, and the gentle bend paints none', async () => {
+const scrubTo = (index: number) =>
+  act(() => { fireEvent.change(screen.getByRole('slider', { name: 'Step of the solve' }), { target: { value: String(index) } }); });
+
+test('the squashed disc paints its fold magenta at step 2, none once untangled, and the gentle bend none', async () => {
   const { canvas } = await mount();
-  // Where the turned-over triangle lies, in world space; the view opens unscrolled at 1:1.
-  const model = meshModelOf(createLabScene('disc').get(asNodeId(SHAPE_ID)) as EditableShape, 'step2')!;
+  await expect.poll(() => screen.getByTestId('inverted').textContent, { timeout: 8000 }).toBe('0');
+  expect(magentaIn(canvas())).toBe(0);
+
+  await scrubTo(TWO_STEP);
+  // Where step 2's turned-over triangle lies, in world space; the view opens unscrolled at 1:1.
+  const model = meshModelOf(createLabScene('disc').get(asNodeId(SHAPE_ID)) as EditableShape, TWO_STEP)!;
   const t = model.ratio.findIndex((r) => r <= 0);
   const corner = (k: number, c: number) => model.world[2 * model.triangles[3 * t + k] + c];
   const cx = (corner(0, 0) + corner(1, 0) + corner(2, 0)) / 3, cy = (corner(0, 1) + corner(1, 1) + corner(2, 1)) / 3;
-
   await expect.poll(() => magentaIn(canvas(), cx - 14, cy - 14, cx + 14, cy + 14), { timeout: 8000 }).toBeGreaterThan(20);
   const away = magentaIn(canvas()) - magentaIn(canvas(), cx - 16, cy - 16, cx + 16, cy + 16);
-  expect(away, 'the disc has no other turned-over triangle').toBe(0);
+  expect(away, 'step 2 of the disc has no other turned-over triangle').toBe(0);
 
   await userEvent.click(screen.getByRole('radio', { name: 'Bend' }));
-  await expect.poll(() => magentaIn(canvas()), { timeout: 8000 }).toBe(0);
+  await expect.poll(() => screen.queryByTestId('step')?.textContent, { timeout: 8000 }).toMatch(/^\d+\/\d+$/);
+  await scrubTo(TWO_STEP);
+  await expect.poll(() => screen.getByTestId('step').textContent, { timeout: 8000 }).toMatch(/^2\//);
+  expect(magentaIn(canvas())).toBe(0);
 });
 
 const fire = (el: Element, type: string, x: number, y: number) =>
@@ -56,9 +69,10 @@ const fire = (el: Element, type: string, x: number, y: number) =>
     button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
   }));
 
-test('the mesh and the count follow a pin dragged halfway back, where the fold grows', async () => {
+test('step 2’s mesh and count follow a pin dragged halfway back, where its fold grows', async () => {
   const { canvas } = await mount();
-  await expect.poll(() => screen.queryByTestId('inverted')?.textContent, { timeout: 8000 }).toBe('1');
+  await scrubTo(TWO_STEP);
+  await expect.poll(() => screen.getByTestId('inverted').textContent, { timeout: 8000 }).toBe('1');
   const before = magentaIn(canvas());
 
   // The disc's top pin sits at (134, 108), and was placed at (160, 82).

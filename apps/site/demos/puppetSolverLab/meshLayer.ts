@@ -9,12 +9,12 @@ import {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { ellipsePath, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-import { meshModelOf, type MeshModel, type Stage } from './meshModel';
+import { meshModelOf, type MeshModel, type StepPick } from './meshModel';
 
 export type MeshShow = 'area' | 'wire' | 'off';
 
 export interface MeshDisplay {
-  stage: Stage;
+  step: StepPick;
   show: MeshShow;
 }
 
@@ -132,12 +132,12 @@ function liveNode(src: MeshLayerSource, envelope: unknown): EditableShape | null
  */
 export function createMeshLayers(src: MeshLayerSource): { mesh: RenderLayer<unknown>; backward: RenderLayer<unknown> } {
   // Keyed on the node's data and pose, not the node: the scene swaps those on a node object it keeps.
-  let last: { data: unknown; pose: unknown; stage: Stage; model: MeshModel | null } | null = null;
+  let last: { data: unknown; pose: unknown; step: StepPick; model: MeshModel | null } | null = null;
   const modelFor = (envelope: unknown): MeshModel | null => {
-    const { stage } = src.display();
+    const { step } = src.display();
     const node = liveNode(src, envelope);
-    if (!last || last.stage !== stage || last.data !== node?.data || last.pose !== node?.pose) {
-      last = { data: node?.data, pose: node?.pose, stage, model: meshModelOf(node, stage) };
+    if (!last || last.step !== step || last.data !== node?.data || last.pose !== node?.pose) {
+      last = { data: node?.data, pose: node?.pose, step, model: meshModelOf(node, step) };
     }
     return last.model;
   };

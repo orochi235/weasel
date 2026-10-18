@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { heldPathWarpOf } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -43,12 +43,27 @@ const pinsOf = () => {
   return held?.warp.kind === 'puppet' ? held.warp.pins : [];
 };
 
+const scrubTo = (index: number) =>
+  act(() => { fireEvent.change(screen.getByRole('slider', { name: 'Step of the solve' }), { target: { value: String(index) } }); });
+
 describe('PuppetSolverLabDemo', () => {
-  it('opens on the squashed disc with a triangle turned over on its outline, and a pin set swaps the shape', async () => {
+  it('opens the squashed disc on the untangled result, and scrubbing back to step 2 shows the fold', async () => {
     await renderSettled(<StrictMode><PuppetSolverLabDemo /></StrictMode>, { wrapper: withIcons });
-    expect(Number(await until('inverted', (v) => Number(v) > 0))).toBeGreaterThan(0);
+    const at = await until('step', (v) => /^\d+\/\d+$/.test(v ?? ''));
+    const [i, n] = at!.split('/').map(Number);
+    expect(i).toBe(n);
+    expect(text('inverted')).toBe('0');
+
+    await scrubTo(1);
+    expect(await until('step', (v) => v === `2/${n}`)).toBe(`2/${n}`);
+    expect(Number(text('inverted'))).toBeGreaterThan(0);
     expect(Number(text('inverted-outline'))).toBeGreaterThan(0);
-    const discTriangles = text('triangles');
+    expect(screen.getByText('Step 2: rigid copies')).toBeTruthy();
+  });
+
+  it('swaps the shape and its pins with the pin set', async () => {
+    await renderSettled(<StrictMode><PuppetSolverLabDemo /></StrictMode>, { wrapper: withIcons });
+    const discTriangles = await until('triangles', (v) => v !== '–');
 
     await userEvent.click(screen.getByRole('radio', { name: 'Bend' }));
     expect(await until('triangles', (v) => v !== discTriangles && v !== '–')).not.toBe(discTriangles);
@@ -56,14 +71,7 @@ describe('PuppetSolverLabDemo', () => {
     expect(pinsOf()).toHaveLength(3);
 
     await userEvent.click(screen.getByRole('radio', { name: 'S bar' }));
-    expect(Number(await until('inverted', (v) => Number(v) > 0))).toBeGreaterThan(0);
-    expect(text('inverted-outline')).toBe('0');
+    await until('triangles', (v) => v !== '–');
     expect(pinsOf()).toHaveLength(4);
-  });
-
-  it('shows no step toggle while the solver keeps its first step to itself', async () => {
-    await renderSettled(<StrictMode><PuppetSolverLabDemo /></StrictMode>, { wrapper: withIcons });
-    expect(screen.queryByRole('radio', { name: /^Step 1/ })).toBeNull();
-    expect(screen.getByRole('radio', { name: 'Wire' })).toBeTruthy();
   });
 });

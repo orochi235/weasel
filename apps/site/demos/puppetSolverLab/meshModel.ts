@@ -1,25 +1,30 @@
 /**
- * What the lab draws from a puppet-warped node: its mesh at one solver stage,
- * placed in world space, each triangle's area ratio, and the stretches of
- * outline whose triangle has turned over.
+ * What the lab draws from a puppet-warped node: its mesh at one step of the
+ * solve, placed in world space, each triangle's area ratio, and the stretches
+ * of outline whose triangle has turned over.
  */
 import type { EditableShape } from '@weasel-js/core';
 import { applyToPoint } from '@weasel-js/geom';
+import type { ArapStage } from '@weasel-js/geom/warp';
 import { resolvePathWarp } from '@weasel-js/path-tools';
-import { solveStages } from './solverStages';
+import { solverTrace } from './solverTrace';
 
-export type Stage = 'step1' | 'step2';
+/** A step of the solve, by its index in the trace; `null` is the last, the result. */
+export type StepPick = number | null;
 
 export interface MeshModel {
   triangles: Uint32Array;
-  /** Vertex positions at the stage shown, in world space. */
+  /** Vertex positions at the step shown, in world space. */
   world: Float64Array;
-  /** Each triangle's signed area at the stage shown over its area at rest; at or below 0 it has turned over. */
+  /** Each triangle's signed area at the step shown over its area at rest; at or below 0 it has turned over. */
   ratio: Float64Array;
   /** Outline edges, as vertex pairs in the triangle's winding, with the triangle owning each. */
   outline: { a: number; b: number; tri: number }[];
   inverted: number;
   invertedOnOutline: number;
+  /** Every step of the solve, and which one is shown. */
+  steps: readonly { stage: ArapStage; round: number }[];
+  index: number;
 }
 
 const doubleArea = (P: ArrayLike<number>, a: number, b: number, c: number) =>
@@ -45,14 +50,15 @@ function outlineOf(T: Uint32Array, n: number): { a: number; b: number; tri: numb
 
 const outlines = new WeakMap<Uint32Array, { a: number; b: number; tri: number }[]>();
 
-/** The mesh `node`'s puppet warp deforms, at `stage`, or null when it holds no puppet warp. */
-export function meshModelOf(node: EditableShape | null | undefined, stage: Stage): MeshModel | null {
+/** The mesh `node`'s puppet warp deforms, at step `pick` of the solve, or null when it holds no puppet warp. */
+export function meshModelOf(node: EditableShape | null | undefined, pick: StepPick): MeshModel | null {
   const resolved = resolvePathWarp(node);
   if (!resolved || resolved.held.warp.kind !== 'puppet') return null;
-  const stages = solveStages(resolved.held.source, resolved.held.warp.pins);
-  if (!stages) return null;
-  const at = (stage === 'step1' ? stages.step1 : null) ?? stages.step2;
-  const { vertices: V, triangles: T } = stages.mesh;
+  const trace = solverTrace(resolved.held.source, resolved.held.warp.pins);
+  if (!trace) return null;
+  const index = pick === null ? trace.steps.length - 1 : Math.max(0, Math.min(trace.steps.length - 1, pick));
+  const at = trace.steps[index].vertices;
+  const { vertices: V, triangles: T } = trace.mesh;
   const n = V.length >> 1;
   let outline = outlines.get(T);
   if (!outline) { outline = outlineOf(T, n); outlines.set(T, outline); }
@@ -70,5 +76,6 @@ export function meshModelOf(node: EditableShape | null | undefined, stage: Stage
     if (ratio[t] <= 0) inverted++;
   }
   const flipped = new Set(outline.filter((e) => ratio[e.tri] <= 0).map((e) => e.tri));
-  return { triangles: T, world, ratio, outline, inverted, invertedOnOutline: flipped.size };
+  const steps = trace.steps.map(({ stage, round }) => ({ stage, round }));
+  return { triangles: T, world, ratio, outline, inverted, invertedOnOutline: flipped.size, steps, index };
 }

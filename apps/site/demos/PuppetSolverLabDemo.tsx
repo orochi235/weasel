@@ -12,10 +12,9 @@ import {
 } from '@weasel-js/labkit';
 import { useCallback, useMemo, useState } from 'react';
 import { createMeshLayers, type MeshShow } from './puppetSolverLab/meshLayer';
-import type { Stage } from './puppetSolverLab/meshModel';
+import type { StepPick } from './puppetSolverLab/meshModel';
 import { createReadout, SolverPanel } from './puppetSolverLab/SolverPanel';
 import { PRESETS, type PresetId } from './puppetSolverLab/presets';
-import { STEP_ONE_SHOWN } from './puppetSolverLab/solverStages';
 import s from './puppetSolverLab/PuppetSolverLab.module.css';
 import { pathLeaf } from './warpLab';
 import '@weasel-js/labkit/styles.css';
@@ -27,11 +26,6 @@ const FEATURES = ['draw', warpPreset] as const;
 const config = f.schema({
   preset: f.enum<PresetId>('disc', (Object.keys(PRESETS) as PresetId[]).map((value) => ({ value, label: PRESETS[value].label })))
     .radio().label('Pins'),
-  stage: f.enum<Stage>('step2', [
-    { value: 'step1', label: 'Step 1' },
-    { value: 'step2', label: 'Step 2' },
-  ]).radio().label('Solver step').showIf(() => STEP_ONE_SHOWN)
-    .describe('Step 1 lets each triangle scale and turn to fit the pins. Step 2 fits an unscaled copy of each to that and averages the copies.'),
   mesh: f.enum<MeshShow>('area', [
     { value: 'area', label: 'Area' },
     { value: 'wire', label: 'Wire' },
@@ -56,16 +50,17 @@ export function createLabScene(preset: PresetId) {
 }
 
 function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const { preset, stage, mesh } = ctx.config;
+  const { preset, mesh } = ctx.config;
+  const [step, setStep] = useState<StepPick>(null);
   const create = useCallback(() => createLabScene(preset), [preset]);
   const scene = useTrialScene(ctx, create);
   const selection = useSelection({ mode: 'multi', initial: SELECTED });
   const puppet = usePuppetTool();
   const [readout] = useState(createReadout);
   const layers = useMemo(() => {
-    const built = createMeshLayers({ scene: scene as never, nodeId: SHAPE_ID, display: () => ({ stage, show: mesh }), onModel: readout.set });
+    const built = createMeshLayers({ scene: scene as never, nodeId: SHAPE_ID, display: () => ({ step, show: mesh }), onModel: readout.set });
     return { mesh: { layer: built.mesh, before: 'scene' }, backward: { layer: built.backward, after: 'scene' } };
-  }, [scene, stage, mesh, readout]);
+  }, [scene, step, mesh, readout]);
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
@@ -76,7 +71,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         tools={{ puppet }}
         layers={layers}
       />
-      <SolverPanel readout={readout} caption={PRESETS[preset].caption} />
+      <SolverPanel readout={readout} caption={PRESETS[preset].caption} onPick={setStep} />
     </div>
   );
 }
