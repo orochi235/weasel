@@ -347,7 +347,15 @@ Priority tags:
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
+  that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
+  by three pins went from 12 anchors to 5, but a 4-anchor bar pushed into an S still refits with 18
+  (19 before). A smooth interpolation of the solved vertices would refit with fewer.
+- **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` takes 30 to
+  60 rounds on a ~500-vertex mesh, about 4 to 5 ms a solve on the fleet, where an unfolded solve
+  takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
+  (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
+  cut it.
 - **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
   node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
   solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
