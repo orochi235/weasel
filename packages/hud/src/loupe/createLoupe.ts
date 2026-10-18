@@ -1,6 +1,6 @@
 import {
   createViewportLayer, screenToWorld, viewToTransform,
-  type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View,
+  type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View, type ViewAt,
 } from '@weasel-js/core';
 import { releaseImageSource, type DrawCommand } from '@weasel-js/core/renderer';
 import {
@@ -108,6 +108,22 @@ const LENS_VIEW = 'weasel-loupe:lens';
 /** Where an interactive lens routes while its window is hidden: nowhere. */
 const NO_RECT = { x: 0, y: 0, w: 0, h: 0 };
 
+/** The lens camera aimed at `aim`: magnifying the view under it, or the
+ *  canvas's own camera `outer` where no view is. */
+function lensCamera(
+  aim: { x: number; y: number }, under: ViewAt | null, outer: View, rect: WidgetBounds, factor: number,
+): View {
+  if (under && under.id !== null) {
+    const world = {
+      x: (aim.x - under.rect.x) / under.view.scale.x + under.view.x,
+      y: (aim.y - under.rect.y) / under.view.scale.y + under.view.y,
+    };
+    return loupeInnerView(world, under.view, rect, factor);
+  }
+  const world = screenToWorld(aim.x, aim.y, viewToTransform(outer));
+  return loupeInnerView({ x: world[0], y: world[1] }, outer, rect, factor);
+}
+
 /** Control surface for a live loupe: where it is aimed, how it magnifies,
  *  what color it is over, and the window it lives in. */
 export interface LoupeHandle {
@@ -176,19 +192,9 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     opts.background ?? ctx.tokens['--wzl-surface'];
   const backdrop = (ctx: HudContentCtx): DrawCommand => backdropOf(ctx, backdropColor(ctx));
 
-  const innerView = (outer: View, rect: WidgetBounds): View => {
-    const { aim } = model;
-    const under = host?.viewAt?.(aim, { except: LENS_VIEW });
-    if (under && under.id !== null) {
-      const world = {
-        x: (aim.x - under.rect.x) / under.view.scale.x + under.view.x,
-        y: (aim.y - under.rect.y) / under.view.scale.y + under.view.y,
-      };
-      return loupeInnerView(world, under.view, rect, model.factor);
-    }
-    const world = screenToWorld(aim.x, aim.y, viewToTransform(outer));
-    return loupeInnerView({ x: world[0], y: world[1] }, outer, rect, model.factor);
-  };
+  const innerView = (outer: View, rect: WidgetBounds): View => (
+    lensCamera(model.aim, host?.viewAt?.(model.aim, { except: LENS_VIEW }) ?? null, outer, rect, model.factor)
+  );
 
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
     if (host) return lens ? [backdrop(ctx), ...lens.draw(ctx.data, ctx.view, ctx.dims)] : [backdrop(ctx)];
