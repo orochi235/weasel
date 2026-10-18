@@ -1,7 +1,7 @@
 import { axisIndexes, type AxisRef } from './axisNames';
 import { axesOf } from './engine/axes';
 import type { HoldStore } from './engine/holdStore';
-import type { LaneColumns, Reader } from './engine/lanes';
+import type { LaneColumns, LanePlace, Reader } from './engine/lanes';
 
 /** How a target's value maps to the flat numbers an animation moves, and back. */
 export interface TargetAxes<T> {
@@ -88,8 +88,8 @@ export interface Target<T> {
 export interface TargetOwner {
   /** Cancels every animation on `s`. */
   stop(s: TargetState): void;
-  /** The voices of `table`'s rows as the last frame read them; null where none is moving. */
-  columns(table: RowTable): LaneColumns | null;
+  /** The voices kept in `group`'s lane as the last frame read them; null where none is. */
+  columns(group: object): LaneColumns | null;
   /** Says `s.adjust` holds something, for the next frame's reading to clear. */
   adjusted(s: TargetState): void;
 }
@@ -101,8 +101,14 @@ export interface RowTable {
   mark(index: number): void;
   /** Called once a frame's voices are read: a mark that reading took in is dropped. */
   settle(): void;
-  /** Fills every moving row's value on screen from `columns` and the table's holds. */
-  fill(columns: LaneColumns | null): void;
+  /** Fills every moving row's value on screen from the voices `columns` answers for the
+   *  table's rows and for its moves, with the table's holds. */
+  fill(columns: (group: object) => LaneColumns | null): void;
+  /** An animation's move on row `index`, of which `share` of its voices is the move, per axis.
+   *  The pass shows its voices in `place` by how much the row's holds leave of the move. */
+  move(index: number, share: readonly number[]): RowMove;
+  /** Says what waits beside row `index`'s holds; null for nothing. */
+  beside(index: number, value: readonly number[] | null): void;
   /** The holds on the table's rows, made the first time they are asked for. */
   holds(): HoldStore;
   /** The rows in use. */
@@ -112,13 +118,37 @@ export interface RowTable {
   refill(): void;
 }
 
-/** An animation's share in moving a target's committed value, which its holds stand in front of. */
+/** An animation's move on a table's row, as the table keeps it for its pass. */
+export interface RowMove {
+  /** Where its voices run: a lane of the table's moves. */
+  readonly place: LanePlace;
+  /** Says the share of the move still to show, per axis, has changed. */
+  kept(kept: readonly number[]): void;
+  leave(): void;
+}
+
+/**
+ * An animation with a destination on a target: the move its destination made in the committed
+ * value is behind the target's holds, which cover it as they cover the committed value, and the
+ * rest of its offset shows on top of them.
+ */
 export interface Behind {
   /** What is left of the move its destination made in the committed value. */
   left(): readonly number[];
+  /** Its voices' sum: its whole offset. */
+  own(): readonly number[];
+  /** The share of each axis of its voices that is that move: 1 where all of it is. */
+  readonly share: readonly number[];
   /** The share of that still to show, per axis, once a hold released over it has committed what
    *  showed; null for all of it. */
   kept: number[] | null;
+  /** The sum of its voices as the last frame read it, where they run on a subject of their own,
+   *  as a table's row's do; null where they run among its target's, in its `slot`. */
+  slot: Reader | null;
+  /** What that sum has changed by since; null for nothing. */
+  adjust: number[] | null;
+  /** Its place in its table's moves, for a row of one. */
+  move: RowMove | null;
 }
 
 /** What an animator keeps on a target it is moving. */
@@ -142,7 +172,7 @@ export interface TargetState<T = unknown> {
   /** The animations with a destination on it. A destination moves the committed value at once
    *  and the animation shows what is left of that move, so a hold covers it as it covers the
    *  committed value. */
-  behind: Set<Behind>;
+  behind: Behind[];
   /** Whether any of `behind` has a `kept`. */
   dimmed: boolean;
   /** What animations stopped under those holds were showing on top of them: how far a coast
@@ -156,7 +186,7 @@ export interface TargetState<T = unknown> {
   row: { readonly table: RowTable; readonly index: number } | null;
   /** How many animations are moving it. */
   live: number;
-  /** The sum of their offsets as the last frame read it. */
+  /** The sum of their voices but those of `behind`, as the last frame read it. */
   slot: Reader | null;
   /** What that sum has changed by since: animations started, stopped or redirected. */
   adjust: number[];
@@ -169,20 +199,49 @@ const states = new WeakMap<object, TargetState>();
 /** Where a read gathers what a target's animations add, on the way to `axes.add`. */
 let scratch = new Float64Array(16);
 
-/** What `s`'s holds, and holds released over it, hide of its animations; null where none. */
-function hidden<T>(s: TargetState<T>): number[] | null {
-  const h = s.holds;
-  if (s.behind.size === 0 || (!h && !s.dimmed)) return null;
-  const out = new Array<number>(s.axes.count).fill(0);
-  const at = h ? h.row * s.axes.count : 0;
-  for (const b of s.behind) {
-    const left = b.left();
-    for (let i = 0; i < out.length; i++) {
-      const shows = (h ? 1 - h.store.cover[at + i]! : 1) * (b.kept ? b.kept[i]! : 1);
-      out[i] = out[i]! + left[i]! * (1 - shows);
+/** How much of the voices of an animation with destination its target shows, on one axis: all
+ *  but the share that is its move, which shows by what `cover` of holds leave of it and `kept`
+ *  of those released over it. */
+export const showing = (share: number, cover: number, kept: number): number =>
+  1 - share * (1 - (1 - cover) * kept);
+
+/**
+ * Adds into `out` from `at` what `s`'s animations with a destination show past its holds, whose
+ * `cover` is from `base`, null where none stand. One whose voices run on a subject of its own
+ * adds them by how much of them shows; one whose voices run among `s`'s own, in `slot` at
+ * full already, takes off what does not show.
+ */
+function addMoves<T>(s: TargetState<T>, out: AxisBuffer, at: number, cover: Float64Array | null, base: number): void {
+  const n = s.axes.count;
+  const { behind } = s;
+  for (let j = 0; j < behind.length; j++) {
+    const b = behind[j]!;
+    const { slot, adjust, kept, share } = b;
+    if (slot) {
+      for (let i = 0; i < n; i++) {
+        const m = slot.cols[slot.at + i]! + (adjust ? adjust[i]! : 0);
+        out[at + i] = out[at + i]! + (cover || kept
+          ? m * showing(share[i]!, cover ? cover[base + i]! : 0, kept ? kept[i]! : 1)
+          : m);
+      }
+    } else if (cover || kept) {
+      const own = b.own();
+      for (let i = 0; i < n; i++) {
+        out[at + i] = out[at + i]! - own[i]! * (1 - showing(share[i]!, cover ? cover[base + i]! : 0, kept ? kept[i]! : 1));
+      }
     }
   }
-  return out;
+}
+
+/** Adds into `out` from `at` what `s`'s animations add to what it shows. */
+function addMoving<T>(s: TargetState<T>, out: AxisBuffer, at: number): void {
+  const n = s.axes.count;
+  const { slot, adjust, beside } = s;
+  for (let i = 0; i < n; i++) {
+    out[at + i] = out[at + i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
+  }
+  const h = s.holds;
+  if (s.behind.length > 0 && (s.row || h || s.dimmed)) addMoves(s, out, at, h ? h.store.cover : null, h ? h.row * n : 0);
 }
 
 /** Puts `s`'s committed value's axes into `out` from `at`. */
@@ -219,42 +278,32 @@ function heldAxes<T>(s: TargetState<T>, committed: T): number[] {
 export function readTarget<T>(s: TargetState<T>): T {
   const committed = s.get();
   if (s.live === 0) return committed;
-  const { axes, slot, beside, adjust } = s;
+  const { axes } = s;
   // A hold answers how far it is from the committed value, which takes that value's axes to check.
   if (!axes.add || s.holds || s.dimmed) {
     const a = heldAxes(s, committed);
-    const hid = hidden(s);
-    for (let i = 0; i < a.length; i++) {
-      a[i] = a[i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0)
-        - (hid ? hid[i]! : 0);
-    }
+    addMoving(s, a, 0);
     return axes.from(a);
   }
   const n = axes.count;
   if (scratch.length < n) scratch = new Float64Array(n);
   const d = scratch;
-  for (let i = 0; i < n; i++) {
-    d[i] = (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0);
-  }
+  d.fill(0, 0, n);
+  addMoving(s, d, 0);
   return axes.add(committed, d);
 }
 
 /** The value `s` shows now, as its axes, in `out` from `at`. */
 export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number): void {
   const committed = s.get();
-  const { axes, slot, beside, adjust } = s;
+  const { axes } = s;
   const moving = s.live > 0;
   if (axes.write && !(moving && s.holds)) axes.write(committed, out, at);
   else {
     const a = moving ? heldAxes(s, committed) : axes.to(committed);
     for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
   }
-  if (!moving) return;
-  const hid = hidden(s);
-  for (let i = 0; i < axes.count; i++) {
-    out[at + i] = out[at + i]! + (slot ? slot.cols[slot.at + i]! : 0) + adjust[i]! + (beside ? beside[i]! : 0)
-      - (hid ? hid[i]! : 0);
-  }
+  if (moving) addMoving(s, out, at);
 }
 
 /** Whether `x` is a target `createTarget` made. */
@@ -286,7 +335,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     discard: false,
     held: 0,
     holds: null,
-    behind: new Set(),
+    behind: [],
     dimmed: false,
     beside: null,
     parts: new Set(),

@@ -3,7 +3,8 @@
 // Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table | held | heldfn | heldrows>`.
 // `held` is N table rows with a hold each and no animation; `heldfn` gives each hold its value
 // as a function, which is asked every frame; `heldrows` holds them all with `animator.holdRows`,
-// whose values are written in place and touched every frame.
+// whose values are written in place and touched every frame; `behind` gives each row a tween
+// under a hold of plain values at weight 0.5, which the hold half covers.
 // `idle` is the frame with nothing read, to take off the other two.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
@@ -163,9 +164,30 @@ function heldRowsCase(): void {
   if (table.shown[row * AXES] !== want[0] || want[0] !== (row + k) / 2) throw new Error(`heldrows: row ${row} shows ${table.shown[row * AXES]}`);
 }
 
-// One case a process (argv[2]: idle | targets | table | held | heldfn | heldrows): three sets of targets alive together
+/** N rows of a table, each with a tween under a hold that covers half of it. */
+function behindCase(): void {
+  const m = mount();
+  const table = createTargetTable({ axes: AXES });
+  for (let row = 0; row < N; row++) {
+    table.add([0, 0]);
+    m.api.tween<number[]>({ target: table.target(row), to: [500 + row, 100], ms: 1e9 });
+    m.api.hold({ target: table.target(row), value: [row, 100], weight: 0.5 });
+  }
+  for (let f = 0; f < 5; f++) m.frame();
+  time('a tween under a hold, steady', () => { m.frame(); void table.shown; });
+  for (const row of [0, N >> 1, N - 1]) {
+    const want = table.target(row).read();
+    if (Math.abs(table.shown[row * AXES]! - want[0]!) > 1e-9) throw new Error(`behind: row ${row} shows ${table.shown[row * AXES]}; read() answers ${want[0]}`);
+  }
+}
+
+// One case a process (argv[2]: idle | targets | table | held | heldfn | heldrows | behind): three sets of targets alive together
 // push each other out of cache, and a frame at 100k rows is bound by memory.
 const which = process.argv[2] ?? 'table';
+if (which === 'behind') {
+  behindCase();
+  process.exit(0);
+}
 if (which === 'heldrows') {
   heldRowsCase();
   process.exit(0);

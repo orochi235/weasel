@@ -1,4 +1,4 @@
-import { stateOf, type TargetState } from '../target';
+import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
 import { absorb, axesFor, comeOut, commitOffset, goBehind, minus, norm, plus, takeUp, times, travel } from './offsets';
@@ -43,17 +43,18 @@ function restWaits(
   };
 }
 
-/** The voices a spring or a coast starts with: `move` behind the target's holds, and the rest
- *  of `start`, with `velocity`, on top. */
+/** The voices a spring or a coast starts with: `move` behind the target's holds, all of its
+ *  voice the move, and the rest of `start`, with `velocity`, on top. */
 function startVoices(
-  ctx: AnimationContext, s: TargetState, o: SpringVoicesOptions,
+  ctx: AnimationContext, s: TargetState, o: Omit<SpringVoicesOptions, 'behind'>,
   move: Along, start: Along, velocity: Along, coast: boolean,
-): SpringVoices {
-  const voices = createSpringVoices(ctx.codec, s, o);
+): { voices: SpringVoices; behind: Behind } {
+  const behind = goBehind(s, () => voices.moved(), () => voices.moved(), new Array<number>(move.length).fill(1));
+  const voices = createSpringVoices(ctx.codec, s, { ...o, behind });
   if (any(move)) voices.move(move);
   const top = minus(start, move);
   if (!any(move) || any(top) || any(velocity)) voices.rest(top, velocity, coast);
-  return voices;
+  return { voices, behind };
 }
 
 /**
@@ -96,8 +97,9 @@ export function startOffsetPhysics<T>(
   ctx.targets.attach(s as never);
   if (o.to != null) s.set(o.to);
   ctx.seedClock();
-  const voices = startVoices(ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null);
-  const behind = goBehind(s, voices.moved);
+  const { voices, behind } = startVoices(
+    ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null,
+  );
 
   let left = false;
   const leave = (commit: boolean): void => {

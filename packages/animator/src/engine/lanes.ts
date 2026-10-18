@@ -125,6 +125,8 @@ function rebuild(l: Lane): void {
 export function createLanes(placeOf?: (key: object) => LanePlace | undefined): Lanes {
   const lanes = new Map<unknown, Lane>();
   const slots = new Map<unknown, Slot>();
+  /** Slots whose last voice left since the last frame. */
+  const gone: Slot[] = [];
   let now = 0;
 
   const laneOf = (axes: number, group: object | undefined): Lane => {
@@ -165,17 +167,20 @@ export function createLanes(placeOf?: (key: object) => LanePlace | undefined): L
     leave(s) {
       s.refs -= 1;
       if (s.refs > 0) return;
-      // Read once more by whoever held it, for what it showed as its last voice left.
+      // Whoever holds it reads what it showed as its last voice left, until the next frame.
       const n = s.lane.axes;
       s.held.set(s.cols.subarray(s.at, s.at + n));
       s.lane.mix.drop(s.key);
       depart(s);
       s.cols = s.held;
       s.at = 0;
+      gone.push(s);
       slots.delete(s.key);
     },
     frame(time) {
       now = time;
+      for (const s of gone) s.held.fill(0);
+      gone.length = 0;
       for (const l of lanes.values()) {
         if (l.dirty) rebuild(l);
         if (l.keys.length === 0 && ++l.idle >= 2) {

@@ -1,6 +1,6 @@
 import type { ColorOverrideRegistry } from '../colorRegistry';
 import { AnimatorEventHub } from '../observe';
-import type { TargetState } from '../target';
+import type { Behind, TargetState } from '../target';
 import type { Animator } from '../types';
 import { createAnimatorApi } from './animatorApi';
 import { createCodec } from './codec';
@@ -34,6 +34,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false };
   const hub = new AnimatorEventHub();
   const codec = createCodec((on) => {
+    // A move behind a row's holds runs in its table's lane for moves; the rest of a row's voices
+    // run in its table's lane.
+    if ('move' in on) return (on as Behind).move?.place;
     const { row } = on as TargetState;
     return row ? { group: row.table, tag: row.index } : undefined;
   });

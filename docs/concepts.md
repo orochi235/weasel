@@ -331,13 +331,16 @@ upload(dots.shown);
 
 A row is a target like any other. Its committed value lives in `table.committed`,
 and the animator fills `table.shown` for every moving row in one pass over flat
-arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+arrays, about 5 ns a row. `shown` is a `Float64Array` unless the table is made with
 `shown: Float32Array`, for a painter that uploads it as it stands.
 
-A row's holds fold in the same pass. `animator.holdRows({ table })` holds many rows at once
-from two flat arrays the caller writes, `values` laid out as `committed` and one weight a row,
-then `touch()`es: a hold on each row, mixed with the row's other holds, with no function asked
-per row.
+A row's holds fold in the same pass, and so does what they cover of a move behind them: an
+animation with a destination on a row runs its voices on a lane subject of its own, which the
+pass scales by what the row's holds leave showing. A target alone keeps such voices among its
+own, which reads faster while nothing holds it, and takes the covered share off as it is read.
+`animator.holdRows({ table })` holds many rows at once from two flat arrays the caller writes,
+`values` laid out as `committed` and one weight a row, then `touch()`es: a hold on each row,
+mixed with the row's other holds, with no function asked per row.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that

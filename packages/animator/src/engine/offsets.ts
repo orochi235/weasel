@@ -1,4 +1,5 @@
 import type { HoldStore } from './holdStore';
+import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
@@ -38,6 +39,35 @@ export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): vo
   s.row?.table.mark(s.row.index);
 }
 
+/** Counts `delta` into what `b`, an animation with a destination on `s`, shows until the next
+ *  frame reads its voices again. */
+export function bumpBehind(s: TargetState, b: Behind, delta: readonly number[], sign: 1 | -1): void {
+  const adjust = (b.adjust ??= new Array<number>(delta.length).fill(0));
+  for (let i = 0; i < delta.length; i++) adjust[i] = adjust[i]! + sign * delta[i]!;
+  stale(s);
+  s.row?.table.mark(s.row.index);
+}
+
+/** Points `holder`, `s` or one of its `behind`, at `slot`, its voices' subject now. One whose
+ *  last voice left since the frame is still in what it shows until the next, so that goes into
+ *  its `adjust`. */
+export function seat(s: TargetState, holder: { slot: Reader | null; adjust: number[] | null }, slot: Reader): void {
+  const was = holder.slot;
+  if (was && was !== slot && was.refs === 0) {
+    const n = s.axes.count;
+    const adjust = (holder.adjust ??= new Array<number>(n).fill(0));
+    for (let i = 0; i < n; i++) adjust[i] = adjust[i]! + was.cols[was.at + i]!;
+    stale(s);
+  }
+  holder.slot = slot;
+}
+
+/** Says what waits beside `s`'s holds. */
+export function setBeside(s: TargetState, beside: number[] | null): void {
+  s.beside = beside;
+  s.row?.table.beside(s.row.index, beside);
+}
+
 function stale(s: TargetState): void {
   if (s.stale || !s.owner) return;
   s.stale = true;
@@ -63,16 +93,36 @@ export function shareBehind<T>(
 
 export const times = (a: readonly number[], b: readonly number[]): number[] => a.map((x, i) => x * b[i]!);
 
-/** Puts an animation behind `s`'s holds. `left` answers what is left of its move. */
-export function goBehind<T>(s: TargetState<T>, left: () => readonly number[]): Behind {
-  const b: Behind = { left, kept: null };
-  s.behind.add(b);
+/** Puts an animation with a destination on `s`. `own` answers its voices' sum, `left` what is
+ *  left of its move, and `share` how much of its voices' each axis that move is. */
+export function goBehind<T>(
+  s: TargetState<T>, own: () => readonly number[], left: () => readonly number[], share: readonly number[],
+): Behind {
+  const b: Behind = {
+    own, left, share, kept: null, slot: null, adjust: null,
+    move: s.row ? s.row.table.move(s.row.index, share) : null,
+  };
+  s.behind.push(b);
   return b;
+}
+
+/** Where an animation with a destination runs its voices, and counts what they add between
+ *  frames: on a subject of its own for a table's row, which the table's pass shows apart, and
+ *  among its target's for any other. */
+export const runsOn = (s: TargetState, b: Behind): TargetState | Behind => (b.move ? b : s);
+
+/** Counts `delta` into what the voices of `b`, an animation with a destination on `s`, show
+ *  until the next frame reads them. */
+export function bumpOn(s: TargetState, b: Behind, delta: readonly number[], sign: 1 | -1): void {
+  if (b.move) bumpBehind(s, b, delta, sign);
+  else bump(s, delta, sign);
 }
 
 /** Takes `b` out from behind `s`'s holds, and answers how much of `left` was still to show. */
 export function comeOut<T>(s: TargetState<T>, b: Behind, left: readonly number[]): number[] {
-  s.behind.delete(b);
+  const at = s.behind.indexOf(b);
+  if (at >= 0) s.behind.splice(at, 1);
+  b.move?.leave();
   if (b.kept) {
     s.dimmed = false;
     for (const other of s.behind) if (other.kept) s.dimmed = true;
@@ -95,7 +145,7 @@ export function commitOffset<T>(s: TargetState<T>, own: readonly number[], left:
 export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
   if (s.discard) return;
   if (s.held === 0) absorb(s, delta);
-  else s.beside = s.beside ? plus(s.beside, delta) : delta.slice();
+  else setBeside(s as never, s.beside ? plus(s.beside, delta) : delta.slice());
   s.row?.table.mark(s.row.index);
 }
 
@@ -104,7 +154,7 @@ export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
 export function takeUp<T>(s: TargetState<T>): number[] {
   const committed = s.axes.to(s.get());
   const beside = s.beside;
-  s.beside = null;
+  if (beside) setBeside(s as never, null);
   return beside ? plus(committed, beside) : committed;
 }
 
@@ -166,19 +216,12 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
         tables.set(s.row.table, tables.get(s.row.table)! - 1);
         s.row.table.mark(s.row.index);
       }
-      const { slot } = s;
-      if (slot && slot.refs === 0 && s.live > 0) {
-        // Its voices are gone while a hold stays: what they last showed is in `adjust` until
-        // the next frame, as a voice that stops beside others is.
-        for (let i = 0; i < s.adjust.length; i++) s.adjust[i] = s.adjust[i]! + slot.cols[slot.at + i]!;
-        s.slot = null;
-        stale(s);
-      }
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
-      s.beside = null;
-      s.behind.clear();
+      if (s.beside) setBeside(s, null);
+      for (const b of s.behind) b.move?.leave();
+      s.behind.length = 0;
       s.dimmed = false;
       s.adjust.fill(0);
       s.stale = false;
@@ -189,6 +232,7 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
         // One that came to rest since is cleared already, and may be another animator's now.
         if (!s.stale || s.owner !== token) continue;
         s.adjust.fill(0);
+        for (const b of s.behind) b.adjust = null;
         s.stale = false;
       }
       adjusted.length = 0;
@@ -205,7 +249,7 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       for (const s of rested) shown(s, s.get());
       rested.clear();
       for (const [t, moving] of tables) {
-        t.fill(owner.columns(t));
+        t.fill(owner.columns);
         if (moving === 0) tables.delete(t);
       }
       publish();

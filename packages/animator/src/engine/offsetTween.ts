@@ -2,7 +2,7 @@ import { easeOut, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { axesFor, bump, comeOut, commitOffset, goBehind, minus, plus, shareBehind, takeUp, times, travel } from './offsets';
+import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
 /** A tween on a target: its destination is committed as it starts, and its voice is what is
  *  left to travel. */
@@ -34,12 +34,14 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);
   /** Its offset at its start, where a run backward ends. */
   const first = path ? offsetAt(0) : travel(ax, given ?? base, to);
-  s.slot = path
-    ? codec.path({ id, on: s, ms, axes: ax.count, at: offsetAt })
-    : codec.tween({ id, on: s, ms, ease: easing, from: first, to: new Array<number>(ax.count).fill(0) });
-  bump(s as never, codec.own(id)!.value, 1);
   const share = shareBehind(ax, committed, to, travel(ax, given ?? base, to));
-  const behind = goBehind(s, () => times(codec.own(id)!.value, share));
+  const own = (): number[] => codec.own(id)!.value;
+  const behind = goBehind(s, own, () => times(own(), share), share);
+  const on = runsOn(s as never, behind);
+  seat(s as never, on, path
+    ? codec.path({ id, on, ms, axes: ax.count, at: offsetAt })
+    : codec.tween({ id, on, ms, ease: easing, from: first, to: new Array<number>(ax.count).fill(0) }));
+  bumpOn(s as never, behind, own(), 1);
 
   let left = false;
   /** Takes its voice off the target, committing what it had left to travel when `commit`, or
@@ -53,7 +55,8 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     const shown = comeOut(s, behind, moved);
     if (own) {
       if (commit) commitOffset(s, value!, moved, shown);
-      bump(s as never, own.value, -1);
+      // Voices among the target's own are in its `slot` until the next frame reads it.
+      if (!behind.move) bump(s as never, own.value, -1);
     }
     codec.stop(id);
     ctx.targets.detach(s as never);

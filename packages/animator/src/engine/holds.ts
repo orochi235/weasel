@@ -2,7 +2,7 @@ import { axisIndexes } from '../axisNames';
 import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
 import { createHoldStore, type HoldLayer, type HoldSources, type HoldStore } from './holdStore';
-import { absorb, axesFor, shortWay } from './offsets';
+import { absorb, axesFor, setBeside, shortWay } from './offsets';
 
 /** What {@link openHold} takes. */
 export interface HoldSource<T> {
@@ -76,6 +76,7 @@ function dim(s: TargetState, before: readonly number[], after: readonly number[]
       b.kept[a] = (b.kept[a]! * was) / open;
       s.dimmed = true;
     }
+    if (b.kept) b.move?.kept(b.kept);
   }
 }
 
@@ -117,8 +118,10 @@ export function leaveHold(ctx: AnimationContext, s: TargetState, layer: HoldLaye
     s.holds = null;
     // Nothing stands in front of the committed value now, so it takes what waited beside it.
     const beside = s.beside;
-    s.beside = null;
-    if (beside) absorb(s, beside);
+    if (beside) {
+      setBeside(s, null);
+      absorb(s, beside);
+    }
   }
   ctx.targets.detach(s);
 }

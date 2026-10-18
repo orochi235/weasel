@@ -1,6 +1,6 @@
-import type { TargetState } from '../target';
+import type { Behind, TargetState } from '../target';
 import type { Codec, Own } from './codec';
-import { bump, minus, plus } from './offsets';
+import { bump, bumpOn, minus, plus, runsOn, seat } from './offsets';
 
 /** What {@link createSpringVoices} takes. */
 export interface SpringVoicesOptions {
@@ -10,6 +10,8 @@ export interface SpringVoicesOptions {
   stiffness: number;
   damping: number;
   mass: number;
+  /** Where the move's voice runs, behind the target's holds. */
+  behind: Behind;
 }
 
 /**
@@ -49,27 +51,33 @@ export function createSpringVoices(codec: Codec, s: TargetState, o: SpringVoices
   const of = (v: { id: number }): Own =>
     (v.id >= 0 ? codec.own(v.id) : undefined) ?? { value: zeros(), velocity: zeros() };
 
+  /** Counts `delta` into what `v` shows until the next frame reads it. */
+  const adjust = (v: { id: number }, delta: readonly number[], sign: 1 | -1): void => {
+    if (v === moving) bumpOn(s, o.behind, delta, sign);
+    else bump(s, delta, sign);
+  };
   const cue = (v: { id: number }, from: readonly number[], velocity: readonly number[], to: number[] | null): void => {
     if (v.id >= 0) {
       const was = codec.own(v.id)!.value;
       codec.recue(v.id, from.slice(), velocity.slice(), to);
-      bump(s, minus(from, was), 1);
+      adjust(v, minus(from, was), 1);
       return;
     }
     v.id = first ? o.id : o.nextId();
     first = false;
-    s.slot = codec.spring({
-      id: v.id, on: s, axes: n, from: from.slice(), to, velocity: velocity.slice(),
+    const on = v === moving ? runsOn(s, o.behind) : s;
+    seat(s, on, codec.spring({
+      id: v.id, on, axes: n, from: from.slice(), to, velocity: velocity.slice(),
       stiffness: o.stiffness, damping: o.damping, mass: o.mass,
-    });
+    }));
     if (rate !== 1) codec.rate(v.id, rate);
-    bump(s, from, 1);
+    adjust(v, from, 1);
   };
 
   const drop = (v: { id: number }): void => {
     if (v.id < 0) return;
     const own = codec.own(v.id);
-    if (own) bump(s, own.value, -1);
+    if (own) adjust(v, own.value, -1);
     codec.stop(v.id);
     v.id = -1;
   };
