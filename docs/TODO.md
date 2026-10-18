@@ -1300,14 +1300,6 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P3) rolldown could not write a dependency file during `packages/forge/src/vite/plugin.test.ts`,
-  twice.** A fleet run at `65c06d7c2` passed every file and exited 1 on an unhandled error:
-  `Failed to write file in …/T/forge-plugin-*/.vite/deps_temp_*/polygon-clipping.js.map`, `Invalid
-  argument (os error 22)`, after "serves the component graph from source, and pushes it again when
-  a component file changes". A run on teitou at `f4100e96c` (2026-10-15) did the same after the
-  same test, on `react-dom.js`. The test makes that directory and removes it when it ends, so the
-  dev server's dependency scan may have still been writing; not confirmed.
-
 - **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
   logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
   teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
