@@ -31,10 +31,10 @@ export function sameGraph(a: Graph, b: Graph): boolean {
 /** A live run's outstanding request for a plan. Stable for the life of the
  *  component; unmounting drops whatever is pending. */
 export interface PendingPlan {
-  /** Hand `ready` the plan once it arrives, unless another request or a
-   *  `drop` comes first. A rejection is left unhandled, so it reaches the
-   *  console. */
-  request(answer: Promise<LayoutPlan>, ready: (plan: LayoutPlan) => void): void;
+  /** Hand `ready` the plan once it arrives, or `failed` the reason it never
+   *  will, unless another request or a `drop` comes first; a superseded
+   *  request's failure is dropped with its answer. */
+  request(answer: Promise<LayoutPlan>, ready: (plan: LayoutPlan) => void, failed: (error: unknown) => void): void;
   /** Forget the outstanding request. */
   drop(): void;
   isWaiting(): boolean;
@@ -44,7 +44,7 @@ export function usePendingPlan(): PendingPlan {
   const generation = useRef(0);
   const waiting = useRef(false);
   const pending = useMemo<PendingPlan>(() => ({
-    request(answer, ready) {
+    request(answer, ready, failed) {
       const mine = ++generation.current;
       waiting.current = true;
       const current = () => generation.current === mine;
@@ -55,8 +55,9 @@ export function usePendingPlan(): PendingPlan {
           ready(plan);
         },
         (error: unknown) => {
-          if (current()) waiting.current = false;
-          throw error;
+          if (!current()) return;
+          waiting.current = false;
+          failed(error);
         },
       );
     },

@@ -20,7 +20,8 @@ npm install @weasel-js/diagram-elk
 On a `DiagramView`, hand `elkPlanner` to `layout()`. The view eases to ELK's
 answer the way it eases to `layered`'s and reports the moves, routes and ports
 to `onMove`; a drag or another `layout()` call before ELK answers drops the
-answer. `elkPlanner`'s options go over the view's `live.layout` options.
+answer, and an ELK failure goes to the view's `live.onError`.
+`elkPlanner`'s options go over the view's `live.layout` options.
 
 ```tsx
 import { elkPlanner } from '@weasel-js/diagram-elk';

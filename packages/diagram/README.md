@@ -299,7 +299,9 @@ answers with a whole `LayoutPlan`, now or as a promise. The run asks it once,
 with the graph as it stands, and eases to the answer the way it eases to
 `layered`'s, reporting the same moves, routes and ports to `onMove`. While the
 answer is on its way, a drag, a change to the data, or another `layout()` call
-drops it, since the plan was made for a diagram that is no longer there.
+drops it, since the plan was made for a diagram that is no longer there. A
+planner whose promise rejects starts no run, and the reason goes to
+`live.onError`, or to `console.error` when that is unset.
 `elkPlanner()` from `@weasel-js/diagram-elk` is one: it lays the diagram out
 with ELK (the Eclipse Layout Kernel).
 

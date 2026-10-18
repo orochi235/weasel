@@ -73,7 +73,8 @@ export interface DiagramViewProps {
     'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'
   >;
   /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
-   *  how many frames an eased layout takes, its easing. */
+   *  how many frames an eased layout takes, its easing, and `onError`, which
+   *  hears a `LayoutPlanner` that failed to answer. */
   live?: Omit<UseLiveLayoutOptions<RectPose>, 'scene' | 'source' | 'algorithm'>;
   /** The smallest scale the fit may use. Unset, the whole diagram fits
    *  however small that makes it; set, it stops here and the rest is a pan away. */

@@ -25,10 +25,11 @@ function deferred() {
   return { planner, asked, answer };
 }
 
-function live(planner: LayoutPlanner) {
+function live(planner: LayoutPlanner, onError?: (error: unknown) => void) {
   const s = scene();
   const clock = makeClock();
   const { result } = renderHook(() => useLiveLayout<RectPose>({
+    ...(onError ? { onError } : {}),
     scene: s.scene,
     source: sceneParticipants<RectPose>(s.scene as never),
     algorithm: planner,
@@ -152,5 +153,40 @@ describe('useLiveLayout with a LayoutPlanner', () => {
     await d.answer();
     act(() => { s.clock.frames(4); });
     expect(s.handle().isRunning()).toBe(false);
+  });
+
+  it('reports a planner that fails to onError, and starts nothing', async () => {
+    const failure = new Error('no layout');
+    const onError = vi.fn();
+    const s = live({ plan: () => Promise.reject(failure) }, onError);
+    act(() => { s.handle().start(); });
+    await act(async () => {});
+    expect(onError).toHaveBeenCalledWith(failure);
+    expect(s.handle().isRunning()).toBe(false);
+    act(() => { s.clock.frames(4); });
+    expect(s.scene.overrides.ids()).toEqual([]);
+  });
+
+  it('logs a failure to the console when there is no onError', async () => {
+    const failure = new Error('no layout');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const s = live({ plan: () => Promise.reject(failure) });
+      act(() => { s.handle().start(); });
+      await act(async () => {});
+      expect(log).toHaveBeenCalledWith(failure);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('ignores a failure from a request already superseded', async () => {
+    const rejects: ((error: unknown) => void)[] = [];
+    const onError = vi.fn();
+    const s = live({ plan: () => new Promise<LayoutPlan>((_, reject) => { rejects.push(reject); }) }, onError);
+    act(() => { s.handle().start(); });
+    act(() => { s.handle().cancel(); });
+    await act(async () => { rejects[0]!(new Error('late')); });
+    expect(onError).not.toHaveBeenCalled();
   });
 });

@@ -78,6 +78,9 @@ export interface UseLiveLayoutOptions<TPose> {
   /** Fires once the run has settled or been stopped and its poses are in the
    *  document, with how many participants moved. */
   onSettle?: (moved: number) => void;
+  /** Hears why a `LayoutPlanner` failed to answer, and no run starts. Unset,
+   *  the failure goes to `console.error`. */
+  onError?: (error: unknown) => void;
   /** Whether a node or edge appearing or disappearing re-heats the run.
    *  Default true — a diagram that ignores a new edge looks broken. */
   reheatOnGraphChange?: boolean;
@@ -215,6 +218,10 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
       if (!sameGraph(graph, graphOf(optsRef.current))) return;
       install(graph, answer);
       run.start();
+    }, (error) => {
+      const onError = optsRef.current.onError;
+      if (onError) onError(error);
+      else console.error(error);
     });
     return false;
   }, [optsRef, install, pending, run]);
