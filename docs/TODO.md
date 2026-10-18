@@ -265,11 +265,12 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) Booleans, Trim segment, Extend to next path, Cut at crossings, and Offset path drop
-  corner specs.** Each expands a path's corners before it rebuilds the geometry, so the rounded
-  shape survives as plain anchors but the corners can no longer be edited as corners
-  (they read paths through `resolveCorners` or a reader that calls it, such as
-  `packages/geom/src/booleans/contours.ts` and `packages/stroke/src/offsetPath.ts`).
+- **(P3) Offset path leaves slivers beside a curve, and spikes where a round corner shrinks to
+  nothing.** `offsetPath` (`packages/stroke/src/offsetPath.ts`) unites the region with its stroke
+  band, and the union keeps thin leftovers of the two meeting along the curve:
+  `offsetPath` of a 100×100 square with a 20-unit round corner, grown by 10, answers six subpaths,
+  five of them slivers. Grown by exactly the corner's radius, the outline also runs a spike into
+  the interior, so that corner cannot be kept as a corner.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -355,11 +356,6 @@ Priority tags:
   grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
-  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
-  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
-  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
-  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
@@ -387,9 +383,6 @@ Priority tags:
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
-  point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
-  either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
