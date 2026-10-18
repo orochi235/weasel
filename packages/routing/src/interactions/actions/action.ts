@@ -4,6 +4,7 @@
  * runs and what happens when it does; `ActionPresentation` is what a palette,
  * menu or toolbar renders. `Action` is both.
  */
+import type { ModifierRoles } from './modifierRoles';
 import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
@@ -187,6 +188,15 @@ export interface ActionDispatch extends BindingSource {
    * gesture.
    */
   activeCursor?: CursorSpec;
+  /**
+   * The modifiers an ongoing action reads while it runs, by role: Shift
+   * holding a handle's angle, Alt breaking its mirror. The dispatcher resolves
+   * each into `InvocationCtx.roles` on the press, every move, and the release,
+   * so a binding's `opts.roles` or a tuning's `roles` can move one to another
+   * key. Read them with {@link roleReader}. A binding's own `mods` are matched
+   * once, at the press; these are read throughout.
+   */
+  modifierRoles?: ModifierRoles;
 }
 
 /**

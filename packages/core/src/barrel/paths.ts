@@ -242,7 +242,7 @@ export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/act
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
 export { pathEditPreview } from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
-export { locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
+export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
   classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath, type EditableShape,
 } from '../features/paths/editablePath';

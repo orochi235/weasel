@@ -38,7 +38,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { EditAnchorsDep, SnapDep, SnapGeometry } from '../depSchema';
-import { ActionDisabledReason, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
+import { ActionDisabledReason, isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
@@ -53,7 +53,7 @@ import {
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
-import { lockHandle, locksInForce, type HandlePress } from './handleDrag';
+import { HANDLE_LOCK_ROLES, lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { locksOf, type EditAnchorsParams } from './params';
 import { pathEditPreview } from './preview';
 import {
@@ -194,17 +194,28 @@ function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
   }));
 }
 
+/** The modifiers `editAnchors` reads while it runs: Shift on the press adds
+ *  to the anchor selection, Alt breaks a smooth anchor's mirror, and the
+ *  handle locks. */
+export const EDIT_ANCHORS_ROLES = {
+  'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
+  'mirror.break': { label: "Break the handles' mirror", keys: ['alt'] },
+  ...HANDLE_LOCK_ROLES,
+} as const satisfies ModifierRoles;
+
+const roleHeld = roleReader(EDIT_ANCHORS_ROLES);
+
 /** Move the dragged handle toward the pointer, under the locks in force, then
  *  wherever the extensions place it. */
 function moveHandle(scratch: EditAnchorsScratch, ctx: InvocationCtx, params: EditAnchorsParams): void {
   const side = scratch.part === 'controlIn' ? 'in' : 'out';
   // Modifiers and held locks are read live, so either can change mid-drag.
   const held = (ctx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(params.handleLock);
-  const locks = locksInForce(held, ctx.modifiers);
+  const locks = locksInForce(held, ctx);
   const locked = scratch.handlePress ? lockHandle(scratch.handlePress, ctx.world, locks) : { to: ctx.world, guide: null };
   scratch.guide = locked.guide;
   const to = placeHandle(scratch.drags, locked.to, { locks });
-  const alt = ctx.modifiers.alt;
+  const alt = roleHeld(ctx, 'mirror.break');
   const move = scratch.symmetries.length > 0
     ? (set: AnchorSet) => moveHandleSymmetric(set, scratch.anchorIndex, side, to.x, to.y, alt, scratch.symmetries)
     : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, alt);
@@ -224,6 +235,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
     target: { kindOf: isAnchorOrControl },
   },
   eligible: { capability: 'edits-anchors' },
+  modifierRoles: EDIT_ANCHORS_ROLES,
   requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],
   invoker: {
     timing: 'ongoing',
@@ -271,7 +283,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         const next = selectionAfterAnchorPress(
           dep.selectedAnchors,
           anchorInfo.anchorIndex,
-          ctx.modifiers.shift,
+          roleHeld(ctx, 'selection.add'),
         );
         dep.setSelectedAnchors(next);
         // Shift-pressing an anchor OUT of the selection must not then drag

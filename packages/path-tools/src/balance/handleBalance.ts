@@ -33,7 +33,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, inPlane, locksInForce, pathEditPreview, pathEditToolActive, pathOperationTags,
+  commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, HANDLE_LOCK_ROLES, inPlane, locksInForce, pathEditPreview, pathEditToolActive, pathOperationTags,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -70,6 +70,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   defaultBinding: { kind: 'drag', target: { kindOf: isBalanceGrip } },
   cursor: 'grab',
   eligible: { capability: 'edits-anchors' },
+  modifierRoles: HANDLE_LOCK_ROLES,
   requires: ['editAnchors', 'pathSymmetry'],
   invoker: {
     timing: 'ongoing',
@@ -93,7 +94,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
         onMove(moveCtx: InvocationCtx): void {
           // Read live, like a handle drag's, so a lock can change mid-drag.
           const held = (moveCtx.deps.editAnchors ?? dep).handleLocks ?? NO_LOCKS;
-          if (locksInForce(held, moveCtx.modifiers).length) {
+          if (locksInForce(held, moveCtx).length) {
             current = null;
             return;
           }

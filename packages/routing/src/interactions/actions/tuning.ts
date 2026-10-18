@@ -8,6 +8,7 @@ import type { GestureSpec } from '@weasel-js/gestures';
 import type { Action } from './action';
 import type { BoundGesture } from './binding';
 import { resolveParams, type BindingOpts, type Invoker } from './invoker';
+import { rebindRoles, type RoleRebinds } from './modifierRoles';
 
 /** An action's params, or a thunk read each time the action asks for them. */
 export type ActionParams<P = Record<string, unknown>> = Partial<P> | (() => Partial<P>);
@@ -27,6 +28,9 @@ export interface ActionTuning<P = Record<string, unknown>> {
   params?: ActionParams<P>;
   /** Bindings added after the action's own `defaultBinding`. */
   bindings?: readonly TunedBinding<P>[];
+  /** Keys for some of the action's `modifierRoles`, by role id. A binding's
+   *  own `opts.roles` is laid over these. */
+  roles?: RoleRebinds;
 }
 
 type Params = BindingOpts['params'];
@@ -81,9 +85,11 @@ function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const invoker = tuning.params && action.invoker ? wrapInvoker(action.invoker, tuning.params) : action.invoker;
   const cursor = tuning.params ? wrapCursor(action.cursor, tuning.params) : action.cursor;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
-  if (invoker === action.invoker && cursor === action.cursor && bindings === null) return action;
+  const modifierRoles = tuning.roles && action.modifierRoles ? rebindRoles(action.modifierRoles, tuning.roles) : null;
+  if (invoker === action.invoker && cursor === action.cursor && bindings === null && modifierRoles === null) return action;
   return {
     ...action,
+    ...(modifierRoles ? { modifierRoles } : {}),
     ...(invoker ? { invoker } : {}),
     ...(cursor ? { cursor } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),

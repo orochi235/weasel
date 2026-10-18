@@ -127,6 +127,8 @@ export { resolveParams } from './interactions/actions/invoker';
 export { overlaysOf } from './interactions/actions/overlay';
 export { tuneAction } from './interactions/actions/tuning';
 export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
+export { roleReader, keysHeld } from './interactions/actions/modifierRoles';
+export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
 export type {
   Point2, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,

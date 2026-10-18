@@ -14,7 +14,7 @@ import { resolveEditablePathOf } from 'features/paths/editablePath';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { constrainTo45 } from '../../../util/constrainTo45';
+import { applyOutHandle, PEN_HANDLE_ROLES, penRole } from './penHandle';
 import { cursorFor } from '@weasel-js/cursor';
 import { createPointerFollower } from '../shared/pointerFollower';
 import { icon } from '../../../icons.gen';
@@ -451,6 +451,7 @@ export function usePenTool(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
+        modifierRoles: PEN_HANDLE_ROLES,
         requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
         invoker: {
           timing: 'ongoing' as const,
@@ -473,24 +474,22 @@ export function usePenTool(
               scratch.current.anchors.push({ x: ax, y: ay });
             }
             scratch.draggingHandleAt = scratch.current!.anchors.length - 1;
-            if (ctx.modifiers.alt) {
-              scratch.current!.anchors[scratch.draggingHandleAt].altBroken = true;
-            }
+            if (penRole(ctx, 'mirror.break')) scratch.current!.anchors[scratch.draggingHandleAt].altBroken = true;
             // A picked-up endpoint's in-handle belongs to the existing
             // segment into it, which the pen does not reshape.
             const linked = !pickedUp;
             const snapHandle = (p: { x: number; y: number }) => snap(ctx.deps, p.x, p.y, scratch.current!.anchors[scratch.draggingHandleAt!]);
-            applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, snapHandle);
+            applyOutHandle(scratch, ctx.world, penRole(ctx, 'handle.constrain'), linked, snapHandle);
             trail.update(ctx.deps);
 
             return {
               onMove: (moveCtx: InvocationCtx) => {
                 const sm = s();
                 if (sm.draggingHandleAt === null) return;
-                if (moveCtx.modifiers.alt && sm.current) {
+                if (penRole(moveCtx, 'mirror.break') && sm.current) {
                   sm.current.anchors[sm.draggingHandleAt].altBroken = true;
                 }
-                applyOutHandle(sm, moveCtx.world, moveCtx.modifiers.shift, linked, snapHandle);
+                applyOutHandle(sm, moveCtx.world, penRole(moveCtx, 'handle.constrain'), linked, snapHandle);
                 forceRender();
               },
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
@@ -509,10 +508,10 @@ export function usePenTool(
                   return;
                 }
                 if (se.draggingHandleAt !== null) {
-                  if (endCtx.modifiers.alt && se.current) {
+                  if (penRole(endCtx, 'mirror.break') && se.current) {
                     se.current.anchors[se.draggingHandleAt].altBroken = true;
                   }
-                  applyOutHandle(se, endCtx.world, endCtx.modifiers.shift, linked, snapHandle);
+                  applyOutHandle(se, endCtx.world, penRole(endCtx, 'handle.constrain'), linked, snapHandle);
                   se.draggingHandleAt = null;
                 }
                 if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
@@ -619,30 +618,6 @@ usePenTool.prefs = {
     },
   },
 } satisfies PrefGroup;
-
-/** Point the anchor's outgoing handle at `target`, optionally snapped and
- *  optionally constrained to 45° steps. When `linked` and not Alt-broken,
- *  the in-handle follows as its mirror through the anchor. */
-function applyOutHandle<S extends PenScratch>(
-  s: S,
-  target: { x: number; y: number },
-  shift: boolean,
-  linked: boolean,
-  snap?: (p: { x: number; y: number }) => { x: number; y: number },
-): void {
-  if (s.current === null || s.draggingHandleAt === null) return;
-  const anchor = s.current.anchors[s.draggingHandleAt];
-  const to = snap ? snap(target) : target;
-  let dx = to.x - anchor.x;
-  let dy = to.y - anchor.y;
-  if (shift) {
-    const c = constrainTo45(dx, dy);
-    dx = c.dx;
-    dy = c.dy;
-  }
-  anchor.outHandle = { x: anchor.x + dx, y: anchor.y + dy };
-  if (linked && !anchor.altBroken) anchor.inHandle = { x: anchor.x - dx, y: anchor.y - dy };
-}
 
 function viewScale(deps: ActionDeps): { x: number; y: number } {
   return deps.view?.get().scale ?? { x: 1, y: 1 };

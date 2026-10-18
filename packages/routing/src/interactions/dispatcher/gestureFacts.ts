@@ -5,6 +5,7 @@
  */
 import { stylusOf } from '@weasel-js/gestures';
 import type { DragSample } from '../actions/invoker';
+import type { RoleKeys } from '../actions/modifierRoles';
 import type { InputEvent } from './matcher';
 
 /**
@@ -21,11 +22,15 @@ export interface GestureFacts {
   startSpread?: number;
   /** Degrees a multitouch gesture's fingers have turned since it began. */
   rotation?: number;
+  /** The keys each of the action's modifier roles answers to, `'mod'`
+   *  already resolved for the platform. */
+  roleKeys?: Readonly<Record<string, RoleKeys>>;
 }
 
 export interface GestureFactsStore {
-  /** Record what the event that starts a gesture establishes. */
-  begin(gestureId: string, event: InputEvent): void;
+  /** Record what the event that starts a gesture establishes, and the keys
+   *  its action's modifier roles answer to. */
+  begin(gestureId: string, event: InputEvent, roleKeys?: Readonly<Record<string, RoleKeys>>): void;
   /** Add a move to the gesture's trail, whether or not its handle previews:
    *  `onEnd` is handed the same trail, so an action that only reads the
    *  finished path, and declares no `onMove`, still gets every vertex. */
@@ -42,8 +47,10 @@ export function createGestureFacts(): GestureFactsStore {
   const points = new Map<string, DragSample[]>();
   const startSpreads = new Map<string, number>();
   const turns = new Map<string, { last: number; total: number }>();
+  const roles = new Map<string, Readonly<Record<string, RoleKeys>>>();
   return {
-    begin(gestureId, event) {
+    begin(gestureId, event, roleKeys) {
+      if (roleKeys) roles.set(gestureId, roleKeys);
       if (event.kind === 'pointerdown') {
         origins.set(gestureId, {
           x: event.x ?? 0,
@@ -77,7 +84,9 @@ export function createGestureFacts(): GestureFactsStore {
       const trail = points.get(gestureId);
       const startSpread = startSpreads.get(gestureId);
       const turn = turns.get(gestureId);
+      const roleKeys = roles.get(gestureId);
       return {
+        ...(roleKeys !== undefined ? { roleKeys } : {}),
         ...(origin !== undefined ? { origin } : {}),
         ...(trail !== undefined ? { points: trail } : {}),
         ...(startSpread !== undefined ? { startSpread } : {}),
@@ -89,12 +98,14 @@ export function createGestureFacts(): GestureFactsStore {
       points.delete(gestureId);
       startSpreads.delete(gestureId);
       turns.delete(gestureId);
+      roles.delete(gestureId);
     },
     clear() {
       origins.clear();
       points.clear();
       startSpreads.clear();
       turns.clear();
+      roles.clear();
     },
   };
 }

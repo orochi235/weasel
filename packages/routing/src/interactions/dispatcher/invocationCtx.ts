@@ -1,5 +1,6 @@
 /** Builds the `InvocationCtx` an action's invoker is handed for one event. */
 import type { ActionDeps, AffordanceHit, InvocationCtx, Point2 } from '../actions/invoker';
+import { resolveRoles } from '../actions/modifierRoles';
 import type { GestureFacts } from './gestureFacts';
 import type { InputEvent } from './matcher';
 
@@ -115,6 +116,8 @@ export function buildInvocationCtx(
   };
   const screen = clientPoint(event);
   if (screen) base.screen = screen;
+  // `'mod'` was resolved when the gesture began, so the platform is moot here.
+  if (facts.roleKeys) base.roles = resolveRoles(facts.roleKeys, base.modifiers, false);
 
   if (event.kind === 'key') {
     base.key = { key: event.key, repeat: event.repeat ?? false };

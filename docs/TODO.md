@@ -62,24 +62,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P2) Path edit's in-gesture modifiers are hard-coded inside the actions.** A consumer can see
-  and remap a binding's `mods`, but not a modifier an action reads off `ctx.modifiers` once it is
-  running, and path edit reads most of its own that way. `editAnchors`
-  (`interactions/actions/edit-anchors/action.ts`) reads Shift at the press to toggle an anchor in
-  the selection, and Alt on every handle move to break the smooth mirror; `locksInForce` in
-  `edit-anchors/handleDrag.ts` reads Shift as the angle lock and Meta or Ctrl as the length lock.
-  `marqueeAnchors` (`defaults/anchorEditing.ts`) reads Shift at the press to add to the anchor
-  selection. The pen (`tools/builtin/pen/usePenTool.ts`) reads Alt to break a handle and Shift to
-  constrain it, at the press, on each move, and at the release. None of these shows in a binding
-  list, a keymap editor, or the command palette, and a host that wants Alt to lock the length
-  instead has to fork the action. `selectAnchor` is the model: its Shift-click is a second
-  binding whose params say `additive: true`. A declared form needs each ongoing action to name its
-  in-gesture modifiers as data — a role (`mirror.break`, `handle.holdAngle`, `handle.holdLength`,
-  `selection.add`) and its default modifier — that bindings or `tune` can rebind, with the
-  dispatcher resolving them into the ctx on every move rather than each action testing raw keys.
-  Modifiers that change mid-gesture are the part no binding models today, since a binding's `mods`
-  are matched once, at the press.
-
 - **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
   in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
   path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
