@@ -8,4 +8,4 @@ export type {
   BoundsCtx,
   TrackCtx,
 } from './types';
-export type { Endless } from '../../endless';
+export type { Endless } from '@weasel-js/quantity';

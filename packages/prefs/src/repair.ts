@@ -1,4 +1,6 @@
+import { endlessAllows } from '@weasel-js/quantity';
 import { isPlainObject } from '@weasel-js/registry';
+import { prefClampNumber } from './bounds';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -104,11 +106,7 @@ function repairList(
 
 function repairNumber(leaf: PrefNumber, stored: unknown): unknown {
   if (typeof stored !== 'number' || Number.isNaN(stored)) return leaf.default;
-  const { endless } = leaf;
-  if (stored === Infinity && (endless === 'max' || endless === 'both')) return stored;
-  if (stored === -Infinity && (endless === 'min' || endless === 'both')) return stored;
-  let v = stored;
-  if (leaf.min !== undefined && v < leaf.min) v = leaf.min;
-  if (leaf.max !== undefined && v > leaf.max) v = leaf.max;
+  if (endlessAllows(leaf.endless, stored)) return stored;
+  const v = prefClampNumber(leaf, stored);
   return Number.isFinite(v) ? v : leaf.default;
 }

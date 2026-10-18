@@ -237,8 +237,8 @@ describe('checkPrefCondition', () => {
   });
 
   it('reports a value the leaf cannot hold', () => {
-    expect(codes({ path: 'mode', is: 'diagonal' })).toEqual(['value']);
-    expect(codes({ path: 'mode', in: ['row', 'diagonal', 3] })).toEqual(['value', 'value']);
+    expect(codes({ path: 'mode', is: 'diagonal' })).toEqual(['option']);
+    expect(codes({ path: 'mode', in: ['row', 'diagonal', 3] })).toEqual(['option', 'value']);
     expect(codes({ path: 'windows.scrolling.scrolls', is: 'yes' })).toEqual(['value']);
     expect(codes({ path: 'windows.count', is: '3' })).toEqual(['value']);
     expect(codes({ path: 'title', isNot: 3 })).toEqual(['value']);
@@ -269,13 +269,13 @@ describe('checkPrefCondition', () => {
   it('reads into an object leaf by its fields, through its sections', () => {
     expect(codes({ path: 'windows.stroke.width', above: 1 })).toEqual([]);
     expect(codes({ path: 'windows.stroke.cap', is: 'round' })).toEqual([]);
-    expect(codes({ path: 'windows.stroke.cap', is: 'square' })).toEqual(['value']);
+    expect(codes({ path: 'windows.stroke.cap', is: 'square' })).toEqual(['option']);
     expect(codes({ path: 'windows.stroke.miter' })).toEqual(['no-leaf']);
   });
 
   it('reads into a union leaf by its tag and by any variant\'s fields', () => {
     expect(codes({ path: 'windows.fill.type', is: 'linear' })).toEqual([]);
-    expect(codes({ path: 'windows.fill.type', is: 'conic' })).toEqual(['value']);
+    expect(codes({ path: 'windows.fill.type', is: 'conic' })).toEqual(['option']);
     expect(codes({ path: 'windows.fill.angle', above: 90 })).toEqual([]);
     expect(codes({ path: 'windows.fill.radius' })).toEqual(['no-leaf']);
   });

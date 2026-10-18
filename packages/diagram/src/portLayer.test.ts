@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, type Scene } from '@weasel-js/core';
 import { portLayer, sceneParticipants } from './portLayer';
-import { PORT_AFFORDANCE_KIND, PORT_LAYER_ID, portScratchOf } from './portAffordance';
+import {
+  PORT_AFFORDANCE_KIND, PORT_LAYER_ID, createPortAffordance, portScratchOf,
+} from './portAffordance';
 
 interface Data { diagram?: unknown }
 interface Rect { x: number; y: number; width: number; height: number }
@@ -55,5 +57,75 @@ describe('portLayer', () => {
     expect(layer.hitTest!(
       50, 20, state, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 },
     )).toBeNull();
+  });
+});
+
+describe('portLayer and the scene\'s gates', () => {
+  const state = {
+    selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
+    modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+  };
+  /** `a`'s east port, at (100, 20). */
+  const hitEast = (scene: Scene<Data, 'main', Rect>) => portLayer(sceneParticipants(scene)).hitTest!(
+    100, 20, state, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 },
+  );
+  const regionsOf = (scene: Scene<Data, 'main', Rect>) =>
+    createPortAffordance(sceneParticipants(scene)).regions(state as never);
+
+  it('draws and hits no port on a node hidden on its own', () => {
+    const scene = sceneWith();
+    scene.setHidden('a' as never, true);
+    expect(regionsOf(scene)).toEqual([]);
+    expect(hitEast(scene)).toBeNull();
+  });
+
+  it('draws and hits no port on a node whose layer is hidden', () => {
+    const scene = sceneWith();
+    scene.setLayerVisible('main', false);
+    expect(regionsOf(scene)).toEqual([]);
+    expect(hitEast(scene)).toBeNull();
+  });
+
+  it('draws and hits no port on a node inside a hidden container', () => {
+    const scene = sceneWith();
+    scene.add({
+      id: 'g' as never, kind: 'container', layer: 'main',
+      pose: { x: 0, y: 0, width: 100, height: 40 }, data: {},
+    });
+    scene.move('a' as never, 'g' as never);
+    scene.setHidden('g' as never, true);
+    expect(hitEast(scene)).toBeNull();
+  });
+
+  it('draws and hits no port on a locked node, as it puts no other chrome on one', () => {
+    const scene = sceneWith();
+    scene.setLocked('a' as never, true);
+    expect(regionsOf(scene)).toEqual([]);
+    expect(hitEast(scene)).toBeNull();
+  });
+
+  it('draws and hits no port on a node on a locked layer', () => {
+    const scene = sceneWith();
+    scene.setLayerLocked('main', true);
+    expect(regionsOf(scene)).toEqual([]);
+    expect(hitEast(scene)).toBeNull();
+  });
+
+  it('draws and hits no port on a layer the asking view does not paint', () => {
+    const scene = sceneWith();
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    for (const [painted, ports] of [[false, 0], [true, 4]] as const) {
+      const asked = { ...state, layerIsPainted: (layer: string) => layer !== 'main' || painted };
+      expect(createPortAffordance(sceneParticipants(scene)).regions(asked)).toHaveLength(ports);
+      const hit = portLayer(sceneParticipants(scene)).hitTest!(100, 20, asked, view, { width: 200, height: 200 });
+      expect(hit !== null).toBe(painted);
+    }
+  });
+
+  it('still yields a hidden node to the graph, marked so', () => {
+    const scene = sceneWith();
+    scene.setHidden('a' as never, true);
+    const [first] = [...sceneParticipants(scene)()];
+    expect(first).toMatchObject({ node: { id: 'a' }, hidden: true });
   });
 });

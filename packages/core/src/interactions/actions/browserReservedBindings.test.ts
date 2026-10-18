@@ -19,11 +19,11 @@ function reserved(actions: readonly AnyAction[]): string[] {
 }
 
 describe('kit key bindings a browser reserves', () => {
-  it('has no collision but the two known ones', () => {
+  it('has no collision', () => {
     const actions = (Object.values(defaults) as unknown[]).filter(
       (v): v is AnyAction => typeof v === 'object' && v !== null && 'id' in v && 'invoker' in v,
     );
-    // Filed in docs/TODO.md; a new entry here is a new collision.
-    expect(reserved(actions).map((r) => r.split(':')[0])).toEqual(['createOutlines', 'averageAnchors']);
+    expect(actions.length).toBeGreaterThan(0);
+    expect(reserved(actions)).toEqual([]);
   });
 });

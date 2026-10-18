@@ -198,7 +198,7 @@ export function placeLine(
   return {
     box: {
       x0: left, y0: y, x1: left + line.width + spread, y1: y + line.height,
-      baselineY: lineBaselineY, cells, glyphs, srcEnd: line.srcEnd,
+      baselineY: lineBaselineY, cells, glyphs, srcEnd: line.srcEnd, justified: spread > 0,
     },
     inkWidth: inkWidth + spread,
   };

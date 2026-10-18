@@ -1,0 +1,5 @@
+---
+'@weasel-js/core': patch
+---
+
+A removal on a canvas can animate out. `scene.onPoseWrite` listeners get a second argument, the nodes each change removed (an undone add among them), each a `PoseRemoval` carrying the node as it stood, the pose it was shown at, its parent and its descendants. `<SceneCanvas poseTransition={{ transition, exit }}>` sees each one off as a ghost: drawn through the scene slot's `drawOne` on a layer above the scene, gliding to `exit(pose)` while it fades out, and never a scene node, so picking, selection and history do not see it. `exits` picks which removals leave this way (default: all but untracked ones), and a node an undo brings back mid-exit returns from where its ghost was. The ghost needs an `AnimatedReflow` (`useAnimatedReflow`, `createReflowTransition`), which gains `over(scene, geometry)` to run the same timing over another scene. `usePoseTransition` returns the ghosts it shows (`Departures`). Additive, except for anything implementing `ScenePoseReports` or `AnimatedReflow` by hand.

@@ -8,6 +8,19 @@ export interface WorkspaceVisual {
   intensity?: number;
 }
 
+/** How a mode is entered. */
+export interface ModeEntry {
+  shortcut?: string;
+  /** `'double-click-target'`: double-clicking a node enters the mode on that node. Which nodes is
+   *  `targets`; `modeTriggers` in `@weasel-js/core` turns the pair into a canvas binding. */
+  trigger?: 'double-click-target';
+  /** The routing kinds a double-click enters this mode on — the `Hit.kind` vocabulary a
+   *  binding's `kind:<k>` target reads, so `'path'` or an app's own `'group'`. A trigger with no
+   *  targets binds nothing, for a mode whose entry follows something else (text-edit, which the
+   *  edit opening enters). */
+  targets?: readonly string[];
+}
+
 /**
  * A mode: an app-level editing context that narrows which tools are usable and
  * how the workspace looks. Tools live inside modes; a tool is never "in" one.
@@ -35,7 +48,7 @@ export interface ModeDefinition {
   /** When true, out-of-target objects dim at the renderer layer. */
   scoping: boolean;
   workspace?: WorkspaceVisual;
-  entry?: { shortcut?: string; trigger?: 'double-click-target' };
+  entry?: ModeEntry;
   exit?: { shortcut?: string };
   commit?: { shortcut?: string };
   cancel?: { shortcut?: string };

@@ -33,6 +33,13 @@ export interface ReflowTransitionOptions<TPose> {
  *  override it holds; the transition stays usable afterward. */
 export interface AnimatedReflow<TPose = unknown> extends ReflowTransition<TPose> {
   dispose(): void;
+  /** The same transition over another scene: its animator, timing and label,
+   *  for poses `geometry` describes given this one's descriptor. Option
+   *  changes reach it as they reach this one. */
+  over<TOther>(
+    scene: ReflowScene<TOther>,
+    geometry: (mine: PoseDescriptor<TPose>) => PoseDescriptor<TOther>,
+  ): AnimatedReflow<TOther>;
 }
 
 /** The part of a scene a reflow transition reads and overrides. */
@@ -69,6 +76,20 @@ function makeReflow<TPose>(
   animator: Animator,
   read: () => ReflowTransitionOptions<TPose>,
 ): AnimatedReflow<TPose> {
+  return {
+    ...makeGlides(scene, animator, read),
+    over: (other, geometry) => makeReflow(other, animator, () => {
+      const { geometry: own, ...timing } = read();
+      return { ...timing, geometry: geometry(own ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>)) };
+    }),
+  };
+}
+
+function makeGlides<TPose>(
+  scene: ReflowScene<TPose>,
+  animator: Animator,
+  read: () => ReflowTransitionOptions<TPose>,
+): Omit<AnimatedReflow<TPose>, 'over'> {
   const glides = new Map<string, Glide<TPose>>();
   let dirty = false;
   let unsubscribe: (() => void) | null = null;

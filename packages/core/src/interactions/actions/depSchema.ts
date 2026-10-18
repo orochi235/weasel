@@ -137,6 +137,10 @@ export type { SvgIngestOptions, SvgUnpacker, ClipboardIngestCtx, IngestionDep };
  *
  * `bounds` is still passed alongside as a useful AABB pose hint — factories
  * may use it as the node's pose even when richer geometry is available.
+ *
+ * Any of them may carry a `minSize` (`{ width, height }`): the size the
+ * insert was held to, which the kit's own factories keep as `data.minSize`
+ * so a resize holds the node to it too.
  */
 export type InsertExtras =
   | { kind: 'rect' }

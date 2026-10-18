@@ -71,7 +71,7 @@ export function TypeSection({ value, onChange }: { value: Type; onChange: (patch
         onChange={(fontSizeDelta) => onChange({ fontSizeDelta })}
         readout={delta > 0 ? `+${delta}` : String(delta)}
       />
-      <Field label="style" columns={s.fontStyle}>
+      <Field label="style" columns={s.fontStyle} group>
         <label className={s.check}>
           <input type="checkbox" checked={value.bold} onChange={(e) => onChange({ bold: e.target.checked })} /> B
         </label>

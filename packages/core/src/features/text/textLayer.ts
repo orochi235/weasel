@@ -16,6 +16,7 @@ import type { TextPose } from '@weasel-js/text';
 import type { RenderLayer } from 'core/layers/render';
 import { textCommandFromPose } from '@weasel-js/renderer';
 import { runsToPlainText } from '@weasel-js/text';
+import { clippedToBox } from '../../canvas/nodeShapes/textPainter';
 
 
 /** Options for `createTextLayer`. */
@@ -55,15 +56,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
           );
         }
         const textCmd = textCommandFromPose(pose, scale);
-        if (clipToBounds) {
-          children.push({
-            kind: 'group',
-            clip: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-            children: [textCmd],
-          });
-        } else {
-          children.push(textCmd);
-        }
+        children.push(clipToBounds ? clippedToBox(textCmd, pose) : textCmd);
       }
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return children;

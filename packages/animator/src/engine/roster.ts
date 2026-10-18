@@ -29,10 +29,10 @@ function file<K>(index: Map<K, Set<ActiveAnimation>>, key: K, a: ActiveAnimation
   } else if (set?.delete(a) && set.size === 0) index.delete(key);
 }
 
-/** `elapsed` answers the animator's clock, as {@link createSchedule} takes it. */
-export function createRoster(elapsed: () => number): Roster {
+/** `elapsed` and `direction` answer the animator's clock, as {@link createSchedule} takes them. */
+export function createRoster(elapsed: () => number, direction?: () => number): Roster {
   const animations = new Map<number, ActiveAnimation>();
-  const schedule = createSchedule(elapsed);
+  const schedule = createSchedule(elapsed, direction);
   // A start interrupts its key and a stop empties its target, and a search of the table for
   // either costs more the more is running.
   const byKey = new Map<string, Set<ActiveAnimation>>();

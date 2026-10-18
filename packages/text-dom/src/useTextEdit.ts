@@ -12,7 +12,7 @@ import {
   numericWeight, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
-import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
+import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { runsToPlainText } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
@@ -21,7 +21,8 @@ import {
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
-import { overlayTransform } from './overlayFrame';
+import { overlayClipPath, overlayTop, overlayTransform } from './overlayFrame';
+export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
 import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
@@ -591,18 +592,6 @@ function installSelectionStyle(
 const ALIGN_ANCHOR = { left: 0, center: 0.5, right: 1 } as const;
 
 /**
- * The overlay's `top`, in container pixels, for content `contentHeight` tall
- * (pre-scale, like the rest of `pose`): the pose's top, shifted by the same
- * `verticalAlign` slack the canvas applies, plus `drop` — how far below the
- * CSS line's baseline the canvas puts its own, from {@link baselineDrop}.
- * @internal
- */
-export function overlayTop(pose: TextEditScreenPose, contentHeight: number, drop = 0): number {
-  const slack = verticalAlignOffset(pose.verticalAlign, pose.height, contentHeight);
-  return pose.y + (slack + drop) * (pose.zoom ?? 1);
-}
-
-/**
  * The canvas and CSS both hang a line's baseline half the leading plus one
  * ascent below the line top, from the same ascent rule, but each engine
  * rounds the font's metrics and that leading its own way, and a face that
@@ -705,6 +694,7 @@ function placeOverlay(
   // `left`/`top` stay screen pixels.
   el.style.transformOrigin = '0 0';
   el.style.transform = overlayTransform(pose, left, top, anchor);
+  el.style.clipPath = pose.clip ? overlayClipPath(el, pose, left, top, anchor, pose.clip) : '';
   // `letter-spacing` is not part of the CSS `font` shorthand. Under a
   // transform the world value is the value. Without one, `pose.fontSize` is
   // `style.fontSize * zoom`, so their ratio is the world→screen factor; run

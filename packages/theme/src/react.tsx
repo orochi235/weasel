@@ -1,11 +1,13 @@
 import type { ColorSource, Palette } from '@weasel-js/paint';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
+import { isDev } from '@weasel-js/registry';
 import { applyTheme } from './applyTheme';
 import { themeTones, type ColorList } from './colorList';
 import { colorSourceCss } from './colorSource';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
+import { useResolvedColorMode } from './useColorMode';
 
 export {
   useColorModePreference,
@@ -35,7 +37,9 @@ const NO_PALETTE: Palette = { entries: [] };
 /** Props for `<ThemeProvider>`. */
 export interface ThemeProviderProps {
   readonly theme?: Theme;
-  /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. */
+  /** Axis values, e.g. `{ mode: 'light' }`. A missing axis takes its default. `mode: 'auto'`
+   *  follows the OS setting, live; any other value the theme lacks takes the default, with a
+   *  warning in development. */
   readonly selection?: Selection;
   /** The colors a `tone` index picks from in this subtree. Absent: the theme's own. */
   readonly tones?: ColorList;
@@ -68,7 +72,11 @@ export function ThemeProvider({
 }: ThemeProviderProps): React.ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const axes = themeAxes(theme);
-  const full = fullSelection(axes, selection);
+  const autoMode = selection?.mode === 'auto' && !('auto' in (axes.mode?.values ?? {}));
+  const systemMode = useResolvedColorMode(autoMode ? 'auto' : 'dark');
+  const given = autoMode ? { ...selection, mode: systemMode } : selection;
+  const full = fullSelection(axes, given);
+  warnUnknownAxisValues(theme, axes, given);
   // Keyed on the selection's content: callers pass a fresh object every render.
   const key = selectionKey(axes, full);
 
@@ -93,6 +101,22 @@ export function ThemeProvider({
       </div>
     </ThemeContext.Provider>
   );
+}
+
+const warned = new Set<string>();
+
+function warnUnknownAxisValues(theme: Theme, axes: ReturnType<typeof themeAxes>, selection: Selection | undefined): void {
+  if (!selection || !isDev()) return;
+  for (const [axis, value] of Object.entries(selection)) {
+    const def = axes[axis];
+    if (!def || value in def.values) continue;
+    const key = `${theme.name}\0${axis}\0${value}`;
+    if (warned.has(key)) continue;
+    warned.add(key);
+    console.warn(
+      `[weasel theme] ThemeProvider: theme "${theme.name}" has no ${axis} "${value}"; using "${def.default}". Its ${axis} values: ${Object.keys(def.values).join(', ')}.`,
+    );
+  }
 }
 
 /** The theme in force. Throws outside a `<ThemeProvider>`; use

@@ -41,7 +41,8 @@ export const pref = {
     return { name, ...options, members };
   },
 
-  number: (name: string, def: number, rest?: Rest<PrefNumber>): PrefNumber => leaf('number', name, def, rest),
+  number: (name: string, def: number, rest?: Rest<PrefNumber>): PrefNumber & { default: number } =>
+    leaf('number', name, def, rest) as PrefNumber & { default: number },
   boolean: (name: string, def: boolean, rest?: Rest<PrefBoolean>): PrefBoolean => leaf('boolean', name, def, rest),
   string: (name: string, def: string, rest?: Rest<PrefString>): PrefString => leaf('string', name, def, rest),
   color: (name: string, def: string, rest?: Rest<PrefColor>): PrefColor => leaf('color', name, def, rest),

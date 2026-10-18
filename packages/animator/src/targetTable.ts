@@ -1,3 +1,5 @@
+import { createHoldStore, type HoldStore } from './engine/holdStore';
+import { createTableMoves, type TableMoves } from './tableMoves';
 import type { LaneColumns } from './engine/lanes';
 import { createTarget, readTargetInto, stateOf, type RowTable, type Target, type TargetState } from './target';
 
@@ -82,6 +84,51 @@ function rowTarget(
   return target;
 }
 
+/** Every moving or held row's value on screen into `shown`: its committed value, what its
+ *  holds add to it, what its voices in `columns` do, and what its moves in `moved` show past
+ *  its holds. */
+function pass(
+  shown: ShownArray, committed: Float64Array, n: number, holds: HoldStore | null,
+  moves: TableMoves, columns: LaneColumns | null, moved: LaneColumns | null, stamp: Int32Array, at: number,
+): void {
+  const h = holds && holds.size > 0 ? holds : null;
+  const delta = h ? h.delta : null;
+  if (h) {
+    const { held, size } = h;
+    for (let j = 0; j < size; j++) {
+      const row = held[j]!;
+      stamp[row] = at;
+      for (let k = 0; k < n; k++) shown[row * n + k] = committed[row * n + k]! + delta![row * n + k]!;
+    }
+  }
+  if (columns) {
+    const { cols, tags, count } = columns;
+    for (let j = 0; j < count; j++) {
+      const row = tags[j]!;
+      const base = row * n;
+      stamp[row] = at;
+      if (delta) for (let k = 0; k < n; k++) shown[base + k] = committed[base + k]! + cols[j * n + k]! + delta[base + k]!;
+      else for (let k = 0; k < n; k++) shown[base + k] = committed[base + k]! + cols[j * n + k]!;
+    }
+  }
+  moves.add(shown, committed, delta, h ? h.cover : null, moved, stamp, at);
+}
+
+/** The rows below `high` that are not `free`. */
+function inUse(high: number, free: readonly number[]): number[] {
+  const gone = new Set(free);
+  return Array.from({ length: high }, (_, r) => r).filter((r) => !gone.has(r));
+}
+
+const tables = new WeakMap<TargetTable<ShownArray>, RowTable>();
+
+/** The animator's side of a table `createTargetTable` made. */
+export function rowTableOf(table: TargetTable<ShownArray>): RowTable {
+  const rows = tables.get(table);
+  if (!rows) throw new Error('animator: `table` was not made by createTargetTable');
+  return rows;
+}
+
 /** Make a {@link TargetTable} whose rows each hold `axes` numbers. */
 export function createTargetTable<S extends ShownArray = Float64Array>(opts: TargetTableOptions<S>): TargetTable<S> {
   const n = opts.axes;
@@ -99,6 +146,14 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
   const removals: number[] = [];
   /** Rows whose value on screen the pass over the table's columns does not give: read apart. */
   const marks = new Set<number>();
+  /** The holds on its rows, once any has been held. */
+  let holds: HoldStore | null = null;
+  const moves = createTableMoves(n);
+  /** The pass that last wrote each row's value on screen. */
+  let stamp = new Int32Array(committed.length / n);
+  let passes = 0;
+  /** Where the last frame's pass found the animator's voices. */
+  let last: (group: object) => LaneColumns | null = () => null;
 
   const flush = (): void => {
     for (const row of marks) {
@@ -118,28 +173,30 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
   const rows: RowTable = {
     mark: (row) => { marks.add(row); },
     settle() {
-      // What a mark stood for is on screen once it is read. A hold is a voice among the row's
-      // columns; what waits beside one, and what a hold hides of a move behind it, are not.
+      // What a mark stood for is on screen once it is read, and the pass gives it from here.
       flush();
-      for (const row of marks) {
-        const s = states[row];
-        if (!s || s.live === 0 || !(s.beside || s.dimmed || (s.held > 0 && s.behind.size > 0))) marks.delete(row);
-      }
+      marks.clear();
     },
-    fill(columns: LaneColumns | null) {
-      if (columns) {
-        const { cols, tags, count } = columns;
-        for (let j = 0; j < count; j++) {
-          const at = tags[j]! * n;
-          for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]!;
-        }
-      }
+    fill(columns) {
+      last = columns;
+      pass(shown, committed, n, holds, moves, columns(rows), columns(moves.group), stamp, ++passes);
       flush();
       opts.show?.();
     },
+    move: moves.move,
+    beside: moves.beside,
+    refill() {
+      const { show } = opts;
+      opts.show = undefined;
+      try { rows.fill(last); } finally { opts.show = show; }
+    },
+    rows: () => inUse(high, free),
+    holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {
+      for (let k = 0; k < n; k++) out[at + k] = committed[row * n + k]!;
+    })),
   };
 
-  return {
+  const table: TargetTable<S> = {
     axes: n,
     get size() { return size; },
     get committed() { return committed; },
@@ -156,6 +213,8 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
         const wider = new Shown(grown.length);
         wider.set(shown);
         shown = wider;
+        holds?.grow(grown.length / n);
+        stamp = Int32Array.from({ length: grown.length / n }, (_, r) => stamp[r] ?? 0);
       }
       put(committed, n, row, value);
       put(shown, n, row, value);
@@ -185,4 +244,6 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       return target;
     },
   };
+  tables.set(table, rows);
+  return table;
 }

@@ -1,17 +1,20 @@
 import type { MouseEvent, PointerEvent } from 'react';
-import type { MenuEntry } from '@weasel-js/menu';
+import type { MenuController, MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { AccessLabel } from './AccessLabel';
+import { MenuColorValue, MenuNumberValue } from './MenuValue';
 import s from './ContextMenu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
- *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. */
+ *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. A number row holds a
+ *  field, which takes focus only when pressed or on Enter. */
 export function MenuRow(props: {
   entry: MenuEntry; id: string; highlighted: boolean; expanded: boolean;
+  controller: MenuController;
   /** The id of the panel a submenu row opens. */
   controls: string;
   onHover(e: PointerEvent): void; onPress(): void;
@@ -37,7 +40,7 @@ export function MenuRow(props: {
     role: checkable ? 'menuitemcheckbox' : 'menuitem',
     className: current ? `${s.row} ${s.current}` : s.row,
     'data-highlighted': highlighted || undefined,
-    'aria-disabled': e.disabled || undefined,
+    'aria-disabled': e.disabled || e.kind === 'color' || undefined,
     'aria-checked': checkable ? e.checked : undefined,
     'aria-current': current ? ('page' as const) : undefined,
     'aria-haspopup': e.kind === 'submenu' ? ('menu' as const) : undefined,
@@ -49,9 +52,11 @@ export function MenuRow(props: {
   };
   const content = (
     <>
-      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
+      <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(e.kind !== 'color' && typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <AccessLabel label={e.label} access={e.access} />
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
+      {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
+      {e.kind === 'color' && <MenuColorValue entry={e} />}
       {e.kind === 'submenu' && <Caret className={s.caret} />}
     </>
   );

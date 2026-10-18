@@ -3,6 +3,7 @@ import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText } from './commit';
 import { insertKind } from './shape';
+import { minSizeOf } from 'core/scene/minSize';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
 const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance'] as const;
@@ -12,6 +13,8 @@ const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance'] as c
  * no box. It commits a node of `params.kind` at `params.size`, centered on the
  * click, through the same `insert` dep a drag commits through. The rest of the
  * binding's params are the insert's extras, as a drag's are.
+ *
+ * A `minSize` in the params floors the size, and goes on to the node.
  *
  * A binding with no `size` places nothing: the kind's extent is the tool's to
  * name, and a click has none of its own.
@@ -26,7 +29,11 @@ export const placeAction: Action & { requires: string[] } = inPlane({
     timing: 'immediate',
     run(deps: ActionDeps, params?: Record<string, unknown>): void {
       const dep = deps.insert;
-      const size = params?.['size'] as { width: number; height: number } | undefined;
+      const asked = params?.['size'] as { width: number; height: number } | undefined;
+      const min = minSizeOf(params);
+      const size = asked && min
+        ? { width: Math.max(asked.width, min.width), height: Math.max(asked.height, min.height) }
+        : asked;
       const x = params?.['worldX'];
       const y = params?.['worldY'];
       if (!dep || !size || typeof x !== 'number' || typeof y !== 'number') return;

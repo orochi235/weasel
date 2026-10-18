@@ -10,7 +10,10 @@ import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
-import { DEFAULT_LINE_HEIGHT, joinLines, LineTracker, statesLines, warnUnreadPositions } from './tspanLines';
+import {
+  DEFAULT_LINE_HEIGHT, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
+} from './tspanLines';
+import { LAID_ATTR } from './laidLines';
 import { placeTspanRun } from './glyphShifts';
 import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { mapFillPaint } from './fillPaint';
@@ -44,6 +47,12 @@ function laidOutWidth(runs: readonly StyledRun[], style: TextStyle, plain: strin
   if (bounds.width > 0) return bounds.width;
   const longest = plain.split('\n').reduce((max, line) => Math.max(max, line.length), 0);
   return longest * resolved.fontSize * ESTIMATED_GLYPH_ADVANCE_EM;
+}
+
+/** A finite number attribute, or `undefined`. */
+function numberAttr(el: Element, name: string): number | undefined {
+  const n = parseFloat(el.getAttribute(name) ?? '');
+  return Number.isFinite(n) ? n : undefined;
 }
 
 /** Take a text node built in its element's own coordinates through `m`,
@@ -107,7 +116,9 @@ export function parseTextElement(
   const fontSize = resolveScreenLength(textStyle.fontSize ?? 16, 1);
 
   const dominantBaseline = el.getAttribute('dominant-baseline');
-  const explicitTopAnchor = dominantBaseline === 'text-before-edge'
+  // Laid-out lines sit on their own baselines, and `y` stays the box top.
+  const laid = el.hasAttribute(LAID_ATTR);
+  const explicitTopAnchor = laid || dominantBaseline === 'text-before-edge'
     || dominantBaseline === 'hanging';
   // If serialized by us, `y` is already the top edge. Otherwise SVG's
   // default is `y` = baseline of the first line — shift up by one
@@ -123,7 +134,7 @@ export function parseTextElement(
   const tracker = new LineTracker(el, onWarn);
   const { runs, lead } = readRuns(el, tracker, inheritedShift, textStyle.letterSpacing, gradients, leafStyle, onWarn);
   const plain = runs.map((r) => r.text).join('');
-  const pitched = tracker.lineHeight(fontSize);
+  const pitched = laid ? numberAttr(el, LINE_HEIGHT_ATTR) : tracker.lineHeight(fontSize);
   if (pitched !== undefined) textStyle.lineHeight = pitched;
   const lineHeight = textStyle.lineHeight ?? DEFAULT_LINE_HEIGHT;
 
@@ -312,11 +323,8 @@ function readTextStyle(
   if (transform && transform !== 'none') out.textTransform = transform;
   const variant = styleValue(style, 'font-variant', onWarn);
   if (variant === 'small-caps') out.fontVariantCaps = variant;
-  // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
-  // attribute. WeaselDraw carries it through the generic namespace bag
-  // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of
-  // `TextStyle.lineHeight` at the bridge layer. From weasel-svg's POV the
-  // value is just an opaque string in `meta`.
+  // `lineHeight` is read from the lines' pitch, or from `data-weasel-line-height`
+  // on laid-out lines, by the caller.
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
   // `selectionColor`) is intentionally not persisted — those are UI state,
   // not document content.

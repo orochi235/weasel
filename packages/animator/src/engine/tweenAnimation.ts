@@ -20,33 +20,39 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
   // expensive setup (color space conversion etc.) doesn't repeat per frame.
   const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
   let lastValueEmitted = false;
+  const atEnd = ctx.atEnd();
   ctx.seedClock();
   // Started ahead of `register`, whose `start` listeners may already cancel it.
   const reader = codec.tween({
     id, ms: Math.max(o.ms, 1), ease: easing,
     from: axes ? axes.to(o.from) : [0],
     to: axes ? axes.to(o.to) : [1],
+    atEnd,
   });
   return ctx.register({
     id,
     kind: 'tween',
     cancelKey: o.cancelKey,
     label: o.label,
-    progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
+    startAt: atEnd ? Math.max(o.ms, 0) : 0,
+    progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, Math.max(0, virtualNow / o.ms))),
     // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec
     // supplies only the value in between.
-    tick(nowMs) {
+    tick(nowMs, scale) {
       if (ctx.tripwire()) { codec.stop(id); return true; }
-      const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
+      // Played backward, it ends at its start as it ends at its end going forward.
+      const atStart = scale < 0 && (nowMs <= 0 || codec.rewound(id));
+      const t = atStart ? 0 : o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
+      const ends = atStart || t >= 1;
       let value: T;
       if (axes) {
-        value = t >= 1 ? o.to : axes.from(reader.cols, reader.at);
+        value = ends ? (atStart ? o.from : o.to) : axes.from(reader.cols, reader.at);
       } else {
-        const eased = t >= 1 ? easing(1) : reader.cols[reader.at]!;
+        const eased = ends ? easing(t) : reader.cols[reader.at]!;
         value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
       }
       o.onTick(value);
-      if (t >= 1 && !lastValueEmitted) {
+      if (ends && !lastValueEmitted) {
         lastValueEmitted = true;
         codec.stop(id);
         // That last onTick may have canceled us — deregistering the id.

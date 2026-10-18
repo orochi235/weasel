@@ -14,6 +14,8 @@ import { buildGestureContext, captureBox, captureStarts, captureTargets, resolve
 import type { PoseDescriptor } from './geometry';
 import type { InkExtents } from 'core/geometry/inkExtents';
 import { drawnBoxes } from '../drawnBoxes';
+import type { MinSize } from 'core/scene/minSize';
+import { boxMinimum } from './minimum';
 
 /** The box the drag resizes, as the press found it. */
 export interface ResizeBox {
@@ -53,6 +55,9 @@ export interface ResizeSession {
   /** World reads and local writes over the scene's composition strategy. */
   readonly poseFrame: PoseFrame<unknown>;
   readonly view: unknown;
+  /** The smallest `box` may be resized to, from the written nodes' own
+   *  minimums: a floor under every constraint. `null` for none. */
+  readonly minimum: MinSize | null;
   readonly constraints: readonly BoundsConstraint<Bounds>[];
   readonly pointSnap: readonly PointSnapBehavior<Bounds>[];
   /** Reused across the drag; constraints mutate its `scratch`. */
@@ -78,7 +83,7 @@ export interface ResizeFrame {
  *  they share, and where each starts. */
 export type ResizePlace = Pick<
   ResizeSession,
-  'scene' | 'writeIds' | 'sharedBox' | 'box' | 'startPoses' | 'startWorlds' | 'geometryOf' | 'poseFrame' | 'view'
+  'scene' | 'writeIds' | 'sharedBox' | 'box' | 'startPoses' | 'startWorlds' | 'geometryOf' | 'poseFrame' | 'view' | 'minimum'
 >;
 
 /** Capture what resizing `ids` from `anchor` acts on. Null when nothing it
@@ -114,11 +119,14 @@ export function captureResize(
   if (starts.startPoses.size === 0) return null;
 
   const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
+  const sharedBox = isGroupPath || writeIds.length > 1;
+  const written = writeIds.filter((id) => starts.startPoses.has(id));
   return {
     place: {
       scene,
       writeIds,
-      sharedBox: isGroupPath || writeIds.length > 1,
+      sharedBox,
+      minimum: boxMinimum(scene, written, starts.leafBounds, starts.startWorlds, box.bounds, sharedBox),
       box,
       startPoses: starts.startPoses,
       startWorlds: starts.startWorlds,

@@ -58,7 +58,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const scene = useBakedScene(props.scene);
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
   const heldModifiers = useHeldModifiers();
-  const redrawOn = useSceneRedrawSources({ supplied: props.redrawOn, scene, heldModifiers, animator: props.animator, modes });
 
   // Our own refs, so input listeners attach even when the consumer forwards its own ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
@@ -98,10 +97,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
+    poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
   });
+  const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
 
   const chrome = useSceneCanvasChrome({
     source: {
@@ -116,11 +116,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
-  const { views: addedViews, addView } = useAddedViews();
+  const { views: addedViews, addView, viewAt } = useAddedViews();
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
-    ingest, viewAnimation, camera, addView,
+    ingest, viewAnimation, camera, addView, viewAt,
   });
   const viewInputs = useSurfaceViewInputs({
     picking, descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, selection, rotationBadge: layered.rotationBadge,

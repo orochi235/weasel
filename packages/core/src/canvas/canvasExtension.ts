@@ -23,6 +23,15 @@ export interface CanvasViewHandle {
   remove(): void;
 }
 
+/** The view under a canvas point, as {@link SceneCanvasApi.viewAt} answers. */
+export interface ViewAt {
+  /** `null` for the canvas itself. */
+  id: string | null;
+  view: View;
+  /** Where the view paints, in canvas CSS px. */
+  rect: { x: number; y: number; w: number; h: number };
+}
+
 /**
  * A `<CanvasView>`'s camera, as its `cameraRef` receives it: the members a
  * canvas's own handle carries for its camera, with the same contract. A camera
@@ -226,4 +235,12 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
    * Adding an id already present replaces that view.
    */
   addView(props: CanvasViewProps): CanvasViewHandle;
+  /**
+   * The innermost view painted under `at`, a point in CSS px from the
+   * canvas's top-left, whether or not that view takes input: its id, its
+   * camera, and the rect it paints into. Where no view is, the canvas itself,
+   * with `id: null`. `except` passes over a view and the views nested in it —
+   * a lens asking what is beneath itself.
+   */
+  viewAt(at: { x: number; y: number }, opts?: { except?: string }): ViewAt;
 }

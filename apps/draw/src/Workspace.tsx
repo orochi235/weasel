@@ -108,7 +108,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const ambient = useEditorAmbient({
     scene,
     selection,
-    modeKeys: modes.keys,
+    modes: modes.ambient,
     grid: grid.commands,
     pathDirection: pathDirection.commands,
     symmetry,
@@ -207,7 +207,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           alphaFor={alphaFor}
           redrawOn={redrawOnScoping}
           isPointerInteractive={modality.scopingDim.isPointerInteractive}
-          onDoubleClick={modes.onDoubleClick}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
           chromeVisibility={pathDirection.chromeVisibility}

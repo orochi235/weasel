@@ -20,6 +20,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
+import type { PoseTransitionSeat } from '../../animation/poseTransition';
 import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
@@ -188,6 +189,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  reorder or resize inside a laid-out container). Absent or `null`,
      *  they snap. */
     reflowTransition?: ReflowTransition<TPose> | null;
+
+    /** Glides what is shown when the scene writes a pose — a `scene.setPose`, an undo — and sees
+     *  removed nodes off with `exit`. Absent or `null`, writes snap. See {@link PoseTransitionSeat}. */
+    poseTransition?: PoseTransitionSeat<TPose> | null;
 
     /**
      * Lets pose-transform actions (move, resize, nudge, flip — NOT rotate) also rewrite a
@@ -589,8 +594,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Called when the user double-clicks the canvas, with the hit node (id + kind) at that
-     * position, or `null` on empty canvas. Typical use: modality dispatch — enter path-edit
-     * on a path node, isolation on a group, text-edit on a text node.
+     * position, or `null` on empty canvas. A notification, not a binding: it fires whatever the
+     * double-click does. Entering a mode on the node belongs to `modeTriggers` instead.
      */
     onDoubleClick?: (hit: SceneCanvasHit | null) => void;
     /** Called on every click — a press and release without a drag — with the

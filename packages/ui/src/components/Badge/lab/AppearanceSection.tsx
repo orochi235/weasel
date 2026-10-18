@@ -21,10 +21,11 @@ export function AppearanceSection({ value, onChange }: { value: Appearance; onCh
       <Field label="variant" columns={controls.wide2}>
         <LabToggle value={value.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
       </Field>
-      <Field label="status" columns={s.status}>
-        <LabToggle value={value.status} options={STATUSES} onChange={(status) => onChange({ status })} />
+      <Field label="status" columns={s.status} group>
+        <LabToggle value={value.status} options={STATUSES} name="status" onChange={(status) => onChange({ status })} />
         <input
           type="color"
+          aria-label="Custom status color"
           className={s.statusSwatch}
           value={value.customColor}
           onChange={(e) => onChange({ customColor: e.target.value, status: 'custom' })}
@@ -38,9 +39,10 @@ export function AppearanceSection({ value, onChange }: { value: Appearance; onCh
       <Field label="label" columns={controls.wide2}>
         <input type="text" className={s.labelInput} value={value.label} onChange={(e) => onChange({ label: e.target.value })} />
       </Field>
-      <Field label="crawl" columns={s.crawl}>
-        <input type="checkbox" checked={value.crawlOn} onChange={(e) => onChange({ crawlOn: e.target.checked })} />
+      <Field label="crawl" columns={s.crawl} group>
+        <input type="checkbox" aria-label="Crawl" checked={value.crawlOn} onChange={(e) => onChange({ crawlOn: e.target.checked })} />
         <InlineRange
+          aria-label="Crawl speed"
           className={controls.fill}
           min={-2}
           max={2}

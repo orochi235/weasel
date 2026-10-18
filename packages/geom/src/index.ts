@@ -85,6 +85,7 @@ export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { growRegion, type GrowRegionOptions } from './paths/growRegion';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
 export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';

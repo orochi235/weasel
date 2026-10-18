@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { inferredNodeRouting, defaultNodeRouting } from './defaultNodeRouting';
+import { inferredNodeRouting, defaultNodeRouting, groupNodeRouting } from './defaultNodeRouting';
 import { createNodeRouting } from 'core/scene/NodeRouting';
 
 describe('inferredNodeRouting', () => {
@@ -32,6 +32,17 @@ describe('inferredNodeRouting', () => {
   it('does not match objects with text === null/undefined', () => {
     expect(classify({ text: null })).toBe('unknown');
     expect(classify({ text: undefined })).toBe('unknown');
+  });
+
+  it('routes a container as "group" whatever its data, and data alone as before', () => {
+    for (const table of [inferredNodeRouting, [groupNodeRouting, ...defaultNodeRouting]]) {
+      const r = createNodeRouting();
+      for (const k of table) r.register(k);
+      expect(r.classify({}, { kind: 'container' })).toBe('group');
+      expect(r.classify({ text: 'hi' }, { kind: 'container' })).toBe('group');
+      expect(r.classify({}, { kind: 'leaf' })).toBe('unknown');
+      expect(r.classify({})).toBe('unknown');
+    }
   });
 
   it('defaultNodeRouting still matches by data.kind tag', () => {

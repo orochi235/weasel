@@ -20,6 +20,7 @@ import {
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
   glyphFieldScale,
+  SYNTH_BOLD_AMOUNT,
 } from '@weasel-js/font';
 import { outlineGroupMesh, outlineGroupStrokeMesh } from '../glyphOutlineMesh';
 import type { ClipRect } from '../batchClip';
@@ -166,13 +167,6 @@ function ruleMesh(x0: number, y0: number, x1: number, y1: number): Mesh {
     indices: new Uint32Array([0, 1, 2, 0, 2, 3]),
   };
 }
-
-/**
- * Amount the SDF threshold shifts by when the resolver fell back
- * from a missing bold variant to the regular atlas. Tuned on Inter: it
- * thickens strokes about a pixel at 16px without breaking glyph topology.
- */
-const SYNTH_BOLD_AMOUNT = 0.08;
 
 /**
  * Stage one group of atlas glyphs into the batch.

@@ -19,14 +19,14 @@ describe('useStickyTool', () => {
   it('draws a sticky with a drag, through insert', () => {
     const { result } = renderHook(() => useStickyTool());
     expect(bindingFor(result.current, 'drag')).toEqual({
-      spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'sticky' } },
+      spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
     });
   });
 
   it('places a default-size sticky with a click, through place', () => {
     const { result } = renderHook(() => useStickyTool());
     expect(bindingFor(result.current, 'click')).toEqual({
-      spec: { kind: 'click' }, actionId: 'place', opts: { params: { kind: 'sticky', size: STICKY_DEFAULTS.size } },
+      spec: { kind: 'click' }, actionId: 'place', opts: { params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, size: STICKY_DEFAULTS.size } },
     });
   });
 
@@ -43,9 +43,11 @@ describe('useStickyTool', () => {
   it('carries the look it is given onto both inserts', () => {
     const background = { paint: solid('#a6e1ff') };
     const size = { width: 90, height: 60 };
-    const { result } = renderHook(() => useStickyTool({ background, padding: 6, size }));
-    expect(bindingFor(result.current, 'drag')?.opts?.params).toEqual({ kind: 'sticky', background, padding: 6 });
-    expect(bindingFor(result.current, 'click')?.opts?.params).toEqual({ kind: 'sticky', background, padding: 6, size });
+    const minSize = { width: 30, height: 20 };
+    const { result } = renderHook(() => useStickyTool({ background, padding: 6, size, minSize, overflow: 'visible' }));
+    const look = { kind: 'sticky', minSize, background, padding: 6, overflow: 'visible' };
+    expect(bindingFor(result.current, 'drag')?.opts?.params).toEqual(look);
+    expect(bindingFor(result.current, 'click')?.opts?.params).toEqual({ ...look, size });
   });
 
   it('passes insert behaviors to the drag', () => {

@@ -20,6 +20,11 @@ to `setTimeout`, and a hidden tab books late again.
 The worker times the pass, but the pass itself runs on the main thread, so a
 stall there longer than the lookahead starts whatever came due late. The
 `onLate(lateMs, when)` option reports each one; if it fires, raise `lookahead`.
+Or pass `synthVoices: 'worklet'`: `playNote` and `playNoise` voices are then
+rendered in an `AudioWorkletProcessor` from events posted when they are played,
+so one played ahead of a stall starts on time. The processor loads from a
+`blob:` URL (CSP: `script-src blob:`); until it has, and where it cannot,
+synth voices play on nodes.
 
 A suspended `AudioContext` is a separate matter: its clock stops, and on resume
 the engine drops what came due meanwhile rather than firing it all at once.

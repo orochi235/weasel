@@ -9,7 +9,8 @@ import type { SceneCanvasProps } from './props';
 import { useNodeAtPoint } from './useNodeAtPoint';
 import { useNodeKinds } from './useNodeKinds';
 import { useSceneSelectTool, type UseSceneSelectToolArgs } from './useSceneSelectTool';
-import { useViewLayerGate } from './useViewLayerGate';
+import { useOptionalViewRegistry } from '../viewRegistry';
+import { useViewLayerGate } from '../useViewLayerGate';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
@@ -30,7 +31,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 }) {
   const { scene, selection, descriptor, viewRef } = args;
   const { geometry, routing, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
-  const { kindOfData, kindOfNode } = useNodeKinds(scene, routing);
+  const { kindOf, kindOfNode } = useNodeKinds(scene, routing);
 
   // The painted alpha of a node in this view: the caller's `alphaFor` times any per-node
   // override alpha. The pick path reads the same number the painter does, or a node faded
@@ -39,7 +40,10 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     () => composeAlphaFor(scene, alphaFor),
     [scene, alphaFor],
   );
-  const viewLayerGate = useViewLayerGate(layerVisibility, layerOrder);
+  const surfaceViewRegistry = useOptionalViewRegistry();
+  const viewLayerGate = useViewLayerGate(
+    layerVisibility, layerOrder, () => surfaceViewRegistry?.surface()?.layers() ?? [],
+  );
 
   const adapter = useSceneAdapter(scene, {
     // `adapterMethods` is memoized; `selection` itself is a fresh object each render.
@@ -59,11 +63,12 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
+    ...(isPointerInteractive ? { isPointerInteractive } : {}),
     selectTool: args.selectTool,
   });
 
   const getNodeAtPoint = useNodeAtPoint({
-    pickBest: selectTool.pickBest, nodes: adapter, kindOfData, isPointerInteractive,
+    pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 
   return {

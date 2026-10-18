@@ -58,6 +58,17 @@ const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^wor
 mkdirSync(join(main, '.worktrees'), { recursive: true });
 const tree = mkdtempSync(join(main, '.worktrees', 'fleet-'));
 git('worktree', 'add', '--detach', '--force', tree, commit);
+const dropTree = () => {
+  git('worktree', 'remove', '--force', tree);
+  rmSync(tree, { recursive: true, force: true });
+};
+// `finally` never runs when a signal kills the process, and a killed run otherwise leaves its tree.
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.once(signal, () => {
+    dropTree();
+    process.exit(128 + { SIGHUP: 1, SIGINT: 2, SIGTERM: 15 }[signal]);
+  });
+}
 
 let status = 1;
 try {
@@ -78,7 +89,6 @@ try {
     spawnSync('sleep', [String(BUSY_WAIT_S)]);
   }
 } finally {
-  git('worktree', 'remove', '--force', tree);
-  rmSync(tree, { recursive: true, force: true });
+  dropTree();
 }
 process.exit(status);

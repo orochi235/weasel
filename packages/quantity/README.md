@@ -43,7 +43,7 @@ wrapper is stored.
 | `integer()` | `42` | `42` |
 | `compact()` | `2.00M` | `2 million` |
 | `percent()` | `25%` | `25 percent` |
-| `fraction({ maxDenominator, mixed })` | `1/12`, `1 1/2` | `1 over 12`, `1 and 1 over 2` |
+| `fraction({ maxDenominator, mixed, form })` | `1/12`, `1 1/2`; `form: 'diagonal'` `¹⁄₁₂`; `form: 'stacked'` drawn as MathML | `1 over 12`, `1 and 1 over 2` |
 | `ratio()` | `1:12` | `1 to 12` |
 | `multiplier()` | `2.5×` | `2.5 times` |
 | `zoom()` | `150%`, `2.5x` | `150 percent`, `2.5 times` |

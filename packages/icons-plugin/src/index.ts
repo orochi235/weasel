@@ -1,15 +1,15 @@
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
-import { libraryAnnotations } from './annotate';
-import { assertBundler } from './bundlers';
-import { fail, iconCatalog, tablesFrom } from './catalog';
-import { collectIconRefs } from './collect';
-import { rewriteIconCalls } from './rewrite';
-import { genFile, namespaceIn, packageDirFinder, reachableTables } from './tables';
-import { MARKER, PREFIX, moduleFor, variantOf, type VariantFilter } from './virtual';
+import { libraryAnnotations } from './annotate.ts';
+import { assertBundler } from './bundlers.ts';
+import { fail, iconCatalog, tablesFrom } from './catalog.ts';
+import { collectIconRefs } from './collect.ts';
+import { rewriteIconCalls } from './rewrite.ts';
+import { genFile, namespaceIn, packageDirFinder, reachableTables } from './tables.ts';
+import { MARKER, PREFIX, moduleFor, variantOf, type VariantFilter } from './virtual.ts';
 
-export type { VariantFilter } from './virtual';
-export { collectIconRefs } from './collect';
+export type { VariantFilter } from './virtual.ts';
+export { collectIconRefs } from './collect.ts';
 
 /** How {@link weaselIcons} treats the build it runs in. */
 export interface WeaselIconsOptions {

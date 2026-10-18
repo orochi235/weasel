@@ -215,6 +215,25 @@ describe('a retained group, in a real context', () => {
     expect(maxDiff(direct, kept)).toBeLessThanOrEqual(8);
   });
 
+  it('keeps as many surfaces as the budget holds, whatever the scratch buffer costs', () => {
+    // Room for two canvas-sized surfaces and nothing for the scratch buffer
+    // they are drawn in, which is held only across frames that redraw one.
+    const r = open({ retainBudget: DW * DH * 4 * 2 });
+    const layers = (): DrawCommand[] => [
+      { kind: 'group', retain: 'a', children: content() },
+      { kind: 'group', retain: 'b', children: content() },
+    ];
+    const a = layers();
+    frame(r, a);
+    expect(r.lastFrameStats().retained).toMatchObject({ redrawn: 2, declined: 0 });
+    frame(r, a);
+    const kept = r.lastFrameStats().retained;
+    expect(kept).toMatchObject({ composited: 2, declined: 0 });
+    // A frame that redraws nothing holds only the surfaces.
+    expect(kept.bytes).toBeGreaterThan(0);
+    expect(kept.bytes).toBeLessThanOrEqual(DW * DH * 4 * 2);
+  });
+
   it('draws straight through past its budget, and leaves the same pixels', () => {
     const children = content();
     const r = open({ retainBudget: 0 });

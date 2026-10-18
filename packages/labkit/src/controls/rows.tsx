@@ -5,9 +5,11 @@ import {
   PropertyRow,
   type PropertyRowLayout,
 } from '@weasel-js/ui';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
-import { BareControl, extra, useDebouncedText, useTextWaitMs } from './fields';
+import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
+
+const noDrafts = (): void => {};
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -27,7 +29,7 @@ export function UnwiredRow({
   );
 }
 
-/** A text row whose writes are debounced — see {@link useDebouncedText}. */
+/** A text row whose drafts are debounced — see {@link useDebouncedText}. Its settled text is written as it is. */
 export function DebouncedTextRow({
   leaf,
   field,
@@ -42,14 +44,29 @@ export function DebouncedTextRow({
   readout?: ReactNode;
   auto?: boolean;
   onAutoChange?: (next: boolean) => void;
+  changed?: boolean;
 }) {
-  // The lab's policy leaves text live, so its writer is `onInput`.
-  const text = useDebouncedText(
+  const drafts = useDebouncedText(
     field.value ?? '',
-    field.onInput ?? field.onChange,
+    field.onInput ?? noDrafts,
     useTextWaitMs(leaf),
   );
-  return <PropertyField {...field} {...row} value={text.local} onInput={text.type} />;
+  return <PropertyField {...field} {...row} onInput={drafts.type} />;
+}
+
+/** The messages of a pair's cells, as one. */
+function pairError(
+  cells: readonly PairCellSpec[],
+  errors: Readonly<Record<string, ReactNode>> | undefined,
+): ReactNode {
+  const said = cells.filter(({ path }) => errors?.[path] != null);
+  if (said.length < 2) return said[0] && errors?.[said[0].path];
+  return said.map(({ path }, i) => (
+    <Fragment key={path}>
+      {i > 0 && ' '}
+      {errors?.[path]}
+    </Fragment>
+  ));
 }
 
 /** One cell of a paired row, with its path and the leaf it draws. */
@@ -73,23 +90,31 @@ export function PairedRow<TC extends Record<string, unknown>>({
   cells,
   shown,
   setConfig,
+  draftConfig,
+  errors,
   layout,
   span,
+  changed,
 }: {
   label: string;
   cells: readonly PairCellSpec[];
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
+  draftConfig?: (path: string, value: unknown) => void;
+  errors?: Readonly<Record<string, ReactNode>>;
   layout?: PropertyRowLayout;
   span?: boolean;
+  changed?: boolean;
 }) {
   return (
     <PropertyRow
       group
       span={span}
+      changed={changed}
       label={label}
       layout={layout}
       disabled={cells.every((cell) => cell.disabled)}
+      error={pairError(cells, errors)}
     >
       {cells.map(({ path, leaf, disabled }) => (
         // The row is named by the pair, so a cell that shares it says which
@@ -99,9 +124,11 @@ export function PairedRow<TC extends Record<string, unknown>>({
           {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
           <BareControl
             leaf={leaf}
-            value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
+            value={leafValueAt(shown, path, leaf)}
             write={(value) => setConfig(path, value)}
+            draft={draftConfig && ((value) => draftConfig(path, value))}
             disabled={disabled}
+            read={(p) => valueAtPath(shown, p)}
           />
         </span>
       ))}

@@ -27,7 +27,9 @@ import {
 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
 import type { DiagramEdge } from './edgeTrait';
-import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
+import {
+  PORT_AFFORDANCE_KIND, offersPorts, portScratchOf, type ParticipantSource,
+} from './portAffordance';
 import { portsOf } from './ports';
 import type { DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -203,12 +205,14 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   };
   const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
 
-  /** The port the pointer is over and may legally land on, or `null`. */
-  function targetPort(from: Port, at: Vec2): Port | null {
+  /** The port the pointer is over and may legally land on, or `null`.
+   *  `view` is the one the drag started in, whose layers it may land on. */
+  function targetPort(from: Port, at: Vec2, view: Parameters<typeof offersPorts>[1]): Port | null {
     let best: Port | null = null;
     let bestD2 = snapRadius * snapRadius;
-    for (const { node, pose } of opts.participants()) {
-      for (const port of portsOf(node, pose, portOpts)) {
+    for (const participant of opts.participants()) {
+      if (!offersPorts(participant, view)) continue;
+      for (const port of portsOf(participant.node, participant.pose, portOpts)) {
         if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
         if (!canConnect(from, port)) continue;
         const d2 = (port.point.x - at.x) ** 2 + (port.point.y - at.y) ** 2;
@@ -223,8 +227,8 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
 
   /** The end the edge currently runs to: a snapped port, or the bare pointer.
    *  A free end is a port with no facing, so a router aims straight at it. */
-  function endAt(from: Port, at: Vec2): { port: Port | null; end: Port } {
-    const port = targetPort(from, at);
+  function endAt(scratch: ConnectScratch, at: Vec2): { port: Port | null; end: Port } {
+    const port = targetPort(scratch.from, at, scratch.deps.view);
     return {
       port,
       end: port ?? { id: '', nodeId: '', point: at, normal: null },
@@ -257,7 +261,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           },
           overlay(): OngoingOverlay | null {
             if (!scratch.open) return null;
-            const { end } = endAt(scratch.from, scratch.current);
+            const { end } = endAt(scratch, scratch.current);
             const points = route({ from: scratch.from, to: end, waypoints: [] });
             if (points.length < 2) return null;
             // How a connector reads belongs to whatever surface paints the role.
@@ -266,7 +270,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;
             if (reason === 'cancel') return;
-            const { port } = endAt(scratch.from, { x: endCtx.world.x, y: endCtx.world.y });
+            const { port } = endAt(scratch, { x: endCtx.world.x, y: endCtx.world.y });
             if (port === null) return;
             // World and modifiers from the release; deps from the press.
             commit(

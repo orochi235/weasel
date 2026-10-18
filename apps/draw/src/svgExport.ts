@@ -18,6 +18,7 @@ import {
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   isAnnotationNode,
+  layoutTextPose,
   pathEffectOf,
   pathEffectParts,
   pathInPoseFrame,
@@ -202,11 +203,13 @@ function sceneSourceOf<TLayer extends string>(
 /**
  * `serializeSvg` once every paint kind and face `nodes` export with has
  * loaded. A load that fails is reported through `onWarn` and the export goes
- * ahead without that def.
+ * ahead without that def. Text is written in the lines the canvas lays it out
+ * into, so a reader that cannot wrap or justify still draws it as drawn.
  */
-async function serializeWarm(nodes: SvgNode[], opts: SerializeOptions): Promise<string> {
+async function serializeWarm(nodes: SvgNode[], given: SerializeOptions): Promise<string> {
+  const opts: SerializeOptions = { ...given, textLayout: layoutTextPose };
   try {
-    await warmSvg(nodes);
+    await warmSvg(nodes, opts);
   } catch (err) {
     opts.onWarn?.(`a paint kind or font this export uses failed to load: ${String(err)}`);
   }

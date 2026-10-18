@@ -16,13 +16,14 @@ import {
 } from '@weasel-js/geom';
 import { lineDecorations } from './layout/decorationMetrics';
 import { layoutRuns } from './layout/layoutRuns';
-import { glyphOutlineD, glyphQuad, runFaces } from './layout/paintRuns';
+import { faceOutlineD, glyphQuad, runFaces } from './layout/paintRuns';
 import { textPoseLayoutInput } from './layout/textPoseLayout';
 import { verticalAlignOffset, type TextVerticalAlign } from './measure/verticalAlign';
 import type { TextPose } from './pose';
 import type { StyledRun } from './runs';
 import type { ResolvedRun } from './runs/resolveRuns';
 import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+import { emboldenGlyph } from './syntheticBold';
 import type { TextStyle } from './textStyle';
 
 /** The fields of a text node's data that decide its glyph geometry, and the
@@ -70,9 +71,6 @@ export interface TextToPathOptions {
  * - `'outlines-loading'` — registered but not parsed yet. `loadTextOutlines`
  *   waits for it; the call has already started the load.
  * - `'outlines-failed'` — registered, and the bytes did not load or parse.
- * - `'synthetic-bold'` — the requested weight is faked from a lighter face.
- *   The renderer thickens the distance field for that, and a path has no
- *   field to thicken. Converting would silently lighten the text.
  * - `'color-glyph'` — the text holds an emoji, which is a picture in its own
  *   colors with no outline. Nothing a caller registers changes that.
  */
@@ -80,8 +78,7 @@ export type TextOutlinesFailure =
   | 'no-outlines'
   | 'color-glyph'
   | 'outlines-loading'
-  | 'outlines-failed'
-  | 'synthetic-bold';
+  | 'outlines-failed';
 
 /** Thrown by {@link textToPath} when some run of the text has no outline
  *  geometry. Names the run's requested face. */
@@ -127,10 +124,6 @@ function assertOutlinable(run: ResolvedRun): void {
   }
   const r = resolveFontVariant(fontFamily, fontWeight, fontStyle);
   const { family, weight, style } = r.resolved;
-  if (r.synthetic.bold) {
-    fail('synthetic-bold', `drawn as a faux bold of ${family} ${weight}/${style}, which has no ` +
-      'geometry to embolden. Register outlines for the real bold face.');
-  }
   if (r.source === 'outline') return;
   const status = outlineStatus(family, weight, style);
   if (status === null) {
@@ -238,7 +231,7 @@ function walkOutlines(
         throw new TextOutlinesError('color-glyph', fontFamily, fontWeight, fontStyle,
           'the text holds an emoji, which is drawn in its own colors and has no outline.');
       }
-      const d = glyphOutlineD(g, runs[g.run], 0);
+      const d = faceOutlineD(g);
       if (d === null) {
         // A code point the run's own face lacks escalates to a fallback face,
         // which the per-run check above never saw.
@@ -253,7 +246,7 @@ function walkOutlines(
       const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
       // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.
       const m: Affine = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
-      parts[paintOf[g.run]]!.push(transformPath(emGlyph(d), m) as PolygonPath);
+      parts[paintOf[g.run]]!.push(transformPath(emboldenGlyph(emGlyph(d), d, g.resolved), m) as PolygonPath);
     }
     for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {
       rules[paintOf[r.run]]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
@@ -275,6 +268,9 @@ function walkOutlines(
  * compound path whose filled region is their union. Glyphs keep the font's
  * curves; overlapping contours are not merged — run the result through
  * `pathUnion` for that, at the cost of flattening the curves.
+ *
+ * A glyph faked bold from a lighter face is grown by the distance the
+ * renderer's field shift moves its edge, curves kept (`emboldenGlyph`).
  *
  * `pose` is the node's box, rotation, and `transform`. Throws
  * {@link TextOutlinesError} when any run's face cannot supply outlines — never

@@ -62,6 +62,14 @@ describe('layoutRuns — justify', () => {
     expect(xs[2]).toEqual([1, 24, 53, 76]);
   });
 
+  it('says which lines it spread', () => {
+    const out = layoutAndPaint([RUN('AB AB AB\nAB AB AB AB')], OPTS);
+    // Wrapped and spread; closed by a hard break; wrapped and spread; last.
+    expect(out.lines.map((l) => l.justified)).toEqual([true, false, true, false]);
+    const ragged = layoutAndPaint([RUN('AB AB AB')], { ...OPTS, align: 'left' });
+    expect(ragged.lines.map((l) => l.justified)).toEqual([false, false]);
+  });
+
   it('falls back to the right edge under rtl', () => {
     const out = layoutAndPaint([RUN('AB AB AB')], { ...OPTS, direction: 'rtl' });
     const xs = lineXs(out);

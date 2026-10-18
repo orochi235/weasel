@@ -11,6 +11,8 @@ export interface PrefControlProps {
   path?: string;
   /** The leaf's value. `undefined` shows its default. */
   value: unknown;
+  /** Everything the surface edits, from its root: what a renderer's context carries as `values`. */
+  values?: unknown;
   /** Every edit, with the leaf's whole value. */
   onChange: (value: unknown) => void;
   /** Controls for app-defined kinds, wherever in the value they turn up. */
@@ -32,13 +34,14 @@ export interface PrefControlProps {
  * surface that lays out its own rows and has a leaf whose value is made of
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
-export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled, disabledAt, entryAt }: PrefControlProps) {
+export function PrefControl({ pref, path = '', value, values, onChange, renderers, fields, disabled, disabledAt, entryAt }: PrefControlProps) {
   const { settles } = useParamsPolicy('form');
   return renderPrefControl(
     {
       path,
       pref,
       value: value !== undefined ? value : pref.default,
+      values,
       setValue: onChange,
       auto: false,
       setAuto: () => {},

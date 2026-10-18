@@ -169,8 +169,10 @@ describe('auto on a node', () => {
     expect(f.number(3).options.unpinned).toBeUndefined();
   });
 
-  it('.manual() opts the node out of ever being auto', () => {
-    expect(f.number(1).manual().options.manual).toBe(true);
+  it('.auto() with no resolver lets the node be auto, and nothing else does', () => {
+    expect(f.number(1).auto().options.autoable).toBe(true);
+    expect(f.number(1).auto().options.autoResolve).toBeUndefined();
+    expect(f.number(1).options.autoable).toBeUndefined();
   });
 
   it('clones rather than mutating, like every other chaining method', () => {

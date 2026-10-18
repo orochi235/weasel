@@ -165,6 +165,33 @@ describe('svgLeafFromKit', () => {
     expect(text).toMatchObject({ kind: 'text', text: 'hi', x: 15, y: 25, width: 90, height: 40 });
   });
 
+  it('writes a text leaf that clips as a group clipped to its box', () => {
+    const node = svgLeafFromKit({ text: 'hi', overflow: 'clip' }, BOX) as SvgGroupNode;
+    expect(node.kind).toBe('group');
+    expect(node.clip).toEqual(rect);
+    expect(node.children.map((c) => c.kind)).toEqual(['text']);
+  });
+
+  it('clips a clipped text leaf\'s background with it', () => {
+    const node = svgLeafFromKit({ text: 'hi', overflow: 'clip', background: { paint: solid('#ffee00') } }, BOX) as SvgGroupNode;
+    expect(node.clip).toEqual(rect);
+    expect(node.children.map((c) => c.kind)).toEqual(['path', 'text']);
+  });
+
+  it('turns a clipped text leaf\'s clip with its box', () => {
+    const node = svgLeafFromKit({ text: 'hi', overflow: 'clip' }, { ...BOX, rotation: Math.PI / 2 }) as SvgGroupNode;
+    // A quarter turn about (60, 45): the box is drawn 50 wide and 100 tall.
+    expect(boundsOf(node.clip!)).toMatchObject({ x: expect.closeTo(35), y: expect.closeTo(-5), width: expect.closeTo(50), height: expect.closeTo(100) });
+  });
+
+  it('reads a clipped text leaf back as a clipped group around its text', () => {
+    const svg = serializeSvg([svgLeafFromKit({ text: 'hi', overflow: 'clip' }, BOX)!]);
+    const [g] = parseSvg(svg).nodes as SvgGroupNode[];
+    expect(g.kind).toBe('group');
+    expect(boundsOf(g.clip!)).toMatchObject(BOX);
+    expect(g.children.map((c) => c.kind)).toEqual(['text']);
+  });
+
   it('writes an image leaf, and null for data no built-in painter draws', () => {
     expect(svgLeafFromKit({ image: { src: 'a.png' } }, BOX)).toMatchObject({ kind: 'image', href: 'a.png' });
     expect(svgLeafFromKit({}, BOX)).toBeNull();

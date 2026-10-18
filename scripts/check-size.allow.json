@@ -1,16 +1,12 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 183
+    "longestFunction": 141
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 172
-  },
-  "packages/audio/src/createAudioEngine.ts": {
-    "lines": 765,
-    "longestFunction": 611
+    "longestFunction": 165
   },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 232
@@ -22,13 +18,8 @@
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
   },
-  "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 486,
-    "longestFunction": 419
-  },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 407,
-    "longestFunction": 262
+    "longestFunction": 251
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 601
@@ -46,7 +37,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 561
+    "lines": 559
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -59,9 +50,6 @@
   },
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 620
-  },
-  "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 130
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 654,
@@ -131,7 +119,7 @@
     "longestFunction": 188
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 230
+    "longestFunction": 229
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 235
@@ -157,16 +145,10 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 191
-  },
-  "packages/labkit/src/controls/ControlRow.tsx": {
-    "longestFunction": 123
-  },
-  "packages/labkit/src/controls/MatrixCell.tsx": {
-    "longestFunction": 129
+    "longestFunction": 152
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 256
+    "longestFunction": 232
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 197
@@ -200,7 +182,7 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 523,
+    "lines": 519,
     "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
@@ -210,7 +192,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 636
+    "lines": 634
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608
@@ -237,7 +219,7 @@
     "lines": 474
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 716,
+    "lines": 706,
     "longestFunction": 381
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
@@ -292,7 +274,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 169
+    "longestFunction": 156
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -310,7 +292,7 @@
     "longestFunction": 189
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 161
+    "longestFunction": 158
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 496,

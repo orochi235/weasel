@@ -54,6 +54,9 @@ jobs:
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops
+      # The audio worklet's processor ships as source text generated from the
+      # synth kernels; editing a kernel without regenerating it ships the old one.
+      - run: npm run check:audio-worklet
       # No source file or function grows past its cap; the allowlist's entries
       # only come down.
       - run: npm run check:size
@@ -91,10 +94,6 @@ jobs:
       # labkit carries its own biome config + class-prefix check (its tests run
       # in the `labkit` vitest project below).
       - run: npm run lint -w @weasel-js/labkit
-      # Skip the `forge-stories` vitest project. It spins up headless Chromium and
-      # renders every story as a browser test — pulls Playwright + ~250 MB of
-      # browser, adds wall-clock time, and exists only to validate that stories
-      # can mount. Run the real test projects only.
       # A test file no project's include glob reaches is collected by nobody
       # and says nothing about it. Runs before the suite so an orphan surfaces
       # as its own failure rather than as a suspiciously small pass count. It
@@ -108,6 +107,8 @@ jobs:
       # Tests that need real layout or real IndexedDB (`*.browser.test.*`), in headless Chromium.
       - run: npx playwright install --with-deps chromium-headless-shell
       - run: npm run test:browser
+      # Every story mounts, and its `play` checks the layout jsdom cannot see.
+      - run: npm run test:stories:forge
       - run: npm run build
       # labkit's declarations are checked against its siblings' built ones, and
       # its stylesheet copies core's and ui's, so it builds after them.

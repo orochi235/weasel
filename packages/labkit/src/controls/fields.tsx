@@ -1,16 +1,28 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/prefs';
 import {
+  type PrefBoundReader,
+  type PrefLeaf,
+  type PrefNumber,
+  prefNumberAt,
+} from '@weasel-js/prefs';
+import {
+  PARAMS_SETTLES,
   type PrefFieldChoice,
   PropertyControl,
   type PropertyControlProps,
   prefFieldProps,
   useParamsPolicy,
+  withDrafts,
 } from '@weasel-js/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hasConfigPath, valueAtPath } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
+
+/** A typed value passes through text that is no value at all on its way, `1` and `12` before `120`, so with
+ *  nowhere to send its drafts a typed field writes only the value its edit settles on. */
+const TYPED_SETTLE = { ...PARAMS_SETTLES.lab, number: true, string: true };
 
 /** Whether this leaf draws as a slider, the one control whose value cannot be
  *  read off the control itself. */
@@ -25,28 +37,51 @@ export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
+/** What the row of `leaf` at `path` shows of `config`: the value there, else the leaf's default. A clearable
+ *  number held unset stays unset. */
+export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
+  const held = valueAtPath(config, path);
+  if (held !== undefined || (extra<boolean>(leaf, 'clearable') && hasConfigPath(config, path)))
+    return held;
+  return extra<unknown>(leaf, 'default');
+}
+
 /**
  * A leaf as the field it draws, with the labkit-only extras `prefFieldProps`
- * knows nothing of. `null` for a kind with no one field: a paint, which a
+ * knows nothing of. Given `draft`, a control the lab leaves live sends the
+ * values its edit passes through there and the one it settles on to `write`;
+ * without it, a typed field writes only that settled value. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
+ * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by.
  */
 export function labField(
-  leaf: PrefLeaf,
+  given: PrefLeaf,
   value: unknown,
   write: (value: unknown) => void,
   fields: readonly PrefFieldChoice[],
   disabled = false,
+  draft?: (value: unknown) => void,
+  read?: PrefBoundReader,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
-  if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
-  const field = prefFieldProps(leaf, { value, setValue: write, fields, disabled }, 'lab');
-  if (field === null) return null;
+  if (given.kind === 'paint' || given.kind === 'object') return null;
+  const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
+  const state = { value, setValue: write, fields, disabled };
+  const settled = prefFieldProps(leaf, state, 'lab', draft ? undefined : TYPED_SETTLE);
+  if (settled === null) return null;
+  const field = draft
+    ? withDrafts(settled, prefFieldProps(leaf, { ...state, setValue: draft }, 'lab'), 'lab')
+    : settled;
   switch (field.kind) {
     case 'number':
       // `prefFieldProps` clamps what it stores, so an instrument is never
       // handed a value outside the range it asked for.
-      return { ...field, unit: extra<string>(leaf, 'suffix') ?? field.unit };
+      return {
+        ...field,
+        unit: extra<string>(leaf, 'suffix') ?? field.unit,
+        placeholder: extra<string>(leaf, 'placeholder'),
+      };
     case 'string':
       return {
         ...field,
@@ -65,22 +100,34 @@ export function BareControl({
   leaf,
   value,
   write,
+  draft,
   name = leaf.name,
   disabled,
+  read,
 }: {
   leaf: PrefLeaf;
   value: unknown;
   write: (value: unknown) => void;
+  /** Where the values an edit passes through go — see {@link labField}. */
+  draft?: (value: unknown) => void;
   name?: string;
   /** The control takes no input: an `enableIf` on the way to it does not hold. */
   disabled?: boolean;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read?: PrefBoundReader;
 }) {
-  const text = useDebouncedText(typeof value === 'string' ? value : '', write, useTextWaitMs(leaf));
-  const field = labField(leaf, value, write, useFieldChoices(), disabled);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
+  const drafts = useDebouncedText(
+    typeof value === 'string' ? value : '',
+    draft ?? unwritten,
+    useTextWaitMs(leaf),
+  );
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
-      return <PropertyControl {...field} name={name} value={text.local} onInput={text.type} />;
+      return (
+        <PropertyControl {...field} name={name} onInput={draft ? drafts.type : field.onInput} />
+      );
     case 'number':
       // The pair names the row, so a cell has no room for a unit.
       return <PropertyControl {...field} name={name} control="input" unit={undefined} />;

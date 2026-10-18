@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
+import { prefNumberAt, prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from '@weasel-js/stroke';
@@ -60,6 +60,24 @@ describe('defaultNodeProperties', () => {
     expect(content && 'members' in content && 'data.text' in content.members).toBe(true);
     const typography = text?.schema.members.text;
     expect(typography && 'members' in typography && 'data.style' in typography.members).toBe(true);
+  });
+});
+
+describe('the W and H leaves', () => {
+  const layout = defaultNodeProperties[0]!.schema.members.layout as PrefSection;
+  const leaf = (path: string) => layout.members[path] as PrefNumber;
+  const reading = (data: unknown) => (path: string): unknown =>
+    path.split('.').slice(1).reduce<unknown>((at, k) => (at as Record<string, unknown> | undefined)?.[k], data);
+
+  it('hold a node to its own data.minSize, as minSizeOf reads it', () => {
+    const data = { minSize: { width: 40, height: 25 } };
+    expect(prefNumberAt(leaf('pose.width'), reading(data)).min).toBe(40);
+    expect(prefNumberAt(leaf('pose.height'), reading(data)).min).toBe(25);
+  });
+
+  it('hold a node with no minimum, or a side that is not a positive number, to zero', () => {
+    expect(prefNumberAt(leaf('pose.width'), reading({})).min).toBe(0);
+    expect(prefNumberAt(leaf('pose.height'), reading({ minSize: { width: 40, height: -3 } })).min).toBe(0);
   });
 });
 
@@ -314,9 +332,21 @@ describe('inferredNodeProperties', () => {
   it('offers the padding and the box alignment beside the style, as fields of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.members.text as PrefSection;
-    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign']);
+    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign', 'data.overflow']);
     const vertical = text.members['data.verticalAlign'] as PrefEnum;
     expect(vertical.options.map((o) => o.value)).toEqual(['top', 'center', 'bottom']);
+  });
+
+  it('offers clipping the text to its box as a switch over `data.overflow`', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const clip = (entry.schema.members.text as PrefSection).members['data.overflow'] as PrefBoolean;
+    expect(clip.control).toBe('switch');
+    const { read, write } = clip.encoding!;
+    expect(read('clip', undefined)).toBe(true);
+    expect(read('visible', undefined)).toBe(false);
+    expect(read(undefined, undefined)).toBe(false);
+    expect(write(true, undefined)).toBe('clip');
+    expect(write(false, undefined)).toBeUndefined();
   });
 
   it('asks for italic, the decorations and the scripts as one row of glyph toggles', () => {

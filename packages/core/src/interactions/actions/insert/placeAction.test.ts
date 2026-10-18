@@ -33,6 +33,16 @@ function click(params: Record<string, unknown>, deps: Partial<ActionDeps>, at = 
   placeAction.invoker.run(deps as ActionDeps, { worldX: at.x, worldY: at.y, pressX: at.x, pressY: at.y, ...params });
 }
 
+describe('placeAction — a minimum size', () => {
+  it('places a node no smaller than the binding\'s minSize, centered on the click', () => {
+    const insert = makeInsertDep();
+    const minSize = { width: 48, height: 30 };
+    click({ kind: 'sticky', size: { width: 40, height: 40 }, minSize }, { insert });
+    expect(insert.calls[0].bounds).toEqual({ x: 76, y: 30, width: 48, height: 40 });
+    expect(insert.calls[0].extras.minSize).toEqual(minSize);
+  });
+});
+
 describe('placeAction', () => {
   it('commits a node of the binding\'s kind and size, centered on the click', () => {
     const insert = makeInsertDep();

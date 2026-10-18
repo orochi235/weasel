@@ -1,7 +1,8 @@
 import type { Fill } from '@weasel-js/paint';
 import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import type { InsertNodeFactory } from '../../../canvas/deps/insert';
-import type { TextNodeData } from '../../../canvas/nodeShapes/textPainter';
+import type { TextNodeData, TextOverflow } from '../../../canvas/nodeShapes/textPainter';
+import type { MinSize } from '../../../core/scene/minSize';
 
 /** How a sticky note looks as it is made, named as the text node it becomes
  *  names them. Every field but `fill` has a default, in {@link STICKY_DEFAULTS}. */
@@ -15,6 +16,10 @@ export interface StickyStyle {
   /** Typography for the note's text. */
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;
+  /** What happens to text that outgrows the note. */
+  overflow?: TextOverflow;
+  /** The smallest note a drag makes or a resize leaves, in world units. */
+  minSize?: MinSize;
   /** The note a click makes, centered on the click, in world units. A drag
    *  makes the note it draws. */
   size?: { width: number; height: number };
@@ -26,6 +31,9 @@ export const STICKY_DEFAULTS = {
   padding: 12,
   style: { fontSize: 18, align: 'center', wrap: true },
   verticalAlign: 'center',
+  overflow: 'clip',
+  // One line of the default type inside the default padding.
+  minSize: { width: 48, height: 48 },
   size: { width: 160, height: 160 },
 } as const satisfies Required<Omit<StickyStyle, 'fill'>>;
 
@@ -35,13 +43,15 @@ export const STICKY_DEFAULTS = {
  * own. `look` is the `sticky` insert's extras, which carry the tool's
  * {@link StickyStyle}.
  */
-export function stickyData(look: StickyStyle & { text?: string }): TextNodeData {
+export function stickyData(look: StickyStyle & { text?: string }): TextNodeData & { minSize: MinSize } {
   return {
     text: look.text ?? '',
     background: look.background ?? STICKY_DEFAULTS.background,
     padding: look.padding ?? STICKY_DEFAULTS.padding,
     style: look.style ?? STICKY_DEFAULTS.style,
     verticalAlign: look.verticalAlign ?? STICKY_DEFAULTS.verticalAlign,
+    overflow: look.overflow ?? STICKY_DEFAULTS.overflow,
+    minSize: look.minSize ?? STICKY_DEFAULTS.minSize,
     ...(look.fill ? { fill: look.fill } : {}),
   };
 }

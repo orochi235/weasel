@@ -68,21 +68,23 @@ export {
   createNodeRouting,
   type NodeRoutingEntry,
   type NodeRouting,
+  type RoutedNode,
 } from '../core/scene/NodeRouting';
-export { defaultNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
+export { defaultNodeRouting, groupNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
 export { createNodeProperties } from '../core/scene/NodeProperties';
+export { minSizeOf, type MinSize } from '../core/scene/minSize';
 export type { NodeProperties, NodePropertiesEntry } from '../core/scene/NodeProperties';
 export {
   defaultNodeProperties,
   inferredNodeProperties,
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
-export type { CanvasProps } from '../canvas/Canvas';
+export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
 export type { ViewPoseAdapter } from '../canvas/useViewHelpers';
 export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';
 export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';
 export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';
-export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from '../canvas/canvasExtension';
+export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi, ViewAt } from '../canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
 // `<Canvas>` consumers can supply their own.
@@ -131,6 +133,8 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
+export { modeTriggers } from '../features/modes/modeTriggers';
+export type { ModeTriggerHandlers } from '../features/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
 

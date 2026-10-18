@@ -6,6 +6,7 @@ import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
+import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
@@ -14,8 +15,8 @@ import type { RectPose } from '../geometry/rectPose';
 export type { RectPose };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { UseSceneOptions };
+export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
-
 
 /**
  * # SceneNode — the thing in the scene
@@ -255,7 +256,8 @@ export type SceneArrivalHandler<TPose> = (
  * which the kit never inspects; `TPose` is the transform shape, `RectPose` by
  * default; `TLayer` is the union of layer names.
  */
-export interface Scene<TData, TLayer extends string, TPose = RectPose> {
+export interface Scene<TData, TLayer extends string, TPose = RectPose>
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>> {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -477,10 +479,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
   /** Declare the unit scope of container `id`, or clear it with `null`. */
   setUnits(id: NodeId, units: UnitScope | null): void;
-  /** Called with the poses each live edit's layout pass wrote, after the
-   *  edit lands — never for an undo or redo, which restore poses rather than
-   *  arrange them. What a reflow animation glides from. */
-  onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
   /** Run `fn` with every mutation applied but none recorded — for writes
    *  that are not edits, such as a simulation stepping poses each frame.
    *  Undo and redo move between recorded states and never restore an

@@ -115,4 +115,19 @@ describe('buildChromeState', () => {
     expect(state.unionBounds!.y).toBeCloseTo(-15);
     expect(state.unionBounds!.y + state.unionBounds!.height).toBeCloseTo(25);
   });
+  it('drops from the selection every id on a layer the view does not paint', () => {
+    const layers: Record<string, string> = { a: 'base', b: 'fx', c: 'base' };
+    const state = buildChromeState({
+      selection: [asNodeId('a'), asNodeId('b')],
+      multiActive: true,
+      effectiveBoundsOf: () => ({ x: 0, y: 0, width: 1, height: 1 }),
+      modifiers: NO_MOD,
+      layerIsPainted: (layer) => layer !== 'fx',
+      layerOf: (id) => layers[id],
+    });
+    expect(state.selection).toEqual(['a']);
+    // One member left: single-target chrome, not the multi box.
+    expect(state.multiActive).toBe(false);
+    expect(state.unionBounds).toBeNull();
+  });
 });

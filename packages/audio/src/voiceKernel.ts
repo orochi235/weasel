@@ -7,8 +7,7 @@
 import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { sineShape, waveShape } from './oscillator';
-import { toFrequency } from './pitch';
-import { NOISE_SECONDS, isInharmonic, noiseSamples, resolvePartials } from './synthVoice';
+import { NOISE_SECONDS, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
 
 /** What of a `playNote` call shapes its samples. Routing, position, and timing
@@ -113,14 +112,13 @@ function createKernel(patch: Shaping, sampleRate: number, source: Source): Voice
 
 /** A `playNote` voice. Throws on a bad pitch or partial, as `playNote` does. */
 export function createNoteKernel(note: KernelNote, sampleRate: number): VoiceKernel {
-  const from = toFrequency(note.pitch);
-  const glideTo = note.glide ? toFrequency(note.glide.to) : undefined;
+  const { from, glideTo, partials } = resolveNote(note);
   const glideMs = note.glide?.ms ?? note.duration ?? 100;
   const linear = note.glide?.curve === 'linear';
   const wave = note.wave ?? 'sine';
   const shape = isInharmonic(wave) ? sineShape : waveShape(wave);
-  const tones: { ratio: number; gain: number; decay?: number; phase: number }[] = isInharmonic(wave)
-    ? resolvePartials(wave).map((p) => ({ ratio: p.ratio, gain: p.gain, decay: p.decay, phase: 0 }))
+  const tones: { ratio: number; gain: number; decay?: number; phase: number }[] = partials
+    ? partials.map((p) => ({ ratio: p.ratio, gain: p.gain, decay: p.decay, phase: 0 }))
     : [{ ratio: 1, gain: 1, phase: 0 }];
   return createKernel(note, sampleRate, (t, tune) => {
     let hz = from;

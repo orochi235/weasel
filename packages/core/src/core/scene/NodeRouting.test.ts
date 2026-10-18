@@ -27,6 +27,15 @@ describe('createNodeRouting', () => {
     expect(r.classify({ kind: 'star' })).toBe('unknown');
   });
 
+  it('hands each entry the node, so a kind can read its structural kind', () => {
+    const r = createNodeRouting();
+    r.register({ name: 'box', matches: (_d, node) => node?.kind === 'container' });
+    r.register(rect);
+    expect(r.classify({ kind: 'rect' }, { kind: 'container' })).toBe('box');
+    expect(r.classify({ kind: 'rect' }, { kind: 'leaf' })).toBe('rect');
+    expect(r.classify({ kind: 'rect' })).toBe('rect');
+  });
+
   it('walks registered kinds in registration order (first match wins)', () => {
     const r = createNodeRouting();
     const anyKind: NodeRoutingEntry = { name: 'any', matches: () => true };

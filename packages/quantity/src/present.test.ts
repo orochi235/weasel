@@ -87,6 +87,8 @@ const CASES: [Display, number, string, string][] = [
   [fraction({ form: 'diagonal', mixed: true }), 1.5, '1¹⁄₂', '1 and 1 over 2'],
   [fraction({ form: 'diagonal' }), -0.75, `${MINUS}³⁄₄`, 'minus 3 over 4'],
   [fraction({ form: 'diagonal' }), 2, '2', '2'],
+  [fraction({ form: 'stacked' }), 1 / 12, '1/12', '1 over 12'],
+  [fraction({ form: 'stacked', mixed: true }), 1.5, '1 1/2', '1 and 1 over 2'],
   [fraction({ of: 'π' }), (3 * Math.PI) / 4, '3π/4', '3 pi over 4'],
   [fraction({ of: 'π' }), Math.PI / 2, 'π/2', 'pi over 2'],
   [fraction({ of: 'π' }), -Math.PI / 2, `${MINUS}π/2`, 'minus pi over 2'],
@@ -263,6 +265,16 @@ describe('mathml', () => {
 
   it('is absent for a kind with no MathML form', () => {
     expect(present(3, unit('mm')).mathml).toBeUndefined();
+  });
+
+  it('asks to be drawn as MathML only for a stacked fraction', () => {
+    const stacked = present(1 / 2, fraction({ form: 'stacked' }));
+    expect(stacked.stacked).toBe(true);
+    expect(stacked.html).toBe(present(1 / 2, fraction()).html);
+    expect(stacked.mathml).toBe(present(1 / 2, fraction()).mathml);
+    expect(present(1 / 2, fraction()).stacked).toBeUndefined();
+    expect(present(1 / 2, fraction({ form: 'diagonal' })).stacked).toBeUndefined();
+    expect(present(3, { kind: 'decimal', form: 'stacked' }).stacked).toBeUndefined();
   });
 });
 

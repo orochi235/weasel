@@ -18,6 +18,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
+export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
 export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
@@ -87,6 +88,7 @@ export type { PrefChange, PrefsStore } from './store';
 export {
   isPrefLinearUnit,
   prefUnit,
+  prefUnitAccepts,
   resolvePrefUnit,
   type PrefFunctionUnit,
   type PrefLinearUnit,
@@ -109,6 +111,7 @@ export {
   type PrefCustom,
   type PrefEnum,
   type PrefEnumBase,
+  type PrefNumberBase,
   type PrefEnumControl,
   type PrefEnumEncoding,
   type PrefField,

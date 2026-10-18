@@ -48,6 +48,21 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   memory is per scene and undo does not clear it.
 - 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
   but does not flip through it. Retract and Symmetric have no default shortcut.
+- 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
+  entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
+  `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
+  double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
+  used to enter path-edit alongside it.
+- 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
+  `onClick`/`onDoubleClick` observers: a rejected node is left out of the select tool's pick,
+  the dispatcher's `kind:` classification, `hitAt` and `nodeAtPoint`, and whatever is beneath it
+  answers. A click on a node a mode dims no longer selects it.
+- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` (the
+  default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
+  `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
+  spreads `groupNodeRouting` ahead of it.
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+  and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
 ## Scene, move, and history
 
@@ -113,6 +128,17 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `bindGradient` measures paint space from the gradient's own start or center,
   and `u_gradP0` is gone; `bindPattern` drops whole tiles from the translation.
 - 2026-10-13 (pass 6): geom's six-number affine type is `Affine`, with no `Mat3` alias left.
+- 2026-10-18: `<Canvas retain>` takes `false` or `{ minCommands, budget }`, with `false` beating a
+  layer's own `retain: true`; `WeaselRenderer.setRetainBudget` is new, and lowering the budget
+  below what is held frees every surface.
+- 2026-10-18: `retainBudget` counts only kept surfaces; the multisampled scratch buffer is left out
+  and freed after a frame that redraws nothing, so a redrawing frame can exceed the budget by one
+  canvas-sized multisampled buffer.
+- 2026-10-18: Views nest: `<CanvasView parent>` measures `bounds` from the parent's rect, hands a
+  thunked `bounds` / `view` the parent's camera and size, cuts the view to the parent, and paints
+  only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
+  canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
+  `createViewportLayer` take an optional `clip`.
 
 ## Text
 
@@ -127,6 +153,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): The text tool's percent unit is data,
   `{ scale: 0.01, precision: 1, suffix: '%' }`, and a linear unit's `fromDisplay` stores a short
   decimal exactly.
+- 2026-10-18: `textToPath` outlines synthetic-bold text instead of refusing it: each glyph grows by
+  the distance the renderer's field shift moves its edge (0.01 em a side on Inter's atlas), corners
+  mitered, curves kept. The `'synthetic-bold'` failure reason is gone. The grown contours overlap
+  where they meet and fill once under `'nonzero'`; they are not merged.
 
 ## SVG and paths
 
@@ -152,6 +182,15 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   joins its two nearest open ends; two paths join into the first selected; three are refused.
   Simplify treats a turn over 40° as a corner and keeps a straight edge 4× its neighbors whole.
   The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
+- 2026-10-18: `svgNodesToKitDrafts` takes `keepEmpty`, which keeps an empty group it is true for
+  (drafted at its clip's box or a zero box) and the groups holding it. Draw keeps an effect's empty
+  group, so a blend of no steps reopens live; one whose sources were not exported opens as nothing.
+- 2026-10-18: `serializeSvg` takes `textLayout` (pass `layoutTextPose`), and `svgNeeds` / `warmSvg`
+  take it too. A laid-out `<text>` drops `dominant-baseline`, carries `data-weasel-layout="lines"`,
+  puts each line on its baseline with a `y`, marks a wrapped line `data-weasel-lines="0"`, and
+  states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
+  writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
+  those are. Draw's exports and clipboard SVG pass it.
 
 ## Animation
 
@@ -199,6 +238,21 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `ClipValue`'s object arm is `object`.
 - 2026-10-13 (pass 6): When a rig's joints change, the new seat takes over the placement and
   committed pose of every joint still named; a renamed joint stops moving.
+- 2026-10-18: `<SceneCanvas poseTransition={{ transition, glides?, enter? }}>` glides what the
+  scene writes through the same kind of transition `reflowTransition` takes, reading the new
+  `scene.onPoseWrite`, which reports each change's net pose per node with an origin (`'call'`,
+  `'ops'`, `'undo'`, `'redo'`, `'layout'`, `'untracked'`) and the edit's label. By default it glides
+  calls, undos and redos, not action commits (`'ops'`); a node another override is showing — a
+  drag's preview, a pose-target animation — is left to it. `enter` grows in added nodes. `onReflow`
+  moved onto a `ScenePoseReports` interface `Scene` extends. AnimationDemo no longer uses
+  `animateOnSetPose` or `animateLifecycle`, which stay exported.
+- 2026-10-18: `scene.onPoseWrite` listeners take a second argument, the nodes the change removed
+  (an undone add among them) as `PoseRemoval`s carrying the node, the pose it was shown at and its
+  descendants. The seat's `exit` sees each off as a ghost — drawn on a `departureGhost` layer just
+  above the scene, never in the scene, so nothing picks, selects or records it — fading to alpha 0
+  through `transition.over(...)`, a new `AnimatedReflow` method; a plain `ReflowTransition` has no
+  `over`, so with one a removal still vanishes. `exits` defaults to every removal but an untracked
+  one. A node that comes back mid-exit returns from where its ghost was, at full opacity.
 
 ## ui, prefs, and theme
 
@@ -255,6 +309,15 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): Audio renders note and noise voices as samples with no `AudioContext`:
   `createNoteKernel`, `createNoiseKernel`, `renderNote`, `renderNoise`, `biquadCoefficients`, and
   `biquadResponseDb`.
+- 2026-10-18: A locked diagram node shows no ports at all, rather than drawn ports that cannot be
+  dragged, matching the kit putting no selection or hover chrome on a locked node. A connect cannot
+  land on a hidden or locked node's port either.
+- 2026-10-18: Audio's `synthVoices: 'worklet'` renders `playNote` and `playNoise` in an
+  `AudioWorkletProcessor` from events posted at the call; default `'nodes'`. Until the processor
+  has loaded (`unlock()` waits for it), or where it cannot, synth voices play on nodes rather than
+  being dropped. A worklet voice is never dropped as `stale`.
+- 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
+  `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
 
 ## draw
 
@@ -288,3 +351,7 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `watchProbe()` is a new export of `@weasel-js/forge/vite`, and the site,
   draw, and theme-editor dev servers load it. An isolated story keeps its iframe through a viewport
   change where `moveBefore` exists.
+- 2026-10-18: icons-plugin's relative imports carry `.ts`, not the `.js` its TODO entry asked for:
+  Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
+  and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
+  on `packages/icons-plugin/src` requires the extension.

@@ -9,6 +9,21 @@ export interface ResolvableView {
   id: string;
   view: View;
   rect: { x: number; y: number; w: number; h: number };
+  /** The part of `rect` the view is seen through, in the same space — a view
+   *  nested in another is cut to it. Omitted, the whole rect. */
+  clip?: { x: number; y: number; w: number; h: number };
+}
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+/** Right and bottom edges are exclusive, so neighbouring views never both
+ *  claim a pixel. */
+const inside = (r: Rect, x: number, y: number): boolean =>
+  x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+
+/** Whether `v` takes a canvas-local point: inside its rect and its clip. */
+export function viewContains(v: ResolvableView, x: number, y: number): boolean {
+  return inside(v.rect, x, y) && (v.clip === undefined || inside(v.clip, x, y));
 }
 
 /**
@@ -51,7 +66,9 @@ export interface ViewResolver {
  * every query, so views and the canvas may move between events.
  */
 export interface CreateViewResolverOpts {
-  /** Candidate views in paint order — the last one containing a point wins. */
+  /** Candidate views in paint order — the last one containing a point wins,
+   *  so a nested view listed after the one around it is the one a point
+   *  inside both reaches. */
   views: () => readonly ResolvableView[];
   /** The camera for points no view claims. */
   root: () => View;
@@ -86,13 +103,10 @@ export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
     return { id: v.id, view: v.view, world: worldOf(at, v.rect, v.view) };
   }
 
-  /** Right and bottom edges are exclusive, so neighbouring views never both
-   *  claim a pixel. */
   function hit({ x, y }: Local): ResolvableView | undefined {
     const list = views();
     for (let i = list.length - 1; i >= 0; i--) {
-      const { rect } = list[i]!;
-      if (x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h) {
+      if (viewContains(list[i]!, x, y)) {
         return occluded?.(x, y) ? undefined : list[i];
       }
     }
