@@ -1,6 +1,6 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 174
+    "longestFunction": 144
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135

@@ -1,6 +1,7 @@
 import { axisIndexes } from '../axisNames';
 import { committedInto, type TargetState } from '../target';
 import type { AnimationContext } from './context';
+import { createHoldStore, type HoldLayer, type HoldStore } from './holdStore';
 import { absorb, axesFor, shortWay } from './offsets';
 
 /** What {@link openHold} takes. */
@@ -26,95 +27,36 @@ export interface OpenHold {
   leave(commit: boolean): void;
 }
 
-interface Member {
-  /** Its value's axes, in an array of its own that the next call writes over. */
-  value(): number[];
-  weight(): number;
-  /** Nonzero at each axis it holds; null where it holds them all. */
-  covers: Uint8Array | null;
-  fixed: boolean;
-  /** Its weight and value as the fold now running read them. */
-  w: number;
-  v: number[];
+/** Where `s`'s holds are folded: its table's store, for a row of one, or a store of its own. */
+export function holdsOf(s: TargetState): { readonly store: HoldStore; readonly row: number } {
+  if (s.holds) return s.holds;
+  if (s.row) return (s.holds = { store: s.row.table.holds(), row: s.row.index });
+  const store = createHoldStore(s.axes.count, 1, (_, out, at) => committedInto(s, out, at), s.axes.angles);
+  return (s.holds = { store, row: 0 });
 }
 
-/** A target's holds, which reach it as one voice. */
-interface Group {
-  members: Member[];
-  /** The voice's id in the codec. */
-  voice: number;
-  /** Nonzero at each angle axis. */
-  angle: Uint8Array;
-}
-
-const groups = new WeakMap<TargetState, Group>();
-
-const share = (w: number): number => (w > 0 ? Math.min(w, 1) : 0);
-
-interface Folded {
-  /** What the holds add to the committed value. */
-  delta: number[];
-  /** The weight holding each axis. */
-  total: number[];
-}
-
-/**
- * A group's holds as one distance from `committed`, without `skip`. On each axis the holds
- * over it are alternatives: one weighs `w / max(1, total)`, and what their weights leave short
- * of 1 is the committed value's. An angle goes by way of the direction the holds average to,
- * so two holds turn the short way toward each other.
- */
-function fold(group: Group, committed: readonly number[], skip?: Member, into?: Folded): Folded {
+/** Where the holds on `s` are folded, what they show against `committed`, with and without
+ *  the hold `skip`. */
+function both(s: TargetState, skip: HoldLayer, committed: readonly number[]) {
+  const { store, row } = s.holds!;
   const n = committed.length;
-  const delta = into ? into.delta : new Array<number>(n);
-  const total = into ? into.total : new Array<number>(n);
-  const { members, angle } = group;
-  // Each member is asked once, whatever the axes: its weight and value are the caller's functions.
-  for (let h = 0; h < members.length; h++) {
-    const m = members[h]!;
-    m.w = m === skip ? 0 : m.weight();
-    if (m.w > 0) m.v = m.value();
-  }
-  for (let a = 0; a < n; a++) {
-    const c = committed[a]!;
-    let held = 0;
-    let sum = 0;
-    let sin = 0;
-    let cos = 0;
-    for (let h = 0; h < members.length; h++) {
-      const m = members[h]!;
-      if (m === skip || !(m.w > 0) || (m.covers && !m.covers[a])) continue;
-      held += m.w;
-      if (!angle[a]) sum += m.w * (m.v[a]! - c);
-      else {
-        sin += m.w * Math.sin(m.v[a]!);
-        cos += m.w * Math.cos(m.v[a]!);
-      }
-    }
-    total[a] = held;
-    if (held > 0 && angle[a]) {
-      // Where the directions cancel out there is no way round between them: each from committed.
-      const mean = Math.hypot(sin, cos) < 1e-9 ? null : Math.atan2(sin, cos);
-      for (let h = 0; h < members.length; h++) {
-        const m = members[h]!;
-        if (m === skip || !(m.w > 0) || (m.covers && !m.covers[a])) continue;
-        sum += m.w * (mean === null ? shortWay(m.v[a]! - c) : shortWay(mean - c) + shortWay(m.v[a]! - mean));
-      }
-    }
-    delta[a] = held > 0 ? sum / Math.max(1, held) : 0;
-  }
-  return into ?? { delta, total };
+  const all = { delta: new Array<number>(n), total: new Array<number>(n) };
+  const rest = { delta: new Array<number>(n), total: new Array<number>(n) };
+  store.fold(row, committed, 0, null, all.delta, all.total);
+  store.fold(row, committed, 0, skip, rest.delta, rest.total);
+  return { all, rest, own: store.valueOf(skip, row) };
 }
 
 /** How far the committed value moves as `leaving` goes, so the target shows what it did. */
-function settle(group: Group, leaving: Member, committed: readonly number[]): number[] {
-  const all = fold(group, committed);
-  const rest = fold(group, committed, leaving);
-  const own = leaving.value().slice();
+function settle(
+  s: TargetState, f: ReturnType<typeof both>, covers: Uint8Array | null, committed: readonly number[],
+): number[] {
+  const { all, rest, own } = f;
+  const angles = s.axes.angles ?? [];
   return committed.map((c, a) => {
-    if (leaving.covers && !leaving.covers[a]) return 0;
+    if (covers && !covers[a]) return 0;
     // Holds that cover the committed value outright leave it nothing to show: it takes this one's.
-    if (rest.total[a]! >= 1 - 1e-9) return group.angle[a] ? shortWay(own[a]! - c) : own[a]! - c;
+    if (rest.total[a]! >= 1 - 1e-9) return angles.includes(a) ? shortWay(own[a]! - c) : own[a]! - c;
     return (all.delta[a]! - rest.delta[a]!) / (1 - rest.total[a]!);
   });
 }
@@ -151,53 +93,21 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   const state = s as unknown as TargetState;
   axesFor(ax, o.value(), 'value');
   let gone = false;
-  const buffer = new Array<number>(ax.count).fill(0);
-  const member: Member = {
-    value: ax.write
-      ? () => {
-        ax.write!(o.value(), buffer, 0);
-        return buffer;
-      }
-      : () => ax.to(o.value()),
-    weight: () => (gone ? 0 : share(o.weight())),
-    covers: coverOf(o.axes, ax),
-    fixed: o.fixed === true,
-    w: 0,
-    v: buffer,
-  };
+  const covers = coverOf(o.axes, ax);
 
   ctx.targets.attach(state);
   s.held += 1;
-  let group = groups.get(state);
-  if (!group) {
-    const angle = new Uint8Array(ax.count);
-    for (const a of ax.angles ?? []) angle[a] = 1;
-    const made: Group = { members: [], voice: ctx.nextId(), angle };
-    const folded: Folded = { delta: [], total: new Array<number>(ax.count).fill(0) };
-    groups.set(state, group = made);
-    ctx.seedClock();
-    s.slot = ctx.codec.hold({
-      id: made.voice,
-      on: s,
-      axes: ax.count,
-      still: member.fixed,
-      at: () => {
-        // One array each for as long as the holds stand: a frame of many holds builds none.
-        const committed = (s.heldAt ??= new Array<number>(ax.count).fill(0));
-        committedInto(s, committed, 0);
-        // The codec keeps what this answers as the voice's own value, so that one is new.
-        folded.delta = new Array<number>(ax.count);
-        const { delta, total } = fold(made, committed, undefined, folded);
-        const cover = (s.cover ??= new Array<number>(ax.count).fill(0));
-        for (let a = 0; a < cover.length; a++) cover[a] = Math.min(total[a]!, 1);
-        return delta;
-      },
-    });
-  }
-  const { members, voice } = group;
-  members.push(member);
-  const still = (): void => ctx.codec.still(voice, members.every((m) => m.fixed));
-  still();
+  const { store, row } = holdsOf(state);
+  const layer = store.free(row);
+  store.join(layer, row, {
+    value: ax.write
+      ? (out, at) => ax.write!(o.value(), out, at)
+      : (out, at) => out.set(ax.to(o.value()), at),
+    weight: o.weight,
+    covers,
+    fixed: o.fixed === true,
+  });
+  ctx.targets.holding(store, 1);
   ctx.touch(state, true);
 
   return {
@@ -205,24 +115,23 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
     leave(commit) {
       if (gone) return;
       if (commit && !s.discard) {
-        const group = groups.get(state)!;
+        store.refold(row);
         const committed = ax.to(s.get());
-        absorb(s, settle(group, member, committed));
-        dim(state, fold(group, committed).total, fold(group, committed, member).total);
+        const f = both(state, layer, committed);
+        absorb(s, settle(state, f, covers, committed));
+        dim(state, f.all.total, f.rest.total);
       }
       gone = true;
-      members.splice(members.indexOf(member), 1);
+      store.part(layer, row);
+      ctx.targets.holding(store, -1);
       s.held -= 1;
       if (s.held === 0) {
-        s.heldAt = null;
-        s.cover = null;
-        groups.delete(state);
-        ctx.codec.stop(voice);
+        s.holds = null;
         // Nothing stands in front of the committed value now, so it takes what waited beside it.
         const beside = s.beside;
         s.beside = null;
         if (beside) absorb(s, beside);
-      } else still();
+      }
       ctx.targets.detach(state);
       ctx.touch(state, true);
     },

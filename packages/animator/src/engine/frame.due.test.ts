@@ -28,7 +28,7 @@ function rig() {
     targets: { settle() {}, show() {} },
     afterTicks: [],
     subscribers: createEmitter(),
-    reread() {},
+    refold() {},
     requestFrame() {},
     tripwire: () => state.tripped,
   });

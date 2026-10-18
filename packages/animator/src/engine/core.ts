@@ -42,7 +42,17 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   let nextId = 1;
   const seedClock = (): void => { if (clock.frameT == null) clock.frameT = host.now(); };
 
-  const reread = (): void => codec.refresh((on, queued) => targets.reread(on as TargetState, queued));
+  /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
+  const touched = new Set<TargetState>();
+  const refold = (s: TargetState): void => {
+    if (s.holds) s.holds.store.refold(s.holds.row);
+    // Between frames a table's `shown` is read apart for such a row; a frame's pass shows it.
+    if (s.row && !frame.framing()) s.row.table.mark(s.row.index);
+  };
+  const refoldTouched = (): void => {
+    for (const s of touched) refold(s);
+    touched.clear();
+  };
   const table = createTable({
     codec,
     hub,
@@ -58,14 +68,10 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     stop: (s) => {
       for (const a of [...table.on(s)]) table.retire(a.id);
     },
-    reread: (s) => {
-      codec.touch(s);
-      reread();
-    },
     columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
-    clock, table, codec, targets, hub, afterTicks, subscribers, reread,
+    clock, table, codec, targets, hub, afterTicks, subscribers, refold: refoldTouched,
     requestFrame: host.requestFrame, tripwire: host.tripwire,
   });
 
@@ -80,9 +86,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     reportEnd: table.reportEnd,
     finish: table.finish,
     touch: (target, at) => {
-      codec.touch(target);
-      if (frame.framing() && !at) return;
-      reread();
+      if (frame.framing() && !at) { touched.add(target); return; }
+      touched.delete(target);
+      refold(target);
       if (!frame.framing()) host.requestFrame();
     },
     tripwire: host.tripwire,

@@ -1,3 +1,4 @@
+import type { HoldStore } from './holdStore';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
@@ -115,8 +116,8 @@ export interface TargetBook {
   detach(s: TargetState): void;
   /** Called once the frame's voices are read: what `adjust` held is in that reading now. */
   settle(): void;
-  /** Called once `s`'s voices are read again mid-frame: all that reading left out is `queued`. */
-  reread(s: TargetState, queued: readonly number[]): void;
+  /** Counts `by` more holds folded in `store`, which each frame asks while it has any. */
+  holding(store: HoldStore, by: 1 | -1): void;
   /** Hands each moving target, and each that came to rest since the last call, to its `show`. */
   show(): void;
   /** Shows `s` now, where an animation just started on it or was redirected. */
@@ -135,6 +136,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   const publishes = new Set<() => void>();
   /** Each table with a row moving, and how many of its rows are. */
   const tables = new Map<RowTable, number>();
+  /** Each store holds are folded in, and how many. */
+  const stores = new Map<HoldStore, number>();
   const shown = (s: TargetState, value: unknown): void => {
     s.show!(value);
     if (s.publish) publishes.add(s.publish);
@@ -163,6 +166,14 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
         tables.set(s.row.table, tables.get(s.row.table)! - 1);
         s.row.table.mark(s.row.index);
       }
+      const { slot } = s;
+      if (slot && slot.refs === 0 && s.live > 0) {
+        // Its voices are gone while a hold stays: what they last showed is in `adjust` until
+        // the next frame, as a voice that stops beside others is.
+        for (let i = 0; i < s.adjust.length; i++) s.adjust[i] = s.adjust[i]! + slot.cols[slot.at + i]!;
+        s.slot = null;
+        stale(s);
+      }
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
@@ -181,12 +192,13 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
         s.stale = false;
       }
       adjusted.length = 0;
+      for (const store of stores.keys()) store.frame();
       for (const t of tables.keys()) t.settle();
     },
-    reread(s, queued) {
-      for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
-      stale(s);
-      s.row?.table.mark(s.row.index);
+    holding(store, by) {
+      const count = (stores.get(store) ?? 0) + by;
+      if (count > 0) stores.set(store, count);
+      else stores.delete(store);
     },
     show() {
       for (const s of showing) shown(s, readTarget(s));

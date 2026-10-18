@@ -24,8 +24,6 @@ export interface Rewinds<V extends Rewindable> {
   /** After a frame has read every subject: marks the voices back at their start, and adds what
    *  each shows into its subject's axes. */
   frame(): void;
-  /** Adds the first frames of the voices back at their start on `slot` into `out`. */
-  into(slot: Slot, out: number[]): void;
   /** Whether `v` has run back to its start. */
   has(v: V): boolean;
   /** Says `v` was cued again, from a start of its own. */
@@ -50,13 +48,6 @@ export function createRewinds<V extends Rewindable>(): Rewinds<V> {
         const { cols, at } = v.slot;
         const first = firstOf(v);
         for (let i = 0; i < first.length; i++) cols[at + i] = cols[at + i]! + first[i]!;
-      }
-    },
-    into(slot, out) {
-      for (const v of back) {
-        if (v.slot !== slot) continue;
-        const first = firstOf(v);
-        for (let i = 0; i < first.length; i++) out[i] = out[i]! + first[i]!;
       }
     },
     has: (v) => back.has(v),

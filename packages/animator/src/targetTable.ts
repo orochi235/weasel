@@ -1,3 +1,4 @@
+import { createHoldStore, type HoldStore } from './engine/holdStore';
 import type { LaneColumns } from './engine/lanes';
 import { createTarget, readTargetInto, stateOf, type RowTable, type Target, type TargetState } from './target';
 
@@ -99,6 +100,8 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
   const removals: number[] = [];
   /** Rows whose value on screen the pass over the table's columns does not give: read apart. */
   const marks = new Set<number>();
+  /** The holds on its rows, once any has been held. */
+  let holds: HoldStore | null = null;
 
   const flush = (): void => {
     for (const row of marks) {
@@ -127,16 +130,28 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
       }
     },
     fill(columns: LaneColumns | null) {
+      const delta = holds && holds.size > 0 ? holds.delta : null;
+      if (delta) {
+        const { held, size } = holds!;
+        for (let j = 0; j < size; j++) {
+          const at = held[j]! * n;
+          for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + delta[at + k]!;
+        }
+      }
       if (columns) {
         const { cols, tags, count } = columns;
         for (let j = 0; j < count; j++) {
           const at = tags[j]! * n;
-          for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]!;
+          if (delta) for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]! + delta[at + k]!;
+          else for (let k = 0; k < n; k++) shown[at + k] = committed[at + k]! + cols[j * n + k]!;
         }
       }
       flush();
       opts.show?.();
     },
+    holds: () => (holds ??= createHoldStore(n, committed.length / n, (row, out, at) => {
+      for (let k = 0; k < n; k++) out[at + k] = committed[row * n + k]!;
+    })),
   };
 
   return {
@@ -156,6 +171,7 @@ export function createTargetTable<S extends ShownArray = Float64Array>(opts: Tar
         const wider = new Shown(grown.length);
         wider.set(shown);
         shown = wider;
+        holds?.grow(grown.length / n);
       }
       put(committed, n, row, value);
       put(shown, n, row, value);

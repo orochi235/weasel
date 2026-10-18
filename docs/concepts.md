@@ -312,9 +312,10 @@ and shows its travel through a pose override. A hand-written adapter's store has
 no overrides, so `createWrittenPoseTarget` writes it the pose on screen each frame
 while the target keeps the committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
-public. blits clocks the voices and sums them; how a target's holds share it is
-folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. blits stays a repository of its own, not a
+public. blits clocks the voices and sums them. Holds are not voices: they are folded
+here, in `engine/holdStore.ts`, since blits weighs a voice whole and a hold can
+cover some axes and turn an angle, and a table's rows keep their holds' values and
+weights in flat arrays of the table's, which its pass reads. blits stays a repository of its own, not a
 `@weasel-js` package. A target is moved by one animator at a time.
 
 Thousands of like values go in a **target table**, where a target apiece would

@@ -1,5 +1,6 @@
 import { axisIndexes, type AxisRef } from './axisNames';
 import { axesOf } from './engine/axes';
+import type { HoldStore } from './engine/holdStore';
 import type { LaneColumns, Reader } from './engine/lanes';
 
 /** How a target's value maps to the flat numbers an animation moves, and back. */
@@ -87,8 +88,6 @@ export interface Target<T> {
 export interface TargetOwner {
   /** Cancels every animation on `s`. */
   stop(s: TargetState): void;
-  /** Reads `s`'s voices again now, where what they read from outside has changed. */
-  reread(s: TargetState): void;
   /** The voices of `table`'s rows as the last frame read them; null where none is moving. */
   columns(table: RowTable): LaneColumns | null;
   /** Says `s.adjust` holds something, for the next frame's reading to clear. */
@@ -102,8 +101,10 @@ export interface RowTable {
   mark(index: number): void;
   /** Called once a frame's voices are read: a mark that reading took in is dropped. */
   settle(): void;
-  /** Fills every moving row's value on screen from `columns`. */
+  /** Fills every moving row's value on screen from `columns` and the table's holds. */
   fill(columns: LaneColumns | null): void;
+  /** The holds on the table's rows, made the first time they are asked for. */
+  holds(): HoldStore;
 }
 
 /** An animation's share in moving a target's committed value, which its holds stand in front of. */
@@ -129,13 +130,10 @@ export interface TargetState<T = unknown> {
   owner: TargetOwner | null;
   /** True while its animations are being stopped without committing where they were. */
   discard: boolean;
-  /** The committed value's axes as its holds last read them; null while it has none. A hold
-   *  answers how far its value is from the committed one, so it is stale once that moves. */
-  heldAt: number[] | null;
   /** How many holds stand in for its committed value. */
   held: number;
-  /** The share of each axis those holds cover, 0 to 1, as they last read; null beside `heldAt`. */
-  cover: number[] | null;
+  /** Where its holds are folded, while it has any: the row of its table, or a store of its own. */
+  holds: { readonly store: HoldStore; readonly row: number } | null;
   /** The animations with a destination on it. A destination moves the committed value at once
    *  and the animation shows what is left of that move, so a hold covers it as it covers the
    *  committed value. */
@@ -165,13 +163,14 @@ let scratch = new Float64Array(16);
 
 /** What `s`'s holds, and holds released over it, hide of its animations; null where none. */
 function hidden<T>(s: TargetState<T>): number[] | null {
-  const { cover } = s;
-  if (s.behind.size === 0 || (!cover && !s.dimmed)) return null;
+  const h = s.holds;
+  if (s.behind.size === 0 || (!h && !s.dimmed)) return null;
   const out = new Array<number>(s.axes.count).fill(0);
+  const at = h ? h.row * s.axes.count : 0;
   for (const b of s.behind) {
     const left = b.left();
     for (let i = 0; i < out.length; i++) {
-      const shows = (cover ? 1 - cover[i]! : 1) * (b.kept ? b.kept[i]! : 1);
+      const shows = (h ? 1 - h.store.cover[at + i]! : 1) * (b.kept ? b.kept[i]! : 1);
       out[i] = out[i]! + left[i]! * (1 - shows);
     }
   }
@@ -188,10 +187,20 @@ export function committedInto<T>(s: TargetState<T>, out: AxisBuffer, at: number)
   }
 }
 
-/** `committed`'s axes, with `s`'s holds read again where it has moved under them. */
+/** `committed`'s axes, plus what `s`'s holds add to them, folded again where the committed
+ *  value has moved under them. */
 function heldAxes<T>(s: TargetState<T>, committed: T): number[] {
   const a = s.axes.to(committed);
-  if (s.heldAt && a.some((x, i) => x !== s.heldAt![i])) s.owner?.reread(s as unknown as TargetState);
+  const h = s.holds;
+  if (!h) return a;
+  const at = h.row * a.length;
+  const { store } = h;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === store.at[at + i]) continue;
+    store.refold(h.row);
+    break;
+  }
+  for (let i = 0; i < a.length; i++) a[i] = a[i]! + store.delta[at + i]!;
   return a;
 }
 
@@ -204,7 +213,7 @@ export function readTarget<T>(s: TargetState<T>): T {
   if (s.live === 0) return committed;
   const { axes, slot, beside, adjust } = s;
   // A hold answers how far it is from the committed value, which takes that value's axes to check.
-  if (!axes.add || s.heldAt || s.dimmed) {
+  if (!axes.add || s.holds || s.dimmed) {
     const a = heldAxes(s, committed);
     const hid = hidden(s);
     for (let i = 0; i < a.length; i++) {
@@ -227,7 +236,7 @@ export function readTargetInto<T>(s: TargetState<T>, out: AxisBuffer, at: number
   const committed = s.get();
   const { axes, slot, beside, adjust } = s;
   const moving = s.live > 0;
-  if (axes.write && !(moving && s.heldAt)) axes.write(committed, out, at);
+  if (axes.write && !(moving && s.holds)) axes.write(committed, out, at);
   else {
     const a = moving ? heldAxes(s, committed) : axes.to(committed);
     for (let i = 0; i < a.length; i++) out[at + i] = a[i]!;
@@ -267,9 +276,8 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     write: null,
     owner: null,
     discard: false,
-    heldAt: null,
     held: 0,
-    cover: null,
+    holds: null,
     behind: new Set(),
     dimmed: false,
     beside: null,
