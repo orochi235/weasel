@@ -139,8 +139,7 @@ describe('handle snapping', () => {
     });
 
     it('wraps round the half turn', () => {
-      // The line runs at 178°; the pointer is at -178°, 4° from it the short
-      // way round, and 22° from the nearest 50° step.
+      // The line runs at 178°; the pointer is at -178°, 4° from it the short way round.
       const drag = start({ stepDeg: 50 }, corner(polar(90), polar(-2)), polar(90));
       drag.move(polar(-178));
       expect(angleOf(drag.out())).toBeCloseTo(178, 4);

@@ -20,6 +20,7 @@ export const DEFAULT_SNAP_PX = 8;
 type SourceMark = NonNullable<SourceCandidate['mark']>;
 
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
+/** How near `origin` a point target counts as on it, relative to its magnitude. */
 const ORIGIN_EPS = 1e-9;
 
 /** What a 2D session runs on, captured at press. */
@@ -141,8 +142,9 @@ function collectAll(
  *  starts is no target for its other end, or a handle would stick to its
  *  own anchor. */
 function atOrigin(locus: { at: Point; dirs: readonly Point[] }, origin: Point | undefined): boolean {
-  return origin !== undefined && locus.dirs.length === 0
-    && Math.abs(locus.at.x - origin.x) <= ORIGIN_EPS && Math.abs(locus.at.y - origin.y) <= ORIGIN_EPS;
+  if (origin === undefined || locus.dirs.length > 0) return false;
+  const eps = ORIGIN_EPS * Math.max(1, Math.abs(origin.x), Math.abs(origin.y));
+  return Math.abs(locus.at.x - origin.x) <= eps && Math.abs(locus.at.y - origin.y) <= eps;
 }
 
 /** The subject's box where `delta0` puts it, and the sides that moved. */

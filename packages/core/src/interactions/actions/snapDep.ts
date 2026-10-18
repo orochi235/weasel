@@ -65,7 +65,10 @@ export interface SnapBegin {
    *  through the press radius; it overrides each source's `reachPx` and is
    *  not capped. */
   reachRad?: number;
-  /** Point gestures: the previous anchor, a line's start. */
+  /** Point gestures: the fixed end of what the gesture draws — a span's
+   *  start, the previous anchor, the anchor a handle pulls from. Tangent and
+   *  perpendicular targets are measured from it, a `constrain` step turns
+   *  about it, and no point target on it is offered. */
   origin?: Point;
   also?: SnapGeometry;
   constrain?: SnapConstrain;

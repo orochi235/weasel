@@ -159,7 +159,7 @@ function anchorDragSnap(
       if (!session) {
         const { path, anchors } = pathAwayFromAnchors(press.originPose, press.dragging);
         const req: SnapBegin = {
-          gesture: 'point', press: press.origin, origin: press.origin, ids: [press.id],
+          gesture: 'point', press: press.origin, ids: [press.id],
           also: { paths: [path], anchors }, constrain: 'axis',
         };
         session = snap?.begin?.(req) ?? inputSession(req);
