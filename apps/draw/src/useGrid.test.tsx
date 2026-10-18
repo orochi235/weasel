@@ -42,7 +42,6 @@ describe('useGrid', () => {
     const at = () => [...result.current.snapSource!.collect({ probes: [{ id: 'pointer', at: { x: 50, y: 19 }, role: 'pointer' }] } as never)]
       .map((c) => c.locus.at);
     expect(at()).toContainEqual({ x: 36, y: 19 });
-    expect(result.current.snap).toBeDefined();
     act(() => drawPrefs().set('view.gridDensity', 8));
     expect(at()).toContainEqual({ x: 48, y: 19 });
   });

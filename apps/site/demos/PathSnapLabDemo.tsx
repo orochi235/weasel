@@ -1,4 +1,4 @@
-import { asNodeId, createScene, ellipsePath, pathFromD, solid, type PathSnapOptions } from '@weasel-js/core';
+import { asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,
@@ -52,16 +52,17 @@ const createLabScene = () =>
 function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { kinds, radius, marker } = ctx.config;
-  const toolOptions = useMemo(() => ({
-    pathSnap: { kinds: { ...kinds }, radius, marker } satisfies PathSnapOptions,
-  }), [kinds, radius, marker]);
+  const snap = useMemo(
+    () => ({ sources: [pathSnapSource({ kinds: { ...kinds }, reachPx: radius })], readout: marker }),
+    [kinds, radius, marker],
+  );
   return (
     <TrialSceneCanvas
       features={['draw']}
       defaultTools={['line', 'pen']}
       scene={scene}
       trial={ctx.trial}
-      toolOptions={toolOptions}
+      snap={snap}
     />
   );
 }

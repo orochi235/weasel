@@ -1,14 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
-import {
-  SceneCanvas,
-  useScene,
-  useSelection,
-  rectPath,
-  solid,
-  drawnAABBOf,
-} from '@weasel-js/core';
-import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignmentGuides } from '@weasel-js/guides';
-import type { Guide, SpacingGap } from '@weasel-js/guides';
+import { useState } from 'react';
+import { SceneCanvas, useScene, useSelection, rectPath, solid } from '@weasel-js/core';
+import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
 import { DemoStage } from './DemoStage';
@@ -20,7 +12,13 @@ type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 460, H = 320;
-const PAGE = { x: 0, y: 0, width: W, height: H };
+const COLOR = '#e0397f';
+const SNAP = {
+  sources: [
+    alignmentSnapSource({ page: { x: 0, y: 0, width: W, height: H }, color: COLOR }),
+    spacingSnapSource({ color: COLOR }),
+  ],
+};
 
 const rect = (id: string, pose: Pose, color: string) => ({
   id: id as NodeId, kind: 'leaf' as const, layer: 'default' as const, pose,
@@ -43,42 +41,6 @@ export function AlignmentGuidesDemo() {
   const selection = useSelection({ mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
-  // Active guides live in a ref so the layer reads them each draw without a
-  // React re-render per pointer-move.
-  const activeRef = useRef<readonly Guide[]>([]);
-  const gapsRef = useRef<readonly SpacingGap[]>([]);
-
-  const { selectTool, toolOptions } = useMemo(() => {
-    const setActiveGuides = (g: readonly Guide[]) => { activeRef.current = g; };
-    const setActiveGaps = (g: readonly SpacingGap[]) => { gapsRef.current = g; };
-    // Each sibling as drawn, stroke included, the way the dragged selection is measured.
-    const boxes = (exclude: ReadonlySet<NodeId>) =>
-      [...scene.nodes.values()].filter((n) => !exclude.has(n.id)).map((n) => drawnAABBOf(scene, n.id, n.pose));
-    // Candidates come from every node not in `exclude`, plus the page.
-    const candidates = (exclude: ReadonlySet<NodeId>) => deriveAlignmentGuides(boxes(exclude), { page: PAGE });
-    return {
-      selectTool: { move: { behaviors: [alignMoveBehavior<Pose>({
-        tolerance: 6,
-        getCandidates: () => candidates(new Set(selection.get())),
-        setActiveGuides,
-        // Equal-spacing snaps measure the gaps between the same siblings.
-        getSpacingTargets: () => boxes(new Set(selection.get())),
-        setActiveGaps,
-      })] } },
-      // The rect being drawn is not in the scene yet, so every node counts.
-      toolOptions: { insert: { behaviors: [alignInsertBehavior({
-        tolerance: 6,
-        getCandidates: () => candidates(new Set()),
-        setActiveGuides,
-      })] } },
-    };
-  }, [scene, selection]);
-
-  const guidesLayer = useMemo(
-    () => createGuidesLayer({ getGuides: () => activeRef.current, getGaps: () => gapsRef.current, color: '#e0397f' }),
-    [],
-  );
-
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
@@ -87,12 +49,10 @@ export function AlignmentGuidesDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          selectTool={selectTool}
           defaultTools={['rect']}
-          toolOptions={toolOptions}
           onToolsCreated={setTools}
           viewport={{}}
-          layers={{ guides: { layer: guidesLayer } }}
+          snap={SNAP}
         />
       </DemoStage>
     </div>

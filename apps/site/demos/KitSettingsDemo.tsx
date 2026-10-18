@@ -1,5 +1,5 @@
 import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill } from '@weasel-js/core';
-import { guidesKitSettingsSchema } from '@weasel-js/guides';
+import { alignmentSnapSource, guidesKitSettingsSchema } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
@@ -19,6 +19,8 @@ const RECTS: { id: string; x: number; y: number; width: number; height: number; 
   { id: 'a', x: 30, y: 30, width: 90, height: 60, fill: { paint: { color: '#7fb069' } } },
   { id: 'b', x: 160, y: 60, width: 70, height: 70, fill: { paint: { color: '#a48bd4' } } },
 ];
+// A move snaps to the other rect's edges within the "Snap reach" setting.
+const SNAP = { sources: [alignmentSnapSource()] };
 
 function Specimens() {
   const scene = useScene({ items: RECTS });
@@ -27,7 +29,7 @@ function Specimens() {
     <div className={s.specimens}>
       <Tree aria-label="Files" nodes={FILES} defaultExpandedIds={['src']} />
       <UnitField aria-label="Count" value={n} onChange={setN} steppers />
-      <SceneCanvas features={['pick', 'move', 'transform']} width={260} height={160} className="ckd-canvas" scene={scene} />
+      <SceneCanvas features={['pick', 'move', 'transform']} width={260} height={160} className="ckd-canvas" scene={scene} snap={SNAP} />
     </div>
   );
 }

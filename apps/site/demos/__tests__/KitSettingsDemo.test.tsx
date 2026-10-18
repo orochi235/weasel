@@ -15,6 +15,7 @@ describe('KitSettingsDemo', () => {
     expect(screen.getByRole('spinbutton', { name: 'Double-click interval' })).toBeTruthy();
     expect(screen.getByRole('spinbutton', { name: 'Curve key' })).toBeTruthy();
     expect(screen.getByRole('spinbutton', { name: 'Selection handle' })).toBeTruthy();
+    expect(screen.getByRole('spinbutton', { name: 'Snap reach' })).toBeTruthy();
   });
 
   it('shows the settings written as custom properties', async () => {

@@ -8,7 +8,7 @@ import {
   useScene,
   warmRender,
 } from '@weasel-js/core';
-import { gridSnapStrategy } from '@weasel-js/guides';
+import { gridSnapSource } from '@weasel-js/guides';
 import type {
   DebugConfig,
   DebugFeature,
@@ -21,6 +21,7 @@ import { DemoStage } from './DemoStage';
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
 
 const W = 520, H = 320, HANDLE = DEFAULT_HANDLE_SIZE;
+const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
 
 const INITIAL: Box[] = [
   { id: 'a', x:  60, y:  60, width: 80, height: 60, color: '#d4c4a8' },
@@ -125,10 +126,8 @@ export function DebugOverlayDemo() {
           className="ckd-canvas"
           onResize={setSize}
           scene={scene}
-          selectTool={{
-            handleHitRadius: HANDLE,
-            snap: gridSnapStrategy<Box>(20),
-          }}
+          selectTool={{ handleHitRadius: HANDLE }}
+          snap={SNAP}
           debug={debug}
           layers={{
             scene: { drawOne: drawBox },
@@ -137,8 +136,8 @@ export function DebugOverlayDemo() {
         />
       </DemoStage>
       <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
-        Click a box to select; drag the body to move (snaps to a 20px grid); drag a
-        corner to resize; wheel to pan and Cmd/Ctrl+wheel to zoom. Toggle features
+        Click a box to select; drag the body to move or a corner to resize, both
+        snapping to a 20px grid; wheel to pan and Cmd/Ctrl+wheel to zoom. Toggle features
         above to layer in the kit's view of the scene. Hover any chip for a one-line
         description of what it shows. Snapshot rasterizes the scene and the overlay
         into one PNG, below.

@@ -1,7 +1,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { RotatedPose } from '@weasel-js/core';
-import { PointSnapDemo } from '../PointSnapDemo';
+import { ResizeSnapDemo } from '../ResizeSnapDemo';
 
 beforeAll(() => {
   window.history.replaceState(null, '', '/?test=1');
@@ -24,9 +24,9 @@ function bottomRight() {
   return { x: p.x + hw + hw * cos - hh * sin, y: p.y + hh + hw * sin + hh * cos };
 }
 
-describe('PointSnapDemo', () => {
+describe('ResizeSnapDemo', () => {
   it('lands a dragged corner of the rotated rect on a grid point', () => {
-    const { container } = render(<PointSnapDemo />);
+    const { container } = render(<ResizeSnapDemo />);
     const canvas = container.querySelector('canvas')!;
     canvas.getBoundingClientRect = () => ({
       left: 0, top: 0, x: 0, y: 0, width: 400, height: 300, right: 400, bottom: 300, toJSON: () => ({}),

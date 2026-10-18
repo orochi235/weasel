@@ -192,7 +192,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           pickHud
           modalityHud
           onToolsCreated={props.onToolsCreated}
-          selectTool={grid.snap ? { snap: grid.snap } : undefined}
           snap={snap}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },

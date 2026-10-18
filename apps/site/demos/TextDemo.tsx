@@ -7,13 +7,14 @@ import {
   type CanvasHelpers,
   type RenderLayer,
 } from '@weasel-js/core';
-import { gridSnapStrategy } from '@weasel-js/guides';
+import { gridSnapSource } from '@weasel-js/guides';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 360;
 const CELL = 10;
+const SNAP = { sources: [gridSnapSource({ spacing: CELL })] };
 
 export function TextDemo() {
   const scene = useScene({ items: INITIAL_TEXT_NODES });
@@ -95,9 +96,7 @@ export function TextDemo() {
           backgroundFill={{ color: '#fafafa' }}
           scene={scene}
           helpersRef={helpersRef}
-          selectTool={{
-            snap: gridSnapStrategy<TextNode>(CELL),
-          }}
+          snap={SNAP}
           layers={{
             // No default scene — the custom text layer paints everything.
             scene: null,
