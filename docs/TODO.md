@@ -364,23 +364,20 @@ Priority tags:
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
   fails it; moving these two is a choice of new keys.
-- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
-  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
-  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
-  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
-  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
-  and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) A path effect that paints nothing is lost through draw's SVG.** A live effect rides on
+  its exported group as `wd:effect` and `wd:depends-on` (`apps/draw/src/svgEffects.ts`), but a
+  blend of no steps, or a repeat with no copies, exports an empty `<g>`, and
+  `svgNodesToKitDrafts` drops empty groups before `svgNodesToSceneDrafts` sees it.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
-  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
-  over two leaves, inserted beside the first.
-- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
-  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
-  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
+- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
+  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
+  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
+  is not carried across, so an effect of an effect in another container reads that path where
+  its own container would put it.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the

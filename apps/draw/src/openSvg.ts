@@ -1,7 +1,7 @@
-import type { NodeId } from '@weasel-js/core';
+import { type AddNodeSpec, pathEffectNode, registeredPathEffects } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
-import type { DrawScene, WeaselDrawData } from './drawDocument';
+import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
 import type { PaperSizeKey } from './paperSizes';
 import { leafOfObj } from './svgImport';
@@ -24,15 +24,34 @@ function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; draft
   return { parsed, drafts: svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`) };
 }
 
-/** Call inside a batch. Drafts arrive parent-before-child, so a draft's parent is already mapped. */
+/**
+ * Call inside a batch. Every draft's id is minted first, so an effect can name
+ * sources that come after it. An effect whose sources the file does not hold,
+ * or that the scene's registry cannot derive, opens as the paths it exported
+ * as; a live one leaves those paths out.
+ */
 function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
-  const sceneIdOf = new Map<string, NodeId>();
+  const sceneIdOf = new Map(drafts.map((d) => [d.id, scene.mintId()]));
+  const derivations = registeredPathEffects(scene.registry);
+  const leaves = new Set(drafts.filter((d) => d.kind === 'leaf').map((d) => d.id));
+  const live = (d: SceneDraft) => derivations !== null && d.kind === 'effect' && d.dependsOn.every((s) => leaves.has(s));
+  const skipped = new Set<string>();
   for (const draft of drafts) {
-    const parent = draft.parentId != null ? sceneIdOf.get(draft.parentId) : undefined;
-    const node = draft.kind === 'container'
-      ? { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData }
-      : { kind: 'leaf' as const, ...leafOfObj(draft.obj) };
-    sceneIdOf.set(draft.id, scene.add({ ...node, layer: 'default', ...(parent != null ? { parent } : {}) }));
+    if (draft.parentId != null && skipped.has(draft.parentId)) {
+      skipped.add(draft.id);
+      continue;
+    }
+    const at = { id: sceneIdOf.get(draft.id)!, ...(draft.parentId != null ? { parent: sceneIdOf.get(draft.parentId)! } : {}) };
+    if (draft.kind === 'effect' && live(draft)) {
+      skipped.add(draft.id);
+      const sources = draft.dependsOn.map((s) => sceneIdOf.get(s)!);
+      scene.add({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>);
+      continue;
+    }
+    const node = draft.kind === 'leaf'
+      ? { kind: 'leaf' as const, ...leafOfObj(draft.obj) }
+      : { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
+    scene.add({ ...node, layer: 'default', ...at });
   }
 }
 
