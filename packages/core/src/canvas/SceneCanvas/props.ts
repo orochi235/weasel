@@ -9,9 +9,7 @@ import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import { KIT_SHAPE_KINDS, type BuiltinShapeToolId } from 'core/shapeKinds';
-import type {
-  ContentHandlerEntry
-} from 'features/ingestion';
+import type { ContentHandlerEntry } from 'features/ingestion';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
@@ -21,6 +19,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
+import type { PoseTransitionSeat } from '../../animation/poseTransition';
 import { HANDLE_BASE_PX, targetSizesPx, type TargetSizesPx } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
@@ -33,10 +32,7 @@ import type { CanvasProps } from '../Canvas';
 import { isCustomEntry, type LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
-import type {
-  InsertNodeFactory,
-  InsertPaint
-} from '../deps';
+import type { InsertNodeFactory, InsertPaint } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
 import type { FeatureEntry } from './features';
@@ -192,6 +188,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  reorder or resize inside a laid-out container). Absent or `null`,
      *  they snap. */
     reflowTransition?: ReflowTransition<TPose> | null;
+
+    /** Glides what is shown when the scene writes a pose — a button's `scene.setPose`, an
+     *  undo — instead of snapping it. Absent or `null`, writes snap. See {@link PoseTransitionSeat}. */
+    poseTransition?: PoseTransitionSeat<TPose> | null;
 
     /**
      * Lets pose-transform actions (move, resize, nudge, flip — NOT rotate) also rewrite a

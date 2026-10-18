@@ -36,6 +36,10 @@ export {
   createReflowTransition, useAnimatedReflow,
   type AnimatedReflow, type ReflowScene, type ReflowTransitionOptions,
 } from './reflow';
+export {
+  bindPoseTransition, glidesByDefault, usePoseTransition,
+  type PoseTransitionScene, type PoseTransitionSeat,
+} from './poseTransition';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
 export {
   srgbU8ToOklab, srgbFloatToOklab, oklabToSrgbU8,

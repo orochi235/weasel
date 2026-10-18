@@ -9,6 +9,7 @@ import type { ArrivalWindow } from './arrivalWindow';
 import type { EditMode } from './editMode';
 import { createSceneHistory, type SceneHistoryMethods } from './historyFacade';
 import type { Notifier } from './notifier';
+import type { PoseWriteLog } from './poseWrites';
 import { createOpTable, type OpTable } from './opTable';
 import { createOuterOps } from './outerOps';
 import { createRecorder, type Recorder, type RecorderEnv } from './recorder';
@@ -25,6 +26,7 @@ export interface SceneRecordingEnv {
   selection: Pick<SceneSelection, 'get' | 'set' | 'replace'>;
   arrivals: RecorderEnv['arrivals'] & Pick<ArrivalWindow<unknown>, 'runEdit'>;
   writePose(id: string, pose: unknown): void;
+  poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'replaying'>;
   config: {
     getActiveJournal?: (() => Journal | null) | undefined;
     coalesceWindowMs?: number | undefined;
@@ -44,7 +46,7 @@ export interface SceneRecording {
 }
 
 export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
-  const { notifier, mode, stale, lifted, selection, arrivals, config } = env;
+  const { notifier, mode, stale, lifted, selection, arrivals, config, poseWrites } = env;
   const { notify } = notifier;
 
   const ops = createOpTable({
@@ -93,6 +95,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     arrivals,
     selection: selection.get,
     writePose: env.writePose,
+    labeled: poseWrites.labeled,
   });
   const { record, engineDriven } = recorder;
 
@@ -100,7 +103,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
    *  journal stepping. The engine inverts whole ops when one throws; this
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
-    atomically(() => lifted(() => stale.during(() => engineDriven(step))), () => true);
+    poseWrites.replaying(() => atomically(() => lifted(() => stale.during(() => engineDriven(step))), () => true));
   }
 
   function refuseUntracked(verb: string): void {
@@ -115,6 +118,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     notify,
     refuseUntracked,
     runArrivalEdit: arrivals.runEdit,
+    labeled: (label, fn) => poseWrites.labeled(label, 'ops', fn),
     activeJournal: outer.activeJournal,
   });
 
@@ -134,7 +138,8 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       },
       applyBatch(batch, label, adapter) {
         refuseUntracked('applyBatch');
-        return arrivals.runEdit(batch, (all) => outer.apply(engine, all, label, adapter));
+        return poseWrites.labeled(label, 'ops', () =>
+          arrivals.runEdit(batch, (all) => outer.apply(engine, all, label, adapter)));
       },
       history,
       ...methods,

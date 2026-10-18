@@ -205,6 +205,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `ClipValue`'s object arm is `object`.
 - 2026-10-13 (pass 6): When a rig's joints change, the new seat takes over the placement and
   committed pose of every joint still named; a renamed joint stops moving.
+- 2026-10-18: `<SceneCanvas poseTransition={{ transition, glides?, enter? }}>` glides what the
+  scene writes through the same kind of transition `reflowTransition` takes, reading the new
+  `scene.onPoseWrite`, which reports each change's net pose per node with an origin (`'call'`,
+  `'ops'`, `'undo'`, `'redo'`, `'layout'`, `'untracked'`) and the edit's label. By default it glides
+  calls, undos and redos, not action commits (`'ops'`); a node another override is showing — a
+  drag's preview, a pose-target animation — is left to it. `enter` grows in added nodes. `onReflow`
+  moved onto a `ScenePoseReports` interface `Scene` extends. AnimationDemo no longer uses
+  `animateOnSetPose` or `animateLifecycle`, which stay exported.
 
 ## ui, prefs, and theme
 
