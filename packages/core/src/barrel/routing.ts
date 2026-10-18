@@ -123,7 +123,6 @@ export type {
   PathSymmetryDep,
   InsertLive,
   SnapDep,
-  SnapQuery,
   SnapGeometry,
   InsertExtras,
   LassoSelectDep,

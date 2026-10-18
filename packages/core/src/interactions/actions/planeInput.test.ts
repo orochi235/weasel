@@ -357,24 +357,21 @@ describe('inPlane', () => {
   it('keeps world-point deps speaking the camera\'s world', () => {
     const { seen, action } = probe();
     const nodeAtPoint = vi.fn(() => null);
-    const snap = { point: vi.fn((p: { x: number; y: number }) => ({ x: Math.round(p.x), y: Math.round(p.y) })) };
     (action.invoker as OngoingInvoker).start(
-      ctxOf(makeScene(), { x: 110, y: 60 }, { x: 110, y: 60 }, { deps: { nodeAtPoint, snap } }),
+      ctxOf(makeScene(), { x: 110, y: 60 }, { x: 110, y: 60 }, { deps: { nodeAtPoint } }),
     );
-    const deps = seen[0].deps as { nodeAtPoint(p: unknown): unknown; snap: { point(p: unknown): unknown } };
+    const deps = seen[0].deps as { nodeAtPoint(p: unknown): unknown };
     deps.nodeAtPoint({ x: 120, y: 120 });
     expect(nodeAtPoint).toHaveBeenCalledWith({ x: 110, y: 60 }, undefined);
-    // Sky 121 is camera 110.5, which rounds to 111 — sky 122.
-    expect(deps.snap.point({ x: 121, y: 0 })).toEqual({ x: 122, y: 0 });
   });
 
   it('runs a snap session in the plane, handing it the plane\'s map', () => {
     const { seen, action } = probe();
     const begin = vi.fn((_req: SnapBegin) => ({ at: (p: { x: number; y: number }) => ({ point: p, held: false, marks: [] }) }));
     (action.invoker as OngoingInvoker).start(
-      ctxOf(makeScene(), { x: 110, y: 60 }, { x: 110, y: 60 }, { deps: { snap: { point: (p: unknown) => p, begin } } }),
+      ctxOf(makeScene(), { x: 110, y: 60 }, { x: 110, y: 60 }, { deps: { snap: { begin } } }),
     );
-    (seen[0].deps.snap as SnapDep).begin!({ gesture: 'move', press: { x: 5, y: 6 } });
+    (seen[0].deps.snap as SnapDep).begin({ gesture: 'move', press: { x: 5, y: 6 } });
     const req = begin.mock.calls[0][0];
     expect(req.press).toEqual({ x: 5, y: 6 });
     // Sky = camera * 2 - 100 at a camera zoomed 2x that the sky does not follow.

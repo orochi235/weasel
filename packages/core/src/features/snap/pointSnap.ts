@@ -22,7 +22,7 @@ export interface PointSnap {
  *  every point lands where it is. */
 export function pointSnap(): PointSnap {
   let live: { session: SnapSession; dep: SnapDep | undefined; origin: Point | undefined } | null = null;
-  const begin = (dep: SnapDep | undefined, req: SnapBegin) => dep?.begin?.(req) ?? inputSession(req);
+  const begin = (dep: SnapDep | undefined, req: SnapBegin) => dep?.begin(req) ?? inputSession(req);
   const request = (p: Point, origin: Point | undefined): SnapBegin => ({ gesture: 'point', press: p, ...(origin ? { origin } : {}) });
   const stop = () => {
     live?.session.end();

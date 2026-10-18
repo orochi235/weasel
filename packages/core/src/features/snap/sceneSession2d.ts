@@ -1,5 +1,6 @@
 import type { ResizeAnchor } from '@weasel-js/routing';
 import type { View } from '@weasel-js/geom';
+import type { DebugSink } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Scene } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
@@ -30,7 +31,8 @@ export interface SceneSessionInputs {
   originProjection?: OriginProjection<unknown>;
   /** How a node's rotation is read. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<unknown>;
-  onEnd?: () => void;
+  /** Where each frame's candidates are recorded. */
+  debug?: DebugSink;
 }
 
 /** A 2D session whose probes are the subject's, read from the scene at press. */
@@ -56,7 +58,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     scene: i.scene,
     rotationOf: sceneRotations(i.scene, i.poseDescriptor),
     store: i.store,
-    ...(i.onEnd ? { onEnd: i.onEnd } : {}),
+    ...(i.debug ? { debug: i.debug } : {}),
   });
 }
 

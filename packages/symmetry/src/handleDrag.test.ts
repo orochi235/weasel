@@ -27,7 +27,6 @@ function rig() {
     pose: { x: 200, y: 50, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
   });
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => createSnapSession2dForTests({
       scene: scene as never, view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       sources: [pathSnapSource()], gesture: req.gesture, press: req.press,

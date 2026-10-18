@@ -22,8 +22,6 @@ import type { Tool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
-import type { PathSnapOptions } from 'features/paths/pathSnap/pathSnapper';
-import type { SnapQuery } from 'interactions/actions/snapDep';
 import type { NodeId } from 'core/scene/types';
 import type { RigEditState } from 'tools/builtin/bone/rigEditState';
 
@@ -37,23 +35,6 @@ export interface BuiltinToolOptions {
    *  binding's `opts.behaviors`, the way `selectTool.move.behaviors` do for
    *  move. */
   insert?: InsertToolOptions;
-  /** Snap world-space points to the active grid (or any other snap target).
-   *
-   *  @deprecated No kit action reads it: every gesture snaps through the
-   *  `snap` dep's sessions, which ask `<SceneCanvas snap>`'s sources, so a
-   *  grid is `gridSnapSource`. */
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
-  /** Snap to the geometry of the scene's paths.
-   *
-   *  @deprecated No kit action reads it: register `pathSnapSource` in
-   *  `<SceneCanvas snap>` instead. */
-  pathSnap?: PathSnapOptions;
-  /** Points to lock to that are in no path: the nearest within reach of
-   *  `p`, or null.
-   *
-   *  @deprecated No kit action reads it: a target set is a `SnapSource` in
-   *  `<SceneCanvas snap>`, as `measureEndSource` is for a measurement's ends. */
-  snapTargets?: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number } | null;
   /** The look of the notes the sticky tool makes: paper, ink, padding,
    *  typography, and the size a click places. */
   sticky?: StickyStyle;

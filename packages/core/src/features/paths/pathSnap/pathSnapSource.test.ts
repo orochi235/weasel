@@ -147,6 +147,28 @@ describe('pathSnapSource', () => {
   });
 });
 
+describe('what a node offers to snap to', () => {
+  const sceneWith = (pose: unknown, data: unknown) => ({
+    nodes: new Map([[asNodeId('n'), { id: asNodeId('n'), kind: 'leaf' as const, layer: 'default', parent: null, pose, data }]]),
+    layers: [{ id: 'default' }],
+    getVersion: () => 1,
+  }) as unknown as Scene<unknown, string, unknown>;
+
+  it("gives a text node's box: its corners and its center", () => {
+    const text = sceneWith({ x: 0, y: 0, width: 100, height: 40 }, { text: 'hi' });
+    const only = { kinds: { nearest: false, midpoint: false } };
+    expect(run(text, only, {}, { x: 51, y: 21 }).marks).toEqual([{ kind: 'point', at: { x: 50, y: 20 }, glyph: 'center', label: 'center' }]);
+    expect(run(text, only, {}, { x: 98, y: 2 }).marks).toEqual([{ kind: 'point', at: { x: 100, y: 0 }, glyph: 'anchor', label: 'anchor' }]);
+  });
+
+  it('gives a filled rectangle its drawn outline', () => {
+    const rect = sceneWith({ x: 10, y: 10, width: 50, height: 30 }, { fill: { paint: { color: '#000' } } });
+    const only = { kinds: { nearest: false } };
+    expect(run(rect, only, {}, { x: 58, y: 38 }).point).toEqual({ x: expect.closeTo(60, 9), y: expect.closeTo(40, 9) });
+    expect(run(rect, only, {}, { x: 35, y: 12 }).point).toEqual({ x: expect.closeTo(35, 9), y: expect.closeTo(10, 9) });
+  });
+});
+
 describe('ownGeometryAt', () => {
   it("is the subject's own nearest geometry point, from the shared index", () => {
     expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE)).toEqual({ x: 0, y: 0 });

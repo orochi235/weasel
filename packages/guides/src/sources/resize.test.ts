@@ -36,7 +36,6 @@ function run(
   const a = scene.add({ kind: 'leaf', layer: 'main', pose, data: { kind: 'rect' } });
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => createSnapSession2dForTests({
       scene,
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },

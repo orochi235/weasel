@@ -40,7 +40,6 @@ function start(options: HandleSnapOptions | null, path: PolygonPath = curve(), p
   const store = createSnapOutcomeStore();
   const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => createSnapSession2d({
       gesture: req.gesture, press: req.press, ids: req.ids ?? [],
       ...(req.pivot ? { pivot: req.pivot } : {}),

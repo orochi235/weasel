@@ -48,7 +48,7 @@ export function handleDragAction(ctrl: SymmetryController): Action & { requires:
         const origin = ctrl.read(id);
         if (!origin) return {};
         const session = press.handle === 'center'
-          ? ctx.deps.snap?.begin?.({ gesture: 'point', press: origin.center }) ?? null
+          ? ctx.deps.snap?.begin({ gesture: 'point', press: origin.center }) ?? null
           : null;
         const from = { x: ctx.world.x, y: ctx.world.y };
         let last: SymmetryChange | null = null;

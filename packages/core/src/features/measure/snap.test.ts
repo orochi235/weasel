@@ -34,7 +34,6 @@ function pathScene(paths: Record<string, string>): AnyScene {
 function pointDep(targets: AnyScene, sources: readonly SnapSource[]): SnapDep {
   const store = createSnapOutcomeStore();
   return {
-    point: (p) => p,
     begin: (req) => createSession2d({
       req, sources, probes: [{ id: 'pointer', at: req.press, role: 'pointer' }],
       view: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), reachPx: 8, scene: targets, store,

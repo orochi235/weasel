@@ -1,5 +1,6 @@
 import { closestOnFlat, resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { View } from '@weasel-js/geom';
+import type { DebugSink } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PlaneMap } from 'core/viewport/parallax';
@@ -7,6 +8,7 @@ import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/s
 import { angleAt } from './angle2d';
 import { inputFlat } from './inputSubspace';
 import { gatherSnapCandidates, resolvedSnapMarks, type SnapCandidateMark } from './gather';
+import { recordSnapCandidates } from './debugCandidates';
 import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
@@ -44,8 +46,8 @@ export interface Session2dInputs {
   store: SnapOutcomeStore;
   /** Nodes that offer no targets. Default `req.ids`. */
   exclude?: readonly string[];
-  /** Runs after `end` clears the store. */
-  onEnd?: () => void;
+  /** Where each frame's candidates are recorded, cleared at `end`. */
+  debug?: DebugSink;
 }
 
 /** A snap session over a 2D canvas: ctx points are world points. */
@@ -58,17 +60,20 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
       const input = inputFlat(req, mods, delta0, inputs.resize);
       if (mods.suspend) {
         store.set([]);
+        inputs.debug?.clearSnap();
         return outcome(req.press, closestOnFlat(input, [delta0.x, delta0.y]), false, []);
       }
       const view = inputs.view();
       const plane = req.plane?.() ?? null;
+      const candidates = collectAll(inputs, sources, delta0, view, plane);
       const res = resolveSnap({
         probes: inputs.probes.map((q) => ({ id: q.id, at: [q.at.x, q.at.y], role: q.role })),
         input,
         delta0: [delta0.x, delta0.y],
-        candidates: collectAll(inputs, sources, delta0, view, plane),
+        candidates,
         toScreen: screenOf(view, plane),
       });
+      if (inputs.debug) recordSnapCandidates(inputs.debug, candidates, res.satisfied, inputs.probes, delta0, plane);
       const delta = { x: res.delta[0], y: res.delta[1] };
       const marks = resolvedSnapMarks(res.satisfied, delta);
       store.set(plane ? marks.map((m) => markFromPlane(m, plane)) : marks);
@@ -77,7 +82,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
     angle: (theta, mods) => angleAt(inputs, sources, theta, mods),
     end() {
       store.set([]);
-      inputs.onEnd?.();
+      inputs.debug?.clearSnap();
     },
   };
 }

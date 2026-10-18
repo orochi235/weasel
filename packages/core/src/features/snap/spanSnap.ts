@@ -29,7 +29,7 @@ export interface SpanSnap {
  * sessions, only `constrain` applies.
  */
 export function spanSnap(dep: SnapDep | undefined, constrain: () => SnapConstrain | undefined = () => undefined): SpanSnap {
-  const begin = (req: SnapBegin): SnapSession => dep?.begin?.(req) ?? inputSession(req);
+  const begin = (req: SnapBegin): SnapSession => dep?.begin(req) ?? inputSession(req);
   let raw: Point = { x: 0, y: 0 };
   let start: Point = raw;
   let held = false;

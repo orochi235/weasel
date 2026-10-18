@@ -11,12 +11,23 @@ import { measureBetween, measurementOf, measureEndsOf } from './measurement';
 import { createMeasurements, currentMeasureId, measureIds } from './measurements';
 import { measureCommands } from './measureCommands';
 import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureGestures';
-import { nearestMeasureEnd, type MeasureHit } from './measureHit';
+import { measureEndSource, type MeasureHit } from './measureHit';
+import type { SnapCollect } from 'features/snap/types';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
 import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };
+
+/** The measurement ends `measureEndSource` offers a pointer at `at`, `reach` world units out. */
+function endsNear(scene: AnyScene, at: Pt, reach: number, reachPx?: number): Pt[] {
+  const source = measureEndSource(reachPx === undefined ? {} : { reachPx });
+  const q: SnapCollect = {
+    gesture: 'point', probes: [{ id: 'pointer', at, role: 'pointer' }], delta0: { x: 0, y: 0 }, exclude: [],
+    reachWorld: (px) => px, reachPx: source.reachPx ?? reach, scene,
+  };
+  return [...source.collect(q)].map((c) => c.locus.at);
+}
 
 function setup() {
   const scene = createScene<object, 'main' | 'notes', RectPose>({
@@ -304,15 +315,22 @@ describe('measurements in the document', () => {
   it('offers its ends to other tools as snap targets', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
-    expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 32, y: 37 }, 5)).toEqual({ x: 30, y: 40 });
-    expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 50, y: 50 }, 5)).toBeNull();
+    expect(endsNear(rig.scene as unknown as AnyScene, { x: 32, y: 37 }, 5)).toEqual([{ x: 30, y: 40 }]);
+    expect(endsNear(rig.scene as unknown as AnyScene, { x: 50, y: 50 }, 5)).toEqual([]);
+  });
+
+  it('takes its own reach over the canvas\'s', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
+    expect(endsNear(rig.scene as unknown as AnyScene, { x: 40, y: 40 }, 5)).toEqual([]);
+    expect(endsNear(rig.scene as unknown as AnyScene, { x: 40, y: 40 }, 5, 12)).toEqual([{ x: 30, y: 40 }]);
   });
 
   it('offers no snap target from a hidden measurement', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 30, y: 40 });
     rig.scene.setHidden(rig.ids()[0]!, true);
-    expect(nearestMeasureEnd(rig.scene as unknown as AnyScene, rig.ms, { x: 32, y: 37 }, 5)).toBeNull();
+    expect(endsNear(rig.scene as unknown as AnyScene, { x: 32, y: 37 }, 5)).toEqual([]);
   });
 
   it('tells a content node from an annotation', () => {

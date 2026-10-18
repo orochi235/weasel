@@ -36,7 +36,6 @@ function rig(opts: { rotation?: number; others?: readonly number[]; selected?: r
   }
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => sceneSession2d({
       req, scene, boxes: drawnBoxes({ scene }), sources: [rotationSnapSource()], view: () => VIEW, reachPx: 8, store,
     }),

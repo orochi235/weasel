@@ -161,7 +161,7 @@ export function beginMove(
     nodeAtPoint: ctx.deps.nodeAtPoint,
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
-    snap: ctx.deps.snap?.begin?.({ gesture: 'move', ids, press, constrain: 'axis' }) ?? null,
+    snap: ctx.deps.snap?.begin({ gesture: 'move', ids, press, constrain: 'axis' }) ?? null,
     press,
   };
   return { session, readers };

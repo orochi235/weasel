@@ -143,7 +143,7 @@ export function measureDragAction(ms: Measurements): Action {
         const end: MeasureEnd | null = hit.part !== 'line' && ms.picked.get() === hit.id ? hit.part : null;
         const from = ctx.drag?.start ?? ctx.world;
         const grabbed = (end && measureEndsOf(node)?.[end]) || from;
-        const snap = end ? deps.snap?.begin?.({ gesture: 'point', press: grabbed, ids: [hit.id] }) ?? null : null;
+        const snap = end ? deps.snap?.begin({ gesture: 'point', press: grabbed, ids: [hit.id] }) ?? null : null;
         let at = from;
         let landed = grabbed;
         const next = () => (end

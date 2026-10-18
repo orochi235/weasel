@@ -73,7 +73,7 @@ describe('createSnap: a 3D move', () => {
     };
     expect(gap(raw.max, { x: 2.5, y: 1, z: 0.5 })).toBeLessThan(5);
 
-    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(pointer, FREE);
+    const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(pointer, FREE);
     expect(out.held).toBe(true);
     const box = aabbOfPose(move.landed(out.point));
     expect(box.max.x).toBeCloseTo(2.5, 6);
@@ -88,7 +88,7 @@ describe('createSnap: a 3D move', () => {
     const move = moveOf(world, ids[0]!);
     const pointer = move.pointerFor({ x: 0.01, y: 0, z: 0.7 });
 
-    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(pointer, FREE);
+    const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(pointer, FREE);
     expect(out.held).toBe(true);
     const snapped = move.landed(out.point);
     const raw = move.landed(pointer);
@@ -102,7 +102,7 @@ describe('createSnap: a 3D move', () => {
     const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 3, y: 0.5, z: 0 })], vp);
     const snap = createSnap(world, { sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })] });
     const move = moveOf(world, ids[0]!);
-    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+    const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press })
       .at(move.pointerFor({ x: 2.02, y: 0, z: 0.015 }), FREE);
     expect(Number.isFinite(out.point.x) && Number.isFinite(out.point.y)).toBe(true);
     expect(out.held).toBe(true);
@@ -120,7 +120,7 @@ describe('createSnap: a 3D move', () => {
     });
     const move = moveOf(world, ids[0]!);
     const run = (target: Vec3) =>
-      createSnap(world, { sources: [at(target)] }).begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+      createSnap(world, { sources: [at(target)] }).begin({ gesture: 'move', ids: [ids[0]!], press: move.press })
         .at(move.press, FREE);
     // The control: a target as far off in front of the camera is taken.
     expect(run({ x: 0.5, y: 0.5, z: -3 }).held).toBe(true);
@@ -135,7 +135,7 @@ describe('createSnap: a 3D move', () => {
     const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 3, y: 0.5, z: 0 })]);
     const snap = createSnap(world, { sources: [boxSnapSource(world)] });
     const move = moveOf(world, ids[0]!);
-    const begin = () => snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press, constrain: 'axis' });
+    const begin = () => snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press, constrain: 'axis' });
 
     const locked = move.landed(begin().at(move.pointerFor({ x: 1.2, y: 0, z: 0.3 }), { suspend: false, constrain: true }).point);
     expect(locked.position.x).toBeCloseTo(1.2, 6);
@@ -152,7 +152,7 @@ describe('createSnap: a 3D move', () => {
     const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 0.04, y: 0.5, z: -5 })]);
     const snap = createSnap(world, { sources: [alignPlaneSource(world)] });
     const move = moveOf(world, ids[0]!);
-    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+    const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press })
       .at(move.pointerFor({ x: 0.01, y: 0, z: 0.7 }), FREE);
     expect(out.marks.length).toBeGreaterThan(0);
     // Every mark lies in an x plane: a y plane's would run level, between different xs.
@@ -168,7 +168,7 @@ describe('createSnap: a 3D move', () => {
     const flipped: W = { ...world, up: { x: 0, y: -1, z: 0 } };
     const snap = createSnap(flipped, { sources: [boxSnapSource(flipped)] });
     const move = moveOf(flipped, ids[0]!);
-    const out = snap.begin!({ gesture: 'move', ids: [ids[0]!], press: move.press })
+    const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press })
       .at(move.pointerFor({ x: 2.02, y: 0, z: 0.015 }), FREE);
     expect(out.held).toBe(true);
     const box = aabbOfPose(move.landed(out.point));
@@ -249,7 +249,7 @@ describe('createSnap: a 3D insert', () => {
     const vp = world.viewport();
     const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ step: 1 })] });
     const press = projectPoint({ x: 0.81, y: 0, z: 0.79 }, vp)!;
-    const ground = cast(vp, snap.begin!({ gesture: 'point', press }).at(press, FREE).point, 0);
+    const ground = cast(vp, snap.begin({ gesture: 'point', press }).at(press, FREE).point, 0);
     expect(ground.x).toBeCloseTo(0.8, 6);
     expect(ground.z).toBeCloseTo(0.8, 6);
   });

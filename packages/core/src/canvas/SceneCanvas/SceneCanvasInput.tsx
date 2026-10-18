@@ -57,7 +57,6 @@ export interface SceneCanvasInputProps {
   dispatcher: Dispatcher;
   pathEdit: {
     state: SceneStandardActionsInputs['editAnchorsExternalState'];
-    snapper: SceneStandardActionsInputs['pathSnapper'];
   };
   chrome: { getIsVisible: () => (id: string) => boolean; getRuleCtx: () => RuleCtx | undefined };
   /** The selection overlay's rotate badge, and where the dispatcher reports the affordances
@@ -103,7 +102,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,
-    viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state, pathSnapper: p.pathEdit.snapper,
+    viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
     snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: useContext(SnapSourceRegistryContext), store: p.snapStore },
   });

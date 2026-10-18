@@ -16,22 +16,6 @@ export interface SnapGeometry {
   anchors?: readonly Point[];
 }
 
-/** What a snap request knows about the gesture asking. Every field is
- *  optional, and a snapper that reads none of them answers the same. */
-export interface SnapQuery {
-  /** Where the geometry being drawn starts: a line's first end, the pen's
-   *  last anchor, a move's base point. Tangent and perpendicular targets are
-   *  measured from it. */
-  origin?: Point;
-  /** Nodes whose geometry offers no targets — what the gesture is moving. */
-  exclude?: readonly string[];
-  /** Only these nodes' geometry offers targets. */
-  include?: readonly string[];
-  /** Geometry to snap to besides the scene's, whatever `include` says. A
-   *  snapper may index it once per object, so pass the same one each move. */
-  also?: SnapGeometry;
-}
-
 /** What builds a gesture's input subspace while `snap.constrain` is held:
  *  an angle step in radians about `origin` (a rotate's every multiple of
  *  it, required), an axis or 45° lock about the press, or a resize's
@@ -106,20 +90,11 @@ export interface SnapSession {
 }
 
 /**
- * World-space point snapping — grid, guides, path geometry, or any consumer
- * rule. Actions apply it to the coords they ingest so the live preview and
- * the committed geometry agree.
+ * Snapping, for every gesture that snaps: each one begins a session at press
+ * and asks it, frame by frame, where its point lands. Points are ctx
+ * coordinates — world in 2D, screen in a 3D host.
  */
 export interface SnapDep {
   /** Start a gesture's snap session. */
-  begin?(req: SnapBegin): SnapSession;
-  /** Snap a world-space point. Return `p` unchanged to opt out. */
-  point(p: Point, at?: SnapQuery): Point;
-  /** Snap `p` to a target alone — path geometry, or a point
-   *  `toolOptions.snapTargets` offers — or null when none is in range. An
-   *  anchor drag reads this, so a grid that the drawing tools follow
-   *  does not start pulling dragged shapes too. */
-  toTargets?(p: Point, at?: SnapQuery): Point | null;
-  /** The gesture that asked is over: drop whatever marks its last snap. */
-  release?(): void;
+  begin(req: SnapBegin): SnapSession;
 }

@@ -49,7 +49,6 @@ export function sessionDep(
 ): SnapDep {
   const view = { ...VIEW, scale: { x: scale, y: scale } };
   return {
-    point: (p) => p,
     begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => view, reachPx: 8, store }),
   };
 }

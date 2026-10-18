@@ -28,6 +28,9 @@ import { useSliceDep } from './slice';
 import { useSnapDepSource } from './snap';
 import { useTextEditDepSource } from './textEdit';
 import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
+import type { SnapSource } from 'features/snap/types';
+import { createScene } from 'core/scene/scene';
+import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import { useViewDepSource } from './view';
 
 afterEach(() => { cleanup(); });
@@ -189,13 +192,17 @@ describe('dep sources after an abandoned render', () => {
     expect(dep(reg, 'slice')).toBe(a);
   });
 
-  it('snap snaps through the committed function', () => {
-    const reg = registryAfterAbandon(
-      () => ({ x: 1, y: 1 }),
-      () => ({ x: 2, y: 2 }),
-      (fn) => { useSnapDepSource({ snapPoint: fn as never }, { current: null }, undefined, createSnapOutcomeStore()); },
-    );
-    expect(dep(reg, 'snap').point({ x: 0, y: 0 })).toEqual({ x: 1, y: 1 });
+  it('snap runs its sessions over the committed sources', () => {
+    const scene = createScene({ systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
+    const at = (x: number): SnapSource => ({
+      id: 'at', roles: ['pointer'],
+      *collect(q) { for (const p of q.probes) yield { probe: p.id, locus: { at: { x, y: x }, dirs: [] } }; },
+    });
+    const reg = registryAfterAbandon(at(1), at(2), (source) => {
+      useSnapDepSource({ current: null }, { scene, boxes: () => drawnBoxes({ scene }), sources: [source] }, createSnapOutcomeStore());
+    });
+    const session = dep(reg, 'snap').begin({ gesture: 'point', press: { x: 0, y: 0 } });
+    expect(session.at({ x: 0, y: 0 }, { suspend: false, constrain: false }).point).toEqual({ x: 1, y: 1 });
   });
 
   it('textEdit reads the committed scene', () => {

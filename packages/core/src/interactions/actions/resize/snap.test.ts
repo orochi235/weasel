@@ -71,7 +71,6 @@ function rig(sources: readonly SnapSource[], poses: readonly Pose[], extra: Reco
   const ids = poses.map((pose) => scene.add({ kind: 'leaf', layer: 'main', data: {}, pose }) as string);
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => sceneSession2d({ req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store }),
   };
   const deps = { scene, selection: { get: () => [ids[0]], set: () => {} } as unknown as SelectionApi, snap, ...extra };

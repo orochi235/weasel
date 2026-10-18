@@ -40,7 +40,6 @@ import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
-import { usePathSnapper } from './SceneCanvas/usePathSnapper';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
@@ -93,11 +92,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
-  const pathSnapper = usePathSnapper(scene as Scene<unknown, string, unknown>, props.toolOptions?.pathSnap);
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
+    poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts,
   });
@@ -155,7 +153,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
-        dispatcher={dispatcher} pathEdit={{ state: pathEditState, snapper: pathSnapper }}
+        dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />

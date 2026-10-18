@@ -162,7 +162,7 @@ function anchorDragSnap(
           gesture: 'point', press: press.origin, ids: [press.id],
           also: { paths: [path], anchors }, constrain: 'axis',
         };
-        session = snap?.begin?.(req) ?? inputSession(req);
+        session = snap?.begin(req) ?? inputSession(req);
       }
       return session.at(world, mods).point;
     },

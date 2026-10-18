@@ -36,7 +36,7 @@ export function pullHandle(s: PenScratch, ctx: InvocationCtx, linked: boolean): 
   const at = s.current!.anchors[s.draggingHandleAt!];
   const anchor = { x: at.x, y: at.y };
   const req: SnapBegin = { gesture: 'point', press: anchor, origin: anchor, constrain: { step: PEN_HANDLE_STEP } };
-  const session = ctx.deps.snap?.begin?.(req) ?? inputSession(req);
+  const session = ctx.deps.snap?.begin(req) ?? inputSession(req);
   return {
     to(c) {
       if (s.current === null || s.draggingHandleAt === null) return;

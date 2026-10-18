@@ -26,8 +26,6 @@ import { usePoseTransition, type PoseTransitionSeat } from '../../animation/pose
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import type { DrawnBoundsScene } from '../drawnBounds';
-import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
-import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { createSnapReadoutLayer, type SnapReadoutStyle } from 'features/snap/readoutLayer';
 
@@ -55,8 +53,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** Ids an in-flight gesture is ghosting. */
   previewIds: () => Iterable<string> | null;
   dispatcher: Dispatcher;
-  /** Whose mark the snap-marker layer draws. */
-  pathSnapper: PathSnapper;
+  /** Whether to mount the snap readout layer. */
   snapReadout: boolean;
   snapReadoutStyle?: SnapReadoutStyle;
   pathEditState: PathEditState;
@@ -81,7 +78,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** The removed nodes the seat is seeing off. */
   departures: Departures<TPose, Node<TData, TLayer, TPose>>;
 } {
-  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
+  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
 
   const baseSizes = useTargetBasePx();
   const merged = useMemo(
@@ -114,11 +111,11 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     [],
   );
 
-  const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
   const [snapStore] = useState(() => createSnapOutcomeStore());
   const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore, args.snapReadoutStyle), [snapStore, args.snapReadoutStyle]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
+  const overlayAnchor = overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay';
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
@@ -142,12 +139,11 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
-    ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: 'pathSnapMarker' } } : {}),
-    ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : 'pathSnapMarker' } } : {}),
+    ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: overlayAnchor } } : {}),
+    ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : overlayAnchor } } : {}),
   }), [
-    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
-    snapMarkerLayer, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
+    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor,
+    snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
   return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures };

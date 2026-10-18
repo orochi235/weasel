@@ -163,7 +163,6 @@ export function createSnap<TData, TLayer extends string>(
   const sources = opts.sources ?? [];
   const reachPx = opts.reachPx ?? DEFAULT_SNAP_PX;
   return {
-    point: (p) => p,
     begin: (req) => createSession3d({ req, world, sources, reachPx, store }),
   };
 }

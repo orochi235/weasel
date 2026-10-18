@@ -57,7 +57,7 @@ describe('<SceneCanvas snap>', () => {
   it('gives deps.snap.begin the sources the prop names', () => {
     const asked: string[] = [];
     const snap = mount(null, { snap: { sources: [pointAt('prop', { x: 40, y: 40 }, asked)] } });
-    const s = snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } });
+    const s = snap.begin({ gesture: 'point', press: { x: 0, y: 0 } });
     expect(s.at({ x: 38, y: 43 }, FREE).point).toEqual({ x: expect.closeTo(40, 9), y: expect.closeTo(40, 9) });
     expect(s.at({ x: 60, y: 60 }, FREE).point).toEqual({ x: 60, y: 60 });
     expect(asked).toEqual(['prop', 'prop']);
@@ -70,13 +70,13 @@ describe('<SceneCanvas snap>', () => {
       snap: { sources: [pointAt('prop', { x: 0, y: 0 }, asked)] },
       features: [preset],
     });
-    snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
+    snap.begin({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
     expect(asked).toEqual(['prop', 'preset', 'hook']);
   });
 
   it('takes its reach from the prop', () => {
     const snap = mount(null, { snap: { sources: [pointAt('prop', { x: 40, y: 40 }, [])], reachPx: 2 } });
-    const s = snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } });
+    const s = snap.begin({ gesture: 'point', press: { x: 0, y: 0 } });
     expect(s.at({ x: 38, y: 43 }, FREE).point).toEqual({ x: 38, y: 43 });
   });
 
@@ -88,14 +88,14 @@ describe('<SceneCanvas snap>', () => {
       return pointAt('shared', { x: 0, y: 0 }, []).collect(q);
     } };
     const snap = mount(<Contribute source={hook} />, { features: [preset] });
-    snap.begin!({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
+    snap.begin({ gesture: 'point', press: { x: 0, y: 0 } }).at({ x: 1, y: 1 }, FREE);
     expect(asked).toEqual(['hook']);
   });
 
   describe('default sources', () => {
     const DEG = Math.PI / 180;
     const rotate = (snap: SnapDep) =>
-      snap.begin!({ gesture: 'rotate', press: { x: 100, y: 0 }, pivot: { x: 0, y: 0 } });
+      snap.begin({ gesture: 'rotate', press: { x: 100, y: 0 }, pivot: { x: 0, y: 0 } });
     const fortyFive: SnapSource = {
       id: 'rotation', roles: [], gestures: ['rotate'], collect: () => [],
       *angles() { yield { angle: 45 * DEG }; },
@@ -107,7 +107,7 @@ describe('<SceneCanvas snap>', () => {
 
     it("lands a pen click on another path's anchor within 8px, unless `omit` names 'path-snap'", () => {
       const click = (props: Record<string, unknown>) => mount(null, props, ['M0 0 L100 100'])
-        .begin!({ gesture: 'point', press: { x: 103, y: 96 } }).at({ x: 103, y: 96 }, FREE).point;
+        .begin({ gesture: 'point', press: { x: 103, y: 96 } }).at({ x: 103, y: 96 }, FREE).point;
       expect(click({})).toEqual({ x: expect.closeTo(100, 9), y: expect.closeTo(100, 9) });
       expect(click({ snap: { omit: ['path-snap'] } })).toEqual({ x: 103, y: 96 });
     });

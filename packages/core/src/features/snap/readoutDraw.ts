@@ -4,7 +4,7 @@
  */
 import { PATH_L, PATH_M, pathFromD, rectPath, type PolygonPath, type PathSnapKind } from '@weasel-js/geom';
 import { textCommand, textCommandFromRuns, type CommandStroke, type DrawCommand } from '@weasel-js/renderer';
-import { pathSnapGlyph } from 'features/paths/pathSnap/pathSnapMarkerLayer';
+import { pathSnapGlyph } from 'features/paths/pathSnap/glyphs';
 
 const PILL_FONT = { fontSize: 10 };
 // No text measurer in a layer: a 10px digit advances about 6px.

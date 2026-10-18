@@ -160,7 +160,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: numbe
     constrain: 'aspect',
     box: { bounds: outsetBox(box.bounds, box.extents), toWorld: (p) => localToWorld(frame, p.x, p.y) },
   };
-  return ctx.deps.snap?.begin?.(req) ?? inputSession(req);
+  return ctx.deps.snap?.begin(req) ?? inputSession(req);
 }
 
 /** Capture a resize at press. Null when nothing is selected, the press is not

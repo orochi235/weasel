@@ -166,7 +166,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: numbe
   const req: SnapBegin = {
     gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: SNAP_ANGLE_STEP },
   };
-  return ctx.deps.snap?.begin?.(req) ?? inputSession(req);
+  return ctx.deps.snap?.begin(req) ?? inputSession(req);
 }
 
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each

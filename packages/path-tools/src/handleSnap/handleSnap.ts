@@ -83,7 +83,7 @@ export function createHandleSnapExtension(options: HandleSnapOptionsInput = {}):
       if (!pressed || !handle) return null;
       const anchor = { x: pressed.x, y: pressed.y };
       const other = start.part === 'controlIn' ? pressed.outHandle : pressed.inHandle;
-      const session: SnapSession | undefined = start.snap?.begin?.({
+      const session: SnapSession | undefined = start.snap?.begin({
         gesture: 'handle',
         press: { x: handle.x, y: handle.y },
         pivot: anchor,

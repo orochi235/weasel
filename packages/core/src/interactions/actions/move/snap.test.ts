@@ -52,7 +52,6 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
   const ids = build(scene);
   const store = createSnapOutcomeStore();
   const snap: SnapDep = {
-    point: (p) => p,
     begin: (req) => sceneSession2d({
       req, scene, boxes: drawnBoxes({ scene }), sources, view: () => VIEW, reachPx: 8, store,
       geometryAt: (press, own) => ownGeometryAt(scene, press, own, VIEW.scale),

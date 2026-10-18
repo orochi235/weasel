@@ -23,7 +23,7 @@ import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 
 export type { EditAnchorsDep, FinishedEditFrame };
-export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
+export type { SnapDep, SnapGeometry } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
 export interface ViewApi {
