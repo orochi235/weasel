@@ -52,7 +52,12 @@ const cells = (phase: string): Array<[string, Partial<Cell>]> => {
       ['flush, 4/task timeout', { sync: 'flush', perTask: 4, yieldBy: 'timeout' }],
     ];
     case 'discard': return [['rasterizer discard', { discard: true }]];
-    case 'timer': return [['timer 1/task message', { gpuTimer: true, perTask: 1 }], ['timer all in one task', { gpuTimer: true }]];
+    case 'timer': return [
+      ['timer 1/task timeout', { gpuTimer: true, perTask: 1, yieldBy: 'timeout' }],
+      ['timer 1/task message', { gpuTimer: true, perTask: 1 }],
+      ['timer all in one task', { gpuTimer: true }],
+      ['timer spin 8 ms', { gpuTimer: true, spinMs: 8 }],
+    ];
     default: return [];
   }
 };
