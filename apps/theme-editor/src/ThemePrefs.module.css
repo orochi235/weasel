@@ -1,0 +1,19 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
+  gap: var(--wzl-space-6);
+  flex: 1;
+  min-height: 0;
+  padding: var(--wzl-space-4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.preview {
+  overflow: auto;
+  min-height: 0;
+}

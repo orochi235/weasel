@@ -19,6 +19,7 @@ import {
   isPrefLeaf,
   pairRuns,
   prefAliasTargets,
+  prefHeadingKey,
   prefSectionLeaves,
   type PrefAlias,
   type PrefAliasTargets,
@@ -81,6 +82,8 @@ export interface PanelSection {
   lead?: PrefBarLead;
   /** The glyph naming it, which a bar can start its line with. */
   icon?: IconRef;
+  /** The key of the leaf drawn in its heading, which stays among `rows` until it is drawn there. */
+  heading?: string;
   rows: PanelRow[];
 }
 
@@ -120,7 +123,8 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
       untitled.push(shown(key, child));
     } else {
       const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
-      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), rows: pairRows(leaves) });
+      const heading = prefHeadingKey(child);
+      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(heading ? { heading } : {}), rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {

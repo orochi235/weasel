@@ -758,27 +758,23 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   snaps are a different case and stay as they are: they place the point the pointer defines, before
   the node has a stroke to measure.
 
-- **(P3) `PrefsRail`'s scroll-to-section browser test fails now and then.** "leaves a nested page
-  off the page that holds it and scrolls to a section that follows it"
-  (`packages/ui/src/components/Prefs/PrefsRail.marks.browser.test.tsx:91`) failed once on a fleet
-  run of 2026-10-14 and passed on the run before it, with no `packages/ui` change between: the
-  rail marked `canvas.grid` current where the test expects `canvas.rulers`. A guess, not
-  confirmed: the section is polled into view and the marks are then read once, so a scroll spy
-  that settles a frame later would still name the section above.
-
-- **(P3) Nobody has seen a theme's prefs schema in a form.** `themePrefsSchema`
-  (`@weasel-js/theme/prefs`) is tested as data and through a store, and no page draws it in
-  `PrefsForm` yet: a page in the rail per token group, and most color rows split by mode.
-  `apps/theme-editor` edits definitions through its own panels and is the place it would go.
-  Nothing drives `applyTheme`'s `weights` from an animator either, which is the same gap as the
-  selector weights under "What the split rows in `PrefsForm` left".
+- **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
+  (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page
+  (`ThemePrefs.tsx`, "Theme prefs" in the lab menu): a rail page per token group, a color that
+  differs by mode split into a member per mode, and a preview of the pinned theme beside it. Built
+  and tested in jsdom, not yet looked at in a browser. Nothing drives `applyTheme`'s `weights` from
+  an animator either, which is the same gap as the selector weights under "What the split rows in
+  `PrefsForm` left".
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
-  heading and in a bar cell are tested in jsdom and were never seen. `list`, `map`, `union`,
-  hidden, and alias rows open to their members through the same path as the kinds that have a
-  test, and have none of their own. A row that can be split is a group and no `<label>`, so an
-  app renderer's control on such a leaf has to name itself. Nothing animates a selector's weights
-  yet: `store.get(path, { weights })` is there for an animator target to drive.
+  heading and in a bar cell are tested in jsdom and were never seen. A row that can be split is a
+  group and no `<label>`, so an app renderer's control on such a leaf has to name itself: the
+  toggle that opens the row is a button on the label line, and a `<label>` would hand its name and
+  every click on the label's text to that button. Undecided, and a look to settle in a browser:
+  move the toggle out of the label line so the row can stay a `<label>`, or keep it there and
+  leave naming to the renderer (`ctx.pref.name`), as a `group` renderer already does. Nothing
+  animates a selector's weights yet: `store.get(path, { weights })` is there for an animator
+  target to drive.
 
 - **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
   `plain` `Badge`, when the line cannot hold the last word and the control together, the control
@@ -798,11 +794,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
   file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
 
-- **(P3) `PropertyField` draws its unit from its own `unit` prop, not through `QuantityText`.**
-  `Slider`'s readouts, `BandEditor`'s ticks and ends, and `Transport`'s rate draw through
-  `QuantityText`, which dims a unit, a percent sign, and a label. `PropertyField`'s suffix is still a
-  `ReactNode` it is handed beside an editable number, so it follows none of that. `QuantityText`
-  draws no kind's MathML form.
+- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
+  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
+  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -882,11 +876,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
 
-- **(P3) A standalone `Bar` opens a group as labeled rows whatever its `as`.** A bar in a
-  `PrefsForm` opens a `page`, `tab`, or `panel` group in the form's own drawing of it; `Bar` draws
-  `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
-  dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
-  Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
+- **(P3) Nobody has looked at what a standalone `Bar` opens in a browser.** A group a `Bar` opens
+  draws its nested groups through the form's pane (`paneChildren`, with `WalkCtx.leaves` handing
+  each leaf back to the bar's own rows and cells), so tabs, panels, sections, and fragments draw as
+  a `PrefsForm` draws them; jsdom only. A `heading` leaf there stays a row, since the bar's rows
+  read an absent value as unset and a heading's control would read it as the default. Nobody has
+  looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
 - **(P3) An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
@@ -904,12 +899,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
   and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
 
-- **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
-  `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
-  (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
-  inside it would inherit, so it needs a title row of its own before it can hold one. Nobody has
-  looked at the control in `PrefsForm`'s headings in a browser: the sticky section heading's
-  `scroll-margin-top` assumes one line of text.
+- **(P3) Nobody has looked at a `heading` leaf's control in a browser.** `PrefsForm`, labkit's
+  `ControlPanel`, and `SelectionPanel` each draw a leaf marked `heading` in the heading of the group
+  or section holding it (`prefHeadingKey`); `SelectionPanel` sets it in a title row beside its
+  dimmed title. `PrefsForm`'s sticky section heading's `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -941,15 +934,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`flatten` in `model.ts`), so a nested `tab` or `panel` loses its `as` while the object leaf
   beside it honors nesting; an empty tab section is left out of the run in `objectRows`, a hidden
   one in labkit, and `PrefsPane` has no emptiness check.
-
-- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns.**
-  `packages/labkit/examples/schema-lab/prefsToFields.ts` turns each leaf of a property schema into
-  a `ConfigField` by hand, and a `field` leaf becomes free text there. `ControlPanel`'s `fields`
-  prop is marked deprecated in favor of `schema`: pass the schema, which goes through
-  `prefFieldProps`, and delete the file. Not a drop-in today: an instrument's `config` takes
-  labkit's own `ConfigSchema` (`packages/labkit/src/config/types.ts`), and nothing turns a
-  `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the example first needs a
-  way for an instrument to declare its config as a pref schema.
 
 ### WeaselDraw app follow-ups (defer)
 

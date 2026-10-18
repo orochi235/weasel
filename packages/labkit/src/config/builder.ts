@@ -12,6 +12,7 @@ import {
   SeparatorNode,
   UnionNode,
 } from './compound';
+import { configFromPrefs } from './fromPrefs';
 import type {
   Annotations,
   BranchAnnotations,
@@ -305,6 +306,9 @@ export const f = {
     def: T,
     validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[],
   ): CustomNode<T> => new CustomNode(kind, def, {}, validate ? { validate } : {}),
+
+  /** A property schema (`PrefSection`) as an instrument's config: see {@link configFromPrefs}. */
+  prefs: configFromPrefs,
 
   /** Collect leaves and groups into an instrument's config. */
   schema<S extends ConfigShape>(nodes: S): ConfigSchema<InferConfig<S>> {

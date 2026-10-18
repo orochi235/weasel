@@ -20,13 +20,14 @@ export interface GroupHeading {
 /**
  * The leaf of `group` marked `heading`, lifted out of its rows into the
  * heading. It stays a row where the form has its own renderer for its kind,
- * whose control the form knows nothing of the size of.
+ * whose control the form knows nothing of the size of, and where the surface
+ * draws its own leaves.
  */
 export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): GroupHeading {
   const entries = Object.entries(group.children);
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : group.children[key];
-  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind]) {
+  if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind] || ctx.leaves) {
     return { className: undefined, control: null, entries };
   }
   const own = path === '' ? key : `${path}.${key}`;

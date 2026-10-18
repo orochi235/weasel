@@ -11,6 +11,7 @@ import {
   type PrefUnion,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
+import type { BarCell, BarLeafNode } from '../Bar/BarLayout';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton, PrefActionRows } from './PrefActionButton';
 import { prefDrawsActionRow } from './registeredActions';
@@ -117,6 +118,12 @@ export interface WalkCtx {
   settles?: Readonly<Record<LiveControl, boolean>>;
   /** What the form was given to split values with, and which rows are open. */
   split?: SplitCtx;
+  /** A surface that draws its leaves itself and its groups as the form does: a standalone `Bar`'s opened
+   *  group. A leaf's row and a nested bar's cells are its, and a `heading` leaf stays a row. */
+  leaves?: {
+    row: (node: BarLeafNode) => ReactNode;
+    cells: (leaves: readonly BarLeafNode[]) => BarCell[];
+  };
 }
 
 /**
@@ -131,6 +138,7 @@ export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: 
 
 /** A leaf's row. `at` says `pref` is already the leaf an alias at `path` shows, and where its value lives. */
 export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  if (ctx.leaves) return ctx.leaves.row(at === undefined ? { path, leaf: pref } : { path, leaf: pref, at });
   const shown = at === undefined ? shownLeaf(ctx, pref) : { pref, at };
   if (shown) return <LeafRow ctx={ctx} path={path} pref={shown.pref} at={shown.at} />;
   const alias = pref as PrefAlias;

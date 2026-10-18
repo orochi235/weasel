@@ -116,20 +116,6 @@
   block-size: 1px;
 }
 
-/* A nested group inside a group a bar opened. */
-.opened {
-  grid-column: 1 / -1;
-}
-
-.openedTitle {
-  margin: var(--wzl-space-3) 0 var(--wzl-space-2);
-  font-size: var(--wzl-font-size-xs);
-  font-weight: var(--wzl-font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--wzl-fg-muted);
-}
-
 /* One field on a bar's line. `flex: none` keeps the bar from squeezing it:
    a bar too long for its room scrolls. */
 .field {

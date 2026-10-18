@@ -67,3 +67,11 @@ it('draws only the HTML form when muted, for a control that speaks the value its
   expect(spoken).toBeUndefined();
   expect(form.hasAttribute('aria-hidden')).toBe(false);
 });
+
+it('draws a unit alone as the unit part of a quantity, for one shown beside a field holding the number', () => {
+  const { container } = render(<QuantityText unit="px" />);
+  const part = container.querySelector('[data-part="unit"]');
+  expect(part?.textContent).toBe('px');
+  expect(container.textContent).toBe('px');
+  expect(container.querySelector('data')).toBeNull();
+});
