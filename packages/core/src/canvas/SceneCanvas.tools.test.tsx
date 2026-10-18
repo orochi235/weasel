@@ -7,6 +7,7 @@ import { asNodeId } from 'core/scene/types';
 import { useTools } from '../tools/overlayBinding';
 import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
+import { STICKY_DEFAULTS } from '../tools/builtin/sticky/stickyNode';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -296,7 +297,7 @@ describe('SceneCanvas tools prop patch form', () => {
     render(<Harness />);
     expect(Object.keys(captured!.registry)).toEqual(['select', 'sticky']);
     const click = captured!.registry.sticky.bindings!.find((b) => b.actionId === 'place');
-    expect(click?.opts?.params).toEqual({ kind: 'sticky', padding: 4, size });
+    expect(click?.opts?.params).toEqual({ kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, padding: 4, size });
   });
 
   it('{ pen: false } omits a bundled tool', () => {
