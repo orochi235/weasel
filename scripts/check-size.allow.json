@@ -19,8 +19,7 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "lines": 407,
-    "longestFunction": 262
+    "longestFunction": 251
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
     "lines": 603
@@ -120,7 +119,7 @@
     "longestFunction": 188
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 230
+    "longestFunction": 229
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 235

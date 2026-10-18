@@ -160,10 +160,11 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
-  and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
-  the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
-  under its aim, and a resolver that descends rather than picking one rect.
+- **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
+  aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
+  but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
+  the canvas's selection where the panel owns one. Its view would need to follow the view under its
+  aim the way a `parent` does, without being measured from or cut to that view's rect.
 
 ---
 
