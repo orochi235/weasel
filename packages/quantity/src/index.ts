@@ -141,3 +141,4 @@ export {
   type RangeOptions,
   type VectorOptions,
 } from './composite';
+export { clampToBounds, snapToStep, spinKey, type SpinBounds } from './spin';
