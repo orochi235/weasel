@@ -3,11 +3,10 @@
  * to it, guide lines and alignment to sibling edges, and the layout strategies
  * a container arranges its children with.
  *
- * `snapToGrid` and `snapToGuides` exist for move, resize and insert with
- * different shapes, so they are imported from a per-action subpath:
+ * `snapToGrid` and `snapToGuides` exist for move and resize with different
+ * shapes, so they are imported from a per-action subpath:
  *   import { snapToGrid } from '@weasel-js/guides/move';
  *   import { snapToGrid, pointSnapToGrid } from '@weasel-js/guides/resize';
- *   import { snapToGrid } from '@weasel-js/guides/insert';
  */
 
 // ─── Grid: the visible lattice, its hover cell, and snapping to it ──────────

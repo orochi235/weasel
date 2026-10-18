@@ -45,12 +45,6 @@ export interface UseDragRectOptions<TScratch = unknown> {
   onCancel?: (ctx: DragRectCtx<TScratch>) => void;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
-  /** Optional: snap world-space points to the active grid (or any other
-   *  snap target). Applied to every coord the gesture ingests (start point
-   *  on `onStart`, current point on `onMove`), so both the live overlay
-   *  and the committed bounds track the snapped values. When omitted,
-   *  behavior is identical to today (identity passthrough). */
-  snapPoint?: (p: DragRectPoint) => DragRectPoint;
 }
 
 /** Drives a rectangle drag and publishes the live box for overlay drawing. */
@@ -133,8 +127,7 @@ export function useDragRect<TScratch = unknown>(
     },
     onStart: (ctx) => {
       const opts = optsRef.current;
-      const raw: DragRectPoint = { x: ctx.start.worldX, y: ctx.start.worldY };
-      const p: DragRectPoint = opts.snapPoint ? opts.snapPoint(raw) : raw;
+      const p: DragRectPoint = { x: ctx.start.worldX, y: ctx.start.worldY };
       dlog('drag-rect', 'start', p);
       ctx.scratch.start = p;
       ctx.scratch.current = p;
@@ -145,8 +138,7 @@ export function useDragRect<TScratch = unknown>(
     },
     onMove: (ctx) => {
       const opts = optsRef.current;
-      const raw: DragRectPoint = { x: ctx.current.worldX, y: ctx.current.worldY };
-      ctx.scratch.current = opts.snapPoint ? opts.snapPoint(raw) : raw;
+      ctx.scratch.current = { x: ctx.current.worldX, y: ctx.current.worldY };
       ctx.scratch.modifiers = ctx.modifiers;
       writeOverlay();
       opts.onMove?.(buildConsumerCtx());

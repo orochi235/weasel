@@ -21,10 +21,6 @@
       "import": "./dist/resize.js",
       "types": "./dist/resize.d.ts"
     },
-    "./insert": {
-      "import": "./dist/insert.js",
-      "types": "./dist/insert.d.ts"
-    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {

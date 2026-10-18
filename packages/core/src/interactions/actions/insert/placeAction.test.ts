@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
+import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { insertAction } from './action';
 import { placeAction } from './placeAction';
@@ -60,7 +62,7 @@ describe('placeAction', () => {
 
   it('snaps the center through the snap dep', () => {
     const insert = makeInsertDep();
-    const snap: SnapDep = { point: (p) => ({ x: Math.round(p.x / 25) * 25, y: Math.round(p.y / 25) * 25 }) };
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
     click({ kind: 'sticky', size: { width: 40, height: 20 } }, { insert, snap }, { x: 103, y: 48 });
     expect(insert.calls[0].bounds).toEqual({ x: 80, y: 40, width: 40, height: 20 });
   });

@@ -11,7 +11,8 @@ const CLICK_FIELDS = ['worldX', 'worldY', 'pressX', 'pressY', 'affordance'] as c
 /**
  * Click-to-insert: the companion to `insertAction` for a click, which draws
  * no box. It commits a node of `params.kind` at `params.size`, centered on the
- * click, through the same `insert` dep a drag commits through. The rest of the
+ * click, snapped through a `point` session of the `snap` dep, and commits
+ * through the same `insert` dep a drag commits through. The rest of the
  * binding's params are the insert's extras, as a drag's are.
  *
  * A `minSize` in the params floors the size, and goes on to the node.
@@ -40,8 +41,9 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       if (!(size.width > 0 && size.height > 0)) return;
 
       deps.selection?.clear();
-      const at = deps.snap ? deps.snap.point({ x, y }) : { x, y };
-      deps.snap?.release?.();
+      const snap = deps.snap?.begin?.({ gesture: 'point', press: { x, y } });
+      const at = snap ? snap.at({ x, y }, { suspend: false, constrain: false }).point : { x, y };
+      snap?.end();
       const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };

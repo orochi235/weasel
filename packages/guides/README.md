@@ -38,14 +38,12 @@ const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: 
 />;
 ```
 
-`snapToGrid` and `snapToGuides` exist for move, resize and insert, and each
-has the shape its action expects, so they are imported from a per-action
-subpath:
+`snapToGrid` and `snapToGuides` exist for move and resize, and each has the
+shape its action expects, so they are imported from a per-action subpath:
 
 ```ts
 import { snapToGrid } from '@weasel-js/guides/move';
 import { snapToGrid, pointSnapToGrid } from '@weasel-js/guides/resize';
-import { snapToGrid } from '@weasel-js/guides/insert';
 ```
 
 | Area | Exports |

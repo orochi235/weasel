@@ -1,4 +1,4 @@
-import type { Action, InvocationCtx, NodeId, OngoingHandle } from '@weasel-js/core';
+import { SNAP_ROLES, snapMods, type Action, type InvocationCtx, type NodeId, type OngoingHandle } from '@weasel-js/core';
 import type { SymmetryChange, SymmetryController } from './controller';
 import type { SymmetryHandlePress } from './guide';
 import type { Point } from '@weasel-js/geom';
@@ -6,7 +6,7 @@ import type { Point } from '@weasel-js/geom';
 /** The id of the action that drags a guide handle. */
 export const SYMMETRY_HANDLE_ACTION_ID = 'symmetry.dragHandle';
 
-/** Shift holds an axis to steps of this many radians. */
+/** `snap.constrain` (Shift) holds an axis to steps of this many radians. */
 const ANGLE_STEP = Math.PI / 12;
 
 /** The change one frame of a handle drag makes, from where the press began. */
@@ -31,15 +31,16 @@ export function handleChange(
 
 /**
  * Drag a handle of the active group's guide: the center moves the group's
- * center, through the `snap` dep when there is one; the knob turns the axis;
- * a repeat's step handle sets both its direction and its spacing. Shift holds
- * the angle to 15° steps. The drag lands as one undo step, and cancel puts
- * the group back.
+ * center, through a `point` session of the `snap` dep when there is one; the
+ * knob turns the axis; a repeat's step handle sets both its direction and its
+ * spacing. `snap.constrain` (Shift) holds the angle to 15° steps. The drag
+ * lands as one undo step, and cancel puts the group back.
  */
 export function handleDragAction(ctrl: SymmetryController): Action & { requires: string[] } {
   return {
     id: SYMMETRY_HANDLE_ACTION_ID,
     label: 'Move symmetry guide',
+    modifierRoles: SNAP_ROLES,
     requires: ['snap'],
     invoker: {
       timing: 'ongoing',
@@ -49,20 +50,27 @@ export function handleDragAction(ctrl: SymmetryController): Action & { requires:
         const id = press.group as NodeId;
         const origin = ctrl.read(id);
         if (!origin) return {};
-        const snapDep = ctx.deps.snap;
-        const snap = (p: Point) => (snapDep ? snapDep.point(p) : p);
+        const session = press.handle === 'center'
+          ? ctx.deps.snap?.begin?.({ gesture: 'point', press: origin.center }) ?? null
+          : null;
         const from = { x: ctx.world.x, y: ctx.world.y };
         let last: SymmetryChange | null = null;
         const back: SymmetryChange = { spec: origin.spec, center: origin.center };
         return {
           kind: 'symmetry-guide',
           onMove(move: InvocationCtx): void {
-            last = handleChange(press, origin, from, move.world, move.modifiers.shift, snap);
+            const mods = snapMods(move);
+            const snap = (p: Point) => (session ? session.at(p, mods).point : p);
+            last = handleChange(press, origin, from, move.world, mods.constrain, snap);
             ctrl.preview(id, last);
           },
           onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
-            ctrl.preview(id, back);
-            if (reason === 'commit' && last) ctrl.update(id, last, 'Move symmetry guide');
+            try {
+              ctrl.preview(id, back);
+              if (reason === 'commit' && last) ctrl.update(id, last, 'Move symmetry guide');
+            } finally {
+              session?.end();
+            }
           },
         };
       },

@@ -39,23 +39,21 @@ export interface BuiltinToolOptions {
   insert?: InsertToolOptions;
   /** Snap world-space points to the active grid (or any other snap target).
    *
-   *  Registered as the `snap` dep, which `insertAction` applies to the
-   *  drag start and current point — so the live preview and the committed
-   *  geometry agree — and which the pen tool reads for its own anchor
-   *  placement. Covers every drag-to-insert tool (rect / ellipse / line /
-   *  polygon / star / text); freehand pencil samples are deliberately left
-   *  unsnapped. A path target in range (`pathSnap`) wins over it. */
+   *  Read through the `snap` dep's `point` by the pen tool, for its own
+   *  anchor placement. Drag-to-insert, measure and the symmetry center snap
+   *  through the dep's sessions instead, which ask `<SceneCanvas snap>`'s
+   *  sources. A path target in range (`pathSnap`) wins over it. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** Snap to the geometry of the scene's paths: crossings, tangent and
    *  perpendicular points from where the line being drawn starts, segment
    *  midpoints, curve extremes and quadrant points, and the nearest point on
-   *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
-   *  a move's base point and to a dragged anchor. Absent, off. */
+   *  a stroke. Applies to the pen as `snapPoint` does, and also to a dragged
+   *  anchor. Absent, off. */
   pathSnap?: PathSnapOptions;
   /** Points to lock to that are in no path — a measurement's ends, say
    *  (`nearestMeasureEnd`): the nearest within reach of `p`, or null. They
-   *  apply wherever a path target does, a move and an anchor drag included,
-   *  and a path target in range wins over them. `at` is the asking gesture's
+   *  apply wherever a path target does, and a path target in range wins
+   *  over them. `at` is the asking gesture's
    *  query; its `exclude` names what that gesture is moving. */
   snapTargets?: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number } | null;
   /** The look of the notes the sticky tool makes: paper, ink, padding,

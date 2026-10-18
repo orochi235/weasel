@@ -1,15 +1,22 @@
 import type { BindingOpts, DragSample, InvocationCtx } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
+import { snapMods } from 'features/snap/roles';
+import { spanSnap, type SpanSnap } from 'features/snap/spanSnap';
 import { pointerStateOf } from '../pointerState';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
-import type { InsertDep, SnapQuery, TextEditDep } from '../depSchema';
+import type { InsertDep, TextEditDep } from '../depSchema';
+import { insertKind } from './shape';
 
 /** The key an insert's single gesture point rides under in the behaviors'
  *  `draggedIds` / `origin` / `current` — insert has no node id yet. */
 export const GESTURE_KEY = 'gesture';
+
+/** The angle step `snap.constrain` (Shift) holds a line to: 15 degrees. */
+const LINE_ANGLE_STEP = Math.PI / 12;
 
 /** What an insert captured at press. Nothing here changes during the drag.
  *  The deps are captured because the dispatcher builds the deps bag once, on
@@ -18,14 +25,10 @@ export interface InsertSession {
   readonly dep: InsertDep;
   /** For the text kind's drop-into-the-caret step. */
   readonly textEdit: TextEditDep | undefined;
-  /** World-space point snapper from the `snap` dep, or identity when the
-   *  dep isn't registered. Applied to the drag's start and current point so
-   *  the live preview and the committed geometry agree. Freehand pencil
-   *  samples are deliberately NOT snapped — a grid-quantized freehand trail
-   *  is a staircase, not a stroke. */
-  readonly snap: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number };
-  /** Drops the mark the last snap left; called once the drag ends. */
-  readonly releaseSnap: () => void;
+  /** Snaps the drag's start and current point, so the live preview and the
+   *  committed geometry agree. Freehand pencil samples are deliberately NOT
+   *  snapped — a grid-quantized freehand trail is a staircase, not a stroke. */
+  readonly snap: SpanSnap;
   /** The active binding's opts — re-resolved on every read so thunked
    *  params see the latest tool state (e.g. polygon `sides` after ArrowUp). */
   readonly opts: BindingOpts | undefined;
@@ -53,9 +56,7 @@ export interface InsertFrame {
    *  pressing or releasing it mid-drag flips the preview and the commit
    *  without the dispatcher re-routing to another binding. */
   readonly altHeld: boolean;
-  /** Shift constrains the `line` kind to 15° increments. */
-  readonly shiftHeld: boolean;
-  /** The endpoints after Shift-constrain, the `snap` dep, and the behaviors. */
+  /** The endpoints after the snap session and the behaviors. */
   readonly shaped: { start: InsertPoint; current: InsertPoint };
 }
 
@@ -80,13 +81,11 @@ export function beginInsert(
     selection.clear();
   }
 
-  const snapDep = ctx.deps.snap;
-  const snap = snapDep
-    ? (p: { x: number; y: number }, at?: SnapQuery) => snapDep.point(p, at)
-    : (p: { x: number; y: number }) => p;
+  const snap = spanSnap(ctx.deps.snap, () =>
+    insertKind(resolveParams(opts?.params)) === 'line' ? { step: LINE_ANGLE_STEP } : undefined);
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
   const readers = gestureReaders(ctx.deps);
-  const origin = snap({ x: ctx.world.x, y: ctx.world.y });
+  const origin = snap.start({ x: ctx.world.x, y: ctx.world.y }, snapMods(ctx)).point;
   const gestureCtx: GestureContext<unknown> = {
     draggedIds: [GESTURE_KEY],
     origin: new Map<string, unknown>([[GESTURE_KEY, origin]]),
@@ -103,12 +102,12 @@ export function beginInsert(
   };
   for (const b of behaviors) b.onStart?.(gestureCtx);
   const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;
+  snap.anchor(startPoint);
 
   const session: InsertSession = {
     dep,
     textEdit: ctx.deps.textEdit,
     snap,
-    releaseSnap: () => snapDep?.release?.(),
     opts,
     priorSelection,
     behaviors,
@@ -121,7 +120,6 @@ export function beginInsert(
     pointer: { x: ctx.world.x, y: ctx.world.y },
     points: ctx.drag?.points ?? null,
     altHeld: ctx.modifiers.alt,
-    shiftHeld: ctx.modifiers.shift,
     shaped: { start: startPoint, current: startPoint },
   };
   return { session, readers, frame };

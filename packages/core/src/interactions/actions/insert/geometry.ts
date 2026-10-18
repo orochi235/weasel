@@ -35,29 +35,3 @@ export function computeBounds(
     height: Math.abs(currentY - startY),
   };
 }
-
-/** Constrain `end` to the nearest multiple of `step` radians around `start`,
- *  preserving the drag length. A `step` of zero or less leaves `end` alone. */
-export function snapToAngleStep(
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-  step: number,
-): { x: number; y: number } {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const len = Math.hypot(dx, dy);
-  if (len === 0 || !(step > 0)) return end;
-  const snapped = Math.round(Math.atan2(dy, dx) / step) * step;
-  return { x: start.x + len * Math.cos(snapped), y: start.y + len * Math.sin(snapped) };
-}
-
-/** The angle step Shift holds a line or a measurement to: 15°. */
-export const SHIFT_ANGLE_STEP = Math.PI / 12;
-
-/** {@link snapToAngleStep} at 15°, the line tool's documented Shift behavior. */
-export function snapTo15Degrees(
-  start: { x: number; y: number },
-  end: { x: number; y: number },
-): { x: number; y: number } {
-  return snapToAngleStep(start, end, SHIFT_ANGLE_STEP);
-}

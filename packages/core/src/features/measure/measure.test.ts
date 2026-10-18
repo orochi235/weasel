@@ -13,6 +13,7 @@ import { measureCommands } from './measureCommands';
 import { measureCreateAction, measureDragAction, measurePickAtAction } from './measureGestures';
 import { nearestMeasureEnd, type MeasureHit } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
+import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };
@@ -113,7 +114,7 @@ describe('measuring', () => {
 
   it('snaps both ends through the snap dep', () => {
     const rig = setup();
-    rig.deps['snap'] = { point: (p: Pt) => ({ x: Math.round(p.x / 10) * 10, y: Math.round(p.y / 10) * 10 }) };
+    rig.deps['snap'] = sessionDep(rig.scene as unknown as AnyScene, [gridSource(10)]);
     rig.measure({ x: 2, y: 3 }, { x: 28, y: 41 });
     expect(rig.ends(rig.ids()[0]!)).toEqual({ start: { x: 0, y: 0 }, end: { x: 30, y: 40 } });
   });
@@ -230,7 +231,7 @@ describe('editing a measurement', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 50, y: 0 });
     const [id] = rig.ids();
-    rig.deps['snap'] = { point: (p: Pt) => ({ x: Math.round(p.x / 10) * 10, y: Math.round(p.y / 10) * 10 }) };
+    rig.deps['snap'] = sessionDep(rig.scene as unknown as AnyScene, [gridSource(10)]);
     rig.drag(MEASURE_ACTION_IDS.drag, { x: 50, y: 0 }, { x: 61, y: 19 }, { affordance: onHit({ id: id!, part: 'end' }) });
     expect(rig.ends(id!)).toEqual({ start: { x: 0, y: 0 }, end: { x: 60, y: 20 } });
     expect(rig.pose(id!)).toEqual({ x: 0, y: 0, width: 60, height: 20 });
