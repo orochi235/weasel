@@ -264,6 +264,10 @@ declare module '@weasel-js/routing' {
      *  Sourced by `<SceneCanvas>` from `toolOptions.pathSnap` and
      *  `toolOptions.snapPoint`. Absent means no snapping. */
     snap?: SnapDep;
+    /** The outcome store the snap readout layer draws, for an action that
+     *  shows a mark of its own, such as an Alt-hover distance. Sourced by
+     *  `<SceneCanvas>`. */
+    snapReadout?: import('../../features/snap/readoutDep').SnapReadoutDep;
     /**
      * The canvas's debug sink.
      * Sourced by `<SceneCanvas>`; absent while its `debug` overlay is off.

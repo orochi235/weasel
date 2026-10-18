@@ -98,7 +98,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
+    previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
   });
@@ -157,7 +157,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState, snapper: pathSnapper }}
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard}
-        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources}
+        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       {props.views?.map((v, i) => <CanvasView key={v.id} {...v} order={v.order ?? i} />)}
       {contributionEntries(tools.tools).flatMap((e) => e.views ?? []).map((v) => (

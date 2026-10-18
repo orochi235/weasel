@@ -20,9 +20,9 @@ export interface SpacingHintsOptions {
    *  setting, else `DEFAULT_GUIDE_TOLERANCE_PX`. */
   tolerance?: number;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
-   *  on, with the preset's `color`. */
-  readout?: false | Omit<DistanceReadoutOptions, 'color'>;
-  /** The color of the marks and the readout. */
+   *  on, drawn by the canvas's snap readout layer. */
+  readout?: false | DistanceReadoutOptions;
+  /** The color of the marks. */
   color?: string;
 }
 
@@ -76,7 +76,7 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
   };
 
   const contributions: SurfaceContribution[] = [marks];
-  if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, color: opts.color }));
+  if (opts.readout !== false) contributions.push(distanceReadout(opts.readout));
 
   return { id, moveBehaviors, contributions };
 }

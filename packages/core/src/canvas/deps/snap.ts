@@ -29,6 +29,7 @@ import { buildProbes, subjectBox } from 'features/snap/probes2d';
 import type { SnapSourceRegistry } from 'features/snap/registry';
 import { sceneProbeReads } from 'features/snap/sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from 'features/snap/session2d';
+import type { SnapReadoutDep } from 'features/snap/readoutDep';
 import type { SnapSource } from 'features/snap/types';
 
 type Point = { x: number; y: number };
@@ -61,11 +62,17 @@ export function useSnapDepSource(
   sources: SnapSources,
   viewRef: React.RefObject<View | null>,
   session?: SnapSessionSources,
+  /** The canvas's outcome store, when its readout layer is built above this
+   *  hook. Absent, the hook makes its own. */
+  given?: SnapOutcomeStore,
 ): SnapOutcomeStore {
   const ref = useLatest(sources);
   const sessionRef = useLatest(session);
   const kitSettings = useKitSettings();
-  const [store] = useState(() => createSnapOutcomeStore());
+  const [own] = useState(() => createSnapOutcomeStore());
+  const store = given ?? own;
+
+  useDepSource('snapReadout', (): SnapReadoutDep => ({ store }));
 
   useDepSource('snap', (): SnapDep => {
     // A query naming `include` asks for those nodes' geometry, which no

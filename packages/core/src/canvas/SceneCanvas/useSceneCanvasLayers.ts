@@ -1,4 +1,4 @@
-import { useMemo, useRef, type MutableRefObject } from 'react';
+import { useMemo, useRef, useState, type MutableRefObject } from 'react';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { Affordance } from 'affordances/types';
@@ -22,6 +22,8 @@ import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
+import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
+import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
@@ -47,6 +49,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   dispatcher: Dispatcher;
   /** Whose mark the snap-marker layer draws. */
   pathSnapper: PathSnapper;
+  snapReadout: boolean;
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
@@ -59,6 +62,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** The affordances the gesture mounter hit-tests, which it publishes here
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
+  /** The marks the readout layer draws; the canvas's snap dep writes them. */
+  snapStore: SnapOutcomeStore;
 } {
   const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
 
@@ -88,6 +93,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   );
 
   const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
+  const [snapStore] = useState(() => createSnapOutcomeStore());
+  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore), [snapStore]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
@@ -112,11 +119,12 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
-    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
+    ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: 'pathSnapMarker' } } : {}),
+    ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : 'pathSnapMarker' } } : {}),
   }), [
     merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
-    snapMarkerLayer, slops, slopsLayer,
+    snapMarkerLayer, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, chromeAffordancesRef };
+  return { layers, rotationBadge, chromeAffordancesRef, snapStore };
 }
