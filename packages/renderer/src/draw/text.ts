@@ -27,6 +27,7 @@ import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { DrawContext, GlyphPaintKind } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { drawColorGlyphs } from './colorGlyphs';
+import { modelScale } from './modelScale';
 import { applyClipTest } from './stencil';
 import { enterUncut, leaveUncut, flushForOwnDraw } from './clip';
 import { BATCH_MODEL, flushBatch } from './flushBatch';
@@ -51,18 +52,6 @@ import { type ScreenRect, renderPaintToScratch, bindScratchPaint } from './scrat
  * hinting the atlas has and outlines don't stopped mattering well below this.
  */
 export const OUTLINE_MIN_SCREEN_PX = 48;
-
-/**
- * Uniform scale the model matrix applies, as the geometric mean of its two
- * axis lengths, so a non-uniform scale answers with something between the
- * two. Being one glyph-size late or early only changes which of two correct
- * renderings is used.
- */
-function modelScale(m: GlMat3): number {
-  const sx = Math.hypot(m[0], m[1]);
-  const sy = Math.hypot(m[3], m[4]);
-  return Math.sqrt(sx * sy) || 1;
-}
 
 export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);

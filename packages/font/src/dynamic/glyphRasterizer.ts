@@ -61,9 +61,10 @@ export interface GlyphRasterizer {
     family: string, weight: number, style: FontStyle, codepoint: number,
   ): RasterizedGlyph;
   /** `text`, one grapheme cluster, as the color glyph the platform draws for
-   *  it, or null when it draws none: no ink, or ink in the fill color alone. */
+   *  it, or null when it draws none: no ink, or ink in the fill color alone.
+   *  Drawn at `size` px, `BAKE_SIZE` when omitted, and measured in its px. */
   rasterizeColor?(
-    family: string, weight: number, style: FontStyle, text: string,
+    family: string, weight: number, style: FontStyle, text: string, size?: number,
   ): RasterizedColorGlyph | null;
 }
 
@@ -118,17 +119,17 @@ export function createCanvasRasterizer(): GlyphRasterizer {
     ctx!.textAlign = 'left';
   }
 
-  /** `text` filled in white, as straight RGBA. No ink is a box of no size. */
-  function draw(family: string, weight: number, style: FontStyle, text: string): {
+  /** `text` filled in white at `size` px, as straight RGBA. No ink is a box of no size. */
+  function draw(family: string, weight: number, style: FontStyle, text: string, size = BAKE_SIZE): {
     data: Uint8ClampedArray; width: number; height: number; left: number; top: number; advance: number;
   } {
-    setFont(family, weight, style);
+    setFont(family, weight, style, size);
     const m = ctx!.measureText(text);
     const advance = m.width;
     const inkLeft = Math.ceil(m.actualBoundingBoxLeft ?? 0);
     const inkRight = Math.ceil(m.actualBoundingBoxRight ?? advance);
-    const inkAscent = Math.ceil(m.actualBoundingBoxAscent ?? BAKE_SIZE * 0.8);
-    const inkDescent = Math.ceil(m.actualBoundingBoxDescent ?? BAKE_SIZE * 0.2);
+    const inkAscent = Math.ceil(m.actualBoundingBoxAscent ?? size * 0.8);
+    const inkDescent = Math.ceil(m.actualBoundingBoxDescent ?? size * 0.2);
     const inkW = inkLeft + inkRight;
     const inkH = inkAscent + inkDescent;
     if (inkW <= 0 || inkH <= 0) {
@@ -139,7 +140,7 @@ export function createCanvasRasterizer(): GlyphRasterizer {
     if (canvas.width < w || canvas.height < h) {
       canvas.width = Math.max(canvas.width, w);
       canvas.height = Math.max(canvas.height, h);
-      setFont(family, weight, style); // resizing resets 2D state
+      setFont(family, weight, style, size); // resizing resets 2D state
     }
     ctx!.clearRect(0, 0, w, h);
     ctx!.fillStyle = '#fff';
@@ -168,8 +169,8 @@ export function createCanvasRasterizer(): GlyphRasterizer {
       return { ...box, alpha };
     },
 
-    rasterizeColor(family, weight, style, text) {
-      const { data, ...box } = draw(family, weight, style, text);
+    rasterizeColor(family, weight, style, text, size) {
+      const { data, ...box } = draw(family, weight, style, text, size);
       const rgba = premultipliedColor(data);
       return rgba && { ...box, rgba };
     },
