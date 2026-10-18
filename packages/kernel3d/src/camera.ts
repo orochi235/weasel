@@ -7,9 +7,11 @@
  */
 
 import {
+  add,
   lookAt,
   multiply,
   perspective,
+  scale,
   type Mat4,
   type Vec3,
 } from '@weasel-js/geom/3d';
@@ -31,8 +33,6 @@ export interface Camera3d {
 
 /** Short of vertical: at exactly ±π/2 the eye lands on the up axis and `lookAt` degenerates. */
 export const MAX_PITCH = Math.PI / 2 - 0.01;
-const MIN_DISTANCE = 0.5;
-const MAX_DISTANCE = 500;
 const UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 /** A camera with defaults for every field not given: origin target, level at
@@ -70,20 +70,95 @@ export function cameraViewProjection(camera: Camera3d, aspect: number): Mat4 {
   return multiply(perspective(camera.fov, aspect, camera.near, camera.far), cameraView(camera));
 }
 
-/** The camera turned about its target by the given radians. Pitch is clamped
- *  to ±`MAX_PITCH`; yaw is not wrapped. */
-export function orbitBy(camera: Camera3d, deltaYaw: number, deltaPitch: number): Camera3d {
-  return {
-    ...camera,
-    yaw: camera.yaw + deltaYaw,
-    pitch: Math.max(-MAX_PITCH, Math.min(MAX_PITCH, camera.pitch + deltaPitch)),
-  };
+/** How far an orbit camera may turn and travel. Distances are in world units,
+ *  so a scene measured in millimeters and one in kilometers want different ones. */
+export interface OrbitLimits {
+  minDistance: number;
+  maxDistance: number;
+  /** Radians. Held inside ±`MAX_PITCH` whatever is asked for. */
+  minPitch: number;
+  maxPitch: number;
 }
 
-/** The camera with its distance multiplied by `factor`, clamped to 0.5..500. */
-export function dollyBy(camera: Camera3d, factor: number): Camera3d {
-  return {
-    ...camera,
-    distance: Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, camera.distance * factor)),
+/** Pitch short of the poles, distance 0.5..500. */
+export const DEFAULT_ORBIT_LIMITS: OrbitLimits = {
+  minDistance: 0.5,
+  maxDistance: 500,
+  minPitch: -MAX_PITCH,
+  maxPitch: MAX_PITCH,
+};
+
+const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
+
+/** The camera with its pitch and distance inside `limits`. Returns `camera`
+ *  itself when it already holds. */
+export function clampCamera(camera: Camera3d, limits: Partial<OrbitLimits> = {}): Camera3d {
+  const l = { ...DEFAULT_ORBIT_LIMITS, ...limits };
+  const pitch = clamp(camera.pitch, Math.max(-MAX_PITCH, l.minPitch), Math.min(MAX_PITCH, l.maxPitch));
+  const distance = clamp(camera.distance, l.minDistance, l.maxDistance);
+  if (pitch === camera.pitch && distance === camera.distance) return camera;
+  return { ...camera, pitch, distance };
+}
+
+/** The camera turned about its target by the given radians, pitch held inside
+ *  `limits`. Yaw is not wrapped. */
+export function orbitBy(
+  camera: Camera3d,
+  deltaYaw: number,
+  deltaPitch: number,
+  limits?: Partial<OrbitLimits>,
+): Camera3d {
+  return clampCamera(
+    { ...camera, yaw: camera.yaw + deltaYaw, pitch: camera.pitch + deltaPitch },
+    limits,
+  );
+}
+
+/** The camera with its distance multiplied by `factor`, held inside `limits`. */
+export function dollyBy(camera: Camera3d, factor: number, limits?: Partial<OrbitLimits>): Camera3d {
+  return clampCamera({ ...camera, distance: camera.distance * factor }, limits);
+}
+
+/**
+ * The camera with its target slid across the screen plane, so the point at the
+ * target follows a pointer that moved `dx`, `dy` CSS pixels in a pane
+ * `paneHeight` pixels tall. Neither angle nor distance changes.
+ */
+export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: number): Camera3d {
+  if (!(paneHeight > 0)) return camera;
+  const perPixel = (2 * camera.distance * Math.tan(camera.fov / 2)) / paneHeight;
+  const { yaw, pitch } = camera;
+  const right: Vec3 = { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) };
+  const up: Vec3 = {
+    x: -Math.sin(yaw) * Math.sin(pitch),
+    y: Math.cos(pitch),
+    z: -Math.cos(yaw) * Math.sin(pitch),
   };
+  const shift = add(scale(right, -dx * perPixel), scale(up, dy * perPixel));
+  return { ...camera, target: add(camera.target, shift) };
+}
+
+/**
+ * `dollyBy` about a point on the pane rather than its middle: the point in the
+ * target's screen-facing plane under `at` — CSS pixels from the pane's
+ * top-left, in a pane of `pane` size — stays under it, as a 2D camera's wheel
+ * zoom keeps the point under the pointer. The target slides toward that point
+ * by as much as the distance shrank, so the next turn pivots nearer it.
+ */
+export function dollyToward(
+  camera: Camera3d,
+  factor: number,
+  at: { x: number; y: number },
+  pane: { width: number; height: number },
+  limits?: Partial<OrbitLimits>,
+): Camera3d {
+  const dollied = dollyBy(camera, factor, limits);
+  const kept = 1 - dollied.distance / camera.distance;
+  const moved = panBy(
+    camera,
+    -kept * (at.x - pane.width / 2),
+    -kept * (at.y - pane.height / 2),
+    pane.height,
+  );
+  return { ...dollied, target: moved.target };
 }

@@ -27,8 +27,11 @@ export interface EffectChartProps<TOptions = never> {
   /** The look's options. Keep the object's identity steady between renders,
    *  or the chart lays out again on each one. */
   options?: TOptions;
-  width: number;
-  height: number;
+  /** CSS pixels. Omit both to fill the parent, which then needs a size of
+   *  its own. The chart refits when its size changes, until the user pans or
+   *  zooms. */
+  width?: number;
+  height?: number;
   /** The smallest scale the chart opens at. A chart that does not fit whole
    *  at it opens at it anyway, anchored at its start, and the rest is a pan
    *  away. Default `EFFECT_MIN_SCALE`. */
@@ -38,9 +41,10 @@ export interface EffectChartProps<TOptions = never> {
   background?: Paint;
   /** A stage id, or null for none. */
   selected?: string | null;
-  /** Hears each pick: a stage's id, or `null` for empty canvas and for
-   *  anything that is not a stage, such as a group box. The canvas keeps its
-   *  own highlight on what was picked; only a change to `selected` moves it. */
+  /** Hears each pick: a stage's id, or `null` for anything else. Only a
+   *  stage can be picked: a click on a group box or a lane lands on the
+   *  canvas behind it. The canvas keeps its own highlight on the stage picked;
+   *  only a change to `selected` moves it. */
   onSelect?: (stage: string | null) => void;
   /** What `checkPipeline` found. Called once on mount, and again each time
    *  the pipeline's content changes. */
@@ -113,10 +117,15 @@ export function EffectChart<TOptions = never>({
     onProblemsRef.current?.(problems);
   }, [onProblemsRef, problems]);
 
+  const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   const built = useMemo(() => {
     const drawn = ((look ?? nodeGraph) as EffectLook<TOptions>)(pipeline, options);
-    return { specs: diagramScene(drawn.data, drawn.scene), color: drawn.color, exits: drawn.exits };
-  }, [pipeline, look, options]);
+    // Only a stage is pickable: the canvas highlights whatever it picks, and
+    // a group box or a lane picked would stay lit while `onSelect` says none.
+    const specs = diagramScene(drawn.data, drawn.scene)
+      .map((s) => (s.pickable === false || stageIds.has(s.id as string) ? s : { ...s, pickable: false }));
+    return { specs, color: drawn.color, exits: drawn.exits };
+  }, [pipeline, look, options, stageIds]);
 
   // Keyed by which stages the run missed, not by the run, so a run that only
   // changes values keeps the port layer.
@@ -136,7 +145,6 @@ export function EffectChart<TOptions = never>({
   const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);
   useReleaseReplaced(run);
 
-  const stageIds = useMemo(() => new Set(pipeline.stages.map((s) => s.id)), [pipeline]);
   return (
     <DiagramView
       key={keyOf(built)}

@@ -10,10 +10,12 @@ import {
   useLatest,
   useScene,
 } from '@weasel-js/core';
-import { bindClip, createTarget, useAnimator } from '@weasel-js/animator';
+import { bindClip, createTarget } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Paint, RectPose, Fill } from '@weasel-js/core';
 import type { Clip, SampledTrack, TimelineHandle } from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 type Lab = [number, number, number];
 
@@ -185,7 +187,9 @@ export function TimelineDemo() {
         <button className="ckd-btn" onClick={addKey}>add x keyframe</button>
       </div>
       <div className="ckd-row">
-        <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} features={[]} animator={animator} />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas className="ckd-canvas" scene={scene} features={[]} animator={animator} />
+        </DemoStage>
         <div className="ckd-panel">
           <div className="ckd-panel-title">event track</div>
           <p className="ckd-panel-note">

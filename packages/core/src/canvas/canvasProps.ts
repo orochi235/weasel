@@ -12,6 +12,7 @@ import type { DrawnBoundsScene } from './drawnBounds';
 import type { GestureSource } from './gestureBounds';
 import type { CanvasLayers } from './layerSlots';
 import type { CanvasViewState } from './useCanvasView';
+import type { SurfaceSizeProps } from './useSurfaceSize';
 import type { CanvasHelpers, ViewPoseAdapter } from './useViewHelpers';
 
 /**
@@ -19,12 +20,7 @@ import type { CanvasHelpers, ViewPoseAdapter } from './useViewHelpers';
  * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
  * kind registries, or scene-aware overlays.
  */
-export interface CanvasProps<TPose = unknown> {
-  /** CSS-pixel width. */
-  width: number;
-  /** CSS-pixel height. */
-  height: number;
-
+export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
   /** Drawing-buffer density (device pixels per CSS pixel). When omitted the
    *  canvas reads `window.devicePixelRatio` per paint. */
   dpr?: number;
@@ -101,7 +97,8 @@ export interface CanvasProps<TPose = unknown> {
   /**
    * Paint into a caller-owned canvas at a rect on it, instead of an element
    * this component creates. `x`/`y` are the rect's top-left in that canvas's
-   * CSS pixels; the rect's size is the existing `width`/`height` props.
+   * CSS pixels; the rect's size is the existing `width`/`height` props, which
+   * it requires: a pane has no element of its own to measure.
    *
    * Requires `inputElement`: with no element of its own there is nowhere for
    * pointer input, focus or the cursor to live, and nothing renders.

@@ -11,7 +11,8 @@ npm install @weasel-js/animator
 ```
 
 ```tsx
-import { createTarget, useAnimator } from '@weasel-js/animator';
+import { createTarget } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 
 const animator = useAnimator();
 let x = 0;

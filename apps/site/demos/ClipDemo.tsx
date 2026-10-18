@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { bindClip, toClip, useAnimator } from '@weasel-js/animator';
+import { bindClip, toClip } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Clip, TimelineHandle } from '@weasel-js/animator';
 import { asNodeId, SceneCanvas, sceneClipTargets, solid, useScene } from '@weasel-js/core';
 import type { RectPose, Fill } from '@weasel-js/core';
 import { AnimatedTimeline } from '@weasel-js/ui/components/Timeline';
 import s from './ClipDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 420, H = 260;
 const BOX = asNodeId('box');
@@ -80,7 +82,9 @@ export function ClipDemo() {
           className={s.code} spellCheck={false} aria-label="Clip JSON"
           value={text} onChange={(e) => setText(e.target.value)}
         />
-        <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} features={[]} animator={animator} />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas className="ckd-canvas" scene={scene} features={[]} animator={animator} />
+        </DemoStage>
       </div>
       <div className={s.editor}>{handle && <AnimatedTimeline handle={handle} />}</div>
       <div className="ckd-hint">

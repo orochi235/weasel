@@ -8,6 +8,7 @@ import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { SiteColorModeContext } from '../colorMode';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -46,6 +47,7 @@ function Demo() {
   useMenus(MENUS);
 
   const canvasRef = useRef<SceneCanvasApi>(null);
+  const size = useRef({ width: W, height: H });
   const hud = useHud();
   const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
   const host = useMenuHost();
@@ -58,22 +60,23 @@ function Demo() {
         const r = canvasRef.current?.element?.getBoundingClientRect();
         return r ? { x: x - r.left, y: y - r.top } : { x, y };
       },
-      canvasSize: () => ({ width: W, height: H }),
+      canvasSize: () => size.current,
     });
   }, [hud, host, icons]);
 
   return (
-    <SceneCanvas
-      ref={canvasRef}
-      features={['pick', 'move', 'edit', 'arrange']}
-      claimKeys
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selection={selection}
-      ambient={[hudEntry]}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        ref={canvasRef}
+        features={['pick', 'move', 'edit', 'arrange']}
+        claimKeys
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        ambient={[hudEntry]}
+        onResize={(s) => { size.current = s; }}
+      />
+    </DemoStage>
   );
 }
 

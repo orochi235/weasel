@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
 interface Data { color: string; label: string }
@@ -55,47 +56,47 @@ export function ViewportDemo() {
           {boundary !== 'none' && inertiaOn ? '(bounds: x 0–300, y 0–200)' : ''}
         </span>
       </div>
-      <SceneCanvas
-        scene={scene}
-        width={480}
-        height={320}
-        backgroundFill={{ color: '#1a130d' }}
-        viewport={{
-          inertia: inertiaConfig,
-          pinchZoom: true,
-          animatedZoom: true,
-        }}
-        layers={{
-          scene: {
-            drawOne: (node, pose, view): DrawCommand[] => {
-              const p = pose as Pose;
-              const fontSize = 14 / meanScale(view.scale);
-              const label = node.data.label;
-              const charW = fontSize * 0.6;
-              return [
-                {
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: node.data.color } },
-                },
-                {
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: { px: 1.5 } },
-                },
-                // Center-aligned: x = center - (text_width / 2). Approximates
-                // ctx.textAlign='center' since TextDrawCommand uses left baseline.
-                textCommandFromRuns(
-                  p.x + p.width / 2 - (label.length * charW) / 2,
-                  p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
-                  [{ text: label, fill: { paint: { kind: 'solid', color: '#1a130d' } } }],
-                  { fontFamily: 'sans-serif', fontSize },
-                ),
-              ];
+      <DemoStage width={480} height={320}>
+        <SceneCanvas
+          scene={scene}
+          backgroundFill={{ color: '#1a130d' }}
+          viewport={{
+            inertia: inertiaConfig,
+            pinchZoom: true,
+            animatedZoom: true,
+          }}
+          layers={{
+            scene: {
+              drawOne: (node, pose, view): DrawCommand[] => {
+                const p = pose as Pose;
+                const fontSize = 14 / meanScale(view.scale);
+                const label = node.data.label;
+                const charW = fontSize * 0.6;
+                return [
+                  {
+                    kind: 'path',
+                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                    fill: { paint: { color: node.data.color } },
+                  },
+                  {
+                    kind: 'path',
+                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                    stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: { px: 1.5 } },
+                  },
+                  // Center-aligned: x = center - (text_width / 2). Approximates
+                  // ctx.textAlign='center' since TextDrawCommand uses left baseline.
+                  textCommandFromRuns(
+                    p.x + p.width / 2 - (label.length * charW) / 2,
+                    p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
+                    [{ text: label, fill: { paint: { kind: 'solid', color: '#1a130d' } } }],
+                    { fontFamily: 'sans-serif', fontSize },
+                  ),
+                ];
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </DemoStage>
       <div style={{ fontSize: 11, color: '#888' }}>
         H / space = hand · drag fast + release = inertia · ⌘+= / ⌘+- / ⌘+0 = animated zoom (pan to interrupt) · pinch = zoom (touch multitouch; trackpad via ctrl+wheel, or Safari's gesture events)
       </div>

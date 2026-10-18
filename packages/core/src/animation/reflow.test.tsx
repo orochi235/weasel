@@ -4,7 +4,7 @@ import { linear } from '@weasel-js/geom';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../core/scene/types';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { createReflowTransition, useAnimatedReflow, type ReflowTransitionOptions } from './reflow';
 import type { Animator, AnimatorEvent } from '@weasel-js/animator';
 

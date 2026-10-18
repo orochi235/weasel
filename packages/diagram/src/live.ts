@@ -7,7 +7,8 @@
  * here writes the document.
  *
  * Two producers: `force` is a relaxation whose target changes every tick;
- * `layered` and `tree` know where they are going, so they ease into it.
+ * `layered` and `tree` know where they are going, so they ease into it. So
+ * does a `LayoutPlanner`, once it answers.
  *
  * **A node another gesture owns is a pin.** `force` holds it with `fx`/`fy`
  * and relaxes its neighbors around it, and an eased layout leaves it alone, so
@@ -15,7 +16,6 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
-  AUTO_POSE_DESCRIPTOR,
   useLatest,
   usePoseRun,
   type NodeId,
@@ -25,175 +25,46 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import { type EasingFn } from '@weasel-js/animator';
-import { forceRelaxation, type ForceOptions } from './force';
+import { isPromise } from './footprint';
 import { buildGraph, type Graph, type GraphSource } from './graph';
 import { chain } from './chain';
 import { layered } from './layered';
 import { LAYOUTS, layoutPoses } from './layoutAction';
-import { center, planOf, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
+import { planOf, plannerPlan, type LayoutFn, type LayoutOptions, type LayoutPlan, type LayoutPlanner } from './layout';
+import { sameGraph, shapeOf, usePendingPlan } from './livePlan';
+import {
+  EASE_FRAMES,
+  easeInOut,
+  easedProducer,
+  forceProducer,
+  progress,
+  type ForceProducerOptions,
+  type LiveLayoutProducer,
+} from './liveProducers';
 import { routeEasings, useEasedRoutes } from './liveRoutes';
 import { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
 import { tree } from './tree';
 import type { DiagramNodeReader } from './trait';
 
-/** What a live producer is told, and what it answers with. */
-export interface LiveLayoutCtx<TPose> {
-  /** Nodes another gesture is moving, and where each is drawn. */
-  pinned: ReadonlyMap<NodeId, TPose>;
-  /** Frames since this run heated, starting at 0. */
-  frame: number;
-}
-
-/** A frame of a live layout: where the participants are, and whether it is
- *  finished. Positions are top-lefts, the same as a `LayoutResult`. */
-export interface LiveLayoutFrame {
-  result: LayoutResult;
-  done: boolean;
-}
-
-/** One frame of a live layout, called once per frame until it reports `done`. */
-export type LiveLayoutProducer<TPose> = (ctx: LiveLayoutCtx<TPose>) => LiveLayoutFrame;
-
-/** How long an eased layout takes to arrive, in frames. Frame-counted rather
- *  than timed, so a background tab resumes where it paused rather than
- *  arriving the instant it comes back. */
-const EASE_FRAMES = 24;
-
-/** Smooth start and end. Inlined rather than pulled from the animator, which
- *  is a registry of running tweens, not a curve library. */
-const easeInOut: EasingFn = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
-
-/** How far along an eased run is at `frame`, before and after its easing. */
-function progress(frame: number, frames: number, easing: EasingFn): { t: number; u: number } {
-  const t = Math.min((frame + 1) / frames, 1);
-  return { t, u: easing(t) };
-}
-
-/** Options for {@link forceProducer}. */
-export interface ForceProducerOptions<TPose> extends ForceOptions {
-  geometry?: PoseDescriptor<TPose>;
-  /** Alpha held while something is pinned, so the graph keeps answering a drag
-   *  instead of freezing under it. Default 0.3. */
-  dragAlpha?: number;
-  /** The run is at rest once no node moves this far in a tick, in world units.
-   *  Default 0.1. `0` never rests, leaving the run to the cooling schedule. */
-  restDistance?: number;
-  /** Consecutive ticks at rest before the run finishes. Default 5. */
-  restTicks?: number;
-}
-
-const REST_DISTANCE = 0.1;
-const REST_TICKS = 5;
-
-/**
- * A relaxation, one tick a frame, done when the graph stops moving.
- *
- * Motion ends long before alpha cools, so it finishes on whichever comes
- * first: `restTicks` ticks in a row with no node moving `restDistance`, or the
- * cooling schedule running out. Nothing rests while a node is held.
- *
- * It does **not** re-anchor the way the one-shot `force` does. Re-anchoring
- * per frame would fight a drag: the anchor is measured from where the nodes
- * were, and a pinned node is deliberately somewhere else.
- */
-export function forceProducer<TPose>(
-  graph: Graph,
-  opts: ForceProducerOptions<TPose> = {},
-): LiveLayoutProducer<TPose> {
-  const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
-  const relaxation = forceRelaxation(graph, opts);
-  const dragAlpha = opts.dragAlpha ?? 0.3;
-  const restDistance = opts.restDistance ?? REST_DISTANCE;
-  const restTicks = opts.restTicks ?? REST_TICKS;
-  const was = relaxation.bodies.map((b) => ({ x: b.x, y: b.y }));
-  let still = 0;
-
-  return ({ pinned }) => {
-    for (const node of graph.nodes) {
-      const body = relaxation.byId.get(node.id);
-      if (body === undefined) continue;
-      const held = pinned.get(node.id as NodeId);
-      if (held !== undefined) {
-        // A dragged node holds its neighbors while they relax, which is `fx` /
-        // `fy` on the integrator rather than a correction applied afterward.
-        const bounds = geometry.getBounds(held);
-        body.fx = center(bounds, 'x');
-        body.fy = center(bounds, 'y');
-      } else if (!relaxation.pinned.has(node.id)) {
-        delete body.fx;
-        delete body.fy;
-      }
-    }
-    // A pin is a live edit, so the run keeps its temperature up until the
-    // pointer lets go.
-    relaxation.sim.alphaTarget(pinned.size > 0 ? dragAlpha : 0);
-    relaxation.sim.tick();
-
-    let moved = 0;
-    relaxation.bodies.forEach((body, i) => {
-      const at = was[i]!;
-      moved = Math.max(moved, Math.hypot(body.x - at.x, body.y - at.y));
-      at.x = body.x;
-      at.y = body.y;
-    });
-    still = pinned.size === 0 && moved < restDistance ? still + 1 : 0;
-
-    const done = still >= restTicks || relaxation.sim.isSettled();
-    return { result: relaxation.placed(), done };
-  };
-}
-
-/** Options for {@link easedProducer}. */
-export interface EasedProducerOptions {
-  layout?: LayoutOptions;
-  /** Frames to arrive in. Default 24. */
-  frames?: number;
-  easing?: EasingFn;
-}
-
-/**
- * A layout that knows its destination, walked into place.
- *
- * The target is computed once, from the graph as it stood when the run heated;
- * each frame is that target scaled by the easing curve, measured from where the
- * nodes started. A pinned node is dropped from the target rather than fought
- * over.
- */
-export function easedProducer<TPose>(
-  graph: Graph,
-  algorithm: LayoutFn,
-  opts: EasedProducerOptions = {},
-): LiveLayoutProducer<TPose> {
-  const frames = opts.frames ?? EASE_FRAMES;
-  const easing = opts.easing ?? easeInOut;
-  const target = algorithm(graph, opts.layout);
-  const from = new Map<string, { x: number; y: number }>();
-  for (const node of graph.nodes) from.set(node.id, { x: node.bounds.x, y: node.bounds.y });
-
-  return ({ pinned, frame }) => {
-    const { t, u } = progress(frame, frames, easing);
-    const result = new Map<string, { x: number; y: number }>();
-    for (const [id, to] of target) {
-      if (pinned.has(id as NodeId)) continue;
-      const start = from.get(id);
-      if (start === undefined) continue;
-      result.set(id, {
-        x: start.x + (to.x - start.x) * u,
-        y: start.y + (to.y - start.y) * u,
-      });
-    }
-    return { result, done: t >= 1 };
-  };
-}
+export {
+  easedProducer,
+  forceProducer,
+  type EasedProducerOptions,
+  type ForceProducerOptions,
+  type LiveLayoutCtx,
+  type LiveLayoutFrame,
+  type LiveLayoutProducer,
+} from './liveProducers';
 
 /** Options for {@link useLiveLayout}. Only `scene` and `source` are required. */
 export interface UseLiveLayoutOptions<TPose> {
   scene: Scene<unknown, string, TPose>;
   /** Where the graph is read from. The same thunk the port affordance takes. */
   source: GraphSource<TPose>;
-  /** A key in `LAYOUTS`, or a layout of the consumer's own. `'force'` relaxes
-   *  continuously; anything else eases to its answer. Default `'force'`. */
-  algorithm?: string | LayoutFn;
+  /** A key in `LAYOUTS`, a layout of the consumer's own, or a planner that
+   *  answers later. `'force'` relaxes continuously; anything else eases to its
+   *  answer. Default `'force'`. */
+  algorithm?: string | LayoutFn | LayoutPlanner;
   layout?: LayoutOptions;
   /** The relaxation's forces, and when a live run of it counts as at rest. */
   force?: Omit<ForceProducerOptions<TPose>, 'geometry'>;
@@ -207,6 +78,9 @@ export interface UseLiveLayoutOptions<TPose> {
   /** Fires once the run has settled or been stopped and its poses are in the
    *  document, with how many participants moved. */
   onSettle?: (moved: number) => void;
+  /** Hears why a `LayoutPlanner` failed to answer, and no run starts. Unset,
+   *  the failure goes to `console.error`. */
+  onError?: (error: unknown) => void;
   /** Whether a node or edge appearing or disappearing re-heats the run.
    *  Default true — a diagram that ignores a new edge looks broken. */
   reheatOnGraphChange?: boolean;
@@ -217,9 +91,11 @@ export interface UseLiveLayoutOptions<TPose> {
 
 /** Controls for a live layout run, from {@link useLiveLayout}. */
 export interface LiveLayout {
-  /** Heat and run. Idempotent while running. */
+  /** Heat and run. Idempotent while running, which includes waiting on a
+   *  planner's answer. */
   start(): void;
-  /** Finish now: commit where the nodes stand. */
+  /** Finish now: commit where the nodes stand. A planner's answer still to
+   *  come is dropped. */
   stop(): void;
   /** Abandon: the document keeps the poses it had. */
   cancel(): void;
@@ -228,11 +104,31 @@ export interface LiveLayout {
   isRunning(): boolean;
 }
 
-/** The shape of a graph, as a string that changes when a node or edge does. */
-function shapeOf(graph: Graph): string {
-  const nodes = graph.nodes.map((n) => n.id).sort().join(',');
-  const edges = graph.edges.map((e) => `${e.from}>${e.to}`).sort().join(',');
-  return `${nodes}|${edges}`;
+/** The graph `o.source` describes now. */
+function graphOf<TPose>(o: UseLiveLayoutOptions<TPose>): Graph {
+  return buildGraph(o.source, {
+    ...(o.read ? { read: o.read } : {}),
+    ...(o.geometry ? { geometry: o.geometry } : {}),
+  });
+}
+
+/** What `o.algorithm` plans for `graph`: `null` for a relaxation, which has
+ *  no destination, and a promise from a planner that answers later. */
+function planFor<TPose>(graph: Graph, o: UseLiveLayoutOptions<TPose>): LayoutPlan | Promise<LayoutPlan> | null {
+  const algorithm = o.algorithm ?? 'force';
+  if (algorithm === 'force') return null;
+  if (typeof algorithm === 'object') return plannerPlan(algorithm, graph, o.layout);
+  return planOf(typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered, graph, o.layout);
+}
+
+/** The producer that eases from `graph` to `plan`, or relaxes `graph` when
+ *  there is no plan. */
+function producerFor<TPose>(graph: Graph, plan: LayoutPlan | null, o: UseLiveLayoutOptions<TPose>): LiveLayoutProducer<TPose> {
+  if (plan === null) return forceProducer<TPose>(graph, { ...o.layout, ...o.force, ...(o.geometry ? { geometry: o.geometry } : {}) });
+  return easedProducer<TPose>(graph, () => plan.moves, {
+    ...(o.frames === undefined ? {} : { frames: o.frames }),
+    ...(o.easing ? { easing: o.easing } : {}),
+  });
 }
 
 /**
@@ -255,35 +151,17 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
   const held = useRef(false);
   const eased = useEasedRoutes<TPose>();
 
-  const build = useCallback((): void => {
+  const pending = usePendingPlan();
+
+  /** Set the run up to ease from `graph` to `plan`, or to relax it when
+   *  there is no plan. */
+  const install = useCallback((graph: Graph, plan: LayoutPlan | null): void => {
     const o = optsRef.current;
-    const graph = buildGraph(o.source, {
-      ...(o.read ? { read: o.read } : {}),
-      ...(o.geometry ? { geometry: o.geometry } : {}),
-    });
-    shape.current = shapeOf(graph);
     producerFrame.current = 0;
-    routes.current = undefined;
     held.current = false;
-    eased.set([]);
-    const algorithm = o.algorithm ?? 'force';
-    if (algorithm === 'force') {
-      routes.current = routesOf(graph, { moves: new Map() });
-      producer.current = forceProducer<TPose>(graph, {
-        ...o.layout, ...o.force,
-        ...(o.geometry ? { geometry: o.geometry } : {}),
-      });
-      return;
-    }
-    const fn = typeof algorithm === 'function' ? algorithm : LAYOUTS[algorithm] ?? layered;
-    const plan = planOf(fn, graph, o.layout);
-    routes.current = routesOf(graph, plan);
-    eased.set(routeEasings(o.scene, graph, plan.moves, routes.current));
-    producer.current = easedProducer<TPose>(graph, () => plan.moves, {
-      ...(o.layout ? { layout: o.layout } : {}),
-      ...(o.frames === undefined ? {} : { frames: o.frames }),
-      ...(o.easing ? { easing: o.easing } : {}),
-    });
+    routes.current = routesOf(graph, plan ?? { moves: new Map() });
+    eased.set(routeEasings(o.scene, graph, routes.current));
+    producer.current = producerFor(graph, plan, o);
   }, [optsRef, eased]);
 
   const step = useCallback((ctx: PoseRunCtx<TPose>): PoseRunStep<TPose> => {
@@ -304,7 +182,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     const poses = layoutPoses(o.scene, placed, o.geometry);
     // Routes ease only toward where they will be written, which a held run never writes.
     const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOut);
-    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId));
+    eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.geometry);
     return { poses: [...poses] as [NodeId, TPose][], done };
   }, [optsRef, eased]);
 
@@ -325,37 +203,60 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     ...(opts.cancelFrame ? { cancelFrame: opts.cancelFrame } : {}),
   });
 
+  /** Read the graph and set the run up on it: true once it is ready to run,
+   *  false while a planner's answer is on its way, after which it starts the
+   *  run itself. */
+  const build = useCallback((): boolean => {
+    const graph = graphOf(optsRef.current);
+    shape.current = shapeOf(graph);
+    const plan = planFor(graph, optsRef.current);
+    if (plan === null || !isPromise(plan)) {
+      install(graph, plan);
+      return true;
+    }
+    pending.request(plan, (answer) => {
+      if (!sameGraph(graph, graphOf(optsRef.current))) return;
+      install(graph, answer);
+      run.start();
+    }, (error) => {
+      const onError = optsRef.current.onError;
+      if (onError) onError(error);
+      else console.error(error);
+    });
+    return false;
+  }, [optsRef, install, pending, run]);
+
+  /** Abandon whatever is running or awaited, and start again from where the
+   *  nodes are now. */
+  const restart = useCallback((): void => {
+    pending.drop();
+    run.cancel();
+    if (build()) run.start();
+  }, [pending, run, build]);
+
   // A node or edge appearing or disappearing is a new problem, so the run
-  // re-heats rather than finishing the one it started on.
+  // re-heats rather than finishing the one it started on. A planner is asked
+  // again, since its answer has no place for what changed.
   useEffect(() => {
     if (opts.reheatOnGraphChange === false) return;
     return opts.scene.subscribe(() => {
-      if (!run.isRunning()) return;
-      const o = optsRef.current;
-      const graph = buildGraph(o.source, {
-        ...(o.read ? { read: o.read } : {}),
-        ...(o.geometry ? { geometry: o.geometry } : {}),
-      });
-      if (shapeOf(graph) === shape.current) return;
-      build();
+      if (!run.isRunning() && !pending.isWaiting()) return;
+      if (shapeOf(graphOf(optsRef.current)) === shape.current) return;
+      if (typeof optsRef.current.algorithm === 'object') restart();
+      else build();
     });
-  }, [opts.scene, opts.reheatOnGraphChange, run, build, optsRef]);
+  }, [opts.scene, opts.reheatOnGraphChange, run, build, restart, pending, optsRef]);
 
   return useMemo<LiveLayout>(() => ({
     start() {
-      if (run.isRunning()) return;
-      build();
-      run.start();
+      if (run.isRunning() || pending.isWaiting()) return;
+      if (build()) run.start();
     },
-    stop: () => { run.stop(); },
-    cancel: () => { run.cancel(); eased.drop(); },
-    restart() {
-      run.cancel();
-      build();
-      run.start();
-    },
-    isRunning: () => run.isRunning(),
-  }), [run, build, eased]);
+    stop: () => { pending.drop(); run.stop(); },
+    cancel: () => { pending.drop(); run.cancel(); eased.drop(); },
+    restart,
+    isRunning: () => run.isRunning() || pending.isWaiting(),
+  }), [run, build, restart, eased, pending]);
 }
 
 /** The layouts that ease rather than relax, for a consumer choosing one. */

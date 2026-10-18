@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataGroup, type DataNode, type DiagramViewApi } from '@weasel-js/diagram';
 import { FONT, moved, routed } from './diagram/shared';
+import { DemoStage } from './DemoStage';
 
 /** Two subsystems that feed each other at every stage, so without groups
  *  their stages would interleave rank by rank. */
@@ -48,17 +49,17 @@ export function DiagramGroupsDemo() {
           </button>
         ))}
       </div>
-      <DiagramView
-        ref={view}
-        specs={specs}
-        width={640}
-        height={400}
-        className="ckd-canvas"
-        onMove={(moves, routes) => {
-          setNodes((ns) => moved(ns, moves));
-          setEdges((es) => routed(es, routes));
-        }}
-      />
+      <DemoStage width={640} height={400}>
+        <DiagramView
+          ref={view}
+          specs={specs}
+          className="ckd-canvas"
+          onMove={(moves, routes) => {
+            setNodes((ns) => moved(ns, moves));
+            setEdges((es) => routed(es, routes));
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

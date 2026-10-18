@@ -60,14 +60,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const heldModifiers = useHeldModifiers();
   const redrawOn = useSceneRedrawSources({ supplied: props.redrawOn, scene, heldModifiers, animator: props.animator, modes });
 
-  // The canvas element, kept here so the dispatcher can attach its input listeners even when
-  // the consumer passes their own forwarded ref, and the full handle, for `requestRedraw`.
+  // Our own refs, so input listeners attach even when the consumer forwards its own ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
-
+  const declaredSize = useLatest({ width: props.width ?? 0, height: props.height ?? 0 });
   const { viewState, viewAnimation, camera } = useCanvasCamera({
     view: props.view, defaultView: props.defaultView, onViewChange: props.onViewChange, viewBounds: props.viewBounds,
-    width: props.width, height: props.height, requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
+    dims: () => canvasApiRef.current?.getSurfaceRect() ?? declaredSize.current,
+    requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
   const { viewRef } = viewState;
   const selection = useCanvasSelection({

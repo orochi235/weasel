@@ -1,4 +1,5 @@
 import type { PointerContextValue } from '@weasel-js/core';
+import type { Camera3d, OrbitLimits } from '@weasel-js/kernel3d';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { CameraGestures } from '../canvas/cameraGestures';
@@ -24,8 +25,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
    *  into it. */
   trial: TrialInfo & {
     setView: (next: unknown) => void;
-    /** 2D convenience over `view`. Reads 1 and writes nothing when the trial holds
-     *  a view that is not the 2D one. */
+    /** The camera's magnification: a 2D view's zoom, or an orbit's opening
+     *  distance over its distance now. Reads 1 and writes nothing with no
+     *  camera. */
     zoom: number;
     setZoom: (z: number) => void;
     /** Resolved active tool: this trial's slot, or the lab's. Null when neither
@@ -44,7 +46,8 @@ export interface RenderContext<TS = unknown, TC = unknown> {
      * `get()` answers `{ worldX, worldY, viewId }`, where `viewId` is
      * `'stage'` over the trial's own camera and `'overview'` over its
      * `<TrialOverview>`, or `null` when it is over neither. A key handler
-     * reading it works over either view.
+     * reading it works over either view. An orbit has no world point under
+     * the pointer, so over one this stays `null`.
      */
     pointer: PointerContextValue;
     /** The trial's clock, present when the instrument declares `clock`. */
@@ -115,6 +118,30 @@ export interface StageCapability<TS = unknown, TC = unknown> {
   gestures?: CameraGestures;
   /** Drawn over the content in viewport pixels, outside the camera — a legend,
    *  a floating panel, anything that must not zoom with the picture. */
+  overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
+}
+
+/**
+ * Declares that an instrument draws a 3D scene through an orbit camera — the
+ * 3D sibling of `canvas` and `stage`. The trial owns the camera: it keeps it in
+ * the trial's `view` as a kernel3d `Camera3d`, so it persists and Clone copies
+ * it, and turns it with the trial's gestures. The instrument's DOM fills the
+ * camera's element and reads the camera with `as3DView(ctx.trial.view)`, or
+ * `useTrialOrbit()` anywhere in the trial. Not combined with `canvas` or `stage`.
+ */
+export interface OrbitCapability<TS = unknown, TC = unknown> {
+  /** Where the camera opens, and where Reset and the `home` gesture return it:
+   *  the fields given, over kernel3d's `createCamera` defaults. A function is
+   *  called once the camera's element knows its size; until then the trial's
+   *  view is `null`. */
+  initialView?: Partial<Camera3d> | ((viewport: ViewportSize) => Partial<Camera3d>);
+  /** How far the camera turns and travels, in the scene's own units.
+   *  Omitted fields are kernel3d's `DEFAULT_ORBIT_LIMITS`. */
+  limits?: Partial<OrbitLimits>;
+  /** As `CanvasCapability.gestures`. A drag turns the camera and Shift+drag
+   *  pans its target; the wheel and a pinch dolly; a double click goes home. */
+  gestures?: CameraGestures;
+  /** As `StageCapability.overlay`. */
   overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
 }
 
@@ -201,6 +228,7 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   deserialize?: (data: unknown, config: TC) => TS;
   canvas?: CanvasCapability<TS, TC>;
   stage?: StageCapability<TS, TC>;
+  orbit?: OrbitCapability<TS, TC>;
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;

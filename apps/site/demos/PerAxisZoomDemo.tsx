@@ -7,6 +7,7 @@ import {
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import s from './PerAxisZoomDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -27,6 +28,7 @@ export function PerAxisZoomDemo() {
   });
   const [view, setView] = useState<View>({ x: -100, y: -100, scale: { x: 1, y: 1 } });
   const [mode, setMode] = useState<'contain' | 'fill' | 'stretch'>('contain');
+  const [size, setSize] = useState({ width: W, height: H });
 
   const setScaleX = (sx: number) => setView({ ...view, scale: { ...view.scale, x: sx } });
   const setScaleY = (sy: number) => setView({ ...view, scale: { ...view.scale, y: sy } });
@@ -60,7 +62,7 @@ export function PerAxisZoomDemo() {
             <option value="stretch">stretch</option>
           </select>
         </label>
-        <button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, { width: W, height: H }, view, { mode }))}>
+        <button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }))}>
           Fit
         </button>
         <button onClick={() => setView({ x: -100, y: -100, scale: { x: 1, y: 1 } })}>
@@ -70,25 +72,26 @@ export function PerAxisZoomDemo() {
       <span style={{ fontSize: 12, color: '#888' }}>
         Cmd/Ctrl+wheel zooms uniformly · plain wheel pans · Cmd/Ctrl+= / - / 0 for zoom steps.
       </span>
-      <SceneCanvas
-        features={['view']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        view={view}
-        onViewChange={setView}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { color: n.data.color } },
-              stroke: { paint: { color: '#d4c4a8' }, width: 2 },
-            }],
-          },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['view']}
+          className="ckd-canvas"
+          scene={scene}
+          view={view}
+          onViewChange={setView}
+          onResize={setSize}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { color: n.data.color } },
+                stroke: { paint: { color: '#d4c4a8' }, width: 2 },
+              }],
+            },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

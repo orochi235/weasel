@@ -5,6 +5,7 @@ import {
   useScene,
 } from '@weasel-js/core';
 import type { MarkerKey, Path, Stroke } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 540, H = 460;
 const INK = { kind: 'solid' as const, color: '#1a130d' };
@@ -73,12 +74,12 @@ export function StrokeMarkersDemo() {
     initial: NODES,
   });
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selectable={false}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        className="ckd-canvas"
+        scene={scene}
+        selectable={false}
+      />
+    </DemoStage>
   );
 }

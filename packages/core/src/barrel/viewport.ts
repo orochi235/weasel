@@ -75,6 +75,7 @@ export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
 export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';
 export { clampView } from '../core/viewport/clampView';
+export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOpts, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
@@ -111,6 +112,7 @@ export type { CanvasViewCamera } from '../canvas/canvasExtension';
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
 export { SceneViewCanvas } from '../canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from '../canvas/SceneViewCanvas';
+export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 // `<DrawCanvas>` is the same detached surface with no scene behind it: a
 // command list painted onto a canvas of its own.
 export { DrawCanvas } from '../canvas/DrawCanvas';

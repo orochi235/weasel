@@ -1,18 +1,14 @@
 import { useLatest } from '@weasel-js/core';
 import { type RefObject, useLayoutEffect, useRef } from 'react';
-import { fitStage } from '../canvas/Stage';
 import type { ViewportSize } from '../canvas/worldSpec';
-import type { Instrument, ViewTransform } from '../instrument/types';
-import { as2DView } from '../state/view';
+import type { Instrument } from '../instrument/types';
+import { as2DView, as3DView } from '../state/view';
+import { homeView, opensBySize } from './homeView';
 
 /** The view `instrument` opens on in a viewport of `size`, or `null` when where
  *  it opens does not depend on the size. */
-function sizedInitialView(instrument: Instrument, size: ViewportSize): ViewTransform | null {
-  const stage = instrument.canvas ? undefined : instrument.stage;
-  const declared =
-    instrument.canvas?.initialView ??
-    (stage ? (stage.initialView ?? ((vp: ViewportSize) => fitStage(stage.size, vp))) : undefined);
-  return typeof declared === 'function' ? declared(size) : null;
+function sizedInitialView(instrument: Instrument, size: ViewportSize): unknown {
+  return opensBySize(instrument) ? homeView(instrument, size) : null;
 }
 
 function measure(el: HTMLElement | null): ViewportSize | null {
@@ -22,11 +18,26 @@ function measure(el: HTMLElement | null): ViewportSize | null {
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-6;
 
-/** Whether `view` is still where `placed` put it. */
-function sitsAt(view: unknown, placed: ViewTransform | null): boolean {
-  const v = as2DView(view);
-  if (!v || !placed) return false;
-  return near(v.zoom, placed.zoom) && near(v.pan.x, placed.pan.x) && near(v.pan.y, placed.pan.y);
+/** Whether `view` is still where `placed` put it — either view shape. */
+function sitsAt(view: unknown, placed: unknown): boolean {
+  const a2 = as2DView(view);
+  const b2 = as2DView(placed);
+  if (a2 && b2) {
+    return near(a2.zoom, b2.zoom) && near(a2.pan.x, b2.pan.x) && near(a2.pan.y, b2.pan.y);
+  }
+  const a3 = as3DView(view);
+  const b3 = as3DView(placed);
+  if (a3 && b3) {
+    return (
+      near(a3.yaw, b3.yaw) &&
+      near(a3.pitch, b3.pitch) &&
+      near(a3.distance, b3.distance) &&
+      near(a3.target.x, b3.target.x) &&
+      near(a3.target.y, b3.target.y) &&
+      near(a3.target.z, b3.target.z)
+    );
+  }
+  return false;
 }
 
 interface ViewPlacementOptions {
@@ -39,6 +50,15 @@ interface ViewPlacementOptions {
   viewport: RefObject<HTMLElement | null>;
 }
 
+/** What {@link useViewPlacement} hands back. */
+export interface ViewPlacement {
+  /** The handler for each measurement of the camera's element. */
+  place: (size: ViewportSize) => void;
+  /** Where the camera opened, at the size last measured: what the `home`
+   *  gesture returns it to. */
+  home: () => unknown;
+}
+
 /**
  * Places a trial's view where its instrument's `initialView` needs the
  * viewport's size: on the first measurement while the view is `null` — the
@@ -46,7 +66,7 @@ interface ViewPlacementOptions {
  * presentation, for the presented box. Leaving gives the tile back the view it
  * had. A view still sitting where the last measurement would have placed it is
  * placed again when the viewport changes size; one that has been moved keeps
- * its pan. Returns the handler for each measurement.
+ * where it is.
  */
 export function useViewPlacement({
   instrument,
@@ -54,7 +74,7 @@ export function useViewPlacement({
   setView,
   presented,
   viewport,
-}: ViewPlacementOptions): (size: ViewportSize) => void {
+}: ViewPlacementOptions): ViewPlacement {
   const latest = useLatest({ instrument, view, setView });
   // The tile's view while presented; `undefined` when nothing was refitted.
   const tileView = useRef<unknown>(undefined);
@@ -80,14 +100,17 @@ export function useViewPlacement({
 
   const measured = useRef<ViewportSize | null>(null);
 
-  return (size) => {
-    const last = measured.current;
-    measured.current = size;
-    if (view != null) {
-      if (!last || (last.width === size.width && last.height === size.height)) return;
-      if (!sitsAt(view, sizedInitialView(instrument, last))) return;
-    }
-    const placed = sizedInitialView(instrument, size);
-    if (placed) setView(placed);
+  return {
+    place: (size) => {
+      const last = measured.current;
+      measured.current = size;
+      if (view != null) {
+        if (!last || (last.width === size.width && last.height === size.height)) return;
+        if (!sitsAt(view, sizedInitialView(instrument, last))) return;
+      }
+      const placed = sizedInitialView(instrument, size);
+      if (placed) setView(placed);
+    },
+    home: () => homeView(instrument, measured.current ?? measure(viewport.current)),
   };
 }

@@ -16,7 +16,8 @@ import {
   type PoseDescriptor,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { insetOf } from './cluster';
+import { insetOf, type GroupInset } from './cluster';
+import { grownBy } from './footprint';
 import { DIAGRAM_TRAIT_KEY } from './trait';
 import type { DiagramGroup, PortAnchor } from './types';
 
@@ -63,8 +64,8 @@ export type DiagramDerivePose<TPose> = (
 ) => TPose | null;
 
 /**
- * A `derivePose` that draws a group's box around its members: their union,
- * grown by the trait's inset. `null` — the authored pose stands — when the node
+ * A `derivePose` that draws a group's box around its members: the union of
+ * what each takes up, its `margin` included, grown by the trait's inset. `null` — the authored pose stands — when the node
  * carries no group trait or every member is gone.
  */
 export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): DiagramDerivePose<TPose> {
@@ -78,7 +79,7 @@ export function groupDerivePose<TPose>(opts: GroupPoseOptions<TPose> = {}): Diag
     let y1 = -Infinity;
     for (const dep of deps) {
       if (dep === undefined) continue;
-      const b = geometry.getBounds(dep.pose);
+      const b = grownBy(geometry.getBounds(dep.pose), traitOf(dep.node)?.margin as GroupInset | undefined);
       x0 = Math.min(x0, b.x);
       y0 = Math.min(y0, b.y);
       x1 = Math.max(x1, b.x + b.width);

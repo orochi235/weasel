@@ -23,7 +23,7 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 485,
+    "lines": 486,
     "longestFunction": 419
   },
   "packages/core/src/canvas/CanvasView.tsx": {
@@ -46,7 +46,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 584
+    "lines": 570
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -150,9 +150,6 @@
     "lines": 464,
     "longestFunction": 321
   },
-  "packages/labkit/src/canvas/CanvasStack.tsx": {
-    "longestFunction": 138
-  },
   "packages/labkit/src/chrome/builtins.tsx": {
     "longestFunction": 223
   },
@@ -203,14 +200,11 @@
     "longestFunction": 255
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "lines": 546,
-    "longestFunction": 421
+    "lines": 523,
+    "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 227
-  },
-  "packages/minimap/src/MinimapCanvas.tsx": {
-    "longestFunction": 127
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

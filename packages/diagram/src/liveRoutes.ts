@@ -1,6 +1,7 @@
 /**
- * The edge half of a live eased layout: each route layout owns, eased from
- * where it ran to where the plan puts it, frame by frame, alongside the nodes.
+ * The edge half of a live layout: each route the run will rewrite, eased from
+ * where it ran to where the run puts it, frame by frame, alongside the nodes,
+ * and drawn through the ports the run will name for its ends.
  *
  * Nothing here writes the document. A frame's route is published as the edge's
  * path on the scene's override channel, drawn by the edge's own `derivePath`
@@ -9,25 +10,31 @@
  */
 import { useEffect, useMemo, useRef } from 'react';
 import {
+  AUTO_POSE_DESCRIPTOR,
   derivedDepOf,
   type DerivedDep,
+  type PoseDescriptor,
   type NodeId,
   type Path,
   type PoseOverride,
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsRoute } from './edge';
+import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
-import type { LayoutResult } from './layout';
-import type { LayoutRoutes } from './routeWrites';
+import { routeWrites, type LayoutRoutes } from './routeWrites';
 
 /** One route on its way from where it ran to where layout puts it. */
 export interface RouteEasing {
   id: string;
-  /** Equal in length: point `k` of the route eases from `from[k]` to `to[k]`. */
+  /** Point `k` of the route eases from `from[k]` to `to[k]`. */
   from: readonly Vec2[];
-  to: readonly Vec2[];
+  /** As long as `from`, or `null` for a route layout takes away: it eases
+   *  onto the straight line between its ends' centers where each frame draws
+   *  them, and arrives with no waypoints at all. */
+  to: readonly Vec2[] | null;
+  /** The edge's ends as the run will write them, ports and all. */
+  ends: Pick<DiagramEdge, 'from' | 'to'>;
 }
 
 const lerp = (a: Vec2, b: Vec2, u: number): Vec2 => ({ x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u });
@@ -45,33 +52,33 @@ function along(points: readonly Vec2[], s: number): Vec2 {
   return points[points.length - 1]!;
 }
 
+/** `count` points spread evenly along the straight line from `start` to
+ *  `end`, its ends left off. */
+const straightRun = (count: number, start: Vec2, end: Vec2): Vec2[] =>
+  Array.from({ length: count }, (_, k) => lerp(start, end, (k + 1) / (count + 1)));
+
 /** `points` as `count` points spread along the same run, its ends kept. A
- *  run of none is the straight line from `start` to `end`, its ends left off. */
+ *  run of none is the straight line from `start` to `end`. */
 function respread(points: readonly Vec2[], count: number, start: Vec2, end: Vec2): Vec2[] {
   if (points.length === count) return [...points];
-  if (points.length === 0) return Array.from({ length: count }, (_, k) => lerp(start, end, (k + 1) / (count + 1)));
+  if (points.length === 0) return straightRun(count, start, end);
   return Array.from({ length: count }, (_, k) => along(points, count === 1 ? 0.5 : k / (count - 1)));
 }
 
 /**
- * The routes a run eases: every edge `routes` lays out whose route layout owns
- * and changes. A route gaining or losing waypoints starts or ends on the
- * straight line between its ends' centers, where they start or arrive.
+ * The routes a run eases: every edge `routes` lays out that the run will
+ * rewrite, whether its route or the ports its ends name. A route gaining
+ * waypoints starts on the straight line between its ends' centers; one losing
+ * them ends there.
  */
 export function routeEasings<TPose>(
   scene: Scene<unknown, string, TPose>,
   graph: Graph,
-  moves: LayoutResult,
   routes: LayoutRoutes,
 ): RouteEasing[] {
-  const centerOf = (id: string, arrived: boolean): Vec2 | null => {
+  const centerOf = (id: string): Vec2 | null => {
     const ids = graph.node(id) !== undefined ? [id] : graph.groups?.find((g) => g.id === id)?.members ?? [];
-    const boxes = ids.flatMap((m) => {
-      const node = graph.node(m);
-      if (node === undefined) return [];
-      const to = arrived ? moves.get(m) : undefined;
-      return [{ ...node.bounds, ...(to ?? {}) }];
-    });
+    const boxes = ids.flatMap((m) => graph.node(m)?.bounds ?? []);
     if (boxes.length === 0) return null;
     const x0 = Math.min(...boxes.map((b) => b.x));
     const y0 = Math.min(...boxes.map((b) => b.y));
@@ -79,51 +86,106 @@ export function routeEasings<TPose>(
     const y1 = Math.max(...boxes.map((b) => b.y + b.height));
     return { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
   };
+  const writes = routeWrites(scene as never, routes);
   const out: RouteEasing[] = [];
   for (const id of routes.edges) {
     const node = scene.get(id as NodeId);
     const edge = node === undefined ? null : diagramEdgeOf(node);
-    if (node === undefined || edge === null || !layoutOwnsRoute(edge) || scene.isLocked(id as NodeId)) continue;
+    const written = writes.get(id);
+    if (node === undefined || edge === null || written === undefined) continue;
+    const next = diagramEdgeOf({ data: written });
+    if (next === null) continue;
+    const ends = { from: next.from, to: next.to };
     const was = edge.waypoints ?? [];
-    const next = routes.waypoints.get(id) ?? [];
-    if (was.length === 0 && next.length === 0) continue;
+    if (!layoutOwnsRoute(edge)) {
+      out.push({ id, from: was, to: was, ends });
+      continue;
+    }
+    const after = routes.waypoints.get(id) ?? [];
+    if (after.length === 0) {
+      out.push({ id, from: was, to: null, ends });
+      continue;
+    }
     const deps = Array.isArray(node.dependsOn) ? node.dependsOn : [];
-    if (deps.length !== 2) continue;
-    const [a0, b0, a1, b1] = [centerOf(deps[0]!, false), centerOf(deps[1]!, false), centerOf(deps[0]!, true), centerOf(deps[1]!, true)];
-    if (a0 === null || b0 === null || a1 === null || b1 === null) continue;
-    const count = Math.max(was.length, next.length);
-    out.push({ id, from: respread(was, count, a0, b0), to: respread(next, count, a1, b1) });
+    const [a, b] = deps.length === 2 ? [centerOf(deps[0]!), centerOf(deps[1]!)] : [null, null];
+    if (a === null || b === null) continue;
+    const count = Math.max(was.length, after.length);
+    out.push({ id, from: respread(was, count, a, b), to: respread(after, count, a, b), ends });
   }
   return out;
 }
 
 /**
  * Each eased route's path `u` of the way there, drawn by the edge's own
- * `derivePath` with its ends at `poseOf`'s answer, else where the scene shows
- * them. An edge that derives no path is left out.
+ * `derivePath` with its ends where `poseOf` puts them. A node `poseOf` does
+ * not place is drawn where the scene shows it, unless it derives its pose —
+ * a group's box — when it is derived afresh from where this frame puts what
+ * it depends on. An edge that derives no path is left out.
  */
 export function easedPaths<TPose>(
   scene: Scene<unknown, string, TPose>,
   easings: readonly RouteEasing[],
   u: number,
   poseOf: (id: string) => TPose | undefined,
+  geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, Path> {
+  const depOf = frameDeps(scene, poseOf);
+  const centerOf = (dep: DerivedDep<TPose>): Vec2 => {
+    const b = geometry.getBounds(dep.pose);
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
   const out = new Map<string, Path>();
-  for (const { id, from, to } of easings) {
+  for (const { id, from, to, ends } of easings) {
     const node = scene.get(id as NodeId);
     if (node?.derivePath === undefined || !Array.isArray(node.dependsOn)) continue;
-    const deps = node.dependsOn.map((dep): DerivedDep<TPose> | undefined => {
-      const shown = derivedDepOf(scene, dep);
-      if (shown === undefined) return undefined;
-      const pose = poseOf(dep) ?? shown.pose;
-      return { node: shown.node, pose, get path() { return shown.path; } };
-    });
+    const deps = node.dependsOn.map(depOf);
+    let target = to;
+    if (target === null) {
+      const [a, b] = deps;
+      target = u >= 1 || a === undefined || b === undefined ? [] : straightRun(from.length, centerOf(a), centerOf(b));
+    }
+    const waypoints = target.length === 0 && u >= 1 ? [] : from.map((p, k) => lerp(p, target[k]!, u));
     const data = node.data as { diagram: object };
-    const waypoints = from.map((p, k) => lerp(p, to[k]!, u));
-    const path = node.derivePath({ ...node, data: { ...data, diagram: { ...data.diagram, waypoints } } } as never, deps);
+    const diagram = { ...data.diagram, ...ends, waypoints };
+    const path = node.derivePath({ ...node, data: { ...data, diagram } } as never, deps);
     if (path !== null) out.set(id, path);
   }
   return out;
+}
+
+/** Each node as this frame draws it: where `poseOf` puts it, else derived from
+ *  where this frame puts its dependencies, else where the scene shows it. */
+function frameDeps<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  poseOf: (id: string) => TPose | undefined,
+): (id: string) => DerivedDep<TPose> | undefined {
+  const memo = new Map<string, DerivedDep<TPose> | undefined>();
+  const depOf = (id: string): DerivedDep<TPose> | undefined => {
+    if (memo.has(id)) return memo.get(id);
+    // Closes a cycle at the scene's answer rather than recursing forever.
+    memo.set(id, derivedDepOf(scene, id as NodeId));
+    const shown = memo.get(id);
+    if (shown === undefined) return undefined;
+    const pose = poseOf(id) ?? derivedFromFrame(scene, shown, depOf) ?? shown.pose;
+    const dep: DerivedDep<TPose> = { node: shown.node, pose, get path() { return shown.path; } };
+    memo.set(id, dep);
+    return dep;
+  };
+  return depOf;
+}
+
+/** `shown`'s pose derived from where this frame draws its dependencies, or
+ *  `undefined` when it derives none or something else holds it this frame. */
+function derivedFromFrame<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  shown: DerivedDep<TPose>,
+  depOf: (id: string) => DerivedDep<TPose> | undefined,
+): TPose | undefined {
+  const { node } = shown;
+  if (node.derivePose === undefined || scene.overrides.read(node.id)?.pose !== undefined) return undefined;
+  const ids = node.dependsOn === 'children' ? scene.childrenOf(node.id) : node.dependsOn ?? [];
+  if (ids.length === 0) return undefined;
+  return node.derivePose(node as never, ids.map(depOf)) ?? undefined;
 }
 
 /** A claim on some edges' paths in the override channel. */
@@ -169,8 +231,13 @@ export interface EasedRoutes<TPose> {
   /** The routes the run now eases; any shown before stop showing. */
   set(easings: readonly RouteEasing[]): void;
   /** Show each route `u` of the way there, its ends where `poseOf` puts
-   *  them; `null` shows none. */
-  show(scene: Scene<unknown, string, TPose>, u: number | null, poseOf: (id: string) => TPose | undefined): void;
+   *  them; `null` shows none. `geometry` reads the poses' bounds. */
+  show(
+    scene: Scene<unknown, string, TPose>,
+    u: number | null,
+    poseOf: (id: string) => TPose | undefined,
+    geometry?: PoseDescriptor<TPose>,
+  ): void;
   /** Stop showing them. */
   drop(): void;
 }
@@ -183,14 +250,14 @@ export function useEasedRoutes<TPose>(): EasedRoutes<TPose> {
       held.current?.hold.drop();
       easings.current = next;
     },
-    show(scene, u, poseOf) {
+    show(scene, u, poseOf, geometry) {
       if (u === null) held.current?.hold.drop();
       if (u === null || easings.current.length === 0) return;
       if (held.current?.scene !== scene) {
         held.current?.hold.drop();
         held.current = { scene, hold: pathHold(scene) };
       }
-      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf));
+      held.current.hold.show(easedPaths(scene, easings.current, u, poseOf, geometry));
     },
     drop() {
       held.current?.hold.drop();

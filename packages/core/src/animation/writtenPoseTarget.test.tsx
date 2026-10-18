@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
-import { useAnimator, type Target } from '@weasel-js/animator';
+import { type Target } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { RECT_POSE_DESCRIPTOR } from '../core/geometry/poseDescriptor';
 import { tweenPose, type PoseAnimationAdapter } from './poseHelpers';
 import { createWrittenPoseTarget } from './writtenPoseTarget';

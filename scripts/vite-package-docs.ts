@@ -148,7 +148,7 @@ export function demosByPackage(root: string): Map<string, string[]> {
     const imported = new Set<string>();
     for (const tab of tabsFor(root, demoPath)) {
       if (tab.language !== 'tsx' && tab.language !== 'ts') continue;
-      for (const specifier of namedSpecifiers(readFileSync(resolve(root, tab.path), 'utf8'))) {
+      for (const specifier of namedSpecifiers(readFileSync(resolve(root, tab.path), 'utf8'), tab.path)) {
         if (specifier.startsWith(SCOPE)) imported.add(packageOf(specifier).slice(SCOPE.length));
       }
     }

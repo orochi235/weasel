@@ -18,6 +18,17 @@ already applied the view transform. The grid therefore zooms and pans with the
 content, which is what you want for a document grid and *not* what you want for
 a fixed screen-space backdrop. For the latter you want a different layer.
 
+## Bounds
+
+`bounds` is optional. Omitted, the grid covers the visible world rect each
+paint, its lines on world multiples of `spacing` so they hold still as the
+view pans. Given, it is called with the paint's `(view, dims)`, and lines
+start at its own corner.
+
+A line family — subdivisions, cell lines, accents — is left out on an axis
+once it would sit closer than 4px on screen, so zooming out thins the grid to
+accents alone and then to nothing.
+
 ## Units
 
 `spacing` accepts a bare number (world units) or a tagged `{ value, unit }`.

@@ -2,56 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, useLayoutEffect } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { createScene, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
+import type { NodeId, RectPose, Vec2 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
-import { buildGraph, type Graph } from './graph';
 import { force } from './force';
 import { easedProducer, forceProducer, useLiveLayout, type LiveLayout } from './live';
 import { sceneParticipants } from './portLayer';
 import { layered } from './layered';
-
-const LAYERS = [{ id: 'main' as const }];
-const box = (x: number, y: number, w = 40, h = 20): RectPose => ({ x, y, width: w, height: h });
-
-/** Three boxes and two edges, scattered. */
-function scene() {
-  const s = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
-  const a = s.add({ kind: 'leaf', layer: 'main', pose: box(0, 0), data: { diagram: {} } });
-  const b = s.add({ kind: 'container', layer: 'main', pose: box(200, 30), data: { diagram: {} } });
-  const c = s.add({ kind: 'leaf', layer: 'main', pose: box(60, 180), data: { diagram: {} } });
-  const edge = (from: NodeId, to: NodeId) => s.add({
-    kind: 'leaf', layer: 'main', pose: box(0, 0, 0, 0),
-    data: { diagram: { from: {}, to: {} } },
-    dependsOn: [from, to],
-  });
-  edge(a, b);
-  edge(b, c);
-  return { scene: s, a, b, c };
-}
-
-const graphOf = (s: ReturnType<typeof scene>['scene']): Graph =>
-  buildGraph(sceneParticipants<RectPose>(s as never));
-
-/** Manual rAF driver. */
-function makeClock() {
-  let next = 1;
-  const callbacks = new Map<number, (t: number) => void>();
-  return {
-    requestFrame: (cb: (t: number) => void): number => {
-      const h = next++;
-      callbacks.set(h, cb);
-      return h;
-    },
-    cancelFrame: (h: number): void => { callbacks.delete(h); },
-    frames(n: number) {
-      for (let i = 0; i < n; i++) {
-        const due = [...callbacks.values()];
-        callbacks.clear();
-        for (const cb of due) cb(0);
-      }
-    },
-  };
-}
+import { box, graphOf, makeClock, scene } from './liveFixture';
 
 const NO_PINS: ReadonlyMap<NodeId, RectPose> = new Map();
 
@@ -331,13 +288,14 @@ describe('useLiveLayout', () => {
     const route = () => (s.scene.get(long)!.data as { diagram: { waypoints?: Vec2[] } }).diagram.waypoints ?? [];
     act(() => { s.handle().start(); });
     act(() => { s.clock.frames(4); });
-    const was = route();
-    expect(was).toHaveLength(2);
+    const next = route();
+    expect(next).toHaveLength(2);
 
-    // `c` far off to the right: the next run routes `a → c` somewhere else.
-    act(() => { s.scene.setPose(s.c, box(900, 400)); });
-    const graph = graphOf(s.scene);
-    const next = layered.plan!(graph).waypoints!.get(long)!;
+    // As an earlier run left it somewhere else: the next run routes it back.
+    const was = next.map((p) => ({ x: p.x + 50, y: p.y - 30 }));
+    const data = s.scene.get(long)!.data as { diagram: object };
+    act(() => { s.scene.update(long, { data: { ...data, diagram: { ...data.diagram, waypoints: was, laidOut: was } } }); });
+    expect(layered.plan!(graphOf(s.scene)).waypoints!.get(long)).toEqual(next);
     act(() => { s.handle().start(); });
     act(() => { s.clock.frames(2); });
     // Two frames of four, eased in and out: halfway.

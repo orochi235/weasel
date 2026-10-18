@@ -12,6 +12,7 @@ import type {
   DebugConfig,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
   { label: 'off',          config: false },
@@ -68,28 +69,28 @@ export function PathPoseDemo() {
           Debug overlay: {DEBUG_STATES[debugIdx].label}
         </button>
       </div>
-      <SceneCanvas
-        features={['pick', 'move', 'transform']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        selectTool={{
-          snap: gridSnapStrategy<Path>(20),
-        }}
-        debug={debug}
-        layers={{
-          scene: {
-            drawOne: (_o, p): DrawCommand[] => [{
-              kind: 'path',
-              path: p,
-              fill: { paint: { color: '#7fb069' } },
-              stroke: { paint: { color: '#1a130d' }, width: 1.5 },
-            }],
-          },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['pick', 'move', 'transform']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          selectTool={{
+            snap: gridSnapStrategy<Path>(20),
+          }}
+          debug={debug}
+          layers={{
+            scene: {
+              drawOne: (_o, p): DrawCommand[] => [{
+                kind: 'path',
+                path: p,
+                fill: { paint: { color: '#7fb069' } },
+                stroke: { paint: { color: '#1a130d' }, width: 1.5 },
+              }],
+            },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

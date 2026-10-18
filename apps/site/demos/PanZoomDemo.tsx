@@ -7,6 +7,7 @@ import {
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { color: string; pin: 'screen' | 'world' | 'none' }
 type LayerId = 'default';
@@ -52,31 +53,31 @@ export function PanZoomDemo() {
           H = hand · hold space = momentary · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0
         </span>
       </div>
-      <SceneCanvas features={['view']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        initialActiveTool="hand"
-        view={view}
-        onViewChange={setView}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => {
-              const lineWidth = n.data.pin === 'screen' ? { px: 2 } : 2;
-              return [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: n.data.color } },
-                ...(n.data.pin === 'none'
-                  ? {}
-                  : { stroke: { paint: { color: '#d4c4a8' }, width: lineWidth } }),
-              }];
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['view']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          initialActiveTool="hand"
+          view={view}
+          onViewChange={setView}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => {
+                const lineWidth = n.data.pin === 'screen' ? { px: 2 } : 2;
+                return [{
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { paint: { color: n.data.color } },
+                  ...(n.data.pin === 'none'
+                    ? {}
+                    : { stroke: { paint: { color: '#d4c4a8' }, width: lineWidth } }),
+                }];
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

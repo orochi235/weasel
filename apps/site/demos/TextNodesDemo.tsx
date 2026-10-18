@@ -3,6 +3,7 @@ import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@wease
 import type { Fill } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui';
+import { DemoStage } from './DemoStage';
 
 const W = 480;
 const H = 380;
@@ -107,16 +108,16 @@ export function TextNodesDemo() {
     <div className="ckd-stack">
       <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
       <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
-        <SceneCanvas
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          backgroundFill={{ color: '#ffffff' }}
-          scene={scene}
-          selectable={false}
-          // The overlay stands in for the node while it is edited.
-          alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
-        />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            backgroundFill={{ color: '#ffffff' }}
+            scene={scene}
+            selectable={false}
+            // The overlay stands in for the node while it is edited.
+            alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
+          />
+        </DemoStage>
       </div>
     </div>
   );

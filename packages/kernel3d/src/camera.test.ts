@@ -5,10 +5,13 @@ import {
   cameraViewProjection,
   orbitBy,
   dollyBy,
+  clampCamera,
+  dollyToward,
+  panBy,
   MAX_PITCH,
   type Camera3d,
 } from './camera';
-import { normalize, sub, type Vec3 } from '@weasel-js/geom/3d';
+import { normalize, sub, transformPoint4, type Vec3 } from '@weasel-js/geom/3d';
 import { rayThroughScreenPoint } from './screen';
 
 const RECT = { x: 0, y: 0, width: 800, height: 600 };
@@ -76,6 +79,75 @@ describe('dollyBy', () => {
   it('clamps to a usable range rather than letting the camera reach the target', () => {
     expect(dollyBy(createCamera({ distance: 10 }), 0.0001).distance).toBe(0.5);
     expect(dollyBy(createCamera({ distance: 10 }), 10000).distance).toBe(500);
+  });
+});
+
+describe('limits', () => {
+  it('hold dolly to a caller range, for scenes in other units', () => {
+    const limits = { minDistance: 0.01, maxDistance: 1e5 };
+    expect(dollyBy(createCamera({ distance: 10 }), 1e-4, limits).distance).toBeCloseTo(0.01, 9);
+    expect(dollyBy(createCamera({ distance: 10 }), 1e3, limits).distance).toBeCloseTo(1e4, 6);
+  });
+
+  it('hold pitch to a caller range, but never past the poles', () => {
+    expect(orbitBy(createCamera({}), 0, 1, { minPitch: 0, maxPitch: 0.5 }).pitch).toBe(0.5);
+    expect(orbitBy(createCamera({}), 0, -1, { minPitch: 0, maxPitch: 0.5 }).pitch).toBe(0);
+    expect(orbitBy(createCamera({}), 0, 10, { maxPitch: 10 }).pitch).toBeCloseTo(MAX_PITCH, 9);
+  });
+
+  it('clampCamera returns a camera already inside them unchanged', () => {
+    const cam = createCamera({ distance: 3 });
+    expect(clampCamera(cam)).toBe(cam);
+    expect(clampCamera(cam, { minDistance: 5 }).distance).toBe(5);
+  });
+});
+
+describe('panBy', () => {
+  // Where the old target lands on screen after the pan, in a pane of RECT's size.
+  function targetOnScreen(before: Camera3d, after: Camera3d): { x: number; y: number } {
+    const vp = cameraViewProjection(after, RECT.width / RECT.height);
+    const [x, y, , w] = transformPoint4(vp, before.target);
+    return { x: ((x / w + 1) / 2) * RECT.width, y: ((1 - y / w) / 2) * RECT.height };
+  }
+
+  it('moves the point at the old target with the pointer', () => {
+    const cam = createCamera({ distance: 8, yaw: 0.9, pitch: 0.5, target: { x: 1, y: 2, z: 3 } });
+    const p = targetOnScreen(cam, panBy(cam, 40, -25, RECT.height));
+    expect(p.x).toBeCloseTo(400 + 40, 3);
+    expect(p.y).toBeCloseTo(300 - 25, 3);
+  });
+
+  it('keeps the angles and the distance', () => {
+    const moved = panBy(createCamera({ distance: 8, yaw: 0.9, pitch: 0.5 }), 40, 25, RECT.height);
+    expect([moved.yaw, moved.pitch, moved.distance]).toEqual([0.9, 0.5, 8]);
+  });
+});
+
+describe('dollyToward', () => {
+  const PANE = { width: RECT.width, height: RECT.height };
+  function onScreen(camera: Camera3d, p: Vec3): { x: number; y: number } {
+    const [x, y, , w] = transformPoint4(cameraViewProjection(camera, PANE.width / PANE.height), p);
+    return { x: ((x / w + 1) / 2) * PANE.width, y: ((1 - y / w) / 2) * PANE.height };
+  }
+
+  it('keeps the point under the pointer where it is, as a 2D wheel zoom does', () => {
+    const cam = createCamera({ distance: 10, yaw: 0.7, pitch: 0.4, target: { x: 1, y: 0, z: -2 } });
+    const at = { x: 620, y: 180 };
+    // The point in the target's plane under `at`: the target, slid there.
+    const under = panBy(cam, -(at.x - 400), -(at.y - 300), PANE.height).target;
+    expect(onScreen(cam, under).x).toBeCloseTo(at.x, 6);
+    const near = dollyToward(cam, 0.5, at, PANE);
+    expect(near.distance).toBeCloseTo(5, 9);
+    const p = onScreen(near, under);
+    expect(p.x).toBeCloseTo(at.x, 6);
+    expect(p.y).toBeCloseTo(at.y, 6);
+  });
+
+  it('is dollyBy at the middle of the pane, and moves no further than the limits let it', () => {
+    const cam = createCamera({ distance: 10, yaw: 0.7, pitch: 0.4 });
+    expect(dollyToward(cam, 0.5, { x: 400, y: 300 }, PANE)).toEqual(dollyBy(cam, 0.5));
+    const held = dollyToward(cam, 0.5, { x: 700, y: 100 }, PANE, { minDistance: 10 });
+    expect(held).toEqual(cam);
   });
 });
 

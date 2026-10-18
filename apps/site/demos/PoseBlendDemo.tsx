@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, springPose, tweenPose, useScene, useSceneAdapter } from '@weasel-js/core';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 interface Block { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -40,7 +41,9 @@ export function PoseBlendDemo() {
           spring
         </label>
       </div>
-      <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas className="ckd-canvas" scene={scene} />
+      </DemoStage>
     </div>
   );
 }

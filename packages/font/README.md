@@ -17,6 +17,14 @@ no glyphs at all.
 | `textureSink` | The `GlyphTextureSink` seam — the renderer injects GL texture upload, so this package never imports one |
 | `textSdf` | The GLSL that turns an atlas sample into glyph coverage, for the renderer's batch program to paste in |
 
+## Without a browser
+
+`@weasel-js/font/metrics` carries the part that runs in Node or a worker:
+`parseBmFont`, `faceMetricsFromTables` and the other face-metric readers, and
+`cssFamilyName`. The package root also loads faces through `document.fonts`
+and rasterizes through a canvas, so a server measuring text imports the
+subpath instead.
+
 ## Fallback
 
 An unregistered family renders in the default family with a one-time warning:

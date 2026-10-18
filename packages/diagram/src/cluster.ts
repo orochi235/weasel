@@ -55,6 +55,12 @@ function canonical(inset: GroupInset, axes: LayoutAxes): CanonicalInset {
     : { crossLo: inset.top, crossHi: inset.bottom, rankLo: inset.right, rankHi: inset.left };
 }
 
+/** The room `inset` keeps on the low and high side across the rank. */
+export function crossInset(inset: GroupInset, axes: LayoutAxes): { lo: number; hi: number } {
+  const c = canonical(inset, axes);
+  return { lo: c.crossLo, hi: c.crossHi };
+}
+
 /**
  * The gap between each rank and the next, widened so a group's box fits: the
  * widest inset of a group ending at rank `i` and of one starting at `i + 1`

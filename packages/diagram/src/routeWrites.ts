@@ -8,9 +8,9 @@
  * `{ near }`, and its edge's route is layout's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, type DiagramEdge, type EdgeEnd } from './edge';
+import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import { labelFollowsLayout, type Graph } from './graph';
-import { diagramLabelOf, type DiagramLabel } from './label';
+import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { LayoutPlan, LayoutPorts } from './layout';
 
 /** Edge routes for `applyLayout` to write alongside a layout's moves. */

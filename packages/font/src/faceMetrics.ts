@@ -7,7 +7,6 @@
  * Both glyph tiers derive the record through {@link faceMetricsFromTables},
  * so one font yields one set of numbers whichever tier serves a run.
  */
-import type { ResolveResult } from './registerFont';
 
 /** One rule: the top edge's distance below the baseline, and its weight. */
 export interface FaceRuleMetrics {
@@ -187,6 +186,9 @@ export function parseFaceMetrics(raw: unknown): FaceMetrics | undefined {
  * tier, the atlas's on the atlas tier. The canvas tier has none, so callers
  * fall back to their defaults.
  */
-export function faceMetricsOf(result: ResolveResult): FaceMetrics | undefined {
+export function faceMetricsOf(result: {
+  readonly entry: { readonly font: { readonly faceMetrics?: FaceMetrics } } | null;
+  readonly outlineFace?: { readonly faceMetrics?: FaceMetrics };
+}): FaceMetrics | undefined {
   return result.outlineFace?.faceMetrics ?? result.entry?.font.faceMetrics;
 }

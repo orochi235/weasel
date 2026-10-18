@@ -27,8 +27,11 @@ export interface StageProps {
   /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
    *  and gesture in flight. Omitted, this one keeps its own. */
   yoke?: Yoke;
-  /** Which gestures the camera takes; the rest reach the page. Omitted, all of them. */
+  /** Which gestures the camera takes; the rest reach the page. Omitted, all
+   *  but `home`. */
   gestures?: CameraGestures;
+  /** Returns the camera to where it opened; what the `home` gesture runs. */
+  onHome?: () => void;
 }
 
 /**
@@ -68,6 +71,7 @@ export function Stage({
   children,
   yoke,
   gestures,
+  onHome,
 }: StageProps) {
   const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
@@ -130,7 +134,13 @@ export function Stage({
   return (
     <CameraScope yoke={yoke}>
       <CameraContext.Provider value={cameraCtx}>
-        <CameraInput hostRef={host} camera={camera} frame={DEFAULT_FRAME} gestures={gestures} />
+        <CameraInput
+          hostRef={host}
+          camera={camera}
+          frame={DEFAULT_FRAME}
+          gestures={gestures}
+          onHome={onHome}
+        />
         <div
           ref={(el) => {
             host.current = el;

@@ -4,6 +4,7 @@ import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, scriptMetricsFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import styles from './TextScriptDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 620, H = 320;
 
@@ -134,13 +135,13 @@ export function TextScriptDemo() {
         {(preset.shift * 100).toFixed(1)}% rise, read from the font&apos;s{' '}
         <code>OS/2</code> table.
       </p>
-      <DrawCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        background={{ kind: 'solid', color: '#ffffff' }}
-        draw={commands}
-      />
+      <DemoStage width={W} height={H}>
+        <DrawCanvas
+          className="ckd-canvas"
+          background={{ kind: 'solid', color: '#ffffff' }}
+          draw={commands}
+        />
+      </DemoStage>
     </div>
   );
 }

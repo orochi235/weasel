@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  type CanvasSize,
   type DrawCommand,
   PATH_L,
   PATH_M,
@@ -21,9 +22,9 @@ import {
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
+import { DemoStage } from './DemoStage';
 
 const W = 620, H = 400;
-const RECT = { x: 0, y: 0, width: W, height: H };
 const LIGHT: Vec3 = { x: 0.4, y: 0.8, z: 0.45 };
 const EDGE = { color: '#14100b' };
 
@@ -45,9 +46,9 @@ const CORNERS: Vec3[] = Array.from({ length: 8 }, (_, i) => ({
 }));
 const FACES = [[0, 2, 6, 4], [1, 3, 7, 5], [0, 1, 5, 4], [2, 3, 7, 6], [0, 1, 3, 2], [4, 5, 7, 6]];
 
-const toScreen = (m: Mat4, p: Vec3): { x: number; y: number } | null => {
+const toScreen = (m: Mat4, p: Vec3, size: CanvasSize): { x: number; y: number } | null => {
   const [x, y, , w] = transformPoint4(m, p);
-  return w > 0.01 ? ndcToScreen({ x: x / w, y: y / w }, RECT) : null;
+  return w > 0.01 ? ndcToScreen({ x: x / w, y: y / w }, { x: 0, y: 0, ...size }) : null;
 };
 
 const polygon = (pts: readonly { x: number; y: number }[], close: boolean) => ({
@@ -63,11 +64,11 @@ const hex = (rgb: Solid['rgb'], k: number) =>
 const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 
-function groundGrid(vp: Mat4): DrawCommand[] {
+function groundGrid(vp: Mat4, size: CanvasSize): DrawCommand[] {
   const out: DrawCommand[] = [];
   for (let i = -5; i <= 5; i++) {
     for (const [a, b] of [[{ x: i, y: 0, z: -5 }, { x: i, y: 0, z: 5 }], [{ x: -5, y: 0, z: i }, { x: 5, y: 0, z: i }]]) {
-      const p = toScreen(vp, a), q = toScreen(vp, b);
+      const p = toScreen(vp, a, size), q = toScreen(vp, b, size);
       if (p && q) out.push({ kind: 'path', path: polygon([p, q], false), stroke: { paint: { color: '#3a2f24' }, width: { px: 1 } } });
     }
   }
@@ -80,15 +81,15 @@ function groundGrid(vp: Mat4): DrawCommand[] {
  * painted far to near. Everything else on the page is the kit's own.
  */
 function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderLayer<unknown> {
-  const vp = cameraViewProjection(camera, W / H);
   const eye = cameraEye(camera);
   const distance = (p: Pose3) => dot(sub(p.position, eye), sub(p.position, eye));
   return {
     id: 'solids',
     label: 'Solids',
     space: 'screen',
-    draw: () => {
-      const out = groundGrid(vp);
+    draw: (_data, _view, size) => {
+      const vp = cameraViewProjection(camera, size.width / size.height);
+      const out = groundGrid(vp, size);
       const far = [...scene.renderOrderNodes()].sort((a, b) => distance(b.pose) - distance(a.pose));
       for (const { pose, data } of far) {
         const model = poseMatrix(pose);
@@ -101,7 +102,7 @@ function solidsLayer(camera: Camera3d, scene: Scene3d<Solid, 'solids'>): RenderL
           const center = face.reduce((s, i) => ({ x: s.x + world[i].x / 4, y: s.y + world[i].y / 4, z: s.z + world[i].z / 4 }), { x: 0, y: 0, z: 0 });
           const outward = sub(center, pose.position);
           if (dot(outward, sub(eye, center)) <= 0) continue;
-          const pts = face.map((i) => toScreen(mvp, CORNERS[i]));
+          const pts = face.map((i) => toScreen(mvp, CORNERS[i], size));
           if (pts.some((p) => p === null)) continue;
           const lit = Math.max(0, dot(outward, LIGHT) / Math.sqrt(dot(outward, outward)));
           out.push({
@@ -132,10 +133,11 @@ export function Kernel3dDemo() {
     createCamera({ distance: 11, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }));
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const cameraRef = useLatest(camera);
+  const size = useRef<CanvasSize>({ width: W, height: H });
 
   const world = useMemo(() => ({
     scene,
-    viewport: (): Viewport3d => ({ camera: cameraRef.current, width: W, height: H }),
+    viewport: (): Viewport3d => ({ camera: cameraRef.current, ...size.current }),
   }), [cameraRef, scene]);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const pickEvery = useMemo(() => {
@@ -147,7 +149,7 @@ export function Kernel3dDemo() {
     const camera3d: Camera3dDep = {
       get: () => cameraRef.current,
       set: setCamera,
-      size: () => ({ width: W, height: H }),
+      size: () => size.current,
     };
     return {
       id: 'camera3d',
@@ -168,24 +170,25 @@ export function Kernel3dDemo() {
           yaw {deg(camera.yaw)}°  pitch {deg(camera.pitch)}°  distance {camera.distance.toFixed(2).padStart(6, '\u2007')}
         </span>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#1e1610' }}
-        scene={scene}
-        features={['pick']}
-        tools={{ orbit }}
-        onToolsCreated={setTools}
-        ambient={[cameraRig]}
-        poseDescriptor={poseDescriptor}
-        geometry={{ pickEvery }}
-        layers={{
-          // Faces need depth order across nodes, which a per-node painter cannot give.
-          scene: { drawOne: () => [] },
-          solids: { layer, before: 'scene' },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          backgroundFill={{ color: '#1e1610' }}
+          scene={scene}
+          features={['pick']}
+          tools={{ orbit }}
+          onToolsCreated={setTools}
+          ambient={[cameraRig]}
+          poseDescriptor={poseDescriptor}
+          geometry={{ pickEvery }}
+          onResize={(next) => { size.current = next; }}
+          layers={{
+            // Faces need depth order across nodes, which a per-node painter cannot give.
+            scene: { drawOne: () => [] },
+            solids: { layer, before: 'scene' },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

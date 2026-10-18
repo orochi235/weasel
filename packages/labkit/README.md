@@ -29,6 +29,20 @@ the `@weasel-js/ui` components it passes through:
 import '@weasel-js/labkit/styles.css';
 ```
 
+Its glyphs come from the app's icon registry, which labkit does not mount: with
+none, every button in the lab draws a placeholder and warns. Mount one at the
+root — the whole kit's tables, or the trimmed set `virtual:weasel-icons` builds
+(`docs/icons.md` in the weasel repo):
+
+```tsx
+import { IconRegistryProvider } from '@weasel-js/core';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+
+<IconRegistryProvider icons={kitIcons}>
+  <App />
+</IconRegistryProvider>
+```
+
 ## A lab
 
 ```tsx
@@ -142,11 +156,13 @@ ready, `step` ms a frame, when its declaration names a `step`; without one it
 stays where it opens. Whatever an instrument animates off the clock or loads on
 its own is the instrument's to settle.
 
-`gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
-'plain' | 'mod' | false, pinch, tap }`, over each instrument's own
-`canvas.gestures` / `stage.gestures` — and whatever they leave reaches the page:
-`<Lab present gestures={{ pan: false, wheel: false }}>` is an embed the page
-scrolls past, keeping only the pinch.
+`gestures` on `<Lab>` decides what the trials' cameras take — `{ drag, wheel:
+'plain' | 'mod' | false, pinch, tap, home }`, over each instrument's own
+`canvas.gestures` / `stage.gestures` / `orbit.gestures` — and whatever they
+leave reaches the page: `<Lab present gestures={{ drag: false, wheel: false }}>`
+is an embed the page scrolls past, keeping only the pinch. The keys mean the
+same on every camera: `drag` pans a 2D one and turns an orbit, and `home` — a
+double click back to where it opened — is on by default only for an orbit.
 
 A widget's own state persists the same way through `usePersistedState(name,
 initial)`, which is `useState` whose value survives a reload — kept per trial
@@ -215,6 +231,8 @@ provide the corresponding chrome; they compose freely.
 | Field | What the trial then provides |
 | --- | --- |
 | `canvas` | A stack of layered `<canvas>` elements with pan and zoom, redrawing only the layers that changed |
+| `stage` | Pan and zoom over the instrument's own DOM, laid out at a fixed size |
+| `orbit` | A 3D orbit camera — turn, pan, dolly, home — for a renderer the instrument brings |
 | `layers` | A sidebar list that hides and reorders those layers |
 | `annotations` | Drawing tools, an overlay on each region you name, a Marks panel, undo and export |
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
@@ -487,15 +505,46 @@ reads the lab store and only mounts inside a `<Lab>`.
 
 ## Driving your own renderer
 
-`CanvasStack` is 2D. For three.js or raw WebGL, take rects and dirtiness from
-labkit and keep the GL yourself:
+### Cameras
+
+`canvas`, `stage` and `orbit` each give the trial a camera, and a trial has at
+most one: `canvas` wins over `stage`, and `orbit` beside either throws. The
+camera lives in the trial's `view`, so it persists, Clone copies it and Reset
+returns it to `initialView`; the lab's zoom controls drive whichever one has
+the focus. `zoom` in a render context is that camera's magnification — a 2D
+view's zoom, or an orbit's opening distance over its distance now.
+
+An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
+fov, near, far }`, plain numbers in radians and scene units. Read it with
+`useTrialOrbit()` anywhere in the trial, or `as3DView(ctx.trial.view)` in
+`render`, and project it with kernel3d's `cameraViewProjection`:
+
+```tsx
+orbit: {
+  initialView: { distance: 14, pitch: 0.45 },
+  limits: { minDistance: 2, maxDistance: 80 },
+},
+```
+
+A drag turns it, Shift+drag pans its target, the wheel and a pinch dolly
+about the point under the pointer — as a 2D camera zooms about it — and a
+double click goes home. When the instrument draws in a pane rather than its
+whole body, it hands that pane to `useTrialOrbit().viewportRef`: gestures land
+there, and the dolly anchors there. An instrument running a dispatcher of its
+own over the pane — tools that select or draw in 3D — keeps the press for them
+with `gestures: { drag: false, home: false, pinch: 'trackpad' }` and moves the
+trial's camera from its own tools; `examples/3d-lab` does both. The loupe, the
+overview and the linked cursor are 2D, and stay out of an orbit trial.
+
+The renderer is the instrument's: `CanvasStack` draws 2D layers, and for three.js
+or raw WebGL you take rects and dirtiness from labkit and keep the GL yourself:
 
 ```tsx
 import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit/surface';
 ```
 
-A trial's `view` is opaque to labkit — persisted, restored on Reset and handed
-to the instrument without being read into — so a 3D lab stores an orbit there.
+A trial's `view` is persisted, restored on Reset and handed to the instrument;
+labkit reads into it only through the camera the instrument declares.
 See `src/surface/AGENTS.md`
 for the contract and the traps.
 
@@ -511,7 +560,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/primitives` | Toolbar, Sidebar, StatusBar, Legend, FloatingPanel, meters |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
-| `/canvas` | `<CanvasStack>`, `<Stage>`, `<CameraInput>`, coordinate helpers |
+| `/canvas` | `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, coordinate helpers |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
 | `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. Not in the root barrel |
 | `/overview` | `<TrialOverview>`, a floating panel showing a trial's whole content. Not in the root barrel |

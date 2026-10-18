@@ -37,9 +37,12 @@ export {
   measureBody,
   sizeToBody,
 } from './body';
+export { PORT_LABEL_GAP, marginOf, portLabelBox } from './portLabels';
+export type { PerimeterPortLabelBox } from './portLabels';
+export { footprintNode } from './footprint';
 export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
-export type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from './graph';
+export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 export { chain } from './chain';
 export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
@@ -48,10 +51,13 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPlanner,
+  LayoutPorts,
   LayoutResult,
   Slot,
 } from './layout';
 export {
+  anchorOffset,
   axesFor,
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
@@ -60,6 +66,7 @@ export {
   packAcross,
   pinnedSet,
   planOf,
+  plannerPlan,
   seededOrder,
   settle,
   translated,
@@ -71,4 +78,4 @@ export { boxForContent, contentBox, outlinePath } from './outline';
 export type { PortsOptions } from './ports';
 export { COMPASS, DEFAULT_PORTS, portOf, portSitesOf, portsOf } from './ports';
 export { forestOf, tree } from './tree';
-export type { DiagramNode, Port, PortAnchor, PortSpec } from './types';
+export type { DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';

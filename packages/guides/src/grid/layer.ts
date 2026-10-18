@@ -17,6 +17,9 @@ import {
   type PlaneUnits,
   type PlaneValue,
   pxExtent,
+  viewportWorldRect,
+  type Dims,
+  type View,
 } from '@weasel-js/core';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 
@@ -31,8 +34,13 @@ export interface GridLayerOpts {
   spacing: PlaneValue;
   /** Optional unit system for resolving tagged `spacing` values. */
   unitSystem?: PlaneUnits;
-  /** Bounds of the area to cover, in world units. */
-  bounds: () => { x: number; y: number; width: number; height: number };
+  /**
+   * The area to cover, in world units, read every paint with that paint's
+   * view and canvas size. Lines start at its own `x`/`y`. Omitted, the grid
+   * covers whatever the canvas shows, with its lines on world multiples of
+   * `spacing` so they stay put as the view pans.
+   */
+  bounds?: (view: View, dims: Dims) => { x: number; y: number; width: number; height: number };
   /** Lines every N cells get the accent style. 0/undef = no accent. */
   accentEvery?: number;
   /** Optional finer subdivisions per cell. e.g. 4 -> 4 sub-lines per cell. */
@@ -62,6 +70,9 @@ const DEFAULT_SUB: CommandStroke = {
   width: 1,
 };
 
+/** Closest, in CSS pixels, a line family is drawn; denser ones are left out. */
+const MIN_SCREEN_SPACING = 4;
+
 /** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
 export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   const line = opts.style?.line ?? DEFAULT_LINE;
@@ -71,12 +82,15 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   return {
     id: 'grid',
     label: 'Grid',
-    draw: (_data, view) => {
-      const b = opts.bounds();
-      if (b.width <= 0 || b.height <= 0) return [];
-
+    draw: (_data, view, dims) => {
       const { accentEvery, subdivisions } = opts;
       const spacing = resolveAxes(opts.spacing, opts.unitSystem);
+      const b = opts.bounds
+        ? opts.bounds(view, dims)
+        : onLattice(viewportWorldRect(view, dims), spacing, accentEvery && accentEvery > 0 ? accentEvery : 1);
+      // Written so a non-finite extent, which a zero view scale gives, fails it too.
+      if (!(b.width > 0 && b.height > 0 && Number.isFinite(b.width) && Number.isFinite(b.height))) return [];
+
       const x0 = b.x;
       const y0 = b.y;
       const x1 = b.x + b.width;
@@ -102,52 +116,53 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
         });
       };
 
-      // Sub-lines (drawn first so cell lines paint on top).
-      if (subdivisions && subdivisions > 1) {
-        const stepX = spacing.x / subdivisions;
-        for (let x = x0; x <= x1 + 1e-9; x += stepX) {
-          const k = Math.round((x - x0) / stepX);
-          if (k % subdivisions === 0) continue;
-          pushSegment(x, y0, x, y1, sub);
+      // One family of parallel lines `step` apart, leaving out every
+      // `skipEvery`th (the ones a coarser family draws), and none at all once
+      // they would sit closer than MIN_SCREEN_SPACING on screen.
+      const family = (axis: 'x' | 'y', step: number, skipEvery: number, s: CommandStroke): void => {
+        if (!(step * Math.abs(view.scale[axis]) >= MIN_SCREEN_SPACING)) return;
+        const [from, to] = axis === 'x' ? [x0, x1] : [y0, y1];
+        for (let k = 0; from + k * step <= to + 1e-9; k++) {
+          if (skipEvery > 0 && k % skipEvery === 0) continue;
+          const at = from + k * step;
+          if (axis === 'x') pushSegment(at, y0, at, y1, s);
+          else pushSegment(x0, at, x1, at, s);
         }
-        const stepY = spacing.y / subdivisions;
-        for (let y = y0; y <= y1 + 1e-9; y += stepY) {
-          const k = Math.round((y - y0) / stepY);
-          if (k % subdivisions === 0) continue;
-          pushSegment(x0, y, x1, y, sub);
-        }
-      }
+      };
 
-      // Cell lines (skip ones that will become accents).
-      let idx = 0;
-      for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
-        const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
-        if (!isAccent) pushSegment(x, y0, x, y1, line);
-        idx++;
+      const accentOn = accentEvery !== undefined && accentEvery > 0;
+      for (const axis of ['x', 'y'] as const) {
+        // Sub-lines first so cell lines paint on top, accents last of all.
+        if (subdivisions && subdivisions > 1) family(axis, spacing[axis] / subdivisions, subdivisions, sub);
       }
-      idx = 0;
-      for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
-        const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
-        if (!isAccent) pushSegment(x0, y, x1, y, line);
-        idx++;
-      }
-
-      // Accent lines on top.
-      if (accentEvery && accentEvery > 0) {
-        idx = 0;
-        for (let x = x0; x <= x1 + 1e-9; x += spacing.x) {
-          if (idx % accentEvery === 0) pushSegment(x, y0, x, y1, accent);
-          idx++;
-        }
-        idx = 0;
-        for (let y = y0; y <= y1 + 1e-9; y += spacing.y) {
-          if (idx % accentEvery === 0) pushSegment(x0, y, x1, y, accent);
-          idx++;
-        }
+      for (const axis of ['x', 'y'] as const) family(axis, spacing[axis], accentOn ? accentEvery : 0, line);
+      if (accentOn) {
+        for (const axis of ['x', 'y'] as const) family(axis, spacing[axis] * accentEvery, 0, accent);
       }
 
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return children;
     },
+  };
+}
+
+/**
+ * Grow `r` outward to whole periods of the lattice, so the first line drawn
+ * sits on a world multiple of the pitch, and of the accent pitch for accents.
+ */
+function onLattice(
+  r: { x: number; y: number; width: number; height: number },
+  spacing: { x: number; y: number },
+  accentEvery: number,
+): { x: number; y: number; width: number; height: number } {
+  const px = spacing.x * accentEvery;
+  const py = spacing.y * accentEvery;
+  const x = Math.floor(r.x / px) * px;
+  const y = Math.floor(r.y / py) * py;
+  return {
+    x,
+    y,
+    width: Math.ceil((r.x + r.width) / px) * px - x,
+    height: Math.ceil((r.y + r.height) / py) * py - y,
   };
 }

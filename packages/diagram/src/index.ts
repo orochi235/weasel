@@ -31,6 +31,9 @@ export type {
   RowPortBox,
   RowTextStyle,
 } from './body';
+export { PORT_LABEL_GAP, marginOf, portLabelBox, portLabelsOf } from './portLabels';
+export type { PerimeterPortLabelBox, PortLabelPlacement } from './portLabels';
+export { footprintNode } from './footprint';
 export {
   CONNECT_ACTION_ID,
   DEFAULT_EDGE_STROKE,
@@ -50,16 +53,15 @@ export {
   EDGE_DERIVE_PATH,
   ROUTERS,
   bezier,
-  diagramEdgeOf,
   edgeDerivePath,
-  layoutOwnsPort,
-  layoutOwnsRoute,
   orthogonal,
   resolveEnd,
   straight,
   withDiagramRegistry,
 } from './edge';
-export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export type { EdgeRouteOptions, RouteRequest, Router } from './edge';
+export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute } from './edgeTrait';
+export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
 export type { SelfLoop } from './selfLoop';
 export { buildGraph } from './graph';
@@ -73,8 +75,10 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
-export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
-export type { DiagramLabel, LabelPoseOptions } from './label';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+export type { LabelPoseOptions } from './label';
+export { diagramLabelOf } from './labelTrait';
+export type { DiagramLabel } from './labelTrait';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
 export {
@@ -124,11 +128,13 @@ export type { LayeredRoute, LayeredRouteInput, RouteEdge } from './route';
 export {
   DEFAULT_NODE_GAP,
   DEFAULT_RANK_GAP,
+  anchorOffset,
   axesFor,
   graphOrder,
   packAcross,
   pinnedSet,
   planOf,
+  plannerPlan,
   seededOrder,
   settle,
   translated,
@@ -140,6 +146,7 @@ export type {
   LayoutFn,
   LayoutOptions,
   LayoutPlan,
+  LayoutPlanner,
   LayoutPorts,
   LayoutResult,
   Slot,
@@ -183,7 +190,8 @@ export {
   isPinned,
 } from './trait';
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
-export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSpec } from './types';
+export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
-export type { DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
+export type { DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
+export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

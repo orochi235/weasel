@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, type DiagramData } from '@weasel-js/diagram';
+import { DemoStage } from './DemoStage';
 
 /** Sinks listed out of order on purpose: the barycenter pass is what keeps
  *  these edges down to the one crossing K2,2 cannot avoid. */
@@ -32,7 +33,9 @@ export function DiagramDataDemo() {
   return (
     <div className="ckd-stack">
       <div className="ckd-row">picked: {picked ?? 'none'}</div>
-      <DiagramView specs={specs} width={640} height={420} selected={picked} onSelect={setPicked} className="ckd-canvas" />
+      <DemoStage width={640} height={420}>
+        <DiagramView specs={specs} selected={picked} onSelect={setPicked} className="ckd-canvas" />
+      </DemoStage>
     </div>
   );
 }

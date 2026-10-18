@@ -37,6 +37,7 @@ import {
 import { viewToMat3 } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { SurfaceCanvas } from './SurfaceCanvas';
+import { useSurfaceSize } from './useSurfaceSize';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -62,8 +63,6 @@ function CanvasInner<TPose>(
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
-    width,
-    height,
     dpr: dprProp,
     flattenTolerance,
     contentVersion,
@@ -115,6 +114,7 @@ function CanvasInner<TPose>(
     canvasRef.current = el;
   }, []);
   const detached = !!paintInto;
+  const { width, height } = useSurfaceSize(props, ownCanvasRef);
   // The detached input element reaches `canvasRef` at commit; the own canvas
   // arrives through `setOwnCanvas`, React's ref callback.
   useInsertionEffect(() => {
@@ -400,6 +400,7 @@ function CanvasInner<TPose>(
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
+    if (w === 0 || h === 0) return false;
 
     const debugFrame = beginDebugFrame(sink, timed, paintLayers);
 
@@ -469,8 +470,8 @@ function CanvasInner<TPose>(
   return (
     <SurfaceCanvas
       ref={setOwnCanvas}
-      width={width}
-      height={height}
+      width={props.width}
+      height={props.height}
       tabIndex={tabIndex}
       className={className} style={style}
     />

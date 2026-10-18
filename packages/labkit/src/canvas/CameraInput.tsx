@@ -38,8 +38,8 @@ import {
 } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
-import { normalize2DView } from '../state/view';
-import { CameraWheelContext } from './CameraWheelContext';
+import { as2DView, normalize2DView } from '../state/view';
+import { useCameraWheelSlot } from './CameraWheelContext';
 import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
@@ -98,9 +98,14 @@ export interface ZoomRange {
   max: number;
 }
 
-/** A labkit camera: a weasel `ViewApi` that also says how far it zooms. */
+/** A labkit camera — 2D or an orbit — as a weasel `ViewApi` whose scale is its
+ *  zoom, and that also says how far it zooms. */
 export interface CameraView extends ViewApi {
   zoomRange(): ZoomRange;
+  /** The zoom a trial's stored `view` reads as on this camera, or `null` when
+   *  the view is not this camera's shape. Read off the view rather than the
+   *  camera, so chrome rendering beside the trial never sees it a change late. */
+  zoomOf(view: unknown): number | null;
 }
 
 function isPositiveFinite(n: number): boolean {
@@ -164,11 +169,13 @@ export function useCameraView({
         return r ? { width: r.width, height: r.height } : null;
       },
       zoomRange: () => ({ ...bounds.current }),
+      zoomOf: (v) => as2DView(v)?.zoom ?? null,
     };
   }, [bounds, hostRef]);
 }
 
 const TAP_ID = 'camera.tap';
+const HOME_ID = 'camera.home';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
 const CHANNELS_WITH_MENU = { ingest: false } as const;
@@ -183,8 +190,10 @@ export interface CameraInputProps {
   /** A primary-button press released without crossing the drag threshold, at
    *  the world point it landed on. */
   onTap?: (world: Point) => void;
-  /** Which gestures the camera takes. Omitted, all of them. */
+  /** Which gestures the camera takes. Omitted, all but `home`. */
   gestures?: CameraGestures;
+  /** Returns the camera to where it opened; what the `home` gesture runs. */
+  onHome?: () => void;
 }
 
 /**
@@ -203,12 +212,22 @@ function CameraDispatch({
   camera,
   frame,
   onTap,
+  onHome,
   gestures,
   registry,
 }: CameraInputProps & { registry: ActionsRegistry }) {
   const frameRef = useLatest(frame);
   const onTapRef = useLatest(onTap);
-  const { pan, wheel, pinch, tap: taps } = resolveGestures(gestures);
+  const onHomeRef = useLatest(onHome);
+  const {
+    drag,
+    wheel,
+    trackpadPinch: padPinch,
+    touchPinch,
+    tap: taps,
+    home,
+  } = resolveGestures(gestures);
+  const homes = home && onHome !== undefined;
   const labMenu = useContext(LabContextMenusContext);
 
   useDepSource('view', () => camera);
@@ -245,7 +264,7 @@ function CameraDispatch({
     const [wheelBinding, ...trackpadPinch] = (
       zoom.defaultBinding as { spec: { kind: string } }[]
     ).filter((b) => b.spec.kind === 'wheel' || b.spec.kind === 'pinch');
-    const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(pinch ? trackpadPinch : [])];
+    const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(padPinch ? trackpadPinch : [])];
     const tap: Action = {
       id: TAP_ID,
       label: 'Tap the canvas',
@@ -259,17 +278,24 @@ function CameraDispatch({
         },
       },
     };
+    const goHome: Action = {
+      id: HOME_ID,
+      label: 'Reset view',
+      defaultBinding: { kind: 'doubleClick' },
+      invoker: { timing: 'immediate', run: () => onHomeRef.current?.() },
+    };
     return [
       ...(labMenu ? [contextMenuAction] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
-      ...(pan ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
+      ...(drag ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(pinch ? [makePinchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [makePinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
+      ...(homes ? [goHome] : []),
     ];
-  }, [frameRef, onTapRef, pan, wheel, pinch, taps, labMenu]);
+  }, [frameRef, onTapRef, onHomeRef, drag, wheel, padPinch, touchPinch, taps, homes, labMenu]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
@@ -292,24 +318,7 @@ function CameraDispatch({
   // Input that lands outside the camera's element — an annotation target's
   // box, portalled into the surface — reaches the active camera's dispatcher
   // through here.
-  const wheelSlotRef = useContext(CameraWheelContext);
-  useEffect(() => {
-    if (!wheelSlotRef) return;
-    const forward = (e: WheelEvent): void => {
-      // The dispatcher cancels the copy it takes; the page acts on the original.
-      const taken = hostRef.current?.dispatchEvent(new WheelEvent('wheel', e)) === false;
-      if (taken) e.preventDefault();
-    };
-    const claim = (): void => {
-      if (registry.isActive()) wheelSlotRef.current = forward;
-    };
-    claim();
-    const off = registry.subscribe(claim);
-    return () => {
-      off();
-      if (wheelSlotRef.current === forward) wheelSlotRef.current = null;
-    };
-  }, [wheelSlotRef, hostRef, registry]);
+  useCameraWheelSlot(hostRef, registry);
 
   return null;
 }

@@ -118,8 +118,8 @@ export function TrialChrome({
     [undockedPanels, trialId],
   );
 
-  // The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape
-  // and goes inert when the trial holds something else — an orbit, say.
+  // The trial view is opaque to labkit. The trial's camera reads a zoom off it
+  // in its own shape; with no camera, only a 2D view has one.
   const view2d = as2DView(record.view);
 
   const configSchema = useConfigSchema(instrument);
@@ -157,7 +157,7 @@ export function TrialChrome({
       title,
       setTitle: (next) => setTrialTitle(trialId, next),
       isLastTrial,
-      zoom: view2d ? view2d.zoom : null,
+      zoom: camera ? camera.zoomOf(record.view) : (view2d?.zoom ?? null),
       setZoom,
       canUndo: undoBindings?.canUndo ?? false,
       canRedo: undoBindings?.canRedo ?? false,

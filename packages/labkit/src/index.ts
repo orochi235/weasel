@@ -153,6 +153,7 @@ export type {
   CanvasStackContextValue,
   CanvasStackProps,
   CanvasStackSurface,
+  OrbitProps,
   StageProps,
   ViewportSize,
   WorldFrame,
@@ -173,6 +174,7 @@ export {
   createCameraRegistry,
   DEFAULT_FRAME,
   fitStage,
+  Orbit,
   resolveFrame,
   Stage,
   screenToWorld,
@@ -277,6 +279,7 @@ export type {
   InstrumentList,
   LayerCapability,
   LayerDescriptor,
+  OrbitCapability,
   PaletteItem,
   Point,
   RenderContext,
@@ -325,8 +328,8 @@ export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
 export { type PersistedStateOptions, usePersistedState } from './state/usePersistedState';
 export { useTrialState } from './state/useTrialState';
-export type { ViewTransform2D } from './state/view';
-export { as2DView, DEFAULT_VIEW } from './state/view';
+export type { ViewTransform2D, ViewTransform3D } from './state/view';
+export { as2DView, as3DView, DEFAULT_VIEW } from './state/view';
 export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';

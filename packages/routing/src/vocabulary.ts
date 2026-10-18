@@ -8,7 +8,7 @@
  * these shapes is a change to core's contract that happens to be spelled here.
  */
 
-import type { PoseLinear, View } from '@weasel-js/geom';
+import type { FramedBox, View } from '@weasel-js/geom';
 import type { SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectionExtendKey, SelectionMode };
 
@@ -17,20 +17,9 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 
 export type { View };
 
-/**
- * Axis-aligned rectangle in world space. The optional `rotation` (radians,
- * around the AABB center) and `transform` (inside it, about the same center)
- * let chrome carry the frame a box is drawn in without a parallel type;
- * `poseFrameOf` composes the two.
- */
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-  transform?: PoseLinear;
-}
+/** Axis-aligned rectangle in world space, with the frame it is drawn in;
+ *  geom's `FramedBox`. */
+export type Bounds = FramedBox;
 
 
 /** The selection as routing reads and writes it. */

@@ -9,7 +9,7 @@
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, matchesGlob, relative, resolve } from 'node:path';
-import { SOURCE, globImports, importSpecifiers, isBare, packageOf, unreadableImports } from './lib/imports.mjs';
+import { SOURCE, isBare, packageOf, scanImports } from './lib/imports.mjs';
 import { workspaceEntries } from './lib/packageEntries.mjs';
 import { type ViteAlias, weaselAliases } from './vite-aliases.ts';
 
@@ -27,6 +27,23 @@ function sourceAt(path: string): string | undefined {
   const written = path.replace(/\.js$/, '');
   const found = [path, ...ENDINGS.map((ending) => written + ending)].find(isFile);
   return found && SOURCE.test(found) ? found : undefined;
+}
+
+type Scan = ReturnType<typeof scanImports>;
+type Parsed = Map<string, { stamp: string; scan: Scan }>;
+const PARSED = Symbol.for('weasel.browserDeps.parsed');
+/** vitest evaluates its config once per project, each time in a fresh module instance, so the
+ *  parses are kept on `globalThis`. Keyed on mtime and size, a watch-mode reload still sees edits. */
+const parsed: Parsed = ((globalThis as { [PARSED]?: Parsed })[PARSED] ??= new Map());
+
+function importsOf(file: string): Scan {
+  const { mtimeMs, size } = statSync(file);
+  const stamp = `${mtimeMs}:${size}`;
+  const hit = parsed.get(file);
+  if (hit?.stamp === stamp) return hit.scan;
+  const scan = scanImports(readFileSync(file, 'utf8'), file);
+  parsed.set(file, { stamp, scan });
+  return scan;
 }
 
 function aliased(specifier: string, aliases: ViteAlias[]): string | undefined {
@@ -77,9 +94,11 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
   const found = new Set<string>();
   const seen = new Set<string>();
   const queue = [
+    // A failed browser test leaves its screenshots in a directory named for the test file.
     ...globSync(entries, { cwd: repoRoot, exclude: (name) => SKIPPED_DIR.test(name) })
       .sort()
-      .map((file) => join(repoRoot, file)),
+      .map((file) => join(repoRoot, file))
+      .filter(isFile),
     ...setupFiles.map((file) => resolve(repoRoot, file)),
   ];
   const resolved = new Map<string, string | undefined>();
@@ -94,18 +113,17 @@ export function browserDeps(repoRoot: string, { entries, setupFiles = [] }: Brow
 
   for (let file = queue.pop(); file; file = queue.pop()) {
     seen.add(file);
-    const text = readFileSync(file, 'utf8');
-    const unreadable = unreadableImports(text);
+    const { specifiers, globs, unreadable } = importsOf(file);
     if (unreadable.length > 0) {
       throw new Error(
         `browserDeps: ${relative(repoRoot, file)} imports what a scan cannot read, so a browser test could meet a ` +
           `dependency vite has not pre-bundled. Write the specifier or the glob as a literal:\n  ${unreadable.join('\n  ')}`,
       );
     }
-    for (const { patterns, modules } of globImports(text)) {
+    for (const { patterns, modules } of globs) {
       if (modules) for (const path of globbed(file, patterns, repoRoot, aliases)) visit(path);
     }
-    for (const specifier of importSpecifiers(text)) {
+    for (const specifier of specifiers) {
       // A query (`?raw`, `?url`) hands the module to a vite plugin as text or an address.
       if (specifier.includes('?')) continue;
       const target = aliased(specifier, aliases);

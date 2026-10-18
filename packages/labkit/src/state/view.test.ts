@@ -1,9 +1,10 @@
 import { ZOOM_FLOOR } from '@weasel-js/core';
+import { createCamera } from '@weasel-js/kernel3d';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import { openLabStore } from './openLabStore';
 import { createLabStore } from './store';
-import { as2DView, DEFAULT_VIEW, normalize2DView, withZoom } from './view';
+import { as2DView, as3DView, DEFAULT_VIEW, normalize2DView, withZoom } from './view';
 
 interface ArbitraryTrialView {
   yaw: number;
@@ -156,6 +157,28 @@ describe('2D view zoom invariant', () => {
     expect(withZoom({ zoom: 2, pan: { x: 4, y: 5 } }, 0)).toEqual({
       zoom: ZOOM_FLOOR,
       pan: { x: 4, y: 5 },
+    });
+  });
+});
+
+describe('as3DView', () => {
+  const cam = createCamera({ distance: 9, yaw: 1.1, pitch: 0.3 });
+
+  it('returns a whole camera as itself', () => {
+    expect(as3DView(cam)).toBe(cam);
+  });
+
+  it('fills lens fields a stored camera lacks, and refuses one with no target', () => {
+    const { fov: _f, near: _n, far: _r, ...bare } = cam;
+    expect(as3DView(bare)).toEqual(cam);
+    expect(as3DView({ yaw: 1, pitch: 0, distance: 3 })).toBeNull();
+    expect(as3DView(DEFAULT_VIEW)).toBeNull();
+  });
+
+  it('brings pitch and distance inside the limits it is given', () => {
+    expect(as3DView(cam, { maxDistance: 4, maxPitch: 0.1 })).toMatchObject({
+      distance: 4,
+      pitch: 0.1,
     });
   });
 });

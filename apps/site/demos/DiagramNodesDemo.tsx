@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode, type NodeMove } from '@weasel-js/diagram';
 import { FONT, PORTS, moved } from './diagram/shared';
+import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
 
@@ -19,7 +20,7 @@ const NODES: DataNode[] = [
       { kind: 'field', label: 'mode', value: 'bilinear' },
     ],
   },
-  { id: 'load', at: { x: 300, y: 200 }, width: 170, height: 50, outline: 'parallelogram', lines: ['read frame'] },
+  { id: 'load', at: { x: 300, y: 200 }, width: 170, height: 50, outline: 'parallelogram', lines: ['read frame'], portLabels: { s: 'pixels' } },
 ];
 
 export function DiagramNodesDemo() {
@@ -29,14 +30,14 @@ export function DiagramNodesDemo() {
   // describe, and the view shows it once the data says so.
   const specs = useMemo(() => diagramScene({ nodes, edges }, { layout: 'none', font: FONT }), [nodes, edges]);
   return (
-    <DiagramView
-      specs={specs}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      portOptions={PORTS}
-      onMove={(moves: readonly NodeMove[]) => setNodes((ns) => moved(ns, moves))}
-      onConnect={(edge) => setEdges((es) => [...es, edge])}
-    />
+    <DemoStage width={W} height={H}>
+      <DiagramView
+        specs={specs}
+        className="ckd-canvas"
+        portOptions={PORTS}
+        onMove={(moves: readonly NodeMove[]) => setNodes((ns) => moved(ns, moves))}
+        onConnect={(edge) => setEdges((es) => [...es, edge])}
+      />
+    </DemoStage>
   );
 }

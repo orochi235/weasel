@@ -4,6 +4,7 @@ import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefConditionEditor, prefConditionFlow } from '@weasel-js/ui';
 import { FONT } from './diagram/shared';
 import s from './PrefConditionDiagramDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -43,7 +44,9 @@ export function PrefConditionDiagramDemo() {
   return (
     <div className={s.demo}>
       <PrefConditionEditor aria-label="Shown if" schema={SCHEMA} value={condition} onChange={setCondition} />
-      <DiagramView specs={specs} width={640} height={260} className="ckd-canvas" />
+      <DemoStage width={640} height={260}>
+        <DiagramView specs={specs} className="ckd-canvas" />
+      </DemoStage>
     </div>
   );
 }

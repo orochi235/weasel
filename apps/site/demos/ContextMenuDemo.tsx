@@ -6,6 +6,7 @@ import {
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -52,15 +53,15 @@ function Demo() {
   return (
     <div className="ckd-shape-tools-demo">
       <ContextMenuHost />
-      <SceneCanvas
-        features={['pick', 'move', 'edit', 'arrange']}
-        claimKeys
-        width={400}
-        height={260}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-      />
+      <DemoStage width={400} height={260}>
+        <SceneCanvas
+          features={['pick', 'move', 'edit', 'arrange']}
+          claimKeys
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+        />
+      </DemoStage>
       <ul>
         {[...scene.nodes.keys()].map((id) => (
           <li key={id} onContextMenu={(e) => onRowMenu(id, e)}>{id}</li>

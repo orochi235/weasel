@@ -15,6 +15,7 @@ import {
 import type { PolygonPath, Stroke, Fill } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 interface NodeData { kind: string; fill: Fill; stroke?: Stroke }
 type LayerId = 'default';
@@ -50,34 +51,34 @@ export function SelectionPanelDemo() {
 
   return (
     <div className="ckd-row">
-      <SceneCanvas
-        features={['pick', 'edit']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        routing={defaultNodeRouting}
-        layers={{
-          scene: {
-            // The renderer's Path union has no ellipse variant, so an
-            // 'ellipse'-kind node paints as a 32-gon polygon approximation
-            // (see `ellipse` above) inscribed in its pose box.
-            drawOne: (n, p): DrawCommand[] => {
-              const fill = commandFill(n.data.fill, p);
-              const stroke = n.data.stroke && commandStroke(n.data.stroke, p);
-              return [{
-                kind: 'path',
-                path: n.data.kind === 'ellipse'
-                  ? ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2)
-                  : { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                ...(fill ? { fill } : {}),
-                ...(stroke ? { stroke } : {}),
-              }];
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['pick', 'edit']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          routing={defaultNodeRouting}
+          layers={{
+            scene: {
+              // The renderer's Path union has no ellipse variant, so an
+              // 'ellipse'-kind node paints as a 32-gon polygon approximation
+              // (see `ellipse` above) inscribed in its pose box.
+              drawOne: (n, p): DrawCommand[] => {
+                const fill = commandFill(n.data.fill, p);
+                const stroke = n.data.stroke && commandStroke(n.data.stroke, p);
+                return [{
+                  kind: 'path',
+                  path: n.data.kind === 'ellipse'
+                    ? ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2)
+                    : { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  ...(fill ? { fill } : {}),
+                  ...(stroke ? { stroke } : {}),
+                }];
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </DemoStage>
       <SelectionPanel
         scene={scene}
         selection={selection}

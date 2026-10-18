@@ -18,7 +18,6 @@ import { icon } from '../icons.gen';
 import { formatShortcut } from '../passthrough/weasel-ui';
 import { Toolbar } from '../primitives/Toolbar';
 import { LabStoreContext } from '../state/context';
-import { as2DView } from '../state/view';
 import { LabActions, useInLabActions } from './LabActions';
 import { useLabCommands } from './LabContext';
 
@@ -88,14 +87,12 @@ function LabZoomControls() {
   const camera = useSyncExternalStore(cameras?.subscribe ?? noSubscribe, () =>
     cameras && focusedTrialId ? cameras.get(focusedTrialId) : null,
   );
-  const zoom = useStore(storeCtx.store, (s) => {
-    const record = s.trials.find((t) => t.id === focusedTrialId);
-    return as2DView(record?.view)?.zoom ?? null;
-  });
+  const view = useStore(storeCtx.store, (s) => s.trials.find((t) => t.id === focusedTrialId)?.view);
+  const zoom = camera?.zoomOf(view) ?? null;
 
   const live = zoom !== null && camera !== null;
-  const view = useMemo(() => (camera ? forZoom(camera) : null), [camera]);
-  const viewRef = useLatest(live ? view : null);
+  const zoomView = useMemo(() => (camera ? forZoom(camera) : null), [camera]);
+  const viewRef = useLatest(live ? zoomView : null);
 
   useEffect(() => {
     const action: Action = {

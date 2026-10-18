@@ -21,9 +21,7 @@ import { AnnotationTargets } from '../annotations/AnnotationTargets';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
-import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
-import { Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
@@ -43,12 +41,11 @@ import type {
 import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
-import { useIsPresented } from '../lab/presentation';
 import type { LayerListItem } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
-import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
+import { DEFAULT_VIEW } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings } from './TrialChrome';
@@ -57,9 +54,10 @@ import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { TrialHistoryContext, useMountedHistory } from './trialHistory';
 import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
+import { useTrialCamera } from './useTrialCamera';
 import { useTrialMarks } from './useTrialMarks';
+import { TrialOrbitContext } from './useTrialOrbit';
 import { useTrialWrites } from './useTrialWrites';
-import { useViewPlacement } from './useViewPlacement';
 
 /** Props for `<Trial>`. */
 export interface TrialProps {
@@ -208,18 +206,14 @@ function TrialRuntime({
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
-  const stage = instrument.canvas ? undefined : instrument.stage;
-  const stageHostRef = useRef<HTMLDivElement | null>(null);
-  const labGestures = useContext(CameraGesturesContext);
-  const gestures = { ...(instrument.canvas ?? stage)?.gestures, ...labGestures };
-  const presented = useIsPresented(record.id);
-  const placeView = useViewPlacement({
+  const cam = useTrialCamera({
     instrument,
+    trialId: record.id,
     view: record.view,
     setView,
-    presented,
-    viewport: instrument.canvas ? canvasContainerRef : stageHostRef,
+    canvasHost: canvasContainerRef,
   });
+  const { camera, view2d } = cam;
 
   const annotationsCap = instrument.annotations;
   const {
@@ -249,10 +243,6 @@ function TrialRuntime({
     else setLabTool(id);
   };
 
-  // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
-  // gets the default here and simply never renders them.
-  const view2d = as2DView(record.view);
-
   const jobCap = instrument.job;
   // Hooks cannot be conditional, so a trial without the capability still calls
   // this — with a runner that yields nothing and is never started.
@@ -275,11 +265,8 @@ function TrialRuntime({
       id: record.id,
       view: record.view,
       setView,
-      zoom: view2d?.zoom ?? 1,
-      setZoom: (z) => {
-        if (!view2d) return;
-        updateTrialView(record.id, withZoom(view2d, z));
-      },
+      zoom: cam.zoom,
+      setZoom: cam.setZoom,
       activeToolId: resolvedToolId,
       setActiveTool,
       visibleLayers,
@@ -398,19 +385,21 @@ function TrialRuntime({
   }, [canvasLayers, dragDropResult.drag]);
 
   let body: ReactNode;
-  if (instrument.canvas) {
+  if (camera?.kind === 'canvas') {
+    const canvas = camera.capability;
     body = (
       <div ref={canvasContainerRef} className="lk-trial__canvas-host">
         <CanvasStack
           layers={layersWithFeedback}
           view={view2d ?? DEFAULT_VIEW}
           onViewChange={setView}
-          worldSpec={instrument.canvas.worldSpec}
-          onResize={placeView}
-          minZoom={instrument.canvas.minZoom}
-          maxZoom={instrument.canvas.maxZoom}
+          worldSpec={canvas.worldSpec}
+          onResize={cam.placement.place}
+          minZoom={canvas.minZoom}
+          maxZoom={canvas.maxZoom}
           ticks={ticks}
-          gestures={gestures}
+          gestures={cam.gestures}
+          onHome={cam.home}
         >
           {instrument.render(renderCtx)}
           {instrument.dragDrop ? dragDropResult.target : null}
@@ -418,22 +407,8 @@ function TrialRuntime({
         <DragOverlay drag={dragDropResult.drag} />
       </div>
     );
-  } else if (stage) {
-    body = (
-      <Stage
-        size={stage.size}
-        view={view2d ?? DEFAULT_VIEW}
-        onViewChange={setView}
-        onResize={placeView}
-        hostRef={stageHostRef}
-        gestures={gestures}
-        minZoom={stage.minZoom}
-        maxZoom={stage.maxZoom}
-        overlay={stage.overlay?.(renderCtx)}
-      >
-        {instrument.render(renderCtx)}
-      </Stage>
-    );
+  } else if (camera) {
+    body = cam.body(instrument.render(renderCtx), renderCtx);
   } else {
     body = instrument.render(renderCtx);
   }
@@ -508,31 +483,33 @@ function TrialRuntime({
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <TrialClockContext.Provider value={clockHandle}>
-        <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
-          <CameraWheelContext.Provider value={wheelSlot}>
-            <TrialChrome
-              job={jobCap ? job : undefined}
-              loupe={loupeBindings}
-              trialId={record.id}
-              record={record}
-              instrument={instrument}
-              isLastTrial={isLast}
-              undoBindings={undoBindings}
-              setConfig={setConfig}
-              trialChrome={extraChrome}
-              chrome={chrome}
-              suppress={suppress}
-              activeToolId={resolvedToolId}
-              setActiveTool={setActiveTool}
-            >
-              {scopedBody}
-              {annotationOverlays}
-              <PresentedTransport trialId={record.id} />
-            </TrialChrome>
-          </CameraWheelContext.Provider>
-        </AnnotationsContext.Provider>
-      </TrialClockContext.Provider>
+      <TrialOrbitContext.Provider value={cam.orbit}>
+        <TrialClockContext.Provider value={clockHandle}>
+          <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
+            <CameraWheelContext.Provider value={wheelSlot}>
+              <TrialChrome
+                job={jobCap ? job : undefined}
+                loupe={loupeBindings}
+                trialId={record.id}
+                record={record}
+                instrument={instrument}
+                isLastTrial={isLast}
+                undoBindings={undoBindings}
+                setConfig={setConfig}
+                trialChrome={extraChrome}
+                chrome={chrome}
+                suppress={suppress}
+                activeToolId={resolvedToolId}
+                setActiveTool={setActiveTool}
+              >
+                {scopedBody}
+                {annotationOverlays}
+                <PresentedTransport trialId={record.id} />
+              </TrialChrome>
+            </CameraWheelContext.Provider>
+          </AnnotationsContext.Provider>
+        </TrialClockContext.Provider>
+      </TrialOrbitContext.Provider>
     </TrialIdProvider>
   );
 }

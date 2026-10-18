@@ -7,6 +7,7 @@ interface SeenProps {
   background?: unknown;
   minScale?: number;
   onSelect?: (id: string | null) => void;
+  specs?: readonly { id?: unknown; pickable?: boolean }[];
   portOptions?: {
     showsPort?: (port: { type?: string }) => boolean;
     fill?: (port: { nodeId: string; type?: string }) => { paint: { color: string; opacity?: number } };
@@ -29,6 +30,7 @@ vi.mock('../DiagramView', async () => {
 
 import type { EffectProblem } from './check';
 import { EffectChart } from './EffectChart';
+import { laneId, lanes } from './lanes';
 import { rack } from './rack';
 import type { EffectPipeline } from './types';
 
@@ -49,6 +51,14 @@ describe('EffectChart picking', () => {
     view.onSelect!('g');
     view.onSelect!(null);
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null, null]);
+  });
+
+  it('lets the canvas pick a stage and nothing else, so nothing else is left highlighted', () => {
+    const typed = { ...pipeline, stages: [{ id: 'blur', title: 'Blur', inputs: [{ id: 'in', type: 'image' }] }] };
+    render(<EffectChart pipeline={typed} look={lanes} width={100} height={100} />);
+    const pickable = seen[seen.length - 1]!.specs!.filter((s) => s.pickable !== false).map((s) => s.id);
+    expect(pickable).toEqual(['blur']);
+    expect(seen[seen.length - 1]!.specs!.some((s) => s.id === laneId('image'))).toBe(true);
   });
 });
 

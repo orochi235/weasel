@@ -9,7 +9,7 @@ import { liveAxes } from './poseTarget';
 import { skeletonAxes } from '@weasel-js/animator';
 import { IDENTITY_JOINT } from '@weasel-js/animator';
 import { createTarget, type TargetAxes } from '@weasel-js/animator';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 
 type Pt = { x: number; y: number };
 

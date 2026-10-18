@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef } from 'react';
 import { useKitSetting, useLatest, usePrefersReducedMotion } from '@weasel-js/react';
-import { useAnimator } from '@weasel-js/animator';
+import { useAnimator } from '@weasel-js/animator/react';
 import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
 import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';

@@ -13,6 +13,7 @@ import {
   type CurveNearest,
 } from '@weasel-js/geom';
 import s from './GeomDemo.module.css';
+import { DemoStage } from './DemoStage';
 import { decimal, qty } from '@weasel-js/quantity';
 
 const W = 620, H = 360;
@@ -144,27 +145,27 @@ export function GeomDemo() {
 
   return (
     <div className={s.demo}>
-      <SceneCanvas
-        features={['pick', 'move']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#ffffff' }}
-        scene={scene}
-        helpersRef={helpersRef}
-        layers={{
-          scene: {
-            drawOne: (n): DrawCommand[] => {
-              const d = n.data;
-              const circle = circlePath(d.x + R, d.y + R, R - 1);
-              if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
-              if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
-              return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['pick', 'move']}
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          helpersRef={helpersRef}
+          layers={{
+            scene: {
+              drawOne: (n): DrawCommand[] => {
+                const d = n.data;
+                const circle = circlePath(d.x + R, d.y + R, R - 1);
+                if (d.role === 'anchor') return [{ kind: 'path', path: circle, fill: { paint: INK } }];
+                if (d.role === 'probe') return [{ kind: 'path', path: circle, fill: { paint: PROBE } }];
+                return [{ kind: 'path', path: circle, fill: { paint: { color: '#ffffff' } }, stroke: { paint: INK, width: { px: 1.5 } } }];
+              },
             },
-          },
-          curve: { layer: curveLayer, before: 'scene' },
-        }}
-      />
+            curve: { layer: curveLayer, before: 'scene' },
+          }}
+        />
+      </DemoStage>
       <label className={s.control}>
         <span><code>splitCubicAt</code> t</span>
         <input

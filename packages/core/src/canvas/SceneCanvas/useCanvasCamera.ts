@@ -1,8 +1,8 @@
 import { useInsertionEffect, useMemo, useRef } from 'react';
-import { useAnimator } from '@weasel-js/animator';
-import { useLatest } from '@weasel-js/react';
+import { useAnimator } from '@weasel-js/animator/react';
 import { useViewAnimationOn, type ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { sameView, type View } from 'core/viewport/view';
+import type { Dims } from 'core/layers/render';
 import type { SceneCanvasApi } from '../canvasExtension';
 import { useCanvasView, type CameraProps, type CanvasViewState } from '../useCanvasView';
 
@@ -11,17 +11,16 @@ import { useCanvasView, type CameraProps, type CanvasViewState } from '../useCan
  * `animateView`, and the target and animator it runs on.
  */
 export function useCanvasCamera(opts: CameraProps & {
-  /** The size the camera looks through, which `viewBounds` clamps against. */
-  width: number;
-  height: number;
+  /** The size the camera looks through, which `viewBounds` clamps against.
+   *  Read live: a filling canvas learns it only once measured. */
+  dims: () => Dims;
   requestRedraw: () => void;
 }): {
   viewState: CanvasViewState;
   viewAnimation: ViewAnimationApi;
   camera: SceneCanvasApi['camera'];
 } {
-  const { view, defaultView, onViewChange, viewBounds, width, height, requestRedraw } = opts;
-  const size = useLatest({ width, height });
+  const { view, defaultView, onViewChange, viewBounds, dims, requestRedraw } = opts;
   const animationRef = useRef<ViewAnimationApi | null>(null);
   /** The runner has written a frame since the controlled view last moved. */
   const runnerWroteRef = useRef(false);
@@ -35,7 +34,7 @@ export function useCanvasCamera(opts: CameraProps & {
       onViewChange?.(next);
     },
     viewBounds,
-    dims: () => size.current,
+    dims,
     requestRedraw,
   });
 

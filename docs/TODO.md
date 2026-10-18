@@ -619,41 +619,6 @@ Priority tags:
   `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
   so whether a scoped container's children are also stored in its units is undecided.
 
-### Diagram follow-ups
-
-- **(P3) A second pinned node makes a seeded re-run move, and can sit on a long edge's route.**
-  `layeredPlan` anchors the layout on the first pinned node; another one stays where its author
-  put it while its neighbors are placed around the slot it would have had
-  (`packages/diagram/src/layered/plan.ts`). In a probe of 400 generated two-pin graphs, 1396 of
-  2800 second runs moved nodes (none did with one pin), and 88 of 2800 layouts ran a long edge
-  through the second pin's box. Placement would have to hold each pinned node's cross-axis
-  position as a constraint, and rank gaps stretch to reach its rank-axis position or say they
-  cannot.
-- **(P3) `onMove` reports a layout run's routes but not the ports it named.** A port layout picks
-  is marked `laidOut` on its edge end, but `fromPort`/`toPort` are part of `edgeIdOf`, so a
-  consumer storing one in its data renames the edge and the next reconcile replaces it
-  (`packages/diagram/src/sceneSync.ts`). Ports need an edge id that does not depend on them, or a
-  field of their own.
-- **(P3) The `lanes` look draws wires straight across stage boxes.** A wire running along its
-  lane passes over any stage between its ends that also touches that lane, and its label can sit
-  on that stage's title (`packages/diagram/src/effect/lanes.ts`). Clicking a lane band reports
-  `null` to `onSelect` but the canvas still highlights the band.
-- **(P3) An eased edge may switch faces on a live run's last frame.** Each eased frame draws
-  the route through the edge's current `from`/`to` ports, but the ports layout renames reach the
-  scene only at commit (`routeWrites`), so a run that changes the face an edge leaves by eases
-  along the old face and jumps on arrival (`easedPaths` in `packages/diagram/src/liveRoutes.ts`).
-  Found in review, not reproduced.
-- **(P3) A live run eases routes for `layered` only.** `force` runs still draw long edges through
-  the old bends while they ease, and an edge to a group reads the group's box a frame late
-  (`packages/diagram/src/liveRoutes.ts`).
-- **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
-  inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
-  after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
-- **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
-  nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
-  the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated
-  diagram once, would let a diagram be checked against it.
-
 ---
 
 ## Animation
@@ -744,6 +709,42 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
+  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
+  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
+  there and resolve it, or warn in dev on a mode the theme does not have.
+
+- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
+  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
+  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
+  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
+
+- **(P2) Gaps blits hit moving its playground onto labkit's `ControlPanel` and `f` (1.10.1).** Each
+  is worked around in blits' `apps/playground/src/app/CompositionControls.tsx` (`DraftRow`,
+  `drafted`) and `SpecFields.tsx`; those are the specs for the fixes.
+  - Number and text rows write on every keystroke, so one typed value is many undo steps. Use the
+    ui fields' draft-and-commit-on-blur; the text draft should also cancel on Escape.
+  - `.resettable()` groups write each value through its own `setConfig`: several undo steps, and a
+    stale-state race. Write the group as one change.
+  - `.dialog()` has no cancel; Escape commits.
+  - `showIf` on an enum value that is not among the enum's options throws, which crashed a whole
+    panel. Treat it as never matching.
+  - A number row cannot be cleared to mean unset/default (blank reverts), and `NumberNode` has no
+    min-only bound.
+  - `PropertyRow`/`ControlPanel` have no slot for a row's validation message.
+  - A section whose rows are all hidden still draws its heading.
+  - An `f.action` row repeats the button text as its label, and an action's run cannot reach the
+    panel's props.
+  - No "changed from baseline" marking; `PrefsForm` has one.
+  - `f` boolean and string leaves get the auto-pin toggle on their label unless `.manual()`, which
+    is easy to miss. Either make it opt-in or make the default obvious.
+  - A custom renderer's context does not carry the config.
+  - `ControlMatrix` cannot set a summary for a custom leaf's cell, and first-column inheritance is
+    its only model; there is no plain grid.
+  - `ListEditor` has no reorder and offers one kind of new entry.
+  - `EasingPicker` always renders its own "Easing" label, doubling the row's.
+  - In the two-column grid a bar or custom row takes a half cell unless its section is one-up.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
