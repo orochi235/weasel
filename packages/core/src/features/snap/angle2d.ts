@@ -76,14 +76,17 @@ function collectAngles(
     ...(inputs.scene ? { scene: inputs.scene } : {}),
     ...(inputs.rotationOf ? { rotationOf: inputs.rotationOf } : {}),
   };
-  sources.forEach((source, order) => {
+  // Runs across sources and their yields: an earlier source, then an earlier
+  // yield, wins a tie.
+  let order = 0;
+  sources.forEach((source) => {
     if (!source.angles) return;
     const reachPx = reachOf(source);
     for (const a of source.angles(q)) {
       // The whole turn of the angle nearest `theta`: 0 catches 359°.
       const at = a.angle + TURN * Math.round((theta - a.angle) / TURN);
       out.push({
-        probe: PROBE, locus: { at: [at], dirs: [] }, source: source.id, order, tier: source.tier ?? 'target', reachPx,
+        probe: PROBE, locus: { at: [at], dirs: [] }, source: source.id, order: order++, tier: source.tier ?? 'target', reachPx,
         ...(a.required ? { required: true } : {}),
         ...(a.mark ? { mark: a.mark } : {}),
       });

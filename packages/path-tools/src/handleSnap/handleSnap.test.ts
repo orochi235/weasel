@@ -22,6 +22,7 @@ const curve = (): PolygonPath => ({
 type Point = { x: number; y: number };
 const DEG = Math.PI / 180;
 const polar = (deg: number, len = 10): Point => ({ x: len * Math.cos(deg * DEG), y: len * Math.sin(deg * DEG) });
+const angleOf = (h: Point) => Math.atan2(h.y, h.x) / DEG;
 
 /** Anchor 0 at (0,0) with both handles, closed through anchor 1 at (20,20). */
 const corner = (outHandle: Point, inHandle: Point): PolygonPath =>
@@ -114,7 +115,6 @@ describe('handle snapping', () => {
   });
 
   describe("onto the line through the anchor's other handle", () => {
-    const angleOf = (h: Point) => Math.atan2(h.y, h.x) / DEG;
 
     it('snaps onto it, keeping the length, ahead of a step that is also in reach', () => {
       // The other handle points at 185°, so the line through it runs at 5°.
@@ -128,17 +128,28 @@ describe('handle snapping', () => {
     });
 
     it('wins a tie with a step', () => {
-      // The line runs at 40°; the pointer sits halfway between it and 45°.
-      const drag = start({ stepDeg: 45 }, corner(polar(30), polar(220)), polar(30));
-      drag.move(polar(42.5));
-      expect(angleOf(drag.out())).toBeCloseTo(40, 4);
+      // The line runs at atan(6/8), about 36.87°; the pointer sits halfway
+      // between it and 45°.
+      const other = { x: -8, y: -6 };
+      const line = Math.atan2(6, 8) / DEG;
+      const drag = start({ stepDeg: 45 }, corner(polar(30), other), polar(30));
+      drag.move(polar((line + 45) / 2));
+      expect(drag.marks()).toEqual([{ kind: 'line', from: other, to: expect.anything() }]);
+      expect(angleOf(drag.out())).toBeCloseTo(line, 4);
     });
 
     it('wraps round the half turn', () => {
-      // The line runs at 178°; the pointer is at -178°, 4° from it the short way round.
-      const drag = start({ stepDeg: 0 }, corner(polar(90), polar(-2)), polar(90));
+      // The line runs at 178°; the pointer is at -178°, 4° from it the short
+      // way round, and 22° from the nearest 50° step.
+      const drag = start({ stepDeg: 50 }, corner(polar(90), polar(-2)), polar(90));
       drag.move(polar(-178));
       expect(angleOf(drag.out())).toBeCloseTo(178, 4);
     });
+  });
+
+  it('wraps a step round the half turn', () => {
+    const drag = start({ stepDeg: 90, opposite: false }, corner(polar(90), polar(-2)), polar(90));
+    drag.move(polar(-177));
+    expect(Math.abs(angleOf(drag.out()))).toBeCloseTo(180, 4);
   });
 });

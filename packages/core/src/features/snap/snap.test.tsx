@@ -105,11 +105,11 @@ describe('<SceneCanvas snap>', () => {
       expect(rotate(mount(null, {})).angle(88 * DEG, FREE).theta).toBeCloseTo(90 * DEG, 9);
     });
 
-    it("lands a pen click on another path's anchor within 8px, unless `omit` names 'path-anchors'", () => {
+    it("lands a pen click on another path's anchor within 8px, unless `omit` names 'path-snap'", () => {
       const click = (props: Record<string, unknown>) => mount(null, props, ['M0 0 L100 100'])
         .begin!({ gesture: 'point', press: { x: 103, y: 96 } }).at({ x: 103, y: 96 }, FREE).point;
       expect(click({})).toEqual({ x: expect.closeTo(100, 9), y: expect.closeTo(100, 9) });
-      expect(click({ snap: { omit: ['path-anchors'] } })).toEqual({ x: 103, y: 96 });
+      expect(click({ snap: { omit: ['path-snap'] } })).toEqual({ x: 103, y: 96 });
     });
 
     it('leaves out a default source `omit` names', () => {

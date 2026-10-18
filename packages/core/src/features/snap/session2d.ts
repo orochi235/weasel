@@ -20,6 +20,7 @@ export const DEFAULT_SNAP_PX = 8;
 type SourceMark = NonNullable<SourceCandidate['mark']>;
 
 const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
+const ORIGIN_EPS = 1e-9;
 
 /** What a 2D session runs on, captured at press. */
 export interface Session2dInputs {
@@ -101,7 +102,10 @@ function collectAll(
   // A plane unit is `plane.scale` camera units the other way round.
   const scale = plane ? camera / Math.max(Math.abs(plane.scale.x), Math.abs(plane.scale.y)) : camera;
   const out: SnapCandidate<SourceMark>[] = [];
-  sources.forEach((source, order) => {
+  // Runs across sources and their yields: an earlier source, then an earlier
+  // yield, wins a tie.
+  let order = 0;
+  sources.forEach((source) => {
     const offered = inputs.probes
       .filter((q) => source.roles.includes(q.role))
       .map((q) => ({ ...q, at: { x: q.at.x + delta0.x, y: q.at.y + delta0.y } }));
@@ -119,11 +123,11 @@ function collectAll(
       ...(inputs.scene ? { scene: inputs.scene } : {}),
     });
     for (const c of found) {
-      if (!ids.has(c.probe)) continue;
+      if (!ids.has(c.probe) || atOrigin(c.locus, req.origin)) continue;
       out.push({
         probe: c.probe, locus: toFlat(c.locus),
         ...(c.locus.span ? { span: c.locus.span } : {}),
-        source: source.id, order, tier: source.tier ?? 'target',
+        source: source.id, order: order++, tier: source.tier ?? 'target',
         reachPx: source.reachPx ?? inputs.reachPx,
         ...(c.required ? { required: true } : {}),
         ...(c.mark ? { mark: c.mark } : {}),
@@ -131,6 +135,14 @@ function collectAll(
     }
   });
   return out;
+}
+
+/** Whether `locus` is a point on `origin`: where the geometry being drawn
+ *  starts is no target for its other end, or a handle would stick to its
+ *  own anchor. */
+function atOrigin(locus: { at: Point; dirs: readonly Point[] }, origin: Point | undefined): boolean {
+  return origin !== undefined && locus.dirs.length === 0
+    && Math.abs(locus.at.x - origin.x) <= ORIGIN_EPS && Math.abs(locus.at.y - origin.y) <= ORIGIN_EPS;
 }
 
 /** The subject's box where `delta0` puts it, and the sides that moved. */

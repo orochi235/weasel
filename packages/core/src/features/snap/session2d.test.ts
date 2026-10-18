@@ -153,4 +153,27 @@ describe('createSession2d', () => {
   it('passes an angle through unchanged until angle snapping lands', () => {
     expect(session().s.angle(0.3, FREE)).toEqual({ theta: 0.3, marks: [] });
   });
+
+  it("breaks a tie by a source's yield order, not by noise in the gap", () => {
+    const first = { x: 50 + 2e-12, y: 50 };
+    const twice: SnapSource = {
+      id: 'twice', roles: ['pointer'],
+      *collect(q) {
+        for (const p of q.probes) {
+          yield { probe: p.id, locus: { at: first, dirs: [] } };
+          yield { probe: p.id, locus: { at: { x: 50 - 1e-12, y: 50 }, dirs: [] } };
+        }
+      },
+    };
+    expect(session({ sources: [twice] }).s.at({ x: 50, y: 50 }, FREE).point).toEqual(first);
+  });
+
+  it('offers no point target on the origin', () => {
+    const atOrigin: SnapSource = {
+      id: 'origin', roles: ['pointer'],
+      *collect(q) { for (const p of q.probes) yield { probe: p.id, locus: { at: { x: 0, y: 0 }, dirs: [] } }; },
+    };
+    const { s } = session({ req: { origin: { x: 0, y: 0 } }, sources: [atOrigin] });
+    expect(s.at({ x: 2, y: 1 }, FREE)).toMatchObject({ point: { x: 2, y: 1 }, held: false });
+  });
 });

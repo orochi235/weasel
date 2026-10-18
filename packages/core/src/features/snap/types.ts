@@ -152,13 +152,13 @@ export interface SceneCanvasSnap {
   /** Sources ahead of the presets' `snapSources` and any `useSnapSource`.
    *  One source per id is asked: the last listed, in the order prop,
    *  presets, `useSnapSource` in mount order. A canvas default (`'rotation'`,
-   *  `'path-anchors'`) loses to any of them. */
+   *  `'path-snap'`) loses to any of them. */
   sources?: readonly SnapSource[];
   /** Ids of canvas defaults to leave out: `'rotation'` stops a rotate
    *  snapping to quarter turns and other nodes' angles (Shift's step is the
-   *  rotate's own and stays), and `'path-anchors'` stops a point gesture
-   *  (the pen, an anchor drag, a drawn line's ends, a measurement) snapping
-   *  to other paths' anchors. */
+   *  rotate's own and stays), and `'path-snap'` stops a point gesture (the
+   *  pen, an anchor drag, a drawn line's ends, a measurement) snapping to
+   *  other nodes' anchors. */
   omit?: readonly string[];
   /** The reach of a source that sets none, in screen px. Default: the kit
    *  setting `targets.snapPx`. */

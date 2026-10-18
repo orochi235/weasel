@@ -96,6 +96,12 @@ describe('usePenTool', () => {
       expect(joined!.map((a) => [a.x, a.y])).toEqual([[-90, 0], [14, 14], [114, 14]]);
     });
 
+    it("pulls a handle from an anchor on another path's anchor from the first pixel", () => {
+      const p = setup({ paths, snap: [anchors] });
+      p.drag({ x: 402, y: 1 }, { x: 403, y: 1 });
+      expect(p.scratch.current!.anchors[0]).toMatchObject({ x: 400, y: 0, outHandle: { x: 403, y: 1 } });
+    });
+
     it("takes the source's reach, and lands unsnapped with no source", () => {
       const wide = setup({ paths, snap: [pathSnapSource({ only: ['anchor'], reachPx: 20 })] });
       wide.click(-50, -50);

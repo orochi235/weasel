@@ -150,7 +150,7 @@ function pool<M>(live: Live<M>[], size: number): Live<M>[] {
   }
   const out: Live<M>[] = [];
   for (const list of byProbe.values()) {
-    list.sort((a, b) => a.px - b.px || a.c.order - b.c.order);
+    list.sort((a, b) => (Math.abs(a.px - b.px) > SAME_PX ? a.px - b.px : a.c.order - b.c.order));
     out.push(...list.slice(0, size));
   }
   return out;

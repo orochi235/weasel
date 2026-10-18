@@ -55,4 +55,14 @@ describe('SnapSession.angle', () => {
     expect(s.angle(6.4, SHIFT).theta).toBeCloseTo(6.3, 9);
     expect(s.angle(-0.3, SHIFT).theta).toBeCloseTo(0, 9);
   });
+
+  it("breaks a tie by a source's yield order, not by noise in the gap", () => {
+    // Both a hair from 10°; the second is nearer by less than a tie.
+    const first = 10 * DEG + 2e-12;
+    const twice: SnapSource = {
+      id: 'twice', roles: [], gestures: ['rotate'], collect: () => [],
+      *angles() { yield { angle: first }; yield { angle: 10 * DEG - 1e-12 }; },
+    };
+    expect(session({}, [twice]).angle(10 * DEG, FREE).theta).toBe(first);
+  });
 });
