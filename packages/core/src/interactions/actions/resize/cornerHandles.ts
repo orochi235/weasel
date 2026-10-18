@@ -89,6 +89,32 @@ export function edgeHandlesFit(
   return Math.abs(body.width) >= floor.x && Math.abs(body.height) >= floor.y;
 }
 
+/** How a canvas lays out its resize handles. `hitRadiusPx` is the one size
+ *  the edge-handle decision keys on, because a handle exists to be grabbed:
+ *  paint and hit-test both read it, so no handle is drawn that cannot be
+ *  grabbed or grabbable where none is drawn. */
+export interface ResizeHandleLayout {
+  /** Whether the edge midpoints get handles at all. */
+  edges: boolean;
+  /** The handles' hit radius, screen px. */
+  hitRadiusPx: number;
+}
+
+/** The handles a body gets in `layout`: every corner, then the edge
+ *  midpoints when the layout has them and {@link edgeHandlesFit} at its hit
+ *  radius. The answer the selection overlay paints; the hit-test reaches the
+ *  same one through the regions' `edgeOf`. */
+export function resizeHandlesFor(
+  layout: ResizeHandleLayout,
+  body: { width: number; height: number },
+  xf: TargetTransform,
+  scale: { x: number; y: number },
+): readonly ResizeHandleAnchor[] {
+  return layout.edges && edgeHandlesFit(body, xf, scale, layout.hitRadiusPx)
+    ? RESIZE_HANDLE_ANCHORS
+    : CORNER_ANCHORS;
+}
+
 /** Resolve a handle's position for the given bounds, in the bounds' frame:
  *  `'min'` → the origin edge, `'max'` → origin + extent, `'mid'` → between. */
 export function handlePoint(

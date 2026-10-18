@@ -385,16 +385,20 @@ describe('createSelectionHandlesLayer', () => {
     expect(tree.every((c) => c.kind === 'path')).toBe(true);
   });
 
-  it('leaves the edge handles off a side under six handle sizes on screen, or when asked', () => {
-    const draw = (width: number, edgeHandles?: boolean) => createSelectionHandlesLayer<Pose>({
-      getSelection: () => [asNodeId('a')],
-      getPose: () => ({ x: 0, y: 0, width, height: 100 }),
-      handles: { size: 8 },
-      ...(edgeHandles === undefined ? {} : { edgeHandles }),
-    }).draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+  it('leaves the edge handles off a side under six hit radii on screen, or when asked', () => {
+    const draw = (width: number, resizeHandles?: { edges?: boolean; hitRadiusPx?: number }) =>
+      createSelectionHandlesLayer<Pose>({
+        getSelection: () => [asNodeId('a')],
+        getPose: () => ({ x: 0, y: 0, width, height: 100 }),
+        // The paint size never decides: only the hit radius does.
+        handles: { size: 20 },
+        ...(resizeHandles ? { resizeHandles } : {}),
+      }).draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(draw(47)).toHaveLength(8);
     expect(draw(48)).toHaveLength(16);
-    expect(draw(100, false)).toHaveLength(8);
+    expect(draw(59, { hitRadiusPx: 10 })).toHaveLength(8);
+    expect(draw(60, { hitRadiusPx: 10 })).toHaveLength(16);
+    expect(draw(100, { edges: false })).toHaveLength(8);
   });
 });
 

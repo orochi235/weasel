@@ -5,6 +5,7 @@
  * These are read during a view's render, so they travel as context rather than
  * on the `SurfaceHandle`, which is not attached until an effect runs.
  */
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -53,9 +54,9 @@ export interface SurfaceViewInputs
   /** The rotate badge the surface's selection overlay paints, which every
    *  view drawing that overlay has to make grabbable where it is drawn. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
-  /** `selectTool.resize.edgeHandles`: whether the resize handles every view
-   *  grabs include the edge midpoints. Default true. */
-  edgeHandles?: boolean;
+  /** The surface's resize-handle layout — which handles exist and their hit
+   *  radius — so every view grabs exactly the handles the overlay paints. */
+  resizeHandles?: ResizeHandleLayout;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

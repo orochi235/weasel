@@ -55,7 +55,7 @@ describe.each([['skewed', SKEWED], ['skewed and turned', TURNED]] as const)('chr
       getPose: () => pose,
       outline: { paint: { kind: 'solid', color: '#000' }, width: 2, pad: 0 },
       handles: { size: 8 },
-      edgeHandles: false,
+      resizeHandles: { edges: false },
     });
     const tree = layer.draw(undefined, VIEW, DIMS);
     // Handle fills, in `RESIZE_HANDLE_ANCHORS` order: TL, TR, BL, BR.

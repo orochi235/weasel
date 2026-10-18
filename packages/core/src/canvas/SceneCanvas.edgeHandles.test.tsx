@@ -11,6 +11,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -143,5 +144,53 @@ describe('edge resize handles', () => {
     const { canvas, a } = mount({}, { selectTool: { resize: { edgeHandles: false } } });
     drag(canvas, [103, 30], [133, 30]);
     expect(a()).toMatchObject({ width: 100, height: 60 });
+  });
+});
+
+describe('edge handles are one decision, keyed on the hit radius', () => {
+  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+  /** A lone selected `side`-square node, with the hit radius and the painted
+   *  handle size set apart, so a decision keyed on the wrong one shows. */
+  function square(side: number, hitRadius: number, paintSize: number) {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const id = scene.add({
+      kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+      pose: { x: 0, y: 0, width: side, height: side, rotation: 0 },
+    });
+    const seen: { selection: SelectionApi | null; views: ViewRegistry | null } = { selection: null, views: null };
+    function Grab() {
+      seen.views = useOptionalViewRegistry();
+      return null;
+    }
+    const result = render(
+      <SceneCanvas
+        scene={scene} width={300} height={300} features={['pick', 'move', 'resize']}
+        selectTool={{ handleHitRadius: hitRadius }}
+        layers={{ selectionOverlay: { handles: { size: paintSize } } }}
+      >
+        <SelectionProbe into={seen} /><Grab />
+      </SceneCanvas>,
+    );
+    act(() => seen.selection!.set([id]));
+    const surface = seen.views!.surface()!;
+    // One outline, then a fill and a stroke per handle.
+    const commands = surface.layers().find((l) => l.id === 'selection-overlay')!
+      .draw({ getChromeState: () => surface.chromeState() }, VIEW, { width: 300, height: 300 }).length;
+    const painted = (commands - 1) / 2 === 8;
+    drag(result.container.querySelector('canvas')!, [side, side / 2], [side + 10, side / 2]);
+    const grabbed = (scene.get(id)!.pose as P).width === side + 10;
+    result.unmount();
+    return { painted, grabbed };
+  }
+
+  // Radius 4 puts the floor at 24 px; a size-keyed one would put it at 72.
+  it.each([[20, false], [30, true]])('radius 4, size 12, a %i px square: edges %s', (side, edges) => {
+    expect(square(side, 4, 12)).toEqual({ painted: edges, grabbed: edges });
+  });
+
+  // Radius 12 puts the floor at 72 px; a size-keyed one would put it at 24.
+  it.each([[60, false], [80, true]])('radius 12, size 4, a %i px square: edges %s', (side, edges) => {
+    expect(square(side, 12, 4)).toEqual({ painted: edges, grabbed: edges });
   });
 });

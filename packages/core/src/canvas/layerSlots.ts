@@ -32,10 +32,11 @@ export function isCustomEntry(v: unknown): v is CustomLayerEntry {
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
- *  minus the `getSelection`/`getPose` the canvas wires automatically. */
+ *  minus the `getSelection`/`getPose` the canvas wires automatically and the
+ *  `resizeHandles` it takes from the hit-test, so the two cannot disagree. */
 export type SelectionOverlaySlotConfig<TPose> = Omit<
   SelectionOverlayLayerOpts<TPose>,
-  'getSelection' | 'getPose'
+  'getSelection' | 'getPose' | 'resizeHandles'
 > & {
   /** Override the auto-wired pose lookup (overlay-aware → adapter fallback). */
   poseById?: (id: string) => TPose | null;

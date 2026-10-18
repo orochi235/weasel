@@ -17,9 +17,9 @@ export function useSurfaceViewInputs(args: {
   chromeCaps: ChromeCaps;
   selection: SelectionApi;
   rotationBadge: SurfaceViewInputs['rotationBadge'];
-  edgeHandles?: boolean;
+  resizeHandles: SurfaceViewInputs['resizeHandles'];
 }): SurfaceViewInputs {
-  const { picking, descriptor, chromeCaps, selection, rotationBadge, edgeHandles } = args;
+  const { picking, descriptor, chromeCaps, selection, rotationBadge, resizeHandles } = args;
   const { adapter, boundsOf, boundsOfPose, planeOfNode, pickEvery, pickBest, kindOfNode, doubleClickNames } = picking;
   return useMemo<SurfaceViewInputs>(() => ({
     adapter: adapter as { getPose(id: string): unknown },
@@ -34,7 +34,7 @@ export function useSurfaceViewInputs(args: {
     chromeCaps,
     selectionApi: selection,
     rotationBadge,
-    ...(edgeHandles !== undefined ? { edgeHandles } : {}),
+    resizeHandles,
   }), [adapter, descriptor, boundsOf, boundsOfPose, planeOfNode,
-       pickEvery, pickBest, kindOfNode, doubleClickNames, chromeCaps, selection, rotationBadge, edgeHandles]);
+       pickEvery, pickBest, kindOfNode, doubleClickNames, chromeCaps, selection, rotationBadge, resizeHandles]);
 }

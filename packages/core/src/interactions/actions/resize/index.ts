@@ -11,6 +11,7 @@ export {
   fixedCornerOf,
   cornerPoint,
   handlePoint,
+  resizeHandlesFor,
   isCornerHandle,
   CORNER_ANCHORS,
   RESIZE_HANDLE_ANCHORS,
@@ -19,6 +20,7 @@ export {
   type CornerAnchor,
   type HandleEdge,
   type ResizeHandleAnchor,
+  type ResizeHandleLayout,
 } from './cornerHandles';
 export * from './behaviors';
 

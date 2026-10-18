@@ -30,7 +30,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import {
-  handleCommandsFor, rectPathFor, resolveHandles, type ResolvedHandles, type SelectionHandleStyle,
+  handleCommandsFor, rectPathFor, resolveHandles, type ResizeHandleLayout, type ResolvedHandles, type SelectionHandleStyle,
 } from './handleCommands';
 
 export type { SelectionHandleStyle };
@@ -66,7 +66,7 @@ interface SelectionLayerCommon<TPose> {
 /** Options for `createSelectionOutlineLayer`. The overlay layer's options
  *  minus the handle visuals — the two run the same body. */
 export type SelectionOutlineLayerOpts<TPose> =
-  Omit<SelectionOverlayLayerOpts<TPose>, 'handles' | 'handlesOf' | 'edgeHandles' | 'rotationHandle'>;
+  Omit<SelectionOverlayLayerOpts<TPose>, 'handles' | 'handlesOf' | 'resizeHandles' | 'rotationHandle'>;
 
 /** Options for `createSelectionHandlesLayer`. The overlay layer's options
  *  minus the outline stroke — the two run the same body. */
@@ -95,12 +95,12 @@ export interface SelectionOverlayLayerOpts<TPose>
   /** Pass `false` to render outlines only. */
   handles?: SelectionHandleStyle | false;
   /** Where to paint handles, in the bounds' own frame. Replaces the kit's
-   *  layout, `edgeHandles` included. */
+   *  layout, `resizeHandles` included. */
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
-  /** Paint a handle at each edge midpoint as well as each corner, where the
-   *  side spans `EDGE_HANDLE_MIN_RADII` handle sizes on screen — the same rule
-   *  the resize affordance hits by. Ignored under `handlesOf`. Default true. */
-  edgeHandles?: boolean;
+  /** The layout the resize affordance hits by: its `hitRadiusPx`, never
+   *  `handles.size`, decides which edge handles are painted. Default: edges on,
+   *  at the kit's default hit radius. */
+  resizeHandles?: Partial<ResizeHandleLayout>;
   /** Draw a rotate badge above the selection's top edge. `true` places it at
    *  the default offset; `distance` sets the offset in screen pixels. Off by
    *  default. */
@@ -352,7 +352,7 @@ function buildSelectionLayer<TPose>(
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
   const handlesEnabled = passes.handles && opts.handles !== false;
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
-  const { handlesOf, edgeHandles = true } = opts;
+  const { handlesOf, resizeHandles } = opts;
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const getPose = opts.getPose;
   const poseBounds = getPose
@@ -410,7 +410,7 @@ function buildSelectionLayer<TPose>(
       }
       if (!handles) return out;
       if (showHandles) {
-        for (const cmd of handleCommandsFor(ids, resolveTargetBounds, handles, handlesOf, edgeHandles, view)) out.push(cmd);
+        for (const cmd of handleCommandsFor(ids, resolveTargetBounds, handles, handlesOf, resizeHandles, view)) out.push(cmd);
       }
       if (showRotation && rotationHandleDistance !== null) {
         for (const id of ids) {

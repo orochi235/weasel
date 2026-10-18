@@ -7,15 +7,17 @@ import type { DrawCommand, GlMat3 } from '@weasel-js/renderer';
 import { alignedStrokeRect, type CommandStroke, type CommandFill } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { screenAngleOf } from '@weasel-js/geom';
-import { angleOf, localToWorld, targetTransformOf, type TargetTransform } from 'core/geometry/targetFrame';
+import { angleOf, localToWorld, targetTransformOf } from 'core/geometry/targetFrame';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 import {
-  RESIZE_HANDLE_ANCHORS, edgeHandlesFit, handlePoint, isCornerHandle,
+  handlePoint, resizeHandlesFor, type ResizeHandleLayout,
 } from 'interactions/actions/resize/cornerHandles';
+
+export type { ResizeHandleLayout };
 
 const DEFAULT_HANDLE_FILL: CommandFill = { paint: { kind: 'solid', color: '#d4c4a8' } };
 const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
@@ -24,17 +26,6 @@ const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
 };
 const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
-/** The kit's handle layout, from the one table the resize affordance hits:
- *  every corner, and every edge midpoint when `edges` is on and the body has
- *  room for them on screen at this handle size. */
-function defaultHandlesOf(
-  b: Bounds, xf: TargetTransform, view: View, edges: boolean, sizePx: number,
-): { x: number; y: number }[] {
-  const withEdges = edges && edgeHandlesFit(b, xf, view.scale, sizePx);
-  return RESIZE_HANDLE_ANCHORS
-    .filter((c) => withEdges || isCornerHandle(c))
-    .map((c) => handlePoint(b, c));
-}
 
 /** Handle visuals, as a consumer supplies them. */
 export interface SelectionHandleStyle {
@@ -86,9 +77,10 @@ export function handleCommandsFor(
   resolveBounds: (id: string) => Bounds | null,
   handles: ResolvedHandles,
   handlesOf: ((b: Bounds) => { x: number; y: number }[]) | undefined,
-  edgeHandles: boolean,
+  layoutOpts: Partial<ResizeHandleLayout> | undefined,
   view: View,
 ): DrawCommand[] {
+  const layout: ResizeHandleLayout = { edges: true, hitRadiusPx: HANDLE_BASE_PX, ...layoutOpts };
   const out: DrawCommand[] = [];
   const half = handles.size / 2;
   const handleAlign = handles.outline.align ?? 'center';
@@ -101,7 +93,9 @@ export function handleCommandsFor(
     const xf = targetTransformOf(worldB);
     const t = viewToTransform(view);
     const angle = screenAngleOf(angleOf(xf), view.scale);
-    const at = handlesOf ? handlesOf(worldB) : defaultHandlesOf(worldB, xf, view, edgeHandles, handles.size);
+    const at = handlesOf
+      ? handlesOf(worldB)
+      : resizeHandlesFor(layout, worldB, xf, view.scale).map((c) => handlePoint(worldB, c));
     for (const hLocal of at) {
       const hWorld = localToWorld(xf, hLocal.x, hLocal.y);
       const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
