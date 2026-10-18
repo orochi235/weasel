@@ -66,6 +66,8 @@ interface Ghost<TPose, TNode> {
   home: Faded<TPose>;
 }
 
+/** An empty set of ghosts, for `bindPoseTransition` to fill and a layer to
+ *  draw; `usePoseTransition` makes one per canvas. */
 export function createDepartures<TPose, TNode>(): Departures<TPose, TNode> {
   const ghosts = new Map<string, Ghost<TPose, TNode>>();
   const overrides = createPoseOverrides<Faded<TPose>>(() => undefined);
