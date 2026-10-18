@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyToPoint, boundsOfPath, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type DistortWarp,
-  type PolygonPath,
+  applyToPoint, boundsOfPath, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type PolygonPath,
 } from '@weasel-js/geom';
+import type { DistortWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import {
   asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene, selectedPathNodes,
@@ -176,8 +176,9 @@ describe('puppet', () => {
     expect(held.warp.kind === 'puppet' && held.warp.pins).toHaveLength(2);
     dragControl(scene, 'puppet', { warpId: held.id, index: 1 }, { x: 100, y: 100 }, { x: 140, y: 60 });
     const anchors = anchorsOf(scene);
+    // The bent edges may gain anchors; the pinned corners stay anchors, where their pins are.
     expect(anchors[0]).toEqual({ x: 0, y: 0 });
-    expect(anchors[2]).toEqual({ x: 140, y: 60 });
+    expect(anchors).toContainEqual({ x: 140, y: 60 });
   });
 });
 

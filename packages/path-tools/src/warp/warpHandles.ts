@@ -5,9 +5,9 @@
  * the kind, the controls of a fresh one are shown where it would start.
  */
 import {
-  applyToPoint, ellipsePath, polylineFromPoints, pathWarpMap, warpControls,
-  type Affine, type PathWarp, type Point,
+  applyToPoint, ellipsePath, polylineFromPoints, type Affine, type Point, type PolygonPath,
 } from '@weasel-js/geom';
+import { pathWarpMap, warpControls, type PathWarp } from '@weasel-js/geom/warp';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
   type Affordance, type AffordanceRegion, type ChromeState, composeAffordanceLayer, DEFAULT_OVERLAY_STYLE, pathNodesOf, type RenderLayer, type Scene, type View, viewToTransform, worldToScreen,
@@ -35,6 +35,8 @@ export interface WarpHandleLayerSource {
 interface ControlGroup {
   warpId: string | null;
   warp: PathWarp;
+  /** The path the warp is laid over, in the warp's frame. */
+  source: PolygonPath;
   toWorld: Affine;
 }
 
@@ -52,15 +54,15 @@ function groupsOf(src: WarpHandleLayerSource, state: ChromeState): ControlGroup[
   const scene = src.scene();
   if (!scene || !src.active()) return [];
   const nodes = pathNodesOf(scene, state.selection, (id) => src.live.get(id));
-  const { held, box } = splitByWarp(nodes, src.kind);
+  const { held, bare, box } = splitByWarp(nodes, src.kind);
   const out: ControlGroup[] = [];
   const seen = new Set<string>();
   for (const t of held) {
     if (seen.has(t.held.id)) continue;
     seen.add(t.held.id);
-    out.push({ warpId: t.held.id, warp: t.held.warp, toWorld: t.toWorld });
+    out.push({ warpId: t.held.id, warp: t.held.warp, source: t.held.source, toWorld: t.toWorld });
   }
-  if (box) out.push({ warpId: null, warp: freshWarp(src.kind, box, src.settings()), toWorld: IDENTITY });
+  if (box) out.push({ warpId: null, warp: freshWarp(src.kind, box, src.settings()), source: bare[0].path, toWorld: IDENTITY });
   return out;
 }
 
@@ -89,7 +91,7 @@ function guideLines(group: ControlGroup): Point[][] {
     return [[...c, c[0]]];
   }
   if (warp.kind !== 'envelope') return [];
-  const map = pathWarpMap(warp);
+  const map = pathWarpMap(warp, group.source);
   const { box, mesh } = warp;
   const at = (u: number, v: number) => toWorld(m, map({ x: box.x + u * box.width, y: box.y + v * box.height }));
   const lines: Point[][] = [];

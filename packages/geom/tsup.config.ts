@@ -10,6 +10,7 @@ export default defineConfig(
       'nd/index': 'src/nd/index.ts',
       'curves/index': 'src/curves/index.ts',
       'tessellate/index': 'src/tessellate/index.ts',
+      'warp/index': 'src/warp/index.ts',
     },
   }),
 );

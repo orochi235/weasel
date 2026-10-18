@@ -1,6 +1,15 @@
+/**
+ * `@weasel-js/geom/warp` — warping paths: distorts, envelopes and puppets, as
+ * maps and as data a shape can hold. A puppet triangulates the shape's fill,
+ * which needs `earcut`, an optional peer of geom.
+ *
+ * @packageDocumentation
+ */
 export { bilinearQuad, projectiveQuad, squareToQuadHomography, type Quad, type UvMap } from './quad';
 export { bicubicMesh, coonsMesh, meshGridFrom, meshGridOver, type MeshGrid } from './mesh';
-export { rigidPuppetMap, unwarpPoint, type PuppetPin } from './puppet';
+export { puppetMap, unwarpPoint, type PuppetPin } from './puppet';
+export { puppetMesh, type PuppetMesh, type PuppetMeshOptions } from './puppetMesh';
+export { createArapSolver, type ArapMesh, type ArapSolver } from './arap';
 export { warpPath, type WarpPathOptions } from './warpPath';
 export {
   applyPathWarp,

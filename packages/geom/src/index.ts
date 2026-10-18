@@ -82,7 +82,6 @@ export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
-export * from './warp';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
 export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
 export {

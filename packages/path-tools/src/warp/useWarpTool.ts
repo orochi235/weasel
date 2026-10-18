@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
-import type { DistortMode, EnvelopeMapping } from '@weasel-js/geom';
+import type { DistortMode, EnvelopeMapping } from '@weasel-js/geom/warp';
 import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import {
   type CanvasExtensionApi, type ContributionDepReader, defineTool, type SurfaceContribution, type Tool,

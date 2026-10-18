@@ -1,18 +1,15 @@
 /**
  * Puppet deformation: pins placed on a shape and dragged, with everything
- * between them moved as rigidly as the pins allow.
- *
- * This is the rigid moving-least-squares deformation (Schaefer, McPhail and
- * Warren, 2006), not as-rigid-as-possible over a triangulation. Each point
- * takes the rotation and translation that best carry the pins to where they
- * were dragged, weighting near pins over far ones. It needs no mesh and no
- * solve, it is defined for every point in the plane — so a warped path can be
- * resampled at any density — and it cannot fly apart: a point's image is always
- * a rigid motion of it, so far from every pin the shape moves as one piece.
- * What it gives up is the shape's own outline: weights fall off with
- * straight-line distance, so two limbs that nearly touch move together.
+ * between them moved as rigidly as the pins allow. The shape's fill is
+ * triangulated (`puppetMesh`) and deformed as-rigid-as-possible (`arap`), so
+ * the pull of a pin travels through the shape: two limbs that nearly touch
+ * share no triangle and move apart. A point follows the triangle holding it.
  */
+import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
+import { createArapSolver, type ArapSolver } from './arap';
+import { meshLocator, placeSpot, type MeshSpot } from './meshMap';
+import { puppetMesh, type PuppetMesh } from './puppetMesh';
 
 /** A pin: where it was placed on the unwarped shape, and where it is now. */
 export interface PuppetPin {
@@ -20,42 +17,73 @@ export interface PuppetPin {
   to: Point;
 }
 
+/** What a pin set costs to set up once: the mesh, its factored solve, and its point lookup. */
+interface Rig {
+  key: string;
+  mesh: PuppetMesh;
+  solver: ArapSolver;
+  locate: (x: number, y: number) => MeshSpot | null;
+  spots: Map<number, Map<number, MeshSpot | null>>;
+  remembered: number;
+}
+
+const rigs = new WeakMap<PolygonPath, Rig>();
+
+function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
+  const key = pins.map((p) => `${p.from.x},${p.from.y}`).join(';');
+  const held = rigs.get(source);
+  if (held?.key === key) return held;
+  const mesh = puppetMesh(source, pins.map((p) => p.from));
+  const pinned = [...new Set(Array.from(mesh.pinVertex).filter((v) => v >= 0))];
+  const rig: Rig = { key, mesh, solver: createArapSolver(mesh, pinned), locate: meshLocator(mesh), spots: new Map(), remembered: 0 };
+  rigs.set(source, rig);
+  return rig;
+}
+
 /**
- * The rigid moving-least-squares map carrying each pin's `from` to its `to`.
- * `falloff` is the power distance is weighted by (`1 / d^(2·falloff)`); higher
- * keeps each pin's pull more local. No pins is the identity, and one pin
- * moves the whole shape with it.
+ * The map `pins` make of `source`'s fill: each point carried by the triangle
+ * of the deformed mesh holding it, or the nearest one for a point off the
+ * shape. The mesh and its solve are set up once per source and pin set, so
+ * moving pins only re-solves. No pins is the identity, and one pin moves the
+ * whole shape with it.
  */
-export function rigidPuppetMap(pins: readonly PuppetPin[], falloff = 1): (p: Point) => Point {
+export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: Point) => Point {
   if (pins.length === 0) return (p) => ({ x: p.x, y: p.y });
+  const rig = rigFor(source, pins);
+  const targets: number[] = [];
+  const seen = new Set<number>();
+  pins.forEach((pin, k) => {
+    const v = rig.mesh.pinVertex[k];
+    if (v < 0 || seen.has(v)) return;
+    seen.add(v);
+    // A pin off the outline holds the outline point it snapped to, carried by its own drag.
+    targets.push(pin.to.x + rig.mesh.vertices[2 * v] - pin.from.x, pin.to.y + rig.mesh.vertices[2 * v + 1] - pin.from.y);
+  });
+  if (targets.length === 0) {
+    const dx = pins[0].to.x - pins[0].from.x, dy = pins[0].to.y - pins[0].from.y;
+    return (p) => ({ x: p.x + dx, y: p.y + dy });
+  }
+  const at = rig.solver.solve(targets);
   return (p) => {
-    let sw = 0;
-    let px = 0, py = 0, qx = 0, qy = 0;
-    const w: number[] = [];
-    for (const pin of pins) {
-      const d2 = (pin.from.x - p.x) ** 2 + (pin.from.y - p.y) ** 2;
-      if (d2 < 1e-18) return { x: pin.to.x, y: pin.to.y };
-      const wi = 1 / d2 ** falloff;
-      w.push(wi);
-      sw += wi;
-      px += wi * pin.from.x; py += wi * pin.from.y;
-      qx += wi * pin.to.x; qy += wi * pin.to.y;
-    }
-    px /= sw; py /= sw; qx /= sw; qy /= sw;
-    // The weighted best rotation taking the centered pins onto their targets.
-    let dot = 0, cross = 0;
-    pins.forEach((pin, i) => {
-      const ax = pin.from.x - px, ay = pin.from.y - py;
-      const bx = pin.to.x - qx, by = pin.to.y - qy;
-      dot += w[i] * (ax * bx + ay * by);
-      cross += w[i] * (ax * by - ay * bx);
-    });
-    const len = Math.hypot(dot, cross);
-    const cos = len === 0 ? 1 : dot / len;
-    const sin = len === 0 ? 0 : cross / len;
-    const dx = p.x - px, dy = p.y - py;
-    return { x: cos * dx - sin * dy + qx, y: sin * dx + cos * dy + qy };
+    const spot = spotOf(rig, p);
+    return spot ? placeSpot(rig.mesh.triangles, at, spot) : { x: p.x, y: p.y };
   };
+}
+
+/** How many points a rig remembers the spot of before starting over. */
+const SPOT_CAP = 1 << 16;
+
+/** Where `p` sits in the rig's mesh. A drag maps the same samples of the path
+ *  every frame, so each is looked up once per pin set. */
+function spotOf(rig: Rig, p: Point): MeshSpot | null {
+  let row = rig.spots.get(p.x);
+  const hit = row?.get(p.y);
+  if (hit !== undefined) return hit;
+  const spot = rig.locate(p.x, p.y);
+  if (++rig.remembered > SPOT_CAP) { rig.spots.clear(); rig.remembered = 1; row = undefined; }
+  if (!row) { row = new Map(); rig.spots.set(p.x, row); }
+  row.set(p.y, spot);
+  return spot;
 }
 
 /**

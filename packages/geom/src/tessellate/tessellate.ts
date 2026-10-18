@@ -40,7 +40,7 @@ function tessellateRect(p: RectPath): Mesh {
 }
 
 /** The contours a fill covers: all of them, or only those a `Z` closed. */
-function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
+export function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
   const closed = new Set<number>();
   const all = flattenContours(p, tolerance, closed);
   if (fillsOpenSubpaths(p)) return all;

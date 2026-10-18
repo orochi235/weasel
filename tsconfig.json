@@ -70,6 +70,7 @@
       "@weasel-js/geom/nd": ["./packages/geom/src/nd/index.ts"],
       "@weasel-js/geom/curves": ["./packages/geom/src/curves/index.ts"],
       "@weasel-js/geom/tessellate": ["./packages/geom/src/tessellate/index.ts"],
+      "@weasel-js/geom/warp": ["./packages/geom/src/warp/index.ts"],
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/guides": ["./packages/guides/src/index.ts"],
       "@weasel-js/guides/move": ["./packages/guides/src/move.ts"],

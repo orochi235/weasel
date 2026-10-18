@@ -12,7 +12,6 @@
  * ignored, the way a stale shape generator is.
  */
 import {
-  applyPathWarp,
   boundsOfPath,
   boxToBox,
   fitAffine,
@@ -21,9 +20,9 @@ import {
   multiply,
   poseFrameOf,
   type Affine,
-  type PathWarp,
   type PolygonPath,
 } from '@weasel-js/geom';
+import { applyPathWarp, type PathWarp } from '@weasel-js/geom/warp';
 import { classifyPathStorage, type EditableShape } from '@weasel-js/core';
 
 /** What `data.warp` holds. */

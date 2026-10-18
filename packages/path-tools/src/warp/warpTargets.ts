@@ -7,19 +7,21 @@ import type { ActionDeps } from '@weasel-js/routing';
 import {
   applyToPoint,
   boundsOfPath,
+  identity,
+  transformPath,
+  type Affine,
+  type PolygonPath,
+} from '@weasel-js/geom';
+import {
   distortOver,
   envelopeOver,
-  identity,
   resizeEnvelope,
-  transformPath,
   warpControls,
-  type Affine,
   type DistortMode,
   type EnvelopeMapping,
   type PathWarp,
-  type PolygonPath,
   type WarpBox,
-} from '@weasel-js/geom';
+} from '@weasel-js/geom/warp';
 import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
 } from './pathWarp';
