@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { boundsOfPath, pointInPath, PATH_C, PATH_L, PATH_Q, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, pointInPath, PATH_C, PATH_Q, type PolygonPath } from '@weasel-js/geom';
 import { textToPath, textToPathsByPaint } from './textToPath';
 import { syntheticBoldOffset } from './syntheticBold';
 
@@ -93,14 +93,11 @@ describe('textToPath — synthetic bold', () => {
   it('keeps every curve a curve', () => {
     const regular = outline('Hamburgefonstiv', 400);
     const bold = outline('Hamburgefonstiv', 700);
-    const count = (p: PolygonPath, cmd: number) => Array.from(p.commands).filter((c) => c === cmd).length;
-    const curves = (p: PolygonPath) => count(p, PATH_C) + count(p, PATH_Q);
+    const curves = (p: PolygonPath) => Array.from(p.commands).filter((c) => c === PATH_C || c === PATH_Q).length;
     expect(curves(bold)).toBeGreaterThanOrEqual(curves(regular));
-    console.info(
-      `[synthetic bold] Hamburgefonstiv: ${regular.commands.length} commands ` +
-        `(${curves(regular)} curves, ${count(regular, PATH_L)} lines) regular, ${bold.commands.length} ` +
-        `(${curves(bold)} curves, ${count(bold, PATH_L)} lines) emboldened`,
-    );
+    // What the growth costs in anchors: 374 commands regular, 414 emboldened, measured 2026-10-18.
+    expect(bold.commands.length, `${regular.commands.length} → ${bold.commands.length}`)
+      .toBeLessThanOrEqual(regular.commands.length * 1.15);
   });
 
   it('splits by paint without refusing', () => {

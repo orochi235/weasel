@@ -130,7 +130,6 @@ describe('Create Outlines on synthetic-bold text', () => {
     const report =
       `drawn ${drawn.width.toFixed(2)}px at ${drawn.left.toFixed(2)}, outlined ` +
       `${outlined.width.toFixed(2)}px at ${outlined.left.toFixed(2)}, regular ${regular.width.toFixed(2)}px`;
-    console.info(`[synthetic bold] ${report}`);
     expect(outlined.width - regular.width, report).toBeCloseTo(8, 0);
     expect(Math.abs(outlined.width - drawn.width), report).toBeLessThanOrEqual(TOLERANCE_PX);
     expect(Math.abs(outlined.left - drawn.left), report).toBeLessThanOrEqual(TOLERANCE_PX / 2);
