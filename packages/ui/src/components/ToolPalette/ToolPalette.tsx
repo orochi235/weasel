@@ -8,6 +8,8 @@ import s from './ToolPalette.module.css';
 import { formatShortcut, type ShortcutInput } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
+import { slotsOf, stackIndex, type PaletteSlot } from './stacks';
+import { ToolStack, type StackCycleModifier, type StackMember } from './ToolStack';
 
 const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
 const MISC = 'misc';
@@ -79,13 +81,25 @@ export interface ToolPaletteProps {
   include?: (tool: Tool) => boolean;
   /** The toolbar's accessible name. Default `"Tools"`. */
   ariaLabel?: string;
+  /**
+   * Tools that share one button, each stack a list of tool ids in menu order. The button shows
+   * the stack's tool in use, or the one last used from it; a click opens a menu of the stack, and
+   * a click with `stackCycle` held makes the next one active instead. The stack sits where the
+   * first of its tools the palette shows would. Tools named in no stack get buttons of their own.
+   */
+  stacks?: ReadonlyArray<readonly string[]>;
+  /** The modifier that makes a click on a stack step through it. Default `'alt'`. */
+  stackCycle?: StackCycleModifier;
 }
+
+const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
 
 /**
  * Toolbar of the registered tools, split into separator-divided groups by
  * each tool's presentation group and navigable by arrow keys. Clicking a
  * button makes that tool active. A tool whose presentation sets `hide`, or
- * that `include` turns down, is left out.
+ * that `include` turns down, is left out. Tools listed together in `stacks`
+ * share one button, which opens a menu of them.
  *
  * Given a `modeRegistry`, tools whose capabilities the current mode does not
  * allow render greyed out and inert rather than disappearing.
@@ -93,7 +107,7 @@ export interface ToolPaletteProps {
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
-    groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools',
+    groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
   } = props;
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && (!include || include(t)));
   const groups = partitionByGroup(list);
@@ -101,17 +115,28 @@ export function ToolPalette(props: ToolPaletteProps) {
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
 
+  const shown = new Map(list.map((t) => [t.id, t]));
+  const stackOf = stackIndex(stacks);
+  const placed = new Set<readonly string[]>();
+  const slotGroups = groupKeys.map((key) => ({ key, slots: slotsOf(groups.get(key)!, shown, stackOf, placed) }));
+  const modeName = modeRegistry ? modeRegistry.current().id : undefined;
+  const describe = (tool: Tool): StackMember => {
+    const label = tool.presentation?.label ?? tool.id;
+    const keys = lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding;
+    return {
+      tool, label, keys,
+      shortcut: tool.presentation?.shortcut ?? formatShortcut(keys),
+      enabled: modeRegistry ? eligibleContribution(modeRegistry, tool) : true,
+    };
+  };
+
   // Flat, in DOM order — the roving-tabindex hook indexes by this order.
-  const ordered = groupKeys.flatMap((k) => groups.get(k)!);
-  const eligibility = ordered.map(
-    (tool) => (modeRegistry ? eligibleContribution(modeRegistry, tool) : true),
-  );
-  const activeIndex = ordered.findIndex((t) => t.id === tools.active);
+  const ordered = slotGroups.flatMap((g) => g.slots);
+  const activeIndex = ordered.findIndex((slot) => slotTools(slot).some((t) => t.id === tools.active));
   const roving = useRovingTabIndex({
     itemSelector: `.${s.paletteBtn}`,
     tabStopIndex: activeIndex >= 0 ? activeIndex : undefined,
   });
-  let index = -1;
 
   return (
     <div
@@ -121,7 +146,7 @@ export function ToolPalette(props: ToolPaletteProps) {
       role="toolbar"
       aria-label={ariaLabel}
     >
-      {groupKeys.map((key, i) => (
+      {slotGroups.map(({ key, slots }, i) => (
         <Fragment key={key}>
           {i > 0 && (
             <div
@@ -131,13 +156,19 @@ export function ToolPalette(props: ToolPaletteProps) {
             />
           )}
           <ToolGroup orientation={orientation} groupKey={key}>
-            {groups.get(key)!.map((tool) => {
-              const i = ++index;
-              const label = tool.presentation?.label ?? tool.id;
-              const shortcut = tool.presentation?.shortcut
-                ?? formatShortcut(lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding);
-              const enabled = eligibility[i];
-              const modeName = modeRegistry ? modeRegistry.current().id : undefined;
+            {slots.map((slot) => {
+              if (slot.kind === 'stack') {
+                return (
+                  <ToolStack
+                    key={slot.members[0].id}
+                    members={slot.members.map(describe)}
+                    active={tools.active}
+                    setActive={(id) => tools.setActive(id)}
+                    cycle={stackCycle}
+                  />
+                );
+              }
+              const { tool, label, shortcut, enabled } = describe(slot.tool);
               const resolvedTitle = !enabled && modeName
                 ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`
                 : undefined;

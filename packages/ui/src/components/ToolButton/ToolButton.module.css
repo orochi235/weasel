@@ -14,6 +14,7 @@
   font-family: inherit;
   font-size: var(--wzl-font-size-xs);
   line-height: 1.1;
+  position: relative;
 }
 .button:hover:not([disabled]) {
   background: var(--wzl-surface-hover);
@@ -40,4 +41,15 @@
   color: var(--wzl-fg-muted);
   font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-2xs);
+}
+
+/* The corner triangle that says the button holds more tools. */
+.menuMark {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 5px;
+  height: 5px;
+  background: var(--wzl-fg-muted);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }

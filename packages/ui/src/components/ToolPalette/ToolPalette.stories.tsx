@@ -89,3 +89,26 @@ function SplitDemo() {
 // One `tools`, two palettes: `include` splits the canvas's tools between them,
 // and the active tool shows pressed in whichever palette holds it.
 export const Split: Story = { render: () => <SplitDemo /> };
+
+function stackedList(): Tool[] {
+  const shape = (id: string, label: string, key: string, glyph: ReturnType<typeof icon>) =>
+    ({ id, keybinding: { key }, presentation: { label, icon: glyph, group: 'shape' } }) as Tool;
+  return [
+    ...fullList().filter((t) => t.id !== 'rect'),
+    shape('rect', 'Rect', 'm', icon('core:rect')),
+    shape('ellipse', 'Ellipse', 'e', icon('core:ellipse')),
+    shape('polygon', 'Polygon', 'g', icon('core:polygon')),
+    shape('star', 'Star', 's', icon('core:star')),
+    { id: 'pencil', keybinding: { key: 'n' }, presentation: { label: 'Pencil', icon: icon('core:pencil'), group: 'draw' } } as Tool,
+  ];
+}
+
+function StackedDemo(props: Partial<ToolPaletteProps>) {
+  const [active, setActive] = useState<string>('select');
+  const tools = makeFakeToolsApi(stackedList(), active, setActive);
+  return <ToolPalette stacks={[['rect', 'ellipse', 'polygon', 'star'], ['pen', 'pencil']]} {...props} tools={tools} />;
+}
+
+// A stack shares one button between related tools. Click it for a menu of them; Alt-click steps
+// to the next one. The button keeps showing the tool last used from it.
+export const Stacks: Story = { render: (args) => <StackedDemo {...args} /> };
