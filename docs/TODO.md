@@ -1327,32 +1327,44 @@ only story runner in the repo.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
-- **(P3) Retained layer surfaces: what the first arc left.** An unchanged layer of 250 commands or
-  more is now drawn once into its own texture and composited (`GroupDrawCommand.retain`,
-  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`). Memory
-  is bounded by a cap, `WeaselRendererOptions.retainBudget`, not by content: every surface is the
-  size of the drawing buffer, 16 MB at 1280x800 and dpr 2, plus one shared multisampled scratch
-  buffer of 8 bytes a sample (131 MB there at 4x). Left:
+- **(P3) Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is
+  drawn once into its own texture and composited (`GroupDrawCommand.retain`,
+  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`;
+  `<Canvas retain>` sets the threshold and budget). Each surface covers only the device pixels its
+  layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
+  any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
 
-  - **Content-bounded surfaces.** Size each surface to its layer's device bounds, clamped to the
-    viewport, and composite a quad over just that. Less memory and fill than a canvas-sized quad;
-    needs a bounds pass over every command kind and an offset projection inside the surface.
+  - **The scratch buffer takes half the default budget.** The one multisampled buffer surfaces are
+    drawn in costs 8 bytes a sample at the size of the largest surface: 131 MB of the 256 MB default
+    at 4x for a canvas-sized one, which leaves room for about 8 canvas-sized surfaces. At 16 and 64 layers the
+    budget declined half or more of them (below). Drawing in tiles, or freeing the scratch buffer
+    once nothing is being redrawn, would change that.
+  - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
+    a custom shader may read `gl_FragCoord`, which the offset viewport moves.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
     surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
   - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
     retained: the renderer declines a retained group inside another render target.
-  - **No `Canvas` prop** sets the threshold or the budget, or turns retaining off for a whole canvas;
-    today that is `RenderLayer.retain: false` per layer, or the renderer's own options.
-  - **No timing of the real path yet.** The 250 threshold comes from `tests/perf/layer-dispatch.spec.ts`,
-    which stood in for a retained layer with one canvas-sized image (composite cheaper than submitting
-    from about 130–250 commands a layer, at 4 to 64 layers; 58 ms submit against 5.4 composite at 64
-    layers of 1,000). Its composite side should be rerun through `retain` itself, which adds the
-    resolve blit, and the threshold set from that.
+  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` now times the real path (`retained`),
+    each variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium
+    153), 2026-10-18, ms a frame over the control, medians of 3 runs:
 
-  Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153), 2026-10-07; one GPU and
-  backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
-  `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
+    | layers | cmds | submit | retained | kept / declined |
+    |---:|---:|---:|---:|---:|
+    |  4 |   30 |  0.225 |  0.515 |  4 /  0 |
+    |  4 |  100 |  0.830 |  0.500 |  4 /  0 |
+    |  4 |  300 |  2.405 |  0.410 |  4 /  0 |
+    | 16 |  100 |  2.750 |  2.565 |  8 /  8 |
+    | 16 |  300 | 10.730 |  5.200 |  8 /  8 |
+    | 64 |  100 | 15.850 | 12.310 |  8 / 56 |
+    | 64 | 1000 | 68.170 | 54.065 |  8 / 56 |
+
+    Retaining wins by 100 commands a layer at every layer count and loses at 30 from 4 layers up,
+    well below the 250 in force. It was left at 250: this is one run on one GPU, and frame time does not price
+    the memory a lower threshold commits. Result file:
+    `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/`; the image stand-in it
+    replaces is in `tests/perf/recorded/layer-dispatch-2026-10-07/`.
 
 - **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
   seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
