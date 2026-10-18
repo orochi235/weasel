@@ -163,6 +163,7 @@ function CanvasInner<TPose>(
       width={props.width}
       height={props.height}
       tabIndex={props.tabIndex ?? 0}
+      aria-label={props['aria-label']}
       className={props.className} style={style}
     />
   );
