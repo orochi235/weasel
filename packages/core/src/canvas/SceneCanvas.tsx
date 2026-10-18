@@ -141,10 +141,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return () => dlog('scene-canvas', 'unmount');
   }, []);
 
+  const declaredSize = useLatest({ width: restProps.width ?? 0, height: restProps.height ?? 0 });
   const { viewState, viewAnimation, camera } = useCanvasCamera({
     view, defaultView, onViewChange, viewBounds,
-    width: restProps.width,
-    height: restProps.height,
+    dims: () => canvasApiRef.current?.getSurfaceRect() ?? declaredSize.current,
     requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
   const { viewRef } = viewState;

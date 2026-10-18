@@ -18,6 +18,7 @@ import { assignRef } from '@weasel-js/react';
 import { useCanvasSurface } from './useCanvasSurface';
 import type { CanvasRendererLease } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
+import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -26,18 +27,13 @@ import type { Scene } from '../core/scene/types';
 import type { Animator } from '@weasel-js/animator';
 
 /** Props for `<SceneViewCanvas>`. */
-export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
+export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
   /** Scene to render. The component subscribes to it and repaints when it
    *  changes. */
   scene: Scene<TData, TLayer, TPose>;
   /** Camera. Applied to scene + `extraCommands` via the renderer's group
    *  transform. */
   view: View;
-  /** CSS-pixel width. Drives both layout (via the rendered drawing-buffer
-   *  size) and the renderer's coordinate space. */
-  width: number;
-  /** CSS-pixel height. */
-  height: number;
   /** Per-node draw callback. See `SceneViewDrawOne`. The consumer is
    *  responsible for what gets painted — there is no AABB-fill default. */
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
@@ -77,7 +73,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasProps<TData, TLayer, TPose>,
 ) {
   const {
-    scene, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    scene, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
     animator, className, canvasRef, cull, paintBounds,
   } = props;
   const view = normalizeView(props.view);
@@ -92,10 +88,11 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
     localRef.current = el;
     assignRef(canvasRef, el);
   }, [canvasRef]);
+  const { width, height } = useSurfaceSize(props, localRef);
 
   const paint = (lease: CanvasRendererLease): boolean => {
     const canvas = localRef.current;
-    if (!canvas) return false;
+    if (!canvas || width === 0 || height === 0) return false;
     const commands = sceneViewFrame({
       scene,
       view,
@@ -122,8 +119,8 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <SurfaceCanvas
       ref={setCanvasRef}
-      width={width}
-      height={height}
+      width={props.width}
+      height={props.height}
       className={className}
     />
   );
@@ -134,6 +131,6 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
  * consumers attach their own through `canvasRef`, a plain prop because
  * `forwardRef` erases the component's generics. `width` and `height` are CSS
  * pixels and size the drawing buffer; a `className` rule that sizes the
- * element stretches that buffer to fit.
+ * element stretches that buffer to fit. Given neither, it fills its parent.
  */
 export const SceneViewCanvas = SceneViewCanvasInner;

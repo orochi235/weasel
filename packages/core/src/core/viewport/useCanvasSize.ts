@@ -17,6 +17,13 @@ export interface CanvasSizeSnapshot extends CanvasSize {
  *  leaves the snapshot stale. */
 export function useCanvasSize(containerRef: RefObject<HTMLElement | null>): CanvasSizeSnapshot {
   const { dpr } = useDeviceProfile();
+  const { width, height } = useElementSize(containerRef);
+  return { width, height, dpr };
+}
+
+/** An element's CSS-pixel size, `0 × 0` until it is mounted and measured.
+ *  Re-measured whenever a `ResizeObserver` reports it resized. */
+export function useElementSize(containerRef: RefObject<HTMLElement | null>): CanvasSize {
   const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
 
   const measure = useCallback(() => {
@@ -30,13 +37,15 @@ export function useCanvasSize(containerRef: RefObject<HTMLElement | null>): Canv
   }, [containerRef]);
 
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
     measure();
+    // Absent under jsdom and in older embedders: one measurement is all there is.
+    if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    observer.observe(el);
     return () => observer.disconnect();
   }, [measure, containerRef]);
 
-  return { width: size.width, height: size.height, dpr };
+  return size;
 }
