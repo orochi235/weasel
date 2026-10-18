@@ -54,4 +54,22 @@ describe('createSnapReadoutLayer', () => {
     store.set([]);
     expect(repaint).toHaveBeenCalledTimes(1);
   });
+
+  it('draws a mark in its own color, else its kind\'s default', () => {
+    const stroke = (c: unknown) => (c as { stroke: { paint: { color: string } } }).stroke.paint.color;
+    const [own] = drawn([{ kind: 'line', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, color: '#112233' }]);
+    expect(stroke(own)).toBe('#112233');
+    const [dflt] = drawn([{ kind: 'line', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }]);
+    expect(stroke(dflt)).toBe('#e8742c');
+    const [gap, pill] = drawn([{ kind: 'distance', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, value: 1, color: '#445566' }]);
+    expect(stroke(gap)).toBe('#445566');
+    expect((pill as { fill: { paint: { color: string } } }).fill.paint.color).toBe('#445566');
+  });
+
+  it('takes its defaults from the style', () => {
+    const store = createSnapOutcomeStore();
+    store.set([{ kind: 'line', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } }]);
+    const [c] = createSnapReadoutLayer(store, { color: '#abcdef' }).draw(undefined, VIEW, DIMS);
+    expect((c as unknown as { stroke: { paint: { color: string } } }).stroke.paint.color).toBe('#abcdef');
+  });
 });

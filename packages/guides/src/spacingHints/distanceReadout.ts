@@ -7,21 +7,24 @@ import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 export interface DistanceReadoutOptions {
   /** The key held to show the readout. Default `'alt'`. */
   modifier?: 'alt' | 'ctrl' | 'meta' | 'shift';
+  /** The color of the marks it writes. Default: the readout layer's. */
+  color?: string;
   /** Contribution id, and the prefix of its action's. Default `'distanceReadout'`. */
   id?: string;
 }
 
 /** The readout as snap marks: a `distance` per gap, a `line` per leader. */
-function marksOf(r: DistanceReadout): SnapMark[] {
+function marksOf(r: DistanceReadout, color: string | undefined): SnapMark[] {
+  const c = color === undefined ? {} : { color };
   return [
     ...r.gaps.map((g): SnapMark => g.axis === 'x'
-      ? { kind: 'distance', from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at }, value: g.max - g.min }
-      : { kind: 'distance', from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max }, value: g.max - g.min }),
+      ? { kind: 'distance', from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at }, value: g.max - g.min, ...c }
+      : { kind: 'distance', from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max }, value: g.max - g.min, ...c }),
     ...r.leaders.flatMap((l): SnapMark[] => {
       if (l.span === undefined) return [];
       return [l.axis === 'x'
-        ? { kind: 'line', from: { x: l.offset, y: l.span.min }, to: { x: l.offset, y: l.span.max } }
-        : { kind: 'line', from: { x: l.span.min, y: l.offset }, to: { x: l.span.max, y: l.offset } }];
+        ? { kind: 'line', from: { x: l.offset, y: l.span.min }, to: { x: l.offset, y: l.span.max }, ...c }
+        : { kind: 'line', from: { x: l.span.min, y: l.offset }, to: { x: l.span.max, y: l.offset }, ...c }];
     }),
   ];
 }
@@ -65,7 +68,7 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
   const show = (next: DistanceReadout): void => {
     if (next === shown || (next.gaps.length === 0 && shown.gaps.length === 0)) return;
     shown = next;
-    store?.set(marksOf(next));
+    store?.set(marksOf(next, opts.color));
   };
 
   const action: Action = {

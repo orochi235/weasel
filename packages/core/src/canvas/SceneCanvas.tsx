@@ -98,7 +98,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, pathEditState,
+    previewIds: previewIdsExtra, dispatcher, pathSnapper, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
   });

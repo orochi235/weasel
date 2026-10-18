@@ -24,8 +24,7 @@ export function createSnapReadoutLayer(
   const color = style.color ?? '#e8742c';
   const gapColor = style.gapColor ?? '#3aa0ff';
   const width = style.lineWidth ?? 1;
-  const stroke = { paint: { kind: 'solid' as const, color }, width };
-  const gapStroke = { paint: { kind: 'solid' as const, color: gapColor }, width };
+  const strokeOf = (c: string) => ({ paint: { kind: 'solid' as const, color: c }, width });
   return {
     id: 'snap-readout',
     label: 'Snap readout',
@@ -38,15 +37,18 @@ export function createSnapReadoutLayer(
       const t = viewToTransform(view);
       const out: DrawCommand[] = [];
       for (const m of marks) {
+        const measured = m.kind === 'gap' || m.kind === 'distance';
+        const c = m.color ?? (measured ? gapColor : color);
         if (m.kind === 'point') {
           const [x, y] = worldToScreen(m.at.x, m.at.y, t);
-          out.push(...glyphCommands(m.glyph, x, y, m.label, color));
+          out.push(...glyphCommands(m.glyph, x, y, m.label, c));
           continue;
         }
         const [x0, y0] = worldToScreen(m.from.x, m.from.y, t);
         const [x1, y1] = worldToScreen(m.to.x, m.to.y, t);
-        if (m.kind === 'line') out.push(...measuredSegmentCommands(x0, y0, x1, y1, 0, stroke, null, color));
-        else out.push(...measuredSegmentCommands(x0, y0, x1, y1, TICK, gapStroke, String(Math.round(m.value)), gapColor));
+        out.push(...measuredSegmentCommands(
+          x0, y0, x1, y1, measured ? TICK : 0, strokeOf(c), measured ? String(Math.round(m.value)) : null, c,
+        ));
       }
       return out;
     },

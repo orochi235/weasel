@@ -4,13 +4,15 @@ import { distanceReadout } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function fixture() {
+function fixture(opts?: Parameters<typeof distanceReadout>[0]) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {} });
+  const c = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {} });
   let selected: NodeId[] = [a];
-  const nodeAtPoint = vi.fn((p: { x: number }, exclude?: Iterable<NodeId>) => {
+  const nodeAtPoint = vi.fn((p: { x: number; y: number }, exclude?: Iterable<NodeId>) => {
     const ex = new Set(exclude);
+    if (p.x >= 30 && p.y >= 40 && !ex.has(c)) return c;
     if (p.x >= 30 && !ex.has(b)) return b;
     if (p.x < 10 && !ex.has(a)) return a;
     return null;
@@ -22,7 +24,7 @@ function fixture() {
     nodeAtPoint,
     selection: { get: () => selected },
   } as unknown as ActionDeps;
-  const r = distanceReadout();
+  const r = distanceReadout(opts);
   const heard = vi.fn();
   store.subscribe(heard);
   const el = document.createElement('div');
@@ -75,5 +77,22 @@ describe('distanceReadout', () => {
 
   it('mounts no layer of its own', () => {
     expect(fixture().r.overlay).toBeUndefined();
+  });
+
+  it('writes a leader to a shape it shares no range with as a line mark', () => {
+    const { run, store } = fixture();
+    run({ show: true, worldX: 35, worldY: 45 });
+    expect(store.get()).toEqual([
+      { kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 20 },
+      { kind: 'distance', from: { x: 5, y: 10 }, to: { x: 5, y: 40 }, value: 30 },
+      { kind: 'line', from: { x: 30, y: 5 }, to: { x: 30, y: 40 } },
+      { kind: 'line', from: { x: 5, y: 40 }, to: { x: 30, y: 40 } },
+    ]);
+  });
+
+  it('stamps its color on the distance and the leader', () => {
+    const { run, store } = fixture({ color: '#e0397f' });
+    run({ show: true, worldX: 35, worldY: 45 });
+    expect(store.get().map((m) => m.color)).toEqual(Array(4).fill('#e0397f'));
   });
 });

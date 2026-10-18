@@ -3,6 +3,7 @@
 
 import type { ProbeRole, SnapTier } from '@weasel-js/geom/nd';
 import type { Scene } from 'core/scene/types';
+import type { SnapReadoutStyle } from './readoutLayer';
 import type { SnapGeometry, SnapMods } from 'interactions/actions/snapDep';
 
 type Point = { x: number; y: number };
@@ -91,10 +92,10 @@ export interface SnapSource<P = Point> {
 
 /** What a session draws for a candidate the result meets. World coords. */
 export type SnapMark<P = Point> =
-  | { kind: 'point'; at: P; glyph: string; label?: string }
-  | { kind: 'line'; from: P; to: P }
-  | { kind: 'gap'; from: P; to: P; value: number }
-  | { kind: 'distance'; from: P; to: P; value: number };
+  | { kind: 'point'; at: P; glyph: string; label?: string; color?: string }
+  | { kind: 'line'; from: P; to: P; color?: string }
+  | { kind: 'gap'; from: P; to: P; value: number; color?: string }
+  | { kind: 'distance'; from: P; to: P; value: number; color?: string };
 
 /** `<SceneCanvas snap>`. */
 export interface SceneCanvasSnap {
@@ -105,4 +106,6 @@ export interface SceneCanvasSnap {
   reachPx?: number;
   /** Whether the snap marks are drawn. Default `true`. */
   readout?: boolean;
+  /** The readout's default colors and line width, for a mark that sets no `color`. */
+  readoutStyle?: SnapReadoutStyle;
 }

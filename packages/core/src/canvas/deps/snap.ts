@@ -17,14 +17,13 @@
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { useState } from 'react';
 import type { SnapDep, SnapQuery } from 'interactions/actions/snapDep';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import { ownGeometryAt } from 'features/paths/pathSnap/pathSnapSource';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
-import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
+import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { buildProbes, subjectBox } from 'features/snap/probes2d';
 import type { SnapSourceRegistry } from 'features/snap/registry';
 import { sceneProbeReads } from 'features/snap/sceneReads';
@@ -61,17 +60,13 @@ export interface SnapSessionSources {
 export function useSnapDepSource(
   sources: SnapSources,
   viewRef: React.RefObject<View | null>,
-  session?: SnapSessionSources,
-  /** The canvas's outcome store, when its readout layer is built above this
-   *  hook. Absent, the hook makes its own. */
-  given?: SnapOutcomeStore,
+  session: SnapSessionSources | undefined,
+  /** The canvas's outcome store, which its readout layer draws. */
+  store: SnapOutcomeStore,
 ): SnapOutcomeStore {
   const ref = useLatest(sources);
   const sessionRef = useLatest(session);
   const kitSettings = useKitSettings();
-  const [own] = useState(() => createSnapOutcomeStore());
-  const store = given ?? own;
-
   useDepSource('snapReadout', (): SnapReadoutDep => ({ store }));
 
   useDepSource('snap', (): SnapDep => {

@@ -23,7 +23,7 @@ import type { DrawnBoundsScene } from '../drawnBounds';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
-import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
+import { createSnapReadoutLayer, type SnapReadoutStyle } from 'features/snap/readoutLayer';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
@@ -50,6 +50,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** Whose mark the snap-marker layer draws. */
   pathSnapper: PathSnapper;
   snapReadout: boolean;
+  snapReadoutStyle?: SnapReadoutStyle;
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
@@ -94,7 +95,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
 
   const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
   const [snapStore] = useState(() => createSnapOutcomeStore());
-  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore), [snapStore]);
+  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore, args.snapReadoutStyle), [snapStore, args.snapReadoutStyle]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {

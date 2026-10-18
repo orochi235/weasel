@@ -27,6 +27,7 @@ import { useResizePolicy } from './resizePolicy';
 import { useSliceDep } from './slice';
 import { useSnapDepSource } from './snap';
 import { useTextEditDepSource } from './textEdit';
+import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import { useViewDepSource } from './view';
 
 afterEach(() => { cleanup(); });
@@ -192,7 +193,7 @@ describe('dep sources after an abandoned render', () => {
     const reg = registryAfterAbandon(
       () => ({ x: 1, y: 1 }),
       () => ({ x: 2, y: 2 }),
-      (fn) => { useSnapDepSource({ snapPoint: fn as never }, { current: null }); },
+      (fn) => { useSnapDepSource({ snapPoint: fn as never }, { current: null }, undefined, createSnapOutcomeStore()); },
     );
     expect(dep(reg, 'snap').point({ x: 0, y: 0 })).toEqual({ x: 1, y: 1 });
   });

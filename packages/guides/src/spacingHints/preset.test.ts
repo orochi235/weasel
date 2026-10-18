@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createScene,
+  createSnapOutcomeStore,
+  type ActionDeps,
   type CanvasExtensionApi,
   type ContributionDepReader,
   type GestureContext,
@@ -15,15 +17,15 @@ type Pose = { x: number; y: number; width: number; height: number };
 function fixture(opts?: SpacingHintsOptions) {
   const scene = createScene<object, 'default', Pose>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
   const rect = (x: number) => scene.add({ kind: 'leaf', layer: 'default', pose: { x, y: 0, width: 10, height: 10 }, data: {} });
-  rect(0);
-  rect(30);
+  const a = rect(0);
+  const b = rect(30);
   const moving = rect(62);
   const preset = createSpacingHintsPreset(opts);
   const deps = { get: (name: string) => (name === 'scene' ? scene : name === 'selection' ? { get: () => [moving] } : undefined) };
   const contributions = (preset.contributions ?? []) as SurfaceContribution[];
   for (const c of contributions) c.attach?.({} as CanvasExtensionApi, deps as unknown as ContributionDepReader);
   const marks = contributions.find((c) => c.id === 'spacingHints.marks')!;
-  return { scene, moving, preset, contributions, layer: marks.overlay as RenderLayer<unknown> };
+  return { scene, a, b, moving, preset, contributions, layer: marks.overlay as RenderLayer<unknown> };
 }
 
 const drag = (id: NodeId, origin: Pose): GestureContext<unknown> => ({
@@ -61,5 +63,17 @@ describe('createSpacingHintsPreset', () => {
 
   it('adds no move behavior with both snaps off', () => {
     expect(fixture({ spacing: false, align: false }).preset.moveBehaviors).toEqual([]);
+  });
+
+  it('colors the Alt-hover readout with its color', () => {
+    const { contributions, scene, a, b } = fixture({ color: '#e0397f' });
+    const readout = contributions.find((c) => c.id === 'distanceReadout')!;
+    const store = createSnapOutcomeStore();
+    const run = (readout.actions![0].invoker as { run: (d: ActionDeps, p: unknown) => void }).run;
+    run({
+      scene, snapReadout: { store }, selection: { get: () => [a] }, nodeAtPoint: () => b,
+    } as unknown as ActionDeps, { show: true, worldX: 35, worldY: 5 });
+    expect(store.get().length).toBeGreaterThan(0);
+    expect(store.get().every((m) => m.color === '#e0397f')).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { captureMovePathSnap, snapMoveDelta } from 'interactions/actions/move/pathSnap';
+import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import { useSnapDepSource, type SnapSources } from './snap';
 
 afterEach(() => { cleanup(); });
@@ -10,7 +11,7 @@ afterEach(() => { cleanup(); });
 function snapDepOf(sources: SnapSources): SnapDep {
   let reg!: DepRegistry;
   function Wire() {
-    useSnapDepSource(sources, { current: null });
+    useSnapDepSource(sources, { current: null }, undefined, createSnapOutcomeStore());
     reg = useDepRegistry();
     return null;
   }
