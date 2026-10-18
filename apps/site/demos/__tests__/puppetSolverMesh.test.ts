@@ -56,11 +56,4 @@ describe('the puppet solver lab mesh', () => {
     expect(backwardCommands(bar, 1)).toHaveLength(bar.inverted + (bar.invertedOnOutline > 0 ? 1 : 0));
     expect(backwardCommands(modelOf('disc'), 1)).toEqual([]);
   });
-
-  it('PROBE', () => {
-    for (const p of ['disc', 'bar-s', 'bend'] as const) {
-      const r = modelOf(p);
-      console.log('PROBE', p, r.steps.map((s, i) => `${s.stage[0]}${s.round}:${modelOf(p, i).inverted}/${modelOf(p, i).invertedOnOutline}`).join(' '));
-    }
-  });
 });

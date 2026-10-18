@@ -48,21 +48,21 @@ export const PRESETS: Record<PresetId, Preset> = {
   disc: {
     label: 'Disc',
     ...placed(disc(), [hold(20, 50), drag(80, 50, 60, 70), drag(50, 20, 40, 30)], 2.6, 30, 30),
-    caption: 'The left pin holds and the other two are pushed toward it. Under the two-step solve, one triangle on the left edge turns '
-      + 'over, so its stretch of outline, drawn heavy, runs backward and the outline doubles back there. Move the '
-      + 'top pin toward where it started: the fold travels and grows before it clears.',
+    caption: 'The left pin holds and the other two are pushed toward it. At step 2 one triangle on the left edge has turned over, '
+      + 'so its stretch of outline, drawn heavy, runs backward. The local/global rounds move the fold about without '
+      + 'clearing it, and the untangling pass rights it in its first round.',
   },
   'bar-s': {
     label: 'S bar',
     ...placed(bar(), [drag(10, 10, 50, 10), drag(70, 10, 60, -40), drag(130, 10, 140, 60), drag(190, 10, 150, 10)], 1.35, 30, 110),
-    caption: 'The ends are pushed together and the two middle pins pulled opposite ways. Under the two-step solve, triangles right at '
-      + 'those two pins turn over, inside the bar, so the outline survives. Moving the end pins back does not clear '
-      + 'them: the middle pins alone pull them over.',
+    caption: 'The ends are pushed together and the two middle pins pulled opposite ways. Step 2 turns three triangles over at '
+      + 'those pins, and the local/global rounds make it six. The untangling pass turns more over at first, then '
+      + 'works them all back and ends with none.',
   },
   bend: {
     label: 'Bend',
     ...placed(bar(), [hold(10, 10), hold(190, 10), drag(100, 10, 100, -20)], 1.35, 30, 120),
-    caption: 'Both ends hold and the middle is lifted. The triangles turn to follow the bend and none turns '
-      + 'over. Drag the middle pin much higher to find where the first one does.',
+    caption: 'Both ends hold and the middle is lifted. No step turns a triangle over, so the solve ends after the '
+      + 'local/global rounds with no untangling pass. Drag the middle pin much higher to find where step 2 starts to fold.',
   },
 };

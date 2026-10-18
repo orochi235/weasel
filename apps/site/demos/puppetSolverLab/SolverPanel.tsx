@@ -66,8 +66,9 @@ const STAGES: Record<ArapStage, { name: (round: number) => string; says: string 
   },
   injective: {
     name: (round) => `Untangling round ${round}`,
-    says: 'Runs only when a triangle is still turned over. Starting from the folded shape with the pins held exactly, it lowers an '
-      + 'untangling energy (Garanzha et al., 2021) with a line search that never lets a triangle flatten, until none is turned over.',
+    says: 'Runs only when a triangle is still turned over. With the pins held exactly, each round lowers an untangling energy '
+      + '(Garanzha et al., 2021) whose softening shrinks as the turned triangles right themselves; once none is left, no round '
+      + 'may flatten one. The count can rise before it falls. The last round is the result.',
   },
 };
 

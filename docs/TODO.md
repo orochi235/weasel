@@ -337,14 +337,6 @@ Priority tags:
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P2) The puppet solver lab waits on the solver's stages.** `lab-puppet-solver`
-  (`apps/site/demos/PuppetSolverLabDemo.tsx`) reads the solver only through
-  `apps/site/demos/puppetSolverLab/solverStages.ts`, which on main gets the finished vertices and
-  nothing else, so its step toggle stays hidden (`STEP_ONE_SHOWN`) and it has no iteration view.
-  Once geom exposes the first step's vertices, each local/global iterate under an iteration cap,
-  and any injective solve's iterates, switch that module to them, show the toggle, and add a
-  scrubber over the iterates. The disc and S bar captions (`puppetSolverLab/presets.ts`) describe
-  where the two-step solve folds, and need rewriting when the solve changes that.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
   that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
