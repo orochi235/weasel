@@ -67,6 +67,16 @@ describe('placeAction', () => {
     expect(insert.calls[0].bounds).toEqual({ x: 80, y: 40, width: 40, height: 20 });
   });
 
+  it('leaves the center on the click while Ctrl suspends snapping, and keeps the click\'s modifiers out of the extras', () => {
+    const insert = makeInsertDep();
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
+    const mods = { alt: false, ctrl: true, meta: false, shift: false };
+    click({ kind: 'sticky', size: { width: 40, height: 20 }, mods }, { insert, snap }, { x: 103, y: 48 });
+    expect(insert.calls[0].bounds).toEqual({ x: 83, y: 38, width: 40, height: 20 });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky' });
+    expect(placeAction.modifierRoles).toHaveProperty(['snap.suspend']);
+  });
+
   it('places nothing with no size, which a click cannot draw', () => {
     const insert = makeInsertDep();
     click({ kind: 'rect' }, { insert });

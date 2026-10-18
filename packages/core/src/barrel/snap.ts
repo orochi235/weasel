@@ -6,7 +6,7 @@ export type {
   AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapEdge, SnapEdges, SnapGesture, SnapMark,
   SnapMarks, SnapProbeAt, SnapSource, SourceCandidate,
 } from '../features/snap/types';
-export { SNAP_ROLES, snapMods } from '../features/snap/roles';
+export { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from '../features/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';
 export { useSnapSource } from '../features/snap/registry';
 export { rotationSnapSource } from '../features/snap/rotationSource';

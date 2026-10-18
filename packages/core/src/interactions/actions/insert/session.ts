@@ -1,6 +1,6 @@
 import type { BindingOpts, DragSample, InvocationCtx } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import { snapMods } from 'features/snap/roles';
+import { SNAP_ANGLE_STEP, snapMods } from 'features/snap/roles';
 import { spanSnap, type SpanSnap } from 'features/snap/spanSnap';
 import { pointerStateOf } from '../pointerState';
 import type { Op } from 'core/ops/types';
@@ -14,9 +14,6 @@ import { insertKind } from './shape';
 /** The key an insert's single gesture point rides under in the behaviors'
  *  `draggedIds` / `origin` / `current` — insert has no node id yet. */
 export const GESTURE_KEY = 'gesture';
-
-/** The angle step `snap.constrain` (Shift) holds a line to: 15 degrees. */
-const LINE_ANGLE_STEP = Math.PI / 12;
 
 /** What an insert captured at press. Nothing here changes during the drag.
  *  The deps are captured because the dispatcher builds the deps bag once, on
@@ -82,7 +79,7 @@ export function beginInsert(
   }
 
   const snap = spanSnap(ctx.deps.snap, () =>
-    insertKind(resolveParams(opts?.params)) === 'line' ? { step: LINE_ANGLE_STEP } : undefined);
+    insertKind(resolveParams(opts?.params)) === 'line' ? { step: SNAP_ANGLE_STEP } : undefined);
   const behaviors = (opts?.behaviors ?? []) as InsertBehavior<unknown>[];
   const readers = gestureReaders(ctx.deps);
   const origin = snap.start({ x: ctx.world.x, y: ctx.world.y }, snapMods(ctx)).point;
@@ -101,6 +98,8 @@ export function beginInsert(
     scratch: {},
   };
   for (const b of behaviors) b.onStart?.(gestureCtx);
+  // A snap target in range outranks a behavior's own snapping.
+  if (snap.startHeld()) gestureCtx.origin.set(GESTURE_KEY, origin);
   const startPoint = gestureCtx.origin.get(GESTURE_KEY) as InsertPoint;
   snap.anchor(startPoint);
 

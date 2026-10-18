@@ -7,6 +7,10 @@ export const SNAP_ROLES = {
   'snap.constrain': { label: 'Constrain', keys: ['shift'] },
 } as const;
 
+/** The angle step `snap.constrain` (Shift) holds a direction to: a line, a
+ *  measurement, a rotate, a symmetry axis. 15 degrees. */
+export const SNAP_ANGLE_STEP = Math.PI / 12;
+
 const held = roleReader(SNAP_ROLES);
 
 /** The snap roles `ctx` holds. */

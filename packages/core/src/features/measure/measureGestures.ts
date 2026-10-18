@@ -2,7 +2,7 @@ import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } fr
 import { resolveParams } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
-import { SNAP_ROLES, snapMods } from 'features/snap/roles';
+import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'features/snap/roles';
 import { spanSnap } from 'features/snap/spanSnap';
 import { measureBetween, withMeasureEnd, type MeasureEnd, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
@@ -14,10 +14,6 @@ type AnyScene = Scene<unknown, string, unknown>;
 
 /** Screen-px radius around a measurement that picks it. */
 export const MEASURE_HIT_PX = 6;
-
-/** The angle step `snap.constrain` (Shift) holds a measurement to, unless
- *  the binding's `angleStep` names another: 15 degrees. */
-const DEFAULT_ANGLE_STEP = Math.PI / 12;
 
 const pointOf = (at: InvocationCtx): MeasurePoint => at.drag?.current ?? at.world;
 
@@ -49,7 +45,7 @@ export function measureCreateAction(ms: Measurements): Action {
         // Read on every event, so a step changed mid-drag reaches it.
         const snap = spanSnap(deps.snap, () => {
           const step = resolveParams(opts?.params)?.['angleStep'];
-          return { step: typeof step === 'number' ? step : DEFAULT_ANGLE_STEP };
+          return { step: typeof step === 'number' ? step : SNAP_ANGLE_STEP };
         });
         const start = snap.start(ctx.drag?.start ?? ctx.world, snapMods(ctx)).point;
         const endAt = (at: InvocationCtx): MeasurePoint => snap.end(pointOf(at), snapMods(at)).point;

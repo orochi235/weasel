@@ -7,6 +7,7 @@ import type { NodeId } from 'core/scene/types';
 import { gridSource, lineSource, sessionDep } from 'features/snap/testing/sessionDep';
 import type { SnapSource } from 'features/snap/types';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
+import type { InsertBehavior } from '../../gestures/types';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
 
@@ -41,8 +42,13 @@ function rig(sources: readonly SnapSource[] | null, siblings: readonly Bounds[] 
   const at = (p: Point, mods: Partial<typeof KEYS> = {}) =>
     ({ world: p, screen: p, modifiers: { ...KEYS, ...mods }, deps }) as unknown as InvocationCtx;
   /** Drag `kind` from `from` to `to` and release. */
-  const draw = (kind: string, from: Point, to: Point, mods: Partial<typeof KEYS> = {}) => {
-    const h = (insertAction.invoker as OngoingInvoker).start(at(from), { params: { kind } });
+  const draw = (
+    kind: string, from: Point, to: Point, mods: Partial<typeof KEYS> = {},
+    opts: { behaviors?: InsertBehavior<unknown>[]; pressMods?: Partial<typeof KEYS> } = {},
+  ) => {
+    const h = (insertAction.invoker as OngoingInvoker).start(
+      at(from, opts.pressMods), { params: { kind }, ...(opts.behaviors ? { behaviors: opts.behaviors } : {}) },
+    );
     h.onMove!(at(to, mods));
     h.onEnd!(at(to, mods), 'commit');
     return committed.at(-1)!;
@@ -96,5 +102,21 @@ describe('insert snapping', () => {
     h.onMove!(r.at({ x: 47, y: 26 }));
     h.onEnd!(r.at({ x: 47, y: 26 }), 'commit');
     expect(r.committed[0]!.bounds).toEqual({ x: 20, y: 10, width: 30, height: 20 });
+  });
+
+  it('snaps an Alt-centered rect\'s center at press and its corner each frame', () => {
+    const r = rig([gridSource(10)]);
+    const { bounds } = r.draw('rect', { x: 3, y: 4 }, { x: 47, y: 52 }, { alt: true }, { pressMods: { alt: true } });
+    expect(bounds).toEqual({ x: -50, y: -50, width: 100, height: 100 });
+  });
+
+  it('keeps a held start where the session put it, over a behavior\'s onStart', () => {
+    const moveStart: InsertBehavior<unknown> = {
+      onStart(ctx) { ctx.origin.set(ctx.draggedIds[0], { x: 3, y: 3 }); },
+    };
+    expect(rig([gridSource(10)]).draw('rect', { x: 13, y: 14 }, { x: 40, y: 40 }, {}, { behaviors: [moveStart] }).bounds)
+      .toEqual({ x: 10, y: 10, width: 30, height: 30 });
+    expect(rig(null).draw('rect', { x: 13, y: 14 }, { x: 40, y: 40 }, {}, { behaviors: [moveStart] }).bounds)
+      .toEqual({ x: 3, y: 3, width: 37, height: 37 });
   });
 });

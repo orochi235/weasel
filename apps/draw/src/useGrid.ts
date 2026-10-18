@@ -1,5 +1,5 @@
 import { contrastLineColor } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
+import { createGridLayer, gridSnapSource, gridSnapStrategy } from '@weasel-js/guides';
 import { useMemo } from 'react';
 import type { AppCommands } from './appCommands';
 import type { WeaselDrawPose } from './drawDocument';
@@ -9,7 +9,9 @@ type Point = { x: number; y: number };
 
 /**
  * The page grid, driven by the View preferences: the layer to draw while it
- * is shown, the snaps to hand the canvas while snapping is on, and the two
+ * is shown, the snaps to hand the canvas while snapping is on (`snapSource`
+ * for the canvas's snap sessions; `snap` and `snapPoint` for the select tool
+ * and the pen, which do not run sessions yet), and the two
  * toggles the command bar fires. The pitch drawn and the pitch snapped to are
  * the one "Grid density" preference.
  */
@@ -30,6 +32,7 @@ export function useGrid(page: { width: number; height: number }, backgroundColor
 
   const snaps = useMemo(() => ({
     snap: gridSnapStrategy<WeaselDrawPose>(spacing),
+    source: gridSnapSource({ spacing }),
     snapPoint: (p: Point): Point => ({
       x: Math.round(p.x / spacing) * spacing,
       y: Math.round(p.y / spacing) * spacing,
@@ -48,5 +51,6 @@ export function useGrid(page: { width: number; height: number }, backgroundColor
     layer: gridVisible ? layer : undefined,
     snap: snapToGrid ? snaps.snap : undefined,
     snapPoint: snapToGrid ? snaps.snapPoint : undefined,
+    snapSource: snapToGrid ? snaps.source : undefined,
   };
 }

@@ -2,6 +2,7 @@ import {
   BUILTIN_TOOL_IDS,
   type Measurements,
   measurementsContribution,
+  measureEndSource,
   nearestMeasureEnd,
   SceneCanvas,
   type SceneCanvasApi,
@@ -128,8 +129,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Measurement ends snap a drawing or a move within a few screen pixels;
-  // past them, a drawing takes the grid.
+  // Measurement ends snap a gesture within a few screen pixels; past them it
+  // takes the grid. `toolOptions` carries the same for the pen and anchor drags.
+  const gridSource = grid.snapSource;
+  const snap = useMemo(
+    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
+    [gridSource],
+  );
   const gridSnap = grid.snapPoint;
   const perPx = 1 / (view.scale.x || 1);
   const toolOptions = useMemo(() => ({
@@ -198,6 +204,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           onToolsCreated={props.onToolsCreated}
           selectTool={grid.snap ? { snap: grid.snap } : undefined}
           toolOptions={toolOptions}
+          snap={snap}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),

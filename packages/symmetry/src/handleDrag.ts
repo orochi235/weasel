@@ -1,13 +1,10 @@
-import { SNAP_ROLES, snapMods, type Action, type InvocationCtx, type NodeId, type OngoingHandle } from '@weasel-js/core';
+import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods, type Action, type InvocationCtx, type NodeId, type OngoingHandle } from '@weasel-js/core';
 import type { SymmetryChange, SymmetryController } from './controller';
 import type { SymmetryHandlePress } from './guide';
 import type { Point } from '@weasel-js/geom';
 
 /** The id of the action that drags a guide handle. */
 export const SYMMETRY_HANDLE_ACTION_ID = 'symmetry.dragHandle';
-
-/** `snap.constrain` (Shift) holds an axis to steps of this many radians. */
-const ANGLE_STEP = Math.PI / 12;
 
 /** The change one frame of a handle drag makes, from where the press began. */
 export function handleChange(
@@ -24,7 +21,7 @@ export function handleChange(
   const dx = to.x - origin.center.x;
   const dy = to.y - origin.center.y;
   let angle = Math.atan2(dy, dx);
-  if (stepped) angle = Math.round(angle / ANGLE_STEP) * ANGLE_STEP;
+  if (stepped) angle = Math.round(angle / SNAP_ANGLE_STEP) * SNAP_ANGLE_STEP;
   if (press.handle === 'angle') return { spec: { angle } };
   return { spec: { angle, spacing: Math.max(1, Math.hypot(dx, dy)) } };
 }

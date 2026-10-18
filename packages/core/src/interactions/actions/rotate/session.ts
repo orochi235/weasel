@@ -19,9 +19,7 @@ import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { shapeSources } from '../selectionSubtree';
 import type { SnapBegin, SnapSession } from '../snapDep';
 import { inputSession } from 'features/snap/session2d';
-
-/** The angle step `snap.constrain` (Shift) holds a rotate to: 15 degrees. */
-const DEFAULT_ROTATION_STEP = Math.PI / 12;
+import { SNAP_ANGLE_STEP } from 'features/snap/roles';
 
 /** One rotated node as the press found it, in the plane the pointer's angle
  *  is read in. */
@@ -163,10 +161,10 @@ export function captureTurn(
 }
 
 /** The drag's snap session: the first rotated node's angle about the pivot,
- *  stepping by `DEFAULT_ROTATION_STEP` while `snap.constrain` is held. */
+ *  stepping by `SNAP_ANGLE_STEP` while `snap.constrain` is held. */
 function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: number; y: number }, theta0: number): SnapSession {
   const req: SnapBegin = {
-    gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: DEFAULT_ROTATION_STEP },
+    gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: SNAP_ANGLE_STEP },
   };
   return ctx.deps.snap?.begin?.(req) ?? inputSession(req);
 }
