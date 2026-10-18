@@ -19,7 +19,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { meanScale } from '@weasel-js/geom';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { scenePointQuery } from './scenePointQuery';
@@ -107,7 +106,7 @@ function chromeBox<TData, TLayer extends string, TPose>(
     descriptor: descriptor as PoseDescriptor<unknown>,
     worldPoseOf: (m) => adapter.getWorldPose(m),
     includeStroke,
-    ...(scale ? { scale: meanScale(scale) } : {}),
+    ...(scale ? { scale } : {}),
   });
 }
 

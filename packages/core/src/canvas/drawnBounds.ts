@@ -15,6 +15,7 @@ import { targetCorners, targetTransformOf, worldToLocal } from 'core/geometry/ta
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { meanScale, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { findNodeShape, type NodeInkCtx } from './NodeShape';
 
@@ -35,7 +36,7 @@ export interface DrawnBoundsOptions {
   /** `false` answers the pose box alone. Default `true`. */
   includeStroke?: boolean;
   /** View scale, which a screen-pixel stroke width is resolved at. Default 1. */
-  scale?: number;
+  scale?: number | Scale2;
 }
 
 /**
@@ -69,7 +70,7 @@ export function inkExtentsOf(
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
   const members = node.kind === 'container' ? scene.childrenOf?.(id) ?? [] : [];
   if (members.length > 0) return membersExtents(scene, members, own, opts);
-  const drawn = findShapeDrawnBounds(node, pose, inkCtx(opts.scale));
+  const drawn = findShapeDrawnBounds(node, pose, inkCtx(opts.scale, own));
   return drawn === null ? NO_INK_EXTENTS : inkExtentsBetween(normalized(unframed), drawn);
 }
 
@@ -123,8 +124,14 @@ function descriptorFor(scene: DrawnBoundsScene, id: NodeId, opts: DrawnBoundsOpt
   return node ? poseDescriptorForNode(d, node) : d;
 }
 
-function inkCtx(scale: number | undefined): { scale: number } | undefined {
-  return scale === undefined ? undefined : { scale };
+/** A per-axis view scale also carries the map from `own`'s frame to screen,
+ *  so a `{ px }` stroke is measured there rather than at the mean. */
+function inkCtx(scale: number | Scale2 | undefined, own: Bounds): NodeInkCtx | undefined {
+  if (scale === undefined) return undefined;
+  if (typeof scale === 'number') return { scale };
+  const xf = targetTransformOf(own);
+  const [a, b, c, d] = xf.identity ? [1, 0, 0, 1] : xf.toWorld;
+  return { scale: meanScale(scale), screen: [scale.x * a, scale.y * b, scale.x * c, scale.y * d] };
 }
 
 function normalized(b: Bounds): Bounds {

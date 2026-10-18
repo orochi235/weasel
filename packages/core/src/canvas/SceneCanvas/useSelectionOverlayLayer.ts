@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import { createSelectionOverlayLayer, rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { DrawnBoundsScene } from '../drawnBounds';
 import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';
 
 export function useSelectionOverlayLayer<TPose>(
@@ -16,6 +17,9 @@ export function useSelectionOverlayLayer<TPose>(
   getOwnSuppressedIds: () => ReadonlySet<string>,
   /** What a slot's `poseById` is projected with when it names no descriptor. */
   poseDescriptor: PoseDescriptor<TPose>,
+  /** The nodes a slot's `poseById` answers for, so their chrome sits on the
+   *  stroke. Omitted when the canvas measures pose boxes alone. */
+  scene?: DrawnBoundsScene,
 ): {
   layer: RenderLayer<unknown> | null;
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
@@ -48,9 +52,13 @@ export function useSelectionOverlayLayer<TPose>(
       // A caller's pose lookup still needs a geometry to project with; without
       // one the layer reads bounds off the chrome state and calls neither.
       ...(cfg.poseById
-        ? { getPose: cfg.poseById, poseDescriptor: cfg.poseDescriptor ?? poseDescriptor }
+        ? {
+            getPose: cfg.poseById,
+            poseDescriptor: cfg.poseDescriptor ?? poseDescriptor,
+            ...(cfg.scene ?? scene ? { scene: cfg.scene ?? scene } : {}),
+          }
         : {}),
     });
-  }, [slot, getOwnSuppressedIds, poseDescriptor]);
+  }, [slot, getOwnSuppressedIds, poseDescriptor, scene]);
   return { layer, rotationBadge };
 }

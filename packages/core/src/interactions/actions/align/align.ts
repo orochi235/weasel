@@ -10,6 +10,8 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import { poseFrame } from '../poseFrame';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { usePointerContext } from '@weasel-js/routing/react';
+import type { Scale2 } from '@weasel-js/geom';
+import { drawnAABBOf, type DrawnBoundsOptions, type DrawnBoundsScene } from 'canvas/drawnBounds';
 import { resolveSpatialReference, type SpatialReference, type SpatialReferenceSources } from '../spatialReference';
 
 export { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize/geometry';
@@ -58,6 +60,11 @@ export interface UseAlignOptions<TPose> {
   /** How local poses fold up to world. Default IDENTITY, where the two are
    *  the same value and the alignment runs entirely in stored coordinates. */
   composition?: PoseComposition<TPose>;
+  /** The nodes behind the adapter's ids. With it, a stroked node aligns by
+   *  the box it is drawn with (`drawnBoundsOf`); without, by its pose box. */
+  scene?: DrawnBoundsScene;
+  /** View scale a screen-pixel stroke is resolved at. Default 1. */
+  viewScale?: () => number | Scale2;
 }
 
 /** Return shape of `useAlign`. */
@@ -79,6 +86,23 @@ export function alignDeltaFor(b: Bounds, u: Bounds, edge: AlignEdge): { dx: numb
     case 'center-x': return { dx: (u.x + u.width / 2) - (b.x + b.width / 2), dy: 0 };
     case 'center-y': return { dx: 0, dy: (u.y + u.height / 2) - (b.y + b.height / 2) };
   }
+}
+
+/** The axis-aligned box `useAlign` measures an id at a world pose by. */
+function alignBoxReader<TPose>(
+  o: UseAlignOptions<TPose>,
+  geom: PoseDescriptor<TPose>,
+  worldPoseOf: (id: NodeId) => TPose,
+): (id: string, pose: TPose) => Bounds {
+  const scene = o.scene;
+  if (!scene) return (_id, pose) => visualBoundsViaDescriptor(pose, geom);
+  const scale = o.viewScale?.();
+  const opts: DrawnBoundsOptions = {
+    descriptor: geom as PoseDescriptor<unknown>,
+    worldPoseOf: (id) => worldPoseOf(id),
+    ...(scale !== undefined ? { scale } : {}),
+  };
+  return (id, pose) => drawnAABBOf(scene, id as NodeId, pose, opts);
 }
 
 /** Align the current selection to a shared edge or center of the selection's
@@ -109,14 +133,15 @@ export function useAlign<TPose>(
       },
       o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
     );
+    const boxOf = alignBoxReader(o, geom, frame.world);
     const poses = sel.map((id) => frame.world(id));
-    const bounds = poses.map((p) => visualBoundsViaDescriptor(p, geom));
+    const bounds = poses.map((p, i) => boxOf(sel[i]!, p));
     const target = alignTargetBounds(bounds, to, {
       pointer: () => {
         const p = pointerRef.current?.get();
         return p ? { x: p.worldX, y: p.worldY } : null;
       },
-      nodeBounds: (id) => visualBoundsViaDescriptor(frame.world(id), geom),
+      nodeBounds: (id) => boxOf(id, frame.world(id)),
     });
     if (target === null) return;
     const ops: Op[] = [];

@@ -1,21 +1,29 @@
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
-import { markerHeads, resolveStrokeWidth, strokeInsets, tessellateStroke } from '@weasel-js/stroke';
+import {
+  markerHeads, resolveStrokeWidth, strokeInsets, tessellateStroke,
+  type InsetLength, type ScreenSpace, type StrokeSpaces,
+} from '@weasel-js/stroke';
+import { resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { NodeInkCtx } from 'canvas/NodeShape';
-import { strokeOutset } from './nodePaint';
+import { strokeOutsetPerAxis } from './nodePaint';
 
 /**
  * The box `stroke` covers along `path`, from the ribbon the renderer draws:
  * joins, caps, dashes, and per-vertex widths as tessellated, and marker heads.
  * An inner stroke stays inside the path, and an outer one reaches as far out as
  * a centered stroke twice as wide. `null` when the stroke paints nothing.
+ *
+ * With `screen` (see `NodeInkCtx.screen`), each screen-sized part is built the
+ * way the renderer builds it under that map, so a `{ px }` stroke is exact in
+ * every direction; without, it is resolved at `scale`.
  */
-export function strokedBounds(path: Path, stroke: Stroke, scale: number): Bounds | null {
-  const width = resolveStrokeWidth(stroke.width ?? 1, scale);
+export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
+  const { sized, spaces } = screen ? onScreen(path, stroke, screen) : atScale(stroke, scale);
+  const width = resolveStrokeWidth(sized.width ?? 1, 1);
   if (!(width > 0)) return null;
-  const sized: Stroke = { ...stroke, width };
   const box = new Box();
   const align = stroke.align ?? 'center';
   if (align !== 'inner') {
@@ -24,18 +32,40 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number): Bounds
     const mesh = tessellateStroke(
       path,
       { ...sized, width: width * k, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => scaleVertexWidth(w, k)) },
-      { startInset: insets.start, endInset: insets.end },
+      {
+        startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
+        endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
+        ...(spaces.ribbon ? { metric: spaces.ribbon.metric } : {}),
+      },
     );
     const v = mesh.vertices;
     for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]!, v[i + 1]!, 0);
   }
-  for (const { entry, path: head, size } of markerHeads(path, sized, width, undefined)) {
+  for (const { entry, path: head, size } of markerHeads(path, sized, width, undefined, spaces)) {
     const b = boundsOfPath(head);
     const pad = entry.outline ? (entry.outline.width * size) / 2 : 0;
     box.add(b.x, b.y, pad);
     box.add(b.x + b.width, b.y + b.height, pad);
   }
   return box.bounds();
+}
+
+/** `[a, b, c, d]`: a frame's linear map to screen pixels. */
+export type ScreenMap = readonly [number, number, number, number];
+
+function atScale(stroke: Stroke, scale: number): { sized: Stroke; spaces: StrokeSpaces } {
+  return { sized: { ...stroke, width: resolveStrokeWidth(stroke.width ?? 1, scale) }, spaces: {} };
+}
+
+function onScreen(path: Path, stroke: Stroke, [a, b, c, d]: ScreenMap): { sized: Stroke; spaces: StrokeSpaces } {
+  const transform = new Float32Array([a, b, 0, c, d, 0, 0, 0, 1]) as GlMat3;
+  const { cmd, spaces } = resolveStrokeLengths(transform, { kind: 'path', path, stroke } as StrokedPathCommand);
+  return { sized: cmd.stroke as Stroke, spaces };
+}
+
+/** `length`, measured in `head`'s space, as the tessellator reads it. */
+function insetIn(length: number, head: ScreenSpace | undefined, ribbon: ScreenSpace | undefined): InsetLength {
+  return head?.metric === ribbon?.metric ? length : { length, metric: head?.metric ?? null };
 }
 
 class Box {
@@ -60,6 +90,7 @@ interface DrawnRecord {
   width: number;
   height: number;
   scale: number;
+  screen: ScreenMap | undefined;
   /** Relative to the pose's top-left, so a move reuses it. */
   box: Bounds | null;
 }
@@ -68,9 +99,9 @@ interface DrawnRecord {
  *  ellipse, whose stroke reaches the same distance past the box on every side. */
 export function outsetPoseBox(pose: Bounds, stroke: Stroke | null, ctx: NodeInkCtx | undefined): Bounds {
   const box = normalized(pose);
-  const r = stroke ? strokeOutset(stroke, ctx?.scale ?? 1) : 0;
-  if (r === 0) return box;
-  return { x: box.x - r, y: box.y - r, width: box.width + 2 * r, height: box.height + 2 * r };
+  if (!stroke) return box;
+  const r = strokeOutsetPerAxis(stroke, ctx);
+  return { x: box.x - r.x, y: box.y - r.y, width: box.width + 2 * r.x, height: box.height + 2 * r.y };
 }
 
 /**
@@ -88,13 +119,15 @@ export function strokedPoseBox(
   const box = normalized(pose);
   if (stroke === null) return box;
   const scale = ctx?.scale ?? 1;
-  const held = nodeMemo(node, DRAWN_SLOT, undefined, (): DrawnRecord => ({ width: NaN, height: NaN, scale: NaN, box: null }));
-  if (held.width !== pose.width || held.height !== pose.height || held.scale !== scale) {
+  const screen = ctx?.screen;
+  const held = nodeMemo(node, DRAWN_SLOT, undefined, (): DrawnRecord => ({ width: NaN, height: NaN, scale: NaN, screen: undefined, box: null }));
+  if (held.width !== pose.width || held.height !== pose.height || held.scale !== scale || !sameMap(held.screen, screen)) {
     const at = { x: 0, y: 0, width: pose.width, height: pose.height };
     held.width = pose.width;
     held.height = pose.height;
     held.scale = scale;
-    held.box = strokedBounds(pathAt(at), stroke, scale);
+    held.screen = screen;
+    held.box = strokedBounds(pathAt(at), stroke, scale, screen);
   }
   if (held.box === null) return box;
   const x0 = Math.min(box.x, pose.x + held.box.x);
@@ -102,6 +135,11 @@ export function strokedPoseBox(
   const x1 = Math.max(box.x + box.width, pose.x + held.box.x + held.box.width);
   const y1 = Math.max(box.y + box.height, pose.y + held.box.y + held.box.height);
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+
+function sameMap(m: ScreenMap | undefined, n: ScreenMap | undefined): boolean {
+  if (m === n) return true;
+  return !!m && !!n && m[0] === n[0] && m[1] === n[1] && m[2] === n[2] && m[3] === n[3];
 }
 
 function normalized(pose: Bounds): Bounds {

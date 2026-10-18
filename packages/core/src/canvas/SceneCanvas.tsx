@@ -100,6 +100,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
     previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
+    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
   });
 
   const chrome = useSceneCanvasChrome({
