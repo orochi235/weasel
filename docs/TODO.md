@@ -565,24 +565,6 @@ Priority tags:
 
 Animations combine through targets, described in `docs/concepts.md` ("Animation target").
 
-- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
-  a row is shown by the table's pass over its columns (`fill` in
-  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
-  runs under a hold on it, and while something a stopped animation left waits beside a hold:
-  then it is read at a single target's cost. What a hold hides of such a move is worked out
-  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
-  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
-  animation's own voice.
-- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
-  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
-  rig clip, and any `animator.hold` given a function are such holds; a hold of plain values is
-  not. What a function costs, from the CPU profile at 10,000: a quarter is blits running a
-  voice that answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap`
-  read per voice); the rest is the hold's own voice reaching, one after another, the group,
-  each member, the function that gives its value, that value, and the committed value. The
-  design left would move it and is not started: holds on a target table's rows could keep
-  their values and weights as rows of the table's own arrays, which adds public API to the
-  table whose shape is not ruled on.
 - **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
   restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
   `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
@@ -590,15 +572,15 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
   `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
   and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first
-  (`packages/animator/src/engine/holdVoices.ts` has one). After the bump, rerun
+  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first:
+  two in `packages/animator/src/engine/codec.ts` (a spring's voice and a queued tween's) and
+  `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
   `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
 
-- **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
-  (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
-  forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
-  and an answer for what a tween run back to its start does: a blits voice past its start
-  reads 0, which for a tween on a target is its destination.
+- **(P3) A loop played backward ends after its current pass.** With a time scale below 0, a
+  `loop` runs its pass in flight back to its start and stops there rather than replaying the
+  passes before it backward, because nothing can start a primitive at its end. Timelines already
+  run back through their laps (`timeScale.composites.test.tsx`).
 
 ### Earlier deferrals
 
