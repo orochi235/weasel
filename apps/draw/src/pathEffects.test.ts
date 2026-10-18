@@ -144,4 +144,28 @@ describe('a path effect through draw\'s SVG', () => {
       expect(liveSteps(reopened)).toHaveLength(liveSteps(scene).length);
     }
   });
+
+  it('reopens an effect that paints nothing, though its group is empty', async () => {
+    for (const effect of [
+      { kind: 'blend', steps: 0 },
+      { kind: 'repeatAlong', count: 0, orient: false },
+    ] as const) {
+      const scene = drawScene([
+        box('a', 0, '#ff0000'),
+        { ...pathEffectNode(effect, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') } as Spec,
+        box('b', 300, '#0000ff'),
+      ]);
+      expect(liveSteps(scene)).toEqual([]);
+      const reopened = drawScene([]);
+      openSvgText(reopened, await exportOf(scene), 'x.svg');
+      const [node] = effectsIn(reopened);
+      expect(node?.data.pathEffect).toEqual(effect);
+      expect(reopened.roots[1]).toBe(node!.id);
+      expect(reopened.roots).toHaveLength(3);
+
+      const alone = drawScene([]);
+      importSvgText(alone, await selectionToSvgString(scene, ['fx']));
+      expect(alone.roots).toEqual([]);
+    }
+  });
 });

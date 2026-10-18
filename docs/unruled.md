@@ -152,6 +152,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   joins its two nearest open ends; two paths join into the first selected; three are refused.
   Simplify treats a turn over 40° as a corner and keeps a straight edge 4× its neighbors whole.
   The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
+- 2026-10-18: `svgNodesToKitDrafts` takes `keepEmpty`, which keeps an empty group it is true for
+  (drafted at its clip's box or a zero box) and the groups holding it. Draw keeps an effect's empty
+  group, so a blend of no steps reopens live; one whose sources were not exported opens as nothing.
 
 ## Animation
 
