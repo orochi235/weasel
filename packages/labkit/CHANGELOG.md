@@ -1,5 +1,371 @@
 # @weasel-js/labkit
 
+## 1.11.0
+
+### Patch Changes
+
+- 65be8d3: A group or a section can name a glyph: `icon?: IconRef`, as a pref leaf's `icon` already does. A bar with `lead: 'icon'` (new beside `'label'`) starts its line with that glyph, in `Bar`, `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`. The button a bar opens a `menu`, `page`, `tab` or `panel` group from draws the glyph before its name, and so does that group's submenu row in a menu built by `resolveSchemaMenu`. `BarMenu` takes an `icon` as `BarPopover` does, and `BarLayout` and `Bar` take an `icon` prop. The schema editor offers `icon` for those groups and `icon` as a lead.
+- 10b67bb: A group or section drawn `as: 'bar'` takes `lead: 'label'`, which starts its line with its name ahead of its cells. `Bar` takes the same as a `lead` prop, over what its schema says, and every surface that draws a bar honors it. The asset editor offers it beside Overflow for a bar. New public API: `PrefBarLead`, `PrefGroup.lead`, `PrefSection.lead`, and `BarProps.lead`.
+- 4447e67: A canvas host given no `width`/`height` fills its parent and follows it as it resizes: `Canvas`,
+  `SceneCanvas`, `LeanSceneCanvas`, `DrawCanvas`, `SceneViewCanvas` and `MinimapCanvas`, each with a new
+  `onResize` reporting every size. Nothing paints until the first measure. On a resize the view keeps
+  its transform, so more or less of the world shows; `DiagramView` and `EffectChart` refit until the
+  user pans or zooms, and `MinimapCanvas` refits its overview. `DrawCanvas`'s `draw(size)` gets the
+  measured size. Core exports `SurfaceSizeProps` and `viewportWorldRect`; labkit's
+  `TrialSceneCanvas` fills through `SceneCanvas` instead of measuring its own trial.
+  
+  `createGridLayer`'s `bounds` is now optional and receives the paint's view and canvas size. Omitted,
+  the grid covers whatever the canvas shows, its lines held on world multiples of `spacing` as the view
+  pans, and any set of lines that would sit closer than 4px on screen is left out.
+- cf7b009: A press that begins on one element and is released over a canvas is a gesture of its own, `carry` (`CarrySpec`), the in-app sibling of an OS drop. `startCarry(origin, pointerdown, { type, value }, callbacks)` opens one from any element; every dispatcher's element is a surface for it unless `channels={{ carry: false }}`, and the surface under the pointer dispatches it through its bindings. An ongoing action bound to `{ kind: 'carry', types }` starts as the carry comes over the surface and reads the payload from `ctx.carry`: moves update it, the release commits it, and leaving the surface or a canceled press cancels it. An immediate action fires on the release, with the payload in `params.carry`. `onEnd` tells the source whether a binding took the drop.
+  
+  labkit's palette drag-drop is a carry now, and a drop routes through the trial canvas's dispatcher beside its pan, zoom, and tap, as the `labkit.paletteDrop` action. This is breaking for a direct `useDragDrop` caller: it no longer takes `canvasContainerRef`, `view`, or `worldSpec`, and its result carries a `target` to render inside the `<CanvasStack>` the palette drops onto. A drop now lands only where nothing else on the page covers the canvas.
+- 4da5998: `ControlPanel` writes a typed number or text once, when the edit settles on Enter or blur, so one typed value is one undo step; Escape writes nothing. This changes what a panel with no `draftConfig` does: it used to write every keystroke. The new `draftConfig` prop takes the values an edit passes through, a typed field's keystrokes and a slider's drag, so an instrument can follow the edit while `setConfig` hears only the settled value. A lab's Settings panel passes one, and still updates as you type.
+  
+  A `.dialog()` row and a compound leaf's dialog now edit a draft: Done writes it once, and the new Cancel button, Escape, or a press outside the dialog drops it. `DialogRow` takes `onOpen`, `onDone`, and `onCancel` for this; given `onCancel`, it draws Cancel beside Done.
+  
+  A `.resettable()` group's reset writes the group's whole value at its own path, once, rather than one write per changed leaf.
+  
+  A number can be cleared: `f.number(4).clearable()` writes `undefined` when its field is emptied and left, and `f.number()` with no default starts unset. `.placeholder()` says what an empty field stands for, and `.min()` and `.max()` bound a number on one side. Underneath, `PrefNumber` gains `clearable`, and the number `PropertyField` and `UnitField` take `onClear`.
+  
+  `PropertyRow`, `PropertyField`, and `DialogRow` take `error`, a validation message drawn under the control as an alert. `ControlPanel` takes `errors`, keyed by path, and a custom row gets its own as `ctx.error`.
+  
+  A `showIf` or `enableIf` comparing an enum with a string none of its options is no longer throws out of `resolveConfigSchema`: it warns in development and never matches. `checkPrefCondition` reports it under a new code, `option`.
+  
+  A section or group whose rows are all hidden no longer draws its heading.
+  
+  A text `PropertyField` drops its draft on Escape and gives `onInput` back the value typing began from.
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- c6a0a52: Kit settings for gestures, targets, the camera, orbit and the loupe. Under a `<KitSettingsProvider>` a consumer can now set `gestures.doubleClickMs`, `doubleClickPx`, `longPressMs`, `tapPx` and `dragPx` (read by the dispatcher, the move action and `useDragHandle`; an explicit `longPress` prop or `dragThresholdPx` param still wins); core's `targets` leaves `handlePx`, `anchorHitPx` and `rotationDistancePx` (the base that device scaling multiplies, under an explicit `handleHitRadius`), `segmentHitPx`, `anchorClickPx`, `pickTolerancePx` (under `geometry.pickTolerancePx`), and the pen, bone, weight and slice overlay dot radii; `view.animationMs` (under a move's own `ms`); `orbit3d.orbitRate` and `dollyRate` in kernel3d; and `loupe.wheelRate` in labkit. `coreKitSettingsSchema`, `kernel3dKitSettingsSchema` and `labkitKitSettingsSchema` describe these as prefs groups whose paths are the settings' paths, each default being the existing constant. Underneath: `createPointerRecognizer` takes `doubleClickMs`, `doubleClickPx`, `tapPx` and `dragPx` thunks; `<SceneCanvas>` publishes the provider's store as the `kitSettings` dep; `targetSizesPx` and `mergeLayersWithDefaults` take optional base sizes; `createPenPreviewLayer`, `createBoneOverlay` and `createWeightOverlay` take optional size readers; `@weasel-js/react` declares `KitTargetSettings`, the shared `targets` area. Additive.
+- e74bb61: A control panel's text fields wait `params.lab.textWaitMs` from kit settings before writing, where a
+  provider sets it; a field's own `debounceMs` still wins.
+- 7ffb8c1: `f.prefs(schema)` takes a property schema (`PrefSection`, its keys dotted paths) as an instrument's `config`: each leaf sits at the path its key names, each named top-level section heads its leaves, and the panel draws every leaf as `PrefsForm` would — a value in its stored unit, an option through its `encoding`, an `object` leaf whole. `defaults()` leaves an encoded leaf absent, since its default is the option it reads as. The schema lab's shape instrument declares its config this way, and its hand-written `prefsToFields` translation is gone.
+- 4057097: `<Lab contextMenus>` opens declared menus on a right-click over a trial's camera, drawn by one menu host for the lab; a lab declaring none keeps the browser's menu.
+- 50396d5: A lab has one actions registry. The header's zoom runs in it as `lab.zoom`, one action with in, out and actual-size variants, and a command a lab registers with `useCommand` from `<Lab>`'s children runs from its keys. `<LabZoom>` still works outside a `<Lab>`, bringing a registry of its own.
+- 9aeddfc: The lab's header commands — add trial, the color mode, and each header item contribution — are
+  registered actions, `lab.add.<instrument>`, `lab.mode.<mode>` and `lab.item.<id>`; a header item's new
+  `keys` binds it lab-wide.
+- 10308d2: A lab draws a menu bar above its header: Lab (add trial and the header's item contributions) and View (zoom and color mode), with the menus a lab declares through the new `menus` prop between them. `menuBar={false}` leaves it out, and `LabShell` takes the same `menuBar` prop; the header keeps every control it had.
+- 80fcaa1: A trial whose record or instrument is gone, such as one a saved layout restores for a story that has since been renamed, now shows a close button beside its message. It had no chrome of its own, so nothing could remove it, and it kept its share of the lab's width.
+- 98870f1: labkit gets a 3D orbit camera as an instrument capability, the sibling of
+  `canvas` and `stage`.
+  
+  **`orbit`.** An instrument declaring `orbit: { initialView, limits, gestures,
+  overlay }` gets a trial-owned kernel3d `Camera3d` in the trial's `view`, so the
+  camera persists, Clone copies it and Reset restores it. A drag turns it,
+  Shift+drag pans its target, the wheel and both pinches dolly, and a double
+  click goes home, all through the gesture dispatcher. `useTrialOrbit()` reads and
+  moves it from anywhere in the trial, and `as3DView` reads it off a stored view.
+  `<Orbit>` is exported for use outside a lab. `orbit` beside `canvas` or `stage`
+  throws. labkit now depends on `@weasel-js/kernel3d`.
+  
+  **One camera surface for 2D and 3D.** The lab's zoom controls drive an orbit as
+  they drive a 2D camera, reading its zoom as home distance over distance, and
+  `RenderContext.trial.zoom` means the same. `CameraGestures` serves every camera
+  and gains `home`, a double click back to where the camera opened — on by
+  default for an orbit, opt-in for a 2D camera through `onHome` on `<Stage>`,
+  `<CanvasStack>` and `<CameraInput>`.
+  
+  **Breaking.** `CameraGestures.pan` is renamed `drag`, since on an orbit a drag
+  turns rather than pans. `CameraView` gains a required `zoomOf(view)`, so a
+  `CameraView` built by hand needs one. `useViewPlacement` returns `{ place, home }`
+  rather than the placement function.
+  
+  **kernel3d.** `orbitBy` and `dollyBy` take an `OrbitLimits`, and `clampCamera`
+  applies one; distance limits were fixed at 0.5..500, which is the default now.
+  `panBy` and the `camera.pan`, `camera.pinchDolly` and `camera.home` actions are
+  new, and `Camera3dDep` takes optional `limits()` and `home()`. `camera.dolly`
+  now binds the ctrl+wheel a trackpad pinch arrives as, which used to zoom the
+  page, and Safari's pinch. `useOrbitTool` binds Shift+drag to `camera.pan`.
+  
+  **routing.** A wheel reported in lines or pages — Firefox's mouse wheel — is
+  converted to pixels before it reaches an action, so per-pixel rates are no
+  longer about a sixteenth as fast there.
+  
+  **Icons.** labkit draws its glyphs from the app's icon registry, which it does
+  not mount: a lab with none draws placeholders and warns. Mount
+  `<IconRegistryProvider icons={kitIcons}>` (`@weasel-js/ui/kit-icons`) or the
+  trimmed `virtual:weasel-icons` set at the app root; labkit's examples now do.
+- d86f89e: Fixes for gaps found moving an app's controls onto labkit's `ControlPanel` and `f`.
+  
+  - `ThemeProvider` takes `selection={{ mode: 'auto' }}` and follows the OS setting, live. Any other axis value the theme lacks still falls back to the axis default, now with a warning in development.
+  - `ControlPanel` and `ControlMatrix` set their own text color, the theme's `--wzl-fg`, so a light page no longer puts dark text on a dark panel.
+  - An `f.action`'s run is told the drawing panel's `config` and `setConfig` beside its `path` (`ConfigActionContext`).
+  - `ControlPanel` takes `changed`, the same set of paths `PrefsForm` takes, and marks those rows as changed. `PropertyField` and `DialogRow` take `changed` as `PropertyRow` does.
+  - Breaking: auto is opt-in. A leaf's label toggles auto only when the leaf says `.auto()` (with or without a resolver) or `.initial(auto)`. `.manual()` is gone; a leaf that never says auto is always pinned.
+  - A renderer's context carries `values`, the whole config or form values, and `changed` for its row, in `ControlPanel` and `PrefsForm` alike. `PrefControl` takes `values` to pass on.
+  - `ControlMatrix`: a row's `summary` says what its cells show, falling back to the leaf's `.dialog` summary; `inherit={false}` makes a plain grid with no fallback column, and `auto` is optional.
+  - `ListEditor` reorders with `reorder`: a handle to drag on each entry, and Alt+Up / Alt+Down anywhere in one. `newEntry` takes a list of `{ label, make }` kinds, which makes the add button a menu.
+  - `EasingPicker` takes `label`, `false` for none, and draws none of its own inside a `PropertyRow`, taking the row's label as its menu's name.
+  - In a paired grid, a row a renderer draws and a group drawn `as('bar')` take the whole width.
+- 2d6bd43: `LayerList` rows can be renamed and locked. `onRename` makes a one-line row's label editable: a double-click on it, or F2 on the focused row, opens a field that Enter or leaving commits and Escape drops. `onLockChange` adds a lock toggle beside the visibility checkbox. A locked row (`LayerListItem.locked`) can still be hidden and unlocked, but not dragged, renamed or removed; `renamable: false` opts one row out of renaming.
+  
+  Breaking: what `LayerListItem.locked` used to mean, a row that cannot be dragged, hidden or removed and selects alone, is now `fixed`, so `locked` can name a layer's lock the way the scene does.
+  
+  `useSceneLayerList` wires both to the scene: every row's checkbox and lock toggle hide and lock its node (`setHidden` / `setLocked` ops), an annotation layer's own row hides and locks the layer, and a `rename` argument, the data a new name writes, makes rows renamable.
+- e34bfb5: An orbit dollies about the point under the pointer, as a 2D camera zooms about
+  it. kernel3d's `dollyToward` keeps the point in the target's screen-facing
+  plane under the pointer still and slides the target toward it, and
+  `camera.dolly` and `camera.pinchDolly` go through it, anchored at the pointer
+  and at where the fingers began.
+  
+  An orbit instrument whose scene fills only part of its DOM names that pane with
+  `useTrialOrbit().viewportRef` (or `<Orbit viewport>`): gestures land there and
+  the dolly anchors there, so a toolbar or a timeline beside the picture no
+  longer throws the anchor off or takes the camera's gestures.
+  
+  `CameraGestures.pinch` takes `'trackpad'` or `'touch'` as well as a boolean, on
+  every camera. Two fingers are pointers, so an instrument handing every press to
+  its own tools can now keep the trackpad's pinch, which it previously had to
+  give up with them.
+- e021579: `contextMenuAction` (`menu.context`) and `openContextMenu` are public from `@weasel-js/core`. They
+  need only `menuHost`, `view` and `worldToClient` to open a menu at a right-click or, from Shift+F10
+  and the ContextMenu key, at the middle of the view; a scene's selection and hit testing refine the
+  hit where they are supplied. labkit's trial cameras now register this action instead of their own
+  copy.
+- 0156ca5: Removes the deprecated snapshot undo exports — `emptyStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo`, and `UndoStack` — from `@weasel-js/labkit` and `@weasel-js/labkit/undo`. Use `createHistory` from `@weasel-js/history` (re-exported by `@weasel-js/core`) instead. Breaking for anything still importing them; a trial's own undo is unaffected.
+- 804e3cf: A typed `PropertyField` (`number` or `string`) now calls `onChange` only once the edit settles: on blur, Enter, or a step. It used to call it on every keystroke when `onChange` was the field's only callback, so typing `150` committed `1`, `15`, and `150`, each its own undo step. A caller that wants each keystroke passes `onInput`. Sliders and color tracks still report every move when given `onChange` alone.
+  
+  `prefFieldProps` still writes where `PARAMS_SETTLES` says a surface follows typing: a lab's numbers and text, and a form's text, write through `onInput` as they are typed. labkit's `ControlPanel` keeps updating as you type, with text debounced by `debounceMs` as before.
+- 798e9b0: The Properties W and H fields hold a node to its `data.minSize`, as resize and
+  insert already do: typing a smaller width shows and stores the minimum. With
+  several nodes selected, each is held to its own minimum.
+  
+  A number leaf takes `minAt` and `maxAt`, bounds read from where its value is
+  held, which `prefNumberAt` folds into `min` and `max` for one holder.
+  `SelectionPanel` resolves them per node, `PrefsForm` and labkit's
+  `ControlPanel` against their values. `prefClampNumber` holds a number to a
+  leaf's range.
+- 5ebf7e7: A group or a section can be drawn `as: 'menu'`: on a bar, a button opening its contents as a menu; in a menu, a submenu; in a panel, a titled box as `panel` is. `prefAsBox` answers whether a panel boxes a node drawn `as` a given value.
+  
+  Every leaf holding a value takes `readout: true`, meaning it is drawn showing its value but not editable. The field lives on the new `PrefValueBase`, so an `action`, `alias`, `label`, or `separator` cannot carry it.
+  
+  A new leaf kind, `actions` (`{ kind: 'actions', group }`), stands for every action the host registered in an action group, in registry order, each drawn as an `action` leaf would be. It holds no value: a store neither reads nor writes it, and it has no `PrefPath`. The schema editor offers both new fields and the new kind.
+- b91a818: An `actions` leaf now draws one button per action registered in its group, in registry order and a variant each, the way an `action` leaf naming that action would. In a bar the buttons sit in one cell; in a prefs form, a selection panel, or a labkit panel each is a row of its own. An action registered later appears without the schema changing. `BarActions` and `PrefActionRows` draw them, and `actionsLeafActions` turns the leaf into the `action` leaves it stands for.
+  
+  `ActionBar` is now a `Bar` over one `actions` leaf for its `group`. `tag`, `only`, `icons`, and `labels` have no schema form, so they filter what that leaf expands to; their behavior is unchanged.
+  
+  In a panel an action reads its icon and label once, on a full-width button, with no row label beside it. It takes its disabled state from the registry, keeps a disabled button focusable with the action's reason in its tooltip, and says in its tooltip when its key names nothing registered. An action with `control: 'icon'` keeps its labeled row.
+  
+  A leaf with `readout: true` draws as its value in words, not as a control, in bars and panels alike: an enum's option label, a number in its display with its unit, a flag as On or Off, a color as a swatch beside its hex. Field props carry it as `readOnly`, which `PropertyControl` and `PropertyField` draw through the new `PropertyReadout`, an `<output>` the row's label names.
+  
+  A group drawn `as: 'menu'` in a `Bar`, or in a bar of a prefs form, is now a button that opens the group as the context menu's panels (`BarMenu`), resolved by `resolveSchemaMenu` with the bar's `values`, `onChange`, and `over`: actions as items, flags as checked items, choices as radio rows, nested groups as submenus.
+  
+  `Bar` takes `framed="segmented"`: a compact strip whose buttons sit almost touching, so a run of actions reads as one control. `ActionBar` draws on it, in place of a stylesheet of its own.
+- 146c859: A canvas or stage trial whose view is not placed yet reads it as the default view its canvas paints meanwhile, so its zoom controls and its status strip (scale and FPS) are there from its first layout. The view is then fitted once, in the room the strip leaves, where before it was fitted to the taller box and fitted again when the strip arrived 30 px later.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [652e692]
+- Updated dependencies [0d6fc26]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [6a53aaa]
+- Updated dependencies [193ba96]
+- Updated dependencies [09c3e5f]
+- Updated dependencies [535aaaa]
+- Updated dependencies [2573527]
+- Updated dependencies [ed0e096]
+- Updated dependencies [465ccd9]
+- Updated dependencies [65be8d3]
+- Updated dependencies [10b67bb]
+- Updated dependencies [b064816]
+- Updated dependencies [d8c0d51]
+- Updated dependencies [2bf7339]
+- Updated dependencies [6f839dd]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [97a672c]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [1e3e770]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [275714b]
+- Updated dependencies [4da5998]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [0a30bde]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies [75d52be]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [0fc9447]
+- Updated dependencies [c2b951b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [681c3f9]
+- Updated dependencies [0382007]
+- Updated dependencies [4a44657]
+- Updated dependencies [a41d50f]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [b36ceac]
+- Updated dependencies [34f8b09]
+- Updated dependencies [ebb8804]
+- Updated dependencies [5e7ee7b]
+- Updated dependencies [5a48607]
+- Updated dependencies [aa27fa7]
+- Updated dependencies [620d2db]
+- Updated dependencies [1c9459d]
+- Updated dependencies [cabeeab]
+- Updated dependencies [ce8b295]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [628c62d]
+- Updated dependencies [ad0b069]
+- Updated dependencies [d32cb70]
+- Updated dependencies [98870f1]
+- Updated dependencies [d86f89e]
+- Updated dependencies [2d6bd43]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [09e5589]
+- Updated dependencies [1e47009]
+- Updated dependencies [e4642bb]
+- Updated dependencies [3246831]
+- Updated dependencies [5eda461]
+- Updated dependencies [90851d1]
+- Updated dependencies [797bf34]
+- Updated dependencies [0f5bd40]
+- Updated dependencies [e901a2b]
+- Updated dependencies [da45b33]
+- Updated dependencies [ce41b60]
+- Updated dependencies [fb44d45]
+- Updated dependencies [57725cc]
+- Updated dependencies [2f51085]
+- Updated dependencies [c6d61e0]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [8ad0483]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [e34bfb5]
+- Updated dependencies [8775065]
+- Updated dependencies [76f7ecb]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [ddbb431]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [67fb8e7]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [17029b0]
+- Updated dependencies [9a85264]
+- Updated dependencies [ae77c1c]
+- Updated dependencies [804e3cf]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [7947fdf]
+- Updated dependencies [6533d2d]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [59b5936]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [5ebf7e7]
+- Updated dependencies [b91a818]
+- Updated dependencies [f231e4b]
+- Updated dependencies [e8f60df]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [e40a56f]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/routing@1.11.0
+  - @weasel-js/prefs@1.11.0
+  - @weasel-js/core@1.11.0
+  - @weasel-js/ui@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/animator@1.11.0
+  - @weasel-js/minimap@1.11.0
+  - @weasel-js/svg@1.11.0
+  - @weasel-js/kernel3d@1.11.0
+  - @weasel-js/theme@1.11.0
+  - @weasel-js/icons@1.11.0
+  - @weasel-js/react@1.11.0
+  - @weasel-js/quantity@1.11.0
+  - @weasel-js/loupe@1.11.0
+  - @weasel-js/storage@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

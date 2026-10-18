@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/core",
-  "version": "1.10.1",
+  "version": "1.11.0",
   "description": "A 2D scene-graph engine for React, rendered on WebGL2: the scene tree, viewport math, pointer and keyboard input, layered rendering, and op-based undo.",
   "weasel": {
     "needs": ["webgl2"]
@@ -96,30 +96,30 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "@weasel-js/font": "1.10.1",
+    "@weasel-js/font": "1.11.0",
     "react": ">=18"
   },
   "dependencies": {
     "@msb235/blits": "0.10.0",
-    "@weasel-js/animator": "1.10.1",
-    "@weasel-js/cursor": "1.10.1",
-    "@weasel-js/geom": "1.10.1",
-    "@weasel-js/gestures": "1.10.1",
-    "@weasel-js/history": "1.10.1",
-    "@weasel-js/icons": "1.10.1",
-    "@weasel-js/modes": "1.10.1",
-    "@weasel-js/paint": "1.10.1",
-    "@weasel-js/prefs": "1.10.1",
-    "@weasel-js/quantity": "1.10.1",
-    "@weasel-js/react": "1.10.1",
-    "@weasel-js/registry": "1.10.1",
-    "@weasel-js/renderer": "1.10.1",
-    "@weasel-js/routing": "1.10.1",
-    "@weasel-js/select": "1.10.1",
-    "@weasel-js/simulation": "1.10.1",
-    "@weasel-js/stroke": "1.10.1",
-    "@weasel-js/text": "1.10.1",
-    "@weasel-js/text-dom": "1.10.1",
+    "@weasel-js/animator": "1.11.0",
+    "@weasel-js/cursor": "1.11.0",
+    "@weasel-js/geom": "1.11.0",
+    "@weasel-js/gestures": "1.11.0",
+    "@weasel-js/history": "1.11.0",
+    "@weasel-js/icons": "1.11.0",
+    "@weasel-js/modes": "1.11.0",
+    "@weasel-js/paint": "1.11.0",
+    "@weasel-js/prefs": "1.11.0",
+    "@weasel-js/quantity": "1.11.0",
+    "@weasel-js/react": "1.11.0",
+    "@weasel-js/registry": "1.11.0",
+    "@weasel-js/renderer": "1.11.0",
+    "@weasel-js/routing": "1.11.0",
+    "@weasel-js/select": "1.11.0",
+    "@weasel-js/simulation": "1.11.0",
+    "@weasel-js/stroke": "1.11.0",
+    "@weasel-js/text": "1.11.0",
+    "@weasel-js/text-dom": "1.11.0",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
@@ -137,8 +137,8 @@
     "2d"
   ],
   "devDependencies": {
-    "@weasel-js/icons-plugin": "1.10.1",
-    "@weasel-js/modes": "1.10.1",
-    "@weasel-js/theme": "1.10.1"
+    "@weasel-js/icons-plugin": "1.11.0",
+    "@weasel-js/modes": "1.11.0",
+    "@weasel-js/theme": "1.11.0"
   }
 }

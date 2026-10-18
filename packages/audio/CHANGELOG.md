@@ -1,5 +1,12 @@
 # @weasel-js/audio
 
+## 1.11.0
+
+### Patch Changes
+
+- 40a817d: A `synthVoices: 'worklet'` voice that the audio thread has started while a main-thread stall kept the scheduler from reaching it now releases on `release()` and fades on `stop(fadeMs)`, where it used to be cut at once. It reports `onDone` when it ends, not `onDrop('stopped')`, because it sounded. `stopKey` treats such a voice the same way.
+- 082f0a8: `createAudioEngine` takes `synthVoices: 'worklet'`, which renders `playNote` and `playNoise` voices in an `AudioWorkletProcessor` from events posted when they are played, rather than building nodes when the scheduler fires. A voice played ahead of a main-thread stall then starts on time. Its handle, bus pool, stealing, pan and position behave as a node voice's do. The processor loads from a `blob:` URL, so a CSP has to allow `script-src blob:`; `unlock()` waits for it to load, and until it has, or where it cannot, synth voices play on nodes. The default, `'nodes'`, is unchanged, and an engine that never asks for the worklet does not load its source. `onLate` no longer reports a worklet voice, which was not late, and `Scheduler.schedule` takes `{ reportLate: false }` for any callback like it.
+
 ## 1.10.1
 
 ### Patch Changes

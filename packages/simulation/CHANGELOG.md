@@ -1,5 +1,16 @@
 # @weasel-js/simulation
 
+## 1.11.0
+
+### Patch Changes
+
+- Updated dependencies [63b310c]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [ad0b069]
+- Updated dependencies [d32cb70]
+- Updated dependencies [398d71e]
+  - @weasel-js/react@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

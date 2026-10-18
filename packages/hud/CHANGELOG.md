@@ -1,5 +1,175 @@
 # @weasel-js/hud
 
+## 1.11.0
+
+### Patch Changes
+
+- c96f8a0: `attachMenuHost(hud, host, …)` draws the open context menu as a HUD widget, from the same model the DOM menu uses: keyboard, typeahead, submenus and on-canvas placement. It takes focus while open, swallows every key pressed while it has focus, and closes when a press lands anywhere else. It does not yet draw icons, shortcut chips or check marks, and screen readers get only its name.
+  
+  A widget can now set `focusRing: false` to keep the HUD from drawing its focus ring around it; the menu does, since its highlighted row already shows where focus is. Menu labels are measured from the advances of the font the HUD draws in, and `measureLabel` is exported for a `measure` override to build on.
+- ac503c9: A widget can declare an `accessibleTree`: a tree of ARIA roles, states, and labels, with the node the keyboard is on marked `active`. While the widget holds focus, the hud mirrors it as visually hidden DOM beside the canvas, which owns the mirror through `aria-owns` and points at the active node through `aria-activedescendant`; a change of highlight alone moves that pointer and leaves the elements in place. The WebGL context menu declares one, so a screen reader sees its rows as `menuitem` and `menuitemcheckbox` elements with their checked and disabled states, an open submenu as a nested `menu`, and the highlighted row as it moves.
+- 4a44657: The WebGL context menu reads its shadow as the DOM panel does, `var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))`, so a theme's bevel reaches it: outer layers draw beneath the panel, `inset` layers over its face inside the border. Inset layers draw hard-edged whatever their blur. `boxShadowCommands` in hud draws any `box-shadow` list around a rounded box.
+  
+  theme adds `expandVars`, which substitutes the `var()` references a resolved theme's values can still hold, fallbacks included, and `parseBoxShadow`, which reads a `box-shadow` value into its layers.
+- 914ff3d: The WebGL context menu closes on a wheel outside its panels, when the window loses focus and on resize, as the DOM menu does. Closing it with Escape, a chosen item or any of those gives HUD focus back to the widget that held it when the menu opened, with its focus ring if it had one; a press that moves focus elsewhere keeps that focus.
+- 58e558d: The WebGL context menu draws each row's icon in the icon column, at 16px and in the row's color, as the DOM row does; a checked row draws its check there instead. `attachMenuHost` and `createMenuWidget` take `icons`, an icon registry or anything with its `get` and `getVersion`, and a menu without one draws no icons.
+  
+  `glyphCommands` draws an icon glyph as draw commands, placed in a square and colored wherever it says `currentColor`. It reads the elements the icon tables use, their presentation attributes and transforms, and a nested `svg` as a clip; a `clip-path` pointing into `defs` does not clip.
+- b14dec1: The WebGL context menu draws each row's shortcut at the row's end, in the muted color and formatted as the DOM menu formats it, and a check mark in the icon column for a row whose action is on, so a toggle's state shows. A panel widens to fit a label and its shortcut. Panels are rounded by `--wzl-radius-md` and cast the DOM panel's default shadow in `--wzl-shadow`. Icons are not drawn yet.
+- 90851d1: A schema drawn as a menu keeps its number, color, and string leaves. `resolveSchemaMenu` turns a number leaf into a new `number` menu entry, in the units the leaf shows, and a color leaf into a new `color` entry; a string reads as a disabled `Name: value` row. Both are new `MenuEntry` kinds, so code that switches over every kind needs a case for each.
+  
+  A number row edits in place and the menu stays open. The DOM menu holds a field in the row: Enter on the highlighted row moves focus into it, the arrow keys step it there, and Enter or Escape hands focus back to the menu. The HUD menu draws a minus and a plus chip either side of the value. In both, `+` and `-` step the highlighted row. The menu controller's new `numberValue`, `setNumber`, and `spin` hold what was set while the menu is open, and `menuNumberText` prints a value as a renderer with no field does.
+  
+  A color row shows a swatch and the hex and is read-only in both menus.
+  
+  `clampToBounds`, `snapToStep`, and `spinKey` move from `@weasel-js/ui`'s internals to `@weasel-js/quantity`, where the menu model steps with them too.
+- 797bf34: A number row in a menu drawn from a schema now honors the leaf's `endless` and `infinity`. An endless end sits one step past its bound, as it does on an endless slider, so stepping up from the bound reaches infinity, and an infinity stored there shows as the leaf's word for it, with no unit after it. This holds in the DOM menu and the HUD menu alike. The DOM menu's field also reads typed units now, in any unit the leaf's `unit` accepts.
+  
+  `clampToBounds` and `spinKey` in `@weasel-js/quantity` take an `endless` bound. `endlessAllows`, `endlessAt`, `endlessTrack`, and the `Endless` type have moved there from `@weasel-js/ui`, which still re-exports `Endless`. `UnitField` takes `endless` as well, so a property row's plain number field keeps an infinity typed at an endless end where it used to clamp it to the bound. `prefUnitAccepts` is now exported from `@weasel-js/prefs`, which ui and routing both use. `prefDisplayBounds` returns the leaf's `endless`, with its ends swapped under a unit that runs backward. `MenuNumberEntry` gains `endless`, `infinity`, and `accepts`. `menuNumberText` now takes the entry in place of a suffix and a display.
+- 57725cc: Menus hang under a rect and register commands from callbacks. `placeMenuUnder` in `@weasel-js/menu` is new public API: it places a menu under a rect, flips it above, and right-aligns it at the right edge. `MenuOpenRequest.under` is an additive field, honored by the DOM and WebGL menu renderers, and `BarMenu` passes its button's rect. `BarMenu` takes an additive `defaultOpen` prop: it opens the menu once on mount, without taking focus, retrying as commands register until the menu has rows. `useCommand(id, label, run, options?)` is new public API in `@weasel-js/routing/react` and `@weasel-js/core`; its `icon` option takes an `IconRef`. The asset editor files menu roots under a "Menus" heading and previews them open.
+- 2f51085: Menus take access letters and links. `access` on `PrefBase`, `PrefGroup` and `PrefSection` names a menu item's letter; the resolver carries it, and an alias's own letter wins over its target's. `@weasel-js/menu` gains `accessMatch` (finds the item a typed letter selects), `withLinks` (runs a link row's `href` through a navigator the host passes), and `href` and `current` on items. `onEdge` is new on the menu controller, called when Left or Right is pressed at a boundary. Link rows now navigate in the WebGL host. `KeyEffect` gained an `edge` variant, and `keyStep` now returns it for Left and Right at a boundary, which breaks a consumer that switches exhaustively over the effect: add a case for it.
+- f34b290: A `<CanvasView>` can nest in another through `parent`: its `bounds` are measured from that view's
+  rect, a thunked `bounds` or `view` receives that view's camera and size, it paints cut to that view
+  and only the layers that view paints, and input inside it lands in its world before that view's.
+  `SceneCanvasApi.viewAt` names the innermost view under a canvas point. An interactive or
+  view-backed loupe now magnifies the camera of the view under its aim, so over a panel it shows and
+  edits the panel's world. `createViewportLayer` and `ResolvableView` take an optional `clip`.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [6f839dd]
+- Updated dependencies [95d22f1]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [0382007]
+- Updated dependencies [4a44657]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [b36ceac]
+- Updated dependencies [34f8b09]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [d86f89e]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [e4642bb]
+- Updated dependencies [90851d1]
+- Updated dependencies [797bf34]
+- Updated dependencies [fe20dc4]
+- Updated dependencies [e901a2b]
+- Updated dependencies [da45b33]
+- Updated dependencies [57725cc]
+- Updated dependencies [2f51085]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [8775065]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [e562d4b]
+- Updated dependencies [7947fdf]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/core@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/gestures@1.11.0
+  - @weasel-js/theme@1.11.0
+  - @weasel-js/icons@1.11.0
+  - @weasel-js/menu@1.11.0
+  - @weasel-js/paint@1.11.0
+  - @weasel-js/font@1.11.0
+  - @weasel-js/loupe@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes
