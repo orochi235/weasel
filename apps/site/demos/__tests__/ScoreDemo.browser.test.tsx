@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import '../../canvas-kit-demo.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { ScoreDemo } from '../ScoreDemo';
@@ -20,7 +20,8 @@ test('a playing score shows the bar in force, and a new mood on the next bar lin
   await expect.poll(() => text('bar'), { timeout: 8000 }).toBe('bar 2, 2 into the cue');
   expect(text('cue')).toBe('urgency');
 
-  await userEvent.click(screen.getByRole('button', { name: 'dread' }));
+  // Clicked and read in one task, so no bar can be booked in between.
+  act(() => screen.getByRole('button', { name: 'dread' }).click());
   expect(text('cue'), 'the bar in force is still the one playing').toBe('urgency');
   await expect.poll(() => text('cue'), { timeout: 8000 }).toBe('dread');
   expect(text('bar')).toMatch(/^bar \d+, 1 into the cue$/);
