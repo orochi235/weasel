@@ -7,6 +7,7 @@
 
 import type { GlyphTextureSink } from '../textureSink';
 
+/** Side of every dynamic-atlas page, in texels: a glyph's rect over it is its uv. */
 export const PAGE_SIZE = 1024;
 export const MAX_PAGES = 4;
 
