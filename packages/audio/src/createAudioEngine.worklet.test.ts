@@ -110,6 +110,17 @@ describe("synthVoices: 'worklet'", () => {
     expect(levels[1].end).toBeCloseTo(ctx.currentTime + 0.1, 9);
   });
 
+  it('reports no lateness for a worklet voice whose pass came late, as it was not', async () => {
+    const onLate = vi.fn();
+    const { ctx, engine, run } = await harness({ onLate });
+    engine.playNote({ pitch: 440, when: 300, duration: 20 });
+    engine.playNote({ pitch: 440, when: 300, duration: 20, bus: 'music' });
+    ctx._advance(600);
+    await run(25);
+    expect(engine.activeVoices()).toBe(2);
+    expect(onLate).not.toHaveBeenCalled();
+  });
+
   it('retunes a voice booked for later', async () => {
     const { engine, posted } = await harness();
     engine.playNote({ pitch: 440, when: 1000 }).setDetune(100);

@@ -199,7 +199,8 @@ export interface AudioEngineOptions {
   clearTimer?: (handle: unknown) => void;
   /** A voice or an `engine.schedule` callback came due `lateMs` after its
    *  time `when`, both in engine ms: the main thread stalled for longer than
-   *  the lookahead covers, and the voice sounded late by that much. */
+   *  the lookahead covers, and the voice sounded late by that much. A
+   *  `synthVoices: 'worklet'` voice is never reported: it was not late. */
   onLate?: (lateMs: number, when: number) => void;
   /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
   insertFadeMs?: number;

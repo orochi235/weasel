@@ -265,6 +265,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   `AudioWorkletProcessor` from events posted at the call; default `'nodes'`. Until the processor
   has loaded (`unlock()` waits for it), or where it cannot, synth voices play on nodes rather than
   being dropped. A worklet voice is never dropped as `stale`.
+- 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
+  `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
 
 ## draw
 

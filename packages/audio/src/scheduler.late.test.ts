@@ -32,6 +32,15 @@ describe('createScheduler onLate', () => {
     expect(onLate.mock.calls).toEqual([[120, 500]]);
   });
 
+  it('says nothing of a late event booked with reportLate: false, and still fires it', () => {
+    const { scheduler, onLate, tickAt } = harness();
+    const fire = vi.fn();
+    scheduler.schedule(500, fire, undefined, { reportLate: false });
+    tickAt(620);
+    expect(fire).toHaveBeenCalledWith(500);
+    expect(onLate).not.toHaveBeenCalled();
+  });
+
   it('says nothing of an event a pass reached inside the lookahead', () => {
     const { scheduler, onLate, tickAt } = harness();
     scheduler.schedule(500, () => {});

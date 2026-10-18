@@ -263,9 +263,10 @@ export function createVoices(deps: VoicesDeps): Voices {
         voice.out = chains.take(deps.busInput(busName), level, spatial.pan);
       }
       live.set(id, voice);
+      // A booked voice already sounds at its time, however late this runs.
       deps.scheduler.schedule(when, (scheduledWhen) => {
         startVoice(voice, starter, bookedAt, scheduledWhen, common.onDone, deps.staleFloor(), teardown);
-      }, common.cancelKey);
+      }, common.cancelKey, { reportLate: !starter.book });
       return voiceHandle(ctx, voice, ops);
     },
     stopAll(reason) {
