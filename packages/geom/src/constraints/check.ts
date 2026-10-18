@@ -63,6 +63,8 @@ export function collapsedBy(
 /** Options for {@link unsatisfiedConstraints}. */
 export interface UnsatisfiedConstraintsOptions {
   axisAngle?: number;
+  /** A frame per constraint, by index, over `axisAngle`. */
+  axisAngles?: readonly (number | undefined)[];
   /** Where a `fixed` anchor belongs. Absent, a `fixed` constraint always holds. */
   reference?: readonly (ConstraintPoint | undefined)[];
   /** Default {@link CONSTRAINT_TOLERANCE}. */
@@ -80,7 +82,7 @@ export function unsatisfiedConstraints(
   opts: UnsatisfiedConstraintsOptions = {},
 ): number[] {
   const { tolerance = CONSTRAINT_TOLERANCE, reference } = opts;
-  const space = { frame: frameAt(opts.axisAngle), count: points.length };
+  const spaceOf = (i: number) => ({ frame: frameAt(opts.axisAngles?.[i] ?? opts.axisAngle), count: points.length });
   const packed = pack(points);
   // One slot past the points for an `onPath` parameter, set to the nearest point's each time.
   const x = new Float64Array(packed.length + 1);
@@ -100,7 +102,7 @@ export function unsatisfiedConstraints(
       return;
     }
     if (c.kind === 'onPath') x[param] = nearestParam(c, x, points.length);
-    writeResiduals(c, x, space, r, 0, undefined, param);
+    writeResiduals(c, x, spaceOf(i), r, 0, undefined, param);
     for (let k = 0; k < residualRows(c); k++) {
       if (Math.abs(r[k]) > tolerance) {
         out.push(i);

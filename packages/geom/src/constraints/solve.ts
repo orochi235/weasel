@@ -38,6 +38,8 @@ export interface SolveConstraintsOptions {
   reference?: readonly (ConstraintPoint | undefined)[];
   /** Radians the frame `horizontal` and `vertical` read is turned from the world's axes. Default 0. */
   axisAngle?: number;
+  /** A frame per constraint, by index, over `axisAngle` — for constraints gathered from paths drawn in different frames. */
+  axisAngles?: readonly (number | undefined)[];
   /** Indices of constraints to leave out of the solve — ones already known not to hold. */
   skip?: Iterable<number>;
   /** Default 100. */
@@ -63,12 +65,12 @@ interface Row {
   at: number;
   /** Where an `onPath` constraint's parameter sits in the coordinates; -1 for any other. */
   param: number;
+  space: ResidualSpace;
 }
 
 interface System {
   rows: Row[];
   m: number;
-  space: ResidualSpace;
   normal: NormalSystem;
   pinned: Set<number>;
   mobility: Float64Array;
@@ -78,17 +80,17 @@ interface System {
 
 function residualsOf(sys: System, x: Float64Array): Float64Array {
   const r = new Float64Array(sys.m);
-  for (const row of sys.rows) writeResiduals(row.c, x, sys.space, r, row.at, undefined, row.param);
+  for (const row of sys.rows) writeResiduals(row.c, x, row.space, r, row.at, undefined, row.param);
   return r;
 }
 
 /** Load the analytic Jacobian at `x` into the normal system. */
 function loadJacobian(sys: System, x: Float64Array): void {
-  const { normal, space } = sys;
+  const { normal } = sys;
   normal.clear();
   const scratch = new Float64Array(2);
   for (const row of sys.rows) {
-    writeResiduals(row.c, x, space, scratch, 0, (k, v, d) => normal.add(row.at + k, v, d), row.param);
+    writeResiduals(row.c, x, row.space, scratch, 0, (k, v, d) => normal.add(row.at + k, v, d), row.param);
   }
 }
 
@@ -169,22 +171,30 @@ function buildSystem(
 ): System {
   const count = points.length;
   const skip = new Set(opts.skip ?? []);
-  const active = constraints.filter((c, i) => !skip.has(i) && constraintApplies(c, points));
+  const activeIndices = constraints.flatMap((c, i) => (!skip.has(i) && constraintApplies(c, points) ? [i] : []));
+  const active = activeIndices.map((i) => constraints[i]);
   const pinned = new Set(active.flatMap((c) => (c.kind === 'fixed' ? [c.anchor] : [])));
   const mobility = mobilityOf(points, active, opts, heldMobility, pinned);
   const rows: Row[] = [];
   const rowCols: Int32Array[] = [];
   let size = spaceSize(count);
-  for (const c of active) {
+  const frames = new Map<number, ResidualSpace>();
+  const spaceAt = (angle: number) => {
+    let space = frames.get(angle);
+    if (!space) frames.set(angle, (space = { frame: frameAt(angle), count }));
+    return space;
+  };
+  for (const i of activeIndices) {
+    const c = constraints[i];
     const height = residualRows(c);
     if (height === 0) continue;
     const param = c.kind === 'onPath' ? size++ : -1;
-    rows.push({ c, at: rowCols.length, param });
+    rows.push({ c, at: rowCols.length, param, space: spaceAt(opts.axisAngles?.[i] ?? opts.axisAngle ?? 0) });
     const vars = Int32Array.from(coordinatesOf(c, count, param));
     for (let k = 0; k < height; k++) rowCols.push(vars);
   }
   const normal = new NormalSystem(rowCols, mobility);
-  return { rows, m: rowCols.length, space: { frame: frameAt(opts.axisAngle), count }, normal, pinned, mobility, size };
+  return { rows, m: rowCols.length, normal, pinned, mobility, size };
 }
 
 /**
@@ -252,7 +262,9 @@ function solveWith(
   const skipped = new Set(opts.skip ?? []);
   const collapsed = collapsedBy(points, out, constraints, skipped);
   const unsatisfied = [...new Set([
-    ...unsatisfiedConstraints(out, constraints, { axisAngle: opts.axisAngle, reference: opts.reference }),
+    ...unsatisfiedConstraints(out, constraints, {
+      axisAngle: opts.axisAngle, axisAngles: opts.axisAngles, reference: opts.reference,
+    }),
     ...collapsed,
   ])].sort((a, b) => a - b);
   return {
