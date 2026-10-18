@@ -655,42 +655,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   not the data the minimum lives in. Needs a per-node bound in `@weasel-js/prefs` that the
   selection panel resolves against the node.
 
-- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
-  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
-  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
-  there and resolve it, or warn in dev on a mode the theme does not have.
-
-- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
-  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
-  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
-  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
-
-- **(P2) Gaps blits hit moving its playground onto labkit's `ControlPanel` and `f` (1.10.1).** Each
-  is worked around in blits' `apps/playground/src/app/CompositionControls.tsx` (`DraftRow`,
-  `drafted`) and `SpecFields.tsx`; those are the specs for the fixes.
-  - Number and text rows write on every keystroke, so one typed value is many undo steps. Use the
-    ui fields' draft-and-commit-on-blur; the text draft should also cancel on Escape.
-  - `.resettable()` groups write each value through its own `setConfig`: several undo steps, and a
-    stale-state race. Write the group as one change.
-  - `.dialog()` has no cancel; Escape commits.
-  - `showIf` on an enum value that is not among the enum's options throws, which crashed a whole
-    panel. Treat it as never matching.
-  - A number row cannot be cleared to mean unset/default (blank reverts), and `NumberNode` has no
-    min-only bound.
-  - `PropertyRow`/`ControlPanel` have no slot for a row's validation message.
-  - A section whose rows are all hidden still draws its heading.
-  - An `f.action` row repeats the button text as its label, and an action's run cannot reach the
-    panel's props.
-  - No "changed from baseline" marking; `PrefsForm` has one.
-  - `f` boolean and string leaves get the auto-pin toggle on their label unless `.manual()`, which
-    is easy to miss. Either make it opt-in or make the default obvious.
-  - A custom renderer's context does not carry the config.
-  - `ControlMatrix` cannot set a summary for a custom leaf's cell, and first-column inheritance is
-    its only model; there is no plain grid.
-  - `ListEditor` has no reorder and offers one kind of new entry.
-  - `EasingPicker` always renders its own "Easing" label, doubling the row's.
-  - In the two-column grid a bar or custom row takes a half cell unless its section is one-up.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
