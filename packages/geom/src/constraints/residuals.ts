@@ -17,12 +17,56 @@ export function frameAt(angle = 0): ConstraintFrame {
   return { cos: Math.cos(angle), sin: Math.sin(angle) };
 }
 
+/**
+ * Where a solve keeps its coordinates. `x` holds every anchor's position,
+ * interleaved, then every anchor's in and out handle as offsets from it, so a
+ * handle rides with its anchor and a constraint on handles reads only them.
+ */
+export interface ResidualSpace {
+  frame: ConstraintFrame;
+  /** Anchors. */
+  count: number;
+}
+
+/** Where anchor `i`'s in handle offset starts in a space of `count` anchors; its out handle follows. */
+export const handleAt = (count: number, i: number): number => 2 * count + 4 * i;
+
+/** Coordinates a space of `count` anchors holds. */
+export const spaceSize = (count: number): number => 6 * count;
+
 /** Takes one derivative: of residual row `row` (counted from the constraint's first) by coordinate `v`. */
 export type Grad = (row: number, v: number, d: number) => void;
 
 /** How many residual rows `c` writes. */
 export function residualRows(c: PathConstraint): number {
   return c.kind === 'coincident' ? 2 : c.kind === 'fixed' ? 0 : 1;
+}
+
+/**
+ * The angle between anchor `i`'s in handle and its out handle turned round,
+ * times the geometric mean of their lengths: zero exactly when they point
+ * apart along one line. Zero when either has no length.
+ */
+function tangentRow(x: ArrayLike<number>, count: number, i: number, grad: Grad | undefined): number {
+  const h = handleAt(count, i);
+  const px = x[h];
+  const py = x[h + 1];
+  const qx = x[h + 2];
+  const qy = x[h + 3];
+  const pp = px * px + py * py;
+  const qq = qx * qx + qy * qy;
+  const scale = Math.sqrt(Math.sqrt(pp) * Math.sqrt(qq));
+  if (scale < 1e-9) return 0;
+  const theta = Math.atan2(-(px * qy - py * qx), -(px * qx + py * qy));
+  if (grad) {
+    // r = θ L: ∂θ/∂p = (py, -px) / |p|², ∂θ/∂q = (-qy, qx) / |q|², ∂L = (L / 2) (p / |p|², q / |q|²).
+    const k = theta / 2;
+    grad(0, h, scale * (py / pp + (k * px) / pp));
+    grad(0, h + 1, scale * (-px / pp + (k * py) / pp));
+    grad(0, h + 2, scale * (-qy / qq + (k * qx) / qq));
+    grad(0, h + 3, scale * (qx / qq + (k * qy) / qq));
+  }
+  return theta * scale;
 }
 
 const dx = (x: ArrayLike<number>, [a, b]: AnchorPair) => x[2 * b] - x[2 * a];
@@ -77,19 +121,23 @@ function angleRow(
 }
 
 /**
- * Write `c`'s residual rows for anchor coordinates `x` (interleaved x, y) into
+ * Write `c`'s residual rows for coordinates `x`, laid out as `space` says, into
  * `out` at `at`, and hand each nonzero derivative to `grad` when given.
  */
 export function writeResiduals(
   c: PathConstraint,
   x: ArrayLike<number>,
-  frame: ConstraintFrame,
+  space: ResidualSpace,
   out: Float64Array,
   at: number,
   grad?: Grad,
 ): void {
+  const { frame } = space;
   switch (c.kind) {
     case 'fixed': return;
+    case 'tangent':
+      out[at] = tangentRow(x, space.count, c.anchor, grad);
+      return;
     case 'horizontal':
       out[at] = -frame.sin * dx(x, c.segment) + frame.cos * dy(x, c.segment);
       if (grad) segmentGrad(grad, 0, c.segment, -frame.sin, frame.cos);

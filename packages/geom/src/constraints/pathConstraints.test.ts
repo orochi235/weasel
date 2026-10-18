@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints } from '../paths/builder';
-import { deleteAnchorsAt, translateAnchorBy } from '../paths/anchorEdits';
+import { deleteAnchorsAt, moveHandleTo, translateAnchorBy } from '../paths/anchorEdits';
 import { editAnchorSetTracked } from '../paths/anchorOrigins';
 import { pathToAnchors } from '../paths/anchors';
 import type { PolygonPath } from '../path';
@@ -89,6 +89,23 @@ describe('constrainPathEdit', () => {
     ];
     const r = constrainPathEdit(before, edit.path, constraints, { origins: edit.origins });
     expect(r.constraints).toEqual([{ kind: 'horizontal', segment: [2, 3] }]);
+  });
+
+  it('turns the other handle of a tangent anchor when one is dragged, and leaves the dragged one', () => {
+    const before = new PathBuilder().moveTo(0, 0).curveTo(20, -20, 60, -20, 80, 0).curveTo(100, 20, 140, 20, 160, 0)
+      .build() as PolygonPath;
+    const edit = editAnchorSetTracked(before, (set) => {
+      moveHandleTo(set, 1, 'out', 100, 40, true);
+    })!;
+    const r = constrainPathEdit(before, edit.path, [{ kind: 'tangent', anchor: 1 }], { origins: edit.origins });
+    expect(r.converged).toBe(true);
+    const [, a] = pathToAnchors(r.path).anchors[0];
+    expect(a.outHandle).toEqual({ x: 100, y: 40 });
+    const p = { x: a.inHandle!.x - 80, y: a.inHandle!.y };
+    const q = { x: 20, y: 40 };
+    expect(Math.abs(p.x * q.y - p.y * q.x) / Math.hypot(p.x, p.y)).toBeLessThan(1e-3);
+    expect(p.x * q.x + p.y * q.y).toBeLessThan(0);
+    expect({ x: a.x, y: a.y }).toEqual({ x: 80, y: 0 });
   });
 
   it('drops every constraint when the anchors renumber and nothing says how', () => {

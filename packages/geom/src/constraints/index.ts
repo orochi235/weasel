@@ -4,11 +4,9 @@ export {
   constraintAnchors, constraintFits, mapConstraintAnchors,
   type AnchorPair, type PathConstraint, type PathConstraintKind,
 } from './types';
-export {
-  CONSTRAINT_TOLERANCE, solveConstraints, unsatisfiedConstraints,
-  type ConstraintPoint, type SolveConstraintsOptions, type SolveConstraintsResult,
-  type UnsatisfiedConstraintsOptions,
-} from './solve';
+export { solveConstraints, type SolveConstraintsOptions, type SolveConstraintsResult } from './solve';
+export { CONSTRAINT_TOLERANCE, unsatisfiedConstraints, type UnsatisfiedConstraintsOptions } from './check';
+export { constraintApplies, type ConstraintPoint, type HandleRef } from './points';
 export {
   anchorsBefore, constrainPathEdit, pathAnchorPoints, remapConstraints, solvePathConstraints,
   type ConstrainPathEditOptions, type ConstrainedPathEdit, type SolvePathConstraintsResult,

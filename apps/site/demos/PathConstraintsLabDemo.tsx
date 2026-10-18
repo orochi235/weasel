@@ -27,6 +27,7 @@ const KIND_LABELS: Record<PathConstraintKind, string> = {
   length: 'Length',
   coincident: 'Coincident',
   fixed: 'Fixed',
+  tangent: 'Tangent',
 };
 
 const config = f.schema({

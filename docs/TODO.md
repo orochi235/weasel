@@ -427,9 +427,6 @@ Priority tags:
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an
   inner- or outer-aligned stroke the grab point sits off the edge that is drawn.
-- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
-  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
-  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
 - **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
   a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
   Constraints between two nodes also need a home other than one node's `data.constraints`, and

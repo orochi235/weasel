@@ -11,10 +11,12 @@ export type AnchorPair = readonly [number, number];
  * One constraint. `fixed` holds an anchor where it was before an edit, so it
  * moves with its node but not with any edit of the path. `horizontal` and
  * `vertical` read the axes of the frame the solve is given; `length` is in
- * the path's own units.
+ * the path's own units. `tangent` keeps an anchor's two handles on one line
+ * through it, pointing apart (G1 continuity), their lengths free; it needs
+ * both handles.
  */
 export type PathConstraint =
-  | { readonly kind: 'fixed'; readonly anchor: number }
+  | { readonly kind: 'fixed' | 'tangent'; readonly anchor: number }
   | { readonly kind: 'horizontal' | 'vertical'; readonly segment: AnchorPair }
   | {
     readonly kind: 'parallel' | 'perpendicular' | 'equalLength';
@@ -29,7 +31,8 @@ export type PathConstraintKind = PathConstraint['kind'];
 /** The anchors `c` reads, in the order it names them; an anchor named twice is listed twice. */
 export function constraintAnchors(c: PathConstraint): number[] {
   switch (c.kind) {
-    case 'fixed': return [c.anchor];
+    case 'fixed':
+    case 'tangent': return [c.anchor];
     case 'horizontal':
     case 'vertical':
     case 'length': return [...c.segment];
@@ -52,9 +55,10 @@ export function mapConstraintAnchors(
     return a === undefined || b === undefined ? null : [a, b];
   };
   switch (c.kind) {
-    case 'fixed': {
+    case 'fixed':
+    case 'tangent': {
       const anchor = to(c.anchor);
-      return anchor === undefined ? null : { kind: 'fixed', anchor };
+      return anchor === undefined ? null : { kind: c.kind, anchor };
     }
     case 'horizontal':
     case 'vertical': {
