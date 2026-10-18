@@ -4,6 +4,7 @@
  * drawn in, so `horizontal` on a rotated `data.path` node turns with it.
  */
 import {
+  conflictingConstraints,
   constrainPathEdit,
   pathAnchorPoints,
   solvePathConstraints,
@@ -29,18 +30,32 @@ export function constraintAxisOf(node: EditableShape | null | undefined): number
 }
 
 /**
- * Indices of `node`'s constraints that do not hold in its committed path:
- * the ones that conflict with the rest. Edits leave them out of the solve,
- * and so does a whole-shape transform — resize, rotate, flip — which carries
- * the list unchanged: a constraint the transform breaks, such as a set
- * length under a scale or an equal length under a non-uniform one, is
- * reported here rather than solved back.
+ * Indices of `constraints` in conflict over `path`'s anchors: those that do
+ * not hold, and with them every member of a smallest set that cannot all hold
+ * together (`conflictingConstraints`). Sorted.
+ */
+export function conflictsIn(path: PolygonPath, constraints: readonly PathConstraint[], axisAngle: number): number[] {
+  const points = pathAnchorPoints(path);
+  const failing = unsatisfiedConstraints(points, constraints, { axisAngle });
+  if (failing.length === 0) return [];
+  const set = new Set([...failing, ...conflictingConstraints(points, constraints, { axisAngle })]);
+  return [...set].sort((a, b) => a - b);
+}
+
+/**
+ * Indices of `node`'s constraints that do not hold in its committed path, and
+ * the others each conflict needs: every member of a smallest set that cannot
+ * all hold. Edits leave the ones that do not hold out of the solve, and so
+ * does a whole-shape transform — resize, rotate, flip — which carries the
+ * list unchanged: a constraint the transform breaks, such as a set length
+ * under a scale or an equal length under a non-uniform one, is reported here
+ * rather than solved back.
  */
 export function constraintConflictsOf(node: EditableShape | null | undefined): number[] {
   const constraints = constraintsOf(node?.data);
   const path = constraints.length > 0 ? resolveEditablePathOf(node) : null;
   if (!path) return [];
-  return unsatisfiedConstraints(pathAnchorPoints(path), constraints, { axisAngle: constraintAxisOf(node) });
+  return conflictsIn(path, constraints, constraintAxisOf(node));
 }
 
 /** What an edit of a constrained node commits: its path, and its constraints renumbered for it. */
@@ -71,17 +86,18 @@ export function constrainNodeEdit(
 
 /**
  * `node`'s path moved the least that makes `constraints` hold, and the
- * indices of those that do not hold in the path it answers. When they cannot
- * all hold the path is the node's own, unmoved.
+ * indices of those in conflict in the path it answers, as
+ * {@link conflictsIn} reads them. When they cannot all hold the path is the
+ * node's own, unmoved.
  */
 export function solveNodeConstraints(
   node: EditableShape | null | undefined,
   constraints: readonly PathConstraint[],
-): { path: PolygonPath; unsatisfied: number[] } | null {
+): { path: PolygonPath; conflicts: number[] } | null {
   const path = resolveEditablePathOf(node);
   if (!path) return null;
   const axisAngle = constraintAxisOf(node);
   const solved = solvePathConstraints(path, constraints, { axisAngle });
-  if (solved.converged) return { path: solved.path, unsatisfied: [] };
-  return { path, unsatisfied: unsatisfiedConstraints(pathAnchorPoints(path), constraints, { axisAngle }) };
+  if (solved.converged) return { path: solved.path, conflicts: [] };
+  return { path, conflicts: conflictsIn(path, constraints, axisAngle) };
 }

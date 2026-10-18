@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { KitSettingsProvider } from '@weasel-js/react';
 import type { DropOutside } from './StructurePane';
 import { usePreviewDrag } from './usePreviewDrag';
 
@@ -32,5 +33,17 @@ describe('usePreviewDrag', () => {
     expect(place.end).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(place.end).toHaveBeenCalledTimes(1);
+  });
+
+  it('picks a row up only past the gestures.dragPx kit setting', () => {
+    const place: DropOutside = { over: vi.fn(() => false), target: vi.fn(() => null), end: vi.fn() };
+    render(<KitSettingsProvider value={{ gestures: { dragPx: 40 } }}><Stage place={place} /></KitSettingsProvider>);
+    const label = screen.getByText('Show grid');
+    fireEvent.pointerDown(label, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerMove(label, { clientX: 25, clientY: 5 });
+    expect(place.over).not.toHaveBeenCalled();
+    fireEvent.pointerMove(label, { clientX: 50, clientY: 5 });
+    expect(place.over).toHaveBeenCalled();
+    fireEvent.pointerUp(label, { clientX: 50, clientY: 5 });
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useSliceTool, VERTEX_RADIUS_PX } from './useSliceTool';
+import { SLICE_CLOSE_HIT_PX, useSliceTool, VERTEX_RADIUS_PX } from './useSliceTool';
 import { boundsOfPath } from '@weasel-js/geom';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import type { ReactNode } from 'react';
@@ -63,6 +63,24 @@ describe('useSliceTool — vertex dots', () => {
     };
     expect(width(setup())).toBe(2 * VERTEX_RADIUS_PX);
     expect(width(setup({}, { targets: { sliceVertexRadiusPx: 5 } }))).toBe(10);
+  });
+});
+
+describe('useSliceTool — close reach', () => {
+  /** Whether a click `d` px right of the first of three points closes the cut. */
+  const closesAt = (d: number, opts: Parameters<typeof useSliceTool>[0] = {}, settings?: KitSettingsOverrides) => {
+    const s = setup(opts, settings);
+    s.click(0, 0);
+    s.click(100, 0);
+    s.click(100, 100);
+    s.click(d, 0);
+    return s.commit.mock.calls.length === 1;
+  };
+
+  it('closes within targets.sliceCloseHitPx, else SLICE_CLOSE_HIT_PX, and an option beats both', () => {
+    expect([closesAt(SLICE_CLOSE_HIT_PX - 1), closesAt(SLICE_CLOSE_HIT_PX + 1)]).toEqual([true, false]);
+    expect(closesAt(15, {}, { targets: { sliceCloseHitPx: 20 } })).toBe(true);
+    expect(closesAt(15, { closeHitRadius: 4 }, { targets: { sliceCloseHitPx: 20 } })).toBe(false);
   });
 });
 

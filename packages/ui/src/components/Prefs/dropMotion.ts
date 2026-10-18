@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
-import { prefersReducedMotion } from '../../reducedMotion';
+import { prefersReducedMotion } from '@weasel-js/react';
 import type { PrefDrop } from './drop';
 import { PATH_ATTR, RAIL_ATTR } from './selection';
 

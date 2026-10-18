@@ -96,6 +96,7 @@ export function beginInsert(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    kitSettings: readers.kitSettings,
     // No node exists to adapt until commit; insert behaviors read points.
     adapter: undefined as unknown as GestureContext<unknown>['adapter'],
     scratch: {},

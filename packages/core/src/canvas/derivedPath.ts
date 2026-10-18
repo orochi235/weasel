@@ -7,12 +7,13 @@
  * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import { boxToBox, transformPath, type Path } from '@weasel-js/geom';
+import { boxToBox, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Path } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
+import { derivedPartsOf, pathFromParts } from 'core/scene/derivedParts';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import type { SceneViewDrawOne } from './NodeShape';
 
@@ -209,8 +210,42 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const derivedPathOf = sceneDerivedPathOf(scene, toPose);
+  const ownPoseOf = composesFrames(scene.composition)
+    ? (toPose ? sceneShownToPose(scene, toPose) : (node: Node<TData, TLayer, TPose>) => effectivePose(scene, node))
+    : null;
   return (node, pose, view, ctx) => {
     if (!showsComputedPath(scene, node)) return drawOne(node, pose, view, ctx);
-    return drawOne(node, pose, view, { ...ctx, derivedPath: derivedPathOf(node) });
+    let path = derivedPathOf(node);
+    if (path !== null && ownPoseOf !== null && scene.overrides.read(node.id)?.path === undefined) {
+      path = withoutInheritedFrame(path, pose, ownPoseOf(node));
+    }
+    return drawOne(node, pose, view, { ...ctx, derivedPath: path });
   };
 }
+
+/**
+ * A derived path is drawn from its dependencies' painted poses, so it is already where it
+ * shows; but the pose rotation the walk wraps every node in is `painted`'s, which carries its
+ * containers' turns as well as its own. Carried back through what the containers add, the
+ * wrap turns it by its own frame alone, as it does a root's.
+ */
+function withoutInheritedFrame(path: Path, painted: unknown, own: unknown): Path {
+  const undo = poseFrameInverseOf(painted);
+  if (undo === null) return path;
+  const box = painted as { x: number; y: number; width: number; height: number };
+  const o = own as { rotation?: number; transform?: unknown } | null;
+  const redo = poseFrameOf({ x: box.x, y: box.y, width: box.width, height: box.height, rotation: o?.rotation, transform: o?.transform });
+  const m = redo === null ? undo : multiply(undo, redo);
+  // Painted every frame from a memoized path, so the carried copy is kept against it.
+  const key = m.join(',');
+  const held = carried.get(path);
+  if (held?.key === key) return held.path;
+  const parts = derivedPartsOf(path);
+  const out = parts === undefined
+    ? transformPath(path, m)
+    : pathFromParts(parts.map((part) => ({ ...part, path: transformPath(part.path, m) })))!;
+  carried.set(path, { key, path: out });
+  return out;
+}
+
+const carried = new WeakMap<Path, { key: string; path: Path }>();

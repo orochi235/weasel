@@ -5,7 +5,7 @@
 import type { Path, PolygonPath } from '../path';
 import { PathBuilder } from './builder';
 import { cornerAt, hasCorners, withoutCorners, type CornerSpec } from './cornerSpec';
-import { cornerShapeK, cornerShapePieces, type CornerShapeFrame } from './cornerShape';
+import { cornerShapeK, cornerShapePieces, type CornerPiece, type CornerShapeFrame } from './cornerShape';
 import {
   decodeContours, paramAtLength, pointAt, segLength, subCubic, tangentAt,
   type Contour, type Vec,
@@ -194,6 +194,52 @@ function segSpan(c: Contour, cuts: readonly (AnchorCut | null)[], k: number): [n
   return [t0, Math.max(t0, t1)];
 }
 
+/** The corner cut at the anchor segment `k` runs into, as the expansion
+ *  draws it, or null when that anchor takes none. */
+function cutAfter(
+  c: Contour, cuts: readonly (AnchorCut | null)[], spans: readonly [number, number][], k: number,
+): { cut: AnchorCut; start: Vec; end: Vec; pieces: CornerPiece[] } | null {
+  const j = (k + 1) % c.anchors.length;
+  const cut = cuts[j];
+  const next = c.segs[j];
+  if (!cut?.spec || cut.trim <= 0 || !next) return null;
+  const seg = c.segs[k];
+  const start = pointAt(seg, spans[k][1]);
+  const end = pointAt(next, spans[j][0]);
+  const frame = shapeFrame({ x: cut.frame.x, y: cut.frame.y }, start, tangentAt(seg, spans[k][1]), end, tangentAt(next, spans[j][0]));
+  return { cut, start, end, pieces: cornerShapePieces(cornerShapeK(cut.spec.shape), frame) };
+}
+
+/** One corner of a path as its expansion draws it. */
+export interface CornerCut {
+  /** Flat anchor index. */
+  index: number;
+  anchor: Vec;
+  spec: CornerSpec;
+  /** Where the cut leaves the edge into the anchor, and where it rejoins the edge out of it. */
+  start: Vec;
+  end: Vec;
+  /** The outline from `start` to `end`. */
+  pieces: CornerPiece[];
+}
+
+/** Every corner `path` cuts, in path order. */
+export function cornerCuts(path: PolygonPath): CornerCut[] {
+  if (!hasCorners(path)) return [];
+  const out: CornerCut[] = [];
+  for (const c of decodeContours(path) ?? []) {
+    const cuts = contourCuts(path, c);
+    const spans = c.segs.map((_s, k) => segSpan(c, cuts, k));
+    c.segs.forEach((_seg, k) => {
+      const at = cutAfter(c, cuts, spans, k);
+      if (!at) return;
+      const { frame } = at.cut;
+      out.push({ index: frame.index, anchor: { x: frame.x, y: frame.y }, spec: at.cut.spec!, start: at.start, end: at.end, pieces: at.pieces });
+    });
+  }
+  return out;
+}
+
 function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]): void {
   const n = c.anchors.length;
   const spans = c.segs.map((_s, k) => segSpan(c, cuts, k));
@@ -214,16 +260,11 @@ function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]
         b.curveTo(c1.x, c1.y, c2.x, c2.y, p3.x, p3.y);
       }
     }
-    const j = (k + 1) % n;
-    const cut = cuts[j];
-    const next = c.segs[j];
-    if (!cut?.spec || cut.trim <= 0 || !next) return;
-    const p1 = pointAt(seg, t1);
-    const p2 = pointAt(next, spans[j][0]);
-    const frame = shapeFrame({ x: cut.frame.x, y: cut.frame.y }, p1, tangentAt(seg, t1), p2, tangentAt(next, spans[j][0]));
-    const pieces = cornerShapePieces(cornerShapeK(cut.spec.shape), frame);
+    const at = cutAfter(c, cuts, spans, k);
+    if (!at) return;
+    const pieces = [...at.pieces];
     // A closing line that ends where the contour started is drawn by the close.
-    if (j === 0 && pieces.at(-1)?.kind === 'line') pieces.pop();
+    if ((k + 1) % n === 0 && pieces.at(-1)?.kind === 'line') pieces.pop();
     for (const piece of pieces) {
       if (piece.kind === 'line') b.lineTo(piece.to.x, piece.to.y);
       else b.curveTo(piece.c1.x, piece.c1.y, piece.c2.x, piece.c2.y, piece.to.x, piece.to.y);

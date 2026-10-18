@@ -21,7 +21,7 @@ export interface UseSliceToolOptions {
   /** Override the default keybinding (`{ key: 'K' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Screen-px radius around the first point within which a click closes the
-   *  cut into a loop and commits it. Default `8`. */
+   *  cut into a loop and commits it. Default the `targets.sliceCloseHitPx` kit setting, else `8`. */
   closeHitRadius?: number;
 }
 
@@ -31,6 +31,8 @@ export interface SliceScratch {
 }
 
 export const VERTEX_RADIUS_PX = 3;
+/** How near the first point, in screen px, a click closes the cut. */
+export const SLICE_CLOSE_HIT_PX = 8;
 
 /**
  * Knife tool. A drag cuts along a straight line, and an Alt-drag along its
@@ -45,7 +47,8 @@ export const VERTEX_RADIUS_PX = 3;
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
   const scratchRef = useRef<SliceScratch>({ points: [] });
-  const optsRef = useLatest({ closeHitRadius: options.closeHitRadius ?? 8 });
+  const closeHitRef = useLatest(options.closeHitRadius);
+  const kitSettings = useKitSettings();
 
   // What the overlay layer's `subscribe` hears: a change to the points, and,
   // while any are placed, every move of the pointer the rubber band follows.
@@ -76,7 +79,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       const pts = points();
       const first = pts[0];
       const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
-      if (pts.length >= 3 && withinPxRadius(x - first.x, y - first.y, optsRef.current.closeHitRadius, scale)) {
+      if (pts.length >= 3 && withinPxRadius(x - first.x, y - first.y, closeHitRef.current ?? kitSettings.get('targets.sliceCloseHitPx') ?? SLICE_CLOSE_HIT_PX, scale)) {
         pts.push({ x: first.x, y: first.y });
         commit(deps);
         return;
@@ -162,9 +165,8 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
         invoker: { timing: 'immediate', run: () => reset() },
       },
     ];
-  }, [live, optsRef]);
+  }, [live, closeHitRef, kitSettings]);
 
-  const kitSettings = useKitSettings();
   const overlay = useMemo<RenderLayer<unknown>>(() => ({
     id: 'slice-pending-cut',
     label: 'Slice — pending cut',
