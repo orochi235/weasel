@@ -312,6 +312,12 @@ describe('LayerList controls', () => {
     expect(screen.queryByLabelText('Show Background')).toBeNull();
   });
 
+  it('puts the lock toggle after the label', () => {
+    list({ items: [{ id: 'a', label: 'Alpha' }], onLockChange: vi.fn(), onVisibilityChange: vi.fn() });
+    const lock = screen.getByLabelText('Lock Alpha');
+    expect(screen.getByText('Alpha').compareDocumentPosition(lock) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('reports a lock toggle, gives fixed layers none, and leaves a locked layer hideable', () => {
     const onLockChange = vi.fn();
     const onVisibilityChange = vi.fn();
