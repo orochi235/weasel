@@ -27,6 +27,7 @@ import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
 import { BareControl, extra, isSliderLeaf, labField, leafValueAt } from './fields';
+import { drawsAnyAt, drawsOwn, loosePathsIn } from './panelPaths';
 import { ResetGroup } from './ResetGroup';
 import { PairedRow } from './rows';
 
@@ -141,15 +142,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
 
   const lift = (heading: ReactNode, paths: readonly string[]) =>
-    liftedControl(heading, paths, {
-      resolved,
-      renderers,
-      shown,
-      setConfig,
-      draftConfig,
-      visible,
-      enabled,
-    });
+    liftedControl(heading, paths, { ...source, visible, enabled });
 
   /** One node, which is either a group to recurse into or a row to draw. */
   const node = (path: string, rows: Rows): ReactNode => {
@@ -349,25 +342,6 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
 }
 
 /** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
-function drawsAnyAt(
-  resolved: ResolvedConfig,
-  visible: (path: string) => boolean,
-  path: string,
-): boolean {
-  if (!visible(path)) return false;
-  const found = schemaNodeAtPath(resolved.group, path);
-  if (!found || isPrefLeaf(found)) return found !== undefined;
-  return Object.keys(found.children).some((key) => drawsAnyAt(resolved, visible, `${path}.${key}`));
-}
-
-/** A group's paths that no section inside it claims, in schema order. */
-function loosePathsIn(resolved: ResolvedConfig, group: PrefGroup, at: string): string[] {
-  const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
-  return Object.keys(group.children)
-    .map((key) => (at === '' ? key : `${at}.${key}`))
-    .filter((p) => !sectioned.has(p));
-}
-
 /** What a group's heading carries: its lifted control, its reset button, or both. */
 function headingActions(control: ReactNode, reset: ReactNode): ReactNode {
   if (!control || !reset) return control ?? reset;
@@ -377,21 +351,6 @@ function headingActions(control: ReactNode, reset: ReactNode): ReactNode {
       {reset}
     </>
   );
-}
-
-/** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */
-function drawsOwn(
-  resolved: ResolvedConfig,
-  renderers: Record<string, ControlRenderer> | undefined,
-  path: string,
-  leaf: PrefLeaf,
-): boolean {
-  const own =
-    renderers?.[path] ??
-    resolved.renderers[path] ??
-    resolved.dialogs[path] ??
-    renderers?.[leaf.kind];
-  return own !== undefined;
 }
 
 /** What a section says of its own frame. */
