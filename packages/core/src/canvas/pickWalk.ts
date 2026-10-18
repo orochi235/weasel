@@ -4,8 +4,8 @@
  *
  * The gates, in the order the walk applies them:
  *   1. containers, when the query does not want them
- *   2. the layer is painted at all — scene visibility, and the asking view's
- *      `layerVisibility` / `layerOrder`
+ *   2. the node is painted at all — not hidden in the scene (`nodeGates`),
+ *      and on a layer the asking view's `layerVisibility` / `layerOrder` paints
  *   3. painted alpha is above zero
  *   4. the node is not locked, unless the query asks for locked nodes
  *   5. the query's own shape test
@@ -20,8 +20,8 @@ import { invert, type Affine, type Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, CopiesFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { unpickedLayerIds } from './pickLayers';
-export { hiddenLayerIds } from './pickLayers';
+import { annotationLayerIds } from 'core/scene/annotation';
+import { nodeGates } from 'core/scene/nodeGates';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -69,6 +69,9 @@ export interface PickSource<TPose> {
   /** Whether the node is locked — painted, but not something a pointer can
    *  take. Omit for a source with no lock concept. */
   isLocked?(node: PickCandidate<TPose>): boolean;
+  /** Whether the source hides the node, so nothing of it is on screen. Omit
+   *  for a source that hides nothing. */
+  isHidden?(node: PickCandidate<TPose>): boolean;
   /** The path a node computes from its dependencies, or null for none. */
   derivedPathOf?(node: PickCandidate<TPose>): Path | null;
   /** How the asking view's world maps into a parallax layer's, or null for a
@@ -191,6 +194,7 @@ export function pickWalk<TPose>(
     // Transparent to picking: the click belongs to whatever is behind it,
     // which for a label inside a box is the box.
     if (node.pickable === false) continue;
+    if (src.isHidden?.(node) === true) continue;
     if (node.layer !== undefined && src.layerIsPainted?.(node.layer) === false) continue;
     if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
     if (isLocked !== undefined && isLocked(node)) continue;
@@ -204,30 +208,6 @@ export function pickWalk<TPose>(
   }
 
   return out;
-}
-
-/** Answers `Scene.isLocked` from the layer records and parent links alone,
- *  so a partial scene stand-in works too. Null when nothing is locked, which
- *  is what keeps the gate off the walk in the common case. */
-function lockedNodeTest(
-  scene: Pick<Scene<unknown, string, unknown>, 'layers' | 'get'>,
-): ((id: string) => boolean) | null {
-  let locked: Set<string> | null = null;
-  for (const layer of scene.layers ?? []) {
-    if (layer.locked === true) (locked ??= new Set()).add(layer.id);
-  }
-  if (locked === null) return null;
-  const lockedLayers = locked;
-  return (id) => {
-    let cur = scene.get(asNodeId(id));
-    const seen = new Set<string>();
-    while (cur !== undefined && !seen.has(cur.id)) {
-      if (lockedLayers.has(cur.layer)) return true;
-      seen.add(cur.id);
-      cur = cur.parent === null ? undefined : scene.get(cur.parent);
-    }
-    return false;
-  };
 }
 
 /**
@@ -270,8 +250,9 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   opts: ScenePickSourceOptions<TPose> = {},
 ): PickSource<TPose> {
-  const hidden = unpickedLayerIds(scene.layers);
-  const locked = lockedNodeTest(scene as never);
+  // Partial scene stand-ins carry only `layers` and `get`, which is all the gates read.
+  const gates = nodeGates(scene as never);
+  const annotations = annotationLayerIds(scene.layers);
   const { getPose, alphaOf, layerIsPainted } = opts;
 
   // Resolved once per walk rather than once per candidate. Needs enumeration — a
@@ -342,11 +323,12 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     },
     // Absent entirely when nothing is faded, so the walk skips the gate.
     ...(readAlpha ? { alphaOf: readAlpha } : {}),
-    ...(locked ? { isLocked: (node: PickCandidate<TPose>) => locked(node.id) } : {}),
-    ...(hidden.size > 0 || layerIsPainted
+    isLocked: (node: PickCandidate<TPose>) => gates.locked(node.id),
+    isHidden: (node: PickCandidate<TPose>) => gates.hidden(node.id),
+    ...(annotations.size > 0 || layerIsPainted
       ? {
         layerIsPainted: (layer: string) =>
-          !hidden.has(layer) && (layerIsPainted === undefined || layerIsPainted(layer)),
+          !annotations.has(layer) && (layerIsPainted === undefined || layerIsPainted(layer)),
       }
       : {}),
   };

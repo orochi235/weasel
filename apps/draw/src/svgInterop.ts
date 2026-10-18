@@ -217,9 +217,9 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * the file carries one; the caller maps it to the minted `NodeId`.
  */
 export type SceneDraft =
-  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData }
-  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData } & EffectAttrs);
+  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj; hidden?: true }
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true }
+  | ({ kind: 'effect'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true } & EffectAttrs);
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -289,8 +289,9 @@ export function svgNodesToSceneDrafts(
   };
   const drafts = svgNodesToKitDrafts('nodes' in input ? { ...input, nodes } : nodes, idOf, { leaf: kitLeafToObj });
   return drafts.map((d): SceneDraft => {
-    if (d.kind === 'leaf') return { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data };
-    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data };
+    const hidden = d.hidden ? { hidden: true as const } : {};
+    if (d.kind === 'leaf') return { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };
+    const group = { id: d.id, parentId: d.parentId, pose: d.pose, data: d.data, ...hidden };
     const effect = effects.get(d.id);
     return effect === undefined ? { kind: 'container', ...group } : { kind: 'effect', ...group, ...effect };
   });

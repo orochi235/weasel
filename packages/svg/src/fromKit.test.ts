@@ -186,6 +186,21 @@ describe('svgNodesFromKit', () => {
     expect(g.children).toHaveLength(1);
   });
 
+  it('writes a hidden node, leaf or group, with display="none" so it reads back hidden', () => {
+    const hiding: SvgKitTree<string> = {
+      ...tree,
+      get: (id) => {
+        const node = tree.get(id)!;
+        return id === 'g' || id === 'c' ? { ...node, hidden: true } : node;
+      },
+    };
+    const nodes = svgNodesFromKit(hiding, { leaf: (_id, node) => svgLeafFromKit(node.data as never, node.pose) });
+    expect(nodes.map((n) => n.hidden)).toEqual([true, true]);
+    expect((nodes[0] as SvgGroupNode).children.map((n) => n.hidden)).toEqual([undefined, undefined]);
+    const back = parseSvg(serializeSvg(nodes), { keepHidden: true }).nodes;
+    expect(back.map((n) => n.hidden)).toEqual([true, true]);
+  });
+
   it('lets a leaf hook replace the lowering and a group hook decorate it', () => {
     const nodes = svgNodesFromKit(tree, {
       leaf: (id, node) => (id === 'c' ? null : svgLeafFromKit(node.data as never, node.pose)),

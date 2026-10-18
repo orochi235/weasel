@@ -171,6 +171,9 @@ export interface SvgKitTreeNode {
   kind: string;
   data: unknown;
   pose: SvgKitPose;
+  /** The kit's `SceneNode.hidden`: written with `display="none"`, which
+   *  `parseSvg(…, { keepHidden: true })` reads back as `hidden`. */
+  hidden?: boolean;
   /** A container's copies, as the kit's `ContainerNode.copiesFromPose`
    *  draws them: each is written as a transformed group of its children. */
   copiesFromPose?(pose: SvgKitPose, node: never): readonly Matrix[] | null;
@@ -200,7 +203,7 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
  * Walk a scene's container tree into `SvgNode`s ready for `serializeSvg`:
  * every `container` becomes a group of its children, in z-order, and every
  * leaf goes through {@link svgLeafFromKit} unless `options.leaf` says
- * otherwise.
+ * otherwise. A hidden node is written hidden, with its subtree as it is.
  */
 export function svgNodesFromKit<TId extends string>(
   tree: SvgKitTree<TId>,
@@ -208,9 +211,11 @@ export function svgNodesFromKit<TId extends string>(
 ): SvgNode[] {
   const { include, leaf, group } = options;
   const emit = (id: TId): SvgNode | null => {
-    if (include && !include(id)) return null;
     const node = tree.get(id);
-    if (!node) return null;
+    const out = node && (!include || include(id)) ? lower(id, node) : null;
+    return out && node?.hidden === true ? { ...out, hidden: true } : out;
+  };
+  const lower = (id: TId, node: SvgKitTreeNode): SvgNode | null => {
     if (node.kind === 'container') {
       // Emitted afresh for each copy: a node object is never shared by two groups.
       const emitChildren = (): SvgNode[] => {

@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
 import { isAnnotationLayer } from 'core/scene/annotation';
+import { nodeGates } from 'core/scene/nodeGates';
 import type { SnapGeometry, SnapQuery } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
 
@@ -54,7 +55,7 @@ export interface PathSnapper {
 export const DEFAULT_PATH_SNAP_RADIUS = 8;
 
 /** A snapper over every leaf of `scene` with geometry (`nodeSnapGeometry`),
- *  but those on a hidden or an annotation layer, indexed once per scene
+ *  but hidden ones (`nodeGates`) and those on an annotation layer, indexed once per scene
  *  version, and again when a query brings geometry of its own. */
 export function createPathSnapper(
   scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>,
@@ -70,12 +71,13 @@ export function createPathSnapper(
     const version = scene.getVersion();
     const layers = scene.layers;
     if (cached?.version === version && cached.layers === layers && cached.also === also) return cached;
-    const off = new Set(layers.filter((l) => l.visible === false || isAnnotationLayer(l)).map((l) => l.id));
+    const notes = new Set(layers.filter(isAnnotationLayer).map((l) => l.id));
+    const gates = nodeGates({ layers, get: (id) => scene.nodes.get(id) });
     const ids: (string | null)[] = [];
     const paths: Path[] = [];
     const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
-      if (node.kind !== 'leaf' || off.has(node.layer)) continue;
+      if (node.kind !== 'leaf' || notes.has(node.layer) || gates.hidden(node.id)) continue;
       const g = nodeSnapGeometry(node);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });

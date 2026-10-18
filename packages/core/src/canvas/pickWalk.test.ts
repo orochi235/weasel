@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { pickWalk, scenePickSource, hiddenLayerIds, type ScenePickSourceOptions } from './pickWalk';
+import { pickWalk, scenePickSource, type ScenePickSourceOptions } from './pickWalk';
 import { hitTestArea } from './deps/hitTestArea';
 import { sceneToAdapter } from './sceneAdapter';
 import type { RectPose } from 'core/scene/composePose';
@@ -168,8 +168,37 @@ describe('pickWalk — layers', () => {
     expect(sceneToAdapter(scene).hitTestArea!(all)).toEqual([]);
   });
 
-  it('only an explicit false hides a layer', () => {
-    expect(hiddenLayerIds([{ id: 'a' }, { id: 'b', visible: false }])).toEqual(new Set(['b']));
+  it('does not pick or marquee a hidden node, or anything under a hidden container', () => {
+    const scene = rectScene();
+    const box = scene.add({
+      kind: 'container', layer: 'main', id: asNodeId('box'),
+      pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+    });
+    scene.setHidden(asNodeId('a'), true);
+    scene.setHidden(box, true);
+    expect(pickAt(scene, 5, 5)).toEqual([]);
+    expect(pickAt(scene, 105, 105)).toEqual([]);
+    expect(hitTestArea(scene as never, { x: -10, y: -10, width: 200, height: 200 })).toEqual(['b']);
+  });
+
+  it('does not pick a locked node, or anything under a locked container', () => {
+    const scene = rectScene();
+    const box = scene.add({
+      kind: 'container', layer: 'main', id: asNodeId('box'),
+      pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'rect' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'top', id: asNodeId('kid'), parent: box,
+      pose: { x: 100, y: 100, width: 40, height: 40 }, data: { kind: 'rect' },
+    });
+    scene.setLocked(box, true);
+    expect(pickAt(scene, 105, 105)).toEqual([]);
+    scene.setLocked(asNodeId('b'), true);
+    expect(pickAt(scene, 30, 30)).toEqual(['a']);
   });
 
   it('passes through an annotation layer for a point pick and an area query alike', () => {

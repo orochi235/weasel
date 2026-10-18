@@ -32,6 +32,13 @@ describe('openSvgText', () => {
     expect(scene.roots).toEqual([asNodeId('old')]);
   });
 
+  it('keeps hidden content, hidden, so an exported hidden node opens as it was', () => {
+    const scene = sceneWithOneShape();
+    openSvgText(scene, svg('<g display="none"><rect x="1" y="1" width="5" height="5"/></g><rect x="9" y="9" width="5" height="5" display="none"/>'), 'a.svg');
+    expect(scene.roots.map((id) => scene.get(id)!.hidden)).toEqual([true, true]);
+    expect(scene.isHidden(scene.childrenOf(scene.roots[0])[0])).toBe(true);
+  });
+
   it('names the document after the picked file', () => {
     expect(openSvgText(sceneWithOneShape(), svg(TWO), 'art.svg').filename).toBe('art.svg');
   });

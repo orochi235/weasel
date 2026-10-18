@@ -114,11 +114,11 @@ export function LayerList(props: LayerListProps) {
   // The press arrives after the drag session ends, which can be after a render
   // the closure did not see, so it reads the selection from here.
   const live = useLatest(props);
-  // Locked rows never join a multi-selection: pressed, one is selected alone, and a range or a
+  // Fixed rows never join a multi-selection: pressed, one is selected alone, and a range or a
   // toggle passes over them.
   const unlocked = () => {
-    const locked = new Set(lockedIds(live.current.items));
-    return (id: string) => !locked.has(id);
+    const fixed = new Set(fixedIds(live.current.items));
+    return (id: string) => !fixed.has(id);
   };
   const press = (item: LayerListItem, mods: PressModifiers) => {
     const { selectedIds = [], onSelect } = live.current;
@@ -302,11 +302,11 @@ export function LayerList(props: LayerListProps) {
 
 const PRESS_POLICY: SelectPolicy = { mode: 'multi', ...LIST_KEYS };
 
-function lockedIds(items: LayerListItem[]): string[] {
+function fixedIds(items: LayerListItem[]): string[] {
   const out: string[] = [];
   for (const it of items) {
-    if (it.locked) out.push(it.id);
-    if (it.children) out.push(...lockedIds(it.children));
+    if (it.fixed) out.push(it.id);
+    if (it.children) out.push(...fixedIds(it.children));
   }
   return out;
 }
@@ -344,9 +344,9 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
   const { props } = shared;
   const selected = props.selectedIds ?? [];
   const drag = useReorderDragList({
-    // With no `onReorder` every row is a locked one to the drag, so a press
-    // still reaches `onPress` and nothing ever engages.
-    items: items.map((it) => ({ id: it.id, label: it.label, locked: it.locked || !props.onReorder })),
+    // With no `onReorder` every row is a wall to the drag, so a press still
+    // reaches `onPress` and nothing ever engages. Locked content cannot move.
+    items: items.map((it) => ({ id: it.id, label: it.label, locked: it.fixed || it.locked || !props.onReorder })),
     selectedIds: items.filter((it) => selected.includes(it.id)).map((it) => it.id),
     onReorder: (ids, target) => {
       const moving = new Set(ids);

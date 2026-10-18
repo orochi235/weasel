@@ -86,9 +86,9 @@ describe('LayerList rows', () => {
     expect(root.classList.length).toBeGreaterThan(1);
   });
 
-  it('marks locked rows and gives them a lock instead of a grip', () => {
-    const { container } = list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], onReorder: vi.fn() });
-    expect(container.querySelectorAll('[data-locked="true"]')).toHaveLength(1);
+  it('marks fixed rows and gives them a lock instead of a grip', () => {
+    const { container } = list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], onReorder: vi.fn() });
+    expect(container.querySelectorAll('[data-fixed="true"]')).toHaveLength(1);
     expect(screen.getAllByRole('img', { name: 'Locked' })).toHaveLength(1);
   });
 });
@@ -138,23 +138,23 @@ describe('LayerList selection', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['g', 'b']);
   });
 
-  it('selects a locked row alone, even on Cmd-click', () => {
+  it('selects a fixed row alone, even on Cmd-click', () => {
     const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], selectedIds: ['a'], onSelect });
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['a'], onSelect });
     click('Background', { metaKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['bg']);
   });
 
-  it('drops a locked row from the selection a Cmd-click builds on', () => {
+  it('drops a fixed row from the selection a Cmd-click builds on', () => {
     const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], selectedIds: ['bg'], onSelect });
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['bg'], onSelect });
     click('Beta', { metaKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['b']);
   });
 
-  it('passes over a locked row inside a shift-click range', () => {
+  it('passes over a fixed row inside a shift-click range', () => {
     const onSelect = vi.fn();
-    const items = [FLAT[0]!, { id: 'bg', label: 'Background', locked: true }, FLAT[2]!];
+    const items = [FLAT[0]!, { id: 'bg', label: 'Background', fixed: true }, FLAT[2]!];
     const { rerender } = list({ items, selectedIds: [], onSelect });
     click('Alpha');
     rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
@@ -193,16 +193,16 @@ describe('LayerList reordering', () => {
     expect(onReorder).toHaveBeenCalledWith({ ids: ['a', 'c'], parentId: null, index: 1 });
   });
 
-  it('cannot drop at or past a locked row', () => {
+  it('cannot drop at or past a fixed row', () => {
     const onReorder = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], onReorder });
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], onReorder });
     drag('Alpha', 1000);
     expect(onReorder).toHaveBeenCalledWith({ ids: ['a'], parentId: null, index: 2 });
   });
 
-  it('never starts a drag from a locked row', () => {
+  it('never starts a drag from a fixed row', () => {
     const onReorder = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], onReorder });
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], onReorder });
     drag('Background', 0, 3 * ROW_H);
     expect(onReorder).not.toHaveBeenCalled();
   });
@@ -304,12 +304,79 @@ describe('LayerList cards', () => {
 });
 
 describe('LayerList controls', () => {
-  it('reports visibility from the checkbox, and gives locked layers none', () => {
+  it('reports visibility from the checkbox, and gives fixed layers none', () => {
     const onVisibilityChange = vi.fn();
-    list({ items: [{ id: 'a', label: 'Alpha', visible: false }, { id: 'bg', label: 'Background', locked: true }], onVisibilityChange });
+    list({ items: [{ id: 'a', label: 'Alpha', visible: false }, { id: 'bg', label: 'Background', fixed: true }], onVisibilityChange });
     fireEvent.click(screen.getByLabelText('Show Alpha'));
     expect(onVisibilityChange).toHaveBeenCalledWith('a', true);
     expect(screen.queryByLabelText('Show Background')).toBeNull();
+  });
+
+  it('reports a lock toggle, gives fixed layers none, and leaves a locked layer hideable', () => {
+    const onLockChange = vi.fn();
+    const onVisibilityChange = vi.fn();
+    list({
+      items: [{ id: 'a', label: 'Alpha', locked: true }, { id: 'b', label: 'Beta' }, { id: 'bg', label: 'Background', fixed: true }],
+      onLockChange, onVisibilityChange, onRemove: vi.fn(),
+    });
+    expect(screen.getByLabelText('Lock Alpha')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByLabelText('Lock Alpha'));
+    fireEvent.click(screen.getByLabelText('Lock Beta'));
+    expect(onLockChange.mock.calls).toEqual([['a', false], ['b', true]]);
+    expect(screen.queryByLabelText('Lock Background')).toBeNull();
+    expect(screen.getByLabelText('Show Alpha')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Remove Alpha')).toBeNull();
+    expect(screen.getByLabelText('Remove Beta')).toBeInTheDocument();
+  });
+
+  it('renames a row from a double-click on its label, committing on Enter', () => {
+    const onRename = vi.fn();
+    list({ onRename });
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    const field = screen.getByLabelText('Rename Alpha');
+    fireEvent.change(field, { target: { value: 'First' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('a', 'First');
+    expect(screen.queryByLabelText('Rename Alpha')).toBeNull();
+  });
+
+  it('starts a rename with F2 on the focused row, and Escape drops it', () => {
+    const onRename = vi.fn();
+    list({ onRename });
+    const row = screen.getByText('Beta').closest('[role="row"]')!;
+    fireEvent.keyDown(row, { key: 'F2' });
+    const field = screen.getByLabelText('Rename Beta');
+    fireEvent.change(field, { target: { value: 'Second' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(screen.queryByLabelText('Rename Beta')).toBeNull();
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it('commits a rename on blur, and ignores an empty or unchanged name', () => {
+    const onRename = vi.fn();
+    list({ onRename });
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    fireEvent.blur(screen.getByLabelText('Rename Alpha'));
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    fireEvent.change(screen.getByLabelText('Rename Alpha'), { target: { value: '  ' } });
+    fireEvent.blur(screen.getByLabelText('Rename Alpha'));
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    fireEvent.change(screen.getByLabelText('Rename Alpha'), { target: { value: 'Al' } });
+    fireEvent.blur(screen.getByLabelText('Rename Alpha'));
+    expect(onRename.mock.calls).toEqual([['a', 'Al']]);
+  });
+
+  it('offers no rename on a fixed, locked, or unrenamable row, or without onRename', () => {
+    const onRename = vi.fn();
+    const { rerender } = list();
+    fireEvent.doubleClick(screen.getByText('Alpha'));
+    expect(screen.queryByLabelText('Rename Alpha')).toBeNull();
+    const items = [{ id: 'a', label: 'Alpha', fixed: true }, { id: 'b', label: 'Beta', locked: true }, { id: 'c', label: 'Gamma', renamable: false }];
+    rerender(<LayerList items={items} onRename={onRename} />);
+    for (const label of ['Alpha', 'Beta', 'Gamma']) {
+      fireEvent.doubleClick(screen.getByText(label));
+      expect(screen.queryByLabelText(`Rename ${label}`)).toBeNull();
+    }
   });
 
   it('removes a layer from its ✕, only when onRemove is given', () => {
@@ -389,9 +456,9 @@ describe('LayerList keyboard', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
   });
 
-  it('selects a range with Shift+arrows, passing over a locked row', () => {
+  it('selects a range with Shift+arrows, passing over a fixed row', () => {
     const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], selectedIds: [], onSelect });
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: [], onSelect });
     act(() => row('Beta').focus());
     fireEvent.keyDown(row('Beta'), { key: 'ArrowDown', shiftKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['b', 'c']);

@@ -198,18 +198,8 @@ Priority tags:
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
-- **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
-  keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
-  `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
-  ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
-  `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
-
 ### Path editing tricks
 
-- **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
-  time.** `LayerList` has no rename, and the scene has no per-node visibility or lock, so a
-  measurement row offers select and remove only; the annotation layer's own row can be hidden,
-  and shows its lock without toggling it. A measurement's `data.label` is what a rename would write.
 - **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
   `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
   is an export, and so skips them, or a view of the canvas, and so keeps them.
@@ -383,21 +373,9 @@ Priority tags:
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
-  (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
-  limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
-  a triangulation of the filled region (`tessellate` already triangulates it) would weigh
-  distance through the shape; it needs a mesh solve per drag frame and a way to map the path's
-  sample points through the deformed triangles.
-- **(P3) Paths warped together drift apart once one is moved alone.** Each path holds its own
-  copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
-  first path holding an id, and a drag moves every path with it by the same world delta. After
-  one of them is moved on its own, its controls no longer sit under the ones shown.
-- **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
-  (`packages/path-tools/src/warp/pathWarp.ts`) recovers a move or a resize of a polygon pose
-  as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
-  warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
-  through a rotation.
+- **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
+  is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
+  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
 - **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
   its own path only. Across nodes the constraint needs a home other than either node's
   `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
@@ -534,6 +512,10 @@ Priority tags:
 
 ## Scene, adapters & layout
 
+- **(P3) A hidden or locked diagram node's ports still draw and take a drag.** `portLayer`
+  walks every node `sceneParticipants` yields (`packages/diagram/src/portLayer.ts`) and asks
+  neither `nodeGates` nor the layer, so ports float over a node on a hidden layer, or one hidden
+  on its own, and a locked node's ports can still be dragged from.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

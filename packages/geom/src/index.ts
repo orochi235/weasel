@@ -86,7 +86,6 @@ export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
-export * from './warp';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
 export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
 export {
@@ -116,6 +115,7 @@ export {
   type PointInPathOptions, type PolygonIntersectsPathOptions, type StrokeHitTestOptions,
 } from './pathHitTest';
 export { transformCoords } from './affine';
+export { fitAffine } from './affineFit';
 export { circlePath, squarePath, rectMarkerPath, roundRectPath } from './paths/markers';
 export {
   countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, segmentEnds, isStraightSegment,

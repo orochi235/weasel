@@ -68,6 +68,37 @@ describe('useSceneLayerList', () => {
   });
 });
 
+describe('useSceneLayerList — hide, lock, rename', () => {
+  it('hides and locks any node from its row, each one undo step', () => {
+    const { hook, scene } = setup();
+    hook.result.current.onVisibilityChange!('a', false);
+    hook.result.current.onLockChange!('g', true);
+    hook.rerender();
+    const items = hook.result.current.items;
+    expect(items.find((it) => it.id === 'a')).toMatchObject({ visible: false });
+    expect(items.find((it) => it.id === 'g')).toMatchObject({ locked: true });
+    expect(scene.isHidden(asNodeId('a'))).toBe(true);
+    expect(scene.isLocked(asNodeId('g1'))).toBe(true);
+    scene.undo();
+    expect(scene.isLocked(asNodeId('g1'))).toBe(false);
+    scene.undo();
+    expect(scene.isHidden(asNodeId('a'))).toBe(false);
+  });
+
+  it('renames a row through `rename`, as one undoable data write, and offers none without it', () => {
+    const { hook, scene } = setup();
+    expect(hook.result.current.onRename).toBeUndefined();
+    const selection = { current: [], set: vi.fn() } as unknown as SelectionApi;
+    const named = renderHook(() => useSceneLayerList({
+      scene, selection, itemFor: (n) => ({ label: n.data.name }), rename: (n, label) => ({ ...n.data, name: label }),
+    }));
+    named.result.current.onRename!('a', 'Apple');
+    expect(scene.get(asNodeId('a'))!.data).toEqual({ name: 'Apple' });
+    scene.undo();
+    expect(scene.get(asNodeId('a'))!.data).toEqual({ name: 'a' });
+  });
+});
+
 /** A content box and two notes on an annotation layer. */
 function annotated(annotations?: SceneLayerListAnnotations) {
   const scene = createScene<{ name: string }, 'main' | 'notes', RectPose>({
@@ -97,8 +128,9 @@ describe('useSceneLayerList — annotation layers', () => {
     const items = hook.result.current.items;
     expect(ids(items)).toEqual([[row, ['n2', 'n1']], 'box']);
     expect(items[0]).toMatchObject({ label: 'Measurements', nonPrinting: true, removable: false });
-    expect(items[0]!.children![0]).toMatchObject({ nonPrinting: true, hideable: false });
-    expect(items[1]).toMatchObject({ hideable: false, removable: false });
+    expect(items[0]!.children![0]).toMatchObject({ nonPrinting: true });
+    expect(items[0]).toMatchObject({ renamable: false });
+    expect(items[1]).toMatchObject({ removable: false });
   });
 
   it('picks an annotation row without touching the content selection', () => {
@@ -108,6 +140,17 @@ describe('useSceneLayerList — annotation layers', () => {
     hook.result.current.onSelect(['n2']);
     expect(pick).toHaveBeenCalledWith('n2');
     expect(selection.set).not.toHaveBeenCalled();
+  });
+
+  it('locks the annotation layer from its row, and hides one note from its own', () => {
+    const { hook, scene } = annotated({ picked: null, pick: vi.fn() });
+    hook.result.current.onLockChange!(row, true);
+    expect(scene.layers.find((l) => l.id === 'notes')?.locked).toBe(true);
+    hook.rerender();
+    expect(hook.result.current.items[0]).toMatchObject({ locked: true });
+    hook.result.current.onVisibilityChange!('n1', false);
+    expect(scene.get(asNodeId('n1'))!.hidden).toBe(true);
+    expect(scene.layers.find((l) => l.id === 'notes')?.visible).toBe(true);
   });
 
   it('hides the annotation layer from its row, and removes a node from its row', () => {

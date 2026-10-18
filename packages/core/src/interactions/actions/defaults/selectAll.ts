@@ -1,11 +1,12 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { isAnnotationLayer } from 'core/scene/annotation';
+import { nodeGates } from 'core/scene/nodeGates';
 
 /**
  * Static descriptor for the `selectAll` Action. Selects every scene node the
- * user can see and reach — nodes on a hidden or locked layer, or on a layer
- * the asking view does not paint, are left out, so Cmd+A then Delete cannot
+ * user can see and reach — hidden and locked nodes (`nodeGates`), and nodes on
+ * a layer the asking view does not paint, are left out, so Cmd+A then Delete cannot
  * take content that is off screen or locked.
  */
 export const selectAllAction: Action & { requires: string[] } = {
@@ -19,20 +20,15 @@ export const selectAllAction: Action & { requires: string[] } = {
     run: (deps) => {
       const scene = deps.scene;
       const view = deps.view;
-      const skipped = new Set(
-        (scene?.layers ?? []).filter((l) => !l.visible || l.locked === true || isAnnotationLayer(l)).map((l) => l.id),
-      );
-      // Scene exposes `renderOrder()` (bottom→top iterable of NodeIds), not
-      // the never-implemented `listAll()`. The node walk is the same sequence
-      // and carries the layer each id sits on, which the id walk cannot.
-      const filtered = skipped.size > 0 || view?.layerIsPainted !== undefined;
-      const all: NodeId[] = !filtered || !scene?.renderOrderNodes
-        ? (scene?.renderOrder ? [...scene.renderOrder()] : [])
-        : scene.renderOrderNodes()
-          .filter((n) => !skipped.has(n.layer)
-            && view?.layerIsPainted?.(n.layer) !== false
-            && scene.isLocked?.(n.id) !== true)
-          .map((n) => n.id);
+      if (!scene) return;
+      // The node walk carries the layer each id sits on, which `view` gates.
+      const gates = nodeGates(scene);
+      const all: NodeId[] = scene.renderOrderNodes()
+        .filter((n) => !isAnnotationLayer(scene.layers.find((l) => l.id === n.layer))
+          && view?.layerIsPainted?.(n.layer) !== false
+          && !gates.hidden(n.id)
+          && !gates.locked(n.id))
+        .map((n) => n.id);
       if (all.length === 0) return;
       deps.selection?.set(all);
     },

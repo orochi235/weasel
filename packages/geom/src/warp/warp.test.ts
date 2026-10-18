@@ -6,7 +6,7 @@ import { PATH_C, PATH_L, PATH_M } from '../commands';
 import type { Point } from '../paths/cubicMath';
 import {
   applyPathWarp, bicubicMesh, bilinearQuad, coonsMesh, distortOver, envelopeOver, meshGridOver,
-  moveWarpControl, pathWarpMap, projectiveQuad, resizeEnvelope, rigidPuppetMap, unwarpPoint, warpPath,
+  moveWarpControl, pathWarpMap, projectiveQuad, resizeEnvelope, warpPath,
   type Quad,
 } from './index';
 
@@ -77,41 +77,6 @@ describe('mesh maps', () => {
   });
 });
 
-describe('rigidPuppetMap', () => {
-  it('moves the whole plane with a single pin', () => {
-    const m = rigidPuppetMap([{ from: { x: 0, y: 0 }, to: { x: 5, y: 7 } }]);
-    close(m({ x: 100, y: -40 }), { x: 105, y: -33 });
-  });
-
-  it('carries every pin exactly to its target', () => {
-    const pins = [
-      { from: { x: 0, y: 0 }, to: { x: 0, y: 0 } },
-      { from: { x: 100, y: 0 }, to: { x: 80, y: 50 } },
-      { from: { x: 50, y: 80 }, to: { x: 60, y: 90 } },
-    ];
-    const m = rigidPuppetMap(pins);
-    for (const p of pins) close(m(p.from), p.to);
-  });
-
-  it('turns far points rigidly rather than flinging them off', () => {
-    // Two pins turned a quarter turn about their midpoint.
-    const m = rigidPuppetMap([
-      { from: { x: -10, y: 0 }, to: { x: 0, y: -10 } },
-      { from: { x: 10, y: 0 }, to: { x: 0, y: 10 } },
-    ]);
-    close(m({ x: 1000, y: 0 }), { x: 0, y: 1000 }, 1e-6);
-  });
-
-  it('is undone by unwarpPoint', () => {
-    const m = rigidPuppetMap([
-      { from: { x: 0, y: 0 }, to: { x: 0, y: 0 } },
-      { from: { x: 100, y: 0 }, to: { x: 90, y: 30 } },
-    ]);
-    const p = { x: 40, y: 25 };
-    close(unwarpPoint(m, m(p), m(p), 1e-9), p, 1e-6);
-  });
-});
-
 describe('warpPath', () => {
   it('keeps every anchor, at the point it maps to', () => {
     const map = (p: Point) => ({ x: p.x * 2 + 3, y: p.y + p.x * 0.5 });
@@ -147,21 +112,22 @@ describe('warpPath', () => {
 
 describe('path warps', () => {
   const box = { x: 0, y: 0, width: 100, height: 50 };
+  const area = square(0, 0, 50);
 
   it('start out as the identity', () => {
     const p = { x: 31, y: 17 };
     for (const w of [distortOver(box), distortOver(box, 'perspective'), envelopeOver(box, 2, 3), { kind: 'puppet' as const, pins: [] }]) {
-      close(pathWarpMap(w)(p), p, 1e-9);
+      close(pathWarpMap(w, area)(p), p, 1e-9);
     }
   });
 
   it('move a corner, a mesh point and a pin by index', () => {
     const d = moveWarpControl(distortOver(box), 2, { x: 130, y: 70 });
-    close(pathWarpMap(d)({ x: 100, y: 50 }), { x: 130, y: 70 });
+    close(pathWarpMap(d, area)({ x: 100, y: 50 }), { x: 130, y: 70 });
     const e = moveWarpControl(envelopeOver(box, 1, 1), 0, { x: -10, y: -10 });
-    close(pathWarpMap(e)({ x: 0, y: 0 }), { x: -10, y: -10 });
+    close(pathWarpMap(e, area)({ x: 0, y: 0 }), { x: -10, y: -10 });
     const p = moveWarpControl({ kind: 'puppet', pins: [{ from: { x: 0, y: 0 }, to: { x: 0, y: 0 } }] }, 0, { x: 4, y: 4 });
-    close(pathWarpMap(p)({ x: 10, y: 10 }), { x: 14, y: 14 });
+    close(pathWarpMap(p, area)({ x: 10, y: 10 }), { x: 14, y: 14 });
   });
 
   it('resample an envelope at a new resolution without moving its grid points', () => {

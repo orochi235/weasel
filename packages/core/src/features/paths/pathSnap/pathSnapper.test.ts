@@ -63,6 +63,17 @@ describe('createPathSnapper', () => {
     expect(notes.snap({ x: 51, y: 50 }, undefined, ONE)).toBeNull();
   });
 
+  it('offers nothing from a hidden node, or from under a hidden container', () => {
+    const live = sceneOf({ a: 'M0 0 L100 100', b: 'M0 100 L100 0' });
+    const s = createPathSnapper(live as never);
+    s.configure({ kinds: { intersection: true, nearest: false, midpoint: false } });
+    expect(s.snap({ x: 50, y: 50 }, undefined, ONE)).toEqual({ x: 50, y: 50 });
+    live.nodes.set(asNodeId('g'), { ...live.nodes.get(asNodeId('a'))!, id: asNodeId('g'), kind: 'container' as never, hidden: true } as never);
+    live.nodes.set(asNodeId('b'), { ...live.nodes.get(asNodeId('b'))!, parent: asNodeId('g') } as never);
+    live.bump();
+    expect(s.snap({ x: 50, y: 50 }, undefined, ONE)).toBeNull();
+  });
+
   it('tells subscribers when the mark changes, and release clears it', () => {
     const s = createPathSnapper(scene as never);
     s.configure({});

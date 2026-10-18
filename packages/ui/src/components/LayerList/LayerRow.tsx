@@ -1,4 +1,4 @@
-import type { MouseEventHandler } from 'react';
+import { type MouseEventHandler, useState } from 'react';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGrip } from '../DragGrip';
@@ -8,6 +8,7 @@ import type { LayerListItem } from './layerListProps';
 import s from './LayerList.module.css';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
+import { canRename, LockToggle, RowLabel, stop } from './RowParts';
 
 interface RowProps {
   item: LayerListItem;
@@ -34,11 +35,14 @@ export function rowContextMenu(shared: Shared, item: LayerListItem, ghosted: boo
 export function Row({ item, shared, parentId, level, ghosted, selected, open, childId, onPointerDown }: RowProps) {
   const { props } = shared;
   const branch = (item.children?.length ?? 0) > 0;
+  const [renaming, setRenaming] = useState(false);
+  const keyDown = shared.keys.onKeyDown(item, parentId);
   return (
     <div
       className={[rows.row, s.row, selected ? rows.selected : '', item.nonPrinting ? s.nonPrinting : ''].filter(Boolean).join(' ')}
       data-selected={selected ? 'true' : undefined}
       data-non-printing={item.nonPrinting ? 'true' : undefined}
+      data-fixed={item.fixed ? 'true' : undefined}
       data-locked={item.locked ? 'true' : undefined}
       onPointerDown={onPointerDown}
       onContextMenu={rowContextMenu(shared, item, ghosted)}
@@ -51,7 +55,12 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
             ...(props.onSelect ? { 'aria-selected': selected } : {}),
             tabIndex: shared.keys.tabStop === item.id ? 0 : -1,
             ref: shared.keys.register(item.id),
-            onKeyDown: shared.keys.onKeyDown(item, parentId),
+            onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+              if (e.key === 'F2' && e.target === e.currentTarget && canRename(props, item)) {
+                e.preventDefault();
+                setRenaming(true);
+              } else keyDown(e);
+            },
             onFocus: () => shared.keys.onFocus(item.id),
           })}
     >
@@ -71,7 +80,7 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
           ))}
         <Grip item={item} reorder={props.onReorder !== undefined} />
         {props.onVisibilityChange &&
-          (item.locked || item.hideable === false ? (
+          (item.fixed || item.hideable === false ? (
             <span className={s.check} />
           ) : (
             <input
@@ -83,8 +92,9 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
               aria-label={`Show ${item.label}`}
             />
           ))}
+        <LockToggle item={item} props={props} />
         {item.leading}
-        <span className={rows.label}>{item.title ?? item.label}</span>
+        <RowLabel item={item} props={props} renaming={renaming} setRenaming={setRenaming} />
         {item.nonPrinting && <NonPrintingMark />}
         {ghosted ? null : <Remove item={item} shared={shared} />}
       </div>
@@ -99,12 +109,9 @@ function NonPrintingMark() {
   );
 }
 
-// Keeps a press on a control inside a row from also starting the row's press.
-const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
-
 /** A row's grip: decoration, since the whole row takes the drag. */
 function Grip({ item, reorder }: { item: LayerListItem; reorder: boolean }) {
-  if (item.locked) {
+  if (item.fixed) {
     return (
       <span className={s.lock} role="img" aria-label="Locked">
         <Icon name={icon('lock')} size={12} />
@@ -132,7 +139,7 @@ export function Handle({
   onPointerDown: ((e: React.PointerEvent) => void) | undefined;
   onNudge: (delta: -1 | 1) => void;
 }) {
-  if (item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
+  if (item.fixed || item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
   return (
     <button
       type="button"
@@ -155,7 +162,7 @@ export function Controls({ item, shared }: { item: LayerListItem; shared: Shared
   const { onVisibilityChange } = shared.props;
   return (
     <>
-      {onVisibilityChange && !item.locked && item.hideable !== false && (
+      {onVisibilityChange && !item.fixed && item.hideable !== false && (
         <input
           className={s.check}
           type="checkbox"
@@ -165,6 +172,7 @@ export function Controls({ item, shared }: { item: LayerListItem; shared: Shared
           aria-label={`Show ${item.label}`}
         />
       )}
+      {shared.props.onLockChange && !item.fixed && <LockToggle item={item} props={shared.props} />}
       <Remove item={item} shared={shared} />
     </>
   );
@@ -172,7 +180,7 @@ export function Controls({ item, shared }: { item: LayerListItem; shared: Shared
 
 function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   const { onRemove } = shared.props;
-  if (!onRemove || item.locked || item.removable === false) return null;
+  if (!onRemove || item.fixed || item.locked || item.removable === false) return null;
   return (
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton

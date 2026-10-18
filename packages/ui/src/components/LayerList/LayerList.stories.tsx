@@ -16,7 +16,7 @@ const swatch = (color: string) => (
 );
 
 /** A document's objects: click to select, Cmd/Ctrl-click to add, shift-click for a range, drag a selected
- *  row to move the whole selection. The locked Background row selects alone
+ *  row to move the whole selection. The fixed Background row selects alone
  *  and walls off drops below it. */
 export const Selectable: Story = {
   render: () => {
@@ -25,7 +25,7 @@ export const Selectable: Story = {
       { id: 'sun', label: 'Sun', leading: swatch('#f5b041') },
       { id: 'hill', label: 'Hill', leading: swatch('#58d68d') },
       { id: 'sky', label: 'Sky', leading: swatch('#5dade2') },
-      { id: 'bg', label: 'Background', leading: swatch('#fff'), locked: true },
+      { id: 'bg', label: 'Background', leading: swatch('#fff'), fixed: true },
     ]);
     const [selected, setSelected] = useState<string[]>(['sun']);
     return (
@@ -70,7 +70,7 @@ export const Nested: Story = {
           },
         ],
       },
-      { id: 'report', label: 'Report', locked: true },
+      { id: 'report', label: 'Report', fixed: true },
     ]);
     const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
     const shown = (list: LayerListItem[]): LayerListItem[] =>

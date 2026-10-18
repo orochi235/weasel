@@ -48,7 +48,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       if (draft) out.push(...measureCommands(toScreen(draft.start), toScreen(draft.end), 1));
       const picked = ms.picked.get();
       const ends = picked === null ? null : measureEndsOf(scene.get(picked));
-      if (ends && scene.layers.find((l) => l.id === ms.layer)?.visible !== false) {
+      if (ends && !scene.isHidden(picked!)) {
         const stroke = { ...OVERLAY_ROLE_STROKES['measure'], width: 1 };
         for (const p of [ends.start, ends.end].map(toScreen)) {
           out.push({
@@ -62,8 +62,6 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       return out;
     },
     hitTest: (wx, wy, _data, view): LayerHit<MeasureHit> | null => {
-      const layer = scene.layers.find((l) => l.id === ms.layer);
-      if (!layer || layer.locked) return null;
       const hit = measureAt(scene, ms, { x: wx, y: wy }, MEASURE_HIT_PX / (view.scale.x || 1));
       if (!hit) return null;
       const onPickedEnd = hit.part !== 'line' && hit.id === ms.picked.get();

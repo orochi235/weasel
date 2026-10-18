@@ -741,7 +741,10 @@ order. See `packages/core/src/core/scene/types.ts`.
 `Node<TData, TLayer, TPose>` — a single entry in the scene tree. Either a `LeafNode`
 (`kind: 'leaf'`) or a `ContainerNode` (`kind: 'container'`, with `children: NodeId[]`).
 Every node carries `id`, `layer`, `pose`, `data`, and `parent`. The opaque `data`
-field holds the consumer's domain payload; the kit never inspects it. See
+field holds the consumer's domain payload; the kit never inspects it. A node may
+also carry `hidden` (not drawn) and `locked` (drawn, out of reach); each covers its
+whole subtree, and `nodeGates` folds them with the layer's flags into the one
+answer every reader asks — see `packages/core/src/core/scene/nodeGates.ts`. See
 `packages/core/src/core/scene/types.ts`.
 
 ### Group vs Selection — not the same axis

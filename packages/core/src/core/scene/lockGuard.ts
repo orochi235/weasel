@@ -1,25 +1,28 @@
 /**
- * The scene's lock guard: what a locked layer refuses, and how a caller that
- * is restoring an already-legal state gets past it.
+ * The scene's lock guard: what a lock refuses, what the selection may hold,
+ * and how a caller that is restoring an already-legal state gets past it.
  */
+import { nodeGates } from './nodeGates';
 import type { Node, NodeId } from './types';
 
 /** What the guard reads of a scene's state. */
 export interface LockGuardState<TData, TLayer extends string, TPose> {
   nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
-  layers: { locked: boolean }[];
+  layers: { id: string; visible: boolean; locked: boolean }[];
   layerIndex: Map<TLayer, number>;
 }
 
 export interface LockGuard<TLayer extends string> {
-  /** Whether `id` sits on a locked layer, or inside a node that does. */
+  /** See `Scene.isLocked`. */
   isLocked(id: NodeId): boolean;
+  /** See `Scene.isHidden`. */
+  isHidden(id: NodeId): boolean;
   /** Throw when `id` is locked and the guard is not lifted. */
   refuse(id: NodeId, verb: string): void;
   /** Throw when `layer` is locked and the guard is not lifted. */
   refuseLayer(layer: TLayer, verb: string): void;
-  /** `ids` less the locked ones: the scene's selection never holds a locked
-   *  node, whoever writes it. */
+  /** `ids` less the locked and hidden ones: the scene's selection never
+   *  holds either, whoever writes it. */
   reachable(ids: readonly NodeId[]): readonly NodeId[];
   /** Run `fn` with the guard lifted: `unlocked()`, `removeLayer`, and every
    *  replay — undo, redo, a journal stepping, a rollback — which restores a
@@ -32,29 +35,25 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
 ): LockGuard<TLayer> {
   let bypass = 0;
 
-  function isLocked(id: NodeId): boolean {
-    if (!state.layers.some((l) => l.locked)) return false;
-    let cur = state.nodes.get(id);
-    while (cur !== undefined) {
-      if (state.layers[state.layerIndex.get(cur.layer) ?? -1]?.locked) return true;
-      cur = cur.parent === null ? undefined : state.nodes.get(cur.parent);
-    }
-    return false;
-  }
+  const source = { get layers() { return state.layers; }, get: (id: NodeId) => state.nodes.get(id) };
+  const isLocked = (id: NodeId): boolean => nodeGates(source).locked(id);
 
   return {
     isLocked,
+    isHidden: (id) => nodeGates(source).hidden(id),
     refuse(id, verb) {
       if (bypass > 0 || !isLocked(id)) return;
-      throw new Error(`Scene: cannot ${verb} "${id}" — it is on a locked layer`);
+      throw new Error(`Scene: cannot ${verb} "${id}" — it is locked`);
     },
     refuseLayer(layer, verb) {
       if (bypass > 0 || !state.layers[state.layerIndex.get(layer) ?? -1]?.locked) return;
       throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked`);
     },
     reachable(ids) {
-      if (!state.layers.some((l) => l.locked)) return ids;
-      return ids.filter((id) => !isLocked(id));
+      const gates = nodeGates(source);
+      return ids.some((id) => gates.locked(id) || gates.hidden(id))
+        ? ids.filter((id) => !gates.locked(id) && !gates.hidden(id))
+        : ids;
     },
     lifted(fn) {
       bypass++;

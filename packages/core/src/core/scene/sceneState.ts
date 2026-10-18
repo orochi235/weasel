@@ -38,13 +38,14 @@ export function createSceneState<TData, TLayer extends string, TPose>(
   const reads: Pick<
     Scene<TData, TLayer, TPose>,
     | 'get' | 'incarnation' | 'childrenOf' | 'ancestorsOf' | 'renderOrder' | 'renderOrderNodes'
-    | 'nodesOnLayer' | 'isLocked' | 'layoutOf' | 'toJSON'
+    | 'nodesOnLayer' | 'isLocked' | 'isHidden' | 'layoutOf' | 'toJSON'
   > = {
     ...createTreeReads(state.nodes),
     renderOrder: order.ids,
     renderOrderNodes: order.nodes,
     nodesOnLayer: order.nodesOnLayer,
     isLocked: (id) => locks.isLocked(id),
+    isHidden: (id) => locks.isHidden(id),
     layoutOf(id) {
       const node = state.nodes.get(id);
       return node?.kind === 'container' ? (node.layout ?? null) : null;

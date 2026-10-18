@@ -22,6 +22,23 @@ function labelDraw(node: { data: Data }, _pose: Pose): DrawCommand[] {
 }
 
 describe('buildSceneTree', () => {
+  it('does not paint a hidden node, or anything under a hidden container', () => {
+    const scene = makeScene();
+    const box = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'box' } });
+    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'kid' }, parent: box });
+    const lone = scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'lone' } });
+    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'shown' } });
+    scene.setHidden(box, true);
+    scene.setHidden(lone, true);
+    const painted: string[] = [];
+    const draw = (node: { data: Data }, pose: Pose): DrawCommand[] => {
+      painted.push(node.data.label);
+      return labelDraw(node, pose);
+    };
+    buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW);
+    expect(painted).toEqual(['shown']);
+  });
+
   it('does not call the painter for a node on a hidden layer', () => {
     const scene = makeScene();
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'hidden' } });
