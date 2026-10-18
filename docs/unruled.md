@@ -155,6 +155,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: `svgNodesToKitDrafts` takes `keepEmpty`, which keeps an empty group it is true for
   (drafted at its clip's box or a zero box) and the groups holding it. Draw keeps an effect's empty
   group, so a blend of no steps reopens live; one whose sources were not exported opens as nothing.
+- 2026-10-18: `serializeSvg` takes `textLayout` (pass `layoutTextPose`), and `svgNeeds` / `warmSvg`
+  take it too. A laid-out `<text>` drops `dominant-baseline`, carries `data-weasel-layout="lines"`,
+  puts each line on its baseline with a `y`, marks a wrapped line `data-weasel-lines="0"`, and
+  states `data-weasel-line-height`, since its pitch no longer does. A justified node writes every
+  word with its own `x`, on its last line too. Draw's exports and clipboard SVG pass it.
 
 ## Animation
 

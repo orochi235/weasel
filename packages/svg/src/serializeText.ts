@@ -1,7 +1,7 @@
 /** Writing `<text>` and its `<tspan>` runs. */
 
 import { escapeAttr } from './xmlEscape';
-import type { FontRequest, StyledRun } from '@weasel-js/core';
+import type { FontRequest, StyledRun, TextPoseLayout } from '@weasel-js/core';
 import { isSolidPaint, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
 import type { SvgTextNode } from './types';
@@ -10,22 +10,28 @@ import type { PaintServerRegistry } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
 import { coreStrokeAttrs, opacityAttr, type Warn } from './strokeAttrs';
-import { linesXml } from './tspanLines';
+import { LINE_HEIGHT_ATTR, linesXml } from './tspanLines';
+import { LAID_ATTR, laidLinesXml, layoutMeasured } from './laidLines';
 
 /**
  * Emit a `<text>` element. `x` is the `text-anchor` point: the box's left
  * edge, center, or right edge as its alignment resolves.
  * `dominant-baseline="text-before-edge"` makes `y` the top of the box, and
  * the width and height, which SVG text doesn't model, go in `data-weasel-*`.
+ *
+ * Given the node's `layout`, each line is written where it lays out instead
+ * (`laidLinesXml`), and `y` stays the box top for weasel's own reader.
  */
 export function textXml(
   node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+  given?: TextPoseLayout | null,
 ): string {
+  const layout = given && layoutMeasured(given, node.text) ? given : null;
   const x = node.x + anchorOffset(node.style, node.width, node.text);
   const attrs: string[] = [
     `x="${trimNumber(x)}"`,
     `y="${trimNumber(node.y)}"`,
-    `dominant-baseline="text-before-edge"`,
+    layout ? `${LAID_ATTR}="lines"` : `dominant-baseline="text-before-edge"`,
     // SVG's default whitespace handling would collapse indentation and runs
     // of spaces away on re-import.
     `xml:space="preserve"`,
@@ -44,15 +50,16 @@ export function textXml(
   const direction = svgDirection(style, node.text);
   // A stated `ltr` is written too: absent reads back as the text's own direction.
   if (direction === 'rtl' || style?.direction === 'ltr') attrs.push(`direction="${direction}"`);
+  let anchor: 'start' | 'middle' | 'end' = 'start';
   if (style?.align != null || direction === 'rtl') {
     // `text-anchor` is reading-order relative in SVG exactly as `start` / `end`
     // are here, so only the absolute pair has to be turned into an edge the
     // reader resolves the same way.
     const align = style?.align ?? 'left';
-    // SVG text does not wrap, so every line written closes its paragraph and
-    // a justified node draws at its start edge. `data-weasel-align` keeps the
-    // justification for weasel's own reader.
-    const anchor = align === 'center' ? 'middle'
+    // SVG text does not wrap, so `text-anchor` has no justify: a justified
+    // node is anchored at its start edge, with each laid-out word placed by
+    // its own `x`. `data-weasel-align` keeps the justification for weasel.
+    anchor = align === 'center' ? 'middle'
       : align === 'start' || align === 'justify' ? 'start'
       : align === 'end' ? 'end'
       : (align === 'left') === (direction === 'ltr') ? 'start' : 'end';
@@ -74,17 +81,19 @@ export function textXml(
   // width it wraps at.
   if (style?.wrap) {
     attrs.push('data-weasel-wrap="true"');
-    warn('text that wraps at its box width is written unwrapped: SVG text does not wrap, so other'
+    if (!layout) warn('text that wraps at its box width is written unwrapped: SVG text does not wrap, so other'
       + ' readers draw one line per hard break (weasel reads the wrap back)');
   }
   if (style?.tabSize != null) attrs.push(`data-weasel-tab-size="${trimNumber(style.tabSize)}"`);
   if (node.verticalAlign && node.verticalAlign !== 'top') {
     attrs.push(`data-weasel-vertical-align="${node.verticalAlign}"`);
-    warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
+    if (!layout) warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
       + ' no box, so other readers draw it at the top (weasel reads the alignment back)');
   }
   // `lineHeight` has no attribute: the lines' `dy` states it, and a caller that
-  // wants it on a single line carries it in `meta`.
+  // wants it on a single line carries it in `meta`. Laid-out lines are pitched
+  // by their tallest run, so there the attribute states it.
+  if (layout && style?.lineHeight != null) attrs.push(`${LINE_HEIGHT_ATTR}="${trimNumber(style.lineHeight)}"`);
   if (node.fill !== undefined) {
     const paint = node.fill?.paint;
     if (!paint) attrs.push('fill="none"');
@@ -104,7 +113,9 @@ export function textXml(
     ? node.runs.map((r) => ({ text: r.text, attrs: runAttrs(r, style, registry, warn) }))
     : [{ text: node.text, attrs: null }];
   const resolved = resolveTextStyle(style);
-  const body = linesXml(pieces, x, resolved.fontSize * resolved.lineHeight);
+  const body = layout
+    ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' }, resolved.align === 'justify')
+    : linesXml(pieces, x, resolved.fontSize * resolved.lineHeight);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
