@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, PathBuilder, pathToAnchors, type DistortWarp, type PolygonPath } from '@weasel-js/geom';
+import {
+  applyToPoint, boundsOfPath, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type PolygonPath,
+} from '@weasel-js/geom';
+import type { DistortWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import {
-  asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene,
+  asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene, selectedPathNodes,
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
+import { splitByWarp } from './warpTargets';
 import {
   configureWarpAction, createAddPinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
 } from './warpActions';
@@ -99,6 +103,27 @@ describe('distort', () => {
     });
   });
 
+  it('keeps the warp on a polygon pose rotated after it', () => {
+    const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+    const scene = createScene<unknown, 'main', unknown>({
+      systemLayers: [{ id: 'main' }],
+      initial: [{ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: square, data: {} }],
+    }) as unknown as S;
+    dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 125, y: 110 });
+    const node = scene.get(asNodeId('a'))!;
+    const turned = transformPath(node.pose as PolygonPath, rotateAboutPoint(50, 50, 0.7));
+    commitOps(depsOf(scene), [createTransformOp({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
+    const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
+    expect(resolved).not.toBeNull();
+    const { corners } = resolved.held.warp as DistortWarp;
+    const anchors = anchorsOf(scene);
+    corners.forEach((c, i) => {
+      const [x, y] = applyToPoint(resolved.toWorld, c.x, c.y);
+      expect(x).toBeCloseTo(anchors[i].x, 2);
+      expect(y).toBeCloseTo(anchors[i].y, 2);
+    });
+  });
+
   it('is dropped by Expand Warp, which keeps the geometry', () => {
     const scene = makeScene();
     dragControl(scene, 'distort', { warpId: null, index: 1 }, { x: 100, y: 0 }, { x: 130, y: 0 });
@@ -151,7 +176,69 @@ describe('puppet', () => {
     expect(held.warp.kind === 'puppet' && held.warp.pins).toHaveLength(2);
     dragControl(scene, 'puppet', { warpId: held.id, index: 1 }, { x: 100, y: 100 }, { x: 140, y: 60 });
     const anchors = anchorsOf(scene);
+    // The bent edges may gain anchors; the pinned corners stay anchors, where their pins are.
     expect(anchors[0]).toEqual({ x: 0, y: 0 });
-    expect(anchors[2]).toEqual({ x: 140, y: 60 });
+    expect(anchors).toContainEqual({ x: 140, y: 60 });
+  });
+});
+
+describe('paths warped together', () => {
+  /** Two 100×100 squares on `data.path`, `a` at the origin and `b` at (150, 0), both selected. */
+  function pairScene(): S {
+    const path = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+    const leaf = (id: string, x: number) => ({
+      id: asNodeId(id), kind: 'leaf' as const, layer: 'main' as const, pose: { x, y: 0, width: 100, height: 100 }, data: { path },
+    });
+    return createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }], initial: [leaf('a', 0), leaf('b', 150)],
+    }) as unknown as S;
+  }
+  const pairDeps = (scene: S) => ({
+    scene, selection: { get: () => ['a', 'b'], set: () => {}, clear: () => {} },
+  }) as unknown as InvocationCtx['deps'];
+  const pathOf = (scene: S, id: string) =>
+    Array.from((resolveEditablePathOf(scene.get(asNodeId(id)) as never) as PolygonPath).coords);
+  function drag(scene: S, scratch: WarpHandleScratch, from: { x: number; y: number }, to: { x: number; y: number }) {
+    const d = (at: { x: number; y: number }) => ({
+      start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
+      affordance: { kind: 'layer:warp-distort', payload: scratch },
+    });
+    const c = (at: { x: number; y: number }): InvocationCtx => ({
+      world: at, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: pairDeps(scene), drag: d(at),
+    });
+    const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(c(from), { params: {} });
+    handle.onMove?.(c(to));
+    handle.onEnd?.(c(to), 'commit');
+  }
+
+  it('part once one is moved alone: its controls stay on it, and the other warp leaves it be', () => {
+    const scene = pairScene();
+    drag(scene, { warpId: null, index: 2 }, { x: 250, y: 100 }, { x: 270, y: 120 });
+    const shared = heldPathWarpOf(scene.get(asNodeId('a'))!.data)!.id;
+    expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)!.id).toBe(shared);
+
+    const a = scene.get(asNodeId('a'))!;
+    const moved = { ...(a.pose as RectPose), y: (a.pose as RectPose).y + 300 };
+    commitOps(pairDeps(scene), [createTransformOp({ id: a.id, from: a.pose, to: moved, label: 'Move' })], 'Move');
+
+    const { held } = splitByWarp(selectedPathNodes(pairDeps(scene)), 'distort');
+    const ids = new Map(held.map((t) => [String(t.node.id), t.held.id]));
+    expect(ids.get('a')).not.toBe(ids.get('b'));
+    // Each path's controls sit on the corners of the box the pair was warped in, carried with it.
+    const corner = (t: (typeof held)[number]) => {
+      const c = (t.held.warp as DistortWarp).corners[0];
+      const [x, y] = applyToPoint(t.toWorld, c.x, c.y);
+      return { x, y };
+    };
+    const byId = new Map(held.map((t) => [String(t.node.id), t]));
+    expect(corner(byId.get('a')!).y).toBeCloseTo(300, 3);
+    expect(corner(byId.get('b')!).y).toBeCloseTo(0, 3);
+
+    const aBefore = pathOf(scene, 'a');
+    drag(scene, { warpId: ids.get('b')!, index: 0 }, { x: 0, y: 0 }, { x: -10, y: -10 });
+    expect(pathOf(scene, 'a')).toEqual(aBefore);
+    expect(boundsOfPath(resolveEditablePathOf(scene.get(asNodeId('b')) as never) as PolygonPath).y).toBeLessThan(0);
+    // The parting is written down once a parted warp is edited.
+    expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)!.id).toBe(ids.get('b'));
   });
 });

@@ -33,6 +33,10 @@
       "import": "./dist/tessellate/index.js",
       "types": "./dist/tessellate/index.d.ts"
     },
+    "./warp": {
+      "import": "./dist/warp/index.js",
+      "types": "./dist/warp/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {

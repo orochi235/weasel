@@ -6,7 +6,7 @@
 import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { meshGridFrom, meshGridOver, bicubicMesh, coonsMesh, type MeshGrid } from './mesh';
-import { rigidPuppetMap, type PuppetPin } from './puppet';
+import { puppetMap, type PuppetPin } from './puppet';
 import { bilinearQuad, projectiveQuad, type Quad, type UvMap } from './quad';
 import { warpPath } from './warpPath';
 
@@ -91,11 +91,12 @@ function boxUv(box: WarpBox, uv: UvMap): (p: Point) => Point {
 }
 
 /**
- * Where `warp` sends each point of the plane. A perspective distort whose
- * corners no longer make a convex quad has no projective map, and falls back
- * to the bilinear one until they do.
+ * Where `warp`, laid over `source`, sends each point of the plane. A
+ * perspective distort whose corners no longer make a convex quad has no
+ * projective map, and falls back to the bilinear one until they do. Only a
+ * puppet reads `source`: its pins pull through the shape's fill.
  */
-export function pathWarpMap(warp: PathWarp): (p: Point) => Point {
+export function pathWarpMap(warp: PathWarp, source: PolygonPath): (p: Point) => Point {
   switch (warp.kind) {
     case 'distort': {
       const uv = (warp.mode === 'perspective' ? projectiveQuad(warp.corners) : null) ?? bilinearQuad(warp.corners);
@@ -104,13 +105,13 @@ export function pathWarpMap(warp: PathWarp): (p: Point) => Point {
     case 'envelope':
       return boxUv(warp.box, envelopeUvMap(warp));
     case 'puppet':
-      return rigidPuppetMap(warp.pins);
+      return puppetMap(source, warp.pins);
   }
 }
 
 /** `source` warped by `warp`, refitted within `tolerance` (`warpPath`). */
 export function applyPathWarp(source: PolygonPath, warp: PathWarp, tolerance = 0.5): PolygonPath {
-  return warpPath(source, pathWarpMap(warp), { tolerance });
+  return warpPath(source, pathWarpMap(warp, source), { tolerance });
 }
 
 /** The points a user drags to change `warp`: a distort's corners, an
