@@ -129,8 +129,9 @@ every component is a kit setting, not a module constant alone. The constant
 stays, as the only definition of the default; the component reads
 `useKitSetting('<area>.<leaf>') ?? CONSTANT`, and code outside React reads
 `get(path)` from `useKitSettings()` (the canvas publishes that store as the
-`kitSettings` dep) at the moment it needs the value. A component's own prop
-still wins over a provider.
+`kitSettings` dep) at the moment it needs the value; a gesture behavior or
+snap strategy finds that store on its `GestureContext` as `kitSettings`. A
+component's own prop still wins over a provider.
 
 To add one: augment `KitSettings` from `@weasel-js/react` in the package's
 `kitSettings.ts` (`targets` leaves go on `KitTargetSettings`, which several

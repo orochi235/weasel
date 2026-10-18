@@ -7,10 +7,12 @@ import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
 import { SEGMENT_HIT_PX } from 'interactions/actions/defaults/segmentUnder';
 import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
-import { ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX } from 'features/paths/penPreviewLayer';
+import {
+  ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_ANCHOR_SNAP_PX, PEN_CLOSE_HIT_PX,
+} from 'features/paths/penPreviewLayer';
 import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
 import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
-import { VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
+import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 
 const ms = { scale: 1, suffix: 'ms' };
 const px = { scale: 1, suffix: 'px' };
@@ -40,9 +42,12 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     penAnchorRadiusPx: pxLeaf('Pen anchor dot', ANCHOR_RADIUS_PX, 16),
     penHandleDotRadiusPx: pxLeaf('Pen handle dot', HANDLE_DOT_RADIUS_PX, 16),
     penCloseHintRadiusPx: pxLeaf('Pen close hint', CLOSE_HINT_RADIUS_PX, 24),
+    penCloseHitPx: pxLeaf('Pen close reach', PEN_CLOSE_HIT_PX),
+    penAnchorSnapPx: pref.number('Pen anchor snap', PEN_ANCHOR_SNAP_PX, { unit: px, min: 0, max: 48, step: 0.5 }),
     boneJointRadiusPx: pxLeaf('Bone joint dot', JOINT_RADIUS_PX, 16),
     weightPointRadiusPx: pxLeaf('Weight point dot', POINT_RADIUS_PX, 16),
     sliceVertexRadiusPx: pxLeaf('Slice vertex dot', VERTEX_RADIUS_PX, 16),
+    sliceCloseHitPx: pxLeaf('Slice close reach', SLICE_CLOSE_HIT_PX),
   }),
   view: pref.group('View', {
     animationMs: msLeaf('Camera animation', DEFAULT_VIEW_ANIMATION_MS, 0),

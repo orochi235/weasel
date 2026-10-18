@@ -14,6 +14,7 @@ type AnyNode = SceneNode<unknown, string, unknown>;
 
 const KIND_LABELS: Record<SpiroKind, string> = {
   smooth: 'Smooth spiro point',
+  g4: 'Extra-smooth (G4) spiro point',
   corner: 'Corner spiro point',
   left: 'Spiro point after a line',
   right: 'Spiro point before a line',

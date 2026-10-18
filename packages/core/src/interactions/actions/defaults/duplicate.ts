@@ -5,6 +5,8 @@ import { copySelection } from './copySubtree';
 import { requiresSelection } from './requiresSelection';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor } from '../resize/geometry';
+import { scenePoseFrame } from '../poseFrame';
+import { storedDelta } from '../selectionSubtree';
 import { recordTransform } from '../transform-again/memory';
 import { icon } from '../../../icons.gen';
 
@@ -13,7 +15,8 @@ import { icon } from '../../../icons.gen';
 export const DUPLICATE_OFFSET = 12;
 
 /**
- * Copy each selected node, with its subtree, offset by `(dx, dy)`, as one
+ * Copy each selected node, with its subtree, offset by `(dx, dy)` in world
+ * space whatever frame it is stored in, as one
  * undoable batch labeled `label`, and select the copies. Returns the copies'
  * ids, or null when nothing was copied.
  */
@@ -31,15 +34,18 @@ export function duplicateSelection(
   if (ids.length === 0) return null;
 
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
+  const frame = scenePoseFrame(scene);
   // Under a frame a child's pose is relative, so offsetting the root
   // carries the subtree and offsetting a child again would double it.
   const offsetDescendants = !composesFrames(scene.composition);
   const { ops, copies } = copySelection(
     scene,
     ids,
-    (id, node, isRoot) => (isRoot || offsetDescendants
-      ? translatePoseViaDescriptor(node.pose, dx, dy, descriptorOf(id))
-      : node.pose),
+    (id, node, isRoot) => {
+      if (!isRoot && !offsetDescendants) return node.pose;
+      const l = storedDelta(frame, descriptorOf(id), id, dx, dy);
+      return translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id));
+    },
     label,
   );
 

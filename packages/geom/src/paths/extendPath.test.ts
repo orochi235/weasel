@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PolygonPath } from '../path';
 import { PATH_C, PATH_L, PATH_M } from '../commands';
 import { pathFromD } from './pathFromD';
-import { extendToMeet, lengthenOpenEnd, openPathEnds } from './extendPath';
+import { extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds } from './extendPath';
 
 const coords = (p: PolygonPath) => Array.from(p.coords);
 const cmds = (p: PolygonPath) => Array.from(p.commands);
@@ -41,5 +41,27 @@ describe('lengthenOpenEnd and openPathEnds', () => {
   it('grows an end by a distance', () => {
     expect(coords(lengthenOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 3)!)).toEqual([0, 0, 0, 8]);
     expect(lengthenOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 0)).toBeNull();
+  });
+});
+
+describe('an empty subpath (a bare M)', () => {
+  // The anchor set counts the bare M as subpath 0, so the first line is subpath 1.
+  const path = pathFromD('M50 50 M0 0 H5 M0 10 H5');
+
+  it('numbers ends as the anchor set does', () => {
+    expect(openPathEnds(path)).toEqual([
+      { sub: 1, end: 'first' }, { sub: 1, end: 'last' },
+      { sub: 2, end: 'first' }, { sub: 2, end: 'last' },
+    ]);
+  });
+
+  it('extends the end it was handed', () => {
+    const r = extendToMeet(path, walls, { sub: 2, end: 'last' })!;
+    expect(r.at).toEqual({ x: 10, y: 10 });
+    expect(coords(r.path)).toEqual([50, 50, 0, 0, 5, 0, 0, 10, 10, 10]);
+  });
+
+  it('reads the ray of the end it was handed', () => {
+    expect(openEndRay(path, { sub: 1, end: 'first' })).toEqual({ at: { x: 0, y: 0 }, dir: { x: -1, y: 0 } });
   });
 });

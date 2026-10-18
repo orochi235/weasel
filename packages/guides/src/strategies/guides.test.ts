@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { guideSnapStrategy } from './guides';
+import { createKitSettingsStore } from '@weasel-js/react';
+import { DEFAULT_GUIDE_TOLERANCE_PX, guideSnapStrategy } from './guides';
 import type { Guide } from '../guides/types';
 import type { GestureContext } from '@weasel-js/core';
 
@@ -8,6 +9,20 @@ interface Pose { x: number; y: number }
 const dummyCtx = {} as unknown as GestureContext<Pose>;
 const viewCtx = (scale: number): GestureContext<Pose> =>
   ({ view: { x: 0, y: 0, scale: { x: scale, y: scale } } }) as unknown as GestureContext<Pose>;
+
+describe('guideSnapStrategy tolerance', () => {
+  const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
+  const settled = (guideSnapPx: number) =>
+    ({ kitSettings: createKitSettingsStore({ targets: { guideSnapPx } }) }) as unknown as GestureContext<Pose>;
+
+  it('reads targets.guideSnapPx off the gesture, else DEFAULT_GUIDE_TOLERANCE_PX, and an option beats both', () => {
+    const at = (x: number, ctx: GestureContext<Pose>, tolerance?: number) =>
+      guideSnapStrategy<Pose>(() => guides, tolerance === undefined ? {} : { tolerance }).snap({ x, y: 0 }, ctx)?.x ?? null;
+    expect([at(100 + DEFAULT_GUIDE_TOLERANCE_PX - 1, dummyCtx), at(100 + DEFAULT_GUIDE_TOLERANCE_PX + 1, dummyCtx)]).toEqual([100, null]);
+    expect(at(115, settled(20))).toBe(100);
+    expect(at(115, settled(20), 4)).toBeNull();
+  });
+});
 
 describe('guideSnapStrategy', () => {
   it('returns null when there are no guides', () => {

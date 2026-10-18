@@ -8,6 +8,7 @@ import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvok
 import {
   constraintAnchors,
   pathAnchorPoints,
+  segmentBetween,
   type AnchorPair,
   type PathConstraint,
   type PathConstraintKind,
@@ -37,7 +38,9 @@ function segmentPair(anchors: readonly number[]): readonly [AnchorPair, AnchorPa
 
 /**
  * The constraints of `kind` that `anchors`, in the order they were selected,
- * ask for: each anchor for `fixed`; each consecutive pair for `horizontal`,
+ * ask for: each anchor for `fixed`; each anchor with both handles for
+ * `tangent`; for `onPath`, three anchors, the first held on the segment the
+ * other two end; each consecutive pair for `horizontal`,
  * `vertical`, `length`, and `coincident`; and for the kinds relating two
  * segments, three anchors as two segments sharing the middle one or four as
  * two pairs. Empty when the anchors cannot make that kind.
@@ -50,6 +53,14 @@ export function constraintsForAnchors(
 ): PathConstraint[] {
   switch (kind) {
     case 'fixed': return anchors.map((anchor) => ({ kind, anchor }));
+    case 'onPath': {
+      const segment = anchors.length === 3 ? segmentBetween(path, anchors[1], anchors[2]) : null;
+      return segment ? [{ kind, anchor: anchors[0], segment }] : [];
+    }
+    case 'tangent': {
+      const points = pathAnchorPoints(path);
+      return anchors.filter((a) => points[a]?.inHandle && points[a]?.outHandle).map((anchor) => ({ kind, anchor }));
+    }
     case 'horizontal':
     case 'vertical': return pairsOf(anchors).map((segment) => ({ kind, segment }));
     case 'coincident': return pairsOf(anchors).map((pair) => ({ kind, anchors: pair }));

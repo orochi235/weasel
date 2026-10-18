@@ -67,7 +67,7 @@ const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost:
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
-  const o = useLatest({ ...opts, hoverExpandMs: useKitSetting('tree.hoverExpandMs') ?? HOVER_EXPAND_MS });
+  const o = useLatest({ ...opts, hoverExpandMs: useKitSetting('tree.hoverExpandMs') ?? HOVER_EXPAND_MS, dragPx: useKitSetting('gestures.dragPx') });
   const drag = useRef<ThresholdDragHandle | null>(null);
   const hover = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
   const [state, setState] = useState<TreeDragState>(IDLE);
@@ -172,7 +172,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     };
 
     drag.current = startThresholdDrag(e, {
-      origin: box,
+      origin: box, threshold: o.current.dragPx,
       onActivate: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
