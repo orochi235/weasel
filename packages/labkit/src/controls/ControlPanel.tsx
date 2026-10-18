@@ -29,7 +29,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   fields?: ConfigField[];
   config: TC;
   /** Writes one value. The path is dotted for a leaf inside an `f.group`, and
-   *  the bare key for one at the root. */
+   *  the bare key for one at the root. A `.resettable()` group's reset is one
+   *  write too, of the group's whole value at the group's own path. */
   setConfig: (path: string, value: unknown) => void;
   /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
