@@ -401,9 +401,6 @@ Priority tags:
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
-  point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
-  either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over

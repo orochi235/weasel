@@ -105,7 +105,7 @@ export {
   type SpiroContour, type SpiroPath, type SpiroToPathOptions,
 } from './paths/spiroPath';
 export {
-  eulerAngleAt, eulerCurvatureAt, eulerPointAt, fitEulerSegment, placeEulerSegment,
+  eulerAngleAt, eulerCurvatureAt, eulerCurvatureDerivativesAt, eulerPointAt, fitEulerSegment, placeEulerSegment,
   type EulerFit, type EulerSegment,
 } from './paths/eulerSpiral';
 export {
