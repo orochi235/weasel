@@ -1,13 +1,9 @@
+import type { TraceRing } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
-import { isDev } from '@weasel-js/react';
 
-// ---------------------------------------------------------------------------
-// Dev-only coord trace
-// ---------------------------------------------------------------------------
-
-/** Records every `clientToWorld` call so dev tools (and agents) can
- *  reconcile cursor coords with computed world coords. Mirrors the
- *  dispatcher's trace log. Exposed on `window.__weaselCoordLog__`. */
+/** One `clientToWorld` call, so a cursor position can be reconciled with the
+ *  world point it became. A canvas keeps these beside its dispatch trace, and
+ *  the devtools hook's `get-trace` reads them. */
 export interface CoordTraceEntry {
   ts: number;
   clientX: number;
@@ -19,38 +15,23 @@ export interface CoordTraceEntry {
   fallback: boolean;
 }
 
-export const COORD_TRACE_LIMIT = 200;
-
-export const coordTrace: CoordTraceEntry[] = [];
-
-export const COORD_DEV: boolean = isDev();
-
-if (COORD_DEV && typeof window !== 'undefined') {
-  (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
-}
-
-function recordCoordTrace(entry: CoordTraceEntry): void {
-  if (!COORD_DEV) return;
-  coordTrace.push(entry);
-  if (coordTrace.length > COORD_TRACE_LIMIT) coordTrace.shift();
-}
-
 /** Record one conversion against the rect and view it was made under. A null
  *  `canvas` or a missing `view` records the identity fallback. */
 export function traceConversion(
+  ring: TraceRing<CoordTraceEntry>,
   clientX: number,
   clientY: number,
   canvas: HTMLElement | null,
   view: View | null | undefined,
   world: { x: number; y: number },
 ): void {
-  if (!COORD_DEV) return;
+  if (!ring.recording()) return;
   if (!canvas || !view) {
-    recordCoordTrace({ ts: Date.now(), clientX, clientY, rect: null, view: null, world, fallback: true });
+    ring.push({ ts: Date.now(), clientX, clientY, rect: null, view: null, world, fallback: true });
     return;
   }
   const rect = canvas.getBoundingClientRect();
-  recordCoordTrace({
+  ring.push({
     ts: Date.now(), clientX, clientY,
     rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
     view: { x: view.x, y: view.y, scaleX: view.scale.x, scaleY: view.scale.y },

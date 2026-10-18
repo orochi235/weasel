@@ -7,6 +7,7 @@ const shims = [
   'resize',
   'clipboard',
   'clone',
+  'devtools',
   'patterns-builtin',
   'renderer',
   'routing',

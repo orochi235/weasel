@@ -27,7 +27,6 @@ import { createEmitter } from '@weasel-js/registry';
 import type { Action } from '../actions/action';
 import type { InputEvent } from './matcher';
 import { buildDispatchRecord } from './buildDispatchRecord';
-import { DEV, recordTrace } from './dispatchTrace';
 import { createGestureFacts } from './gestureFacts';
 import { endAllGestures, invokeAction, pumpGesture, type GestureRun } from './gestureRun';
 import { createInFlightGestures } from './inFlightGestures';
@@ -40,8 +39,8 @@ import type { Dispatcher, DispatcherContext } from './dispatcherApi';
 export type {
   Dispatcher, DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate, UiOngoingControl,
 } from './dispatcherApi';
-export { publishLiveDispatch, recordModeSwitch } from './dispatchTrace';
-export type { ModeSwitchLogEntry, TraceLogEntry } from './dispatchTrace';
+export { createDispatchTrace, createTraceRing } from './dispatchTrace';
+export type { DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing } from './dispatchTrace';
 export { multiTouchGestureId, pointerGestureId } from './gestureIds';
 export { filterEligible, preferContextual } from './ranking';
 
@@ -84,10 +83,11 @@ export function createDispatcher(opts?: {
 
     if (event.kind === 'hover') return hover(event, ctx);
 
-    const r = rank(event, ctx, inFlight.engagedOwners(), DEV);
+    const trace = ctx.trace?.recording() ? ctx.trace : null;
+    const r = rank(event, ctx, inFlight.engagedOwners(), trace !== null);
     const walked = walk(r, event, ctx, invoking(event), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
-    if (DEV) recordTrace(buildDispatchRecord(r, walked, event, ctx, false, outcome));
+    trace?.push(buildDispatchRecord(r, walked, event, ctx, false, outcome));
     return outcome;
   }
 

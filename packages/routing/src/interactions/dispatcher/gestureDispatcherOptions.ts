@@ -10,6 +10,7 @@ import type { DepSchema } from '../../index';
 import type { AffordanceHit } from '../actions/invoker';
 import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher } from './dispatcherApi';
+import type { DispatchTrace } from './dispatchTrace';
 import type { LongPressOptions } from './longPressState';
 
 /**
@@ -175,6 +176,10 @@ export interface UseGestureDispatcherOptions {
    * mounter and other consumers (the preview-ghost layer).
    */
   dispatcher?: Dispatcher;
+
+  /** Where every dispatcher this hook drives records its decisions. Absent,
+   *  the hook makes one of its own. Published as the `dispatchTrace` dep. */
+  trace?: DispatchTrace;
 
   /**
    * Converts a client-space pointer position (e.g. `e.clientX`, `e.clientY`)

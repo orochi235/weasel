@@ -79,6 +79,7 @@ export function buildDebugOverlayCommands(
   if (config.viewport && s.viewport) emitViewport(out, s.viewport, view, dims, theme, strokes);
   if (config.hitboxes) emitHitboxes(out, s, view, t, theme, strokes);
   if (config.bounds) emitBounds(out, s, view, t, theme, strokes);
+  if (config.highlight?.length) emitHighlight(out, s, new Set(config.highlight), view, t, theme, strokes);
   if (config.handles) emitHandles(out, s, t, theme, strokes);
   if (config.origins) emitOrigins(out, s, t, theme);
   if (config.snap) emitSnap(out, s, t, theme, strokes);
@@ -204,6 +205,23 @@ function emitBounds(
     const sw = b.bounds.width * view.scale.x;
     const sh = b.bounds.height * view.scale.y;
     out.push({ kind: 'path', path: rectPath(sx, sy, sw, sh), stroke });
+  }
+}
+
+function emitHighlight(
+  out: DrawCommand[],
+  s: DebugSnapshot,
+  ids: ReadonlySet<string>,
+  view: View,
+  t: ReturnType<typeof viewToTransform>,
+  theme: DebugTheme,
+  strokes: DebugStrokes,
+): void {
+  const stroke = strokeOf(strokes.highlight, theme.highlight);
+  for (const b of s.bounds) {
+    if (!ids.has(b.id)) continue;
+    const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
+    out.push({ kind: 'path', path: rectPath(sx, sy, b.bounds.width * view.scale.x, b.bounds.height * view.scale.y), stroke });
   }
 }
 

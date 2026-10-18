@@ -26,7 +26,7 @@ import {
   withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther,
 } from 'features/paths/pathEditExtension';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
-import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
+import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
@@ -91,7 +91,7 @@ export function useEditAnchorsDepSource(
       setEditingId(id: string | null) {
         const next = id ?? '';
         if (effectiveId !== next) {
-          recordModeSwitch(
+          registry.get('dispatchTrace')?.recordModeSwitch(
             'editAnchors.editingId',
             effectiveId || null,
             next || null,

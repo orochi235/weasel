@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { createDispatcher, type DispatcherContext, type TraceLogEntry } from './dispatcher';
+import { createDispatcher, createDispatchTrace, type DispatcherContext } from './dispatcher';
 import type { DispatchRecord } from './dispatchRecord';
 import type { ActionsRegistry } from '../actions/registry';
 import type { Action } from '../actions/action';
@@ -47,8 +47,11 @@ function ruleCtxIn(mode: string, allowed: string[] = []): RuleCtx {
   } as RuleCtx;
 }
 
+const trace = createDispatchTrace();
+
 function ctxOf(actions: Action[], extra: Partial<DispatcherContext> = {}): DispatcherContext {
   return {
+    trace,
     actions: registryOf(actions),
     depRegistry: { register: vi.fn().mockReturnValue(() => {}), get: vi.fn() },
     activeToolId: null,
@@ -65,8 +68,7 @@ const press = (extra: Record<string, unknown> = {}): InputEvent =>
   ({ kind: 'pointerdown', pointerId: 1, x: 5, y: 7, ...NO_MODS, ...extra }) as InputEvent;
 
 function lastRecord(): DispatchRecord {
-  const log = (window as unknown as { __weaselDispatchLog__: TraceLogEntry[] }).__weaselDispatchLog__;
-  const last = log.at(-1);
+  const last = trace.since(0).entries.at(-1);
   if (last?.kind !== 'dispatch') throw new Error('no dispatch record in the trace');
   return last;
 }

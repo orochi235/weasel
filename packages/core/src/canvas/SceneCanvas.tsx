@@ -37,6 +37,7 @@ import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
 import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
+import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
@@ -51,7 +52,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose> & { presetSource: PresetSource },
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
-  const { selectTool: selectToolOpts, selectable = true, viewport, modes, debug } = props;
+  const { selectTool: selectToolOpts, selectable = true, viewport, modes } = props;
+  const devtools = useDevtoolsOverride(props.debug);
+  const debug = devtools.debug as typeof props.debug;
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
   const scene = useBakedScene(props.scene);
@@ -154,7 +157,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
-        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard}
+        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} devtools={devtools}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       {props.views?.map((v, i) => <CanvasView key={v.id} {...v} order={v.order ?? i} />)}
