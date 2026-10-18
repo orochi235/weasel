@@ -113,6 +113,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `bindGradient` measures paint space from the gradient's own start or center,
   and `u_gradP0` is gone; `bindPattern` drops whole tiles from the translation.
 - 2026-10-13 (pass 6): geom's six-number affine type is `Affine`, with no `Mat3` alias left.
+- 2026-10-18: `<Canvas retain>` takes `false` or `{ minCommands, budget }`, with `false` beating a
+  layer's own `retain: true`; `WeaselRenderer.setRetainBudget` is new, and lowering the budget
+  below what is held frees every surface.
 
 ## Text
 

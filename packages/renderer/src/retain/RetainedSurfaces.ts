@@ -50,7 +50,7 @@ export interface RetainedDraw {
  */
 export class RetainedSurfaces {
   private readonly gl: WebGL2RenderingContext;
-  private readonly budget: number;
+  private budget: number;
   private readonly samples: number;
   private readonly surfaces = new Map<string, Surface>();
   private scratch: Scratch | null = null;
@@ -74,6 +74,13 @@ export class RetainedSurfaces {
   get bytes(): number {
     if (this.surfaces.size === 0 && !this.scratch) return 0;
     return this.surfaces.size * this.surfaceBytes() + this.scratchBytes();
+  }
+
+  /** Change the budget. Lowered below what is held, every surface goes, and
+   *  groups are drawn again within the new one. */
+  setBudget(budget: number): void {
+    this.budget = budget;
+    if (this.bytes > budget) this.releaseAll();
   }
 
   /** Open a frame. `stamp` holds what every surface depends on beyond its

@@ -15,6 +15,16 @@ import type { CanvasViewState } from './useCanvasView';
 import type { SurfaceSizeProps } from './useSurfaceSize';
 import type { CanvasHelpers, ViewPoseAdapter } from './useViewHelpers';
 
+/** How a canvas retains its layers. Unset fields keep their defaults. */
+export interface CanvasRetainOptions {
+  /** Drawing commands a layer must hold to be retained, when it does not say
+   *  for itself. Default `DEFAULT_LAYER_RETAIN.minCommands`. */
+  minCommands?: number;
+  /** GPU memory, in bytes, retained layers may hold together:
+   *  `WeaselRendererOptions.retainBudget`. 0 retains nothing. */
+  budget?: number;
+}
+
 /**
  * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state, hover
  * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
@@ -31,6 +41,12 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  zoom, whatever the scene's world unit. A number holds a fixed world
    *  tolerance instead. */
   flattenTolerance?: FlattenTolerance;
+
+  /** Which unchanged layers the renderer keeps as pixels between frames and
+   *  composites as one quad, instead of drawing their commands again — see
+   *  `RenderLayer.retain` and `LayerRetainPolicy`. `false` retains no layer on
+   *  this canvas, whatever the layer asks. */
+  retain?: false | CanvasRetainOptions;
 
   /** The version of whatever content this canvas draws, sampled at paint time
    *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.

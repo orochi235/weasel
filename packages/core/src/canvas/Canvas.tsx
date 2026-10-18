@@ -42,7 +42,7 @@ import { useCanvasPaint, usePaintedVersion } from './useCanvasPaint';
 import { layerHover } from './layerHover';
 import { useClientToWorld } from './useClientToWorld';
 
-export type { CanvasProps } from './canvasProps';
+export type { CanvasProps, CanvasRetainOptions } from './canvasProps';
 
 const NO_SELECTION: SelectionApi['current'] = [];
 
@@ -127,7 +127,7 @@ function CanvasInner<TPose>(
   const paintInputsRef = useLatest({
     layers: layersWithDebug, width, height, debugSink, frameStats,
     dpr: props.dpr, layerGroups: props.layerGroups, shaders: props.shaders,
-    flattenTolerance: props.flattenTolerance,
+    flattenTolerance: props.flattenTolerance, retain: props.retain,
   });
   useInsertionEffect(() => {
     adoptControlled();

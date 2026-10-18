@@ -11,14 +11,8 @@ import {
   DEFAULT_BAKE_BUDGET,
 } from '@weasel-js/font';
 import {
-  GLYPH_PAINT_VERT_SRC,
-  GLYPH_PATTERN_FRAG_SRC,
-  GLYPH_GRAD_FRAG_SRC,
-  GLYPH_TEXTURE_FRAG_SRC,
-  GLYPH_PATTERN_UNIFORMS,
-  GLYPH_GRAD_UNIFORMS,
-  GLYPH_TEXTURE_UNIFORMS,
-  GLYPH_PAINT_ATTRIBUTES,
+  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
+  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_TEXTURE_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
 } from './shaders/glyphPaint';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
@@ -585,6 +579,11 @@ export class WeaselRenderer {
   /** Change `flattenTolerance` after construction; `undefined` restores the default. */
   setFlattenTolerance(tolerance: FlattenTolerance | undefined): void {
     this.flattenTolerance = tolerance;
+  }
+
+  /** Change `retainBudget` after construction; `undefined` restores the default. */
+  setRetainBudget(bytes: number | undefined): void {
+    this.retained.setBudget(bytes ?? DEFAULT_RETAIN_BUDGET);
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {
