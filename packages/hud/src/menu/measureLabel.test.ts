@@ -40,7 +40,7 @@ describe('measureLabel', () => {
 describe('a menu widget with no measure of its own', () => {
   const ctx = {
     dims: { width: 800, height: 600 }, defaultFont: FAMILY,
-    tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444' },
+    tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008' },
     color: () => undefined,
   } as never as HudDrawCtx;
 

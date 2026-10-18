@@ -745,12 +745,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) The asset editor's preview of the menu bar shows fewer rows than the app.**
-  `RegistryProbe` mounts `<SceneCanvas features={['draw']}>` with no `ambient` and no
-  `useFileCommands`, so `file.*` and the app's `view.*` toggles are never registered and File, and
-  View's four toggles, preview without them. Register the same set the
-  app does, or have the probe take it as a prop.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -760,27 +754,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   Headless Playwright sends no such event, so this is unverified. Check on a real Windows or
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
 
-- **(P4) A `BarMenu` that opened itself can pull focus out of another menu when it closes.** Its
-  `close` gives focus to its button only when focus is inside a menu, but it checks with
-  `closest('[role="menu"]')`, which matches any menu on the page. Scope the check to this menu's
-  own panel ids.
-
-- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context-menu model
-  splits state, keyboard and placement from drawing so one menu renders in both. Generalize that
-  split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
-  chrome can draw on either substrate from one behavior.
-
-- **(P4) The WebGL context menu has no screen-reader surface.** `attachMenuHost` draws into the
-  canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
-  kept in step with the model's highlight.
-
-- **(P3) The WebGL context menu draws no icons, shortcut chips or check marks.** `drawPanel` draws
-  each row's label and a submenu caret; the DOM rows also show the action's icon, its shortcut and a
-  check for a row whose action is `active`. So a toggle action's state cannot be seen in the WebGL
-  menu at all.
-
-- **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
-  `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
+- **(P4) A headless-component layer shared by DOM and WebGL chrome.** The context menu already
+  runs one behavior on both substrates: `@weasel-js/menu` holds its state, keys, typeahead and
+  placement, ui's `MenuPanel` and hud's `drawPanel` draw it, and a hud widget's `accessibleTree`
+  is the substrate-neutral description its DOM mirror is built from. Generalizing that so buttons,
+  lists and other chrome draw on either substrate is several arcs: the roving highlight and
+  typeahead as a list behavior not typed to `MenuEntry` (`keys.ts`'s `step`/`firstRow`,
+  `typeahead.ts`); focus that means one thing whether it is DOM focus or `hud.focus`; a
+  measure/draw contract a DOM component and a hud widget both implement; then porting a button and
+  a list onto it. **Open decision before the first arc: where the layer lives.** A new package
+  (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
+  `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
 
 - **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer. The guides
   package's move snaps (`snapToGrid`, `snapToGuides` in `packages/guides/src/behaviors/move`) put

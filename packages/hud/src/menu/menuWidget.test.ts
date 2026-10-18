@@ -15,7 +15,7 @@ const entries: MenuEntry[] = [
 const open: OpenMenu = { seq: 1, source: 'pointer', client: { x: 100, y: 100 }, entries };
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
-  tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444' },
+  tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008' },
   color: () => undefined,
 } as never as HudDrawCtx;
 
@@ -136,6 +136,28 @@ describe('createMenuWidget', () => {
     w.onPointer({ type: 'up', x: 290, y: 110, native: null });
     expect(inner).toHaveBeenCalled();
     expect(close).toHaveBeenCalled();
+  });
+
+  it('describes itself as a menu tree: roles, states, and the open submenu under its row', () => {
+    const { w } = widget({
+      ...open, source: 'keyboard',
+      entries: [
+        { kind: 'item', key: 'grid', label: 'Grid', checked: true, run },
+        { kind: 'separator', key: 's' },
+        { kind: 'submenu', key: 'more', label: 'More', entries: [{ kind: 'item', key: 'x', label: 'Inner', run, disabled: true }] },
+      ],
+    });
+    const tree = () => w.accessibleTree!.read();
+    expect(tree().children!.map((n) => [n.role, n.active ?? false])).toEqual([
+      ['menuitemcheckbox', true], ['separator', false], ['menuitem', false],
+    ]);
+    expect(tree().children![0]!.checked).toBe(true);
+    w.onKey!(keydown('ArrowUp'));
+    w.onKey!(keydown('ArrowRight'));
+    const more = tree().children![2]!;
+    expect(more.expanded).toBe(true);
+    expect(more.active).toBeUndefined();
+    expect(more.children![0]!.children![0]).toMatchObject({ role: 'menuitem', label: 'Inner', disabled: true, active: true });
   });
 
   it('draws every color from a real theme as a concrete value', () => {

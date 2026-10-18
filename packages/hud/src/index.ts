@@ -7,6 +7,8 @@ export type {
   HudDrawCtx,
   HudPointerEvent,
   HudKeyEvent,
+  HudAccessibleNode,
+  HudAccessibleTree,
 } from './widget';
 export { DEFAULT_WIDGET_CLAIMS, claimsOf, isFocusable } from './widget';
 export type { HudHost } from './host';
@@ -26,7 +28,9 @@ export type { HudContentCtx } from './widget';
 export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
 export { measureLabel } from './menu/measureLabel';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
-export { DEFAULT_MENU_METRICS, type MenuMetrics } from './menu/drawPanel';
+export { DEFAULT_MENU_METRICS, type MenuIcons, type MenuMetrics } from './menu/drawPanel';
+export { glyphCommands, type GlyphPlacement } from './glyph';
+export { boxShadowCommands } from './boxShadow';
 export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
 export { loupeInnerView } from '@weasel-js/loupe';
 export type { ResolvedTheme } from '@weasel-js/theme';

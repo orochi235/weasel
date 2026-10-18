@@ -13,10 +13,13 @@ import {
   type ToolDef,
   type ToolsApi,
   BUILTIN_TOOL_IDS,
-  type Fill,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
 import { actionIcon } from '@weasel-js/ui';
+import { appCommandsContribution, type AppCommands } from '../appCommands';
+import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
+import { DRAW_FEATURES } from '../drawFeatures';
+import { useFileCommands } from '../fileCommands';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 
@@ -31,16 +34,27 @@ interface ProbeProps {
   onSnapshot(s: RegistrySnapshot): void;
 }
 
-interface ShapeData { fill: Fill }
-interface ShapePose { x: number; y: number; width: number; height: number }
+const noop = () => {};
 
-/** Mounts a hidden SceneCanvas with the exhaustive tool bundle, lets it auto-wire its built-in
- *  actions into the surrounding `ActionsProvider`, and calls `onSnapshot` with the resulting
- *  tool/action lists on every change. */
+/** The app's own commands at rest: what the probe's copies of them read. */
+const IDLE_COMMANDS: AppCommands = {
+  gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
+  pathDirection: false, togglePathDirection: noop, symmetryOn: false, toggleSymmetry: noop,
+  canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
+};
+const AMBIENT = [appCommandsContribution(() => IDLE_COMMANDS)];
+
+/** Mounts a hidden SceneCanvas with the exhaustive tool bundle and the app's features, own commands
+ *  and file commands, lets it auto-wire their actions into the surrounding `ActionsProvider`, and
+ *  calls `onSnapshot` with the resulting tool/action lists on every change. */
 export function RegistryProbe({ onSnapshot }: ProbeProps) {
-  const scene = useScene<ShapeData, 'default', ShapePose>({
-    systemLayers: [{ id: 'default' }],
+  const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
+    systemLayers: [...DRAW_LAYERS],
     initial: [],
+  });
+  useFileCommands({
+    scene, filename: 'probe', paperSize: 'letter', backgroundColor: '#ffffff',
+    setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,
   });
 
   // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal
@@ -155,7 +169,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         scene={scene}
         width={200}
         height={200}
-        features={['draw']} defaultTools={BUILTIN_TOOL_IDS}
+        features={DRAW_FEATURES} defaultTools={BUILTIN_TOOL_IDS}
+        ambient={AMBIENT}
         routing={defaultNodeRouting}
         onToolsCreated={handleToolsCreated}
       />

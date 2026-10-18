@@ -190,6 +190,10 @@ export interface Widget {
   readonly tabOrder?: number;
   /** What assistive tech announces when this widget takes focus. */
   readonly accessibleName?: string;
+  /** What assistive tech is shown of the widget's insides while it holds focus: a tree of roles
+   *  the HUD mirrors as hidden DOM beside the canvas, with the node marked `active` as the
+   *  canvas's active descendant. `subscribe` hears each change to the tree. */
+  readonly accessibleTree?: HudAccessibleTree;
   /** Key input while this widget is focused. Return `true` for a key the
    *  widget handled: it then never reaches the canvas's key bindings. Return
    *  `false` and the key falls through to them as if nothing were focused. */
@@ -203,3 +207,26 @@ export interface Widget {
    *  hand-written widget stays a plain object; every kit widget reports it. */
   readonly disposed?: boolean;
 }
+
+/** One node of a widget's accessibility tree: an element with an ARIA role. */
+export interface HudAccessibleNode {
+  role: string;
+  /** Unique among its siblings, and the same from one read to the next while it stands for the same thing. */
+  key: string;
+  /** Text content for a leaf, the accessible name of a node with children. */
+  label?: string;
+  /** The node the keyboard is on. At most one in a tree. */
+  active?: boolean;
+  checked?: boolean;
+  disabled?: boolean;
+  /** Set on a node that opens a menu: whether it is open. */
+  expanded?: boolean;
+  children?: readonly HudAccessibleNode[];
+}
+
+/** A widget's accessibility tree and how to hear it change. */
+export interface HudAccessibleTree {
+  read(): HudAccessibleNode;
+  subscribe(fn: () => void): () => void;
+}
+

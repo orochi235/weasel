@@ -12,11 +12,11 @@ import {
   type ActionsRegistry,
   type ToolsApi,
 } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { MenuBar } from '@weasel-js/ui';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { DRAW_FEATURES } from './drawFeatures';
 import { useFileCommands } from './fileCommands';
 import { DRAW_MENU_BAR } from './menuBar';
 import { saveSvgFile } from './saveSvg';
@@ -66,7 +66,7 @@ function setup() {
       <ActionsProvider>
         <Probe />
         <MenuBar schema={DRAW_MENU_BAR} />
-        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw', pathTools]} claimKeys
+        <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={DRAW_FEATURES} claimKeys
           scene={scene} layers={{}} width={64} height={64} defaultTools={BUILTIN_TOOL_IDS}
           onToolsCreated={(t) => { tools = t; }}
           ambient={[appCommandsContribution(() => commands)]} />
