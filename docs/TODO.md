@@ -1046,6 +1046,15 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P1) The first-publish gate passes a package npm will not let CI publish.**
+  `check-first-publish.mjs` asks only whether a name exists on npm. `@weasel-js/menu` was published
+  by hand at 1.10.1 (2026-10-16) and never given a trusted publisher, so the gate passed and the
+  1.11.0 release (run 39172234345, 2026-10-18) died on its `E404 PUT` after 16 of 42 packages,
+  leaving the fixed group split across 1.10.1 and 1.11.0 on npm. The gate should also ask whether
+  each package has trust config (`npm trust list`, or a 1.x version carrying a provenance
+  attestation, which only an OIDC publish can make). Recovery: register `menu` with
+  `scripts/setup-trusted-publishing.mjs`, then re-run Release by `workflow_dispatch`.
+
 - **(P2) Nothing runs the stories' `play` checks.** CI, `npm test`, and the fleet's
   `.onto/tests` all leave out the `forge-stories` vitest project, and CI's comment says it
   "exists only to validate that stories can mount" — but plays assert layout jsdom cannot, and
