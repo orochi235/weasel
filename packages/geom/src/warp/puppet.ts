@@ -3,12 +3,15 @@
  * between them moved as rigidly as the pins allow. The shape's fill is
  * triangulated (`puppetMesh`) and deformed as-rigid-as-possible (`arap`), so
  * the pull of a pin travels through the shape: two limbs that nearly touch
- * share no triangle and move apart. A point follows the triangle holding it.
+ * share no triangle and move apart. A point is carried by a smooth
+ * (Clough–Tocher) interpolation of the deformed mesh, so a bend has no kink
+ * where two triangles meet.
  */
 import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { createArapSolver, type ArapSolver } from './arap';
-import { meshLocator, placeSpot, type MeshSpot } from './meshMap';
+import { cloughTocherMap, restFrames, type RestFrames } from './cloughTocher';
+import { meshLocator, type MeshSpot } from './meshMap';
 import { puppetMesh, type PuppetMesh } from './puppetMesh';
 
 /** A pin: where it was placed on the unwarped shape, and where it is now. */
@@ -21,6 +24,7 @@ export interface PuppetPin {
 interface Rig {
   key: string;
   mesh: PuppetMesh;
+  frames: RestFrames;
   solver: ArapSolver;
   locate: (x: number, y: number) => MeshSpot | null;
   spots: Map<number, Map<number, MeshSpot | null>>;
@@ -35,20 +39,20 @@ function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
   if (held?.key === key) return held;
   const mesh = puppetMesh(source, pins.map((p) => p.from));
   const pinned = [...new Set(Array.from(mesh.pinVertex).filter((v) => v >= 0))];
-  const rig: Rig = { key, mesh, solver: createArapSolver(mesh, pinned), locate: meshLocator(mesh), spots: new Map(), remembered: 0 };
+  const rig: Rig = { key, mesh, frames: restFrames(mesh), solver: createArapSolver(mesh, pinned), locate: meshLocator(mesh), spots: new Map(), remembered: 0 };
   rigs.set(source, rig);
   return rig;
 }
 
 /**
- * The map `pins` make of `source`'s fill: each point carried by the triangle
- * of the deformed mesh holding it, or the nearest one for a point off the
+ * The map `pins` make of `source`'s fill: smooth across the deformed mesh,
+ * through every pin, and carried on past the outline for a point off the
  * shape. The mesh and its solve are set up once per source and pin set, so
- * moving pins only re-solves. No pins is the identity, and one pin moves the
- * whole shape with it.
+ * moving pins only re-solves. No pins, or none moved, is the identity, and
+ * one pin moves the whole shape with it.
  */
 export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: Point) => Point {
-  if (pins.length === 0) return (p) => ({ x: p.x, y: p.y });
+  if (pins.every((p) => p.to.x === p.from.x && p.to.y === p.from.y)) return (p) => ({ x: p.x, y: p.y });
   const rig = rigFor(source, pins);
   const targets: number[] = [];
   const seen = new Set<number>();
@@ -63,10 +67,10 @@ export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: 
     const dx = pins[0].to.x - pins[0].from.x, dy = pins[0].to.y - pins[0].from.y;
     return (p) => ({ x: p.x + dx, y: p.y + dy });
   }
-  const at = rig.solver.solve(targets);
+  const place = cloughTocherMap(rig.mesh, rig.frames, rig.solver.solve(targets));
   return (p) => {
     const spot = spotOf(rig, p);
-    return spot ? placeSpot(rig.mesh.triangles, at, spot) : { x: p.x, y: p.y };
+    return spot ? place(spot) : { x: p.x, y: p.y };
   };
 }
 

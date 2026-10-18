@@ -152,6 +152,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   joins its two nearest open ends; two paths join into the first selected; three are refused.
   Simplify treats a turn over 40° as a corner and keeps a straight edge 4× its neighbors whole.
   The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
+- 2026-10-18: A puppet warp's map is smooth across its mesh (Clough–Tocher) where it was affine
+  per triangle, so every puppet-warped shape, saved ones included, redraws slightly differently:
+  its bends lose their small corners.
 
 ## Animation
 

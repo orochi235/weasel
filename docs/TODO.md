@@ -354,9 +354,13 @@ Priority tags:
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
-  is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
+- **(P3) A hard puppet squash folds the warped outline back on itself.** Squash a 100-wide disc
+  (hold (20, 50), drag (80, 50) to (60, 70) and (50, 20) to (40, 30)) or push a bar into an S,
+  and `puppetMap` (`packages/geom/src/warp/puppet.ts`) runs stretches of the outline backward;
+  `warpPath` refits those as loops and spikes. The piecewise-affine map folded at the same places
+  as the smooth one that replaced it, so the fold is in the solved mesh, not the interpolation
+  (inferred). The anchors a bend adds come from the same place: smoothing moved refit anchor
+  counts both ways across 20 bends, and so did a mesh 16 times finer.
 - **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
   node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
   solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
