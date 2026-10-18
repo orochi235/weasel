@@ -818,12 +818,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `IconRegistry` that React only hands out, so `attachMenuHost` could take one; what is missing is
   turning a glyph's SVG `body` (strokes in `currentColor` on a 20×20 viewBox) into draw commands.
 
-- **(P4) The WebGL context menu ignores a theme's `--wzl-bevel-raised`.** `drawPanel` rounds the
-  panel by `--wzl-radius-md` and draws the DOM panel's default shadow, `0 8px 24px var(--wzl-shadow)`,
-  as nested translucent rounded rects. A theme that sets `--wzl-bevel-raised` changes the DOM
-  panel's edge but not this one; following it means drawing a CSS `box-shadow` list, insets
-  included.
-
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
   flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind

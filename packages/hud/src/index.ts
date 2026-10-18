@@ -27,6 +27,7 @@ export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHos
 export { measureLabel } from './menu/measureLabel';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
 export { DEFAULT_MENU_METRICS, type MenuMetrics } from './menu/drawPanel';
+export { boxShadowCommands } from './boxShadow';
 export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
 export { loupeInnerView } from '@weasel-js/loupe';
 export type { ResolvedTheme } from '@weasel-js/theme';

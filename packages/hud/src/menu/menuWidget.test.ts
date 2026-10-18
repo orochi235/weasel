@@ -15,7 +15,7 @@ const entries: MenuEntry[] = [
 const open: OpenMenu = { seq: 1, source: 'pointer', client: { x: 100, y: 100 }, entries };
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
-  tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444' },
+  tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008' },
   color: () => undefined,
 } as never as HudDrawCtx;
 

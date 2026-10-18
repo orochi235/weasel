@@ -3,7 +3,8 @@ import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
-import { resolveCurrentColor, tokenPx } from '@weasel-js/theme';
+import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
+import { boxShadowCommands } from '../boxShadow';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
@@ -79,30 +80,11 @@ function check(cx: number, cy: number, color: string): DrawCommand {
   };
 }
 
-// The DOM panel's own shadow, `0 8px 24px var(--wzl-shadow)`: a blur that
-// reaches SHADOW_BLUR / 2 either side of the edge, drawn as nested rounded
-// rects whose overlap builds the falloff.
-const SHADOW_DY = 8;
-const SHADOW_BLUR = 24;
-const SHADOW_STEP = 4;
-const SHADOW_LAYER_ALPHA = 0.16;
+// The shadow `.surface` in ui's listbox.module.css gives the DOM panel.
+const PANEL_SHADOW = 'var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))';
 
-function shadow(b: WidgetBounds, radius: number, color: string): DrawCommand {
-  const children: DrawCommand[] = [];
-  for (let e = SHADOW_BLUR / 2; e >= -SHADOW_BLUR / 2; e -= SHADOW_STEP) {
-    const w = b.w + e * 2;
-    const h = b.h + e * 2;
-    if (w <= 0 || h <= 0) continue;
-    children.push({
-      kind: 'path',
-      path: roundRectPath(b.x - e, b.y + SHADOW_DY - e, w, h, Math.max(0, radius + e)),
-      fill: solid(color),
-    });
-  }
-  return { kind: 'group', alpha: SHADOW_LAYER_ALPHA, children };
-}
-
-/** One panel's commands: its shadow and rounded background, a highlight behind row `highlight`, and every row. */
+/** One panel's commands: its rounded face and the DOM panel's box shadow, a highlight behind row
+ *  `highlight`, and every row. */
 export function drawPanel(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null, m: MenuMetrics,
 ): DrawCommand[] {
@@ -111,12 +93,14 @@ export function drawPanel(
   const muted = resolveCurrentColor(t['--wzl-fg-muted'], fg);
   const radius = tokenPx('--wzl-radius-md', t);
   const font = { fontFamily: ctx.defaultFont, fontSize: m.fontSize };
-  const out: DrawCommand[] = [shadow(b, radius, t['--wzl-shadow']), {
+  const shadow = boxShadowCommands(b, radius, parseBoxShadow(expandVars(PANEL_SHADOW, t)), fg,
+    { x: b.x + 1, y: b.y + 1, w: b.w - 2, h: b.h - 2 });
+  const out: DrawCommand[] = [...shadow.under, {
     kind: 'path',
     path: roundRectPath(b.x, b.y, b.w, b.h, radius),
     fill: solid(t['--wzl-surface-popover']),
     stroke: { paint: { kind: 'solid', color: t['--wzl-border'] }, width: 1 },
-  }];
+  }, ...shadow.over];
   const rows = rowLayout(entries, m);
   entries.forEach((e, i) => {
     const r = rows[i]!;

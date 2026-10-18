@@ -74,4 +74,28 @@ describe('drawPanel', () => {
     expect(panel.fill).toBeDefined();
     expect(panel.stroke).toBeDefined();
   });
+
+  it("follows a theme's --wzl-bevel-raised in place of the default shadow, drawing inset layers over the face", () => {
+    const e: MenuEntry = { kind: 'item', key: 'a', label: 'A', run };
+    const beveled = {
+      ...ctx,
+      tokens: { ...ctx.tokens, '--wzl-radius-md': '0px', '--wzl-dark': '#000000',
+        '--wzl-bevel-raised': 'inset -1px -1px 0 var(--wzl-dark), inset 1px 1px 0 #ffffff' },
+    } as never as HudDrawCtx;
+    const cmds = drawPanel(beveled, b, [e], null, m);
+    const face = cmds.findIndex((c) => c.kind === 'path' && c.fill && c.stroke);
+    expect(face).toBe(0);
+    const [light, dark] = cmds.slice(1, 3);
+    expect(JSON.stringify(dark)).toContain('#000000');
+    expect(JSON.stringify(light)).toContain('#ffffff');
+    expect(JSON.stringify(cmds)).not.toContain('rgba(0, 0, 0, 0.6)');
+    // Clipped to the face less its 1px border.
+    const clip = dark!.kind === 'group' ? dark!.clip : undefined;
+    const coords = clip?.kind === 'polygon' ? [...clip.coords] : [];
+    const xs = coords.filter((_, i) => i % 2 === 0);
+    const ys = coords.filter((_, i) => i % 2 === 1);
+    expect([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)])
+      .toEqual([b.x + 1, b.y + 1, b.x + b.w - 1, b.y + b.h - 1]);
+  });
 });
+
