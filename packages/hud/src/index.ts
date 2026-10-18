@@ -7,6 +7,8 @@ export type {
   HudDrawCtx,
   HudPointerEvent,
   HudKeyEvent,
+  HudAccessibleNode,
+  HudAccessibleTree,
 } from './widget';
 export { DEFAULT_WIDGET_CLAIMS, claimsOf, isFocusable } from './widget';
 export type { HudHost } from './host';

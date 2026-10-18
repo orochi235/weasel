@@ -802,10 +802,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   split (focus, roving highlight, placement, a measure/draw contract) so buttons, lists and other
   chrome can draw on either substrate from one behavior.
 
-- **(P4) The WebGL context menu has no screen-reader surface.** `attachMenuHost` draws into the
-  canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
-  kept in step with the model's highlight.
-
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
   flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind

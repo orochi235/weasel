@@ -1,7 +1,8 @@
 import { createMenuController, withLinks, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
-import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
+import { createRevision, type HudAccessibleTree, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
+import { accessibleMenu } from './accessibleMenu';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
@@ -102,6 +103,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     return true;
   };
 
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c), subscribe: c.subscribe };
+
   return {
     id: `weasel-menu-${opts.open.seq}`,
     get bounds() { return union(); },
@@ -111,6 +114,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     focusable: true,
     focusRing: false,
     accessibleName: 'Context menu',
+    accessibleTree,
     deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration(), opts.icons?.getVersion()],
     draw: (ctx) => {
       family = ctx.defaultFont;
