@@ -25,8 +25,8 @@ export interface SourceCandidate<P = Point> {
   /** The result must meet one required candidate, whatever its reach. */
   required?: boolean;
   /** Drawn when the result meets this candidate. A function is handed the
-   *  resolved move, so the mark can sit where the probe landed. */
-  mark?: SnapMark<P> | ((delta: P) => SnapMark<P>);
+   *  resolved move, so the marks can sit where the probe landed. */
+  mark?: SnapMarks<P> | ((delta: P) => SnapMarks<P>);
 }
 
 export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate';
@@ -43,6 +43,9 @@ export interface SnapCollect<P = Point> {
   gesture: SnapGesture;
   /** The probes this source matches, where the unsnapped gesture puts them. */
   probes: readonly SnapProbeAt<P>[];
+  /** The unsnapped move from the press. A probe at `at` here lands at
+   *  `at - delta0 + delta` for the resolved `delta` a function mark gets. */
+  delta0: P;
   /** Nodes that offer no targets: what the gesture moves. */
   exclude: readonly string[];
   /** Only these nodes offer targets. */
@@ -89,6 +92,9 @@ export interface SnapSource<P = Point> {
   collect(q: SnapCollect<P>): Iterable<SourceCandidate<P>>;
   angles?(q: AngleCollect): Iterable<AngleCandidate>;
 }
+
+/** One mark, or several, for one candidate. */
+export type SnapMarks<P = Point> = SnapMark<P> | readonly SnapMark<P>[];
 
 /** What a session draws for a candidate the result meets. World coords. */
 export type SnapMark<P = Point> =

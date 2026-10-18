@@ -52,13 +52,15 @@ import { snapToGrid } from '@weasel-js/guides/insert';
 |---|---|
 | Grid | `createGridLayer`, `createCellHighlightLayer`, `useGridCellHover`, `gridSnapStrategy`, `pointToGridCell`, `pointSnapToGrid`, `roundToCell` |
 | Guides | `useGuides`, `createGuidesLayer`, `guideSnapStrategy`, `deriveAlignmentGuides`, `matchAlignment`, `alignMoveBehavior`, `alignResizeBehavior`, `alignInsertBehavior` |
+| Snap sources | `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource`, `spacingSnapSource`, for `<SceneCanvas snap={{ sources }}>` or a preset's `snapSources` |
 | Spacing hints | `createSpacingHintsPreset` (below), `distanceReadout`, `measureDistances` |
 | Layout | `freeform`, `tileGrid`, `snapPoint`, `slots` (with the `rowSlots`, `gridSlots`, and `ringSlots` arrangements), `pack`, `quadtree`, `perContainer` for a strategy that keeps state, and the drop-target pickers `none`, `nearest`, `nearestWithin`, `containedThenNearest`, `cellAt` |
 
-Spacing hints are one `<SceneCanvas features>` preset: a move snaps the
-selection to the spacing between its siblings and marks the equal gaps, and
-holding Alt over a shape measures its distance from the selection. Build one
-per canvas; it lives in `src/spacingHints/`.
+Spacing hints are one `<SceneCanvas features>` preset: its snap sources move
+the selection to the spacing between its siblings (and, with `align`, to their
+edges and centers), the canvas's snap readout marks the equal gaps, and holding
+Alt over a shape measures its distance from the selection. It lives in
+`src/spacingHints/`.
 
 ```tsx
 const spacingHints = useMemo(() => createSpacingHintsPreset({ color: '#e0397f' }), []);

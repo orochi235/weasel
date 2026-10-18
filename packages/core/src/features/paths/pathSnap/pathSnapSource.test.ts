@@ -132,7 +132,7 @@ describe('pathSnapSource', () => {
       const src: SnapSource = pathSnapSource({ kinds: { nearest: false, anchor: false, intersection: false } });
       const base: SnapCollect = {
         gesture: 'point', probes: [{ id: 'pointer', at: { x: 50, y: 51 }, role: 'pointer' }],
-        exclude: [], reachWorld: (px) => px, reachPx: 8, scene: cross, ...extra,
+        delta0: { x: 0, y: 0 }, exclude: [], reachWorld: (px) => px, reachPx: 8, scene: cross, ...extra,
       };
       return [...src.collect(base)];
     };

@@ -20,6 +20,9 @@ export * from './guides';
 export { guideSnapStrategy, DEFAULT_GUIDE_TOLERANCE_PX } from './strategies/guides';
 export type { GuideSnapOptions } from './strategies/guides';
 
+// ─── Snap sources: grid, ruler guides, alignment, equal spacing ─────────────
+export * from './sources';
+
 // ─── Spacing hints: equal-spacing snaps on move, and Alt-hover distances ────
 export * from './spacingHints';
 

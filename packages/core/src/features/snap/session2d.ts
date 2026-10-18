@@ -57,7 +57,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
         toScreen: screenOf(view),
       });
       const delta = { x: res.delta[0], y: res.delta[1] };
-      const marks = res.satisfied.flatMap((c) => (c.mark ? [typeof c.mark === 'function' ? c.mark(delta) : c.mark] : []));
+      const marks = res.satisfied.flatMap((c) => marksOf(c.mark, delta));
       store.set(marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
@@ -67,6 +67,12 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
       inputs.onEnd?.();
     },
   };
+}
+
+function marksOf(mark: SourceMark | undefined, delta: Point): readonly SnapMark[] {
+  if (!mark) return [];
+  const m = typeof mark === 'function' ? mark(delta) : mark;
+  return 'kind' in m ? [m] : m;
 }
 
 function screenOf(view: View | null): (w: readonly number[]) => readonly number[] {
@@ -92,7 +98,7 @@ function collectAll(
     if (offered.length === 0) return;
     const ids = new Set(offered.map((q) => q.id));
     const found = source.collect({
-      gesture: req.gesture, probes: offered, exclude: req.ids ?? [],
+      gesture: req.gesture, probes: offered, delta0, exclude: req.ids ?? [],
       ...(req.origin ? { origin: req.origin } : {}),
       ...(req.also ? { also: req.also } : {}),
       reachWorld: (px) => px / scale,

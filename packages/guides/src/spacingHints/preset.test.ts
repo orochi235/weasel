@@ -3,14 +3,11 @@ import {
   createScene,
   createSnapOutcomeStore,
   type ActionDeps,
-  type CanvasExtensionApi,
-  type ContributionDepReader,
-  type GestureContext,
-  type NodeId,
-  type RenderLayer,
+  type Scene,
   type SurfaceContribution,
 } from '@weasel-js/core';
 import { createSpacingHintsPreset, type SpacingHintsOptions } from './preset';
+import { expectNear, moveBy } from '../sources/testing/session';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -21,48 +18,37 @@ function fixture(opts?: SpacingHintsOptions) {
   const b = rect(30);
   const moving = rect(62);
   const preset = createSpacingHintsPreset(opts);
-  const deps = { get: (name: string) => (name === 'scene' ? scene : name === 'selection' ? { get: () => [moving] } : undefined) };
   const contributions = (preset.contributions ?? []) as SurfaceContribution[];
-  for (const c of contributions) c.attach?.({} as CanvasExtensionApi, deps as unknown as ContributionDepReader);
-  const marks = contributions.find((c) => c.id === 'spacingHints.marks')!;
-  return { scene, a, b, moving, preset, contributions, layer: marks.overlay as RenderLayer<unknown> };
+  return { scene, a, b, moving, preset, contributions };
 }
 
-const drag = (id: NodeId, origin: Pose): GestureContext<unknown> => ({
-  draggedIds: [id],
-  origin: new Map([[id, origin]]),
-  current: new Map(),
-  snap: null,
-  modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-  pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
-  view: null,
-  adapter: {} as never,
-  scratch: {},
-});
-
-const labels = (layer: RenderLayer<unknown>) =>
-  layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as never, { width: 200, height: 100 })
-    .filter((c) => c.kind === 'text');
-
 describe('createSpacingHintsPreset', () => {
-  it('snaps a moved shape to the spacing between its siblings and marks the equal gaps', () => {
-    const { scene, moving, preset, layer } = fixture();
-    const [move] = preset.moveBehaviors!;
-    const res = move.onMove!(drag(moving, scene.get(moving)!.pose), { kind: 'translate', dx: 0, dy: 0 });
-    // Its gap to the middle shape is 22; the gap beside it is 20, within the snap.
-    expect(res).toEqual({ transform: { kind: 'translate', dx: -2, dy: 0 } });
-    expect(labels(layer)).toHaveLength(2);
-    move.onEnd!(drag(moving, scene.get(moving)!.pose), true as never);
-    expect(labels(layer)).toHaveLength(0);
+  it('snaps a moved shape to the spacing between its siblings and marks the equal gaps in its color', () => {
+    const { scene, moving, preset } = fixture({ color: '#e0397f' });
+    const out = moveBy({
+      sources: preset.snapSources!, box: { x: 62, y: 0, width: 10, height: 10 },
+      ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
+    }).by(0, 0);
+    // Its gap to the middle shape is 22; the gap beside it is 20, within reach.
+    expectNear(out.point, { x: -2, y: 0 });
+    expect(out.marks.map((m) => [m.kind, m.color])).toEqual([['gap', '#e0397f'], ['gap', '#e0397f']]);
+  });
+
+  it('brings spacing by default, alignment when asked, and neither when both are off', () => {
+    expect(fixture().preset.snapSources!.map((s) => s.id)).toEqual(['spacing']);
+    expect(fixture({ align: true }).preset.snapSources!.map((s) => s.id)).toEqual(['spacing', 'alignment']);
+    expect(fixture({ spacing: false, align: false }).preset.snapSources).toEqual([]);
+    expect(fixture().preset.moveBehaviors).toBeUndefined();
+  });
+
+  it('gives its sources its tolerance as their reach', () => {
+    expect(fixture({ align: true, tolerance: 12 }).preset.snapSources!.map((s) => s.reachPx)).toEqual([12, 12]);
+    expect(fixture().preset.snapSources![0].reachPx).toBeUndefined();
   });
 
   it('brings the Alt-hover distance readout unless told not to', () => {
-    expect(fixture().contributions.map((c) => c.id)).toEqual(['spacingHints.marks', 'distanceReadout']);
-    expect(fixture({ readout: false }).contributions.map((c) => c.id)).toEqual(['spacingHints.marks']);
-  });
-
-  it('adds no move behavior with both snaps off', () => {
-    expect(fixture({ spacing: false, align: false }).preset.moveBehaviors).toEqual([]);
+    expect(fixture().contributions.map((c) => c.id)).toEqual(['distanceReadout']);
+    expect(fixture({ readout: false }).contributions).toEqual([]);
   });
 
   it('colors the Alt-hover readout with its color', () => {
