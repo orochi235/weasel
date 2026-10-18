@@ -172,8 +172,9 @@ Renderer main thread:
 | every-frame | pan | 2,500 |  3.30 [ 3.12– 3.52] |  3.55 [ 3.27– 3.70] |  3.93 [ 3.43– 4.21] |  2.42 [ 1.80– 3.22] |
 | every-frame | pan | 5,000 |  6.78 [ 4.61– 7.19] |  7.11 [ 6.64– 8.16] |  7.57 [ 7.20– 8.71] |  4.92 [ 4.67– 5.63] |
 
-All threads (renderer main, compositor, raster workers, and GPU process),
-readout changing every frame:
+All threads (renderer main, compositor, raster workers, and GPU process; not
+the renderer's worker pool, which "Frame rate" below prices), readout changing
+every frame:
 
 | Text | Camera | Glyphs | HUD | DOM | React | DOM layer |
 |---|---|---:|---:|---:|---:|---:|
@@ -243,12 +244,27 @@ and 29 ms. Every-frame cells, mean rAF interval in ms:
 | every-frame | pan | 2,500 | 42.0 [36.7–44.7] | 35.3 [33.8–39.5] | 39.6 [26.2–49.9] | 33.1 [20.7–34.7] |
 | every-frame | pan | 5,000 | 69.0 [67.9–71.0] | 60.6 [55.9–63.4] | 66.5 [64.0–74.1] | 42.7 [37.7–50.4] |
 
-**At 5,000 glyphs the HUD's readout gets the fewest frames**, about 70 ms
-apart under every camera with a tight spread, although its traced busy time is
-the lowest of the four. Under the pan, the DOM layer gets the most. Nothing in the trace
-explains the HUD's interval: its four counted thread groups are busy about
-9 ms of each 70 ms frame. Whether this is the headless frame scheduler or work
-on a thread the analysis does not count is not established.
+**At 5,000 glyphs the HUD's readout got the fewest frames**, about 70 ms
+apart under every camera with a tight spread, although its traced busy time was
+the lowest of the four. Under the pan, the DOM layer got the most.
+
+**That gap does not reproduce.** On 2026-10-17 the 5,000-glyph every-frame rung
+on a fixed camera ran at 16.67 ms, HUD and DOM alike, in every window: on teitou
+(Apple M5 Max) and on msb-uai at today's tree, on msb-uai at `4e90f4a86` (the
+tree above), and on msb-uai after the whole fixed-camera half of the sweep had
+run in the same page first. Chromium was 153.0.8010.12 in all of them, as on
+2026-10-05. So neither the code nor the cells before it account for the 70 ms;
+what was different about msb-uai that night is not known. The result files are
+in `recorded/hud-vs-dom-census-2026-10-17/`.
+
+**The thread groups above leave out the renderer's worker pool.** `HVD_CENSUS=1`
+reports every thread in every process. In those runs the renderer's
+`ThreadPoolForegroundWorker` threads were busy 2.48 ms a frame under the HUD
+against 0.69 under the DOM on teitou, and 3.23 against 0.87 on msb-uai, at
+5,000 glyphs changing every frame. That difference, 1.8 and 2.4 ms, is larger
+than the HUD's lead in the all-threads table at that size, 0.86 ms, though the
+two come from different runs: the sweep has not been rerun with the pool
+counted, and what those threads do for the HUD has not been broken down.
 
 ### Widget command caching
 
@@ -261,6 +277,9 @@ result files are in `recorded/hud-command-cache/`.
 
 The default sweep is 486 measurements and took 78 minutes on msb-uai.
 `HVD_GLYPHS`, `HVD_UPDATES`, `HVD_CAMERAS`, and `HVD_APPROACHES` each narrow it.
+`HVD_CENSUS=1` adds the census of every thread and the frame pipeline's async
+stages; it traces more categories, so its busy figures are not comparable with a
+run without it.
 
 ## Timing a frame
 

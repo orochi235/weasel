@@ -1251,11 +1251,12 @@ only story runner in the repo.
 - **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
   the HUD against plain DOM, a React overlay, and a DOM layer moved as one element
   (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **The HUD's 5,000-glyph readout gets the fewest frames** — about 70 ms apart under every
-    camera, against 43–61 for the DOM — while its traced busy time is the lowest, about 9 ms per
-    frame. Either the headless frame scheduler or a thread the trace analysis does not count
-    (renderer worker threads, for one) accounts for the rest; nothing has checked which. Until it
-    is, none of the frame intervals can be read as a display's frame rate.
+  - **The all-threads figures leave out the renderer's worker pool**, which the HUD keeps 1.8–2.4
+    ms a frame busier than the DOM at 5,000 glyphs changing every frame (`HVD_CENSUS=1`, teitou and
+    msb-uai, 2026-10-17; README, "Frame rate"). Rerunning the every-frame half of the sweep with
+    the census on would say whether "off the main thread the HUD is cheaper" survives, and the
+    pool's self times would say what it is doing. The 70 ms frame gap this entry used to ask about
+    no longer reproduces.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1278,15 +1279,22 @@ only story runner in the repo.
   The before column was measured through `gl.finish()`, which does not wait for the GPU
   (`tests/perf/README.md`, "Timing a frame"); its files are in
   `tests/perf/recorded/render-cost-2026-10-04/before/`. Re-measuring it means that renderer under
-  today's timing, so the size of the gain is not settled. What is left:
+  today's timing, so the size of the gain is not settled.
 
-  - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`), 16 of it bind and draw;
-    no other call in `flushBatch` moves it by more than its noise, about 1.2 us. So what remains is
-    the draw count, and what still ends a run is a sixteenth texture, a ninth color matrix, a clip
-    only the stencil expresses, and a paint that draws for itself (a pattern, a shader, per-vertex
-    colors).
-  - **None of what joined the run since has been seen in a browser or timed.** Each is pinned by
-    draw count through the GL recorder, and has a `*.browser.test.ts` beside it that has never run:
+  The figures below dated 2026-10-17 are one pass of each spec on teitou, with the specs as of
+  `539738293`; result files in `tests/perf/recorded/batch-specs-2026-10-17/` (they name onto's
+  base commit, `f32b06842`, marked dirty). What is left:
+
+  - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`, 2026-10-17: 21.41), and 17.4 of it
+    goes when the vertex `bufferSubData` is dropped, leaving 3.4 for the bind and the draw. No other
+    call in `flushBatch` moves it by more than 0.4 us. A stencil clip around a solid rect costs
+    24.4 us a clip, 22.2 of it the break; an axis-aligned rect clip, cut on the CPU, costs 0.09
+    (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
+    clip only the stencil expresses, and a paint that draws for itself (a pattern, a shader,
+    per-vertex colors).
+  - **What joined the run since is checked in a browser but not timed.** Each is pinned by draw
+    count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium (run
+    2026-10-17):
     - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
     - Fifteen textures where a run held seven, fetched through a tree of four compares where the
       chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
@@ -1298,15 +1306,12 @@ only story runner in the repo.
       matrix per fragment, and three array uniforms a flush where the matrices changed.
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
-  - **The perf specs have not been run since those edits.** `flush-anatomy`, `clip-cost`,
-    `flush-noise`, and `image-quad`'s `unmerged` frame break a run with a color matrix, which only
-    works with `colorFolding` off: that seam now also holds a run to one matrix. `flush-anatomy`
-    lost its `u_synthBold` variant and its color-matrix variant drops the array uploads;
-    `layer-dispatch` expects 16 textures a draw.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
-    why a slanted edge cannot be cut). The stencil itself costs about 4.9 us a push and pop, 7.9 at
-    8 leaves (`clip-cost.spec.ts`). The stencil reference is state, so one draw cannot test two
+    why a slanted edge cannot be cut). The stencil itself costs about 2.2 us a push and pop around a
+    pattern rect, 2.4 at 8 leaves, clipping to a quad with one slanted edge (`clip-cost.spec.ts`,
+    2026-10-17); on 2026-10-06 the same spec read 4.9 and 7.9 with a rect clip, so shape and date
+    are not separated. The stencil reference is state, so one draw cannot test two
     depths; putting such a clip in the run means deciding coverage in the fragment shader, from
     half-planes a vertex names. That has to agree with the stencil where an item that draws for
     itself sits under the same clip, at pixel centers on an edge and per sample on a multisampled
@@ -1389,10 +1394,13 @@ only story runner in the repo.
   MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so a minified draw scatters its
   taps, and 16px is where a 32px tile is minified hardest by anything drawing that many of them.
 
-  **Run the control first.** Every number in it is canvas2d on a page that also holds a WebGL2
-  context. Nobody has measured that rung with no GL context at all, so "the batch costs its
-  co-tenant" and "this rung is expensive whenever GL is resident, and the batch only changes the
-  timing" are not yet separated. That is one run and it could retire the entry.
+  **The control has to run in their harness.** Every number in it is canvas2d on a page that also
+  holds a WebGL2 context. Nobody has measured that rung with no GL context at all, so "the batch
+  costs its co-tenant" and "this rung is expensive whenever GL is resident, and the batch only
+  changes the timing" are not yet separated. Nothing in this repo can take that run: no spec under
+  `tests/perf/` draws with canvas2d, and `atlas-wall.spec.ts`, which builds walls of this shape,
+  draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
+  16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
 - **(P3) Retained layer surfaces: what the first arc left.** An unchanged layer of 250 commands or
   more is now drawn once into its own texture and composited (`GroupDrawCommand.retain`,

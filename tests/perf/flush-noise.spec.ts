@@ -13,6 +13,7 @@
  */
 import { test, expect, type Browser, type Page } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { busy, markWindow, parseTrace, selfTimes } from './lib/trace';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -23,73 +24,18 @@ const RUNS = rounds(8);
 const PHASES = (process.env.WEASEL_NOISE_PHASES ?? 'block,yield').split(',');
 const VARIANTS = ['rect-plain', 'rect-cmbreak'] as const;
 
-interface TraceEvent {
-  ph: string; name: string; pid: number; tid: number; ts: number; dur?: number;
-  args?: Record<string, unknown>;
-}
-
-function busy(events: TraceEvent[], t0: number, t1: number): number {
-  const spans = events
-    .map((e) => [Math.max(e.ts, t0), Math.min(e.ts + (e.dur ?? 0), t1)] as const)
-    .filter(([a, b]) => b > a)
-    .sort((x, y) => x[0] - y[0]);
-  let sum = 0; let a0 = -1; let b0 = -1;
-  for (const [a, b] of spans) {
-    if (a > b0) { if (b0 > a0) sum += b0 - a0; a0 = a; b0 = b; } else if (b > b0) b0 = b;
-  }
-  if (b0 > a0) sum += b0 - a0;
-  return sum;
-}
-
-function selfTimes(events: TraceEvent[], t0: number, t1: number): Map<string, number> {
-  const inside = events
-    .filter((e) => e.ts >= t0 && e.ts + (e.dur ?? 0) <= t1)
-    .sort((a, b) => a.ts - b.ts || (b.dur ?? 0) - (a.dur ?? 0));
-  const self = new Map<string, number>();
-  const stack: Array<{ e: TraceEvent; end: number; child: number }> = [];
-  const close = (f: { e: TraceEvent; child: number }) => {
-    self.set(f.e.name, (self.get(f.e.name) ?? 0) + Math.max(0, (f.e.dur ?? 0) - f.child));
-  };
-  for (const e of inside) {
-    const end = e.ts + (e.dur ?? 0);
-    while (stack.length && stack[stack.length - 1].end <= e.ts) close(stack.pop()!);
-    if (stack.length) stack[stack.length - 1].child += e.dur ?? 0;
-    stack.push({ e, end, child: 0 });
-  }
-  while (stack.length) close(stack.pop()!);
-  return self;
-}
-
 interface ThreadBusy { name: string; busyUs: number; top: [string, number][] }
 
 function analyzeTrace(buf: Buffer): { wallUs: number; threads: ThreadBusy[] } {
-  const parsed = JSON.parse(buf.toString('utf8')) as { traceEvents?: TraceEvent[] } | TraceEvent[];
-  const events = Array.isArray(parsed) ? parsed : (parsed.traceEvents ?? []);
-  const tname = new Map<string, string>();
-  const pname = new Map<number, string>();
-  for (const e of events) {
-    if (e.ph !== 'M') continue;
-    const n = String((e.args as { name?: string } | undefined)?.name ?? '');
-    if (e.name === 'thread_name') tname.set(`${e.pid}:${e.tid}`, n);
-    if (e.name === 'process_name') pname.set(e.pid, n);
-  }
-  const start = events.find((e) => e.name === 'noise-start');
-  const end = events.find((e) => e.name === 'noise-end');
-  if (!start || !end) throw new Error('trace holds no noise-start / noise-end marks');
-  const t0 = start.ts; const t1 = end.ts;
-  const byThread = new Map<string, TraceEvent[]>();
-  for (const e of events) {
-    if (e.ph !== 'X' || e.dur === undefined) continue;
-    const k = `${e.pid}:${e.tid}`;
-    (byThread.get(k) ?? byThread.set(k, []).get(k)!).push(e);
-  }
+  const trace = parseTrace(buf);
+  const { t0, t1 } = markWindow(trace, 'noise-start', 'noise-end');
   const threads: ThreadBusy[] = [];
-  for (const [k, list] of byThread) {
+  for (const [k, list] of trace.byThread) {
     const pid = Number(k.split(':')[0]);
     const b = busy(list, t0, t1);
     if (b < (t1 - t0) * 0.02) continue;
     const top = [...selfTimes(list, t0, t1)].sort((x, y) => y[1] - x[1]).slice(0, 8);
-    threads.push({ name: `${pname.get(pid) ?? pid}/${tname.get(k) ?? k}`, busyUs: b, top });
+    threads.push({ name: `${trace.processName.get(pid) ?? pid}/${trace.threadName.get(k) ?? k}`, busyUs: b, top });
   }
   threads.sort((a, b) => b.busyUs - a.busyUs);
   return { wallUs: t1 - t0, threads };
@@ -404,9 +350,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
       await browser.startTracing(page, { categories: CATEGORIES.split(',') });
       const f = await ev<number[]>('mech', c, 150);
       const buf = await browser.stopTracing();
-      const parsed = JSON.parse(buf.toString('utf8')) as { traceEvents?: (TraceEvent & { tdur?: number })[] };
-      const events = parsed.traceEvents ?? [];
-      const put = events.filter((e) => e.ph === 'X' && e.name === 'CommandBufferService:PutChanged');
+      const put = parseTrace(buf).events.filter((e) => e.ph === 'X' && e.name === 'CommandBufferService:PutChanged');
       const dur = put.reduce((a, e) => a + (e.dur ?? 0), 0);
       const tdur = put.reduce((a, e) => a + (e.tdur ?? 0), 0);
       const withT = put.filter((e) => e.tdur !== undefined).length;
@@ -427,17 +371,9 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const buf = await browser.stopTracing();
     const sorted = st.frames.map((f, i) => [f, i] as const).sort((a, b) => b[0] - a[0]);
     console.log(`  median ${med(st.frames).toFixed(2)} ms; slowest ${sorted.slice(0, 5).map(([f, i]) => `#${i} ${f.toFixed(1)}`).join(', ')}`);
-    const parsed = JSON.parse(buf.toString('utf8')) as { traceEvents?: TraceEvent[] } | TraceEvent[];
-    const events = Array.isArray(parsed) ? parsed : (parsed.traceEvents ?? []);
+    const { events, threadName: tname, processName: pname } = parseTrace(buf);
     const marks = new Map<string, number>();
     for (const e of events) if (/^f\d+$/.test(e.name) && !marks.has(e.name)) marks.set(e.name, e.ts);
-    const tname = new Map<string, string>(); const pname = new Map<number, string>();
-    for (const e of events) {
-      if (e.ph !== 'M') continue;
-      const n = String((e.args as { name?: string } | undefined)?.name ?? '');
-      if (e.name === 'thread_name') tname.set(`${e.pid}:${e.tid}`, n);
-      if (e.name === 'process_name') pname.set(e.pid, n);
-    }
     const stalls: unknown[] = [];
     for (const [f, i] of sorted.slice(0, 3)) {
       const a = marks.get(`f${i}`); const b = marks.get(`f${i + 1}`) ?? (a ?? 0) + f * 1000;
