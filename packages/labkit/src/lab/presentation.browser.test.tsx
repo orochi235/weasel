@@ -4,6 +4,7 @@ import '../styles.less';
 import './presentation.browser.test.less';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { useContext } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -177,6 +178,32 @@ const Centered: Instrument = {
   },
 };
 
+test('a new trial places its view once, in the room its status strip leaves', async () => {
+  const views: unknown[] = [];
+  function Views() {
+    const { trials, focusedTrialId } = useContext(LabContext)!;
+    const view = trials.find((t) => t.id === focusedTrialId)?.view;
+    if (view != null && view !== views.at(-1)) views.push(view);
+    return null;
+  }
+  // The strip's readouts grow 2 px when their face arrives, which refits the view too.
+  const numeric = getComputedStyle(document.documentElement).getPropertyValue('--wzl-font-numeric');
+  await document.fonts.load(`12px ${numeric}`);
+  const { container } = renderWithIcons(
+    <div className="lk-present-frame">
+      <Lab instruments={[Centered]} defaultInstrument="Centered">
+        <Capture />
+        <Views />
+      </Lab>
+    </div>,
+  );
+  await act(async () => lab?.addTrial('Centered'));
+  for (let i = 0; i < 10; i++) await act(() => new Promise((r) => requestAnimationFrame(r)));
+  const stack = box(container.querySelector('.lk-canvas-stack'));
+  expect(stack?.height).toBe(box(container.querySelector('.lk-trial__body'))?.height);
+  expect(views).toEqual([{ zoom: 1, pan: { x: (stack?.width ?? 0) / 2, y: (stack?.height ?? 0) / 2 } }]);
+});
+
 test('entering refits the view to the presented box, and leaving gives the tile its own back', async () => {
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
@@ -187,8 +214,8 @@ test('entering refits the view to the presented box, and leaving gives the tile 
   );
   await act(async () => lab?.addTrial('Centered'));
   const focused = () => lab?.trials.find((t) => t.id === lab?.focusedTrialId);
-  // The canvas stack is briefly taller than the tile's body, until the status strip takes its
-  // room; capture the tile's own view only once the box has settled and the view sits at its middle.
+  // The canvas stack is briefly taller than the tile's body, until the status strip's face arrives;
+  // capture the tile's own view only once the box has settled and the view sits at its middle.
   const stack = () => box(container.querySelector('.lk-canvas-stack'));
   const body = () => box(container.querySelector('.lk-trial__body'));
   await expect

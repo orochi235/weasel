@@ -22,7 +22,7 @@ import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
-import { as2DView, withZoom } from '../state/view';
+import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { editsText } from './editsText';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
@@ -119,8 +119,9 @@ export function TrialChrome({
   );
 
   // The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape
-  // and goes inert when the trial holds something else — an orbit, say.
-  const view2d = as2DView(record.view);
+  // and goes inert when the trial holds something else — an orbit, say. An unplaced
+  // view reads as the default its canvas paints, so the status strip is in before the first fit.
+  const view2d = as2DView(record.view) ?? (record.view === null ? DEFAULT_VIEW : null);
 
   const configSchema = useConfigSchema(instrument);
   const { auto } = useResolvedConfig(configSchema, record.config, record.auto);
