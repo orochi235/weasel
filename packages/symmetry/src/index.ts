@@ -1,6 +1,6 @@
 export {
   DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, mirrorAcross, symmetryTransforms, turnAbout,
-  type SymmetryKind, type SymmetrySpec,
+  type SymmetryKind, type SymmetryKindDef, type SymmetrySpec,
 } from './kinds';
 export {
   SYMMETRY_CLIP_KEY, SYMMETRY_COPIES_KEY, centerOfPose, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup,

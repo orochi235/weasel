@@ -39,7 +39,8 @@ export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
   annotations?: SceneLayerListAnnotations;
 }
 
-type Props = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelect' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
+/** The `<LayerList>` props `useSceneLayerList` answers. */
+export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelect' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
 
 /**
@@ -52,7 +53,7 @@ type Props = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelect' 
  */
 export function useSceneLayerList<TData, TLayer extends string, TPose>(
   args: UseSceneLayerListArgs<TData, TLayer, TPose>,
-): Props {
+): SceneLayerListProps {
   const { scene, selection, adapter, itemFor, rename, label = 'Reorder', annotations } = args;
   const annotationLayers = scene.layers.filter(isAnnotationLayer);
   const onAnnotation = new Set<string>(annotationLayers.map((l) => l.id));

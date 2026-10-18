@@ -17,19 +17,17 @@ import { resolveEditablePathOf, storeEditablePath } from 'features/paths/editabl
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import { withoutGeometryBoundData } from 'features/paths/pathEditExtension';
 
-type AnyScene = Scene<unknown, string, unknown>;
-export type AnyNode = Node<unknown, string, unknown>;
 
 /** A selected node with an editable polygon, and that polygon in world space. */
 export interface PathNode {
   id: NodeId;
-  node: AnyNode;
+  node: Node<unknown, string, unknown>;
   path: PolygonPath;
 }
 
 /** The selected leaves that hold an editable polygon, in selection order. */
 export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
-  const scene = deps?.scene as AnyScene | undefined;
+  const scene = deps?.scene as Scene<unknown, string, unknown> | undefined;
   return scene ? pathNodesOf(scene, deps?.selection?.get() ?? []) : [];
 }
 
@@ -37,7 +35,7 @@ export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
  *  `shapeOf` stands in a node's pose and data, as an in-flight gesture would
  *  leave them, for its own. */
 export function pathNodesOf(
-  scene: Pick<AnyScene, 'get'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
   ids: readonly string[],
   shapeOf?: (id: string) => { pose: unknown; data: unknown } | undefined,
 ): PathNode[] {
@@ -46,7 +44,7 @@ export function pathNodesOf(
     const found = scene.get(id as NodeId);
     if (!found || found.kind !== 'leaf') continue;
     const shape = shapeOf?.(id);
-    const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as AnyNode) : found;
+    const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as Node<unknown, string, unknown>) : found;
     const path = resolveEditablePathOf(node);
     if (path) out.push({ id: id as NodeId, node, path });
   }
@@ -55,20 +53,20 @@ export function pathNodesOf(
 
 /** `node` storing `worldPath` as plain geometry, or null when it holds no
  *  editable polygon. */
-export function withPath(node: AnyNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
+export function withPath(node: Node<unknown, string, unknown>, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath(node, worldPath);
   if (!stored) return null;
   return { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) };
 }
 
 /** The ops that give `node` the geometry `worldPath`, labeled `label`. */
-export function reshapeOps(node: AnyNode, worldPath: PolygonPath, label: string): Op[] {
+export function reshapeOps(node: Node<unknown, string, unknown>, worldPath: PolygonPath, label: string): Op[] {
   const next = withPath(node, worldPath);
   return next ? reshapeTo(node, next, label) : [];
 }
 
 /** The ops taking `node` from what it is to `next`, labeled `label`. */
-export function reshapeTo(node: AnyNode, next: { pose: unknown; data: unknown }, label: string): Op[] {
+export function reshapeTo(node: Node<unknown, string, unknown>, next: { pose: unknown; data: unknown }, label: string): Op[] {
   const ops: Op[] = [];
   if (next.pose !== node.pose) ops.push(createTransformOp({ id: node.id, from: node.pose, to: next.pose, label }));
   if (next.data !== node.data) ops.push(createSetDataOp({ id: node.id, from: node.data, to: next.data, label }));
@@ -76,25 +74,25 @@ export function reshapeTo(node: AnyNode, next: { pose: unknown; data: unknown },
 }
 
 /** A copy of `node` under a fresh id, holding `worldPath`. */
-export function pathCopy(scene: AnyScene, node: AnyNode, worldPath: PolygonPath): AnyNode | null {
+export function pathCopy(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>, worldPath: PolygonPath): Node<unknown, string, unknown> | null {
   const next = withPath(node, worldPath);
   if (!next) return null;
-  return { ...node, id: scene.mintId(), pose: next.pose, data: next.data } as AnyNode;
+  return { ...node, id: scene.mintId(), pose: next.pose, data: next.data } as Node<unknown, string, unknown>;
 }
 
 /** Where `id` sits among its siblings, back to front. */
-export function slotOf(scene: AnyScene, id: NodeId): number {
+export function slotOf(scene: Scene<unknown, string, unknown>, id: NodeId): number {
   const parent = scene.get(id)?.parent ?? null;
   const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
   return siblings.indexOf(id);
 }
 
 /** Insert `node` at `index` among its parent's children. */
-export function insertAt(node: AnyNode, index: number, label: string): Op {
+export function insertAt(node: Node<unknown, string, unknown>, index: number, label: string): Op {
   return createInsertOp(index >= 0 ? { node, index, label } : { node, label });
 }
 
 /** Delete `node`, remembering its slot for undo. */
-export function deleteNode(scene: AnyScene, node: AnyNode, label: string): Op {
+export function deleteNode(scene: Scene<unknown, string, unknown>, node: Node<unknown, string, unknown>, label: string): Op {
   return createDeleteOp({ node, index: slotOf(scene, node.id), label });
 }

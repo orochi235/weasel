@@ -5,12 +5,8 @@
 
 import type { PolygonPath } from '../path';
 import { anchorsToPath, pathToAnchors, type PenAnchor } from './anchors';
-
-/** The anchor model `pathToAnchors` produces; `AnchorSet` in `anchorEdits`. */
-interface Anchors {
-  anchors: PenAnchor[][];
-  closed: boolean[];
-}
+import type { AnchorSet } from './anchorEdits';
+import type { Point } from './cubicMath';
 
 /**
  * Where a point of an edited path came from: point `a` of the path before the edit, or for a
@@ -34,8 +30,6 @@ interface Held {
   idx?: number;
 }
 
-interface Point { x: number; y: number }
-
 const at = (x: number): Point => ({ x, y: x });
 const keyOf = (p: Point): string => `${p.x},${p.y}`;
 
@@ -43,7 +37,7 @@ const keyOf = (p: Point): string => `${p.x},${p.y}`;
  * Which point of `path` each anchor of `set` was decoded from. `pathToAnchors` runs again
  * over a path whose every point holds its own index, so the two walks cannot disagree.
  */
-function heldBy(path: PolygonPath, set: Anchors): Held[][] {
+function heldBy(path: PolygonPath, set: AnchorSet): Held[][] {
   const coords = new Float32Array(path.coords.length);
   for (let i = 0; i < coords.length; i++) coords[i] = i >> 1;
   const indexed = pathToAnchors({ ...path, coords }).anchors;
@@ -61,7 +55,7 @@ export function anchorPointIndices(path: PolygonPath): number[] {
 
 /** For each point `anchorsToPath` writes for `set`: the flat index of the anchor it belongs to,
  *  times 3, plus 0 for the anchor's own point, 1 for its in handle, and 2 for its out handle. */
-function writtenFrom(set: Anchors): Float32Array {
+function writtenFrom(set: AnchorSet): Float32Array {
   let flat = 0;
   const coded = set.anchors.map((sub) => sub.map((a) => {
     const k = 3 * flat++;
@@ -155,7 +149,7 @@ function copied(anchor: PenAnchor, byPlace: ReadonlyMap<string, Held>): Held | u
  */
 export function editAnchorSetTracked(
   path: PolygonPath,
-  edit: (set: Anchors) => boolean | void,
+  edit: (set: AnchorSet) => boolean | void,
 ): { path: PolygonPath; origins: (PointOrigin | null)[] } | null {
   const set = pathToAnchors(path);
   const byAnchor = new Map<PenAnchor, Held>();

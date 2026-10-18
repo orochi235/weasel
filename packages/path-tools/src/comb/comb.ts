@@ -3,7 +3,7 @@
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
-import { curvatureComb, linePath, polylineFromPoints, type AnchorSet } from '@weasel-js/geom';
+import { curvatureComb, linePath, polylineFromPoints, type AnchorSet, type Point } from '@weasel-js/geom';
 import type { PathEditExtension } from '@weasel-js/core';
 
 /** Chrome-caps id the curvature comb is drawn under. Off by default. */
@@ -22,10 +22,8 @@ export interface PathEditCombOptions {
 
 const COMB_DEFAULTS = { scale: 2000, samplesPerSegment: 24, color: 'rgba(224, 102, 58, 0.75)' };
 
-type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
-
 /** Draw commands for `set`'s curvature comb, in screen space. */
-export function combCommands(set: AnchorSet, toScreen: ToScreen, opts: PathEditCombOptions = {}): DrawCommand[] {
+export function combCommands(set: AnchorSet, toScreen: (p: Point) => Point, opts: PathEditCombOptions = {}): DrawCommand[] {
   const { scale, samplesPerSegment, color } = { ...COMB_DEFAULTS, ...opts };
   const paint = { kind: 'solid' as const, color };
   const out: DrawCommand[] = [];

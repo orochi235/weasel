@@ -7,19 +7,18 @@
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import { cubicEvalAt, splitCubicAt } from '../curve';
 import type { PolygonPath } from '../path';
-
-export interface Vec { x: number; y: number }
+import type { Point } from './cubicMath';
 
 /** One segment as a cubic; a line has its controls on its ends. */
 export interface Seg {
   line: boolean;
-  p0: Vec; c1: Vec; c2: Vec; p3: Vec;
+  p0: Point; c1: Point; c2: Point; p3: Point;
 }
 
 /** One subpath. Segment `k` runs from anchor `k` to anchor `k + 1`, wrapping
  *  when closed, so a closed contour has as many segments as anchors. */
 export interface Contour {
-  anchors: Vec[];
+  anchors: Point[];
   segs: Seg[];
   closed: boolean;
   /** Flat index of `anchors[0]`. */
@@ -30,7 +29,7 @@ export interface Contour {
   sources: number[];
 }
 
-const lineSeg = (a: Vec, b: Vec): Seg => ({ line: true, p0: a, c1: a, c2: b, p3: b });
+const lineSeg = (a: Point, b: Point): Seg => ({ line: true, p0: a, c1: a, c2: b, p3: b });
 
 /** `path` as contours, or null when a command opens a subpath with no `M`,
  *  where the anchor walkers and this one would count differently. */
@@ -41,8 +40,8 @@ export function decodeContours(path: PolygonPath): Contour[] | null {
   let flat = 0;
   let drawn = 0;
   let bad = false;
-  const last = (): Vec => cur!.anchors[cur!.anchors.length - 1];
-  const push = (p: Vec, seg: Seg): void => {
+  const last = (): Point => cur!.anchors[cur!.anchors.length - 1];
+  const push = (p: Point, seg: Seg): void => {
     cur!.segs.push(seg);
     cur!.anchors.push(p);
     cur!.sources.push(drawn++);
@@ -50,7 +49,7 @@ export function decodeContours(path: PolygonPath): Contour[] | null {
   };
   forEachSegment(commands, coords, (cmd, ci, _px, _py, _i, opens) => {
     if (opens) { bad = true; return false; }
-    const at = (k: number): Vec => ({ x: coords[ci + k], y: coords[ci + k + 1] });
+    const at = (k: number): Point => ({ x: coords[ci + k], y: coords[ci + k + 1] });
     switch (cmd) {
       case PATH_M:
         if (cur) out.push(cur);
@@ -135,7 +134,7 @@ export function paramAtLength(seg: Seg, s: number): number {
   return (i - 1 + f) / LUT_STEPS;
 }
 
-export function pointAt(seg: Seg, t: number): Vec {
+export function pointAt(seg: Seg, t: number): Point {
   if (seg.line) {
     return { x: seg.p0.x + (seg.p3.x - seg.p0.x) * t, y: seg.p0.y + (seg.p3.y - seg.p0.y) * t };
   }
@@ -144,13 +143,13 @@ export function pointAt(seg: Seg, t: number): Vec {
   return { x, y };
 }
 
-function unit(x: number, y: number): Vec | null {
+function unit(x: number, y: number): Point | null {
   const l = Math.hypot(x, y);
   return l > 1e-12 ? { x: x / l, y: y / l } : null;
 }
 
 /** Unit direction of travel along `seg` at `t`, or null for a segment of no length. */
-export function tangentAt(seg: Seg, t: number): Vec | null {
+export function tangentAt(seg: Seg, t: number): Point | null {
   const { p0, c1, c2, p3 } = seg;
   if (seg.line) return unit(p3.x - p0.x, p3.y - p0.y);
   const u = 1 - t;
@@ -164,7 +163,7 @@ export function tangentAt(seg: Seg, t: number): Vec | null {
 }
 
 /** The piece of cubic `seg` between parameters `t0 < t1`, as `[c1, c2, p3]`. */
-export function subCubic(seg: Seg, t0: number, t1: number): [Vec, Vec, Vec] {
+export function subCubic(seg: Seg, t0: number, t1: number): [Point, Point, Point] {
   const { p0, c1, c2, p3 } = seg;
   let c = [p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p3.x, p3.y];
   if (t0 > 0) c = [...splitCubicAt(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], t0)[1]];

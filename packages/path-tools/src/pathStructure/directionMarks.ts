@@ -3,7 +3,7 @@
  * every segment and a ring round each subpath's start anchor.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import { circlePath, directionMarks, polygonFromPoints, type AnchorSet } from '@weasel-js/geom';
+import { circlePath, directionMarks, polygonFromPoints, type AnchorSet, type Point } from '@weasel-js/geom';
 import type { PathEditExtension } from '@weasel-js/core';
 
 /** Chrome-caps id the direction arrows and start rings are drawn under. Off by default. */
@@ -21,10 +21,8 @@ export interface PathDirectionStyle {
 
 const DIRECTION_DEFAULTS: Required<PathDirectionStyle> = { color: '#e8590c', arrowPx: 9, ringPx: 8 };
 
-type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
-
 /** Draw commands for `set`'s direction arrows and start rings, in screen space. */
-export function directionCommands(set: AnchorSet, toScreen: ToScreen, style: PathDirectionStyle = {}): DrawCommand[] {
+export function directionCommands(set: AnchorSet, toScreen: (p: Point) => Point, style: PathDirectionStyle = {}): DrawCommand[] {
   const { color, arrowPx, ringPx } = { ...DIRECTION_DEFAULTS, ...style };
   const paint = { kind: 'solid' as const, color };
   const out: DrawCommand[] = [];

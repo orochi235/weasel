@@ -6,11 +6,10 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { asNodeId } from 'core/scene/types';
-
-type XY = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** World center of the selection's bounds, else of the visible canvas. */
-export function keyboardAnchor(deps: ActionDeps): XY | null {
+export function keyboardAnchor(deps: ActionDeps): Point | null {
   const ids = deps.selection?.get() ?? [];
   if (ids.length && deps.scene) {
     const frame = scenePoseFrame(deps.scene);
@@ -32,7 +31,7 @@ export function keyboardAnchor(deps: ActionDeps): XY | null {
  * `at`, the current selection. Without a classifier wired, a pointer hit names
  * no body at all, and without a selection neither does a keyboard one.
  */
-export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: string } {
+export function menuHitFor(deps: ActionDeps, at?: Point): { hit: MenuHit; select?: string } {
   if (at) {
     const hit = deps.hitAt?.(at);
     if (!hit) return { hit: {} };
@@ -55,7 +54,7 @@ export function menuHitFor(deps: ActionDeps, at?: XY): { hit: MenuHit; select?: 
 export function openContextMenu(
   deps: ActionDeps,
   params?: Record<string, unknown>,
-  anchorOf: (deps: ActionDeps) => XY | null = keyboardAnchor,
+  anchorOf: (deps: ActionDeps) => Point | null = keyboardAnchor,
 ): boolean {
   const host = deps.menuHost;
   if (!host) return false;

@@ -8,8 +8,7 @@
  * ellipse, `0` the straight bevel, and `±∞` the square corner and the notch.
  */
 import { fitCubicWithTangents } from './schneiderFit';
-
-export interface Vec { x: number; y: number }
+import type { Point } from './cubicMath';
 
 /** The six `corner-shape` keywords, from most convex to most concave. */
 export type CornerKeyword = 'square' | 'squircle' | 'round' | 'bevel' | 'scoop' | 'notch';
@@ -55,15 +54,15 @@ export const CORNER_FIT_TOLERANCE = 1e-3;
 /** The cut a corner shape spans: from `start` to `end`, the two points where
  *  it leaves the edges, around `outer`, the corner the edges meet at. */
 export interface CornerShapeFrame {
-  start: Vec;
-  end: Vec;
-  outer: Vec;
+  start: Point;
+  end: Point;
+  outer: Point;
 }
 
 /** One piece of a corner's outline, continuing from where the last ended. */
 export type CornerPiece =
-  | { kind: 'line'; to: Vec }
-  | { kind: 'cubic'; c1: Vec; c2: Vec; to: Vec };
+  | { kind: 'line'; to: Point }
+  | { kind: 'cubic'; c1: Point; c2: Point; to: Point };
 
 /** Kappa of the cubic quarter circle, the one the kit draws every arc with. */
 const KAPPA = (4 / 3) * Math.tan(Math.PI / 8);
@@ -77,24 +76,24 @@ function exponentOf(k: number): number {
 
 /** The point at `theta` on the unit curve `u^n + v^n = 1`: `π/2` is
  *  `(0, 1)`, where the corner starts, and `0` is `(1, 0)`, where it ends. */
-function unitPoint(n: number, theta: number): Vec {
+function unitPoint(n: number, theta: number): Point {
   const p = 2 / n;
   return { x: Math.cos(theta) ** p, y: Math.sin(theta) ** p };
 }
 
 /** The unit direction of travel from start to end at `theta`. */
-function unitTangent(n: number, theta: number): Vec {
+function unitTangent(n: number, theta: number): Point {
   const q = 2 - 2 / n;
   const x = Math.sin(theta) ** q, y = -(Math.cos(theta) ** q);
   const l = Math.hypot(x, y);
   return { x: x / l, y: y / l };
 }
 
-type UnitCubic = [Vec, Vec, Vec];
+type UnitCubic = [Point, Point, Point];
 
-const sub = (a: Vec, b: Vec): Vec => ({ x: a.x - b.x, y: a.y - b.y });
+const sub = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 
-function cubicAt(p0: Vec, [c1, c2, p3]: UnitCubic, t: number): Vec {
+function cubicAt(p0: Point, [c1, c2, p3]: UnitCubic, t: number): Point {
   const u = 1 - t;
   const a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
   return { x: a * p0.x + b * c1.x + c * c2.x + d * p3.x, y: a * p0.y + b * c1.y + c * c2.y + d * p3.y };
@@ -102,7 +101,7 @@ function cubicAt(p0: Vec, [c1, c2, p3]: UnitCubic, t: number): Vec {
 
 /** The distance from `q` to the cubic `p0, piece`: the nearest of a coarse
  *  scan, refined by bisecting the parameter around it. */
-function distanceToCubic(q: Vec, p0: Vec, piece: UnitCubic): number {
+function distanceToCubic(q: Point, p0: Point, piece: UnitCubic): number {
   const d = (t: number) => { const c = cubicAt(p0, piece, t); return Math.hypot(c.x - q.x, c.y - q.y); };
   let best = 0;
   for (let i = 1; i <= 32; i++) if (d(i / 32) < d(best / 32)) best = i;
@@ -116,7 +115,7 @@ function distanceToCubic(q: Vec, p0: Vec, piece: UnitCubic): number {
 
 /** The farthest any point of the true curve between `a` and `b` lies from
  *  the cubic `p0, piece`. */
-function fitError(n: number, a: number, b: number, p0: Vec, piece: UnitCubic): number {
+function fitError(n: number, a: number, b: number, p0: Point, piece: UnitCubic): number {
   let worst = 0;
   for (let i = 1; i < 16; i++) worst = Math.max(worst, distanceToCubic(unitPoint(n, a + (b - a) * (i / 16)), p0, piece));
   return worst;
@@ -126,7 +125,7 @@ function fitError(n: number, a: number, b: number, p0: Vec, piece: UnitCubic): n
  *  each is within `tol`. */
 function fitUnit(n: number, a: number, b: number, tol: number, depth: number, out: UnitCubic[]): void {
   const p0 = unitPoint(n, a), p3 = unitPoint(n, b);
-  const samples: Vec[] = [];
+  const samples: Point[] = [];
   const params: number[] = [];
   for (let i = 0; i <= 12; i++) {
     samples.push(unitPoint(n, a + (b - a) * (i / 12)));
@@ -158,13 +157,13 @@ function unitCubics(n: number, tol: number): UnitCubic[] {
 }
 
 /** `frame` mapped from the unit square spanned at `center`. */
-function mapperFor(frame: CornerShapeFrame, center: Vec): (p: Vec) => Vec {
+function mapperFor(frame: CornerShapeFrame, center: Point): (p: Point) => Point {
   const ex = sub(frame.end, center), sy = sub(frame.start, center);
   return (p) => ({ x: center.x + p.x * ex.x + p.y * sy.x, y: center.y + p.x * ex.y + p.y * sy.y });
 }
 
 /** The center the convex curves are spanned from: across the cut from `outer`. */
-export function cornerCenter(frame: CornerShapeFrame): Vec {
+export function cornerCenter(frame: CornerShapeFrame): Point {
   return { x: frame.start.x + frame.end.x - frame.outer.x, y: frame.start.y + frame.end.y - frame.outer.y };
 }
 
@@ -187,7 +186,7 @@ export function cornerShapePieces(k: number, frame: CornerShapeFrame, tolerance 
 
 /** The point on the true curve of parameter `k` across `frame` at `s`, from
  *  0 at its start to 1 at its end. Finite `k` only. */
-export function cornerShapePoint(k: number, frame: CornerShapeFrame, s: number): Vec {
+export function cornerShapePoint(k: number, frame: CornerShapeFrame, s: number): Point {
   const n = 2 ** Math.abs(k);
   const map = mapperFor(frame, k > 0 ? cornerCenter(frame) : frame.outer);
   return map(unitPoint(n, (Math.PI / 2) * (1 - s)));

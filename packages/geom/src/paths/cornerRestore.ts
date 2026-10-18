@@ -9,7 +9,8 @@ import type { Path, PolygonPath } from '../path';
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import { PathBuilder } from './builder';
 import { flatAnchorIndices } from './cornerCarry';
-import { decodeContours, type Contour, type Seg, type Vec } from './cornerSegments';
+import { decodeContours, type Contour, type Seg } from './cornerSegments';
+import type { Point } from './cubicMath';
 import type { CornerPiece } from './cornerShape';
 import { compactCorners, withoutCorners, type CornerSpec } from './cornerSpec';
 import { cornerCuts } from './corners';
@@ -17,10 +18,10 @@ import { cornerCuts } from './corners';
 /** A corner a rebuilt path may hold expanded: the anchor and spec it folds
  *  back into, and the cut it is drawn as, from `start` to `end`. */
 export interface CornerTrace {
-  anchor: Vec;
+  anchor: Point;
   spec: CornerSpec;
-  start: Vec;
-  end: Vec;
+  start: Point;
+  end: Point;
   pieces: readonly CornerPiece[];
 }
 
@@ -44,9 +45,9 @@ export function keepCorners(sources: readonly Path[], result: PolygonPath, toler
   return traces.length === 0 ? result : restoreCorners(result, traces, tolerance);
 }
 
-const dist = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
 
-function onTrace(p: Vec, t: CornerTrace, tol: number): boolean {
+function onTrace(p: Point, t: CornerTrace, tol: number): boolean {
   let from = t.start;
   for (const piece of t.pieces) {
     const d = piece.kind === 'line'
@@ -59,8 +60,8 @@ function onTrace(p: Vec, t: CornerTrace, tol: number): boolean {
 }
 
 /** The blossom of cubic `s` at `(u, v, w)`. */
-function blossom(s: Seg, u: number, v: number, w: number): Vec {
-  const lerp = (a: Vec, b: Vec, t: number): Vec => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+function blossom(s: Seg, u: number, v: number, w: number): Point {
+  const lerp = (a: Point, b: Point, t: number): Point => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
   const a = lerp(s.p0, s.c1, u), b = lerp(s.c1, s.c2, u), c = lerp(s.c2, s.p3, u);
   const d = lerp(a, b, v), e = lerp(b, c, v);
   return lerp(d, e, w);
@@ -68,9 +69,9 @@ function blossom(s: Seg, u: number, v: number, w: number): Vec {
 
 /** The parameter, past `[0, 1]` on the side `from` gives, where cubic `s`
  *  carried on as the same polynomial passes through `target`; null if it does not. */
-function extendTo(s: Seg, target: Vec, from: 0 | 1, tol: number): number | null {
+function extendTo(s: Seg, target: Point, from: 0 | 1, tol: number): number | null {
   const at = (u: number) => blossom(s, u, u, u);
-  const d1 = (u: number): Vec => {
+  const d1 = (u: number): Point => {
     const a = blossom(s, u, u, 0), b = blossom(s, u, u, 1);
     return { x: 3 * (b.x - a.x), y: 3 * (b.y - a.y) };
   };
@@ -88,7 +89,7 @@ function extendTo(s: Seg, target: Vec, from: 0 | 1, tol: number): number | null 
 
 /** `s` with its start moved to `start` and its end to `end`, either left
  *  where it was when undefined; null when a curve cannot reach them. */
-function reachSeg(s: Seg, start: Vec | undefined, end: Vec | undefined, tol: number): Seg | null {
+function reachSeg(s: Seg, start: Point | undefined, end: Point | undefined, tol: number): Seg | null {
   const p0 = start ?? s.p0, p3 = end ?? s.p3;
   if (s.line) return { line: true, p0, c1: p0, c2: p3, p3 };
   const u0 = start ? extendTo(s, start, 0, tol) : 0;
@@ -103,7 +104,7 @@ interface Run { from: number; to: number; trace: CornerTrace }
 /** Whether anchor `a`, reached or left by straight edge `edge`, ends a corner's
  *  cut at `p`: it sits there, or it sits on the cut and the edge runs through
  *  `p` to it, as when flattening has merged the cut's end into the edge. */
-function endsCut(a: Vec, edge: Seg, p: Vec, t: CornerTrace, tol: number): boolean {
+function endsCut(a: Point, edge: Seg, p: Point, t: CornerTrace, tol: number): boolean {
   if (dist(a, p) <= tol) return true;
   return edge.line && onTrace(a, t, tol)
     && nearestOnLine(p.x, p.y, edge.p0.x, edge.p0.y, edge.p3.x, edge.p3.y).dist <= tol;
@@ -136,7 +137,7 @@ function covered(run: Run, n: number): number[] {
   }
 }
 
-interface Node { at: Vec; spec: CornerSpec | null }
+interface Node { at: Point; spec: CornerSpec | null }
 interface Rebuilt { nodes: Node[]; segs: Seg[]; closed: boolean; folded: Run[] }
 
 /** `c` with each of `runs` folded into its anchor; null when an edge next to one cannot reach it. */

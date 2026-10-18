@@ -9,7 +9,6 @@ export interface MeasureHit {
   part: MeasureEnd | 'line';
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 
 function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): number {
   const dx = b.x - a.x;
@@ -25,7 +24,7 @@ function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): n
  * measurement (`nodeGates`) is passed over.
  */
 export function measureAt(
-  scene: Pick<AnyScene, 'renderOrderNodes' | 'get' | 'layers'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,
   tolerance: number,
@@ -53,7 +52,7 @@ export function measureAt(
  * tools, a move and an anchor drag all reach it.
  */
 export function nearestMeasureEnd(
-  scene: Pick<AnyScene, 'renderOrderNodes' | 'get' | 'layers'>,
+  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes' | 'get' | 'layers'>,
   ms: Pick<Measurements, 'layer'>,
   p: MeasurePoint,
   tolerance: number,

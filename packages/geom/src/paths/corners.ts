@@ -8,8 +8,9 @@ import { cornerAt, hasCorners, withoutCorners, type CornerSpec } from './cornerS
 import { cornerShapeK, cornerShapePieces, type CornerPiece, type CornerShapeFrame } from './cornerShape';
 import {
   decodeContours, paramAtLength, pointAt, segLength, subCubic, tangentAt,
-  type Contour, type Vec,
+  type Contour,
 } from './cornerSegments';
+import type { Point } from './cubicMath';
 
 /** Below this turn (radians) an anchor is smooth, and no corner can be cut. */
 const MIN_TURN = 1e-3;
@@ -22,7 +23,7 @@ export interface CornerFrame {
   x: number;
   y: number;
   /** Unit direction from the anchor into the wedge the cut is taken from. */
-  bisector: Vec;
+  bisector: Point;
   /** Half the angle between the two edges at the anchor. */
   halfAngle: number;
   /** How far along each edge the stored spec cuts, its setback, after clamping. */
@@ -198,7 +199,7 @@ function segSpan(c: Contour, cuts: readonly (AnchorCut | null)[], k: number): [n
  *  draws it, or null when that anchor takes none. */
 function cutAfter(
   c: Contour, cuts: readonly (AnchorCut | null)[], spans: readonly [number, number][], k: number,
-): { cut: AnchorCut; start: Vec; end: Vec; pieces: CornerPiece[] } | null {
+): { cut: AnchorCut; start: Point; end: Point; pieces: CornerPiece[] } | null {
   const j = (k + 1) % c.anchors.length;
   const cut = cuts[j];
   const next = c.segs[j];
@@ -214,11 +215,11 @@ function cutAfter(
 export interface CornerCut {
   /** Flat anchor index. */
   index: number;
-  anchor: Vec;
+  anchor: Point;
   spec: CornerSpec;
   /** Where the cut leaves the edge into the anchor, and where it rejoins the edge out of it. */
-  start: Vec;
-  end: Vec;
+  start: Point;
+  end: Point;
   /** The outline from `start` to `end`. */
   pieces: CornerPiece[];
 }
@@ -276,7 +277,7 @@ function emitContour(b: Emitter, c: Contour, cuts: readonly (AnchorCut | null)[]
 /** The frame a corner's shape spans: from `p1` to `p2`, around where the two
  *  edges' tangents there meet. That is the anchor itself between straight
  *  edges; between curves it keeps every convex shape tangent to both. */
-function shapeFrame(v: Vec, p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null): CornerShapeFrame {
+function shapeFrame(v: Point, p1: Point, t1: Point | null, p2: Point, t2: Point | null): CornerShapeFrame {
   const outer = t1 && t2 ? tangentMeet(p1, t1, p2, t2) : null;
   const chord = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   const far = !outer || Math.hypot(outer.x - v.x, outer.y - v.y) > 4 * chord;
@@ -285,7 +286,7 @@ function shapeFrame(v: Vec, p1: Vec, t1: Vec | null, p2: Vec, t2: Vec | null): C
 
 /** Where the line through `a` along `ta` meets the one through `b` along
  *  `tb`, or null when they are parallel. */
-function tangentMeet(a: Vec, ta: Vec, b: Vec, tb: Vec): Vec | null {
+function tangentMeet(a: Point, ta: Point, b: Point, tb: Point): Point | null {
   const den = ta.x * tb.y - ta.y * tb.x;
   if (Math.abs(den) < 1e-9) return null;
   const s = ((b.x - a.x) * tb.y - (b.y - a.y) * tb.x) / den;

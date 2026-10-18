@@ -1,7 +1,6 @@
 import type { Scale2 } from '../pxExtent';
 import type { AnchorSet } from './anchorEdits';
-
-type Point = { x: number; y: number };
+import type { Point } from './cubicMath';
 
 /**
  * Flat indices of every anchor a round brush covers as it moves from `from` to

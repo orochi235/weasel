@@ -4,8 +4,6 @@ import {
 import { UNION_OF_CHILDREN, unionOfChildren, type NodeId, type Scene, type SceneNode } from '@weasel-js/core';
 import { isSymmetryGroup } from './group';
 
-type AnyScene = Scene<unknown, string, unknown>;
-type AnyNode = SceneNode<unknown, string, unknown>;
 
 /** What {@link bakeSymmetry} did. */
 export interface BakeResult {
@@ -17,7 +15,7 @@ export interface BakeResult {
 }
 
 /** A path leaf's outline in world coordinates, or null for a leaf without one. */
-function worldPathOf(node: AnyNode, pose: unknown): Path | null {
+function worldPathOf(node: SceneNode<unknown, string, unknown>, pose: unknown): Path | null {
   const path = (node.data as { path?: Path } | null)?.path;
   if (!path || !pose || typeof pose !== 'object') return null;
   return pathThroughPoseFrame(pathInPoseFrame(path, pose as never), pose);
@@ -35,12 +33,12 @@ function worldPathOf(node: AnyNode, pose: unknown): Path | null {
  * kit's path data, `{ path, fill?, stroke? }`. A paint that is laid out in
  * the shape's own box, a gradient say, is copied as it is.
  */
-export function bakeSymmetry(scene: AnyScene, id: NodeId, label = 'Bake symmetry'): BakeResult | null {
+export function bakeSymmetry(scene: Scene<unknown, string, unknown>, id: NodeId, label = 'Bake symmetry'): BakeResult | null {
   if (!isSymmetryGroup(scene, id)) return null;
   return scene.batch(label, () => bakeInBatch(scene, id));
 }
 
-function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
+function bakeInBatch(scene: Scene<unknown, string, unknown>, id: NodeId): BakeResult {
   const skipped: NodeId[] = [];
   for (const child of [...scene.childrenOf(id)]) {
     for (const inner of [...descendantGroups(scene, child)].reverse()) skipped.push(...bakeInBatch(scene, inner).skipped);
@@ -68,7 +66,7 @@ function bakeInBatch(scene: AnyScene, id: NodeId): BakeResult {
   return { group: plain, skipped: [...new Set(skipped)] };
 }
 
-function descendantGroups(scene: AnyScene, id: NodeId): NodeId[] {
+function descendantGroups(scene: Scene<unknown, string, unknown>, id: NodeId): NodeId[] {
   const out: NodeId[] = [];
   const walk = (n: NodeId): void => {
     if (isSymmetryGroup(scene, n)) out.push(n);
@@ -79,7 +77,7 @@ function descendantGroups(scene: AnyScene, id: NodeId): NodeId[] {
 }
 
 /** Add `id`, carried through `m`, under `parent`. */
-function copySubtree(scene: AnyScene, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
+function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affine, parent: NodeId, skipped: NodeId[]): void {
   const node = scene.get(id);
   if (!node) return;
   if (node.kind === 'container') {

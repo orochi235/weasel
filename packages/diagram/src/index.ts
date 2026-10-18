@@ -159,7 +159,7 @@ export {
   createLayoutAction,
 } from './layoutAction';
 export type { ApplyLayoutOptions, LayoutActionOptions } from './layoutAction';
-export { routeWrites, routesOf, type LayoutRoutes } from './routeWrites';
+export { routeWrites, routesOf, type LayoutRoutes, type RoutedScene } from './routeWrites';
 export { forestOf, tree, type Forest } from './tree';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {

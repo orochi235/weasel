@@ -4,7 +4,7 @@
  * between two — and the per-vertex widths a drag leaves behind.
  */
 import {
-  editAnchorSetTracked, insertAnchorOnSegment, nearestSegmentT, pathToAnchors, type PolygonPath,
+  editAnchorSetTracked, insertAnchorOnSegment, nearestSegmentT, pathToAnchors, type PolygonPath, type Point,
 } from '@weasel-js/geom';
 import {
   type HalfWidths, type Stroke, type VertexWidth, vertexHalfWidths, vertexWidthFromSides,
@@ -12,14 +12,11 @@ import {
 import { resolveStrokeWidth, strokeEdgeNear, type StrokeEdgeHit, type StrokeSide } from '@weasel-js/stroke';
 import { resolveEditablePathOf, withPath, type NodeId, type Scene, type SceneNode } from '@weasel-js/core';
 
-type AnyScene = Scene<unknown, string, unknown>;
-type AnyNode = SceneNode<unknown, string, unknown>;
-type Point = { x: number; y: number };
 
 /** A stroked path node and its centerline in world space. */
 export interface WidthTarget {
   id: NodeId;
-  node: AnyNode;
+  node: SceneNode<unknown, string, unknown>;
   path: PolygonPath;
   stroke: Stroke;
   /** The stroke's own width in world units: what an unset entry takes. */
@@ -69,7 +66,7 @@ export function isWidthSet(entry: VertexWidth | undefined): boolean {
 }
 
 /** The node's stroke, when it paints one along an editable path. */
-function targetOf(scene: AnyScene, node: AnyNode, scale: number): WidthTarget | null {
+function targetOf(scene: Scene<unknown, string, unknown>, node: SceneNode<unknown, string, unknown>, scale: number): WidthTarget | null {
   if (node.kind !== 'leaf' || node.derivePath || node.derivePose || scene.isLocked(node.id) || scene.isHidden(node.id)) return null;
   const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
   if (!stroke?.paint) return null;
@@ -80,7 +77,7 @@ function targetOf(scene: AnyScene, node: AnyNode, scale: number): WidthTarget | 
 /** The topmost stroke, and its edge nearest `(x, y)`, that `accept` takes.
  *  `scale` resolves a `{ px }` width. */
 function edgeAt(
-  scene: AnyScene, x: number, y: number, scale: number, accept: (edge: StrokeEdgeHit) => boolean,
+  scene: Scene<unknown, string, unknown>, x: number, y: number, scale: number, accept: (edge: StrokeEdgeHit) => boolean,
 ): { target: WidthTarget; edge: StrokeEdgeHit } | null {
   const nodes = scene.renderOrderNodes();
   for (let i = nodes.length - 1; i >= 0; i--) {
@@ -93,13 +90,13 @@ function edgeAt(
 }
 
 /** The topmost stroke whose ink is within `reach` of `(x, y)`. */
-export function widthTargetAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthTarget | null {
+export function widthTargetAt(scene: Scene<unknown, string, unknown>, x: number, y: number, scale: number, reach: number): WidthTarget | null {
   return edgeAt(scene, x, y, scale, (edge) => edge.gap <= reach)?.target ?? null;
 }
 
 /** The topmost stroke edge within `reach` of `(x, y)`, and the width point a
  *  press there moves: the anchor within `reach` along the path, or a new one. */
-export function widthEdgeAt(scene: AnyScene, x: number, y: number, scale: number, reach: number): WidthEdgeHit | null {
+export function widthEdgeAt(scene: Scene<unknown, string, unknown>, x: number, y: number, scale: number, reach: number): WidthEdgeHit | null {
   const found = edgeAt(scene, x, y, scale, (edge) => Math.abs(edge.gap) <= reach);
   if (!found) return null;
   const { edge } = found;

@@ -19,7 +19,7 @@ const WARP_ICONS = { distort: icon('distort'), envelope: icon('envelope'), puppe
 export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
 
 /** Options every warp tool takes. */
-interface WarpToolOptions {
+export interface WarpToolOptions {
   /** Palette label. */
   label?: string;
   /** Override the default keybinding (Distort `F`, Envelope `M`, Puppet Warp

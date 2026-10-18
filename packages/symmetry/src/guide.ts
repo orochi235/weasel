@@ -1,4 +1,4 @@
-import { applyToPoint, ellipsePath, linePath, type Path } from '@weasel-js/geom';
+import { applyToPoint, ellipsePath, linePath, type Path, type Point } from '@weasel-js/geom';
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
@@ -31,11 +31,9 @@ export interface SymmetryGuideStyle {
   knobDistancePx?: number;
 }
 
-type Pt = { x: number; y: number };
-
 /** What the guide draws: the active group's spec and center, or null for none. */
 export interface SymmetryGuideSource {
-  current(): { group: string; spec: SymmetrySpec; center: Pt } | null;
+  current(): { group: string; spec: SymmetrySpec; center: Point } | null;
   subscribe(listener: () => void): () => void;
 }
 
@@ -44,13 +42,13 @@ const CURSORS: Record<SymmetryHandle, string> = { center: 'move', angle: 'grab',
 /** Each handle the guide shows for `spec`, in screen pixels, topmost first. */
 export function guideHandles(
   spec: SymmetrySpec,
-  center: Pt,
+  center: Point,
   view: View,
   knobPx: number,
-): Array<{ handle: SymmetryHandle; at: Pt }> {
+): Array<{ handle: SymmetryHandle; at: Point }> {
   const t = viewToTransform(view);
   const [cx, cy] = worldToScreen(center.x, center.y, t);
-  const out: Array<{ handle: SymmetryHandle; at: Pt }> = [];
+  const out: Array<{ handle: SymmetryHandle; at: Point }> = [];
   if (spec.kind === 'repeat') {
     const [sx, sy] = worldToScreen(
       center.x + Math.cos(spec.angle) * spec.spacing, center.y + Math.sin(spec.angle) * spec.spacing, t,
@@ -70,7 +68,7 @@ function hasAxis(spec: SymmetrySpec): boolean {
 }
 
 /** A world direction at `angle`, as a unit vector on screen. */
-function screenDir(angle: number, view: View): Pt {
+function screenDir(angle: number, view: View): Point {
   const x = Math.cos(angle) * view.scale.x;
   const y = Math.sin(angle) * view.scale.y;
   const len = Math.hypot(x, y) || 1;
@@ -101,8 +99,8 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
   const hitR = style.hitRadiusPx ?? 9;
   const knob = style.knobDistancePx ?? 64;
   const stroke = (c: string) => ({ paint: { kind: 'solid' as const, color: c }, width: { px: 1 } });
-  const line = (a: Pt, b: Pt, c: string): DrawCommand => ({ kind: 'path', path: linePath(a, b), stroke: stroke(c) });
-  const dot = (at: Pt, radius: number): Path => ellipsePath({ x: at.x - radius, y: at.y - radius, width: radius * 2, height: radius * 2 });
+  const line = (a: Point, b: Point, c: string): DrawCommand => ({ kind: 'path', path: linePath(a, b), stroke: stroke(c) });
+  const dot = (at: Point, radius: number): Path => ellipsePath({ x: at.x - radius, y: at.y - radius, width: radius * 2, height: radius * 2 });
 
   return {
     id: SYMMETRY_GUIDE_ID,

@@ -2,7 +2,8 @@ import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
-import { selectedPathNodes, withPath, type AnyNode, type PathNode } from './pathNodes';
+import { selectedPathNodes, withPath, type PathNode } from './pathNodes';
+import type { Node } from 'core/scene/types';
 import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
 
@@ -69,7 +70,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
         recompute();
         const shapeOf = (id: string) => {
           const entry = current.get(id);
-          return entry ? withPath(entry.node.node as AnyNode, entry.path) : null;
+          return entry ? withPath(entry.node.node as Node<unknown, string, unknown>, entry.path) : null;
         };
         return {
           kind: spec.id,
