@@ -11,6 +11,7 @@ import {
   createScene,
   type Op,
 } from '@weasel-js/core';
+import { createKitSettingsStore } from '@weasel-js/react';
 import { snapToGrid } from './snapToGrid';
 import { snapToGuides } from './snapToGuides';
 import { alignInsertBehavior } from '../../guides/alignment/behaviors';
@@ -60,6 +61,15 @@ function drag(
 }
 
 describe('insertAction behavior pipeline', () => {
+  it('hands snapToGuides the kitSettings dep, so targets.guideSnapPx sets its reach', () => {
+    const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 50 }];
+    const behaviors = [snapToGuides({ getGuides: () => guides })] as InsertBehavior<unknown>[];
+    const kitSettings = createKitSettingsStore({ targets: { guideSnapPx: 20 } });
+    expect(insertAction.requires).toContain('kitSettings');
+    expect(drag({ x: 0, y: 0 }, { x: 65, y: 40 }, behaviors).dep.calls[0]!.bounds).toMatchObject({ width: 65 });
+    expect(drag({ x: 0, y: 0 }, { x: 65, y: 40 }, behaviors, { kitSettings }).dep.calls[0]!.bounds).toMatchObject({ width: 50 });
+  });
+
   it('snapToGrid snaps both the committed node and the live preview', () => {
     const { preview, dep } = drag({ x: 7, y: 12 }, { x: 53, y: 48 }, [snapToGrid({ spacing: 10 })]);
     const snapped = { x: 10, y: 10, width: 40, height: 40 };

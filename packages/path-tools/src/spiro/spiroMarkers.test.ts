@@ -11,6 +11,12 @@ describe('spiroMarker', () => {
     sameCoords(spiroMarker('corner')({ x: 10, y: 20 }, 8, null, null), squarePath(10, 20, 8));
   });
 
+  it('draws a g4 point as a diamond, its tips on the circle a smooth point fills', () => {
+    const b = boundsOfPath(spiroMarker('g4')({ x: 10, y: 20 }, 8, null, null));
+    expect([b.x, b.y, b.width, b.height]).toEqual([5, 15, 10, 10]);
+    expect(Array.from(spiroMarker('g4')({ x: 10, y: 20 }, 8, null, null).coords)).toHaveLength(8);
+  });
+
   it('turns a tangent point into a half-disc whose round side faces away from its line', () => {
     // The line arrives at a left point from the left, so the disc bulges right.
     const left = boundsOfPath(spiroMarker('left')({ x: 0, y: 0 }, 8, { x: -50, y: 0 }, { x: 50, y: 30 }));

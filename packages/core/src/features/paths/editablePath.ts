@@ -2,10 +2,14 @@
  * A node's editable polygon. It lives in one of two places: the pose itself
  * (`pose.kind === 'polygon'`), or `data.path` with a rect pose, stored pose-local.
  * A rect `data.path` is edited as its four corners and is stored as a polygon
- * from the first edit on; reading it changes nothing.
+ * from the first edit on; reading it changes nothing. A leaf drawn as its rect
+ * pose alone reads as a rect `data.path` the size of its pose, and gains one
+ * on the first edit.
  */
-import { asPolygonPath, pathInWorld, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
+import { asPolygonPath, pathInWorld, rectPath, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
+import { findNodeShape } from 'canvas/NodeShape';
+import { RECT_FALLBACK_PAINTER } from 'canvas/nodeShapes/rectFallbackPainter';
 import { pathFromPlane } from 'canvas/planeClips';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { RectPose } from 'core/scene/types';
@@ -13,10 +17,19 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { PathEditExtension } from './pathEditExtension';
 import { pathFormOf, representationOf, withoutPathForm, type AnchorMarkerShape } from './pathRepresentation';
 
-/** The two fields of a node the editable path is read from. */
+/** The fields of a node the editable path is read from. A node's `kind`
+ *  says whether a rect pose with no path is a leaf drawn as that rect. */
 export interface EditableShape {
   pose: unknown;
   data: unknown;
+  kind?: string;
+}
+
+/** Whether `node` is a leaf whose only geometry is its rect pose, drawn by
+ *  the kit's rect fallback. */
+function drawsPoseAlone(node: EditableShape): boolean {
+  if (node.kind !== 'leaf' || (node.data as { path?: unknown } | null)?.path != null) return false;
+  return findNodeShape(node as never) === RECT_FALLBACK_PAINTER;
 }
 
 /** Resolve where a node's editable polygon lives. Returns null when the
@@ -28,6 +41,10 @@ export function classifyPathStorage(
   if (!node) return null;
   const pose = node.pose as { kind?: string } | undefined;
   if (pose?.kind === 'polygon') return { kind: 'pose' };
+  if (isRectPose(node.pose) && drawsPoseAlone(node)) {
+    const { width, height } = node.pose;
+    return { kind: 'data', pose: node.pose, data: { ...(node.data as object), path: asPolygonPath(rectPath(0, 0, width, height)) } };
+  }
   const data = node.data as { path?: Path } | null;
   const kind = (data?.path as { kind?: string } | undefined)?.kind;
   if (!data?.path || (kind !== 'polygon' && kind !== 'rect') || !isRectPose(node.pose)) return null;
@@ -114,6 +131,7 @@ function previewedShape(
   let pose = node.pose;
   let data = node.data;
   let touched = false;
+  const kind = node.kind;
   for (const source of previews) {
     const previewIds = source.previewIds?.();
     if (!previewIds) continue;
@@ -127,7 +145,7 @@ function previewedShape(
     const d = source.previewData?.(id);
     if (d != null) { data = d; touched = true; }
   }
-  return { pose, data };
+  return { pose, data, kind };
 }
 
 /**

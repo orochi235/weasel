@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  boundsOfPath, cubicPointAt, pathContainsPoint, pathToAnchors, PathBuilder, type Path, type PolygonPath,
+  boundsOfPath, cubicPointAt, pathContainsPoint, pathToAnchors, PathBuilder, withCorner, type CornerSpec, type Path,
+  type PolygonPath,
 } from '@weasel-js/geom';
 import { offsetPath } from './offsetPath';
 
@@ -51,5 +52,34 @@ describe('offsetPath', () => {
   it('answers the region itself at distance zero', () => {
     const rect = offsetPath({ kind: 'rect', x: 0, y: 0, width: 10, height: 20 }, 0);
     expect(bounds(rect)).toEqual([0, 0, 10, 20]);
+  });
+
+  describe('corner specs', () => {
+    const cornered = (spec: CornerSpec) => withCorner(SQUARE as PolygonPath, 1, spec);
+    const specsOf = (p: PolygonPath) => pathToAnchors(p).anchors.flat()
+      .flatMap((a) => (a.corner ? [{ x: Math.round(a.x * 100) / 100, y: Math.round(a.y * 100) / 100, ...a.corner }] : []));
+
+    it('keeps a round corner, grown by the distance about the same center', () => {
+      const out = offsetPath(cornered({ shape: 'round', radius: 20 }), 10);
+      const [spec] = specsOf(out);
+      expect(spec).toMatchObject({ x: 110, y: -10, shape: 'round' });
+      expect(spec!.radius).toBeCloseTo(30, 1);
+    });
+
+    it('keeps a round corner shrunk with the region', () => {
+      const out = offsetPath(cornered({ shape: 'round', radius: 10 }), -5);
+      const [spec] = specsOf(out);
+      expect(spec).toMatchObject({ x: 95, y: 5, shape: 'round' });
+      expect(spec!.radius).toBeCloseTo(5, 1);
+    });
+
+    it('expands a corner whose offset is no longer its shape', () => {
+      const out = offsetPath(cornered({ shape: 'bevel', radius: 10 }), 10);
+      expect(specsOf(out)).toEqual([]);
+    });
+
+    it('keeps every corner at distance zero', () => {
+      expect(specsOf(offsetPath(cornered({ shape: 'bevel', radius: 10 }), 0))).toEqual([{ x: 100, y: 0, shape: 'bevel', radius: 10 }]);
+    });
   });
 });

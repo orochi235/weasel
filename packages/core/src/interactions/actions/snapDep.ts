@@ -36,10 +36,11 @@ export interface SnapQuery {
 export interface SnapDep {
   /** Snap a world-space point. Return `p` unchanged to opt out. */
   point(p: Point, at?: SnapQuery): Point;
-  /** Snap `p` to path geometry alone, or null when no target is in range.
-   *  A move and an anchor drag read this, so a grid that the drawing tools
-   *  follow does not start pulling dragged shapes too. */
-  toPaths?(p: Point, at?: SnapQuery): Point | null;
+  /** Snap `p` to a target alone — path geometry, or a point
+   *  `toolOptions.snapTargets` offers — or null when none is in range. A move
+   *  and an anchor drag read this, so a grid that the drawing tools follow
+   *  does not start pulling dragged shapes too. */
+  toTargets?(p: Point, at?: SnapQuery): Point | null;
   /** The gesture that asked is over: drop whatever marks its last snap. */
   release?(): void;
 }

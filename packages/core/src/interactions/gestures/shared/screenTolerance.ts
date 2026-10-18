@@ -3,6 +3,7 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import { pxExtent } from '@weasel-js/geom';
 import type { GestureContext } from '../types';
 import type { ActionDeps } from '@weasel-js/routing';
+import type { KitSettingsStore } from '@weasel-js/react';
 
 /** A screen-pixel tolerance in world units, per axis, through the camera of
  *  the view the gesture landed in. With no view, one pixel is one unit. */
@@ -29,12 +30,14 @@ export function gesturePlaneReader(deps: Pick<ActionDeps, 'view'>): () => PlaneM
   return () => api?.plane?.() ?? null;
 }
 
-/** The two reads a gesture refreshes its context from on every move. */
+/** What a gesture builds its context from: the view and plane, read again on
+ *  every move, and the kit settings, whose store reads each leaf when asked. */
 export interface GestureReaders {
   view: () => View | null;
   plane: () => PlaneMap | null;
+  kitSettings: KitSettingsStore | null;
 }
 
-export function gestureReaders(deps: Pick<ActionDeps, 'view'>): GestureReaders {
-  return { view: gestureViewReader(deps), plane: gesturePlaneReader(deps) };
+export function gestureReaders(deps: Pick<ActionDeps, 'view' | 'kitSettings'>): GestureReaders {
+  return { view: gestureViewReader(deps), plane: gesturePlaneReader(deps), kitSettings: deps.kitSettings ?? null };
 }

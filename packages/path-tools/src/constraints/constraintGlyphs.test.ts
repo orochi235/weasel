@@ -38,6 +38,13 @@ describe('constraintGlyphs', () => {
     expect(widths).toEqual([1.5, 3]);
   });
 
+  it('marks a tangent inside the shape by its anchor, where a click finds it', () => {
+    const [mark] = constraintGlyphs(SQUARE, [{ kind: 'tangent', anchor: 2 }], new Set(), STYLE);
+    expect(mark).toBeDefined();
+    const inward = 13 / Math.SQRT2;
+    expect(constraintMarkAt(SQUARE, [{ kind: 'tangent', anchor: 2 }], { x: 100 - inward, y: 100 - inward }, 8)).toBe(0);
+  });
+
   it('draws nothing for a constraint naming an anchor the path lacks', () => {
     expect(constraintGlyphs(SQUARE, [{ kind: 'fixed', anchor: 9 }], new Set(), STYLE)).toEqual([]);
   });

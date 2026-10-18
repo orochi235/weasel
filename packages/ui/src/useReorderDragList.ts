@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import { useKitSetting } from '@weasel-js/react';
 import type { SelectModifiers } from '@weasel-js/select';
 import { resolveDrop, type DropRow } from './dropTarget';
 
@@ -28,7 +29,7 @@ export interface UseReorderDragListOptions {
    *  also handles `click` sees one press, not two. A press that starts on a
    *  control inside the row (a toggle) is left to the control. */
   onPress?(id: string, mods: PressModifiers): void;
-  /** Pointer-move distance (px) before pending drag engages. Default `DRAG_THRESHOLD_PX`. */
+  /** Pointer-move distance (px) before pending drag engages. Default the `gestures.dragPx` kit setting, else `DRAG_THRESHOLD_PX`. */
   threshold?: number;
   /** Selector matching the container's children that are rows, for a list
    *  that interleaves other elements (a table's detail rows). Default: every
@@ -183,7 +184,8 @@ function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[]
  * and go as the list re-renders, and a drag must outlive the row it grabbed.
  */
 export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDragHandlers {
-  const optsRef = useLatest(opts);
+  const dragPx = useKitSetting('gestures.dragPx');
+  const optsRef = useLatest({ ...opts, threshold: opts.threshold ?? dragPx });
   const containerRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<ThresholdDragHandle | null>(null);
   const [state, setState] = useState<ReorderDragState>(IDLE);

@@ -124,6 +124,8 @@ function fitStops(sub: PenAnchor[], stops: readonly number[], tol: number, out: 
   const n = sub.length;
   for (let k = 0; k + 1 < stops.length; k++) {
     const pts = sampleRun(sub, stops[k], stops[k + 1], tol);
+    // Coincident anchors sample to a single point, which has no run to fit.
+    if (pts.length < 2) continue;
     const last = closing && k + 2 === stops.length;
     const fresh = out.length === 0;
     fitPointRun(pts, unit(sub2(pts[1], pts[0])), unit(sub2(pts[pts.length - 2], pts[pts.length - 1])), tol, out, last);

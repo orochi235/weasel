@@ -41,6 +41,7 @@ import {
   type WeaselDrawPaperSize,
 } from './svgInterop';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
+import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
@@ -111,11 +112,12 @@ function pathObj(
 }
 
 /** A live path effect as the paths it shows — what Expand to Paths would
- *  make of it, each part in its own paint. */
-function effectToObjs<TLayer extends string>(scene: DrawScene<TLayer>, id: string): PathObj[] {
+ *  make of it, each part in its own paint — with what keeps it live. */
+function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string): EffectObj {
   const node = scene.get(id as never)!;
-  const deps = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map((d) => derivedDepOf(scene, d));
-  return (pathEffectParts(node, deps) ?? []).map((part, k) => {
+  const dependsOn = (Array.isArray(node.dependsOn) ? node.dependsOn : []).map(String);
+  const deps = dependsOn.map((d) => derivedDepOf(scene, d as never, node));
+  const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
     const { x, y, width, height } = boundsOfPath(part.path);
     const own = node.data as WeaselDrawData;
     return pathObj(
@@ -124,6 +126,7 @@ function effectToObjs<TLayer extends string>(scene: DrawScene<TLayer>, id: strin
       part.stroke === undefined ? own.stroke : part.stroke,
     );
   });
+  return { id, effect: pathEffectOf(node)!, dependsOn, parts };
 }
 
 export interface SceneToSvgOptions {
@@ -190,7 +193,7 @@ function sceneSourceOf<TLayer extends string>(
     objOf: (id) => {
       const node = scene.get(id as never);
       if (!node || node.kind !== 'leaf') return undefined;
-      if (pathEffectOf(node) !== null) return effectToObjs(scene, id);
+      if (pathEffectOf(node) !== null) return effectToObj(scene, id);
       return leafToObj(id, node.data, poseOf(id)!) ?? undefined;
     },
   };

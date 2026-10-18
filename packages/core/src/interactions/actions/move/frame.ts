@@ -13,6 +13,7 @@ function foldBehaviors(
   moveCtx: InvocationCtx,
   dx0: number,
   dy0: number,
+  held: boolean,
 ): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId> } {
   let dx = dx0;
   let dy = dy0;
@@ -39,7 +40,8 @@ function foldBehaviors(
     if (!r) continue;
     if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
     if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
-    if (r.transform && r.transform.kind === 'translate') transform = r.transform;
+    // A snap target in range outranks a behavior's own snapping, the grid's included.
+    if (r.transform && r.transform.kind === 'translate' && !held) transform = r.transform;
     if (r.snap !== undefined) gctx.snap = r.snap;
   }
   if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
@@ -51,7 +53,7 @@ function foldBehaviors(
  *  behaviors posed. */
 export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx: InvocationCtx): MoveFrame {
   const snapped = snapMoveDelta(session.pathSnap, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
-  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy);
+  const { dx, dy, posed, opaque } = foldBehaviors(session, readers, moveCtx, snapped.dx, snapped.dy, snapped.held);
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };

@@ -3,6 +3,7 @@ import type { Point } from '../paths/cubicMath';
 import { flattenCubic, flattenQuadratic } from '../flatten';
 import { parseSubpaths } from './contours';
 import { snipPathByPolyline } from './splitBySegment';
+import { keepCorners } from '../paths/cornerRestore';
 
 /** Options for {@link snipPathsAtCrossings}. */
 export interface SnipAtCrossingsOptions {
@@ -42,7 +43,7 @@ export function snipPathsAtCrossings(
         });
       }
     });
-    return cut ? pieces : null;
+    return cut ? pieces.map((piece) => (piece.kind === 'polygon' ? keepCorners([path], piece) : piece)) : null;
   });
 }
 

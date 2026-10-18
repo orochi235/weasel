@@ -23,6 +23,9 @@ export type { GuideSnapOptions } from './strategies/guides';
 // ─── Spacing hints: equal-spacing snaps on move, and Alt-hover distances ────
 export * from './spacingHints';
 
+// ─── Kit settings ───────────────────────────────────────────────────────────
+export { guidesKitSettingsSchema } from './kitSettings';
+
 // ─── Layout strategies, and the drop-target pickers they are built from ─────
 export * from './layout/snaps';
 export * from './layout/perContainer';

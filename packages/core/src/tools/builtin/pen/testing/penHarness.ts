@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import { createElement, type ReactNode } from 'react';
+import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from '../usePenTool';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
@@ -108,10 +110,15 @@ export function setup(over: {
   deps?: Record<string, unknown>;
   /** Leave `build` off the insert dep. */
   noMakeNode?: boolean;
+  /** Mount the pen under a `KitSettingsProvider` holding these. */
+  kitSettings?: KitSettingsOverrides;
 } = {}) {
-  const { scale = 1, paths = {}, deps: depsOver, noMakeNode, ...toolOpts } = over;
+  const { scale = 1, paths = {}, deps: depsOver, noMakeNode, kitSettings, ...toolOpts } = over;
   const adapter = makeAdapter();
-  const { result } = renderHook(() => usePenTool(toolOpts));
+  const wrapper = kitSettings
+    ? ({ children }: { children: ReactNode }) => createElement(KitSettingsProvider, { value: kitSettings }, children)
+    : undefined;
+  const { result } = renderHook(() => usePenTool(toolOpts), wrapper ? { wrapper } : undefined);
   const tool = result.current;
   // The state this pen's overlay paints from.
   const scratch = previewLayers.mock.lastCall![0].state;

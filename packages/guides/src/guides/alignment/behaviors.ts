@@ -21,6 +21,7 @@ import type {
 import { MOVE_ANCHORS, matchAlignment, stretchSpan } from './match';
 import { applyEdges, matchSpacing } from './spacing';
 import { alignmentOnPlane } from './plane';
+import { guideTolerance } from '../../strategies/guides';
 
 /** Options for move and resize — adds the pose descriptor for non-rect poses. */
 export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
@@ -78,9 +79,9 @@ function publish(args: AlignmentBehaviorBase, r: Resolved | null): void {
 
 function worldTol(
   base: AlignmentBehaviorBase,
-  ctx: Parameters<typeof screenTolerance>[1],
+  ctx: Parameters<typeof screenTolerance>[1] & Parameters<typeof guideTolerance>[1],
 ): { x: number; y: number } {
-  return screenTolerance(base.tolerance ?? 6, ctx);
+  return screenTolerance(guideTolerance(base.tolerance, ctx), ctx);
 }
 
 /** Move behavior: snap the dragged selection's union box (edges + center) to
