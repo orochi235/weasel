@@ -1079,13 +1079,11 @@ only story runner in the repo.
   line links to GitHub only where TypeDoc found the repository, which it cannot from a git
   worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
 
-- **(P3) Laid-out SVG text has not been looked at in a browser.** `serializeSvg(nodes, {
-  textLayout: layoutTextPose })` writes each line the renderer lays out as a `<tspan x y>` on its
-  baseline, with per-word `x` on a justified node (`laidLines.ts`); draw's exports pass it. Its
-  tests check the positions against the layout, not pixels. Left: render one in a browser beside
-  the canvas — a wrapped node, a justified one, a line with a larger run, a centered and an `rtl`
-  one, whose anchor comes from weasel's widths and lands off by however much the browser's face
-  differs — and the default `<tspan x dy>` lines, which have not been seen in one either.
+- **(P3) SVG text export: `rtl` and the default lines not seen in a browser.** Headless Chromium
+  drew an export written with `textLayout: layoutTextPose` (Inter from `assets/fonts/inter`) with
+  every glyph inside the cell weasel's layout gives it, for a wrapped, a justified, a centered node
+  and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
+  the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
 - **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
   wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a

@@ -2,8 +2,8 @@
  * The body of a `<text>` from the lines the renderer laid it out into: each
  * line a `<tspan>` placed at the layout's own `x` and baseline `y`, so a
  * reader that cannot wrap, justify, or pitch a line around a larger run still
- * draws the lines where weasel does. A justified node also gives every word
- * its own `x`, since `text-anchor` has no justify.
+ * draws the lines where weasel does. A line the layout justified also gives
+ * every word its own `x`, since `text-anchor` has no justify.
  */
 import type { LaidOutCell, LaidOutLineBox, TextPoseLayout } from '@weasel-js/core';
 import { LINES_ATTR, type LinePiece } from './tspanLines';
@@ -69,7 +69,7 @@ const breaksIn = (text: string): number => text.match(HARD_BREAKS)?.length ?? 0;
  * as `linesXml` folds them.
  */
 export function laidLinesXml(
-  pieces: readonly LinePiece[], layout: TextPoseLayout, anchor: ChunkAnchor, justify: boolean,
+  pieces: readonly LinePiece[], layout: TextPoseLayout, anchor: ChunkAnchor,
 ): string {
   const text = pieces.map((p) => p.text).join('');
   const offsets: number[] = [];
@@ -89,7 +89,7 @@ export function laidLinesXml(
     const start = Math.min(...line.cells.map((c) => c.srcIndex));
     const stepped = breaksIn(text.slice(prevEnd, start));
     prevEnd = line.srcEnd;
-    const starts = justify ? wordStarts(text, start, line.srcEnd) : [start];
+    const starts = line.justified ? wordStarts(text, start, line.srcEnd) : [start];
     starts.forEach((from, k) => {
       const to = starts[k + 1] ?? line.srcEnd;
       const cells = line.cells.filter((c) => c.srcIndex >= from && c.srcIndex < to);

@@ -158,8 +158,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: `serializeSvg` takes `textLayout` (pass `layoutTextPose`), and `svgNeeds` / `warmSvg`
   take it too. A laid-out `<text>` drops `dominant-baseline`, carries `data-weasel-layout="lines"`,
   puts each line on its baseline with a `y`, marks a wrapped line `data-weasel-lines="0"`, and
-  states `data-weasel-line-height`, since its pitch no longer does. A justified node writes every
-  word with its own `x`, on its last line too. Draw's exports and clipboard SVG pass it.
+  states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
+  writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
+  those are. Draw's exports and clipboard SVG pass it.
 
 ## Animation
 

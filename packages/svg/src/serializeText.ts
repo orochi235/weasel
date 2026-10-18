@@ -114,7 +114,7 @@ export function textXml(
     : [{ text: node.text, attrs: null }];
   const resolved = resolveTextStyle(style);
   const body = layout
-    ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' }, resolved.align === 'justify')
+    ? laidLinesXml(pieces, layout, { anchor, rtl: direction === 'rtl' })
     : linesXml(pieces, x, resolved.fontSize * resolved.lineHeight);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);

@@ -101,6 +101,14 @@ describe('serializeSvg with a text layout', () => {
     expect(back.style?.align).toBe('justify');
   });
 
+  it('writes a justified line the layout did not spread as one chunk', () => {
+    // Closed by a hard break, then the paragraph's last line: both ragged.
+    const n = node('AB AB AB AB\nAB AB', { style: { wrap: true, align: 'justify' } });
+    expect(body(laidSvg(n))).toMatch(
+      /<\/tspan><tspan x="10" y="[\d.]+" data-weasel-lines="0">AB AB<\/tspan><tspan x="10" y="[\d.]+">AB AB<\/tspan>$/,
+    );
+  });
+
   it('pitches a line holding a larger run where the layout puts it', () => {
     const n = node('AB\nAB', {
       runs: [{ text: 'AB\nA' }, { text: 'B', fontSize: 64 }],
