@@ -43,7 +43,7 @@ export interface EditorProps {
   modality: UseModalityReturn;
 }
 
-/** The editor's chrome around the workspace: the menu bar, the command bar, the tool-options strip, the two
+/** The editor's chrome around the workspace: the command bar led by the menu bar, the tool-options strip, the two
  *  sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
@@ -85,8 +85,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
     <ActiveToolContextProvider>
       <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
         <div className="wd-app">
-          <MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />
           <Toolbar
+            menus={<MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />}
             scene={scene}
             selection={selection}
             paperSize={doc.paperSize}
