@@ -47,11 +47,9 @@ export const Adornments: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState('');
-      return <Input label="Q" value={v} onChange={setV} description={`value="${v}"`} />;
-    }
-    return <Wrap />;
+  args: { label: 'Q' },
+  render: (args) => {
+    const [v, setV] = useState('');
+    return <Input {...args} value={v} onChange={setV} description={`value="${v}"`} />;
   },
 };

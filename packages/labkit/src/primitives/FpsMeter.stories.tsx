@@ -9,6 +9,4 @@ export default meta;
 
 type Story = StoryObj<typeof FpsMeter>;
 
-export const Default: Story = {
-  render: () => <FpsMeter />,
-};
+export const Default: Story = {};

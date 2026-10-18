@@ -16,11 +16,8 @@ export const Indeterminate: Story = { args: { children: 'Mixed', isIndeterminate
 export const Disabled: Story = { args: { children: 'Locked', isDisabled: true, defaultSelected: true } };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState(false);
-      return <Checkbox isSelected={v} onChange={setV}>state = {String(v)}</Checkbox>;
-    }
-    return <Wrap />;
+  render: (args) => {
+    const [v, setV] = useState(false);
+    return <Checkbox {...args} isSelected={v} onChange={setV}>state = {String(v)}</Checkbox>;
   },
 };
