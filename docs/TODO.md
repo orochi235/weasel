@@ -378,6 +378,9 @@ Priority tags:
   (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
   is not carried across, so an effect of an effect in another container reads that path where
   its own container would put it.
+- **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
+  optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
+  nothing adds, swaps, or removes the spine of an existing blend.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
