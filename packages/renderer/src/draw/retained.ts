@@ -2,7 +2,8 @@ import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { compositeProgramId } from '../effects/composite';
 import { isOwnComposite } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
-import type { RetainedClip, RetainedKey } from '../retain/RetainedSurfaces';
+import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
+import { contentBounds, type DeviceRect } from '../retain/contentBounds';
 import type { DrawContext } from './drawContext';
 import { drawFullscreenQuad, returnToRenderTarget } from './effects';
 import { applyClipTest } from './stencil';
@@ -45,6 +46,11 @@ function readsOnlyOwnPixels(children: readonly DrawCommand[]): boolean {
  * rather than on the composite because an edge of a clip and an edge of the
  * content crossing one pixel cover its samples together: clip the resolved
  * pixel instead and that pixel comes out as much as 30 levels off.
+ *
+ * The surface covers only the device pixels the group can paint
+ * (`contentBounds`), drawn under the canvas's own projection through a
+ * viewport offset by the rect's corner, and composited as a quad over that
+ * rect alone.
  */
 export function drawRetainedGroup(
   ctx: DrawContext, cmd: GroupDrawCommand, ownsSurface: boolean, dispatch: Dispatch,
@@ -70,36 +76,44 @@ export function drawRetainedGroup(
     viewMatrix: ctx.viewMatrix,
     clips,
   };
-  let texture = store.lookup(id, width, height, key);
-  if (!texture) {
-    const draw = store.reserve(id, width, height);
+  let pixels = store.lookup(id, width, height, key);
+  if (!pixels) {
+    const rect = contentBounds(cmd.children, ctx.state.transform, clips, width / ctx.widthCss, width, height);
+    const draw = store.reserve(id, width, height, rect);
     if (!draw) {
       ctx.state.pop();
       return false;
     }
     // Staged geometry belongs to the buffer underneath.
     flushBatch(ctx);
-    drawInto(ctx, cmd.children, clips, draw.fbo, width, height, dispatch);
-    texture = draw.commit(key);
+    if (draw.fbo) drawInto(ctx, cmd.children, clips, draw.fbo, rect, dispatch);
+    pixels = draw.commit(key);
   }
   ctx.state.pop();
 
+  const { texture, rect } = pixels;
+  if (!texture) return true;
   flushBatch(ctx);
   const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
-  if (composite) {
+  if (composite && ctx.viewportWithin) {
     applyClipTest(ctx, 0);
-    drawFullscreenQuad(ctx, composite, texture, width, height, undefined, COMPOSITE_AS_DRAWN);
+    ctx.viewportWithin(rect);
+    drawFullscreenQuad(ctx, composite, texture, rect.width, rect.height, undefined, COMPOSITE_AS_DRAWN);
+    ctx.restoreTargetRect?.();
   }
   return true;
 }
 
-/** Draw `children` into the scratch buffer behind `fbo`, under the group
- *  stack as it stands and inside `clips`. */
+/** Draw `children` into the bottom-left `rect.width × rect.height` of the
+ *  scratch buffer behind `fbo`, under the group stack as it stands and inside
+ *  `clips`: the part of the drawing buffer `rect` covers. */
 function drawInto(
   ctx: DrawContext, children: readonly DrawCommand[], clips: readonly RetainedClip[],
-  fbo: WebGLFramebuffer, width: number, height: number, dispatch: Dispatch,
+  fbo: WebGLFramebuffer, rect: DeviceRect, dispatch: Dispatch,
 ): void {
   const gl = ctx.gl;
+  const width = ctx.deviceWidth!;
+  const height = ctx.deviceHeight!;
   const parentClipDepth = ctx.clipDepth;
   const parentClipStack = ctx.clipStack;
   const parentBatchClip = ctx.drawBatch.clip;
@@ -107,11 +121,17 @@ function drawInto(
   ctx.clipDepth = 0;
   ctx.clipStack = [];
   ctx.drawBatch.clip = null;
-  ctx.renderTarget = { fbo };
+  // The whole drawing buffer's viewport, slid so `rect`'s bottom-left corner
+  // lands on the scratch buffer's; the scissor keeps the rest of it out.
+  const restore = (): void => {
+    gl.viewport(-rect.x, rect.y + rect.height - height, width, height);
+    gl.scissor(0, 0, rect.width, rect.height);
+    gl.enable(gl.SCISSOR_TEST);
+  };
+  ctx.renderTarget = { fbo, restore };
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-  gl.viewport(0, 0, width, height);
-  gl.disable(gl.SCISSOR_TEST);
+  restore();
   gl.stencilMask(0xFF);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
   for (const clip of clips) enterGroupClip(ctx, clip.path, clip.transform);

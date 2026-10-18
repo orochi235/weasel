@@ -44,6 +44,8 @@ export interface CanvasPaintOptions {
   tile?: { x: number; y: number } | null;
   /** `WeaselRendererOptions.flattenTolerance`, applied from this paint on. */
   flattenTolerance?: FlattenTolerance;
+  /** `WeaselRendererOptions.retainBudget`, applied from this paint on. */
+  retainBudget?: number;
   /** Custom programs to compile on the renderer. Compiled when the renderer
    *  is created, and again when the set of ids changes. */
   shaders?: readonly ShaderProgramHandle[];
@@ -68,7 +70,8 @@ export interface CanvasRendererLease {
     options?: CanvasRenderOptions,
   ): boolean;
   /** The renderer that paints `canvas` at `size`, ready to render: created on
-   *  first use, resized, and given this paint's tile, tolerance, and shaders.
+   *  first use, resized, and given this paint's tile, tolerance, retain
+   *  budget, and shaders.
    *  Frees the previous renderer first if the surface moved to another
    *  element, or between owning it whole and painting a tile of it. `null`
    *  where no WebGL2 context is available (jsdom, a failed context creation,
@@ -96,6 +99,7 @@ interface Held {
   tileX: number | null;
   tileY: number | null;
   flattenTolerance: FlattenTolerance | undefined;
+  retainBudget: number | undefined;
   shaderKey: string;
 }
 
@@ -148,6 +152,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
           ...(shared ? {} : { canvas }),
           width, height, dpr,
           flattenTolerance: options.flattenTolerance,
+          retainBudget: options.retainBudget,
         });
       } catch (e) {
         // A lost context fails to compile and may yet come back; anything
@@ -162,7 +167,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       // a renderer that has already recompiled.
       const mine: Held = held = {
         canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
-        flattenTolerance: options.flattenTolerance, shaderKey: '',
+        flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget, shaderKey: '',
         lost: false,
         onLost: () => { mine.lost = true; },
         onRestored: () => {
@@ -190,6 +195,10 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       if (held.flattenTolerance !== options.flattenTolerance) {
         held.renderer.setFlattenTolerance(options.flattenTolerance);
         held.flattenTolerance = options.flattenTolerance;
+      }
+      if (held.retainBudget !== options.retainBudget) {
+        held.renderer.setRetainBudget(options.retainBudget);
+        held.retainBudget = options.retainBudget;
       }
     }
 

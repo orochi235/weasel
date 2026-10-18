@@ -109,7 +109,9 @@ export interface GroupDrawCommand {
    *
    * Worth it for a group of a few hundred commands or more that holds still
    * across frames; below that, drawing it is cheaper than the composite. A
-   * surface is the size of the drawing buffer and is freed at the end of any
+   * surface covers the device pixels the children can paint, clamped to the
+   * drawing buffer — all of it under text, a custom shader or `effects`, which
+   * are bounded only by the clips around them — and is freed at the end of any
    * frame that does not draw its id. The renderer's `retainBudget` caps what
    * they hold together.
    *
