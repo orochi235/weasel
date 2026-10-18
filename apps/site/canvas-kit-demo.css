@@ -274,6 +274,7 @@ a:hover { text-decoration: underline; }
 /* A demo's canvas box: its natural size plus however far the frame's handles
  * were dragged, never below 120px unless it started smaller. */
 .ckd-stage {
+  flex: none;
   width: max(min(var(--demo-stage-w), 120px), calc(var(--demo-stage-w) + var(--demo-stage-dw, 0px)));
   height: max(min(var(--demo-stage-h), 120px), calc(var(--demo-stage-h) + var(--demo-stage-dh, 0px)));
 }
