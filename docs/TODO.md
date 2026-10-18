@@ -368,11 +368,6 @@ Priority tags:
   `lengthenPathEnd` through `editAnchorSetTracked`, which counts the anchor set's subpaths. The two
   agree unless a path holds an empty subpath (a bare `M`); then the end extended is not the one
   picked (`packages/geom/src/paths/extendPath.ts`). Number them one way.
-- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
-  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
-  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
-  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
-  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision

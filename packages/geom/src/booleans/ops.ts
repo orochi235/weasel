@@ -11,7 +11,8 @@
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
 import polygonClipping from 'polygon-clipping';
-import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon } from './adapter';
+import { pathToMultiPolygon, multiPolygonToPath, type Polygon } from './adapter';
+import { arrangementFaces } from './arrangementFaces';
 import type { Path, PolygonPath } from '../path';
 
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
@@ -61,65 +62,46 @@ export function pathCrop(...paths: Path[]): PolygonPath[] {
   return pathCropPieces(...paths).map((p) => p.path);
 }
 
-function divideRegions(paths: Path[]): { region: MultiPolygon; sources: number[] }[] {
-  const mps = paths.map((p) => pathToMultiPolygon(p));
-  const n = mps.length;
-  if (n === 1) return [{ region: mps[0]!, sources: [0] }];
-  const out: { region: MultiPolygon; sources: number[] }[] = [];
-
-  // Size-ascending, so the output is stable: exclusives first, then pairs,
-  // then triples, …
-  const subsets: number[] = [];
-  for (let mask = 1; mask < 1 << n; mask++) subsets.push(mask);
-  subsets.sort((a, b) => popcount(a) - popcount(b) || a - b);
-
-  for (const mask of subsets) {
-    const inside: typeof mps = [];
-    const outside: typeof mps = [];
+/** The faces the paths' outlines cut the plane into, each naming the inputs covering it. */
+function faces(paths: Path[]): { polygon: Polygon; sources: number[] }[] {
+  const clean = paths.map((p) => {
+    const mp = pathToMultiPolygon(p);
+    return mp.length === 0 ? mp : polygonClipping.union(mp);
+  });
+  return arrangementFaces(clean).map(({ mask, polygon }) => {
     const sources: number[] = [];
-    for (let i = 0; i < n; i++) {
-      if (mask & (1 << i)) sources.push(i);
-      (mask & (1 << i) ? inside : outside).push(mps[i]);
-    }
-    const [insideHead, ...insideRest] = inside;
-    let region = insideRest.length === 0
-      ? insideHead
-      : polygonClipping.intersection(insideHead, ...insideRest);
-    if (region.length === 0) continue;
-    if (outside.length > 0) {
-      const [outHead, ...outRest] = outside;
-      const outsideUnion = polygonClipping.union(outHead, ...outRest);
-      region = polygonClipping.difference(region, outsideUnion);
-      if (region.length === 0) continue;
-    }
-    out.push({ region, sources });
-  }
-  return out;
+    for (let i = 0; i < paths.length; i++) if (mask & (1n << BigInt(i))) sources.push(i);
+    return { polygon, sources };
+  });
 }
 
 /**
  * Fracture N paths along every intersection into the maximal set of
- * non-overlapping regions. Returns one piece per region, naming every input
- * that covers it. For N=2 these are the three Illustrator "Divide" outputs
- * (A−B, B−A, A∩B).
- *
- * One region per non-empty subset of the inputs, so the 2^N − 1 subset count
- * limits this to small N; passing more than ~8 inputs is a misuse.
+ * non-overlapping regions. Returns one piece per set of inputs covering some
+ * region, naming them. For N=2 these are the three Illustrator "Divide"
+ * outputs (A−B, B−A, A∩B). Pieces with fewer sources come first.
  */
 export function pathDividePieces(...paths: Path[]): BooleanPiece[] {
-  if (paths.length === 0) return [];
-  return divideRegions(paths).map(({ region, sources }) => ({ path: multiPolygonToPath(region), sources }));
+  const regions = new Map<string, { polygons: Polygon[]; sources: number[] }>();
+  for (const { polygon, sources } of faces(paths)) {
+    const key = sources.join(',');
+    const region = regions.get(key);
+    if (region) region.polygons.push(polygon);
+    else regions.set(key, { polygons: [polygon], sources });
+  }
+  return [...regions.values()].map(({ polygons, sources }) => ({ path: multiPolygonToPath(polygons), sources }));
 }
 
 /**
  * The faces the paths cut each other into: {@link pathDividePieces}, with a
  * region that falls apart split into one piece per connected part. A face
- * keeps its holes. Same order, a region's parts in the order clipping gives them.
+ * keeps its holes. Same order, a region's parts left to right.
+ *
+ * Traces the arrangement of the outlines once, so the cost grows with the
+ * edges and their crossings rather than with the subsets of the inputs.
  */
 export function pathFacePieces(...paths: Path[]): BooleanPiece[] {
-  if (paths.length === 0) return [];
-  return divideRegions(paths).flatMap(({ region, sources }) =>
-    region.map((polygon) => ({ path: multiPolygonToPath([polygon]), sources: [...sources] })));
+  return faces(paths).map(({ polygon, sources }) => ({ path: multiPolygonToPath([polygon]), sources }));
 }
 
 /**
@@ -162,12 +144,6 @@ export function pathMerge(paths: readonly Path[], keyOf: (index: number) => unkn
       sources: g.map((p) => p.sources[0]!),
     }))
     .sort((a, b) => top(a) - top(b));
-}
-
-function popcount(n: number): number {
-  let c = 0;
-  while (n) { n &= n - 1; c++; }
-  return c;
 }
 
 /**
