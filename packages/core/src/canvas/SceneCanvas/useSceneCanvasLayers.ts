@@ -14,6 +14,8 @@ import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { useTargetBasePx } from 'core/device/useTargetBasePx';
+import { targetSizesPx } from 'core/device/targets';
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
@@ -57,10 +59,15 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   slops: boolean;
   /** `geometry.boundsIncludeStroke`: whether chrome sits on the stroke. */
   boundsIncludeStroke: boolean;
+  /** `selectTool`'s `handleHitRadius` and `resize.edgeHandles`, resolved here into
+   *  the one {@link ResizeHandleLayout} the overlay paints and the hit-test reads. */
+  selectTool?: { handleHitRadius?: number; resize?: { edgeHandles?: boolean } };
 }): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
+  /** Which resize handles exist and their hit radius, for every hit-test of this canvas. */
+  resizeHandles: ResizeHandleLayout;
   /** The affordances the gesture mounter hit-tests, which it publishes here
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
@@ -90,6 +97,10 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   const departureLayer = useDepartureGhostLayer({ scene, sceneSlot, departures });
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
+  const hitRadiusPx = args.selectTool?.handleHitRadius ?? targetSizesPx(targetScale, baseSizes).handle;
+  const edges = args.selectTool?.resize?.edgeHandles ?? true;
+  const resizeHandles = useMemo<ResizeHandleLayout>(() => ({ edges, hitRadiusPx }), [edges, hitRadiusPx]);
+
   const chromeAffordancesRef = useRef<readonly Affordance[]>([]);
   const slopsLayer = useMemo(
     () => createSlopsDebugLayer({ getAffordances: () => chromeAffordancesRef.current }),
@@ -109,6 +120,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     pathEditState.getEditingIds,
     poseDescriptor,
     args.boundsIncludeStroke ? (scene as unknown as DrawnBoundsScene) : undefined,
+    resizeHandles,
   );
 
   const layers = useMemo<CanvasLayers>(() => ({
@@ -128,5 +140,5 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     snapMarkerLayer, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, chromeAffordancesRef, departures };
+  return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, departures };
 }

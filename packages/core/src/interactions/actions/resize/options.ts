@@ -40,4 +40,10 @@ export interface UseResizeOptions<TPose> {
    *  handles hide whenever any selected node is non-resizable. Default: every
    *  node resizable. */
   resizable?: (id: string) => boolean;
+  /** Give the selection a resize handle at the middle of each edge, as well
+   *  as each corner: it resizes along one axis with the opposite edge pinned.
+   *  A side too short on screen for one (`EDGE_HANDLE_MIN_RADII` handle
+   *  radii) shows none. Read by `<SceneCanvas>` for its overlay and hit-test.
+   *  Default true. */
+  edgeHandles?: boolean;
 }

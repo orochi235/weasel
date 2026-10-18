@@ -27,6 +27,8 @@ export type Point2 = Point;
  * `kind` is a discriminator string:
  *   - `'handle:top-left'` / `'handle:top-right'` / `'handle:bottom-left'` /
  *     `'handle:bottom-right'` — corner resize handles.
+ *   - `'handle:top'` / `'handle:right'` / `'handle:bottom'` / `'handle:left'` —
+ *     edge resize handles.
  *   - `'rotate-handle'` — the rotation affordance.
  *   - `'anchor:N'` — a path anchor at index N.
  */
@@ -46,8 +48,8 @@ export interface AffordanceHit {
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */
   targetIds?: string[];
-  /** Set only when `kind` matches `'handle:*'`: which corner stays fixed
-   *  during a resize. */
+  /** Set only when `kind` matches `'handle:*'`: which corner or edge stays
+   *  fixed during a resize; `'free'` on the axis an edge handle leaves alone. */
   anchor?: ResizeAnchor;
   /** Cursor to show while the pointer hovers this affordance (no gesture in
    *  flight). Unset falls through to action-cursor prediction, then to the

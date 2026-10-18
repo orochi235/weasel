@@ -49,7 +49,7 @@
     "longestFunction": 138
   },
   "packages/core/src/features/selection/overlay.ts": {
-    "lines": 620
+    "lines": 514
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 654,

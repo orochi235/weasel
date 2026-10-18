@@ -43,6 +43,8 @@ function paintedHandles(): { x: number; y: number; angle: number }[] {
   const layer = createSelectionOverlayLayer({
     getSelection: () => [asNodeId('a')],
     handles: { size: SIZE },
+    // The corners are what this file measures.
+    resizeHandles: { edges: false },
     outline: { paint: { kind: 'solid', color: '#000' }, width: 1, pad: 0 },
   });
   const tree = layer.draw(envelope, VIEW, DIMS);
@@ -54,7 +56,7 @@ function paintedHandles(): { x: number; y: number; angle: number }[] {
 }
 
 describe('resize handles on a turned target under 4:1 zoom', () => {
-  const corner = createCornerResizeAffordance({ handleHitRadius: SIZE / 2 });
+  const corner = createCornerResizeAffordance({ handleHitRadius: SIZE / 2, edges: false });
   const handles = paintedHandles();
 
   it('paints four turned handles', () => {

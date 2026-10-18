@@ -1,3 +1,4 @@
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -60,6 +61,8 @@ export interface SceneCanvasInputProps {
    *  it hit-tests, for the slops overlay. */
   overlay: {
     rotationBadge: { distancePx: number; sizePx: number } | null | undefined;
+    /** The resize-handle layout the overlay paints, so the hit-test grabs exactly those. */
+    resizeHandles: ResizeHandleLayout;
     chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
   };
   canvas: {
@@ -115,7 +118,8 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     doubleClickNames: picking.doubleClickNames,
     viewRef: viewState.viewRef, dispatcher: p.dispatcher,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
-    targetScale, handleHitRadius: selectTool?.handleHitRadius,
+    targetScale, handleHitRadius: overlay.resizeHandles.hitRadiusPx,
+    edgeHandles: overlay.resizeHandles.edges,
     rotationBadge: overlay.rotationBadge, chromeAffordancesRef: overlay.chromeAffordancesRef,
     onDoubleClick, onClick, longPress: props.longPress,
   });

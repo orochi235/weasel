@@ -50,20 +50,20 @@ describe('createCornerResizeAffordance', () => {
     expect(aff.regions(state)).toEqual([]);
   });
 
-  it('produces 4 point regions for a single selection in single-mode', () => {
+  it('produces a point region per corner and edge for a single selection in single-mode', () => {
     const aff = createCornerResizeAffordance();
     const regions = aff.regions(stateWithSingle());
-    expect(regions).toHaveLength(4);
+    expect(regions).toHaveLength(8);
     for (const r of regions) {
       expect(r.shape.kind).toBe('point');
       expect(r.targetId).toBe('a');
     }
   });
 
-  it('produces 4 point regions for the union AABB in multi-mode', () => {
+  it('produces 8 point regions for the union AABB in multi-mode', () => {
     const aff = createCornerResizeAffordance();
     const regions = aff.regions(stateWithMulti());
-    expect(regions).toHaveLength(4);
+    expect(regions).toHaveLength(8);
     for (const r of regions) {
       expect(r.targetId).toBe(MULTI_RESIZE_TARGET_ID);
     }
@@ -217,5 +217,60 @@ describe('corner handles on a small selection', () => {
     if (topLeft.shape.kind !== 'point') throw new Error('expected a point region');
     const quad = pointRegionScreenQuad(topLeft.shape, transformOf(small(), 'a'), VIEW, (x, y) => [x, y]);
     expect(quad).toEqual([{ x: 92, y: 92 }, { x: 100, y: 92 }, { x: 100, y: 100 }, { x: 92, y: 100 }]);
+  });
+});
+
+describe('edge handles', () => {
+  // 100 x 60: both sides clear the 48 px floor at the default 8 px radius.
+  const roomy = (rotation = 0): ChromeState => ({
+    ...stateWithSingle(),
+    boundsOf: () => ({ x: 100, y: 100, width: 100, height: 60, rotation }),
+  });
+  const hitAt = (x: number, y: number, state: ChromeState, opts = {}, scale = 1) =>
+    hitAffordanceRegions(
+      [createCornerResizeAffordance(opts)], x, y, state, { x: 0, y: 0, scale: { x: scale, y: scale } },
+    );
+
+  it('takes a press at each edge midpoint, pinning the opposite edge', () => {
+    expect(hitAt(150, 100, roomy())?.region.hitKind).toBe('handle:top');
+    expect(hitAt(200, 130, roomy())?.region.hitKind).toBe('handle:right');
+    expect(hitAt(150, 160, roomy())?.region.hitKind).toBe('handle:bottom');
+    expect(hitAt(100, 130, roomy())?.region.hitKind).toBe('handle:left');
+    expect(hitAt(204, 130, roomy())?.binding.initialScratch).toEqual({
+      anchor: { x: 'min', y: 'free' },
+      targetId: 'a',
+      fixedPoint: { x: 100, y: 130 },
+    });
+  });
+
+  it('still gives the corners their own presses', () => {
+    expect(hitAt(200, 100, roomy())?.region.hitKind).toBe('handle:top-right');
+  });
+
+  it('shows a resize cursor along the axis the handle drags, turned with the target', () => {
+    const cursorAt = (x: number, y: number, s: ChromeState) => hitAt(x, y, s)?.cursor;
+    expect(cursorAt(200, 130, roomy())).toMatchObject({ glyph: 'resize', angle: 0, fallback: 'ew-resize' });
+    expect(cursorAt(150, 160, roomy())).toMatchObject({ glyph: 'resize', angle: Math.PI / 2, fallback: 'ns-resize' });
+    // Turned 90° about (150, 130), the local right midpoint lands at (150, 180).
+    expect(cursorAt(150, 180, roomy(Math.PI / 2))).toMatchObject({ angle: Math.PI / 2 });
+  });
+
+  it('hides them on a side under six hit radii on screen, and brings them back zoomed in', () => {
+    // 50 x 40 at scale 1: 40 < 48, so neither pair is offered.
+    expect(hitAt(150, 120, stateWithSingle())).toBeNull();
+    expect(hitAt(125, 100, stateWithSingle())).toBeNull();
+    // At 2x the same body spans 100 x 80 px.
+    expect(hitAt(150, 120, stateWithSingle(), {}, 2)?.region.hitKind).toBe('handle:right');
+  });
+
+  it('can be left out', () => {
+    expect(createCornerResizeAffordance({ edges: false }).regions(roomy())).toHaveLength(4);
+    expect(hitAt(200, 130, roomy(), { edges: false })).toBeNull();
+  });
+
+  it('paints only the edge handles that fit', () => {
+    const squares = (state: ChromeState) =>
+      composeAffordanceLayer('x', 'X', [createCornerResizeAffordance()]).draw(state, VIEW, DIMS).length;
+    expect(squares(roomy())).toBe(2 * squares(stateWithSingle()));
   });
 });

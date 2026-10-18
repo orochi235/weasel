@@ -55,9 +55,10 @@ describe.each([['skewed', SKEWED], ['skewed and turned', TURNED]] as const)('chr
       getPose: () => pose,
       outline: { paint: { kind: 'solid', color: '#000' }, width: 2, pad: 0 },
       handles: { size: 8 },
+      resizeHandles: { edges: false },
     });
     const tree = layer.draw(undefined, VIEW, DIMS);
-    // Handle fills, in `defaultHandlesOf` order: TL, TR, BL, BR.
+    // Handle fills, in `RESIZE_HANDLE_ANCHORS` order: TL, TR, BL, BR.
     const centers = tree.slice(1).map((c) => {
       const fill = (c.kind === 'group' ? (c as GroupDrawCommand).children[0] : c) as PathDrawCommand;
       const r = fill.path as { x: number; y: number; width: number; height: number };

@@ -36,6 +36,8 @@ export interface ChromeAffordanceOptions {
    *  it can be grabbed where it is drawn. Omitted or null, only the rotate
    *  ring is hit-tested. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** Resize handles at the edge midpoints as well as the corners. Default true. */
+  edgeHandles?: boolean;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
 }
@@ -59,7 +61,7 @@ export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
 
 /**
  * The kit's selection chrome as affordances, bottom → top: rotate ring (and
- * badge), corner handles, then anchors and their controls — a corner handle
+ * badge), resize handles, then anchors and their controls — a corner handle
  * beats the rotate band it sits inside, and a control handle beats everything.
  */
 export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordance[] {
@@ -70,6 +72,7 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
     rotateBandPx = sizes.rotationDistance,
     getAnchorState,
     rotationBadge,
+    edgeHandles = true,
   } = opts;
   return [
     createRotationAffordance({
@@ -79,7 +82,7 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
         ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
         : {}),
     }),
-    createCornerResizeAffordance({ handleHitRadius }),
+    createCornerResizeAffordance({ handleHitRadius, edges: edgeHandles }),
     ...(getAnchorState
       ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
       : []),
