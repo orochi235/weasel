@@ -3,9 +3,10 @@
  * frame of 512 one-rect flushes (`rect-cmbreak`) beside a frame of one batch
  * (`rect-plain`).
  *
- * Frames drawn back to back in one task slow down after about eight, by 4–10x,
- * with occasional stalls of seconds. Frames drawn one per task do not, which is
- * why the perf specs time one frame per task — see `lib/frameTiming.ts`.
+ * Every phase here syncs through `gl.finish()`, which Chromium's WebGL makes a
+ * flush, so a frame reads as its issue cost until the command buffer fills and
+ * as its real cost after: the cliff after a few frames in one task. See
+ * `README.md`, "Frames timed through `finish` in one task".
  *
  * `WEASEL_NOISE_PHASES` picks phases (comma-separated). This page is not
  * cross-origin isolated, so single frames read at 100 us. This reports; it does
@@ -199,14 +200,16 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         }
         return out;
       },
-      stallTrace(id: string, count: number): { frames: number[]; starts: number[] } {
-        render(id); gl.finish();
+      stallTrace(id: string, count: number, read: boolean): { frames: number[]; starts: number[] } {
+        const px = new Uint8Array(4);
+        const sync = () => { if (read) gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); else gl.finish(); };
+        render(id); sync();
         performance.mark('noise-start');
         const frames: number[] = []; const starts: number[] = [];
         for (let k = 0; k < count; k++) {
           const t0 = performance.now();
           performance.mark(`f${k}`);
-          render(id); gl.finish();
+          render(id); sync();
           frames.push(performance.now() - t0); starts.push(t0);
         }
         performance.mark('noise-end');
@@ -370,10 +373,11 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     }
   }
 
-  if (PHASES.includes('stall')) {
-    console.log('\nstall: 240 single frames under a trace; what the GPU process does in the slowest');
+  for (const phase of ['stall', 'stall-read'].filter((p) => PHASES.includes(p))) {
+    const read = phase === 'stall-read';
+    console.log(`\n${phase}: 240 single frames in one task under a trace, each ending in ${read ? 'a one-pixel readPixels' : 'finish'}; what the GPU process does in the slowest`);
     await browser.startTracing(page, { categories: CATEGORIES.split(',') });
-    const st = await ev<{ frames: number[]; starts: number[] }>('stallTrace', 'rect-cmbreak', 240);
+    const st = await ev<{ frames: number[]; starts: number[] }>('stallTrace', 'rect-cmbreak', 240, read);
     const buf = await browser.stopTracing();
     const sorted = st.frames.map((f, i) => [f, i] as const).sort((a, b) => b[0] - a[0]);
     console.log(`  median ${med(st.frames).toFixed(2)} ms; slowest ${sorted.slice(0, 5).map(([f, i]) => `#${i} ${f.toFixed(1)}`).join(', ')}`);
@@ -392,7 +396,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
       for (const r of rows) console.log(`      ${r.ms.toFixed(1).padStart(7)} ms  ${r.thread}  ${r.name}  ${JSON.stringify(r.args ?? {}).slice(0, 160)}`);
       stalls.push({ frame: i, ms: f, rows });
     }
-    run.item('stall frames', { median: metric(med(st.frames), 'ms', '240 single frames', st.frames) }, { stalls });
+    run.item(`${phase} frames`, { median: metric(med(st.frames), 'ms', '240 single frames', st.frames) }, { stalls });
   }
 
   expect(errors).toEqual([]);

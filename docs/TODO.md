@@ -1396,8 +1396,12 @@ only story runner in the repo.
   `tests/perf/recorded/mesh-batch-2026-10-07/`. Left: the same run on a D3D or Vulkan backend,
   where the break-evens may sit elsewhere.
 
-- **(P3) What inside Chromium or ANGLE slows frames drawn back to back in one task** — 4–10x after
-  about eight (`tests/perf/README.md`, "Timing a frame") — is unknown.
+- **(P3) What stalled single frames for 0.15–3.7 s in `flush-noise` on 2026-10-04 is unknown.** The
+  4–10x slowdown after a few frames in one task is explained: `finish` is a flush, so the cheap
+  frames were issue cost until the command buffer filled (`tests/perf/README.md`, "Frames timed
+  through `finish` in one task"). The stalls are not: raw WebGL2 in `back-to-back.spec.ts` never
+  passed 43 ms a frame on teitou on 2026-10-17. The next step is `flush-noise`'s `stall` phase on
+  weasel's own frame, synced by `readPixels` instead of `finish`.
 
 - **(P3) A consumer's `sampling: 'nearest'` costing up to 8x does not reproduce here.** They drew a
   5652px atlas (~122MB) and saw nearest cost 8.11x linear at 2:1 minification, 5.98x at 1.33:1,
