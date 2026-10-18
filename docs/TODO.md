@@ -46,7 +46,9 @@ Priority tags:
   preference; a move and the drawing tools reach path targets and measurement ends through the
   `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
   path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
-  the tolerances are fixed constants (`DEFAULT_GUIDE_TOLERANCE_PX`). The arc settles one snap
+  each pipeline reads its own reach: guides and spacing hints the `targets.guideSnapPx` kit
+  setting, the pen `targets.penAnchorSnapPx`, and path snap its own `radius` option, else
+  `DEFAULT_PATH_SNAP_RADIUS`, with no kit setting behind it. The arc settles one snap
   pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
   suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
   spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
