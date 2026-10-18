@@ -16,6 +16,11 @@ import type { InkExtents } from 'core/geometry/inkExtents';
 import { drawnBoxes } from '../drawnBoxes';
 import type { MinSize } from 'core/scene/minSize';
 import { boxMinimum } from './minimum';
+import { boxFrame } from './boxFrame';
+import { localToWorld } from 'core/geometry/targetFrame';
+import { outsetBox } from 'core/geometry/inkExtents';
+import type { SnapBegin, SnapSession } from '../snapDep';
+import { inputSession } from 'features/snap/session2d';
 
 /** The box the drag resizes, as the press found it. */
 export interface ResizeBox {
@@ -69,6 +74,9 @@ export interface ResizeSession {
   readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
   /** Label, history, and callbacks from the `resizePolicy` dep. */
   readonly lifecycle: GestureLifecycle;
+  /** The drag's snapping: the `snap` dep's session, else one that only holds
+   *  the handle to its axis and Shift to the aspect. */
+  readonly snap: SnapSession;
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -141,6 +149,20 @@ export function captureResize(
   };
 }
 
+/** The drag's snap session, over the box as drawn in its own frame. */
+function beginSnap(ctx: InvocationCtx, ids: readonly NodeId[], press: { x: number; y: number }, box: ResizeBox): SnapSession {
+  const frame = boxFrame(box, box.bounds);
+  const req: SnapBegin = {
+    gesture: 'resize',
+    ids,
+    press,
+    handle: box.anchor,
+    constrain: 'aspect',
+    box: { bounds: outsetBox(box.bounds, box.extents), toWorld: (p) => localToWorld(frame, p.x, p.y) },
+  };
+  return ctx.deps.snap?.begin?.(req) ?? inputSession(req);
+}
+
 /** Capture a resize at press. Null when nothing is selected, the press is not
  *  on a resize handle, or nothing it would write exists. Runs each
  *  constraint's `onStart`. */
@@ -175,6 +197,7 @@ export function beginResize(
     geometryProjection: ctx.deps.geometryProjection,
     selectionMethods: selection.adapterMethods,
     lifecycle: readGestureLifecycle(policy, 'Resize', constraints),
+    snap: beginSnap(ctx, ids, startWorld, place.box),
   };
   return { session, readers };
 }

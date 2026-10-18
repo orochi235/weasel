@@ -45,10 +45,25 @@ describe('buildProbes', () => {
       .toEqual([{ id: 'pointer', at: { x: 3, y: 4 }, role: 'pointer' }]);
   });
 
-  it('probes the moving edge of a resize, on the drawn box', () => {
+  it('probes the moving edge of a resize, on the drawn box: its midpoint as pointer, its ends as box', () => {
     const probes = buildProbes(
       { gesture: 'resize', press: { x: 114, y: 40 }, ids: [ID], handle: { x: 'min', y: 'free' } }, reads(),
     );
-    expect(probes).toEqual([{ id: 'pointer', at: { x: 115, y: 45 }, role: 'pointer' }]);
+    expect(probes).toEqual([
+      { id: 'pointer', at: { x: 115, y: 45 }, role: 'pointer' },
+      { id: 'box.0', at: { x: 115, y: 15 }, role: 'box' },
+      { id: 'box.1', at: { x: 115, y: 75 }, role: 'box' },
+    ]);
+  });
+
+  it('probes a resize\'s dragged corner as pointer and box, through the box it names', () => {
+    const probes = buildProbes({
+      gesture: 'resize', press: { x: 0, y: 0 }, ids: [ID], handle: { x: 'max', y: 'max' },
+      box: { bounds: { x: 0, y: 0, width: 10, height: 20 }, toWorld: (p) => ({ x: p.x + 100, y: p.y }) },
+    }, reads());
+    expect(probes).toEqual([
+      { id: 'pointer', at: { x: 100, y: 0 }, role: 'pointer' },
+      { id: 'box.0', at: { x: 100, y: 0 }, role: 'box' },
+    ]);
   });
 });

@@ -12,7 +12,6 @@ import type { ResizePolicy } from '../depSchema';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import type { PoseFrame } from '../poseFrame';
 import { shapeSources } from '../selectionSubtree';
-import { DEFAULT_RESIZE_BEHAVIORS } from './behaviors';
 import { fixedCornerOf } from './cornerHandles';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './geometry';
 import { boundsForRules } from './ruleBounds';
@@ -38,9 +37,7 @@ export function resolvePolicy(dep: ResizePolicy<unknown> | undefined): {
 } {
   if (!dep) {
     return {
-      // Standard kit behaviors (shift = aspect lock) apply even with no
-      // policy wired; consumers opt out via an explicit `constraints: []`.
-      constraints: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<Bounds>[],
+      constraints: [],
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
     };

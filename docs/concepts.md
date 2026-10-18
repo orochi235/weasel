@@ -568,8 +568,8 @@ makes a move, resize or rotate commit without a history entry unless
 `transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
 Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
-`snapBackOrDelete(...)` for move; `clampMinSize` and `lockAspectWithModifier`
-for resize; `snapRotationWithModifier` for rotate, which a rotate applies with
+`snapBackOrDelete(...)` for move; `clampMinSize` for resize (Shift's aspect
+lock is the snap session's `snap.constrain` role); `snapRotationWithModifier` for rotate, which a rotate applies with
 Shift and 15 degree steps unless its binding is given a `behaviors` list. A clone drag takes the move behaviors that only reshape the
 translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
 `snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —

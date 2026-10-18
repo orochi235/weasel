@@ -1,4 +1,4 @@
-import type { Bounds, SnapMark, SnapSource } from '@weasel-js/core';
+import type { Bounds, SnapEdges, SnapMark, SnapSource } from '@weasel-js/core';
 import {
   applyEdges, equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
@@ -30,13 +30,12 @@ function gapMark(g: SpacingGap, color: string | undefined): SnapMark {
   return { kind: 'gap', ...ends, value: g.max - g.min, ...(color === undefined ? {} : { color }) };
 }
 
-const shifted = (b: Bounds, d: Point): Bounds => applyEdges(b, d.x, d.y, { x: 'both', y: 'both' });
-
 /**
  * Equal spacing as snap targets, Figma's: on each axis, the positions of the
  * subject's box that make its gap to a neighbor equal one already between
- * two siblings, or center it between its two neighbors. When the result
- * meets one, it marks every gap of that size, the box's own included.
+ * two siblings, or center it between its two neighbors. A resize moves only
+ * the edges it drags. When the result meets one, it marks every gap of that
+ * size, the box's own included.
  */
 export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSource {
   const fromScene = cachedPerScene(measureAll);
@@ -51,10 +50,13 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
       const measured = opts.getTargets ? measureAll(opts.getTargets()) : fromScene(q);
       if (!box || !probe || !measured) return;
       const reach = q.reachWorld(q.reachPx);
+      const edges: SnapEdges = q.edges ?? { x: 'both', y: 'both' };
       for (const axis of ['x', 'y'] as const) {
+        const edge = edges[axis];
+        if (edge === null) continue;
         const refs = referenceGaps(box, measured[axis]);
         const seen = new Set<string>();
-        for (const o of spacingOffers(box, axis, 'both', measured.boxes, refs)) {
+        for (const o of spacingOffers(box, axis, edge, measured.boxes, refs)) {
           const key = `${o.delta.toFixed(6)}:${o.size.toFixed(6)}`;
           if (Math.abs(o.delta) > reach || seen.has(key)) continue;
           seen.add(key);
@@ -62,7 +64,8 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
             probe: probe.id,
             locus: axisLine(axis, probe.at[axis] + o.delta, probe.at),
             mark: (delta: Point) => {
-              const landed = shifted(box, landedShift(q, delta));
+              const shift = landedShift(q, delta);
+              const landed = applyEdges(box, shift.x, shift.y, edges);
               return equalGaps(landed, axis, o.size, measured.boxes, refs).map((g) => gapMark(g, opts.color));
             },
           };

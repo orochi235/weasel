@@ -64,13 +64,20 @@ describe('resizeAction on a polygon path pose', () => {
   it('keeps the aspect ratio under Shift instead of writing NaN coords', () => {
     const scene = makeScene();
     const handle = start(scene, { shift: true });
-    // Width is the dominant axis: 40 -> 80, so height follows 20 -> 40.
+    // The corner goes to the point of the diagonal nearest (90, 45): (40, 5)
+    // onto (40, 20) is (34, 17), so 40x20 becomes 74x37.
     handle.onMove!(ctxAt(scene, { x: 90, y: 45 }, { shift: true }));
     const preview = handle.previewPose!(ID as string) as Path;
-    expect(boundsOf(preview)).toMatchObject({ x: 10, y: 20, width: 80, height: 40 });
+    const near = (b: Bounds) => {
+      expect(b.x).toBeCloseTo(10);
+      expect(b.y).toBeCloseTo(20);
+      expect(b.width).toBeCloseTo(74);
+      expect(b.height).toBeCloseTo(37);
+    };
+    near(boundsOf(preview));
 
     handle.onEnd!(ctxAt(scene, { x: 90, y: 45 }, { shift: true }), 'commit');
-    expect(boundsOf(scene.get(ID)!.pose)).toMatchObject({ x: 10, y: 20, width: 80, height: 40 });
+    near(boundsOf(scene.get(ID)!.pose));
   });
 
   it('hands constraints the bounds of the pose, at the start and as it moves', () => {

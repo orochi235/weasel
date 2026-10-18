@@ -3,6 +3,7 @@
 import type { Path } from '@weasel-js/geom';
 import type { ResizeAnchor } from '@weasel-js/routing';
 import type { PlaneMap } from 'core/viewport/parallax';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapGesture, SnapMark } from 'features/snap/types';
 
 type Point = { x: number; y: number };
@@ -36,6 +37,13 @@ export interface SnapQuery {
  *  press, or a resize's aspect. */
 export type SnapConstrain = { step: number } | 'aspect' | 'axis';
 
+/** The box a resize drags, as drawn, in its own frame. */
+export interface SnapResizeBox {
+  bounds: Bounds;
+  /** Its frame into ctx coordinates, an affine map. Default: the identity. */
+  toWorld?: (p: Point) => Point;
+}
+
 /** What a gesture tells the snap dep when it starts. Points are ctx
  *  coordinates: world in 2D. */
 export interface SnapBegin {
@@ -45,6 +53,9 @@ export interface SnapBegin {
   ids?: readonly string[];
   /** Resize: the sides the drag pins. An axis left `free` is an edge handle. */
   handle?: ResizeAnchor;
+  /** Resize: the box `handle` belongs to. Default: the subject's drawn box,
+   *  axis-aligned. */
+  box?: SnapResizeBox;
   pivot?: Point;
   /** Point gestures: the previous anchor, a line's start. */
   origin?: Point;

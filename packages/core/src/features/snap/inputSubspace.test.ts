@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { flatDim, type Flat } from '@weasel-js/geom/nd';
 import type { SnapBegin, SnapMods } from 'interactions/actions/snapDep';
 import { inputFlat } from './inputSubspace';
+import { resizeSubject } from './resizeBox';
 
 const ON: SnapMods = { suspend: false, constrain: true };
 const OFF: SnapMods = { suspend: false, constrain: false };
@@ -46,8 +47,9 @@ describe('inputFlat', () => {
   });
 
   it('is the diagonal through the fixed corner for an aspect lock', () => {
-    const box = { x: 0, y: 0, width: 100, height: 50 };
-    const f = inputFlat(req({ gesture: 'resize', constrain: 'aspect', handle: { x: 'min', y: 'min' } }), ON, { x: 9, y: 1 }, box);
+    const handle = { x: 'min', y: 'min' } as const;
+    const box = resizeSubject({ bounds: { x: 0, y: 0, width: 100, height: 50 } }, handle);
+    const f = inputFlat(req({ gesture: 'resize', constrain: 'aspect', handle }), ON, { x: 9, y: 1 }, box);
     const [x, y] = dirOf(f);
     expect(y / x).toBeCloseTo(0.5, 9);
     expect(f.at).toEqual([0, 0]);
@@ -58,5 +60,17 @@ describe('inputFlat', () => {
     expectDir(inputFlat(edgeX, OFF, { x: 3, y: 4 }), 0);
     const edgeY = req({ gesture: 'resize', handle: { x: 'free', y: 'max' }, constrain: 'aspect' });
     expectDir(inputFlat(edgeY, ON, { x: 3, y: 4 }), 90);
+  });
+
+  it('runs an edge handle and an aspect lock along the box\'s own frame', () => {
+    const turn = Math.PI / 6;
+    const toWorld = (p: { x: number; y: number }) =>
+      ({ x: p.x * Math.cos(turn) - p.y * Math.sin(turn), y: p.x * Math.sin(turn) + p.y * Math.cos(turn) });
+    const bounds = { x: 0, y: 0, width: 100, height: 100 };
+    const edge = { x: 'min', y: 'free' } as const;
+    expectDir(inputFlat(req({ gesture: 'resize', handle: edge }), OFF, { x: 3, y: 4 }, resizeSubject({ bounds, toWorld }, edge)), 30);
+    const corner = { x: 'min', y: 'min' } as const;
+    const aspect = req({ gesture: 'resize', handle: corner, constrain: 'aspect' });
+    expectDir(inputFlat(aspect, ON, { x: 3, y: 4 }, resizeSubject({ bounds, toWorld }, corner)), 75);
   });
 });

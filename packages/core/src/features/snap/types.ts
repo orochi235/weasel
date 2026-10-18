@@ -33,6 +33,11 @@ export interface SourceCandidate<P = Point> {
 
 export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate';
 
+/** The sides of a box a gesture moves on one axis; null for neither. */
+export type SnapEdge = 'min' | 'max' | 'both' | null;
+
+export interface SnapEdges { x: SnapEdge; y: SnapEdge }
+
 /** A point on the subject that should land on a locus. */
 export interface SnapProbeAt<P = Point> {
   id: string;
@@ -48,9 +53,13 @@ export interface SnapCollect<P = Point> {
   /** The unsnapped move from the press. A probe at `at` here lands at
    *  `at - delta0 + delta` for the resolved `delta` a function mark gets. */
   delta0: P;
-  /** A move's subject: the union of its drawn boxes, stroke included, where
-   *  the unsnapped gesture puts it. Absent for other gestures. */
+  /** The subject's drawn box, stroke included, where the unsnapped gesture
+   *  puts it: a move's union of boxes, or the box a resize drags. Absent for
+   *  other gestures. */
   box?: Bounds;
+  /** Which sides of `box` the gesture moves on each axis. Default: both, as
+   *  a move does. */
+  edges?: SnapEdges;
   /** `id`'s drawn box, measured as `box` is. Absent in a host with no 2D
    *  scene. */
   drawnBox?(id: string): Bounds | undefined;

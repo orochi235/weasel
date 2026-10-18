@@ -5,9 +5,9 @@ import type { Scene } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
-import type { SnapBegin, SnapConstrain, SnapGeometry, SnapSession } from 'interactions/actions/snapDep';
+import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
-import { buildProbes, subjectBox } from './probes2d';
+import { buildProbes, resizeSubjectOf, subjectBox } from './probes2d';
 import { sceneProbeReads, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
@@ -43,6 +43,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     sources: i.sources,
     probes: buildProbes(i.req, reads),
     box: i.req.ids ? subjectBox(i.req.ids, reads) : null,
+    resize: resizeSubjectOf(i.req, reads),
     drawnBox: (id) => {
       const pose = reads.pose(id);
       return pose === undefined ? undefined : reads.drawnBox(id, pose);
@@ -72,6 +73,8 @@ export interface SnapSession2dOptions {
   constrain?: SnapConstrain;
   /** Resize: the sides the drag pins. */
   handle?: ResizeAnchor;
+  /** Resize: the box `handle` belongs to. Default: the subjects' drawn box. */
+  box?: SnapResizeBox;
   also?: SnapGeometry;
   /** The reach of a source that sets none, in screen px. Default `DEFAULT_SNAP_PX`. */
   reachPx?: number;
@@ -104,6 +107,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.origin ? { origin: opts.origin } : {}),
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
+    ...(opts.box ? { box: opts.box } : {}),
     ...(opts.also ? { also: opts.also } : {}),
     ...(opts.plane ? { plane: () => opts.plane ?? null } : {}),
   };

@@ -1,4 +1,5 @@
-import type { Bounds, SnapCollect, SnapMark, SnapProbeAt, SnapSource } from '@weasel-js/core';
+import type { Bounds, SnapCollect, SnapEdges, SnapMark, SnapProbeAt, SnapSource } from '@weasel-js/core';
+import { applyEdges } from '../guides/alignment/spacing';
 import { deriveAlignmentGuides } from '../guides/alignment/derive';
 import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
@@ -77,14 +78,17 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
       if (indexes.length === 0) return;
       const reach = q.reachWorld(q.reachPx);
       const box = q.box ?? null;
-      for (const p of q.probes) {
+      // A resize offers its dragged corner as pointer and as box; the box's
+      // probes are the ones whose marks span it.
+      const probes = q.probes.some((p) => p.role === 'box') ? q.probes.filter((p) => p.role === 'box') : q.probes;
+      for (const p of probes) {
         for (const axis of ['x', 'y'] as const) {
           for (const index of indexes) {
             for (const g of inReach(index[axis], p.at[axis], reach)) {
               yield {
                 probe: p.id,
                 locus: axisLine(axis, g.offset, p.at),
-                mark: (delta: Point) => lineMark(g, extentAcross(p, box, axis, landedShift(q, delta)), opts.color),
+                mark: (delta: Point) => lineMark(g, extentAcross(p, box, axis, landedShift(q, delta), q.edges), opts.color),
               };
             }
           }
@@ -96,9 +100,12 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
 
 /** Where the landed probe's box (its own point, for a pointer) spans the axis
  *  across `axis`. */
-function extentAcross(p: SnapProbeAt, box: Bounds | null, axis: Axis, shift: Point): [number, number] {
+function extentAcross(
+  p: SnapProbeAt, box: Bounds | null, axis: Axis, shift: Point, edges: SnapEdges = { x: 'both', y: 'both' },
+): [number, number] {
   const c = cross(axis);
   if (p.role !== 'box' || box === null) return [p.at[c] + shift[c], p.at[c] + shift[c]];
-  const lo = (c === 'x' ? box.x : box.y) + shift[c];
-  return [lo, lo + (c === 'x' ? box.width : box.height)];
+  const landed = applyEdges(box, shift.x, shift.y, edges);
+  const lo = c === 'x' ? landed.x : landed.y;
+  return [lo, lo + (c === 'x' ? landed.width : landed.height)];
 }

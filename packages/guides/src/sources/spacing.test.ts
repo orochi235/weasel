@@ -67,4 +67,27 @@ describe('spacingSnapSource', () => {
     expectNear(out.point, { x: -2, y: 0 });
     expect(gaps(out.marks)).toEqual([[10, 30, 20], [40, 60, 20]]);
   });
+
+  it('snaps a resize\'s moving edge so its gap to the next box equals an existing gap', () => {
+    const { scene, ids } = sceneOf([BOX]);
+    const targets = [...ROW, { x: 170, y: 100, width: 20, height: 50 }];
+    const d = drive({
+      sources: [row(targets)], gesture: 'resize', scene, ids, handle: { x: 'min', y: 'free' }, press: { x: 150, y: 125 },
+    });
+    // The east edge at 148; C starts at 170, so 170 - 20 = 150. The west edge stays.
+    const out = d.at({ x: 148, y: 125 });
+    expectNear(out.point, { x: 150, y: 125 });
+    expect(gaps(out.marks)).toEqual([[20, 40, 20], [150, 170, 20]]);
+  });
+
+  it('leaves the pinned side of a resize where it is', () => {
+    const { scene, ids } = sceneOf([BOX]);
+    // Moved whole, the box would center at 101..189. Its east edge alone lands
+    // at 190, where its gap to the box at 230 matches its 40 to B.
+    const d = drive({
+      sources: [row([ROW[1], { x: 230, y: 100, width: 20, height: 50 }])],
+      gesture: 'resize', scene, ids, handle: { x: 'min', y: 'free' }, press: { x: 150, y: 125 },
+    });
+    expectNear(d.at({ x: 188, y: 125 }).point, { x: 190, y: 125 });
+  });
 });

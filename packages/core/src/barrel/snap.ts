@@ -1,10 +1,10 @@
 // ─── Snap sources and sessions ───
 export type {
-  SnapBegin, SnapConstrain, SnapMods, SnapOutcome, SnapSession,
+  SnapBegin, SnapConstrain, SnapMods, SnapOutcome, SnapResizeBox, SnapSession,
 } from '../interactions/actions/snapDep';
 export type {
-  AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapGesture, SnapMark, SnapMarks, SnapProbeAt,
-  SnapSource, SourceCandidate,
+  AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapEdge, SnapEdges, SnapGesture, SnapMark,
+  SnapMarks, SnapProbeAt, SnapSource, SourceCandidate,
 } from '../features/snap/types';
 export { SNAP_ROLES, snapMods } from '../features/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';

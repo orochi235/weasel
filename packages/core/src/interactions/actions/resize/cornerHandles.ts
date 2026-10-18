@@ -97,3 +97,20 @@ export function fixedCornerOf(
     y: anchor.y === 'max' ? bounds.y + bounds.height : bounds.y,
   };
 }
+
+/** The corner or edge midpoint of `bounds` a resize pinning `anchor` moves. */
+export function movingPoint(bounds: Bounds, anchor: ResizeAnchor): { x: number; y: number } {
+  const side = (pin: ResizeAnchor['x'], lo: number, size: number): number =>
+    pin === 'min' ? lo + size : pin === 'max' ? lo : lo + size / 2;
+  return { x: side(anchor.x, bounds.x, bounds.width), y: side(anchor.y, bounds.y, bounds.height) };
+}
+
+/** `bounds` with the edges `anchor` leaves free moved by `(dx, dy)`, in its own axes. */
+export function movedEdges(bounds: Bounds, anchor: ResizeAnchor, dx: number, dy: number): Bounds {
+  let { x, y, width, height } = bounds;
+  if (anchor.x === 'min') width += dx;
+  else if (anchor.x === 'max') { x += dx; width -= dx; }
+  if (anchor.y === 'min') height += dy;
+  else if (anchor.y === 'max') { y += dy; height -= dy; }
+  return { x, y, width, height };
+}

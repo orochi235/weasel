@@ -175,7 +175,7 @@ export type { InsertDep, PathSymmetryDep, InsertIntoDep, InsertLive };
 
 /**
  * Adapter dep for `resizeAction`: bounds-frame behaviors (e.g.
- * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
+ * `clampMinSize`), world-space anchor-point snap behaviors (e.g.
  * `@weasel-js/guides`' `pointSnapToGrid`), and group-expansion (`expandIds`).
  *
  * The generic is erased to `unknown` at the schema entry; consumers cast at

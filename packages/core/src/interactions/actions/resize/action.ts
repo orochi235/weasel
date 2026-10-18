@@ -8,14 +8,17 @@ import { nextFrame } from './frame';
 import { beginResize, type ResizeFrame } from './session';
 import { unitsOfBox } from './replay';
 import { recordTransform } from '../transform-again/memory';
+import { SNAP_ROLES } from 'features/snap/roles';
 
 /**
  * Anchor-relative drag resize, committed as one batch on release. It needs
  * `InvocationCtx.drag.affordance` with a `handle:*` kind.
  *
- * The optional `resizePolicy` dep carries the constraints, point snaps, and
- * `expandIds`; absent, the invoker falls back to the kit's default
- * constraints, no snap, and `ids => ids` expansion.
+ * The dragged corner or edge snaps through the `snap` dep's session before
+ * the box is resized, held to the handle's axis, and to the box's diagonal
+ * while `snap.constrain` (Shift) is held. The optional `resizePolicy` dep
+ * carries the constraints, point snaps, and `expandIds`; absent, the invoker
+ * runs no constraints and `ids => ids` expansion.
  */
 export const resizeAction: Action & { requires: string[] } = inPlane({
   id: 'resize',
@@ -23,7 +26,11 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   // No default binding: a bare `{ kind: 'drag' }` claims every drag at ambient
   // scope. The resize handles bind it (`selectionResizeBindings`).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view', 'boundsIncludeStroke', 'kitSettings'],
+  modifierRoles: SNAP_ROLES,
+  requires: [
+    'selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view',
+    'boundsIncludeStroke', 'kitSettings', 'snap',
+  ],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -52,6 +59,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
               }
             } else runBehaviorCancel(session.constraints, session.gestureCtx);
           } finally {
+            session.snap.end();
             closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },

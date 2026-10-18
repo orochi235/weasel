@@ -7,7 +7,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { BoundsConstraint, GestureContext, ResizeAnchor, RotatedPose } from '../../gestures/types';
 import { carryPose, planeOf } from '../planeInput';
-import { fixedCornerOf } from './cornerHandles';
+import { fixedCornerOf, movedEdges } from './cornerHandles';
 import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from './geometry';
 import { snapPose } from './pointSnap';
 import { boundsForRules } from './ruleBounds';
@@ -15,6 +15,8 @@ import { boxFrame } from './boxFrame';
 import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
 import { clampToMinSize } from './behaviors/clampMinSize';
+import { edgeAspect } from './aspect';
+import { snapMods } from 'features/snap/roles';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
  *  taken into the axes of the frame the box is drawn in first. A frame nothing
@@ -27,23 +29,7 @@ function computeProposedBounds(
   frame: TargetTransform,
 ): Bounds {
   const { x: dx, y: dy } = worldDeltaToLocal(frame, worldDx, worldDy) ?? { x: 0, y: 0 };
-  let nx = ob.x;
-  let ny = ob.y;
-  let nw = ob.width;
-  let nh = ob.height;
-  if (anchor.x === 'min') {
-    nw = ob.width + dx;
-  } else if (anchor.x === 'max') {
-    nx = ob.x + dx;
-    nw = ob.width - dx;
-  }
-  if (anchor.y === 'min') {
-    nh = ob.height + dy;
-  } else if (anchor.y === 'max') {
-    ny = ob.y + dy;
-    nh = ob.height - dy;
-  }
-  return { x: nx, y: ny, width: nw, height: nh };
+  return movedEdges(ob, anchor, dx, dy);
 }
 
 /** `proposed` as the constraints rewrite it, each seeing the one before's. */
@@ -152,26 +138,33 @@ export function posesInBox(
   return { previews, proposed, lone: { id, g, world } };
 }
 
-/** One move's previews: the box as the drag and the constraints leave it,
- *  and every write id's stored pose inside it. A lone target also gets the
- *  rotated-resize pin and the point snaps, which a shared box, resized in the
- *  AABB frame, does not. `moveCtx` must carry a drag. */
+/** One move's previews: the box as the snapped drag and the constraints
+ *  leave it, and every write id's stored pose inside it. A lone target also
+ *  gets the rotated-resize pin and, when the snap session holds nothing, the
+ *  point snaps; a shared box, resized in the AABB frame, gets neither.
+ *  `moveCtx` must carry a drag. */
 export function nextFrame(session: ResizeSession, readers: GestureReaders, moveCtx: InvocationCtx): ResizeFrame {
-  const at = moveCtx.drag!.current;
+  const raw = moveCtx.drag!.current;
   const { box, gestureCtx: gctx } = session;
   gctx.modifiers = { ...moveCtx.modifiers };
-  gctx.pointer = pointerStateOf(at, moveCtx);
+  gctx.pointer = pointerStateOf(raw, moveCtx);
   gctx.view = readers.view();
   gctx.plane = readers.plane();
 
+  const mods = snapMods(moveCtx);
+  const snapped = session.snap.at(raw, mods);
+  const at = snapped.point;
   // The constraints see the box as drawn; the stroke keeps its width, so the
   // extents come back off what they leave.
   const moved = computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds));
-  const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, outsetBox(moved, box.extents)), box.extents);
+  const drawn = outsetBox(moved, box.extents);
+  const shaped = mods.constrain ? edgeAspect(drawn, outsetBox(box.bounds, box.extents), box.anchor) : drawn;
+  const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, shaped), box.extents);
 
-  const { previews, proposed, lone } = posesInBox(session, constrained, (g, world) => snapPose(
+  const pointSnap = snapped.held ? undefined : (g: PoseDescriptor<unknown>, world: unknown) => snapPose(
     session.pointSnap, g, world, box, box.anchor, gctx.modifiers, gctx.plane ?? null,
-  ));
+  );
+  const { previews, proposed, lone } = posesInBox(session, constrained, pointSnap);
   if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
   return { previews, proposed };
 }

@@ -7,8 +7,9 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { fromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { inputFlat } from './inputSubspace';
-import type { SnapOutcomeStore } from './outcomeStore';
-import type { SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
+import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
+import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
+import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
 
 type Point = { x: number; y: number };
 
@@ -26,8 +27,10 @@ export interface Session2dInputs {
   sources: readonly SnapSource[];
   /** At press. */
   probes: readonly SnapProbeAt[];
-  /** The subject's drawn box at press, for an aspect lock. */
+  /** A move's subject: its drawn box at press. */
   box?: Bounds | null;
+  /** A resize's box and frame. */
+  resize?: ResizeSubject | null;
   /** `id`'s drawn box now, for sources measuring the scene the way the
    *  subject's box was. */
   drawnBox?: (id: string) => Bounds | undefined;
@@ -49,7 +52,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
   return {
     at(p, mods) {
       const delta0 = { x: p.x - req.press.x, y: p.y - req.press.y };
-      const input = inputFlat(req, mods, delta0, inputs.box);
+      const input = inputFlat(req, mods, delta0, inputs.resize);
       if (mods.suspend) {
         store.set([]);
         return outcome(req.press, closestOnFlat(input, [delta0.x, delta0.y]), false, []);
@@ -64,7 +67,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
         toScreen: screenOf(view, plane),
       });
       const delta = { x: res.delta[0], y: res.delta[1] };
-      const marks = res.satisfied.flatMap((c) => marksOf(c.mark, delta));
+      const marks = distinct(res.satisfied.flatMap((c) => marksOf(c.mark, delta)));
       store.set(plane ? marks.map((m) => markFromPlane(m, plane)) : marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
@@ -74,6 +77,17 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
       inputs.onEnd?.();
     },
   };
+}
+
+/** `marks` with repeats dropped, so a target several probes meet is drawn once. */
+function distinct(marks: readonly SnapMark[]): SnapMark[] {
+  const seen = new Set<string>();
+  return marks.filter((m) => {
+    const key = JSON.stringify(m);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function marksOf(mark: SourceMark | undefined, delta: Point): readonly SnapMark[] {
@@ -117,7 +131,7 @@ function collectAll(
     const found = source.collect({
       gesture: req.gesture, probes: offered, delta0, exclude: inputs.exclude ?? req.ids ?? [],
       ...(plane ? { plane } : {}),
-      ...(req.gesture === 'move' && inputs.box ? { box: shift(inputs.box, delta0) } : {}),
+      ...subjectAt(inputs, delta0),
       ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
       ...(req.origin ? { origin: req.origin } : {}),
       ...(req.also ? { also: req.also } : {}),
@@ -140,7 +154,26 @@ function collectAll(
   return out;
 }
 
-const shift = (b: Bounds, d: Point): Bounds => ({ ...b, x: b.x + d.x, y: b.y + d.y });
+/** The subject's box where `delta0` puts it, and the sides that moved. */
+function subjectAt(inputs: Session2dInputs, delta0: Point): Pick<SnapCollect, 'box' | 'edges'> {
+  if (inputs.resize) return { box: resizedBox(inputs.resize, delta0), edges: resizeEdges(inputs.resize) };
+  const b = inputs.req.gesture === 'move' ? inputs.box : null;
+  return b ? { box: { ...b, x: b.x + delta0.x, y: b.y + delta0.y } } : {};
+}
+
+/** A session no source answers: it only holds the point to the gesture's
+ *  input subspace, as when a host provides no `snap` dep. */
+export function inputSession(req: SnapBegin): SnapSession {
+  return createSession2d({
+    req,
+    sources: [],
+    probes: [],
+    resize: req.gesture === 'resize' && req.handle && req.box ? resizeSubject(req.box, req.handle) : null,
+    view: () => null,
+    reachPx: 0,
+    store: createSnapOutcomeStore(),
+  });
+}
 
 function toFlat(locus: { at: Point; dirs: readonly Point[] }): Flat {
   return { at: [locus.at.x, locus.at.y], dirs: locus.dirs.map((d) => [d.x, d.y]) };

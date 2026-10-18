@@ -1,7 +1,6 @@
 /**
  * Wires the `resizePolicy` dep consumed by `resizeAction`. Omitted
- * `constraints` default to `DEFAULT_RESIZE_BEHAVIORS` (shift = aspect lock);
- * pass `[]` to disable.
+ * `constraints` default to none; Shift's aspect lock is the snap session's.
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -11,7 +10,6 @@ import type {
   BoundsConstraint,
 } from 'interactions/gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { DEFAULT_RESIZE_BEHAVIORS } from 'interactions/actions/resize/behaviors';
 import type { GestureLifecycleOptions } from 'interactions/actions/gestureLifecycle';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 
@@ -40,7 +38,7 @@ export function useResizePolicy<TPose>(
       transient: o.transient,
       onGestureStart: o.onGestureStart,
       onGestureEnd: o.onGestureEnd,
-      constraints: (o.constraints ?? DEFAULT_RESIZE_BEHAVIORS) as ResizePolicy<unknown>['constraints'],
+      constraints: (o.constraints ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['constraints'],
       pointSnap: (o.pointSnap ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['pointSnap'],
       expandIds: o.expandIds ?? IDENTITY_EXPAND,
     };

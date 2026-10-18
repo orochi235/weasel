@@ -1,8 +1,8 @@
-import type { ResizeAnchor } from '@weasel-js/routing';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { SnapBegin } from 'interactions/actions/snapDep';
 import type { SnapProbeAt } from './types';
+import { resizeProbes, resizeSubject, type ResizeSubject } from './resizeBox';
 
 type Point = { x: number; y: number };
 
@@ -28,11 +28,13 @@ export function subjectBox(ids: readonly string[], reads: ProbeReads): Bounds | 
   return unionBounds(boxes);
 }
 
-/** The corner or edge midpoint of `box` a resize pinning `handle` moves. */
-export function movingPoint(box: Bounds, handle: ResizeAnchor): Point {
-  const side = (pin: ResizeAnchor['x'], lo: number, size: number): number =>
-    pin === 'min' ? lo + size : pin === 'max' ? lo : lo + size / 2;
-  return { x: side(handle.x, box.x, box.width), y: side(handle.y, box.y, box.height) };
+/** A resize's box and frame: the one it names, else the subjects' drawn box,
+ *  axis-aligned. Null for another gesture, or with nothing to resize. */
+export function resizeSubjectOf(req: SnapBegin, reads: ProbeReads): ResizeSubject | null {
+  if (req.gesture !== 'resize' || !req.handle) return null;
+  if (req.box) return resizeSubject(req.box, req.handle);
+  const bounds = subjectBox(req.ids ?? [], reads);
+  return bounds ? resizeSubject({ bounds }, req.handle) : null;
 }
 
 /** The probes a gesture snaps, where they are at press. */
@@ -42,9 +44,8 @@ export function buildProbes(req: SnapBegin, reads: ProbeReads): SnapProbeAt[] {
     case 'point':
       return [{ id: 'pointer', at: req.press, role: 'pointer' }];
     case 'resize': {
-      const box = subjectBox(ids, reads);
-      const at = box && req.handle ? movingPoint(box, req.handle) : req.press;
-      return [{ id: 'pointer', at, role: 'pointer' }];
+      const s = resizeSubjectOf(req, reads);
+      return s ? resizeProbes(s) : [{ id: 'pointer', at: req.press, role: 'pointer' }];
     }
     case 'move':
       return moveProbes(req.press, ids, reads);
