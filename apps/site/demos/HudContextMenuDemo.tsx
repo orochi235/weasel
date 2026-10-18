@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   ActionsProvider, SceneCanvas, rectPath, solid, useMenuHost, useMenus, useScene, useSelection,
 } from '@weasel-js/core';
@@ -6,8 +6,7 @@ import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/cor
 import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
-import { ThemeProvider } from '@weasel-js/theme/react';
-import { SiteColorModeContext } from '../colorMode';
+import { SiteThemeProvider } from '../SiteThemeProvider';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }
@@ -79,11 +78,9 @@ function Demo() {
 }
 
 export function HudContextMenuDemo() {
-  // The hud draws in the canvas, so the page's mode reaches it as a theme, not through CSS.
-  const mode = useContext(SiteColorModeContext);
   return (
-    <ThemeProvider selection={{ mode }} className="ckd-shape-tools-demo">
+    <SiteThemeProvider className="ckd-shape-tools-demo">
       <ActionsProvider><Demo /></ActionsProvider>
-    </ThemeProvider>
+    </SiteThemeProvider>
   );
 }

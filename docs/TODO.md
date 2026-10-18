@@ -1129,14 +1129,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) The older hud demos draw in dark mode whatever the site shows.** The hud reads its colors
-  from a `ThemeProvider`, not the cascade, and the demo shell provides none, so `hud`, `hud-gallery`
-  and `loupe` keep the theme's default mode when the site is switched to light.
-  `HudContextMenuDemo` follows the site by putting `SiteColorModeContext` (`apps/site/colorMode.ts`)
-  into its own `ThemeProvider`; the others can do the same. A provider around every demo would
-  reach the lab demos too: `LabRoot` (`packages/labkit/src/lab/LabRoot.tsx`) applies
-  `interstellarTheme` only when `useThemeOptional()` finds no outer theme.
-
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
   write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it

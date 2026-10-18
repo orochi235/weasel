@@ -5,6 +5,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
+import { SiteThemeProvider } from '../SiteThemeProvider';
 
 const W = 600, H = 400;
 
@@ -84,6 +85,10 @@ function detailLayer(): RenderLayer<unknown> {
 }
 
 export function LoupeDemo() {
+  return <SiteThemeProvider className="ckd-canvas-wrap"><Demo /></SiteThemeProvider>;
+}
+
+function Demo() {
   const ref = useRef<SceneCanvasApi>(null);
   const hud = useHud(ref, { font: 'sans-serif' });
   const hudTool = useHudContribution();
@@ -131,7 +136,7 @@ export function LoupeDemo() {
   }, [hud, editing, settings]);
 
   return (
-    <div className="ckd-canvas-wrap">
+    <>
       <div className="ckd-row">
         <label>
           <input type="radio" name="loupe-mode" checked={mode === 'vector'}
@@ -180,6 +185,6 @@ export function LoupeDemo() {
           }}
         />
       </DemoStage>
-    </div>
+    </>
   );
 }
