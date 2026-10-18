@@ -34,9 +34,6 @@ export interface UseHandToolOptions {
  * A declarative shell: its one binding routes a drag to the
  * `viewport.dragPan` action, which owns the gesture, the view writes, and
  * the grabbing cursor. The tool only passes `axis` and `inertia` along.
- *
- * Holding space in Chrome on macOS flashes the arrow on each key repeat, even on a
- * bare `cursor: grab` page and over `cursor: none`; no page can stop it (2026-10-18).
  */
 export function useHandTool(opts: UseHandToolOptions = {}): Tool {
   // Read through a ref from a params thunk rather than closing over the
