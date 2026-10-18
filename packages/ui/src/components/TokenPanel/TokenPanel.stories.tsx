@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useCallback, useState } from 'react';
-import { TokenPanel } from './TokenPanel';
+import { TokenPanel, type TokenPanelProps } from './TokenPanel';
 import type { TokenEntry } from './tokenTypes';
 
 const meta: Meta<typeof TokenPanel> = {
@@ -43,7 +43,7 @@ const TOKENS: readonly TokenEntry[] = [
   { name: '--shadow', type: 'shadow', group: 'shadow', value: '0 1px 3px rgba(0, 0, 0, 0.3)' },
 ];
 
-function Editable() {
+function Editable(args: Partial<TokenPanelProps>) {
   const [values, setValues] = useState<Record<string, string>>({});
   const onChange = useCallback((name: string, value: string | null) => {
     setValues(({ [name]: _dropped, ...rest }) => (value === null ? rest : { ...rest, [name]: value }));
@@ -53,11 +53,11 @@ function Editable() {
   );
   return (
     <div style={{ width: 300 }}>
-      <TokenPanel tokens={tokens} onChange={onChange} />
+      <TokenPanel {...args} tokens={tokens} onChange={onChange} />
     </div>
   );
 }
 
 export const Default: Story = {
-  render: () => <Editable />,
+  render: (args) => <Editable {...args} />,
 };

@@ -81,6 +81,24 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(screen.getByRole('toolbar', { name: 'Pen' })).toBeInTheDocument();
   });
 
+  it('TokenPanel Default', async () => {
+    const { Default } = await import('./TokenPanel/TokenPanel.stories');
+    draw(Default as Story, { className: 'tokens-here' });
+    expect(document.querySelector('.tokens-here')).not.toBeNull();
+  });
+
+  it('SidebarPanel Interactive', async () => {
+    const { Interactive } = await import('./SidebarPanel/SidebarPanel.stories');
+    draw(Interactive as Story, { className: 'panel-here' });
+    expect(document.querySelector('.panel-here')).not.toBeNull();
+  });
+
+  it.each(['Rail', 'Columns'])('PrefsHeading %s', async (name) => {
+    const mod = (await import('./Prefs/PrefsHeading.stories')) as unknown as Record<string, Story>;
+    draw(mod[name], { className: 'form-here' });
+    expect(document.querySelector('.form-here')).not.toBeNull();
+  });
+
   it('CurveField DomeContour', async () => {
     const { DomeContour } = await import('./Properties/CurveField.stories');
     draw(DomeContour as Story, { height: 77 });
