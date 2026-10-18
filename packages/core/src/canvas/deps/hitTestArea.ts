@@ -23,7 +23,6 @@ import {
 } from 'canvas/pickWalk';
 import { rectToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
-export { hiddenLayerIds } from 'canvas/pickLayers';
 import type { HitTestView } from 'interactions/actions/depSchema';
 import { findShapeInk, findShapeSilhouette } from 'canvas/NodeShape';
 import {

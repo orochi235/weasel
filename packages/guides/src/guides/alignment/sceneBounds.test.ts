@@ -25,6 +25,12 @@ describe('siblingBounds', () => {
     expect(siblingBounds(scene, [a, b, g])).toEqual([]);
   });
 
+  it('skips a hidden sibling', () => {
+    const { scene, a, b } = fixture();
+    scene.setHidden(b, true);
+    expect(siblingBounds(scene, [a])).toEqual([box(100, 100, 50, 50)]);
+  });
+
   it('stays inside a group for a node inside it', () => {
     const { scene, inner } = fixture();
     expect(siblingBounds(scene, [inner])).toEqual([box(130, 110)]);

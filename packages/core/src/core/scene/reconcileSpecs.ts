@@ -42,6 +42,8 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
         scene.add(spec);
         continue;
       }
+      // An unlock goes first and a lock last, so the writes between can land.
+      if (before.locked === true && spec.locked !== true) scene.setLocked(id, false);
       const parent = spec.parent ?? null;
       if (parent !== (before.parent ?? null)) scene.move(id, parent);
       if (spec.layer !== before.layer) scene.setLayer(id, spec.layer);
@@ -49,6 +51,8 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
       if (spec.kind === 'container' && !same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
       if (!same(spec.pose, before.pose)) scene.setPose(id, spec.pose);
+      if ((spec.hidden === true) !== (before.hidden === true)) scene.setHidden(id, spec.hidden === true);
+      if (spec.locked === true && before.locked !== true) scene.setLocked(id, true);
     }
     if (selected.some((id) => removed.has(id))) {
       scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));

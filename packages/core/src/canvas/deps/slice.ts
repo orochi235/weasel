@@ -62,6 +62,7 @@ export function useSliceDepSource(
       const leaves: SliceLeaf<Node<unknown, string, unknown>>[] = [];
       const drawnAt = new Map<string, DrawnPose>();
       for (const node of sc.renderOrderNodes()) {
+        if (sc.isHidden(node.id)) continue;
         const path = leafPath(sc, node);
         if (!path) continue;
         const drawn = drawnPose(poseDescriptorForNode(descriptor, node), frame.world(node.id));

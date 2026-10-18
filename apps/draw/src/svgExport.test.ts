@@ -222,6 +222,21 @@ describe('Export leaves annotations out', () => {
   });
 });
 
+describe('Export writes hidden nodes hidden', () => {
+  it('writes a hidden node with display="none", and none for a hidden layer', async () => {
+    const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
+    const shown = { path: { kind: 'rect' as const, x: 0, y: 0, width: 30, height: 40 }, fill: { paint: solid('#ff0000') } };
+    scene.add({ kind: 'leaf', layer: 'default', pose: { x: 10, y: 20, width: 30, height: 40 }, data: shown });
+    const off = scene.add({ kind: 'leaf', layer: 'default', pose: { x: 50, y: 20, width: 30, height: 40 }, data: shown });
+    scene.setHidden(off, true);
+    const svg = await sceneToSvgString(scene, {
+      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff',
+    });
+    expect(svg.match(/display="none"/g)).toHaveLength(1);
+    expect(parseSvg(svg).nodes).toHaveLength(1);
+  });
+});
+
 describe('Save then Open: the page background', () => {
   it('comes back as the document background, not as a node', async () => {
     const scene = fakeScene({

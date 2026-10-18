@@ -294,7 +294,8 @@ function scaleLeafData(
  * Each file is fit-clamped to 90% of the visible viewport and centered on the
  * drop point (or the viewport center), with later files cascading by a fixed
  * offset. A multi-root file is wrapped in one container so it arrives as a
- * single selectable unit. A file that fails to parse, or parses to nothing,
+ * single selectable unit. Content the file hides arrives hidden
+ * (`SceneNode.hidden`) rather than being left out. A file that fails to parse, or parses to nothing,
  * is skipped with a `console.warn`.
  */
 export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<void> {
@@ -303,7 +304,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
   for (const file of files) {
     try {
       const text = await readFileText(file);
-      const parsed = parseSvg(text);
+      const parsed = parseSvg(text, { keepHidden: true });
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
       let drafts = svgNodesToKitDrafts(parsed, () => ctx.scene.mintId());
       if (drafts.length === 0) {
@@ -355,6 +356,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             pose: place(d.pose),
             data: d.kind === 'leaf' ? scaleLeafData(d.data, scale) : d.data,
             parent: d.parentId,
+            ...(d.hidden ? { hidden: true } : {}),
           } as unknown as { id: string },
           label: 'Insert SVG',
         }),

@@ -212,8 +212,8 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  * minted `NodeId`.
  */
 export type SceneDraft =
-  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
-  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData };
+  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj; hidden?: true }
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds; data: SvgKitLeafData; hidden?: true };
 
 /**
  * Lift the kit's lowering of one leaf into an `Obj`, adding what the `wd:`
@@ -275,9 +275,12 @@ export function svgNodesToSceneDrafts(
     (n) => (n.kind === 'group' ? n.meta?.wd?.attrs?.['group-id'] : undefined) ?? nextId(),
     { leaf: kitLeafToObj },
   );
-  return drafts.map((d): SceneDraft => (d.kind === 'container'
-    ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
-    : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }));
+  return drafts.map((d): SceneDraft => ({
+    ...(d.kind === 'container'
+      ? { kind: 'container', id: d.id, parentId: d.parentId, pose: d.pose, data: d.data }
+      : { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data }),
+    ...(d.hidden ? { hidden: true } : {}),
+  }));
 }
 
 /**

@@ -5,6 +5,7 @@
 import type { ArrivalWindow } from './arrivalWindow';
 import { createFieldEdits, type FieldEdits } from './fieldEdits';
 import { registerKitOps } from './kitOps';
+import { createNodeFlags } from './nodeFlags';
 import { createLayerEdits, type LayerEdits, type createLayerStack } from './layerStack';
 import type { ResolvedLayoutFrame } from './layoutPass';
 import type { LockGuard } from './lockGuard';
@@ -42,7 +43,8 @@ export interface SceneEdits<TData, TLayer extends string, TPose> {
   construct: TreeEdits<TData, TLayer, TPose>['construct'];
   methods: Omit<TreeEdits<TData, TLayer, TPose>, 'construct'>
     & FieldEdits<TData, TLayer, TPose>
-    & LayerEdits<TData, TLayer, TPose>;
+    & LayerEdits<TData, TLayer, TPose>
+    & ReturnType<typeof createNodeFlags<TData, TLayer, TPose>>;
 }
 
 export function createSceneEdits<TData, TLayer extends string, TPose>(
@@ -96,5 +98,12 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     removeMany: treeEdits.removeMany,
   });
 
-  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits } };
+  const flagEdits = createNodeFlags<TData, TLayer, TPose>({
+    register: env.ops.register,
+    requireNode: store.requireNode,
+    record: recorder.record,
+    narrowSelection: () => env.narrowSelection(),
+  });
+
+  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits, ...flagEdits } };
 }

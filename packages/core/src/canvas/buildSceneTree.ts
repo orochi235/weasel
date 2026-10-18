@@ -8,6 +8,7 @@ import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/p
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 import { splitOverChildren } from './overChildren';
+import { hidesSubtree } from 'core/scene/nodeGates';
 
 /** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` is one. */
 export interface HierarchicalAdapter<TNode, TPose> {
@@ -46,7 +47,8 @@ function wrapInChain(
 
 /**
  * Walk the adapter's scene tree once and emit each node's own paint into the bucket for
- * **that node's own `layer`** — not its parent's. So a child whose `layer` differs from its
+ * **that node's own `layer`** — not its parent's. A node carrying `hidden` is skipped with
+ * its whole subtree; see `nodeGates`. So a child whose `layer` differs from its
  * parent draws in its own layer's pass while staying a tree child for hit-testing / move /
  * reparent. Output is one group per visible layer, in adapter (`getLayers`) order.
  *
@@ -64,7 +66,7 @@ function wrapInChain(
  * single camera wrap still lands it right.
  */
 export function buildSceneTree<
-  TNode extends { id: string; layer: string },
+  TNode extends { id: string; layer: string; hidden?: boolean },
   TPose,
 >(
   adapter: HierarchicalAdapter<TNode, TPose>,
@@ -101,7 +103,7 @@ export function buildSceneTree<
     copied: boolean,
   ): void {
     const node = adapter.getNode(id);
-    if (!node) return;
+    if (!node || hidesSubtree(node)) return;
     const local = adapter.getPose(id);
     // Fold once, on the way down: O(1) per node where walking the parent chain
     // per node would be O(depth).

@@ -198,12 +198,6 @@ Priority tags:
   `serializeSvg` writes no line height either, so a pitch read on import is dropped on export
   unless a caller carries it, as WeaselDraw does in `wd:line-height`.
 
-- **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
-  keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
-  `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
-  ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
-  `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
-
 ### Path editing tricks
 
 - **(P2) Measurement rows in draw's Layers panel cannot be renamed, or hidden or locked one at a
@@ -685,6 +679,10 @@ Priority tags:
 - **(P3) Wires into a `rack` stage's side ports can cross.** Six side stages feeding six side
   inputs of one stage drew Layer 1's and Layer 2's wires crossing on their way in, before and
   after the ports were spread apart (`packages/diagram/src/effect/rack.ts`).
+- **(P3) A hidden or locked diagram node's ports still draw and take a drag.** `portLayer`
+  walks every node `sceneParticipants` yields (`packages/diagram/src/portLayer.ts`) and asks
+  neither `nodeGates` nor the layer, so ports float over a node on a hidden layer, or one hidden
+  on its own, and a locked node's ports can still be dragged from.
 - **(P4) An ELK layout adapter.** elkjs (the Eclipse Layout Kernel) lays out ports, labels and
   nested groups well, but answers asynchronously and is large (around 1.5 MB; not measured), so it cannot sit behind
   the synchronous `LayoutFn`. An adapter in a package of its own, for laying out a generated

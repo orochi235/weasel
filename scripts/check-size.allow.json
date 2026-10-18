@@ -41,10 +41,10 @@
     "lines": 604
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 156
+    "longestFunction": 144
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 236
+    "longestFunction": 235
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 207
@@ -53,7 +53,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 584
+    "lines": 575
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440

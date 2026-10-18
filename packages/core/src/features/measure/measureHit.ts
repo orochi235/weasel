@@ -1,6 +1,7 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
+import { nodeGates } from 'core/scene/nodeGates';
 
 /** Which part of which measurement lies under a point. */
 export interface MeasureHit {
@@ -20,8 +21,8 @@ function distanceToSegment(p: MeasurePoint, a: MeasurePoint, b: MeasurePoint): n
 
 /**
  * The measurement under `p`, newest first: an end within `tolerance` world
- * units of it, else a line within the same distance. Nothing on a hidden
- * measurement layer is hit.
+ * units of it, else a line within the same distance. A hidden or locked
+ * measurement (`nodeGates`) is passed over.
  */
 export function measureAt(
   scene: Pick<AnyScene, 'renderOrderNodes' | 'get' | 'layers'>,
@@ -29,8 +30,8 @@ export function measureAt(
   p: MeasurePoint,
   tolerance: number,
 ): MeasureHit | null {
-  if (scene.layers.find((l) => l.id === ms.layer)?.visible === false) return null;
-  const ids = measureIds(scene, ms).reverse();
+  const gates = nodeGates(scene);
+  const ids = measureIds(scene, ms).reverse().filter((id) => !gates.hidden(id) && !gates.locked(id));
   for (const id of ids) {
     const ends = measureEndsOf(scene.get(id));
     if (!ends) continue;
@@ -46,7 +47,7 @@ export function measureAt(
 }
 
 /**
- * The measurement end nearest `p` within `tolerance` world units, or null —
+ * The end of a shown measurement nearest `p` within `tolerance` world units, or null —
  * what a snap rule offers other tools so they can start or end on one.
  * Compose it ahead of a grid: `p => nearestMeasureEnd(…) ?? toGrid(p)`.
  */
@@ -56,10 +57,11 @@ export function nearestMeasureEnd(
   p: MeasurePoint,
   tolerance: number,
 ): MeasurePoint | null {
-  if (scene.layers.find((l) => l.id === ms.layer)?.visible === false) return null;
+  const gates = nodeGates(scene);
   let best: MeasurePoint | null = null;
   let bestD = tolerance;
   for (const id of measureIds(scene, ms)) {
+    if (gates.hidden(id)) continue;
     const ends = measureEndsOf(scene.get(id));
     if (!ends) continue;
     for (const end of [ends.start, ends.end]) {

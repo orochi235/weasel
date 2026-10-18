@@ -9,8 +9,10 @@ import type { PoseComposition } from './composeFrame';
 import type { PoseLinear } from '@weasel-js/geom';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
+import type { UseSceneOptions } from './useSceneOptions';
 
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
+export type { UseSceneOptions };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
 /**
@@ -89,6 +91,16 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  from anything else — it still paints, still clips, and a consumer can
    *  still select it by id. */
   pickable?: boolean;
+  /** Not drawn, with its whole subtree: picking, area selection, select-all,
+   *  snapping and the selection pass over it, and an SVG export writes it with
+   *  `display="none"`. Absent means shown; `Scene.isHidden` folds in its
+   *  ancestors' flags and its layer's visibility. */
+  hidden?: boolean;
+  /** Out of reach, with its whole subtree: still drawn, but picking and area
+   *  selection pass over it, the selection drops it, and every edit to it
+   *  throws, as on a locked layer. Absent means unlocked; `Scene.isLocked`
+   *  folds in its ancestors' and its layer's. */
+  locked?: boolean;
   /** Computes this node's path from its dependencies, in `dependsOn` order —
    *  each one the node and the pose it is painted at.
    *  A dependency that has been removed arrives as `undefined`.
@@ -166,6 +178,10 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   id?: NodeId;
   /** Mirrors `SceneNode.pickable`. Omit for the default, which is pickable. */
   pickable?: boolean;
+  /** Mirrors `SceneNode.hidden`. */
+  hidden?: boolean;
+  /** Mirrors `SceneNode.locked`. */
+  locked?: boolean;
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
   clipFromPose?: ClipFromPoseFn<TPose>;
@@ -240,44 +256,6 @@ export type SceneArrivalHandler<TPose> = (
    *  left — removed, or moved out. */
   departures: ReadonlyMap<NodeId, readonly NodeId[]>,
 ) => ReadonlyMap<NodeId, TPose> | null;
-
-/** Options for `useScene` — the layers the scene has, what it starts out
- *  holding, and how its history behaves. */
-export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
-  systemLayers: readonly SystemLayerSpec<TLayer>[];
-  initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
-  ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
-  historyLimit?: number;
-  /** Window (ms) within which consecutive same-shaped mutations merge into
-   *  the previous undo entry (matching per-op coalesce keys — e.g. repeated
-   *  `setPose` on the same node, or repeated `applyBatch` calls whose ops
-   *  carry matching `coalesceKey` multisets). `0` (default) disables
-   *  coalescing: every mutation is a discrete undo entry. Undo of a
-   *  coalesced entry returns to the state before the first merged mutation;
-   *  redo restores the latest. `scene.batch` entries never coalesce. */
-  coalesceWindowMs?: number;
-  generateId?: () => NodeId;
-  /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
-   *  Required only when serializing/deserializing scenes that use function fields. */
-  registry?: SceneRegistry<TPose, TData, TLayer>;
-  /** How a child's pose folds into its container's. Default: it does not, and every pose is world. */
-  composition?: PoseComposition<TPose>;
-  /** How laid-out containers are measured. See {@link LayoutFrame}. */
-  layoutFrame?: LayoutFrame<TPose>;
-  /** When supplied, `scene.applyBatch` consults this on every call. If it returns a non-null
-   *  `Journal`, ops are routed to the journal's `applyBatch` instead of recording a new
-   *  parent-history entry, and undo and redo step that journal. The scene state changes as
-   *  normal; only the history tracking differs.
-   *
-   *  When the accessor isn't known at scene-construction time, wire it after
-   *  construction via `scene.setActiveJournalAccessor(fn)`. */
-  getActiveJournal?: () => import('@weasel-js/history').Journal | null;
-  /** Re-render the host on every scene mutation. Default `true`. Set `false`
-   *  when the scene is read by a frame loop rather than by a render — a game
-   *  loop, a simulation — and nothing in the host's DOM derives from it.
-   *  Read by `useScene`; `createScene` ignores it. */
-  subscribe?: boolean;
-}
 
 /**
  * The kit-owned scene tree: nodes, layers, and the undo history over both.
@@ -403,6 +381,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** Shift `id` to `index` within its **current** parent's child list. Unlike
    *  {@link move}, the parent never changes — only sibling order. */
   reorder(id: NodeId, index: number): void;
+  /** Show or hide a layer. Hiding drops its nodes from the selection. */
   setLayerVisible(layer: TLayer, visible: boolean): void;
   /** Lock or unlock a layer. A locked layer still paints, but its nodes are
    *  out of reach: picking and area selection pass over them, the selection
@@ -413,10 +392,22 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  `LayerRecord.parallax`. Undoable; an animation tweening it writes inside
    *  {@link Scene.untracked} so no frame becomes an undo step. */
   setLayerParallax(layer: TLayer, parallax: ParallaxOpts | undefined): void;
-  /** Whether `id` sits on a locked layer or under a container that does.
-   *  A container's lock covers its whole subtree, whatever layers the
+  /** Whether `id` is locked: it or an ancestor carries `locked`, or sits on a
+   *  locked layer. A lock covers its whole subtree, whatever layers the
    *  descendants are tagged to. An id not in the scene is not locked. */
   isLocked(id: NodeId): boolean;
+  /** Whether `id` is not drawn: its own layer is hidden, or it or an ancestor
+   *  carries `hidden`. A hidden layer hides only the nodes tagged to it. An
+   *  id not in the scene is not hidden. */
+  isHidden(id: NodeId): boolean;
+  /** Hide or show node `id` and its subtree — see `SceneNode.hidden`. One
+   *  undo step; hiding drops the subtree from the selection. Never blocked by
+   *  a lock, and setting what the node already has records nothing. */
+  setHidden(id: NodeId, hidden: boolean): void;
+  /** Lock or unlock node `id` and its subtree — see `SceneNode.locked`. One
+   *  undo step; locking drops the subtree from the selection. Never blocked
+   *  by a lock, and setting what the node already has records nothing. */
+  setLocked(id: NodeId, locked: boolean): void;
   /** Run `fn` with the lock guard lifted, for a programmatic edit that has to
    *  reach a locked node. Undo and redo never need it. */
   unlocked<T>(fn: () => T): T;

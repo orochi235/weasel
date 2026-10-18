@@ -18,7 +18,7 @@ export interface OpenedSvg {
 }
 
 function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; drafts: SceneDraft[] } {
-  const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
+  const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES, keepHidden: true });
   for (const w of parsed.warnings) onWarn(w);
   let seq = 0;
   return { parsed, drafts: svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`) };
@@ -32,7 +32,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
     const node = draft.kind === 'container'
       ? { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData }
       : { kind: 'leaf' as const, ...leafOfObj(draft.obj) };
-    sceneIdOf.set(draft.id, scene.add({ ...node, layer: 'default', ...(parent != null ? { parent } : {}) }));
+    sceneIdOf.set(draft.id, scene.add({
+      ...node, layer: 'default', ...(parent != null ? { parent } : {}), ...(draft.hidden ? { hidden: true } : {}),
+    }));
   }
 }
 

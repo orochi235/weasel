@@ -22,6 +22,7 @@ import type { Node, Scene } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { sceneMutators } from 'core/scene/sceneMutators';
 import { asNodeId } from 'core/scene/types';
+import { nodeGates } from 'core/scene/nodeGates';
 import { applyOpsTo } from 'core/applyOps';
 import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
 import type { ScenePickSourceOptions } from 'canvas/pickWalk';
@@ -94,6 +95,10 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
       /** Move a node to another layer — what a `setLayer` op writes through. */
       setLayer(id: string, layer: TLayer): void;
+      /** Hide or show a node — what a `setHidden` op writes through. */
+      setHidden(id: string, hidden: boolean): void;
+      /** Lock or unlock a node — what a `setLocked` op writes through. */
+      setLocked(id: string, locked: boolean): void;
       getRemovalClosure(ids: readonly string[]): string[];
       applyOps(ops: Op[], label?: string): void;
       snapshotSelection(ids: string[]): ClipboardSnapshot;
@@ -138,14 +143,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const visibleLayers = (): Set<TLayer> => {
-    const out = new Set<TLayer>();
-    for (const layer of scene.layers) {
-      if (layer.visible) out.add(layer.id);
-    }
-    return out;
-  };
-
   const sel = options.selection;
   const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
@@ -178,14 +175,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     ...sceneMutators(scene),
     // What is shown, where the mutators' other users read the document:
-    // visible layers only, and the effective pose.
+    // the nodes not hidden, and the effective pose.
     getNodes() {
-      const visible = visibleLayers();
-      const out: Node<TData, TLayer, TPose>[] = [];
-      for (const n of scene.renderOrderNodes()) {
-        if (visible.has(n.layer)) out.push(n);
-      }
-      return out;
+      const gates = nodeGates(scene);
+      return scene.renderOrderNodes().filter((n) => !gates.hidden(n.id));
     },
     getPose(id) {
       const nid = asNodeId(id);

@@ -122,6 +122,16 @@ describe('the default slice dep', () => {
     expect(scene.historyIndex()).toBe(depth);
   });
 
+  it('leaves a hidden node uncut', () => {
+    const scene = makeScene();
+    scene.setHidden(asNodeId('sq'), true);
+    const { commit } = mount(scene);
+    const depth = scene.historyIndex();
+    commit(across);
+    expect(leaves(scene).map((n) => n.id)).toEqual(['sq']);
+    expect(scene.historyIndex()).toBe(depth);
+  });
+
   it('cuts a child in world space and stores its pieces in the parent frame', () => {
     const scene = createScene<Data, Layer, RectPose>({
       systemLayers: [{ id: 'main' }],
