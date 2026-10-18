@@ -64,7 +64,8 @@ async function renderLab(probe?: (state: DropState) => void, instrument = testIn
 
 beforeEach(() => {
   HTMLElement.prototype.getBoundingClientRect = function () {
-    if (this.classList.contains('lk-trial__canvas-host')) {
+    // The canvas stack fills the host; its dispatcher is what a drop lands on.
+    if (this.classList.contains('lk-trial__canvas-host') || this.classList.contains('lk-canvas-stack')) {
       return {
         x: 100,
         y: 100,

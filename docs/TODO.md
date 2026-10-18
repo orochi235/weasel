@@ -924,13 +924,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
   drag. Only jsdom has run a hover binding.
 
-- **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
-  pan, zoom, tap, and loupe route through weasel's dispatcher (`CameraInput`),
-  but dragging a palette item onto a canvas is `useDragDrop`
-  (`packages/labkit/src/dragdrop/DragDropRuntime.tsx`): a press in the sidebar
-  that ends over the canvas, which no binding on the canvas's dispatcher sees
-  begin. Routing it needs a drag that starts on one element and drops on
-  another — the same shape `ingest` answers for an OS drag.
+- **(P3) A `carry` spec takes no `target`.** A carry (`startCarry`, `CarrySpec`)
+  is matched on the surface as a whole, like an OS `drop`, so a binding cannot
+  say "dropped onto a selected body" or onto an affordance: the carry channel
+  (`routing/src/interactions/dispatcher/channels/carry.ts`) classifies nothing
+  under the pointer. Nor does `Action.enabled`'s `carried` argument see a
+  carry's payload; it is typed for ingest items only.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`

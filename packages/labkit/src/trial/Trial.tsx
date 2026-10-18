@@ -357,9 +357,6 @@ function TrialRuntime({
 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
-    canvasContainerRef,
-    view: view2d ?? DEFAULT_VIEW,
-    worldSpec: instrument.canvas?.worldSpec,
     state: record.state,
     config,
     setState: (next) => {
@@ -416,6 +413,7 @@ function TrialRuntime({
           gestures={gestures}
         >
           {instrument.render(renderCtx)}
+          {instrument.dragDrop ? dragDropResult.target : null}
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
       </div>
