@@ -825,15 +825,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P4) The WebGL context menu has square corners and no shadow.** The DOM panel takes
   `--wzl-radius-md` and `--wzl-bevel-raised`; `drawPanel` draws a plain bordered rect.
 
-- **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
-  box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
-  flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind
-  them still measure the pose box: the selection overlay given its own `poseById`,
-  `composeSelectionPose`, the adapter-only `useAlign` hook, a bare `<Canvas>`, and the guides
-  package's origin snaps (`snapToGuides`, `snapToGrid`), which move a point rather than a box.
-  Text has no `drawnBounds` either, so a stroked glyph that spills past its layout box is not
-  covered. A `{ px }` stroke under a skewing or stretching `transform` is outset by its width at
-  the mean scale, which only approximates the screen-exact ribbon.
+- **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer. The guides
+  package's move snaps (`snapToGrid`, `snapToGuides` in `packages/guides/src/behaviors/move`) put
+  the dragged pose's origin on a grid line or guide, so a rect with a centered stroke 10 wide
+  lands with its stroke's outer edge 5 short of the line. Snapping the drawn box instead would put
+  the stroke's edge on it, which is what the selection chrome, resize, and `alignMoveBehavior` now
+  measure — and every stroked shape would land half a stroke from where it lands today. The insert
+  snaps are a different case and stay as they are: they place the point the pointer defines, before
+  the node has a stroke to measure.
 
 - **(P2) Kit settings that do not reach their readers yet.** `history.coalesceMs` is read once,
   when `PrefSchemaEditor` mounts, because `createHistory` (`@weasel-js/history`) fixes its window

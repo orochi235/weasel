@@ -270,9 +270,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     boundsOf: internalBoundsOf,
     planeOfNode: internalPlaneOfNode,
     previewIds: previewIdsExtra,
-    dispatcher, pathSnapper,
-    pathEditState,
+    dispatcher, pathSnapper, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
+    boundsIncludeStroke: geometry?.boundsIncludeStroke ?? true,
   });
 
   const { getHover, canvasRef: trackHoverOn } = useSceneHover({

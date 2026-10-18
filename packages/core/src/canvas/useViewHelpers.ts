@@ -9,6 +9,8 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { NodeId } from 'core/scene/types';
 import type { DebugSink } from '../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { Scale2 } from '@weasel-js/geom';
+import { drawnBoundsOf, type DrawnBoundsScene } from './drawnBounds';
 
 const noOpUnsubscribe = (): void => {};
 
@@ -135,6 +137,11 @@ export interface UseViewHelpersOpts<TPose> {
    *  geometry's box of that pose, which is wrong wherever the surface draws a
    *  node somewhere its pose does not say — a parallax plane. */
   boundsOfPose?: ((id: string, pose: TPose) => Bounds | null) | undefined;
+  /** The nodes the adapter's ids name: with them, the fallbacks box each as
+   *  drawn, stroke included, rather than by its pose. */
+  nodes?: DrawnBoundsScene | undefined;
+  /** The view's scale, which a screen-pixel stroke is resolved at. Default 1. */
+  getScale?: (() => Scale2) | undefined;
   selection: readonly NodeId[];
   gestureSource: GestureSource | undefined;
   /** The dispatcher's preview pose for an id, read through a ref so a change
@@ -161,13 +168,23 @@ export function useViewHelpers<TPose>(
   opts: UseViewHelpersOpts<TPose>,
 ): ViewHelpersBundle<TPose> {
   const {
-    adapter, geometry, boundsOf, boundsOfPose, selection, gestureSource,
+    adapter, geometry, boundsOf, boundsOfPose, nodes, getScale, selection, gestureSource,
     previewPoseExtra, getIsVisible,
   } = opts;
+  const getScaleRef = useLatest(getScale);
+  const poseBoxOf = useCallback((id: string, pose: TPose): Bounds => {
+    if (!nodes) return framedBounds(pose, geometry);
+    const scale = getScaleRef.current?.();
+    return drawnBoundsOf(nodes, id as NodeId, pose, {
+      descriptor: geometry as PoseDescriptor<unknown>,
+      ...(adapter ? { worldPoseOf: (m: NodeId) => worldPoseOf(adapter, m) } : {}),
+      ...(scale ? { scale } : {}),
+    });
+  }, [nodes, geometry, adapter, getScaleRef]);
   const boxOf = useCallback(
     (id: string, pose: TPose): Bounds | null =>
-      (boundsOfPose ? boundsOfPose(id, pose) : framedBounds(pose, geometry)),
-    [boundsOfPose, geometry],
+      (boundsOfPose ? boundsOfPose(id, pose) : poseBoxOf(id, pose)),
+    [boundsOfPose, poseBoxOf],
   );
 
   const baseBoundsOf = useMemo(() => {
@@ -177,12 +194,12 @@ export function useViewHelpers<TPose>(
       try {
         // World: chrome is drawn over the picture, so it has to agree with
         // where the renderer put the node, not with where its pose is stored.
-        return framedBounds(worldPoseOf(adapter, id), geometry);
+        return poseBoxOf(id, worldPoseOf(adapter, id));
       } catch {
         return null;
       }
     };
-  }, [boundsOf, adapter, geometry]);
+  }, [boundsOf, adapter, poseBoxOf]);
 
   const committedPoseOf = useCallback((id: string): TPose | null => {
     if (!adapter) return null;

@@ -23,8 +23,8 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 720,
-    "longestFunction": 422
+    "lines": 485,
+    "longestFunction": 419
   },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 407,
@@ -65,7 +65,7 @@
     "longestFunction": 138
   },
   "packages/core/src/features/selection/overlay.ts": {
-    "lines": 749
+    "lines": 620
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
     "longestFunction": 148

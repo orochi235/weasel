@@ -19,6 +19,7 @@ import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
+import type { DrawnBoundsScene } from '../drawnBounds';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
 
@@ -49,6 +50,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
+  /** `geometry.boundsIncludeStroke`: whether chrome sits on the stroke. */
+  boundsIncludeStroke: boolean;
 }): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
@@ -96,6 +99,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     merged.selectionOverlay,
     pathEditState.getEditingIds,
     poseDescriptor,
+    args.boundsIncludeStroke ? (scene as unknown as DrawnBoundsScene) : undefined,
   );
 
   const layers = useMemo<CanvasLayers>(() => ({

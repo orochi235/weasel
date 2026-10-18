@@ -146,4 +146,9 @@ export interface NodeInkCtx {
   /** The smaller axis's scale, where it differs from `scale`. A box bounding
    *  a `{ px }` stroke reads its reach here, where a pixel is the most world. */
   leastScale?: number;
+  /** The linear map from the frame `drawnBounds` answers in to screen pixels,
+   *  `[a, b, c, d]` in `Affine` order: the view's scale times the pose's
+   *  rotation and `transform`. With it, a `{ px }` length is measured the way
+   *  the renderer builds it, exact in every direction; without, at `scale`. */
+  screen?: readonly [number, number, number, number];
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Stroke } from '@weasel-js/paint';
-import { PATH_L, PATH_M } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, type Scale2 } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { drawnBoundsOf, inkExtentsOf } from './drawnBounds';
@@ -21,7 +21,7 @@ function sceneWith(nodes: { id: string; data: unknown; pose: RectPose; parent?: 
 
 const BOX: RectPose = { x: 0, y: 0, width: 100, height: 100 };
 
-function boxOf(data: unknown, pose: RectPose = BOX, opts: { includeStroke?: boolean; scale?: number } = {}) {
+function boxOf(data: unknown, pose: RectPose = BOX, opts: { includeStroke?: boolean; scale?: number | Scale2 } = {}) {
   const scene = sceneWith([{ id: 'a', data, pose }]);
   return drawnBoundsOf(scene, asNodeId('a'), pose, opts);
 }
@@ -85,6 +85,38 @@ describe('drawnBoundsOf', () => {
     ]);
     const g = asNodeId('g');
     expect(drawnBoundsOf(scene, g, scene.get(g)!.pose)).toEqual({ x: -5, y: -5, width: 205, height: 110 });
+  });
+});
+
+describe('drawnBoundsOf, a { px } stroke on screen', () => {
+  const STRETCH = { x: 4, y: 1 };
+
+  it('outsets each side by the stroke as it lands on screen under a stretched view', () => {
+    expect(boxOf({ shape: 'rect', stroke: stroke({ width: { px: 10 } }) }, BOX, { scale: STRETCH }))
+      .toEqual({ x: -1.25, y: -5, width: 102.5, height: 110 });
+  });
+
+  it('measures across a skewing transform', () => {
+    const skewed = { ...BOX, transform: [1, 0, 1, 1] as const };
+    const b = boxOf({ shape: 'ellipse', stroke: stroke({ width: { px: 10 } }) }, skewed, { scale: { x: 1, y: 1 } });
+    // Across the slanted sides a pixel is √2 units of the box's own x.
+    expect(b.x).toBeCloseTo(-5 * Math.SQRT2, 9);
+    expect(b.width).toBeCloseTo(100 + 10 * Math.SQRT2, 9);
+    expect(b).toMatchObject({ y: -5, height: 110, transform: [1, 0, 1, 1] });
+  });
+
+  it('builds a path\'s ribbon in screen space', () => {
+    const square = {
+      kind: 'polygon' as const,
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      fillRule: 'nonzero' as const,
+    };
+    const b = boxOf({ path: square, fill: null, stroke: stroke({ width: { px: 8 }, join: 'miter' }) }, BOX, { scale: STRETCH });
+    expect(b.x).toBeCloseTo(-1, 4);
+    expect(b.y).toBeCloseTo(-4, 4);
+    expect(b.width).toBeCloseTo(102, 4);
+    expect(b.height).toBeCloseTo(108, 4);
   });
 });
 

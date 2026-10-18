@@ -1,5 +1,5 @@
 import type { Paint, Stroke, Fill } from '@weasel-js/paint';
-import type { NodeInk, NodePaintCtx } from 'canvas/NodeShape';
+import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
 import { resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
@@ -83,6 +83,26 @@ export function inkReach(
 export function strokeOutset(stroke: Stroke | null, scale: number): number {
   const r = inkReach(stroke, scale);
   return r.outset + (r.outsetPx ?? 0) / (scale > 0 ? scale : 1);
+}
+
+/** {@link strokeOutset} per axis of the frame `ctx.screen` maps from: `x` past
+ *  the left and right sides, `y` past the top and bottom. A `{ px }` reach
+ *  is a disk on screen, and its extent along each axis of that frame is the
+ *  support of the disk pulled back through the map. */
+export function strokeOutsetPerAxis(stroke: Stroke | null, ctx: NodeInkCtx | undefined): { x: number; y: number } {
+  const scale = ctx?.scale ?? 1;
+  const screen = ctx?.screen;
+  if (!screen) {
+    const r = strokeOutset(stroke, scale);
+    return { x: r, y: r };
+  }
+  const r = inkReach(stroke, scale);
+  const px = r.outsetPx ?? 0;
+  if (px === 0) return { x: r.outset, y: r.outset };
+  const [a, b, c, d] = screen;
+  const det = Math.abs(a * d - b * c);
+  if (!(det > 0)) return { x: r.outset, y: r.outset };
+  return { x: r.outset + (px * Math.hypot(c, d)) / det, y: r.outset + (px * Math.hypot(a, b)) / det };
 }
 
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first

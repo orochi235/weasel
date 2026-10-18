@@ -62,3 +62,30 @@ describe('useViewHelpers preview bounds', () => {
     expect(result.current.helpers.getEffectiveBounds('a')).toEqual({ x: 50, y: 20, width: 10, height: 10 });
   });
 });
+
+describe('useViewHelpers over nodes', () => {
+  const pose = { x: 0, y: 0, width: 100, height: 100 };
+  const node = {
+    id: 'a', kind: 'leaf', layer: 'main', pose,
+    data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: { px: 8 } } },
+  };
+  const helpersWith = (previewPoseExtra: ((id: string) => unknown) | undefined) => renderHook(() => useViewHelpers({
+    adapter: { getPose: () => pose },
+    geometry: RECT_POSE_DESCRIPTOR,
+    boundsOf: undefined,
+    nodes: { get: () => node as never },
+    getScale: () => ({ x: 2, y: 2 }),
+    selection: [asNodeId('a')],
+    gestureSource: undefined,
+    previewPoseExtra,
+  })).result.current.helpers;
+
+  it('boxes a stroked node as drawn at the view scale', () => {
+    expect(helpersWith(undefined).getEffectiveBounds('a')).toEqual({ x: -2, y: -2, width: 104, height: 104 });
+  });
+
+  it('boxes a previewed pose as drawn', () => {
+    const preview = () => ({ x: 10, y: 0, width: 100, height: 100 });
+    expect(helpersWith(preview).getEffectiveBounds('a')).toEqual({ x: 8, y: -2, width: 104, height: 104 });
+  });
+});
