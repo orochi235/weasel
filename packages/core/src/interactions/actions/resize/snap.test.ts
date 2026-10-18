@@ -143,6 +143,39 @@ describe('a resize snapping through the snap session', () => {
     h.onEnd!(r.at({ x: 32, y: 75 }), 'cancel');
   });
 
+  describe('a Shift corner drag on a quarter-turned node', () => {
+    const turned: Pose = { x: 0, y: 0, width: 100, height: 40, rotation: Math.PI / 2 };
+    const corners = (p: Pose) => [[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]]
+      .map(([lx, ly]) => rotatePoint(lx, ly, p.x + p.width / 2, p.y + p.height / 2, p.rotation!));
+    const has = (p: Pose, w: Point) => corners(p).some((c) => Math.abs(c.x - w.x) < 1e-9 && Math.abs(c.y - w.y) < 1e-9);
+
+    it('keeps the aspect and tracks the cursor on the leading local axis', () => {
+      const r = rig([], [turned]);
+      const h = r.press({ x: 30, y: 70 });
+      // Local delta (20, 10) is world (-10, 20); local y leads (10/40 over 20/100).
+      h.onMove!(r.at({ x: 20, y: 90 }, { shift: true }));
+      const p = r.preview(h);
+      expect(p.width / p.height).toBeCloseTo(2.5, 9);
+      expect(p.height).toBeCloseTo(50, 9);
+      expect(has(p, { x: 70, y: -30 })).toBe(true);
+      expect(has(p, { x: 20, y: 95 })).toBe(true);
+      h.onEnd!(r.at({ x: 20, y: 90 }), 'cancel');
+    });
+
+    it('flips through the fixed corner with the aspect kept', () => {
+      const r = rig([], [turned]);
+      const h = r.press({ x: 30, y: 70 });
+      // Local delta (-130, -40) is world (40, -130); local x leads, past the pin.
+      h.onMove!(r.at({ x: 70, y: -60 }, { shift: true }));
+      const p = r.preview(h);
+      expect(Math.abs(p.width / p.height)).toBeCloseTo(2.5, 9);
+      expect(Math.abs(p.width)).toBeCloseTo(30, 9);
+      expect(has(p, { x: 70, y: -30 })).toBe(true);
+      expect(has(p, { x: 82, y: -60 })).toBe(true);
+      h.onEnd!(r.at({ x: 70, y: -60 }), 'cancel');
+    });
+  });
+
   it('never moves an edge handle along the other axis', () => {
     // The y guide is in reach of the pointer, but the east edge only moves on x,
     // so the y guide is never met and never marked.

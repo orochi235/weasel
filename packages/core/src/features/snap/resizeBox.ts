@@ -6,7 +6,7 @@ import type { SnapEdge, SnapEdges, SnapProbeAt } from './types';
 
 type Point = { x: number; y: number };
 
-const EPS = 1e-9;
+export const EPS = 1e-9;
 
 /** A resize's box with its frame read out, in ctx coordinates. */
 export interface ResizeSubject {
