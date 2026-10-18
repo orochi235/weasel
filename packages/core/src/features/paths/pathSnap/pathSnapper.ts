@@ -3,15 +3,10 @@
  * dep's path targets, and the mark it leaves for the marker layer to draw.
  */
 import { createEmitter } from '@weasel-js/registry';
-import {
-  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
-  type Path, type PathSnapIndex, type PathSnapKind, type PathSnapTarget,
-} from '@weasel-js/geom';
+import { findPathSnap, PATH_SNAP_KINDS, type PathSnapKind } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
-import { isAnnotationLayer } from 'core/scene/annotation';
-import { nodeGates } from 'core/scene/nodeGates';
-import type { SnapGeometry, SnapQuery } from 'interactions/actions/snapDep';
-import { nodeSnapGeometry } from './snapGeometry';
+import type { SnapQuery } from 'interactions/actions/snapDep';
+import { createSceneSnapIndexer } from './sceneIndex';
 
 type Point = { x: number; y: number };
 
@@ -63,36 +58,7 @@ export function createPathSnapper(
   const changed = createEmitter();
   let options: PathSnapOptions | undefined;
   let current: PathSnapMark | null = null;
-  let cached: {
-    version: number; layers: unknown; also: SnapGeometry | undefined; ids: (string | null)[]; index: PathSnapIndex;
-  } | null = null;
-
-  const indexed = (also: SnapGeometry | undefined) => {
-    const version = scene.getVersion();
-    const layers = scene.layers;
-    if (cached?.version === version && cached.layers === layers && cached.also === also) return cached;
-    const notes = new Set(layers.filter(isAnnotationLayer).map((l) => l.id));
-    const gates = nodeGates({ layers, get: (id) => scene.nodes.get(id) });
-    const ids: (string | null)[] = [];
-    const paths: Path[] = [];
-    const extra: PathSnapTarget[] = [];
-    for (const node of scene.nodes.values()) {
-      if (node.kind !== 'leaf' || notes.has(node.layer) || gates.hidden(node.id)) continue;
-      const g = nodeSnapGeometry(node);
-      if (!g) continue;
-      for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
-      ids.push(node.id);
-      paths.push(g.path);
-    }
-    for (const path of also?.paths ?? []) { ids.push(null); paths.push(path); }
-    if (also?.anchors) {
-      ids.push(null);
-      for (const p of also.anchors) extra.push({ kind: 'anchor', x: p.x, y: p.y, paths: [paths.length] });
-      paths.push({ kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' });
-    }
-    cached = { version, layers, also, ids, index: createPathSnapIndex(paths, extra) };
-    return cached;
-  };
+  const indexed = createSceneSnapIndexer(scene);
   const setMark = (next: PathSnapMark | null) => {
     if (current === next || (current && next && current.kind === next.kind && current.x === next.x && current.y === next.y)) return;
     current = next;

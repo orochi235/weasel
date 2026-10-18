@@ -20,6 +20,7 @@ import { useKitSettings, useLatest } from '@weasel-js/react';
 import { useState } from 'react';
 import type { SnapDep, SnapQuery } from 'interactions/actions/snapDep';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
+import { ownGeometryAt } from 'features/paths/pathSnap/pathSnapSource';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -81,21 +82,22 @@ export function useSnapDepSource(
       ...(s ? {
         begin: (req) => {
           const view = viewRef.current;
-          const paths = ref.current.paths;
+          const sources = [...s.sources, ...(s.registry?.list() ?? [])];
+          const wantsGeometry = sources.some((src) => src.roles.includes('geometry'));
           const reads = sceneProbeReads({
             scene: s.scene, boxes: s.boxes(),
-            ...(paths ? { geometryAt: (press: Point, ids: readonly string[]) => paths.snap(press, { include: ids }, view?.scale ?? { x: 1, y: 1 }) } : {}),
+            ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
           });
           return createSession2d({
             req,
-            sources: [...s.sources, ...(s.registry?.list() ?? [])],
+            sources,
             probes: buildProbes(req, reads),
             box: req.ids ? subjectBox(req.ids, reads) : null,
             view: () => viewRef.current,
             reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
             scene: s.scene,
             store,
-            onEnd: () => paths?.release(),
+            onEnd: () => ref.current.paths?.release(),
           });
         },
       } : {}),

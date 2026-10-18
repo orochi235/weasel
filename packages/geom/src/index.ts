@@ -68,7 +68,7 @@ export { intersectSegments, type SegmentCrossing } from './intersect/segmentInte
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
 export {
-  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  createPathSnapIndex, findPathSnap, findPathSnaps, PATH_SNAP_KINDS,
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
   type StaticPathSnapKind,
 } from './snap/pathSnap';

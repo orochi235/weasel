@@ -2,6 +2,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { measureEndsOf, type MeasureEnd, type MeasurePoint } from './measurement';
 import { measureIds, type Measurements } from './measurements';
 import { nodeGates } from 'core/scene/nodeGates';
+import type { SnapSource } from 'features/snap/types';
 
 /** Which part of which measurement lies under a point. */
 export interface MeasureHit {
@@ -43,6 +44,29 @@ export function measureAt(
     if (ends && distanceToSegment(p, ends.start, ends.end) <= tolerance) return { id, part: 'line' };
   }
   return null;
+}
+
+/** The ends of every shown measurement as snap targets for a pointer probe. */
+export function measureEndSource(): SnapSource {
+  return {
+    id: 'measure-ends',
+    roles: ['pointer'],
+    *collect(q) {
+      if (!q.scene) return;
+      const gates = nodeGates(q.scene);
+      const skip = new Set(q.exclude);
+      for (const node of q.scene.renderOrderNodes()) {
+        const ends = measureEndsOf(node);
+        if (!ends || skip.has(node.id) || gates.hidden(node.id)) continue;
+        for (const end of [ends.start, ends.end]) {
+          const at = { x: end.x, y: end.y };
+          for (const p of q.probes) {
+            yield { probe: p.id, locus: { at, dirs: [] }, mark: { kind: 'point', at, glyph: 'center' } };
+          }
+        }
+      }
+    },
+  };
 }
 
 /**
