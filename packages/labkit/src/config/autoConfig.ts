@@ -23,7 +23,11 @@ export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
  *  `autoValue`. A leaf that says none of them is always pinned, and so is one marked `manual`. */
 export function leafCanAuto(leaf: PrefLeaf): boolean {
   if (leaf.manual === true) return false;
-  return extra<boolean>(leaf, 'autoable') === true || leaf.unpinned === true || autoResolverOf(leaf) !== undefined;
+  return (
+    extra<boolean>(leaf, 'autoable') === true ||
+    leaf.unpinned === true ||
+    autoResolverOf(leaf) !== undefined
+  );
 }
 
 /** Every leaf in a resolved schema, in schema order, with its dotted path.

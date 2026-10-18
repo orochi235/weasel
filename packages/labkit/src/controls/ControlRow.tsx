@@ -33,9 +33,9 @@ import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
 import { boundAction } from './boundAction';
 import type { ControlPack } from './controlPack';
+import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField, leafValueAt } from './fields';
-import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { inDialog, summarizeLeaf } from './inDialog';
 import { useRowAuto } from './rowAuto';
 import { DebouncedTextRow, UnwiredRow } from './rows';
@@ -91,7 +91,11 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
         {leaf.kind === 'actions' ? (
           <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
         ) : (
-          <PrefActionButton pref={action as PrefAction} path={props.path} disabled={props.disabled} />
+          <PrefActionButton
+            pref={action as PrefAction}
+            path={props.path}
+            disabled={props.disabled}
+          />
         )}
       </div>
     );
@@ -249,19 +253,21 @@ function LeafRow<TC extends Record<string, unknown>>({
   const custom = customRow(resolved, renderers, path, leaf);
   // The grid cannot see what a custom row draws, so the row takes the whole width rather than half a pair.
   if (custom)
-    return spanned(custom({
-      path,
-      pref: boundAction(leaf, config, setConfig),
-      value,
-      values: config,
-      changed,
-      setValue: write,
-      auto: isAutoRow,
-      setAuto,
-      fields: choices,
-      disabled,
-      error,
-    }));
+    return spanned(
+      custom({
+        path,
+        pref: boundAction(leaf, config, setConfig),
+        value,
+        values: config,
+        changed,
+        setValue: write,
+        auto: isAutoRow,
+        setAuto,
+        fields: choices,
+        disabled,
+        error,
+      }),
+    );
 
   const label = leaf.name;
   const description = leaf.description;
@@ -293,7 +299,16 @@ function LeafRow<TC extends Record<string, unknown>>({
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
     const summary = summarizeLeaf(leaf, value);
-    const dialog = { label, summary, readout: autoReadout, layout, description, disabled, changed, error };
+    const dialog = {
+      label,
+      summary,
+      readout: autoReadout,
+      layout,
+      description,
+      disabled,
+      changed,
+      error,
+    };
     return (
       <CompoundRow
         dialog={{ ...dialog, ...autoProps }}
@@ -304,7 +319,9 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled, draft, (p) => valueAtPath(shown, p));
+  const field = labField(leaf, value, write, choices, disabled, draft, (p) =>
+    valueAtPath(shown, p),
+  );
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {

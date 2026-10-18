@@ -162,7 +162,8 @@ export const PlainGrid: Story = {
             { key: 'delay' },
             {
               key: 'ease',
-              summary: (v) => (typeof v === 'string' ? v : `${(v as { steps: number }).steps} steps`),
+              summary: (v) =>
+                typeof v === 'string' ? v : `${(v as { steps: number }).steps} steps`,
             },
           ]}
           config={values}

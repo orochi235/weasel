@@ -19,7 +19,11 @@ describe('<ControlPanel> auto is opt-in', () => {
       mode: f.enum('a', ['a', 'b']).label('Mode'),
     });
     render(
-      <ControlPanel schema={resolveConfigSchema(schema, [])} config={schema.defaults()} setConfig={() => {}} />,
+      <ControlPanel
+        schema={resolveConfigSchema(schema, [])}
+        config={schema.defaults()}
+        setConfig={() => {}}
+      />,
     );
     for (const name of ['On', 'Title', 'Size', 'Tint', 'Mode']) expect(pinToggle(name)).toBeNull();
   });
@@ -27,11 +31,18 @@ describe('<ControlPanel> auto is opt-in', () => {
   it('toggles a leaf that said .auto(), with or without a resolver, or .initial(auto)', () => {
     const schema = f.schema({
       a: f.number(1).auto().label('Bare'),
-      b: f.number(1).auto(() => 2).label('Resolved'),
+      b: f
+        .number(1)
+        .auto(() => 2)
+        .label('Resolved'),
       c: f.string('x').initial(auto).label('Opened'),
     });
     render(
-      <ControlPanel schema={resolveConfigSchema(schema, [])} config={schema.defaults()} setConfig={() => {}} />,
+      <ControlPanel
+        schema={resolveConfigSchema(schema, [])}
+        config={schema.defaults()}
+        setConfig={() => {}}
+      />,
     );
     expect(pinToggle('Bare')).not.toBeNull();
     expect(pinToggle('Resolved')).not.toBeNull();

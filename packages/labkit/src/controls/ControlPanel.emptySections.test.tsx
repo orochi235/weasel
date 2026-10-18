@@ -28,9 +28,7 @@ describe('<ControlPanel> headings over nothing', () => {
     const schema = resolveConfigSchema(
       f.schema({
         on: f.boolean(false),
-        grid: f
-          .group({ size: f.number(4).showIf({ path: 'on', is: true }) })
-          .section('Layout'),
+        grid: f.group({ size: f.number(4).showIf({ path: 'on', is: true }) }).section('Layout'),
       }),
     );
     renderWithIcons(panel(schema, { on: false, grid: { size: 4 } }));

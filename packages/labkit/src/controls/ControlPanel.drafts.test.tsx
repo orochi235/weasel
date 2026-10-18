@@ -25,7 +25,12 @@ const config = { count: 1, title: 'old', x: 0, y: 0 };
 function mount(draftConfig?: (path: string, value: unknown) => void) {
   const setConfig = vi.fn();
   renderWithIcons(
-    <ControlPanel schema={schema} config={config} setConfig={setConfig} draftConfig={draftConfig} />,
+    <ControlPanel
+      schema={schema}
+      config={config}
+      setConfig={setConfig}
+      draftConfig={draftConfig}
+    />,
   );
   return setConfig;
 }

@@ -46,7 +46,11 @@ export function DebouncedTextRow({
   onAutoChange?: (next: boolean) => void;
   changed?: boolean;
 }) {
-  const drafts = useDebouncedText(field.value ?? '', field.onInput ?? noDrafts, useTextWaitMs(leaf));
+  const drafts = useDebouncedText(
+    field.value ?? '',
+    field.onInput ?? noDrafts,
+    useTextWaitMs(leaf),
+  );
   return <PropertyField {...field} {...row} onInput={drafts.type} />;
 }
 

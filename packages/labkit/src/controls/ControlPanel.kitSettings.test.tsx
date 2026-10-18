@@ -20,7 +20,12 @@ describe('<ControlPanel> text drafts under kit settings', () => {
   it('waits the lab default with no provider', () => {
     const draftConfig = vi.fn();
     render(
-      <ControlPanel fields={fields} config={{ t: '' }} setConfig={vi.fn()} draftConfig={draftConfig} />,
+      <ControlPanel
+        fields={fields}
+        config={{ t: '' }}
+        setConfig={vi.fn()}
+        draftConfig={draftConfig}
+      />,
     );
     typeAndWait(PARAMS_TEXT_WAIT_MS.lab - 1);
     expect(draftConfig).not.toHaveBeenCalled();

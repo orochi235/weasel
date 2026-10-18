@@ -87,14 +87,9 @@ describe('<ControlPanel> heading controls', () => {
   it('lifts into a section heading and a group heading', () => {
     const schema = resolveConfigSchema(
       f.schema({
-        surface: f
-          .enum<string>('flat', ['flat', 'dome'])
-          .label('Surface')
-          .section('Surface'),
+        surface: f.enum<string>('flat', ['flat', 'dome']).label('Surface').section('Surface'),
         radius: f.number(10).label('Radius').section('Surface'),
-        grid: f
-          .group({ show: f.boolean(true).label('Grid'), size: f.number(8) })
-          .label('Grid'),
+        grid: f.group({ show: f.boolean(true).label('Grid'), size: f.number(8) }).label('Grid'),
       }),
     );
     render(
@@ -123,9 +118,7 @@ describe('<ControlPanel> heading controls', () => {
   });
 
   it('leaves a label that only starts with the heading alone', () => {
-    const schema = resolveConfigSchema(
-      f.schema({ width: f.number(8).label('Rubber width') }),
-    );
+    const schema = resolveConfigSchema(f.schema({ width: f.number(8).label('Rubber width') }));
     render(
       <ControlPanel schema={schema} title="Rubber" config={{ width: 8 }} setConfig={vi.fn()} />,
     );

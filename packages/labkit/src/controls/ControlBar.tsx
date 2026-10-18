@@ -35,7 +35,8 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, read, write, bind, draft, custom, row, open } = props;
+  const { group, path, visible, enabled, value, read, write, bind, draft, custom, row, open } =
+    props;
   return (
     <BarLayout
       className="lk-control-bar"

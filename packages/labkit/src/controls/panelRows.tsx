@@ -141,7 +141,15 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const loosePaths = (group: PrefGroup, at: string): string[] => loosePathsIn(resolved, group, at);
 
   const lift = (heading: ReactNode, paths: readonly string[]) =>
-    liftedControl(heading, paths, { resolved, renderers, shown, setConfig, draftConfig, visible, enabled });
+    liftedControl(heading, paths, {
+      resolved,
+      renderers,
+      shown,
+      setConfig,
+      draftConfig,
+      visible,
+      enabled,
+    });
 
   /** One node, which is either a group to recurse into or a row to draw. */
   const node = (path: string, rows: Rows): ReactNode => {

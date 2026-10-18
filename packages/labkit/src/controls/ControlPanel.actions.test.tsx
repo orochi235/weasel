@@ -35,7 +35,9 @@ describe('<ControlPanel> action rows', () => {
     );
     render(<ControlPanel schema={schema} config={{ count: 2 }} setConfig={setConfig} />);
     fireEvent.click(screen.getByRole('button', { name: 'bump' }));
-    expect(run).toHaveBeenCalledWith(expect.objectContaining({ path: 'bump', config: { count: 2 } }));
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'bump', config: { count: 2 } }),
+    );
     expect(setConfig).toHaveBeenCalledWith('count', 3);
   });
 

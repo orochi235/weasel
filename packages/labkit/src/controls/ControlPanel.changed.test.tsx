@@ -37,7 +37,10 @@ describe('<ControlPanel> changed', () => {
 
   it('marks a paired row when any of its cells changed', () => {
     const schema = f.schema({
-      x: f.number(0).label('X').pair({ with: ['y'], label: 'Offset' }),
+      x: f
+        .number(0)
+        .label('X')
+        .pair({ with: ['y'], label: 'Offset' }),
       y: f.number(0).label('Y'),
     });
     const { container } = render(
@@ -54,8 +57,8 @@ describe('<ControlPanel> changed', () => {
   it('tells a custom renderer its row is changed, and marks a .dialog row', () => {
     const seen: (boolean | undefined)[] = [];
     const schema = f.schema({
-      own: f.number(1).render((ctx) => (seen.push(ctx.changed), <span>own</span>)),
-      plain: f.number(1).render((ctx) => (seen.push(ctx.changed), <span>plain</span>)),
+      own: f.number(1).render((ctx) => (seen.push(ctx.changed), (<span>own</span>))),
+      plain: f.number(1).render((ctx) => (seen.push(ctx.changed), (<span>plain</span>))),
       notes: f
         .list<string>([], f.string(''))
         .label('Notes')
@@ -76,7 +79,11 @@ describe('<ControlPanel> changed', () => {
   it('marks nothing without a changed set', () => {
     const schema = f.schema({ size: f.number(1) });
     const { container } = render(
-      <ControlPanel schema={resolveConfigSchema(schema, [])} config={{ size: 3 }} setConfig={() => {}} />,
+      <ControlPanel
+        schema={resolveConfigSchema(schema, [])}
+        config={{ size: 3 }}
+        setConfig={() => {}}
+      />,
     );
     expect(changedRows(container)).toEqual([]);
   });

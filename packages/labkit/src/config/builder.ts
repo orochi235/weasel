@@ -273,7 +273,9 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
 function numberLeaf(def: number): NumberNode;
 function numberLeaf(): NumberNode<number | undefined>;
 function numberLeaf(def?: number): NumberNode<number | undefined> {
-  return def === undefined ? new NumberNode<number | undefined>(undefined).clearable() : new NumberNode(def);
+  return def === undefined
+    ? new NumberNode<number | undefined>(undefined).clearable()
+    : new NumberNode(def);
 }
 
 /** Every default in a shape, nested the way the shape is. */

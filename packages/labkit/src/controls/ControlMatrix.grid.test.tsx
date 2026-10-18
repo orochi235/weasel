@@ -31,7 +31,12 @@ describe('<ControlMatrix> summaries', () => {
       <ControlMatrix
         schema={schema}
         columns={columns}
-        rows={[{ key: 'ease', summary: (v) => (typeof v === 'string' ? v : `${(v as { steps: number }).steps} steps`) }]}
+        rows={[
+          {
+            key: 'ease',
+            summary: (v) => (typeof v === 'string' ? v : `${(v as { steps: number }).steps} steps`),
+          },
+        ]}
         config={config}
         auto={new Set()}
         setConfig={() => {}}
@@ -73,7 +78,14 @@ describe('<ControlMatrix inherit={false}>', () => {
 
   it('needs no auto set, and draws no column as the fallback', () => {
     const { container } = render(
-      <ControlMatrix schema={schema} columns={columns} rows={[{ key: 'delay' }]} config={config} inherit={false} setConfig={() => {}} />,
+      <ControlMatrix
+        schema={schema}
+        columns={columns}
+        rows={[{ key: 'delay' }]}
+        config={config}
+        inherit={false}
+        setConfig={() => {}}
+      />,
     );
     expect(container.querySelector('.is-first')).toBeNull();
     expect(container.querySelector('.is-inherited')).toBeNull();

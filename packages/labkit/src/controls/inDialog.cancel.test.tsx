@@ -22,12 +22,17 @@ const schema = resolveConfigSchema(
 function mount() {
   const setConfig = vi.fn();
   renderWithIcons(
-    <ControlPanel schema={schema} config={{ note: 'hi', names: ['a', 'b'] }} setConfig={setConfig} />,
+    <ControlPanel
+      schema={schema}
+      config={{ note: 'hi', names: ['a', 'b'] }}
+      setConfig={setConfig}
+    />,
   );
   return setConfig;
 }
 
-const open = (name: string) => fireEvent.click(screen.getByRole('button', { name: `Edit ${name}` }));
+const open = (name: string) =>
+  fireEvent.click(screen.getByRole('button', { name: `Edit ${name}` }));
 
 describe('a .dialog row', () => {
   it('holds its edits until Done, then writes them once', () => {

@@ -27,7 +27,9 @@ describe('a clearable number', () => {
   });
 
   it('draws an unset value as an empty field, not as its default', () => {
-    const schema = resolveConfigSchema(f.schema({ gap: f.number(4).clearable().placeholder('auto') }));
+    const schema = resolveConfigSchema(
+      f.schema({ gap: f.number(4).clearable().placeholder('auto') }),
+    );
     mount(schema, { gap: undefined });
     const input = screen.getByRole('spinbutton', { name: 'Gap' });
     expect(input).toHaveValue('');
@@ -68,7 +70,9 @@ describe('a number bounded on one side', () => {
   });
 
   it('clamps to a maximum alone', () => {
-    const setConfig = mount(resolveConfigSchema(f.schema({ gap: f.number(4).max(10) })), { gap: 4 });
+    const setConfig = mount(resolveConfigSchema(f.schema({ gap: f.number(4).max(10) })), {
+      gap: 4,
+    });
     const input = screen.getByRole('spinbutton', { name: 'Gap' });
     input.focus();
     fireEvent.change(input, { target: { value: '30' } });
