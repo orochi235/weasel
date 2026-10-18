@@ -1500,10 +1500,13 @@ only story runner in the repo.
   MIN_FILTER to LINEAR and generates no mipmaps on the screen path, so a minified draw scatters its
   taps, and 16px is where a 32px tile is minified hardest by anything drawing that many of them.
 
-  **Run the control first.** Every number in it is canvas2d on a page that also holds a WebGL2
-  context. Nobody has measured that rung with no GL context at all, so "the batch costs its
-  co-tenant" and "this rung is expensive whenever GL is resident, and the batch only changes the
-  timing" are not yet separated. That is one run and it could retire the entry.
+  **The control has to run in their harness.** Every number in it is canvas2d on a page that also
+  holds a WebGL2 context. Nobody has measured that rung with no GL context at all, so "the batch
+  costs its co-tenant" and "this rung is expensive whenever GL is resident, and the batch only
+  changes the timing" are not yet separated. Nothing in this repo can take that run: no spec under
+  `tests/perf/` draws with canvas2d, and `atlas-wall.spec.ts`, which builds walls of this shape,
+  draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
+  16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
 - **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps`
   (`packages/core/src/core/layers/render.ts`) skips rebuilding a layer's command tree, not
