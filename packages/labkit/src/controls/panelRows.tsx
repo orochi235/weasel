@@ -22,6 +22,7 @@ import { headingLeaf } from '../config/headingLeaf';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafEnabled, isLeafVisible } from '../config/visible';
+import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import { type Rows, sectionRows } from './controlPack';
@@ -150,6 +151,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
+          bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
           custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
           row={(p) => (
             <PropertyList pack={rows.grid} density={density} align={align}>

@@ -35,6 +35,7 @@ import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
+import { boundAction } from './boundAction';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
@@ -89,12 +90,13 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
   }
   if (prefDrawsActionRow(leaf) && !drawn && !renderers?.[leaf.kind]) {
     // An action's button reads its own label, so it takes the row's whole width with none beside it.
+    const action = boundAction(leaf, props.config, props.setConfig);
     return (
       <div className="lk-control-actions">
         {leaf.kind === 'actions' ? (
           <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
         ) : (
-          <PrefActionButton pref={leaf as PrefAction} path={props.path} disabled={props.disabled} />
+          <PrefActionButton pref={action as PrefAction} path={props.path} disabled={props.disabled} />
         )}
       </div>
     );
@@ -291,7 +293,11 @@ function LeafRow<TC extends Record<string, unknown>>({
         layout={layout}
         disabled={disabled}
       >
-        <PrefActionButton pref={leaf as PrefAction} path={path} disabled={disabled} />
+        <PrefActionButton
+          pref={boundAction(leaf, config, setConfig) as PrefAction}
+          path={path}
+          disabled={disabled}
+        />
       </PropertyRow>
     );
   }

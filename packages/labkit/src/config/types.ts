@@ -1,6 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import type {
-  PrefAction,
+  PrefActionContext,
   PrefBarOverflow,
   PrefCondition,
   PrefGroup,
@@ -76,10 +76,20 @@ export interface Annotations {
   tag?: string;
   variants?: Record<string, PrefObject>;
   /** What an action leaf's button calls. */
-  run?: PrefAction['run'];
+  run?: ConfigActionRun;
   /** The path of the leaf an alias shows. */
   of?: string;
 }
+
+/** What an `f.action`'s run is told where labkit draws it: its path, and the config of the
+ *  panel drawing it, with that panel's writer. */
+export interface ConfigActionContext extends PrefActionContext {
+  config: Record<string, unknown>;
+  setConfig: (path: string, value: unknown) => void;
+}
+
+/** What an `f.action` calls. */
+export type ConfigActionRun = (ctx: ConfigActionContext) => void | Promise<void>;
 
 /** What a rule contributes. `kind` is honored only while it is still unset,
  *  which is what makes `f.value` claimable and a kinded factory final. */

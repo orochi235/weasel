@@ -15,6 +15,8 @@ export interface ControlBarProps {
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
   write: (path: string, value: unknown) => void;
+  /** The leaf as the bar's cell draws it: an action's run told the panel's config. */
+  bind: (leaf: PrefLeaf) => PrefLeaf;
   /** Whether the lab draws the leaf's control itself, which then keeps its row form. */
   custom: (path: string, leaf: PrefLeaf) => boolean;
   /** The leaf at a path as one of the panel's rows. */
@@ -29,7 +31,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, write, custom, row, open } = props;
+  const { group, path, visible, enabled, value, write, bind, custom, row, open } = props;
   return (
     <BarLayout
       framed
@@ -48,7 +50,7 @@ export function ControlBar(props: ControlBarProps) {
             ) : (
               <Cell
                 path={at}
-                leaf={leaf}
+                leaf={bind(leaf)}
                 value={value(at, leaf)}
                 write={(v) => write(at, v)}
                 disabled={!enabled(at)}
