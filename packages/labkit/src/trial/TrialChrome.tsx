@@ -80,6 +80,11 @@ const NO_OP = (): void => {};
 const NO_SECTIONS: Readonly<Record<string, boolean>> = Object.freeze({});
 const noSubscribe = (): (() => void) => NO_OP;
 
+/** The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape and goes inert
+ *  when the trial holds something else — an orbit, say. An unplaced view reads as the default
+ *  its canvas paints, so the status strip is in before the first fit. */
+const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT_VIEW : null);
+
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
  *  each region its slice. */
@@ -118,10 +123,7 @@ export function TrialChrome({
     [undockedPanels, trialId],
   );
 
-  // The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape
-  // and goes inert when the trial holds something else — an orbit, say. An unplaced
-  // view reads as the default its canvas paints, so the status strip is in before the first fit.
-  const view2d = as2DView(record.view) ?? (record.view === null ? DEFAULT_VIEW : null);
+  const view2d = chromeView(record.view);
 
   const configSchema = useConfigSchema(instrument);
   const { auto } = useResolvedConfig(configSchema, record.config, record.auto);

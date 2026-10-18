@@ -214,7 +214,7 @@
     "longestFunction": 423
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 227
+    "longestFunction": 225
   },
   "packages/minimap/src/MinimapCanvas.tsx": {
     "longestFunction": 127
