@@ -327,10 +327,12 @@ Priority tags:
   grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
-  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
-  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
-  fails it; moving these two is a choice of new keys.
+- **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
+  `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
+  Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
+  nor Firefox's Mod+Shift+J (Browser Console) and Mod+Shift+K (Web Console). path-tools' bridge is on
+  Mod+Shift+J, so adding them fails `packages/path-tools/src/browserReservedBindings.test.ts` and
+  bridge needs a new chord in the same change.
 - **(P3) A path effect that paints nothing is lost through draw's SVG.** A live effect rides on
   its exported group as `wd:effect` and `wd:depends-on` (`apps/draw/src/svgEffects.ts`), but a
   blend of no steps, or a repeat with no copies, exports an empty `<g>`, and

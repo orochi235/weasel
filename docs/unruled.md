@@ -48,6 +48,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   memory is per scene and undo does not clear it.
 - 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
   but does not flip through it. Retract and Symmetric have no default shortcut.
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+  and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
 ## Scene, move, and history
 
