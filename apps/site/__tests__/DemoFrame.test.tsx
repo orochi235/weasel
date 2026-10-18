@@ -25,6 +25,22 @@ describe('DemoFrame', () => {
     expect(axes.sort()).toEqual(['both', 'x', 'y']);
   });
 
+  it('puts each stage\'s handles on that stage, all driving one delta', () => {
+    const { container } = render(
+      <DemoFrame>
+        <DemoStage width={400} height={300}><i /></DemoStage>
+        <DemoStage width={200} height={150}><i /></DemoStage>
+      </DemoFrame>,
+    );
+    const stages = [...container.querySelectorAll<HTMLElement>('.ckd-stage')];
+    const corners = stages.map((st) => st.querySelector<HTMLElement>('.ckd-demo-resize[data-axis="both"]')!);
+    expect(corners.every(Boolean)).toBe(true);
+    drag(corners[1], 30, 20);
+    expect(frameOf(container).style.getPropertyValue('--demo-stage-dw')).toBe('30px');
+    drag(corners[0], 10, 0);
+    expect(frameOf(container).style.getPropertyValue('--demo-stage-dw')).toBe('40px');
+  });
+
   it('gives a stage its natural size until a handle is dragged', () => {
     const { container } = render(<DemoFrame><DemoStage width={400} height={300}><i /></DemoStage></DemoFrame>);
     const stage = container.querySelector<HTMLElement>('.ckd-stage')!;

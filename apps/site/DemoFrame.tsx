@@ -1,13 +1,18 @@
 import {
-  createContext, useCallback, useRef, useState,
+  createContext, useCallback, useContext, useMemo, useRef,
   type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject,
 } from 'react';
 
-/** Registers a stage with the frame around it; returns the unregister. */
-export const DemoFrameContext = createContext<(() => () => void) | null>(null);
-
 type Axis = 'x' | 'y' | 'both';
 type Delta = { dw: number; dh: number };
+
+interface FrameApi {
+  frame: RefObject<HTMLDivElement | null>;
+  delta: RefObject<Delta>;
+  apply: (next: Delta | null) => void;
+}
+
+const DemoFrameContext = createContext<FrameApi | null>(null);
 
 /** The smallest a stage is dragged down to, per axis, in CSS pixels. */
 const MIN_STAGE = 120;
@@ -18,22 +23,17 @@ const ARROWS: Record<string, [number, number]> = {
 };
 
 /**
- * The box a demo is mounted in. Once a `DemoStage` mounts inside, it grows
- * handles on its right edge, bottom edge and corner; dragging one grows or
- * shrinks every stage in the demo by the distance dragged, and a
- * double-click puts them back at their natural size.
+ * The box a demo is mounted in. It holds the one resize delta every
+ * `DemoStage` inside reads, so dragging any stage's handles grows or shrinks
+ * them all by the distance dragged, and a double-click puts them back at
+ * their natural size.
  */
 export function DemoFrame({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const delta = useRef<Delta>({ dw: 0, dh: 0 });
-  const [stages, setStages] = useState(0);
-  const register = useCallback(() => {
-    setStages((n) => n + 1);
-    return () => setStages((n) => n - 1);
-  }, []);
 
   const apply = useCallback((next: Delta | null) => {
-    const el = ref.current;
+    const el = frame.current;
     if (!el) return;
     delta.current = next ?? { dw: 0, dh: 0 };
     if (next === null) {
@@ -44,37 +44,35 @@ export function DemoFrame({ children }: { children: ReactNode }) {
     el.style.setProperty('--demo-stage-dw', `${next.dw}px`);
     el.style.setProperty('--demo-stage-dh', `${next.dh}px`);
   }, []);
+  const api = useMemo(() => ({ frame, delta, apply }), [apply]);
 
   return (
-    <DemoFrameContext.Provider value={register}>
-      <div ref={ref} className={stages > 0 ? 'ckd-demo-frame ckd-demo-frame--resizable' : 'ckd-demo-frame'}>
-        {children}
-        {stages > 0 && (['x', 'y', 'both'] as const).map((axis) => (
-          <ResizeHandle key={axis} axis={axis} frame={ref} delta={delta} apply={apply} />
-        ))}
-      </div>
+    <DemoFrameContext.Provider value={api}>
+      <div ref={frame} className="ckd-demo-frame">{children}</div>
     </DemoFrameContext.Provider>
   );
 }
 
-interface HandleProps {
-  axis: Axis;
-  frame: RefObject<HTMLDivElement | null>;
-  delta: RefObject<Delta>;
-  apply: (next: Delta | null) => void;
+/** A stage's right-edge, bottom-edge and corner handles, or nothing outside a `DemoFrame`. */
+export function StageHandles() {
+  const api = useContext(DemoFrameContext);
+  if (!api) return null;
+  return (['x', 'y', 'both'] as const).map((axis) => <ResizeHandle key={axis} axis={axis} {...api} />);
 }
 
-/** How far a stage may shrink from `start`: down to `MIN_STAGE` on each axis.
- *  Unbounded when the stage has no laid-out size to measure. */
+/** How far the stages may shrink from `start`: until the smallest reaches `MIN_STAGE` on each axis.
+ *  Unbounded on an axis no stage has a laid-out size to measure on. */
 function floorOf(frame: HTMLElement | null, start: Delta): Delta {
-  const rect = frame?.querySelector('.ckd-stage')?.getBoundingClientRect();
-  return {
-    dw: rect && rect.width > 0 ? start.dw - (rect.width - MIN_STAGE) : -Infinity,
-    dh: rect && rect.height > 0 ? start.dh - (rect.height - MIN_STAGE) : -Infinity,
-  };
+  const floor = { dw: -Infinity, dh: -Infinity };
+  for (const stage of frame?.querySelectorAll('.ckd-stage') ?? []) {
+    const rect = stage.getBoundingClientRect();
+    if (rect.width > 0) floor.dw = Math.max(floor.dw, start.dw - (rect.width - MIN_STAGE));
+    if (rect.height > 0) floor.dh = Math.max(floor.dh, start.dh - (rect.height - MIN_STAGE));
+  }
+  return floor;
 }
 
-function ResizeHandle({ axis, frame, delta, apply }: HandleProps) {
+function ResizeHandle({ axis, frame, delta, apply }: FrameApi & { axis: Axis }) {
   const drag = useRef<{ x: number; y: number; start: Delta; floor: Delta } | null>(null);
   const moveTo = (start: Delta, floor: Delta, dx: number, dy: number) => apply({
     dw: axis === 'y' ? start.dw : Math.max(floor.dw, start.dw + dx),
@@ -84,6 +82,7 @@ function ResizeHandle({ axis, frame, delta, apply }: HandleProps) {
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     e.preventDefault();
+    e.stopPropagation();
     e.currentTarget.setPointerCapture?.(e.pointerId);
     const start = { ...delta.current };
     drag.current = { x: e.clientX, y: e.clientY, start, floor: floorOf(frame.current, start) };
@@ -97,6 +96,7 @@ function ResizeHandle({ axis, frame, delta, apply }: HandleProps) {
     const step = ARROWS[e.key];
     if (!step) return;
     e.preventDefault();
+    e.stopPropagation();
     const start = { ...delta.current };
     moveTo(start, floorOf(frame.current, start), step[0], step[1]);
   };
@@ -115,7 +115,7 @@ function ResizeHandle({ axis, frame, delta, apply }: HandleProps) {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerEnd}
       onPointerCancel={onPointerEnd}
-      onDoubleClick={() => apply(null)}
+      onDoubleClick={(e) => { e.stopPropagation(); apply(null); }}
       onKeyDown={onKeyDown}
     />
   );

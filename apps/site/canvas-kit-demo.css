@@ -263,17 +263,13 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
-/* The box a demo mounts in. Only a demo with a stage in it gets a box, so
- * every other demo lays out as if the frame were not there. */
+/* Holds the resize delta its stages inherit; lays out as if it were not there. */
 .ckd-demo-frame { display: contents; }
-.ckd-demo-frame--resizable {
-  display: block;
-  position: relative;
-}
 
-/* A demo's canvas box: its natural size plus however far the frame's handles
- * were dragged, never below 120px unless it started smaller. */
+/* A demo's canvas box: its natural size plus however far its handles were
+ * dragged, never below 120px unless it started smaller. */
 .ckd-stage {
+  position: relative;
   flex: none;
   width: max(min(var(--demo-stage-w), 120px), calc(var(--demo-stage-w) + var(--demo-stage-dw, 0px)));
   height: max(min(var(--demo-stage-h), 120px), calc(var(--demo-stage-h) + var(--demo-stage-dh, 0px)));
