@@ -279,8 +279,9 @@ Priority tags:
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
   through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
-  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
+  400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
+  (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).

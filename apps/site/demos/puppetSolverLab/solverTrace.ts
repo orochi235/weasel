@@ -5,9 +5,7 @@
  * The last step is the result `puppetMap` warps the shape by.
  */
 import type { PolygonPath } from '@weasel-js/geom';
-import {
-  createArapSolver, puppetMesh, type ArapSolver, type ArapStage, type PuppetMesh, type PuppetPin,
-} from '@weasel-js/geom/warp';
+import { puppetSolve, type ArapStage, type PuppetMesh, type PuppetPin } from '@weasel-js/geom/warp';
 
 export interface TraceStep {
   stage: ArapStage;
@@ -20,52 +18,18 @@ export interface SolverTrace {
   steps: TraceStep[];
 }
 
-interface Rig {
-  key: string;
-  mesh: PuppetMesh;
-  solver: ArapSolver;
-  traced?: { key: string; trace: SolverTrace };
-}
+const traced = new WeakMap<PolygonPath, { key: string; trace: SolverTrace | null }>();
 
-const rigs = new WeakMap<PolygonPath, Rig>();
-
-function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
-  const key = pins.map((p) => `${p.from.x},${p.from.y}`).join(';');
-  const held = rigs.get(source);
-  if (held?.key === key) return held;
-  const mesh = puppetMesh(source, pins.map((p) => p.from));
-  const pinned = [...new Set(Array.from(mesh.pinVertex).filter((v) => v >= 0))];
-  const rig: Rig = { key, mesh, solver: createArapSolver(mesh, pinned) };
-  rigs.set(source, rig);
-  return rig;
-}
-
-/**
- * `source` deformed by `pins` as `puppetMap` deforms it — a pin off the
- * outline holds the outline vertex it snapped to, carried by its own drag —
- * with every step of the solve kept. Solved once per pin position.
- */
+/** `source` deformed by `pins` as `puppetMap` deforms it, with every step of the solve kept. Solved once per pin set. */
 export function solverTrace(source: PolygonPath, pins: readonly PuppetPin[]): SolverTrace | null {
-  if (pins.length === 0) return null;
-  const rig = rigFor(source, pins);
-  const { mesh, solver } = rig;
-  if (mesh.triangles.length === 0) return null;
-  const V = mesh.vertices;
-  const targets: number[] = [];
-  const seen = new Set<number>();
-  pins.forEach((pin, k) => {
-    const v = mesh.pinVertex[k];
-    if (v < 0 || seen.has(v)) return;
-    seen.add(v);
-    targets.push(pin.to.x + V[2 * v] - pin.from.x, pin.to.y + V[2 * v + 1] - pin.from.y);
-  });
-  if (targets.length === 0) return null;
-  const key = targets.join(',');
-  if (rig.traced?.key === key) return rig.traced.trace;
+  const key = pins.map((p) => `${p.from.x},${p.from.y},${p.to.x},${p.to.y}`).join(';');
+  const held = traced.get(source);
+  if (held?.key === key) return held.trace;
   const steps: TraceStep[] = [];
-  solver.solve(targets, { trace: (s) => steps.push({ stage: s.stage, round: s.round, vertices: Float64Array.from(s.vertices) }) });
-  if (steps.length === 0) return null;
-  const trace = { mesh, steps };
-  rig.traced = { key, trace };
+  const solved = puppetSolve(source, pins, {
+    trace: (s) => steps.push({ stage: s.stage, round: s.round, vertices: Float64Array.from(s.vertices) }),
+  });
+  const trace = solved && steps.length > 0 ? { mesh: solved.mesh, steps } : null;
+  traced.set(source, { key, trace });
   return trace;
 }

@@ -4,7 +4,7 @@ import type { Point } from '../paths/cubicMath';
 import { addSymmetric, factorSymmetric, symmetricRows } from './profileCholesky';
 import { createArapSolver } from './arap';
 import { puppetMesh } from './puppetMesh';
-import { puppetMap, unwarpPoint } from './puppet';
+import { puppetMap, puppetSolve, unwarpPoint } from './puppet';
 
 const close = (p: Point, q: Point, digits = 6) => {
   expect(p.x).toBeCloseTo(q.x, digits);
@@ -114,5 +114,33 @@ describe('puppetMap', () => {
   it('moves the whole shape with one pin, and leaves it be with none', () => {
     close(puppetMap(square(), [])({ x: 3, y: 4 }), { x: 3, y: 4 });
     close(puppetMap(square(), [{ from: { x: 50, y: 50 }, to: { x: 55, y: 57 } }])({ x: 10, y: 10 }), { x: 15, y: 17 });
+  });
+});
+
+describe('puppetSolve', () => {
+  const pins = [
+    { from: { x: 10, y: 50 }, to: { x: 10, y: 50 } },
+    { from: { x: 90, y: 50 }, to: { x: 120, y: 80 } },
+  ];
+
+  it('places the vertices puppetMap carries points by', () => {
+    const shape = square();
+    const solved = puppetSolve(shape, pins)!;
+    const map = puppetMap(shape, pins);
+    const V = solved.mesh.vertices;
+    for (let i = 0; i < V.length / 2; i += 7) {
+      close(map({ x: V[2 * i], y: V[2 * i + 1] }), { x: solved.vertices[2 * i], y: solved.vertices[2 * i + 1] });
+    }
+  });
+
+  it('traces the solve, from the first linear step to the vertices it returns', () => {
+    const steps: { stage: string; vertices: Float64Array }[] = [];
+    const solved = puppetSolve(square(), pins, { trace: (s) => steps.push({ stage: s.stage, vertices: Float64Array.from(s.vertices) }) })!;
+    expect(steps.slice(0, 2).map((s) => s.stage)).toEqual(['similarity', 'rigid']);
+    expect(Array.from(steps.at(-1)!.vertices)).toEqual(Array.from(solved.vertices));
+  });
+
+  it('is null with no pins', () => {
+    expect(puppetSolve(square(), [])).toBeNull();
   });
 });

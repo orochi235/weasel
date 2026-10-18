@@ -1064,7 +1064,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'Puppet warp',
     category: 'Geometry',
     description:
-      "`usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged. The deformation is rigid moving least squares: each point takes the rotation and translation that best carry the pins to where they were dragged, weighting near pins over far ones. It needs no triangulation and no solver, and a point's image is always a rigid motion of it, so nothing can fly off — far from every pin the shape moves as one piece, and a pin left alone holds its place. The cost is that it weighs straight-line distance rather than distance through the shape. The eel opens with three pins placed by `withPathWarp`.",
+      "`usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged. The shape's fill is triangulated with its outline as edges (`puppetMesh`), and the triangles are moved as rigidly as the pins allow (`createArapSolver`): two linear steps, then local/global rounds, then, if any triangle is still turned over, an untangling pass that rights it with the pins held. A pin's pull travels through the fill, so two limbs that nearly touch move apart, and a pin left alone holds its place. The Inside the puppet solver lab steps through the solve. The eel opens with three pins placed by `withPathWarp`.",
     hint: 'Drag the pin at the eel\'s head and the tail holds. Click on the eel to add a pin, <kbd>Alt</kbd>-click a pin to take it out. Press Expand warp in the palette to keep the bent shape as a plain path.',
     load: () => import('./demos/PuppetLabDemo').then((m) => m.PuppetLabDemo),
     path: 'apps/site/demos/PuppetLabDemo.tsx',

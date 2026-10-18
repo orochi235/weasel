@@ -7,7 +7,7 @@
  */
 import type { PolygonPath } from '../path';
 import type { Point } from '../paths/cubicMath';
-import { createArapSolver, type ArapSolver } from './arap';
+import { createArapSolver, type ArapSolveOptions, type ArapSolver } from './arap';
 import { meshLocator, placeSpot, type MeshSpot } from './meshMap';
 import { puppetMesh, type PuppetMesh } from './puppetMesh';
 
@@ -50,6 +50,19 @@ function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
 export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: Point) => Point {
   if (pins.length === 0) return (p) => ({ x: p.x, y: p.y });
   const rig = rigFor(source, pins);
+  const at = solveRig(rig, pins);
+  if (!at) {
+    const dx = pins[0].to.x - pins[0].from.x, dy = pins[0].to.y - pins[0].from.y;
+    return (p) => ({ x: p.x + dx, y: p.y + dy });
+  }
+  return (p) => {
+    const spot = spotOf(rig, p);
+    return spot ? placeSpot(rig.mesh.triangles, at, spot) : { x: p.x, y: p.y };
+  };
+}
+
+/** The rig's vertices under `pins`, or null when no pin landed on the mesh. */
+function solveRig(rig: Rig, pins: readonly PuppetPin[], opts?: ArapSolveOptions): Float64Array | null {
   const targets: number[] = [];
   const seen = new Set<number>();
   pins.forEach((pin, k) => {
@@ -59,15 +72,25 @@ export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: 
     // A pin off the outline holds the outline point it snapped to, carried by its own drag.
     targets.push(pin.to.x + rig.mesh.vertices[2 * v] - pin.from.x, pin.to.y + rig.mesh.vertices[2 * v + 1] - pin.from.y);
   });
-  if (targets.length === 0) {
-    const dx = pins[0].to.x - pins[0].from.x, dy = pins[0].to.y - pins[0].from.y;
-    return (p) => ({ x: p.x + dx, y: p.y + dy });
-  }
-  const at = rig.solver.solve(targets);
-  return (p) => {
-    const spot = spotOf(rig, p);
-    return spot ? placeSpot(rig.mesh.triangles, at, spot) : { x: p.x, y: p.y };
-  };
+  return targets.length === 0 ? null : rig.solver.solve(targets, opts);
+}
+
+/**
+ * The mesh `puppetMap` deforms for `pins` and where its vertices land, solved
+ * with `opts` — its `trace` reports every stage of the solve, and its round
+ * caps bound it. With the default options the vertices are the ones
+ * `puppetMap` places points by. Null with no pins, or when none landed on the
+ * mesh (then `puppetMap` moves the shape with the first pin).
+ */
+export function puppetSolve(
+  source: PolygonPath,
+  pins: readonly PuppetPin[],
+  opts?: ArapSolveOptions,
+): { mesh: PuppetMesh; vertices: Float64Array } | null {
+  if (pins.length === 0) return null;
+  const rig = rigFor(source, pins);
+  const vertices = solveRig(rig, pins, opts);
+  return vertices ? { mesh: rig.mesh, vertices } : null;
 }
 
 /** How many points a rig remembers the spot of before starting over. */
