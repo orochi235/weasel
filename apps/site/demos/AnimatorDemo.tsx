@@ -1,9 +1,10 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { createTarget, type AnimationKind, type HoldHandle } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import { DrawCanvas, solid } from '@weasel-js/core';
+import { DrawCanvas, solid, type Dims } from '@weasel-js/core';
 import { Button, ToggleBar } from '@weasel-js/ui';
 import s from './AnimatorDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 560, H = 260, SIZE = 28, COUNT = 7, PITCH = 44, INSET = 24;
 const SLIDE = W - 2 * INSET - SIZE - (COUNT - 1) * PITCH;
@@ -13,6 +14,13 @@ const FILL = solid('#7ab8d4');
 interface Mark { x: number; y: number }
 
 const slid = (m: Mark): Mark => ({ ...m, x: m.x === 0 ? SLIDE : 0 });
+
+/** A mark's value is laid out for the canvas at W × H; stretch it to the canvas at `size`. */
+const placed = (m: Mark, size: Dims): Mark => {
+  const slide = size.width - 2 * INSET - SIZE - (COUNT - 1) * PITCH;
+  const bottom = size.height - 40 - SIZE;
+  return { x: m.x * slide / SLIDE, y: TOP + (m.y - TOP) * (bottom - TOP) / (BOTTOM - TOP) };
+};
 const dropped = (m: Mark): Mark => ({ ...m, y: m.y === TOP ? BOTTOM : TOP });
 
 const SPEEDS = [{ value: 1, label: '1×' }, { value: 0.25, label: '¼×' }];
@@ -95,17 +103,20 @@ export function AnimatorDemo() {
           size="sm"
         />
       </div>
-      <DrawCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        background={{ kind: 'solid', color: '#ffffff' }}
-        draw={marks.map(({ mark }, i) => ({
-          kind: 'path',
-          path: { kind: 'rect', x: INSET + i * PITCH + mark.shown.x, y: mark.shown.y, width: SIZE, height: SIZE },
-          fill: { paint: FILL },
-        }))}
-      />
+      <DemoStage width={W} height={H}>
+        <DrawCanvas
+          className="ckd-canvas"
+          background={{ kind: 'solid', color: '#ffffff' }}
+          draw={(size) => marks.map(({ mark }, i) => {
+            const at = placed(mark.shown, size);
+            return {
+              kind: 'path',
+              path: { kind: 'rect', x: INSET + i * PITCH + at.x, y: at.y, width: SIZE, height: SIZE },
+              fill: { paint: FILL },
+            };
+          })}
+        />
+      </DemoStage>
       <dl className={s.live}>
         {KINDS.map((kind) => (
           <div key={kind} className={s.kind}>

@@ -1,5 +1,6 @@
 import { asNodeId, SceneCanvas } from '@weasel-js/core';
 import type { ActionParamSchema, ActionTunings, TunedBinding } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 400, H = 300;
 
@@ -40,15 +41,15 @@ const TUNE: ActionTunings = {
 
 export function AlignDemo() {
   return (
-    <SceneCanvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={SCENE}
-      features={['pick', 'move', 'transform', 'arrange']}
-      tune={TUNE}
-      claimKeys
-      selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        className="ckd-canvas"
+        scene={SCENE}
+        features={['pick', 'move', 'transform', 'arrange']}
+        tune={TUNE}
+        claimKeys
+        selectionOptions={{ mode: 'multi', initial: RECTS.map((r) => asNodeId(r.id)) }}
+      />
+    </DemoStage>
   );
 }

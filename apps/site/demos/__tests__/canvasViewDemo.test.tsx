@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { act, cleanup, createEvent, fireEvent, render } from '@testing-library/react';
 import { CanvasViewDemo, makeRandomScene, pipView, PIP } from '../CanvasViewDemo';
 
@@ -33,7 +33,7 @@ describe('CanvasViewDemo PiP', () => {
 });
 
 describe('CanvasViewDemo routing', () => {
-  afterEach(cleanup);
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
   function moveTo(el: Element, clientX: number, clientY: number) {
     const move = createEvent.pointerMove(el, { pointerId: 1 });
@@ -43,9 +43,12 @@ describe('CanvasViewDemo routing', () => {
   }
 
   it('routes a pointer over the PiP to the PiP, and over the paint-only overview to the canvas', () => {
+    // jsdom lays nothing out, and the canvas fills its stage: give it the stage's 600x400 at the client origin.
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => ({ x: 0, y: 0, left: 0, top: 0, right: 600, bottom: 400, width: 600, height: 400, toJSON() {} }) as DOMRect,
+    );
     const { container } = render(<CanvasViewDemo />);
     const canvas = container.querySelector('canvas')!;
-    // jsdom puts the canvas at the client origin; the demo canvas is 600x400.
     moveTo(canvas, PIP.margin + 10, 400 - PIP.margin - 10);
     expect(container.textContent).toMatch(/pip → /);
     moveTo(canvas, 600 - 100, 50);

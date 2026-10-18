@@ -21,6 +21,7 @@ import {
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 const W = 240;
 const H = 200;
@@ -82,23 +83,23 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
   return (
     <WeaselProvider isolate>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selectionOptions={{ mode: 'multi' }}
-        layers={{
-          scene: {
-            drawOne: (node): DrawCommand[] => [{
-              kind: 'path',
-              path: node.data.path,
-              fill: { paint: { color: node.data.color } },
-            }],
-          },
-        }}
-        data-panel={id}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selectionOptions={{ mode: 'multi' }}
+          layers={{
+            scene: {
+              drawOne: (node): DrawCommand[] => [{
+                kind: 'path',
+                path: node.data.path,
+                fill: { paint: { color: node.data.color } },
+              }],
+            },
+          }}
+          data-panel={id}
+        />
+      </DemoStage>
     </WeaselProvider>
   );
 }
@@ -202,23 +203,23 @@ function InteractivePanel() {
           Reset
         </button>
       </div>
-      <SceneCanvas features={['pick']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        layers={{
-          scene: {
-            drawOne: (node): DrawCommand[] => [{
-              kind: 'path',
-              path: node.data.path,
-              fill: { paint: { color: node.data.color } },
-            }],
-          },
-        }}
-        data-panel="interactive"
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          layers={{
+            scene: {
+              drawOne: (node): DrawCommand[] => [{
+                kind: 'path',
+                path: node.data.path,
+                fill: { paint: { color: node.data.color } },
+              }],
+            },
+          }}
+          data-panel="interactive"
+        />
+      </DemoStage>
     </div>
   );
 }

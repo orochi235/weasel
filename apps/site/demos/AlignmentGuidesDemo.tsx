@@ -11,6 +11,7 @@ import { alignInsertBehavior, alignMoveBehavior, createGuidesLayer, deriveAlignm
 import type { Guide, SpacingGap } from '@weasel-js/guides';
 import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui';
+import { DemoStage } from './DemoStage';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the
 // kit's path painter draws both without a custom drawOne.
@@ -81,19 +82,19 @@ export function AlignmentGuidesDemo() {
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <SceneCanvas features={['pick', 'move']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        selectTool={selectTool}
-        defaultTools={['rect']}
-        toolOptions={toolOptions}
-        onToolsCreated={setTools}
-        viewport={{}}
-        layers={{ guides: { layer: guidesLayer } }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick', 'move']}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          selectTool={selectTool}
+          defaultTools={['rect']}
+          toolOptions={toolOptions}
+          onToolsCreated={setTools}
+          viewport={{}}
+          layers={{ guides: { layer: guidesLayer } }}
+        />
+      </DemoStage>
     </div>
   );
 }

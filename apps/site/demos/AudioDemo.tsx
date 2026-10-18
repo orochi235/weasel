@@ -19,6 +19,7 @@ import type {
   VoiceHandle,
 } from '@weasel-js/audio';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 interface Dot { id: string; x: number; y: number; width: number; height: number }
 
@@ -223,7 +224,7 @@ export function AudioDemo() {
 
   const overlay: RenderLayer<unknown> = {
     id: 'audio', label: 'Audio overlay',
-    draw: () => {
+    draw: (_data, _view, dims) => {
       const cmds: DrawCommand[] = [
         {
           kind: 'path',
@@ -246,12 +247,12 @@ export function AudioDemo() {
           { fontFamily: 'sans-serif', fontSize: 11 },
         ),
       ];
-      const barW = W / BARS;
+      const barW = dims.width / BARS;
       for (let i = 0; i < BARS; i += 1) {
         const h = Math.max(1, bands.current[i] * 90);
         cmds.push({
           kind: 'path',
-          path: { kind: 'rect', x: i * barW + 2, y: H - h, width: barW - 4, height: h },
+          path: { kind: 'rect', x: i * barW + 2, y: dims.height - h, width: barW - 4, height: h },
           fill: { paint: { color: '#7fb069' } },
         });
       }
@@ -273,25 +274,25 @@ export function AudioDemo() {
         <span className={`ckd-readout ${num.numeric}`}>activeVoices {voices} / 8 per bus</span>
       </div>
       <div className="ckd-row">
-        <SceneCanvas features={['pick', 'move']}
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          animator={animator}
-          layers={{
-            audio: { layer: overlay, before: 'scene' },
-            scene: {
-              drawOne: (_n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: '#d4a574' } },
-              }],
-            },
-            selectionOverlay: { handles: false },
-          }}
-        />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas features={['pick', 'move']}
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            animator={animator}
+            layers={{
+              audio: { layer: overlay, before: 'scene' },
+              scene: {
+                drawOne: (_n, p): DrawCommand[] => [{
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { paint: { color: '#d4a574' } },
+                }],
+              },
+              selectionOverlay: { handles: false },
+            }}
+          />
+        </DemoStage>
         <div className="ckd-panel ckd-panel-wide">
           <div className="ckd-panel-title">spatial</div>
           <dl className="ckd-meters">
