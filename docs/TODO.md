@@ -690,6 +690,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
+- **(P3) A schema drawn as a menu drops its number and color leaves.** `leafRows` in
+  `packages/routing/src/menus/resolveMenu.ts` turns actions, booleans, enums, separators, labels,
+  and aliases into rows and answers nothing for any other kind, so the same asset loses controls
+  when it moves from a bar or a panel to a menu. draw's Loupe asset shows this: as a menu it keeps
+  its switch, mode, and Copy, and loses magnification and the picked color. A number row (an inline
+  field, or steps) and a read-only color row would close it.
+
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
