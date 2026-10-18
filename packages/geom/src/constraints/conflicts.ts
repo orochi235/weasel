@@ -13,6 +13,8 @@ import { constraintAnchors, type PathConstraint } from './types';
 export interface ConflictingConstraintsOptions {
   /** Radians the frame `horizontal` and `vertical` read is turned from the world's axes. Default 0. */
   axisAngle?: number;
+  /** A frame per constraint, by index, over `axisAngle`. */
+  axisAngles?: readonly (number | undefined)[];
   /** Where each anchor belongs for a `fixed` constraint. Default: where it is now. */
   reference?: readonly (ConstraintPoint | undefined)[];
 }

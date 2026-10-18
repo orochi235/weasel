@@ -3,6 +3,12 @@ import type { Op } from 'core/ops/types';
 import type { PathEditExtension, PathEditMark, PathEditStore } from 'features/paths/pathEditExtension';
 import type { HandleLocks } from './edit-anchors/params';
 
+/** An edit as {@link EditAnchorsDep.finishEdit} finishes it: the edited node's world path, and the other nodes' that move with it. */
+export interface FinishedEditFrame {
+  path: unknown;
+  others: readonly { id: string; path: unknown }[];
+}
+
 /**
  * Adapter dep for `editAnchorsAction`: narrow read/write access to the
  * editable polygon of a single node, so anchor-edit actions need not know
@@ -91,13 +97,13 @@ export interface EditAnchorsDep {
 
   /**
    * `worldPath`, an edit of `id`'s committed path, finished by every
-   * extension's `finishEdit` in turn — path constraints made to hold, say.
-   * Null when one cannot finish it, and the edit should then not happen.
-   * `applyEdit` and `editOps` run it themselves; an ongoing edit calls it
-   * each frame so its preview is what they will commit. Optional: absent,
-   * edits stand as they are.
+   * extension's `finishEdit` in turn — path constraints made to hold, say —
+   * with the paths of any other nodes that move with it. Null when one cannot
+   * finish it, and the edit should then not happen. `applyEdit` and `editOps`
+   * run it themselves; an ongoing edit calls it each frame so its preview is
+   * what they will commit. Optional: absent, edits stand as they are.
    */
-  finishEdit?(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]): unknown;
+  finishEdit?(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]): FinishedEditFrame | null;
   /**
    * Commit `worldPath` for `id` with `data` laid over its data, as one
    * history entry, finished by no extension: what an extension writing its

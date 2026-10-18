@@ -131,6 +131,8 @@ interface EditAnchorsScratch {
   symmetries: readonly AnchorSymmetry[];
   /** Where each point of `currentPose` came from in `originPose`. */
   origins?: readonly (PointOrigin | null)[];
+  /** Other nodes' world paths the finished edit moves with it. */
+  others: readonly { id: string; path: PolygonPath }[];
 }
 
 type Point = { x: number; y: number };
@@ -166,9 +168,10 @@ const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
   const { dep, id } = scratch;
-  const path = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : next.path;
-  if (!path) return;
-  scratch.currentPose = path as PolygonPath;
+  const done = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : { path: next.path, others: [] };
+  if (!done) return;
+  scratch.currentPose = done.path as PolygonPath;
+  scratch.others = done.others as EditAnchorsScratch['others'];
   scratch.origins = next.origins;
 }
 
@@ -209,6 +212,23 @@ function moveHandle(scratch: EditAnchorsScratch, ctx: InvocationCtx, params: Edi
     ? (set: AnchorSet) => moveHandleSymmetric(set, scratch.anchorIndex, side, to.x, to.y, alt, scratch.symmetries)
     : (set: AnchorSet) => moveHandleTo(set, scratch.anchorIndex, side, to.x, to.y, alt);
   track(scratch, editAnchorSetTracked(scratch.originPose, move));
+}
+
+/**
+ * What a press drags, the selection updated first, before any move: a handle
+ * press drags its anchor's handle; an anchor press selects as
+ * {@link selectionAfterAnchorPress} says and drags what it left selected —
+ * nothing when Shift took the pressed anchor out of it.
+ */
+function draggedByPress(
+  dep: EditAnchorsDep,
+  press: { anchorIndex: number; part: EditAnchorsScratch['part'] },
+  shift: boolean,
+): readonly number[] {
+  if (press.part !== 'anchor') return [press.anchorIndex];
+  const next = selectionAfterAnchorPress(dep.selectedAnchors, press.anchorIndex, shift);
+  dep.setSelectedAnchors(next);
+  return next.has(press.anchorIndex) ? [...next] : [];
 }
 
 /** Static descriptor for the `editAnchors` Action. */
@@ -262,25 +282,12 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       if (anchorInfo.part === 'controlOut' && !origin.outHandle) return {};
 
       let active = false;
-      const preview = pathEditPreview(dep, editingId, () => (active ? scratch.currentPose : null));
+      const preview = pathEditPreview(
+        dep, editingId, () => (active ? scratch.currentPose : null), () => (active ? scratch.others : []),
+      );
       if (!preview) return {};
 
-      // --- Press semantics: selection updates immediately, before any move.
-      let dragging: readonly number[] = [anchorInfo.anchorIndex];
-      if (anchorInfo.part === 'anchor') {
-        const next = selectionAfterAnchorPress(
-          dep.selectedAnchors,
-          anchorInfo.anchorIndex,
-          ctx.modifiers.shift,
-        );
-        dep.setSelectedAnchors(next);
-        // Shift-pressing an anchor OUT of the selection must not then drag
-        // it; drag whatever the press left selected, intersected with the
-        // pressed anchor's membership.
-        dragging = next.has(anchorInfo.anchorIndex)
-          ? [...next]
-          : [];
-      }
+      const dragging = draggedByPress(dep, anchorInfo, ctx.modifiers.shift);
 
       const scratch: EditAnchorsScratch = {
         dep,
@@ -305,6 +312,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
         originPose: worldPath,
         currentPose: worldPath,
         symmetries: editedPathSymmetries(ctx.deps.pathSymmetry, editingId, decoded),
+        others: [],
       };
       const snapAnchor = anchorDragSnap(ctx.deps.snap, {
         id: editingId, origin: scratch.anchorOrigin, originPose: worldPath, dragging,

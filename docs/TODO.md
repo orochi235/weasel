@@ -376,13 +376,14 @@ Priority tags:
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
   that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
-- **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
-  its own path only. Across nodes the constraint needs a home other than either node's
-  `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
-  undone with the scene. Its solve packs every node a connected set of constraints reaches into one
-  coordinate vector — `solveConstraints` already takes any point list — and commits each moved
-  node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
-  the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
+- **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
+  node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
+  solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
+  anchor in one node and a segment in another; a consumer adds the node itself. A whole-node move,
+  resize, or rotate solves no links, and nothing reports one it breaks: `constraintConflictsOf`
+  reads a node's own list. The drags that preview through `pathEditPreview` without finishing each
+  frame — bend segment, corner, Lengthen, Balance, Simplify brush — commit the linked nodes but
+  do not preview them, as they do not preview a node's own constraints.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
