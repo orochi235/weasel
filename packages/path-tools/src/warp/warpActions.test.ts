@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, PathBuilder, pathToAnchors, type DistortWarp, type PolygonPath } from '@weasel-js/geom';
+import {
+  applyToPoint, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type DistortWarp,
+  type PolygonPath,
+} from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import {
   asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene,
@@ -99,6 +102,27 @@ describe('distort', () => {
     });
   });
 
+  it('keeps the warp on a polygon pose rotated after it', () => {
+    const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+    const scene = createScene<unknown, 'main', unknown>({
+      systemLayers: [{ id: 'main' }],
+      initial: [{ id: asNodeId('a'), kind: 'leaf', layer: 'main', pose: square, data: {} }],
+    }) as unknown as S;
+    dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 125, y: 110 });
+    const node = scene.get(asNodeId('a'))!;
+    const turned = transformPath(node.pose as PolygonPath, rotateAboutPoint(50, 50, 0.7));
+    commitOps(depsOf(scene), [createTransformOp({ id: node.id, from: node.pose, to: turned, label: 'Rotate' })], 'Rotate');
+    const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
+    expect(resolved).not.toBeNull();
+    const { corners } = resolved.held.warp as DistortWarp;
+    const anchors = anchorsOf(scene);
+    corners.forEach((c, i) => {
+      const [x, y] = applyToPoint(resolved.toWorld, c.x, c.y);
+      expect(x).toBeCloseTo(anchors[i].x, 2);
+      expect(y).toBeCloseTo(anchors[i].y, 2);
+    });
+  });
+
   it('is dropped by Expand Warp, which keeps the geometry', () => {
     const scene = makeScene();
     dragControl(scene, 'distort', { warpId: null, index: 1 }, { x: 100, y: 0 }, { x: 130, y: 0 });
@@ -155,3 +179,4 @@ describe('puppet', () => {
     expect(anchors[2]).toEqual({ x: 140, y: 60 });
   });
 });
+

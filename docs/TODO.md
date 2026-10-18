@@ -418,11 +418,6 @@ Priority tags:
   copy of a shared warp, matched by `HeldPathWarp.id`; the warp tools show the controls of the
   first path holding an id, and a drag moves every path with it by the same world delta. After
   one of them is moved on its own, its controls no longer sit under the ones shown.
-- **(P3) A polygon-pose node rotated after a warp drops the warp.** `resolvePathWarp`
-  (`packages/path-tools/src/warp/pathWarp.ts`) recovers a move or a resize of a polygon pose
-  as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
-  warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
-  through a rotation.
 - **(P3) The Girth tool is untried on rectangles.** It edits the nodes `resolveEditablePathOf`
   answers a path for, which since rectangle path edit includes a drawn rectangle's rect
   `data.path`, but nothing has shaped a rectangle's stroke with it yet. `strokeEdgeNear`, which it hit-tests with, measures every stroke as centered, so on an

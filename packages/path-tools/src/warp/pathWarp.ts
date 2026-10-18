@@ -15,11 +15,11 @@ import {
   applyPathWarp,
   boundsOfPath,
   boxToBox,
+  fitAffine,
   identity,
   invert,
   multiply,
   poseFrameOf,
-  transformPath,
   type Affine,
   type PathWarp,
   type PolygonPath,
@@ -115,8 +115,9 @@ function sameUnder(a: PolygonPath, m: Affine, b: PolygonPath): boolean {
 /**
  * The warp `node` holds and its frame in world space, or null when it holds
  * none or the one it holds no longer reproduces its geometry. A node whose
- * stored path was only scaled and moved since — a polygon pose dragged, say —
- * still resolves: the box-to-box map between the two is folded into `frame`.
+ * stored path was rewritten by an affine map since — a polygon pose moved,
+ * resized or rotated, which rewrites its coordinates — still resolves: the
+ * map is recovered from the two sets of points and replaces `frame`.
  */
 export function resolvePathWarp(node: EditableShape | null | undefined): ResolvedPathWarp | null {
   if (!node) return null;
@@ -125,12 +126,10 @@ export function resolvePathWarp(node: EditableShape | null | undefined): Resolve
   const stored = storedPathOf(node);
   if (!stored) return null;
   const made = heldWarpResult(held);
-  let toStorage = held.frame;
+  let toStorage: Affine | null = held.frame;
   if (!sameUnder(made, toStorage, stored.path)) {
-    const a = boundsOfPath(transformPath(made, toStorage) as PolygonPath);
-    const b = boundsOfPath(stored.path);
-    toStorage = multiply(boxToBox(a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height), toStorage);
-    if (!sameUnder(made, toStorage, stored.path)) return null;
+    toStorage = made.coords.length === stored.path.coords.length ? fitAffine(made.coords, stored.path.coords) : null;
+    if (!toStorage || !sameUnder(made, toStorage, stored.path)) return null;
   }
   return { held, toWorld: multiply(stored.toWorld, toStorage) };
 }
