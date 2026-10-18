@@ -1339,9 +1339,6 @@ only story runner in the repo.
   `tests/perf/recorded/mesh-batch-2026-10-07/`. Left: the same run on a D3D or Vulkan backend,
   where the break-evens may sit elsewhere.
 
-- **(P3) What inside Chromium or ANGLE slows frames drawn back to back in one task** — 4–10x after
-  about eight (`tests/perf/README.md`, "Timing a frame") — is unknown.
-
 - **(P3) A consumer's `sampling: 'nearest'` costing up to 8x does not reproduce here.** They drew a
   5652px atlas (~122MB) and saw nearest cost 8.11x linear at 2:1 minification, 5.98x at 1.33:1,
   1.08x at 1:1, and 1.14x magnified, in single runs on a contended box. `atlas-wall.spec.ts` with

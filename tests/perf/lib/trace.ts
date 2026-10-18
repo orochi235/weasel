@@ -72,25 +72,41 @@ export function busy(events: TraceEvent[], t0: number, t1: number): number {
   return sum;
 }
 
+export interface SelfTime { dur: number; tdur: number; count: number }
+
 /** Self time by event name on one thread, for events wholly inside the
- *  window. An event's self time is its duration less its direct children's. */
-export function selfTimes(events: TraceEvent[], t0: number, t1: number): Map<string, number> {
+ *  window, wall (`dur`) and thread CPU (`tdur`). An event's self time is its
+ *  duration less its direct children's. Adds into `into` when given. */
+export function selfTimeStats(
+  events: TraceEvent[], t0: number, t1: number, into = new Map<string, SelfTime>(),
+): Map<string, SelfTime> {
   const inside = events
     .filter((e) => e.ts >= t0 && e.ts + (e.dur ?? 0) <= t1)
     .sort((a, b) => a.ts - b.ts || (b.dur ?? 0) - (a.dur ?? 0));
-  const self = new Map<string, number>();
-  const stack: Array<{ e: TraceEvent; end: number; child: number }> = [];
-  const close = (f: { e: TraceEvent; child: number }) => {
-    self.set(f.e.name, (self.get(f.e.name) ?? 0) + Math.max(0, (f.e.dur ?? 0) - f.child));
+  const stack: Array<{ e: TraceEvent; end: number; child: number; childT: number }> = [];
+  const close = (f: { e: TraceEvent; child: number; childT: number }) => {
+    const s = into.get(f.e.name) ?? { dur: 0, tdur: 0, count: 0 };
+    s.dur += Math.max(0, (f.e.dur ?? 0) - f.child);
+    s.tdur += Math.max(0, (f.e.tdur ?? 0) - f.childT);
+    s.count += 1;
+    into.set(f.e.name, s);
   };
   for (const e of inside) {
     const end = e.ts + (e.dur ?? 0);
     while (stack.length && stack[stack.length - 1].end <= e.ts) close(stack.pop()!);
-    if (stack.length) stack[stack.length - 1].child += e.dur ?? 0;
-    stack.push({ e, end, child: 0 });
+    if (stack.length) {
+      stack[stack.length - 1].child += e.dur ?? 0;
+      stack[stack.length - 1].childT += e.tdur ?? 0;
+    }
+    stack.push({ e, end, child: 0, childT: 0 });
   }
   while (stack.length) close(stack.pop()!);
-  return self;
+  return into;
+}
+
+/** `selfTimeStats`' wall self time alone. */
+export function selfTimes(events: TraceEvent[], t0: number, t1: number): Map<string, number> {
+  return new Map([...selfTimeStats(events, t0, t1)].map(([name, s]) => [name, s.dur]));
 }
 
 /** CPU time of a thread in [t0, t1], from the outermost events wholly inside

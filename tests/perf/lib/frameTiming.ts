@@ -2,14 +2,13 @@
  * Frame timing for specs whose frames break the batch, imported into the page
  * (`/weasel/@fs…/tests/perf/lib/frameTiming.ts`) rather than by the spec.
  *
- * **One frame per task.** A frame costs several times more run back to back
- * inside one task than when the page yields to the event loop between frames,
- * as a real frame loop does, with occasional single frames stalling for
- * seconds inside the GPU process. Each sample here runs a frame in a task of
- * its own and ends in a one-pixel `readPixels`.
+ * **One frame per task, after `setTimeout(0)`.** The few ms of idle that buys
+ * is what a frame loop has between frames, and idle slows the next frame's GPU
+ * work several times over against a GPU kept busy (`README.md`, "Idle time
+ * before a frame slows the GPU"). Each sample ends in a one-pixel `readPixels`.
  *
- * **Not `finish`, which does not wait for the GPU.** A one-pixel `readPixels`
- * cannot return before the draws behind it have run.
+ * **Not `finish`, which in Chromium's WebGL is a flush.** A one-pixel
+ * `readPixels` cannot return before the draws behind it have run.
  *
  * A sample is the frame's latency through that read: the page's JS, the GPU
  * process and the GPU in series, plus one small readback. A frame loop overlaps

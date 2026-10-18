@@ -286,21 +286,86 @@ run without it.
 Specs that time the renderer draw **one frame per task** and take the median,
 through `lib/frameTiming.ts`, on a page `lib/isolate.ts` makes cross-origin
 isolated so `performance.now()` resolves microseconds rather than 100 us. A
-sample ends in a one-pixel `readPixels`, not `gl.finish()`, which does not wait
-for the GPU: `fill-rate` times its plain shader both ways and on teitou
+sample ends in a one-pixel `readPixels`, not `gl.finish()`. In Chromium's
+WebGL `finish()` is a flush: its body is `ContextGL()->Flush();  //
+Intentionally a flush, not a finish.` (read in
+`third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc` on
+Chromium's main branch, 2026-10-17). It waits for neither the GPU nor the GPU
+process: `fill-rate` times its plain shader both ways and on teitou
 (2026-10-05) read 0.03 ms through `finish` against 3.6 ms through the read.
 
-A block of frames drawn back to back in one task measures something a frame
-loop never sees. Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-04,
-with `flush-noise.spec.ts`: a frame of 512 one-rect flushes costs 0.5–0.8 ms
-when the page yields between frames. Inside one task the first eight frames
-still cost that, and every frame after them 3–9 ms, in plateaus that change
-from round to round, with single frames stalling 0.15–3.7 s inside the GPU
-process. The GPU process's own trace showed it busy on the CPU throughout
-(thread time equal to wall time), and the slowdown went away when the draws
-were dropped, not when the uploads were. That regime is what made
-a per-flush figure read 5 us one round and 29 the next. What inside Chromium
-or ANGLE resets at a task boundary was not found.
+### Frames timed through `finish` in one task
+
+A frame timed through `finish` measures how long the page takes to issue its
+commands, until the renderer's command buffer is full. From then on every frame
+waits for the GPU process to make room, so it costs what the GPU process takes
+to run a frame. On 2026-10-04 `flush-noise.spec.ts` saw this as frames of 512
+one-rect flushes costing 0.5–0.8 ms for the first eight in a task and 3–9 ms
+after; a rerun on teitou on 2026-10-17 saw it from four frames per task on
+(`tests/perf/recorded/batch-specs-2026-10-17/`). The cheap
+frames were the misreading, not the dear ones.
+
+`back-to-back.spec.ts` shows the mechanism on raw WebGL2, with no weasel in the
+page. Each frame is N draws, each a `bufferSubData` of one rect and a
+`drawElements`. Measured on teitou (Apple M5 Max, ANGLE Metal, headless
+Chromium 153.0.8010.12), 2026-10-17, run solo, medians of 3 rounds (6 for
+the first two rows); result
+files in `tests/perf/recorded/back-to-back-2026-10-17/`.
+
+| Draws | Frame ends in | Yield | ms, frames 0–7 | ms, frame 24 on | First slow frame |
+|---:|---|---|---:|---:|---|
+| 512 | `finish` | none | 0.21 | 1.02 | 23–24 |
+| 512 | `flush` | none | 0.19 | 0.86 | 24–25 |
+| 2048 | `flush` | none | 0.84 | 16.94 | 5–6 |
+| 128 | `flush` | none | 0.05 | 0.02 | none in 120 frames, in 2 of 3 rounds |
+| 512 | `flush` | `setTimeout` every 4 frames | 0.17 | 0.08 | 24–26 |
+| 512 | `flush` | `setTimeout` every frame | 0.23 | 0.15 | none |
+
+Four times the draws, a quarter of the frames: the cliff comes after a fixed
+amount of commands, not a fixed number of frames. A trace of the 512-draw case
+shows the renderer's main thread waiting 1.7 ms a frame in
+`GpuChannel::WaitForGetOffsetInRange`, with
+`CommandBufferHelper::WaitForAvailableEntries` beside it, once past the cliff;
+the GPU process's `CommandBufferService:PutChanged` is on the CPU for all of its
+685 us a frame. A yield after each frame gives the GPU process time to empty
+the buffer; one every four frames does not. That weasel's frame hits the cliff
+after eight frames, or four, is inferred from its issuing more commands a
+frame than this probe does; neither the buffer's size in Chromium nor weasel's
+commands per frame was measured.
+
+What this does not explain is the 0.15–3.7 s single-frame stalls of
+2026-10-04. They did not recur: the raw probe's slowest frame across every
+cell was 43 ms, a 2048-draw frame, and `flush-noise`'s `stall` and `stall-read`
+phases, 240 of weasel's frames in one task each, ending in `finish` and in a
+one-pixel read, peaked at 9 ms and 31 ms (teitou, 2026-10-17;
+`flush-noise-2026-10-18T03-01-59Z.json` in the same directory). If they come
+back, `stall-read` is the phase to run.
+
+### Idle time before a frame slows the GPU
+
+Timed through `readPixels`, raw frames do not slow down back to back. Same
+machine, date, and result files; 512 draws a frame, synced by a one-pixel
+read:
+
+| Between frames | ms, frames 0–7 | ms, frame 24 on | GPU ms, frame 24 on |
+|---|---:|---:|---:|
+| nothing, one task | 4.41 | 1.91 | 0.72 |
+| a `MessageChannel` task | 5.11 | 1.92 | 0.75 |
+| `setTimeout(0)`, about 5 ms | 6.84 | 5.00 | 2.58 |
+| an 8 ms busy wait, same task | 5.36 | 3.28 | 1.75 |
+
+GPU ms is `EXT_disjoint_timer_query_webgl2`; the first two rows have 8 rounds,
+the last two 5. A task boundary costs nothing; idle time costs, and it shows
+up in the GPU's own time for the same work, as it does in the first frames
+after the 300 ms each cell idles before starting. That the GPU drops its clock
+while idle is an inference. SwiftShader (`--use-angle=swiftshader`, and what
+`--use-angle=gl` gave headless on teitou) shows none of it: frames
+yielding by `setTimeout`, by `MessageChannel`, or not at all cost within 7% of
+each other.
+
+`frameTiming` yields by `setTimeout(0)` before every sample, so its samples sit
+in the third row's regime: a frame after a few ms of idle, as in a frame loop,
+not a frame on a GPU kept busy.
 
 ## Comparing two runs
 
