@@ -111,6 +111,7 @@ export type { CanvasViewCamera } from '../canvas/canvasExtension';
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
 export { SceneViewCanvas } from '../canvas/SceneViewCanvas';
 export type { SceneViewCanvasProps } from '../canvas/SceneViewCanvas';
+export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 // `<DrawCanvas>` is the same detached surface with no scene behind it: a
 // command list painted onto a canvas of its own.
 export { DrawCanvas } from '../canvas/DrawCanvas';
