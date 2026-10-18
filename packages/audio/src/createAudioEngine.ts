@@ -8,6 +8,7 @@ import { createSoundCache, type SoundCache, type SoundHandle } from './soundCach
 import type { SpatialOptions, Vec2 } from './spatialize';
 import { createStreamStarters } from './streamStarter';
 import { createSynthStarters } from './synthStarters';
+import { createWorkletVoices } from './worklet/workletVoices';
 import { createTickTimer } from './tickTimer';
 import type {
   AudioEngineOptions, NoiseOptions, NoteOptions, PlayOptions, StreamOptions, VoiceHandle,
@@ -95,7 +96,7 @@ function bufferStarter(
       };
       voice.retune();
       // Still live when this runs, so the voice still holds its chain.
-      source.connect(voice.chain!.panner);
+      source.connect(voice.out!.input!);
       source.start(when / 1000);
       return source;
     },
@@ -124,6 +125,21 @@ function busSlots(busNames: string[], opts: AudioEngineOptions) {
     return total;
   };
   return { slotsFor, active };
+}
+
+/** How synth voices are made: in the voice worklet once it has loaded, when
+ *  `synthVoices` asks for it, and on nodes otherwise. */
+function engineSynth(ctx: BaseAudioContext, opts: AudioEngineOptions, busInput: (bus: string) => AudioNode) {
+  const random = opts.random ?? Math.random;
+  const nodes = createSynthStarters(ctx, random);
+  const worklet = opts.synthVoices === 'worklet' ? createWorkletVoices(ctx, busInput, random) : null;
+  const pick = () => (worklet?.ready() ? worklet : nodes);
+  return {
+    note: (note: NoteOptions) => pick().note(note),
+    noise: (noise: NoiseOptions) => pick().noise(noise),
+    loaded: worklet?.loaded,
+    dispose: () => worklet?.dispose(),
+  };
 }
 
 /** The timer that wakes the scheduler, and the scheduler. */
@@ -189,7 +205,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     disposed: () => disposed,
     listener: () => ({ at: listener, opts: spatialOpts }),
   });
-  const synth = createSynthStarters(ctx, opts.random ?? Math.random);
+  const synth = engineSynth(ctx, opts, graph.input);
   const streams = createStreamStarters(ctx, timers);
 
   const engine: AudioEngine = {
@@ -198,6 +214,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     async unlock() {
       if (disposed) return;
       if (ctx.state !== 'running') await ctx.resume();
+      await synth.loaded;
     },
     now,
     load: sounds.load,
@@ -257,6 +274,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       for (const tap of [...taps]) tap.dispose();
       taps.clear();
       watch.dispose();
+      synth.dispose();
       graph.dispose();
       graph.master.disconnect();
       if (ownsContext) void ctx.close().catch(() => undefined);

@@ -1,5 +1,6 @@
 import { envelopeLevel, envelopePoints, resolveEnvelope, type ResolvedEnvelope } from './envelope';
-import type { Inharmonic, NoiseColor, SynthPartial, VoiceFilter, Waveform } from './types';
+import { toFrequency } from './pitch';
+import type { Inharmonic, NoiseColor, NoteOptions, SynthPartial, VoiceFilter, Waveform } from './types';
 
 /** Seconds of noise in each cached loop: long enough that the repeat is not
  *  heard as a pitch. */
@@ -100,6 +101,23 @@ export function resolvePartials(wave: Inharmonic): (SynthPartial & { gain: numbe
     gain: total > 0 ? (p.gain ?? 1) / total : 0,
     decay: p.decay,
   }));
+}
+
+/** What of a note is checked where it was written, not when it comes due. */
+export interface ResolvedNote {
+  from: number;
+  glideTo: number | undefined;
+  partials: (SynthPartial & { gain: number })[] | null;
+}
+
+/** A note's pitch, glide target and partials. Throws on a bad pitch or partial. */
+export function resolveNote(note: Pick<NoteOptions, 'pitch' | 'glide' | 'wave'>): ResolvedNote {
+  const wave = note.wave ?? 'sine';
+  return {
+    from: toFrequency(note.pitch),
+    glideTo: note.glide ? toFrequency(note.glide.to) : undefined,
+    partials: isInharmonic(wave) ? resolvePartials(wave) : null,
+  };
 }
 
 /** An envelope written onto a param from `t0` (seconds), mapped through `map`,

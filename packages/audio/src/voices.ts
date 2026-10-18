@@ -1,4 +1,3 @@
-import { writeParam } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type Vec2 } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
@@ -10,7 +9,7 @@ import type { LiveVoice, Slots, SourceLike, Starter, VoiceOptions } from './live
 export interface Voices {
   /**
    * Everything a voice does apart from making its node: the lock and dispose
-   * checks, the chain, the booking, the stale-backlog check, the slot and any
+   * checks, the output, the booking, the stale-backlog check, the slot and any
    * steal, and the handle.
    */
   launch(common: VoiceOptions, starter: Starter): VoiceHandle;
@@ -46,16 +45,18 @@ const dropped = (id: number): VoiceHandle => ({
   setPan: () => {}, setPosition: () => {}, isPlaying: () => false,
 });
 
-function teardownVoice(
-  voice: LiveVoice, reason: VoiceDropReason, chains: ChainPool, live: Map<number, LiveVoice>,
-): void {
+function teardownVoice(voice: LiveVoice, reason: VoiceDropReason, live: Map<number, LiveVoice>): void {
   // First, and never at a call site: teardown is what makes a voice dead, and
   // a queued callback that outlives it must find it canceled. The steal path
   // has no other place to set this.
   voice.canceled = true;
   if (!voice.playing && voice.source === null) return;
   voice.playing = false;
-  if (voice.source === null) reportDrop(voice.onDrop, reason);
+  if (voice.source === null) {
+    voice.unbook?.();
+    reportDrop(voice.onDrop, reason);
+  }
+  voice.unbook = null;
   if (voice.source) {
     try { voice.source.stop(); } catch { /* already stopped */ }
     voice.source.disconnect();
@@ -65,10 +66,8 @@ function teardownVoice(
   voice.release = null;
   voice.env?.disconnect();
   voice.env = null;
-  if (voice.chain) {
-    chains.give(voice.chain);
-    voice.chain = null;
-  }
+  voice.out?.free();
+  voice.out = null;
   live.delete(voice.id);
   if (voice.slot !== null) {
     voice.slots.byToken.delete(voice.token);
@@ -91,8 +90,10 @@ function startVoice(
   if (voice.canceled) return;
   // Came due while the context was suspended: starting it now would play
   // a backlog at once, which is what dropping a locked play avoids. A voice
-  // played since the resume is no backlog, however early its `when`.
-  if (bookedAt < staleFloor && scheduledWhen < staleFloor) {
+  // played since the resume is no backlog, however early its `when`. Nor is a
+  // booked voice: the audio thread holds it, and its clock stopped too.
+  const booked = voice.unbook !== null;
+  if (!booked && bookedAt < staleFloor && scheduledWhen < staleFloor) {
     teardown(voice, 'stale');
     return;
   }
@@ -123,11 +124,12 @@ function startVoice(
     source = starter.start(voice, scheduledWhen);
   } catch (err) {
     // Not back to the idle chains: whatever the starter built before it threw is still wired into this one.
-    voice.chain?.gain.disconnect();
-    voice.chain = null;
+    voice.out?.abandon();
+    voice.out = null;
     teardown(voice, 'failed');
     throw err;
   }
+  voice.unbook = null;
   source.onended = () => { teardown(voice); onDone?.(); };
   voice.source = source;
 }
@@ -137,14 +139,14 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
   return {
     id: voice.id,
     stop(fadeMs) {
-      if (fadeMs && fadeMs > 0 && voice.source && voice.chain && !voice.canceled) {
+      if (fadeMs && fadeMs > 0 && voice.source && voice.out && !voice.canceled) {
         // Canceled but not torn down: the fade is what ends this voice, and
         // stopping the source now would cut the ramp scheduled a line above
         // it — which is the click `fadeMs` exists to avoid. `onended` does
         // the bookkeeping when the fade reaches the end.
         voice.canceled = true;
         voice.fading = true;
-        writeParam(ctx, voice.chain.gain.gain, 0, fadeMs);
+        voice.out.level(0, fadeMs);
         try { voice.source.stop(ctx.currentTime + fadeMs / 1000); } catch { /* ended */ }
         return;
       }
@@ -163,9 +165,9 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     },
     setGain(value, rampMs) {
       voice.baseGain = value;
-      if (!voice.chain || voice.fading) return;
+      if (!voice.out || voice.fading) return;
       voice.rampEnd = rampMs && rampMs > 0 ? ctx.currentTime + rampMs / 1000 : 0;
-      writeParam(ctx, voice.chain.gain.gain, value * voice.spatialGain, rampMs);
+      voice.out.level(value * voice.spatialGain, rampMs);
       poolGain(voice);
     },
     setRate(value) {
@@ -178,7 +180,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     },
     setPan(value) {
       voice.position = undefined;
-      if (voice.chain) voice.chain.panner.pan.value = value;
+      voice.out?.pan(value);
     },
     setPosition(p) {
       voice.position = p;
@@ -204,20 +206,20 @@ export function createVoices(deps: VoicesDeps): Voices {
   };
 
   const applySpatial = (voice: LiveVoice): void => {
-    if (!voice.position || !voice.chain) return;
+    if (!voice.position || !voice.out) return;
     const s = spatialOf(voice.position);
     voice.spatialGain = s.gain;
-    voice.chain.panner.pan.value = s.pan;
+    voice.out.pan(s.pan);
     if (!voice.fading) {
-      // writeParam cancels what is scheduled, so a ramp still running is rescheduled to the same end.
+      // A level write cancels what is scheduled, so a ramp still running is rescheduled to the same end.
       const left = (voice.rampEnd - ctx.currentTime) * 1000;
-      writeParam(ctx, voice.chain.gain.gain, voice.baseGain * s.gain, left > 0 ? left : undefined);
+      voice.out.level(voice.baseGain * s.gain, left > 0 ? left : undefined);
     }
     poolGain(voice);
   };
 
   const teardown = (voice: LiveVoice, reason: VoiceDropReason = 'stopped'): void => {
-    teardownVoice(voice, reason, chains, live);
+    teardownVoice(voice, reason, live);
   };
   const ops: VoiceOps = { teardown, applySpatial, poolGain };
 
@@ -242,16 +244,24 @@ export function createVoices(deps: VoicesDeps): Voices {
       const when = common.when ?? bookedAt;
       const baseGain = common.gain ?? 1;
       const spatial = common.position ? spatialOf(common.position) : { gain: 1, pan: common.pan ?? 0 };
+      const level = baseGain * spatial.gain;
 
       const voice: LiveVoice = {
         id, slots, slot: null, token: 0, key: common.cancelKey, onDrop: common.onDrop,
         source: null, env: null, retune: null, release: null, releasing: false,
-        chain: chains.take(deps.busInput(busName), baseGain * spatial.gain, spatial.pan),
+        out: null, unbook: null,
         baseGain, spatialGain: spatial.gain,
         rate: common.rate ?? 1, detune: common.detune ?? 0,
         position: common.position,
         playing: true, canceled: false, fading: false, rampEnd: 0,
       };
+      if (starter.book) {
+        const booking = starter.book(voice, { bus: busName, when, level, pan: spatial.pan });
+        voice.out = booking.out;
+        voice.unbook = booking.cancel;
+      } else {
+        voice.out = chains.take(deps.busInput(busName), level, spatial.pan);
+      }
       live.set(id, voice);
       deps.scheduler.schedule(when, (scheduledWhen) => {
         startVoice(voice, starter, bookedAt, scheduledWhen, common.onDone, deps.staleFloor(), teardown);

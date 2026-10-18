@@ -1,5 +1,3 @@
-import { voiceProcessorSource } from './voiceProcessor.gen';
-
 const loads = new WeakMap<BaseAudioContext, Promise<void>>();
 
 /** Add the voice processor to a context's worklet scope, once per context.
@@ -10,6 +8,8 @@ export function loadVoiceProcessor(ctx: BaseAudioContext): Promise<void> {
   if (!load) {
     load = (async () => {
       if (!ctx.audioWorklet) throw new Error('@weasel-js/audio: this context has no audioWorklet');
+      // Imported here, so an engine that never asks for worklet voices does not carry the source.
+      const { voiceProcessorSource } = await import('./voiceProcessor.gen');
       const url = URL.createObjectURL(new Blob([voiceProcessorSource], { type: 'text/javascript' }));
       try {
         await ctx.audioWorklet.addModule(url);

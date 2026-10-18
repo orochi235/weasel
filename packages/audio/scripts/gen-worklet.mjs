@@ -17,6 +17,8 @@ const out = fileURLToPath(new URL('../src/worklet/voiceProcessor.gen.ts', import
 
 const result = await build({
   entryPoints: [entry],
+  // Its path comments are relative to this, so the output is the same from any cwd.
+  absWorkingDir: fileURLToPath(new URL('../src', import.meta.url)),
   bundle: true,
   write: false,
   format: 'iife',

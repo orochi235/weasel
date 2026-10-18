@@ -1,8 +1,7 @@
 import { resolveEnvelope, type Envelope } from './envelope';
 import { sourceGroup, type LiveVoice, type SourceLike, type Starter } from './liveVoice';
-import { toFrequency } from './pitch';
 import {
-  envelopeOnParam, isInharmonic, noiseBuffer, resolvePartials, voiceFilter,
+  envelopeOnParam, noiseBuffer, resolveNote, voiceFilter, type ResolvedNote,
 } from './synthVoice';
 import type { Inharmonic, NoiseOptions, NoteOptions, VoiceFilter, Waveform } from './types';
 
@@ -35,7 +34,7 @@ function synthStart(
   const amp = envelopeOnParam(shaper.gain, env, gate, t0, (v) => v);
   const filter = patch.filter ? voiceFilter(ctx, patch.filter, gate, t0) : null;
   filter?.node.connect(shaper);
-  shaper.connect(voice.chain!.panner);
+  shaper.connect(voice.out!.input!);
   voice.env = shaper;
 
   const { nodes, retune } = make(t0, filter?.node ?? shaper);
@@ -59,9 +58,7 @@ function synthStart(
 function noteOscillators(
   ctx: BaseAudioContext,
   note: NoteOptions,
-  from: number,
-  glideTo: number | undefined,
-  partials: ReturnType<typeof resolvePartials> | null,
+  { from, glideTo, partials }: ResolvedNote,
   applyWave: (osc: OscillatorNode, wave: Exclude<Waveform, Inharmonic>) => void,
   t0: number,
   into: AudioNode,
@@ -120,14 +117,11 @@ export function createSynthStarters(ctx: BaseAudioContext, random: () => number)
 
   return {
     note(note) {
-      const from = toFrequency(note.pitch);
-      const glideTo = note.glide ? toFrequency(note.glide.to) : undefined;
-      const wave = note.wave ?? 'sine';
-      const partials = isInharmonic(wave) ? resolvePartials(wave) : null;
+      const resolved = resolveNote(note);
       return {
         ready: () => true,
         start: (voice, whenMs) => synthStart(ctx, voice, whenMs, note, (t0, into) => {
-          const oscs = noteOscillators(ctx, note, from, glideTo, partials, applyWave, t0, into);
+          const oscs = noteOscillators(ctx, note, resolved, applyWave, t0, into);
           return {
             nodes: oscs,
             retune: () => {

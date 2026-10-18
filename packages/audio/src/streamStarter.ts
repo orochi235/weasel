@@ -80,7 +80,7 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
           if (opts.offset !== undefined) el.currentTime = opts.offset / 1000;
           voice.retune = () => { el.playbackRate = voice.rate; };
           voice.retune();
-          const into = voice.chain!.panner;
+          const into = voice.out!.input!;
           node.connect(into);
           return mediaSource(ctx, timers, el, node, into);
         },

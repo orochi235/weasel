@@ -1,7 +1,7 @@
 import type { Vec2 } from './spatialize';
 import type { PlayOptions, VoiceDropReason } from './types';
 import type { VoicePool } from './voicePool';
-import type { Chain } from './voiceChains';
+import type { VoiceOut } from './voiceChains';
 
 /** A voice pool and its token index. Tokens restart at 1 in every pool, so the
  *  index has to be per pool — keyed by bus name, a shared pool would look a
@@ -34,9 +34,22 @@ export const sourceGroup = (nodes: AudioScheduledSourceNode[]): SourceLike => ({
 export interface Starter {
   /** False drops the voice when it comes due. */
   ready(): boolean;
-  /** Build the node, connect it into `voice.chain.panner`, and start it at
-   *  `when`, engine ms. */
+  /** Build the node, connect it into `voice.out.input`, and start it at
+   *  `when`, engine ms. A booked voice's source already exists: this hands it over. */
   start(voice: LiveVoice, when: number): SourceLike;
+  /**
+   * For a voice whose samples are made off the main thread: hand it over at
+   * the call rather than when the scheduler fires, so a stall between the two
+   * cannot delay it. Returns the voice's output in place of a node chain, and
+   * what cancels it if it is torn down before it starts.
+   */
+  book?(voice: LiveVoice, at: { bus: string; when: number; level: number; pan: number }): Booking;
+}
+
+/** What `Starter.book` returns. */
+export interface Booking {
+  out: VoiceOut;
+  cancel(): void;
 }
 
 export interface LiveVoice {
@@ -56,9 +69,11 @@ export interface LiveVoice {
   /** A synth voice's note-off. Null for a buffer voice, and until it starts. */
   release: (() => void) | null;
   releasing: boolean;
-  /** Null once torn down, when the chain goes back to be reused: a handle
+  /** Null once torn down, when a chain goes back to be reused: a handle
    *  that outlives its voice must not write to another voice's nodes. */
-  chain: Chain | null;
+  out: VoiceOut | null;
+  /** A booked voice's cancel, until it starts. */
+  unbook: (() => void) | null;
   baseGain: number;
   spatialGain: number;
   rate: number;
@@ -67,8 +82,8 @@ export interface LiveVoice {
   position?: Vec2;
   playing: boolean;
   canceled: boolean;
-  /** `stop(fadeMs)` owns the chain gain from here until the source ends. */
+  /** `stop(fadeMs)` owns the output's level from here until the source ends. */
   fading: boolean;
-  /** Context time a `setGain` ramp on the chain gain ends at; 0 when none was asked for. */
+  /** Context time a `setGain` ramp on the level ends at; 0 when none was asked for. */
   rampEnd: number;
 }
