@@ -55,9 +55,20 @@ function isBox(pose: unknown): pose is Box {
 }
 
 /**
+ * `path`, drawn in the unturned box of a node posed at `from`, as it is drawn
+ * in the box of `to`. Whatever turns the box is applied after, by whoever
+ * paints it. A pose that is not a box leaves the path where it is.
+ */
+export function carryBoxPath(path: Path, from: unknown, to: unknown): Path {
+  if (!isBox(from) || !isBox(to)) return path;
+  if (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height) return path;
+  return carryPathBy(path, boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height));
+}
+
+/**
  * A dependency's derived `path`, drawn in its own frame, carried into the
- * reader's — the frame change that took its pose `from` to `to`. A pose that
- * is not a box gives no plane to carry a path through, and leaves it as it is.
+ * reader's — the frame change that took its pose `from` to `to`: out of
+ * `from`'s turn, {@link carryBoxPath}'s box to box, into `to`'s turn.
  */
 export function carryDepPath(path: Path, from: unknown, to: unknown): Path {
   if (!isBox(from) || !isBox(to)) return path;
@@ -66,7 +77,13 @@ export function carryDepPath(path: Path, from: unknown, to: unknown): Path {
   let m: Affine = boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height);
   if (back !== null) m = multiply(m, back);
   if (fwd !== null) m = multiply(fwd, m);
-  // Read every frame, and a derivation's memo compares the path it read by reference.
+  return carryPathBy(path, m);
+}
+
+/** `path` through `m`, keeping its parts. Painted and read every frame, and a
+ *  derivation's memo compares the path it read by reference, so the copy is
+ *  kept against it. */
+export function carryPathBy(path: Path, m: Affine): Path {
   const key = m.join(',');
   const held = carried.get(path);
   if (held?.key === key) return held.path;
