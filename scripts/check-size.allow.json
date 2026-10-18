@@ -22,10 +22,6 @@
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
   },
-  "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 486,
-    "longestFunction": 419
-  },
   "packages/core/src/canvas/CanvasView.tsx": {
     "lines": 407,
     "longestFunction": 262

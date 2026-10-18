@@ -1380,14 +1380,11 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `CanvasInner` is one 422-line function.** It is most of the 720-line `canvas/Canvas.tsx`,
-  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas.
-  `SceneCanvasInner` is under the cap: its mounters are hooks, called from `SceneCanvasInput`, a
-  component kept ahead of the canvas's children because a child's dep or action override has to
-  register after the kit's (`SceneCanvas.registrationOrder.test.tsx`). `CanvasInner` has no mounters
-  to fold, so it needs its own split. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to
-  another owner. Left open by the preset table and the rule context, and described in the audit:
-  `selectTool.rotate === false` is still decided in three places that do not agree, and making
-  them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
-  kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
-  summary prints the label, so making them one needs a decision on what it should say.
+- **(P3) `selectTool.rotate === false` is decided in three places that do not agree.** Making them
+  one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
+  lists them. Left open by the preset table and the rule context.
+
+- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
+  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
+  summary prints the label, so making them one needs a decision on what it should say. Left open by
+  the selection pass.
