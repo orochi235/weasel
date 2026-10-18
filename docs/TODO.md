@@ -19,6 +19,24 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) Tools have no consistent home, and no way to compose a set of them.** Where a tool lives
+  depends on when it was written:
+  - Core's `tools/builtin/` holds the select, hand, and shape tools, and also bone, weight, slice,
+    eyedropper, measure, and image.
+  - `@weasel-js/path-tools` holds the path-editing family: warp, trim, spiro, smudge, the shape
+    builder, girth, and extend. Some of these are tools and some are path-edit presets.
+  - Guides presets and `apps/draw` bring tools of their own.
+
+  Choosing a set is a hand-picked id list: `BUILTIN_TOOL_IDS` plus `defaultTools`, presets that
+  each add their own tools, and `tools={{ … }}` patches. draw mounts every built-in id except
+  bone and weight. As more tools land, each consumer has to make that cut again, and every new
+  built-in id silently joins whatever list includes "all of them".
+  Needs:
+  - a durable rule for which package a tool lives in, which also answers moving finished tools
+    out of core so they stop sharing its test surface;
+  - a composition unit above single ids (families or sets a consumer opts into whole, with
+    exclusions) that presets, `defaultTools`, and the palette all read.
+
 - **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
   moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
   as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
@@ -1074,17 +1092,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ---
 
-### weasel-den deferrals
+### Domain bundles
 
-From `docs/specs/2026-05-03-weasel-den-design.md`. **Read `packages/den/README.md` first**: the
-spec's pack shape was superseded by core's `Contribution` + `mergeContributions`, and its
-convenience layer shipped inside core. The items below are what survives that.
-
-- **(P3) A presentation bundle and a whiteboard bundle.** Each is a `Contribution` bundle, the way
-  `@weasel-js/diagram` is (`createDiagramContribution`), in a package of its own: neither is a den
-  pack.
-  - Presentation: to be rethought before anything is built. This bullet came from the den spec
-    (2026-05-03), which predates sherpa (the presentation runtime) and blits (concurrent effects).
+- **(P3) A presentation bundle and a whiteboard bundle.** Each would be a `Contribution` bundle,
+  the way `@weasel-js/diagram` is (`createDiagramContribution`).
+  - Presentation: to be rethought before anything is built. This bullet predates sherpa (the
+    presentation runtime) and blits (concurrent effects).
     Ruled 2026-10-17: a presentation strategy now runs through those two, not an in-canvas
     slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
     have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
@@ -1093,12 +1106,6 @@ convenience layer shipped inside core. The items below are what survives that.
     note, as an `insert` node factory minting a filled rect that carries text, bound by a
     drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
     their whiteboard defaults.
-- **(P3) Move `useSelectTool` / `useTextTool` / `usePenTool` /
-  `usePencilTool` out of core's builtin tools.** The den's one motivation nothing
-  has absorbed: separating finished, stable tools' test surface from core's. It
-  needs no new package — `packages/den` is a README, not a package — and core's
-  own workspace layout can hold them. Defer until each is stable.
-
 ### d3 integration plugin
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems

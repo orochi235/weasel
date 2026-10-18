@@ -21,7 +21,7 @@ export function publishableWorkspaces(root = repoRoot) {
       try {
         manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
       } catch {
-        continue; // not a package (e.g. packages/den is an empty placeholder)
+        continue; // not a package
       }
       if (manifest.private) continue;
       out.push({ dir, manifest });
