@@ -87,6 +87,14 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const visible = (path: string): boolean =>
     isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
 
+  /** Whether the node at `path` draws anything: a visible leaf, or a visible group with such a node beneath it. */
+  const drawsAny = (path: string): boolean => {
+    if (!visible(path)) return false;
+    const found = schemaNodeAtPath(resolved.group, path);
+    if (!found || isPrefLeaf(found)) return found !== undefined;
+    return Object.keys(found.children).some((key) => drawsAny(`${path}.${key}`));
+  };
+
   /** A group's paths that no section inside it claims, in schema order. */
   const loosePaths = (group: PrefGroup, at: string): string[] => {
     const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
@@ -119,7 +127,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const node = (path: string, rows: Rows): ReactNode => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found) return null;
-    if (!visible(path)) return null;
+    if (!drawsAny(path)) return null;
     if (isPrefLeaf(found)) {
       return (
         <ControlRow
@@ -240,7 +248,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     const out: ReactNode[] = [];
     for (const step of prefTabRuns(runs, tabGroup)) {
       if (step.tabs) {
-        const tabs = step.tabs.flatMap((run) => run.items).filter(visible);
+        const tabs = step.tabs.flatMap((run) => run.items).filter(drawsAny);
         if (tabs.length === 0) continue;
         out.push(
           <GroupTabs
@@ -300,6 +308,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           rows,
         )}
         {sections.map((section) => {
+          if (!section.paths.some(drawsAny)) return null;
           const inner = sectionRows(section, rows);
           const heading = lift(section.label, section.paths);
           return (
