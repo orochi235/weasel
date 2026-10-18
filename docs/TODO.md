@@ -1060,13 +1060,14 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. `grep 'render: () =>'` lists them. The ones that drew one plain
-  instance of the meta's component are rewritten around `args`; what is left is
-  matrices, hand-built compositions, generic components (`DataGrid<Route>`), and
-  stories that mount a harness holding state (`<Live start=… />`, `<Strip only=… />`).
-  A harness is the open kind: it can take the story's args and pass them to the
-  one instance it draws, the way `ToggleBar`'s stories do, with a control that
-  only sets where held state starts, as `Timeline`'s playhead does.
+  would read them. `grep 'render: () =>'` lists them. Every story that draws one
+  instance of the meta's component, plain or inside a harness holding state, now
+  takes `args` and passes them on (`storyArgs.test.tsx` in `packages/ui/src/components`
+  and `packages/labkit/src`). What is left draws several instances, something other
+  than the meta's component (`Timeline`'s `Live` draws `AnimatedTimeline`, `BarField`'s
+  `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
+  props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
+  whether a matrix story should take args and apply them to every cell.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
