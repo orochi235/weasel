@@ -7,8 +7,8 @@
  * which is the Levenberg-Marquardt schedule run on the constraint side.
  */
 
-import { solveDense } from './linear';
 import { frameAt, residualRows, writeResiduals, type ConstraintFrame } from './residuals';
+import { NormalSystem } from './sparse';
 import { constraintAnchors, constraintFits, type AnchorPair, type PathConstraint } from './types';
 
 /** A point the solver reads and writes. */
@@ -54,16 +54,14 @@ interface Row {
   c: PathConstraint;
   /** First residual row. */
   at: number;
-  /** Coordinates the constraint reads that may move. */
-  vars: number[];
 }
 
 interface System {
   rows: Row[];
   m: number;
   n: number;
-  mobility: Float64Array;
   frame: ConstraintFrame;
+  normal: NormalSystem;
 }
 
 function residualsOf(sys: System, x: Float64Array): Float64Array {
@@ -72,50 +70,20 @@ function residualsOf(sys: System, x: Float64Array): Float64Array {
   return r;
 }
 
-/** Central differences, one constraint at a time over only the coordinates it reads. */
-function jacobianOf(sys: System, x: Float64Array): Float64Array {
-  const j = new Float64Array(sys.m * sys.n);
-  const plus = new Float64Array(2);
-  const minus = new Float64Array(2);
+/** Load the analytic Jacobian at `x` into the normal system. */
+function loadJacobian(sys: System, x: Float64Array): void {
+  const { normal, frame } = sys;
+  normal.clear();
+  const scratch = new Float64Array(2);
   for (const row of sys.rows) {
-    const rows = residualRows(row.c);
-    for (const v of row.vars) {
-      const h = 1e-6 * (1 + Math.abs(x[v]));
-      const keep = x[v];
-      x[v] = keep + h;
-      writeResiduals(row.c, x, sys.frame, plus, 0);
-      x[v] = keep - h;
-      writeResiduals(row.c, x, sys.frame, minus, 0);
-      x[v] = keep;
-      for (let k = 0; k < rows; k++) j[(row.at + k) * sys.n + v] = (plus[k] - minus[k]) / (2 * h);
-    }
+    writeResiduals(row.c, x, frame, scratch, 0, (k, v, d) => normal.add(row.at + k, v, d));
   }
-  return j;
 }
 
-/** The damped minimum-norm step for residuals `r` and Jacobian `j`, or null when it cannot be taken. */
-function stepOf(sys: System, j: Float64Array, r: Float64Array, lambda: number): Float64Array | null {
-  const { m, n, mobility } = sys;
-  const a = new Float64Array(m * m);
-  for (let p = 0; p < m; p++) {
-    for (let q = p; q < m; q++) {
-      let s = 0;
-      for (let v = 0; v < n; v++) s += j[p * n + v] * mobility[v] * j[q * n + v];
-      a[p * m + q] = s;
-      a[q * m + p] = s;
-    }
-    a[p * m + p] += lambda;
-  }
-  const y = solveDense(a, Float64Array.from(r), m);
-  if (!y) return null;
-  const delta = new Float64Array(n);
-  for (let v = 0; v < n; v++) {
-    if (mobility[v] === 0) continue;
-    let s = 0;
-    for (let p = 0; p < m; p++) s += j[p * n + v] * y[p];
-    delta[v] = -mobility[v] * s;
-  }
-  return delta;
+/** The damped minimum-norm step for residuals `r` at the loaded Jacobian, or null when it cannot be taken. */
+function stepOf(sys: System, r: Float64Array, lambda: number): Float64Array | null {
+  const y = sys.normal.solve(r, lambda);
+  return y && sys.normal.step(y);
 }
 
 const sumSq = (r: Float64Array) => r.reduce((s, v) => s + v * v, 0);
@@ -136,16 +104,16 @@ function buildSystem(
   }
   for (const i of pinned) mobility.fill(0, 2 * i, 2 * i + 2);
   const rows: Row[] = [];
-  let m = 0;
+  const rowCols: Int32Array[] = [];
   for (const c of active) {
     const height = residualRows(c);
     if (height === 0) continue;
-    const vars = [...new Set(constraintAnchors(c).flatMap((i) => [2 * i, 2 * i + 1]))]
-      .filter((v) => mobility[v] > 0);
-    rows.push({ c, at: m, vars });
-    m += height;
+    rows.push({ c, at: rowCols.length });
+    const vars = Int32Array.from(constraintAnchors(c).flatMap((i) => [2 * i, 2 * i + 1]));
+    for (let k = 0; k < height; k++) rowCols.push(vars);
   }
-  return { rows, m, n: 2 * count, mobility, frame: frameAt(opts.axisAngle), pinned };
+  const normal = new NormalSystem(rowCols, mobility);
+  return { rows, m: rowCols.length, n: 2 * count, frame: frameAt(opts.axisAngle), normal, pinned };
 }
 
 /**
@@ -189,10 +157,10 @@ function solveWith(
   let iterations = 0;
   while (maxAbs(r) > tolerance && iterations < maxIterations && lambda < 1e12) {
     iterations++;
-    const j = jacobianOf(sys, x);
+    loadJacobian(sys, x);
     const before = sumSq(r);
     for (; lambda < 1e12; lambda *= 10) {
-      const delta = stepOf(sys, j, r, lambda);
+      const delta = stepOf(sys, r, lambda);
       if (!delta) continue;
       const next = x.map((v, i) => v + delta[i]);
       const rn = residualsOf(sys, next);

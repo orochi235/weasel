@@ -438,9 +438,6 @@ Priority tags:
   one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
   `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
   the Jacobian's rank, which the damped solve does not compute.
-- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
-  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
-  analytic derivatives.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
