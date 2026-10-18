@@ -239,6 +239,15 @@ describe('editing a measurement', () => {
     expect(rig.ends(id!)).toEqual({ start: { x: 0, y: 0 }, end: { x: 50, y: 0 } });
   });
 
+  it('keeps the offset from a press beside the end rather than jumping the end to the pointer', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 50, y: 0 });
+    const [id] = rig.ids();
+    rig.deps['snap'] = sessionDep(rig.scene as unknown as AnyScene, []);
+    rig.drag(MEASURE_ACTION_IDS.drag, { x: 53, y: 2 }, { x: 63, y: 9 }, { affordance: onHit({ id: id!, part: 'end' }) });
+    expect(rig.ends(id!)).toEqual({ start: { x: 0, y: 0 }, end: { x: 60, y: 7 } });
+  });
+
   it('carries the whole measurement when the drag starts on its line', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 50, y: 0 });

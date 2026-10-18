@@ -4,7 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'features/snap/roles';
 import { spanSnap } from 'features/snap/spanSnap';
-import { measureBetween, withMeasureEnd, type MeasureEnd, type MeasurePoint } from './measurement';
+import { measureBetween, measureEndsOf, withMeasureEnd, type MeasureEnd, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
@@ -120,8 +120,9 @@ function nodeOf(scene: AnyScene | undefined, id: NodeId) {
 
 /**
  * A drag on a measurement under any tool. On an end of the picked
- * measurement it moves that end, through a `point` session of the `snap` dep
- * in which the measurement's own ends offer nothing; anywhere else on a
+ * measurement it moves that end, keeping its offset from the press, through
+ * a `point` session of the `snap` dep in which the measurement's own ends
+ * offer nothing; anywhere else on a
  * measurement it carries the whole measurement with the pointer. Previewed
  * while it runs; one undo step on release.
  */
@@ -141,15 +142,17 @@ export function measureDragAction(ms: Measurements): Action {
         if (!hit || !node) return {};
         const end: MeasureEnd | null = hit.part !== 'line' && ms.picked.get() === hit.id ? hit.part : null;
         const from = ctx.drag?.start ?? ctx.world;
-        const snap = end ? deps.snap?.begin?.({ gesture: 'point', press: from, ids: [hit.id] }) ?? null : null;
+        const grabbed = (end && measureEndsOf(node)?.[end]) || from;
+        const snap = end ? deps.snap?.begin?.({ gesture: 'point', press: grabbed, ids: [hit.id] }) ?? null : null;
         let at = from;
-        let landed = from;
+        let landed = grabbed;
         const next = () => (end
           ? withMeasureEnd(node, end, landed)
           : translatedMeasure(node, at.x - from.x, at.y - from.y));
         const follow = (c: InvocationCtx) => {
           at = pointOf(c);
-          landed = snap ? snap.at(at, snapMods(c)).point : at;
+          const held = { x: grabbed.x + at.x - from.x, y: grabbed.y + at.y - from.y };
+          landed = snap ? snap.at(held, snapMods(c)).point : held;
         };
         ms.picked.set(hit.id);
         return {
