@@ -17,6 +17,9 @@ import {
   type PlaneUnits,
   type PlaneValue,
   pxExtent,
+  viewportWorldRect,
+  type Dims,
+  type View,
 } from '@weasel-js/core';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 
@@ -31,8 +34,13 @@ export interface GridLayerOpts {
   spacing: PlaneValue;
   /** Optional unit system for resolving tagged `spacing` values. */
   unitSystem?: PlaneUnits;
-  /** Bounds of the area to cover, in world units. */
-  bounds: () => { x: number; y: number; width: number; height: number };
+  /**
+   * The area to cover, in world units, read every paint with that paint's
+   * view and canvas size. Lines start at its own `x`/`y`. Omitted, the grid
+   * covers whatever the canvas shows, with its lines on world multiples of
+   * `spacing` so they stay put as the view pans.
+   */
+  bounds?: (view: View, dims: Dims) => { x: number; y: number; width: number; height: number };
   /** Lines every N cells get the accent style. 0/undef = no accent. */
   accentEvery?: number;
   /** Optional finer subdivisions per cell. e.g. 4 -> 4 sub-lines per cell. */
@@ -71,12 +79,15 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   return {
     id: 'grid',
     label: 'Grid',
-    draw: (_data, view) => {
-      const b = opts.bounds();
-      if (b.width <= 0 || b.height <= 0) return [];
-
+    draw: (_data, view, dims) => {
       const { accentEvery, subdivisions } = opts;
       const spacing = resolveAxes(opts.spacing, opts.unitSystem);
+      const b = opts.bounds
+        ? opts.bounds(view, dims)
+        : onLattice(viewportWorldRect(view, dims), spacing, accentEvery && accentEvery > 0 ? accentEvery : 1);
+      // Written so a non-finite extent, which a zero view scale gives, fails it too.
+      if (!(b.width > 0 && b.height > 0 && Number.isFinite(b.width) && Number.isFinite(b.height))) return [];
+
       const x0 = b.x;
       const y0 = b.y;
       const x1 = b.x + b.width;
@@ -149,5 +160,26 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       return children;
     },
+  };
+}
+
+/**
+ * Grow `r` outward to whole periods of the lattice, so the first line drawn
+ * sits on a world multiple of the pitch, and of the accent pitch for accents.
+ */
+function onLattice(
+  r: { x: number; y: number; width: number; height: number },
+  spacing: { x: number; y: number },
+  accentEvery: number,
+): { x: number; y: number; width: number; height: number } {
+  const px = spacing.x * accentEvery;
+  const py = spacing.y * accentEvery;
+  const x = Math.floor(r.x / px) * px;
+  const y = Math.floor(r.y / py) * py;
+  return {
+    x,
+    y,
+    width: Math.ceil((r.x + r.width) / px) * px - x,
+    height: Math.ceil((r.y + r.height) / py) * py - y,
   };
 }

@@ -98,4 +98,64 @@ describe('createGridLayer', () => {
     // 4 vertical lines at x = 0, 10, 20, 30 and 3 horizontal at y = 0, 15, 30.
     expect(tree.filter((c) => c.kind === 'path')).toHaveLength(7);
   });
+
+  it('hands the paint-time view and dims to bounds', () => {
+    const seen: unknown[] = [];
+    const layer = createGridLayer({
+      spacing: 10,
+      bounds: (view, dims) => { seen.push(view, dims); return { x: 0, y: 0, width: 10, height: 10 }; },
+    });
+    const view = { x: 5, y: 7, scale: { x: 2, y: 2 } };
+    layer.draw(undefined, view, { width: 300, height: 200 });
+    expect(seen).toEqual([view, { width: 300, height: 200 }]);
+  });
+
+  describe('with bounds omitted', () => {
+    const coords = (tree: unknown[]) => (tree as PathDrawCommand[])
+      .map((p) => Array.from((p.path as { coords: ArrayLike<number> }).coords));
+    const verticalXs = (tree: unknown[]) => [...new Set(coords(tree).filter((c) => c[0] === c[2]).map((c) => c[0]))].sort((a, b) => a - b);
+
+    it('covers the visible world rect, which follows the canvas size', () => {
+      const layer = createGridLayer({ spacing: 10 });
+      const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+      expect(verticalXs(layer.draw(undefined, view, { width: 30, height: 30 }))).toEqual([0, 10, 20, 30]);
+      expect(verticalXs(layer.draw(undefined, view, { width: 50, height: 30 }))).toEqual([0, 10, 20, 30, 40, 50]);
+    });
+
+    it('divides the canvas size by the zoom', () => {
+      const layer = createGridLayer({ spacing: 10 });
+      const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, { width: 60, height: 20 });
+      expect(verticalXs(tree)).toEqual([0, 10, 20, 30]);
+    });
+
+    it('keeps lines on the world lattice when the view is panned off it', () => {
+      const layer = createGridLayer({ spacing: 10 });
+      const tree = layer.draw(undefined, { x: 3, y: -4, scale: { x: 1, y: 1 } }, { width: 20, height: 20 });
+      expect(verticalXs(tree)).toEqual([0, 10, 20, 30]);
+      for (const c of coords(tree)) {
+        if (c[0] === c[2]) expect([c[1], c[3]]).toEqual([-10, 20]);
+      }
+    });
+
+    it('keeps accent lines on world multiples of the accent pitch while panning', () => {
+      const layer = createGridLayer({
+        spacing: 10,
+        accentEvery: 5,
+        style: { accent: { paint: { kind: 'solid', color: 'red' }, width: 1 } },
+      });
+      const tree = layer.draw(undefined, { x: 23, y: 0, scale: { x: 1, y: 1 } }, { width: 40, height: 10 }) as PathDrawCommand[];
+      const accentXs = tree
+        .filter((p) => (p.stroke?.paint as { color?: string }).color === 'red')
+        .map((p) => (p.path as { coords: ArrayLike<number> }).coords)
+        .filter((c) => c[0] === c[2])
+        .map((c) => c[0]);
+      expect(accentXs.every((x) => x % 50 === 0)).toBe(true);
+      expect(accentXs).toContain(50);
+    });
+
+    it('draws nothing at a zero zoom rather than looping without end', () => {
+      const layer = createGridLayer({ spacing: 10 });
+      expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 0, y: 1 } }, { width: 100, height: 100 })).toEqual([]);
+    });
+  });
 });

@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   asNodeId,
   ROTATED_POSE_DESCRIPTOR,
@@ -13,6 +12,7 @@ const W = 400, H = 300;
 // Demo unit system: base is the pixel, but the demo speaks in "tiles" worth 20px.
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
+const GRID = createGridLayer({ spacing: CELL, unitSystem: UNITS, accentEvery: 5 });
 
 /**
  * The select tool's full transform surface on one canvas — no per-gesture
@@ -26,19 +26,10 @@ const CELL = { value: 1, unit: 'tile' } as const;
  * registered, so select stays the active tool throughout.
  */
 export function TransformDemo() {
-  // The view never moves, so the canvas's own size is the world the grid covers.
-  const [size, setSize] = useState({ width: W, height: H });
-  const grid = useMemo(() => createGridLayer({
-    spacing: CELL,
-    unitSystem: UNITS,
-    bounds: () => ({ x: 0, y: 0, ...size }),
-    accentEvery: 5,
-  }), [size]);
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
         className="ckd-canvas"
-        onResize={setSize}
         scene={sceneJson}
         features={['pick', 'move', 'transform']}
         poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
@@ -47,7 +38,7 @@ export function TransformDemo() {
         }}
         selectionOptions={{ mode: 'multi', initial: [asNodeId('b')] }}
         layers={{
-          grid: { layer: grid },
+          grid: { layer: GRID },
           selectionOverlay: { rotationHandle: true },
         }}
       />

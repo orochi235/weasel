@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   asNodeId,
   SceneCanvas,
@@ -18,9 +17,8 @@ interface Rect extends RotatedPose {
 
 const W = 400, H = 300;
 const SNAP_GRID = 20;
-const gridLayer = (size: { width: number; height: number }) => createGridLayer({
+const GRID = createGridLayer({
   spacing: SNAP_GRID,
-  bounds: () => ({ x: 0, y: 0, ...size }),
   style: { line: { paint: { kind: 'solid', color: '#3a3020' }, width: 1 } },
 });
 
@@ -42,8 +40,6 @@ const SELECTED = { mode: 'multi', initial: [asNodeId('a')] } as const;
 
 export function PointSnapDemo() {
   const scene = useScene({ items: INITIAL });
-  const [size, setSize] = useState({ width: W, height: H });
-  const grid = useMemo(() => gridLayer(size), [size]);
 
   return (
     <DemoStage width={W} height={H}>
@@ -52,10 +48,9 @@ export function PointSnapDemo() {
         className="ckd-canvas"
         scene={scene}
         selectionOptions={SELECTED}
-        onResize={setSize}
         poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>}
         layers={{
-          grid: { layer: grid },
+          grid: { layer: GRID },
           scene: {
             // drawOne returns unrotated geometry; SceneCanvas wraps the
             // output in a rotation transform when `pose.rotation` is set

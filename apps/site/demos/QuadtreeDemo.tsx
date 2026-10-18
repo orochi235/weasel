@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
@@ -8,11 +8,7 @@ import { DemoStage } from './DemoStage';
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 480, H = 360;
-const gridLayer = (size: Dims) => createGridLayer({
-  spacing: 20,
-  bounds: () => ({ x: 0, y: 0, ...size }),
-  accentEvery: 5,
-});
+const GRID = createGridLayer({ spacing: 20, accentEvery: 5 });
 
 const INITIAL: Rect[] = [
   { id: 'a', x:  40, y:  40, width: 120, height:  90, fill: { paint: { color: '#7fb069' } } },
@@ -93,8 +89,6 @@ function createQuadtreeLayer(
 export function QuadtreeDemo() {
   const scene = useScene({ items: INITIAL });
   const helpersRef = useRef<CanvasHelpers<Rect> | null>(null);
-  const [size, setSize] = useState<Dims>({ width: W, height: H });
-  const grid = useMemo(() => gridLayer(size), [size]);
 
   return (
     <DemoStage width={W} height={H}>
@@ -103,9 +97,8 @@ export function QuadtreeDemo() {
         className="ckd-canvas"
         scene={scene}
         helpersRef={helpersRef}
-        onResize={setSize}
         layers={{
-          grid: { layer: grid },
+          grid: { layer: GRID },
           quadtree: {
             layer: createQuadtreeLayer(
               () => [...scene.renderOrder()].map((id) => scene.get(id)!.data),

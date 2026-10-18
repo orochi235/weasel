@@ -15,7 +15,7 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createGridLayer } from '@weasel-js/guides';
-import type { Dims, MoveBehavior, RenderLayer } from '@weasel-js/core';
+import type { Dims, MoveBehavior } from '@weasel-js/core';
 import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
@@ -38,12 +38,7 @@ const INITIAL: Card[] = [
 const FLICK_W = 600, FLICK_H = 160;
 const FLICK_GRID = 60;
 
-/** A grid over the whole canvas, at whatever size it paints. */
-function flickGridLayer(): RenderLayer<unknown> {
-  let area: Dims = { width: FLICK_W, height: FLICK_H };
-  const grid = createGridLayer({ spacing: FLICK_GRID, bounds: () => ({ x: 0, y: 0, ...area }) });
-  return { ...grid, draw: (data, view, dims) => { area = dims; return grid.draw(data, view, dims); } };
-}
+const FLICK_GRID_LAYER = createGridLayer({ spacing: FLICK_GRID });
 const FLICK_BLOCK = 40;
 const FLICK_COAST_MS = 180;
 
@@ -333,7 +328,6 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   const tracker = useVelocityTracker();
   const flight = useRef<PhysicsHandle<Vec2> | null>(null);
   const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });
-  const gridLayer = useMemo(() => flickGridLayer(), []);
   useEffect(() => () => {
     flight.current?.cancel();
     flight.current = null;
@@ -356,7 +350,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
           selection={selection}
           selectTool={{ move: { behaviors } }}
           layers={{
-            grid: { layer: gridLayer },
+            grid: { layer: FLICK_GRID_LAYER },
             scene: {
               drawOne: (n, p): DrawCommand[] => [{
                 kind: 'path',
