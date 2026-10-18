@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
-import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
+import { paneChildren } from '../Prefs/PrefsPane';
+import type { WalkCtx } from '../Prefs/PrefsRow';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -79,7 +81,7 @@ export function Bar(props: BarProps) {
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
   return (
     <BarLayout
-      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
+      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
       lead={props.lead ?? schema.lead}
@@ -187,21 +189,38 @@ function leafRow(node: BarLeafNode, draw: Draw): ReactNode {
   );
 }
 
-/** A group a bar opens from a button: its leaves as rows, each nested group under its name. */
-function GroupRows({ draw, group, path }: { draw: Draw; group: PrefGroup; path: string }): ReactNode {
-  const rows: ReactNode[] = [];
-  for (const [key, child] of Object.entries(group.children)) {
-    const at = `${path}.${key}`;
-    if (isPrefLeaf(child)) {
-      if (child.hidden !== true) rows.push(leafRow(shownNode({ path: at, leaf: child as PrefLeaf }, draw), draw));
-    } else {
-      rows.push(
-        <div key={at} className={s.opened}>
-          {child.name !== '' && child.as !== 'fragment' && <h5 className={s.openedTitle}>{child.name}</h5>}
-          <GroupRows draw={draw} group={child} path={at} />
-        </div>,
-      );
+/** `values`, each entry nested at its dotted path: a form's value tree. A deeper entry is written over a shallower one. */
+function nested(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const path of Object.keys(values ?? {}).sort((a, b) => a.split('.').length - b.split('.').length)) {
+    const segments = path.split('.');
+    let at = out;
+    for (const segment of segments.slice(0, -1)) {
+      const next = at[segment];
+      at = (at[segment] = next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {}) as Record<string, unknown>;
     }
+    at[segments.at(-1)!] = values![path];
   }
-  return <PropertyList>{rows}</PropertyList>;
+  return out;
+}
+
+const ignore = (): void => {};
+
+/** A group a bar opens from a button: its nested groups as a form's pane draws them, and its leaves as the bar's rows. */
+function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: string }): ReactNode {
+  const ctx: WalkCtx = {
+    values: nested(draw.values),
+    onChange: draw.onChange ?? ignore,
+    mixed: draw.mixed,
+    fields: draw.fields,
+    targets: draw.targets,
+    disabled: draw.disabled,
+    entryAt: draw.entryAt,
+    settles: draw.settles,
+    leaves: {
+      row: (node) => (node.leaf.hidden === true ? null : leafRow(shownNode(node, draw), draw)),
+      cells: (leaves) => barCells(leaves, draw),
+    },
+  };
+  return <PropertyList>{paneChildren(ctx, Object.entries(group.children), path, 1)}</PropertyList>;
 }

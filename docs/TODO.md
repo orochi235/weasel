@@ -966,11 +966,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
 
-- **(P3) A standalone `Bar` opens a group as labeled rows whatever its `as`.** A bar in a
-  `PrefsForm` opens a `page`, `tab`, or `panel` group in the form's own drawing of it; `Bar` draws
-  `GroupRows`, a row per leaf under each nested group's name. `Bar` holds its values flat, keyed by
-  dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
-  Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
+- **(P3) Nobody has looked at what a standalone `Bar` opens in a browser.** A group a `Bar` opens
+  draws its nested groups through the form's pane (`paneChildren`, with `WalkCtx.leaves` handing
+  each leaf back to the bar's own rows and cells), so tabs, panels, sections, and fragments draw as
+  a `PrefsForm` draws them; jsdom only. A `heading` leaf there stays a row, since the bar's rows
+  read an absent value as unset and a heading's control would read it as the default. Nobody has
+  looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
 - **(P3) A fragment has no box for a preview drag to land on.** Its element is
   `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
