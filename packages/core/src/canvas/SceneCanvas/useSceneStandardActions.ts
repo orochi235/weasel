@@ -12,7 +12,6 @@ import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
-import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,
@@ -43,7 +42,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'poseTransition' | 'insertNodeFactories' | 'insertPaint' | 'toolOptions' | 'ingestion'
+  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'toolOptions' | 'ingestion'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
@@ -173,7 +172,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useAreaSelectDepSource(scene, selection, poseDescriptor, alphaOf);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
-  usePoseTransition(scene, props.poseTransition as PoseTransitionSeat<unknown> | null | undefined);
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(

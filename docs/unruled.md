@@ -235,6 +235,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   drag's preview, a pose-target animation — is left to it. `enter` grows in added nodes. `onReflow`
   moved onto a `ScenePoseReports` interface `Scene` extends. AnimationDemo no longer uses
   `animateOnSetPose` or `animateLifecycle`, which stay exported.
+- 2026-10-18: `scene.onPoseWrite` listeners take a second argument, the nodes the change removed
+  (an undone add among them) as `PoseRemoval`s carrying the node, the pose it was shown at and its
+  descendants. The seat's `exit` sees each off as a ghost — drawn on a `departureGhost` layer just
+  above the scene, never in the scene, so nothing picks, selects or records it — fading to alpha 0
+  through `transition.over(...)`, a new `AnimatedReflow` method; a plain `ReflowTransition` has no
+  `over`, so with one a removal still vanishes. `exits` defaults to every removal but an untracked
+  one. A node that comes back mid-exit returns from where its ghost was, at full opacity.
 
 ## ui, prefs, and theme
 

@@ -40,6 +40,7 @@ export {
   bindPoseTransition, glidesByDefault, usePoseTransition,
   type PoseTransitionScene, type PoseTransitionSeat,
 } from './poseTransition';
+export { createDepartures, type Departures, type ShownDeparture } from './departures';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
 export {
   srgbU8ToOklab, srgbFloatToOklab, oklabToSrgbU8,

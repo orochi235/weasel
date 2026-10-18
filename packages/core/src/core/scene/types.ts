@@ -6,7 +6,7 @@ import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
-import type { PoseWrite, PoseWriteOrigin, ScenePoseReports } from './poseWrites';
+import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
@@ -15,9 +15,8 @@ import type { RectPose } from '../geometry/rectPose';
 export type { RectPose };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
 export type { UseSceneOptions };
-export type { PoseWrite, PoseWriteOrigin, ScenePoseReports };
+export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
-
 
 /**
  * # SceneNode — the thing in the scene
@@ -257,7 +256,8 @@ export type SceneArrivalHandler<TPose> = (
  * which the kit never inspects; `TPose` is the transform shape, `RectPose` by
  * default; `TLayer` is the union of layer names.
  */
-export interface Scene<TData, TLayer extends string, TPose = RectPose> extends ScenePoseReports<TPose> {
+export interface Scene<TData, TLayer extends string, TPose = RectPose>
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>> {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];

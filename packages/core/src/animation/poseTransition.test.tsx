@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
@@ -10,6 +10,7 @@ import { createTransformOp } from '../core/ops/transform';
 import { moveAction } from '../interactions/actions/move/action';
 import { createReflowTransition } from './reflow';
 import { bindPoseTransition, type PoseTransitionSeat } from './poseTransition';
+import { createDepartures } from './departures';
 
 const at = (x: number, y = 0): RectPose => ({ x, y, width: 10, height: 10 });
 const A = asNodeId('a');
@@ -32,9 +33,11 @@ function setup(seat: Omit<PoseTransitionSeat<RectPose>, 'transition'> = {}) {
     initial: [{ id: A, kind: 'leaf', layer: 'main', pose: at(0), data: {} }],
   });
   const transition = createReflowTransition(scene, result.current, { ms: 100, easing: linear });
-  bindPoseTransition(scene, () => ({ transition, ...seat }));
+  const departures = createDepartures<RectPose, unknown>();
+  bindPoseTransition(scene, () => ({ transition, ...seat }), departures);
   const where = (id: NodeId = A) => effectivePose(scene, scene.get(id)!);
-  return { scene, transition, frame, where };
+  const ghosts = () => departures.shown().map((d) => ({ id: d.removal.id, x: d.pose.x, alpha: d.alpha }));
+  return { scene, transition, departures, frame, where, ghosts };
 }
 
 const batchAdapter = (scene: ReturnType<typeof setup>['scene']) => ({
@@ -125,5 +128,55 @@ describe('bindPoseTransition', () => {
     let c!: NodeId;
     act(() => { c = plain.scene.add({ kind: 'leaf', layer: 'main', pose: at(20), data: {} }); });
     expect(plain.where(c).width).toBe(10);
+  });
+
+  it('lets a removed node vanish when the seat has no `exit`', () => {
+    const { scene, ghosts } = setup();
+    act(() => { scene.remove(A); });
+    expect(ghosts()).toEqual([]);
+  });
+
+  it('sees a removed node off through `exit` as a ghost the scene never holds', () => {
+    const { scene, frame, ghosts, departures } = setup({ exit: (p) => ({ ...p, x: p.x + 100 }) });
+    const heard = vi.fn();
+    departures.subscribe(heard);
+    act(() => { scene.remove(A); });
+    expect(scene.get(A)).toBeUndefined();
+    expect(ghosts()).toEqual([{ id: A, x: 0, alpha: 1 }]);
+    frame(0);
+    frame(50);
+    expect(ghosts()[0]!.x).toBeCloseTo(50);
+    expect(ghosts()[0]!.alpha).toBeCloseTo(0.5);
+    expect(heard).toHaveBeenCalled();
+    frame(100);
+    expect(ghosts()).toEqual([]);
+    // The ghost recorded nothing: one undo is the removal's, and the last.
+    act(() => { scene.undo(); });
+    expect(scene.get(A)).toBeDefined();
+    expect(scene.canUndo()).toBe(false);
+  });
+
+  it('drops the ghost when an undo brings its node back, which returns from where the ghost was', () => {
+    const { scene, frame, ghosts, where } = setup({ exit: (p) => ({ ...p, x: p.x + 100 }) });
+    act(() => { scene.remove(A); });
+    frame(0);
+    frame(40);
+    act(() => { scene.undo(); });
+    expect(ghosts()).toEqual([]);
+    expect(where().x).toBeCloseTo(40);
+    frame(80);
+    expect(where().x).toBeCloseTo(24);
+    frame(140);
+    expect(where().x).toBe(0);
+  });
+
+  it('leaves a removal `exits` turns down, and an untracked one by default, to vanish', () => {
+    const declined = setup({ exit: (p) => p, exits: () => false });
+    act(() => { declined.scene.remove(A); });
+    expect(declined.ghosts()).toEqual([]);
+
+    const untracked = setup({ exit: (p) => p });
+    act(() => { untracked.scene.untracked(() => untracked.scene.remove(A)); });
+    expect(untracked.ghosts()).toEqual([]);
   });
 });

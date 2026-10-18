@@ -58,7 +58,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const scene = useBakedScene(props.scene);
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
   const heldModifiers = useHeldModifiers();
-  const redrawOn = useSceneRedrawSources({ supplied: props.redrawOn, scene, heldModifiers, animator: props.animator, modes });
 
   // Our own refs, so input listeners attach even when the consumer forwards its own ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
@@ -98,10 +97,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
+    poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
     boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
   });
+  const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
 
   const chrome = useSceneCanvasChrome({
     source: {

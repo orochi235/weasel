@@ -3,6 +3,7 @@ import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
 import { createNotifier } from './notifier';
 import { createPoseWriteLog } from './poseWrites';
+import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
@@ -23,6 +24,12 @@ import {
   type SerializedScene,
   type UseSceneOptions,
 } from './types';
+
+/** A node still in `scene`, with the pose it is shown at. */
+function shownNode<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, id: NodeId) {
+  const node = scene.get(id);
+  return node && { node, pose: effectivePose(scene, node) };
+}
 
 let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
@@ -58,7 +65,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const { state, locks, reads } = doc;
   const notifier = createNotifier();
   const mode = createEditMode();
-  const poseWrites = createPoseWriteLog<TPose>({ untracked: mode.untracked, changes: notifier });
+  const poseWrites = createPoseWriteLog({ untracked: mode.untracked, changes: notifier, shown: (id) => shownNode(scene, id) });
   const writePose = (id: string, pose: unknown): void =>
     poseWrites.layout(() => scene.setPose(asNodeId(id), pose as TPose));
 

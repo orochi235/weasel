@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from './scene';
 import { createTransformOp } from '../ops/transform';
 import type { LayoutStrategy } from '../../layout/types';
-import { asNodeId, type RectPose } from './types';
-import type { PoseWrite } from './poseWrites';
+import { asNodeId, type NodeId, type RectPose } from './types';
+import type { PoseRemoval, PoseWrite } from './poseWrites';
 
 const at = (x: number, y = 0): RectPose => ({ x, y, width: 10, height: 10 });
 const A = asNodeId('a');
@@ -14,8 +14,12 @@ function setup() {
     initial: [{ id: A, kind: 'leaf', layer: 'l', pose: at(0), data: null }],
   });
   const seen: PoseWrite<RectPose>[][] = [];
-  scene.onPoseWrite((w) => seen.push(w.map((x) => ({ ...x }))));
-  return { scene, seen };
+  const removed: PoseRemoval<RectPose>[][] = [];
+  scene.onPoseWrite((w, r) => {
+    if (w.length > 0) seen.push(w.map((x) => ({ ...x })));
+    if (r.length > 0) removed.push([...r]);
+  });
+  return { scene, seen, removed };
 }
 
 describe('Scene.onPoseWrite', () => {
@@ -57,7 +61,7 @@ describe('Scene.onPoseWrite', () => {
   });
 
   it('reports an added node with no from, and leaves out one written back or removed', () => {
-    const { scene, seen } = setup();
+    const { scene, seen, removed } = setup();
     const b = scene.add({ kind: 'leaf', layer: 'l', pose: at(20), data: null });
     scene.batch('there and back', () => { scene.setPose(A, at(4)); scene.setPose(A, at(0)); });
     scene.batch('come and go', () => {
@@ -65,6 +69,51 @@ describe('Scene.onPoseWrite', () => {
       scene.remove(c);
     });
     expect(seen).toEqual([[{ id: b, from: undefined, to: at(20), origin: 'call', label: 'add leaf' }]]);
+    expect(removed).toEqual([]);
+  });
+
+  it('reports a removed node as it was shown, with where it was and where the removal came from', () => {
+    const { scene, seen, removed } = setup();
+    scene.overrides.set(A, { pose: at(3) });
+    scene.remove(A);
+    expect(seen).toEqual([]);
+    expect(removed).toHaveLength(1);
+    expect(removed[0]![0]).toMatchObject({ id: A, parent: null, pose: at(3), origin: 'call', children: [] });
+    expect(removed[0]![0]!.node).toMatchObject({ id: A, pose: at(0) });
+  });
+
+  it('reports a removed container once, carrying its descendants beneath it', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'container', layer: 'l', pose: at(0), data: null });
+    const k = scene.add({ kind: 'leaf', layer: 'l', parent: g, pose: at(4), data: null });
+    const removed: PoseRemoval<RectPose>[] = [];
+    scene.onPoseWrite((_w, r) => removed.push(...r));
+    scene.remove(g);
+    expect(removed.map((r) => r.id)).toEqual([g]);
+    expect(removed[0]!.children.map((c) => [c.node, c.pose])).toEqual([[expect.objectContaining({ id: k }), at(4)]]);
+  });
+
+  it('reports an undone add as a removal by the undo, its children beneath it', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    let g!: NodeId;
+    scene.batch('make', () => {
+      g = scene.add({ kind: 'container', layer: 'l', pose: at(0), data: null });
+      scene.add({ kind: 'leaf', layer: 'l', parent: g, pose: at(4), data: null });
+    });
+    const removed: PoseRemoval<RectPose>[] = [];
+    scene.onPoseWrite((_w, r) => removed.push(...r));
+    scene.undo();
+    expect(removed.map((r) => [r.id, r.origin, r.children.length])).toEqual([[g, 'undo', 1]]);
+  });
+
+  it('reports a node removed and put back within one change as moved, not removed', () => {
+    const { scene, seen, removed } = setup();
+    scene.batch('swap', () => {
+      scene.remove(A);
+      scene.add({ id: A, kind: 'leaf', layer: 'l', pose: at(6), data: null });
+    });
+    expect(removed).toEqual([]);
+    expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
   });
 
   it('reports a node an undo brings back as added', () => {

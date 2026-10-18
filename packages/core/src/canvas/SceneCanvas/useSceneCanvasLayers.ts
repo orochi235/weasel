@@ -17,6 +17,9 @@ import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
+import { useDepartureGhostLayer } from './useDepartureGhostLayer';
+import type { Departures } from '../../animation/departures';
+import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import type { DrawnBoundsScene } from '../drawnBounds';
@@ -26,8 +29,8 @@ import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarke
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
  * the kit defaults, with the scene and selection-overlay slots built, and the
- * canvas's own layers anchored around them. The preview ghost sits above the
- * scene, the dispatcher's overlay (marquee, lasso) above the ghost, and the
+ * canvas's own layers anchored around them. Removed nodes leave just above
+ * the scene, the preview ghost above them, the dispatcher's overlay (marquee, lasso) above the ghost, and the
  * anchor overlay above the selection chrome.
  */
 export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: {
@@ -42,6 +45,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   colorOverrides: ColorOverrideRegistry | undefined;
   boundsOf: (id: string) => Bounds | null;
   planeOfNode: (id: string, view: View) => PlaneMap | null;
+  /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
+  poseTransition: PoseTransitionSeat<TPose> | null | undefined;
   /** Ids an in-flight gesture is ghosting. */
   previewIds: () => Iterable<string> | null;
   dispatcher: Dispatcher;
@@ -59,6 +64,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   /** The affordances the gesture mounter hit-tests, which it publishes here
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
+  /** The removed nodes the seat is seeing off. */
+  departures: Departures<TPose, Node<TData, TLayer, TPose>>;
 } {
   const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
 
@@ -79,6 +86,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   });
   // Takes the scene-wired slot, so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({ scene, sceneSlot, dispatcher });
+  const departures = usePoseTransition(scene, args.poseTransition);
+  const departureLayer = useDepartureGhostLayer({ scene, sceneSlot, departures });
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
   const chromeAffordancesRef = useRef<readonly Affordance[]>([]);
@@ -106,7 +115,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     ...builtLayersOf(merged),
     scene: sceneLayers,
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
-    previewGhost: { layer: previewLayer, after: 'scene' },
+    departureGhost: { layer: departureLayer, after: 'scene' },
+    previewGhost: { layer: previewLayer, after: 'departureGhost' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
@@ -114,9 +124,9 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
   }), [
-    merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
+    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
     snapMarkerLayer, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, chromeAffordancesRef };
+  return { layers, rotationBadge, chromeAffordancesRef, departures };
 }

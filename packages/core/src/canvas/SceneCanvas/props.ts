@@ -189,8 +189,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  they snap. */
     reflowTransition?: ReflowTransition<TPose> | null;
 
-    /** Glides what is shown when the scene writes a pose — a button's `scene.setPose`, an
-     *  undo — instead of snapping it. Absent or `null`, writes snap. See {@link PoseTransitionSeat}. */
+    /** Glides what is shown when the scene writes a pose — a `scene.setPose`, an undo — and sees
+     *  removed nodes off with `exit`. Absent or `null`, writes snap. See {@link PoseTransitionSeat}. */
     poseTransition?: PoseTransitionSeat<TPose> | null;
 
     /**

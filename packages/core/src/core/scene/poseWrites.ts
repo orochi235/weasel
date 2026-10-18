@@ -1,9 +1,11 @@
 /**
  * What a scene reports about the poses it writes: each change's net pose per
- * node and where the write came from, handed to `onPoseWrite` once the change
- * reaches the scene's subscribers.
+ * node, the nodes it removed as they were last shown, and where each came
+ * from, handed to `onPoseWrite` once the change reaches the scene's
+ * subscribers.
  */
 import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { createRemovalLog } from './poseRemovals';
 import type { RegisteredOp } from './types';
 import type { LayoutMove } from './layoutTypes';
 import type { NodeId } from '@weasel-js/routing';
@@ -35,21 +37,45 @@ export interface PoseWrite<TPose> {
   label?: string;
 }
 
+/** A removed node as it was last shown, with the descendants it took along. */
+export interface RemovedNode<TPose, TNode = unknown> {
+  /** The node as it stood before the change removed it. */
+  node: TNode;
+  /** Where it was shown, override included, in its stored frame. */
+  pose: TPose;
+  children: readonly RemovedNode<TPose, TNode>[];
+}
+
+/** One node a scene change removed, a removal's root: its descendants ride
+ *  beneath it rather than being reported apart. */
+export interface PoseRemoval<TPose, TNode = unknown> extends RemovedNode<TPose, TNode> {
+  id: NodeId;
+  /** The parent it was removed from, which may still be in the scene. */
+  parent: NodeId | null;
+  origin: PoseWriteOrigin;
+  label?: string;
+}
+
 /** What a scene reports about the poses its edits write. */
-export interface ScenePoseReports<TPose> {
+export interface ScenePoseReports<TPose, TNode = unknown> {
   /** Called with the poses each live edit's layout pass wrote, after the
    *  edit lands — never for an undo or redo, which restore poses rather than
    *  arrange them. What a reflow animation glides from. */
   onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
-  /** Called with every node whose pose a change wrote or that it added, once
-   *  per change, before the scene's subscribers hear of it. A node written
-   *  back to the pose it had, or removed by the change, is left out. Not
-   *  called for `loadState` or the scene's initial nodes. */
-  onPoseWrite(listener: (writes: readonly PoseWrite<TPose>[]) => void): () => void;
+  /** Called once per change, before the scene's subscribers hear of it, with
+   *  every node whose pose the change wrote or that it added, and every node
+   *  it removed — an undone add among them. A node written back to the pose
+   *  it had, or both added and removed by the change, is left out of both.
+   *  Not called for `loadState` or the scene's initial nodes. */
+  onPoseWrite(
+    listener: (writes: readonly PoseWrite<TPose>[], removed: readonly PoseRemoval<TPose, TNode>[]) => void,
+  ): () => void;
 }
 
 /** What the log reads of the scene it reports for. */
-export interface PoseWriteEnv {
+export interface PoseWriteEnv<TPose, TNode> {
+  /** A node still in the scene, with the pose it is shown at. */
+  shown(id: NodeId): { node: TNode; pose: TPose } | undefined;
   /** Whether the edit running now is inside `scene.untracked`. */
   untracked(): boolean;
   /** The scene's change notice. The log reports on it, subscribed before
@@ -57,8 +83,8 @@ export interface PoseWriteEnv {
   changes: { subscribe(listener: () => void): () => void };
 }
 
-export interface PoseWriteLog<TPose> {
-  subscribe: ScenePoseReports<TPose>['onPoseWrite'];
+export interface PoseWriteLog<TPose, TNode = unknown> {
+  subscribe: ScenePoseReports<TPose, TNode>['onPoseWrite'];
   /** Run `fn` as an edit labeled `label`; an enclosing edit's label stands. */
   labeled<T>(label: string, via: 'call' | 'ops', fn: () => T): T;
   /** Run `fn` as a history step replaying recorded ops. */
@@ -73,10 +99,12 @@ export interface PoseWriteLog<TPose> {
 }
 
 interface Posed<TPose> { id: NodeId; pose: TPose }
+interface Parented { id: NodeId; parent: NodeId | null }
 
-export function createPoseWriteLog<TPose>(env: PoseWriteEnv): PoseWriteLog<TPose> {
-  const listeners = createEmitter<[writes: readonly PoseWrite<TPose>[]]>();
+export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPose, TNode>): PoseWriteLog<TPose, TNode> {
+  const listeners = createEmitter<[writes: readonly PoseWrite<TPose>[], removed: readonly PoseRemoval<TPose, TNode>[]]>();
   const pending = new Map<NodeId, PoseWrite<TPose>>();
+  const removals = createRemovalLog<TPose, TNode>(env.shown);
   let edit: { label: string; via: 'call' | 'ops' } | null = null;
   let replays = 0;
   let layouts = 0;
@@ -101,12 +129,14 @@ export function createPoseWriteLog<TPose>(env: PoseWriteEnv): PoseWriteLog<TPose
 
   function noteAdded(nodes: readonly Posed<TPose>[], reverted: boolean): void {
     if (!collecting()) return;
-    for (const n of nodes) pending.set(n.id, { id: n.id, from: undefined, to: n.pose, ...stamp(reverted) });
+    for (const n of nodes) {
+      // Removed and back within one change: it moved, if anything.
+      pending.set(n.id, { id: n.id, from: removals.takeBack(n.id), to: n.pose, ...stamp(reverted) });
+    }
   }
 
-  function noteGone(ids: readonly NodeId[]): void {
-    for (const id of ids) pending.delete(id);
-  }
+  const seeOff = (roots: readonly Parented[], nodes: readonly Parented[], reverted: boolean): () => void =>
+    collecting() ? removals.seeOff(roots, nodes, stamp(reverted), pending) : () => {};
 
   function around<T>(fn: () => T, enter: () => void, leave: () => void): T {
     enter();
@@ -118,8 +148,8 @@ export function createPoseWriteLog<TPose>(env: PoseWriteEnv): PoseWriteLog<TPose
   }
 
   type SetPayload = { id: NodeId; from: TPose; to: TPose };
-  type AddPayload = Posed<TPose>;
-  type RemovePayload = { nodes: readonly Posed<TPose>[] };
+  type AddPayload = Posed<TPose> & Parented;
+  type RemovePayload = { nodes: readonly (Posed<TPose> & Parented)[]; detached: readonly Parented[] };
   const wrap: Record<string, (h: RegisteredOp<unknown>) => RegisteredOp<unknown>> = {
     'kit:setPose': (h) => ({
       ...h,
@@ -129,20 +159,26 @@ export function createPoseWriteLog<TPose>(env: PoseWriteEnv): PoseWriteLog<TPose
     'kit:add': (h) => ({
       ...h,
       apply: (p) => { h.apply(p); noteAdded([p as AddPayload], false); },
-      revert: (p) => { h.revert(p); noteGone([(p as AddPayload).id]); },
+      revert: (p) => { const done = seeOff([p as AddPayload], [p as AddPayload], true); h.revert(p); done(); },
     }),
     'kit:remove': (h) => ({
       ...h,
-      apply: (p) => { h.apply(p); noteGone((p as RemovePayload).nodes.map((n) => n.id)); },
+      apply: (p) => {
+        const r = p as RemovePayload;
+        const done = seeOff(r.detached, r.nodes, false);
+        h.apply(p);
+        done();
+      },
       revert: (p) => { h.revert(p); noteAdded((p as RemovePayload).nodes, true); },
     }),
   };
 
   function flush(): void {
-    if (pending.size === 0) return;
+    const removed = removals.drain();
+    if (pending.size === 0 && removed.length === 0) return;
     const writes = [...pending.values()].filter((w) => !deepEqual(w.from, w.to));
     pending.clear();
-    if (writes.length > 0) listeners.emit(writes);
+    if (writes.length > 0 || removed.length > 0) listeners.emit(writes, removed);
   }
   env.changes.subscribe(flush);
 

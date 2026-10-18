@@ -32,6 +32,9 @@ const INITIAL: Card[] = [
   { id: 'c', x: 340, y: 100, width: 80, height: 60, color: ACCENT_FILLS[2] },
 ];
 
+/** A card collapsed to a point at its center: where one grows from and shrinks into. */
+const toCenter = (p: Card): Card => ({ ...p, x: p.x + p.width / 2, y: p.y + p.height / 2, width: 0, height: 0 });
+
 // Flick-snap panel: a second canvas below the cards, showing decay → snap.
 const FLICK_W = 600, FLICK_H = 160;
 const FLICK_GRID = 60;
@@ -87,14 +90,12 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   };
 
   // A pose the scene is handed — a button's setPose, an undo or redo — glides
-  // there on screen, and a card the scene adds grows from its center. The
-  // document takes each write at once; only what is shown travels.
+  // there on screen, a card the scene adds grows from its center, and one it
+  // removes shrinks into it, fading. The document takes each write at once;
+  // only what is shown travels.
   const glide = useAnimatedReflow(scene, animator, { ms: 250, label: 'glide' });
   const poseTransition = useMemo<PoseTransitionSeat<Card> | null>(
-    () => glide && {
-      transition: glide,
-      enter: (p) => ({ ...p, x: p.x + p.width / 2, y: p.y + p.height / 2, width: 0, height: 0 }),
-    },
+    () => glide && { transition: glide, enter: toCenter, exit: toCenter },
     [glide],
   );
 
@@ -118,6 +119,11 @@ export function AnimationCards({ animator }: { animator: Animator }) {
     const node = scene.get(asNodeId(id));
     if (!node) return;
     scene.setPose(node.id, { ...node.pose, x, y });
+  };
+
+  const removeSelected = () => {
+    const ids = selection.current;
+    scene.batch('Remove', () => ids.forEach((id) => scene.remove(asNodeId(id))));
   };
 
   const addCard = () => {
@@ -185,6 +191,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         <button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</button>
         <button onClick={addCard}>Add card</button>
         <button onClick={addBatch}>Add 5 (staggered fade-in)</button>
+        <button onClick={removeSelected} disabled={selection.current.length === 0}>Remove selected</button>
         <button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</button>
         <button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</button>
       </div>
