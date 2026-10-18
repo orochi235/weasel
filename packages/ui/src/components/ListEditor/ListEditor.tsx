@@ -1,10 +1,10 @@
-import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
-import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
+import { useMemo, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref } from 'react';
+import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { DragGrip } from '../DragGrip';
 import f from '../field.module.css';
 import { AddEntry, type ListEntryKind } from './AddEntry';
-import { movedEntry, useListFocus } from './listFocus';
+import { useEntryMoves, useListFocus } from './listEntries';
 import s from './ListEditor.module.css';
 
 export type { ListEntryKind };
@@ -45,7 +45,47 @@ export interface ListEditorProps<T = string> {
 export type ItemListEditorProps<T> = ListEditorProps<T> &
   Required<Pick<ListEditorProps<T>, 'renderEntry' | 'newEntry'>>;
 
-const isMove = (e: KeyboardEvent): boolean => e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown');
+// The overloads leave `newEntry` out only for a list of strings.
+function kindsOf<T>(newEntry: ListEditorProps<T>['newEntry'], label: string): readonly ListEntryKind<T>[] {
+  if (typeof newEntry === 'function') return [{ label, make: newEntry }];
+  return newEntry ?? [{ label, make: () => '' as T }];
+}
+
+/** Marks the entry being dragged, and the edge of the one a drop would land against. */
+function dropAttrs(i: number, count: number, { targetIndex, draggedIds }: ReorderDragState) {
+  return {
+    'data-drop-before': targetIndex === i ? '' : undefined,
+    'data-drop-after': targetIndex === count && i === count - 1 ? '' : undefined,
+    'data-dragging': draggedIds?.includes(String(i)) ? '' : undefined,
+  };
+}
+
+/** An entry's drag handle, which Alt+Up / Alt+Down also move from. */
+function Handle({
+  name,
+  disabled,
+  ref,
+  onPointerDown,
+}: {
+  name: string;
+  disabled: boolean;
+  ref: Ref<HTMLButtonElement>;
+  onPointerDown: (e: ReactPointerEvent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      ref={ref}
+      className={s.handle}
+      aria-label={`Drag to reorder ${name}`}
+      aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      disabled={disabled}
+      onPointerDown={disabled ? undefined : onPointerDown}
+    >
+      <DragGrip size={13} />
+    </button>
+  );
+}
 
 /**
  * An editable list: one control per entry, a remove button beside each, and
@@ -73,13 +113,7 @@ export function ListEditor<T>({
   entryDisabled,
 }: ListEditorProps<T>) {
   const focus = useListFocus();
-  // The overloads leave `newEntry` out only for a list of strings.
-  const kinds = useMemo(
-    (): readonly ListEntryKind<T>[] =>
-      typeof newEntry === 'function' ? [{ label: addLabel, make: newEntry }]
-        : newEntry ?? [{ label: addLabel, make: () => '' as T }],
-    [newEntry, addLabel],
-  );
+  const kinds = useMemo(() => kindsOf(newEntry, addLabel), [newEntry, addLabel]);
 
   const insert = (at: number, make: () => T): void => {
     if (value.length >= maxItems) return;
@@ -91,25 +125,7 @@ export function ListEditor<T>({
     onChange(value.filter((_, i) => i !== at));
     focus.request({ at: Math.max(0, at - 1), to: 'removed' });
   };
-  const items = useMemo((): ReorderItem[] => value.map((_, i) => ({ id: String(i), label: '' })), [value]);
-  const drag = useReorderDragList({
-    items,
-    selectedIds: [],
-    onReorder: ([id], target) => {
-      const from = Number(id);
-      onChange(movedEntry(value, from, target));
-      focus.request({ at: target > from ? target - 1 : target, to: 'handle' });
-    },
-  });
-  const move = (e: KeyboardEvent, at: number): void => {
-    if (!reorder || disabled || !isMove(e)) return;
-    e.preventDefault();
-    const by = e.key === 'ArrowUp' ? -1 : 1;
-    const to = at + by;
-    if (to < 0 || to >= value.length) return;
-    onChange(movedEntry(value, at, by < 0 ? to : to + 1));
-    focus.request({ at: to, to: e.target === focus.inputs.current[at] ? 'input' : 'handle' });
-  };
+  const { drag, move } = useEntryMoves(value, onChange, focus, reorder && !disabled);
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, at: number): void => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -121,7 +137,6 @@ export function ListEditor<T>({
   };
   const name = (i: number): string => `${ariaLabel ?? 'Entry'} ${i + 1}`;
   const set = (at: number, next: T): void => onChange(value.map((v, j) => (j === at ? next : v)));
-  const { targetIndex, draggedIds } = drag.state;
 
   return (
     <div className={[s.editor, className].filter(Boolean).join(' ')} role="group" aria-label={ariaLabel}>
@@ -134,25 +149,18 @@ export function ListEditor<T>({
             <li
               key={i}
               className={s.entry}
-              data-drop-before={targetIndex === i ? '' : undefined}
-              data-drop-after={targetIndex === value.length && i === value.length - 1 ? '' : undefined}
-              data-dragging={draggedIds?.includes(String(i)) ? '' : undefined}
+              {...dropAttrs(i, value.length, drag.state)}
               onKeyDown={(e) => move(e, i)}
             >
               {reorder && (
-                <button
-                  type="button"
+                <Handle
+                  name={name(i)}
+                  disabled={disabled}
                   ref={(el) => {
                     focus.handles.current[i] = el;
                   }}
-                  className={s.handle}
-                  aria-label={`Drag to reorder ${name(i)}`}
-                  aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                  disabled={disabled}
-                  onPointerDown={disabled ? undefined : drag.rowProps(String(i), i).onPointerDown}
-                >
-                  <DragGrip size={13} />
-                </button>
+                  onPointerDown={drag.rowProps(String(i), i).onPointerDown}
+                />
               )}
               {renderEntry ? (
                 <div className={s.control}>{renderEntry(entry, (next) => set(i, next), name(i), i)}</div>
