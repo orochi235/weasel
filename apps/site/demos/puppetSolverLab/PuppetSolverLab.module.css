@@ -1,0 +1,99 @@
+/* Short enough that the canvas, its controls and the panel fit an 800px window. */
+.frame {
+  width: 100%;
+  height: 460px;
+  min-width: 0;
+}
+
+.trial {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  top: var(--wzl-space-4);
+  right: var(--wzl-space-4);
+  max-height: calc(100% - 2 * var(--wzl-space-4));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  width: 270px;
+  box-sizing: border-box;
+  padding: var(--wzl-space-3) var(--wzl-space-4);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  font-size: var(--wzl-font-size-sm);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wzl-space-5);
+}
+
+.scrub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.scrub input {
+  width: 100%;
+  margin: 0;
+}
+
+/* Fixed width, so a growing step count never shoves the stage name. */
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 7ch;
+  text-align: end;
+}
+
+.row dt {
+  color: var(--wzl-fg-muted);
+}
+
+.row dd {
+  min-width: 5ch;
+  margin: 0;
+  text-align: end;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-1) var(--wzl-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wzl-fg-muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+}
+
+.swatch {
+  border-radius: 2px;
+}
+
+.caption {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+  line-height: 1.4;
+}

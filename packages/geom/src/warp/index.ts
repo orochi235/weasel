@@ -7,7 +7,7 @@
  */
 export { bilinearQuad, projectiveQuad, squareToQuadHomography, type Quad, type UvMap } from './quad';
 export { bicubicMesh, coonsMesh, meshGridFrom, meshGridOver, type MeshGrid } from './mesh';
-export { puppetMap, unwarpPoint, type PuppetPin } from './puppet';
+export { puppetMap, puppetSolve, unwarpPoint, type PuppetPin } from './puppet';
 export { puppetMesh, type PuppetMesh, type PuppetMeshOptions } from './puppetMesh';
 export {
   ARAP_INJECTIVE_ROUNDS,
