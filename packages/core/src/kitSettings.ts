@@ -17,6 +17,8 @@ export interface CoreKitTargetSettings {
   anchorClickPx: number;
   /** Grab slop around a shape's outline. */
   pickTolerancePx: number;
+  /** How near a snap target pulls a point, for a snap source that sets no reach of its own. */
+  snapPx: number;
   penAnchorRadiusPx: number;
   penHandleDotRadiusPx: number;
   penCloseHintRadiusPx: number;

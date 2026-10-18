@@ -12,6 +12,8 @@ import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
+import type { SnapSourceRegistry } from 'features/snap/registry';
+import type { SnapSource } from 'features/snap/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,
@@ -42,7 +44,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'toolOptions' | 'ingestion'
+  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'toolOptions' | 'ingestion' | 'snap'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
@@ -84,6 +86,8 @@ export interface SceneStandardActionsInputs {
    *  `toolOptions.snapPoint` and `toolOptions.snapTargets` for the drawing
    *  and dragging actions. */
   pathSnapper: SnapSources['paths'];
+  /** The snap sources a session asks: the prop's and the presets', then the registry's. */
+  snap: { sources: readonly SnapSource[]; registry: SnapSourceRegistry | null };
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -107,7 +111,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   const {
     props, rotateOff, viewOn, selection, scene, adapter, standardActions, currentViewRef,
     onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, viewAnimation,
-    editAnchorsExternalState, pathSnapper, canvasRef, canvasApiRef, ingestionClipboard,
+    editAnchorsExternalState, pathSnapper, snap, canvasRef, canvasApiRef, ingestionClipboard,
   } = inputs;
   const { tune, viewport, toolOptions, ingestion } = props;
   const boundsIncludeStroke = props.geometry?.boundsIncludeStroke ?? true;
@@ -177,6 +181,11 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useSnapDepSource(
     { snapPoint: toolOptions?.snapPoint, targets: toolOptions?.snapTargets, paths: pathSnapper },
     currentViewRef,
+    {
+      scene, descriptor: poseDescriptor, boundsIncludeStroke, sources: snap.sources,
+      ...(snap.registry ? { registry: snap.registry } : {}),
+      ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
+    },
   );
   useDebugDepSource(canvasApiRef);
   usePreviewPathsDepSource(canvasApiRef);

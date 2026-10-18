@@ -21,6 +21,7 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { Contribution, Tool } from 'tools/overlayBinding';
 import type { PathEditExtension } from 'features/paths/pathEditExtension';
+import type { SnapSource } from 'features/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { BuiltinToolId } from './props';
 
@@ -81,6 +82,9 @@ export interface FeaturePreset {
    *  after the select tool's own: a snap, a readout of the drag. They reach
    *  only a move some enabled preset binds, `move` or `draw`'s. */
   readonly moveBehaviors?: readonly MoveBehavior<unknown>[];
+  /** Snap sources every snap session on the canvas asks, after
+   *  `<SceneCanvas snap.sources>` and the presets before it. */
+  readonly snapSources?: readonly SnapSource[];
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
   /** Default chrome-caps rules for chrome of its own, under the consumer's
@@ -124,6 +128,8 @@ export interface EnabledPresets {
   readonly presets: readonly FeaturePreset[];
   /** Their path-edit extensions, in order. */
   readonly pathEdit: readonly PathEditExtension[];
+  /** Their snap sources, in order. */
+  readonly snapSources: readonly SnapSource[];
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -166,7 +172,12 @@ export function resolveFeatures(
     ordered.push(p);
   };
   for (const p of listed) place(p);
-  return { presets: ordered, pathEdit: ordered.flatMap((p) => p.pathEdit ?? []), has: (id) => byId.has(id) };
+  return {
+    presets: ordered,
+    pathEdit: ordered.flatMap((p) => p.pathEdit ?? []),
+    snapSources: ordered.flatMap((p) => p.snapSources ?? []),
+    has: (id) => byId.has(id),
+  };
 }
 
 /** The actions the given presets register, in registration order. */

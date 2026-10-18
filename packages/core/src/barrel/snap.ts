@@ -1,0 +1,12 @@
+// ─── Snap sources and sessions ───
+export type {
+  SnapBegin, SnapConstrain, SnapMods, SnapOutcome, SnapSession,
+} from '../interactions/actions/snapDep';
+export type {
+  AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapCollect, SnapGesture, SnapMark, SnapProbeAt,
+  SnapSource, SourceCandidate,
+} from '../features/snap/types';
+export { SNAP_ROLES, snapMods } from '../features/snap/roles';
+export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';
+export { useSnapSource } from '../features/snap/registry';
+export { DEFAULT_SNAP_PX } from '../features/snap/session2d';

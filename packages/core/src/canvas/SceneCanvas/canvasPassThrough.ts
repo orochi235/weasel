@@ -12,7 +12,7 @@ const OWN_PROPS = [
   'tune', 'describeKind', 'animator', 'views', 'children', 'debug', 'alphaFor', 'layerVisibility',
   'layerOrder', 'isPointerInteractive', 'onDoubleClick', 'onClick', 'chromeVisibility', 'modes',
   'pathEdit', 'defaultPathEdit', 'getFocused', 'cursorCoordsHud', 'pickHud', 'modalityHud', 'view',
-  'onViewChange', 'defaultView', 'viewBounds', 'redrawOn',
+  'onViewChange', 'defaultView', 'viewBounds', 'redrawOn', 'snap',
 ] as const satisfies readonly (keyof Props)[];
 
 /** The props `<SceneCanvas>` passes through to its `<Canvas>`: all but its own. */

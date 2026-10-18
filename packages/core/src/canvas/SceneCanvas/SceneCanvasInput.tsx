@@ -6,7 +6,9 @@ import type { RuleCtx } from 'features/chrome-caps';
 import type { Affordance } from 'affordances/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import { useEffect, type MutableRefObject, type RefObject } from 'react';
+import { useContext, useEffect, type MutableRefObject, type RefObject } from 'react';
+import { SnapSourceRegistryContext } from 'features/snap/registry';
+import type { SnapSource } from 'features/snap/types';
 import { dlog } from '../../debug/flag';
 import { useDeviceProfile } from '../../core/device/useDeviceProfile';
 import { useTestHook } from '../../test-hook/useTestHook';
@@ -68,6 +70,8 @@ export interface SceneCanvasInputProps {
     ready: boolean;
   };
   ingestionClipboard: SceneStandardActionsInputs['ingestionClipboard'];
+  /** The enabled presets' snap sources. */
+  snapSources: readonly SnapSource[];
 }
 
 /**
@@ -95,6 +99,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,
     viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state, pathSnapper: p.pathEdit.snapper,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
+    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: useContext(SnapSourceRegistryContext) },
   });
 
   // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the

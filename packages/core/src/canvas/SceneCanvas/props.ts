@@ -9,9 +9,8 @@ import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import { KIT_SHAPE_KINDS, type BuiltinShapeToolId } from 'core/shapeKinds';
-import type {
-  ContentHandlerEntry
-} from 'features/ingestion';
+import type { ContentHandlerEntry } from 'features/ingestion';
+import type { SceneCanvasSnap } from 'features/snap/types';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
@@ -33,10 +32,7 @@ import type { CanvasProps } from '../Canvas';
 import { isCustomEntry, type LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
-import type {
-  InsertNodeFactory,
-  InsertPaint
-} from '../deps';
+import type { InsertNodeFactory, InsertPaint } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CameraProps } from '../useCanvasView';
 import type { FeatureEntry } from './features';
@@ -408,6 +404,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  narrow subset of the underlying hook's options surface — `lasso.mode`,
      *  `rig.state`, etc. */
     toolOptions?: BuiltinToolOptions;
+    /** What gestures snap to, and how near it pulls. */
+    snap?: SceneCanvasSnap;
 
     /** Initial active-slot tool id. Default: `'select'` when it is
      *  registered, otherwise none — a canvas can run on ambient bindings

@@ -14,6 +14,7 @@ import {
 import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
 import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
+import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import { coreKitSettingsSchema } from './kitSettingsSchema';
 
 const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<string, number> } = {
@@ -31,6 +32,7 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     segmentHitPx: SEGMENT_HIT_PX,
     anchorClickPx: ANCHOR_CLICK_PX,
     pickTolerancePx: DEFAULT_PICK_TOLERANCE_PX,
+    snapPx: DEFAULT_SNAP_PX,
     penAnchorRadiusPx: ANCHOR_RADIUS_PX,
     penHandleDotRadiusPx: HANDLE_DOT_RADIUS_PX,
     penCloseHintRadiusPx: CLOSE_HINT_RADIUS_PX,

@@ -1,6 +1,8 @@
 /** The `snap` dep: what a drawn or dragged point locks to. */
 
 import type { Path } from '@weasel-js/geom';
+import type { ResizeAnchor } from '@weasel-js/routing';
+import type { SnapGesture, SnapMark } from 'features/snap/types';
 
 type Point = { x: number; y: number };
 
@@ -33,7 +35,53 @@ export interface SnapQuery {
  * rule. Actions apply it to the coords they ingest so the live preview and
  * the committed geometry agree.
  */
+/** What builds a gesture's input subspace while `snap.constrain` is held:
+ *  an angle step in radians about `origin`, an axis or 45° lock about the
+ *  press, or a resize's aspect. */
+export type SnapConstrain = { step: number } | 'aspect' | 'axis';
+
+/** What a gesture tells the snap dep when it starts. Points are ctx
+ *  coordinates: world in 2D. */
+export interface SnapBegin {
+  gesture: SnapGesture;
+  press: Point;
+  /** The subject, whose geometry offers no targets. */
+  ids?: readonly string[];
+  /** Resize: the sides the drag pins. An axis left `free` is an edge handle. */
+  handle?: ResizeAnchor;
+  pivot?: Point;
+  /** Point gestures: the previous anchor, a line's start. */
+  origin?: Point;
+  also?: SnapGeometry;
+  constrain?: SnapConstrain;
+}
+
+/** The snap roles held this frame. */
+export interface SnapMods {
+  /** No source answers; the input subspace still applies. */
+  suspend: boolean;
+  constrain: boolean;
+}
+
+export interface SnapOutcome {
+  point: Point;
+  /** Whether some target holds the point. */
+  held: boolean;
+  marks: readonly SnapMark[];
+}
+
+/** One gesture's snapping, from press to release. */
+export interface SnapSession {
+  /** Where `p` lands. */
+  at(p: Point, mods: SnapMods): SnapOutcome;
+  angle(theta: number, mods: SnapMods): { theta: number; marks: readonly SnapMark[] };
+  /** Clears the gesture's marks. */
+  end(): void;
+}
+
 export interface SnapDep {
+  /** Start a gesture's snap session. */
+  begin?(req: SnapBegin): SnapSession;
   /** Snap a world-space point. Return `p` unchanged to opt out. */
   point(p: Point, at?: SnapQuery): Point;
   /** Snap `p` to a target alone — path geometry, or a point

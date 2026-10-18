@@ -2,21 +2,33 @@
  * `useSnapDepSource` — wires the `snap` dep that `insertAction`, the pen, a
  * move and an anchor drag consume.
  *
- * Sourced from `<SceneCanvas toolOptions={{ pathSnap, snapTargets, snapPoint }} />`.
+ * `point` / `toTargets` are sourced from `<SceneCanvas toolOptions={{ pathSnap, snapTargets, snapPoint }} />`.
  * A path target in range wins, then a point `snapTargets` offers; otherwise
  * `snapPoint` (a grid, say) has the point. The dep reads all three through a
  * ref, so toggling any takes effect on the next gesture without remounting
  * the registry.
+ *
+ * `begin` runs a session over the snap sources `session` names, and writes
+ * its marks to the outcome store this hook returns.
  *
  * Always registered (hooks can't be conditional); with neither source the
  * dep's `point` is the identity function, which is the same behavior actions
  * fall back to when the dep is absent entirely.
  */
 import { useDepSource } from '@weasel-js/routing/react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
+import { useState } from 'react';
 import type { SnapDep, SnapQuery } from 'interactions/actions/snapDep';
 import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
 import type { View } from 'core/viewport/view';
+import type { Scene } from 'core/scene/types';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
+import { buildProbes, subjectBox } from 'features/snap/probes2d';
+import type { SnapSourceRegistry } from 'features/snap/registry';
+import { sceneProbeReads } from 'features/snap/sceneReads';
+import { createSession2d, DEFAULT_SNAP_PX } from 'features/snap/session2d';
+import type { SnapSource } from 'features/snap/types';
 
 type Point = { x: number; y: number };
 
@@ -31,8 +43,28 @@ export interface SnapSources {
   paths?: PathSnapper;
 }
 
-export function useSnapDepSource(sources: SnapSources, viewRef: React.RefObject<View | null>): void {
+/** What `begin` reads: the scene its probes come from and the sources it asks. */
+export interface SnapSessionSources {
+  scene: Scene<unknown, string, unknown>;
+  descriptor: PoseDescriptor<unknown>;
+  boundsIncludeStroke: boolean;
+  /** `<SceneCanvas snap.sources>`, then the presets' `snapSources`. */
+  sources: readonly SnapSource[];
+  /** Sources `useSnapSource` adds, after `sources`. */
+  registry?: SnapSourceRegistry;
+  /** Overrides the kit setting `targets.snapPx`. */
+  reachPx?: number;
+}
+
+export function useSnapDepSource(
+  sources: SnapSources,
+  viewRef: React.RefObject<View | null>,
+  session?: SnapSessionSources,
+): SnapOutcomeStore {
   const ref = useLatest(sources);
+  const sessionRef = useLatest(session);
+  const kitSettings = useKitSettings();
+  const [store] = useState(() => createSnapOutcomeStore());
 
   useDepSource('snap', (): SnapDep => {
     // A query naming `include` asks for those nodes' geometry, which no
@@ -41,10 +73,33 @@ export function useSnapDepSource(sources: SnapSources, viewRef: React.RefObject<
       ref.current.paths?.snap(p, at, viewRef.current?.scale ?? { x: 1, y: 1 })
         ?? (at?.include ? null : ref.current.targets?.(p, at))
         ?? null;
+    const s = sessionRef.current;
     return {
       point: (p, at) => toTargets(p, at) ?? ref.current.snapPoint?.(p) ?? p,
       toTargets,
       release: () => ref.current.paths?.release(),
+      ...(s ? {
+        begin: (req) => {
+          const view = viewRef.current;
+          const paths = ref.current.paths;
+          const reads = sceneProbeReads({
+            scene: s.scene, descriptor: s.descriptor, includeStroke: s.boundsIncludeStroke, view,
+            ...(paths ? { geometryAt: (press: Point, ids: readonly string[]) => paths.snap(press, { include: ids }, view?.scale ?? { x: 1, y: 1 }) } : {}),
+          });
+          return createSession2d({
+            req,
+            sources: [...s.sources, ...(s.registry?.list() ?? [])],
+            probes: buildProbes(req, reads),
+            box: req.ids ? subjectBox(req.ids, reads) : null,
+            view: () => viewRef.current,
+            reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+            scene: s.scene,
+            store,
+            onEnd: () => paths?.release(),
+          });
+        },
+      } : {}),
     };
   });
+  return store;
 }

@@ -157,7 +157,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState, snapper: pathSnapper }}
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard}
-        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }}
+        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources}
       />
       {props.views?.map((v, i) => <CanvasView key={v.id} {...v} order={v.order ?? i} />)}
       {contributionEntries(tools.tools).flatMap((e) => e.views ?? []).map((v) => (
