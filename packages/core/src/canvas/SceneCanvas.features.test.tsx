@@ -266,7 +266,7 @@ describe('<SceneCanvas features>', () => {
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
     // The actions that belong to insert and text tools stay out, and so does
     // the paste `edit` binds, because `ingest` answers the same event.
-    expect(missing.sort()).toEqual(['clipboard.pasteEvent', 'enterTextEdit', 'insert', 'insert.adjustRotation', 'insert.reposition']);
+    expect(missing.sort()).toEqual(['clipboard.pasteEvent', 'enterTextEdit', 'insert', 'insert.adjustRotation', 'insert.reposition', 'place']);
   });
 
   it("'edit' without 'ingest' registers the paste-event action in its place", () => {
