@@ -194,6 +194,19 @@ describe('constrainAnchors and unconstrainAnchors', () => {
     expect(p[3].y).toBeCloseTo(130, 3);
   });
 
+  it('answers every member of a conflict, not only the constraint left failing', () => {
+    const quad = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 30 }, { x: 110, y: 100 }, { x: -10, y: 100 }]) as PolygonPath;
+    const held: PathConstraint[] = [
+      { kind: 'fixed', anchor: 0 },
+      { kind: 'fixed', anchor: 1 },
+      { kind: 'horizontal', segment: [2, 3] },
+    ];
+    const t = setup(held, quad);
+    expect(setConstraints(t.dep(), [...held, { kind: 'vertical', segment: [0, 1] }], 'Constrain')).toEqual([0, 1, 3]);
+    expect(constraintConflictsOf(t.scene.get(t.id))).toEqual([0, 1, 3]);
+    expect(setConstraints(t.dep(), held, 'Unconstrain')).toEqual([]);
+  });
+
   it('reports vertical on a horizontal edge as a conflict instead of collapsing the edge', () => {
     const t = setup([{ kind: 'horizontal', segment: [0, 1] }]);
     const before = t.points();

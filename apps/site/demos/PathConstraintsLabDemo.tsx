@@ -98,7 +98,7 @@ function describeStatus(scene: ReturnType<typeof createLabScene>): string {
   const broken = constraintConflictsOf(node);
   const count = `${constraints.length} constraint${constraints.length === 1 ? '' : 's'}`;
   if (broken.length === 0) return `${count}, all holding.`;
-  return `${count}. Conflicting, left unsolved: ${broken.map((i) => KIND_LABELS[constraints[i].kind]).join(', ')}.`;
+  return `${count}. In conflict: ${broken.map((i) => KIND_LABELS[constraints[i].kind]).join(', ')}.`;
 }
 
 function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {

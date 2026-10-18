@@ -434,10 +434,6 @@ Priority tags:
   coordinate vector — `solveConstraints` already takes any point list — and commits each moved
   node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
   the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
-- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
-  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
-  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
-  the Jacobian's rank, which the damped solve does not compute.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 

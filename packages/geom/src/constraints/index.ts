@@ -11,3 +11,4 @@ export {
   anchorsBefore, constrainPathEdit, pathAnchorPoints, remapConstraints, segmentBetween, solvePathConstraints,
   type ConstrainPathEditOptions, type ConstrainedPathEdit, type SolvePathConstraintsResult,
 } from './pathConstraints';
+export { conflictingConstraints, type ConflictingConstraintsOptions } from './conflicts';
