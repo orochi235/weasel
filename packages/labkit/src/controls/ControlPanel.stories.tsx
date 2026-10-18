@@ -56,7 +56,10 @@ const allFields: ConfigField[] = [
   { key: 'tint', label: 'Tint', type: 'color', default: '#3a86ff' },
 ];
 
-function Harness({ fields, ...args }: Partial<ControlPanelProps<Record<string, unknown>>> & { fields: ConfigField[] }) {
+function Harness({
+  fields,
+  ...args
+}: Partial<ControlPanelProps<Record<string, unknown>>> & { fields: ConfigField[] }) {
   const initial: Record<string, unknown> = {};
   for (const f of fields) initial[f.key] = f.default;
   const [config, setConfig] = useState<Record<string, unknown>>(initial);

@@ -40,7 +40,10 @@ const resolved = resolveConfigSchema(schema, []);
 /** Every path the panel will draw as auto, except the `.manual()` one. */
 const EVERY_AUTO = ['gap', 'cols', 'wave', 'mode', 'showGrid', 'title', 'tint'];
 
-function Panel({ start, ...args }: Partial<ControlPanelProps<Record<string, unknown>>> & { start: readonly string[] }) {
+function Panel({
+  start,
+  ...args
+}: Partial<ControlPanelProps<Record<string, unknown>>> & { start: readonly string[] }) {
   const [state, setState] = useState(() => ({
     config: schema.defaults() as Record<string, unknown>,
     autoPaths: start,

@@ -1,6 +1,6 @@
+import { render } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
 
 // forge gives a story controls only when its `render` takes args, so a story whose harness holds state still has to
 // pass them through to the instance it draws. Each case sets a class and finds it in the DOM.
@@ -45,17 +45,23 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
   });
 
   it('TrialOverview Default', async () => {
-    draw(stories(await import('./overview/TrialOverview.stories')).Default, { className: 'arg-here' });
+    draw(stories(await import('./overview/TrialOverview.stories')).Default, {
+      className: 'arg-here',
+    });
     expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 
   it('Readout ValuesComeAndGo', async () => {
-    draw(stories(await import('./primitives/Readout.stories')).ValuesComeAndGo, { className: 'arg-here' });
+    draw(stories(await import('./primitives/Readout.stories')).ValuesComeAndGo, {
+      className: 'arg-here',
+    });
     expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 
   it('AutoControls Interactive', async () => {
-    draw(stories(await import('./controls/AutoControls.stories')).Interactive, { className: 'arg-here' });
+    draw(stories(await import('./controls/AutoControls.stories')).Interactive, {
+      className: 'arg-here',
+    });
     expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 });

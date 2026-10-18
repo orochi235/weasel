@@ -29,7 +29,10 @@ function makeColoredLayer(id: string, color: string, x: number, y: number): Canv
   };
 }
 
-function Harness({ layers, ...args }: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
+function Harness({
+  layers,
+  ...args
+}: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
   const [view, setView] = useState({ zoom: 1, pan: { x: 50, y: 50 } });
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
