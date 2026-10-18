@@ -4,7 +4,9 @@ import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
 import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
+import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
+import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
@@ -80,13 +82,20 @@ function check(cx: number, cy: number, color: string): DrawCommand {
   };
 }
 
+/** Where a menu finds the glyph a row's `icon` names: an icon registry, or anything answering as one. */
+export type MenuIcons = Pick<IconRegistry, 'get' | 'getVersion'>;
+
+/** The DOM row draws its icon at 16px. */
+const ICON_SIZE = 16;
+
 // The shadow `.surface` in ui's listbox.module.css gives the DOM panel.
 const PANEL_SHADOW = 'var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))';
 
 /** One panel's commands: its rounded face and the DOM panel's box shadow, a highlight behind row
- *  `highlight`, and every row. */
+ *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. */
 export function drawPanel(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null, m: MenuMetrics,
+  icons?: MenuIcons,
 ): DrawCommand[] {
   const t = ctx.tokens;
   const fg = t['--wzl-fg'];
@@ -115,7 +124,12 @@ export function drawPanel(
       [{ text: e.label, fill: solid(color) }],
       font, undefined, r.h, 'center',
     ));
-    if (e.kind === 'item' && e.checked) out.push(check(b.x + m.padX + m.rowHeight / 2, b.y + r.y + r.h / 2, color));
+    const iconX = b.x + m.padX + m.rowHeight / 2;
+    const iconY = b.y + r.y + r.h / 2;
+    const ref = typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
+    const glyph = ref ? icons?.get(ref) : undefined;
+    if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
+    else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
     const chip = shortcutOf(e);
     if (chip) {
       out.push(textCommandFromRuns(

@@ -2,7 +2,7 @@ import { createMenuController, withLinks, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createRevision, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
-import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuMetrics } from './drawPanel';
+import { DEFAULT_MENU_METRICS, drawPanel, rowAt, type MenuIcons, type MenuMetrics } from './drawPanel';
 import { measureLabel } from './measureLabel';
 import { createPlacer } from './placePanels';
 
@@ -21,6 +21,8 @@ export interface MenuWidgetOptions {
    *  registered face's own advances, which is what the text is laid out with. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
   metrics?: MenuMetrics;
+  /** Where a row's icon is looked up; without it no row draws one. */
+  icons?: MenuIcons;
   onChange(): void;
 }
 
@@ -109,11 +111,11 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     focusable: true,
     focusRing: false,
     accessibleName: 'Context menu',
-    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration()],
+    deps: (ctx) => [...rev.deps(), ctx.defaultFont, faceGeneration(), opts.icons?.getVersion()],
     draw: (ctx) => {
       family = ctx.defaultFont;
       panels = place(c, family);
-      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m));
+      return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons));
     },
     hitTest: (x, y) => levelAt(x, y) >= 0,
     cursorAt: () => 'default',

@@ -806,12 +806,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   canvas and exposes only `accessibleName`. Mirror the open menu as hidden DOM with menu roles,
   kept in step with the model's highlight.
 
-- **(P3) The WebGL context menu draws no icons.** `drawPanel` draws a row's label, its shortcut,
-  a check for an `active` action and a submenu caret, but leaves the icon column empty where the DOM
-  row draws the action's icon. No HUD widget draws a glyph yet. The registry itself is a plain
-  `IconRegistry` that React only hands out, so `attachMenuHost` could take one; what is missing is
-  turning a glyph's SVG `body` (strokes in `currentColor` on a 20×20 viewBox) into draw commands.
-
 - **(P3) Some boxes still leave the stroke out.** `drawnBoundsOf` (`canvas/drawnBounds.ts`) is the
   box a stroked shape is shown and measured with, and `<SceneCanvas>`'s chrome, resize, rotate,
   flip, align, distribute, and `alignMoveBehavior` read it. Paths with no node or painter behind

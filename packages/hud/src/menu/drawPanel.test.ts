@@ -97,5 +97,22 @@ describe('drawPanel', () => {
     expect([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)])
       .toEqual([b.x + 1, b.y + 1, b.x + b.w - 1, b.y + b.h - 1]);
   });
+
+  it("draws a row's icon from the registry in the icon column, in the row's color, and the check in its place", () => {
+    const icons = { get: (ref: string) => (ref === 'test:dot' ? { body: '<circle cx="10" cy="10" r="4"/>', group: '', tags: [] } : undefined), getVersion: () => 1 };
+    const plain: MenuEntry = { kind: 'item', key: 'a', label: 'A', icon: 'test:dot', run };
+    const off: MenuEntry = { ...plain, disabled: true };
+    const on: MenuEntry = { ...plain, checked: true };
+    const glyphs = (e: MenuEntry) => drawPanel(ctx, b, [e], null, m, icons).filter((c) => c.kind === 'group' && c.transform);
+    const [g] = glyphs(plain);
+    expect(g).toBeDefined();
+    const t = g!.kind === 'group' ? g!.transform! : [];
+    // 16px, centered in the icon column of the first row.
+    expect([t[0], t[6], t[7]]).toEqual([0.8, b.x + m.padX + m.rowHeight / 2 - 8, b.y + m.padY + m.rowHeight / 2 - 8]);
+    expect(JSON.stringify(g)).toContain('#eee');
+    expect(JSON.stringify(glyphs(off))).toContain('#888');
+    expect(glyphs(on)).toHaveLength(0);
+    expect(drawPanel(ctx, b, [plain], null, m).filter((c) => c.kind === 'group' && c.transform)).toHaveLength(0);
+  });
 });
 

@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef } from 'react';
 import {
-  ActionsProvider, SceneCanvas, rectPath, solid, useMenuHost, useMenus, useScene, useSelection,
+  ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene, useSelection,
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
@@ -49,16 +49,18 @@ function Demo() {
   const hud = useHud();
   const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
   const host = useMenuHost();
+  const icons = useIconRegistry();
   useEffect(() => {
     if (!host) return;
     return attachMenuHost(hud, host, {
+      ...(icons ? { icons } : {}),
       toCanvas: ({ x, y }) => {
         const r = canvasRef.current?.element?.getBoundingClientRect();
         return r ? { x: x - r.left, y: y - r.top } : { x, y };
       },
       canvasSize: () => ({ width: W, height: H }),
     });
-  }, [hud, host]);
+  }, [hud, host, icons]);
 
   return (
     <SceneCanvas
