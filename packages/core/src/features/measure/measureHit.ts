@@ -55,12 +55,14 @@ export function measureEndSource(): SnapSource {
       if (!q.scene) return;
       const gates = nodeGates(q.scene);
       const skip = new Set(q.exclude);
+      const reach = q.reachWorld(q.reachPx);
       for (const node of q.scene.renderOrderNodes()) {
         const ends = measureEndsOf(node);
         if (!ends || skip.has(node.id) || gates.hidden(node.id)) continue;
         for (const end of [ends.start, ends.end]) {
           const at = { x: end.x, y: end.y };
           for (const p of q.probes) {
+            if (Math.hypot(at.x - p.at.x, at.y - p.at.y) > reach) continue;
             yield { probe: p.id, locus: { at, dirs: [] }, mark: { kind: 'point', at, glyph: 'center' } };
           }
         }

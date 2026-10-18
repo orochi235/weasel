@@ -96,6 +96,7 @@ function collectAll(
       ...(req.origin ? { origin: req.origin } : {}),
       ...(req.also ? { also: req.also } : {}),
       reachWorld: (px) => px / scale,
+      reachPx: source.reachPx ?? inputs.reachPx,
       ...(inputs.scene ? { scene: inputs.scene } : {}),
     });
     for (const c of found) {

@@ -19,16 +19,18 @@ function sceneOf(paths: Record<string, string>) {
 
 function run(
   scene: Scene<unknown, string, unknown>, opts: PathSnapSourceOptions, req: Partial<SnapBegin>,
-  at: { x: number; y: number }, press = at,
+  at: { x: number; y: number }, env: { reach?: number; scale?: number } = {},
 ) {
+  const press = at;
+  const scale = { x: env.scale ?? 1, y: env.scale ?? 1 };
   const full: SnapBegin = { gesture: 'point', press, ...req };
   const store = createSnapOutcomeStore();
   const s = createSession2d({
     req: full,
     sources: [pathSnapSource(opts)],
     probes: [{ id: 'pointer', at: press, role: 'pointer' }],
-    view: () => ({ x: 0, y: 0, scale: ONE }),
-    reachPx: 8,
+    view: () => ({ x: 0, y: 0, scale }),
+    reachPx: env.reach ?? 8,
     scene,
     store,
   });
@@ -82,6 +84,47 @@ describe('pathSnapSource', () => {
     expect(run(circle, only, {}, { x: 3.4, y: 9.4 }).held).toBe(false);
   });
 
+  it("takes the canvas's reach when it sets none", () => {
+    const line = sceneOf({ a: 'M0 0 L100 0' });
+    // The anchor is 9.9px off: out at 8px, in at 12px.
+    expect(run(line, {}, {}, { x: 7, y: 7 }, { reach: 12 }).marks).toMatchObject([{ glyph: 'anchor' }]);
+    expect(run(line, {}, {}, { x: 7, y: 7 }).marks).toMatchObject([{ glyph: 'nearest' }]);
+  });
+
+  it('lets an anchor out of reach leave nearest on offer', () => {
+    const line = sceneOf({ a: 'M0 0 L100 0' });
+    // The anchor is 6.7px off, past a 5px reach; nearest is 3px off.
+    expect(run(line, {}, {}, { x: 6, y: 3 }, { reach: 5 }).marks).toMatchObject([{ glyph: 'nearest' }]);
+    expect(run(line, {}, {}, { x: 6, y: 3 }).marks).toMatchObject([{ glyph: 'anchor' }]);
+  });
+
+  it('measures that reach through the view scale', () => {
+    const line = sceneOf({ a: 'M0 0 L100 0' });
+    // The anchor is 4.6 world units off: 4.6px at scale 1, 9.2px at scale 2.
+    expect(run(line, {}, {}, { x: 4.5, y: 1 }).marks).toMatchObject([{ glyph: 'anchor' }]);
+    expect(run(line, {}, {}, { x: 4.5, y: 1 }, { scale: 2 }).marks).toMatchObject([{ glyph: 'nearest' }]);
+  });
+
+  it('drops a tangent within reach of its own origin', () => {
+    const circle = sceneOf({ c: 'M-10 0 A10 10 0 1 0 10 0 A10 10 0 1 0 -10 0 Z' });
+    const only = { kinds: { anchor: false, quadrant: false, extremum: false, midpoint: false, nearest: false } };
+    // From (12, 0) the tangent point (8.3, 5.5) is 6.6 away: inside the 8px reach.
+    expect(run(circle, only, { origin: { x: 12, y: 0 } }, { x: 8.3, y: 5.5 }).held).toBe(false);
+  });
+
+  it('offers nothing from a hidden or an annotation layer, or from a hidden node under a container', () => {
+    const hiddenLayer = { ...cross, layers: [{ id: 'default', visible: false }] } as unknown as Scene<unknown, string, unknown>;
+    expect(run(hiddenLayer, {}, {}, { x: 51, y: 50 }).held).toBe(false);
+    const notes = { ...cross, layers: [{ id: 'default', annotation: true }] } as unknown as Scene<unknown, string, unknown>;
+    expect(run(notes, {}, {}, { x: 51, y: 50 }).held).toBe(false);
+    const live = sceneOf({ a: 'M0 0 L100 100', b: 'M0 100 L100 0' });
+    const nodes = (live as unknown as { nodes: Map<unknown, Record<string, unknown>> }).nodes;
+    const b = nodes.get(asNodeId('b'))!;
+    nodes.set(asNodeId('g'), { ...b, id: asNodeId('g'), kind: 'container', hidden: true });
+    nodes.set(asNodeId('b'), { ...b, parent: asNodeId('g') });
+    expect(run(live, { kinds: { nearest: false, midpoint: false } }, {}, { x: 51, y: 50 }).held).toBe(false);
+  });
+
   it('skips the nodes a gesture moves, and offers only the ones it includes', () => {
     const skipped = run(cross, { kinds: { nearest: false, midpoint: false } }, { ids: [asNodeId('b')] }, { x: 51, y: 50 });
     expect(skipped.held).toBe(false);
@@ -89,7 +132,7 @@ describe('pathSnapSource', () => {
       const src: SnapSource = pathSnapSource({ kinds: { nearest: false, anchor: false, intersection: false } });
       const base: SnapCollect = {
         gesture: 'point', probes: [{ id: 'pointer', at: { x: 50, y: 51 }, role: 'pointer' }],
-        exclude: [], reachWorld: (px) => px, scene: cross, ...extra,
+        exclude: [], reachWorld: (px) => px, reachPx: 8, scene: cross, ...extra,
       };
       return [...src.collect(base)];
     };

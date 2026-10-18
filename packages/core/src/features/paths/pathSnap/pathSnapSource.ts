@@ -31,7 +31,7 @@ export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
       const { ids, index } = sceneSnapIndex(q.scene, q.also);
       const exclude = new Set(q.exclude);
       const include = q.include ? new Set(q.include) : null;
-      const radius = q.reachWorld(opts.reachPx ?? DEFAULT_SNAP_PX);
+      const radius = q.reachWorld(opts.reachPx ?? q.reachPx);
       const skip = (i: number) => {
         const id = ids[i];
         if (id === null) return false;

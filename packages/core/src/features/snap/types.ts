@@ -52,6 +52,9 @@ export interface SnapCollect<P = Point> {
   also?: SnapGeometry;
   /** `px` screen pixels as world units: a radius to cull targets by. */
   reachWorld(px: number): number;
+  /** The reach, in screen px, the session applies to this source: its own
+   *  `reachPx`, else the canvas's. Candidates past it are dropped anyway. */
+  reachPx: number;
   /** Absent in a host with no 2D scene. */
   scene?: Scene<unknown, string, unknown>;
 }
