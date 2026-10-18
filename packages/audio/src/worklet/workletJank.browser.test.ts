@@ -57,9 +57,10 @@ function block(ms: number): void {
   expect(spin).toBeGreaterThan(0);
 }
 
-/** Book a bar of notes, block the main thread through most of it, and return
- *  what the engine's master put out, from just before the first note. */
-async function bookThenBlock(synthVoices: AudioEngineOptions['synthVoices']) {
+/** An engine on a running context whose master output is recorded from
+ *  inside a worklet: `record(from)` resolves with `RECORD` seconds of it,
+ *  starting at context time `from`. */
+async function recordedEngine(synthVoices: AudioEngineOptions['synthVoices']) {
   await userEvent.click(document.body);
   const ctx = new AudioContext({ sampleRate: RATE });
   contexts.push(ctx);
@@ -82,12 +83,22 @@ async function bookThenBlock(synthVoices: AudioEngineOptions['synthVoices']) {
   // A clock that is not moving would pass nothing; wait until it does.
   const t0 = ctx.currentTime;
   await expect.poll(() => ctx.currentTime).toBeGreaterThan(t0 + 0.05);
+  const record = (from: number) => {
+    const recording = new Promise<Float32Array>((resolve) => {
+      recorder.port.onmessage = (e: MessageEvent<Float32Array>) => resolve(e.data);
+    });
+    recorder.port.postMessage(Math.round(from * RATE));
+    return recording;
+  };
+  return { ctx, engine, late, record };
+}
 
+/** Book a bar of notes, block the main thread through most of it, and return
+ *  what the engine's master put out, from just before the first note. */
+async function bookThenBlock(synthVoices: AudioEngineOptions['synthVoices']) {
+  const { ctx, engine, late, record } = await recordedEngine(synthVoices);
   const from = ctx.currentTime + 0.1;
-  const recording = new Promise<Float32Array>((resolve) => {
-    recorder.port.onmessage = (e: MessageEvent<Float32Array>) => resolve(e.data);
-  });
-  recorder.port.postMessage(Math.round(from * RATE));
+  const recording = record(from);
   // A plain callback at the first note's time: its lateness is the stall's.
   engine.schedule((from + LEAD) * 1000, () => {});
   for (let k = 0; k < NOTES; k += 1) {
@@ -144,4 +155,33 @@ it('control: node voices booked into the same block start late', async () => {
   const onTime = onsets(samples).filter((ms) => ms !== null && Math.abs(ms) < 3).length;
   expect(onTime).toBeLessThan(NOTES);
   expect(Math.max(0, ...late)).toBeGreaterThan(300);
+}, 20_000);
+
+it('releases, rather than cuts, a worklet voice released inside the stall that started it', async () => {
+  const { ctx, engine, record } = await recordedEngine('worklet');
+  const from = ctx.currentTime + 0.1;
+  const recording = record(from);
+  const dropped: string[] = [];
+  const voice = engine.playNote({
+    pitch: 440, gain: 0.5, envelope: { attack: 2, release: 300 },
+    when: (from + LEAD) * 1000, onDrop: (r) => dropped.push(r),
+  });
+  // Through the voice's start, with no scheduler pass between: then release.
+  block(500);
+  const releasedAt = Math.round((ctx.currentTime - from) * RATE);
+  voice.release();
+  const samples = await recording;
+  const level = (at: number) => {
+    let sq = 0;
+    const n = Math.round(0.02 * RATE);
+    for (let i = at; i < at + n; i += 1) sq += samples[i] * samples[i];
+    return Math.sqrt(sq / n);
+  };
+  const held = level(releasedAt - Math.round(0.05 * RATE));
+  expect(held).toBeGreaterThan(0.1);
+  // A 300 ms release from there: still a third of the way down 100 ms on, where a cut is silent.
+  const after = releasedAt + Math.round(0.1 * RATE);
+  expect(after + Math.round(0.02 * RATE)).toBeLessThan(samples.length);
+  expect(level(after)).toBeGreaterThan(0.3 * held);
+  expect(dropped).toEqual([]);
 }, 20_000);

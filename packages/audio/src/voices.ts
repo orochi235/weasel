@@ -87,7 +87,8 @@ function startVoice(
   staleFloor: number,
   teardown: VoiceOps['teardown'],
 ): void {
-  if (voice.canceled) return;
+  // A source already: `catchUp` started it ahead of this pass.
+  if (voice.canceled || voice.source !== null) return;
   // Came due while the context was suspended: starting it now would play
   // a backlog at once, which is what dropping a locked play avoids. A voice
   // played since the resume is no backlog, however early its `when`. Nor is a
@@ -130,6 +131,7 @@ function startVoice(
     throw err;
   }
   voice.unbook = null;
+  voice.catchUp = null;
   source.onended = () => { teardown(voice); onDone?.(); };
   voice.source = source;
 }
@@ -139,6 +141,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
   return {
     id: voice.id,
     stop(fadeMs) {
+      voice.catchUp?.();
       if (fadeMs && fadeMs > 0 && voice.source && voice.out && !voice.canceled) {
         // Canceled but not torn down: the fade is what ends this voice, and
         // stopping the source now would cut the ramp scheduled a line above
@@ -154,6 +157,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     },
     release() {
       if (voice.releasing) return;
+      voice.catchUp?.();
       if (voice.release && voice.source && !voice.canceled) {
         // Like a fade: `onended` tears the voice down once the release is out.
         voice.releasing = true;
@@ -249,7 +253,7 @@ export function createVoices(deps: VoicesDeps): Voices {
       const voice: LiveVoice = {
         id, slots, slot: null, token: 0, key: common.cancelKey, onDrop: common.onDrop,
         source: null, env: null, retune: null, release: null, releasing: false,
-        out: null, unbook: null,
+        out: null, unbook: null, catchUp: null,
         baseGain, spatialGain: spatial.gain,
         rate: common.rate ?? 1, detune: common.detune ?? 0,
         position: common.position,
@@ -263,10 +267,14 @@ export function createVoices(deps: VoicesDeps): Voices {
         voice.out = chains.take(deps.busInput(busName), level, spatial.pan);
       }
       live.set(id, voice);
+      const begin = (): void => {
+        startVoice(voice, starter, bookedAt, when, common.onDone, deps.staleFloor(), teardown);
+      };
+      if (starter.book) {
+        voice.catchUp = () => { if (ctx.currentTime * 1000 >= when) begin(); };
+      }
       // A booked voice already sounds at its time, however late this runs.
-      deps.scheduler.schedule(when, (scheduledWhen) => {
-        startVoice(voice, starter, bookedAt, scheduledWhen, common.onDone, deps.staleFloor(), teardown);
-      }, common.cancelKey, { reportLate: !starter.book });
+      deps.scheduler.schedule(when, begin, common.cancelKey, { reportLate: !starter.book });
       return voiceHandle(ctx, voice, ops);
     },
     stopAll(reason) {
@@ -274,7 +282,9 @@ export function createVoices(deps: VoicesDeps): Voices {
     },
     stopKey(key) {
       for (const voice of [...live.values()]) {
-        if (voice.key === key) teardown(voice);
+        if (voice.key !== key) continue;
+        voice.catchUp?.();
+        teardown(voice);
       }
     },
     respatialize() {

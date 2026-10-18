@@ -624,14 +624,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
 
-- **(P3) A worklet voice released inside a stall is cut, not released.** With
-  `synthVoices: 'worklet'` the audio thread starts a voice at its time, but the
-  engine counts it started only when the scheduler reaches it. A `release()` or
-  `stop(fadeMs)` landing between the two, which only a main-thread stall makes
-  possible, takes the before-start path in `voices.ts`: the processor is told to
-  stop at once and `onDrop('stopped')` fires for a voice that sounded. The fix
-  is for a booked voice to count as started once its `when` has passed.
-
 ---
 
 ## Selection, actions & UI panels
