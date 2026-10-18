@@ -3,6 +3,7 @@
  * Both are `null` when the slot is switched off, and a pre-built layer has no badge.
  */
 import { useMemo } from 'react';
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import type { RenderLayer } from 'core/layers/render';
 import { createSelectionOverlayLayer, rotationBadgeOf } from 'features/selection/overlay';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -20,6 +21,8 @@ export function useSelectionOverlayLayer<TPose>(
   /** The nodes a slot's `poseById` answers for, so their chrome sits on the
    *  stroke. Omitted when the canvas measures pose boxes alone. */
   scene?: DrawnBoundsScene,
+  /** The canvas's resize-handle layout, which its hit-test reads too. */
+  resizeHandles?: ResizeHandleLayout,
 ): {
   layer: RenderLayer<unknown> | null;
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
@@ -48,6 +51,7 @@ export function useSelectionOverlayLayer<TPose>(
     };
     return createSelectionOverlayLayer<TPose>({
       ...cfg,
+      ...(resizeHandles ? { resizeHandles } : {}),
       getSuppressedIds,
       // A caller's pose lookup still needs a geometry to project with; without
       // one the layer reads bounds off the chrome state and calls neither.
@@ -59,6 +63,6 @@ export function useSelectionOverlayLayer<TPose>(
           }
         : {}),
     });
-  }, [slot, getOwnSuppressedIds, poseDescriptor, scene]);
+  }, [slot, getOwnSuppressedIds, poseDescriptor, scene, resizeHandles]);
   return { layer, rotationBadge };
 }

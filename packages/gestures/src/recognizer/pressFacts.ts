@@ -2,7 +2,7 @@
  * What the recognizer remembers of a press, and the events a release or a
  * hold on it synthesizes.
  */
-import type { BodyKind, BodyTarget, EventModifiers, InputEvent } from '../ui/inputEvent';
+import type { BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent } from '../ui/inputEvent';
 
 /** Press-time state replayed onto a synthesized click, long-press or
  *  contextmenu, whose matchers resolve targets against it. */
@@ -17,6 +17,8 @@ export interface PressFacts extends EventModifiers {
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
+  /** Replayed onto the double click in place of `bodyTarget` and `bodyKind`. */
+  doubleClickBody?: DoubleClickBody;
 }
 
 /** Where and how a press was released, for the click it turned out to be. */
@@ -53,11 +55,14 @@ export function clickEvents(down: PressFacts, up: ReleaseFacts): { click: InputE
     y: up.worldY,
     clientX: up.clientX,
     clientY: up.clientY,
-    ...pressedOn(down),
   };
+  const named = down.doubleClickBody;
   return {
-    click: { kind: 'click', ...shared, pressX: down.worldX, pressY: down.worldY },
-    doubleclick: { kind: 'doubleclick', ...shared },
+    click: { kind: 'click', ...shared, ...pressedOn(down), pressX: down.worldX, pressY: down.worldY },
+    doubleclick: {
+      kind: 'doubleclick', ...shared,
+      ...pressedOn(named ? { affordance: down.affordance, ...named } : down),
+    },
   };
 }
 

@@ -1,5 +1,7 @@
 import { useMemo, type RefObject } from 'react';
-import type { Scene } from 'core/scene/types';
+import { asNodeId, type Scene } from 'core/scene/types';
+import { useLatest } from '@weasel-js/react';
+import { doubleClickTarget } from '../doubleClickTarget';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -14,7 +16,7 @@ import { useViewLayerGate } from '../useViewLayerGate';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
-  'geometry' | 'routing' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive'
+  'geometry' | 'routing' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive' | 'isolatedGroup'
 >;
 
 /**
@@ -71,8 +73,15 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 
+  const isolatedGroup = useLatest(args.props.isolatedGroup);
+  const doubleClickNames = useMemo(() => kindOfNode && ((hitId: string) => doubleClickTarget(hitId, {
+    parentOf: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    kindOf: kindOfNode,
+    scope: isolatedGroup.current?.() ?? null,
+  })), [scene, kindOfNode, isolatedGroup]);
+
   return {
-    ...selectTool, adapter, kindOfNode, getNodeAtPoint, viewLayerGate,
+    ...selectTool, adapter, kindOfNode, doubleClickNames, getNodeAtPoint, viewLayerGate,
     /** The composed paint alpha, only when the consumer fades anything. */
     alphaOf: alphaFor ? composedAlphaFor : undefined,
   };

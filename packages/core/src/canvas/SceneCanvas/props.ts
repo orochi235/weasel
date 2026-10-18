@@ -1,6 +1,7 @@
 import type { ModeRegistry } from '@weasel-js/modes';
 import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
+import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
 import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
@@ -88,12 +89,7 @@ export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId | 'slice' | '
  *  tools of the `core/shapeKinds` table, then the knife and the rig tools. */
 export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = ['select', 'hand', ...KIT_SHAPE_KINDS, 'slice', 'bone', 'weight'];
 
-/** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
- *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
-export interface SceneCanvasHit {
-  id: string;
-  kind: string;
-}
+export type { SceneCanvasHit };
 
 /** Props for `<SceneCanvas>`. A scene is the only thing it needs. With nothing
  *  else it renders that scene and keeps a selection no input sets; `features`
@@ -538,22 +534,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-
-    /**
-     * Per-id pointer-interactivity predicate: an id it returns `false` for is excluded from
-     * hit-test results. Typical use: suppressing pointer events for dimmed nodes.
-     */
-    isPointerInteractive?: (id: string) => boolean;
-
-    /**
-     * Called when the user double-clicks the canvas, with the hit node (id + kind) at that
-     * position, or `null` on empty canvas. A notification, not a binding: it fires whatever the
-     * double-click does. Entering a mode on the node belongs to `modeTriggers` instead.
-     */
-    onDoubleClick?: (hit: SceneCanvasHit | null) => void;
-    /** Called on every click — a press and release without a drag — with the
-     *  node under it, or `null` on empty canvas. Fires after the click's own
-     *  behavior, so a pick it made is already in the selection, and fires
-     *  again on a node that was already picked. */
-    onClick?: (hit: SceneCanvasHit | null) => void;
-  };
+  } & SceneCanvasPointerProps;

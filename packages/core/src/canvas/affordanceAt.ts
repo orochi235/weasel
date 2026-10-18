@@ -36,6 +36,8 @@ export interface ChromeAffordanceOptions {
    *  it can be grabbed where it is drawn. Omitted or null, only the rotate
    *  ring is hit-tested. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** Resize handles at the edge midpoints as well as the corners. Default true. */
+  edgeHandles?: boolean;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
 }
@@ -59,7 +61,7 @@ export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
 
 /**
  * The kit's selection chrome as affordances, bottom → top: rotate ring (and
- * badge), corner handles, then anchors and their controls — a corner handle
+ * badge), resize handles, then anchors and their controls — a corner handle
  * beats the rotate band it sits inside, and a control handle beats everything.
  */
 export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordance[] {
@@ -70,6 +72,7 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
     rotateBandPx = sizes.rotationDistance,
     getAnchorState,
     rotationBadge,
+    edgeHandles = true,
   } = opts;
   return [
     createRotationAffordance({
@@ -79,7 +82,7 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
         ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
         : {}),
     }),
-    createCornerResizeAffordance({ handleHitRadius }),
+    createCornerResizeAffordance({ handleHitRadius, edges: edgeHandles }),
     ...(getAnchorState
       ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
       : []),
@@ -168,21 +171,29 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
  * @param kindOfNode - Resolver from a hit node id to its semantic kind.
  *   Omitting it leaves `kind` undefined, which makes every `kind:` TargetSpec
  *   form no-match.
+ * @param doubleClickNames - The node a double-click on a hit names
+ *   (`doubleClickTarget`). Where that is another node, it rides along as
+ *   `doubleClick`, classified the same way.
  */
 export function buildClassifyTarget(
   getSelection: () => readonly string[],
   pickBest: (wx: number, wy: number) => string | null,
   kindOfNode?: (id: string) => string | undefined,
+  doubleClickNames?: (hitId: string) => string,
 ): (worldPoint: { x: number; y: number }) => BodyClassification {
   return function classifyTarget({ x: wx, y: wy }) {
     const hitId = pickBest(wx, wy);
     if (!hitId) return { body: 'empty' };
     const sel = getSelection();
-    return {
-      body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
-      kind: kindOfNode?.(hitId),
-      id: hitId,
-    };
+    const classify = (id: string) => ({
+      body: sel.includes(id) ? 'selected-body' as const : 'unselected-body' as const,
+      kind: kindOfNode?.(id),
+      id,
+    });
+    const named = doubleClickNames?.(hitId);
+    return named !== undefined && named !== hitId
+      ? { ...classify(hitId), doubleClick: classify(named) }
+      : classify(hitId);
   };
 }
 

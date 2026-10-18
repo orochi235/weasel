@@ -19,10 +19,10 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/CanvasView.tsx": {
-    "longestFunction": 251
+    "longestFunction": 249
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 559
+    "lines": 537
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
     "longestFunction": 144
@@ -49,7 +49,7 @@
     "longestFunction": 138
   },
   "packages/core/src/features/selection/overlay.ts": {
-    "lines": 620
+    "lines": 514
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 644,

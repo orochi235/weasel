@@ -51,15 +51,23 @@ type D = { path?: PolygonPath; text?: string };
 type P = { x: number; y: number; width: number; height: number };
 const square = (x: number): P => ({ x, y: 0, width: 30, height: 30 });
 
-function setup(handlers: ModeTriggerHandlers) {
+const triangle = () => pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath;
+
+function setup(handlers: ModeTriggerHandlers, isolatedGroup?: () => string | null) {
   const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
-  scene.add({ id: asNodeId('p'), kind: 'leaf', layer: 'main', pose: square(0),
-    data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath } });
+  scene.add({ id: asNodeId('p'), kind: 'leaf', layer: 'main', pose: square(0), data: { path: triangle() } });
   scene.add({ id: asNodeId('t'), kind: 'leaf', layer: 'main', pose: square(40), data: { text: 'hi' } });
+  // outer > inner > member, all drawn over x 120..150.
+  scene.add({ id: asNodeId('outer'), kind: 'container', layer: 'main', pose: square(120), data: {} } as never);
+  scene.add({ id: asNodeId('inner'), kind: 'container', layer: 'main', parent: asNodeId('outer'),
+    pose: square(120), data: {} } as never);
+  scene.add({ id: asNodeId('member'), kind: 'leaf', layer: 'main', parent: asNodeId('inner'),
+    pose: square(120), data: { path: triangle() } } as never);
   const { container } = render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={120} height={40}
-      ambient={[modeTriggers(registry, handlers)]} modes={registry} />,
+    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={40}
+      ambient={[modeTriggers(registry, handlers)]} modes={registry}
+      {...(isolatedGroup ? { isolatedGroup } : {})} />,
   );
   const canvas = container.querySelector('canvas')!;
   const doubleClick = (x: number) => act(() => {
@@ -91,5 +99,23 @@ describe('modeTriggers on a canvas', () => {
     setup({ enter, canEnter }).doubleClick(15);
     expect(canEnter).toHaveBeenCalledWith('path-edit', 'p');
     expect(enter).not.toHaveBeenCalled();
+  });
+
+  it('enters isolation on the outermost group above a double-clicked member', () => {
+    const enter = vi.fn();
+    setup({ enter }).doubleClick(135);
+    expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'outer');
+  });
+
+  it('drills one group further in from the isolated group', () => {
+    const enter = vi.fn();
+    setup({ enter }, () => 'outer').doubleClick(135);
+    expect(enter).toHaveBeenCalledExactlyOnceWith('isolation', 'inner');
+  });
+
+  it('enters path-edit on a member path with no further group above it inside the isolated one', () => {
+    const enter = vi.fn();
+    setup({ enter }, () => 'inner').doubleClick(135);
+    expect(enter).toHaveBeenCalledExactlyOnceWith('path-edit', 'member');
   });
 });

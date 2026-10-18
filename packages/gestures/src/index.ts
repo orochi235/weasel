@@ -73,6 +73,7 @@ export type {
   BodyTarget,
   BodyKind,
   BodyClassification,
+  DoubleClickBody,
   IngestItem,
   KeyEvent,
   KeyHeldEvent,

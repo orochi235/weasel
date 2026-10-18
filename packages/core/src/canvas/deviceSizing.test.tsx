@@ -59,13 +59,13 @@ describe('device-scaled chrome sizing', () => {
 
   it('paint size and hit radius agree under a coarse profile', () => {
     const painted = handleSizeOf(coarse.targetScale);
-    const corners = chromeAffordances({ targetScale: coarse.targetScale })
+    const handles = chromeAffordances({ targetScale: coarse.targetScale })
       .find((a) => a.id === 'selection.resize-handles')!
       .regions(singleSelection());
 
     expect(painted).toBeGreaterThan(HANDLE_BASE_PX);
-    expect(corners).toHaveLength(4);
-    for (const r of corners) expect(r.shape).toMatchObject({ hitRadiusPx: painted });
+    expect(handles).toHaveLength(8);
+    for (const r of handles) expect(r.shape).toMatchObject({ hitRadiusPx: painted });
   });
 
   it('a caller passing neither option gets an agreeing unscaled pair', () => {

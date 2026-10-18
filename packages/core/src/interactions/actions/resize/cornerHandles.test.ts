@@ -4,6 +4,9 @@ import {
   cornerPoint,
   cornerResizeHandles,
   fixedCornerOf,
+  handlePoint,
+  isCornerHandle,
+  RESIZE_HANDLE_ANCHORS,
   hitCornerHandle,
 } from './cornerHandles';
 
@@ -52,8 +55,10 @@ describe('fixedCornerOf', () => {
     expect(fixedCornerOf(b, { x: 'max', y: 'max' })).toEqual({ x: 40, y: 60 });
   });
 
-  it('anchor free axis: fixed coord is the bounds origin on that axis', () => {
-    expect(fixedCornerOf(b, { x: 'free', y: 'min' })).toEqual({ x: 10, y: 20 });
+  it('anchor free axis: fixed coord is the bounds center on that axis', () => {
+    // An edge handle's pin: the opposite edge's midpoint, which an aspect lock
+    // grows the free axis about.
+    expect(fixedCornerOf(b, { x: 'free', y: 'min' })).toEqual({ x: 25, y: 20 });
   });
 });
 
@@ -102,5 +107,23 @@ describe('CORNER_ANCHORS round-trip', () => {
       expect(fixedW.x).toBeCloseTo(expFixed.x);
       expect(fixedW.y).toBeCloseTo(expFixed.y);
     }
+  });
+});
+
+describe('RESIZE_HANDLE_ANCHORS', () => {
+  const b = { x: 10, y: 20, width: 30, height: 40 };
+
+  it('lists the corners first, as CORNER_ANCHORS', () => {
+    expect(RESIZE_HANDLE_ANCHORS.slice(0, 4)).toEqual(CORNER_ANCHORS);
+  });
+
+  it('puts each edge handle at its midpoint, pinning the opposite edge there', () => {
+    const edges = RESIZE_HANDLE_ANCHORS.filter((c) => !isCornerHandle(c));
+    expect(edges.map((c) => [c.kind, handlePoint(b, c), fixedCornerOf(b, c.anchor)])).toEqual([
+      ['handle:top', { x: 25, y: 20 }, { x: 25, y: 60 }],
+      ['handle:right', { x: 40, y: 40 }, { x: 10, y: 40 }],
+      ['handle:bottom', { x: 25, y: 60 }, { x: 25, y: 20 }],
+      ['handle:left', { x: 10, y: 40 }, { x: 40, y: 40 }],
+    ]);
   });
 });

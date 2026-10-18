@@ -4,7 +4,7 @@ import type { ChromeCaps } from 'features/chrome-caps/useChromeCaps';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SurfaceViewInputs } from '../viewInputs';
 
-type Picking = Pick<SurfaceViewInputs, 'boundsOf' | 'planeOfNode' | 'pickEvery' | 'pickBest' | 'kindOfNode'>
+type Picking = Pick<SurfaceViewInputs, 'boundsOf' | 'planeOfNode' | 'pickEvery' | 'pickBest' | 'kindOfNode' | 'doubleClickNames'>
   & { adapter: unknown; boundsOfPose: unknown };
 
 /**
@@ -17,9 +17,10 @@ export function useSurfaceViewInputs(args: {
   chromeCaps: ChromeCaps;
   selection: SelectionApi;
   rotationBadge: SurfaceViewInputs['rotationBadge'];
+  resizeHandles: SurfaceViewInputs['resizeHandles'];
 }): SurfaceViewInputs {
-  const { picking, descriptor, chromeCaps, selection, rotationBadge } = args;
-  const { adapter, boundsOf, boundsOfPose, planeOfNode, pickEvery, pickBest, kindOfNode } = picking;
+  const { picking, descriptor, chromeCaps, selection, rotationBadge, resizeHandles } = args;
+  const { adapter, boundsOf, boundsOfPose, planeOfNode, pickEvery, pickBest, kindOfNode, doubleClickNames } = picking;
   return useMemo<SurfaceViewInputs>(() => ({
     adapter: adapter as { getPose(id: string): unknown },
     geometry: descriptor,
@@ -29,9 +30,11 @@ export function useSurfaceViewInputs(args: {
     pickEvery,
     pickBest,
     kindOfNode,
+    doubleClickNames,
     chromeCaps,
     selectionApi: selection,
     rotationBadge,
+    resizeHandles,
   }), [adapter, descriptor, boundsOf, boundsOfPose, planeOfNode,
-       pickEvery, pickBest, kindOfNode, chromeCaps, selection, rotationBadge]);
+       pickEvery, pickBest, kindOfNode, doubleClickNames, chromeCaps, selection, rotationBadge, resizeHandles]);
 }

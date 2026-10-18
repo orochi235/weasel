@@ -203,6 +203,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           alphaFor={alphaFor}
           redrawOn={redrawOnScoping}
           isPointerInteractive={modality.scopingDim.isPointerInteractive}
+          isolatedGroup={modes.isolatedGroup}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
           chromeVisibility={pathDirection.chromeVisibility}

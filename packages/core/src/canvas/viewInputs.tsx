@@ -5,6 +5,7 @@
  * These are read during a view's render, so they travel as context rather than
  * on the `SurfaceHandle`, which is not attached until an effect runs.
  */
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -42,6 +43,8 @@ export interface SurfaceViewInputs
   pickBest?: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
   kindOfNode?: (id: string) => string | undefined;
+  /** The node a double-click on a hit names (`doubleClickTarget`). */
+  doubleClickNames?: ((hitId: string) => string) | undefined;
   /** The surface's chrome-caps rule table, evaluated against a view's own
    *  context. */
   chromeCaps?: ChromeCaps;
@@ -51,6 +54,9 @@ export interface SurfaceViewInputs
   /** The rotate badge the surface's selection overlay paints, which every
    *  view drawing that overlay has to make grabbable where it is drawn. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** The surface's resize-handle layout — which handles exist and their hit
+   *  radius — so every view grabs exactly the handles the overlay paints. */
+  resizeHandles?: ResizeHandleLayout;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

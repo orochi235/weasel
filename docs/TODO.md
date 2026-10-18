@@ -63,14 +63,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) A double-click never isolates a group in draw.** A container routes as `'group'` now, and
-  `ISOLATION`'s trigger binds `kind:group`, but the hit under a double-click on a group is never
-  the group: `pickTopMostHit` drops an ancestor whenever one of its children is also hit, and draw
-  selects members directly, so the double-click lands on the member and opens it in path-edit
-  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). Needs a decision on what a
-  double-click on a grouped member names — the member, as now, or its group, Illustrator-style,
-  which would also mean asking whether a single click selects the group.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
@@ -295,8 +287,9 @@ Priority tags:
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
   through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
-  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
+  400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
+  (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
@@ -355,7 +348,15 @@ Priority tags:
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
+  that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
+  by three pins went from 12 anchors to 5, but a 4-anchor bar pushed into an S still refits with 18
+  (19 before). A smooth interpolation of the solved vertices would refit with fewer.
+- **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` takes 30 to
+  60 rounds on a ~500-vertex mesh, about 4 to 5 ms a solve on the fleet, where an unfolded solve
+  takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
+  (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
+  cut it.
 - **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
   node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
   solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
@@ -907,6 +908,13 @@ only story runner in the repo.
   `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
+
+- **(P3) Loading a story raises an unhandled "ResizeObserver loop" error.** With forge's dev
+  server running, opening `#/ui-foundations-slider--single` makes vite's terminal print
+  `[Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.`,
+  once on load and again on reload (seen 2026-10-18, headless Chromium). Some ResizeObserver
+  callback changes a size it observes in the same frame. It isn't known yet which one, or
+  whether it's the Slider's or the workshop's.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
