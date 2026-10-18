@@ -16,6 +16,9 @@ export interface ShapeKindDescriptor {
    *  dispatcher overlay layer knows how to draw it. Kinds without one still
    *  commit; they just have no live drag preview. */
   readonly insertPreview: boolean;
+  /** A node of this kind is a text node: an insert drops into its caret, and
+   *  its properties carry the text groups. Absent, it is not. */
+  readonly text?: boolean;
 }
 
 /**
@@ -32,7 +35,8 @@ export const SHAPE_KINDS = {
   pen: { tool: true, insertPreview: false },
   pencil: { tool: true, insertPreview: true },
   lasso: { tool: true, insertPreview: false },
-  text: { tool: true, insertPreview: true },
+  text: { tool: true, insertPreview: true, text: true },
+  sticky: { tool: true, insertPreview: true, text: true },
   image: { tool: false, insertPreview: true },
 } as const satisfies Record<string, ShapeKindDescriptor>;
 

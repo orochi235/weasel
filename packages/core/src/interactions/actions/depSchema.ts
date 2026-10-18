@@ -146,6 +146,8 @@ export type InsertExtras =
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
+  /** A sticky note: a text node with a background, in the look its tool names. */
+  | ({ kind: 'sticky'; text?: string } & import('../../tools/builtin/sticky/stickyNode').StickyStyle)
   /** A finished path in world coords, as the pen tool commits one. `bounds`
    *  is its AABB. An open path takes no fill. `data` is laid under the path
    *  and paint on the node's data: the form the path was drawn from

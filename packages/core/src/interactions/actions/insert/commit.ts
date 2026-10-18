@@ -4,6 +4,19 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
 import type { InsertFrame, InsertSession } from './session';
 import { insertShape, isCommittableExtent } from './shape';
+import { shapeKindInfo } from 'core/shapeKinds';
+import type { TextEditDep } from '../depSchema';
+
+/**
+ * A freshly inserted text box is empty, so it draws nothing and the tool's own
+ * `click on selected body → enterTextEdit` binding has nothing visible to
+ * click. Drop straight into the caret instead, for every kind that is text —
+ * which is also what every other editor does. `textEdit` is optional: without
+ * it the node is still committed.
+ */
+export function enterInsertedText(textEdit: TextEditDep | undefined, id: string | null, kind: string): void {
+  if (id !== null && shapeKindInfo(kind)?.text) textEdit?.startEdit(id, { caret: 0 });
+}
 
 /** Cancel the insert: tell the behaviors, and put the selection the draw
  *  cleared back. */
@@ -49,15 +62,6 @@ export function commitInsert(
   if (!isCommittableExtent(bounds, extras.kind)) return false;
 
   const id = session.dep.commit(bounds, extras);
-
-  // A freshly dragged text box is empty, so it draws nothing and the
-  // tool's own `click on selected body → enterTextEdit` binding has
-  // nothing visible to click. Drop straight into the caret instead —
-  // which is also what every other editor does with a text tool.
-  // `textEdit` is optional: without it the box is still committed,
-  // exactly as before.
-  if (id !== null && extras.kind === 'text') {
-    session.textEdit?.startEdit(String(id), { caret: 0 });
-  }
+  enterInsertedText(session.textEdit, id === null ? null : String(id), extras.kind);
   return id !== null;
 }

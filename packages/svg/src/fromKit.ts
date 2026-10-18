@@ -51,6 +51,10 @@ export interface SvgKitLeafData {
   style?: TextStyle;
   runs?: readonly StyledRun[];
   verticalAlign?: TextVerticalAlign;
+  /** A text node's paint over its whole box, under the glyphs. */
+  background?: Fill | null;
+  /** A text node's inset from its box to its text, on every side. */
+  padding?: number;
   image?: ImageNodeData['image'];
 }
 
@@ -123,7 +127,7 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
 /**
  * Write one leaf as the `SvgNode` its built-in painter draws — image, text or
  * path, in the order the painters claim a node. `null` for data none of them
- * draws.
+ * draws. A text node with a `background` is a group: the box, then the text.
  *
  * A path with no `fill` takes `kit:path`'s fallback: the default shape fill
  * when it has no stroke, and no fill when it has one. Under a pose `transform`
@@ -133,20 +137,16 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
 export function svgLeafFromKit(
   data: SvgKitLeafData,
   pose: SvgKitPose,
-): SvgPathNode | SvgTextNode | SvgImageNode | null {
+): SvgPathNode | SvgTextNode | SvgImageNode | SvgGroupNode | null {
   if (data.image) return svgImageFromKit(data.image, pose);
   if (data.text != null) {
-    const node: SvgTextNode = {
-      kind: 'text', x: pose.x, y: pose.y, width: pose.width, height: pose.height, text: data.text,
-    };
-    if (data.style) node.style = data.style;
-    if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
-    if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
-    if (data.fill !== undefined) node.fill = data.fill && mapFillPaint(data.fill, (p) => fillInPoseFrame(p, pose));
-    if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
-    if (pose.rotation) node.rotation = pose.rotation;
-    if (pose.transform) node.transform = pose.transform;
-    return node;
+    const text = svgTextFromKit({ ...data, text: data.text }, pose);
+    if (!data.background?.paint) return text;
+    const box = svgLeafFromKit({
+      path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+      fill: data.background,
+    }, pose) as SvgPathNode;
+    return { kind: 'group', children: [box, text] };
   }
   if (!data.path) return null;
   const stroke = svgStrokeFromKit(data.stroke, pose);
@@ -163,6 +163,24 @@ export function svgLeafFromKit(
     node.fill = paintThroughMatrix(node.fill, frame);
     if (stroke) node.stroke = strokeThroughMatrix(stroke, frame);
   } else if (pose.rotation) node.rotation = pose.rotation;
+  return node;
+}
+
+/** A text leaf's text, in its box inset by `padding` about the same center,
+ *  which a rotation turns about. */
+function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPose): SvgTextNode {
+  const pad = Math.max(0, Math.min(data.padding ?? 0, pose.width / 2, pose.height / 2));
+  const node: SvgTextNode = {
+    kind: 'text', x: pose.x + pad, y: pose.y + pad, width: pose.width - 2 * pad, height: pose.height - 2 * pad,
+    text: data.text,
+  };
+  if (data.style) node.style = data.style;
+  if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
+  if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
+  if (data.fill !== undefined) node.fill = data.fill && mapFillPaint(data.fill, (p) => fillInPoseFrame(p, pose));
+  if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
+  if (pose.rotation) node.rotation = pose.rotation;
+  if (pose.transform) node.transform = pose.transform;
   return node;
 }
 

@@ -68,7 +68,7 @@
     "lines": 749
   },
   "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 148
+    "longestFunction": 130
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 679,

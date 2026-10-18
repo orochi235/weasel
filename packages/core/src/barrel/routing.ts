@@ -44,6 +44,7 @@ export { resizeAction } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
+export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';
 export { clearSelectionAction } from '../interactions/actions/defaults/clearSelection';
 export {

@@ -1026,10 +1026,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
     have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
     `adjacentPage`).
-  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
-    note, as an `insert` node factory minting a filled rect that carries text, bound by a
-    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
-    their whiteboard defaults.
+  - Whiteboard. The tools are all in core: `usePencilTool`, `useTextTool`, and `useStickyTool`
+    (built-in id `sticky`, a text node with a `background`; its look is `toolOptions.sticky`).
+    The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
+    of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
+    SVG import reads a written note back as a rect and a text node.
 ### d3 integration plugin
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems

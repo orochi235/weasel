@@ -19,6 +19,7 @@ export type CoreIconName =
   | 'select'
   | 'slice'
   | 'star'
+  | 'sticky'
   | 'text'
   | 'unknown'
   | 'weight'
@@ -137,6 +138,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "select",
       "slice",
       "star",
+      "sticky",
       "text",
       "unknown",
       "weight"
@@ -307,6 +309,7 @@ declare module '@weasel-js/icons' {
     'core:select': true;
     'core:slice': true;
     'core:star': true;
+    'core:sticky': true;
     'core:text': true;
     'core:unknown': true;
     'core:weight': true;
