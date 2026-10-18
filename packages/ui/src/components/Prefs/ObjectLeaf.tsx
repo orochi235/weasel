@@ -49,6 +49,7 @@ export function ObjectLeaf({
       // the object leaf it hangs off.
       auto: ctx.auto,
       setAuto: ctx.setAuto,
+      values: ctx.values,
       ...(ctx.fields ? { fields: ctx.fields } : {}),
       disabled: ctx.disabled === true || ctx.disabledAt?.(path) === true,
       disabledAt: ctx.disabledAt,

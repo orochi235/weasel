@@ -44,6 +44,9 @@ export interface PrefRenderContext {
   pref: PrefLeaf;
   /** Current value — `values` at `path`, falling back to `pref.default`. */
   value: unknown;
+  /** Everything the surface edits, from its root: a form's `values`, a control panel's `config`. What a row
+   *  reads of another setting. */
+  values?: unknown;
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
@@ -173,6 +176,7 @@ export function prefRenderContext(
     path,
     pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
+    values: ctx.values,
     mixed,
     setValue: (v) => ctx.onChange(path, v),
     mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),

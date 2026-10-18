@@ -162,6 +162,7 @@ function CompoundControl({
       pref={inside.leaf}
       path={path}
       value={value}
+      values={config}
       onChange={onChange}
       renderers={renderers}
       fields={choices}
@@ -267,8 +268,9 @@ function LeafRow<TC extends Record<string, unknown>>({
   if (custom)
     return custom({
       path,
-      pref: leaf,
+      pref: boundAction(leaf, config, setConfig),
       value,
+      values: config,
       setValue: write,
       auto: isAutoRow,
       setAuto,
