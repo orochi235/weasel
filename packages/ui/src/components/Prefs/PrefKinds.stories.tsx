@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, userEvent, within } from '@weasel-js/forge/play';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefControl } from './PrefControl';
-import { PrefsForm } from './PrefsForm';
+import { PrefsForm, type PrefsFormProps } from './PrefsForm';
 
 const meta: Meta<typeof PrefsForm> = {
   title: 'Primitives/Prefs/Compound kinds',
@@ -15,7 +15,7 @@ type Story = StoryObj<typeof PrefsForm>;
 
 const DEFAULT_PHASES = [0.5, 2, 0.25];
 
-function CompoundKindsStory() {
+function CompoundKindsStory(args: Partial<PrefsFormProps>) {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const schema: PrefGroup = {
     name: 'Timing',
@@ -96,6 +96,7 @@ function CompoundKindsStory() {
   };
   return (
     <PrefsForm
+      {...args}
       schema={schema}
       values={values}
       onChange={(path, value) => setValues((prev) => ({ ...prev, [path]: value }))}
@@ -104,7 +105,7 @@ function CompoundKindsStory() {
 }
 
 export const CompoundKinds: Story = {
-  render: () => <CompoundKindsStory />,
+  render: (args) => <CompoundKindsStory {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Remove Phase 3' }));
@@ -166,11 +167,11 @@ const SEVERAL: PrefGroup = {
 
 const DIFFER: ReadonlySet<string> = new Set(['stroke.width', 'dash', 'tags', 'end']);
 
-function MixedStory() {
+function MixedStory(args: Partial<PrefsFormProps>) {
   const [last, setLast] = useState('');
   return (
     <>
-      <PrefsForm schema={SEVERAL} layout="list" mixed={DIFFER} values={{ stroke: { width: 1, color: '#1d4ed8' } }}
+      <PrefsForm layout="list" {...args} schema={SEVERAL} mixed={DIFFER} values={{ stroke: { width: 1, color: '#1d4ed8' } }}
         onChange={(path, value) => setLast(`${path} = ${JSON.stringify(value)}`)} />
       <output>{last}</output>
     </>
@@ -183,7 +184,7 @@ function MixedStory() {
  * draws its choice as mixed with no variant's fields.
  */
 export const Mixed: Story = {
-  render: () => <MixedStory />,
+  render: (args) => <MixedStory {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getAllByText('Mixed').length).toBeGreaterThanOrEqual(2);

@@ -179,10 +179,10 @@ export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {
   anchorsBefore, conflictingConstraints, constrainPathEdit, constraintAnchors, constraintApplies, constraintFits,
   mapConstraintAnchors,
-  pathAnchorPoints, remapConstraints, segmentBetween, solveConstraints, solvePathConstraints,
-  unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
+  constrainPathsEdit, pathAnchorPoints, remapConstraints, segmentBetween, solveConstraints, solvePathConstraints,
+  unsatisfiedConstraints, withAnchorPoints, CONSTRAINT_TOLERANCE,
   type AnchorPair, type ConflictingConstraintsOptions, type ConstrainPathEditOptions, type ConstrainedPathEdit,
-  type ConstraintPoint, type HandleRef,
+  type ConstrainedPathsEdit, type ConstraintPoint, type HandleRef, type PathLink, type PathsEditItem,
   type PathConstraint, type PathConstraintKind, type SolveConstraintsOptions, type SolveConstraintsResult,
   type SolvePathConstraintsResult, type UnsatisfiedConstraintsOptions,
 } from './constraints';

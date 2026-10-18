@@ -1,9 +1,10 @@
 import type { IconRef } from '@weasel-js/icons';
-import { applyBooleanOp, type BooleanOp } from './booleans';
+import { applyBooleanOp, previewBooleanOp, type BooleanOp } from './booleans';
+import type { BooleanOpOptions } from './operands';
 import type { BooleanStrokes } from './operands';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { ImmediateInvoker } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
 
 const ID_FOR: Record<BooleanOp, string> = {
@@ -47,6 +48,11 @@ export const PATHFINDER_STROKES: BooleanStrokes = 'unfilled';
 // Static descriptors
 // ---------------------------------------------------------------------------
 
+function opOptions(deps: ActionDeps): BooleanOpOptions {
+  const scale = deps.view?.get().scale;
+  return { strokes: PATHFINDER_STROKES, ...(scale ? { scale } : {}) };
+}
+
 function makePathfinderAction(op: BooleanOp): Action {
   return {
     id: ID_FOR[op],
@@ -54,7 +60,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     icon: ICON_FOR[op],
     group: 'pathfinder',
     eligible: { capability: 'creates-shapes' },
-    requires: ['selection', 'booleansAdapter', 'view'],
+    requires: ['selection', 'booleansAdapter', 'view', 'previewPaths'],
     // No default keybindings — there's no industry-standard chord set for
     // boolean ops. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -62,11 +68,18 @@ function makePathfinderAction(op: BooleanOp): Action {
       run: (deps) => {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
-        const scale = deps.view?.get().scale;
-        const result = applyBooleanOp(adapter, op, { strokes: PATHFINDER_STROKES, ...(scale ? { scale } : {}) });
+        const result = applyBooleanOp(adapter, op, opOptions(deps));
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,
+    preview: (deps) => {
+      const adapter = deps.booleansAdapter;
+      const paths = deps.previewPaths;
+      if (!adapter || !paths) return;
+      const result = previewBooleanOp(adapter, op, opOptions(deps));
+      if (result.kind !== 'pieces') return;
+      return paths.show(result.pieces.map((piece) => ({ path: piece.path })));
+    },
     enabled: (deps) => {
       const selection = deps?.selection;
       const count = selection?.get().length ?? 0;

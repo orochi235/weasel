@@ -112,9 +112,9 @@ describe('leaves that read an absent value as their default', () => {
     }
   });
 
-  it('flags a text node\'s text, style, and vertical alignment, which draw without being held', () => {
+  it('flags a text node\'s text, style, padding, and vertical alignment, which draw without being held', () => {
     expect(flagged(members('text', 'content'))).toEqual(['data.text']);
-    expect(flagged(members('text', 'text'))).toEqual(['data.style', 'data.verticalAlign']);
+    expect(flagged(members('text', 'text'))).toEqual(['data.padding', 'data.style', 'data.verticalAlign']);
     expect(flagged(members('text', 'layout'))).toEqual(['pose.rotation']);
   });
 });
@@ -311,10 +311,10 @@ describe('inferredNodeProperties', () => {
     expect(read('end', { direction: 'rtl' })).toBe('left');
   });
 
-  it('offers the box alignment beside the style, as a field of the node', () => {
+  it('offers the padding and the box alignment beside the style, as fields of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.members.text as PrefSection;
-    expect(Object.keys(text.members)).toEqual(['data.style', 'data.verticalAlign']);
+    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign']);
     const vertical = text.members['data.verticalAlign'] as PrefEnum;
     expect(vertical.options.map((o) => o.value)).toEqual(['top', 'center', 'bottom']);
   });

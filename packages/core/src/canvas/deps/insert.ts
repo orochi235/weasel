@@ -30,6 +30,7 @@ import type { Stroke, Fill } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { composesFrames, composeWorldPose } from 'core/scene/composeFrame';
 import { definesFrame } from 'core/scene/effectivePose';
+import { stickyData, type StickyStyle } from '../../tools/builtin/sticky/stickyNode';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -117,6 +118,8 @@ function boxKindData(
       const e = extras as Partial<{ text: string }>;
       return { text: e.text ?? '' };
     }
+    case 'sticky':
+      return stickyData(extras as StickyStyle & { text?: string });
     case 'image': {
       // The bitmap is loaded + cached by `imageCache` keyed on `src`;
       // only the (serializable) `src` lives on the node.

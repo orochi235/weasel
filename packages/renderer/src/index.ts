@@ -14,6 +14,7 @@ export {
   DEFAULT_RETAIN_BUDGET,
 } from './WeaselRenderer';
 export { releaseImageSource, type ImageMinification } from './cache/GLImageCache';
+export { DEFAULT_FLATTEN_TOLERANCE_PX, type FlattenTolerance } from './draw/flattenTolerance';
 export type {
   DrawCommand,
   GroupDrawCommand,

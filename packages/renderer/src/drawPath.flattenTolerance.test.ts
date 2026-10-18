@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_M as M, PATH_Z as Z, PATH_C as C } from '@weasel-js/geom';
-import type { PolygonPath } from '@weasel-js/geom';
+import type { GlMat3, PolygonPath } from '@weasel-js/geom';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import type { FlattenTolerance } from './draw/flattenTolerance';
 import { meshBatching } from './draw';
 
 // Curved polygon (bezier segments) so the solid-rect fast path can't
-// intercept — needed to prove getMesh vs. fresh tessellate() is actually
-// exercised by flattenTolerance.
+// intercept and the tolerance reaches the tessellator.
 const POLYGON_CURVED: PolygonPath = {
   kind: 'polygon',
   commands: new Uint8Array([M, C, C, Z]),
@@ -20,6 +20,9 @@ const POLYGON_CURVED: PolygonPath = {
   fillRule: 'nonzero',
 };
 
+const FILL: DrawCommand = { kind: 'path', path: POLYGON_CURVED, fill: { paint: { kind: 'solid', color: '#000' } } };
+const zoom = (s: number): GlMat3 => new Float64Array([s, 0, 0, 0, s, 0, 0, 0, 1]);
+
 describe('flattenTolerance option', () => {
   /** Per-vertex colors take their own draw, so the mesh reaches GL as a buffer
    *  rather than as staged vertices — which is where the pool choice is
@@ -29,50 +32,68 @@ describe('flattenTolerance option', () => {
     vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
   };
 
-  const stagedVertexFloats = (rec: ReturnType<typeof makeGLRecorder>): number =>
-    rec.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === rec.gl.ARRAY_BUFFER)!
+  /** Vertex floats in the staged run: more segments, longer run. */
+  const stagedVertexFloats = (
+    command: DrawCommand,
+    flattenTolerance?: FlattenTolerance,
+    dpr = 1,
+  ): number => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr, flattenTolerance });
+    const caps = { ...meshBatching };
+    meshBatching.maxVertices = Infinity;
+    try {
+      r.render([command]);
+    } finally {
+      Object.assign(meshBatching, caps);
+    }
+    return rec.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === rec.gl.ARRAY_BUFFER)!
       .args[4] as number;
+  };
+  const zoomed = (s: number): DrawCommand => ({ kind: 'group', transform: zoom(s), children: [FILL] });
 
-  it('tessellates fresh when flattenTolerance is set', () => {
-    const render = (flattenTolerance?: number): ReturnType<typeof makeGLRecorder> => {
-      const rec = makeGLRecorder();
-      const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance });
-      // Counted off the staged run, so the finer mesh has to join one.
-      const caps = { ...meshBatching };
-      meshBatching.maxVertices = Infinity;
-      try {
-        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { paint: { kind: 'solid', color: '#000' } } }]);
-      } finally {
-        Object.assign(meshBatching, caps);
-      }
-      return rec;
-    };
-    // A finer tolerance means more segments, so the staged run is longer. The
-    // persistent cache's key excludes tolerance, so serving from it would give
-    // both renders the same count.
-    expect(stagedVertexFloats(render(0.01)))
-      .toBeGreaterThan(stagedVertexFloats(render()));
+  it('tessellates finer at a finer world tolerance', () => {
+    expect(stagedVertexFloats(FILL, 0.01)).toBeGreaterThan(stagedVertexFloats(FILL));
   });
 
-  it('routes a mesh that takes its own draw through the transient pool', () => {
+  it('follows the zoom by default, keeping the chord error on screen', () => {
+    expect(stagedVertexFloats(zoomed(8))).toBeGreaterThan(stagedVertexFloats(zoomed(1)));
+    expect(stagedVertexFloats(zoomed(1))).toBe(stagedVertexFloats(FILL));
+  });
+
+  it('measures a pixel tolerance in device pixels', () => {
+    expect(stagedVertexFloats(FILL, undefined, 4)).toBeGreaterThan(stagedVertexFloats(FILL));
+    expect(stagedVertexFloats(FILL, undefined, 4)).toBe(stagedVertexFloats(zoomed(4)));
+  });
+
+  it('holds a world tolerance against the zoom', () => {
+    expect(stagedVertexFloats(zoomed(8), 0.5)).toBe(stagedVertexFloats(FILL, 0.5));
+  });
+
+  it('keeps a mesh built at a set tolerance for the next frame', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance: 0.01 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
-    // Transient meshes are freed at end of render(): deleteVertexArray proves
-    // the fill did NOT come from the persistent cache.
-    expect(rec.calls.map((c) => c.name)).toContain('deleteVertexArray');
+    const cmd = { kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand;
+    r.render([cmd]);
+    r.render([cmd]);
+    // A transient upload is freed at the end of render(); a cached one is not.
+    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
+    expect(rec.calls.filter((c) => c.name === 'createVertexArray')).toHaveLength(1);
   });
 
-  it('setFlattenTolerance changes the route after construction', () => {
+  it('setFlattenTolerance changes the tolerance after construction', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
-    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
-
-    const after = makeGLRecorder();
-    const r2 = new WeaselRenderer({ gl: after.gl, width: 100, height: 100, dpr: 1 });
-    r2.setFlattenTolerance(0.01);
-    r2.render([{ kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand]);
-    expect(after.calls.map((c) => c.name)).toContain('deleteVertexArray');
+    r.setFlattenTolerance(0.01);
+    const caps = { ...meshBatching };
+    meshBatching.maxVertices = Infinity;
+    try {
+      r.render([FILL]);
+    } finally {
+      Object.assign(meshBatching, caps);
+    }
+    const floats = rec.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === rec.gl.ARRAY_BUFFER)!
+      .args[4] as number;
+    expect(floats).toBe(stagedVertexFloats(FILL, 0.01));
   });
 });

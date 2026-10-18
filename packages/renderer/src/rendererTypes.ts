@@ -1,4 +1,5 @@
 import type { ImageMinification } from './cache/GLImageCache';
+import type { FlattenTolerance } from './draw/flattenTolerance';
 
 /** A run of top-level commands, `[start, end)` by index, that
  *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
@@ -64,14 +65,10 @@ export interface WeaselRendererOptions {
    *  the headless `renderSceneToPixels` path does; `'auto'` builds them
    *  for an image the first time a frame draws it at half size or smaller. */
   imageMinification?: ImageMinification;
-  /** Flatness tolerance for curve tessellation, in WORLD units (see
-   *  `TessellateOptions.flattenTolerance`). When set, path fills are
-   *  tessellated fresh at this tolerance per frame (transient pool) instead
-   *  of served from the Path-identity mesh cache — the cache key does not
-   *  include tolerance. Default: unset — the existing cached behavior at
-   *  `DEFAULT_FLATTEN_TOLERANCE`. The headless path derives this from the
-   *  requested output scale; screen callers normally leave it unset. */
-  flattenTolerance?: number;
+  /** How far a flattened curve may stray: in world units, or `{ px }` in
+   *  device pixels, which follows each path's transform so a zoom keeps
+   *  curves smooth. Default `{ px: DEFAULT_FLATTEN_TOLERANCE_PX }`. */
+  flattenTolerance?: FlattenTolerance;
   /** GPU memory, in bytes, that retained groups may hold between frames — see
    *  `GroupDrawCommand.retain`. A group that would take the total past it is
    *  drawn straight through instead. Counts each surface (4 bytes a device

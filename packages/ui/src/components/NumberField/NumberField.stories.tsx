@@ -53,11 +53,8 @@ export const LabelBeside: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState(10);
-      return <NumberField label={`Q (= ${v})`} value={v} onChange={setV} />;
-    }
-    return <Wrap />;
+  render: (args) => {
+    const [v, setV] = useState(10);
+    return <NumberField {...args} label={`Q (= ${v})`} value={v} onChange={setV} />;
   },
 };

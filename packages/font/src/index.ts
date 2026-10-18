@@ -51,11 +51,16 @@ export {
   dynamicPageTextureId,
   syncColorPageTexture,
   colorPageTextureId,
+  syncSharpColorPageTexture,
+  sharpColorPageTextureId,
+  sharperColorGlyph,
+  MAX_SHARP_LEVEL,
+  PAGE_SIZE as DYNAMIC_PAGE_SIZE,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
 } from './dynamic/dynamicAtlas';
 
-export type { CanvasFontEntry, DynamicFace } from './dynamic/dynamicAtlas';
+export type { CanvasFontEntry, DynamicFace, SharperColorGlyph } from './dynamic/dynamicAtlas';
 
 export {
   registerFontOutlines,

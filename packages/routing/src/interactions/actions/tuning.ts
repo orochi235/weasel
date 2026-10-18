@@ -77,15 +77,32 @@ function wrapCursor(cursor: Action['cursor'], params: ActionParams): Action['cur
   return wrapped;
 }
 
+const PREVIEW_WRAPS = new WeakMap<object, { inner: Action['preview']; params: ActionParams }>();
+
+/** A preview handed the tuning's params under the call's, as `run` is. */
+function wrapPreview(preview: Action['preview'], params: ActionParams): Action['preview'] {
+  if (!preview) return preview;
+  for (let w: Action['preview'] = preview; w; w = PREVIEW_WRAPS.get(w)?.inner) {
+    if (PREVIEW_WRAPS.get(w)?.params === params) return preview;
+  }
+  const wrapped: NonNullable<Action['preview']> = (deps, given) => preview(deps, tunedParams([{ params }], given));
+  PREVIEW_WRAPS.set(wrapped, { inner: preview, params });
+  return wrapped;
+}
+
 function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const invoker = tuning.params && action.invoker ? wrapInvoker(action.invoker, tuning.params) : action.invoker;
   const cursor = tuning.params ? wrapCursor(action.cursor, tuning.params) : action.cursor;
+  const preview = tuning.params ? wrapPreview(action.preview, tuning.params) : action.preview;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
-  if (invoker === action.invoker && cursor === action.cursor && bindings === null) return action;
+  if (invoker === action.invoker && cursor === action.cursor && preview === action.preview && bindings === null) {
+    return action;
+  }
   return {
     ...action,
     ...(invoker ? { invoker } : {}),
     ...(cursor ? { cursor } : {}),
+    ...(preview ? { preview } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
   };
 }

@@ -31,6 +31,10 @@ export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
 export { useTextTool } from './text';
 export {
+  useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS,
+  type UseStickyToolOptions, type StickyStyle,
+} from './sticky';
+export {
   useBoneTool, createRigEditState, createBoneOverlay, placedRig,
   type UseBoneToolOptions, type RigEditState, type PlacedRig,
 } from './bone';

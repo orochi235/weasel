@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { SidebarPanel } from './SidebarPanel';
+import { SidebarPanel, type SidebarPanelProps } from './SidebarPanel';
 import { Sidebar } from '../Sidebar';
 import { MenuButton } from '../MenuButton';
 
@@ -37,7 +37,7 @@ export const WithActions: Story = {
 
 // Drive collapse + hide state locally so a reader can click both
 // affordances and see them in action.
-function InteractiveSidebarPanel() {
+function InteractiveSidebarPanel(args: SidebarPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [hidden, setHidden] = useState(false);
   if (hidden) {
@@ -51,19 +51,23 @@ function InteractiveSidebarPanel() {
   return (
     <Sidebar side="right" ariaLabel="Demo sidebar">
       <SidebarPanel
-        title="Selection"
+        {...args}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((v) => !v)}
         onHide={() => setHidden(true)}
-      >
-        <div style={{ padding: '4px 6px', fontSize: 12 }}>
-          Click the title to collapse. Click ×  to hide entirely.
-        </div>
-      </SidebarPanel>
+      />
     </Sidebar>
   );
 }
 
 export const Interactive: Story = {
-  render: () => <InteractiveSidebarPanel />,
+  args: {
+    title: 'Selection',
+    children: (
+      <div style={{ padding: '4px 6px', fontSize: 12 }}>
+        Click the title to collapse. Click ×  to hide entirely.
+      </div>
+    ),
+  },
+  render: (args) => <InteractiveSidebarPanel {...args} />,
 };

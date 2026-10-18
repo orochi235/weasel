@@ -8,7 +8,11 @@ export { solveConstraints, type SolveConstraintsOptions, type SolveConstraintsRe
 export { CONSTRAINT_TOLERANCE, unsatisfiedConstraints, type UnsatisfiedConstraintsOptions } from './check';
 export { constraintApplies, type ConstraintPoint, type HandleRef } from './points';
 export {
-  anchorsBefore, constrainPathEdit, pathAnchorPoints, remapConstraints, segmentBetween, solvePathConstraints,
-  type ConstrainPathEditOptions, type ConstrainedPathEdit, type SolvePathConstraintsResult,
+  anchorsBefore, pathAnchorPoints, remapConstraints, segmentBetween, solvePathConstraints, withAnchorPoints,
+  type SolvePathConstraintsResult,
 } from './pathConstraints';
+export {
+  constrainPathEdit, constrainPathsEdit,
+  type ConstrainPathEditOptions, type ConstrainedPathEdit, type ConstrainedPathsEdit, type PathLink, type PathsEditItem,
+} from './pathsEdit';
 export { conflictingConstraints, type ConflictingConstraintsOptions } from './conflicts';

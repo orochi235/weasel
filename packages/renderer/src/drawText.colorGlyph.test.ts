@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { registerFont, FIXTURE_FONT, GLYPH_MODE_MSDF, colorPageTextureId, resetBakeBudget } from '@weasel-js/font';
+import {
+  registerFont, FIXTURE_FONT, GLYPH_MODE_MSDF, colorPageTextureId, sharpColorPageTextureId, resetBakeBudget,
+} from '@weasel-js/font';
 import {
   _resetFontRegistryForTests, _resetDynamicFontsForTests, _resetFallbackForTests, __setGlyphRasterizerForTests,
 } from '@weasel-js/font/test-seams';
@@ -102,5 +104,67 @@ describe('drawText — an emoji', () => {
     expect(verticesOf(verts, GLYPH_MODE_MSDF)).toHaveLength(8);
     expect(verticesOf(verts, PAINT_MODE_IMAGE)).toHaveLength(4);
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+  });
+
+  describe('drawn larger than its bake', () => {
+    /** A color glyph whose box scales with the size it is drawn at, `SIDE` at 48px. */
+    function scalingRasterizer(): void {
+      __setGlyphRasterizerForTests({
+        faceMetrics: () => ({ ascent: 40, descent: 8 }),
+        rasterize: () => ({ width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: -8, top: 26, advance: 22 }),
+        rasterizeColor: (_f, _w, _s, _t, size = 48) => {
+          const side = (SIDE * size) / 48;
+          return {
+            width: side, height: side, rgba: new Uint8ClampedArray(side * side * 4).fill(255),
+            left: -size / 8, top: (size * 50) / 48, advance: size,
+          };
+        },
+      });
+    }
+
+    function scaled(k: number) {
+      return { kind: 'group' as const, transform: Float64Array.of(k, 0, 0, 0, k, 0, 0, 0, 1), children: [textCommand('👍', '#000')] };
+    }
+
+    function spans(quad: { uv: number[] }[], positions: number[][]) {
+      return {
+        uv: quad[2].uv[0] - quad[0].uv[0],
+        x: positions[2][0] - positions[0][0],
+        x0: positions[0][0],
+      };
+    }
+
+    function imageQuad(ctx: Parameters<typeof dispatch>[0], calls: Parameters<typeof stagedVertices>[1]) {
+      const verts = stagedVertices(ctx, calls);
+      const out: { uv: number[] }[] = [];
+      const pos: number[][] = [];
+      for (let i = 0; i < verts.length; i += FLOATS_PER_VERTEX) {
+        if (paintModeOf(verts[i + TEX_SLOT_OFFSET]) !== PAINT_MODE_IMAGE) continue;
+        out.push({ uv: [...verts.subarray(i + 6, i + 8)] });
+        pos.push([verts[i], verts[i + 1]]);
+      }
+      return spans(out, pos);
+    }
+
+    it('samples a bake at the power of two above its on-screen size, over the same box', () => {
+      scalingRasterizer();
+      // 32px text at 4x is 128 device px of a 48px bake: 2.67 device px a texel, so the 192px bake.
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, scaled(4));
+      const sharper = imageQuad(ctx, calls);
+      expect(ctx.textureCache.has(sharpColorPageTextureId(0))).toBe(true);
+      expect(sharper.uv).toBeCloseTo((SIDE * 4) / 1024);
+      // The base bake's box: SIDE texels at 32/48 world units each, from 6 texels left of the pen.
+      expect(sharper.x).toBeCloseTo(4 * SIDE * (32 / 48));
+      expect(sharper.x0).toBeCloseTo(4 * -6 * (32 / 48));
+    });
+
+    it('keeps the base bake at its own size', () => {
+      scalingRasterizer();
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, scaled(1));
+      expect(imageQuad(ctx, calls).uv).toBeCloseTo(SIDE / 1024);
+      expect(ctx.textureCache.has(sharpColorPageTextureId(0))).toBe(false);
+    });
   });
 });

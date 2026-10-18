@@ -23,6 +23,7 @@ function registryOf(actions: Action[]): ActionsRegistry {
     paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
     list: () => actions,
     trigger: vi.fn().mockReturnValue(false),
+    preview: vi.fn(() => () => {}),
     subscribe: vi.fn().mockReturnValue(() => {}),
     begin: vi.fn().mockReturnValue(null),
     setDispatcher: vi.fn(),

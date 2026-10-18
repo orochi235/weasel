@@ -19,7 +19,7 @@ const swatch = (color: string) => (
  *  row to move the whole selection. The fixed Background row selects alone
  *  and walls off drops below it. */
 export const Selectable: Story = {
-  render: () => {
+  render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
       { id: 'title', label: 'Title', leading: swatch('#222') },
       { id: 'sun', label: 'Sun', leading: swatch('#f5b041') },
@@ -31,6 +31,7 @@ export const Selectable: Story = {
     return (
       <div className={s.narrow}>
         <LayerList
+          {...args}
           items={items}
           selectedIds={selected}
           onSelect={setSelected}
@@ -44,7 +45,7 @@ export const Selectable: Story = {
 /** Layers that hold layers, each with a visibility checkbox. A drag reorders a
  *  row among its own siblings and never moves it to another parent. */
 export const Nested: Story = {
-  render: () => {
+  render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
       {
         id: 'ingest',
@@ -82,6 +83,7 @@ export const Nested: Story = {
     return (
       <div className={s.narrow}>
         <LayerList
+          {...args}
           items={shown(items)}
           onReorder={(move) => setItems(moveLayers(items, move))}
           onVisibilityChange={(id, visible) =>
@@ -101,7 +103,8 @@ export const Nested: Story = {
 /** A stack of effects, each a card whose settings fold away. Each takes the
  *  next tone of the theme's list, and the palette adds more. */
 export const Cards: Story = {
-  render: () => {
+  args: { title: 'Effects' },
+  render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
       { id: '1', label: 'fill', tone: 0 },
       { id: '2', label: 'stroke', tone: 1 },
@@ -111,7 +114,7 @@ export const Cards: Story = {
     return (
       <div className={s.wide}>
         <LayerList
-          title="Effects"
+          {...args}
           items={items}
           addKinds={['fill', 'stroke', 'shadow']}
           onAdd={(kind) => {

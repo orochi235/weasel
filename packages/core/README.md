@@ -71,8 +71,8 @@ export function Editor() {
   const selection = useSelection({ mode: 'multi' });
 
   // Click to select, drag to move with grid snapping, handles to resize and
-  // rotate, the shape tools, the knife, the bone and weight tools, and the
-  // standard keyboard actions (Cmd+A, Cmd+Z, Delete, …):
+  // rotate, the shape and text tools, sticky notes, the knife, the bone and
+  // weight tools, and the standard keyboard actions (Cmd+A, Cmd+Z, Delete, …):
   return (
     <SceneCanvas
       width={W}

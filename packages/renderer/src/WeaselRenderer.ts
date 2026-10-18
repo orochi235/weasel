@@ -28,6 +28,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
+import { inCssPixels, type FlattenTolerance } from './draw/flattenTolerance';
 import type { GlMat3 } from '@weasel-js/geom';
 import {
   dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind,
@@ -136,7 +137,7 @@ export class WeaselRenderer {
   private programEpoch = 0;
   private readonly paintScratch: PaintScratch;
   private readonly imageMinification: ImageMinification;
-  private flattenTolerance?: number;
+  private flattenTolerance?: FlattenTolerance;
   private readonly bakeBudget: number;
   private readonly textOutlineMinScreenSize: number;
   private contextLost = false;
@@ -529,7 +530,7 @@ export class WeaselRenderer {
       heightCss: this.heightCss,
       clipDepth: 0,
       clipStack: [],
-      flattenTolerance: this.flattenTolerance,
+      flattenTolerance: inCssPixels(this.flattenTolerance, this.dpr),
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
       effectTargets: this.effectTargets,
@@ -581,9 +582,8 @@ export class WeaselRenderer {
     return this.stats;
   }
 
-  /** Change the curve-flattening tolerance after construction. `undefined`
-   *  restores the cached `DEFAULT_FLATTEN_TOLERANCE` route. */
-  setFlattenTolerance(tolerance: number | undefined): void {
+  /** Change `flattenTolerance` after construction; `undefined` restores the default. */
+  setFlattenTolerance(tolerance: FlattenTolerance | undefined): void {
     this.flattenTolerance = tolerance;
   }
 

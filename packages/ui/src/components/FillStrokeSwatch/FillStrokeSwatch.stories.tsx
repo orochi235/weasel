@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Paint } from '@weasel-js/core';
 import type { PaintSlot } from '../GradientEditor';
-import { FillStrokeSwatch } from './FillStrokeSwatch';
+import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
 
 const meta: Meta<typeof FillStrokeSwatch> = {
   title: 'Primitives/FillStrokeSwatch',
@@ -15,13 +15,15 @@ type Story = StoryObj<typeof FillStrokeSwatch>;
 const solid = (color: string): Paint => ({ kind: 'solid', color });
 const DEFAULTS = { fill: solid('#ffffffff'), stroke: solid('#000000ff') };
 
-function Live({ initial }: { initial: { fill: Paint | null; stroke: Paint | null } }) {
+function Live({ initial, ...args }: Partial<FillStrokeSwatchProps> & { initial: { fill: Paint | null; stroke: Paint | null } }) {
   const [paints, setPaints] = useState(initial);
   const [focused, setFocused] = useState<PaintSlot>('fill');
   const set = (slot: PaintSlot, paint: Paint | null) =>
     setPaints((p) => ({ ...p, [slot]: paint }));
   return (
     <FillStrokeSwatch
+      shortcuts={{ none: '/', swap: 'X', reset: 'D' }}
+      {...args}
       fill={paints.fill}
       stroke={paints.stroke}
       focused={focused}
@@ -31,25 +33,25 @@ function Live({ initial }: { initial: { fill: Paint | null; stroke: Paint | null
       onToggleNone={(slot) => set(slot, paints[slot] === null ? DEFAULTS[slot] : null)}
       onSwap={() => setPaints((p) => ({ fill: p.stroke, stroke: p.fill }))}
       onReset={() => setPaints(DEFAULTS)}
-      shortcuts={{ none: '/', swap: 'X', reset: 'D' }}
     />
   );
 }
 
 /** Click a chip for the picker, shift-click it for none. */
 export const Default: Story = {
-  render: () => <Live initial={{ fill: solid('#7ab8d4ff'), stroke: solid('#1a1a1aff') }} />,
+  render: (args) => <Live {...args} initial={{ fill: solid('#7ab8d4ff'), stroke: solid('#1a1a1aff') }} />,
 };
 
 /** No stroke, and a translucent fill over the checker. */
 export const NoneAndTranslucent: Story = {
-  render: () => <Live initial={{ fill: solid('#e0406080'), stroke: null }} />,
+  render: (args) => <Live {...args} initial={{ fill: solid('#e0406080'), stroke: null }} />,
 };
 
 /** A gradient fill previews as its ramp. */
 export const Gradient: Story = {
-  render: () => (
+  render: (args) => (
     <Live
+      {...args}
       initial={{
         fill: {
           kind: 'linear-gradient',

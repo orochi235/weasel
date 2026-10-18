@@ -90,8 +90,8 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  Mutually exclusive with `gl`. Default: `OffscreenCanvas` when
    *  available, else `document.createElement('canvas')`. */
   createCanvas?: (widthPx: number, heightPx: number) => HeadlessCanvasLike;
-  /** Max curve-flattening error in OUTPUT pixels. Default 0.25. Converted to
-   *  world units against the larger scale axis. */
+  /** Max curve-flattening error in OUTPUT pixels. Default 0.25. Measured
+   *  along each path's most stretched axis. */
   flattenTolerancePx?: number;
   /** Commands drawn over the scene in output-pixel space — origin at the
    *  output's top-left, one unit per output pixel. Annotations, watermarks,
@@ -261,7 +261,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       const plan = planPixelRender(args);
       const { width, height } = plan;
       const ctx = contextFor(width, height);
-      const flattenTolerance = (args.flattenTolerancePx ?? 0.25) / Math.max(Math.abs(args.scale.x), Math.abs(args.scale.y));
+      const flattenTolerance = { px: args.flattenTolerancePx ?? 0.25 };
       if (!renderer) {
         renderer = new WeaselRenderer({
           gl: ctx,

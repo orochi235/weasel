@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefsLayout } from './PrefsForm';
+import { PrefsForm, type PrefsFormProps } from './PrefsForm';
 
 const meta: Meta<typeof PrefsForm> = {
   title: 'Primitives/Prefs/Heading control',
@@ -41,9 +41,9 @@ const SCHEMA: PrefGroup = {
   },
 };
 
-function Form({ layout }: { layout: PrefsLayout }) {
+function Form(args: Partial<PrefsFormProps>) {
   const [values, setValues] = useState<Record<string, unknown>>({});
-  return <PrefsForm layout={layout} schema={SCHEMA} values={values} onChange={(path, value) => setValues((v) => withValue(v, path, value))} />;
+  return <PrefsForm {...args} schema={SCHEMA} values={values} onChange={(path, value) => setValues((v) => withValue(v, path, value))} />;
 }
 
 function withValue(values: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
@@ -53,7 +53,7 @@ function withValue(values: Record<string, unknown>, path: string, value: unknown
 }
 
 /** A leaf marked `heading` is drawn in its section's heading and its panel's title, and has no row beneath. */
-export const Rail: Story = { render: () => <Form layout="rail" /> };
+export const Rail: Story = { args: { layout: 'rail' }, render: (args) => <Form {...args} /> };
 
 /** The same in a column's heading. */
-export const Columns: Story = { render: () => <Form layout="columns" /> };
+export const Columns: Story = { args: { layout: 'columns' }, render: (args) => <Form {...args} /> };

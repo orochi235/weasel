@@ -16,6 +16,7 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,
   useDebugDepSource,
+  usePreviewPathsDepSource,
   useDepChangeNotices,
   useDispatcherDepSource,
   useEditAnchorsDepSource,
@@ -178,6 +179,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
     currentViewRef,
   );
   useDebugDepSource(canvasApiRef);
+  usePreviewPathsDepSource(canvasApiRef);
   useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf);

@@ -26,7 +26,7 @@ import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
-import type { DrawCommand, ShaderProgramHandle } from '@weasel-js/renderer';
+import type { DrawCommand, FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
@@ -530,9 +530,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /** Custom shader programs to compile on the renderer. See `CanvasProps.shaders`. */
     shaders?: ShaderProgramHandle[];
 
-    /** Flatness tolerance for curve tessellation, in world units. See
-     *  `CanvasProps.flattenTolerance`. */
-    flattenTolerance?: number;
+    /** Flatness tolerance for curve tessellation. See `CanvasProps.flattenTolerance`. */
+    flattenTolerance?: FlattenTolerance;
 
     /** Fill for the full canvas behind the scene, drawn as a screen-space layer slotted
      *  before `'scene'` — independent of pan / zoom. */

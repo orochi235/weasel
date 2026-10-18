@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import type { PrefAction } from '@weasel-js/prefs';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
@@ -29,6 +29,9 @@ export interface BarActionButtonProps {
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
   missing?: string;
   onPress: () => void;
+  /** Show what pressing would do, while the button is hovered or focused;
+   *  returns what takes it down. */
+  preview?: () => () => void;
   'data-testid'?: string;
 }
 
@@ -38,9 +41,10 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason } = props;
+  const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason, preview } = props;
   const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
+  const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
   const explained = dead || (disabled && disabledReason !== undefined);
   const tip = dead
     ? `${label}: no action “${missing}”`
@@ -62,8 +66,13 @@ export function BarActionButton(props: BarActionButtonProps) {
           className={[s.action, words && s.actionLabeled, row && s.actionRow].filter(Boolean).join(' ')}
           {...(dead ? { 'data-missing': missing } : {})}
           onClick={() => {
+            hide();
             if (!disabled && !dead) onPress();
           }}
+          onPointerEnter={show}
+          onPointerLeave={hide}
+          onFocus={show}
+          onBlur={hide}
         >
           {icon}
           {words && <span>{label}</span>}
@@ -72,6 +81,26 @@ export function BarActionButton(props: BarActionButtonProps) {
       <Tooltip>{tip}</Tooltip>
     </TooltipTrigger>
   );
+}
+
+/** `preview` shown from `show` until `hide`, at most once at a time, and taken
+ *  down when the button unmounts or stops offering one. */
+function usePreviewWhileNear(preview: (() => () => void) | undefined): { show: () => void; hide: () => void } {
+  const stop = useRef<(() => void) | null>(null);
+  const hide = () => {
+    stop.current?.();
+    stop.current = null;
+  };
+  const show = () => {
+    if (preview && !stop.current) stop.current = preview();
+  };
+  // Keyed on whether there is one, not its identity: a caller builds it each render.
+  const offered = preview !== undefined;
+  useEffect(() => () => {
+    stop.current?.();
+    stop.current = null;
+  }, [offered]);
+  return { show, hide };
 }
 
 /** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. A leaf naming a

@@ -232,15 +232,38 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
       const deps = leaf.depsOf(a);
-      const { worldX: x, worldY: y } = params ?? {};
-      const at = typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
-      if (!evaluateEnabled(a, deps, at).enabled) return false;
+      if (!evaluateEnabled(a, deps, pointOf(params)).enabled) return false;
       try {
         a.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }
       return true;
+    },
+    preview: (id: string, params?: Record<string, unknown>) => {
+      const leaf = this.start();
+      const a = leaf.resolve(id);
+      if (!a?.preview) return NO_PREVIEW;
+      const deps = leaf.depsOf(a);
+      if (!evaluateEnabled(a, deps, pointOf(params)).enabled) return NO_PREVIEW;
+      let stop: (() => void) | void;
+      try {
+        stop = a.preview(deps, params);
+      } catch (err) {
+        console.error(`weasel ActionsRegistry: preview of "${id}" threw`, err);
+        return NO_PREVIEW;
+      }
+      if (typeof stop !== 'function') return NO_PREVIEW;
+      let down = false;
+      return () => {
+        if (down) return;
+        down = true;
+        try {
+          stop();
+        } catch (err) {
+          console.error(`weasel ActionsRegistry: preview of "${id}" threw as it ended`, err);
+        }
+      };
     },
     subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
@@ -256,6 +279,14 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     holdsKeys: () => keyHolder === this,
     dropKeys: () => { if (keyHolder === this) keyHolder = null; },
   };
+}
+
+const NO_PREVIEW = (): void => {};
+
+/** The world point a trigger's params carry, when they carry both coordinates. */
+function pointOf(params: Record<string, unknown> | undefined): { x: number; y: number } | undefined {
+  const { worldX: x, worldY: y } = params ?? {};
+  return typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
 }
 
 /** The node last activated on the page, across every tree: where a key that

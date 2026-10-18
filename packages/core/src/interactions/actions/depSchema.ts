@@ -19,10 +19,10 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
-import type { EditAnchorsDep } from './editAnchorsDep';
+import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 
-export type { EditAnchorsDep };
+export type { EditAnchorsDep, FinishedEditFrame };
 export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
@@ -146,6 +146,8 @@ export type InsertExtras =
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
+  /** A sticky note: a text node with a background, in the look its tool names. */
+  | ({ kind: 'sticky'; text?: string } & import('../../tools/builtin/sticky/stickyNode').StickyStyle)
   /** A finished path in world coords, as the pen tool commits one. `bounds`
    *  is its AABB. An open path takes no fill. `data` is laid under the path
    *  and paint on the node's data: the form the path was drawn from
@@ -268,6 +270,9 @@ declare module '@weasel-js/routing' {
      * Actions report what they did here, and the overlay draws it.
      */
     debug?: DebugSink;
+    /** Where an action's `preview` draws what it would make, over the canvas.
+     *  Sourced by `<SceneCanvas>`. */
+    previewPaths?: import('../../canvas/deps/previewPaths').PreviewPathsDep;
     /** Viewport point of a world point on this canvas, or null before it mounts.
      *  Sourced by `<SceneCanvas>`. */
     worldToClient?: (x: number, y: number) => { x: number; y: number } | null;

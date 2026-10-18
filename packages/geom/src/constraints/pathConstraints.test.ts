@@ -4,9 +4,8 @@ import { deleteAnchorsAt, insertAnchorOnSegment, moveHandleTo, translateAnchorBy
 import { editAnchorSetTracked } from '../paths/anchorOrigins';
 import { pathToAnchors } from '../paths/anchors';
 import type { PolygonPath } from '../path';
-import {
-  constrainPathEdit, pathAnchorPoints, remapConstraints, anchorsBefore, segmentBetween, solvePathConstraints,
-} from './pathConstraints';
+import { pathAnchorPoints, remapConstraints, anchorsBefore, segmentBetween, solvePathConstraints } from './pathConstraints';
+import { constrainPathEdit } from './pathsEdit';
 import type { PathConstraint } from './types';
 
 const PARALLELOGRAM: PathConstraint[] = [

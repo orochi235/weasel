@@ -12,6 +12,7 @@ import type { EffectTargets } from '../effects/EffectTargets';
 import type { RetainedSurfaces } from '../retain/RetainedSurfaces';
 import type { PaintScratch } from '../paintScratch';
 import type { StagedBatchState } from './batchRun';
+import type { FlattenTolerance } from './flattenTolerance';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -64,11 +65,10 @@ export interface DrawContext {
   clipStack: ClipEntry[];
   /** Set while `enterUncut` stages an item the rect clips could not cut. */
   uncut?: boolean;
-  /** Flatness tolerance for curve tessellation, in WORLD units. When set,
-   *  fill meshes bypass the Path-identity cache (whose key excludes
-   *  tolerance) and are tessellated fresh per frame via the transient pool.
-   *  See `WeaselRendererOptions.flattenTolerance`. */
-  flattenTolerance?: number;
+  /** Flatness tolerance for curve tessellation, a `{ px }` one in CSS pixels;
+   *  `flattenToleranceOf` resolves it per path. Unset is half a pixel. See
+   *  `WeaselRendererOptions.flattenTolerance`. */
+  flattenTolerance?: FlattenTolerance;
   /** On-screen glyph size (CSS px) at which text switches to tessellated
    *  outlines. See `WeaselRendererOptions.textOutlineMinScreenSize`. */
   textOutlineMinScreenSize?: number;

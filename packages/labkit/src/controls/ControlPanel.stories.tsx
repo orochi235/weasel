@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
-import type { ConfigRule, ControlRenderer } from '../config/types';
-import { ControlPanel } from './ControlPanel';
+import type { ConfigRule } from '../config/types';
+import { ControlPanel, type ControlPanelProps } from './ControlPanel';
 import type { ConfigField } from './types';
 
 const meta: Meta<typeof ControlPanel> = {
@@ -56,12 +56,16 @@ const allFields: ConfigField[] = [
   { key: 'tint', label: 'Tint', type: 'color', default: '#3a86ff' },
 ];
 
-function Harness({ fields }: { fields: ConfigField[] }) {
+function Harness({
+  fields,
+  ...args
+}: Partial<ControlPanelProps<Record<string, unknown>>> & { fields: ConfigField[] }) {
   const initial: Record<string, unknown> = {};
   for (const f of fields) initial[f.key] = f.default;
   const [config, setConfig] = useState<Record<string, unknown>>(initial);
   return (
     <ControlPanel
+      {...args}
       fields={fields}
       config={config}
       setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -70,12 +74,13 @@ function Harness({ fields }: { fields: ConfigField[] }) {
 }
 
 export const Default: Story = {
-  render: () => <Harness fields={allFields} />,
+  render: (args) => <Harness {...args} fields={allFields} />,
 };
 
 export const Minimal: Story = {
-  render: () => (
+  render: (args) => (
     <Harness
+      {...args}
       fields={[
         { key: 'speed', label: 'Speed', type: 'slider', min: 0, max: 10, default: 5 },
         { key: 'enabled', label: 'Enabled', type: 'checkbox', default: true },
@@ -95,19 +100,18 @@ const sectioned = f.schema({
 
 function SchemaHarness({
   rules = [],
-  renderers,
-}: {
+  ...args
+}: Partial<ControlPanelProps<Record<string, unknown>>> & {
   rules?: readonly ConfigRule[];
-  renderers?: Record<string, ControlRenderer>;
 }) {
   const schema = resolveConfigSchema(sectioned, rules);
   const [config, setConfig] = useState<Record<string, unknown>>(sectioned.defaults());
   return (
     <ControlPanel
+      {...args}
       schema={schema}
       config={config}
       setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
-      renderers={renderers}
     />
   );
 }
@@ -115,13 +119,14 @@ function SchemaHarness({
 /** Sections, and a kind no control is registered for — the placeholder names
  *  the gap rather than dropping the row. */
 export const Sections: Story = {
-  render: () => <SchemaHarness />,
+  render: (args) => <SchemaHarness {...args} />,
 };
 
 /** The same schema with a control supplied for `vector2`. */
 export const CustomControl: Story = {
-  render: () => (
+  render: (args) => (
     <SchemaHarness
+      {...args}
       renderers={{
         vector2: ({ pref, value, setValue }) => {
           const v = value as { x: number; y: number };
@@ -166,11 +171,12 @@ const described = f.schema({
 /** A leaf with a `describe(...)` gets an \u24d8 beside its label whose tooltip
  *  carries the text; leaves without one stay bare. */
 export const Described: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(described, []);
     const [config, setConfig] = useState<Record<string, unknown>>(described.defaults());
     return (
       <ControlPanel
+        {...args}
         schema={schema}
         config={config}
         setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -194,11 +200,12 @@ const conditional = f.schema({
  *  `{ path: 'showGrid' }`, which the resolved schema carries. "Fine step"
  *  takes a function, and shows only at a spacing that is a multiple of ten. */
 export const Conditional: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(conditional, []);
     const [config, setConfig] = useState<Record<string, unknown>>(conditional.defaults());
     return (
       <ControlPanel
+        {...args}
         schema={schema}
         config={config}
         setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -224,11 +231,12 @@ const gated = f.schema({
  *  Tolerance and Snap to take no input; the Guides group, whose condition is a
  *  function, enables every row under it only while snapping to guides. */
 export const EnableIf: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(gated, []);
     const [config, setConfig] = useState<Record<string, unknown>>(gated.defaults());
     return (
       <ControlPanel
+        {...args}
         schema={schema}
         config={config}
         setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -254,12 +262,13 @@ const nested = f.schema({
 /** `f.group` nests the value as well as the heading: these rows write to
  *  `grid.size` and `export.scale`, not to `size` and `scale`. */
 export const Nested: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(nested, []);
     const [config, setConfig] = useState<Record<string, unknown>>(nested.defaults());
     return (
       <>
         <ControlPanel
+          {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -294,12 +303,13 @@ const presentation = f.schema({
  *  `alpha` gives the swatch an opacity track and stores `#rrggbbaa`. The dump
  *  shows what each control actually wrote. */
 export const Presentation: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(presentation, []);
     const [config, setConfig] = useState<Record<string, unknown>>(presentation.defaults());
     return (
       <>
         <ControlPanel
+          {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
@@ -336,17 +346,17 @@ const inline = f.schema({
  *  narrow column. Every row kind meets here — slider, select, switch, text —
  *  and they have to share one base height, or the column reads as ragged. */
 export const Inline: Story = {
-  render: () => {
+  args: { layout: 'inline', align: 'center' },
+  render: (args) => {
     const schema = resolveConfigSchema(inline, []);
     const [config, setConfig] = useState<Record<string, unknown>>(inline.defaults());
     return (
       <div style={{ width: 360 }}>
         <ControlPanel
+          {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
-          layout="inline"
-          align="center"
         />
       </div>
     );
@@ -386,18 +396,17 @@ const sidebarSliders = f.schema({
 /** astv's sidebar sliders paired two to a row, at the narrowest width a two-up sidebar should support:
  *  300px at compact and comfortable. Roomy needs 352px; at 300 its longest labels push readouts out of the row. */
 export const SidebarSliders: Story = {
-  render: () => {
+  args: { layout: 'inline', align: 'center', pack: 'pairs' },
+  render: (args) => {
     const schema = resolveConfigSchema(sidebarSliders, []);
     const [config, setConfig] = useState<Record<string, unknown>>(sidebarSliders.defaults());
     return (
       <div style={{ width: 300 }}>
         <ControlPanel
+          {...args}
           schema={schema}
           config={config}
           setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
-          layout="inline"
-          align="center"
-          pack="pairs"
         />
       </div>
     );
@@ -429,12 +438,13 @@ const shortcuts = f.schema({ grid: f.alias('view.grid'), spacing: f.alias('view.
  *  schema's leaf, reads and writes its path in the config, and follows its conditions: Spacing is disabled
  *  while Show grid is off. */
 export const AliasesIntoAnotherSchema: Story = {
-  render: () => {
+  render: (args) => {
     const schema = resolveConfigSchema(shortcuts, []);
     const [config, setConfig] = useState<Record<string, unknown>>({});
     return (
       <div style={{ width: 300 }}>
         <ControlPanel
+          {...args}
           schema={schema}
           over={dialogSchema}
           config={config}

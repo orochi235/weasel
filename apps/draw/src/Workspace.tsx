@@ -43,8 +43,10 @@ import { useSymmetry } from './useSymmetry';
 import { usePageFit } from './usePageFit';
 import { useSpacingHints } from './useSpacingHints';
 
-/** Every built-in but the rig tools: a drawing has no skeletons to edit. */
-const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight');
+/** Every built-in but the rig tools, since a drawing has no skeletons to edit,
+ *  and the sticky tool, whose `background` and `padding` the document's
+ *  SVG round trip does not carry. */
+const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
 
 /** Screen-px radius within which a drawing tool snaps to a measurement's end. */
 const END_SNAP_PX = 6;

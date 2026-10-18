@@ -376,13 +376,14 @@ Priority tags:
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
   that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
-- **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
-  its own path only. Across nodes the constraint needs a home other than either node's
-  `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
-  undone with the scene. Its solve packs every node a connected set of constraints reaches into one
-  coordinate vector — `solveConstraints` already takes any point list — and commits each moved
-  node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
-  the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
+- **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
+  node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
+  solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
+  anchor in one node and a segment in another; a consumer adds the node itself. A whole-node move,
+  resize, or rotate solves no links, and nothing reports one it breaks: `constraintConflictsOf`
+  reads a node's own list. The drags that preview through `pathEditPreview` without finishing each
+  frame — bend segment, corner, Lengthen, Balance, Simplify brush — commit the linked nodes but
+  do not preview them, as they do not preview a node's own constraints.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -391,7 +392,7 @@ Priority tags:
 - **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Live preview of a Boolean operation.** Seeing the result before committing: on hovering a Pathfinder button, or holding an op key over a path. `previewBooleanOp` answers the pieces an operation would make, each with its source and paint, and mints and commits nothing. `createPathOverlay` draws paths that are not nodes over the scene, as the shape builder shows its faces with. What is left is asking for them: no Pathfinder action has a gesture or a key to hold, and an action has no way to say what it would do while its button is hovered.
+- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -422,17 +423,10 @@ Priority tags:
   sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
   rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
   against: the model (`u_view` on a shader command, `u_model` in a registered paint kind) and the
-  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first needs a
-  per-path origin in `@weasel-js/geom`'s tessellation.
-
-- **(P3) Curve flattening ignores zoom on the live canvas.** `<Canvas>` leaves `flattenTolerance`
-  unset unless a consumer passes one, and WeaselDraw doesn't, so every curve flattens at
-  `DEFAULT_FLATTEN_TOLERANCE`, 0.5 world units, whatever the zoom: 4 px of chord error at 8x.
-  `renderSceneToPixels` already derives the tolerance from the output scale. The live path
-  needs the same, with the fill and stroke mesh caches keyed on a quantized tolerance, so that
-  a continuous zoom doesn't rebuild every mesh on every frame. Thick strokes already cap each
-  flattened step at 10° (`strokeFlattening` in `@weasel-js/stroke`), which fixes what the facets
-  look like at a tight bend but not this.
+  paint matrix a registered kind asks for (`PaintBindContext.spaceInverse`). The first cannot be
+  fixed in tessellation alone: `PolygonPath.coords` is a `Float32Array`, so the grid is already in
+  the path before the tessellator reads it. It needs the path itself to carry an origin (or
+  double coords), which every reader of `coords` would then honor.
 
 ---
 
@@ -498,16 +492,6 @@ Priority tags:
   `camera.mjs`). The straight arrows drawn before the 45-degree rule in CLAUDE.md ("Drawing
   icons") still use spreads of 36 to 42.
 
-- **(P3) Text: an emoji is a bitmap baked at one size.** A color glyph is rasterized at the canvas
-  tier's `BAKE_SIZE` (48px) and mipmapped, so it is sharp at or below that on screen and blurs
-  above it: a 96px heading, or body text zoomed past 4x. A distance field has no such limit and
-  an emoji has no field, so it needs a second bake at the size it is drawn at, the way a vector
-  image re-rasterizes in power-of-two steps (`maybeReraster` in
-  `packages/renderer/src/images/imageCache.ts`). The larger bakes want pages of their own: the
-  color pages empty together with the field pages when either set fills (`reclaim` in
-  `packages/font/src/dynamic/bakeQueue.ts`), and one 384px emoji takes the room of sixty at 48.
-  Whether the result is sharp can only be read in a browser.
-
 ---
 
 ## Scene, adapters & layout
@@ -533,11 +517,6 @@ Priority tags:
 - **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
-- **(P3) Bake copies only path leaves.** `bakeSymmetry` reports text and image leaves in
-  `skipped` and leaves them uncopied. It also copies a paint laid out in the shape's own box, a
-  gradient say, without carrying it through the copy's mirror or turn.
-- **(P3) Symmetry in a scene that composes frames.** A group's center is its pose, so dragging the
-  center in such a scene moves its children too, and bake writes absolute poses.
 - **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
   the lab's petal is, and can cover a path-edit handle there.
 
@@ -987,10 +966,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
     slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
     have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
     `adjacentPage`).
-  - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
-    note, as an `insert` node factory minting a filled rect that carries text, bound by a
-    drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
-    their whiteboard defaults.
+  - Whiteboard. The tools are all in core: `usePencilTool`, `useTextTool`, and `useStickyTool`
+    (built-in id `sticky`, a text node with a `background`; its look is `toolOptions.sticky`).
+    The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
+    of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
+    SVG import reads a written note back as a rect and a text node.
 ### d3 integration plugin
 
 - **(P3) `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -1012,13 +992,14 @@ only story runner in the repo.
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
-  would read them. `grep 'render: () =>'` lists them. The ones that drew one plain
-  instance of the meta's component are rewritten around `args`; what is left is
-  matrices, hand-built compositions, generic components (`DataGrid<Route>`), and
-  stories that mount a harness holding state (`<Live start=… />`, `<Strip only=… />`).
-  A harness is the open kind: it can take the story's args and pass them to the
-  one instance it draws, the way `ToggleBar`'s stories do, with a control that
-  only sets where held state starts, as `Timeline`'s playhead does.
+  would read them. `grep 'render: () =>'` lists them. Every story that draws one
+  instance of the meta's component, plain or inside a harness holding state, now
+  takes `args` and passes them on (`storyArgs.test.tsx` in `packages/ui/src/components`
+  and `packages/labkit/src`). What is left draws several instances, something other
+  than the meta's component (`Timeline`'s `Live` draws `AnimatedTimeline`, `BarField`'s
+  `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
+  props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
+  whether a matrix story should take args and apply them to every cell.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
@@ -1152,9 +1133,10 @@ only story runner in the repo.
   main-thread `OffscreenCanvas` that rasterizes pattern tiles in
   `packages/core/src/features/patterns/` is not worker offload.
 - **(P3) Headless server-side rendering in Node.** `renderSceneToPixels`
-  (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`. Left: verify
-  it against a `gl` from `headless-gl` (untested there), or wire up a worker + `OffscreenCanvas`
-  path for a Node-hosted consumer.
+  (`packages/core/src/canvas/renderSceneToPixels.ts`) accepts a caller-supplied `gl`, which has to
+  be WebGL2. `headless-gl` cannot supply one: `gl@8.1.6` (read 2026-10-17) implements WebGL 1.0.3
+  only, vertex arrays through `OES_vertex_array_object`, and Node has no `OffscreenCanvas`. Left:
+  find a Node binding that provides WebGL2, or host the render in headless Chromium.
 - **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
   `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
   smaller, so only an image that is drawn small pays for them. The screen path still builds its

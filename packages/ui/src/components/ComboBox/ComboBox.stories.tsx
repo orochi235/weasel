@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ComboBox, ComboBoxItem } from './ComboBox';
+import { ComboBox, ComboBoxItem, type ComboBoxProps } from './ComboBox';
 import { useAsyncOptions } from '../../useAsyncOptions';
 
 const meta: Meta<typeof ComboBox> = {
@@ -35,19 +35,17 @@ export const ExplicitChildren: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState<string | null>('r');
-      return (
-        <ComboBox<string>
-          label={`Color (= ${v ?? '∅'})`}
-          options={COLORS}
-          selectedKey={v}
-          onSelectionChange={setV}
-        />
-      );
-    }
-    return <Wrap />;
+  render: (args) => {
+    const [v, setV] = useState<string | null>('r');
+    return (
+      <ComboBox<string>
+        {...(args as ComboBoxProps<string>)}
+        label={`Color (= ${v ?? '∅'})`}
+        options={COLORS}
+        selectedKey={v}
+        onSelectionChange={setV}
+      />
+    );
   },
 };
 
