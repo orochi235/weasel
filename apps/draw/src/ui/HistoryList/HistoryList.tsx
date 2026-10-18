@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { ItemList, type ItemListRow } from '@weasel-js/ui';
 import s from './HistoryList.module.css';
 
@@ -42,14 +42,27 @@ export function HistoryList(props: HistoryListProps) {
     className: i === currentIndex ? `${s.row} ${s.current}` : s.row,
     rowProps: { 'data-row-index': i },
   }));
+  const scroller = useRef<HTMLDivElement>(null);
+  // Scrolls only the list's own box: `scrollIntoView` would also scroll
+  // every scrollable ancestor, the window included.
+  useLayoutEffect(() => {
+    const box = scroller.current;
+    const row = box?.querySelector<HTMLElement>(`[data-row-index="${currentIndex}"]`);
+    if (!box || !row) return;
+    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    if (top < box.scrollTop) box.scrollTop = top;
+    else if (top + row.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = top + row.offsetHeight - box.clientHeight;
+  }, [currentIndex, items.length]);
   return (
-    <ItemList
-      rows={rows}
-      className={className}
-      empty={empty}
-      selection="single"
-      onActivate={(_id, i) => onJump(i)}
-      containerProps={{ 'aria-label': 'History' }}
-    />
+    <div ref={scroller} className={s.scroller}>
+      <ItemList
+        rows={rows}
+        className={className}
+        empty={empty}
+        selection="single"
+        onActivate={(_id, i) => onJump(i)}
+        containerProps={{ 'aria-label': 'History' }}
+      />
+    </div>
   );
 }

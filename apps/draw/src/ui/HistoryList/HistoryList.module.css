@@ -1,3 +1,10 @@
+/* A fixed cap, so new entries scroll inside the panel instead of growing it
+   and pushing the panels below it down. */
+.scroller {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 /* The row box itself is `ItemList`'s. Every row jumps to its state. */
 .row {
   cursor: pointer;
