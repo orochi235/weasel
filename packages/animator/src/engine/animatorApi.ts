@@ -92,6 +92,10 @@ export function createAnimatorApi(host: ApiHost): Animator {
     register: table.register,
     finish: table.finish,
     afterTicks: host.afterTicks,
+    rateOf: (id) => {
+      const a = animations.get(id);
+      return a ? table.rateOf(a) : 0;
+    },
   });
 
   const physics = <T,>(
@@ -125,7 +129,11 @@ export function createAnimatorApi(host: ApiHost): Animator {
     pause: () => { clock.paused = true; },
     resume: () => { clock.paused = false; },
     isPaused: () => clock.paused,
-    setTimeScale: (s) => { clock.timeScale = timeScaleOf(s); },
+    setTimeScale: (s) => {
+      const scale = timeScaleOf(s);
+      if ((scale < 0) === (clock.timeScale < 0)) clock.timeScale = scale;
+      else table.turn(() => { clock.timeScale = scale; });
+    },
     timeScale: () => clock.timeScale,
     pauseKey: (key) => eachUnder(table, key, (a) => [true, a.timeScale]),
     resumeKey: (key) => eachUnder(table, key, (a) => [false, a.timeScale]),

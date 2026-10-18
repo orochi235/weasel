@@ -4,6 +4,7 @@ import {
 } from '@msb235/blits';
 import { createHoldVoices, type HoldStart, type HoldVoice } from './holdVoices';
 import { createLanes, type LaneColumns, type LanePlace, type Out, type Reader, type Slot } from './lanes';
+import { createRewinds } from './rewinds';
 
 export type { HoldStart } from './holdVoices';
 export type { Reader } from './lanes';
@@ -56,6 +57,9 @@ export interface Codec {
   push(id: number, velocity: number[]): void;
   /** Plays `id` at rate `rate` from where it is, without a jump. */
   rate(id: number, rate: number): void;
+  /** Whether `id`, played backward, has got back to its start: its subject shows its first
+   *  frame from then until it stops. */
+  rewound(id: number): boolean;
   stop(id: number): void;
   /** Whether `id` is one of the codec's voices. */
   has(id: number): boolean;
@@ -95,6 +99,22 @@ interface Voice {
   held?: HoldVoice;
 }
 
+// A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
+// at `from`, and the codec releases it with a `to` or `push` timed at 0.
+function springVoice(slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } {
+  // With no target the spring force is zero whatever the stiffness, leaving damping alone:
+  // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
+  const patch: Moves & Patch<unknown, Out, void> = sp.to == null
+    ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
+    : springPatch<unknown, Out, number[]>('v', {
+      from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
+    });
+  const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
+  if (sp.to) patch.to!(slot.key, sp.to, 0);
+  patch.push!(slot.key, sp.velocity, 0);
+  return { handle, patch };
+}
+
 /** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
 export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Codec {
   const lanes = createLanes(placeOf);
@@ -103,23 +123,8 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
   const queue: Voice[] = [];
   const holds = createHoldVoices();
+  const rewinds = createRewinds<Voice>();
   let time = 0;
-
-  // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
-  // at `from`, and the codec releases it with a `to` or `push` timed at 0.
-  const springVoice = (slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } => {
-    // With no target the spring force is zero whatever the stiffness, leaving damping alone:
-    // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
-    const patch: Moves & Patch<unknown, Out, void> = sp.to == null
-      ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
-      : springPatch<unknown, Out, number[]>('v', {
-        from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
-      });
-    const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
-    if (sp.to) patch.to!(slot.key, sp.to, 0);
-    patch.push!(slot.key, sp.velocity, 0);
-    return { handle, patch };
-  };
 
   const get = (id: number): Voice => {
     const v = voices.get(id);
@@ -138,6 +143,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     v.handle = handle;
     v.patch = patch;
     v.spring = next;
+    rewinds.recued(v);
   };
 
   function stop(id: number): void {
@@ -146,6 +152,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     if (v.held) holds.remove(v.held);
     else if (v.queued) v.queued = undefined;
     else v.handle.fade({ over: 0 });
+    rewinds.remove(v);
     lanes.leave(v.slot);
     voices.delete(id);
   }
@@ -167,6 +174,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       holds.frame();
       time += dtMs;
       lanes.frame(time);
+      rewinds.frame();
     },
     tween(s) {
       if (s.to.length !== s.from.length) {
@@ -230,6 +238,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         for (const v of queue) {
           if (v.queued && v.slot === slot) v.queued.from.forEach((x, i) => { queued[i] += x; });
         }
+        rewinds.into(slot, queued);
         reread(slot.key, queued);
       });
     },
@@ -260,9 +269,11 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     rate(id, rate) {
       const v = get(id);
       if (v.kind === 'hold') return;
+      rewinds.rate(v, rate);
       if (v.queued) v.queuedRate = rate;
       else v.handle.rate = rate;
     },
+    rewound: (id) => { const v = voices.get(id); return v !== undefined && rewinds.has(v); },
     stop,
     has: (id) => voices.has(id),
     own(id) {

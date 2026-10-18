@@ -97,7 +97,8 @@ export function createFrame(host: FrameHost): Frame {
       const frameDt = clock.frameT == null ? 0 : Math.max(0, t - clock.frameT);
       clock.frameT = t;
       framing = true;
-      const dt = frameDt * (clock.paused ? 0 : clock.timeScale);
+      // Backward is each animation's own rate: the clock under them only goes forward.
+      const dt = frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale));
       clock.elapsed += dt;
       host.codec.frame(dt);
       host.targets.settle();

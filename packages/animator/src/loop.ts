@@ -25,14 +25,14 @@ export function createLoop(
 ): AnimationHandle {
   const max = opts.count ?? Infinity;
   let iteration = 0;
-  let cancelled = false;
+  let canceled = false;
   let current: AnimationHandle | null = null;
 
   const supervisor = createSupervisor({ kind: 'loop', cancelKey: opts.cancelKey, label: opts.label });
   supervisor.setOnCancel(() => {
     // External cancel path (animator.cancel/cancelKey or handle.cancel).
-    // Mark cancelled so `next` short-circuits; tear down the current child.
-    cancelled = true;
+    // Mark canceled so `next` short-circuits; tear down the current child.
+    canceled = true;
     current?.cancel();
     current = null;
   });
@@ -46,12 +46,13 @@ export function createLoop(
   supervisor.setOnRate(applyRate);
 
   const next = (): void => {
-    if (cancelled) return;
-    if (iteration >= max) {
+    if (canceled) return;
+    // Played backward, it ends once the pass in flight has run back to its start.
+    if (iteration >= max || (iteration > 0 && supervisor.rate() < 0)) {
       current = null;
       // Natural completion: deregister the supervisor so isActive() goes
-      // false. `cancelled` makes a late `next` a no-op.
-      cancelled = true;
+      // false. `canceled` makes a late `next` a no-op.
+      canceled = true;
       supervisor.finish();
       opts.onDone?.();
       return;

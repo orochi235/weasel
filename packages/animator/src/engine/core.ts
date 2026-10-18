@@ -47,6 +47,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     codec,
     hub,
     elapsed: () => clock.elapsed,
+    direction: () => (clock.timeScale < 0 ? -1 : 1),
     seedClock,
     showNow: (target) => targets.showNow(target),
     resting: () => targets.resting,

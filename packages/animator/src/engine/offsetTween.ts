@@ -31,48 +31,54 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   ctx.targets.attach(s as never);
   s.set(o.to);
   ctx.seedClock();
+  const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);
+  /** Its offset at its start, where a run backward ends. */
+  const first = path ? offsetAt(0) : travel(ax, given ?? base, to);
   s.slot = path
-    ? codec.path({ id, on: s, ms, axes: ax.count, at: (u) => minus(ax.to(path(easing(u))), to) })
-    : codec.tween({
-      id, on: s, ms, ease: easing,
-      from: travel(ax, given ?? base, to),
-      to: new Array<number>(ax.count).fill(0),
-    });
+    ? codec.path({ id, on: s, ms, axes: ax.count, at: offsetAt })
+    : codec.tween({ id, on: s, ms, ease: easing, from: first, to: new Array<number>(ax.count).fill(0) });
   bump(s as never, codec.own(id)!.value, 1);
   const share = shareBehind(ax, committed, to, travel(ax, given ?? base, to));
   const behind = goBehind(s, () => times(codec.own(id)!.value, share));
 
   let left = false;
-  /** Takes its voice off the target, committing what it had left to travel when `commit`. */
-  const leave = (commit: boolean): void => {
+  /** Takes its voice off the target, committing what it had left to travel when `commit`, or
+   *  given `at`, that offset in its place. */
+  const leave = (commit: boolean, at?: readonly number[]): void => {
     if (left) return;
     left = true;
     const own = codec.own(id);
-    const moved = own ? behind.left() : [];
+    const value = at ?? own?.value;
+    const moved = value ? times(value, share) : [];
     const shown = comeOut(s, behind, moved);
     if (own) {
-      if (commit) commitOffset(s, own.value, moved, shown);
+      if (commit) commitOffset(s, value!, moved, shown);
       bump(s as never, own.value, -1);
     }
     codec.stop(id);
     ctx.targets.detach(s as never);
   };
-
-  seed.progress = (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms));
-  // With no `onTick` to call it has nothing to do until it ends.
-  if (!o.onTick) seed.due = Math.max(o.ms, 0);
-  seed.onCancel = () => leave(true);
-  seed.tick = (nowMs) => {
-    if (ctx.tripwire()) { leave(true); return true; }
-    const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
-    if (o.onTick) o.onTick(t >= 1 ? o.to : ax.from(plus(to, codec.own(id)!.value)));
-    if (t < 1) return false;
+  /** Ends it at its destination, or played backward, at its start. */
+  const end = (atStart: boolean): true => {
+    o.onTick?.(atStart ? from : o.to);
     // That last onTick may have canceled it, which commits where it was and never completes.
     if (!ctx.has(id)) return true;
-    leave(false);
+    leave(atStart, atStart ? first : undefined);
     ctx.reportEnd(id);
     o.onDone?.();
     return true;
+  };
+
+  seed.progress = (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, Math.max(0, virtualNow / o.ms)));
+  // With no `onTick` to call it has nothing to do until it ends.
+  if (!o.onTick) seed.due = Math.max(o.ms, 0);
+  seed.onCancel = () => leave(true);
+  seed.tick = (nowMs, scale) => {
+    if (ctx.tripwire()) { leave(true); return true; }
+    if (scale < 0 && (nowMs <= 0 || codec.rewound(id))) return end(true);
+    if (o.ms <= 0 || nowMs >= o.ms) return end(false);
+    o.onTick?.(ax.from(plus(to, codec.own(id)!.value)));
+    return false;
   };
   return ctx.register(seed);
 }

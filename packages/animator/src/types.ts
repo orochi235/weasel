@@ -33,7 +33,9 @@ export interface AnimationHandle {
   pause(): void;
   /** Resume this animation's virtual clock. Idempotent. */
   resume(): void;
-  /** Multiply this animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
+  /** Multiply this animation's virtual-clock rate by `scale`. 1 = normal, 0 holds it still, and
+   *  below 0 plays it backward: run back to its start, it ends there holding its start value,
+   *  as it ends holding its destination going forward, and `onDone` runs. */
   setTimeScale(scale: number): void;
   /** This animation's own time scale. 1 once it has finished, since the
    *  animator no longer holds an entry to read. */
@@ -211,7 +213,9 @@ export interface Animator {
   resume(): void;
   /** True iff the animator is currently globally paused. */
   isPaused(): boolean;
-  /** Multiply every animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
+  /** Multiply every animation's virtual-clock rate by `scale`. Below 0 plays every one backward,
+   *  as each handle's `setTimeScale` does, while the animator's own clock goes on forward: one
+   *  started meanwhile is at its start already, and ends at once. */
   setTimeScale(scale: number): void;
   /** The global time scale. Per-animation scales multiply on top of it. */
   timeScale(): number;

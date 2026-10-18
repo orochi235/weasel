@@ -35,12 +35,14 @@ interface PendingEntry {
  */
 class CompositeHandle implements AnimationHandle {
   readonly id: number;
-  private cancelled = false;
+  private canceled = false;
   private paused_ = false;
   private timeScale_ = 1;
   private children: AnimationHandle[] = [];
   private pending: PendingEntry[] = [];
   private outstanding: number;
+  /** Children started and not yet done. */
+  private running = 0;
   private finished = false;
 
   constructor(
@@ -58,11 +60,11 @@ class CompositeHandle implements AnimationHandle {
     supervisor.setOnFrame((virtualNow) => this.fireDue(virtualNow));
   }
 
-  /** Invoked when the supervisor is cancelled externally (animator.cancel /
+  /** Invoked when the supervisor is canceled externally (animator.cancel /
    *  cancelKey) OR via this composite's own `cancel`. */
   private handleSupervisorCancel(): void {
-    if (this.cancelled) return;
-    this.cancelled = true;
+    if (this.canceled) return;
+    this.canceled = true;
     this.pending = [];
     // Snapshot children first: child.cancel() may synchronously invoke our
     // own noteChildDone path via the animator's completion listener, which
@@ -73,36 +75,50 @@ class CompositeHandle implements AnimationHandle {
   }
 
   noteChildDone(): void {
-    if (this.cancelled || this.finished) return;
+    if (this.canceled || this.finished) return;
     this.outstanding -= 1;
-    if (this.outstanding <= 0) {
-      this.finished = true;
-      this.children = [];
-      this.supervisor.finish();
-    }
+    this.running -= 1;
+    if (this.outstanding <= 0) this.finish();
+    else this.rewound();
+  }
+
+  private finish(): void {
+    this.finished = true;
+    this.children = [];
+    this.pending = [];
+    this.supervisor.finish();
+  }
+
+  /** Played backward, it ends once every item running has run back to its start: the items
+   *  still waiting are not reached going that way. */
+  private rewound(): void {
+    if (this.running <= 0 && this.supervisor.rate() < 0) this.finish();
   }
 
   addChild(h: AnimationHandle): void {
-    if (this.cancelled) {
+    if (this.canceled) {
       h.cancel();
       return;
     }
+    this.running += 1;
     this.children.push(h);
     if (this.paused_) h.pause();
     if (this.timeScale_ !== 1) h.setTimeScale(this.timeScale_);
   }
 
   schedule(delayMs: number, fire: () => void): void {
-    if (this.cancelled) return;
+    if (this.canceled) return;
     this.pending.push({ at: delayMs, fire });
   }
 
   private fireDue(virtualNow: number): void {
-    if (this.cancelled || this.pending.length === 0) return;
+    if (this.canceled || this.finished) return;
+    this.rewound();
+    if (this.finished || this.pending.length === 0) return;
     const due = this.pending.filter((p) => p.at <= virtualNow).sort((a, b) => a.at - b.at);
     this.pending = this.pending.filter((p) => p.at > virtualNow);
     for (const p of due) {
-      if (this.cancelled) return;
+      if (this.canceled) return;
       p.fire();
     }
   }
@@ -210,8 +226,8 @@ function runStagger<TItem>(
     const fire = (): void => {
       const child = factory(item, i);
       // Hook into the child's deregistration (natural OR cancel). If the
-      // composite is already cancelled, the watcher fires immediately on
-      // cancel and the noteChildDone branch is a no-op (cancelled guard).
+      // composite is already canceled, the watcher fires immediately on
+      // cancel and the noteChildDone branch is a no-op (canceled guard).
       watchCompletion(child.id, () => composite.noteChildDone());
       composite.addChild(child);
     };

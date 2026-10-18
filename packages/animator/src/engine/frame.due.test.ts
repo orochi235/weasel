@@ -15,6 +15,7 @@ function rig() {
     codec: { stop() {}, has: () => false, rate() {} },
     hub,
     elapsed: () => clock.elapsed,
+    direction: () => (clock.timeScale < 0 ? -1 : 1),
     seedClock: () => { clock.frameT ??= state.now; },
     showNow() {},
     resting: () => false,
@@ -101,6 +102,31 @@ describe('a frame and the animations it ticks', () => {
     slow.resume();
     expect(r.tick(270)).toEqual([]);
     expect(r.tick(280)).toEqual(['slow@100']);
+  });
+
+  it('ticks one with a `due` every frame while it plays backward, and leaves it to wait again forward', () => {
+    const r = rig();
+    const a = r.start('a', 1000, { due: 1000 });
+    r.tick(0);
+    expect(r.tick(100)).toEqual([]);
+    a.setTimeScale(-1);
+    expect(r.tick(120)).toEqual(['a@80']);
+    expect(r.tick(140)).toEqual(['a@60']);
+    a.setTimeScale(1);
+    expect(r.tick(160)).toEqual([]);
+    expect(r.table.waiting).toBe(1);
+  });
+
+  it('runs every clock backward while the animator plays backward, its own clock going on forward', () => {
+    const r = rig();
+    const a = r.start('a', 1000);
+    r.tick(0);
+    r.tick(100);
+    r.table.turn(() => { r.clock.timeScale = -1; });
+    expect(r.tick(130)).toEqual(['a@70']);
+    expect(r.clock.elapsed).toBe(130);
+    a.setTimeScale(-1);
+    expect(r.tick(150)).toEqual(['a@90']);
   });
 
   it('counts the animator\'s own pause and time scale into every clock', () => {

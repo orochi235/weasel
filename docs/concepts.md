@@ -290,6 +290,12 @@ A pose move can follow an undo instead: `tweenPose` and `springPose` given
 `rewind: true` travel back to where they began when the move is undone mid-flight,
 and forward again if it is redone on the way.
 
+A time scale below 0 plays an animation back to its start, where it ends as it would at its
+end going forward: a tween on a target commits its start value, and `onDone` runs. The
+motion a redirect gave a spring plays back only as far as the redirect, where blits started
+its clock, and holds there; a loop and a stagger end once what they have in flight is back at
+its start.
+
 What is built on it:
 
 | Value | Its target | Moved by |

@@ -32,6 +32,8 @@ export interface SpringVoices {
   /** Sets the animation's velocity, by way of the rest. */
   push(velocity: readonly number[]): void;
   rate(rate: number): void;
+  /** Whether every voice, played backward, has got back to where it was last cued. */
+  rewound(): boolean;
   stop(): void;
 }
 
@@ -97,6 +99,8 @@ export function createSpringVoices(codec: Codec, s: TargetState, o: SpringVoices
       rate = r;
       for (const v of [moving, resting]) if (v.id >= 0 && codec.has(v.id)) codec.rate(v.id, r);
     },
+    rewound: () => (moving.id >= 0 || resting.id >= 0)
+      && [moving, resting].every((v) => v.id < 0 || codec.rewound(v.id)),
     stop() {
       drop(moving);
       drop(resting);
