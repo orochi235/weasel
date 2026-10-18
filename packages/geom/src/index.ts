@@ -173,9 +173,12 @@ export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {
-  anchorsBefore, constrainPathEdit, constraintAnchors, constraintFits, mapConstraintAnchors, pathAnchorPoints,
-  remapConstraints, solveConstraints, solvePathConstraints, unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
-  type AnchorPair, type ConstrainPathEditOptions, type ConstrainedPathEdit, type ConstraintPoint,
+  anchorsBefore, conflictingConstraints, constrainPathEdit, constraintAnchors, constraintApplies, constraintFits,
+  mapConstraintAnchors,
+  pathAnchorPoints, remapConstraints, segmentBetween, solveConstraints, solvePathConstraints,
+  unsatisfiedConstraints, CONSTRAINT_TOLERANCE,
+  type AnchorPair, type ConflictingConstraintsOptions, type ConstrainPathEditOptions, type ConstrainedPathEdit,
+  type ConstraintPoint, type HandleRef,
   type PathConstraint, type PathConstraintKind, type SolveConstraintsOptions, type SolveConstraintsResult,
   type SolvePathConstraintsResult, type UnsatisfiedConstraintsOptions,
 } from './constraints';

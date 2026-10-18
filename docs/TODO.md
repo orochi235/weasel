@@ -405,20 +405,13 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
-  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
-  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
-- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
-  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
-  Constraints between two nodes also need a home other than one node's `data.constraints`, and
-  both nodes solved in one edit.
-- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
-  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
-  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
-  the Jacobian's rank, which the damped solve does not compute.
-- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
-  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
-  analytic derivatives.
+- **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
+  its own path only. Across nodes the constraint needs a home other than either node's
+  `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
+  undone with the scene. Its solve packs every node a connected set of constraints reaches into one
+  coordinate vector — `solveConstraints` already takes any point list — and commits each moved
+  node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
+  the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
