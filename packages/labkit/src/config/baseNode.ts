@@ -124,26 +124,26 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   }
 
   /**
-   * Compute this leaf's value while it is auto, instead of leaving it
-   * `undefined`. The resolver is given the config with every other auto path
-   * already resolved.
+   * Let this leaf be auto: its row's label then toggles it. A leaf that never
+   * says so is always pinned. With `resolve`, the leaf's value while it is
+   * auto is what that computes, given the config with every other auto path
+   * already resolved; without, it reads `undefined`.
    */
-  auto(resolve: (config: Record<string, unknown>) => T): this {
-    return this.opt({ autoResolve: resolve as (c: Record<string, unknown>) => unknown });
+  auto(resolve?: (config: Record<string, unknown>) => T): this {
+    return this.opt(
+      resolve === undefined
+        ? { autoable: true }
+        : { autoable: true, autoResolve: resolve as (c: Record<string, unknown>) => unknown },
+    );
   }
 
   /**
-   * Start this leaf auto rather than pinned at its default. Takes `auto` and
-   * nothing else — the constructor argument already declares the value, and a
-   * second way to say it would fight with the first.
+   * Start this leaf auto rather than pinned at its default, which also lets it
+   * be auto. Takes `auto` and nothing else — the constructor argument already
+   * declares the value, and a second way to say it would fight with the first.
    */
   initial(value: Auto): this {
     if (!isAuto(value)) throw new Error('[labkit] .initial() takes `auto` and nothing else');
     return this.opt({ unpinned: true });
-  }
-
-  /** Never auto. The row's label does not toggle. */
-  manual(): this {
-    return this.opt({ manual: true });
   }
 }

@@ -198,6 +198,9 @@ export interface NodeOptions extends BranchOptions {
   dialog?: DialogSpec;
   /** Errors for this leaf under `config`, the instrument's whole config. */
   validate?: (leaf: PrefLeaf, config: Record<string, unknown>) => string[];
+  /** The leaf may be auto, and its row's label toggles it. Set by `.auto()`;
+   *  a leaf without it is always pinned. */
+  autoable?: boolean;
   /** Computes this leaf's value while it is auto. Attaching one is what gives
    *  the row a real value to pin back to and keeps the instrument off
    *  `?? compute()`. */
@@ -205,9 +208,6 @@ export interface NodeOptions extends BranchOptions {
   /** The leaf starts auto rather than pinned at its default. Set by
    *  `.initial(auto)`. */
   unpinned?: boolean;
-  /** The leaf can never be auto: the row's label does not toggle. For a value
-   *  the instrument cannot receive as `undefined`. */
-  manual?: boolean;
 }
 
 /** A `.showIf` or `.enableIf` written as code, for what a condition cannot say. */

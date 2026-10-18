@@ -209,12 +209,6 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(r.sections).toEqual([{ at: '', label: 'Advanced', paths: ['grid'] }]);
   });
 
-  it('rejects a leaf that is both manual and starts auto', () => {
-    const schema = f.schema({ seed: f.number(1).manual().initial(auto) });
-    expect(() => resolveConfigSchema(schema, [])).toThrow(/seed/);
-    expect(() => resolveConfigSchema(schema, [])).toThrow(/manual/);
-  });
-
   it('rejects a value leaf whose kind nothing can infer, naming it and the fix', () => {
     const schema = f.schema({ grid: f.group({ when: f.value<number | null>(null) }) });
     expect(() => resolveConfigSchema(schema, [])).toThrow(/grid\.when/);
@@ -227,22 +221,23 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(leafAt(resolveConfigSchema(schema, [rule]), 'when').kind).toBe('number');
   });
 
-  it('carries autoResolve, unpinned and manual onto the resolved leaf', () => {
+  it('carries autoResolve, unpinned and autoable onto the resolved leaf', () => {
     const r = resolveConfigSchema(
       f.schema({
         gap: f.number(12).auto(() => 18),
         cols: f.number(3).initial(auto),
-        seed: f.number(1).manual(),
+        bare: f.number(1).auto(),
         plain: f.number(0),
       }),
       [],
     );
+    const autoable = (path: string) => (leafAt(r, path) as { autoable?: boolean }).autoable;
     expect(typeof leafAt(r, 'gap').autoResolve).toBe('function');
     expect(leafAt(r, 'cols').unpinned).toBe(true);
-    expect(leafAt(r, 'seed').manual).toBe(true);
+    expect([autoable('gap'), autoable('cols'), autoable('bare')]).toEqual([true, true, true]);
     expect(leafAt(r, 'plain').autoResolve).toBeUndefined();
     expect(leafAt(r, 'plain').unpinned).toBeUndefined();
-    expect(leafAt(r, 'plain').manual).toBeUndefined();
+    expect(autoable('plain')).toBeUndefined();
   });
 
   it('gives a list of strings a string item, and a typed list the item it was built with', () => {

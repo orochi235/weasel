@@ -31,7 +31,7 @@ import {
   withRowControl,
 } from '@weasel-js/ui';
 import { useMemo } from 'react';
-import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
+import { autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
@@ -242,7 +242,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const pinned = valueAtPath(config, path) ?? fallback;
 
   const isAutoRow = auto?.has(path) ?? false;
-  const canAuto = setRowAuto !== undefined && !extra<boolean>(leaf, 'manual');
+  const canAuto = setRowAuto !== undefined && leafCanAuto(leaf);
   // Read out of the resolved config rather than re-running this leaf's own
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.

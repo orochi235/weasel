@@ -19,6 +19,13 @@ export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
   return leaf.autoValue === undefined ? undefined : () => leaf.autoValue;
 }
 
+/** Whether a leaf may be auto: it said `.auto()` or `.initial(auto)`, or, as data, `unpinned` or an
+ *  `autoValue`. A leaf that says none of them is always pinned, and so is one marked `manual`. */
+export function leafCanAuto(leaf: PrefLeaf): boolean {
+  if (leaf.manual === true) return false;
+  return extra<boolean>(leaf, 'autoable') === true || leaf.unpinned === true || autoResolverOf(leaf) !== undefined;
+}
+
 /** Every leaf in a resolved schema, in schema order, with its dotted path.
  *  Not `prefLeaves`, which rejects the `$version` key a prefs store reserves. */
 function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
