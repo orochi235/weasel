@@ -1083,12 +1083,12 @@ convenience layer shipped inside core. The items below are what survives that.
 - **(P3) A presentation bundle and a whiteboard bundle.** Each is a `Contribution` bundle, the way
   `@weasel-js/diagram` is (`createDiagramContribution`), in a package of its own: neither is a den
   pack.
-  - Presentation. A frame is a page: `layoutPages` places the slides, `fitViewToPage` frames one,
-    and `adjacentPage` steps the order (`packages/core/src/core/pages/`). Left: (1) next-slide and
-    previous-slide actions that animate the view to `adjacentPage` through `useViewAnimation`, and
-    the contribution binding them to the arrow and page keys; (2) a frame tool, a drag-rect
-    binding whose action adds a page, which waits on the undoable page list under "Multi-page
-    documents"; (3) a presenting state that holds the view on the current page.
+  - Presentation: to be rethought before anything is built. This bullet came from the den spec
+    (2026-05-03), which predates sherpa (the presentation runtime) and blits (concurrent effects).
+    Ruled 2026-10-17: a presentation strategy now runs through those two, not an in-canvas
+    slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
+    have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
+    `adjacentPage`).
   - Whiteboard. The freeform pen is `usePencilTool` and text is `useTextTool`. Left: (1) a sticky
     note, as an `insert` node factory minting a filled rect that carries text, bound by a
     drag-rect tool the way `useRectTool` is; (2) the contribution bundling the three tools with
