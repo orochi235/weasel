@@ -6,7 +6,8 @@ function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;
 }
 
-/** Routes a container node as `'group'`, whatever its data holds. First in both tables below. */
+/** Routes a container node as `'group'`, whatever its data holds. `inferredNodeRouting` leads
+ *  with it; spread it ahead of `defaultNodeRouting`, which is the shape-kind table alone. */
 export const groupNodeRouting: NodeRoutingEntry = {
   name: 'group',
   matches: (_data, node) => node?.kind === 'container',
@@ -22,15 +23,14 @@ export const groupNodeRouting: NodeRoutingEntry = {
  * (`{ path }`, `{ text }`, `{ image }`) wants `inferredNodeRouting`, which
  * SceneCanvas applies when `routing` is unset.
  */
-export const defaultNodeRouting: readonly NodeRoutingEntry[] = [
-  groupNodeRouting,
-  ...KIT_SHAPE_KINDS.map((name): NodeRoutingEntry => ({
+export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.map(
+  (name) => ({
     name,
     matches: (data) =>
       isObj(data) &&
       (data as { kind?: unknown }).kind === name,
-  })),
-];
+  }),
+);
 
 /**
  * Routing classifiers used when a consumer doesn't pass `routing` to

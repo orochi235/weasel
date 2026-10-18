@@ -57,9 +57,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   `onClick`/`onDoubleClick` observers: a rejected node is left out of the select tool's pick,
   the dispatcher's `kind:` classification, `hitAt` and `nodeAtPoint`, and whatever is beneath it
   answers. A click on a node a mode dims no longer selects it.
-- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` and
-  `defaultNodeRouting` lead with `groupNodeRouting`, which routes a container as `'group'`. A
-  container was `'unknown'` before.
+- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` (the
+  default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
+  `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
+  spreads `groupNodeRouting` ahead of it.
 
 ## Scene, move, and history
 

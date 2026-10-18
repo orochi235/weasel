@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { inferredNodeRouting, defaultNodeRouting } from './defaultNodeRouting';
+import { inferredNodeRouting, defaultNodeRouting, groupNodeRouting } from './defaultNodeRouting';
 import { createNodeRouting } from 'core/scene/NodeRouting';
 
 describe('inferredNodeRouting', () => {
@@ -35,7 +35,7 @@ describe('inferredNodeRouting', () => {
   });
 
   it('routes a container as "group" whatever its data, and data alone as before', () => {
-    for (const table of [inferredNodeRouting, defaultNodeRouting]) {
+    for (const table of [inferredNodeRouting, [groupNodeRouting, ...defaultNodeRouting]]) {
       const r = createNodeRouting();
       for (const k of table) r.register(k);
       expect(r.classify({}, { kind: 'container' })).toBe('group');

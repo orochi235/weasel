@@ -92,8 +92,8 @@ describe('collectRoutingTrait', () => {
       expect(entry.kind).toBe('routingKind');
       expect(entry.trait).toBe('routing');
       expect(entry.source).toBe('default');
-      // Built-in shape kinds in defaults cross-link to a ShapeKindEntry; `group` has no shape.
-      expect(entry.shapeKindId).toBe(entry.id === 'group' ? undefined : entry.id);
+      // Built-in shape kinds in defaults cross-link to a ShapeKindEntry.
+      expect(entry.shapeKindId).toBe(entry.id);
     }
   });
 
