@@ -15,11 +15,8 @@ export const DefaultOn: Story = { args: { children: 'Bluetooth', defaultSelected
 export const Disabled: Story = { args: { children: 'Locked', isDisabled: true, defaultSelected: true } };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState(false);
-      return <Switch isSelected={v} onChange={setV}>state = {String(v)}</Switch>;
-    }
-    return <Wrap />;
+  render: (args) => {
+    const [v, setV] = useState(false);
+    return <Switch {...args} isSelected={v} onChange={setV}>state = {String(v)}</Switch>;
   },
 };

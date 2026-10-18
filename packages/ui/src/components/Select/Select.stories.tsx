@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
-import { Select, SelectItem, SelectSection } from './Select';
+import { Select, SelectItem, SelectSection, type SelectProps } from './Select';
 
 const meta: Meta<typeof Select> = {
   title: 'Primitives/Select',
@@ -124,19 +124,17 @@ export const Disabled: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState<string>('r');
-      return (
-        <Select<string>
-          label={`Color (= ${v})`}
-          options={COLORS}
-          selectedKey={v}
-          onSelectionChange={setV}
-        />
-      );
-    }
-    return <Wrap />;
+  render: (args) => {
+    const [v, setV] = useState<string>('r');
+    return (
+      <Select<string>
+        {...(args as SelectProps<string>)}
+        label={`Color (= ${v})`}
+        options={COLORS}
+        selectedKey={v}
+        onSelectionChange={setV}
+      />
+    );
   },
 };
 

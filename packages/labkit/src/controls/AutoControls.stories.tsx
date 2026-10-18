@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { applyConfigWrite } from '../config/autoConfig';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from './ControlPanel';
+import { ControlPanel, type ControlPanelProps } from './ControlPanel';
 
 /**
  * The ghosting and the muted accent are CSS, and jsdom resolves neither
@@ -40,13 +40,17 @@ const resolved = resolveConfigSchema(schema, []);
 /** Every path the panel will draw as auto, except the `.manual()` one. */
 const EVERY_AUTO = ['gap', 'cols', 'wave', 'mode', 'showGrid', 'title', 'tint'];
 
-function Panel({ start }: { start: readonly string[] }) {
+function Panel({
+  start,
+  ...args
+}: Partial<ControlPanelProps<Record<string, unknown>>> & { start: readonly string[] }) {
   const [state, setState] = useState(() => ({
     config: schema.defaults() as Record<string, unknown>,
     autoPaths: start,
   }));
   return (
     <ControlPanel
+      {...args}
       schema={resolved}
       config={state.config}
       auto={new Set(state.autoPaths)}
@@ -84,5 +88,5 @@ export const BothStates: Story = {
 
 /** One panel to click labels around in: the row must not resize as it toggles. */
 export const Interactive: Story = {
-  render: () => <Panel start={['gap']} />,
+  render: (args) => <Panel {...args} start={['gap']} />,
 };

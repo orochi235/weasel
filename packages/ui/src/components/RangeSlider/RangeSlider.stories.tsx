@@ -35,19 +35,9 @@ export const Disabled: Story = {
 };
 
 export const Controlled: Story = {
-  render: () => {
-    function Wrap() {
-      const [v, setV] = useState(50);
-      return (
-        <RangeSlider
-          label="Q"
-          value={v}
-          onChange={setV as (v: number | number[]) => void}
-          minValue={0}
-          maxValue={100}
-        />
-      );
-    }
-    return <Wrap />;
+  args: { label: 'Q', minValue: 0, maxValue: 100 },
+  render: (args) => {
+    const [v, setV] = useState(50);
+    return <RangeSlider {...args} value={v} onChange={setV as (v: number | number[]) => void} />;
   },
 };

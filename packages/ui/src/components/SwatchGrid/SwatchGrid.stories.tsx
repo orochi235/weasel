@@ -22,18 +22,18 @@ const PALETTE: SwatchGridOption[] = [
 /** Click applies to the first target; shift-click, right-click or
  *  Shift+Enter to the second. */
 export const Default: Story = {
-  render: () => {
+  args: { options: PALETTE, columns: 6, 'aria-label': 'Palette' },
+  render: (args) => {
     const [fill, setFill] = useState<string | null>('#4a6fd4ff');
     const [stroke, setStroke] = useState<string | null>('#1a1a1aff');
     return (
       <div>
         <SwatchGrid
-          options={PALETTE}
+          {...args}
+          options={args.options ?? PALETTE}
           value={fill}
           onChange={setFill}
           onAltChange={setStroke}
-          columns={6}
-          aria-label="Palette"
         />
         <p>fill {fill ?? 'none'} · stroke {stroke ?? 'none'}</p>
       </div>

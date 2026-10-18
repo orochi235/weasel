@@ -116,7 +116,8 @@ const TEXT_OPTIONS: PrefGroup = {
 };
 
 export const FromASchema: Story = {
-  render: () => {
+  args: { label: 'Text' },
+  render: (args) => {
     const [values, setValues] = useState<Record<string, unknown>>({
       bold: true,
       italic: false,
@@ -127,7 +128,7 @@ export const FromASchema: Story = {
     return (
       <div style={{ width: 640 }}>
         <ToolOptionsBar
-          label="Text"
+          {...args}
           schema={TEXT_OPTIONS}
           values={values}
           onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))}

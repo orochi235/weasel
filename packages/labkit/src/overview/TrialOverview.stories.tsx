@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Stage } from '../canvas/Stage';
 import type { ViewTransform } from '../instrument/types';
-import { TrialOverview } from './TrialOverview';
+import { TrialOverview, type TrialOverviewProps } from './TrialOverview';
 
 const meta: Meta<typeof TrialOverview> = {
   title: 'labkit/Overview/TrialOverview',
@@ -29,7 +29,7 @@ function Picture() {
   );
 }
 
-function Harness() {
+function Harness(args: Partial<TrialOverviewProps>) {
   const [view, setView] = useState<ViewTransform>({ zoom: 2, pan: { x: -200, y: -120 } });
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
@@ -37,7 +37,7 @@ function Harness() {
         size={SIZE}
         view={view}
         onViewChange={setView}
-        overlay={<TrialOverview width={200} height={140} render={() => <Picture />} />}
+        overlay={<TrialOverview width={200} height={140} {...args} render={() => <Picture />} />}
       >
         <Picture />
       </Stage>
@@ -46,5 +46,5 @@ function Harness() {
 }
 
 export const Default: Story = {
-  render: () => <Harness />,
+  render: (args) => <Harness {...args} />,
 };

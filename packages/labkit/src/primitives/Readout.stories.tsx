@@ -38,7 +38,7 @@ export const WithTitleAndNote: Story = {
 /** Values vanish while the cursor is off the picture; the rows hold their
  *  place and the readout its height. */
 export const ValuesComeAndGo: Story = {
-  render: () => {
+  render: (args) => {
     const [on, setOn] = useState(true);
     return (
       <div>
@@ -46,6 +46,7 @@ export const ValuesComeAndGo: Story = {
           {on ? 'Hide values' : 'Show values'}
         </button>
         <Readout
+          {...args}
           rows={[
             { label: 'x', value: on ? `${FIGURE_SPACE}12.50` : undefined },
             { label: 'y', value: on ? '-3.75' : undefined },
