@@ -28,7 +28,7 @@ function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; draft
  * Call inside a batch. Every draft's id is minted first, so an effect can name
  * sources that come after it. An effect whose sources the file does not hold,
  * or that the scene's registry cannot derive, opens as the paths it exported
- * as; a live one leaves those paths out.
+ * as, and as nothing when it exported none; a live one leaves those paths out.
  */
 function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
   const sceneIdOf = new Map(drafts.map((d) => [d.id, scene.mintId()]));
@@ -36,6 +36,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
   const leaves = new Set(drafts.filter((d) => d.kind === 'leaf').map((d) => d.id));
   const live = (d: SceneDraft) => derivations !== null && d.kind === 'effect' && d.dependsOn.every((s) => leaves.has(s));
   const skipped = new Set<string>();
+  const parents = new Set(drafts.map((d) => d.parentId));
   for (const draft of drafts) {
     if (draft.parentId != null && skipped.has(draft.parentId)) {
       skipped.add(draft.id);
@@ -52,6 +53,7 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[]): void {
       scene.add({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>);
       continue;
     }
+    if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'leaf'
       ? { kind: 'leaf' as const, ...leafOfObj(draft.obj) }
       : { kind: 'container' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
