@@ -8,6 +8,7 @@ import {
   WeaselProvider,
   type Paint,
   type RectPose,
+  type CanvasSize,
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
@@ -36,9 +37,10 @@ export interface DiagramViewProps {
   specs: readonly DiagramSpec[];
   /** The view opens fitted to the diagram, and fits again when the size or a
    *  fit option changes or a layout run settles, until the user pans or zooms;
-   *  from then on the view is theirs. */
-  width: number;
-  height: number;
+   *  from then on the view is theirs. Omit both to fill the parent, which
+   *  then needs a size of its own; a resize of the parent is a size change. */
+  width?: number;
+  height?: number;
   /** A participant id, or null for none. */
   selected?: string | null;
   /** Reports what each click leaves picked, `null` for none — a re-click on the
@@ -155,12 +157,18 @@ function Inner({
   // the live layout's options before the effect restarts it.
   const [run, setRun] = useState<{ algorithm: DiagramLayout } | null>(null);
   const controlled = view !== undefined;
+  const fills = width === undefined || height === undefined;
+  const [measured, setMeasured] = useState<CanvasSize | null>(null);
+  const boxWidth = width ?? measured?.width ?? 0;
+  const boxHeight = height ?? measured?.height ?? 0;
+  // A filling canvas is 0 × 0 until measured, and no box to fit into.
+  const unsized = boxWidth === 0 || boxHeight === 0;
   const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
   const defaultView = useMemo(
-    () => controlled ? undefined : fitDiagram(specs, { width, height }, fitOpts),
+    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts),
     // A later `specs` keeps the view it has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, width, height, minScale, maxScale, anchor, fitPadding],
+    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding],
   );
   // A settled run's fit holds until the box or a fit option changes.
   const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
@@ -169,7 +177,7 @@ function Inner({
     liveOpts?.onSettle?.(moved);
     if (controlled || moved === 0) return;
     const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
-    setSettledFit({ view: fitDiagram(boxes, { width, height }, fitOpts), over: defaultView });
+    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts), over: defaultView });
   });
   const live = useLiveLayout<RectPose>({
     ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
@@ -219,6 +227,7 @@ function Inner({
       onClick={onClick}
       width={width}
       height={height}
+      {...(fills ? { onResize: setMeasured } : {})}
       className={className}
       {...(defaultView ? { defaultView } : {})}
       {...(view ? { view } : {})}

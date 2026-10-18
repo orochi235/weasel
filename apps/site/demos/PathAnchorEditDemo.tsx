@@ -8,6 +8,7 @@ import {
   useSelection,
   type Path,
 } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 480, H = 300;
 
@@ -36,12 +37,12 @@ export function PathAnchorEditDemo() {
   const selection = useSelection();
 
   return (
-    <SceneCanvas features={['pick', 'move', 'paths']}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selection={selection}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas features={['pick', 'move', 'paths']}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+      />
+    </DemoStage>
   );
 }

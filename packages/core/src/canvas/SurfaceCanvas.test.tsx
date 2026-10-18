@@ -39,8 +39,13 @@ describe('<SurfaceCanvas>', () => {
 
   it('sizes from those properties at zero specificity', () => {
     expect(SURFACE_RULE).toContain(':where([data-wzl-surface])');
-    expect(SURFACE_RULE).toContain('width: var(--wzl-surface-width)');
-    expect(SURFACE_RULE).toContain('height: var(--wzl-surface-height)');
+    expect(SURFACE_RULE).toContain('width: var(--wzl-surface-width, 100%)');
+    expect(SURFACE_RULE).toContain('height: var(--wzl-surface-height, 100%)');
+  });
+
+  it('lets a filling canvas shrink inside its parent at zero specificity', () => {
+    expect(SURFACE_RULE).toContain(":where([data-wzl-surface='fill'])");
+    expect(SURFACE_RULE).toContain('contain: size');
   });
 
   it('holds the rule in the document it mounts in, once however many mount', () => {

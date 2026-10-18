@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { FONT, moved } from './diagram/shared';
+import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
 const BOX = { width: 150, height: 44 };
@@ -29,12 +30,12 @@ export function DiagramEdgesDemo() {
   const [nodes, setNodes] = useState(NODES);
   const specs = useMemo(() => diagramScene({ nodes, edges: EDGES }, { layout: 'none', font: FONT }), [nodes]);
   return (
-    <DiagramView
-      specs={specs}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      onMove={(moves) => setNodes((ns) => moved(ns, moves))}
-    />
+    <DemoStage width={W} height={H}>
+      <DiagramView
+        specs={specs}
+        className="ckd-canvas"
+        onMove={(moves) => setNodes((ns) => moved(ns, moves))}
+      />
+    </DemoStage>
   );
 }

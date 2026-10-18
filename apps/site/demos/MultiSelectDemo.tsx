@@ -1,5 +1,6 @@
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
@@ -16,13 +17,13 @@ const INITIAL: Rect[] = [
 export function MultiSelectDemo() {
   const scene = useScene({ items: INITIAL });
   return (
-    <SceneCanvas
-      features={['pick', 'move', 'transform']}
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      scene={scene}
-      selectionOptions={{ mode: 'multi' }}
-    />
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        features={['pick', 'move', 'transform']}
+        className="ckd-canvas"
+        scene={scene}
+        selectionOptions={{ mode: 'multi' }}
+      />
+    </DemoStage>
   );
 }

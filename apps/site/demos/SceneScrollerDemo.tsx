@@ -40,10 +40,11 @@ import {
   type GameRefs,
 } from './platformer/world';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 720;
 const H = 405;
-const DIMS: Dims = { width: W, height: H };
+const OPENING: Dims = { width: W, height: H };
 
 /** The concussion blur, in px of radius. Each knock adds `perHit` and the
  *  total clears at a fixed rate, so one knock is gone in `clearSeconds` and
@@ -87,7 +88,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
   const [running, setRunning] = useState(false);
   const canvas = useRef<SceneCanvasApi | null>(null);
-  const initialView = useMemo(() => cameraView(game.current.camera, DIMS), []);
+  // The frame loop reads it, so it lives in a ref and a resize costs no render.
+  const dims = useRef<Dims>(OPENING);
+  const initialView = useMemo(() => cameraView(game.current.camera, OPENING), []);
 
   // `impact` is what the knocks have added and not yet cleared; `blur` follows
   // it with a short rise so a knock doesn't snap on. Both are stepped by the
@@ -146,7 +149,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       frameMs.current = frame * 1000;
 
       const g = game.current;
-      g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
+      g.camera = followCamera(g.camera, g.player.body, dims.current, WORLD, frame);
       beginFrame(g);
       impact.step(frame);
       blurRadius.target = impact.value;
@@ -166,7 +169,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       // The camera is the canvas view, so scene nodes and the parallax bands
       // all project through it. A shake nudges the view rather than the
       // camera, keeping the follow state clean.
-      const v = cameraView(g.camera, DIMS);
+      const v = cameraView(g.camera, dims.current);
       const shake = g.shake;
       canvas.current?.setView(shake > 0
         ? {
@@ -291,29 +294,30 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         <button className="ckd-btn" onClick={onRestart}>restart</button>
         <span className={`ckd-readout ${num.numeric}`}>zoom {CAM_SCALE}x</span>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        selectable={false}
-        animator={animator}
-        ref={canvas}
-        defaultView={initialView}
-        layerGroups={layerGroups}
-        layers={{
-          scene: { drawOne: defaultDrawOne, cull: true },
-          sky: { layer: layers.sky, before: 'scene' },
-          far: { layer: layers.far, before: 'scene' },
-          mid: { layer: layers.mid, before: 'scene' },
-          near: { layer: layers.near, before: 'scene' },
-          debug: { layer: layers.debug, after: 'scene' },
-          hud: { layer: layers.hud, after: 'debug' },
-          callouts: { layer: layers.callouts, after: 'hud' },
-          ending: { layer: layers.ending, after: 'callouts' },
-          selectionOverlay: null,
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          selectable={false}
+          animator={animator}
+          ref={canvas}
+          onResize={(size) => { dims.current = size; }}
+          defaultView={initialView}
+          layerGroups={layerGroups}
+          layers={{
+            scene: { drawOne: defaultDrawOne, cull: true },
+            sky: { layer: layers.sky, before: 'scene' },
+            far: { layer: layers.far, before: 'scene' },
+            mid: { layer: layers.mid, before: 'scene' },
+            near: { layer: layers.near, before: 'scene' },
+            debug: { layer: layers.debug, after: 'scene' },
+            hud: { layer: layers.hud, after: 'debug' },
+            callouts: { layer: layers.callouts, after: 'hud' },
+            ending: { layer: layers.ending, after: 'callouts' },
+            selectionOverlay: null,
+          }}
+        />
+      </DemoStage>
       <div className="ckd-toolbar">
         <label className="ckd-field">
           <input

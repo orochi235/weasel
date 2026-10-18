@@ -5,6 +5,7 @@ import {
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
 import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 300;
 
@@ -130,7 +131,7 @@ export function TextOutlinesDemo() {
   }, [outlines]);
 
   return (
-    <div style={{ position: 'relative', width: W }}>
+    <div style={{ position: 'relative', width: 'min-content' }}>
       <label style={{ display: 'block', marginBottom: 6 }}>
         <input
           type="checkbox"
@@ -185,16 +186,16 @@ export function TextOutlinesDemo() {
         />
         <span style={{ marginLeft: 8, opacity: 0.6 }}>{zoom.toFixed(2)}×</span>
       </label>
-      <SceneCanvas
-        ref={canvasRef}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#ffffff' }}
-        scene={scene}
-        view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
-        layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked, filled) } }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          ref={canvasRef}
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
+          layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked, filled) } }}
+        />
+      </DemoStage>
     </div>
   );
 }

@@ -32,6 +32,7 @@ import type {
   Skeleton,
 } from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 340;
 const BONES: { name: string; parent: string | null; x: number; y: number; rotation: number; length: number }[] = [
@@ -271,15 +272,15 @@ export function RigDemo() {
         </label>
         <span className={`ckd-readout ${num.numeric}`}>track u {shownTrackBlend.toFixed(2)}</span>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        features={['pick', 'move']}
-        animator={animator}
-        layers={{ selectionOverlay: null }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          features={['pick', 'move']}
+          animator={animator}
+          layers={{ selectionOverlay: null }}
+        />
+      </DemoStage>
       <div className="ckd-hint">
         Both figures are the same six-joint skeleton, bound to scene nodes by
         <code> useRig</code>: each bone, joint marker and label is a node that rides its

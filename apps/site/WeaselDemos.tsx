@@ -9,6 +9,7 @@ import { Wordmark } from './FrontPage/Wordmark';
 import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 import { isPackagePage } from './Packages/catalog';
 import { SiteNav } from './SiteNav';
+import { DemoFrame } from './DemoFrame';
 
 // These are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -212,7 +213,9 @@ function DemoView({ entry }: { entry: DemoEntry }) {
 
       <div className="ckd-canvas-wrap">
         <Suspense fallback={<div className="ckd-demo-loading" />}>
-          <Component />
+          <DemoFrame>
+            <Component />
+          </DemoFrame>
         </Suspense>
         {entry.hint && <span className="ckd-hint"><InlineMarkdown text={entry.hint} /></span>}
       </div>

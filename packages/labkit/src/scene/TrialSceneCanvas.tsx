@@ -3,9 +3,8 @@ import {
   SceneCanvas,
   type SceneCanvasApi,
   type SceneCanvasProps,
-  useCanvasSize,
 } from '@weasel-js/core';
-import { type ForwardedRef, forwardRef, type ReactElement, type Ref, useRef } from 'react';
+import { type ForwardedRef, forwardRef, type ReactElement, type Ref } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
@@ -33,22 +32,11 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   }: TrialSceneCanvasProps<TData, TLayer, TPose>,
   ref: ForwardedRef<SceneCanvasApi>,
 ) {
-  const host = useRef<HTMLDivElement | null>(null);
-  const { width, height } = useCanvasSize(host);
   useTrialHistory(history ? scene : null);
   const toolsReported = useSceneToolSlot(trial, onToolsCreated);
   return (
-    <div ref={host} className="lk-trial-scene">
-      <div className="lk-trial-scene__fill">
-        <SceneCanvas
-          {...rest}
-          ref={ref}
-          scene={scene}
-          width={width}
-          height={height}
-          onToolsCreated={toolsReported}
-        />
-      </div>
+    <div className="lk-trial-scene">
+      <SceneCanvas {...rest} ref={ref} scene={scene} onToolsCreated={toolsReported} />
     </div>
   );
 }

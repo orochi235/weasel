@@ -6,7 +6,8 @@
  * (`useCanvasSurface`), whose frame loop stops while the canvas is off screen
  * or the tab is hidden. Like `<SceneViewCanvas>` it attaches no event
  * listeners. Its size is `width` × `height` unless a `className` rule sizes
- * the element; the drawing buffer stays `width` × `height` either way.
+ * the element; the drawing buffer stays `width` × `height` either way. Given
+ * neither, it fills its parent.
  */
 import { useCallback, useRef } from 'react';
 import type { Ref } from 'react';
@@ -14,6 +15,7 @@ import { assignRef } from '@weasel-js/react';
 import type { Paint } from '@weasel-js/paint';
 import { useCanvasSurface } from './useCanvasSurface';
 import { SurfaceCanvas } from './SurfaceCanvas';
+import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import type { CanvasRendererLease } from './canvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -28,11 +30,7 @@ export type DrawCanvasDraw =
   | ((size: { width: number; height: number }) => readonly DrawCommand[]);
 
 /** Props for `<DrawCanvas>`. */
-export interface DrawCanvasProps {
-  /** CSS-pixel width. The drawing buffer is `width × dpr`. */
-  width: number;
-  /** CSS-pixel height. */
-  height: number;
+export interface DrawCanvasProps extends SurfaceSizeProps {
   /** The commands to paint, in the coordinate space `view` maps to the
    *  screen — CSS pixels when `view` is omitted. A new array repaints on the
    *  next frame. A function is read at paint time, so state it reads outside
@@ -63,7 +61,7 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
  * scene, tools and an input dispatcher that nothing uses.
  */
 export function DrawCanvas(props: DrawCanvasProps) {
-  const { width, height, draw, background, redrawOn, dpr, className, canvasRef } = props;
+  const { draw, background, redrawOn, dpr, className, canvasRef } = props;
   const view = props.view ? normalizeView(props.view) : IDENTITY_VIEW;
 
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -71,10 +69,11 @@ export function DrawCanvas(props: DrawCanvasProps) {
     canvasElRef.current = el;
     assignRef(canvasRef, el);
   }, [canvasRef]);
+  const { width, height } = useSurfaceSize(props, canvasElRef);
 
   const paint = (lease: CanvasRendererLease): boolean => {
     const el = canvasElRef.current;
-    if (!el) return false;
+    if (!el || width === 0 || height === 0) return false;
     const content = typeof draw === 'function' ? draw({ width, height }) : draw;
     const commands: DrawCommand[] = background ? backgroundFillCommands(background, { width, height }) : [];
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
@@ -82,5 +81,5 @@ export function DrawCanvas(props: DrawCanvasProps) {
   };
   useCanvasSurface(paint, { target: canvasElRef, dpr, redrawOn, onCommit: 'paint' });
 
-  return <SurfaceCanvas ref={setRefs} width={width} height={height} className={className} />;
+  return <SurfaceCanvas ref={setRefs} width={props.width} height={props.height} className={className} />;
 }

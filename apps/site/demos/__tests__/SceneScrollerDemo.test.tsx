@@ -49,7 +49,11 @@ beforeAll(() => {
   };
   const original = proto.getContext;
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
-  return () => { proto.getContext = original; };
+  // The canvas fills its stage, and jsdom measures every box 0×0, which paints nothing.
+  const box = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+    () => ({ x: 0, y: 0, left: 0, top: 0, right: 720, bottom: 405, width: 720, height: 405, toJSON() {} }) as DOMRect,
+  );
+  return () => { proto.getContext = original; box.mockRestore(); };
 });
 
 afterEach(() => {

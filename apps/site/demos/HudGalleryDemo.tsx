@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { Hud } from '@weasel-js/hud';
+import { DemoStage } from './DemoStage';
 
 const W = 640, H = 264;
 const COL = [24, 232, 440], ROW = [24, 144];
@@ -79,13 +80,13 @@ export function HudGalleryDemo() {
 
   return (
     <div className="ckd-canvas-wrap">
-      <SceneCanvas features={['pick']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        ambient={[hudEntry]}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas features={['pick']}
+          className="ckd-canvas"
+          scene={scene}
+          ambient={[hudEntry]}
+        />
+      </DemoStage>
     </div>
   );
 }

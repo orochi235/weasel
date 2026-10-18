@@ -25,6 +25,7 @@ import {
 } from './forceGraph/graph';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 import s from './ForceGraphDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 const BOUNDS = { width: W, height: H };
@@ -234,30 +235,30 @@ export function ForceGraphDemo() {
         </span>
       </div>
       <div className={s.canvas}>
-        <SceneCanvas features={['view']}
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          selectable={false}
-          tools={tools}
-          initialActiveTool="pin"
-          ambient={PAN_ON_DRAG}
-          view={view}
-          onViewChange={setView}
-          layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: ellipsePath(p),
-                fill: { paint: { kind: 'solid', color: GROUP_COLORS[n.data.group] } },
-                stroke: { paint: { color: '#fff' }, width: { px: Math.min(1.5, p.width / 8) } },
-              }],
-            },
-            edges: { layer: edgesLayer, before: 'scene' },
-          }}
-        />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas features={['view']}
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            selectable={false}
+            tools={tools}
+            initialActiveTool="pin"
+            ambient={PAN_ON_DRAG}
+            view={view}
+            onViewChange={setView}
+            layers={{
+              scene: {
+                drawOne: (n, p): DrawCommand[] => [{
+                  kind: 'path',
+                  path: ellipsePath(p),
+                  fill: { paint: { kind: 'solid', color: GROUP_COLORS[n.data.group] } },
+                  stroke: { paint: { color: '#fff' }, width: { px: Math.min(1.5, p.width / 8) } },
+                }],
+              },
+              edges: { layer: edgesLayer, before: 'scene' },
+            }}
+          />
+        </DemoStage>
       </div>
     </div>
   );

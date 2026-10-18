@@ -11,6 +11,7 @@ import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import sceneJson from './data/layout.scene.json';
+import { DemoStage } from './DemoStage';
 
 // --- Scene model ---
 //
@@ -82,31 +83,31 @@ export function LayoutDemo() {
 
   return (
     <div>
-      <SceneCanvas features={['pick', 'move']}
-        width={620}
-        height={260}
-        scene={scene}
-        reflowTransition={reflow}
-        layers={{
-          scene: {
-            drawOne: (node, p): DrawCommand[] => {
-              const cmds: DrawCommand[] = [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: node.data.color } },
-              }];
-              if (node.data.isContainer) {
-                cmds.push({
+      <DemoStage width={620} height={260}>
+        <SceneCanvas features={['pick', 'move']}
+          scene={scene}
+          reflowTransition={reflow}
+          layers={{
+            scene: {
+              drawOne: (node, p): DrawCommand[] => {
+                const cmds: DrawCommand[] = [{
                   kind: 'path',
-                  path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
-                  stroke: { paint: { color: '#d4c4a8' }, width: 1 },
-                });
-              }
-              return cmds;
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { paint: { color: node.data.color } },
+                }];
+                if (node.data.isContainer) {
+                  cmds.push({
+                    kind: 'path',
+                    path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                    stroke: { paint: { color: '#d4c4a8' }, width: 1 },
+                  });
+                }
+                return cmds;
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </DemoStage>
       <button className="ckd-btn" onClick={addTile} disabled={tiles >= 4}>add tile</button>
       <label className="ckd-field">
         <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} />

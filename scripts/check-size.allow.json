@@ -23,7 +23,7 @@
     "longestFunction": 165
   },
   "packages/core/src/canvas/Canvas.tsx": {
-    "lines": 720,
+    "lines": 718,
     "longestFunction": 422
   },
   "packages/core/src/canvas/CanvasView.tsx": {
@@ -212,9 +212,6 @@
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 227
-  },
-  "packages/minimap/src/MinimapCanvas.tsx": {
-    "longestFunction": 127
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

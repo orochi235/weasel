@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
 const BAR_W = 40, BAR_STRIDE = 45, ORIGIN_X = 30;
@@ -128,22 +129,22 @@ function D3SortableDemoInner() {
           {animating ? ' · animating…' : ''}
         </span>
       </div>
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        scene={scene}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { kind: 'solid', color: n.data.color } },
-              stroke: { paint: { color: '#222' }, width: 1.5 },
-            }],
-          },
-        }}
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          scene={scene}
+          layers={{
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { paint: { kind: 'solid', color: n.data.color } },
+                stroke: { paint: { color: '#222' }, width: 1.5 },
+              }],
+            },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

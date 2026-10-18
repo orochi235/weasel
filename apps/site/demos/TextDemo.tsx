@@ -10,6 +10,7 @@ import {
 import { gridSnapStrategy } from '@weasel-js/guides';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
+import { DemoStage } from './DemoStage';
 
 const W = 600, H = 360;
 const CELL = 10;
@@ -86,29 +87,25 @@ export function TextDemo() {
   };
 
   return (
-    <div
-      ref={containerRef}
-      style={{ position: 'relative', width: W, height: H }}
-      onDoubleClick={edit.onDoubleClick}
-    >
-      <SceneCanvas
-        features={['view', 'pick', 'move', 'resize', 'edit']}
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#fafafa' }}
-        scene={scene}
-        helpersRef={helpersRef}
-        selectTool={{
-          snap: gridSnapStrategy<TextNode>(CELL),
-        }}
-        layers={{
-          // No default scene — the custom text layer paints everything.
-          scene: null,
-          'text-bounds': { layer: outlineLayer, before: 'selectionOverlay' },
-          'text': { layer: textLayer, before: 'selectionOverlay' },
-        }}
-      />
+    <div ref={containerRef} className="ckd-canvas-frame" onDoubleClick={edit.onDoubleClick}>
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          features={['view', 'pick', 'move', 'resize', 'edit']}
+          className="ckd-canvas"
+          backgroundFill={{ color: '#fafafa' }}
+          scene={scene}
+          helpersRef={helpersRef}
+          selectTool={{
+            snap: gridSnapStrategy<TextNode>(CELL),
+          }}
+          layers={{
+            // No default scene — the custom text layer paints everything.
+            scene: null,
+            'text-bounds': { layer: outlineLayer, before: 'selectionOverlay' },
+            'text': { layer: textLayer, before: 'selectionOverlay' },
+          }}
+        />
+      </DemoStage>
     </div>
   );
 }

@@ -39,6 +39,7 @@ import {
 import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { createBackgroundFillLayer } from 'core/layers/backgroundFill';
 import { SurfaceCanvas } from './SurfaceCanvas';
+import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -60,11 +61,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
  * delivery, and slot composition, and not gesture dispatch, selection state, picking logic,
  * kind registries, or scene-aware overlays.
  */
-export interface CanvasProps<TPose = unknown> {
-  /** CSS-pixel width. */
-  width: number;
-  /** CSS-pixel height. */
-  height: number;
+export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
 
   /** Drawing-buffer density (device pixels per CSS pixel). When omitted the
    *  canvas reads `window.devicePixelRatio` per paint. */
@@ -138,7 +135,8 @@ export interface CanvasProps<TPose = unknown> {
   /**
    * Paint into a caller-owned canvas at a rect on it, instead of an element
    * this component creates. `x`/`y` are the rect's top-left in that canvas's
-   * CSS pixels; the rect's size is the existing `width`/`height` props.
+   * CSS pixels; the rect's size is the existing `width`/`height` props, which
+   * it requires: a pane has no element of its own to measure.
    *
    * Requires `inputElement`: with no element of its own there is nowhere for
    * pointer input, focus or the cursor to live, and nothing renders.
@@ -294,8 +292,6 @@ function CanvasInner<TPose>(
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
-    width,
-    height,
     dpr: dprProp,
     flattenTolerance,
     contentVersion,
@@ -348,6 +344,7 @@ function CanvasInner<TPose>(
     canvasRef.current = el;
   }, []);
   const detached = !!paintInto;
+  const { width, height } = useSurfaceSize(props, ownCanvasRef);
   // The detached input element reaches `canvasRef` at commit; the own canvas
   // arrives through `setOwnCanvas`, React's ref callback.
   useInsertionEffect(() => {
@@ -635,6 +632,7 @@ function CanvasInner<TPose>(
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
+    if (w === 0 || h === 0) return false;
 
     const debugFrame = beginDebugFrame(sink, timed, paintLayers);
 
@@ -704,8 +702,8 @@ function CanvasInner<TPose>(
   return (
     <SurfaceCanvas
       ref={setOwnCanvas}
-      width={width}
-      height={height}
+      width={props.width}
+      height={props.height}
       tabIndex={tabIndex}
       className={className} style={style}
     />

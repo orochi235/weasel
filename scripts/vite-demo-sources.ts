@@ -10,7 +10,8 @@ import { namedSpecifiers } from './lib/imports.mjs';
  *   import DEMO_SOURCES from 'virtual:demo-sources';
  *   DEMO_SOURCES['apps/site/demos/SceneDemo.tsx']
  *   // → [{ path, language, load }, ...] — the demo's own TSX first, then
- *   //   a tab for each relative import that resolves to a readable file.
+ *   //   a tab for each relative import that resolves to a readable file
+ *   //   not marked `@site-chrome`.
  *
  * `load()` is a dynamic import of a per-file virtual module, so a demo's
  * source is a chunk of its own, fetched when the panel asks for it.
@@ -96,7 +97,16 @@ function findFile(root: string, resolved: string): { path: string; ext: string }
   return null;
 }
 
-/** A demo's files as its code panel lists them: the demo itself, then each file it imports by relative path. */
+/** Marks a file as the site's own furniture, left out of every code panel:
+ *  `@site-chrome` opening a comment line, as in a `/** @site-chrome *\/` header. */
+const SITE_CHROME = /^\s*(?:\/\/|\/\*\*?|\*)\s*@site-chrome\b/m;
+
+function isSiteChrome(root: string, path: string): boolean {
+  return SITE_CHROME.test(readFileSync(resolve(root, path), 'utf8'));
+}
+
+/** A demo's files as its code panel lists them: the demo itself, then each
+ *  file it imports by relative path, except one marked site chrome. */
 export function tabsFor(root: string, demoPath: string): { path: string; language: Language }[] {
   const src = readFileSync(resolve(root, demoPath), 'utf8');
   const tabs: { path: string; language: Language }[] = [
@@ -111,6 +121,7 @@ export function tabsFor(root: string, demoPath: string): { path: string; languag
     const language = found && extToLang(found.ext);
     if (!found || !language || seen.has(found.path)) continue;
     seen.add(found.path);
+    if (isSiteChrome(root, found.path)) continue;
     tabs.push({ path: found.path, language });
   }
   return tabs;
