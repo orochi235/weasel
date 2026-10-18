@@ -1281,17 +1281,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) Two ways a new dependency can still reach a browser test unannounced.** The `browser`
-  project's `optimizeDeps.include` is computed from what its tests import
-  (`scripts/vitest-browser-deps.ts`), so a newly imported dependency changes vite's config hash and
-  a warm dep cache on a fleet node is rebuilt before any test loads; confirmed on studio and teitou
-  on 2026-10-15. The scan cannot see a dependency reached only through `import.meta.glob` or a
-  computed `import()`, and the opt-in `forge-stories` project has no such list. Either one met
-  mid-run reloads the page under the suites, which fails them with "Vitest failed to find the
-  runner". Vitest drops vite's info lines at its default `logLevel` of `warn`, so a fleet log shows
-  "Re-optimizing dependencies because vite config has changed" only with `logLevel: 'info'` set on
-  the project.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check

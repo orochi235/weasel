@@ -78,6 +78,60 @@ describe('browserDeps', () => {
     expect(deps(['./setup.ts'])).toEqual(['@testing-library/react', 'axe-core', 'zustand/vanilla']);
   });
 
+  it('follows import.meta.glob into the files it matches, relative and root-absolute', () => {
+    put('packages/kit/src/plugins/a.ts', `import 'dep-a';\n`);
+    put('packages/kit/src/plugins/b.tsx', `import 'dep-b';\n`);
+    put('packages/kit/src/plugins/skip.ts', `import 'dep-skipped';\n`);
+    put('packages/kit/src/extra/c.ts', `import 'dep-c';\n`);
+    put(
+      'packages/kit/src/index.ts',
+      [
+        `export { store } from './store';`,
+        `export const plugins = import.meta.glob<{ x: number }>(['./plugins/*.{ts,tsx}', '!**/skip.ts'], { eager: true });`,
+        `export const extra = import.meta.glob("/packages/kit/src/extra/*.ts");`,
+      ].join('\n'),
+    );
+    expect(deps()).toEqual(['@testing-library/react', 'dep-a', 'dep-b', 'dep-c', 'zustand/vanilla']);
+  });
+
+  it('does not follow a glob that loads its files as text or addresses', () => {
+    put('packages/kit/src/plugins/a.ts', `import 'dep-a';\n`);
+    put(
+      'packages/kit/src/index.ts',
+      `export { store } from './store';\nexport const raw = import.meta.glob('./plugins/*.ts', { query: '?raw', import: 'default', eager: true });\n`,
+    );
+    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
+  });
+
+  it('reads an import that follows a string holding a glob', () => {
+    put(
+      'packages/kit/src/store.ts',
+      `const pattern = '**/*.ts';\nimport { create } from 'zustand/vanilla';\nconst more = '!**/__tests__/**';\nexport const store = create(() => [pattern, more]);\n`,
+    );
+    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
+  });
+
+  it('fails, naming the file, on an import it cannot read', () => {
+    put('packages/kit/src/index.ts', `export { store } from './store';\nexport const load = (name: string) => import(\`./locales/\${name}.ts\`);\n`);
+    expect(() => deps()).toThrow(/packages\/kit\/src\/index\.ts/);
+    put('packages/kit/src/index.ts', `export { store } from './store';\nexport const load = (name: string) => import(name);\n`);
+    expect(() => deps()).toThrow(/packages\/kit\/src\/index\.ts/);
+    put('packages/kit/src/index.ts', `export { store } from './store';\nconst where = './plugins/*.ts';\nexport const all = import.meta.glob(where);\n`);
+    expect(() => deps()).toThrow(/packages\/kit\/src\/index\.ts/);
+  });
+
+  it('ignores an import written inside a string or a comment', () => {
+    put(
+      'packages/kit/src/index.ts',
+      [
+        `export { store } from './store';`,
+        `// import(later)`,
+        `export const code = (file: string) => \`() => import(\${JSON.stringify(file)})\`;`,
+      ].join('\n'),
+    );
+    expect(deps()).toEqual(['@testing-library/react', 'zustand/vanilla']);
+  });
+
   it('leaves out what vite cannot or must not pre-bundle', () => {
     put('packages/app/src/raw.ts', `import 'raw-only';\n`);
     put(
