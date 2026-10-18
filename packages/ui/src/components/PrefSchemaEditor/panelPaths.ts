@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { pathWithin } from '../Prefs/selection';
-import { childrenOf, joinPath, type SchemaNode } from './schemaEdit';
+import { childrenOf, joinPath, ownChildrenOf, type SchemaNode } from './schemaEdit';
 
 /** Every leaf and field the tree shows, as its tree path and the path a properties panel draws its row at. */
 function panelRows(root: PrefSection): Array<[tree: string, panel: string]> {
@@ -14,7 +14,8 @@ function panelRows(root: PrefSection): Array<[tree: string, panel: string]> {
       }
       const shown = panel === '' ? key : `${panel}.${key}`;
       out.push([at, shown]);
-      walk(child, at, shown);
+      // A field of an entry is drawn once per entry, at no one path of its own.
+      if (ownChildrenOf(child)) walk(child, at, shown);
     }
   };
   walk(root, null, '');

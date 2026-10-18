@@ -64,7 +64,7 @@ function onEditorKey(e: KeyboardEvent<HTMLDivElement>, step: (to: 'undo' | 'redo
 }
 
 /** Props for {@link AssetEditor}: {@link PrefSchemaEditorProps} over a workspace in place of one schema. */
-export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>, 'schema' | 'onChange' | 'original' | 'onSubmit'> {
+export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>, 'schema' | 'onChange' | 'original' | 'onSubmit' | 'actionCatalog' | 'onActionCatalogChange'> {
   workspace: Workspace;
   onChange(next: Workspace): void;
   /** Baseline for the change list. Default: the first `workspace` seen. */
@@ -127,7 +127,7 @@ export function AssetEditor(
   });
   const doc = useDocument<Workspace>({
     value: workspace, onChange: (next) => onChange(withRoots(latest.current.workspace, next)), base, same, codec, opened, draftKey, draftStorage, taken,
-    selection: { get: () => view.recorded(beforeOpening.current ?? latest.current.paths), set: view.restore },
+    selection: { get: () => [...view.recorded(beforeOpening.current ?? latest.current.paths), ...(catalog?.recorded() ?? [])], set: (ids) => { view.restore(ids); catalog?.restore(ids); } },
   });
   // A key names its asset, so the same path edited in two of them close together is two steps.
   const coalesce = (key?: string) => (key === undefined ? undefined : `${assetId}:${key}`);

@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/prefs';
-import { childrenOf, isUnder, isValidKey, joinPath, keyOf, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, isUnder, isValidKey, joinPath, keyOf, keysOf, ownChildrenOf, ownSlotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { findType, NO_TYPES, type PrefTypes } from './types';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
@@ -75,8 +75,9 @@ const isEntry = (node: SchemaNode, k: string, x: unknown): x is PrefLeaf =>
   k === 'item' && isPrefLeaf(node) && (node.kind === 'list' || node.kind === 'map') && isPlain(x);
 
 function printNode(node: SchemaNode, depth: number, types: PrefTypes): string {
-  const kids = childrenOf(node);
-  const slot = slotOf(node);
+  // An entry's fields print inside the entry.
+  const kids = ownChildrenOf(node);
+  const slot = ownSlotOf(node);
   // A leaf made from a registered type prints as the type's name and what it sets over it.
   const type = isPrefLeaf(node) ? findType(types, node.type) : undefined;
   const named = type && isValidKey(type.type!) ? type.type! : undefined;
@@ -129,7 +130,7 @@ function flatten(root: SchemaRoot): Map<string, SchemaNode> {
 function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[] {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   // The nodes under one are compared as nodes; what a closed leaf holds is an attribute like its others.
-  for (const slot of [slotOf(a), slotOf(b)]) if (slot) keys.delete(slot);
+  for (const slot of [ownSlotOf(a), ownSlotOf(b)]) if (slot) keys.delete(slot);
   const out: SchemaChange[] = [];
   for (const k of keys) {
     const from = (a as unknown as Record<string, unknown>)[k];

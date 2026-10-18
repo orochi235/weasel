@@ -18,6 +18,7 @@ import { elevateQuadraticToCubic } from '../curve';
 import { DEFAULT_FLATTEN_TOLERANCE, flattenCubic } from '../flatten';
 import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
+import { resolveCorners } from '../paths/corners';
 
 /** A `[x, y]` 2-tuple. */
 export type Pair = [number, number];
@@ -36,9 +37,10 @@ export interface PathToMultiPolygonOptions {
 
 /** Convert a `Path` to a `MultiPolygon` suitable for `polygon-clipping`. */
 export function pathToMultiPolygon(
-  path: Path,
+  given: Path,
   opts: PathToMultiPolygonOptions = {},
 ): MultiPolygon {
+  const path = resolveCorners(given);
   if (path.kind === 'rect') {
     const { x, y, width, height } = path;
     const ring: Ring = [

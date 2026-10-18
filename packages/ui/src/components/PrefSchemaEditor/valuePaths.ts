@@ -1,18 +1,22 @@
 import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, PREF_ENTRY, type PrefLeaf } from '@weasel-js/prefs';
-import { childrenOf, innerOf, joinPath, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
+import { childrenOf, innerOf, joinPath, keysOf, nodeAt, ownChildrenOf, pathOf, slotOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 /**
  * The path a leaf's value is read and written at, which is what an alias names: every key down to it but a
- * section's, which is a heading. So under a section root it is the leaf's own key, and a field's after it.
+ * section's, which is a heading. So under a section root it is the leaf's own key, and a field's after it. A field
+ * of a list's or a map's entry is read in every entry, so the entry's step is written `*` (`'phases.*.mode'`).
  */
 export function valuePathOf(root: SchemaRoot, path: string): string {
   const keys = keysOf(path);
-  // A path a node is about to take has no node at its end yet.
-  const isHeading = (i: number): boolean => {
+  const out: string[] = [];
+  keys.forEach((key, i) => {
+    // A path a node is about to take has no node at its end yet.
     const node = nodeAt(root, pathOf(keys.slice(0, i + 1)));
-    return node !== undefined && isPrefSection(node);
-  };
-  return keys.filter((_, i) => !isHeading(i)).join('.');
+    if (node !== undefined && isPrefSection(node)) return;
+    out.push(key);
+    if (node !== undefined && i < keys.length - 1 && slotOf(node) === 'item') out.push(PREF_ENTRY);
+  });
+  return out.join('.');
 }
 
 /**
@@ -71,7 +75,8 @@ function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: s
     // A variant's fields are read at the union's own path.
     const shapes = variants && each(variants, () => at, entry);
     if (shapes !== variants) self = { ...self, variants: shapes } as SchemaNode;
-    const kids = childrenOf(node);
+    // An entry's fields were mapped with the entry.
+    const kids = ownChildrenOf(node);
     // A section's key is a heading, and no part of the paths under it.
     const mapped = kids && each(kids, (key, kid) => (isPrefSection(kid) ? at : under(at, key)), entry);
     return mapped === kids ? self : withChildren(self, mapped!);

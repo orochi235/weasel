@@ -46,3 +46,30 @@ describe('PrefSchemaEditor: the condition on a list\'s entry', () => {
     expect(nodeAt(latest, 'view/phases')).not.toHaveProperty('enableIf');
   });
 });
+
+const steps = {
+  kind: 'list', name: 'Steps', description: '', default: [],
+  item: { kind: 'object', name: 'Step', description: '', default: {}, children: {
+    held: { kind: 'boolean', name: 'Held', description: '', default: false },
+    gain: { kind: 'number', name: 'Gain', description: '', default: 0 },
+  } },
+} as PrefLeaf;
+const STEPS: PrefGroup = { name: 'Prefs', children: { view: { name: 'View', children: { steps } } } };
+let edited: PrefGroup = STEPS;
+function LiveSteps() {
+  const [schema, setSchema] = useState(STEPS);
+  edited = schema;
+  return <PrefSchemaEditor schema={schema} onChange={setSchema} original={STEPS} />;
+}
+
+describe('PrefSchemaEditor: the condition on a field of a list\'s entry', () => {
+  it('draws the field as a row, and sets its condition from the entry\'s other fields', () => {
+    renderWithIcons(<LiveSteps />);
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('gain'));
+    const own = attributes().getByRole('group', { name: 'Enabled if' });
+    fireEvent.click(within(own).getByRole('button', { name: /Add a condition/ }));
+    fireEvent.click(screen.getByRole('option', { name: /Held this Step: held/ }));
+    const item = (nodeAt(edited, 'view/steps') as PrefList).item as unknown as { children: Record<string, PrefLeaf> };
+    expect(item.children.gain!.enableIf).toEqual({ from: 'item', path: 'held', is: true });
+  });
+});

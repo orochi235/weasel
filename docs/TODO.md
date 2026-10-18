@@ -265,11 +265,12 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) Booleans, Trim segment, Extend to next path, Cut at crossings, and Offset path drop
-  corner specs.** Each expands a path's corners before it rebuilds the geometry, so the rounded
-  shape survives as plain anchors but the corners can no longer be edited as corners
-  (they read paths through `resolveCorners` or a reader that calls it, such as
-  `packages/geom/src/booleans/contours.ts` and `packages/stroke/src/offsetPath.ts`).
+- **(P3) Offset path leaves slivers beside a curve, and spikes where a round corner shrinks to
+  nothing.** `offsetPath` (`packages/stroke/src/offsetPath.ts`) unites the region with its stroke
+  band, and the union keeps thin leftovers of the two meeting along the curve:
+  `offsetPath` of a 100×100 square with a 20-unit round corner, grown by 10, answers six subpaths,
+  five of them slivers. Grown by exactly the corner's radius, the outline also runs a spike into
+  the interior, so that corner cannot be kept as a corner.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -355,41 +356,33 @@ Priority tags:
   grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
   the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
   on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P3) Shape builder slows past a handful of selected paths.** `pathFacePieces`
-  (`packages/geom/src/booleans/ops.ts`) cuts one region per subset of the paths, so the faces
-  `useShapeBuilderTool` works on cost 2^N clipping runs: fine for the few shapes it is usually
-  given, unusable for a dozen. Tracing the arrangement of the outlines' edges once would give
-  the same faces at the cost of one overlay.
 - **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
   Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
   so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
   fails it; moving these two is a choice of new keys.
-- **(P3) A path effect reopens from draw's SVG as plain paths.** Export writes an effect as a
-  group of the paths it shows (`apps/draw/src/svgExport.ts`), so the file looks right, but the
-  blend, bend or repeat is no longer live once reopened. Carrying it needs its sources named by
-  id, and an imported leaf takes a fresh id (`svgNodesToSceneDrafts` keeps ids for groups only,
-  through `wd:group-id`); with a leaf id carried the same way, the effect's `data.pathEffect`
-  and `dependsOn` can ride as `wd:` attributes on its group.
+- **(P3) A path effect that paints nothing is lost through draw's SVG.** A live effect rides on
+  its exported group as `wd:effect` and `wd:depends-on` (`apps/draw/src/svgEffects.ts`), but a
+  blend of no steps, or a repeat with no copies, exports an empty `<g>`, and
+  `svgNodesToKitDrafts` drops empty groups before `svgNodesToSceneDrafts` sees it.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A path effect inside a container that composes frames is untried.** An effect paints in
-  the frame its sources are painted in (`core/scene/pathEffects/`); the actions only make one
-  over two leaves, inserted beside the first.
-- **(P3) A blend has no spine, and its steps no spacing by distance.** `BlendEffect` places
-  `steps` shapes evenly in `t` on the straight run between its sources; laying them along a
-  third path, or spacing them so neighboring shapes sit a fixed distance apart, is not offered.
+- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
+  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
+  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
+  is not carried across, so an effect of an effect in another container reads that path where
+  its own container would put it.
+- **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
+  optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
+  nothing adds, swaps, or removes the spine of an existing blend.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
   `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
   bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P3) Spiro curves solve G2 points only.** `solveSpiro` keeps curvature continuous at a smooth
-  point (G2). A point that also keeps its rate of change continuous (G4, a cubic-curvature segment
-  either side) needs a second segment type in `eulerSpiral.ts` and two more equations per point.
 - **(P2) Puppet warp bends by straight-line distance, not through the shape.** `rigidPuppetMap`
   (`packages/geom/src/warp/puppet.ts`) weights each pin by its distance across the plane, so two
   limbs that nearly touch move together when a pin on one is dragged. As-rigid-as-possible over
@@ -405,20 +398,13 @@ Priority tags:
   as a box-to-box map, but a rotation rewrites the coordinates in a way no such map undoes, so the
   warp stops resolving and the warp tools start a fresh one. A `data.path` node keeps its warp
   through a rotation.
-- **(P2) Tangent (G1) at an anchor.** The solver's variables are anchor positions only; handles
-  ride along with their anchor. G1 needs each handle as a variable of its own (direction, or
-  both handle points), and the handle drag to call `constrainEdit` the way the anchor drag does.
-- **(P2) Point on a path.** An anchor held on a segment of its own path or another node's needs
-  a parameter variable `t` per constraint and a residual from `nearestOnPath`-style evaluation.
-  Constraints between two nodes also need a home other than one node's `data.constraints`, and
-  both nodes solved in one edit.
-- **(P3) A conflict names only the constraints that fail, not the set that conflicts.** Adding
-  one that cannot hold keeps it unsolved and marks it; the overlay, `constraintConflictsOf` and
-  `setConstraints`' return value are the only reports. Finding the minimal conflicting set needs
-  the Jacobian's rank, which the damped solve does not compute.
-- **(P3) The solve is dense.** The Jacobian is a full `m × 2n` matrix built by central
-  differences; fine at a few hundred anchors, but a large constrained path wants sparse rows and
-  analytic derivatives.
+- **(P2) An anchor cannot be held on another node's path.** `onPath` holds one on a segment of
+  its own path only. Across nodes the constraint needs a home other than either node's
+  `data.constraints`: a scene-level constraint store whose entries name `(node, anchor)`, saved and
+  undone with the scene. Its solve packs every node a connected set of constraints reaches into one
+  coordinate vector — `solveConstraints` already takes any point list — and commits each moved
+  node's path in one batch. Path edit finishes one node per frame (`PathEditExtension.finishEdit`,
+  the drag's `previewPose`), so the preview also has to carry the other nodes it moves.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -923,11 +909,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
 
-- **(P3) A field's condition inside an object entry is written in code.** `PrefSchemaEditor`
-  edits an entry's own `enableIf` and nothing inside an object entry: the structure tree shows a
-  list or a map as one row (`slotOf` in `schemaTree.ts`), so a field of its item has no row to
-  select and its `{ from: 'item' }` condition no editor.
-
 - **(P3) A lab's config schema takes no `over`.** A lab resolves its instrument's config schema
   with none (`useConfigSchema`), so that schema cannot alias into another schema or hold a
   condition on its setting. Every surface reads `over`'s values from the config it is handed, and
@@ -941,30 +922,21 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   dotted path, where the form's pane reads a nested tree, so the two do not share a body yet.
   Nobody has looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
 
-- **(P3) A fragment has no box for a preview drag to land on.** Its element is
-  `display: contents`, so `measure` in `Prefs/dropTarget.ts` reads an empty rect for it and a drag
-  in `PrefSchemaEditor`'s preview lands only beside the rows inside it; the structure tree takes
-  both. Its box can be the union of its rows' rects, but two things then need a browser to
-  settle: a point on its first row means both "before that row" and "before the fragment", which
-  wants an edge zone to tell apart, and an empty fragment still has no rect at all.
+- **(P3) An empty fragment takes no drop in the live preview.** It draws nothing
+  (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
+  only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
+  is on would give the preview somewhere to land, and would also move the rows around it.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
   export drops all four. A schema is sectioned rather than nested where `f.group` would move its
-  config paths.
-
-- **(P3) `PrefSchemaEditor` has nowhere to keep an action catalog.** `AssetEditor` keeps one in
-  a workspace's `actions` asset, where its Actions list is sorted, grouped, and edited. The
-  one-schema editor builds its list from the host's actions on every draw, so its rows show their
-  attributes read-only and nothing sorts them. Giving it a catalog means a second asset in the
-  workspace `asWorkspace` makes, and `oneAssetCodec` and `sameSchema` read only the first: a
-  draft would drop the catalog and its steps.
-
-- **(P3) A step back over the action catalog does not restore the rows picked in it.**
-  `useAssetView.recorded` keeps each shown asset's selection with a step; the catalog's lives in
-  `useActionCatalog` and is not among them, so after an undo the Actions list keeps whichever of
-  its picked rows still exist.
+  config paths. `ResolvedConfig` is labkit's and `@weasel-js/ui` cannot import labkit, so this
+  needs decisions before it is built: how a labkit section shows in the structure tree (a
+  `PrefSection` cannot sit in a `PrefGroup` root outside an `object` leaf, so either a new node
+  kind or a group marked to keep its config paths); what the export writes for a schema whose
+  source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
+  and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
 
 - **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
   `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it

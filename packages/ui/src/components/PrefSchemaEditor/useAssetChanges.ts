@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import type { PrefTypes } from './types';
-import { assetOf, type Asset, type Workspace } from './workspace';
+import { assetOf, shownAssets, type Asset, type Workspace } from './workspace';
 import { workspaceChanges, type AssetChanges } from './workspaceChanges';
 
 const NO_CHANGES: readonly SchemaChange[] = [];
@@ -33,7 +33,9 @@ export interface WorkspaceChanges {
 }
 
 function changesText(workspace: Workspace, each: readonly AssetChanges[]): string {
-  if (workspace.assets.length === 1) return formatChanges(each[0]?.changes ?? NO_CHANGES);
+  // A lone dialog's changes need no heading, though a catalog is kept beside it, until that changes too.
+  const [lone, ...more] = shownAssets(workspace);
+  if (more.length === 0 && each.every((c) => c.id === lone?.id)) return formatChanges(each[0]?.changes ?? NO_CHANGES);
   return each.map(({ id, changes }) => `${assetOf(workspace, id)!.label}\n${formatChanges(changes)}`).join('\n\n');
 }
 

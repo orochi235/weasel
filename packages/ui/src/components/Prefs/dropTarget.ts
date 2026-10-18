@@ -6,12 +6,15 @@ import { PATH_ATTR, RAIL_ATTR } from './selection';
 const FORM_ATTR = 'data-pref-form';
 const DROPPING_ATTR = 'data-dropping';
 const SCROLL_ATTR = 'data-pref-scroll';
+const FRAGMENT_ATTR = 'data-pref-fragment';
 
 /** How far outside a row a point still counts as beside it: the gaps between rows belong to the nearest one. */
 const ROW_SNAP = 16;
 const RAIL_SNAP = 6;
 /** The share of a rail entry, from each end, that drops beside it; the middle drops into it. */
 const RAIL_EDGE = 0.3;
+/** How far into a fragment's first or last row, from its outer edge, a point drops beside the fragment and not beside the row. */
+const FRAGMENT_EDGE = 6;
 
 interface Rect { left: number; top: number; right: number; bottom: number }
 
@@ -29,6 +32,8 @@ interface Box {
   across: boolean;
   /** Index of the cover whose title can sit over the box, or -1. */
   cover: number;
+  /** Indices of the fragments the box lies in, the outermost first. */
+  fragments: number[];
 }
 
 /** A section whose title sticks to the top of its scroller, over the section's own rows: its rect, and the title's height. */
@@ -89,16 +94,48 @@ function measure(form: Element): Frame {
       owner: owner ? index.get(owner) ?? -1 : -1,
       across: bar ? bar.getAttribute('data-orientation') !== 'vertical' : twoAcross && !el.hasAttribute('data-wide'),
       cover: sections.findIndex((s) => s.el !== el && s.el.contains(el)),
+      fragments: [],
     };
+  });
+  // A fragment draws no box of its own, so it is measured as the rows inside it; an empty one has none to give it.
+  els.forEach((el, i) => {
+    if (!el.hasAttribute(FRAGMENT_ATTR)) return;
+    const held = boxes.filter((box, j) => j > i && el.contains(els[j]!) && box.rect.bottom > box.rect.top);
+    for (const box of held) box.fragments.push(i);
+    if (held.length > 0) boxes[i]!.rect = unionOf(held.map((box) => box.rect));
   });
   const covers = sections.map((s) => ({ rect: rectOf(s.el), height: s.title.getBoundingClientRect().height }));
   return { left: origin.left, top: origin.top, scrollers, covers, boxes };
 }
 
+const unionOf = (rects: readonly Rect[]): Rect => ({
+  left: Math.min(...rects.map((r) => r.left)),
+  top: Math.min(...rects.map((r) => r.top)),
+  right: Math.max(...rects.map((r) => r.right)),
+  bottom: Math.max(...rects.map((r) => r.bottom)),
+});
+
 const inside = (r: Rect, x: number, y: number): boolean => x >= r.left && x < r.right && y >= r.top && y < r.bottom;
 
 const distance = (r: Rect, x: number, y: number): number =>
   Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+
+/**
+ * Beside the outermost fragment the row at `row` starts or ends, where `p` is within {@link FRAGMENT_EDGE} of the
+ * row's leading or trailing edge, or past it: its top and bottom, or its sides for a row set across.
+ */
+function besideFragment(frame: Frame, row: number, p: { x: number; y: number }): PrefDropMark | null {
+  const { rect, across, fragments } = frame.boxes[row]!;
+  const lead = across ? p.x - rect.left : p.y - rect.top;
+  const trail = across ? rect.right - p.x : rect.bottom - p.y;
+  for (const f of fragments) {
+    const rows = frame.boxes.flatMap((b, i) => (b.kind === 'row' && b.fragments.includes(f) ? [i] : []));
+    const { path } = frame.boxes[f]!;
+    if (rows[0] === row && lead < FRAGMENT_EDGE) return { path, where: 'before' };
+    if (rows.at(-1) === row && trail <= FRAGMENT_EDGE) return { path, where: 'after' };
+  }
+  return null;
+}
 
 function hit(frame: Frame, form: Element, clientX: number, clientY: number): PrefDropMark | null {
   const now = form.getBoundingClientRect();
@@ -139,12 +176,16 @@ function hit(frame: Frame, form: Element, clientX: number, clientY: number): Pre
   if (found < 0) return null;
   let box = frame.boxes[found]!;
   if (box.kind === 'group') {
-    const row = nearest((b) => b.kind === 'row' && b.owner === found, ROW_SNAP);
+    const among = found;
+    const row = nearest((b) => b.kind === 'row' && (b.owner === among || b.fragments.includes(among)), ROW_SNAP);
     if (row < 0) return { path: box.path, where: 'into' };
+    found = row;
     box = frame.boxes[row]!;
   }
   const p = pointIn(box)!;
   const { rect } = box;
+  const beside = box.kind === 'row' ? besideFragment(frame, found, p) : null;
+  if (beside) return beside;
   if (box.kind === 'rail') {
     const t = (p.y - rect.top) / (rect.bottom - rect.top);
     // The root's entry has nothing beside it: what it holds is the root's own.
