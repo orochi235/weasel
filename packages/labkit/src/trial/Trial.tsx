@@ -48,6 +48,7 @@ import type { TrialRecord } from '../state/types';
 import { DEFAULT_VIEW } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { LoupeSwitchContext } from './loupeSwitch';
+import { MissingTrial } from './MissingTrial';
 import type { LoupeBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
@@ -79,14 +80,9 @@ export const Trial = memo(function Trial({ id, chrome, suppress }: TrialProps) {
   const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
   const instrument = record ? instruments.find((i) => i.name === record.instrumentName) : undefined;
   const kept = useKeptMarks(instrument?.annotations?.storage, id);
-  if (!record) {
-    return <div className="lk-trial lk-trial--unknown">Trial not found: {id}</div>;
-  }
-  if (!instrument) {
-    return (
-      <div className="lk-trial lk-trial--unknown">Unknown instrument: {record.instrumentName}</div>
-    );
-  }
+  if (!record) return <MissingTrial id={id}>{`Trial not found: ${id}`}</MissingTrial>;
+  if (!instrument)
+    return <MissingTrial id={id}>{`Unknown instrument: ${record.instrumentName}`}</MissingTrial>;
   if (!kept.ready) return <div className="lk-trial lk-trial--loading" />;
   return (
     <TrialRuntime

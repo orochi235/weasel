@@ -133,12 +133,10 @@ Priority tags:
 - **(P3) `BASELINE.md`'s text layout numbers include grouping.**
   `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
 
-- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
-  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
-  panel run past the right edge of the stage. Not compared against the lab before its text moved
-  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
-  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
-  hand-rolled ones.
+- **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
+  (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
+  `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
+  looked at in a browser on 2026-10-18, but no card was dragged.
 
 ### Cursor package follow-ups
 
