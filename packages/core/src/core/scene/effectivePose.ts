@@ -8,7 +8,7 @@
  */
 import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import type { PoseComposition } from './composeFrame';
-import { depFrameRebase } from './depFrame';
+import { carryDepPath, depFrameRebase } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -180,8 +180,23 @@ function depsAsRead<TPose>(
     const dep = plain(id);
     if (dep === undefined) return undefined;
     const pose = rebase(id, dep.pose);
-    return pose === dep.pose ? dep : { node: dep.node, pose, get path() { return dep.path; } };
+    return pose === dep.pose ? dep : new RebasedDep(dep, pose);
   };
+}
+
+/** A dependency read from another frame: its pose rebased, and its path
+ *  carried by the same frame change when asked for. */
+class RebasedDep<TPose> implements DerivedDep<TPose> {
+  readonly node: Node<unknown, string, TPose>;
+
+  constructor(private readonly dep: DerivedDep<TPose>, readonly pose: TPose) {
+    this.node = dep.node;
+  }
+
+  get path(): Path | null {
+    const path = this.dep.path;
+    return path === null ? null : carryDepPath(path, this.dep.pose, this.pose);
+  }
 }
 
 function depIn<TPose>(
@@ -220,7 +235,7 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
     const { source, reading } = this;
     return resolveDerivedPath(
       this.posed,
-      (depId) => depIn(source, depId, reading),
+      depsAsRead(source, this.posed, reading),
       (depId) => source.childrenOf(depId),
       PATH_SLOT[reading],
     );

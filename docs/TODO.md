@@ -336,11 +336,6 @@ Priority tags:
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
-  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
-  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
-  is not carried across, so an effect of an effect in another container reads that path where
-  its own container would put it.
 - **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
   optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
   nothing adds, swaps, or removes the spine of an existing blend.
