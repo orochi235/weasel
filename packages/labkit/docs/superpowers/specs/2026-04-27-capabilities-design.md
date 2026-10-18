@@ -274,26 +274,10 @@ interface UndoCapability<TS, TC> {
 }
 ```
 
-### 6.2 UndoStack Data Structure
+### 6.2 Undo History
 
-`UndoStack` is a pure, immutable-style data structure with no React dependencies. It is unit-testable in isolation.
-
-```ts
-interface UndoStack {
-  past: unknown[];     // oldest at index 0; bounded by maxDepth
-  future: unknown[];   // most-recent-undone at index 0
-}
-
-// Pure functions (not methods — implementer may choose class or module):
-function pushSnapshot(stack: UndoStack, snapshot: unknown, maxDepth: number): UndoStack;
-function undo(stack: UndoStack): { stack: UndoStack; snapshot: unknown } | null;
-function redo(stack: UndoStack): { stack: UndoStack; snapshot: unknown } | null;
-function clearUndo(stack: UndoStack): UndoStack;
-```
-
-**Depth eviction:** **CLAUDE'S DEFAULT:** FIFO eviction — when `past.length === maxDepth` and a new snapshot is pushed, the oldest entry (`past[0]`) is dropped. No snapshot compression.
-
-**Redo invalidation:** Pushing a new snapshot clears `future` entirely (standard undo/redo behavior).
+A trial's undo runs on `createHistory` (`@weasel-js/history`). The snapshot stack this section
+once specified (`UndoStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo`) has been removed.
 
 ### 6.3 Default Snapshot Behavior
 
@@ -438,17 +422,6 @@ Both palette (DragDrop) and `<LayerList>` (Layers) can appear simultaneously in 
 ---
 
 ## 10. Testing Strategy
-
-### 10.1 UndoStack (Pure Unit Tests)
-
-`src/undo/undoStack.test.ts` — no React, no rendering:
-- `pushSnapshot` with depth < maxDepth
-- `pushSnapshot` with depth = maxDepth (evicts oldest)
-- `pushSnapshot` clears future
-- `undo` returns null on empty stack
-- `redo` returns null when future is empty
-- round-trip: push → undo → redo
-- `clearUndo` resets both past and future
 
 ### 10.2 CanvasStack (DOM + Canvas Mock)
 
