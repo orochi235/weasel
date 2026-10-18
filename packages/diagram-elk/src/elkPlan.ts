@@ -3,8 +3,9 @@
  * `LayoutPlan`, so the result goes through `applyLayout` and `routesOf` like
  * any of the diagram package's own layouts.
  *
- * ELK answers asynchronously, so this is not a `LayoutFn` and cannot stand in
- * one's place in a live run; it is for laying a diagram out once.
+ * ELK answers asynchronously, so this is not a `LayoutFn`. It is a
+ * `LayoutPlanner` instead, through `elkPlanner`: a live run, and so
+ * `DiagramView.layout`, asks it once and eases to its answer.
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import {
@@ -18,6 +19,7 @@ import {
   type LayoutDirection,
   type LayoutOptions,
   type LayoutPlan,
+  type LayoutPlanner,
   type LayoutPorts,
   type LayoutResult,
 } from '@weasel-js/diagram/layout';
@@ -92,6 +94,17 @@ export async function elkPlan(graph: Graph, opts: ElkLayoutOptions = {}): Promis
 /** {@link elkPlan}'s moves alone. */
 export async function elkLayout(graph: Graph, opts: ElkLayoutOptions = {}): Promise<LayoutResult> {
   return (await elkPlan(graph, opts)).moves;
+}
+
+/** {@link elkPlanner}'s answer: a `LayoutPlanner` whose plan is an {@link ElkPlan}. */
+export interface ElkPlanner extends LayoutPlanner {
+  plan(graph: Graph, opts?: LayoutOptions): Promise<ElkPlan>;
+}
+
+/** ELK as a `LayoutPlanner`, for a live run or `DiagramView.layout`: `opts`
+ *  over whatever layout options the run passes. */
+export function elkPlanner(opts: ElkLayoutOptions = {}): ElkPlanner {
+  return { plan: (graph, layout) => elkPlan(graph, { ...layout, ...opts }) };
 }
 
 function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): ElkPlan {
