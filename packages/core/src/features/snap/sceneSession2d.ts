@@ -8,7 +8,7 @@ import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, resizeSubjectOf, subjectBox } from './probes2d';
-import { sceneProbeReads, withSubtrees } from './sceneReads';
+import { sceneProbeReads, sceneRotations, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
 
@@ -28,6 +28,8 @@ export interface SceneSessionInputs {
   geometryAt?: (press: Point, ids: readonly string[]) => Point | null;
   /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
+  /** How a node's rotation is read. Default `AUTO_POSE_DESCRIPTOR`. */
+  poseDescriptor?: PoseDescriptor<unknown>;
   onEnd?: () => void;
 }
 
@@ -52,6 +54,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     view: i.view,
     reachPx: i.reachPx,
     scene: i.scene,
+    rotationOf: sceneRotations(i.scene, i.poseDescriptor),
     store: i.store,
     ...(i.onEnd ? { onEnd: i.onEnd } : {}),
   });
@@ -73,6 +76,10 @@ export interface SnapSession2dOptions {
   constrain?: SnapConstrain;
   /** Resize: the sides the drag pins. */
   handle?: ResizeAnchor;
+  /** Rotate: the point the angle turns about. */
+  pivot?: Point;
+  /** Rotate: the subject's angle at press. */
+  theta0?: number;
   /** Resize: the box `handle` belongs to. Default: the subjects' drawn box. */
   box?: SnapResizeBox;
   also?: SnapGeometry;
@@ -107,6 +114,8 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     ...(opts.origin ? { origin: opts.origin } : {}),
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
+    ...(opts.pivot ? { pivot: opts.pivot } : {}),
+    ...(opts.theta0 !== undefined ? { theta0: opts.theta0 } : {}),
     ...(opts.box ? { box: opts.box } : {}),
     ...(opts.also ? { also: opts.also } : {}),
     ...(opts.plane ? { plane: () => opts.plane ?? null } : {}),
@@ -125,5 +134,6 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     reachPx: opts.reachPx ?? DEFAULT_SNAP_PX,
     store: opts.store ?? createSnapOutcomeStore(),
     ...(opts.originProjection ? { originProjection: opts.originProjection } : {}),
+    ...(opts.poseDescriptor ? { poseDescriptor: opts.poseDescriptor } : {}),
   });
 }

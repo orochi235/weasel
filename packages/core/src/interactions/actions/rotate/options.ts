@@ -7,9 +7,8 @@ import type { RotateBehavior, RotatedPose } from '../../gestures/types';
 export interface UseRotateOptions<TPose> {
   /** Behaviors are typed against the pose shape; typed `never` for a pose
    *  without a numeric `rotation`. `onMove` sees the first rotated node's
-   *  turned pose, and a pose or a rotation it returns sets the rotation for
-   *  the whole selection. Unset, `DEFAULT_ROTATE_BEHAVIORS` applies: Shift
-   *  snaps the angle to 15 degree steps. `[]` turns that off. */
+   *  turned pose, after the snap session has snapped it, and a pose or a
+   *  rotation it returns sets the rotation for the whole selection. */
   behaviors?: TPose extends RotatedPose ? RotateBehavior<TPose>[] : never;
   /** History label for the committed rotation. Default `'Rotate'`. */
   rotateLabel?: string;

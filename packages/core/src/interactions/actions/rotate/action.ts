@@ -8,14 +8,18 @@ import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
 import { recordTransform } from '../transform-again/memory';
+import { SNAP_ROLES } from 'features/snap/roles';
 
 /**
  * Pointer-driven rotation of the selection, committed as one undo entry.
  *
  * A pose whose descriptor has no `withRotation`, or reports
- * `supportsRotation` false, is left alone. Behaviors (`opts.behaviors`) see
- * the first rotated node's turned pose; a pose one returns from `onMove` sets
- * the rotation for the whole selection.
+ * `supportsRotation` false, is left alone. The first rotated node's angle
+ * snaps through the `snap` dep's session — quarter turns and other nodes'
+ * angles, 15 degree steps while `snap.constrain` (Shift) is held — and the
+ * rest of the selection turns by the same amount. Behaviors
+ * (`opts.behaviors`) then see that node's turned pose; a pose one returns
+ * from `onMove` sets the rotation for the whole selection.
  */
 export const rotateAction: Action & { requires: string[] } = inPlane({
   id: 'rotate',
@@ -24,7 +28,8 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   // tool claimed rotate a non-empty selection. The rotation handle binds it
   // (`selectionRotateBindings`).
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'kitSettings'],
+  modifierRoles: SNAP_ROLES,
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -58,6 +63,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
               }
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
+            session.snap.end();
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },

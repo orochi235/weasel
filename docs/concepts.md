@@ -569,8 +569,9 @@ makes a move, resize or rotate commit without a history entry unless
 
 Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `clampMinSize` for resize (Shift's aspect
-lock is the snap session's `snap.constrain` role); `snapRotationWithModifier` for rotate, which a rotate applies with
-Shift and 15 degree steps unless its binding is given a `behaviors` list. A clone drag takes the move behaviors that only reshape the
+lock is the snap session's `snap.constrain` role). A rotate snaps through the snap session too: quarter
+turns and other nodes' angles from `rotationSnapSource`, which every `<SceneCanvas>` registers, and
+15 degree steps while `snap.constrain` (Shift) is held. A clone drag takes the move behaviors that only reshape the
 translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
 `snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
 are in `@weasel-js/guides`. Marquee area-select is unconditional — it is

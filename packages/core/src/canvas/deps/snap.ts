@@ -23,6 +23,7 @@ import { ownGeometryAt } from 'features/paths/pathSnap/pathSnapSource';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'features/snap/registry';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
@@ -54,6 +55,8 @@ export interface SnapSessionSources {
   registry?: SnapSourceRegistry;
   /** Overrides the kit setting `targets.snapPx`. */
   reachPx?: number;
+  /** How a node's rotation is read, for angle targets. */
+  poseDescriptor?: PoseDescriptor<unknown>;
 }
 
 export function useSnapDepSource(
@@ -93,6 +96,7 @@ export function useSnapDepSource(
             ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
             view: () => viewRef.current,
             reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+            ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),
             store,
             onEnd: () => ref.current.paths?.release(),
           });

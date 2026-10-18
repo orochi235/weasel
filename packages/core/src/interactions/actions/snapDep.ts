@@ -33,8 +33,9 @@ export interface SnapQuery {
 }
 
 /** What builds a gesture's input subspace while `snap.constrain` is held:
- *  an angle step in radians about `origin`, an axis or 45° lock about the
- *  press, or a resize's aspect. */
+ *  an angle step in radians about `origin` (a rotate's every multiple of
+ *  it, required), an axis or 45° lock about the press, or a resize's
+ *  aspect. */
 export type SnapConstrain = { step: number } | 'aspect' | 'axis';
 
 /** The box a resize drags, as drawn, in its own frame. */
@@ -56,7 +57,10 @@ export interface SnapBegin {
   /** Resize: the box `handle` belongs to. Default: the subject's drawn box,
    *  axis-aligned. */
   box?: SnapResizeBox;
+  /** Rotate: the point the angle turns about. Default `press`. */
   pivot?: Point;
+  /** Rotate: the subject's angle at press, radians. Default 0. */
+  theta0?: number;
   /** Point gestures: the previous anchor, a line's start. */
   origin?: Point;
   also?: SnapGeometry;
@@ -84,6 +88,7 @@ export interface SnapOutcome {
 export interface SnapSession {
   /** Where `p` lands. */
   at(p: Point, mods: SnapMods): SnapOutcome;
+  /** Where the angle `theta` (radians, about `pivot`) lands. */
   angle(theta: number, mods: SnapMods): { theta: number; marks: readonly SnapMark[] };
   /** Clears the gesture's marks. */
   end(): void;

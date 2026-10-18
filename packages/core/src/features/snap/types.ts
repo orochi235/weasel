@@ -84,19 +84,35 @@ export interface SnapCollect<P = Point> {
   plane?: PlaneMap | null;
 }
 
-/** What a rotate or handle drag asks a source for. Task 8 implements the
- *  session side. */
+/** What a rotate or handle drag asks a source for, once per frame. Angles
+ *  are radians about `pivot`, in the frame `rotationOf` reads. */
 export interface AngleCollect {
   pivot: Point;
+  /** The angle at press. */
   theta0: number;
+  /** The unsnapped angle now. */
+  theta: number;
+  /** The subject. */
   ids: readonly string[];
+  /** Nodes that offer no targets: the subject and everything under it. */
+  exclude: readonly string[];
   mods: SnapMods;
+  /** Absent in a host with no 2D scene. */
+  scene?: Scene<unknown, string, unknown>;
+  /** `id`'s world rotation, read as the subject's is; undefined for a node
+   *  that cannot turn. */
+  rotationOf?(id: string): number | undefined;
 }
 
+/** An angle a source offers. The session compares it round the circle, so
+ *  any whole turn of it is the same target. */
 export interface AngleCandidate {
   angle: number;
+  /** The result must land on one required angle, whatever its reach. */
   required?: boolean;
-  mark?: SnapMark;
+  /** Drawn when the result lands on it. Default: a ray from the pivot along
+   *  the snapped angle, labeled in degrees. */
+  mark?: SnapMarks;
 }
 
 /** A set of snap targets. */
@@ -111,6 +127,7 @@ export interface SnapSource<P = Point> {
   /** Default: every gesture but `'rotate'`. */
   gestures?: readonly SnapGesture[];
   collect(q: SnapCollect<P>): Iterable<SourceCandidate<P>>;
+  /** Angle targets, for a source whose `gestures` include `'rotate'`. */
   angles?(q: AngleCollect): Iterable<AngleCandidate>;
 }
 

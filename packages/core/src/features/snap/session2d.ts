@@ -1,14 +1,15 @@
 import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { View } from '@weasel-js/geom';
 import type { Scene } from 'core/scene/types';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { fromPlane, type PlaneMap } from 'core/viewport/parallax';
+import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
+import { angleAt } from './angle2d';
 import { inputFlat } from './inputSubspace';
+import { distinct, markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
+import { screenOf } from './screen';
 import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
 
 type Point = { x: number; y: number };
@@ -38,6 +39,9 @@ export interface Session2dInputs {
   /** The reach of a source that sets none, in screen px. */
   reachPx: number;
   scene?: Scene<unknown, string, unknown>;
+  /** `id`'s world rotation, for angle targets; undefined for a node that
+   *  cannot turn. */
+  rotationOf?: (id: string) => number | undefined;
   store: SnapOutcomeStore;
   /** Nodes that offer no targets. Default `req.ids`. */
   exclude?: readonly string[];
@@ -71,7 +75,7 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
       store.set(plane ? marks.map((m) => markFromPlane(m, plane)) : marks);
       return outcome(req.press, res.delta, res.members.length > 0, marks);
     },
-    angle: (theta) => ({ theta, marks: [] }),
+    angle: (theta, mods) => angleAt(inputs, sources, theta, mods),
     end() {
       store.set([]);
       inputs.onEnd?.();
@@ -79,35 +83,10 @@ export function createSession2d(inputs: Session2dInputs): SnapSession {
   };
 }
 
-/** `marks` with repeats dropped, so a target several probes meet is drawn once. */
-function distinct(marks: readonly SnapMark[]): SnapMark[] {
-  const seen = new Set<string>();
-  return marks.filter((m) => {
-    const key = JSON.stringify(m);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function marksOf(mark: SourceMark | undefined, delta: Point): readonly SnapMark[] {
   if (!mark) return [];
   const m = typeof mark === 'function' ? mark(delta) : mark;
   return 'kind' in m ? [m] : m;
-}
-
-function screenOf(view: View | null, plane: PlaneMap | null): (w: readonly number[]) => readonly number[] {
-  const t = view ? viewToTransform(view) : null;
-  return ([x, y]) => {
-    const w = plane ? fromPlane(plane, { x, y }) : { x, y };
-    return t ? worldToScreen(w.x, w.y, t) : [w.x, w.y];
-  };
-}
-
-/** `m` carried out of a plane into the camera's world, where the readout draws. */
-function markFromPlane(m: SnapMark, plane: PlaneMap): SnapMark {
-  const pt = (p: Point) => fromPlane(plane, p);
-  return m.kind === 'point' ? { ...m, at: pt(m.at) } : { ...m, from: pt(m.from), to: pt(m.to) };
 }
 
 function outcome(press: Point, delta: readonly number[], held: boolean, marks: readonly SnapMark[]): SnapOutcome {
