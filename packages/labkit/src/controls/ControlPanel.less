@@ -6,6 +6,12 @@
   padding: 0;
 }
 
+// The panel draws on the theme's surface, so its text takes the theme's ink rather than the page's.
+.lk-control-panel,
+.lk-control-panel-frame {
+  color: var(--wzl-fg);
+}
+
 // A cell in a paired row, with the caption naming the knob it holds. Case,
 // tracking, alignment and width come from the --wzl-params-label-* properties,
 // which inherit across the CSS-module boundary that keeps PropertyPanel's row

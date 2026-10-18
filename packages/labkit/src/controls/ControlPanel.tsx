@@ -225,6 +225,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       list
     ) : (
       <PropertyPanel
+        className="lk-control-panel-frame"
         title={title}
         actions={titled.control}
         stance={stance}
