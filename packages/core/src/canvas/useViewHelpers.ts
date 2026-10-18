@@ -149,6 +149,9 @@ export interface UseViewHelpersOpts<TPose> {
   previewPoseExtra: ((id: string) => unknown) | undefined;
   /** Chrome-caps predicate for this view. Absent means everything is visible. */
   getIsVisible?: (() => (id: string) => boolean) | undefined;
+  /** Whether a scene layer reaches the screen in this view. Absent means
+   *  every layer the scene shows does. */
+  layerIsPainted?: ((layerId: string) => boolean) | undefined;
 }
 
 export interface ViewHelpersBundle<TPose> {
@@ -169,7 +172,7 @@ export function useViewHelpers<TPose>(
 ): ViewHelpersBundle<TPose> {
   const {
     adapter, geometry, boundsOf, boundsOfPose, nodes, getScale, selection, gestureSource,
-    previewPoseExtra, getIsVisible,
+    previewPoseExtra, getIsVisible, layerIsPainted,
   } = opts;
   const getScaleRef = useLatest(getScale);
   const poseBoxOf = useCallback((id: string, pose: TPose): Bounds => {
@@ -251,8 +254,9 @@ export function useViewHelpers<TPose>(
         if (pose == null) return true;
         return geometry.supportsRotation(pose);
       },
+      ...(layerIsPainted ? { layerIsPainted } : {}),
     }),
-    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf],
+    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf, layerIsPainted],
   );
 
   const helpers: CanvasViewHelpers<TPose> = {

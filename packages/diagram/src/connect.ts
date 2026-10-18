@@ -205,12 +205,13 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   };
   const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
 
-  /** The port the pointer is over and may legally land on, or `null`. */
-  function targetPort(from: Port, at: Vec2): Port | null {
+  /** The port the pointer is over and may legally land on, or `null`.
+   *  `painted` is the view the drag started in: its own layer visibility. */
+  function targetPort(from: Port, at: Vec2, painted: (layerId: string) => boolean): Port | null {
     let best: Port | null = null;
     let bestD2 = snapRadius * snapRadius;
     for (const participant of opts.participants()) {
-      if (!offersPorts(participant)) continue;
+      if (!offersPorts(participant, painted)) continue;
       for (const port of portsOf(participant.node, participant.pose, portOpts)) {
         if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
         if (!canConnect(from, port)) continue;
@@ -226,8 +227,9 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
 
   /** The end the edge currently runs to: a snapped port, or the bare pointer.
    *  A free end is a port with no facing, so a router aims straight at it. */
-  function endAt(from: Port, at: Vec2): { port: Port | null; end: Port } {
-    const port = targetPort(from, at);
+  function endAt(scratch: ConnectScratch, at: Vec2): { port: Port | null; end: Port } {
+    const view = scratch.deps.view;
+    const port = targetPort(scratch.from, at, (layerId) => view?.layerIsPainted?.(layerId) !== false);
     return {
       port,
       end: port ?? { id: '', nodeId: '', point: at, normal: null },
@@ -260,7 +262,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           },
           overlay(): OngoingOverlay | null {
             if (!scratch.open) return null;
-            const { end } = endAt(scratch.from, scratch.current);
+            const { end } = endAt(scratch, scratch.current);
             const points = route({ from: scratch.from, to: end, waypoints: [] });
             if (points.length < 2) return null;
             // How a connector reads belongs to whatever surface paints the role.
@@ -269,7 +271,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;
             if (reason === 'cancel') return;
-            const { port } = endAt(scratch.from, { x: endCtx.world.x, y: endCtx.world.y });
+            const { port } = endAt(scratch, { x: endCtx.world.x, y: endCtx.world.y });
             if (port === null) return;
             // World and modifiers from the release; deps from the press.
             commit(

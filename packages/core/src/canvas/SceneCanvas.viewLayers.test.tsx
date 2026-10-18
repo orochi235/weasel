@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { giveKeys, renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
@@ -17,6 +17,8 @@ import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
+import type { SceneCanvasApi } from './canvasExtension';
+import type { CanvasHelpers } from './useViewHelpers';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 
@@ -229,3 +231,60 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     expect(selection.current).toEqual(['b']);
   });
 });
+
+describe('the chrome state a layer draws with answers for its own view', () => {
+  /** What each view's chrome state said about `fx`, keyed by view id. */
+  function probe() {
+    const said = new Map<string | null, boolean>();
+    const layer: RenderLayer<unknown> = {
+      id: 'probe',
+      label: 'Probe',
+      draw: (data) => {
+        const { viewId, getChromeState } = data as CanvasHelpers<unknown>;
+        said.set(viewId, getChromeState().layerIsPainted?.('fx') ?? true);
+        return [];
+      },
+    };
+    return { said, layer };
+  }
+
+  it('says a layer the surface hides is not painted there', async () => {
+    const { said, layer } = probe();
+    function Host(): ReactNode {
+      const ref = useRef<SceneCanvasApi>(null);
+      useEffect(() => ref.current?.registerLayer(layer), []);
+      return <SceneCanvas ref={ref} features={['draw']} scene={makeScene()} width={300} height={200}
+        layers={LAYERS} layerVisibility={HIDE_FX} />;
+    }
+    render(<Host />);
+    await nextFrame();
+    expect(said.get(null)).toBe(false);
+  });
+
+  it('says a layer one panel hides is not painted in that panel, and is on the surface', async () => {
+    const { said, layer } = probe();
+    let registry!: ViewRegistry;
+    // A slot layer: the surface paints registered layers over its views, not in them.
+    function Host(): ReactNode {
+      return (
+        <SceneCanvas features={['draw']} scene={makeScene()} width={800} height={800}
+          layers={{ ...LAYERS, probe: { layer } }}
+          views={[{ id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 }, layerVisibility: HIDE_FX }]}>
+          <RegistryOut set={(found) => { registry = found; }} />
+        </SceneCanvas>
+      );
+    }
+    render(<Host />);
+    await nextFrame();
+    const panel = registry.list().find((v) => v.id === 'panel')!;
+    panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 800 });
+    expect(said.get('panel')).toBe(false);
+    expect(said.get(null)).toBe(true);
+  });
+});
+
+function RegistryOut({ set }: { set: (r: ViewRegistry) => void }): null {
+  const r = useOptionalViewRegistry();
+  useEffect(() => { if (r) set(r); });
+  return null;
+}

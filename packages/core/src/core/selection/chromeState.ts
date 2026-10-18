@@ -45,6 +45,11 @@ export interface ChromeState {
    *  call sites that construct `ChromeState` by hand keep compiling;
    *  affordances should treat an absent predicate as "true". */
   canRotate?(id: string): boolean;
+  /** Whether a scene layer reaches the screen in the view this state was
+   *  built for — its `layerVisibility` / `layerOrder`, as `ViewApi` answers
+   *  it. Absent: the view paints every layer the scene shows. An affordance
+   *  that reads it puts no chrome on a node whose layer it says `false` to. */
+  layerIsPainted?(layerId: string): boolean;
 }
 
 export interface BuildChromeStateArgs {
@@ -56,16 +61,18 @@ export interface BuildChromeStateArgs {
    *  `true` for every id — preserves pre-existing affordance behavior for
    *  unit-test call sites that don't wire pose-descriptor capability. */
   canRotate?: (id: string) => boolean;
+  layerIsPainted?: (layerId: string) => boolean;
 }
 
 export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
-  const { selection, multiActive, effectiveBoundsOf, modifiers, canRotate } = args;
+  const { selection, multiActive, effectiveBoundsOf, modifiers, canRotate, layerIsPainted } = args;
   return {
     selection,
     multiActive,
     boundsOf: effectiveBoundsOf,
     modifiers,
     canRotate: canRotate ?? (() => true),
+    ...(layerIsPainted ? { layerIsPainted } : {}),
     // Not cached: the state is memoized across renders, and poses move under
     // it (a committed move, a live preview) without any of its inputs changing.
     get unionBounds() {

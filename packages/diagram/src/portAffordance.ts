@@ -51,12 +51,20 @@ export interface ParticipantPose<TPose> {
   hidden?: boolean;
   /** Out of reach: locked, or on a locked layer. */
   locked?: boolean;
+  /** The scene layer the node is painted on, which the asking view may not
+   *  paint (`ChromeState.layerIsPainted`, `ViewApi.layerIsPainted`). */
+  layer?: string;
 }
 
 /** Whether a participant's ports are drawn, grabbed and landed on. A hidden
- *  or locked node gets none, as it gets no selection or hover chrome either. */
-export function offersPorts(p: { hidden?: boolean; locked?: boolean }): boolean {
-  return p.hidden !== true && p.locked !== true;
+ *  or locked node gets none, as it gets no selection or hover chrome either,
+ *  and nor does one on a layer the asking view does not paint. */
+export function offersPorts(
+  p: { hidden?: boolean; locked?: boolean; layer?: string },
+  layerIsPainted?: (layerId: string) => boolean,
+): boolean {
+  if (p.hidden === true || p.locked === true) return false;
+  return p.layer === undefined || layerIsPainted?.(p.layer) !== false;
 }
 
 /** Where the affordance gets its participants. A thunk rather than a scene so
@@ -160,7 +168,7 @@ export function createPortAffordance<TPose>(
     regions(state: ChromeState): readonly AffordanceRegion[] {
       const out: AffordanceRegion[] = [];
       for (const participant of participants()) {
-        if (!offersPorts(participant)) continue;
+        if (!offersPorts(participant, state.layerIsPainted)) continue;
         const { node, pose } = participant;
         if (opts.shows !== undefined && !opts.shows(node, state)) continue;
         for (const port of portsOf(node, pose, portOpts)) {

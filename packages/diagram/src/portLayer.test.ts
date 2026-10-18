@@ -111,6 +111,17 @@ describe('portLayer and the scene\'s gates', () => {
     expect(hitEast(scene)).toBeNull();
   });
 
+  it('draws and hits no port on a layer the asking view does not paint', () => {
+    const scene = sceneWith();
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    for (const [painted, ports] of [[false, 0], [true, 4]] as const) {
+      const asked = { ...state, layerIsPainted: (layer: string) => layer !== 'main' || painted };
+      expect(createPortAffordance(sceneParticipants(scene)).regions(asked)).toHaveLength(ports);
+      const hit = portLayer(sceneParticipants(scene)).hitTest!(100, 20, asked, view, { width: 200, height: 200 });
+      expect(hit !== null).toBe(painted);
+    }
+  });
+
   it('still yields a hidden node to the graph, marked so', () => {
     const scene = sceneWith();
     scene.setHidden('a' as never, true);
