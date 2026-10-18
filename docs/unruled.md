@@ -255,6 +255,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): Audio renders note and noise voices as samples with no `AudioContext`:
   `createNoteKernel`, `createNoiseKernel`, `renderNote`, `renderNoise`, `biquadCoefficients`, and
   `biquadResponseDb`.
+- 2026-10-18: A locked diagram node shows no ports at all, rather than drawn ports that cannot be
+  dragged, matching the kit putting no selection or hover chrome on a locked node. A connect cannot
+  land on a hidden or locked node's port either.
 
 ## draw
 

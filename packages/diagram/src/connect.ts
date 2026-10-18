@@ -27,7 +27,9 @@ import {
 } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
 import type { DiagramEdge } from './edgeTrait';
-import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
+import {
+  PORT_AFFORDANCE_KIND, offersPorts, portScratchOf, type ParticipantSource,
+} from './portAffordance';
 import { portsOf } from './ports';
 import type { DiagramNodeReader } from './trait';
 import type { Port } from './types';
@@ -207,8 +209,9 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   function targetPort(from: Port, at: Vec2): Port | null {
     let best: Port | null = null;
     let bestD2 = snapRadius * snapRadius;
-    for (const { node, pose } of opts.participants()) {
-      for (const port of portsOf(node, pose, portOpts)) {
+    for (const participant of opts.participants()) {
+      if (!offersPorts(participant)) continue;
+      for (const port of portsOf(participant.node, participant.pose, portOpts)) {
         if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
         if (!canConnect(from, port)) continue;
         const d2 = (port.point.x - at.x) ** 2 + (port.point.y - at.y) ** 2;
