@@ -19,10 +19,10 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
 import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
-import type { EditAnchorsDep } from './editAnchorsDep';
+import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
 
-export type { EditAnchorsDep };
+export type { EditAnchorsDep, FinishedEditFrame };
 export type { SnapDep, SnapGeometry, SnapQuery } from './snapDep';
 
 /** Minimal view API the action layer consumes. */

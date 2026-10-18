@@ -22,9 +22,6 @@ import { constraintAnchors, type PathConstraint } from './types';
 /** How freely a held anchor moves, against 1 for any other: it gives way only when nothing else can. */
 const HELD_MOBILITY = 1e-3;
 
-/** How freely a held anchor an `onPath` binds moves: it slides onto its segment, which barely moves. */
-const SLIDE_MOBILITY = 1e3;
-
 /** How freely an `onPath` parameter moves, over the square of its segment's chord: freely enough that the anchor slides along before anything bends. */
 const PARAM_MOBILITY = 1e6;
 
@@ -149,7 +146,6 @@ function mobilityOf(
   params.forEach((c, k) => {
     const [a, b] = c.segment.map((i) => points[i]);
     mobility[spaceSize(count) + k] = PARAM_MOBILITY / ((b.x - a.x) ** 2 + (b.y - a.y) ** 2 + 1e-6);
-    if (held.has(c.anchor)) mobility.fill(SLIDE_MOBILITY, 2 * c.anchor, 2 * c.anchor + 2);
   });
   for (const i of pinned) mobility.fill(0, 2 * i, 2 * i + 2);
   for (const c of active) {
@@ -230,8 +226,17 @@ function solveWith(
   const sys = buildSystem(points, constraints, opts, heldMobility);
   const x = new Float64Array(sys.size);
   x.set(pack(points, (i) => (sys.pinned.has(i) ? opts.reference?.[i] ?? points[i] : points[i])));
+  // A held anchor an `onPath` binds slides: it starts from the point on its segment nearest where the edit put it.
+  const held = new Set(opts.held ?? []);
+  const r0 = new Float64Array(2);
   for (const row of sys.rows) {
-    if (row.c.kind === 'onPath') x[row.param] = nearestParam(row.c, x, points.length);
+    if (row.c.kind !== 'onPath') continue;
+    x[row.param] = nearestParam(row.c, x, points.length);
+    const a = row.c.anchor;
+    if (!held.has(a) || sys.pinned.has(a)) continue;
+    writeResiduals(row.c, x, row.space, r0, 0, undefined, row.param);
+    x[2 * a] -= r0[0];
+    x[2 * a + 1] -= r0[1];
   }
 
   let r = residualsOf(sys, x);

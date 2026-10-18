@@ -112,6 +112,7 @@ export type {
   HitTestView,
   ClipboardIngestCtx,
   EditAnchorsDep,
+  FinishedEditFrame,
   IngestionDep,
   InsertDep,
   InsertIntoDep,

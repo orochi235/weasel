@@ -104,11 +104,36 @@ export interface PathEditDrag {
   overlays?(current: AnchorSet): readonly OngoingOverlay[];
 }
 
+/** Another node an edit changes along with the edited one. */
+export interface PathEditOther {
+  id: string;
+  /** Its new path, in world space, stored where the node keeps its own. */
+  path?: PolygonPath;
+  /** Data fields to set on it. */
+  data?: Record<string, unknown>;
+  /** Delete it: what it kept true no longer has anything to hold. */
+  remove?: boolean;
+}
+
 /** What an edit commits once an extension has finished it. */
 export interface FinishedPathEdit {
   path: PolygonPath;
   /** Data fields to set beside the path. */
   data?: Record<string, unknown>;
+  /** Other nodes the edit changes, committed in the same history entry and previewed with it. */
+  others?: readonly PathEditOther[];
+}
+
+/** The scene as {@link PathEditExtension.finishEdit} reads it, for an edit that reaches past one node. */
+export interface PathEditFinishCtx {
+  /** The edited node's id. */
+  id: string;
+  /** A node's committed pose, data and dependencies; null when there is none. */
+  node(id: string): { pose: unknown; data: unknown; dependsOn?: readonly string[] | 'children' } | null;
+  /** A node's committed editable path, in world space; null when it has none. */
+  path(id: string): PolygonPath | null;
+  /** The nodes that list `id` in their `dependsOn`, directly or through others. */
+  dependents(id: string): readonly string[];
 }
 
 /** One feature's share of path edit. Every member is optional. */
@@ -134,13 +159,16 @@ export interface PathEditExtension {
   /**
    * `worldPath`, an edit of `node`'s committed path, finished so whatever
    * this extension keeps true holds — the path, and any data fields that
-   * change with it. Null when it cannot hold, and the edit should then not
-   * happen. Runs on every commit of an edit and every frame of one in flight.
+   * change with it, and any other nodes it has to move to keep it. Null when
+   * it cannot hold, and the edit should then not happen. Runs on every commit
+   * of an edit and every frame of one in flight. `ctx` reads the rest of the
+   * scene; it is absent where an edit has no scene behind it.
    */
   finishEdit?(
     node: { pose: unknown; data: unknown },
     worldPath: PolygonPath,
     origins?: readonly (PointOrigin | null)[],
+    ctx?: PathEditFinishCtx,
   ): FinishedPathEdit | null;
   /** How path edit reads and writes the nodes whose `data.representation`
    *  is of its kind. */

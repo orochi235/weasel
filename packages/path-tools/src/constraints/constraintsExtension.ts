@@ -4,6 +4,7 @@
  */
 import { pathAnchorPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathEditExtension, PathEditTarget } from '@weasel-js/core';
+import { finishLinkedEdit, registerConstraintLinkShape } from './constraintLinks';
 import { constraintGlyphs, constraintMarkAt, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { conflictsIn, constrainNodeEdit, constraintAxisOf, constraintsOf, solveNodeConstraints } from './pathConstraints';
 
@@ -64,6 +65,7 @@ const screenPoints = (target: PathEditTarget, toScreen: (p: { x: number; y: numb
 /** The constraints extension, its marks drawn in `style`'s colors. */
 export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> = {}): PathEditExtension {
   const colors = { ...DEFAULT_STYLE, ...style };
+  registerConstraintLinkShape();
   return {
     id: CONSTRAINTS_EXTENSION_ID,
     marks(ctx) {
@@ -85,7 +87,14 @@ export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> 
       const solved = solveNodeConstraints(target.node, kept);
       if (solved) store(target.id, solved.path, 'Delete constraint', { constraints: kept });
     },
-    finishEdit(node, worldPath, origins) {
+    finishEdit(node, worldPath, origins, ctx) {
+      const linked = ctx ? finishLinkedEdit(ctx, worldPath, origins) : undefined;
+      if (linked === null) return null;
+      if (linked) {
+        return linked.constraints === constraintsOf(node.data)
+          ? { path: linked.path, others: linked.others }
+          : { path: linked.path, data: { constraints: linked.constraints }, others: linked.others };
+      }
       const done = constrainNodeEdit(node, worldPath, origins);
       if (!done) return null;
       return done.constraints === constraintsOf(node.data)

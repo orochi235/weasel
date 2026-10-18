@@ -112,6 +112,9 @@ export {
 export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
+export {
+  constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
+} from './constraints/constraintLinks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
   CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
