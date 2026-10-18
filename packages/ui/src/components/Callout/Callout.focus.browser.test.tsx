@@ -13,12 +13,12 @@ const frames = async (n: number) => {
   for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
 };
 
-function Page({ modal, onDismiss }: { modal?: boolean; onDismiss?: () => void }) {
+function Page({ modal, onDismiss, isOpen = true }: { modal?: boolean; onDismiss?: () => void; isOpen?: boolean }) {
   return (
     <>
       <input aria-label="Width" />
       <Callout
-        isOpen
+        isOpen={isOpen}
         modal={modal}
         anchorRect={{ x: 300, y: 200, width: 40, height: 20 }}
         title="Too small"
@@ -45,6 +45,21 @@ test('a non-modal callout lets a click elsewhere keep focus, and typing lands th
   expect(input.value).toBe('12');
   expect(screen.getByRole('dialog', { name: 'Too small' })).toBeTruthy();
   expect(onDismiss).not.toHaveBeenCalled();
+});
+
+test('a non-modal callout that opens while an input has focus leaves focus there', async () => {
+  const { rerender } = renderWithIcons(<Page isOpen={false} />);
+  const input = screen.getByRole<HTMLInputElement>('textbox', { name: 'Width' });
+  await userEvent.click(input);
+  await userEvent.keyboard('1');
+
+  rerender(<Page isOpen />);
+  await frames(3);
+  expect(screen.getByRole('dialog', { name: 'Too small' })).toBeTruthy();
+  expect(document.activeElement).toBe(input);
+
+  await userEvent.keyboard('2{Backspace}3');
+  expect(input.value).toBe('13');
 });
 
 test('a non-modal callout lets programmatic focus leave it', async () => {

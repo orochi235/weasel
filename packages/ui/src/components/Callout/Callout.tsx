@@ -1,14 +1,4 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useCallback, useContext, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest } from '@weasel-js/core';
 import {
@@ -281,26 +271,14 @@ type CalloutDialogProps = {
 /**
  * React Aria's Dialog contains focus wherever it is mounted: it flips its overlay's FocusScope to `contain`, which
  * would make a non-modal callout pull focus back from every input clicked outside it. So only a modal callout gets
- * one; a non-modal one is a plain `role="dialog"` that takes focus when it opens and lets it go.
+ * one. A non-modal one is a plain `role="dialog"` that, like React Aria's own non-modal popovers, leaves focus where it
+ * was when it opens: a callout that opens because of typing elsewhere must not take the next keystroke.
  */
 function CalloutDialog({ modal, titleId, dialogRef, children, ...labels }: CalloutDialogProps) {
   const trigger = useContext(OverlayTriggerStateContext);
-  const ref = useRef<HTMLElement | null>(null);
-  const setRef = useCallback(
-    (node: HTMLElement | null) => {
-      ref.current = node;
-      dialogRef(node);
-    },
-    [dialogRef],
-  );
-  useEffect(() => {
-    if (modal) return;
-    const node = ref.current;
-    if (node && !node.contains(document.activeElement)) node.focus({ preventScroll: true });
-  }, [modal]);
   if (modal) {
     return (
-      <RACDialog role="alertdialog" className={s.dialog} {...labels} ref={setRef}>
+      <RACDialog role="alertdialog" className={s.dialog} {...labels} ref={dialogRef}>
         {children}
       </RACDialog>
     );
@@ -313,7 +291,7 @@ function CalloutDialog({ modal, titleId, dialogRef, children, ...labels }: Callo
       className={s.dialog}
       aria-label={labels['aria-label']}
       aria-labelledby={labelledby}
-      ref={setRef}
+      ref={dialogRef}
     >
       {children({ close: () => trigger?.close() })}
     </section>
