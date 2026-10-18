@@ -3,7 +3,9 @@
 
 import { closestOnFlat, flatDim, intersectFlats, solveLeastSquares, type Flat, type Vec } from './flat';
 
+/** A `fallback` candidate holds only the axes no `target` claims. */
 export type SnapTier = 'target' | 'fallback';
+/** What a probe stands for on the subject; sources match probes by role. */
 export type ProbeRole = 'origin' | 'box' | 'geometry' | 'pointer';
 
 /** A point on the subject that should land on a locus. `role` says which
@@ -33,6 +35,7 @@ export interface SnapCandidate<M> {
   mark?: M;
 }
 
+/** One frame's snap: the probes, the input subspace, the raw move, and the candidates. */
 export interface SnapProblem<M> {
   probes: readonly SnapProbe[];
   /** `H`, the subspace of δ-space the result stays inside. */
@@ -48,6 +51,7 @@ export interface SnapProblem<M> {
   eps?: number;
 }
 
+/** The move `resolveSnap` chose and the candidates it meets. */
 export interface SnapResolution<M> {
   /** `closestOnFlat(input, delta0)` when nothing snaps. */
   delta: Vec;
@@ -228,6 +232,8 @@ function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, m: Measure): SnapCa
   });
 }
 
+/** The move nearest `delta0` within `H` that meets the best-ranked set of
+ *  candidates in reach, or `delta0` projected into `H` when none is. */
 export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
   const { input, delta0 } = problem;
   let base = closestOnFlat(input, delta0);

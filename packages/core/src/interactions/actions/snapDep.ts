@@ -87,6 +87,7 @@ export interface SnapMods {
   hold?: boolean;
 }
 
+/** Where a session put one frame's point, and the marks to draw for it. */
 export interface SnapOutcome {
   point: Point;
   /** Whether some target holds the point. */

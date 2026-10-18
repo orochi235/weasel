@@ -38,6 +38,7 @@ export type SnapGesture = 'point' | 'move' | 'resize' | 'rotate' | 'handle';
 /** The sides of a box a gesture moves on one axis; null for neither. */
 export type SnapEdge = 'min' | 'max' | 'both' | null;
 
+/** Which sides of the subject's box a gesture moves, per axis. */
 export interface SnapEdges { x: SnapEdge; y: SnapEdge }
 
 /** A point on the subject that should land on a locus. */

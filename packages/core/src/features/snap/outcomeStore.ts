@@ -11,6 +11,7 @@ export interface SnapOutcomeStore<P = Point> {
 
 const NONE: readonly never[] = [];
 
+/** An empty outcome store, which notifies only when the marks change. */
 export function createSnapOutcomeStore<P = Point>(): SnapOutcomeStore<P> {
   let marks: readonly SnapMark<P>[] = NONE;
   const listeners = new Set<() => void>();

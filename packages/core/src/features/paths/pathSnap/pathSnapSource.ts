@@ -7,6 +7,7 @@ import { sceneSnapIndex } from './sceneIndex';
 
 type Point = { x: number; y: number };
 
+/** Options for `pathSnapSource`. */
 export interface PathSnapSourceOptions {
   /** The kinds offered. Default: every kind. */
   only?: readonly PathSnapKind[];

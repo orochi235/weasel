@@ -6,6 +6,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { SnapOutcomeStore } from './outcomeStore';
 import { glyphCommands, measuredSegmentCommands } from './readoutDraw';
 
+/** The snap readout's colors and line width, for a mark that sets no `color`. */
 export interface SnapReadoutStyle {
   /** Points, lines and their labels. Default orange, as the path marker. */
   color?: string;
@@ -17,6 +18,7 @@ export interface SnapReadoutStyle {
 
 const TICK = 6;
 
+/** A screen-space layer drawing the marks in `store`, redrawn when they change. */
 export function createSnapReadoutLayer(
   store: SnapOutcomeStore,
   style: SnapReadoutStyle = {},
