@@ -3,7 +3,6 @@ import {
   type Measurements,
   measurementsContribution,
   measureEndSource,
-  pathSnapSource,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -15,7 +14,6 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { PATH_SNAP_KINDS } from '@weasel-js/geom';
 import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
@@ -49,9 +47,6 @@ import { useSpacingHints } from './useSpacingHints';
  *  and the sticky tool, whose `background` and `padding` the document's
  *  SVG round trip does not carry. */
 const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
-
-/** Path targets as the pen has always had them: other paths' anchors only. */
-const ANCHOR_SNAP = pathSnapSource({ kinds: Object.fromEntries(PATH_SNAP_KINDS.map((k) => [k, k === 'anchor'])) });
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -130,11 +125,11 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Path anchors and measurement ends snap a gesture within a few screen
-  // pixels; past them it takes the grid.
+  // Measurement ends, and the canvas's default path anchors, snap a gesture
+  // within a few screen pixels; past them it takes the grid.
   const gridSource = grid.snapSource;
   const snap = useMemo(
-    () => ({ sources: [...(gridSource ? [gridSource] : []), ANCHOR_SNAP, measureEndSource()] }),
+    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
     [gridSource],
   );
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({

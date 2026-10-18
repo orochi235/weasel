@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { type PolygonPath, pathFromD } from '@weasel-js/geom';
+import { type PolygonPath, pathFromD, pathToAnchors } from '@weasel-js/geom';
 import { pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
-import { ANCHORS_ONLY, gridSource } from 'features/snap/testing/sessionDep';
+import { gridSource } from 'features/snap/testing/sessionDep';
 import { setup } from './testing/penHarness';
 
 // The real layer, recorded: the pen keeps its state to itself, and the one
@@ -11,7 +11,7 @@ vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 
-const anchors = pathSnapSource({ kinds: ANCHORS_ONLY });
+const anchors = pathSnapSource({ only: ['anchor'] });
 
 describe('usePenTool', () => {
   describe('snapping through the snap dep', () => {
@@ -73,6 +73,7 @@ describe('usePenTool', () => {
       p.click(-50, -50);
       p.click(96, 104);
       expect(p.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });
+      // Farther from every anchor than the reach (targets.snapPx, 8 here), so the grid wins.
       p.click(206, 0);
       expect(p.scratch.current!.anchors[2]).toEqual({ x: 210, y: 0 });
     });
@@ -86,8 +87,17 @@ describe('usePenTool', () => {
       expect(p.scratch.current!.anchors[2]).toEqual({ x: 100, y: 100 });
     });
 
+    it('joins an off-grid open end the press is on, though the grid would pull it away', () => {
+      const p = setup({ paths: { b: poly('M 14 14 L 114 14') }, snap: [gridSource(30)] });
+      p.click(-100, 14);
+      p.click(16, 12);
+      expect(p.applyOps).toHaveBeenCalled();
+      const { anchors: [joined] } = pathToAnchors(p.inserted[0]!.pose.path);
+      expect(joined!.map((a) => [a.x, a.y])).toEqual([[-90, 0], [14, 14], [114, 14]]);
+    });
+
     it("takes the source's reach, and lands unsnapped with no source", () => {
-      const wide = setup({ paths, snap: [pathSnapSource({ kinds: ANCHORS_ONLY, reachPx: 20 })] });
+      const wide = setup({ paths, snap: [pathSnapSource({ only: ['anchor'], reachPx: 20 })] });
       wide.click(-50, -50);
       wide.click(115, 100);
       expect(wide.scratch.current!.anchors[1]).toEqual({ x: 100, y: 100 });

@@ -9,7 +9,7 @@
  *     or every selected anchor together. The pressed anchor snaps through
  *     the `snap` dep's `point` session, to what the drag leaves still of the
  *     path and to the canvas's targets; Shift holds it to the axes and
- *     diagonals through its press.
+ *     diagonals through its press, and Ctrl suspends the snap.
  *   - **Dragging a control handle** moves just that handle, mirroring the
  *     opposite one while the anchor is smooth. Alt breaks the mirror; Shift
  *     holds the handle to the angle it had at the press, changing only its
@@ -43,7 +43,7 @@ import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay } from '
 import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
 import { inputSession } from 'features/snap/session2d';
-import { SNAP_ROLES } from 'features/snap/roles';
+import { SNAP_ROLES, snapMods } from 'features/snap/roles';
 import { ActionDisabledReason, isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
@@ -212,8 +212,9 @@ function moveAnchors(scratch: EditAnchorsScratch, to: Point): void {
 
 /** The modifiers `editAnchors` reads while it runs: Shift on the press adds
  *  to the anchor selection, Alt breaks a smooth anchor's mirror, the handle
- *  locks, and Shift holds an anchor drag to the axes and diagonals. Nothing
- *  suspends snapping: Ctrl already holds a handle's length. */
+ *  locks, and Shift holds an anchor drag to the axes and diagonals. An anchor
+ *  drag also reads `snap.suspend` at its default key, Ctrl, which is not
+ *  declared here because on a handle Ctrl holds the length. */
 export const EDIT_ANCHORS_ROLES = {
   'selection.add': { label: 'Add to the anchor selection', keys: ['shift'] },
   'mirror.break': { label: "Break the handles' mirror", keys: ['alt'] },
@@ -349,8 +350,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       const move = (moveCtx: InvocationCtx): void => {
         scratch.lastMove = moveCtx;
         if (scratch.part !== 'anchor') return moveHandle(scratch, moveCtx, paramsOf(opts));
-        const mods = { suspend: false, constrain: roleHeld(moveCtx, 'snap.constrain') };
-        moveAnchors(scratch, snapAnchor.at(moveCtx.world, mods));
+        moveAnchors(scratch, snapAnchor.at(moveCtx.world, snapMods(moveCtx)));
       };
 
       return {

@@ -25,6 +25,7 @@ import { sceneSession2d } from 'features/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
 import { rotationSnapSource } from 'features/snap/rotationSource';
+import { pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
 import type { SnapSource } from 'features/snap/types';
 
 type Point = { x: number; y: number };
@@ -57,8 +58,13 @@ export interface SnapSessionSources {
   poseDescriptor?: PoseDescriptor<unknown>;
 }
 
-/** The sources every canvas asks after its own, unless `omit` names one. */
-const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [rotationSnapSource()];
+/** The sources every canvas asks after its own, unless `omit` names one:
+ *  quarter turns and other nodes' angles for a rotate, and other paths'
+ *  anchors for a point gesture (`'path-anchors'`). */
+const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [
+  rotationSnapSource(),
+  { ...pathSnapSource({ only: ['anchor'] }), id: 'path-anchors', gestures: ['point'] },
+];
 
 /** `listed`, one source per id (the last one listed, where it stands),
  *  then each default whose id is neither listed nor in `omit`. */

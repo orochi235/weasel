@@ -4,6 +4,7 @@ import { resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
 import type { SnapMods } from 'interactions/actions/snapDep';
 import { distinct, markFromPlane } from './marks';
 import { screenOf } from './screen';
+import { stepAngles } from './stepAngles';
 import type { Session2dInputs } from './session2d';
 import type { AngleCollect, SnapMark, SnapMarks, SnapSource } from './types';
 
@@ -53,8 +54,7 @@ function collectAngles(
   const out: SnapCandidate<SnapMarks>[] = [];
   const c = req.constrain;
   if (mods.constrain && typeof c === 'object' && c.step > 0) {
-    const k = Math.round(theta / c.step);
-    for (const at of [k - 1, k, k + 1].map((i) => i * c.step)) {
+    for (const at of stepAngles(theta, c.step)) {
       out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'constrain', order: -1, tier: 'target', reachPx: 0, required: true });
     }
   }

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { pathSnapSource } from 'features/paths/pathSnap/pathSnapSource';
-import { sceneOfPaths, sessionDep } from 'features/snap/testing/sessionDep';
+import { gridSource, sceneOfPaths, sessionDep } from 'features/snap/testing/sessionDep';
+import type { SnapSource } from 'features/snap/types';
 import type { SnapDep } from '../snapDep';
 import { editAnchorsAction } from './action';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
@@ -14,13 +15,13 @@ const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
  *  when one is given; the committed path. */
 function dragAnchor2To(
   to: { x: number; y: number },
-  opts: { others?: string[]; snap?: boolean; shift?: boolean } = {},
+  opts: { others?: string[]; snap?: boolean; sources?: SnapSource[]; shift?: boolean; ctrl?: boolean } = {},
 ): PolygonPath | null {
   const scene = sceneOfPaths([square, ...(opts.others ?? []).map((d) => pathFromD(d) as PolygonPath)]);
   const [editingId] = [...scene.nodes.keys()];
   const snap: SnapDep | undefined = opts.snap === false
     ? undefined
-    : sessionDep(scene, [pathSnapSource({ kinds: { nearest: false } })]);
+    : sessionDep(scene, opts.sources ?? [pathSnapSource({ kinds: { nearest: false } })]);
   let committed: PolygonPath | null = null;
   const dep = makeEditAnchorsDep({
     editingId: editingId!,
@@ -30,7 +31,7 @@ function dragAnchor2To(
   const at = (x: number, y: number): InvocationCtx => ({
     world: { x, y },
     screen: { x, y },
-    modifiers: { ...KEYS, shift: opts.shift === true },
+    modifiers: { ...KEYS, shift: opts.shift === true, ctrl: opts.ctrl === true },
     deps: stubDeps({ selection: [editingId], editAnchors: dep, ...(snap ? { snap } : {}) }),
     drag: { start: { x: 100, y: 100 }, current: { x, y }, delta: { x: x - 100, y: y - 100 }, affordance: { kind: 'anchor:2' } },
   });
@@ -53,6 +54,11 @@ describe('an anchor drag snapping', () => {
 
   it("lands on another path's midpoint", () => {
     expect(anchor2(dragAnchor2To({ x: 203, y: 48 }, { others: ['M200 0 L200 100'] })!)).toEqual([200, 50]);
+  });
+
+  it('is not snapped while Ctrl is held', () => {
+    expect(anchor2(dragAnchor2To({ x: 113, y: 103 }, { sources: [gridSource(30)] })!)).toEqual([120, 90]);
+    expect(anchor2(dragAnchor2To({ x: 113, y: 103 }, { sources: [gridSource(30)], ctrl: true })!)).toEqual([113, 103]);
   });
 
   it('holds to the axes through its press while Shift is held, with or without a snap dep', () => {

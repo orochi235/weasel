@@ -1,4 +1,4 @@
-import { PATH_SNAP_KINDS, type PathSnapKind, type PolygonPath } from '@weasel-js/geom';
+import type { PolygonPath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -34,9 +34,6 @@ export function lineSource(at: Point, dir: Point): SnapSource {
     },
   };
 }
-
-/** `pathSnapSource`'s `kinds` with only anchors on. */
-export const ANCHORS_ONLY = Object.fromEntries(PATH_SNAP_KINDS.map((k) => [k, k === 'anchor'])) as Record<PathSnapKind, boolean>;
 
 /** A scene holding one leaf per path, on layer `main`, posed as the path. */
 export function sceneOfPaths(paths: readonly PolygonPath[]): AnyScene {

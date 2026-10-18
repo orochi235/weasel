@@ -5,6 +5,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import type { FeaturePreset } from 'canvas/SceneCanvas/features';
+import { pathFromD } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/types';
 import type { SnapDep } from 'interactions/actions/snapDep';
@@ -39,8 +40,9 @@ function Contribute({ source }: { source: SnapSource }) {
   return null;
 }
 
-function mount(children: ReactNode, props: Record<string, unknown>) {
+function mount(children: ReactNode, props: Record<string, unknown>, paths: readonly string[] = []) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+  for (const d of paths) scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: pathFromD(d) } as never);
   const got: { snap?: SnapDep } = {};
   render(
     <SceneCanvas scene={scene} width={200} height={200} {...props}>
@@ -101,6 +103,13 @@ describe('<SceneCanvas snap>', () => {
 
     it('snaps a rotate to a quarter turn with no source named', () => {
       expect(rotate(mount(null, {})).angle(88 * DEG, FREE).theta).toBeCloseTo(90 * DEG, 9);
+    });
+
+    it("lands a pen click on another path's anchor within 8px, unless `omit` names 'path-anchors'", () => {
+      const click = (props: Record<string, unknown>) => mount(null, props, ['M0 0 L100 100'])
+        .begin!({ gesture: 'point', press: { x: 103, y: 96 } }).at({ x: 103, y: 96 }, FREE).point;
+      expect(click({})).toEqual({ x: expect.closeTo(100, 9), y: expect.closeTo(100, 9) });
+      expect(click({ snap: { omit: ['path-anchors'] } })).toEqual({ x: 103, y: 96 });
     });
 
     it('leaves out a default source `omit` names', () => {

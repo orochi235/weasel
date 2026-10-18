@@ -9,6 +9,7 @@ export type {
 export { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from '../features/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../features/snap/outcomeStore';
 export { pointSnap, type PointSnap } from '../features/snap/pointSnap';
+export { stepAngles } from '../features/snap/stepAngles';
 export { useSnapSource } from '../features/snap/registry';
 export { rotationSnapSource } from '../features/snap/rotationSource';
 export { pathSnapSource, type PathSnapSourceOptions } from '../features/paths/pathSnap/pathSnapSource';

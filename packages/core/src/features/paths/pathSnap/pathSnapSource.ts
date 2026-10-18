@@ -8,6 +8,8 @@ import { sceneSnapIndex } from './sceneIndex';
 type Point = { x: number; y: number };
 
 export interface PathSnapSourceOptions {
+  /** The kinds offered. Default: every kind. */
+  only?: readonly PathSnapKind[];
   /** Kinds to turn on or off. A kind not named is on. */
   kinds?: Partial<Record<PathSnapKind, boolean>>;
   /** Overrides the canvas's reach for path targets, in screen px. */
@@ -21,7 +23,7 @@ export interface PathSnapSourceOptions {
  * targets need the query's `origin`.
  */
 export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
-  const kinds = PATH_SNAP_KINDS.filter((k) => opts.kinds?.[k] !== false);
+  const kinds = (opts.only ?? PATH_SNAP_KINDS).filter((k) => opts.kinds?.[k] !== false);
   return {
     id: 'path-snap',
     roles: ['pointer', 'geometry'],

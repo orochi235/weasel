@@ -4,7 +4,7 @@ import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { createPointerFollower, defineTool, pointSnap, SNAP_ROLES, snapMods, type Tool } from '@weasel-js/core';
+import { createPointerFollower, defineTool, pointSnap, snapMods, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
@@ -78,7 +78,6 @@ function spiroActions(host: SpiroActionsHost): Action[] {
       id: 'spiro.placePoint',
       label: 'Spiro — place point',
       eligible: { capability: 'creates-paths' },
-      modifierRoles: SNAP_ROLES,
       requires: ['view', 'pointer', 'insert', 'selection', 'snap'],
       invoker: {
         timing: 'immediate',

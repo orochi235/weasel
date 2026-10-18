@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
-import { PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { anchorsToPath, PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
 import {
   createSnapSession2dForTests as createSnapSession2d,
@@ -19,11 +19,20 @@ const curve = (): PolygonPath => ({
   fillRule: 'nonzero',
 });
 
-function start(options: HandleSnapOptions | null) {
+type Point = { x: number; y: number };
+const DEG = Math.PI / 180;
+const polar = (deg: number, len = 10): Point => ({ x: len * Math.cos(deg * DEG), y: len * Math.sin(deg * DEG) });
+
+/** Anchor 0 at (0,0) with both handles, closed through anchor 1 at (20,20). */
+const corner = (outHandle: Point, inHandle: Point): PolygonPath =>
+  anchorsToPath([[{ x: 0, y: 0, outHandle, inHandle }, { x: 20, y: 20 }]], [true]);
+
+/** A drag of anchor 0's out handle, at `press`, on `path`. */
+function start(options: HandleSnapOptions | null, path: PolygonPath = curve(), press: Point = { x: 10, y: 0 }) {
   const committed: { path: PolygonPath | null } = { path: null };
   const read = () => options;
   const dep = makeEditAnchorsDep({
-    getEditablePath: () => curve(),
+    getEditablePath: () => path,
     applyEdit: (_id, p) => { committed.path = p as PolygonPath; },
     extensions: [createHandleSnapExtension(read)],
   });
@@ -40,7 +49,7 @@ function start(options: HandleSnapOptions | null) {
       scene: scene as never, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, sources: [handleSnapSource(read)], store,
     }),
   };
-  const at = { x: 10, y: 0 };
+  const at = press;
   const affordance: AffordanceHit = { kind: 'controlOut:0', targetIds: ['node-a'] };
   const ctx: InvocationCtx = {
     world: at,
@@ -102,5 +111,34 @@ describe('handle snapping', () => {
     far.move({ x: 20, y: 18 });
     expect(far.marks()).toEqual([]);
     expect(far.out()).toEqual({ x: 20, y: 18 });
+  });
+
+  describe("onto the line through the anchor's other handle", () => {
+    const angleOf = (h: Point) => Math.atan2(h.y, h.x) / DEG;
+
+    it('snaps onto it, keeping the length, ahead of a step that is also in reach', () => {
+      // The other handle points at 185°, so the line through it runs at 5°.
+      const drag = start({ stepDeg: 45 }, corner(polar(30), polar(185)), polar(30));
+      drag.move(polar(3.1));
+      expect(drag.marks()).toEqual([{ kind: 'line', from: expect.anything(), to: expect.anything() }]);
+      expect((drag.marks()[0] as { from: Point }).from).toEqual({ x: expect.closeTo(polar(185).x, 5), y: expect.closeTo(polar(185).y, 5) });
+      const h = drag.out();
+      expect(angleOf(h)).toBeCloseTo(5, 4);
+      expect(Math.hypot(h.x, h.y)).toBeCloseTo(10, 4);
+    });
+
+    it('wins a tie with a step', () => {
+      // The line runs at 40°; the pointer sits halfway between it and 45°.
+      const drag = start({ stepDeg: 45 }, corner(polar(30), polar(220)), polar(30));
+      drag.move(polar(42.5));
+      expect(angleOf(drag.out())).toBeCloseTo(40, 4);
+    });
+
+    it('wraps round the half turn', () => {
+      // The line runs at 178°; the pointer is at -178°, 4° from it the short way round.
+      const drag = start({ stepDeg: 0 }, corner(polar(90), polar(-2)), polar(90));
+      drag.move(polar(-178));
+      expect(angleOf(drag.out())).toBeCloseTo(178, 4);
+    });
   });
 });

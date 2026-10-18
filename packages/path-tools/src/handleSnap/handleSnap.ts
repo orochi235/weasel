@@ -5,7 +5,7 @@
  * {@link handleSnapSource} offers it the angles.
  */
 import { anchorAt } from '@weasel-js/geom';
-import type { AngleCandidate, PathEditExtension, SnapMark, SnapSession, SnapSource } from '@weasel-js/core';
+import { stepAngles, type AngleCandidate, type PathEditExtension, type SnapMark, type SnapSession, type SnapSource } from '@weasel-js/core';
 
 /** Angle snapping for a control-handle drag. */
 export interface HandleSnapOptions {
@@ -28,6 +28,8 @@ type Point = { x: number; y: number };
 const DEG = Math.PI / 180;
 const DEFAULT_STEP_DEG = 45;
 const DEFAULT_REACH_DEG = 6;
+/** Angle gaps closer than this, in radians, are a tie. */
+const TIE = 1e-6;
 /** How far a guide reaches past the handle, as a share of its length at the press. */
 const LINE_OVERSHOOT = 1.25;
 
@@ -36,7 +38,8 @@ const reader = (options: HandleSnapOptionsInput) => (typeof options === 'functio
 /**
  * A handle drag's angle targets: the multiples of `stepDeg` either side of
  * the handle, and the angle that puts it in line with the anchor's other
- * handle, which the drag brings as `also.anchors`. Each draws its line.
+ * handle, which the drag brings as `also.anchors`, ahead of a step it ties
+ * with. Each draws its line.
  */
 export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSource {
   const read = reader(options);
@@ -50,16 +53,19 @@ export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSour
       if (!opts) return;
       const { pivot } = q;
       const reach = Math.hypot(q.press.x - pivot.x, q.press.y - pivot.y) * LINE_OVERSHOOT;
-      // First, so the opposite handle wins a tie with a step.
+      let nearest = Infinity;
       for (const other of opts.opposite === false ? [] : q.also?.anchors ?? []) {
         if (other.x === pivot.x && other.y === pivot.y) continue;
         const angle = Math.atan2(pivot.y - other.y, pivot.x - other.x);
+        nearest = Math.min(nearest, gap(q.theta, angle));
         yield { angle, mark: { kind: 'line', from: other, to: along(pivot, angle, reach) } };
       }
       const step = (opts.stepDeg ?? DEFAULT_STEP_DEG) * DEG;
       if (step <= 0) return;
-      const k = Math.round(q.theta / step);
-      for (const angle of [k - 1, k, k + 1].map((i) => i * step)) yield { angle, mark: stepLine(pivot, angle, reach) };
+      for (const angle of stepAngles(q.theta, step)) {
+        // The opposite handle wins a tie: the resolver would break it by noise.
+        if (gap(q.theta, angle) < nearest - TIE) yield { angle, mark: stepLine(pivot, angle, reach) };
+      }
     },
   };
 }
@@ -107,6 +113,11 @@ export function createHandleSnapExtension(options: HandleSnapOptionsInput = {}):
       };
     },
   };
+}
+
+/** How far apart two angles are round the circle, in radians. */
+function gap(a: number, b: number): number {
+  return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 }
 
 function along(from: Point, angle: number, len: number): Point {

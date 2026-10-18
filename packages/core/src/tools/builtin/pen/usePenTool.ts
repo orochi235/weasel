@@ -16,7 +16,7 @@ import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { PEN_HANDLE_ROLES, pullHandle } from './penHandle';
 import { pointSnap } from 'features/snap/pointSnap';
-import { SNAP_ROLES, snapMods } from 'features/snap/roles';
+import { snapMods } from 'features/snap/roles';
 import type { ModifierState } from 'core/modifierState';
 import { cursorFor } from '@weasel-js/cursor';
 import { createPointerFollower } from '../shared/pointerFollower';
@@ -302,14 +302,14 @@ export function usePenTool(
     return true;
   }, [optsRef]);
 
-  /** Where an anchor pressed at `(x, y)` lands: wherever the snap session
-   *  puts it, then onto an open subpath's end within the close-hit radius.
-   *  `hit` names that end. */
+  /** Where an anchor pressed at `(x, y)` lands: on an open subpath's end
+   *  within the close-hit radius of the press, which `hit` names, else
+   *  wherever the snap session puts it. */
   const placeAt = useCallback((deps: ActionDeps, x: number, y: number, mods: ModifierState): { x: number; y: number; hit: PathAnchorHit | null } => {
+    const hit = openEndNear(deps, x, y, penReachOf(optsRef.current).close);
+    if (hit) return { x: hit.x, y: hit.y, hit };
     const last = scratchRef.current!.current?.anchors.at(-1);
-    const landed = snaps.place(deps.snap, { x, y }, snapMods({ modifiers: mods }), last).point;
-    const hit = openEndNear(deps, landed.x, landed.y, penReachOf(optsRef.current).close);
-    return hit ? { x: hit.x, y: hit.y, hit } : { ...landed, hit: null };
+    return { ...snaps.place(deps.snap, { x, y }, snapMods({ modifiers: mods }), last).point, hit: null };
   }, [snaps, optsRef]);
 
   /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
@@ -368,7 +368,6 @@ export function usePenTool(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        modifierRoles: SNAP_ROLES,
         requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
         invoker: {
           timing: 'immediate' as const,
