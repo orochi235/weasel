@@ -994,14 +994,6 @@ only story runner in the repo.
   and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
   the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
-- **(P3) A removal on a canvas cannot animate out.** `<SceneCanvas poseTransition>` glides the
-  poses the scene writes and grows in the nodes it adds, from `scene.onPoseWrite`. A node a delete
-  removes is gone by the time that report arrives, so nothing is left to show leaving;
-  `animateLifecycle`'s `exitTo` still works only over an adapter the caller holds and removes
-  through. Following a removal needs the scene to keep the node presentable after it leaves the
-  document — a ghost the paint walk draws and nothing picks — or the delete action to wait on an
-  exit before it commits.
-
 ---
 
 ## Backends (WebGL future)
