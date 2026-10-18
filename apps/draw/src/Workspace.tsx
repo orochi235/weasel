@@ -104,7 +104,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
 
   const modeId = useModeId(machine);
   const targetLabel = useModeTargetLabel(machine, scene);
-  const modes = useCanvasModes(machine, scene, selection, modality.pathEdit, modality.scopingDim.isPointerInteractive);
+  const modes = useCanvasModes(machine, scene, selection, modality.pathEdit);
   const ambient = useEditorAmbient({
     scene,
     selection,

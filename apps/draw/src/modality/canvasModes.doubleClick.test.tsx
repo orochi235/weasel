@@ -1,7 +1,7 @@
 /**
  * Which mode a double-click on the canvas enters in draw, through a real `<SceneCanvas>` wired the
  * way Workspace wires it: `useCanvasModes`, the machine's path-edit host, and the scoping dim's
- * `isPointerInteractive`.
+ * `isPointerInteractive`, which the canvas's hit-test honors.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
@@ -57,7 +57,7 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
       return id ? new Set([id]) : new Set<string>();
     },
   }));
-  const modes = useCanvasModes(machine, scene, selection, pathEdit, dim.isPointerInteractive);
+  const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
     <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={240} height={60}
       ambient={modes.ambient}
@@ -99,7 +99,7 @@ describe('double-click mode entry in draw', () => {
     expect(t.state()).toEqual({ mode: 'normal', target: null });
   });
 
-  it("a group opens its member path, not isolation: draw routes no node as a `group`", () => {
+  it('a group opens its member path, not isolation: the hit is the member', () => {
     const t = setup();
     t.doubleClick(AT.group);
     expect(t.state()).toEqual({ mode: 'path-edit', target: 'member' });

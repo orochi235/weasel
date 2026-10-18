@@ -2,7 +2,7 @@
  * Two things on a canvas name a node's kind, and they disagree: the label
  * published with the selection (`SelectionContextValue.kinds`), and the
  * routing kind a binding's `kind:` target and `Hit.kind` speak. This pins
- * both answers for the same nodes.
+ * both answers for the same nodes. They agree only on a container, `'group'`.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -83,7 +83,7 @@ function answers(props: {
 }
 
 describe('the two kind classifiers on one canvas', () => {
-  it('the published label reads the node and its pose; the routing kind reads the data', () => {
+  it('the published label reads the node and its pose; the routing kind reads the data, and a container', () => {
     expect(answers().table).toEqual({
       pathData: { label: undefined, routing: 'path' },
       pathPose: { label: 'path', routing: 'unknown' },
@@ -91,7 +91,7 @@ describe('the two kind classifiers on one canvas', () => {
       text: { label: undefined, routing: 'text' },
       image: { label: undefined, routing: 'image' },
       card: { label: undefined, routing: 'unknown' },
-      group: { label: 'group', routing: 'unknown' },
+      group: { label: 'group', routing: 'group' },
     });
   });
 
@@ -100,6 +100,7 @@ describe('the two kind classifiers on one canvas', () => {
     const { table } = answers({ routing });
     expect(table.card).toEqual({ label: undefined, routing: 'card' });
     expect(table.pathData).toEqual({ label: undefined, routing: 'unknown' });
+    // A routing table without the group entry leaves a container unrouted.
     expect(table.group).toEqual({ label: 'group', routing: 'unknown' });
   });
 

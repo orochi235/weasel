@@ -30,7 +30,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
 }) {
   const { scene, selection, descriptor, viewRef } = args;
   const { geometry, routing, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
-  const { kindOfData, kindOfNode } = useNodeKinds(scene, routing);
+  const { kindOf, kindOfNode } = useNodeKinds(scene, routing);
 
   // The painted alpha of a node in this view: the caller's `alphaFor` times any per-node
   // override alpha. The pick path reads the same number the painter does, or a node faded
@@ -59,11 +59,12 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     // that once per walk instead of once per candidate.
     ...(alphaFor ? { alphaOf: composedAlphaFor } : {}),
     ...(viewLayerGate ? { layerIsPainted: viewLayerGate } : {}),
+    ...(isPointerInteractive ? { isPointerInteractive } : {}),
     selectTool: args.selectTool,
   });
 
   const getNodeAtPoint = useNodeAtPoint({
-    pickBest: selectTool.pickBest, nodes: adapter, kindOfData, isPointerInteractive,
+    pickBest: selectTool.pickBest, nodes: adapter, kindOf,
   });
 
   return {
