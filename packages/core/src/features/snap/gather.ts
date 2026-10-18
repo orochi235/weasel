@@ -1,6 +1,13 @@
 import type { SnapCandidate, Vec } from '@weasel-js/geom/nd';
 import { distinct } from './marks';
-import type { SnapCollect, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
+import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
+
+const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
+
+/** The sources that answer `gesture`: those naming it, and, for one naming none, point, move and resize. */
+export function snapSourcesFor<S extends Pick<SnapSource<unknown>, 'gestures'>>(sources: readonly S[], gesture: SnapGesture): S[] {
+  return sources.filter((s) => (s.gestures ?? DEFAULT_GESTURES).includes(gesture));
+}
 
 /** What a candidate draws when the result meets it. */
 export type SnapCandidateMark<P> = NonNullable<SourceCandidate<P>['mark']>;

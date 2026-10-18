@@ -7,20 +7,19 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { angleAt } from './angle2d';
 import { inputFlat } from './inputSubspace';
-import { gatherSnapCandidates, resolvedSnapMarks, type SnapCandidateMark } from './gather';
+import { gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type SnapCandidateMark } from './gather';
 import { recordSnapCandidates } from './debugCandidates';
 import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { resizedBox, resizeEdges, resizeSubject, type ResizeSubject } from './resizeBox';
 import { screenOf } from './screen';
-import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource } from './types';
+import type { SnapCollect, SnapMark, SnapProbeAt, SnapSource } from './types';
 
 type Point = { x: number; y: number };
 
 /** The canvas's reach when neither a source nor the kit settings name one. */
 export const DEFAULT_SNAP_PX = 8;
 
-const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
 
 /** What a 2D session runs on, captured at press. */
 export interface Session2dInputs {
@@ -53,7 +52,7 @@ export interface Session2dInputs {
 /** A snap session over a 2D canvas: ctx points are world points. */
 export function createSession2d(inputs: Session2dInputs): SnapSession {
   const { req, store } = inputs;
-  const sources = inputs.sources.filter((s) => (s.gestures ?? DEFAULT_GESTURES).includes(req.gesture));
+  const sources = snapSourcesFor(inputs.sources, req.gesture);
   return {
     at(p, mods) {
       const delta0 = { x: p.x - req.press.x, y: p.y - req.press.y };

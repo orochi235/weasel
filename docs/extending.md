@@ -387,7 +387,6 @@ Each action pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `packages/guides/src/behaviors/move/snapToGrid.ts` — pure pose refinement.
 - `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
 

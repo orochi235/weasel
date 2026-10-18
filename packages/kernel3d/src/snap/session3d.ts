@@ -1,6 +1,6 @@
 import {
-  gatherSnapCandidates, resolvedSnapMarks,
-  type SnapBegin, type SnapCandidateMark, type SnapGesture, type SnapOutcome, type SnapOutcomeStore,
+  gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor,
+  type SnapBegin, type SnapCandidateMark, type SnapOutcome, type SnapOutcomeStore,
   type SnapProbeAt, type SnapSession, type SnapSource,
 } from '@weasel-js/core';
 import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
@@ -16,7 +16,6 @@ import { boxProbes, subjectOf } from './probes3d';
 
 type Point = { x: number; y: number };
 
-const DEFAULT_GESTURES: readonly SnapGesture[] = ['point', 'move', 'resize'];
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 
 /** What a 3D session runs on. */
@@ -54,7 +53,7 @@ export function createSession3d<TData, TLayer extends string>(inputs: Session3dI
   const up = normalize(world.up ?? DEFAULT_UP);
   const basis = planeBasis(up);
   const frame = frameOf(req, world, up);
-  const sources = inputs.sources.filter((s) => (s.gestures ?? DEFAULT_GESTURES).includes(req.gesture));
+  const sources = snapSourcesFor(inputs.sources, req.gesture);
   const unsnapped = (p: Point): SnapOutcome => {
     store.set([]);
     return { point: p, held: false, marks: [] };

@@ -15,6 +15,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'features/snap/registry';
+import { snapSourcesFor } from 'features/snap/gather';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
@@ -78,7 +79,7 @@ export function useSnapDepSource(
       const s = sessionRef.current;
       const view = viewRef.current;
       const sources = withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit);
-      const wantsGeometry = sources.some((src) => src.roles.includes('geometry'));
+      const wantsGeometry = snapSourcesFor(sources, req.gesture).some((src) => src.roles.includes('geometry'));
       const debug = s.debug?.() ?? undefined;
       return sceneSession2d({
         req,
