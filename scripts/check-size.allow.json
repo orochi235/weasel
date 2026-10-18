@@ -60,9 +60,6 @@
   "packages/core/src/features/selection/overlay.ts": {
     "lines": 620
   },
-  "packages/core/src/features/text/useSceneTextEdit.ts": {
-    "longestFunction": 130
-  },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
     "lines": 654,
     "longestFunction": 451
@@ -237,7 +234,7 @@
     "lines": 474
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 716,
+    "lines": 706,
     "longestFunction": 381
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {

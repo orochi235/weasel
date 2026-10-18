@@ -30,6 +30,7 @@ const note = (id: string, x: number, y: number, text: string, color?: string) =>
 const INITIAL = [
   note('a', 30, 30, 'Drag to draw a note, or click to place one'),
   note('b', 200, 60, 'Double-click to edit', '#c8ecffff'),
+  note('c', 355, 175, 'A note cuts its text at its edge, so this sentence, which runs on well past the bottom of the paper, is clipped there.', '#ffd6e0ff'),
 ];
 
 /** Publishes the canvas's text editor as the `textEdit` dep, so a new note

@@ -13,6 +13,22 @@ export type EditingDrawOne = <TNode extends Node<unknown, string, unknown>>(
 export function drawOneEditing(editingId: string | null): EditingDrawOne {
   return (node, pose, view, ctx) => {
     const out = defaultDrawOne(node, pose, view, ctx);
-    return node.id === editingId ? out.filter((c) => c.kind !== 'text') : out;
+    return node.id === editingId ? withoutText(out) : out;
   };
+}
+
+/** `cmds` with every text command gone, at any depth, and any group left
+ *  empty by it — a clipped node's glyphs ride in one. */
+function withoutText(cmds: readonly DrawCommand[]): DrawCommand[] {
+  const out: DrawCommand[] = [];
+  for (const c of cmds) {
+    if (c.kind === 'text') continue;
+    if (c.kind !== 'group') {
+      out.push(c);
+      continue;
+    }
+    const children = withoutText(c.children);
+    if (children.length > 0) out.push({ ...c, children });
+  }
+  return out;
 }

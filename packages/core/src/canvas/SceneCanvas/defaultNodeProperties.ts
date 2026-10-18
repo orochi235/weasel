@@ -101,6 +101,13 @@ const transformEncoding: PrefBooleanEncoding = {
   write: (on, pose) => (on ? pose?.transform : undefined),
 };
 
+/** `data.overflow` as a flag: on is `'clip'`, and off removes the key, since
+ *  absent draws past the box. */
+const overflowEncoding: PrefBooleanEncoding = {
+  read: (stored) => stored === 'clip',
+  write: (on) => (on ? 'clip' : undefined),
+};
+
 type MarkerOptions = PrefEnum['options'];
 let markerOptionsCache: { generation: number; options: MarkerOptions } | undefined;
 
@@ -302,6 +309,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                 },
                 'data.padding': { kind: 'number', display: TWO_PLACES, name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
                 'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
+                'data.overflow': { kind: 'boolean', name: 'Clip', description: 'Cut the text at the box\'s edge instead of drawing it past.', default: false, control: 'switch', encoding: overflowEncoding },
               },
             },
           }

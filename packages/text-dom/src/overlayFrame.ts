@@ -1,3 +1,4 @@
+import { verticalAlignOffset } from '@weasel-js/text';
 import type { TextEditScreenPose } from './textEditTypes';
 
 /**
@@ -22,4 +23,38 @@ export function overlayTransform(pose: TextEditScreenPose, left: number, top: nu
   }
   if (anchor !== 0) parts.push(`translateX(${-anchor * 100}%)`);
   return parts.length > 0 ? parts.join(' ') : 'none';
+}
+
+/**
+ * The overlay's `clip-path`: the pose box grown by `clip`, in the overlay's
+ * own pre-transform pixels, so its transform carries the cut with the text.
+ * The box's corner sits at the overlay's origin less the pull back by
+ * `anchor` of its width, and pose units are its pixels.
+ */
+export function overlayClipPath(
+  el: HTMLElement,
+  pose: TextEditScreenPose,
+  left: number,
+  top: number,
+  anchor: number,
+  clip: NonNullable<TextEditScreenPose['clip']>,
+): string {
+  const zoom = pose.zoom ?? 1;
+  const x0 = (pose.x - left) / zoom + anchor * el.offsetWidth - clip.left;
+  const y0 = (pose.y - top) / zoom - clip.top;
+  const x1 = x0 + clip.left + pose.width + clip.right;
+  const y1 = y0 + clip.top + pose.height + clip.bottom;
+  return `polygon(${x0}px ${y0}px, ${x1}px ${y0}px, ${x1}px ${y1}px, ${x0}px ${y1}px)`;
+}
+
+/**
+ * The overlay's `top`, in container pixels, for content `contentHeight` tall
+ * (pre-scale, like the rest of `pose`): the pose's top, shifted by the same
+ * `verticalAlign` slack the canvas applies, plus `drop` — how far below the
+ * CSS line's baseline the canvas puts its own, from {@link baselineDrop}.
+ * @internal
+ */
+export function overlayTop(pose: TextEditScreenPose, contentHeight: number, drop = 0): number {
+  const slack = verticalAlignOffset(pose.verticalAlign, pose.height, contentHeight);
+  return pose.y + (slack + drop) * (pose.zoom ?? 1);
 }

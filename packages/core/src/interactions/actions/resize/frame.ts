@@ -14,6 +14,7 @@ import { boundsForRules } from './ruleBounds';
 import { boxFrame } from './boxFrame';
 import { insetBox, outsetBox } from 'core/geometry/inkExtents';
 import type { ResizeBox, ResizeFrame, ResizeSession } from './session';
+import { clampToMinSize } from './behaviors/clampMinSize';
 
 /** `ob` with the edges `anchor` leaves free moved by the drag delta, which is
  *  taken into the axes of the frame the box is drawn in first. A frame nothing
@@ -116,14 +117,16 @@ function storedPose(
 }
 
 /** Every write id's stored pose with the box taken from where the press found
- *  it to `proposed`. A lone target is also pinned at the fixed corner and run
- *  through `snap`, and comes back with its world pose. */
+ *  it to `asked`, held to the place's minimum. A lone target is also pinned at
+ *  the fixed corner and run through `snap`, and comes back with its world
+ *  pose. `proposed` is the box they were put in. */
 export function posesInBox(
-  place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox'>,
-  proposed: Bounds,
+  place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf' | 'writeIds' | 'startWorlds' | 'box' | 'sharedBox' | 'minimum'>,
+  asked: Bounds,
   snap: (g: PoseDescriptor<unknown>, world: unknown) => unknown = (_g, world) => world,
-): { previews: Map<NodeId, unknown>; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
+): { previews: Map<NodeId, unknown>; proposed: Bounds; lone?: { id: NodeId; g: PoseDescriptor<unknown>; world: unknown } } {
   const { box } = place;
+  const proposed = (place.minimum && clampToMinSize(asked, box.anchor, place.minimum)) ?? asked;
   const previews = new Map<NodeId, unknown>();
   const worldOf = (id: NodeId): unknown => {
     const start = place.startWorlds.get(id);
@@ -137,16 +140,16 @@ export function posesInBox(
       if (next === undefined) continue;
       previews.set(id, storedPose(place, id, next));
     }
-    return { previews };
+    return { previews, proposed };
   }
 
   const id = place.writeIds[0];
   const g = place.geometryOf(id);
   const remapped = worldOf(id);
-  if (remapped === undefined) return { previews };
+  if (remapped === undefined) return { previews, proposed };
   const world = snap(g, pinFixedCorner(g, remapped, box, proposed));
   previews.set(id, storedPose(place, id, world));
-  return { previews, lone: { id, g, world } };
+  return { previews, proposed, lone: { id, g, world } };
 }
 
 /** One move's previews: the box as the drag and the constraints leave it,
@@ -164,9 +167,9 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   // The constraints see the box as drawn; the stroke keeps its width, so the
   // extents come back off what they leave.
   const moved = computeProposedBounds(box.bounds, box.anchor, at.x - session.startWorld.x, at.y - session.startWorld.y, boxFrame(box, box.bounds));
-  const proposed = insetBox(constrain(session.constraints, gctx, box.anchor, outsetBox(moved, box.extents)), box.extents);
+  const constrained = insetBox(constrain(session.constraints, gctx, box.anchor, outsetBox(moved, box.extents)), box.extents);
 
-  const { previews, lone } = posesInBox(session, proposed, (g, world) => snapPose(
+  const { previews, proposed, lone } = posesInBox(session, constrained, (g, world) => snapPose(
     session.pointSnap, g, world, box, box.anchor, gctx.modifiers, gctx.plane ?? null,
   ));
   if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);

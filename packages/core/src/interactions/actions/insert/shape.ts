@@ -4,6 +4,7 @@ import type { InsertExtras } from '../depSchema';
 import { applyUserRotation, buildExtras } from './extras';
 import { computeBounds, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
+import { minSizeOf, type MinSize } from 'core/scene/minSize';
 
 /** The node kind a binding's resolved params ask for. */
 export function insertKind(resolved: Record<string, unknown> | undefined): string {
@@ -29,6 +30,29 @@ function resolveEndpoints(
   return { start, current };
 }
 
+/** `current` moved out from `start` until the box they make is no smaller
+ *  than `min`, along the way the drag went (rightward and down when it has
+ *  not gone either way). */
+function reachMinimum(
+  start: InsertPoint,
+  current: InsertPoint,
+  min: MinSize,
+  mode: 'corner' | 'center',
+): InsertPoint {
+  // A center drag makes a box twice its reach.
+  const k = mode === 'center' ? 0.5 : 1;
+  const reach = (d: number, m: number) => (Math.abs(d) >= m * k ? d : (d < 0 ? -1 : 1) * m * k);
+  return {
+    ...current,
+    x: start.x + reach(current.x - start.x, min.width),
+    y: start.y + reach(current.y - start.y, min.height),
+  };
+}
+
+/** Kinds a minimum size does not apply to: a line has no area, and a pencil
+ *  trail is drawn where the pointer went. */
+const NO_MINIMUM = new Set(['line', 'pencil']);
+
 export interface InsertShape {
   bounds: { x: number; y: number; width: number; height: number };
   extras: InsertExtras;
@@ -47,7 +71,11 @@ export function insertShape(
   userRotation: number,
 ): InsertShape {
   const mode = effectiveOriginMode(resolved?.['originMode'], frame.altHeld);
-  const { start, current } = resolveEndpoints(frame.shaped, insertKind(resolved), mode);
+  const kind = insertKind(resolved);
+  const ends = resolveEndpoints(frame.shaped, kind, mode);
+  const { start } = ends;
+  const min = NO_MINIMUM.has(kind) ? null : minSizeOf(resolved);
+  const current = min ? reachMinimum(start, ends.current, min, mode) : ends.current;
   const bounds = computeBounds(start.x, start.y, current.x, current.y, mode);
   const extras = buildExtras(
     { ...(resolved ?? {}), originMode: mode },
@@ -55,6 +83,8 @@ export function insertShape(
     points,
   );
   applyUserRotation(extras, userRotation);
+  // The node keeps the minimum it was drawn to, whatever its kind's extras hold.
+  if (min) (extras as { minSize?: MinSize }).minSize = min;
   return { bounds, extras, start };
 }
 

@@ -25,7 +25,7 @@ import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { poseFrameOf } from '@weasel-js/geom';
 import { isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
-import { textBoxOf } from '../../canvas/nodeShapes/textPainter';
+import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
 
 /** Shape the default projections expect `data` to satisfy. All fields
@@ -39,6 +39,7 @@ export interface DefaultTextData {
   stroke?: Stroke | null;
   verticalAlign?: TextVerticalAlign;
   padding?: number;
+  overflow?: TextOverflow;
 }
 
 /** All-optional projections + fontSize fallback. */
@@ -61,6 +62,9 @@ export interface UseSceneTextEditOptions<TData> {
   getVerticalAlign?: (data: TData) => TextVerticalAlign | undefined;
   /** Read the inset from the node's box to its text from `data`. Default: `data.padding`. */
   getPadding?: (data: TData) => number | undefined;
+  /** Read whether the node cuts its text at its box from `data`, which the
+   *  overlay then does too. Default: `data.overflow`. */
+  getOverflow?: (data: TData) => TextOverflow | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
   setText?: (data: TData, text: string) => TData;
   /** Produce updated data with new runs. Default: `{ ...data, runs }`. */
@@ -146,6 +150,8 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
       opts.current.getVerticalAlign ? opts.current.getVerticalAlign(data) : data.verticalAlign,
     padding: (data: TData): number | undefined =>
       opts.current.getPadding ? opts.current.getPadding(data) : data.padding,
+    overflow: (data: TData): TextOverflow | undefined =>
+      opts.current.getOverflow ? opts.current.getOverflow(data) : data.overflow,
   };
 }
 
@@ -215,23 +221,9 @@ export function useSceneTextEdit<
       const scene = sceneRef.current;
       const node = scene.get(asNodeId(id));
       if (!node) return null;
-      const painted = scenePaintedPoseOf(scene)(node);
-      // Inset about the box center, which is all the overlay's frame needs.
-      const pose = { ...painted, ...textBoxOf({ padding: read.padding(node.data) }, painted) };
-      const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
-      const box = screenBoxOf(pose, view, at?.box);
-      return {
-        ...box,
-        // Against `zoom`, the same factor the overlay scales back up by, so a
-        // `{ px }` size arrives on screen at the pixel count it names.
-        fontSize: resolveScreenLength(
-          style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
-          box.zoom,
-        ),
-        verticalAlign: read.verticalAlign(node.data),
-      };
+      return screenPoseOf(node.data, scenePaintedPoseOf(scene)(node), read, view, at?.box, optsRef.current.defaultFontSize);
     },
     getClipRect: () => surface()?.box ?? null,
     getRuns: (id) => {
@@ -280,6 +272,40 @@ export function useSceneTextEdit<
 
   const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
   return { ...edit, onDoubleClick, isTextNode, drawOne };
+}
+
+/** The overlay's pose for a node painted at `painted`: its text box, inset
+ *  about the box center, which is all the overlay's frame needs, projected
+ *  through `view`. */
+function screenPoseOf<TData extends DefaultTextData>(
+  d: TData,
+  painted: RectPose,
+  read: ReturnType<typeof projectionsOf<TData>>,
+  view: View | undefined,
+  origin: TextEditClipRect | undefined,
+  defaultFontSize = 16,
+): TextEditScreenPose {
+  const inset = textBoxOf({ padding: read.padding(d) }, painted);
+  const box = screenBoxOf({ ...painted, ...inset }, view, origin);
+  return {
+    ...box,
+    // Against `zoom`, the same factor the overlay scales back up by, so a
+    // `{ px }` size arrives on screen at the pixel count it names.
+    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? defaultFontSize, box.zoom),
+    verticalAlign: read.verticalAlign(d),
+    ...(read.overflow(d) === 'clip' ? { clip: clipToBox(inset, painted) } : {}),
+  };
+}
+
+/** How far `box` reaches past `inner` on each side: the overlay's cut at
+ *  `box` when its own pose is `inner`. */
+function clipToBox(inner: RectPose, box: RectPose): NonNullable<TextEditScreenPose['clip']> {
+  return {
+    top: inner.y - box.y,
+    left: inner.x - box.x,
+    bottom: box.y + box.height - (inner.y + inner.height),
+    right: box.x + box.width - (inner.x + inner.width),
+  };
 }
 
 /**
