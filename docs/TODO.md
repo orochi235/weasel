@@ -63,14 +63,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) A double-click never isolates a group in draw.** A container routes as `'group'` now, and
-  `ISOLATION`'s trigger binds `kind:group`, but the hit under a double-click on a group is never
-  the group: `pickTopMostHit` drops an ancestor whenever one of its children is also hit, and draw
-  selects members directly, so the double-click lands on the member and opens it in path-edit
-  (`apps/draw/src/modality/canvasModes.doubleClick.test.tsx` pins this). Needs a decision on what a
-  double-click on a grouped member names — the member, as now, or its group, Illustrator-style,
-  which would also mean asking whether a single click selects the group.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
@@ -355,7 +347,15 @@ Priority tags:
   where the two-step solve folds, and need rewriting when the solve changes that.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. A smooth interpolation of the solved vertices would refit with fewer.
+  that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
+  by three pins went from 12 anchors to 5, but a 4-anchor bar pushed into an S still refits with 18
+  (19 before). A smooth interpolation of the solved vertices would refit with fewer.
+- **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` takes 30 to
+  60 rounds on a ~500-vertex mesh, about 4 to 5 ms a solve on the fleet, where an unfolded solve
+  takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
+  (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
+  cut it.
 - **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
   node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
   solves them all together, but path edit opens one node at a time, so nothing in the UI picks an

@@ -53,6 +53,8 @@ export interface SceneGestureDispatcherInputs {
    *  `kind:<k>` / `kind:<k>:selected` target forms can match. Absent when
    *  the consumer opted out of routing (`routing={[]}`). */
   kindOfNode?: (id: string) => string | undefined;
+  /** The node a double-click on a hit names (`doubleClickTarget`), for the classification. */
+  doubleClickNames?: (hitId: string) => string;
   viewRef?: React.RefObject<View>;
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
@@ -150,7 +152,7 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
 
 /** Which body a world point lands on, its selection state, and its routing kind. */
 function useClassifyTarget(
-  inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef'>,
+  inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef' | 'doubleClickNames'>,
   kindOfNodeRef: { readonly current: SceneGestureDispatcherInputs['kindOfNode'] },
 ) {
   const { selectionRef, pickEvery, pickBest, viewRef } = inputs;
@@ -158,6 +160,7 @@ function useClassifyTarget(
   // stable function identities across renders (no need to pass them as deps).
   const pickEveryRef = useLatest(pickEvery);
   const pickBestRef = useLatest(pickBest);
+  const doubleClickNamesRef = useLatest(inputs.doubleClickNames);
   // Build the `classifyTarget` thunk. Takes world coords and delegates to
   // `buildClassifyTarget`.
   return useMemo(() => {
@@ -178,8 +181,9 @@ function useClassifyTarget(
       // second one invented for bindings. `routing={[]}` opts out and leaves
       // every `kind:` target unmatchable.
       (id: string) => kindOfNodeRef.current?.(id),
+      (id: string) => doubleClickNamesRef.current?.(id) ?? id,
     );
-  }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef]);
+  }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef, doubleClickNamesRef]);
 }
 
 /** Runs this canvas's gesture dispatcher over its tools, contributions, and chrome. */

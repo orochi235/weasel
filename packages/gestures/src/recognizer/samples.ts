@@ -3,7 +3,7 @@
  * pump events each becomes.
  */
 import type {
-  BodyKind, BodyTarget, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
+  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
 } from '../ui/inputEvent';
 import { stylusOf } from '../ui/stylus';
 import type { Point } from './multiTouch';
@@ -28,6 +28,8 @@ export interface PressSample extends PointerSample {
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
+  /** What a double click this press completes lands on, where not the body hit. */
+  doubleClickBody?: DoubleClickBody;
 }
 
 export function modifiersOf(e: EventModifiers): EventModifiers {
@@ -43,6 +45,7 @@ export function pressFactsOf(s: PressSample): PressFacts {
     worldY: s.y,
     ...modifiersOf(s),
     ...pressedOn(s),
+    ...(s.doubleClickBody !== undefined ? { doubleClickBody: s.doubleClickBody } : {}),
   };
 }
 

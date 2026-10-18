@@ -11,6 +11,7 @@ import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
 import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
+import { modeScopeIds } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 
@@ -28,8 +29,9 @@ function fakeHistory() {
 }
 
 const square = (x: number) => ({ x, y: 0, width: 30, height: 30 });
-/** Left edge of each node; a double-click lands 15px in. */
-const AT = { anchored: 0, anchorless: 40, text: 80, group: 120, empty: 180 } as const;
+/** Left edge of each node; a double-click lands 15px in. `group` spans `member` and `inner`, whose
+ *  one child is `deep`. */
+const AT = { anchored: 0, anchorless: 40, text: 80, member: 120, deep: 160, empty: 200 } as const;
 
 function Harness({ machine }: { machine: ModeMachine }): ReactElement {
   const [scene] = useState(() => {
@@ -41,27 +43,32 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
     const outline = pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath;
     leaf('anchorless', AT.anchorless, { path: { ...outline, kind: 'spiro' } });
     leaf('text', AT.text, { text: 'hello' });
-    s.add({ id: asNodeId('group'), kind: 'container', layer: 'main', data: {}, pose: square(AT.group) } as never);
-    s.add({
-      id: asNodeId('member'), kind: 'leaf', layer: 'main', parent: asNodeId('group'),
-      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath }, pose: square(AT.group),
+    const container = (id: string, parent: string | undefined, x: number, width: number) => s.add({
+      id: asNodeId(id), kind: 'container', layer: 'main', data: {}, pose: { ...square(x), width },
+      ...(parent ? { parent: asNodeId(parent) } : {}),
     } as never);
+    const member = (id: string, parent: string, x: number) => s.add({
+      id: asNodeId(id), kind: 'leaf', layer: 'main', parent: asNodeId(parent),
+      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath }, pose: square(x),
+    } as never);
+    container('group', undefined, AT.member, 70);
+    member('member', 'group', AT.member);
+    container('inner', 'group', AT.deep, 30);
+    member('deep', 'inner', AT.deep);
     return s as unknown as DrawScene;
   });
   const selection = useSelection({ mode: 'multi', scene });
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const [dim] = useState(() => createScopingDim({
     registry: machine.registry,
-    getTargetIds: () => {
-      const id = machine.getActiveTargetId();
-      return id ? new Set([id]) : new Set<string>();
-    },
+    getTargetIds: () => modeScopeIds(machine, scene),
   }));
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
     <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={240} height={60}
       ambient={modes.ambient}
       isPointerInteractive={dim.isPointerInteractive}
+      isolatedGroup={modes.isolatedGroup}
       modes={machine.registry}
       pathEdit={modes.pathEdit} />
   );
@@ -99,9 +106,31 @@ describe('double-click mode entry in draw', () => {
     expect(t.state()).toEqual({ mode: 'normal', target: null });
   });
 
-  it('a group opens its member path, not isolation: the hit is the member', () => {
+  it('a grouped path names its group: isolation on the group', () => {
     const t = setup();
-    t.doubleClick(AT.group);
+    t.doubleClick(AT.member);
+    expect(t.state()).toEqual({ mode: 'isolation', target: 'group' });
+  });
+
+  it('a path two groups deep names the outermost group first', () => {
+    const t = setup();
+    t.doubleClick(AT.deep);
+    expect(t.state()).toEqual({ mode: 'isolation', target: 'group' });
+  });
+
+  it('inside the isolated group, a double-click names the next group in', () => {
+    const t = setup();
+    t.doubleClick(AT.deep);
+    t.doubleClick(AT.deep);
+    expect(t.state()).toEqual({ mode: 'isolation', target: 'inner' });
+    t.doubleClick(AT.deep);
+    expect(t.state()).toEqual({ mode: 'path-edit', target: 'deep' });
+  });
+
+  it('inside the isolated group, a path in no further group leaves isolation for path-edit', () => {
+    const t = setup();
+    t.doubleClick(AT.member);
+    t.doubleClick(AT.member);
     expect(t.state()).toEqual({ mode: 'path-edit', target: 'member' });
   });
 

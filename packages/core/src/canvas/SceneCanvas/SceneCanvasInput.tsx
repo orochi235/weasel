@@ -42,7 +42,7 @@ export interface SceneCanvasInputProps {
   selection: SelectionApi;
   descriptor: PoseDescriptor<unknown>;
   picking: Pick<
-    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'viewLayerGate' | 'alphaOf'
+    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf'
   > & { adapter: BridgeAdapter };
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
   nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
@@ -112,6 +112,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     selectionRef,
     boundsOf: picking.boundsOf, planeOfNode: picking.planeOfNode,
     pickEvery: picking.pickEvery, pickBest: picking.pickBest, kindOfNode: picking.kindOfNode,
+    doubleClickNames: picking.doubleClickNames,
     viewRef: viewState.viewRef, dispatcher: p.dispatcher,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
     targetScale, handleHitRadius: selectTool?.handleHitRadius,

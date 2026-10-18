@@ -61,6 +61,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
   `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
   spreads `groupNodeRouting` ahead of it.
+- 2026-10-18: A double-click on a grouped member names its outermost group, stopping below
+  `<SceneCanvas isolatedGroup>`, so repeated double-clicks drill in a group at a time (ruled
+  2026-10-18: a double-click on a group isolates it). Unruled around it: the isolated group
+  reaches the kit as that new prop, since the mode registry holds no target; only a node routed
+  `'group'` is named, so a container routed otherwise is passed over; the `onDoubleClick` observer
+  still reports the node hit, not the group named.
+- 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
+  click is unchanged and picks the member.
 - 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 
@@ -191,6 +199,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
   writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
   those are. Draw's exports and clipboard SVG pass it.
+- 2026-10-18: A puppet warp's solve runs five local/global rounds after its two linear steps, then,
+  only when a triangle is left turned over, an injective pass (untangling energy of Garanzha et al.,
+  2021) with the pins held. Every puppet-warped shape redraws differently, and a drag that starts to
+  fold jumps to the injective shape rather than easing into it. The solve is deterministic from the
+  pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
+  last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
+  weights, not cotangent ones, so each system stays the one already factored.
 
 ## Animation
 
@@ -321,7 +336,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## draw
 
-- 2026-10-11: A double-click on a path inside an isolated group leaves isolation for path edit.
+- 2026-10-11: A double-click on a path inside an isolated group leaves isolation for path edit. Since
+  2026-10-18 only a path in no further group does; inside a nested group the double-click isolates
+  that group.
+- 2026-10-18: Isolation lights and unlocks the isolated group's contents, not only the group node,
+  so its members can be clicked.
 - 2026-10-12: Open replaces the document and Import appends, and Open adopts the file's background
   color. The grid is off by default.
 - 2026-10-13: `App.tsx` is split into `Editor`, `Workspace`, and hooks, and two dev pages were

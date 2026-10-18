@@ -12,7 +12,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { isBody } from '@weasel-js/routing';
+import { ActionDisabledReason, isBody } from '@weasel-js/routing';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
@@ -27,7 +27,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
     target: { kindOf: isBody },
   },
   eligible: { mode: { in: ['normal', 'isolation'] } },
-  requires: ['editAnchors', 'selection', 'nodeAtPoint'],
+  requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
@@ -54,5 +54,6 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       }
     },
   } as ImmediateInvoker,
-  enabled: () => true,
+  // A double-click naming a group above the path under it is the group's, not this action's.
+  enabled: (deps, at) => (at && deps?.hitAt?.(at)?.doubleClick ? ActionDisabledReason.NotApplicable : true),
 };

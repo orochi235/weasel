@@ -240,23 +240,21 @@ export function CanvasView(props: CanvasViewProps): null {
     };
   }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, helpersRef]);
 
-  const classifyTarget = useMemo(() => {
-    const inner = buildClassifyTarget(
-      () => live.current.selection.get(),
-      (wx, wy) => {
-        const i = inputsRef.current;
-        // This view's camera: the dispatcher converted with `clientToWorldHere`,
-        // and a screen-pixel tolerance needs the scale that produced it. The
-        // layer gate is this view's too, never the surface's.
-        const frame = { ...camera(), layerIsPainted };
-        if (i?.pickBest) return i.pickBest(wx, wy, frame);
-        const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
-        return ids.length > 0 ? ids[ids.length - 1]! : null;
-      },
-      (id) => inputsRef.current?.kindOfNode?.(id),
-    );
-    return (world: { x: number; y: number }) => inner(world);
-  }, [camera, layerIsPainted, live, inputsRef]);
+  const classifyTarget = useMemo(() => buildClassifyTarget(
+    () => live.current.selection.get(),
+    (wx, wy) => {
+      const i = inputsRef.current;
+      // This view's camera: the dispatcher converted with `clientToWorldHere`,
+      // and a screen-pixel tolerance needs the scale that produced it. The
+      // layer gate is this view's too, never the surface's.
+      const frame = { ...camera(), layerIsPainted };
+      if (i?.pickBest) return i.pickBest(wx, wy, frame);
+      const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
+      return ids.length > 0 ? ids[ids.length - 1]! : null;
+    },
+    (id) => inputsRef.current?.kindOfNode?.(id),
+    (id) => inputsRef.current?.doubleClickNames?.(id) ?? id,
+  ), [camera, layerIsPainted, live, inputsRef]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
