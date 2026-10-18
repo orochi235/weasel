@@ -1,7 +1,7 @@
 import type { MenuEntry, MenuItemEntry } from '@weasel-js/menu';
 import {
-  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt, prefNumberAt,
-  resolvePrefUnit,
+  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
+  prefNumberAt, prefUnitAccepts, resolvePrefUnit,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs';
@@ -10,6 +10,7 @@ import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { endlessAllows } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/react';
 import type { MenuDef } from './types';
 import type { Point } from '@weasel-js/geom';
@@ -122,25 +123,30 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
 }
 
 /** A number row, in the units the leaf shows: its value, bounds, and step convert from the stored unit, and
- *  what is set converts back. */
+ *  what is set converts back. An infinity is a value only where an `endless` end stands for it. */
 function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
   const { values, onChange } = ctx.src;
   if (!values || !onChange) return [];
   const leaf = prefNumberAt(given, values);
   const unit = leaf.unit && resolvePrefUnit(leaf.unit);
   const stored = values(path);
-  const { min, max, step } = prefDisplayBounds(leaf);
+  const { min, max, step, endless } = prefDisplayBounds(leaf);
   const disabled = off || leaf.readout === true;
   return [{
     kind: 'number', key, label: leaf.name, ...withAccess(leaf.access),
     ...(leaf.icon ? { icon: leaf.icon } : {}),
     ...(disabled ? { disabled } : {}),
-    value: typeof stored === 'number' && Number.isFinite(stored) ? (unit ? unit.toDisplay(stored) : stored) : undefined,
+    value: typeof stored === 'number' && (Number.isFinite(stored) || endlessAllows(leaf.endless, stored))
+      ? (unit ? unit.toDisplay(stored) : stored)
+      : undefined,
     ...(min === undefined ? {} : { min }),
     ...(max === undefined ? {} : { max }),
     step,
     ...(unit?.suffix === undefined ? {} : { suffix: unit.suffix }),
     ...(leaf.display ? { display: leaf.display } : {}),
+    ...(endless ? { endless } : {}),
+    ...(leaf.infinity === undefined ? {} : { infinity: leaf.infinity }),
+    ...(unit ? { accepts: prefUnitAccepts(unit) } : {}),
     set: (shown) => onChange(path, unit ? unit.fromDisplay(shown) : shown),
   }];
 }

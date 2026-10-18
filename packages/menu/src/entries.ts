@@ -1,4 +1,4 @@
-import type { Display } from '@weasel-js/quantity';
+import type { Display, Endless, InfinityText, UnitTable } from '@weasel-js/quantity';
 
 /** A key chip: the key, and which modifiers are held with it. `@weasel-js/routing`
  *  derives these from action bindings as `ActionShortcut`; `@weasel-js/gestures`
@@ -69,6 +69,13 @@ export interface MenuNumberEntry {
   suffix?: string;
   /** How the value shows, and reads back where it is typed. Default: every decimal it has. */
   display?: Display;
+  /** The ends that stand for infinity, one step past `min` or `max`. */
+  endless?: Endless;
+  /** The word infinity shows as. Default `∞`. */
+  infinity?: InfinityText;
+  /** Units a renderer with a field reads typed, each mapped to the factor that turns a number in it into the
+   *  unit shown: `{ mm: 0.1, cm: 1 }`. */
+  accepts?: Readonly<UnitTable>;
   set(value: number): void;
 }
 

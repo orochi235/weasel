@@ -142,3 +142,4 @@ export {
   type VectorOptions,
 } from './composite';
 export { clampToBounds, snapToStep, spinKey, type SpinBounds } from './spin';
+export { endlessAllows, endlessAt, endlessTrack, type Endless, type EndlessTrack } from './endless';

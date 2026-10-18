@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Paint, PaintKind } from '@weasel-js/core';
-import type { Display, UnitTable } from '@weasel-js/quantity';
-import type { Endless } from '../../endless';
+import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {

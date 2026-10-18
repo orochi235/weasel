@@ -1,13 +1,12 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
-import { endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
-import { endlessAllows } from '../../endless';
+import { clampToBounds, endlessAllows, endless as withInfinity } from '@weasel-js/quantity';
+import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
 import { stepDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
-import { prefUnitAccepts, type PrefFieldChoice } from './schema';
+import type { PrefFieldChoice } from './schema';
 import { withSurfaceControl } from './surfaceControls';
 
 /** What {@link prefFieldProps} is told about one leaf's value. */
@@ -129,16 +128,13 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
     case 'number': {
       const unit = leaf.unit && resolvePrefUnit(leaf.unit);
       // ±Infinity is a value only where an end of the leaf stands for it.
-      const endless = leaf.endless;
       const stored =
-        typeof value === 'number' && (Number.isFinite(value) || endlessAllows(endless, value)) ? value : undefined;
+        typeof value === 'number' && (Number.isFinite(value) || endlessAllows(leaf.endless, value)) ? value : undefined;
       // `min`/`max`/`step` are declared in the stored unit, like the value, so
       // they convert with it.
+      // and so do the ends that stand for infinity, under a unit that runs backward.
       const bounds = prefDisplayBounds(leaf);
-      const clamp = (n: number) =>
-        endlessAllows(endless, n)
-          ? n
-          : Math.min(bounds.max ?? Infinity, Math.max(bounds.min ?? -Infinity, n));
+      const clamp = (n: number) => clampToBounds(n, bounds);
       const store = (shown: number) => setValue(unit ? unit.fromDisplay(clamp(shown)) : clamp(shown));
       return {
         kind: 'number',
@@ -153,7 +149,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         accepts: unit ? prefUnitAccepts(unit) : undefined,
         display:
           leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
-        endless,
+        endless: bounds.endless,
         onChange: store,
       };
     }

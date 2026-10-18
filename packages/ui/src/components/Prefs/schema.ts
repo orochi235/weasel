@@ -1,5 +1,4 @@
 import { prefDrawsNoControl } from './PrefWords';
-import type { UnitTable } from '@weasel-js/quantity';
 import {
   filterPrefSubtree,
   isPrefLeaf,
@@ -7,17 +6,10 @@ import {
   prefGroupIsPage,
   type PrefGroup,
   type PrefLeaf,
-  type PrefNumberUnit,
   type PrefObject,
   type PrefSection,
   prefSectionLeaves,
 } from '@weasel-js/prefs';
-
-/** What a unit leaf's field reads as typed text: its `accepts` table, and its
- *  `suffix` as the display unit itself. */
-export function prefUnitAccepts(unit: PrefNumberUnit): Readonly<UnitTable> {
-  return unit.suffix === undefined ? { ...unit.accepts } : { [unit.suffix]: 1, ...unit.accepts };
-}
 
 /** One field a `field` leaf may name: the path its value is read and written
  *  at, and what it is. */

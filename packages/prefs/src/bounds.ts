@@ -1,3 +1,4 @@
+import { endlessAllows } from '@weasel-js/quantity';
 import type { PrefNumber } from './schema';
 
 /** Reads a value held beside a number leaf, by the path a condition there would name. */
@@ -27,9 +28,7 @@ export function prefNumberAt(leaf: PrefNumber, read: PrefBoundReader): PrefNumbe
 
 /** `n` held to `leaf`'s `min` and `max`, except an infinity an `endless` end stands for. */
 export function prefClampNumber(leaf: PrefNumber, n: number): number {
-  const { endless } = leaf;
-  if (n === Infinity && (endless === 'max' || endless === 'both')) return n;
-  if (n === -Infinity && (endless === 'min' || endless === 'both')) return n;
+  if (endlessAllows(leaf.endless, n)) return n;
   let v = n;
   if (leaf.min !== undefined && v < leaf.min) v = leaf.min;
   if (leaf.max !== undefined && v > leaf.max) v = leaf.max;

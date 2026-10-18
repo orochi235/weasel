@@ -4,8 +4,7 @@ import { PropertyField } from './PropertyField';
 import { PropertyList } from './PropertyList';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
-import { compact, decimal, endless, unit, type Display } from '@weasel-js/quantity';
-import type { Endless } from '../../endless';
+import { compact, decimal, endless, unit, type Display, type Endless } from '@weasel-js/quantity';
 
 const meta: Meta<typeof PropertyField> = {
   title: 'ui/Properties/PropertyField',

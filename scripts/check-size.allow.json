@@ -275,7 +275,7 @@
     "longestFunction": 204
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 159
+    "longestFunction": 156
   },
   "packages/ui/src/components/PaintInput/PaintInput.tsx": {
     "longestFunction": 138
@@ -293,7 +293,7 @@
     "longestFunction": 189
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 161
+    "longestFunction": 158
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "lines": 496,

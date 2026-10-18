@@ -1,4 +1,4 @@
-/** Which end of a slider stands for infinity. */
+/** Which ends of a number's range stand for infinity. */
 export type Endless = 'min' | 'max' | 'both';
 
 /** Whether the `max` end (`sign` 1) or the `min` end (`sign` −1) is endless. */

@@ -72,6 +72,26 @@ describe('a number row in a DOM menu', () => {
     expect(field()).toHaveValue('50%');
   });
 
+  it('reads a typed value in any unit it accepts', () => {
+    const { set } = open({ value: 10, min: 0, max: 100, suffix: 'cm', accepts: { cm: 1, mm: 0.1 } });
+    act(() => {
+      fireEvent.change(field(), { target: { value: '12mm' } });
+      fireEvent.blur(field());
+    });
+    expect(set).toHaveBeenCalledWith(1.2);
+  });
+
+  it('takes infinity typed at an endless end, and shows its word for it without the unit', () => {
+    const { set } = open({ endless: 'max', infinity: 'uncapped' });
+    act(() => {
+      fireEvent.change(field(), { target: { value: 'uncapped' } });
+      fireEvent.blur(field());
+    });
+    expect(set).toHaveBeenCalledWith(Infinity);
+    expect(field()).toHaveValue('uncapped');
+    expect(screen.getByRole('menuitem', { name: /Magnification/ }).textContent).not.toContain('×');
+  });
+
   it('cannot be edited while disabled', () => {
     open({ disabled: true });
     expect(screen.getByRole('menuitem', { name: /Magnification/ })).toHaveAttribute('aria-disabled', 'true');
