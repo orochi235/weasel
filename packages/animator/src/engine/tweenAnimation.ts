@@ -20,18 +20,21 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
   // expensive setup (color space conversion etc.) doesn't repeat per frame.
   const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
   let lastValueEmitted = false;
+  const atEnd = ctx.atEnd();
   ctx.seedClock();
   // Started ahead of `register`, whose `start` listeners may already cancel it.
   const reader = codec.tween({
     id, ms: Math.max(o.ms, 1), ease: easing,
     from: axes ? axes.to(o.from) : [0],
     to: axes ? axes.to(o.to) : [1],
+    atEnd,
   });
   return ctx.register({
     id,
     kind: 'tween',
     cancelKey: o.cancelKey,
     label: o.label,
+    startAt: atEnd ? Math.max(o.ms, 0) : 0,
     progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, Math.max(0, virtualNow / o.ms))),
     // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec
     // supplies only the value in between.

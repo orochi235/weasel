@@ -113,7 +113,7 @@ describe('a composite played backward', () => {
     expect(animator.isActive()).toBe(false);
   });
 
-  it('a loop ends once the pass in flight has run back to its start', () => {
+  it('a loop runs back through the passes before the one in flight, and ends at the start of pass 0', () => {
     const { animator, step } = setup();
     const seen: number[] = [];
     const onDone = vi.fn();
@@ -122,12 +122,110 @@ describe('a composite played backward', () => {
     });
     step(0);
     step(1000);
+    step(1000);
     step(300);
     expect(seen.at(-1)).toBeCloseTo(30, 6);
     act(() => { animator.setTimeScale(-1); });
     step(400);
     expect(seen.at(-1)).toBe(0);
+    step(300);
+    expect(seen.at(-1)).toBeCloseTo(70, 6);
+    step(700);
+    expect(seen.at(-1)).toBe(0);
+    expect(onDone).not.toHaveBeenCalled();
+    step(500);
+    expect(seen.at(-1)).toBeCloseTo(50, 6);
+    step(500);
+    expect(seen.at(-1)).toBe(0);
     expect(onDone).toHaveBeenCalledTimes(1);
+    step(16);
+    expect(animator.isActive()).toBe(false);
+  });
+
+  it('a loop hands each earlier pass its own index, and plays forward again from where it turns', () => {
+    const { animator, step } = setup();
+    const passes: number[] = [];
+    let a = 0;
+    const ta = createTarget<number>({ get: () => a, set: (v) => { a = v; } });
+    let lp!: ReturnType<typeof animator.loop>;
+    act(() => {
+      lp = animator.loop((i, next) => {
+        passes.push(i);
+        return animator.tween({ target: ta, from: 0, to: 100, ms: 1000, easing: linear, onDone: next });
+      }, { count: 3 });
+    });
+    step(0);
+    step(1000);
+    step(500);
+    expect(ta.read()).toBeCloseTo(50, 6);
+    act(() => { lp.setTimeScale(-1); });
+    step(500);
+    // Pass 0 has started at its end.
+    expect(ta.read()).toBe(100);
+    step(250);
+    expect(ta.read()).toBeCloseTo(75, 6);
+    act(() => { lp.setTimeScale(1); });
+    step(250);
+    // Pass 0 has played forward to its end, and pass 1 has started at its start.
+    expect(passes).toEqual([0, 1, 0, 1]);
+    expect(ta.read()).toBe(0);
+    step(1000);
+    step(1000);
+    expect(passes).toEqual([0, 1, 0, 1, 2]);
+    expect(ta.read()).toBe(100);
+    step(16);
+    expect(animator.isActive()).toBe(false);
+  });
+
+  it('a loop started inside a loop run back starts at the end of its last pass', () => {
+    const { animator, step } = setup();
+    const passes: string[] = [];
+    const seen: number[] = [];
+    const onDone = vi.fn();
+    act(() => {
+      animator.loop((outer, next) => animator.loop((inner, innerNext) => {
+        passes.push(`${outer}.${inner}`);
+        return animator.tween({ from: 0, to: 100, ms: 1000, easing: linear, onTick: (v) => seen.push(v), onDone: innerNext });
+      }, { count: 2, onDone: next }), { count: 2, onDone });
+    });
+    step(0);
+    step(1000);
+    step(1000);
+    step(500);
+    act(() => { animator.setTimeScale(-1); });
+    step(500);
+    expect(passes).toEqual(['0.0', '0.1', '1.0', '0.1']);
+    step(300);
+    expect(seen.at(-1)).toBeCloseTo(70, 6);
+    step(700);
+    step(1000);
+    expect(passes).toEqual(['0.0', '0.1', '1.0', '0.1', '0.0']);
+    expect(seen.at(-1)).toBe(0);
+    expect(onDone).toHaveBeenCalledTimes(1);
+    step(16);
+    expect(animator.isActive()).toBe(false);
+  });
+
+  it('a loop starts a pass of a target tween with its own blend at that pass\'s end', () => {
+    const { animator, step } = setup();
+    let a = 0;
+    const ta = createTarget<number>({ get: () => a, set: (v) => { a = v; } });
+    const interpolate = (x: number, y: number, u: number): number => x + (y - x) * u;
+    act(() => {
+      animator.loop((_, next) => animator.tween({
+        target: ta, from: 0, to: 100, ms: 1000, easing: linear, interpolate, onDone: next,
+      }), { count: 2 });
+    });
+    step(0);
+    step(1000);
+    step(500);
+    act(() => { animator.setTimeScale(-1); });
+    step(500);
+    expect(ta.read()).toBe(100);
+    step(250);
+    expect(ta.read()).toBeCloseTo(75, 6);
+    step(750);
+    expect(ta.read()).toBe(0);
     step(16);
     expect(animator.isActive()).toBe(false);
   });

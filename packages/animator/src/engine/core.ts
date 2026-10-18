@@ -43,6 +43,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const afterTicks: (() => void)[] = [];
   const subscribers = createEmitter();
   let nextId = 1;
+  let atEnd = false;
   const seedClock = (): void => { if (clock.frameT == null) clock.frameT = host.now(); };
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
@@ -83,6 +84,12 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     codec,
     targets,
     nextId: () => nextId++,
+    atEnd: () => atEnd,
+    starting: (end, start) => {
+      const was = atEnd;
+      atEnd = end;
+      try { return start(); } finally { atEnd = was; }
+    },
     seedClock,
     register: table.register,
     has: (id) => table.animations.has(id),

@@ -573,11 +573,6 @@ Animations combine through targets, described in `docs/concepts.md` ("Animation 
   `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
   `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
 
-- **(P3) A loop played backward ends after its current pass.** With a time scale below 0, a
-  `loop` runs its pass in flight back to its start and stops there rather than replaying the
-  passes before it backward, because nothing can start a primitive at its end. Timelines already
-  run back through their laps (`timeScale.composites.test.tsx`).
-
 ### Earlier deferrals
 
 From `docs/specs/2026-05-04-animation-primitive-design.md`:

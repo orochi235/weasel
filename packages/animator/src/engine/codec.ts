@@ -13,6 +13,8 @@ export interface TweenStart {
   from: number[]; to: number[];
   /** The subject the voice reaches, where several voices share one. Default: its own, `id`. */
   on?: unknown;
+  /** Starts it at its end, to play backward. */
+  atEnd?: boolean;
 }
 export interface SpringStart {
   id: number; axes: number;
@@ -27,6 +29,8 @@ export interface PathStart {
   at(u: number): number[];
   /** As {@link TweenStart.on}. */
   on?: unknown;
+  /** As {@link TweenStart.atEnd}. */
+  atEnd?: boolean;
 }
 /** A voice's own value and velocity, apart from any other voice on its subject. */
 export interface Own { value: number[]; velocity: number[] }
@@ -102,6 +106,8 @@ function springVoice(slot: Slot, sp: SpringStart): { handle: Handle<unknown>; pa
   return { handle, patch };
 }
 
+const zeros = (n: number): number[] => new Array<number>(n).fill(0);
+
 /** `placeOf` answers where a shared subject's voices run, for one kept in a lane of its own. */
 export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Codec {
   const lanes = createLanes(placeOf);
@@ -150,7 +156,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         v.queued = undefined;
         const key = v.slot.key;
         const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
-        v.handle = v.slot.lane.mix.cue({ patch, subjects: [key] });
+        v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
         v.patch = patch;
         patch.to(key, q.to.slice(), 0);
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
@@ -165,7 +171,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         throw new Error(`codec: tween ${s.id} goes from ${s.from.length} axes to ${s.to.length}`);
       }
       const shared = s.on !== undefined;
-      const slot = lanes.join(s.from.length, shared ? s.on : s.id, shared ? new Array<number>(s.from.length).fill(0) : s.from);
+      const slot = lanes.join(s.from.length, shared ? s.on : s.id, shared ? zeros(s.from.length) : s.atEnd ? s.to : s.from);
       const v = { kind: 'tween', slot, from: s.from, queued: s } as Voice;
       voices.set(s.id, v);
       queue.push(v);
@@ -185,18 +191,15 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     path(s) {
       const shared = s.on !== undefined;
       const from = s.at(0);
-      const slot = lanes.join(s.axes, shared ? s.on : s.id, shared ? new Array<number>(s.axes).fill(0) : from);
-      const v = { kind: 'path', slot, from } as Voice;
-      const patch = fnPatch<unknown, Out>(
-        s.ms,
-        (phase) => {
-          v.last = s.at(phase);
-          return { v: v.last };
-        },
-        { writes: ['v'] },
-      );
+      const last = s.atEnd ? s.at(1) : undefined;
+      const slot = lanes.join(s.axes, shared ? s.on : s.id, shared ? zeros(s.axes) : last ?? from);
+      const v = { kind: 'path', slot, from, last } as Voice;
+      const patch = fnPatch<unknown, Out>(s.ms, (phase) => {
+        v.last = s.at(phase);
+        return { v: v.last };
+      }, { writes: ['v'] });
       // Held at its end until the animator stops it, so a frame between the two reads the end.
-      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: false, freeze: 'after' });
+      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: false, freeze: 'after', seek: s.atEnd ? s.ms : 0 });
       voices.set(s.id, v);
       return slot;
     },
@@ -241,7 +244,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
       }
       return (!v.queued && v.patch.read(v.slot.key))
-        || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };
+        || { value: v.queued?.atEnd ? v.queued.to : v.from, velocity: zeros(v.from.length) };
     },
     voiceCount: () => voices.size,
     columns: (group) => lanes.columns(group),

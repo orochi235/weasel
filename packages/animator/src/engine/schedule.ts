@@ -5,7 +5,7 @@ import { createWakes } from './wakes';
 export interface Schedule {
   /** `a`'s own clock now, in virtual ms. */
   clockOf(a: ActiveAnimation): number;
-  /** Takes `a` on, its clock at 0. */
+  /** Takes `a` on, its clock at its `startAt`. */
   add(a: ActiveAnimation): void;
   remove(a: ActiveAnimation): void;
   /** Sets `a`'s pause and time scale, leaving its clock where it stands. */
@@ -71,7 +71,7 @@ export function createSchedule(elapsed: () => number, direction: () => number = 
   return {
     clockOf,
     add(a) {
-      a.base = 0;
+      a.base = a.startAt ?? 0;
       a.anchor = elapsed();
       a.seq = seq++;
       a.heapAt = -1;

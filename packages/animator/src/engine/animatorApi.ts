@@ -90,6 +90,8 @@ export function createAnimatorApi(host: ApiHost): Animator {
   const { animations } = table;
   const createSupervisor = supervisors({
     nextId: ctx.nextId,
+    atEnd: ctx.atEnd,
+    starting: ctx.starting,
     register: table.register,
     finish: table.finish,
     afterTicks: host.afterTicks,
