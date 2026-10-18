@@ -164,3 +164,22 @@
 .slider {
   flex: 1;
 }
+
+/* A section's title with the control of its heading leaf beside it. */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-3);
+  margin: 0 0 var(--wzl-space-3);
+}
+
+.sectionHead > .sectionTitle {
+  margin: 0;
+}
+
+.headingControl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}

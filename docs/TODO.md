@@ -1001,12 +1001,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `useActionCatalog` and is not among them, so after an undo the Actions list keeps whichever of
   its picked rows still exist.
 
-- **(P3) `SelectionPanel` draws a `heading` leaf as a row.** `PrefsForm` and labkit's
-  `ControlPanel` draw a leaf marked `heading` in the heading of the group holding it
-  (`prefHeadingKey`). `SelectionPanel`'s section title dims itself with `opacity`, which a control
-  inside it would inherit, so it needs a title row of its own before it can hold one. Nobody has
-  looked at the control in `PrefsForm`'s headings in a browser: the sticky section heading's
-  `scroll-margin-top` assumes one line of text.
+- **(P3) Nobody has looked at a `heading` leaf's control in a browser.** `PrefsForm`, labkit's
+  `ControlPanel`, and `SelectionPanel` each draw a leaf marked `heading` in the heading of the group
+  or section holding it (`prefHeadingKey`); `SelectionPanel` sets it in a title row beside its
+  dimmed title. `PrefsForm`'s sticky section heading's `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a

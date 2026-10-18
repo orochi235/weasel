@@ -89,23 +89,49 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
   );
 }
 
+/**
+ * The row of the leaf a headed section draws in its heading, named for the section. It stays a row where the panel
+ * has its own renderer for it, whose control the panel knows nothing of the size of, or where a pair shares it.
+ */
+function headingRow(section: PanelSection, scope: PanelCellScope): PanelRow | undefined {
+  if (section.heading === undefined || !sectionHeaded(section)) return undefined;
+  const row = section.rows.find((r) => r.leaves.length === 1 && panelLeafKey(r.leaves[0]!) === section.heading);
+  const only = row?.leaves[0];
+  if (!only || scope.renderers?.[only.path] || scope.renderers?.[only.leaf.kind]) return undefined;
+  return row;
+}
+
 /** A section's rows under its heading, or nothing when no row draws a control. */
 function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelMarks): DrawnSection[] {
+  const lifted = headingRow(section, scope);
   // Render controls before emitting row chrome so a null-rendering
   // leaf (custom renderer opting out) collapses its cell — and the
   // whole row / section when nothing survives. PrefsForm precedent.
   const rows = section.rows
+    .filter((row) => row !== lifted)
     .map((row) => ({ row, controls: rowCells(row, scope) }))
     .filter(({ controls }) => controls.length > 0);
-  if (rows.length === 0) return [];
+  const only = lifted?.leaves[0];
+  const headControl = only && rowCells({ label: section.name, leaves: [{ ...only, leaf: { ...only.leaf, name: section.name } }] }, scope)[0];
+  if (rows.length === 0 && !headControl) return [];
   const headed = sectionHeaded(section);
   // A section hidden whole carries one mark, on its heading; with no heading each of its rows does.
-  const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden));
+  const whole = headed && rows.every(({ controls }) => controls.every((cell) => cell.hidden)) && headControl?.hidden !== false;
   const rowMarks: PanelMarks = whole ? { ...marks, hidden: undefined } : marks;
   const marked = (controls: readonly RenderedCell[]): boolean => !whole && controls.every((cell) => cell.hidden);
   const content = (
     <>
-      {headed && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
+      {headed && !headControl && <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>}
+      {headControl && (
+        // The title dims itself, so the control sits beside it rather than in it, where it would dim too.
+        <div className={s.sectionHead}>
+          <h3 className={s.sectionTitle}>{section.name}{whole && <HiddenBadge />}</h3>
+          <span className={s.headingControl} {...selectionAttrs(panelLeafKey(only!), rowMarks, true)}>
+            {headControl.content}
+            {!whole && headControl.hidden && <HiddenBadge />}
+          </span>
+        </div>
+      )}
       {rows.map(({ row, controls }) =>
         row.leaves.length === 1 && controls[0].block
           ? blockRow(row, controls[0], section.name === '', rowMarks, marked(controls))
