@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef } from 'react';
-import { useKitSetting, useLatest } from '@weasel-js/react';
+import { useKitSetting, useLatest, usePrefersReducedMotion } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator';
 import { easeOutCubic } from '@weasel-js/geom';
 import type { Animator, EasingSpec, InterpolatorFactory } from '@weasel-js/animator';
@@ -18,7 +18,8 @@ export const DEFAULT_VIEW_ANIMATION_MS = 250;
 
 /** How the camera should move. */
 export interface ViewAnimationOptions {
-  /** Duration in ms. Default the `view.animationMs` kit setting, else `DEFAULT_VIEW_ANIMATION_MS`. */
+  /** Duration in ms. Default the `view.animationMs` kit setting, else `DEFAULT_VIEW_ANIMATION_MS`;
+   *  0 under `prefers-reduced-motion`. */
   ms?: number;
   /** Easing curve. Default `easeOutCubic`. */
   easing?: EasingSpec;
@@ -104,7 +105,8 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
   /** Where this runner's own animation is heading. */
   const targetRef = useRef<View | null>(null);
   const writingRef = useRef(false);
-  const msRef = useLatest(useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS);
+  const setting = useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS;
+  const msRef = useLatest(usePrefersReducedMotion() ? 0 : setting);
 
   return useMemo(
     () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef, msRef),

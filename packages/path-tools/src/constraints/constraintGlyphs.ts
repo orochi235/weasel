@@ -3,7 +3,9 @@
  * screen pixels, and where a click finds them: a letter beside a horizontal
  * or vertical segment, paired strokes beside parallel ones, a foot beside
  * perpendicular ones, ticks across equal ones, a dimension bar beside a fixed
- * length, a pin by a fixed anchor, and a ring by coincident ones. Marks sit
+ * length, a pin by a fixed anchor, a ring by coincident ones, a line
+ * touching a circle by a tangent one, and a dot on a line by one held on a
+ * segment. Marks sit
  * on the inside of the shape, toward the centroid of its anchors, so a click
  * on one lands on the shape rather than on empty canvas.
  */
@@ -59,6 +61,8 @@ function frameOf(points: readonly Pt[], [i, j]: AnchorPair, inside: Pt) {
 function segmentsOf(c: PathConstraint): readonly AnchorPair[] {
   switch (c.kind) {
     case 'fixed':
+    case 'tangent':
+    case 'onPath':
     case 'coincident': return [];
     case 'horizontal':
     case 'vertical':
@@ -69,8 +73,8 @@ function segmentsOf(c: PathConstraint): readonly AnchorPair[] {
 
 /** Where `c`'s marks sit, one point per mark. */
 function markCenters(points: readonly Pt[], c: PathConstraint, inside: Pt): Pt[] {
-  if (c.kind === 'fixed' || c.kind === 'coincident') {
-    const p = points[c.kind === 'fixed' ? c.anchor : c.anchors[0]];
+  if (c.kind === 'fixed' || c.kind === 'tangent' || c.kind === 'onPath' || c.kind === 'coincident') {
+    const p = points[c.kind === 'coincident' ? c.anchors[0] : c.anchor];
     return [at(p, toward(p, inside), c.kind === 'fixed' ? 11 : 13)];
   }
   return segmentsOf(c).map((s) => {
@@ -129,13 +133,38 @@ function glyphOf(b: PathBuilder, points: readonly Pt[], c: PathConstraint, insid
       const d = toward(p, inside);
       const ring = at(p, d, 13);
       line(b, at(p, d, 6), at(p, d, 9));
-      b.moveTo(ring.x + 4, ring.y);
-      for (let k = 1; k <= 12; k++) b.lineTo(ring.x + 4 * Math.cos((k * Math.PI) / 6), ring.y + 4 * Math.sin((k * Math.PI) / 6));
+      circle(b, ring, 4);
+      return;
+    }
+    case 'tangent': {
+      // A circle inside the shape and a line touching it on the anchor's side.
+      const p = points[c.anchor];
+      const d = toward(p, inside);
+      const ring = at(p, d, 13);
+      const side = { x: -d.y, y: d.x };
+      const touch = at(ring, d, -4);
+      line(b, at(touch, side, -6), at(touch, side, 6));
+      circle(b, ring, 4);
+      return;
+    }
+    case 'onPath': {
+      // A dot on a short line, inside the shape by the anchor.
+      const p = points[c.anchor];
+      const d = toward(p, inside);
+      const dot = at(p, d, 13);
+      const side = { x: -d.y, y: d.x };
+      line(b, at(dot, side, -7), at(dot, side, 7));
+      circle(b, dot, 2.5);
       return;
     }
     default:
       for (const s of segmentsOf(c)) segmentMark(b, points, c.kind, s, inside);
   }
+}
+
+function circle(b: PathBuilder, o: Pt, r: number): void {
+  b.moveTo(o.x + r, o.y);
+  for (let k = 1; k <= 12; k++) b.lineTo(o.x + r * Math.cos((k * Math.PI) / 6), o.y + r * Math.sin((k * Math.PI) / 6));
 }
 
 const xy = (p: Pt): [number, number] => [p.x, p.y];

@@ -458,8 +458,8 @@ describe('objToSvgNode — coverage gaps', () => {
     const node = objToSvgNode(text as never);
     if (node.kind !== 'text') throw new Error('expected text');
     expect(node.style).toEqual({ fontSize: 12, align: 'right' });
-    // No lineHeight in the input → meta bag carries only the `tool` attr.
-    expect(node.meta?.wd?.attrs).toEqual({ tool: 'text' });
+    // No lineHeight in the input → meta bag carries only `tool` and the id.
+    expect(node.meta?.wd?.attrs).toEqual({ tool: 'text', 'leaf-id': 'x' });
     expect(node.meta?.wd?.attrs?.['line-height']).toBeUndefined();
   });
 

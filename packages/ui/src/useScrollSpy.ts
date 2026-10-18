@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { prefersReducedMotion } from './reducedMotion';
+import { prefersReducedMotion } from '@weasel-js/react';
 
 /** One observed section: its id and its top edge, in the container's
  *  coordinates (its `getBoundingClientRect().top` less the container's). */

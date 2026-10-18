@@ -57,4 +57,28 @@ describe('useDocument kit settings', () => {
     cleanup();
     expect(undoOnceAfter({ history: { coalesceMs: 5000 } }, COALESCE_MS + 1)).toEqual(BASE);
   });
+
+  it('follows a change to history.coalesceMs made after it mounted', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    let setSettings: (next: KitSettingsOverrides) => void = () => {};
+    function Wrapper({ children }: { children: ReactNode }) {
+      const [settings, set] = useState<KitSettingsOverrides>({ history: { coalesceMs: 5000 } });
+      setSettings = set;
+      return <KitSettingsProvider value={settings}>{children}</KitSettingsProvider>;
+    }
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState(BASE);
+      const doc = useDocument({
+        value, onChange: setValue, base: BASE, codec, opened: null, taken: false,
+        selection: { get: () => [], set: () => {} },
+      });
+      return { value, doc };
+    }, { wrapper: Wrapper });
+    act(() => setSettings({ history: { coalesceMs: 50 } }));
+    act(() => result.current.doc.commit({ n: 1 }, 'name'));
+    vi.advanceTimersByTime(51);
+    act(() => result.current.doc.commit({ n: 2 }, 'name'));
+    act(() => result.current.doc.step('undo'));
+    expect(result.current.value).toEqual({ n: 1 });
+  });
 });

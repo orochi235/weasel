@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { alignMoveBehavior, alignInsertBehavior, alignResizeBehavior } from './behaviors';
 import { deriveAlignmentGuides } from './derive';
+import { createKitSettingsStore } from '@weasel-js/react';
 import type { Guide, SpacingGap } from '../types';
 import type {
   GestureContext,
@@ -62,6 +63,18 @@ describe('alignMoveBehavior', () => {
     // 4 world is 8px at 2×: outside 5px. At 0.5× it is 2px: inside.
     expect(b.onMove!(at(2), tt(0, 0))).toBeUndefined();
     expect(b.onMove!(at(0.5), tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: -4, dy: 0 } });
+  });
+
+  it('reaches as far as the targets.guideSnapPx kit setting when given no tolerance', () => {
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'L', axis: 'x', offset: 90 }],
+      setActiveGuides: () => {},
+    });
+    const at = (guideSnapPx: number): GestureContext<Pose> =>
+      ({ ...ctx(), kitSettings: createKitSettingsStore({ targets: { guideSnapPx } }) });
+    // The left edge is 10 from the line: past the default 6, inside a 12 reach.
+    expect(b.onMove!(ctx(), tt(0, 0))).toBeUndefined();
+    expect(b.onMove!(at(12), tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: -10, dy: 0 } });
   });
 
   it('measures the dragged box as the gesture frames draw it', () => {

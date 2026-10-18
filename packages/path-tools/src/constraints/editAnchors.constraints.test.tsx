@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
+import {
+  PathBuilder, pathAnchorPoints, pathToAnchors, polygonFromPoints, type PathConstraint, type PolygonPath,
+} from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
@@ -25,12 +27,14 @@ const PARALLELOGRAM: PathConstraint[] = [
 const cross = (p: { x: number; y: number }[], [a, b]: number[], [c, d]: number[]) =>
   (p[b].x - p[a].x) * (p[d].y - p[c].y) - (p[b].y - p[a].y) * (p[d].x - p[c].x);
 
-/** A 100-unit square at the origin as a polygon pose, in edit mode, carrying `constraints`. */
-function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
+const SQUARE = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]) as PolygonPath;
+
+/** `pose`, a 100-unit square at the origin by default, as a polygon pose in edit mode, carrying `constraints`. */
+function setup(constraints: PathConstraint[] = PARALLELOGRAM, pose: PolygonPath = SQUARE) {
   const scene = createScene<Data, 'main', PolygonPath>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({
     kind: 'leaf', layer: 'main',
-    pose: polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]) as PolygonPath,
+    pose,
     data: { constraints },
   });
   let selected: ReadonlySet<number> = new Set();
@@ -67,13 +71,24 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
   const run = (action: { invoker?: unknown }, params?: Record<string, unknown>) =>
     (action.invoker as ImmediateInvoker).run(deps(), params);
   const points = () => pathAnchorPoints(scene.get(id)!.pose);
-  const ctx = (x: number, y: number, anchor: number): InvocationCtx => ({
+  const ctx = (x: number, y: number, anchor: number | string, alt = false): InvocationCtx => ({
     world: { x, y },
     screen: { x, y },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    modifiers: { alt, ctrl: false, meta: false, shift: false },
     deps: deps(),
-    drag: { start: { x, y }, current: { x, y }, delta: { x: 0, y: 0 }, affordance: { kind: `anchor:${anchor}` } },
+    drag: {
+      start: { x, y }, current: { x, y }, delta: { x: 0, y: 0 },
+      affordance: { kind: typeof anchor === 'number' ? `anchor:${anchor}` : anchor },
+    },
   });
+  /** Press the handle `part` (`controlOut:1`, say) at `from`, drag it to `to` with Alt held, and release. */
+  const dragHandle = (part: string, from: { x: number; y: number }, to: { x: number; y: number }) => {
+    const handle = (editAnchorsAction.invoker as OngoingInvoker).start(ctx(from.x, from.y, part, true), undefined);
+    handle.onMove!(ctx(to.x, to.y, part, true));
+    const preview = handle.previewPose!(id) as PolygonPath;
+    handle.onEnd!(ctx(to.x, to.y, part, true), 'commit');
+    return preview;
+  };
   /** Press anchor `anchor` where it is, move it by `(dx, dy)`, and release. */
   const drag = (anchor: number, dx: number, dy: number) => {
     const p = points()[anchor];
@@ -84,7 +99,7 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM) {
     return pathAnchorPoints(preview);
   };
   return {
-    scene, id, run, drag, points, dep, deps,
+    scene, id, run, drag, dragHandle, points, dep, deps,
     select: (...flat: number[]) => { selected = new Set(flat); },
     constraints: () => scene.get(id)!.data.constraints ?? [],
   };
@@ -110,6 +125,33 @@ describe('constrained path edits', () => {
     t.select(1);
     t.run(nudgeAnchorsUpAction, { magnitude: 'small' });
     expect(t.points()[1]).toEqual({ x: 100, y: 0 });
+  });
+
+  it('turns the far handle of a tangent anchor through a handle drag that breaks the mirror', () => {
+    const wave = new PathBuilder().moveTo(0, 0).curveTo(20, -20, 60, -20, 80, 0).curveTo(100, 20, 140, 20, 160, 0)
+      .build() as PolygonPath;
+    const t = setup([{ kind: 'tangent', anchor: 1 }], wave);
+    const preview = t.dragHandle('controlOut:1', { x: 100, y: 20 }, { x: 100, y: 40 });
+    const [, a] = pathToAnchors(t.scene.get(t.id)!.pose).anchors[0];
+    expect(pathToAnchors(preview).anchors[0][1]).toEqual(a);
+    expect(a.outHandle).toEqual({ x: 100, y: 40 });
+    // The in handle points away from the out handle along one line through the anchor.
+    const p = { x: a.inHandle!.x - a.x, y: a.inHandle!.y - a.y };
+    expect(Math.abs(p.x * 40 - p.y * 20) / Math.hypot(p.x, p.y)).toBeLessThan(1e-3);
+    expect(p.x).toBeLessThan(0);
+  });
+
+  it('slides an anchor held on a segment along it under a drag, the segment staying put', () => {
+    const tab = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }, { x: 40, y: 0 },
+    ]) as PolygonPath;
+    const t = setup([{ kind: 'onPath', anchor: 4, segment: [0, 1] }], tab);
+    const preview = t.drag(4, 20, 25);
+    const p = t.points();
+    expect(p).toEqual(preview);
+    expect(p[4].x).toBeCloseTo(60, 1);
+    expect(Math.abs(p[4].y)).toBeLessThan(0.1);
+    expect(Math.abs(p[0].y) + Math.abs(p[1].y)).toBeLessThan(0.1);
   });
 
   it('renumbers its constraints when an anchor is deleted', () => {
@@ -150,6 +192,19 @@ describe('constrainAnchors and unconstrainAnchors', () => {
     const p = t.points();
     expect(p[2]).toEqual({ x: 100, y: 130 });
     expect(p[3].y).toBeCloseTo(130, 3);
+  });
+
+  it('answers every member of a conflict, not only the constraint left failing', () => {
+    const quad = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 30 }, { x: 110, y: 100 }, { x: -10, y: 100 }]) as PolygonPath;
+    const held: PathConstraint[] = [
+      { kind: 'fixed', anchor: 0 },
+      { kind: 'fixed', anchor: 1 },
+      { kind: 'horizontal', segment: [2, 3] },
+    ];
+    const t = setup(held, quad);
+    expect(setConstraints(t.dep(), [...held, { kind: 'vertical', segment: [0, 1] }], 'Constrain')).toEqual([0, 1, 3]);
+    expect(constraintConflictsOf(t.scene.get(t.id))).toEqual([0, 1, 3]);
+    expect(setConstraints(t.dep(), held, 'Unconstrain')).toEqual([]);
   });
 
   it('reports vertical on a horizontal edge as a conflict instead of collapsing the edge', () => {
