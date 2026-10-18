@@ -1070,6 +1070,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PuppetLabDemo.tsx',
   },
   {
+    id: 'lab-puppet-solver',
+    title: 'Inside the puppet solver',
+    category: 'Geometry',
+    description:
+      "What the puppet warp does with its pins, drawn under the shape. `puppetMesh` fills the shape with triangles: the outline's points are their outer edges, a near-even lattice of points fills the inside, and every pin gets a point of its own, so the pull of a pin travels through the fill rather than across gaps. `createArapSolver` then moves the points as rigidly as the pins allow, in the two steps of Igarashi, Moscovich and Hughes (2005): first each triangle may turn and scale to fit, then an unscaled copy of each is fitted to that and the copies are averaged. Each triangle is colored by its area now over its area at rest, blue for shrunk and orange for grown. One whose area has gone to zero or below has turned over, mirrored, and is magenta. A turned-over triangle on the outline owns a stretch of it that now runs backward, drawn heavy, and that is where the warped outline loops or spikes. The panel counts them.",
+    hint: 'The squashed disc and the S-bent bar are pin sets the two-step solve folds; the gentle bend is one it handles. Drag a pin and watch the colors and the count follow it. Switch Mesh to Wire to see the shape through the triangles.',
+    load: () => import('./demos/PuppetSolverLabDemo').then((m) => m.PuppetSolverLabDemo),
+    path: 'apps/site/demos/PuppetSolverLabDemo.tsx',
+  },
+  {
     id: 'symmetry-lab',
     title: 'Symmetry',
     package: 'symmetry',
