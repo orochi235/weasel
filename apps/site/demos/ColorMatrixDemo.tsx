@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { DemoStage } from './DemoStage';
 
 const W = 720;
 const H = 360;
@@ -93,10 +94,8 @@ export function ColorMatrixDemo() {
 
   return (
     <div className="ckd-stack">
-      <div style={{ position: 'relative', width: W, height: H }}>
+      <DemoStage width={W} height={H}>
         <SceneCanvas
-          width={W}
-          height={H}
           className="ckd-canvas"
           scene={scene}
           layers={{
@@ -104,7 +103,7 @@ export function ColorMatrixDemo() {
             stack: { layer, after: 'scene' },
           }}
         />
-      </div>
+      </DemoStage>
       <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
         {groups.map((g) => (
           <PresetRow

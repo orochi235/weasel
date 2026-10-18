@@ -8,6 +8,7 @@ import {
   type CursorGlyphName,
 } from '@weasel-js/cursor';
 import s from './CursorDemo.module.css';
+import { DemoStage } from './DemoStage';
 
 const W = 620, H = 300;
 const NAMES = Object.keys(GLYPHS) as CursorGlyphName[];
@@ -84,15 +85,15 @@ export function CursorDemo() {
         </span>
       </div>
 
-      <SceneCanvas
-        width={W}
-        height={H}
-        className="ckd-canvas"
-        backgroundFill={{ color: '#ffffff' }}
-        scene={scene}
-        tools={{ cursor: tool }}
-        initialActiveTool="cursor"
-      />
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          tools={{ cursor: tool }}
+          initialActiveTool="cursor"
+        />
+      </DemoStage>
     </div>
   );
 }
