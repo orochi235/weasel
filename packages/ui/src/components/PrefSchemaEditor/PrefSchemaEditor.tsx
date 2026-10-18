@@ -1,16 +1,19 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
+import { NO_CATALOG } from './actionCatalog';
 import { AssetEditor } from './AssetEditor';
 import type { DraftStorage } from './draft';
-import type { EditorAction } from './editorActions';
+import { useEditorActions, type EditorAction } from './editorActions';
 import type { PrefSchemaEditorPrefs } from './editorPrefs';
 import type { SubmitChanges } from './ExportPanel';
 import type { CustomKinds } from './kindSchemas';
-import { asWorkspace, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
+import { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
+import { printSchema } from './schemaExport';
 import { NO_TYPES, type PrefTypes } from './types';
 import type { SentAsset } from './useAssetChanges';
+import type { Workspace } from './workspace';
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefGroup> {
@@ -38,10 +41,16 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   /** The actions a pref may fire, listed in the shelf under a group for each part of their key's path, to be
    *  dragged into the structure: each lands as an `action` pref that fires it by key. A row picked there shows
    *  its attributes. Left out, the editor lists what the `ActionsRegistry` above it can fire from a button, and
-   *  with no registry it lists none. A pref firing a key not among them is marked in the tree. This editor holds
-   *  one schema, so the list is not sorted or edited here: `AssetEditor` does that, over a workspace with an
-   *  `actions` asset to keep it in. */
+   *  with no registry it lists none. A pref firing a key not among them is marked in the tree. The reader sorts
+   *  and groups the list by dragging its rows, which is kept in `actionCatalog`. */
   actions?: readonly EditorAction[];
+  /** The catalog the Actions list is sorted and grouped in, as `actionCatalog()` starts one: each action it does not
+   *  hold yet is filed into it by its key. Left out, the editor keeps its own, starting empty, so every action is
+   *  filed by its key. Either way the reader's sorting is kept in the draft beside the schema, and undoes with it. */
+  actionCatalog?: PrefGroup;
+  /** Called with the catalog after the reader sorts, groups, or edits the Actions list: what a host keeps to hand
+   *  back as `actionCatalog`. */
+  onActionCatalogChange?(next: PrefGroup): void;
   /** A name to keep the edited schema under in this browser's `localStorage`, so a reload opens on the edits and
    *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
@@ -80,11 +89,27 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
-export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>({ schema, onChange, original, onSubmit, types = NO_TYPES, ...rest }: PrefSchemaEditorProps<S>) {
+export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>({ schema, onChange, original, onSubmit, types = NO_TYPES, actionCatalog, onActionCatalogChange, ...rest }: PrefSchemaEditorProps<S>) {
   const codec = useMemo(() => oneAssetCodec<S>(types), [types]);
-  const workspace = useMemo(() => asWorkspace(schema), [schema]);
-  const base = useMemo(() => original && asWorkspace(original), [original]);
-  // Its one asset is all a submission holds, and Submit is off until that asset has changed.
-  const submit = onSubmit && (([sent]: readonly SentAsset[]) => onSubmit(sent!.changes, sent!.literal));
-  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={(next) => onChange(schemaOf<S>(next))} original={base} onSubmit={submit} />;
+  // A catalog is kept only where there are actions to file in it.
+  const listed = useEditorActions(rest.actions) !== null;
+  const [ownCatalog, setOwnCatalog] = useState(actionCatalog ?? NO_CATALOG);
+  const catalog = listed ? actionCatalog ?? ownCatalog : undefined;
+  const [firstCatalog] = useState(catalog);
+  const workspace = useMemo(() => asWorkspace(schema, catalog), [schema, catalog]);
+  const base = useMemo(() => original && asWorkspace(original, firstCatalog), [original, firstCatalog]);
+  const change = (next: Workspace) => {
+    const sorted = catalogIn(next);
+    if (sorted && sorted !== catalog) {
+      setOwnCatalog(sorted);
+      onActionCatalogChange?.(sorted);
+    }
+    if (schemaOf(next) !== schema) onChange(schemaOf<S>(next));
+  };
+  // A submission holds the schema's changes alone: the catalog is the host's through `onActionCatalogChange`.
+  const submit = onSubmit && ((sent: readonly SentAsset[]) => {
+    const mine = sent.find((a) => a.id === ONE);
+    return onSubmit(mine?.changes ?? [], mine?.literal ?? printSchema(schema, types));
+  });
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={change} original={base} onSubmit={submit} />;
 }
