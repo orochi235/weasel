@@ -142,3 +142,19 @@ export function translateEach(
   }
   for (const { id, to } of writes) scene.setPose(id, to);
 }
+
+/** The world translation `(dx, dy)` as a translation of `id`'s stored pose,
+ *  which under a turned frame points another way. */
+export function storedDelta(
+  frame: PoseFrame<unknown>,
+  descriptor: PoseDescriptor<unknown>,
+  id: NodeId,
+  dx: number,
+  dy: number,
+): { dx: number; dy: number } {
+  if (frame.pc.closure === 'identity' || frame.frame(id) === null) return { dx, dy };
+  const world = frame.world(id);
+  const from = descriptor.getBounds(frame.local(id, world));
+  const to = descriptor.getBounds(frame.local(id, translatePoseViaDescriptor(world, dx, dy, descriptor)));
+  return { dx: to.x - from.x, dy: to.y - from.y };
+}

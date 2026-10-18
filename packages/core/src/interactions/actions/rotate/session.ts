@@ -115,6 +115,7 @@ function buildGestureContext(
     pointer: pointerStateOf(ctx.world, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
     adapter: moveGestureAdapter(scene, undefined, selectionMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},

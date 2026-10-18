@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
+import { PathBuilder, polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { constraintsForAnchors } from './anchorConstraints';
 
 const SQUARE = polygonFromPoints([{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 40 }, { x: 0, y: 40 }]) as PolygonPath;
@@ -25,5 +25,16 @@ describe('constraintsForAnchors', () => {
       { kind: 'equalLength', segments: [[0, 1], [2, 3]] },
     ]);
     expect(constraintsForAnchors('parallel', [0, 1], SQUARE)).toEqual([]);
+  });
+
+  it('asks a tangent only of anchors with both handles', () => {
+    const wave = new PathBuilder().moveTo(0, 0).curveTo(20, -20, 60, -20, 80, 0).curveTo(100, 20, 140, 20, 160, 0)
+      .build() as PolygonPath;
+    expect(constraintsForAnchors('tangent', [0, 1, 2], wave)).toEqual([{ kind: 'tangent', anchor: 1 }]);
+  });
+
+  it('holds the first of three anchors on the segment the other two end, and nothing when they end none', () => {
+    expect(constraintsForAnchors('onPath', [3, 2, 1], SQUARE)).toEqual([{ kind: 'onPath', anchor: 3, segment: [1, 2] }]);
+    expect(constraintsForAnchors('onPath', [3, 0, 2], SQUARE)).toEqual([]);
   });
 });

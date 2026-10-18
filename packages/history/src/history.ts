@@ -181,8 +181,9 @@ export interface CreateHistoryOptions {
    *  rapid-input UX (nudge, per-keystroke text edits). The window resets on
    *  each successful coalesce, so a sustained burst keeps merging, and closes
    *  on any other history operation — only the entry the last push created is
-   *  ever a merge target. */
-  coalesceWindowMs?: number;
+   *  ever a merge target. A function is called at each push, so the window
+   *  can follow a setting that changes after the history is made. */
+  coalesceWindowMs?: number | (() => number);
   /** Clock injection point for tests. Defaults to `Date.now`. */
   now?: () => number;
   /** Where the caller's selection lives. Supplied, each entry records the
@@ -437,9 +438,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  rather than positional index so a multi-id selection can re-emit ops in
    *  any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
-    if (coalesceWindowMs <= 0) return false;
-    if (version !== coalesceAnchorVersion) return false;
-    if (now() - top.timestamp > coalesceWindowMs) return false;
+    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs;
+    if (!(windowMs > 0) || version !== coalesceAnchorVersion || now() - top.timestamp > windowMs) return false;
     if (top.forwardOps.length === 0 || incoming.length === 0) return false;
     if (top.forwardOps.length !== incoming.length) return false;
     const counts = new Map<string, number>();

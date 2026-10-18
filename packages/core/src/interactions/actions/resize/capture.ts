@@ -184,6 +184,7 @@ export function buildGestureContext(
     pointer: pointerStateOf(startWorld, ctx),
     view: readers.view(),
     plane: readers.plane(),
+    kitSettings: readers.kitSettings,
     ...(ctx.deps.scene
       ? { frames: sceneGestureFrames(ctx.deps.scene, ctx.deps) as GestureContext<Bounds>['frames'] }
       : {}),
