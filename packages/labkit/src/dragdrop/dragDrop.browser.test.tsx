@@ -58,9 +58,12 @@ test('a palette item dragged onto the canvas drops at the world point it was rel
 
   await expect.poll(() => screen.getByTestId('items').textContent).toMatch(/^a@/);
   // The pointer lands on a whole pixel, and the canvas's center need not be one.
-  const [x, y] = screen.getByTestId('items').textContent!.slice(2).split(',').map(Number);
-  expect(Math.abs(x! - 30)).toBeLessThanOrEqual(1);
-  expect(Math.abs(y! - 20)).toBeLessThanOrEqual(1);
+  const [x = Number.NaN, y = Number.NaN] = (screen.getByTestId('items').textContent ?? '')
+    .slice(2)
+    .split(',')
+    .map(Number);
+  expect(Math.abs(x - 30)).toBeLessThanOrEqual(1);
+  expect(Math.abs(y - 20)).toBeLessThanOrEqual(1);
   expect(container.querySelector('.lk-drag-ghost')).toBeNull();
 });
 
@@ -71,7 +74,8 @@ test('a palette item released off the canvas drops nothing', async () => {
     </div>,
   );
   const palette = await screen.findByRole('button', { name: 'Item A' });
-  await expect.poll(() => container.querySelector('.lk-canvas-stack')?.getBoundingClientRect().width ?? 0)
+  await expect
+    .poll(() => container.querySelector('.lk-canvas-stack')?.getBoundingClientRect().width ?? 0)
     .toBeGreaterThan(0);
 
   await userEvent.dragAndDrop(palette, palette, { targetPosition: { x: 2, y: 2 } });

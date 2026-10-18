@@ -8,8 +8,8 @@ import {
   useVisibleRaf,
 } from '@weasel-js/core';
 import {
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type PointerEvent as ReactPointerEvent,
   useCallback,
   useContext,
   useEffect,
@@ -20,12 +20,7 @@ import {
 import { CameraContext } from '../canvas/CameraInput';
 import { frameLocalToWorld } from '../canvas/cameraView';
 import type { WorldFrame } from '../canvas/worldSpec';
-import type {
-  DragDropCapability,
-  DragFeedback,
-  PaletteItem,
-  Point,
-} from '../instrument/types';
+import type { DragDropCapability, DragFeedback, PaletteItem, Point } from '../instrument/types';
 import { DragGhost } from './DragGhost';
 
 /** The carry type a palette item travels as. */
@@ -101,7 +96,8 @@ export function useDragDrop<TS, TC>({
     const active = dragRef.current;
     if (!active || !world) return;
     const live = liveRef.current;
-    const feedback = live.capability.onDragOver?.(world, active.item, live.state, live.config) ?? null;
+    const feedback =
+      live.capability.onDragOver?.(world, active.item, live.state, live.config) ?? null;
     update({ ...active, feedback });
   });
 
@@ -136,7 +132,12 @@ export function useDragDrop<TS, TC>({
   const startDrag = useCallback(
     (item: PaletteItem, e: ReactPointerEvent) => {
       if (carryRef.current) return;
-      update({ item, from: e.currentTarget, screenPos: { x: e.clientX, y: e.clientY }, feedback: null });
+      update({
+        item,
+        from: e.currentTarget,
+        screenPos: { x: e.clientX, y: e.clientY },
+        feedback: null,
+      });
       carryRef.current = startCarry(
         e.currentTarget,
         e,
@@ -195,10 +196,7 @@ function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined):
 function PaletteDropTarget({ sink }: { sink: DropSink }) {
   const camera = useContext(CameraContext);
   const frameRef = useLatest(camera?.frame);
-  const action = useMemo(
-    () => paletteDropAction(sink, () => frameRef.current),
-    [sink, frameRef],
-  );
+  const action = useMemo(() => paletteDropAction(sink, () => frameRef.current), [sink, frameRef]);
   useAction(action);
   return null;
 }
