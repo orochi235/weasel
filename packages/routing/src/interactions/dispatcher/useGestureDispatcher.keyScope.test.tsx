@@ -16,17 +16,17 @@ import type { Action } from '../actions/action';
 const NO_ENTRIES = new Map();
 const NO_POINTER = { pointer: false } as const;
 
-function Canvas({ name, run, claimKeys, noCanvas, noPointer }: {
-  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean;
+function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
+  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean; over?: boolean;
 }): ReactNode {
   const registry = useActionsRegistry()!;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => registry.register({
     id: 'test.q',
     label: 'Q',
-    defaultBinding: { kind: 'key', key: 'q' },
+    defaultBinding: over ? [{ spec: { kind: 'key', key: 'q' }, opts: { over: true } }] : { kind: 'key', key: 'q' },
     invoker: { timing: 'immediate', run: () => run() },
-  } satisfies Action), [registry, run]);
+  } satisfies Action), [registry, run, over]);
   useGestureDispatcher({
     canvasRef, actions: registry, entriesById: NO_ENTRIES,
     ...(claimKeys !== undefined ? { claimKeys } : {}),
@@ -47,6 +47,12 @@ function Root({ children }: { children: ReactNode }): ReactNode {
 
 const press = (): void => {
   act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', cancelable: true })); });
+};
+const hover = (name: string): void => {
+  act(() => { canvas(name).dispatchEvent(new PointerEvent('pointermove', { bubbles: true })); });
+};
+const leave = (name: string): void => {
+  act(() => { canvas(name).dispatchEvent(new PointerEvent('pointerleave')); });
 };
 const canvas = (name: string): Element => document.querySelector(`canvas[data-name="${name}"]`)!;
 
@@ -133,5 +139,55 @@ describe('a key that reaches the page', () => {
     rerender(<Root><InputScope key="next"><Canvas name="b" run={run} /></InputScope></Root>);
     press();
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('a key bound with `over`', () => {
+  it('goes to the canvas under the pointer, whichever holds the keys', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} over /></InputScope>
+        <InputScope><Canvas name="b" run={b} over /></InputScope>
+      </Root>,
+    );
+    giveKeys(canvas('a'));
+    hover('b');
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([0, 1]);
+  });
+
+  it('goes to the canvas under the pointer before any has been pressed in', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} over noPointer /></InputScope></Root>);
+    hover('a');
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes nowhere once the pointer leaves, though the canvas holds the keys', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} over /></InputScope></Root>);
+    giveKeys(canvas('a'));
+    hover('a');
+    leave('a');
+    press();
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('leaves a key without it to the canvas holding the keys, wherever the pointer is', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} /></InputScope>
+        <InputScope><Canvas name="b" run={b} /></InputScope>
+      </Root>,
+    );
+    giveKeys(canvas('a'));
+    hover('b');
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
   });
 });

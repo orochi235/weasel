@@ -146,7 +146,7 @@ export {
   multiTouchGestureId, pointerGestureId, createDispatcher, createDispatchTrace, createTraceRing,
 } from './interactions/dispatcher/dispatcher';
 export type {
-  DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing, DispatcherContext, UiOngoingControl,
+  DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing, DispatcherContext, KeyReach, UiOngoingControl,
   ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions, Dispatcher,
 } from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/dispatchRecord';

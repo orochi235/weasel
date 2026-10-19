@@ -10,6 +10,7 @@
  */
 import {
   type ActionsRegistry,
+  InputScope,
   type Tool,
   useActionsRegistry,
   useGestureDispatcher,
@@ -58,15 +59,29 @@ function LoupeDispatch({
   return null;
 }
 
+/** The loupe's own scope's registry, so two loupes under one provider do not
+ *  stack their actions on one id. */
+function OwnLoupeDispatch(props: LoupeGesturesProps) {
+  const registry = useActionsRegistry();
+  if (!registry) return null;
+  return <LoupeDispatch {...props} registry={registry} ownDispatcher />;
+}
+
 /**
  * The loupe's input, routed. Inside a camera (`<CanvasStack>`, `<Stage>`) its
  * actions join the camera's dispatcher, which already listens on the host;
- * elsewhere it mounts a dispatcher of its own. With no registry in scope it
- * renders nothing rather than registering actions that could never fire.
+ * elsewhere it mounts a dispatcher of its own, in an input scope of its own.
+ * With no registry in scope it renders nothing rather than registering actions
+ * that could never fire.
  */
 export function LoupeGestures(props: LoupeGesturesProps) {
   const registry = useActionsRegistry();
   const camera = useContext(CameraContext);
   if (!registry) return null;
-  return <LoupeDispatch {...props} registry={registry} ownDispatcher={camera === null} />;
+  if (camera !== null) return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
+  return (
+    <InputScope>
+      <OwnLoupeDispatch {...props} />
+    </InputScope>
+  );
 }

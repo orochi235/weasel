@@ -1,7 +1,7 @@
 /** The keyboard channel: window keydown and keyup as `key` and `key-held` input. */
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
-import type { Dispatcher } from '../dispatcherApi';
+import type { Dispatcher, KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 
 /**
@@ -37,8 +37,10 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
-    // Every dispatcher hears keys on window; only the one holding them acts.
-    if (!core.holdsKeys()) return;
+    // Every dispatcher hears keys on window. The one holding them acts, and so
+    // does the one under the pointer, for its `over` bindings alone.
+    const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
+    if (!reach.held && !reach.over) return;
 
     // Autorepeat for a key that's already engaged a key-held binding is
     // suppressed entirely — no dispatch (no trace flood) and the
@@ -51,13 +53,13 @@ export function keyboardInput(core: DispatchCore): {
       return;
     }
 
-    if (press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey })) return;
+    if (press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach)) return;
     // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it.
-    if (typedWithAltGraph(e)) press(e, { altKey: false, ctrlKey: false });
+    if (typedWithAltGraph(e)) press(e, { altKey: false, ctrlKey: false }, reach);
   };
 
   /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */
-  const press = (e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }): boolean => {
+  const press = (e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }, reach: KeyReach): boolean => {
     // Both forms dispatch unconditionally. The dispatcher
     // de-dupes naturally because each form uses a different gestureId and
     // different GestureSpec kind. The dispatcher returns 'unhandled' when no
@@ -72,7 +74,7 @@ export function keyboardInput(core: DispatchCore): {
       shiftKey: e.shiftKey,
       repeat: e.repeat,
     };
-    const keyResult = dispatch(keyEv);
+    const keyResult = dispatch(keyEv, undefined, reach);
 
     // Always dispatch key-held DOWN, even on autorepeat. The dispatcher's
     // own defense returns 'handled' (no-op) when a handle is already in
@@ -88,7 +90,7 @@ export function keyboardInput(core: DispatchCore): {
       shiftKey: e.shiftKey,
     };
     const heldOn = dispatcherNow();
-    const heldResult = dispatch(heldEv, heldOn);
+    const heldResult = dispatch(heldEv, heldOn, reach);
 
     if (heldResult === 'handled') {
       heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), on: heldOn });
