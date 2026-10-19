@@ -1047,15 +1047,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P1) The first-publish gate passes a package npm will not let CI publish.**
-  `check-first-publish.mjs` asks only whether a name exists on npm. `@weasel-js/menu` was published
-  by hand at 1.10.1 (2026-10-16) and never given a trusted publisher, so the gate passed and the
-  1.11.0 release (run 39172234345, 2026-10-18) died on its `E404 PUT` after 16 of 42 packages,
-  leaving the fixed group split across 1.10.1 and 1.11.0 on npm. The gate should also ask whether
-  each package has trust config (`npm trust list`, or a 1.x version carrying a provenance
-  attestation, which only an OIDC publish can make). Recovery: register `menu` with
-  `scripts/setup-trusted-publishing.mjs`, then re-run Release by `workflow_dispatch`.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check

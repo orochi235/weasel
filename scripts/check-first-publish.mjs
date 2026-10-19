@@ -1,36 +1,57 @@
-// Refuse to start a release when a workspace has never been published.
+// Refuse to start a release that the release job's OIDC credential cannot finish.
 //
-// npm's OIDC trusted publishing cannot create a package. The release job's
-// short-lived token gets `E404: PUT /<name>` — the same status npm returns for
-// "no such package", which is what makes it read like a registry outage rather
-// than a missing bootstrap. So a first publish must come from a human with
-// credentials.
-// Tracked upstream as https://github.com/npm/cli/issues/8544.
+// npm's OIDC trusted publishing cannot create a package, nor publish one with no
+// trust config. Either way the release job's short-lived token gets
+// `E404: PUT /<name>` — the same status npm returns for "no such package", which
+// is what makes it read like a registry outage rather than a missing bootstrap.
+// Creation is tracked upstream as https://github.com/npm/cli/issues/8544.
 //
 // `npm trust github <name>` can register trust config for a name that is still
 // a 404. Whether an OIDC *publish* can then create the package is untested.
 //
 // `changeset publish` is not atomic. It publishes in dependency order and stops
-// at the first failure, so a new package strands the release halfway: some of
-// the fixed group at the new version, the rest at the old one, and the registry
-// disagreeing with `main`.
+// at the first failure, so one such package strands the release halfway: some
+// of the fixed group at the new version, the rest at the old one, and the
+// registry disagreeing with `main`. 1.11.0 stopped 16 of 42 packages in on
+// `menu`, which existed on npm but had never been given a trusted publisher.
+import { classify, readPending } from './lib/first-publish.mjs';
+import { fetchPackument, registryBase } from './lib/registry.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
-import { isPublished, registryBase } from './lib/registry.mjs';
 
 const warnOnly = process.argv.includes('--warn');
 
-const packages = publishableWorkspaces();
-const missing = [];
+const LABEL = {
+  ok: 'ok',
+  missing: 'NEVER PUBLISHED',
+  untrusted: 'NO TRUSTED PUBLISHER',
+  pending: 'trust registered, awaiting first CI publish',
+};
 
+const packages = publishableWorkspaces();
+const pending = readPending();
+const states = [];
 for (const [i, { manifest }] of packages.entries()) {
-  const name = manifest.name;
-  const published = await isPublished(name);
-  if (!published) missing.push(name);
-  console.log(`[first-publish] ${i + 1}/${packages.length} ${name} — ${published ? 'ok' : 'NEVER PUBLISHED'}`);
+  const state = { name: manifest.name, packument: await fetchPackument(manifest.name) };
+  states.push(state);
+  const { status } = classify([state], pending);
+  console.log(`[first-publish] ${i + 1}/${packages.length} ${manifest.name} — ${LABEL[status[manifest.name]]}`);
 }
 
+const { missing, untrusted, stale } = classify(states, pending);
+
+const register = (names) => [
+  'Register the trusted publisher in a real terminal (it prompts for 2FA), naming',
+  'the package, or it sweeps all of them with a 2FA challenge each:',
+  '',
+  ...names.map((n) => `  node scripts/setup-trusted-publishing.mjs ${n}`),
+  '',
+  'It records the package in scripts/trust-pending.json. Commit that file: it is',
+  'how this gate knows trust is registered before the release job has used it.',
+];
+
+const lines = [];
 if (missing.length > 0) {
-  const lines = [
+  lines.push(
     `[first-publish] ${missing.length} package(s) have never been published:`,
     '',
     ...missing.map((n) => `  ${n}`),
@@ -43,16 +64,39 @@ if (missing.length > 0) {
     ...missing.map((n) => `  npm publish -w ${n} --tag pre --provenance=false`),
     '',
     '(provenance is off because npm only attests from CI; the release job keeps it.)',
-    'Run both in a real terminal, never through an agent or a `!` prompt: the',
+    'Run it in a real terminal, never through an agent or a `!` prompt: the',
     "account's 2FA is a passkey, which approves in the browser while npm waits on a",
     'TTY. Without one npm fails EOTP with the approval URL masked, and a passkey',
     'has no code to pass as --otp.',
-    'Then register the trusted publisher so CI owns every publish after this one —',
-    'naming the package, or it sweeps all of them with a 2FA challenge each:',
+    'Then, so CI owns every publish after this one:',
+    ...register(missing),
     '',
-    ...missing.map((n) => `  node scripts/setup-trusted-publishing.mjs ${n}`),
+  );
+}
+if (untrusted.length > 0) {
+  lines.push(
+    `[first-publish] ${untrusted.length} package(s) are on npm but no version came from a trusted publisher:`,
     '',
-  ];
+    ...untrusted.map((n) => `  ${n}`),
+    '',
+    'The release job would fail on these with E404 PUT after publishing their',
+    'siblings, leaving the registry split across two versions.',
+    ...register(untrusted),
+    '',
+  );
+}
+
+if (stale.length > 0) {
+  console.warn(
+    [
+      '[first-publish] these have now been published by the release job; remove them',
+      'from scripts/trust-pending.json:',
+      ...stale.map((n) => `  ${n}`),
+    ].join('\n'),
+  );
+}
+
+if (lines.length > 0) {
   const report = lines.join('\n');
   if (warnOnly) {
     console.warn(report);
@@ -61,5 +105,7 @@ if (missing.length > 0) {
     process.exit(1);
   }
 } else {
-  console.log(`[first-publish] OK — all ${packages.length} publishable package(s) exist on ${registryBase()}.`);
+  console.log(
+    `[first-publish] OK — all ${packages.length} publishable package(s) exist on ${registryBase()} with a trusted publisher.`,
+  );
 }
