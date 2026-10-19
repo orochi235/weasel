@@ -4,7 +4,7 @@
  * edit, so the host changes its data and the view follows through the specs.
  */
 import {
-  ActionDisabledReason,
+  createDeleteAction,
   dragPanContribution,
   useLatest,
   type Action,
@@ -20,7 +20,6 @@ import { diagramPorts } from './contribution';
 import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './fromData';
-import { diagramGroupOf } from './group';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
@@ -31,38 +30,36 @@ const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
 const NO_MARQUEE = { areaSelect: null };
 
-/** The data ids a removal of `ids` takes: the nodes, and every edge on them. */
+/**
+ * The data a delete of `ids` takes: the selected nodes and groups, and every
+ * edge selected or ending on one of them. Not `removalClosure`: a group
+ * depends on its members, and deleting a member leaves the group standing.
+ */
 export function removedData(scene: Scene<unknown, string, unknown>, ids: readonly string[]): DeleteReport {
-  const nodes: string[] = [];
-  const edges: string[] = [];
-  const live = ids.filter((id) => scene.get(id as never) !== undefined);
-  for (const id of scene.removalClosure(live as never)) {
-    const node = scene.get(id);
+  const nodes = new Set<string>();
+  const edges = new Set<string>();
+  for (const id of ids) {
+    const node = scene.get(id as never);
     if (node === undefined) continue;
-    if (diagramEdgeOf(node) !== null) edges.push(id);
-    else if (dataKeyReader(node) !== null && diagramGroupOf(node) === null) nodes.push(id);
+    if (diagramEdgeOf(node) !== null) edges.add(id);
+    else if (dataKeyReader(node) !== null) nodes.add(id);
   }
-  return { nodes, edges };
+  for (const node of scene.renderOrderNodes()) {
+    const ends = node.dependsOn;
+    if (diagramEdgeOf(node) !== null && Array.isArray(ends) && ends.some((end) => nodes.has(end))) edges.add(node.id);
+  }
+  return { nodes: [...nodes], edges: [...edges] };
 }
 
-/** Core's `delete`, on its keys, reporting what it would remove instead of removing it. */
+/** Core's `delete`, reporting what it would remove instead of removing it. */
 export function reportDeleteAction(report: (removed: DeleteReport) => void): Action {
-  return {
-    id: 'delete',
-    label: 'Delete',
-    group: 'edit',
-    defaultBinding: { kind: 'key', key: ['Delete', 'Backspace'], phase: [{ channel: '*', phase: 'initial' }] },
-    requires: ['scene', 'selection'],
-    invoker: {
-      timing: 'immediate',
-      run: (deps) => {
-        const ids = (deps.selection?.get() ?? []) as readonly string[];
-        if (deps.scene === undefined || ids.length === 0) return;
-        report(removedData(deps.scene as Scene<unknown, string, unknown>, ids));
-      },
+  return createDeleteAction({
+    commit: (ids, deps) => {
+      if (deps.scene === undefined) return;
+      const removed = removedData(deps.scene as Scene<unknown, string, unknown>, ids);
+      if (removed.nodes.length > 0 || removed.edges.length > 0) report(removed);
     },
-    enabled: (deps) => ((deps?.selection?.get().length ?? 0) > 0 ? true : ActionDisabledReason.SelectionRequired),
-  };
+  });
 }
 
 export const reconnectChangeOf = ({ edgeId, end, target }: EndChange): ReconnectChange => ({
@@ -122,12 +119,13 @@ export function useDiagramEditing(
     ? diagramEdgeEnds<RectPose>({
         participants: source,
         selected,
+        bodies: connectBodies === true,
         ...(canConnect ? { canConnect } : {}),
         ...(portOptions?.snapRadius !== undefined ? { snapRadius: portOptions.snapRadius } : {}),
         ...(portOptions?.showsPort ? { showsPort: portOptions.showsPort } : {}),
         commit: (change) => report.current.onReconnect?.(reconnectChangeOf(change)),
       })
-    : null, [reconnects, source, selected, canConnect, portOptions, report]);
+    : null, [reconnects, source, selected, connectBodies, canConnect, portOptions, report]);
   const label = useMemo((): Contribution | null => labels
     ? {
         id: 'weasel-diagram-edge-label',

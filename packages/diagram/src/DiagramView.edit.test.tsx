@@ -57,16 +57,21 @@ describe('DiagramView editing', () => {
   it('lets an edge be picked, and reports a drag of its end onto another shape', () => {
     const onReconnect = vi.fn();
     const onSelect = vi.fn();
-    const { canvas } = mount({ onReconnect, onSelect });
+    const { canvas } = mount({ onReconnect, onSelect, connectBodies: true });
     click(canvas, 200, 20);
     expect(onSelect).toHaveBeenLastCalledWith(AB);
-    act(() => {
+    const dragEndToC = () => act(() => {
       pointer(canvas, 'pointerdown', 300, 20);
       pointer(canvas, 'pointermove', 320, 100);
       pointer(canvas, 'pointermove', 350, 220);
       pointer(canvas, 'pointerup', 350, 220);
     });
+    dragEndToC();
     expect(onReconnect).toHaveBeenCalledWith({ edge: AB, end: 'to', node: 'c' });
+    // Reported, not written: the end is still on b, so its handle is still there to drag.
+    dragEndToC();
+    expect(onReconnect).toHaveBeenCalledTimes(2);
+    expect(onReconnect).toHaveBeenLastCalledWith({ edge: AB, end: 'to', node: 'c' });
   });
 
   it('reports a connect onto a body as an edge with no port at that end', () => {

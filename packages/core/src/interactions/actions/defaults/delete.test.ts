@@ -2,7 +2,7 @@
  * Tests for `deleteAction` descriptor.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { buildDeleteOps, deleteAction } from './delete';
+import { buildDeleteOps, createDeleteAction, deleteAction } from './delete';
 import { createScene } from 'core/scene/scene';
 import type { ContainerNode, RectPose } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -108,6 +108,34 @@ describe('deleteAction (descriptor)', () => {
 
   it('invoker.timing = "immediate"', () => {
     expect(deleteAction.invoker?.timing).toBe('immediate');
+  });
+});
+
+describe('createDeleteAction', () => {
+  it('hands the selected ids to a custom commit and writes nothing', () => {
+    const { scene, removed, applyBatchLog } = makeStubScene({ a: {}, b: {} });
+    const selection = makeSelection(['b', 'a']);
+    const applyOps = vi.fn();
+    const commit = vi.fn();
+    const action = createDeleteAction({ commit });
+    const deps = { selection, scene, applyOps };
+
+    (action.invoker as ImmediateInvoker).run(deps as unknown as Parameters<ImmediateInvoker['run']>[0]);
+
+    expect(commit).toHaveBeenCalledOnce();
+    expect(commit.mock.calls[0]![0]).toEqual(['b', 'a']);
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(scene.remove).not.toHaveBeenCalled();
+    expect(removed).toEqual([]);
+    expect(applyBatchLog).toEqual([]);
+    expect(selection.set).not.toHaveBeenCalled();
+  });
+
+  it('keeps the default descriptor: keys, icon, gate', () => {
+    const custom = createDeleteAction({ commit: () => {} });
+    expect(custom.defaultBinding).toEqual(deleteAction.defaultBinding);
+    expect(custom.icon).toBe(deleteAction.icon);
+    expect(custom.enabled).toBe(deleteAction.enabled);
   });
 });
 

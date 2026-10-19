@@ -51,17 +51,17 @@ export interface DiagramViewProps {
    *  edge it describes and draws nothing; add it to the data to keep it. An
    *  end on a shape's body (`connectBodies`) has no port field. */
   onConnect?: (edge: DataEdge) => void;
-  /** Set to let a selected edge's ends be dragged onto another shape or
-   *  port. Reports the move and draws nothing; change the data edge to keep it. */
+  /** Set to let a selected edge's ends be dragged onto another port, or with
+   *  `connectBodies` onto a shape's body. Reports the move and draws nothing; change the data edge to keep it. */
   onReconnect?: (change: ReconnectChange) => void;
-  /** Set to let Delete and Backspace remove the selection. Reports the data
-   *  nodes and edges the removal would take, edges hanging off a removed node
-   *  included, and removes nothing. */
+  /** Set to let Delete and Backspace remove the selection. Reports the
+   *  selected data nodes (a selected group, not its members) and every edge
+   *  selected or ending on one of them, and removes nothing. */
   onDelete?: (removed: DeleteReport) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
-  /** Whether a connect may run onto a shape's body, away from its ports.
-   *  Default false. */
+  /** Whether a connect or a reconnect may end on a shape's body, away from
+   *  its ports. Default false. */
   connectBodies?: boolean;
   /** Contributions to install after the view's own: a tool's bindings, a key. */
   ambient?: readonly Contribution[];
