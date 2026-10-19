@@ -47,6 +47,15 @@ const endPress = (end: 'from' | 'to', edgeId = 'ab') => ({
   payload: { targetId: edgeId, edgeId, end },
 });
 
+/** The run the handle is previewing, which must be a polyline. */
+function previewPoints(handle: OngoingHandle): { x: number; y: number }[] {
+  const overlay = overlaysOf(handle)[0];
+  if (overlay === undefined || overlay.kind !== 'polyline') {
+    throw new Error(`expected a polyline overlay, got ${String(overlay?.kind)}`);
+  }
+  return overlay.points.map((p) => ({ x: p.x, y: p.y }));
+}
+
 function open(opts: Partial<ReconnectOptions<Rect>>, end: 'from' | 'to' = 'to'): OngoingHandle {
   const invoker = createReconnectAction<Rect>({
     participants: PARTICIPANTS, selected: () => ['ab'], ...opts,
@@ -130,8 +139,7 @@ describe('createReconnectAction', () => {
       { data: { diagram: { from: { port: 'e' }, to: { port: 'w' } } } },
       [{ node: a!.node, pose: a!.pose }, { node: c!.node, pose: c!.pose }] as never,
     ) as { coords: Float32Array };
-    const points = (overlaysOf(handle)[0] as { points: { x: number; y: number }[] }).points;
-    expect(points.flatMap((p) => [p.x, p.y])).toEqual([...drawn.coords]);
+    expect(previewPoints(handle).flatMap((p) => [p.x, p.y])).toEqual([...drawn.coords]);
   });
 
   it('previews through the edge\'s waypoints', () => {
@@ -143,7 +151,7 @@ describe('createReconnectAction', () => {
     if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
     const handle = invoker.start(ctxAt(300, 20, endPress('to')));
     handle.onMove!(ctxAt(200, 400));
-    expect((overlaysOf(handle)[0] as { points: unknown[] }).points).toEqual([
+    expect(previewPoints(handle)).toEqual([
       { x: 100, y: 20 }, { x: 200, y: 100 }, { x: 200, y: 400 },
     ]);
   });
