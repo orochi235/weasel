@@ -1,6 +1,9 @@
 /** A mounted `<SceneCanvas>` answers a devtools panel through `window.__weaselDevtools__`. */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { useState } from 'react';
 import { render, act, cleanup } from '@testing-library/react';
+import type { DepName } from '@weasel-js/routing';
+import { useDepSource } from '@weasel-js/routing/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -21,15 +24,23 @@ afterEach(() => {
   cleanup();
 });
 
+function ExtraDep() {
+  useDepSource('clock' as DepName, () => 0 as never);
+  return null;
+}
+
 function mount() {
   let scene: Scene<D, L, P> | null = null;
+  let showChild: (on: boolean) => void = () => {};
   function Harness() {
+    const [child, setChild] = useState(false);
+    showChild = setChild;
     const s = useScene<D, L, P>({
       systemLayers: [{ id: 'main' }],
       initial: [{ id: 'a' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
     });
     scene = s;
-    return <SceneCanvas features={['draw']} scene={s} width={200} height={200} aria-label="board" />;
+    return <SceneCanvas features={['draw']} scene={s} width={200} height={200} aria-label="board">{child && <ExtraDep />}</SceneCanvas>;
   }
   render(<Harness />);
   const hook = window.__weaselDevtools__!;
@@ -49,7 +60,7 @@ function mount() {
     if (reply?.type !== 'result') throw new Error(`expected a result, got ${JSON.stringify(reply)}`);
     return reply.result;
   };
-  return { scene: () => scene!, sup, result, close, rootId };
+  return { scene: () => scene!, sup, result, close, rootId, showChild: (on: boolean) => showChild(on) };
 }
 
 describe('SceneCanvas devtools root', () => {
@@ -95,6 +106,31 @@ describe('SceneCanvas devtools root', () => {
     expect(registry.actions.map((a) => a.id)).toEqual(expect.arrayContaining(['undo', 'redo']));
     expect(registry.deps.map((d) => d.name)).toEqual(expect.arrayContaining(['selection']));
     expect(registry.routingKinds.length).toBeGreaterThan(0);
+    close();
+  });
+
+  it('announces no registry change when only the selection changes', () => {
+    const { result, rootId, close } = mount();
+    const heard: string[] = [];
+    const off = window.__weaselDevtools__!.root(rootId)!.subscribe((area) => heard.push(area));
+    result({ type: 'select', ids: ['a'] });
+    result({ type: 'select', ids: [] });
+    expect(heard).toContain('selection');
+    expect(heard).not.toContain('registry');
+    off();
+    close();
+  });
+
+  it('announces a registry change when a dep source comes and goes', () => {
+    const { rootId, close, showChild } = mount();
+    const heard: string[] = [];
+    const off = window.__weaselDevtools__!.root(rootId)!.subscribe((area) => heard.push(area));
+    act(() => { showChild(true); });
+    expect(heard).toContain('registry');
+    heard.length = 0;
+    act(() => { showChild(false); });
+    expect(heard).toContain('registry');
+    off();
     close();
   });
 

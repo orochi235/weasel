@@ -1,6 +1,6 @@
 import { useEffect, useState, type MutableRefObject, type RefObject } from 'react';
 import {
-  createDispatchTrace, createTraceRing, type Contribution, type DispatchTrace, type TraceRing,
+  createDispatchTrace, createTraceRing, type Contribution, type DepRegistry, type DispatchTrace, type TraceRing,
 } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
@@ -36,6 +36,11 @@ function resolved(debug: DebugConfig | false | undefined): DebugConfig | null {
   if (debug === false) return null;
   if (debug !== undefined) return debug;
   return typeof window === 'undefined' ? null : parseDebugFlags(window.location.search);
+}
+
+/** What `get-registry` reports of `deps`, as one comparable string; null for a registry that cannot list itself. */
+function depListingKey(deps: DepRegistry): string | null {
+  return deps.list?.().map((d) => `${d.name}:${d.depth}:${d.stacked}`).join('\u0000') ?? null;
 }
 
 /** This canvas's trace buffers and its devtools root, read from the latest render. */
@@ -81,7 +86,15 @@ export function useCanvasDevtoolsRoot(c: {
       routingKinds: (c.routing ?? inferredNodeRouting).map((k) => k.name),
     }),
     subscribeRegistry(listener) {
-      const offs = [actions?.subscribe(listener), deps.subscribe?.(listener)];
+      // The dep registry also notifies when a source's value changes, as every selection does; only the listing is ours.
+      let listed = depListingKey(deps);
+      const onDeps = (): void => {
+        const next = depListingKey(deps);
+        if (next !== null && next === listed) return;
+        listed = next;
+        listener();
+      };
+      const offs = [actions?.subscribe(listener), deps.subscribe?.(onDeps)];
       return () => { for (const off of offs) off?.(); };
     },
     history: traces.history,
