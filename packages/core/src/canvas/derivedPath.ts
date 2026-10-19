@@ -15,6 +15,7 @@ import { resolveDerivedPath } from 'core/scene/derivedPath';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
+import type { DrawnBoundsScene } from './drawnBounds';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
 
@@ -234,4 +235,25 @@ function withoutInheritedFrame(path: Path, painted: unknown, own: unknown): Path
   const o = own as { rotation?: number; transform?: unknown } | null;
   const redo = poseFrameOf({ x: box.x, y: box.y, width: box.width, height: box.height, rotation: o?.rotation, transform: o?.transform });
   return carryPathBy(path, redo === null ? undo : multiply(undo, redo));
+}
+
+const drawnScenes = new WeakMap<object, DrawnBoundsScene>();
+
+/** `scene` read as `drawnBoundsOf` reads one, each node that shows a computed
+ *  path answering it. One object per scene, so it can key a memo. */
+export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): DrawnBoundsScene {
+  let held = drawnScenes.get(scene);
+  if (held === undefined) {
+    const pathOf = sceneDerivedPathOf(scene);
+    held = {
+      get: (id) => scene.get(id) as never,
+      childrenOf: (id) => scene.childrenOf(id),
+      derivedPathOf: (id) => {
+        const node = scene.get(id);
+        return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;
+      },
+    };
+    drawnScenes.set(scene, held);
+  }
+  return held;
 }

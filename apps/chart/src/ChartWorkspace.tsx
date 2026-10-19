@@ -1,6 +1,6 @@
 import {
   SceneCanvas, useCanvasSize, useScene, useSceneTextEdit, useSelection,
-  defaultVisibilityRules, type Rule, type SceneCanvasApi, type Tool, type ToolsApi, type View, type VisibilityRules,
+  type SceneCanvasApi, type Tool, type ToolsApi, type View,
 } from '@weasel-js/core';
 import { diagramResizable, dropEmptyEdgeLabel } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
@@ -21,10 +21,6 @@ const FEATURES = ['draw'] as const;
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const INGESTION = { handlers: [stencilDropHandler] };
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
-// An edge's pose is a placeholder at the origin: its box there is no outline to show, and its ends carry the handles.
-const CHROME: VisibilityRules = {
-  'selection.outline': { all: [defaultVisibilityRules['selection.outline'] as Rule, { resizable: true }] },
-};
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
@@ -83,7 +79,6 @@ export function ChartWorkspace(): ReactElement {
             viewport={{ recenter }}
             tools={diagram.tools}
             selectTool={selectTool}
-            chromeVisibility={CHROME}
             ambient={diagram.ambient}
             ingestion={INGESTION}
             onToolsCreated={setTools}

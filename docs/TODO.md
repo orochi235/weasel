@@ -1333,13 +1333,6 @@ only story runner in the repo.
   its newest source. Core needs a way for a dep to delegate to the default
   (`packages/diagram/src/stencilTool.ts`).
 
-- **(P3) Selection chrome draws from a path-derived node's 0x0 placeholder pose.** Chart works
-  around it with `diagramResizable` and an outline gate that applies to the whole selection; the
-  core fix is to measure such nodes by their path (`apps/chart/src/ChartWorkspace.tsx`).
-
-- **(P3) `DiagramView` turns on `pick` and makes edges pickable**, so a selected wire may draw the
-  same box at the origin (`packages/diagram/src/DiagramView.tsx`).
-
 - **(P3) Pipeline mode loses its undo history on a mode switch, and can't be saved.** The history
   lives in `PipelineWorkspace`'s `useMemo`, so leaving the mode drops it, and the File menu is empty
   in pipeline mode, so a pipeline can't be written to or opened from a file

@@ -49,6 +49,7 @@ export type {
 } from '../canvas/NodeShape';
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
+export { drawnBoundsScene } from '../canvas/derivedPath';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   bitmapSrc,

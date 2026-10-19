@@ -12,18 +12,21 @@ import {
   type InkExtents,
 } from 'core/geometry/inkExtents';
 import { targetCorners, targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
-import { axisAlignedBounds } from 'core/geometry/unionBounds';
+import { axisAlignedBounds, unionBounds } from 'core/geometry/unionBounds';
 import type { Node, NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { meanScale, type Scale2 } from '@weasel-js/geom';
+import { boundsOfPath, meanScale, type Path, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { findNodeShape, type NodeInkCtx } from './NodeShape';
 
 /** The scene reads {@link drawnBoundsOf} makes. `childrenOf` absent: every
- *  node is a leaf. */
+ *  node is a leaf. `derivedPathOf` absent: every node is measured by its pose,
+ *  a path-derived one included — `drawnBoundsScene` supplies it for a `Scene`. */
 export interface DrawnBoundsScene {
   get(id: NodeId): Node<unknown, string, unknown> | undefined;
   childrenOf?(id: NodeId): readonly NodeId[];
+  /** The path a node shows in place of its pose's, or `null` for one that shows its own. */
+  derivedPathOf?(id: NodeId): Path | null;
 }
 
 /** How {@link drawnBoundsOf} reads a node. */
@@ -44,7 +47,8 @@ export interface DrawnBoundsOptions {
  * drawn in: a turned node's box comes back turned with it. A node with no
  * stroke, a painter that declares no {@link NodeShapeEntry.drawnBounds}, or
  * `includeStroke: false` answers `framedBounds` unchanged. A container's box
- * reaches as far as its members' boxes do.
+ * reaches as far as its members' boxes do. A node showing a derived path is
+ * boxed around that path, and its placeholder pose plays no part.
  */
 export function drawnBoundsOf(
   scene: DrawnBoundsScene,
@@ -52,6 +56,8 @@ export function drawnBoundsOf(
   pose: unknown,
   opts: DrawnBoundsOptions = {},
 ): Bounds {
+  const derived = scene.derivedPathOf?.(id) ?? null;
+  if (derived !== null) return derivedBoundsOf(scene, id, pose, derived, opts);
   return outsetBox(framedBounds(pose, descriptorFor(scene, id, opts)), inkExtentsOf(scene, id, pose, opts));
 }
 
@@ -72,6 +78,18 @@ export function inkExtentsOf(
   if (members.length > 0) return membersExtents(scene, members, own, opts);
   const drawn = findShapeDrawnBounds(node, pose, inkCtx(opts.scale, own));
   return drawn === null ? NO_INK_EXTENTS : inkExtentsBetween(normalized(unframed), drawn);
+}
+
+/** The box of a node drawn along `path`: the path's own, grown by the stroke
+ *  its painter reports. */
+function derivedBoundsOf(scene: DrawnBoundsScene, id: NodeId, pose: unknown, path: Path, opts: DrawnBoundsOptions): Bounds {
+  const { x, y, width, height } = boundsOfPath(path);
+  const own = { x, y, width, height };
+  const node = scene.get(id);
+  if (opts.includeStroke === false || !node) return own;
+  const ctx = { ...inkCtx(opts.scale, { x: 0, y: 0, width: 0, height: 0 }), derivedPath: path };
+  const drawn = findShapeDrawnBounds(node, pose, ctx);
+  return drawn === null ? own : unionBounds([own, drawn]) ?? own;
 }
 
 /** A container's extents: its members' drawn boxes, taken into its own frame,
