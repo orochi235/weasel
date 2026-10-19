@@ -76,6 +76,29 @@ describe('resolveToolRegistry', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "pen"'));
   });
 
+  it('replaces a tool a preset implies where it stands, silently', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const hand = tool('hand');
+    const own = tool('own');
+    const mine = tool('own');
+    const enabled = resolveFeatures(['select', 'view', { id: 'mine', tools: [own] }], CORE_NAMED_PRESETS);
+    const registry = resolveToolRegistry({
+      builtins, defaultTools: ['rect' as BuiltinToolId], enabled, patch: { hand, own: mine }, dev: true,
+    });
+    expect(Object.keys(registry)).toEqual(['select', 'hand', 'rect', 'own']);
+    expect(registry.hand).toBe(hand);
+    expect(registry.own).toBe(mine);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('still says so when a preset implies a tool defaultTools also asks for', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    resolveToolRegistry({
+      builtins, defaultTools: ['hand' as BuiltinToolId], enabled: presets('view'), patch: { hand: tool('hand') }, dev: true,
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "hand"'));
+  });
+
   it('appends a tool under an unmounted id after the built-ins, in patch order, silently', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const a = tool('a');
