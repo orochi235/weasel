@@ -1036,11 +1036,10 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) What the devtools extension lacks.** The hook, the panel (with its Registry and History
-  tabs) and the extension are built (`docs/devtools.md`). What is left:
-  2. The extension's 16 px icon is the whole site logo shrunk (`apps/devtools-extension/scripts/
-     gen-icons.ts`), and at 1x it reads as an orange and dark blob. A crop to the head for the 16
-     and 32 px sizes would read better; that is a call on the mark, not made (2026-10-19).
+- **(P3) The devtools extension's 16 px icon is the whole site logo shrunk.**
+  `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
+  1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
+  better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
 
