@@ -566,22 +566,6 @@ Priority tags:
 
 ## Animation
 
-### Combining animations
-
-Animations combine through targets, described in `docs/concepts.md` ("Animation target").
-
-- **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
-  restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
-  `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
-  measured inside blits with `node bench/restart.mjs 1000 10000`, a stop went from 15.4–15.7 µs to
-  2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
-  `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
-  and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first:
-  two in `packages/animator/src/engine/codec.ts` (a spring's voice and a queued tween's) and
-  `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
-  `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
-
 ### Earlier deferrals
 
 From `docs/specs/2026-05-04-animation-primitive-design.md`:
