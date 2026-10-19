@@ -156,3 +156,20 @@ describe('trapezoid', () => {
     expect(boxForContent('trapezoid', { width: 40, height: 40 })).toEqual({ width: 40, height: 80 });
   });
 });
+
+describe('ellipse', () => {
+  it('passes through the middle of each side of its box', () => {
+    const coords = [...(outlinePath('ellipse', { x: 0, y: 0, width: 100, height: 50 }) as { coords: Float32Array }).coords];
+    const points = new Set<string>();
+    for (let i = 0; i + 1 < coords.length; i += 2) points.add(`${coords[i]},${coords[i + 1]}`);
+    for (const p of ['50,0', '100,25', '50,50', '0,25']) expect(points).toContain(p);
+  });
+
+  it('sizes its content box as the inscribed rect, and boxForContent inverts it', () => {
+    const box = contentBox('ellipse', { x: 0, y: 0, width: 100, height: 50 });
+    expect(box.width).toBeCloseTo(100 / Math.SQRT2);
+    expect(box.height).toBeCloseTo(50 / Math.SQRT2);
+    expect(box.x + box.width / 2).toBeCloseTo(50);
+    expect(boxForContent('ellipse', box).width).toBeCloseTo(100);
+  });
+});
