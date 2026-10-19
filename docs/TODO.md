@@ -427,6 +427,17 @@ Priority tags:
   the path before the tessellator reads it. It needs the path itself to carry an origin (or
   double coords), which every reader of `coords` would then honor.
 
+- **(P3) The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
+  Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
+  reproduces them at the baseline commit, so the node has not drifted. `tessellate` slowed about
+  40% at 2026-10-17's 7cbedd8b0, which checks every nonzero fill for crossings; a faster check
+  (2026-10-19) brought the 64-curve fill from 0.21 ms to 0.18 ms, against 0.15 ms before.
+  `tessellateStroke` slowed at 2026-10-14's ab9ea7afa, which caps a thick stroke's flattening at
+  10° of turn per vertex: the 4-wide benchmark stroke now flattens to 1258 points where the fill
+  takes 474, so 64 curves take 1.44 ms against 0.48 ms, and 512 curves 12.0 ms against 1.65 ms. Left:
+  re-record those rows; and decide whether the cap should still subdivide wiggles smaller than
+  the stroke is wide, which is where the 512-curve case spends its 10034 points.
+
 ---
 
 ## Text
