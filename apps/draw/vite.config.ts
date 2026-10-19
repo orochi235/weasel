@@ -5,6 +5,7 @@ import { weaselAliases } from '../../scripts/vite-aliases.ts';
 import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
 import { skipWorktrees } from '../../scripts/vite-watch.ts';
+import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { callbackSourcePlugin } from './vite-plugin-callback-source.ts';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
@@ -31,6 +32,7 @@ export default defineConfig({
   plugins: [
     react(),
     skipWorktrees(),
+    devSourcemaps(),
     // Opt-in: it AST-rewrites every module under those three trees on every
     // serve transform, and it exists only to put source links on the dev
     // inspector's callback rows. `sourceOf` degrades to no link without it.
