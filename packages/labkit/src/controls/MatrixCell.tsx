@@ -105,18 +105,17 @@ export function MatrixCell({
       </button>
     );
   } else if (field?.kind === 'color') {
-    control = (
-      <ColorCell
-        value={field.value}
-        alpha={field.alpha === true}
-        clearable={clearable(leaf)}
-        label={label}
-        disabled={disabled}
-        unpinned={unpinned}
-        onChange={field.onChange}
-        onOpen={onOpen}
-      />
-    );
+    // Called, not rendered: `Focusable` attaches its ref and handlers to the element it is handed.
+    control = colorCell({
+      value: field.value,
+      alpha: field.alpha === true,
+      clearable: clearable(leaf),
+      label,
+      disabled,
+      unpinned,
+      onChange: field.onChange,
+      onOpen,
+    });
   } else {
     const valueClass =
       field?.kind === 'number' ? 'lk-control-matrix__value is-number' : 'lk-control-matrix__value';
@@ -147,7 +146,7 @@ export function MatrixCell({
 
 /** A color cell: a swatch that edits in place, or, for a color that may be unset, a chip that opens the popover,
  *  the only place it can be cleared. */
-function ColorCell({
+function colorCell({
   value,
   alpha,
   clearable: unsettable,

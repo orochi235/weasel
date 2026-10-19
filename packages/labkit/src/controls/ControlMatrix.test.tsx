@@ -110,6 +110,14 @@ describe('<ControlMatrix>', () => {
     ).toBeTruthy();
   });
 
+  it('hands an inherited color cell its tooltip trigger, as every other cell', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    setup();
+    const said = error.mock.calls.map((c) => String(c[0]));
+    error.mockRestore();
+    expect(said.filter((m) => m.includes('Focusable'))).toEqual([]);
+  });
+
   it('flips a boolean in place, which pins it', () => {
     const { setConfig } = setup();
     fireEvent.click(screen.getByRole('switch', { name: /^Window Background/ }));
