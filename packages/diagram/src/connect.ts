@@ -101,6 +101,9 @@ export interface ConnectActionOptions<TPose> {
    * choose the edge node's data, its layer, or its stroke.
    */
   commit?: (edge: PendingEdge, ctx: InvocationCtx) => void;
+  /** What the default commit draws the edge with. Default {@link DEFAULT_EDGE_STROKE}.
+   *  Ignored when `commit` is given. */
+  edgeStroke?: Stroke;
 }
 
 const DEFAULT_SNAP = 16;
@@ -178,7 +181,9 @@ export function grabPortBindings(
  *
  * The edge lands on the **source node's** layer rather than the bottom one.
  */
-export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
+export function commitEdgeToScene(
+  edge: PendingEdge, ctx: InvocationCtx, opts: { stroke?: Stroke } = {},
+): void {
   const scene = ctx.deps.scene;
   if (scene === undefined) return;
   const trait: DiagramEdge = {
@@ -191,7 +196,7 @@ export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
     kind: 'leaf',
     layer: source?.layer ?? scene.layers[0]!.id,
     pose: { x: 0, y: 0, width: 0, height: 0 } as never,
-    data: { diagram: trait, stroke: DEFAULT_EDGE_STROKE } as never,
+    data: { diagram: trait, stroke: opts.stroke ?? DEFAULT_EDGE_STROKE } as never,
     dependsOn: [edge.from.nodeId as never, edge.to.nodeId as never],
     // Without this the edge re-resolves on every dependency move and paints
     // nothing. `EDGE_DERIVE_PATH` rather than a fresh `edgeDerivePath()` so the
@@ -215,8 +220,10 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     canConnect = defaultCanConnect,
     snapRadius = DEFAULT_SNAP,
     router: routerKey = DEFAULT_ROUTER,
-    commit = commitEdgeToScene,
   } = opts;
+  const stroke = opts.edgeStroke;
+  const commit = opts.commit
+    ?? ((edge: PendingEdge, ctx: InvocationCtx) => commitEdgeToScene(edge, ctx, stroke ? { stroke } : {}));
   const routers = opts.routers ?? ROUTERS;
   const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
   const targets = createTargets({ ...opts, canConnect, snapRadius, bodies: opts.bodies ?? false });

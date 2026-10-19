@@ -73,6 +73,10 @@ export const EDIT_EDGE_LABEL_ACTION_ID = 'diagram.editEdgeLabel';
 export interface EditEdgeLabelOptions {
   /** Runs in place of the default add-then-edit. */
   commit?: (edgeId: string, ctx: InvocationCtx) => void;
+  /** The face a new label is set in. Default the diagram's, two sizes down. Ignored when `commit` is given. */
+  style?: RowTextStyle;
+  /** A new label's text color. Ignored when `commit` is given. */
+  fill?: string;
 }
 
 function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
@@ -82,14 +86,18 @@ function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | 
   return node !== undefined && diagramEdgeOf(node) !== null ? id! : null;
 }
 
-function beginEditing(edgeId: string, ctx: InvocationCtx): void {
+function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>): void {
   const { scene, textEdit } = ctx.deps;
   if (scene === undefined) return;
   const labelId = `${edgeId}/label`;
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);
     if (edge === undefined) return;
-    scene.add(edgeLabelSpec(edgeId, '', { layer: edge.layer }) as never);
+    scene.add(edgeLabelSpec(edgeId, '', {
+      layer: edge.layer,
+      ...(look.style ? { style: look.style } : {}),
+      ...(look.fill !== undefined ? { fill: look.fill } : {}),
+    }) as never);
   }
   textEdit?.startEdit(labelId);
 }
@@ -102,7 +110,7 @@ function beginEditing(edgeId: string, ctx: InvocationCtx): void {
  * built from the deps and the click point.
  */
 export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
-  const commit = opts.commit ?? beginEditing;
+  const commit = opts.commit ?? ((edgeId: string, ctx: InvocationCtx) => beginEditing(edgeId, ctx, opts));
   return {
     id: EDIT_EDGE_LABEL_ACTION_ID,
     label: 'Edit edge label',

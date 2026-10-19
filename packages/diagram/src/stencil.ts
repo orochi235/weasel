@@ -5,7 +5,7 @@
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
 import { buildBody, type MeasureRowText, type Row } from './body';
 import { DEFAULT_FONT } from './edgeLabel';
-import { NODE, type DiagramSceneData } from './fromData';
+import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
 import type { Outline } from './outline';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
@@ -52,13 +52,15 @@ function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
 /**
  * The ops that insert `stencil` at `bounds`: its container first, then one
  * text node per text row. Applied as one batch, they are one undo entry.
+ * `style` colors the body and its text; default `diagramScene`'s node style.
  */
 export function stencilBuild<TLayer extends string>(
   stencil: DiagramStencil,
   bounds: Bounds,
-  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText },
+  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
+  const style = opts.style ?? NODE;
   const at = placedBounds(stencil, bounds);
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
     { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS },
@@ -69,8 +71,8 @@ export function stencilBuild<TLayer extends string>(
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
         diagram: trait,
-        fill: { paint: { color: NODE.fill } },
-        stroke: { paint: { color: NODE.stroke }, width: 2 },
+        fill: { paint: { color: style.fill } },
+        stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
       }),
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
         ? {
@@ -80,7 +82,7 @@ export function stencilBuild<TLayer extends string>(
               fontSize: box.row.style?.fontSize ?? DEFAULT_FONT.fontSize,
               ...(box.row.style?.bold === true ? { fontWeight: 700 } : {}),
             },
-            fill: { paint: { color: NODE.text } },
+            fill: { paint: { color: style.text } },
           }
         : null,
     },

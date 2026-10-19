@@ -131,6 +131,17 @@ describe('EffectEditor', () => {
     expect(next.pipeline.stages.at(-1)).toMatchObject({ id: 'blur-2', type: 'blur', title: 'Blur' });
   });
 
+  it('places a stage added without a point clear of the others, and pins every stage where it shows', () => {
+    const unplaced: EffectDoc = { ...doc, places: { src: { x: 0, y: 0 } } };
+    const { onChange, api } = mount(unplaced);
+    const id = api.current!.addStage(blurType);
+    const next = onChange.mock.calls[0]![0] as EffectDoc;
+    expect(Object.keys(next.places).sort()).toEqual(['blur', id, 'mix', 'src'].sort());
+    expect(next.places.src).toEqual({ x: 0, y: 0 });
+    const others = ['src', 'blur', 'mix'].map((s) => next.places[s]!.x);
+    expect(next.places[id]!.x).toBeGreaterThan(Math.max(...others));
+  });
+
   it('reports a pick of a stage, and of a wire as none', () => {
     const onSelect = vi.fn();
     render(<EffectEditor doc={doc} onChange={() => {}} onSelect={onSelect} width={600} height={400} />);

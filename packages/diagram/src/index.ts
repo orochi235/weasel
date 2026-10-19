@@ -105,6 +105,7 @@ export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
 export type { DiagramLabel } from './labelTrait';
+export { diagramResizable } from './resizable';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
 export {

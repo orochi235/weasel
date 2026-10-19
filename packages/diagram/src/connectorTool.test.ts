@@ -37,6 +37,7 @@ describe('useConnectorTool', () => {
     expect(tool.id).toBe(CONNECTOR_TOOL_ID);
     expect(tool.bindings).toEqual([{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID }]);
     expect(tool.actions?.map((a) => a.id)).toEqual([CONNECTOR_ACTION_ID]);
+    expect(tool.presentation?.icon).toBe('core:arrow');
   });
 
   it('draws a body-to-body edge from a drag between two shapes', () => {

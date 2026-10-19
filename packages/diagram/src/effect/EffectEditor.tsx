@@ -7,6 +7,7 @@ import { diagramScene, type DataEdge } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, reconnectWire, removeStages, removeWires } from './edit';
 import { editorScene, type EditorScene } from './editorMapping';
+import { freeSpot } from './place';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
 import type { EffectDoc, EffectPipeline, EffectWire } from './types';
@@ -34,8 +35,10 @@ export interface EffectEditorProps {
 
 /** What a `ref` on `EffectEditor` holds. */
 export interface EffectEditorApi {
-  /** Adds a stage of type `type`, at the world point under `client` when
-   *  given, else wherever layout puts it. Returns the new stage's id. */
+  /** Adds a stage of type `type` with its top-left at the world point under
+   *  `client` when given. Without one it goes in the first free spot in view
+   *  (`freeSpot`), and every stage layout placed is pinned where it shows, so
+   *  nothing moves under it. Returns the new stage's id. */
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
 }
 
@@ -82,17 +85,25 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   // does not clear it, and so its own input does not count as fed while its end is dragged.
   const [edge, setEdge] = useState<string | null>(null);
   const pickedWire = edge === null ? undefined : built.wireOf(edge);
-  const now = useLatest({ doc, built, onChange, pickedWire });
+  const now = useLatest({ doc, built, specs, options, onChange, pickedWire });
   const view = useRef<DiagramViewApi | null>(null);
   const handlers = useMemo(() => editHandlers(() => now.current), [now]);
 
   useImperativeHandle(ref, () => ({
     addStage: (type, client) => {
-      const d = now.current.doc;
-      const id = nextStageId(d.pipeline, type.type);
-      const at = client && view.current ? view.current.worldAt(client.x, client.y) : undefined;
-      now.current.onChange(addStage(ensureWireIds(d), stageFromType(type, id), at), 'Add stage');
-      return id;
+      const { doc: d, specs: shown, options: opts, onChange: report } = now.current;
+      const stage = stageFromType(type, nextStageId(d.pipeline, type.type));
+      if (client && view.current) {
+        report(addStage(ensureWireIds(d), stage, view.current.worldAt(client.x, client.y)), 'Add stage');
+      } else {
+        const boxes = stageBoxes(d, shown);
+        const places = { ...Object.fromEntries([...boxes].map(([id, b]) => [id, { x: b.x, y: b.y }])), ...d.places };
+        const alone: EffectDoc = { pipeline: { ...d.pipeline, stages: [stage], wires: [], groups: [] }, places: {} };
+        const size = stageBoxes(alone, drawnSpecs(alone, opts)).get(stage.id) ?? { width: 0, height: 0 };
+        const at = freeSpot([...boxes.values()], size, view.current?.visible() ?? null);
+        report(addStage(ensureWireIds({ ...d, places }), stage, at), 'Add stage');
+      }
+      return stage.id;
     },
   }), [now]);
 
@@ -127,6 +138,20 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     />
   );
 });
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/** The doc as `DiagramView` is handed it. */
+function drawnSpecs(doc: EffectDoc, options: NodeGraphOptions | undefined) {
+  const built = editorScene(doc, options);
+  return diagramScene(built.data, built.scene);
+}
+
+/** Each stage's box as drawn, by stage id. */
+function stageBoxes(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unknown }[]): Map<string, Box> {
+  const ids = new Set(doc.pipeline.stages.map((s) => s.id));
+  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, s.pose as Box]));
+}
 
 interface Now {
   doc: EffectDoc;

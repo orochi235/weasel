@@ -4,7 +4,8 @@ import { renderHook } from '@testing-library/react';
 import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
-import { useStencilInsert, useStencilTool } from './stencilTool';
+import { NODE } from './fromData';
+import { useStencilInsert, useStencilTool, type StencilInsertOptions } from './stencilTool';
 
 const byId = (id: string) => FLOWCHART_STENCILS.find((s) => s.id === id)!;
 
@@ -18,7 +19,7 @@ interface InsertedNode {
   kind: string;
   parent?: string | null;
   pose: RectPose;
-  data: { diagram?: { outline?: unknown }; text?: string };
+  data: { diagram?: { outline?: unknown }; text?: string; fill?: { paint: { color: string } }; stroke?: { paint: { color: string }; width: number } };
 }
 const insertedNodes = (ops: { name: string; args: unknown }[]) =>
   ops.map((op) => {
@@ -71,6 +72,17 @@ describe('stencilBuild', () => {
       expect(insertedNodes(ops as never)[0]!.data.diagram?.outline).toBe(s.outline);
     }
   });
+
+  it("colors the body and its text with diagramScene's node style, or the style it is given", () => {
+    const colors = (style?: typeof NODE) => {
+      const [box, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
+        layer: 'main', newId: idMinter(), ...(style ? { style } : {}),
+      }).ops as never);
+      return [box!.data.fill?.paint.color, box!.data.stroke?.paint.color, box!.data.stroke?.width, text!.data.fill?.paint.color];
+    };
+    expect(colors()).toEqual([NODE.fill, NODE.stroke, 2, NODE.text]);
+    expect(colors({ fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 })).toEqual(['#fff', '#333', 1.5, '#111']);
+  });
 });
 
 describe('useStencilTool', () => {
@@ -85,12 +97,12 @@ describe('useStencilTool', () => {
 });
 
 describe('useStencilInsert', () => {
-  function insertDep() {
+  function insertDep(opts?: StencilInsertOptions) {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children);
     const { result } = renderHook(() => {
       useDepSource('scene', () => scene as never);
-      useStencilInsert(FLOWCHART_STENCILS);
+      useStencilInsert(FLOWCHART_STENCILS, opts);
       return useDepRegistry();
     }, { wrapper });
     return { scene, dep: result.current.get('insert')! };
@@ -109,5 +121,11 @@ describe('useStencilInsert', () => {
     const { scene, dep } = insertDep();
     expect(dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' } as never)).toBeNull();
     expect([...scene.roots]).toEqual([]);
+  });
+
+  it('builds bodies in the style it is given', () => {
+    const { scene, dep } = insertDep({ style: { fill: '#fafafa', stroke: '#222', text: '#000' } });
+    const id = dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('process') } as never)!;
+    expect((scene.get(id)!.data as { fill: { paint: { color: string } } }).fill.paint.color).toBe('#fafafa');
   });
 });

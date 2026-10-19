@@ -121,6 +121,8 @@ export interface DiagramViewApi {
   live: LiveLayout;
   /** The world point under a client point: where a drop from outside the canvas lands. */
   worldAt(clientX: number, clientY: number): Vec2;
+  /** The world rect the canvas shows, or `null` before it has a size. */
+  visible(): { x: number; y: number; width: number; height: number } | null;
 }
 
 /** What {@link DiagramViewApi.layout} runs. */

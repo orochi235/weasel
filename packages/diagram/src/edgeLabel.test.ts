@@ -82,6 +82,15 @@ describe('editEdgeLabelAction', () => {
     expect(scene.renderOrderNodes()).toHaveLength(before);
   });
 
+  it('sets a new label in the style and color it is given', () => {
+    const scene = sceneWithEdge();
+    const style = { fontFamily: 'serif', fontSize: 14 };
+    runOn(editEdgeLabelAction({ style, fill: '#222' }), depsOf(scene, { textEdit: { startEdit: vi.fn() } }));
+    const data = scene.get('e1/label' as never)!.data as { style: unknown; fill: { paint: { color: string } } };
+    expect(data.style).toEqual(style);
+    expect(data.fill.paint.color).toBe('#222');
+  });
+
   it('adds nothing to a labeled edge and begins on the existing label', () => {
     const scene = sceneWithEdge(true);
     const before = scene.renderOrderNodes().length;

@@ -8,6 +8,7 @@ import {
   type ActionDeps, type InsertDep, type NodeId, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
+import type { NodeStyle } from './fromData';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 
 /** The tool that draws `stencil`: its id is the stencil's insert kind. */
@@ -35,6 +36,8 @@ export interface StencilInsertOptions {
   /** The layer bodies are inserted on. Default: the scene's first layer. */
   layer?: string;
   measure?: MeasureRowText;
+  /** The body's fill, stroke and text colors. Default `diagramScene`'s node style. */
+  style?: NodeStyle;
 }
 
 /**
@@ -58,6 +61,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         layer: layer(),
         newId: () => scene.mintId(),
         ...(optsRef.current.measure ? { measure: optsRef.current.measure } : {}),
+        ...(optsRef.current.style ? { style: optsRef.current.style } : {}),
       });
       return { id: built.id as NodeId, ops: built.ops };
     };

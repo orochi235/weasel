@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
-import { commitEdgeToScene } from './connect';
+import { commitEdgeToScene, DEFAULT_EDGE_STROKE } from './connect';
+import { connectorTool } from './connectorTool';
 import { DIAGRAM_EDGE, EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import type { Port } from './types';
@@ -109,5 +110,33 @@ describe('commitEdgeToScene', () => {
     const path = EDGE_DERIVE_PATH(edge, deps as never) as { coords: Float32Array };
     // `b`'s west side, the one facing `a`.
     expect([...path.coords].slice(-2)).toEqual([300, 20]);
+  });
+
+  it('draws the edge with DEFAULT_EDGE_STROKE, or with the stroke it is given', () => {
+    const scene = sceneWithTwo();
+    commitEdgeToScene({ from, to, router: 'straight' }, { deps: { scene } } as unknown as InvocationCtx);
+    const stroke = { paint: { color: '#222' }, width: 1.5, markerEnd: 'arrow' as const };
+    commitEdgeToScene({ from, to, router: 'straight' }, { deps: { scene } } as unknown as InvocationCtx, { stroke });
+    const edges = scene.renderOrderNodes().filter((n) => n.dependsOn !== undefined);
+    expect(edges.map((e) => (e.data as { stroke?: unknown }).stroke)).toEqual([DEFAULT_EDGE_STROKE, stroke]);
+  });
+});
+
+describe('the connect action\'s edgeStroke option', () => {
+  it('reaches the edge the default commit adds', () => {
+    const scene = sceneWithTwo();
+    const participants = () => (['a', 'b'] as const).map((id) => ({ node: scene.get(id as never)!, pose: scene.get(id as never)!.pose }));
+    const stroke = { paint: { color: '#333' }, width: 2 };
+    const invoker = connectorTool<Rect>({ participants, edgeStroke: stroke }).actions![0]!.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const ctx = (x: number) => ({
+      world: { x, y: 20 }, screen: { x, y: 20 }, modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      deps: { scene }, drag: { start: { x: 50, y: 20 }, current: { x, y: 20 }, delta: { x: x - 50, y: 0 } },
+    }) as unknown as InvocationCtx;
+    const handle = invoker.start(ctx(50));
+    handle.onMove!(ctx(350));
+    handle.onEnd!(ctx(350), 'commit');
+    const edge = scene.renderOrderNodes().find((n) => n.dependsOn !== undefined)!;
+    expect((edge.data as { stroke?: unknown }).stroke).toEqual(stroke);
   });
 });

@@ -8,6 +8,7 @@
 import { useMemo } from 'react';
 import { defineTool, type Tool } from '@weasel-js/core';
 import { createConnectAction, type ConnectActionOptions } from './connect';
+import { icon } from './icons.gen';
 
 export const CONNECTOR_TOOL_ID = 'diagram.connector';
 export const CONNECTOR_ACTION_ID = 'diagram.connectorDraw';
@@ -19,7 +20,7 @@ export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
     id: CONNECTOR_TOOL_ID,
     hookName: 'useConnectorTool',
     cursor: 'crosshair',
-    presentation: { label: 'Connector', group: 'draw' },
+    presentation: { label: 'Connector', icon: icon('core:arrow'), group: 'draw' },
     actions: [createConnectAction({ ...opts, id: CONNECTOR_ACTION_ID, startFrom: 'body', bodies: true })],
     bindings: [{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID }],
   });
@@ -28,10 +29,10 @@ export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
 /** {@link connectorTool}, rebuilt when one of its options changes rather than
  *  when the bag holding them does. */
 export function useConnectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
-  const { participants, read, geometry, canConnect, showsPort, snapRadius, router, routers, commit } = opts;
+  const { participants, read, geometry, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke } = opts;
   return useMemo(
     () => connectorTool(opts),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `opts` is the fields listed
-    [participants, read, geometry, canConnect, showsPort, snapRadius, router, routers, commit],
+    [participants, read, geometry, canConnect, showsPort, snapRadius, router, routers, commit, edgeStroke],
   );
 }

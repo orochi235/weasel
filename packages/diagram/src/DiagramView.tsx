@@ -106,6 +106,14 @@ function Inner({
       const [x, y] = canvasRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY];
       return { x, y };
     },
+    visible: () => {
+      const canvas = canvasRef.current;
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || r === undefined || r.width === 0 || r.height === 0) return null;
+      const [x0, y0] = canvas.clientToWorld(r.left, r.top);
+      const [x1, y1] = canvas.clientToWorld(r.right, r.bottom);
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    },
   }), [live]);
 
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
