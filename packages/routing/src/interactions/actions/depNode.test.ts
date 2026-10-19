@@ -63,3 +63,22 @@ describe('dep registry change notices', () => {
     expect(heard).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('dep registry listing', () => {
+  it('lists each name it answers, how many scopes up its live source sits, and how many are stacked there', () => {
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    root.registry.register('selection' as DepName, (() => 1) as never);
+    root.registry.register('gate' as DepName, (() => 1) as never);
+    scope.registry.register('gate' as DepName, (() => 2) as never);
+    scope.registry.register('gate' as DepName, (() => 3) as never);
+    expect(scope.registry.list!()).toEqual([
+      { name: 'gate', depth: 0, stacked: 2 },
+      { name: 'selection', depth: 1, stacked: 1 },
+    ]);
+    expect(root.registry.list!()).toEqual([
+      { name: 'gate', depth: 0, stacked: 1 },
+      { name: 'selection', depth: 0, stacked: 1 },
+    ]);
+  });
+});
