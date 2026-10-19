@@ -30,7 +30,7 @@ export interface BarPopoverProps extends OverlayPortalProps {
  * others draws this way in a bar, and so does a text area.
  */
 export function BarPopover({ label, icon, children, isDisabled, className, portalContainer }: BarPopoverProps) {
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   return (
     <DialogTrigger>
       {anchor}
@@ -41,8 +41,8 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
-      {ready && (
-        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+      {ready && provide(
+        <RACPopover className={s.popover} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
             {children}
           </RACDialog>

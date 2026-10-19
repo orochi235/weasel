@@ -8,15 +8,15 @@ import { icon } from '../../icons.gen';
 
 /** The button at the end of a bar that opens the cells its line had no room for, one under another. */
 export function BarOverflow({ label, children }: { label: string; children: ReactNode }) {
-  const { anchor, portalProps, ready } = useOverlayPortal();
+  const { anchor, provide, ready } = useOverlayPortal();
   return (
     <DialogTrigger>
       {anchor}
       <RACButton aria-label={label} className={s.action}>
         <Icon name={icon('more')} size={16} />
       </RACButton>
-      {ready && (
-        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+      {ready && provide(
+        <RACPopover className={s.popover} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
             {children}
           </RACDialog>
