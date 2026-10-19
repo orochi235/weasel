@@ -164,6 +164,18 @@ distance, so the lab's zoom steps dolly it and its reset returns to the home
 distance. `CameraView.zoomOf(view)` reads that zoom off a stored view rather
 than the camera, so chrome rendering beside the trial is never a change late.
 
+**A 3D view in a trial draws through `useOrbitView()`** (`src/trial/useOrbitView.tsx`),
+whatever renders it — three.js or raw GL in the instrument's DOM, or a surface
+tile. It returns the trial's orbit camera and a `viewportRef` for the pane the
+scene is drawn in, and it tells the trial a 3D view is there: a trial whose
+instrument declares no `orbit` has a camera nothing can move, so in development
+it warns, once per instrument. A lab that wants the camera still declares
+`orbit: { fixed: true }`, which binds no gestures and keeps the camera the
+trial's — persisted, cloned, reset — rather than leaving `orbit` out.
+`useTrialOrbit()` is the reader for chrome, and declares nothing. labkit cannot
+see a GL context it did not create — probing a canvas with `getContext` would
+create one — so a scene drawn without `useOrbitView` goes unnoticed.
+
 Zoom is clamped to `[minZoom, maxZoom]` (defaults 0.1 / 32), settable via `CanvasStack`'s props and, for an instrument's own canvas, `CanvasCapability.minZoom` / `maxZoom`. The clamp always widens to admit whatever zoom the canvas opened at — an instrument declaring `initialView.zoom: 1600` with the default range is not clamped down to 32 on the first wheel event.
 
 ## Testing notes

@@ -40,6 +40,8 @@ export interface TrialCamera {
   body: (content: ReactNode, ctx: RenderContext) => ReactNode | null;
 }
 
+const STILL: CameraGestures = { drag: false, wheel: false, pinch: false, tap: false, home: false };
+
 /**
  * Everything a trial does with its camera that does not depend on which kind
  * it is: placement, the `home` gesture, the zoom it reports, and the orbit
@@ -66,7 +68,10 @@ export function useTrialCamera({
     [pane],
   );
   const labGestures = useContext(CameraGesturesContext);
-  const gestures = { ...camera?.capability.gestures, ...labGestures };
+  const gestures =
+    camera?.kind === 'orbit' && camera.capability.fixed
+      ? STILL
+      : { ...camera?.capability.gestures, ...labGestures };
   const placement = useViewPlacement({
     instrument,
     view,
