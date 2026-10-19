@@ -143,6 +143,18 @@ Priority tags:
 
 ## Viewport
 
+- **(P2) A 3D lab that never calls `useOrbitView` still ships with a frozen camera, silently.**
+  `useOrbitView()` (`packages/labkit/src/trial/useOrbitView.tsx`) warns in development when a trial
+  draws through it with no `orbit` declared, and `orbit: { fixed: true }` opts out (2026-10-19). But
+  a consumer who draws three.js or raw WebGL without knowing the hook gets no warning, which is the
+  consumer this was for, and controls are still opt-in. Turning the orbit camera on after the
+  instrument's first render was ruled out (2026-10-19): it remounts the instrument's DOM, and reset,
+  clone, and the opening view all read the camera kind from the definition. Probing a canvas for a GL
+  context is out too (`getContext` on a fresh canvas creates one; CLAUDE.md, Traps). Left: a way the
+  3D path cannot be taken without passing through labkit's camera, e.g. labkit owning the 3D
+  surface's context or a definition-time 3D marker; and a sign in the trial chrome, not just the
+  console, when a 3D view has no camera.
+
 - **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
   aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
   but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
