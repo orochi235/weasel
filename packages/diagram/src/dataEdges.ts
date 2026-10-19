@@ -4,7 +4,7 @@ import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
-import { edgeLabelSpec, labelStyleOf } from './edgeLabel';
+import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
@@ -28,12 +28,6 @@ function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpec
   return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
 }
 
-/** The box an edge's label takes, set in the diagram's label face. */
-function labelSizeOf(text: string, ctx: EdgeSpecContext): { width: number; height: number } {
-  const style = labelStyleOf(ctx.font);
-  return { width: ctx.measure(text, style).width, height: style.fontSize };
-}
-
 /** Each edge's label as a group's box takes it in: where it sits, when layout
  *  stationed it beside its waypoints, else only its id. */
 export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): WireLabel[] {
@@ -42,7 +36,7 @@ export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): Wi
     if (!e.label) continue;
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
-    const size = labelSizeOf(e.label, ctx);
+    const size = labelSize(e.label, labelStyleOf(ctx.font), ctx.measure);
     const placement = placementOf(e, route, ctx);
     const center = route?.waypoints !== undefined && typeof placement.at === 'object'
       ? labelCenter(polylineFromPoints([...route.waypoints]), placement, size)

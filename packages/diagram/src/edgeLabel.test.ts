@@ -47,6 +47,7 @@ describe('edgeLabelSpec', () => {
     const style = { fontFamily: 'serif', fontSize: 10 };
     const spec = edgeLabelSpec('e1', 'x', { layer: 'main', measure, style, label: { at: 'end' }, fill: '#f00' });
     expect(measure).toHaveBeenCalledWith('x', style);
+    // The measured height (9) is ignored on purpose: a label's height is its font size.
     expect(spec.pose).toEqual({ x: 0, y: 0, width: 42, height: 10 });
     expect(spec.data).toMatchObject({ diagram: { label: { at: 'end' } }, style, fill: { paint: { color: '#f00' } } });
   });

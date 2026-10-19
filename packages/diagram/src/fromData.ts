@@ -12,7 +12,7 @@ import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
 import { edgeSpecs, wireLabels } from './dataEdges';
-import { labelStyleOf } from './edgeLabel';
+import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
 import { grownBy } from './footprint';
@@ -195,13 +195,11 @@ export interface DiagramSceneOptions {
   edgeStyle?: (edge: DataEdge) => EdgeStyle;
 }
 
-const FONT = { fontFamily: 'sans-serif', fontSize: 12 };
 const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
-const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
@@ -234,7 +232,7 @@ function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily:
   if (e.labelPlacement !== undefined && !labelFollowsLayout(e.labelPlacement.at)) return null;
   const style = labelStyleOf(font);
   const offset = (e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT).offset;
-  return { width: measure(e.label, style).width, height: style.fontSize, ...(offset !== undefined ? { offset } : {}) };
+  return { ...labelSize(e.label, style, measure), ...(offset !== undefined ? { offset } : {}) };
 }
 
 /** A data edge as layout reads it: its ends, the ports it names, and the room
@@ -295,7 +293,7 @@ function nodeSpecs(
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
-  const font = opts.font ?? FONT;
+  const font = opts.font ?? DEFAULT_FONT;
   const styleOf = (s: RowTextStyle | undefined): DiagramTextStyle => ({
     fontFamily: s?.fontFamily ?? font.fontFamily,
     fontSize: s?.fontSize ?? font.fontSize,
