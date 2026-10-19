@@ -1,0 +1,22 @@
+.wc-theme {
+  width: 100%;
+  height: 100%;
+}
+
+.wc-app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.wc-menubar {
+  flex-shrink: 0;
+}
+
+.wc-host {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
