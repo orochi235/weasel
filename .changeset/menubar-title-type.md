@@ -2,4 +2,4 @@
 '@weasel-js/ui': patch
 ---
 
-`MenuBar` titles take the theme's foreground color and the UI font at the small size and the bold weight, the same as `Bar`'s labeled buttons, which now state that weight rather than taking the browser's button default, instead of inheriting both from the page. On a page whose own text color belonged to the other mode, the titles read as disabled.
+`MenuBar` titles set their own color and type instead of inheriting them from the page: the theme's foreground, and the UI font at the small size and bold weight, matching `Bar`'s labeled buttons. On a page whose text color came from the other mode, the titles had read as disabled. `Bar`'s buttons now state that weight too, where before they took the browser's button default.
