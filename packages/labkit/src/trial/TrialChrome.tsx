@@ -1,4 +1,4 @@
-import { historyKey } from '@weasel-js/core';
+import { DevtoolsLabel, historyKey } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
@@ -305,7 +305,7 @@ export function TrialChrome({
             )
           }
         >
-          <TrialTitleContext.Provider value={title}>{children}</TrialTitleContext.Provider>
+          <Titled title={title}>{children}</Titled>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
         </TrialBody>
       </div>
@@ -314,5 +314,14 @@ export function TrialChrome({
         <StatusRegion contributions={inRegion('status')} ctx={ctx} />
       </div>
     </section>
+  );
+}
+
+/** The trial's title, to what it renders and to a devtools panel listing its canvases. */
+function Titled({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <TrialTitleContext.Provider value={title}>
+      <DevtoolsLabel value={title}>{children}</DevtoolsLabel>
+    </TrialTitleContext.Provider>
   );
 }

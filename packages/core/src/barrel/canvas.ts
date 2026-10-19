@@ -140,6 +140,8 @@ export type { CreateChildrenLayerOpts } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';
+export { DevtoolsLabel, useDevtoolsLabel } from '../devtools/label';
+export type { DevtoolsLabelProps } from '../devtools/label';
 
 // ─── Layout: the contract a container's layout strategy implements. The
 // strategies themselves (freeform, tileGrid, snapPoint) are in @weasel-js/guides.

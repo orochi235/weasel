@@ -10,6 +10,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from '../devtools/protocol';
 import { createInPageTransports } from '../devtools/transport';
+import { DevtoolsLabel } from '../devtools/label';
 
 type D = { color: string };
 type L = 'main';
@@ -156,6 +157,21 @@ describe('SceneCanvas devtools root', () => {
     }
     render(<Unlabeled />);
     expect(window.__weaselDevtools__!.roots().map((r) => r.label)).toContain('Pan and zoom');
+  });
+
+  it('takes a DevtoolsLabel above it over any labeled ancestor nearer to it', () => {
+    function InTrial() {
+      const s = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return (
+        <DevtoolsLabel value="Trial one">
+          <div role="group" aria-label="Content"><SceneCanvas scene={s} width={50} height={50} /></div>
+        </DevtoolsLabel>
+      );
+    }
+    render(<InTrial />);
+    const labels = window.__weaselDevtools__!.roots().map((r) => r.label);
+    expect(labels).toContain('Trial one');
+    expect(labels).not.toContain('Content');
   });
 
   it('leaves the root out when the canvas unmounts', () => {
