@@ -35,6 +35,7 @@ export function labelSize(text: string, style: RowTextStyle, measure?: MeasureRo
   return { width: measure !== undefined ? measure(text, style).width : text.length * size * GLYPH, height: size };
 }
 
+/** Options for {@link edgeLabelSpec}. */
 export interface EdgeLabelOptions<TLayer extends string> {
   layer: TLayer;
   /** Where along the edge it sits. Default {@link LABEL_PLACEMENT}. */
@@ -68,8 +69,10 @@ export function edgeLabelSpec<TLayer extends string>(
   } as AddNodeSpec<unknown, TLayer, RectPose>;
 }
 
+/** The action that adds or edits an edge's label. */
 export const EDIT_EDGE_LABEL_ACTION_ID = 'diagram.editEdgeLabel';
 
+/** Options for {@link editEdgeLabelAction}. */
 export interface EditEdgeLabelOptions {
   /** Runs in place of the default add-then-edit. */
   commit?: (edgeId: string, ctx: InvocationCtx) => void;

@@ -152,13 +152,16 @@ describe('WeaselChart chart mode', () => {
     const { host, canvas } = await mountApp();
     const [first] = await twoBodies(host, canvas);
     await useTool('Select');
+    // The body's middle, clear of its stroke and of the selection handles on its edges.
+    const inkInBody = () => darkPixels(canvas, at(host, 110, 115), at(host, 210, 145));
+    const blank = inkInBody();
     doubleClick(canvas, at(host, 160, 130));
     await expect.poll(editor).not.toBeNull();
     await userEvent.keyboard('MMMM');
     editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await expect.poll(editor).toBeNull();
     await expect.poll(() => saved().find((n) => n.parent === first)?.data.text).toBe('MMMM');
-    await expect.poll(() => lightPixels(canvas, at(host, 100, 100), at(host, 220, 160))).toBeGreaterThan(20);
+    await expect.poll(inkInBody).toBeGreaterThan(blank + 20);
   });
 
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
@@ -178,20 +181,20 @@ describe('WeaselChart chart mode', () => {
   });
 });
 
-/** Pixels brighter than 180 on every channel inside a client rect: label ink on a body's dark fill. */
-function lightPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): number {
+/** Pixels darker than 128 on every channel inside a client rect: label ink on a body's white fill. */
+function darkPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): number {
   const gl = canvas.getContext('webgl2')!;
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
-  const x0 = Math.round((a.x - box.left) * dpr) + 4;
-  const x1 = Math.round((b.x - box.left) * dpr) - 4;
-  const y0 = Math.round((a.y - box.top) * dpr) + 4;
-  const y1 = Math.round((b.y - box.top) * dpr) - 4;
+  const x0 = Math.round((a.x - box.left) * dpr);
+  const x1 = Math.round((b.x - box.left) * dpr);
+  const y0 = Math.round((a.y - box.top) * dpr);
+  const y1 = Math.round((b.y - box.top) * dpr);
   const w = x1 - x0;
   const h = y1 - y0;
   const px = new Uint8Array(w * h * 4);
   gl.readPixels(x0, canvas.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
   let n = 0;
-  for (let i = 0; i < px.length; i += 4) if (px[i]! > 180 && px[i + 1]! > 180 && px[i + 2]! > 180) n++;
+  for (let i = 0; i < px.length; i += 4) if (px[i]! < 128 && px[i + 1]! < 128 && px[i + 2]! < 128) n++;
   return n;
 }

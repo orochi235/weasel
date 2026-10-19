@@ -19,7 +19,7 @@ function readHistory(historyKey: string): unknown {
 
 /**
  * Keeps a scene and its undo stack in local storage: restores the stack once on mount,
- * then saves 300 ms after each render, and at once when the page goes away.
+ * then saves 300 ms after each render, and at once on unmount or when the page goes away.
  */
 export function useSessionPersistence<D, L extends string, P>(
   scene: Scene<D, L, P>,
@@ -82,6 +82,9 @@ export function useSessionPersistence<D, L extends string, P>(
   useEffect(() => {
     const flush = (): void => pendingSaveRef.current?.();
     window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
   }, []);
 }

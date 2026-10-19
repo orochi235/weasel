@@ -10,7 +10,9 @@ import { defineTool, type Tool } from '@weasel-js/core';
 import { createConnectAction, type ConnectActionOptions } from './connect';
 import { icon } from './icons.gen';
 
+/** The connector tool's id. */
 export const CONNECTOR_TOOL_ID = 'diagram.connector';
+/** The action the connector tool binds a drag to. */
 export const CONNECTOR_ACTION_ID = 'diagram.connectorDraw';
 
 /** The connector tool's definition, outside React. `id`, `startFrom` and

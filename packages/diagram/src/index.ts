@@ -99,7 +99,7 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
-export { EDIT_EDGE_LABEL_ACTION_ID, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
+export { EDIT_EDGE_LABEL_ACTION_ID, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';

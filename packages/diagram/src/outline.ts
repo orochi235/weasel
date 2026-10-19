@@ -2,8 +2,8 @@
  * The shapes a built body can wear, as paths in the node's bounds.
  *
  * These are the flowchart vocabulary — a decision is a diamond, an I/O step a
- * parallelogram, a terminator a stadium, a demultiplexer a trapezoid, a preparation step a hexagon —
- * plus `'rect'` for everything else and
+ * parallelogram, a terminator a stadium, a demultiplexer a trapezoid, a preparation step a hexagon,
+ * a connector an ellipse — plus `'rect'` for everything else and
  * a `Path` escape hatch for a shape the vocabulary does not have. The path is
  * built in world coordinates from the bounds it is given, the same way the
  * kit's own `clipFromPose` factories are; a custom `Path` is drawn in a unit

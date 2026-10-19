@@ -53,9 +53,12 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
   useDepSource('insert', (): InsertDep => {
     const scene = registry.get('scene');
     const layer = () => optsRef.current.layer ?? scene?.layers[0]?.id ?? 'default';
+    const stencilOf = (kind: string) => {
+      const id = stencilIdOf(kind);
+      return id === null ? undefined : stencilsRef.current.find((s) => s.id === id);
+    };
     const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
-      const id = stencilIdOf(extras.kind);
-      const stencil = id === null ? undefined : stencilsRef.current.find((s) => s.id === id);
+      const stencil = stencilOf(extras.kind);
       if (stencil === undefined || scene === undefined) return null;
       const built = stencilBuild(stencil, bounds, {
         layer: layer(),
@@ -72,7 +75,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
-        commitOps(deps as unknown as ActionDeps, built.ops, `Insert ${extras.kind}`);
+        commitOps(deps as unknown as ActionDeps, built.ops, `Insert ${stencilOf(extras.kind)!.label}`);
         return built.id;
       },
     };

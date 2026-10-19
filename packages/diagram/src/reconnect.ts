@@ -39,6 +39,7 @@ import { portOf } from './ports';
 
 export { EDGE_END_LAYER_ID };
 
+/** The action that drags an edge end onto a new port or body. */
 export const RECONNECT_ACTION_ID = 'diagram.reconnect';
 /** The action id that absorbs a press on an edge-end handle. */
 export const GRAB_EDGE_END_ACTION_ID = 'diagram.grabEdgeEnd';

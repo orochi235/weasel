@@ -113,6 +113,7 @@ describe('useStencilInsert', () => {
     const id = dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('terminal') } as never);
     expect(id).not.toBeNull();
     expect(scene.get(id!)?.kind).toBe('container');
+    expect(scene.historyEntries().map((e) => e.label)).toEqual(['Insert Terminal']);
     expect(scene.undo()).toBe(true);
     expect(scene.get(id!)).toBeUndefined();
   });

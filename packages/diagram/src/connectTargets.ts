@@ -34,6 +34,7 @@ export interface BodyEnd {
 /** Either end of a connect. */
 export type ConnectEnd = Port | BodyEnd;
 
+/** Whether a connect end lands on a node's body rather than a port. */
 export function isBodyEnd(end: ConnectEnd): end is BodyEnd {
   return (end as { kind?: unknown }).kind === 'body';
 }

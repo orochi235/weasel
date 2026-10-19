@@ -56,8 +56,7 @@ export interface PendingEdge {
  *
  * A port with no type joins anything. Two different ports on the *same node*
  * may be joined: a self-edge is meaningful in a state machine. A body is
- * untyped, and never joins its own node: with no port named at either end,
- * there is no telling which sides the loop would use.
+ * untyped, and never joins its own node.
  */
 export const defaultCanConnect: CanConnect = (from, to) => {
   if (isBodyEnd(from) || isBodyEnd(to)) return from.nodeId !== to.nodeId;

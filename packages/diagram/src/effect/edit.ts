@@ -26,6 +26,7 @@ export function nextWireId(p: EffectPipeline): string {
   return `w${n}`;
 }
 
+/** Appends the stage, pinning it at `at` when given. */
 export function addStage(doc: EffectDoc, stage: EffectStage, at?: Vec2): EffectDoc {
   const next = withPipeline(doc, { stages: [...doc.pipeline.stages, stage] });
   return at ? { ...next, places: { ...doc.places, [stage.id]: { x: at.x, y: at.y } } } : next;
@@ -91,6 +92,7 @@ export function setParam(doc: EffectDoc, stage: string, param: string, control: 
   });
 }
 
+/** Pins each stage at its new position. */
 export function moveStages(doc: EffectDoc, moves: readonly { id: string; x: number; y: number }[]): EffectDoc {
   const places = { ...doc.places };
   for (const m of moves) places[m.id] = { x: m.x, y: m.y };

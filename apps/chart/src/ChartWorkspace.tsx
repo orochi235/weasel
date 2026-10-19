@@ -2,7 +2,7 @@ import {
   SceneCanvas, useCanvasSize, useScene, useSceneTextEdit, useSelection,
   defaultVisibilityRules, type Rule, type SceneCanvasApi, type Tool, type ToolsApi, type View, type VisibilityRules,
 } from '@weasel-js/core';
-import { CONNECTOR_TOOL_ID, diagramResizable } from '@weasel-js/diagram';
+import { diagramResizable } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -28,7 +28,7 @@ const CHROME: VisibilityRules = {
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
-const isPaletteTool = (tool: Tool): boolean => tool.id === CONNECTOR_TOOL_ID || !tool.id.startsWith('stencil:');
+const isPaletteTool = (tool: Tool): boolean => !tool.id.startsWith('stencil:');
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
