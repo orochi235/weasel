@@ -9,6 +9,7 @@ export interface TraceRead {
   coords?: SerializedValue[];
 }
 
+/** A cursor over one root's dispatch trace, and over its coord records once asked. */
 export interface TraceFollower {
   /** The trace and, when on, the coord records recorded since the last read. Reads run one after another. */
   read(): Promise<TraceRead>;
@@ -16,6 +17,7 @@ export interface TraceFollower {
   setCoords(on: boolean): void;
 }
 
+/** Follow `rootId`'s dispatch trace through `client`, from the oldest record the canvas still holds. */
 export function followTrace(client: DevtoolsClient, rootId: string): TraceFollower {
   let cursor = 0;
   let coordCursor: number | null = null;

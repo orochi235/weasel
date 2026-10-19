@@ -14,6 +14,7 @@ export interface DevtoolsViewProps {
   rootId: string;
 }
 
+/** A tab of the panel, as `DevtoolsPanel`'s `tabs` and `defaultTab` name it. */
 export type DevtoolsTabId = 'scene' | 'state' | 'registry' | 'dispatch' | 'history' | 'frame';
 
 export interface DevtoolsTab {

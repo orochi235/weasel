@@ -37,6 +37,7 @@ export interface DevtoolsClientState {
   error: string | null;
 }
 
+/** One open connection to a page's devtools hook, from the panel's side. */
 export interface DevtoolsClient {
   state(): DevtoolsClientState;
   /** Hear every change to {@link DevtoolsClient.state}. Returns the unsubscribe. */

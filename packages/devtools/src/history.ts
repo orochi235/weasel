@@ -2,6 +2,7 @@
 import type { DevtoolsHistorySlice } from '@weasel-js/core/devtools-protocol';
 import type { DevtoolsClient } from './client';
 
+/** A cursor over one root's history steps. */
 export interface HistoryFollower {
   /** The steps recorded since the last read, and where the history stands now. Reads run one after another. */
   read(): Promise<DevtoolsHistorySlice>;
@@ -9,6 +10,7 @@ export interface HistoryFollower {
   setCheckpoints(on: boolean): void;
 }
 
+/** Follow `rootId`'s history steps through `client`, from the oldest step the canvas still holds. */
 export function followHistory(client: DevtoolsClient, rootId: string): HistoryFollower {
   let cursor = 0;
   let checkpoints = false;

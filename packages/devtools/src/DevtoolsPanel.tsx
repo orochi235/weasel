@@ -7,6 +7,7 @@ import type { DevtoolsClient } from './client';
 import { DEVTOOLS_TABS, type DevtoolsTab, type DevtoolsTabId } from './tabs';
 import s from './DevtoolsPanel.module.css';
 
+/** Props for {@link DevtoolsPanel}. */
 export interface DevtoolsPanelProps {
   /** The panel's end of a connection to a page's devtools hook. */
   transport: PanelTransport;
