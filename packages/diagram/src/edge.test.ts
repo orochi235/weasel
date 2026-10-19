@@ -4,7 +4,9 @@ import {
   DIAGRAM_EDGE,
   bezier,
   edgeDerivePath,
+  ROUTERS,
   orthogonal,
+  routerOf,
   straight,
   withDiagramRegistry,
   type Router,
@@ -110,6 +112,16 @@ describe('bezier', () => {
     const between = run.filter((p) => p.y > 80 && p.y < 120);
     expect(between.length).toBeGreaterThan(0);
     for (const p of between) expect(p.x).toBeCloseTo(100, 6);
+  });
+});
+
+describe('routerOf', () => {
+  it('picks the router an edge names, and straight for none or an unknown key', () => {
+    expect(routerOf({ router: 'orthogonal' })).toBe(ROUTERS['orthogonal']);
+    expect(routerOf({})).toBe(straight);
+    expect(routerOf({ router: 'nope' })).toBe(straight);
+    const mine = () => [];
+    expect(routerOf({ router: 'mine' }, { mine })).toBe(mine);
   });
 });
 

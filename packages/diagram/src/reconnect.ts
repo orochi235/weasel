@@ -24,7 +24,7 @@ import {
   type ConnectActionOptions,
 } from './connect';
 import { createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
-import { ROUTERS, type Router } from './edge';
+import { routerOf, type Router } from './edge';
 import {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
@@ -119,7 +119,6 @@ interface ReconnectScratch {
 /** The `diagram.reconnect` action: an ongoing drag carrying one edge end. */
 export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Action {
   const { canConnect = defaultCanConnect, commit = commitReconnectToScene } = opts;
-  const routers = opts.routers ?? ROUTERS;
   const endsOf = createEdgeEnds(opts.participants, opts);
   const shared = { ...opts, snapRadius: opts.snapRadius ?? DEFAULT_SNAP, bodies: opts.bodies ?? true };
   // The resolver asks `canConnect(fixed, candidate)`; a moved `from` end
@@ -140,13 +139,12 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
         const pressed = edgeEndScratchOf(ctx.drag?.affordance);
         const ends = pressed === null ? null : endsOf(pressed.edgeId);
         if (pressed === null || ends === null) return {};
-        const key = ends.trait.router ?? opts.router ?? 'straight';
         const scratch: ReconnectScratch = {
           edgeId: pressed.edgeId,
           moving: pressed.end,
           fixed: fixedEndOf(ends, pressed.end, opts),
           ends: ends as EdgeEnds<unknown>,
-          route: routers[key] ?? ROUTERS['straight']!,
+          route: routerOf(ends.trait, opts.routers),
           current: { x: ctx.world.x, y: ctx.world.y },
           open: true,
           deps: ctx.deps,
@@ -160,7 +158,7 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
           },
           overlay(): OngoingOverlay | null {
             if (!scratch.open) return null;
-            const points = resolver.preview(scratch.route, scratch.fixed, scratch.current, scratch.deps.view, scratch.moving);
+            const points = resolver.preview(scratch.route, scratch.fixed, scratch.current, scratch.deps.view, scratch.moving, scratch.ends.trait.waypoints);
             return points.length < 2 ? null : { kind: 'polyline', points, role: 'connector' };
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

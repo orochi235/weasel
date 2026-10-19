@@ -199,6 +199,11 @@ function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
   return best;
 }
 
+/** The router an edge is drawn with: the one it names, else `straight`. */
+export function routerOf(edge: { router?: string }, routers: Readonly<Record<string, Router>> = ROUTERS): Router {
+  return (edge.router !== undefined && routers[edge.router]) || straight;
+}
+
 /** Options for {@link edgeDerivePath}. */
 export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
   /** Routers by key. Defaults to {@link ROUTERS}. */
@@ -253,9 +258,7 @@ export function edgeDerivePath<TPose>(
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
-    const routers = opts.routers ?? ROUTERS;
-    const router = (edge.router !== undefined && routers[edge.router]) || straight;
-    const points = router({ from, to, waypoints });
+    const points = routerOf(edge, opts.routers)({ from, to, waypoints });
     return points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
   };
 }

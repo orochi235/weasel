@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { overlaysOf, type InvocationCtx, type OngoingHandle } from '@weasel-js/core';
 import { createReconnectAction, diagramEdgeEnds, type EndChange, type ReconnectOptions } from './reconnect';
 import { EDGE_END_AFFORDANCE_KIND, createEdgeEndAffordance } from './edgeEndLayer';
+import { EDGE_DERIVE_PATH } from './edge';
 import type { GraphNodeLike } from './graph';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -111,6 +112,40 @@ describe('createReconnectAction', () => {
     expect(overlaysOf(handle)[0]).toEqual({
       kind: 'polyline', points: [{ x: 100, y: 20 }, { x: 200, y: 400 }], role: 'connector',
     });
+  });
+
+  it('previews with the router the committed edge draws with, not `opts.router`', () => {
+    // `ab` names no router, so its path is straight whatever the action was given.
+    const plain = () => PARTICIPANTS().map((p) => p.node.id !== 'ab' ? p : {
+      ...p, node: { ...p.node, data: { diagram: { from: { port: 'e' }, to: { port: 'w' } } } },
+    });
+    const invoker = createReconnectAction<Rect>({
+      participants: plain, selected: () => ['ab'], router: 'orthogonal',
+    }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const handle = invoker.start(ctxAt(300, 20, endPress('to')));
+    handle.onMove!(ctxAt(301, 221));
+    const [a, , c] = plain();
+    const drawn = EDGE_DERIVE_PATH(
+      { data: { diagram: { from: { port: 'e' }, to: { port: 'w' } } } },
+      [{ node: a!.node, pose: a!.pose }, { node: c!.node, pose: c!.pose }] as never,
+    ) as { coords: Float32Array };
+    const points = (overlaysOf(handle)[0] as { points: { x: number; y: number }[] }).points;
+    expect(points.flatMap((p) => [p.x, p.y])).toEqual([...drawn.coords]);
+  });
+
+  it('previews through the edge\'s waypoints', () => {
+    const bent = () => PARTICIPANTS().map((p) => p.node.id !== 'ab' ? p : {
+      ...p,
+      node: { ...p.node, data: { diagram: { from: { port: 'e' }, to: { port: 'w' }, waypoints: [{ x: 200, y: 100 }] } } },
+    });
+    const invoker = createReconnectAction<Rect>({ participants: bent, selected: () => ['ab'] }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const handle = invoker.start(ctxAt(300, 20, endPress('to')));
+    handle.onMove!(ctxAt(200, 400));
+    expect((overlaysOf(handle)[0] as { points: unknown[] }).points).toEqual([
+      { x: 100, y: 20 }, { x: 200, y: 100 }, { x: 200, y: 400 },
+    ]);
   });
 
   it('declines a press that carries no edge end', () => {
