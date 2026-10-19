@@ -14,6 +14,7 @@ import {
 } from '@weasel-js/core';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import type { CanConnect } from './connect';
+import { isBodyEnd } from './connectTargets';
 import { diagramPorts, type DiagramContributionOptions } from './contribution';
 import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
@@ -198,7 +199,10 @@ function Inner({
         participants: source,
         ...(canConnect ? { canConnect } : {}),
         commit: ({ from, to }) => onConnectRef.current?.({
-          from: from.nodeId, fromPort: from.id, to: to.nodeId, toPort: to.id,
+          from: from.nodeId,
+          ...(isBodyEnd(from) ? {} : { fromPort: from.id }),
+          to: to.nodeId,
+          ...(isBodyEnd(to) ? {} : { toPort: to.id }),
         }),
       })
     : null, [mode, source, canConnect, portOptions, onConnectRef]);

@@ -46,6 +46,9 @@ export {
   grabPortBindings,
 } from './connect';
 export type { CanConnect, ConnectActionOptions, PendingEdge } from './connect';
+export { bodyAt, isBodyEnd } from './connectTargets';
+export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
+export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
 export { createDiagramContribution, diagramPorts } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
