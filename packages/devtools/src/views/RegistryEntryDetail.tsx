@@ -1,6 +1,6 @@
 /** One registry entry in full: a tool, an action, or a dep. */
 import type { ReactElement, ReactNode } from 'react';
-import type { DevtoolsActionEntry, DevtoolsDepEntry, DevtoolsRegistry, DevtoolsToolEntry } from '@weasel-js/core/devtools';
+import type { DevtoolsActionEntry, DevtoolsDepEntry, DevtoolsRegistry, DevtoolsToolEntry } from '@weasel-js/core/devtools-protocol';
 import { Code } from '@weasel-js/ui/components/Code';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { Bindings } from './Bindings';

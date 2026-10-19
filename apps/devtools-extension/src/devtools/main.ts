@@ -7,5 +7,5 @@ const api = extensionApi();
 const stop = watchHookPresence(inspectedPresence(api), (present) => {
   if (!present) return;
   stop();
-  api.devtools!.panels.create('weasel', '', 'panel.html');
+  api.devtools!.panels.create('weasel', 'icons/icon-32.png', 'panel.html');
 });

@@ -14,6 +14,12 @@ describe('the extension manifest', () => {
     expect(m.browser_specific_settings).toMatchObject({ gecko: { id: GECKO_ID } });
   });
 
+  it('names an icon at every size', () => {
+    expect(manifestFor('chrome', '1.0.0').icons).toEqual({
+      16: 'icons/icon-16.png', 32: 'icons/icon-32.png', 48: 'icons/icon-48.png', 128: 'icons/icon-128.png',
+    });
+  });
+
   it('gives a browser a version it accepts', () => {
     expect(extensionVersion('1.12.0-next.3')).toBe('1.12.0');
     expect(manifestFor('chrome', '2.0.1').version).toBe('2.0.1');

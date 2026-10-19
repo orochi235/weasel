@@ -1,7 +1,7 @@
 /** A `<SceneCanvas>` in jsdom with a small scene, for the panel's tests: a group holding one leaf, and a second leaf. */
 import { vi } from 'vitest';
 import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
-import type { DevtoolsRoot } from '@weasel-js/core/devtools';
+import type { DevtoolsRoot } from '@weasel-js/core/devtools-protocol';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type Data = { label: string; paint?: () => void };

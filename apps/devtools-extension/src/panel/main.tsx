@@ -1,4 +1,5 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/fonts.css';
 import './panel.css';
 
 import { StrictMode } from 'react';

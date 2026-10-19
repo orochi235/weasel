@@ -5,7 +5,7 @@
  * and no notice reports that.
  */
 import { useState, type ReactElement } from 'react';
-import type { DevtoolsRegistry } from '@weasel-js/core/devtools';
+import type { DevtoolsRegistry } from '@weasel-js/core/devtools-protocol';
 import { Input } from '@weasel-js/ui/components/Input';
 import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import { useRootQuery } from '../hooks';

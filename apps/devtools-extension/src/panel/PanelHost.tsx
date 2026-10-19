@@ -4,9 +4,9 @@
  * so it says `yo` to the new page's hook.
  */
 import { useEffect, useState } from 'react';
-import type { PanelTransport } from '@weasel-js/core/devtools';
+import type { PanelTransport } from '@weasel-js/core/devtools-protocol';
+import { DevtoolsPanel } from '@weasel-js/devtools';
 import { watchHookPresence, type PresenceOptions } from '../hookPresence';
-import { Panel } from './Panel';
 import s from './panel.module.css';
 
 export function PanelHost({ presence, transport }: { presence: PresenceOptions; transport: PanelTransport }) {
@@ -26,5 +26,5 @@ export function PanelHost({ presence, transport }: { presence: PresenceOptions; 
       </p>
     );
   }
-  return <Panel key={state.page} transport={transport} />;
+  return <DevtoolsPanel key={state.page} transport={transport} />;
 }

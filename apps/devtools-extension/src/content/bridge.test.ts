@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { portPair } from '../testing/fakePorts';
 import { createContentBridge } from './bridge';
-import { ENVELOPE, PROTOCOL } from '../envelope';
+import { DEVTOOLS_ENVELOPE as ENVELOPE, DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/core/devtools-protocol';
 
 const sup = { type: 'sup', protocol: PROTOCOL, kitVersion: 'x', roots: [] };
 

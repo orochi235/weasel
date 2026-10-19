@@ -1,7 +1,7 @@
 /** The panel end to end against a real `<SceneCanvas>` and the hook it installs, over an in-page connection. */
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { PanelMessage, PanelTransport } from '@weasel-js/core/devtools';
+import type { PanelMessage, PanelTransport } from '@weasel-js/core/devtools-protocol';
 import type { DispatchRecord } from '@weasel-js/core/routing';
 import { DevtoolsPanel } from './DevtoolsPanel';
 import { createInPagePanelTransport } from './inPageTransport';

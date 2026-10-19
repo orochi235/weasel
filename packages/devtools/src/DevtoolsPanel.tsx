@@ -1,5 +1,5 @@
 import { useState, type ReactElement } from 'react';
-import type { PanelTransport } from '@weasel-js/core/devtools';
+import type { PanelTransport } from '@weasel-js/core/devtools-protocol';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { useDevtoolsClient } from './hooks';
 import { RootPicker } from './RootPicker';

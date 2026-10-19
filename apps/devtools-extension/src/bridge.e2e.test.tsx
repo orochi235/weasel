@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
-import { createDevtoolsRoot, installDevtoolsHook, type DevtoolsRootSource } from '@weasel-js/core/devtools';
+import { createDevtoolsRoot, installDevtoolsHook, type DevtoolsRootSource } from '@weasel-js/core/devtools-protocol';
 import { portPair } from './testing/fakePorts';
 import { PORT_PAGE } from './envelope';
 import { createContentBridge } from './content/bridge';
 import { createRelay } from './background/relay';
 import { createPortTransport } from './panel/portTransport';
-import { PanelPlaceholder } from './panel/PanelPlaceholder';
+import { DevtoolsPanel } from '@weasel-js/devtools';
 
 function source(label: string): DevtoolsRootSource {
   return {
@@ -56,11 +56,13 @@ describe('the extension, end to end', () => {
       return panel;
     });
 
-    const view = render(<PanelPlaceholder transport={transport} />);
-    expect(await screen.findByText('demo canvas')).toBeInTheDocument();
+    const view = render(<DevtoolsPanel transport={transport} />);
+    const picked = () => screen.queryByRole('button', { name: /demo canvas\s*2d/ });
+    await waitFor(() => expect(picked()).not.toBeNull());
 
     unregister();
-    await waitFor(() => expect(screen.queryByText('demo canvas')).toBeNull());
+    await waitFor(() => expect(picked()).toBeNull());
+    expect(screen.getByText('No canvas on this page.')).toBeInTheDocument();
 
     view.unmount();
     transport.close();

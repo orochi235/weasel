@@ -27,7 +27,9 @@ The panel inspects and steers; it never edits the scene (2026-10-18).
 
 ## Connecting
 
-A transport is `send(message)` plus `onMessage(listener)`, from `@weasel-js/core/devtools`:
+A transport is `send(message)` plus `onMessage(listener)`, from `@weasel-js/core/devtools`, or from
+`@weasel-js/core/devtools-protocol`, which exports the same without installing a hook — what a panel
+in its own window, such as the extension's, imports:
 
 - `createInPageTransports()` — both ends in one page, delivered by direct call. Pass `page` to
   `hook.connect` and talk over `panel`. A session ends at `bye`, so a panel that reconnects needs a
@@ -130,8 +132,8 @@ uses it for its dispatch widget.
 
 ## Extension
 
-`apps/devtools-extension` is a browser extension that hosts the panel in the browser's own devtools,
-for Chrome, Edge, and Firefox, and for Safari through an Xcode wrapper. Its content script relays
-`createWindowPanelTransport`'s envelopes, so it works on any page with a hook. Building it, loading
-it unpacked, and packaging it for Safari are in its
-[README](../apps/devtools-extension/README.md).
+`apps/devtools-extension` hosts `DevtoolsPanel` in the browser's own devtools, for Chrome, Edge, and
+Firefox, and for Safari through an Xcode wrapper. Its content script relays
+`createWindowPanelTransport`'s envelopes, so it works on any page with a hook, frames included. A
+content script connects only while a panel is open on its tab. Building it, loading it unpacked, and
+packaging it for Safari are in its [README](../apps/devtools-extension/README.md).

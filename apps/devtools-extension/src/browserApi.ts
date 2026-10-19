@@ -26,7 +26,8 @@ export interface ExtensionApi {
   runtime: {
     connect(info: { name: string }): PortLike;
     readonly onConnect: ExtEvent<[port: PortLike]>;
-    readonly onMessage: ExtEvent<[message: unknown, sender: unknown, respond: (r?: unknown) => void]>;
+    sendMessage(message: unknown): Promise<unknown>;
+    readonly onMessage: ExtEvent<[message: unknown, sender: PortLike['sender'], respond: (r?: unknown) => void]>;
   };
   tabs?: {
     sendMessage(tabId: number, message: unknown): Promise<unknown> | void;

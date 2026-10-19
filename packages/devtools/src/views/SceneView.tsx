@@ -1,6 +1,6 @@
 /** The Scene tab: a root's node tree beside the node picked in it. */
 import { useRef, useState, type PointerEvent, type ReactElement } from 'react';
-import type { DevtoolsNodeSummary } from '@weasel-js/core/devtools';
+import type { DevtoolsNodeSummary } from '@weasel-js/core/devtools-protocol';
 import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import type { DevtoolsViewProps } from '../tabs';
 import { NodeDetail } from './NodeDetail';

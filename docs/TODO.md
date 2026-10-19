@@ -1040,12 +1040,9 @@ only story runner in the repo.
   the panel and the extension are built (`docs/devtools.md`). What is left:
   1. Registry and History tabs in the panel over `get-registry` and `get-history`; then draw's
      Bundle Inspector (`apps/draw/src/dev/RegistryInspector.tsx`) can go.
-  2. What the extension (`apps/devtools-extension`) lacks: icons (its manifest has none, so
-     browsers draw a letter and Safari's converter warns), and a way for a frame that loads while
-     the panel is open to join before the panel's next `yo`. It restates the envelope tag and
-     protocol number, tied to core's by type, because importing `@weasel-js/core/devtools`
-     installs a hook; a side-effect-free entry for the protocol and transports would let it
-     import them.
+  2. The extension's 16 px icon is the whole site logo shrunk (`apps/devtools-extension/scripts/
+     gen-icons.ts`), and at 1x it reads as an orange and dark blob. A crop to the head for the 16
+     and 32 px sizes would read better; that is a call on the mark, not made (2026-10-19).
   3. A selection change is announced as `scene` as well as `selection`, because a scene notifies
      its subscribers on selection (`core/scene/scene.ts`) and the root follows that feed. The
      panel's Scene tab then reloads its open levels on every selection (seen 2026-10-19).

@@ -3,6 +3,8 @@
 export type Target = 'chrome' | 'firefox';
 export const TARGETS: readonly Target[] = ['chrome', 'firefox'];
 
+export const ICON_SIZES = [16, 32, 48, 128] as const;
+
 /** Firefox keys an extension's storage and updates to this id. */
 export const GECKO_ID = 'devtools@weasel-js.dev';
 
@@ -17,6 +19,7 @@ export function manifestFor(target: Target, kitVersion: string): Record<string, 
     name: 'weasel devtools',
     description: 'Inspect and steer the weasel canvases on a page.',
     version: extensionVersion(kitVersion),
+    icons: Object.fromEntries(ICON_SIZES.map((n) => [String(n), `icons/icon-${n}.png`])),
     devtools_page: 'devtools.html',
     // `scripting` reaches tabs that loaded before the extension did.
     permissions: ['scripting'],

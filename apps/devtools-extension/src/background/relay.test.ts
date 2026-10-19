@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
-import { PORT_PAGE, PORT_PANEL, PROTOCOL } from '../envelope';
+import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/core/devtools-protocol';
+import { PORT_PAGE, PORT_PANEL } from '../envelope';
 import { createRelay } from './relay';
 
 const P = PROTOCOL;
@@ -59,6 +60,27 @@ describe('the background relay', () => {
     p.postMessage(yo);
     p.postMessage(yo);
     expect(wake.mock.calls).toEqual([[4], [4], [4]]);
+  });
+
+  it('says whether a tab has a panel, for a content script that just loaded', () => {
+    const { relay, panel } = setup();
+    expect(relay.panelOpen(2)).toBe(false);
+    const p = panel(2);
+    expect(relay.panelOpen(2)).toBe(true);
+    expect(relay.panelOpen(3)).toBe(false);
+    p.disconnect();
+    expect(relay.panelOpen(2)).toBe(false);
+  });
+
+  it('replays the yo to a frame that loads while the panel is open', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    p.postMessage(yo);
+    page(1, 0).postMessage(sup(root('root-1')));
+    const late = page(1, 3);
+    expect(late.received).toEqual([yo]);
+    late.postMessage(sup(root('root-1', 'late')));
+    expect(p.received.at(-1)).toEqual({ type: 'root-added', protocol: P, root: root('frame3/root-1', 'late (frame 3)') });
   });
 
   it('serves a content script that connected before the panel', () => {

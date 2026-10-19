@@ -1,6 +1,6 @@
 /** The React side of a connection: the client a panel holds, the data it reads per root, and its polls. */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { DevtoolsArea, PanelTransport } from '@weasel-js/core/devtools';
+import type { DevtoolsArea, PanelTransport } from '@weasel-js/core/devtools-protocol';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createDevtoolsClient, type DevtoolsClient, type DevtoolsClientState } from './client';
 

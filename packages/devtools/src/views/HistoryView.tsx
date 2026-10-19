@@ -4,7 +4,7 @@
  * and, on request, every entry on its stacks.
  */
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import type { DevtoolsHistoryRecord, DevtoolsHistorySlice } from '@weasel-js/core/devtools';
+import type { DevtoolsHistoryRecord, DevtoolsHistorySlice } from '@weasel-js/core/devtools-protocol';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Switch } from '@weasel-js/ui/components/Switch';
