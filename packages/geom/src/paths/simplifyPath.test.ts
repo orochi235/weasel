@@ -37,6 +37,38 @@ function worstRadialError(path: PolygonPath, r: number): number {
 
 const anchorsOf = (p: PolygonPath): PenAnchor[][] => pathToAnchors(p).anchors;
 
+/** Points every 1/40 of each segment along what `path` draws. */
+function along(path: PolygonPath): { x: number; y: number }[] {
+  const { anchors, closed } = pathToAnchors(path);
+  const out: { x: number; y: number }[] = [];
+  anchors.forEach((sub, s) => {
+    const count = closed[s] ? sub.length : sub.length - 1;
+    for (let i = 0; i < count; i++) {
+      const a = sub[i];
+      const b = sub[(i + 1) % sub.length];
+      for (let k = 0; k < 40; k++) out.push(cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, k / 40));
+    }
+  });
+  return out;
+}
+
+/** How far the farthest point along `path` is from the polygon `poly`'s edges. */
+function strayFrom(path: PolygonPath, poly: PolygonPath): number {
+  const ring = anchorsOf(poly)[0];
+  let worst = 0;
+  for (const p of along(path)) {
+    let best = Infinity;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy)));
+      best = Math.min(best, Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy));
+    }
+    worst = Math.max(worst, best);
+  }
+  return worst;
+}
+
 describe('simplifyPath', () => {
   it('refits a dense polygon circle with a handful of anchors, within the tolerance', () => {
     const dense = circle(200);
@@ -77,6 +109,26 @@ describe('simplifyPath', () => {
     expect(sub[sub.length - 1].x).toBeCloseTo(120);
     expect(sub[sub.length - 1].y).toBeCloseTo(20 * Math.sin(6), 4);
     expect(pathToAnchors(simplifyPath(path, 0.5)).closed).toEqual([false]);
+  });
+
+  it('holds the whole result within the tolerance, not only where it samples the original', () => {
+    // Long flats between quarter arcs of nine steps: a cubic fitted across an arc
+    // and the start of the flat after it bulges where the flat has no samples.
+    const b = new PathBuilder();
+    const arc = (cx: number, cy: number, from: number, k0 = 0) => {
+      for (let k = k0; k <= 9; k++) {
+        const ang = ((from + k * 10) * Math.PI) / 180;
+        b.lineTo(cx + 10 * Math.cos(ang), cy + 10 * Math.sin(ang));
+      }
+    };
+    b.moveTo(-10, 0);
+    arc(0, 0, 180, 1);
+    b.lineTo(110, -10);
+    arc(100, 100, 0);
+    arc(0, 100, 90);
+    b.close();
+    const poly = b.build();
+    expect(strayFrom(simplifyPath(poly, 0.1), poly)).toBeLessThan(0.1 + 1e-6);
   });
 
   it('keeps the fill rule and every subpath', () => {

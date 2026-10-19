@@ -231,12 +231,6 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) A refit can stray past its tolerance between the points it checks.** `simplifyPath`
-  (`packages/geom/src/paths/simplifyPath.ts`) holds every point it samples from the original within
-  `tolerance` of the result, but samples a straight segment at most 8 times, so a cubic fitted
-  across a flat and a turn bulges between samples. `offsetPath` of a 100×100 square with a 20-unit
-  round corner, grown by 10 with round joins, runs 0.26 from where it should be at `tolerance`
-  0.1 (measured 2026-10-19); `offsetPath.test.ts` checks distance with `refit: false` for this.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
