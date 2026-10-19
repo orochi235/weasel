@@ -42,6 +42,28 @@ export function isPublished(name, { attempts = 3, delayMs = 4000 } = {}) {
 }
 
 /**
+ * The full packument, or `null` when the package still 404s after retrying.
+ * Full rather than abbreviated, since only the full one carries each version's
+ * `_npmUser`.
+ */
+export async function fetchPackument(name, { attempts = 3, delayMs = 4000, fetch: fetchImpl = globalThis.fetch } = {}) {
+  let body = null;
+  const found = await existsWithRetry(
+    async () => {
+      const res = await fetchImpl(`${registryBase()}/${encodeName(name)}`, {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+      });
+      if (res.status === 200) body = await res.json();
+      return res.status;
+    },
+    name,
+    { attempts, delayMs },
+  );
+  return found ? body : null;
+}
+
+/**
  * Whether one exact version of a package is on the registry and installable.
  *
  * Asks for the version manifest directly instead of reading the packument's

@@ -21,6 +21,8 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { addPending, hasTrustedPublish, readPending, writePending } from './lib/first-publish.mjs';
+import { fetchPackument } from './lib/registry.mjs';
 import { publishablePackageNames, repoRoot } from './lib/workspaces.mjs';
 
 const WORKFLOW = 'release.yml';
@@ -104,6 +106,7 @@ console.log(`  npm:        ${npmCmd.via}`);
 console.log();
 
 let failed = 0;
+const configured = [];
 for (const [i, pkg] of packages.entries()) {
   const argv = [
     ...npmCmd.prefix,
@@ -133,6 +136,7 @@ for (const [i, pkg] of packages.entries()) {
     // Fully inherited stdio: npm's 2FA challenge is interactive, and capturing
     // its output swallows the prompt, so the run stalls looking like a hang.
     execFileSync(npmCmd.bin, argv, { stdio: 'inherit' });
+    if (!listOnly) configured.push(pkg);
   } catch {
     failed += 1;
     console.error(`✗ ${pkg} failed (see npm output above)`);
@@ -142,6 +146,17 @@ for (const [i, pkg] of packages.entries()) {
   if (i < packages.length - 1) {
     execFileSync(process.execPath, ['-e', 'setTimeout(()=>{},2000)']);
   }
+}
+
+// The first-publish gate cannot read trust config, only whether a version came
+// from a trusted publisher, so a registration it cannot see yet is recorded here.
+const unseen = [];
+for (const pkg of configured) {
+  if (!hasTrustedPublish(await fetchPackument(pkg))) unseen.push(pkg);
+}
+if (unseen.length > 0) {
+  writePending(addPending(readPending(), unseen));
+  console.log(`\nRecorded in scripts/trust-pending.json, which needs committing: ${unseen.join(', ')}`);
 }
 
 if (failed) {

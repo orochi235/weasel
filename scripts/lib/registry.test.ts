@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 // @ts-expect-error — plain .mjs with no typings; `scripts/` is outside tsconfig's include.
-import { hasVersion, isPublished } from './registry.mjs';
+import { fetchPackument, hasVersion, isPublished } from './registry.mjs';
 
 const TARBALL = 'https://registry.npmjs.org/@weasel-js/hud/-/hud-1.4.3.tgz';
 
@@ -87,6 +87,40 @@ describe('hasVersion', () => {
     fetchReturning(503);
     await expect(hasVersion('@weasel-js/hud', '1.4.3', { attempts: 1, delayMs: 0 })).rejects.toThrow(
       /@weasel-js\/hud@1\.4\.3: registry answered 503/,
+    );
+  });
+});
+
+describe('fetchPackument', () => {
+  const body = { name: '@weasel-js/menu', versions: {} };
+  const fetcher = (...statuses: number[]) => {
+    const calls: string[] = [];
+    const fake = async (url: string) => {
+      calls.push(url);
+      const status = statuses[Math.min(calls.length - 1, statuses.length - 1)];
+      return { status, json: async () => body };
+    };
+    return { calls, fake };
+  };
+
+  it('returns the full packument through the injected fetch', async () => {
+    const { calls, fake } = fetcher(200);
+    await expect(fetchPackument('@weasel-js/menu', { fetch: fake })).resolves.toEqual(body);
+    expect(calls).toEqual(['https://registry.npmjs.org/@weasel-js%2fmenu']);
+  });
+
+  it('retries a 404 and returns null once the attempts run out', async () => {
+    const { calls, fake } = fetcher(404);
+    await expect(
+      fetchPackument('@weasel-js/new', { fetch: fake, attempts: 3, delayMs: 0 }),
+    ).resolves.toBeNull();
+    expect(calls).toHaveLength(3);
+  });
+
+  it('throws on a status that is not 200 or 404', async () => {
+    const { fake } = fetcher(503);
+    await expect(fetchPackument('@weasel-js/menu', { fetch: fake, attempts: 1 })).rejects.toThrow(
+      /@weasel-js\/menu: registry answered 503/,
     );
   });
 });
