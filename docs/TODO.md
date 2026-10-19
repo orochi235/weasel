@@ -26,11 +26,12 @@ Priority tags:
     eyedropper, measure, and image.
   - `@weasel-js/path-tools` holds the path-editing family: warp, trim, spiro, smudge, the shape
     builder, girth, and extend. Some of these are tools and some are path-edit presets.
-  - Guides presets and `apps/draw` bring tools of their own.
+  - `@weasel-js/diagram` and `@weasel-js/kernel3d` bring tools of their own (connector,
+    stencils, orbit), and so does `apps/draw` (opacity scrub).
 
   Choosing a set is a hand-picked id list: `BUILTIN_TOOL_IDS` plus `defaultTools`, presets that
   each add their own tools, and `tools={{ … }}` patches. draw mounts every built-in id except
-  bone and weight. As more tools land, each consumer has to make that cut again, and every new
+  bone, weight, and sticky. As more tools land, each consumer has to make that cut again, and every new
   built-in id silently joins whatever list includes "all of them".
   Needs:
   - a durable rule for which package a tool lives in, which also answers moving finished tools
