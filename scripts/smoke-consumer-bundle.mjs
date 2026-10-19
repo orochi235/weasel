@@ -392,6 +392,8 @@ await writeFile(
     `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
     `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
+    `import * as icon from '@weasel-js/ui/components/Icon';\n` +
+    `import * as paintValue from '@weasel-js/ui/paint-value';\n` +
     // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
     // that path is only importable if labkit *declares* ui as a runtime
     // dependency.
@@ -406,7 +408,7 @@ await writeFile(
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides,\n` +
-    `  toolPalette, prefs, callout, toastSub };\n` +
+    `  toolPalette, prefs, callout, icon, paintValue, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
     `  if (Object.keys(m).length === 0) throw new Error('no exports: ' + n);\n` +
