@@ -208,6 +208,29 @@ export default [
   },
   {
     /**
+     * The dev server serves every module the root barrel reaches, about 640 of them, so one
+     * import of it from draw costs every page load hundreds of requests.
+     */
+    files: ['apps/draw/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@weasel-js/ui',
+              message:
+                'Import from a subpath (@weasel-js/ui/components/<Name>, @weasel-js/ui/paint-value) instead of the barrel.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /**
      * The baseline. Rules are enumerated rather than spread from a plugin's
      * `recommended`, because a preset changes what this repo enforces whenever
      * a dependency is upgraded, and the two react-hooks presets in particular

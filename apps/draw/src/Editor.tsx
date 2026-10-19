@@ -8,7 +8,13 @@ import {
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ContextMenuHost, MenuBar, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
+import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';

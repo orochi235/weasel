@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { defaultToastQueue, ToastRegion } from '@weasel-js/ui';
+import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { describePasteOmissions, reportPasteOmissions } from './pasteOmissions';
 import { renderWithIcons } from './testIcons';
 

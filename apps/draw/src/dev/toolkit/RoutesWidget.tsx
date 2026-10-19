@@ -1,6 +1,7 @@
 import { specificity } from '@weasel-js/core';
 import { canonicalModifiers, type RegistryEntry } from '@weasel-js/core/routing';
-import { DataGrid, type DataGridColumn, PropertyPanel } from '@weasel-js/ui';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import s from '../ToolkitBuilder.module.css';
 import { codeOrDash, SPECIFICITY_HEADER, withUniqueIds } from './gridCells';

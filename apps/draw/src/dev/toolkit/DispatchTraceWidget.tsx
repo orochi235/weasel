@@ -1,4 +1,5 @@
-import { PropertyPanel, Switch } from '@weasel-js/ui';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { type ReactElement, useState } from 'react';
 import { useDispatchTraceLog } from '../dispatchTraceLog';
 import { DispatchTraceTable } from '../DispatchTraceTable';

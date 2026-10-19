@@ -1,4 +1,5 @@
-import { Code, DataGrid, type DataGridColumn } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import s from './RegistryInspector.module.css';
 import type { PropertyDescriptor } from './traitSchemas.types';
 

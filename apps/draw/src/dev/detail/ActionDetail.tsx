@@ -1,6 +1,10 @@
 import type { GestureSpec } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { Badge, Code, DataGrid, DetailList, DetailRow, KeySequence, keySpecsFromShortcut, type BadgeProps } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid } from '@weasel-js/ui/components/DataGrid';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
 import { Fragment } from 'react';
 import s from '../RegistryInspector.module.css';
 import { BOOLEAN_BADGE_PROPS } from '../badgeTokens';

@@ -1,5 +1,5 @@
 import type { PasteOmission } from '@weasel-js/core';
-import { toast } from '@weasel-js/ui';
+import { toast } from '@weasel-js/ui/components/Toast';
 
 const REASON: Record<PasteOmission['reason'], string> = {
   'dependency-not-copied': 'A shape that follows other shapes needs them copied with it.',

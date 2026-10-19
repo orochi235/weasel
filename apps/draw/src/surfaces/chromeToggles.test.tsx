@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useLatest } from '@weasel-js/core';
-import { MenuBar } from '@weasel-js/ui';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo } from 'react';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
 import { DRAW_MENU_BAR } from '../menuBar';

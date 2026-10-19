@@ -1,4 +1,4 @@
-import { Code } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
 import s from '../RegistryInspector.module.css';
 import type { CallbackRef, CallbackSource } from '../registryEntries';
 

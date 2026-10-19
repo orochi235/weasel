@@ -1,12 +1,8 @@
 import { type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
 import { qty, zoom } from '@weasel-js/quantity';
-import {
-  StatusBar,
-  StatusBarItem,
-  solidColorOf,
-  StatusBarSpacer,
-  ThemeSwitcher
-} from '@weasel-js/ui';
+import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
+import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
+import { solidColorOf } from '@weasel-js/ui/paint-value';
 import type { ReactElement } from 'react';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import type { ActivePaint } from './ActiveSwatches';

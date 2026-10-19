@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIconVariant } from '@weasel-js/core';
-import { Select } from '@weasel-js/ui';
+import { Select } from '@weasel-js/ui/components/Select';
 import s from './RegistryInspector.module.css';
 import { DevShell } from './DevShell';
 import { RegistryTree } from './RegistryTree';

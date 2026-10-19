@@ -1,4 +1,7 @@
-import { Badge, Button, Code, InlineMarkdown, type BadgeProps } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import s from '../RegistryInspector.module.css';
 import { BUNDLE_BADGE_PROPS, KIND_BADGE_PROPS } from '../badgeTokens';
 import type { ActionEntry, ToolEntry, TreeCategoryNode, TreeEntry } from '../registryEntries';

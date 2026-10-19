@@ -16,7 +16,9 @@ import {
 } from '@weasel-js/core';
 import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
-import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
+import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
+import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
+import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import { PAPER_PRESETS } from './docPersistence';

@@ -1,5 +1,6 @@
 import * as Weasel from '@weasel-js/core';
-import { Code, DetailList, DetailRow } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';

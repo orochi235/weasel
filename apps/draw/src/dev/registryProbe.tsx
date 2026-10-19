@@ -15,7 +15,7 @@ import {
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { actionIcon } from '@weasel-js/ui';
+import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
 import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
 import { DRAW_FEATURES } from '../drawFeatures';

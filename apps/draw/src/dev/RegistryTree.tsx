@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Input, Tree, filterTree, treeBranchIds, type TreeNode, Icon } from '@weasel-js/ui';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { Input } from '@weasel-js/ui/components/Input';
+import { Tree, filterTree, treeBranchIds, type TreeNode } from '@weasel-js/ui/components/Tree';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryEntries';
 import { icon } from '../icons.gen';

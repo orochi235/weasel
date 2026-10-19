@@ -1,4 +1,8 @@
-import { Badge, Button, Code, DataGrid, InlineMarkdown, type BadgeProps, type DataGridColumn } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';

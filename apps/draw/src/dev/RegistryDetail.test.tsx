@@ -1,6 +1,6 @@
 import { screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { keySpecFromKey } from '@weasel-js/ui';
+import { keySpecFromKey } from '@weasel-js/ui/components/Keycaps';
 import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';

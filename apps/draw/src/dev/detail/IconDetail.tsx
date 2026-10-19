@@ -1,4 +1,6 @@
-import { Code, DetailList, DetailRow, Icon } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import s from '../RegistryInspector.module.css';
 import type { IconEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';

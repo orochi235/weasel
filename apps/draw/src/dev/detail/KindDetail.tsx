@@ -1,4 +1,7 @@
-import { Button, Code, DetailList, DetailRow, InlineMarkdown } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ToolIcon } from '../../ui/ToolIcon';
 import s from '../RegistryInspector.module.css';

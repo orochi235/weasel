@@ -7,7 +7,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '@weasel-js/core';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { appCommandsContribution, type AppCommands } from './index';
 import { withIcons } from '../testIcons';
 

@@ -1,5 +1,11 @@
 import { formatPhaseAtom } from '@weasel-js/core/routing';
-import { Badge, Button, Code, DataGrid, DetailList, DetailRow, GestureRoute, KeySequence, keySpecsFromShortcut, type BadgeProps } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid } from '@weasel-js/ui/components/DataGrid';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
 import s from '../RegistryInspector.module.css';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
 import { collectBundles, parseRoute } from '../registryData';

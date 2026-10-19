@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds } from '@weasel-js/ui';
+import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { usePrefsStore } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';

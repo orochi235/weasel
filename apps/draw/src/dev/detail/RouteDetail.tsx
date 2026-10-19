@@ -1,5 +1,9 @@
 import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, ROUTE_FIELD_DEFINITIONS, type RouteFieldName } from '@weasel-js/core/routing';
-import { Code, DataGrid, DetailList, DetailRow, GestureRoute, InlineMarkdown } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid } from '@weasel-js/ui/components/DataGrid';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { Fragment, type ReactNode } from 'react';
 import s from '../RegistryInspector.module.css';
 import { parseRoute } from '../registryData';

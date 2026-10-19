@@ -10,7 +10,10 @@ import {
   type SelectionApi,
 } from '@weasel-js/core';
 import { decimal, qty } from '@weasel-js/quantity';
-import { Checkbox, LayerList, type LayerListItem, SidebarPanel, useContextMenu, useSceneLayerList } from '@weasel-js/ui';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { LayerList, type LayerListItem, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';
 import type { PanelChrome } from './surfaces/types';

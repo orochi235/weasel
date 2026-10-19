@@ -10,7 +10,8 @@
  *     rewrite state.
  */
 import { createContext, useContext } from 'react';
-import { Input, Select, type SelectOption } from '@weasel-js/ui';
+import { Input } from '@weasel-js/ui/components/Input';
+import { Select, type SelectOption } from '@weasel-js/ui/components/Select';
 import type {
   RegistryEnumFilter,
   RegistryEnumSources,

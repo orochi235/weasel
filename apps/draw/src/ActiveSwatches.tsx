@@ -14,7 +14,8 @@ import {
   DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useOngoingAction,
   type Paint,
 } from '@weasel-js/core';
-import { FillStrokeSwatch, solidColorOf } from '@weasel-js/ui';
+import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
+import { solidColorOf } from '@weasel-js/ui/paint-value';
 import { useColorContext } from './tools/colorContext';
 
 /** The paint a new shape takes, as a node holds one: `null` is none. */
