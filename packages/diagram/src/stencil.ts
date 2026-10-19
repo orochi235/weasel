@@ -1,0 +1,93 @@
+/**
+ * Stencils: the shapes a palette offers, as data, and what one becomes when it
+ * is drawn — a `buildBody` body whose rows are ordinary text nodes.
+ */
+import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
+import { buildBody, type MeasureRowText, type Row } from './body';
+import { DEFAULT_FONT } from './edgeLabel';
+import { NODE, type DiagramSceneData } from './fromData';
+import type { Outline } from './outline';
+
+/** One shape a palette offers. `size` is what a click places; `rows` default
+ *  to one empty label, so the body has a text node to type into. */
+export interface DiagramStencil {
+  id: string;
+  label: string;
+  outline: Outline;
+  size: { width: number; height: number };
+  rows?: readonly Row[];
+}
+
+/** The basic flowchart symbols. */
+export const FLOWCHART_STENCILS: readonly DiagramStencil[] = [
+  { id: 'process', label: 'Process', outline: 'rect', size: { width: 120, height: 60 } },
+  { id: 'decision', label: 'Decision', outline: 'diamond', size: { width: 120, height: 80 } },
+  { id: 'terminal', label: 'Terminal', outline: 'stadium', size: { width: 120, height: 50 } },
+  { id: 'data', label: 'Data', outline: 'parallelogram', size: { width: 130, height: 60 } },
+  { id: 'manual', label: 'Manual', outline: 'trapezoid', size: { width: 130, height: 60 } },
+  { id: 'preparation', label: 'Preparation', outline: 'hexagon', size: { width: 130, height: 60 } },
+  { id: 'connector', label: 'Connector', outline: 'ellipse', size: { width: 50, height: 50 } },
+];
+
+/** The insert kind a stencil's tool passes to the `insert` dep. */
+export const stencilKind = (id: string): string => `stencil:${id}`;
+
+/** The stencil id an insert kind names, or `null` for a kind that is no stencil's. */
+export function stencilIdOf(kind: string): string | null {
+  return kind.startsWith('stencil:') ? kind.slice('stencil:'.length) : null;
+}
+
+const DEFAULT_ROWS: readonly Row[] = [{ kind: 'label', text: '' }];
+
+type Bounds = { x: number; y: number; width: number; height: number };
+
+/** A zero-size box — a click rather than a drag — becomes the stencil's own
+ *  size centered on where it landed. */
+function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
+  if (b.width > 0 && b.height > 0) return b;
+  const { width, height } = stencil.size;
+  return { x: b.x + b.width / 2 - width / 2, y: b.y + b.height / 2 - height / 2, width, height };
+}
+
+/**
+ * The ops that insert `stencil` at `bounds`: its container first, then one
+ * text node per text row. Applied as one batch, they are one undo entry.
+ */
+export function stencilBuild<TLayer extends string>(
+  stencil: DiagramStencil,
+  bounds: Bounds,
+  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText },
+): { id: string; ops: Op[] } {
+  const id = opts.newId();
+  const at = placedBounds(stencil, bounds);
+  const built = buildBody<DiagramSceneData, TLayer, RectPose>(
+    { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS },
+    at,
+    {
+      id,
+      layer: opts.layer,
+      ...(opts.measure ? { measure: opts.measure } : {}),
+      body: (trait) => ({
+        diagram: trait,
+        fill: { paint: { color: NODE.fill } },
+        stroke: { paint: { color: NODE.stroke }, width: 2 },
+      }),
+      row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
+        ? {
+            text,
+            style: {
+              fontFamily: box.row.style?.fontFamily ?? DEFAULT_FONT.fontFamily,
+              fontSize: box.row.style?.fontSize ?? DEFAULT_FONT.fontSize,
+              ...(box.row.style?.bold === true ? { fontWeight: 700 } : {}),
+            },
+            fill: { paint: { color: NODE.text } },
+          }
+        : null,
+    },
+  );
+  const ops = built.specs.map((spec, k) => createInsertOp({
+    node: { ...spec, id: spec.id ?? `${id}/${k}`, parent: spec.parent ?? null },
+    label: `Insert ${stencil.label}`,
+  }));
+  return { id, ops };
+}

@@ -195,7 +195,8 @@ export interface DiagramSceneOptions {
   edgeStyle?: (edge: DataEdge) => EdgeStyle;
 }
 
-const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
+/** What a node is drawn with when nothing says otherwise. */
+export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
