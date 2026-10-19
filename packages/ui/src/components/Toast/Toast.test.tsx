@@ -16,9 +16,21 @@ describe('ToastRegion', () => {
     const q = createToastQueue();
     renderWithIcons(<ToastRegion queue={q} />);
     act(() => q.add('success', 'Saved', { description: 'All changes stored' }));
-    expect(screen.getByRole('region', { name: /notifications/i })).toBeTruthy();
+    expect(screen.getByRole('region', { name: /notification/i })).toBeTruthy();
     expect(screen.getByText('Saved')).toBeTruthy();
     expect(screen.getByText('All changes stored')).toBeTruthy();
+  });
+
+  it('is a landmark F6 reaches once a toast arrives', () => {
+    const q = createToastQueue();
+    renderWithIcons(<ToastRegion queue={q} />);
+    const origin = document.body.appendChild(document.createElement('button'));
+    origin.focus();
+    act(() => q.add('info', 'Reachable', { ttlMs: null }));
+    act(() => { fireEvent.keyDown(origin, { key: 'F6' }); });
+    const region = screen.getByRole('region', { name: /notification/i });
+    expect(region.contains(document.activeElement)).toBe(true);
+    origin.remove();
   });
 
   it('dismisses via the close button', () => {
@@ -90,7 +102,7 @@ describe('ToastRegion given a container', () => {
   it('renders the region inside the container', () => {
     const { q, host } = setup();
     act(() => q.add('info', 'Inside', { ttlMs: null }));
-    expect(screen.getByRole('region', { name: /notifications/i }).parentElement).toBe(host);
+    expect(screen.getByRole('region', { name: /notification/i }).parentElement).toBe(host);
     expect(host.textContent).toContain('Inside');
   });
 
@@ -104,16 +116,16 @@ describe('ToastRegion given a container', () => {
     expect(screen.queryByText('Clicked')).toBeNull();
     act(() => vi.advanceTimersByTime(8100));
     expect(screen.queryByText('Timed')).toBeNull();
-    expect(screen.queryByRole('region', { name: /notifications/i })).toBeNull();
+    expect(screen.queryByRole('region', { name: /notification/i })).toBeNull();
   });
 
   it('pauses the timers while hovered', () => {
     const { q } = setup();
     act(() => q.add('info', 'Held'));
-    fireEvent.pointerEnter(screen.getByRole('region', { name: /notifications/i }));
+    fireEvent.pointerEnter(screen.getByRole('region', { name: /notification/i }));
     act(() => vi.advanceTimersByTime(20_000));
     expect(screen.getByText('Held')).toBeTruthy();
-    fireEvent.pointerLeave(screen.getByRole('region', { name: /notifications/i }));
+    fireEvent.pointerLeave(screen.getByRole('region', { name: /notification/i }));
     act(() => vi.advanceTimersByTime(8100));
     expect(screen.queryByText('Held')).toBeNull();
   });
@@ -121,16 +133,29 @@ describe('ToastRegion given a container', () => {
   it('forgets a hover that ended with the last toast closing under the pointer', () => {
     const { q } = setup();
     act(() => q.add('info', 'First', { ttlMs: null }));
-    fireEvent.pointerEnter(screen.getByRole('region', { name: /notifications/i }));
+    fireEvent.pointerEnter(screen.getByRole('region', { name: /notification/i }), { pointerType: 'mouse' });
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
-    expect(screen.queryByRole('region', { name: /notifications/i })).toBeNull();
+    expect(screen.queryByRole('region', { name: /notification/i })).toBeNull();
 
+    // The region left from under the pointer, so no pointerleave: the next move ends the hover.
+    fireEvent.pointerOver(document.body, { pointerType: 'mouse' });
     act(() => q.add('info', 'Second'));
     // Focus passing through the stack re-reads the pause state.
     act(() => screen.getByRole('button', { name: /dismiss/i }).focus());
     act(() => screen.getByRole('button', { name: /dismiss/i }).blur());
     act(() => vi.advanceTimersByTime(8100));
     expect(screen.queryByText('Second')).toBeNull();
+  });
+
+  it('is a landmark F6 reaches', () => {
+    const { q } = setup();
+    const origin = document.body.appendChild(document.createElement('button'));
+    origin.focus();
+    act(() => q.add('info', 'Reachable', { ttlMs: null }));
+    act(() => { fireEvent.keyDown(origin, { key: 'F6' }); });
+    const region = screen.getByRole('region', { name: /notification/i });
+    expect(region.contains(document.activeElement)).toBe(true);
+    origin.remove();
   });
 
   it('returns focus to where it came from when the last toast closes', () => {

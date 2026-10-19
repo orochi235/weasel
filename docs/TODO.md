@@ -686,17 +686,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
-- **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
-  Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
-  re-exported by `react-aria-components`, and depending on `react-aria`
-  directly risks a second copy whose context the overlays never read — which
-  fails silently, as an unthemed overlay. Switch `useOverlayPortal`
-  (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
-  The same switch lets a contained `ToastRegion` drop its own region for RAC's,
-  which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-2691598d3-261008`, last
-  checked 2026-10-17.
-
 - **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
   (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
   pointer passes out of its target or off the surface. The loupe

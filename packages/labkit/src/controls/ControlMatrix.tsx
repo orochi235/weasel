@@ -115,7 +115,7 @@ export function ControlMatrix({
   const [open, setOpen] = useState<OpenCell | null>(null);
   const choices = useFieldChoicesOf(schema.group);
   const triggerRef = useRef<HTMLElement | null>(null);
-  const { anchor, portalProps, ready } = useOverlayPortal();
+  const { anchor, provide, ready } = useOverlayPortal();
 
   const targets = aliasTargetsOf(schema, config, over);
   const cellAt = (path: string): MatrixTarget | undefined => matrixTargetAt(schema, path, targets);
@@ -203,12 +203,11 @@ export function ControlMatrix({
           ))}
         </tbody>
       </table>
-      {ready && (
+      {ready && provide(
         <MatrixPopover
           open={open}
           close={() => setOpen(null)}
           triggerRef={triggerRef}
-          portalProps={portalProps}
           schema={schema}
           over={over}
           config={config}

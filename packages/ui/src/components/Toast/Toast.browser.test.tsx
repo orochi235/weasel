@@ -62,7 +62,7 @@ for (const via of ['provider', 'prop'] as const) {
     // bottom-right: hugs the container's corner, not the viewport's.
     expect(host.right - toast.right).toBeCloseTo(16, 0);
     expect(host.bottom - toast.bottom).toBeCloseTo(16, 0);
-    expect(screen.getByRole('region', { name: /notifications/i }).parentElement).toBe(screen.getByTestId('host'));
+    expect(screen.getByRole('region', { name: /notification/i }).parentElement).toBe(screen.getByTestId('host'));
   });
 }
 
@@ -84,7 +84,7 @@ test('with no container, the region is fixed to the viewport corner as before', 
     </div>,
   );
   act(() => queue.add('info', 'Page level', { ttlMs: null }));
-  const region = await screen.findByRole('region', { name: /notifications/i });
+  const region = await screen.findByRole('region', { name: /notification/i });
   expect(region.parentElement).toBe(document.body);
   expect(getComputedStyle(region).position).toBe('fixed');
   const toast = (await screen.findByRole('alertdialog')).getBoundingClientRect();

@@ -125,6 +125,30 @@ describe('consumers can override where an overlay portals', () => {
     expect(host()).toBeNull();
   });
 
+  it('portalContainer={null} sends it to the body from inside another overlay', () => {
+    renderWithIcons(
+      <Themed>
+        <Dialog isOpen title="Hi">
+          <Select label="Color" options={OPTIONS} portalContainer={null} />
+        </Dialog>
+      </Themed>,
+    );
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+    expect(screen.getByRole('listbox').closest('[data-wzl-theme]')).toBeNull();
+  });
+
+  it('a nested overlay portals into the themed ancestor too', () => {
+    renderWithIcons(
+      <Themed>
+        <Dialog isOpen title="Hi">
+          <Select label="Color" options={OPTIONS} />
+        </Dialog>
+      </Themed>,
+    );
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+    expect(screen.getByRole('listbox').closest('[data-wzl-theme]')).toBe(screen.getByTestId('themed'));
+  });
+
   it('OverlayPortalProvider sets the container for a whole subtree', () => {
     const elsewhere = document.createElement('div');
     document.body.appendChild(elsewhere);

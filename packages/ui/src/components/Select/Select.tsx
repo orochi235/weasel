@@ -161,7 +161,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     ...rest
   } = props;
 
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
@@ -228,7 +228,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           `closest()` gets the wrong answer without it — a text editor whose
           font menu lives here would end its session the moment the menu is
           clicked. */}
-      {ready && (
+      {ready && provide(
         <RACPopover
           className={s.popover}
           data-weasel-overlay=""
@@ -236,7 +236,6 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           offset={popup === 'over' ? nudge.offset : undefined}
           crossOffset={popup === 'over' ? nudge.crossOffset : undefined}
           shouldFlip={popup !== 'over'}
-          {...portalProps}
         >
           {popup === 'over' && (
             <AlignOverTrigger

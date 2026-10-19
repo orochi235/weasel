@@ -1,5 +1,5 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { Button, PropertyList, type useOverlayPortal } from '@weasel-js/ui';
+import { Button, PropertyList } from '@weasel-js/ui';
 import type { RefObject } from 'react';
 import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
 import { auto as autoValue } from '../config/auto';
@@ -13,7 +13,6 @@ export function MatrixPopover({
   open,
   close,
   triggerRef,
-  portalProps,
   schema,
   over,
   config,
@@ -25,7 +24,6 @@ export function MatrixPopover({
   open: OpenCell | null;
   close: () => void;
   triggerRef: RefObject<HTMLElement | null>;
-  portalProps: ReturnType<typeof useOverlayPortal>['portalProps'];
   schema: ResolvedConfig;
   over?: PrefGroup | PrefSection;
   config: Record<string, unknown>;
@@ -45,7 +43,6 @@ export function MatrixPopover({
       placement="bottom"
       className="lk-control-matrix__popover"
       data-weasel-overlay=""
-      {...portalProps}
     >
       {open ? (
         <RACDialog

@@ -76,7 +76,7 @@ export function Dialog(props: DialogProps) {
   const stanced = useStance({ stance, tone });
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const box = (close: () => void) => (
     <>
       {(title !== undefined || showClose) && (
@@ -106,14 +106,13 @@ export function Dialog(props: DialogProps) {
   return (
     <>
       {anchor}
-      {ready && (
+      {ready && provide(
         <ModalOverlay
           {...rest}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           className={s.overlay}
           data-weasel-overlay=""
-          {...portalProps}
         >
           <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
             <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
