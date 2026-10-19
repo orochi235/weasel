@@ -26,6 +26,9 @@ export interface DebugConfig {
   /** The last viewport change a pan or zoom made: the viewport it started
    *  from, outlined in the current view, and the world point it held fixed. */
   viewport?: boolean;
+  /** Ids of nodes to outline, the way the Elements panel outlines a hovered
+   *  element. Their bounds are recorded whether or not `bounds` is on. */
+  highlight?: readonly string[];
   /** Optional per-feature color overrides; falls back to the default theme. */
   theme?: Partial<DebugTheme>;
   /** Optional per-feature line-width / dash overrides; falls back to
@@ -55,6 +58,8 @@ export interface DebugTheme {
   fpsTextBg: string;
   /** Previous-viewport outline, anchor trail and readout. */
   viewport: string;
+  /** Outline of each highlighted node. */
+  highlight: string;
 }
 
 /** Line width and dash pattern for one stroked debug feature. An empty (or
@@ -75,6 +80,7 @@ export interface DebugStrokes {
   snap: DebugStroke;
   /** The previous-viewport outline and the anchor's trail. */
   viewport: DebugStroke;
+  highlight: DebugStroke;
 }
 
 

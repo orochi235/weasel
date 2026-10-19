@@ -30,3 +30,5 @@ export type {
   RankedCandidate, PlacedBy, WalkStep, SpecificityPart,
 } from '@weasel-js/routing';
 export type { TraceLogEntry, ModeSwitchLogEntry } from '@weasel-js/routing';
+export { createDispatchTrace, createTraceRing } from '@weasel-js/routing';
+export type { DispatchTrace, TraceRing } from '@weasel-js/routing';

@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/react';
-import { createLongPressStore, type Dispatcher } from '@weasel-js/routing';
+import { createLongPressStore, type Dispatcher, type DispatchTrace, type TraceRing } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
@@ -17,7 +17,7 @@ import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
-import { traceConversion } from './coordTrace';
+import { traceConversion, type CoordTraceEntry } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
 /** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
@@ -59,6 +59,8 @@ export interface SceneGestureDispatcherInputs {
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
   dispatcher?: Dispatcher;
+  /** Where the dispatcher records its decisions and `clientToWorld` its conversions. */
+  traces: { dispatch: DispatchTrace; coords: TraceRing<CoordTraceEntry> };
   /** Chrome-caps visibility resolver factory. Threaded into
    *  `buildAffordanceAt` so the hit-test pipeline gates corner / rotate /
    *  anchor affordances on the same chrome ids the renderer uses. */
@@ -192,7 +194,7 @@ function useClassifyTarget(
 export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs): void {
   const {
     canvasRef, canvasApiRef, tools, contributions, enabled, keyboard, claimKeys, viewRef,
-    kindOfNode, dispatcher, getRuleCtx, onDoubleClick, onClick,
+    kindOfNode, dispatcher, traces, getRuleCtx, onDoubleClick, onClick,
     longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
   } = inputs;
   const registry = useActionsRegistry();
@@ -220,9 +222,9 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     const api = canvasApiRef.current;
     const [x, y] = api ? api.clientToWorld(clientX, clientY) : [clientX, clientY];
     const world = { x, y };
-    traceConversion(clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
+    traceConversion(traces.coords, clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
-  }, [canvasRef, canvasApiRef, viewRef]);
+  }, [canvasRef, canvasApiRef, viewRef, traces.coords]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
@@ -259,6 +261,7 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     affordanceAt: affordanceWithLayers,
     classifyTarget,
     dispatcher,
+    trace: traces.dispatch,
     clientToWorld,
     requestRedraw,
     paintedCursor,

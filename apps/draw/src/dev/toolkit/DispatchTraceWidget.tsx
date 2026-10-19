@@ -4,8 +4,7 @@ import { useDispatchTraceLog } from '../dispatchTraceLog';
 import { DispatchTraceTable } from '../DispatchTraceTable';
 import s from '../ToolkitBuilder.module.css';
 
-// Reads the kit's dev-only rolling log (`window.__weaselDispatchLog__`). Unhandled events (idle
-// mousemoves, wheels over chrome) are noisy and hidden by default.
+// Unhandled events (idle mousemoves, wheels over chrome) are noisy and hidden by default.
 
 export function DispatchTraceWidget(): ReactElement {
   const { entries, live, now } = useDispatchTraceLog();

@@ -48,6 +48,7 @@
       "@weasel-js/core/renderer": ["./packages/core/src/import-shims/renderer.ts"],
       "@weasel-js/core/routing": ["./packages/core/src/import-shims/routing.ts"],
       "@weasel-js/core/test-seams": ["./packages/core/src/import-shims/test-seams.ts"],
+      "@weasel-js/core/devtools": ["./packages/core/src/import-shims/devtools.ts"],
       "@weasel-js/cursor": ["./packages/cursor/src/index.ts"],
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],

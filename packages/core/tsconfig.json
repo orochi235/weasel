@@ -35,6 +35,7 @@
       "@weasel-js/core/renderer": ["./src/import-shims/renderer.ts"],
       "@weasel-js/core/routing": ["./src/import-shims/routing.ts"],
       "@weasel-js/core/test-seams": ["./src/import-shims/test-seams.ts"],
+      "@weasel-js/core/devtools": ["./src/import-shims/devtools.ts"],
       "@weasel-js/cursor": ["../cursor/src/index.ts"],
       "@weasel-js/d3": ["../d3/src/index.ts"],
       "@weasel-js/diagram": ["../diagram/src/index.ts"],

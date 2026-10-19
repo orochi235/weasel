@@ -55,12 +55,13 @@ export interface SurfaceCanvasProps {
   className?: string;
   style?: CSSProperties;
   tabIndex?: number;
+  'aria-label'?: string;
 }
 
 /** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels,
  *  or its parent's size on an axis given neither. */
 export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
-  function SurfaceCanvas({ width, height, className, style, tabIndex }, ref) {
+  function SurfaceCanvas({ width, height, className, style, tabIndex, 'aria-label': ariaLabel }, ref) {
     // Stable while `ref` is, so a commit does not detach the element.
     const setRef = useCallback((el: HTMLCanvasElement | null) => {
       if (el) adoptSurfaceRule(el);
@@ -78,6 +79,7 @@ export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
         width={width}
         height={height}
         tabIndex={tabIndex}
+        aria-label={ariaLabel}
         className={className}
         style={sized as CSSProperties}
         data-wzl-surface={fills ? 'fill' : ''}

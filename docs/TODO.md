@@ -1025,25 +1025,19 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) A devtools hook, a panel on it, and a browser extension hosting that panel.** The Elements
-  panel cannot see inside a `<canvas>`, so a weasel app is opaque to every built-in browser tool.
-  Build it in three layers, the way React DevTools is built:
-  1. A global devtools hook in core, separate from the `?test=1` test hook
-     (`packages/core/src/test-hook/`): a versioned protocol of snapshots (scene tree, selection,
-     view, active tool, deps), event streams (dispatcher routing decisions, ops and history, the
-     debug sink's frame stats), and commands (select, highlight a node, toggle a debug overlay
-     feature). Everything is serializable; the page draws all overlays itself.
-  2. The panel, as an ordinary weasel-ui/labkit component talking to that protocol through a
-     transport. Mounted in-page, it serves forge, the site's demos and draw, and replaces
-     `apps/draw/src/dev/RegistryInspector.tsx`. The dispatcher trace — which binding a gesture
-     matched and what it beat — can reuse `Powerline` and the routing reflection registry.
-  3. The extension: a devtools page plus a content-script bridge hosting the same panel. Chrome,
-     Edge and Firefox share the WebExtensions devtools API; Safari needs an Xcode app wrapper.
-     It has to tolerate a page running a different protocol version than it was built for.
-
-  Production exposure is a per-app choice (2026-10-18): dev builds always expose the hook, and a
-  production build exposes it only when the app opts in. Layer 1 is designed, unbuilt:
-  `docs/superpowers/specs/2026-10-18-devtools-hook-design.md`.
+- **(P2) A devtools panel on the hook, and a browser extension hosting it.** The hook is built
+  (`docs/devtools.md`): each `<SceneCanvas>` is a root a panel reads and steers over a versioned
+  message protocol. What is left:
+  1. The panel, as an ordinary weasel-ui/labkit component talking to the hook through a transport.
+     Mounted in-page, it serves forge, the site's demos and draw, and replaces
+     `apps/draw/src/dev/RegistryInspector.tsx` and the `DispatchTracePanel` there. The dispatcher
+     trace — which binding a gesture matched and what it beat — can reuse `Powerline` and the
+     routing reflection registry.
+  2. The extension: a devtools page plus a content-script bridge (`createWindowPanelTransport`)
+     hosting the same panel. Chrome, Edge and Firefox share the WebExtensions devtools API; Safari
+     needs an Xcode app wrapper.
+  3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
+     history steps.
 
 ## Release-gate & build hygiene
 

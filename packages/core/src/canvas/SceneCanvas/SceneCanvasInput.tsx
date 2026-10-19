@@ -23,6 +23,7 @@ import type { BridgeAdapter, SceneCanvasProps } from './props';
 import type { NodeAtPoint } from './useNodeAtPoint';
 import type { useSceneCanvasTools } from './useSceneCanvasTools';
 import { useSceneGestureDispatcher } from './useSceneGestureDispatcher';
+import { useCanvasDevtoolsRoot, type CanvasDevtools } from './useCanvasDevtoolsRoot';
 import type { useScenePicking } from './useScenePicking';
 import {
   useSceneStandardActions, type SceneStandardActionsInputs, type StandardActionsProps,
@@ -77,6 +78,7 @@ export interface SceneCanvasInputProps {
   snapSources: readonly SnapSource[];
   /** The outcome store the canvas's readout layer draws. */
   snapStore: SnapOutcomeStore;
+  devtools: CanvasDevtools;
 }
 
 /**
@@ -114,6 +116,10 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const onClick = useHitObserver(props.onClick, p.nodeAtPointRef);
   const selectionRef = useLatest(selection);
   const { targetScale } = useDeviceProfile();
+  const { root, traces } = useCanvasDevtoolsRoot({
+    scene, selection, viewState, tools: p.tools.tools,
+    element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
+  });
   useSceneGestureDispatcher({
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef,
     tools: p.tools.tools, contributions: p.tools.contributions,
@@ -123,7 +129,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     boundsOf: picking.boundsOf, planeOfNode: picking.planeOfNode,
     pickEvery: picking.pickEvery, pickBest: picking.pickBest, kindOfNode: picking.kindOfNode,
     doubleClickNames: picking.doubleClickNames,
-    viewRef: viewState.viewRef, dispatcher: p.dispatcher,
+    viewRef: viewState.viewRef, dispatcher: p.dispatcher, traces,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
     targetScale, handleHitRadius: overlay.resizeHandles.hitRadiusPx,
     edgeHandles: overlay.resizeHandles.edges,
@@ -143,6 +149,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     getSelectionIds: () => (selection.current as readonly string[] | undefined) ?? [],
     getView: () => viewState.viewRef.current,
     getActiveToolId: () => p.tools.tools.active ?? null,
+    probes: root.probes,
   });
 
   // Mounted only when passed: an empty default registered with the deps above would land

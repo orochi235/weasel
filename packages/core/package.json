@@ -20,6 +20,8 @@
   "sideEffects": [
     "*.css",
     "./src/import-shims/mesh.ts",
+    "./src/import-shims/devtools.ts",
+    "./dist/devtools.js",
     "./src/core/paint/registerMesh.ts",
     "./dist/mesh.js",
     "./dist/core/paint/registerMesh.js"
@@ -72,6 +74,10 @@
     "./clone": {
       "import": "./dist/clone.js",
       "types": "./dist/clone.d.ts"
+    },
+    "./devtools": {
+      "import": "./dist/devtools.js",
+      "types": "./dist/devtools.d.ts"
     },
     "./patterns-builtin": {
       "import": "./dist/patterns-builtin.js",

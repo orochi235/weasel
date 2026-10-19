@@ -1,8 +1,7 @@
 /**
- * DEV-only "what fired" panel over the dispatcher trace log the kit mounts on
- * `window.__weaselDispatchLog__`: which candidate actions each event considered,
- * which fired, and whether the event was handled. The global is not populated
- * in production builds, so the panel renders an empty table there.
+ * DEV-only "what fired" panel over the canvas's dispatch trace, read through the
+ * devtools hook: which candidate actions each event considered, which fired, and
+ * whether the event was handled.
  */
 import { useCallback, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';

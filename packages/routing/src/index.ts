@@ -43,6 +43,8 @@ export interface DepSchema {
   activeTool: ActiveToolContextValue;
   /** The menu host of the `ActionsProvider` in scope. */
   menuHost?: import('./menus/menuHost').MenuHost;
+  /** The canvas's dispatch trace, for a dep to record a mode switch into. */
+  dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -141,10 +143,10 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {
-  multiTouchGestureId, pointerGestureId, recordModeSwitch, createDispatcher,
+  multiTouchGestureId, pointerGestureId, createDispatcher, createDispatchTrace, createTraceRing,
 } from './interactions/dispatcher/dispatcher';
 export type {
-  ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,
+  DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing, DispatcherContext, UiOngoingControl,
   ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions, Dispatcher,
 } from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/dispatchRecord';

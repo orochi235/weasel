@@ -14,6 +14,7 @@ export function useTestHook(read: TestHookRefs): void {
         getSelectionIds: () => live.current.getSelectionIds(),
         getView: () => live.current.getView(),
         getActiveToolId: () => live.current.getActiveToolId(),
+        ...(live.current.probes ? { probes: live.current.probes } : {}),
       });
       if (hook) {
         hook._markReady();

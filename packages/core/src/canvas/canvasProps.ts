@@ -140,6 +140,9 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  canvas is focusable. Not applied under `paintInto`: whether the input
    *  element can take focus is the caller's to decide. */
   tabIndex?: number;
+  /** Accessible name of the `<canvas>` this component renders; devtools lists the canvas under it.
+   *  Not applied under `paintInto`. */
+  'aria-label'?: string;
   /** Fired when the element input comes from gains focus: the canvas, or
    *  under `paintInto` the `inputElement`. Called with the DOM event. */
   onFocus?: (event: FocusEvent) => void;

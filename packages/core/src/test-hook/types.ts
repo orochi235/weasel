@@ -8,6 +8,8 @@ export interface TestHookRefs {
   getSelectionIds: () => readonly string[];
   getView: () => View;
   getActiveToolId: () => string | null;
+  /** Where registered probes live: the canvas's devtools root, so a panel reads them too. */
+  probes?: Map<string, () => unknown>;
 }
 
 export interface WeaselTestHook {
