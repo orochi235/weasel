@@ -3,15 +3,12 @@ import { SchemaPanel } from './surfaces/SchemaSurfaces';
 import { useSurfaces } from './surfaces/surfaceState';
 import type { SidebarHost } from './surfaces/types';
 
-// The trace log it reads is only populated in DEV, so production leaves the
-// panel out of the bundle entirely.
-const DispatchTracePanel = import.meta.env.DEV
-  ? lazy(() => import('./dev/DispatchTracePanel').then((m) => ({ default: m.DispatchTracePanel })))
-  : null;
+// A development aid only: production leaves the panel and its package out of the bundle entirely.
+const DevtoolsSidebarPanel = import.meta.env.DEV ? lazy(() => import('./dev/DevtoolsSidebarPanel')) : null;
 
 export type RightSidebarProps = SidebarHost;
 
-/** Every surface asset shown as a panel, in list order, then the dev trace. */
+/** Every surface asset shown as a panel, in list order, then the devtools panel in development. */
 export function RightSidebar(host: RightSidebarProps): ReactElement {
   return (
     <>
@@ -21,9 +18,9 @@ export function RightSidebar(host: RightSidebarProps): ReactElement {
           ? <Fragment key={asset.id}>{asset.render(host, chrome)}</Fragment>
           : <SchemaPanel key={asset.id} asset={asset} chrome={chrome} />;
       })}
-      {DispatchTracePanel && (
+      {DevtoolsSidebarPanel && (
         <Suspense fallback={null}>
-          <DispatchTracePanel />
+          <DevtoolsSidebarPanel />
         </Suspense>
       )}
     </>

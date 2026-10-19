@@ -1,5 +1,6 @@
 export { isDebugEnabled, dlog, dwarn } from './flag';
 export { parseDebugFlags } from './parseDebugFlags';
+export { DEBUG_FEATURES } from './features';
 export { createDebugSink } from './createDebugSink';
 export { createDebugOverlayLayer, buildDebugOverlayCommands } from './createDebugOverlayLayer';
 export type { CreateDebugOverlayLayerOpts } from './createDebugOverlayLayer';

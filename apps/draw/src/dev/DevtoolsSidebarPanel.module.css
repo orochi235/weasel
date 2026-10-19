@@ -1,0 +1,5 @@
+/* The panel fills its box, so the box sets its size: tall enough for a tree beside a node's detail. */
+.body {
+  height: 420px;
+  min-width: 0;
+}

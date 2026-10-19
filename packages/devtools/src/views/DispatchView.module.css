@@ -1,0 +1,30 @@
+.dispatch {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  border-bottom: 1px solid var(--wzl-line-subtle);
+  flex-shrink: 0;
+}
+
+/* Last in the row and pushed to its end, so its changing width displaces nothing. */
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin-inline-start: auto;
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--wzl-space-4);
+}

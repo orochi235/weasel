@@ -1036,20 +1036,19 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) A devtools panel on the hook, and a browser extension hosting it.** The hook is built
-  (`docs/devtools.md`): each `<SceneCanvas>` is a root a panel reads and steers over a versioned
-  message protocol. What is left:
-  1. The panel, as an ordinary weasel-ui/labkit component talking to the hook through a transport.
-     Mounted in-page, it serves forge, the site's demos and draw, and replaces
-     `apps/draw/src/dev/RegistryInspector.tsx` and the `DispatchTracePanel` there. The dispatcher
-     trace — which binding a gesture matched and what it beat — can reuse `Powerline` and the
-     routing reflection registry.
-  2. What the extension (`apps/devtools-extension`, built 2026-10-19) still lacks: icons (its
-     manifest has none, so browsers draw a letter and Safari's converter warns), and a way for a
-     frame that loads while the panel is open to join before the panel's next `yo`. It restates
-     the envelope tag and protocol number, tied to core's by type, because importing
-     `@weasel-js/core/devtools` installs a hook; a side-effect-free entry for the protocol and
-     transports would let it import them.
+- **(P2) The devtools panel's Registry and History tabs, and what the extension lacks.** The hook,
+  the panel and the extension are built (`docs/devtools.md`). What is left:
+  1. Registry and History tabs in the panel over `get-registry` and `get-history`; then draw's
+     Bundle Inspector (`apps/draw/src/dev/RegistryInspector.tsx`) can go.
+  2. What the extension (`apps/devtools-extension`) lacks: icons (its manifest has none, so
+     browsers draw a letter and Safari's converter warns), and a way for a frame that loads while
+     the panel is open to join before the panel's next `yo`. It restates the envelope tag and
+     protocol number, tied to core's by type, because importing `@weasel-js/core/devtools`
+     installs a hook; a side-effect-free entry for the protocol and transports would let it
+     import them.
+  3. A selection change is announced as `scene` as well as `selection`, because a scene notifies
+     its subscribers on selection (`core/scene/scene.ts`) and the root follows that feed. The
+     panel's Scene tab then reloads its open levels on every selection (seen 2026-10-19).
 
 ## Release-gate & build hygiene
 

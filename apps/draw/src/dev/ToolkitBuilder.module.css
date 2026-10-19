@@ -64,6 +64,8 @@
    of pushing the whole page. */
 .widgetBodyScrollY { max-height: 280px; overflow-y: auto; min-height: 0; }
 .widgetBodyScrollXY { max-height: 280px; overflow: auto; min-height: 0; }
+/* The devtools panel fills its box, so the box sets its size. */
+.widgetDevtools { height: 320px; min-width: 0; }
 /* Explicit aspect-ratio mirrors the SceneCanvas buffer (width=520 height=360,
    = 13/9). A bare `<canvas>` carries this ratio implicitly via its width/height
    attributes, but inside this column-flex container that transferred ratio is

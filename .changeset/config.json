@@ -45,7 +45,8 @@
       "@weasel-js/symmetry",
       "@weasel-js/path-tools",
       "@weasel-js/forge",
-      "@weasel-js/routing"
+      "@weasel-js/routing",
+      "@weasel-js/devtools"
     ]
   ],
   "linked": [],

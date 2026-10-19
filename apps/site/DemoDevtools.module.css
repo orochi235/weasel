@@ -1,0 +1,16 @@
+/* The demo and, in development, the devtools panel beside it. Wraps onto its own row when the page is narrow. */
+.stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-8);
+  align-items: flex-start;
+}
+
+.panel {
+  flex: 1 1 420px;
+  max-width: 640px;
+  height: 440px;
+  border: 1px solid var(--wzl-line-subtle);
+  border-radius: var(--wzl-radius-sm);
+  overflow: hidden;
+}
