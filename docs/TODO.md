@@ -1044,9 +1044,12 @@ only story runner in the repo.
      `apps/draw/src/dev/RegistryInspector.tsx` and the `DispatchTracePanel` there. The dispatcher
      trace — which binding a gesture matched and what it beat — can reuse `Powerline` and the
      routing reflection registry.
-  2. The extension: a devtools page plus a content-script bridge (`createWindowPanelTransport`)
-     hosting the same panel. Chrome, Edge and Firefox share the WebExtensions devtools API; Safari
-     needs an Xcode app wrapper.
+  2. What the extension (`apps/devtools-extension`, built 2026-10-19) still lacks: icons (its
+     manifest has none, so browsers draw a letter and Safari's converter warns), and a way for a
+     frame that loads while the panel is open to join before the panel's next `yo`. It restates
+     the envelope tag and protocol number, tied to core's by type, because importing
+     `@weasel-js/core/devtools` installs a hook; a side-effect-free entry for the protocol and
+     transports would let it import them.
   3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
      history steps.
 

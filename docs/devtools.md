@@ -4,7 +4,8 @@ How a page running weasel exposes its canvases to a devtools panel: what the pag
 messages a panel sends and gets back, and what a production app has to do to allow it. For anyone
 building a panel, an extension, or a console probe against `window.__weaselDevtools__`.
 
-A panel in the page and the browser extension are not built yet (`docs/TODO.md`, "Devtools").
+A panel in the page is not built yet (`docs/TODO.md`, "Devtools"). The browser extension is under
+"Extension" below.
 
 ## What the page publishes
 
@@ -66,3 +67,11 @@ cycles `'[cycle]'`, and depth, length and string size are capped.
 A canvas keeps two rolling buffers of 200: its dispatchers' decisions (`DispatchTrace`, on every
 `DispatcherContext` and published as the `dispatchTrace` dep) and its `clientToWorld` conversions.
 Both record in a dev build, and in production only while a panel is connected.
+
+## Extension
+
+`apps/devtools-extension` is a browser extension that hosts the panel in the browser's own devtools,
+for Chrome, Edge, and Firefox, and for Safari through an Xcode wrapper. Its content script relays
+`createWindowPanelTransport`'s envelopes, so it works on any page with a hook. Building it, loading
+it unpacked, and packaging it for Safari are in its
+[README](../apps/devtools-extension/README.md).
