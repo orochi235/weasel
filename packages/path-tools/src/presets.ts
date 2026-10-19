@@ -32,6 +32,7 @@ import { resamplePathAction } from './resample/resample';
 import {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
 } from './pathEffects/actions';
+import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
 import { spiroPreset } from './spiro/spiroPreset';
@@ -204,10 +205,14 @@ export const segmentTypePreset: FeaturePreset = {
 };
 
 /** Blend, Bend along, and Repeat along, live, and the actions that edit and
- *  expand them. The scene must hold `withPathEffectsRegistry`'s derivations. */
+ *  expand them and set or release a blend's spine. The scene must hold
+ *  `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
   id: 'pathEffects',
-  actions: [blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction],
+  actions: [
+    blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
+    setBlendSpineAction, releaseBlendSpineAction,
+  ],
 };
 
 /** `expandWarp` and `configureWarp`; the warp tools bring their own drags. */
