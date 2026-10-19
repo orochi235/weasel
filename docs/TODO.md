@@ -112,8 +112,11 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
-  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
+- **(P3) The tessellate benchmarks have slowed since the 2026-09-29 baseline.** Run on studio,
+  the node that baseline came from, on 2026-10-19: `tessellate` over curve count came out about 40%
+  slower across the board, and `tessellateStroke` about 3x slower (64 cubics: 0.48 ms then, 1.52 ms
+  now), while the rect fast path held. Bisect `tests/perf/bench/tessellate.bench.ts` between the
+  two dates to tell a code regression from the node, then re-record the whole baseline.
 
 - **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
   (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
