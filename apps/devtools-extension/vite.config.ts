@@ -27,6 +27,7 @@ export default defineConfig(({ mode }): UserConfig => {
     return {
       ...shared,
       plugins: [react(), weaselIcons.vite({ mode: 'app' })],
+      publicDir: resolve(here, 'public'),
       build: {
         outDir: OUT,
         emptyOutDir: true,

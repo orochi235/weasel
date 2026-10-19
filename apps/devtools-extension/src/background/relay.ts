@@ -3,9 +3,11 @@
  * the tab it inspects, and carry messages between them. Either side may
  * connect first, and either may go at any time.
  */
-import type { DevtoolsRootInfo, PageMessage, PanelMessage } from '@weasel-js/core/devtools';
+import {
+  DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PageMessage, type PanelMessage,
+} from '@weasel-js/core/devtools-protocol';
 import type { PortLike } from '../browserApi';
-import { PORT_PAGE, PORT_PANEL, PROTOCOL, isPanelHello } from '../envelope';
+import { PORT_PAGE, PORT_PANEL, isPanelHello } from '../envelope';
 import { scopePageMessage, unscopeRootId } from './frames';
 
 interface Frame {
@@ -31,6 +33,8 @@ export interface RelayOptions {
 export interface Relay {
   /** Take a port `runtime.onConnect` handed the background. */
   connect(port: PortLike): void;
+  /** Whether a panel inspects `tabId`: a content script loading there connects at once. */
+  panelOpen(tabId: number): boolean;
 }
 
 export function createRelay({ wake }: RelayOptions): Relay {
@@ -86,7 +90,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     const frame = t.frames.get(frameId);
     if (frame) frame.port.postMessage({ ...message, rootId });
     else t.panel?.postMessage({
-      type: 'error', protocol: PROTOCOL, requestId: message.requestId,
+      type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId: message.requestId,
       message: `weasel devtools: no frame ${frameId} in this tab`,
     } satisfies PageMessage);
   }
@@ -104,7 +108,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
       if (t.frames.get(frameId) !== frame) return;
       t.frames.delete(frameId);
       for (const rootId of frame.roots.keys()) {
-        t.panel?.postMessage({ type: 'root-removed', protocol: PROTOCOL, rootId } satisfies PageMessage);
+        t.panel?.postMessage({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId } satisfies PageMessage);
       }
       prune(tabId);
     });
@@ -125,7 +129,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     });
     port.onDisconnect.addListener(() => {
       if (!t || t.panel !== port) return;
-      const bye: PanelMessage = { type: 'bye', protocol: t.yo?.protocol ?? PROTOCOL };
+      const bye: PanelMessage = { type: 'bye', protocol: t.yo?.protocol ?? DEVTOOLS_PROTOCOL };
       t.panel = null;
       t.yo = null;
       for (const f of t.frames.values()) {
@@ -142,5 +146,6 @@ export function createRelay({ wake }: RelayOptions): Relay {
       if (port.name === PORT_PAGE) connectPage(port);
       else if (port.name === PORT_PANEL) connectPanel(port);
     },
+    panelOpen: (tabId) => Boolean(tabs.get(tabId)?.panel),
   };
 }

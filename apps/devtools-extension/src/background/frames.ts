@@ -3,7 +3,7 @@
  * own `root-N` ids. The panel sees one id space: the top frame's ids as they
  * are, and every other frame's as `frame<N>/<id>`.
  */
-import type { DevtoolsRootInfo, PageMessage } from '@weasel-js/core/devtools';
+import type { DevtoolsRootInfo, PageMessage } from '@weasel-js/core/devtools-protocol';
 
 const SCOPED = /^frame(\d+)\/(.+)$/;
 

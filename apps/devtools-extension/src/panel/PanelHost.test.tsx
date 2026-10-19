@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import { createInPageTransports } from '@weasel-js/core/devtools';
+import { createInPageTransports } from '@weasel-js/core/devtools-protocol';
 import type { PresenceOptions } from '../hookPresence';
 import { PanelHost } from './PanelHost';
 

@@ -3,7 +3,7 @@
  * background is stopped when idle, which drops the port; the transport then
  * opens another and says `yo` again, so the page starts a fresh session.
  */
-import type { PageMessage, PanelMessage, PanelTransport } from '@weasel-js/core/devtools';
+import type { PageMessage, PanelMessage, PanelTransport } from '@weasel-js/core/devtools-protocol';
 import type { PortLike } from '../browserApi';
 import { PORT_PANEL, type PanelHello } from '../envelope';
 

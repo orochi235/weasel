@@ -1,6 +1,6 @@
 // Background entry: a service worker in Chrome and Edge, an event page in Firefox.
 import { extensionApi, type ExtensionApi } from '../browserApi';
-import { CONNECT_REQUEST } from '../envelope';
+import { CONNECT_REQUEST, isHello } from '../envelope';
 import { createRelay } from './relay';
 
 async function wakeTab(api: ExtensionApi, tabId: number): Promise<void> {
@@ -21,3 +21,7 @@ async function wakeTab(api: ExtensionApi, tabId: number): Promise<void> {
 const api = extensionApi();
 const relay = createRelay({ wake: (tabId) => void wakeTab(api, tabId) });
 api.runtime.onConnect.addListener((port) => relay.connect(port));
+api.runtime.onMessage.addListener((message, sender, respond) => {
+  const tabId = sender?.tab?.id;
+  if (isHello(message) && tabId !== undefined) respond(relay.panelOpen(tabId));
+});

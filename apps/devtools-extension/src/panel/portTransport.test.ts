@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
-import { PORT_PANEL, PROTOCOL } from '../envelope';
+import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/core/devtools-protocol';
+import { PORT_PANEL } from '../envelope';
 import { createPortTransport } from './portTransport';
 
 const yo = { type: 'yo', protocol: PROTOCOL } as const;
