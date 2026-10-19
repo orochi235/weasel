@@ -250,7 +250,9 @@ the working tree, so from a checkout someone else is editing it tests their half
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
 it on the branch before merging and on `main` after. `onto` keeps one tree per repository on a
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
-path(s) match <sha>` and that gate test passed rather than skipped.
+path(s) match <sha>` and that gate test passed rather than skipped. `npm run test:fleet -- HEAD
+--spread 0` shards the suite across every ready node; `scripts/fleet-tree.setup.ts` checks each
+node's tree, so a sharded run prints that line once per shard and fails a shard whose tree is wrong.
 
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so

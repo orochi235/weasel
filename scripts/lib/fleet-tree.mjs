@@ -58,3 +58,8 @@ export const checkTree = (root, env) => {
   const problems = entries.flatMap(([path, id]) => fileProblem(root, path, id) ?? []);
   return { armed: true, commit: marker.commit, checked: entries.length, problems };
 };
+
+/** What a fleet run prints about its tree: the line that proves the match, or why nothing else in the run counts. */
+export const treeReport = (check) => check.problems.length === 0
+  ? { ok: true, text: `fleet-tree: ${check.checked} changed path(s) match ${check.commit}` }
+  : { ok: false, text: `this fleet run tested the wrong tree, so no other result in it counts:\n  ${check.problems.slice(0, 20).join('\n  ')}` };

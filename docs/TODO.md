@@ -1066,8 +1066,8 @@ only story runner in the repo.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
-  longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check
-  on this side. `--spread` calls `prepare()` once and runs its shards outside the retry, since
+  longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
+  on this side, in every shard. `--spread` calls `prepare()` once and runs its shards outside the retry, since
   retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.

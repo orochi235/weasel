@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { COMMIT_ENV, MARKER, armTree, blobHash, changedFiles, checkTree } from './fleet-tree.mjs';
+import { COMMIT_ENV, MARKER, armTree, blobHash, changedFiles, checkTree, treeReport } from './fleet-tree.mjs';
 
 const COMMIT = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -113,5 +113,20 @@ describe('armTree', () => {
     expect(readFileSync(join(root, '.onto/tests'), 'utf8')).toBe(
       `plugin: node\nrun: vitest run\nprelude: export ${COMMIT_ENV}=${COMMIT}\n`,
     );
+  });
+});
+
+describe('treeReport', () => {
+  it('prints the line a passing run is known by', () => {
+    put('a.ts', 'x');
+    mark(COMMIT, { 'a.ts': blobHash(Buffer.from('x')) });
+    expect(treeReport(checkTree(root, { [COMMIT_ENV]: COMMIT }))).toEqual({ ok: true, text: `fleet-tree: 1 changed path(s) match ${COMMIT}` });
+  });
+
+  it('names what is wrong with the tree', () => {
+    mark(COMMIT, { 'a.ts': '1'.repeat(40) });
+    const report = treeReport(checkTree(root, { [COMMIT_ENV]: COMMIT }));
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain('a.ts is missing');
   });
 });

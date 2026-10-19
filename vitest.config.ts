@@ -48,6 +48,7 @@ const VITE_SERVER_TESTS = [
 
 export default defineConfig({
   test: {
+    globalSetup: ['./scripts/fleet-tree.setup.ts'],
     projects: [
       {
         ...shared,
