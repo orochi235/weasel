@@ -33,7 +33,7 @@ import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
-import { useTrialOrbit } from '../../src/trial/useTrialOrbit';
+import { useOrbitView } from '../../src/trial/useOrbitView';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   alignPlaneSource,
@@ -104,9 +104,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // The trial owns the camera: it persists, Clone copies it and Reset puts it
   // back. The wheel reaches it through the trial; the orbit tool below turns
   // and pans it through this viewport's own `camera3d` dep.
-  const trialOrbit = useTrialOrbit();
-  const camera = trialOrbit?.camera ?? HOME;
-  const setCameraRef = useLatest(trialOrbit?.setCamera);
+  const orbitView = useOrbitView();
+  const camera = orbitView.camera ?? HOME;
+  const setCameraRef = useLatest(orbitView.setCamera);
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
 
   const cameraRef = useLatest(camera);
@@ -301,7 +301,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const camera3d = useMemo(
     () => ({
       get: () => cameraRef.current,
-      set: (next: Camera3d) => setCameraRef.current?.(next),
+      set: (next: Camera3d) => setCameraRef.current(next),
       size: () => sizeRef.current,
     }),
     [cameraRef, setCameraRef],
@@ -446,12 +446,12 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   // The trial's camera anchors its dolly in this pane, under the toolbar,
   // where the renderer projects.
-  const viewportRef = trialOrbit?.viewportRef;
+  const viewportRef = orbitView.viewportRef;
   const attachPane = useCallback(
     (el: HTMLDivElement | null) => {
       paneRef.current = el;
       attachTile(el);
-      viewportRef?.(el);
+      viewportRef(el);
     },
     [attachTile, viewportRef],
   );

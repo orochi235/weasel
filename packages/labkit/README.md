@@ -517,9 +517,13 @@ the focus. `zoom` in a render context is that camera's magnification — a 2D
 view's zoom, or an orbit's opening distance over its distance now.
 
 An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
-fov, near, far }`, plain numbers in radians and scene units. Read it with
-`useTrialOrbit()` anywhere in the trial, or `as3DView(ctx.trial.view)` in
-`render`, and project it with kernel3d's `cameraViewProjection`:
+fov, near, far }`, plain numbers in radians and scene units. Whatever draws
+the scene reads it with `useOrbitView()`, and projects it with kernel3d's
+`cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
+`useOrbitView()` also tells the trial a 3D view is drawn there, so an
+instrument that forgets `orbit` — whose camera then cannot move — gets a
+warning in development. For a camera that should hold still, declare
+`orbit: { fixed: true }`:
 
 ```tsx
 orbit: {
@@ -531,7 +535,7 @@ orbit: {
 A drag turns it, Shift+drag pans its target, the wheel and a pinch dolly
 about the point under the pointer — as a 2D camera zooms about it — and a
 double click goes home. When the instrument draws in a pane rather than its
-whole body, it hands that pane to `useTrialOrbit().viewportRef`: gestures land
+whole body, it hands that pane to `useOrbitView().viewportRef`: gestures land
 there, and the dolly anchors there. An instrument running a dispatcher of its
 own over the pane — tools that select or draw in 3D — keeps the press for them
 with `gestures: { drag: false, home: false, pinch: 'trackpad' }` and moves the

@@ -17,4 +17,5 @@ export {
   resetTrial,
 } from './trialOps';
 export type { TrialOrbit } from './useTrialOrbit';
+export { useOrbitView } from './useOrbitView';
 export { useTrialOrbit } from './useTrialOrbit';
