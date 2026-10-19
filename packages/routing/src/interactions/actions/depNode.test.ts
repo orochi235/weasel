@@ -34,6 +34,26 @@ describe('createDepRegistry', () => {
   });
 });
 
+describe('a source reading the one it displaced', () => {
+  it('reads the source beneath it in its own stack, then in the scopes above', () => {
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    const wrap = (tag: string) => ((below: () => unknown) => `${tag}(${String(below())})`) as never;
+    root.registry.register('selection' as DepName, (() => 'base') as never);
+    scope.registry.register('selection' as DepName, wrap('a'));
+    const release = scope.registry.register('selection' as DepName, wrap('b'));
+    expect(scope.registry.get('selection' as DepName)).toBe('b(a(base))');
+    release();
+    expect(scope.registry.get('selection' as DepName)).toBe('a(base)');
+  });
+
+  it('reads undefined below the bottom source', () => {
+    const deps = createDepRegistry();
+    deps.register('selection' as never, ((below: () => unknown) => below() ?? 'none') as never);
+    expect(deps.get('selection' as never)).toBe('none');
+  });
+});
+
 describe('dep registry change notices', () => {
   it('tells subscribers when a source is registered, released, or said to have changed', () => {
     const registry = createDepRegistry();

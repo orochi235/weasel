@@ -51,8 +51,9 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi): Cha
 }
 
 /**
- * Replaces the canvas's `insert` dep with one that builds stencil bodies. Mounted as a child
- * of `<SceneCanvas>`: the dep registry is last-write-wins, and a child registers after the canvas.
+ * Puts an `insert` dep that builds stencil bodies over the canvas's own, which still takes every
+ * other kind. Mounted as a child of `<SceneCanvas>`: the newest source is the one asked first,
+ * and a child registers after the canvas.
  */
 export function StencilInsertPublisher(): null {
   useStencilInsert(FLOWCHART_STENCILS, STENCIL_INSERT);

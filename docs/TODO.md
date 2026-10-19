@@ -1327,8 +1327,3 @@ only story runner in the repo.
 - **(P3) Second arc.** Connectors that route around shapes while editing; containers and
   swimlanes; multiple pages (`core/pages`); themes; waypoint editing on connectors; editing under
   the `rack` and `lanes` looks, where dragging a stage reorders it.
-
-- **(P3) A consumer's `insert` dep hides the kit default.** A canvas using `useStencilInsert`
-  can't also use core's rect, ellipse and text insert tools, because the dep registry answers only
-  its newest source. Core needs a way for a dep to delegate to the default
-  (`packages/diagram/src/stencilTool.ts`).

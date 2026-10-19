@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type RectPose } from '@weasel-js/core';
+import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
 import { NODE } from './fromData';
@@ -98,11 +98,12 @@ describe('useStencilTool', () => {
 });
 
 describe('useStencilInsert', () => {
-  function insertDep(opts?: StencilInsertOptions) {
+  function insertDep(opts?: StencilInsertOptions, under?: InsertDep) {
     const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children);
     const { result } = renderHook(() => {
       useDepSource('scene', () => scene as never);
+      if (under) useDepSource('insert', () => under);
       useStencilInsert(FLOWCHART_STENCILS, opts);
       return useDepRegistry();
     }, { wrapper });
@@ -119,7 +120,19 @@ describe('useStencilInsert', () => {
     expect(scene.get(id!)).toBeUndefined();
   });
 
-  it('inserts nothing for a kind no stencil names', () => {
+  it('hands a kind no stencil names to the insert dep it displaced', () => {
+    const under = { commit: vi.fn(() => 'r1' as never), build: vi.fn(() => null), layer: () => 'main' } satisfies InsertDep;
+    const { dep } = insertDep(undefined, under);
+    const bounds = { x: 0, y: 0, width: 10, height: 10 };
+    expect(dep.commit(bounds, { kind: 'rect' } as never)).toBe('r1');
+    expect(under.commit).toHaveBeenCalledWith(bounds, { kind: 'rect' }, undefined);
+    dep.build!(bounds, { kind: 'rect' } as never);
+    expect(under.build).toHaveBeenCalledTimes(1);
+    dep.commit(bounds, { kind: stencilKind('process') } as never);
+    expect(under.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('inserts nothing for a kind no stencil names when nothing is beneath it', () => {
     const { scene, dep } = insertDep();
     expect(dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' } as never)).toBeNull();
     expect([...scene.roots]).toEqual([]);

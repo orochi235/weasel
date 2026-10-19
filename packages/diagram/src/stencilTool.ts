@@ -41,25 +41,27 @@ export interface StencilInsertOptions {
 }
 
 /**
- * Registers the `insert` dep for stencil kinds, replacing the kit's default.
- * A kind no stencil here names inserts nothing: the dep registry answers only
- * its newest source, so the default cannot be reached to delegate to.
+ * Registers the `insert` dep for stencil kinds. Any other kind goes to the
+ * `insert` dep this one displaced, so core's rect, ellipse and text tools
+ * keep working beside the stencils.
  */
 export function useStencilInsert(stencils: readonly DiagramStencil[], opts: StencilInsertOptions = {}): void {
   const registry = useDepRegistry();
   const stencilsRef = useLatest(stencils);
   const optsRef = useLatest(opts);
 
-  useDepSource('insert', (): InsertDep => {
+  useDepSource('insert', (below): InsertDep => {
     const scene = registry.get('scene');
-    const layer = () => optsRef.current.layer ?? scene?.layers[0]?.id ?? 'default';
+    const fallback = below();
+    const layer = () => optsRef.current.layer ?? fallback?.layer?.() ?? scene?.layers[0]?.id ?? 'default';
     const stencilOf = (kind: string) => {
       const id = stencilIdOf(kind);
       return id === null ? undefined : stencilsRef.current.find((s) => s.id === id);
     };
-    const build: NonNullable<InsertDep['build']> = (bounds, extras) => {
+    const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
       const stencil = stencilOf(extras.kind);
-      if (stencil === undefined || scene === undefined) return null;
+      if (stencil === undefined) return fallback?.build?.(bounds, extras, ends) ?? null;
+      if (scene === undefined) return null;
       const built = stencilBuild(stencil, bounds, {
         layer: layer(),
         newId: () => scene.mintId(),
@@ -72,6 +74,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       layer,
       build,
       commit(bounds, extras, ends) {
+        if (stencilOf(extras.kind) === undefined) return fallback?.commit(bounds, extras, ends) ?? null;
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
