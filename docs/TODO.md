@@ -686,6 +686,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
+- **(P3) Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
+  (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
+  pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
+  when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
+  a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
+  worth that.
 - **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
   (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
   pointer passes out of its target or off the surface. The loupe
