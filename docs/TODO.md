@@ -1072,14 +1072,6 @@ only story runner in the repo.
   attestation, which only an OIDC publish can make). Recovery: register `menu` with
   `scripts/setup-trusted-publishing.mjs`, then re-run Release by `workflow_dispatch`.
 
-- **(P2) Nothing runs the stories' `play` checks.** CI, `npm test`, and the fleet's
-  `.onto/tests` all leave out the `forge-stories` vitest project, and CI's comment says it
-  "exists only to validate that stories can mount" — but plays assert layout jsdom cannot, and
-  `Prefs.stories.tsx`'s Rail play failed on `main` from 2026-10-14 (`815a44787`, a wider rail
-  gutter) until it was found by hand on 2026-10-18. The fleet already runs headless Chromium
-  for `browser`, so adding `--project=forge-stories` there costs wall time, not a new
-  dependency; run `npm run test:stories:forge` once first to see which plays are failing now.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
