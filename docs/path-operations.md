@@ -75,8 +75,8 @@ Tag: `path-command`
 |---|---|---|---|---|---|
 | Join | `joinPaths` | Joins two open ends with a straight segment | Mod+J | main | core |
 | Join anchors | `joinAnchors` | The same, from two selected end anchors | Mod+J in path edit | main | core |
-| Bridge | `bridgePaths` | Joins two open ends with a curve along each end's heading | Mod+Shift+J | main | path-tools |
-| Bridge anchors | `bridgeAnchors` | The same, from two selected end anchors | Mod+Shift+J in path edit | main | path-tools |
+| Bridge | `bridgePaths` | Joins two open ends with a curve along each end's heading | Alt+J | main | path-tools |
+| Bridge anchors | `bridgeAnchors` | The same, from two selected end anchors | Alt+J in path edit | main | path-tools |
 | Average anchors | `averageAnchors` | Moves selected anchors to their mean, or lines them up on one axis | Mod+Alt+Shift+J | main | core |
 | Cut at crossings | `snipAtCrossings` | Splits paths where they cross | — | main | core |
 | Simplify | `simplifyPath` | Removes anchors the curve does not need | — | main | core |
@@ -112,5 +112,5 @@ explicit:
 - **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
   modifier to the same click.
 - **A brush drag** simplifies or smudges depending on the tool.
-- **Mod+J** joins, Mod+Shift+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor
+- **Mod+J** joins, Alt+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor
   forms.

@@ -995,7 +995,7 @@ const DEMO_META: DemoMeta[] = [
     category: 'Geometry',
     description:
       "Bridge joins two open ends with a curve that leaves each one along the direction its path was heading, so the joint has no kink. Each handle of the new segment is Tension times the gap long: `0` is a straight segment, as Join makes, and longer handles swing the curve wider. Two separate paths become one, the first selected keeping its style, and the whole change is one undo step. With one path selected, Bridge closes it. In path edit, select the two end anchors to bridge instead. The control panel's Tension reaches both commands through `<SceneCanvas tune>`.",
-    hint: 'The two upper paths open selected: press Bridge in the bar, or <kbd>Mod+Shift+J</kbd>, then undo and try another Tension. Join beside it spans the same gap straight. To bridge in path edit, double-click a path, select its two ends and press Bridge anchors.',
+    hint: 'The two upper paths open selected: press Bridge in the bar, or <kbd>Alt+J</kbd>, then undo and try another Tension. Join beside it spans the same gap straight. To bridge in path edit, double-click a path, select its two ends and press Bridge anchors.',
     load: () => import('./demos/BridgeLabDemo').then((m) => m.BridgeLabDemo),
     path: 'apps/site/demos/BridgeLabDemo.tsx',
   },
