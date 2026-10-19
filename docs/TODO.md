@@ -1043,14 +1043,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) A vitest worker thread on teitou segfaults now and then and ends the fleet run with 255.**
-  The run of `c55d95f3f` died 22,636 tests in with no failure in its log (2026-10-19); teitou's
-  `~/Library/Logs/DiagnosticReports/node-2026-10-19-125455.ips` is `EXC_BAD_ACCESS` on a
-  `WorkerThread`, a jump to address 0 out of interpreted JS. `node-2026-10-17-234520.ips` there is the
-  same class (a bad read at `0x89`, also a worker thread). The same tree passed in full on studio, so
-  nothing points at a test yet. Next: record the node version each run used and whether other nodes
-  ever crash this way, to tell a node or V8 bug from a native addon (rolldown, lightningcss) on a
-  worker.
+- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once every node runs Node 24.22.0 or later.**
+  Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
+  to 10-19), all under nvm's Node 24.21.0, which `.nvmrc` selects. The crash reports match
+  nodejs/node#62393, a Sparkplug bug fixed by the V8 backport in 24.22.0 (2026-10-14), so the config
+  turns Sparkplug off for now (2026-10-19). Install 24.22.0 on each node's nvm, then remove the line;
+  there are reports of the same crash on 26.7 and 26.8.1, so check a 26 run before removing it.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
