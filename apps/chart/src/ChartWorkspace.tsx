@@ -15,7 +15,7 @@ import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPer
 import { StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StencilInsertPublisher, useChartDiagram } from './useChartDiagram';
-import './ChartWorkspace.css';
+import './workspace.css';
 
 const FEATURES = ['draw'] as const;
 // Module consts: SceneCanvas keys its wiring off these props' identity.

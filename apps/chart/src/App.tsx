@@ -4,17 +4,24 @@ import './app.css';
 import { CHART_MENUS } from './chartCommands';
 import { ChartWorkspace } from './ChartWorkspace';
 import { chartMenuBar } from './menuBar';
+import { MODE_MENU, useModeCommands, type ChartMode } from './modes';
+import { PIPELINE_MENUS } from './pipeline/pipelineCommands';
+import { PipelineWorkspace } from './pipeline/PipelineWorkspace';
 
-export type ChartMode = 'chart' | 'pipeline';
+export type { ChartMode } from './modes';
 
 export function App(): ReactElement {
-  const [mode] = useState<ChartMode>('chart');
-  const menuBar = useMemo(() => chartMenuBar(mode === 'chart' ? CHART_MENUS : {}), [mode]);
+  const [mode, setMode] = useState<ChartMode>('chart');
+  useModeCommands(mode, setMode);
+  const menuBar = useMemo(
+    () => chartMenuBar({ ...(mode === 'chart' ? CHART_MENUS : PIPELINE_MENUS), mode: MODE_MENU }),
+    [mode],
+  );
 
   return (
     <div className="wc-app" data-mode={mode}>
       <MenuBar schema={menuBar} className="wc-menubar" />
-      {mode === 'chart' && <ChartWorkspace />}
+      {mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace />}
     </div>
   );
 }
