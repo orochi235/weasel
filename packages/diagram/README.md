@@ -91,7 +91,8 @@ lands on.
 ```tsx
 <DiagramView specs={specs} onConnect={add} connectBodies />
 
-const connector = useConnectorTool({ participants: sceneParticipants(scene), bodies: true });
+const participants = useMemo(() => sceneParticipants(scene), [scene]);
+const connector = useConnectorTool({ participants });
 ```
 
 An end is a `ConnectEnd`: a port, or a body (`isBodyEnd` tells them apart). A
@@ -106,7 +107,8 @@ changes nothing; update the data edge to keep it.
 ```tsx
 <DiagramView
   specs={specs}
-  onReconnect={(change) => setEdges(applyReconnect(edges, change))}
+  onReconnect={({ edge, end, node, port }) => setEdges((all) => all.map((e) => edgeIdOf(e) !== edge ? e
+    : end === 'from' ? { ...e, from: node, fromPort: port } : { ...e, to: node, toPort: port }))}
   connectBodies
 />
 ```
@@ -126,23 +128,27 @@ or edits the existing one in place.
 const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 ```
 
-`labelSize` sizes the box from the text, so a label's box and an edit of it
-agree.
+`labelSize` is the box a label's text takes. Both routes size with it, so a
+label built from data and one the action creates come out the same size.
 
 ### Stencils
 
 A `DiagramStencil` is a palette entry: an id, a label, an outline and a default
 size. `FLOWCHART_STENCILS` has the basic flowchart symbols. `useStencilInsert`
 makes the canvas's `insert` dep build them, and `useStencilTool` gives each a
-tool that places one on a click or a drag.
+tool that places one on a drag. A click places nothing; to place one at a
+point, call the `insert` dep's `commit` with a zero-size box there and the
+stencil's kind, and the body comes out at the stencil's size.
 
 ```tsx
 useStencilInsert(FLOWCHART_STENCILS, { layer: 'diagram' });
 const decision = useStencilTool(FLOWCHART_STENCILS[1]);
 ```
 
-A drop from your own palette lands where `DiagramView`'s `worldAt(clientX,
-clientY)` says. `useStencilInsert` replaces the kit's `insert` dep, so a canvas
+A drop from your own palette goes through the canvas's `ingestion` handlers:
+a handler gets the drop's world point as `ctx.point` and calls
+`ctx.insert.commit`. Elsewhere, `SceneCanvasApi.clientToWorld` turns a client
+point into a world one. `useStencilInsert` replaces the kit's `insert` dep, so a canvas
 using it cannot also use core's rect, ellipse and text tools.
 
 ### Laying it out
@@ -675,7 +681,7 @@ const column: EffectLook = (pipeline) => {
 `EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
 stage to move it, drag from an output to an input to wire them, press Delete to
 remove the selection, and drag an end of a selected wire to move it. It keeps no
-state. Every edit comes back through `onChange` as the next `EffectDoc` with a
+document state. Every edit comes back through `onChange` as the next `EffectDoc` with a
 name for an undo entry, and shows once `doc` follows.
 
 ```tsx
@@ -689,8 +695,9 @@ api.current?.addStage({ type: 'gate', title: 'Gate', inputs, outputs });
 ```
 
 An `EffectStageType` carries the ports and typed params a new stage starts
-with. `setParam`, `addWire`, `canWire` and the rest of the edit model are plain
-functions over an `EffectDoc`, for driving the edits yourself.
+with. `setParam`, `addWire`, `removeStages` and the rest of the edit model are
+plain functions from one `EffectDoc` to the next, and `canWire` asks an
+`EffectPipeline` whether two ports may be wired, for driving the edits yourself.
 
 ## Design notes
 

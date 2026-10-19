@@ -1342,3 +1342,28 @@ only story runner in the repo.
 
 - **(P3) Body label text sits left-aligned in stencil bodies** rather than centered
   (`packages/diagram/src/stencil.ts`).
+
+- **(P3) `formatParam` always shows one decimal.** A param stepping by 0.01 shows 0.04 as "0.0",
+  and a small negative value prints "-0.0". Take the decimals from the control's `step`
+  (`packages/diagram/src/effect/stageTypes.ts`).
+
+- **(P3) `EffectEditor`'s picked wire survives a delete.** `nextWireId` reuses the lowest free id,
+  so the next wire drawn comes back already picked. Clear the pick in `onDelete`
+  (`packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) Dragging a stage pins only that stage, while `addStage` pins every stage.** After a drag,
+  layered layout can still move the stages nobody placed. Make the two agree (`packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) A body end on a node with no ports commits an edge with nothing to route to**
+  (`packages/diagram/src/connectTargets.ts`).
+
+- **(P3) The reconnect preview aims its fixed end at the pointer**, not at the edge's first
+  waypoint (`packages/diagram/src/reconnect.ts`).
+
+- **(P3) The rule for where an end aims and which point is a body's center lives twice**, in
+  `connectTargets.ts` and `edge.ts`. Fold it into one (`packages/diagram/src/`).
+
+- **(P3) Pipeline mode loses its undo history on a mode switch, and can't be saved.** The history
+  lives in `PipelineWorkspace`'s `useMemo`, so leaving the mode drops it, and the File menu is empty
+  in pipeline mode, so a pipeline can't be written to or opened from a file
+  (`apps/chart/src/pipeline`).
