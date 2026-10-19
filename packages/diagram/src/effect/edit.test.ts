@@ -38,6 +38,13 @@ describe('edit', () => {
     expect(g.places.b).toBeDefined();
   });
 
+  it('removeStages prunes a group left empty, and a group holding only that one', () => {
+    const d = built();
+    const groups = [{ id: 'inner', members: ['b'] }, { id: 'outer', members: ['inner'] }, { id: 'keep', members: ['b', 'c'] }];
+    const r = removeStages({ ...d, pipeline: { ...d.pipeline, groups } }, ['b']);
+    expect(r.pipeline.groups).toEqual([{ id: 'keep', members: ['c'] }]);
+  });
+
   it('addWire mints w1 then w2', () => {
     expect(built().pipeline.wires.map((w) => w.id)).toEqual(['w1', 'w2']);
   });
