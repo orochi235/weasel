@@ -122,13 +122,21 @@ const transport = useMemo(() => createInPagePanelTransport(), []);
 <div className="dock"><DevtoolsPanel transport={transport} /></div>
 ```
 
+Its tabs are Scene (the node tree and a picked node's pose and data), State (selection, view,
+tool, overlay flags and probes), Registry (tools, actions and deps under a name filter, each with
+its bindings in the route grammar), Dispatch (the trace and the live prediction), History (each
+step with its ops, where the history stands, and the checkpoint stack on request) and Frame (paint
+cost while the `fps` overlay is on). Registry re-reads on `selection` and `scene` as well as
+`registry`, since `enabled` and `active` are not announced.
+
 It says `yo` on mount and `bye` on unmount, which drops its highlight and overlay flags. Mount it
 in development only, behind a lazy import, so production bundles leave it out:
 `import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way in
 three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
 Devtools switch in the demo's header), and forge (a Devtools global in the workshop toolbar, which
 puts the panel beside the story). `tabs={['dispatch']}` shows a subset; draw's Toolkit Builder
-uses it for its dispatch widget.
+uses it for its dispatch widget. Draw's Bundle Inspector (`#/dev/registry`) keeps only draw's static
+catalog (bundles, gestures, slots, ops, icons, traits); a canvas's live registry is the panel's.
 
 ## Extension
 

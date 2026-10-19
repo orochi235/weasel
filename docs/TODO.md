@@ -1036,16 +1036,11 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) The devtools panel's Registry and History tabs, and what the extension lacks.** The hook,
-  the panel and the extension are built (`docs/devtools.md`). What is left:
-  1. Registry and History tabs in the panel over `get-registry` and `get-history`; then draw's
-     Bundle Inspector (`apps/draw/src/dev/RegistryInspector.tsx`) can go.
+- **(P2) What the devtools extension lacks.** The hook, the panel (with its Registry and History
+  tabs) and the extension are built (`docs/devtools.md`). What is left:
   2. The extension's 16 px icon is the whole site logo shrunk (`apps/devtools-extension/scripts/
      gen-icons.ts`), and at 1x it reads as an orange and dark blob. A crop to the head for the 16
      and 32 px sizes would read better; that is a call on the mark, not made (2026-10-19).
-  3. A selection change is announced as `scene` as well as `selection`, because a scene notifies
-     its subscribers on selection (`core/scene/scene.ts`) and the root follows that feed. The
-     panel's Scene tab then reloads its open levels on every selection (seen 2026-10-19).
 
 ## Release-gate & build hygiene
 
