@@ -1,8 +1,8 @@
 /**
  * The slice of the WebExtensions API this extension calls, typed by hand, and
- * one accessor that reads it from `browser` (Firefox, Safari) or `chrome`
- * (Chrome, Edge). Where the two differ — `eval`, which Chrome answers by
- * callback — the wrapper below takes either shape.
+ * one accessor that reads it from `browser` where there is one and `chrome`
+ * otherwise. `eval` answers differently in each browser, so it has its own
+ * wrapper below.
  */
 
 export interface ExtEvent<A extends unknown[]> {
