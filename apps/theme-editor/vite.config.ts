@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases.ts';
 import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
+import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
@@ -24,6 +25,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    skipWorktrees(),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     weaselIcons.vite({ mode: 'app' }),
     localWake(),

@@ -10,6 +10,7 @@ import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
 import { localWake } from './scripts/vite-wake.ts';
+import { skipWorktrees } from './scripts/vite-watch.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
@@ -53,6 +54,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    skipWorktrees(),
     serveReferenceInDev(),
     demoTimestamps({ root: import.meta.dirname }),
     demoSources({ root: import.meta.dirname }),

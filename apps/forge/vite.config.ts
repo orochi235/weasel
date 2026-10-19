@@ -8,6 +8,7 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
+import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
@@ -21,6 +22,7 @@ export default defineConfig(({ command, isPreview }) => ({
   define: weaselDefines(repoRoot),
   plugins: [
     react(),
+    skipWorktrees(),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     weaselIcons.vite({ mode: 'app' }),
