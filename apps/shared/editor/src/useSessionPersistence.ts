@@ -64,11 +64,12 @@ export function useSessionPersistence<D, L extends string, P>(
       if (!restoredRef.current) return;
       const { sceneKey, historyKey, onSaved } = optsRef.current;
       try {
-        onSaved?.(writeSession(
+        const ok = writeSession(
           localStorage,
           [sceneKey, JSON.stringify(scene.toJSON(), serializeReplacer)],
           [[historyKey, JSON.stringify(scene.serializeHistory(), serializeReplacer)]],
-        ));
+        );
+        onSaved?.(ok);
       } catch {
         // No store at all, or a scene that will not serialize.
         onSaved?.(false);
