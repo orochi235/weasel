@@ -92,4 +92,22 @@ describe('commitEdgeToScene', () => {
     const serialized = scene.toJSON().nodes.find((n) => n.dependsOn !== undefined)!;
     expect(serialized.derivePathKey).toBe(DIAGRAM_EDGE);
   });
+
+  it('writes a body end as an end naming no port, which routes to the facing port', () => {
+    const scene = sceneWithTwo();
+    commitEdgeToScene(
+      { from, to: { kind: 'body', nodeId: 'b', point: { x: 350, y: 20 } }, router: 'straight' },
+      { deps: { scene } } as unknown as InvocationCtx,
+    );
+    const edge = scene.renderOrderNodes().find((n) => n.dependsOn !== undefined)!;
+    expect(edge.dependsOn).toEqual(['a', 'b']);
+    expect(diagramEdgeOf(edge)!.to).toStrictEqual({});
+    const deps = (['a', 'b'] as const).map((id) => {
+      const node = scene.get(id as never)!;
+      return { node, pose: node.pose };
+    });
+    const path = EDGE_DERIVE_PATH(edge, deps as never) as { coords: Float32Array };
+    // `b`'s west side, the one facing `a`.
+    expect([...path.coords].slice(-2)).toEqual([300, 20]);
+  });
 });
