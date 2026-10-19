@@ -17,6 +17,8 @@ export interface SceneSelection {
    *  returning what it read earlier, or one that has already filtered. */
   replace(ids: readonly NodeId[]): void;
   subscribe(listener: () => void): () => void;
+  /** How many times subscribers have been told the selection changed. */
+  changes(): number;
 }
 
 export function createSceneSelection(
@@ -24,12 +26,14 @@ export function createSceneSelection(
   reachable: (ids: readonly NodeId[]) => readonly NodeId[],
 ): SceneSelection {
   let ids: readonly NodeId[] = [];
+  let changes = 0;
   const changed = createEmitter();
 
   return {
     get: () => ids,
     set(next) {
       ids = reachable(next);
+      changes++;
       changed.emit();
     },
     narrow(gone) {
@@ -41,6 +45,7 @@ export function createSceneSelection(
       ids = next;
     },
     subscribe: changed.subscribe,
+    changes: () => changes,
   };
 }
 

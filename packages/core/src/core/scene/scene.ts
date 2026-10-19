@@ -2,6 +2,7 @@ import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
 import { createNotifier } from './notifier';
+import { sceneChanges } from './sceneChanges';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
@@ -80,13 +81,8 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   const generateId = options.generateId ?? defaultGenerateId;
   const selection = createSceneSelection(locks.reachable);
-  // A selection change is a scene change to every subscriber; counted, so a
-  // reader can tell one that changed nothing else.
-  let selectionChanges = 0;
-  selection.subscribe(() => {
-    selectionChanges++;
-    notifier.notify();
-  });
+  // A selection change is a scene change to every subscriber.
+  selection.subscribe(notifier.notify);
 
   /** Ephemeral per-node overrides. Deliberately not part of `state`: not
    *  document content, never reaches `toJSON`, and never touches history. */
@@ -162,9 +158,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       notifier.notify();
     },
 
-    subscribe: notifier.subscribe,
-    getVersion: notifier.version,
-    getContentVersion: () => notifier.version() - selectionChanges,
+    ...sceneChanges(notifier, selection),
   };
 
   const initial = initialNodes(registry);

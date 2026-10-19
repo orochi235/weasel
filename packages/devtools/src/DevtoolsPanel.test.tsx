@@ -91,6 +91,17 @@ describe('DevtoolsPanel', () => {
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: /^solo\b/ })).toBeNull());
   });
 
+  it('leaves the scene tree alone when only the selection changes', async () => {
+    const t = mount();
+    await waitFor(() => row('solo'));
+    await act(settle);
+    const before = t.sentOfType('get-children').length;
+    act(() => { t.root().source.select(['solo']); });
+    await waitFor(() => expect(t.root().source.selection()).toEqual(['solo']));
+    await act(settle);
+    expect(t.sentOfType('get-children')).toHaveLength(before);
+  });
+
   it('shows a picked node: parent, pose and data, a function as its name', async () => {
     mount();
     await waitFor(() => row('group'));

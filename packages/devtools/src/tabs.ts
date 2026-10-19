@@ -3,6 +3,8 @@ import type { ComponentType } from 'react';
 import type { DevtoolsClient } from './client';
 import { DispatchView } from './views/DispatchView';
 import { FrameView } from './views/FrameView';
+import { HistoryView } from './views/HistoryView';
+import { RegistryView } from './views/RegistryView';
 import { SceneView } from './views/SceneView';
 import { StateView } from './views/StateView';
 
@@ -12,7 +14,7 @@ export interface DevtoolsViewProps {
   rootId: string;
 }
 
-export type DevtoolsTabId = 'scene' | 'state' | 'dispatch' | 'frame';
+export type DevtoolsTabId = 'scene' | 'state' | 'registry' | 'dispatch' | 'history' | 'frame';
 
 export interface DevtoolsTab {
   id: DevtoolsTabId;
@@ -23,6 +25,8 @@ export interface DevtoolsTab {
 export const DEVTOOLS_TABS: readonly DevtoolsTab[] = [
   { id: 'scene', label: 'Scene', View: SceneView },
   { id: 'state', label: 'State', View: StateView },
+  { id: 'registry', label: 'Registry', View: RegistryView },
   { id: 'dispatch', label: 'Dispatch', View: DispatchView },
+  { id: 'history', label: 'History', View: HistoryView },
   { id: 'frame', label: 'Frame', View: FrameView },
 ];
