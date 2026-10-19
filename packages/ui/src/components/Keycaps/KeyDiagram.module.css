@@ -53,12 +53,12 @@
 .board .slot > kbd.cap {
   width: 100%;
   min-width: 0;
-  padding: 0 2px;
+  padding: 0 var(--wzl-space-1);
 }
 
 .slot > kbd.cap {
-  /* Between the theme's light (200) and normal: a whole keyboard of bold legends reads as a wall. */
-  font-weight: 300;
+  /* A whole keyboard of bold legends reads as a wall. */
+  font-weight: var(--wzl-font-weight-normal);
   /* A key let go fades back, so a tap too quick to see held still shows. */
   transition: background-color 0.35s ease-out, border-color 0.35s ease-out, color 0.35s ease-out;
 }
@@ -71,6 +71,8 @@
   background: var(--tone, var(--wzl-accent));
   border-color: var(--tone, var(--wzl-accent));
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   transition: none;
 }
 
