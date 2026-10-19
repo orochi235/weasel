@@ -556,4 +556,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   subscribe(listener: () => void): () => void;
   /** Monotonically increasing version. Snapshot for `useSyncExternalStore`. */
   getVersion(): number;
+  /** {@link Scene.getVersion} less the changes that only moved the selection: unchanged across a
+   *  notice that changed nothing else. */
+  getContentVersion(): number;
 }

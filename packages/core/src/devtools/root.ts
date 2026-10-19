@@ -76,7 +76,18 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
     if (s === watchedScene) return;
     offScene?.();
     watchedScene = s;
-    offScene = s ? s.subscribe(() => notify('scene')) : null;
+    if (!s) {
+      offScene = null;
+      return;
+    }
+    // A selection change notifies the scene's subscribers too; the canvas reports it as `selection`.
+    let content = s.getContentVersion();
+    offScene = s.subscribe(() => {
+      const next = s.getContentVersion();
+      if (next === content) return;
+      content = next;
+      notify('scene');
+    });
   };
   const attach = (): void => {
     const offs = [

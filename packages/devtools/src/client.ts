@@ -8,6 +8,7 @@ import {
   type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
   type PageMessage, type PanelTransport, type SerializedValue,
 } from '@weasel-js/core/devtools';
+import type { DevtoolsHistorySlice, DevtoolsRegistry } from '@weasel-js/core/devtools';
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -21,6 +22,8 @@ export interface DevtoolsResultMap {
   'get-state': DevtoolsRootState;
   'get-trace': DevtoolsTraceSlice;
   'get-frame': SerializedValue;
+  'get-registry': DevtoolsRegistry;
+  'get-history': DevtoolsHistorySlice;
   select: null;
   highlight: null;
   'set-tool': null;

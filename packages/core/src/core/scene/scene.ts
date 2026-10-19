@@ -80,8 +80,13 @@ function buildScene<TData, TLayer extends string, TPose>(
 
   const generateId = options.generateId ?? defaultGenerateId;
   const selection = createSceneSelection(locks.reachable);
-  // A selection change is a scene change to every subscriber.
-  selection.subscribe(notifier.notify);
+  // A selection change is a scene change to every subscriber; counted, so a
+  // reader can tell one that changed nothing else.
+  let selectionChanges = 0;
+  selection.subscribe(() => {
+    selectionChanges++;
+    notifier.notify();
+  });
 
   /** Ephemeral per-node overrides. Deliberately not part of `state`: not
    *  document content, never reaches `toJSON`, and never touches history. */
@@ -159,6 +164,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     subscribe: notifier.subscribe,
     getVersion: notifier.version,
+    getContentVersion: () => notifier.version() - selectionChanges,
   };
 
   const initial = initialNodes(registry);
