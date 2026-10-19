@@ -1,0 +1,24 @@
+.frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--wzl-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+}
+
+.figure {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  text-align: end;
+  white-space: pre;
+}
+
+.layers {
+  font-family: var(--wzl-font-mono);
+}
+
+.note {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+}

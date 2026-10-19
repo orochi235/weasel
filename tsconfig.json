@@ -51,6 +51,7 @@
       "@weasel-js/core/test-seams": ["./packages/core/src/import-shims/test-seams.ts"],
       "@weasel-js/cursor": ["./packages/cursor/src/index.ts"],
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
+      "@weasel-js/devtools": ["./packages/devtools/src/index.ts"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
       "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
       "@weasel-js/diagram/effect": ["./packages/diagram/src/effect.entry.ts"],
@@ -173,7 +174,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/menu/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/icons/src", "packages/icons-plugin/src","packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/diagram-elk/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/path-tools/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/animator/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/text-dom/src","packages/history/src", "packages/menu/src", "packages/quantity/src", "packages/simulation/src", "packages/stroke/src", "packages/renderer/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/icons/src", "packages/icons-plugin/src","packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/diagram-elk/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/parallax/src", "packages/minimap/src", "packages/symmetry/src", "packages/path-tools/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src", "packages/devtools/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

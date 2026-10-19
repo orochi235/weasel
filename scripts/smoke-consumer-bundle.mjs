@@ -402,12 +402,15 @@ await writeFile(
     `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
+    // devtools is a Vite library build with a stylesheet of its own, like ui.
+    `import * as devtools from '@weasel-js/devtools';\n` +
+    `import '@weasel-js/devtools/style.css';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides,\n` +
+    `  guides, devtools,\n` +
     `  toolPalette, prefs, callout, icon, paintValue, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
@@ -513,6 +516,7 @@ await writeFile(
     // a module with no declarations is TS7016 right here.
     `type _Ui = typeof import('@weasel-js/ui');\n` +
     `type _Hud = typeof import('@weasel-js/hud');\n` +
+    `type _Devtools = typeof import('@weasel-js/devtools');\n` +
     // The subpath must carry types too, not just resolve as JS. The wildcard's
     // `types` condition points into the tsc-emitted tree, which is laid out to
     // mirror the Vite entry keys; if those two ever drift, this is TS7016.

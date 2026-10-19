@@ -88,21 +88,13 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
   // Dev HUDs sit over the canvas and change between dispatches, and a
   // Playwright element screenshot is a pixel-clip of the viewport, so it
   // captures them regardless of DOM nesting. Hide every non-canvas sibling
-  // inside `.wd-canvas-host`, and the dispatch trace, which lives elsewhere.
+  // inside `.wd-canvas-host`.
   await page.evaluate(() => {
     const host = document.querySelector('.wd-canvas-host');
     if (host) {
       for (const child of Array.from(host.children)) {
         if (child.tagName !== 'CANVAS') (child as HTMLElement).style.display = 'none';
       }
-    }
-    // DispatchTracePanel renders under a CSS-module class containing
-    // "barTitle"; walk up to its widget wrapper.
-    const title = document.querySelector('[class*="barTitle"]');
-    if (title) {
-      let w: HTMLElement | null = title as HTMLElement;
-      while (w && !/widget/i.test(w.className)) w = w.parentElement;
-      if (w) w.style.display = 'none';
     }
   });
   await waitForRepaint(page);

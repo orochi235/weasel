@@ -3,6 +3,7 @@
  * `@weasel-js/routing`. Re-exported here, beside the overlay that reads one.
  */
 import type { DebugSink, HitShape, HandleKind, View, ViewportGestureKind } from '@weasel-js/routing';
+import type { DEBUG_FEATURES } from './features';
 export type { DebugSink, HitShape, HandleKind, ViewportGestureKind };
 
 /** One bit per debug feature; absent keys are off. */
@@ -38,8 +39,7 @@ export interface DebugConfig {
 
 /** The name of one debug-overlay feature — the keys of {@link DebugConfig}
  *  that toggle a visualization. */
-export type DebugFeature =
-  | 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps' | 'viewport';
+export type DebugFeature = (typeof DEBUG_FEATURES)[number];
 
 /** Colors the debug overlay draws with, one entry per feature. */
 export interface DebugTheme {
