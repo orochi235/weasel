@@ -321,11 +321,6 @@ Priority tags:
   question: prune members the final flat already implies, or document `members` as the path the
   search took? Ties between combinations compare their members' orders, so by reading the code (not
   observed) a redundant line could decide one.
-- **(P3) The flat math's two tolerances are uncalibrated against each other** (2026-10-18).
-  `RANK_TOL` (dependence in Gram-Schmidt) and `PIVOT_TOL` (zero pivots in the solve) in
-  `packages/geom/src/snap/flat.ts` were picked, not measured; nothing checks that they agree on when
-  two near-parallel directions are one. Left: a test over lines meeting at shrinking angles, and
-  the values it settles on.
 - **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
