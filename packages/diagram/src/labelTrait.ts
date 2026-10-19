@@ -19,6 +19,9 @@ export interface DiagramLabel {
   offset?: number;
 }
 
+/** Where an edge label sits when neither the edge nor the scene says. */
+export const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
+
 /** The label trait on a node's data, or `null`. */
 export function diagramLabelOf(node: { data: unknown }): DiagramLabel | null {
   const data = node.data;

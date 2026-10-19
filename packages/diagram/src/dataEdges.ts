@@ -4,7 +4,8 @@ import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
-import { LABEL_DERIVE_POSE, labelCenter } from './label';
+import { edgeLabelSpec, labelStyleOf } from './edgeLabel';
+import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
 
@@ -18,9 +19,6 @@ export interface EdgeSpecContext {
   routes?: ReadonlyMap<string, LayeredRoute> | null;
   opts: Pick<DiagramSceneOptions, 'edgeStyle' | 'router' | 'labelPlacement'>;
 }
-
-/** The face an edge label is set in: the diagram's, two sizes down. */
-export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
 
 /** Where a label sits: beside the room layout left it, at the edge's own
  *  offset or else the diagram's; else the edge's own placement, else the
@@ -104,22 +102,13 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       derivePath: EDGE_DERIVE_PATH,
     });
     if (!e.label) continue;
-    const labelStyle = labelStyleOf(ctx.font);
-    specs.push({
-      id: `${id}/label` as never,
-      kind: 'leaf',
+    specs.push(edgeLabelSpec(id, e.label, {
       layer: 'main',
-      pickable: false,
-      pose: { x: 0, y: 0, ...labelSizeOf(e.label, ctx) },
-      data: {
-        diagram: { label: placementOf(e, route, ctx) },
-        text: e.label,
-        style: labelStyle,
-        fill: { paint: { color: style.label ?? style.stroke } },
-      },
-      dependsOn: [id as never],
-      derivePose: LABEL_DERIVE_POSE as never,
-    });
+      label: placementOf(e, route, ctx),
+      style: labelStyleOf(ctx.font),
+      fill: style.label ?? style.stroke,
+      measure: ctx.measure,
+    }) as DiagramSpec);
   }
   return specs;
 }
