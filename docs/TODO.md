@@ -1332,8 +1332,3 @@ only story runner in the repo.
   can't also use core's rect, ellipse and text insert tools, because the dep registry answers only
   its newest source. Core needs a way for a dep to delegate to the default
   (`packages/diagram/src/stencilTool.ts`).
-
-- **(P3) Pipeline mode loses its undo history on a mode switch, and can't be saved.** The history
-  lives in `PipelineWorkspace`'s `useMemo`, so leaving the mode drops it, and the File menu is empty
-  in pipeline mode, so a pipeline can't be written to or opened from a file
-  (`apps/chart/src/pipeline`).

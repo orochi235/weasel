@@ -4,12 +4,11 @@ import { useCallback, useRef, useState, type ReactElement } from 'react';
 import { ParamPanel } from './ParamPanel';
 import { usePipelineCommands } from './pipelineCommands';
 import { StagePalette } from './StagePalette';
-import { usePipelineDoc } from './usePipelineDoc';
+import type { PipelineDoc } from './usePipelineDoc';
 import '../workspace.css';
 
 /** Pipeline mode: the document is an effect pipeline, edited as data through `EffectEditor`. */
-export function PipelineWorkspace(): ReactElement {
-  const pipeline = usePipelineDoc();
+export function PipelineWorkspace({ pipeline }: { pipeline: PipelineDoc }): ReactElement {
   usePipelineCommands(pipeline);
   const { doc, change } = pipeline;
   const editor = useRef<EffectEditorApi | null>(null);

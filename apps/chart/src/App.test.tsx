@@ -4,6 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from './App';
+import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -52,6 +53,26 @@ describe('App', () => {
     choose('Mode', 'Chart');
     expect(screen.queryByRole('grid', { name: 'Stages' })).toBeNull();
     expect(screen.getByRole('listbox', { name: 'Shapes' })).toBeTruthy();
+  });
+
+  it("keeps pipeline mode's undo history through a visit to chart mode", () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
+    const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as { pipeline: { stages: unknown[] } }).pipeline.stages;
+    expect(stages()).toHaveLength(1);
+    choose('Mode', 'Chart');
+    choose('Mode', 'Pipeline');
+    choose('Edit', 'Undo');
+    expect(stages()).toHaveLength(0);
+  });
+
+  it('gives pipeline mode a File menu of its own', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'File' })); });
+    const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['New', 'Open…', 'Save']);
   });
 
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {

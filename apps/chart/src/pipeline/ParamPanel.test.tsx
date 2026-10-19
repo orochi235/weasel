@@ -26,7 +26,7 @@ describe('ParamPanel', () => {
     const [next, label] = change.mock.calls[0]!;
     expect(label).toBe('Set radius');
     const radius = (next as EffectDoc).pipeline.stages[0]!.params![0]!;
-    expect(radius.value).toBe('12.0 px');
+    expect(radius.value).toBe('12 px');
     expect(radius.control).toMatchObject({ kind: 'number', value: 12, min: 0, max: 50 });
   });
 
