@@ -27,6 +27,10 @@
       "types": "./dist/kitIcons.d.ts",
       "import": "./dist/kitIcons.js"
     },
+    "./paint-value": {
+      "types": "./dist/components/paintValue.d.ts",
+      "import": "./dist/components/paintValue.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },

@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { defaultToastQueue, ToastRegion } from '@weasel-js/ui';
+import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { FIRST_RUN_KEY, showFirstRunNotice } from './firstRunNotice';
 import { renderWithIcons } from './testIcons';
 

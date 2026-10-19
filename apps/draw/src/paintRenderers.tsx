@@ -2,11 +2,8 @@ import {
   type Paint,
   useOngoingAction
 } from '@weasel-js/core';
-import {
-  PaintInput,
-  type PropertyRenderContext,
-  type PropertyRenderer
-} from '@weasel-js/ui';
+import { PaintInput } from '@weasel-js/ui/components/PaintInput';
+import { type PropertyRenderContext, type PropertyRenderer } from '@weasel-js/ui/components/SelectionPanel';
 
 /** Every `Paint` variant, not just the gradients. Keyed on the union's
  *  own discriminant, so a variant added later needs no change here — the

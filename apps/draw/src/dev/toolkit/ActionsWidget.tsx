@@ -1,15 +1,9 @@
 import { type Action, actionBindings, type GestureSpec, keySpecShortcut } from '@weasel-js/core';
-import {
-  actionIcon,
-  Code,
-  DataGrid,
-  type DataGridColumn,
-  KeySequence,
-  keySpecsFromMods,
-  keySpecsFromShortcut,
-  type LogicalModSpec,
-  PropertyPanel,
-} from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { actionIcon } from '@weasel-js/ui/components/Icon';
+import { KeySequence, keySpecsFromMods, keySpecsFromShortcut, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement, ReactNode } from 'react';
 import s from '../ToolkitBuilder.module.css';
 

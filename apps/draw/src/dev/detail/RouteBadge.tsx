@@ -1,6 +1,8 @@
 import type { ModifierKey, ParsedModifiers } from '@weasel-js/core/routing';
 import { getGestureDescriptor, type GestureName } from '@weasel-js/core/routing';
-import { Badge, Code, KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, type BadgeProps, type KeySpec, type LogicalModSpec } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Code } from '@weasel-js/ui/components/Code';
+import { KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, type KeySpec, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
 import { Fragment } from 'react';
 import s from '../RegistryInspector.module.css';
 import { CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, PHASE_BADGE_PROPS } from '../badgeTokens';

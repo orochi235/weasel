@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { ActionsProvider, createDispatcher, useActionsRegistry, type Action } from '@weasel-js/core';
-import type { PropertyRenderContext } from '@weasel-js/ui';
+import type { PropertyRenderContext } from '@weasel-js/ui/components/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { renderWithIcons } from '../testIcons';
 

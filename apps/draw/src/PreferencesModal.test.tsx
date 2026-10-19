@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { PrefRenderContext } from '@weasel-js/ui';
+import type { PrefRenderContext } from '@weasel-js/ui/components/Prefs';
 import { SurfacesEditor } from './PreferencesModal';
 import { PREFS } from './prefs';
 

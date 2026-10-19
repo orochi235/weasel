@@ -9,7 +9,9 @@
  *  binding that fires it. */
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
-import { ActionBar as KitActionBar, Bar, MenuButton } from '@weasel-js/ui';
+import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { DEV_ROUTES } from './dev/devRoutes';
 import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';

@@ -7,16 +7,12 @@
  *  (`registry-enum`, `data`), and the dev-only "Show hidden" switch.
  */
 import { useMemo, useState } from 'react';
-import {
-  Checkbox,
-  Code,
-  DataGrid,
-  PrefsDialog,
-  Select,
-  Switch,
-  type DataGridColumn,
-  type PrefRenderContext,
-} from '@weasel-js/ui';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { PrefsDialog, type PrefRenderContext } from '@weasel-js/ui/components/Prefs';
+import { Select } from '@weasel-js/ui/components/Select';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { usePrefsValues } from '@weasel-js/prefs/react';
 import {
   drawPrefs,

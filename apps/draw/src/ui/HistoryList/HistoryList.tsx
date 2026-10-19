@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { ItemList, type ItemListRow } from '@weasel-js/ui';
+import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
 import s from './HistoryList.module.css';
 
 /** A single row in the history panel. Mirrors `weasel-kit`'s

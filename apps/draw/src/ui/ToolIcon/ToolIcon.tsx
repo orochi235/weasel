@@ -1,6 +1,6 @@
 import type { BuiltinShapeToolId } from '@weasel-js/core';
 import type { IconRef } from '@weasel-js/icons';
-import { Icon, type IconProps } from '@weasel-js/ui';
+import { Icon, type IconProps } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 
 /** The kit's shape tools. `image` is one even though `useBuiltinShapeTools`

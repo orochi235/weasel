@@ -1,5 +1,6 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { DataGrid, FallthroughDiagram, type DataGridColumn } from '@weasel-js/ui';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { FallthroughDiagram } from '@weasel-js/ui/components/FallthroughDiagram';
 import { formatAge, type DispatchRecord, type TraceLogEntry } from './dispatchTraceLog';
 import s from './DispatchTraceTable.module.css';
 

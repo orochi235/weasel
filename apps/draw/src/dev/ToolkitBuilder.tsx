@@ -6,7 +6,8 @@
  */
 import { asNodeId, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
 import { pathTools } from '@weasel-js/path-tools';
-import { Select, Switch } from '@weasel-js/ui';
+import { Select } from '@weasel-js/ui/components/Select';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { type ReactElement, useEffect, useState } from 'react';
 import { DevShell } from './DevShell';
 import { BUNDLE_DEFAULT_TOOLS } from './registryData';

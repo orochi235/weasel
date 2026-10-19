@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, BarMenu, PrefsForm, resolveIcon, SidebarPanel, useContextMenu } from '@weasel-js/ui';
+import { Bar, BarMenu } from '@weasel-js/ui/components/Bar';
+import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { resolveIcon } from '@weasel-js/ui/components/Icon';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { switchMenuId, switchSchema, SurfaceSwitchButton } from './surfaceSwitch';
 import type { PanelChrome, SchemaAsset, SchemaBinding } from './types';
 import s from './SchemaSurfaces.module.css';

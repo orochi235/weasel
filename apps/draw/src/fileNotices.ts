@@ -1,4 +1,4 @@
-import { defaultToastQueue, toast } from '@weasel-js/ui';
+import { defaultToastQueue, toast } from '@weasel-js/ui/components/Toast';
 
 /** How many distinct warnings a toast quotes before it counts the rest. */
 const QUOTED = 3;

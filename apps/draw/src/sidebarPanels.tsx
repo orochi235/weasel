@@ -6,15 +6,12 @@ import {
   useOngoingAction,
   withAlpha01
 } from '@weasel-js/core';
-import {
-  AnchorFields,
-  PropertyField,
-  PropertyList,
-  SelectionPanel,
-  SidebarPanel,
-  solidColorOf,
-  SwatchStrip
-} from '@weasel-js/ui';
+import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
+import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import { SwatchStrip } from '@weasel-js/ui/components/SwatchStrip';
+import { solidColorOf } from '@weasel-js/ui/paint-value';
 import type { ReactElement } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
 import { DEFAULT_FILENAME } from './docPersistence';

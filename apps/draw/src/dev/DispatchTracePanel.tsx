@@ -5,7 +5,10 @@
  */
 import { useCallback, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
-import { ButtonBar, Disclosure, ToggleBar, Icon } from '@weasel-js/ui';
+import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
+import { Disclosure } from '@weasel-js/ui/components/Disclosure';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './DispatchTracePanel.module.css';
 import { useDispatchTraceLog } from './dispatchTraceLog';
 import { DispatchTraceTable } from './DispatchTraceTable';

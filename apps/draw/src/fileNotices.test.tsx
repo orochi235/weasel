@@ -1,7 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { defaultToastQueue, ToastRegion } from '@weasel-js/ui';
+import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { describeSvgWarnings, reportSessionSave, reportSvgWarnings } from './fileNotices';
 import { importSvgFile, openSvgFile } from './openSvg';

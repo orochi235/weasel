@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAction, useMenus, type Action, type MenuDef } from '@weasel-js/core';
 import { pref, type PrefAction, type PrefGroup } from '@weasel-js/prefs';
-import { MenuButton } from '@weasel-js/ui';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { usePref } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import { surfaceOf, useSetSurface } from './surfaceState';

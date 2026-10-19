@@ -7,7 +7,11 @@ import {
   type Tool,
 } from '@weasel-js/core';
 import { buildRouteRegistry } from '@weasel-js/core/routing';
-import { Badge, DataGrid, type DataGridColumn, PropertyPanel, Select, ToggleBar } from '@weasel-js/ui';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
+import { Select } from '@weasel-js/ui/components/Select';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { type ReactElement, useMemo, useState } from 'react';
 import {
   AFFORDANCE_PREFIX,

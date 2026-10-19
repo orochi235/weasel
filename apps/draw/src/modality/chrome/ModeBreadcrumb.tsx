@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { modeLabel, type ModeDefinition } from '@weasel-js/modes';
-import { Button, KeyCap } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { KeyCap } from '@weasel-js/ui/components/Keycaps';
 import styles from './ModeBreadcrumb.module.css';
 
 export interface ModeBreadcrumbProps {

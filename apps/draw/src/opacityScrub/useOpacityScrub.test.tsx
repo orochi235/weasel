@@ -17,7 +17,7 @@ import {
   type View,
   type Fill,
 } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 import { withIcons } from '../testIcons';

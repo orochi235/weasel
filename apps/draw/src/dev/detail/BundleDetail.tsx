@@ -1,4 +1,9 @@
-import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeySequence, keySpecsFromShortcut, type DataGridColumn } from '@weasel-js/ui';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
 import s from '../RegistryInspector.module.css';
 import { collectBundles } from '../registryData';
 import type { BundleEntry, ToolEntry } from '../registryEntries';

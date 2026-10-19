@@ -13,7 +13,7 @@ import {
   type ToolsApi,
 } from '@weasel-js/core';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { MenuBar } from '@weasel-js/ui';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { DRAW_FEATURES } from './drawFeatures';

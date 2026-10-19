@@ -6,7 +6,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
 import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
-import { solidColorOf } from '@weasel-js/ui';
+import { solidColorOf } from '@weasel-js/ui/paint-value';
 import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, useLatest, withAlpha01 } from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------

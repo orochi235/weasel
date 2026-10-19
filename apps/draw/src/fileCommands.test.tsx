@@ -12,7 +12,7 @@ import {
   useActionsRegistry,
   type ActionsRegistry,
 } from '@weasel-js/core';
-import { CommandPalette } from '@weasel-js/ui';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';

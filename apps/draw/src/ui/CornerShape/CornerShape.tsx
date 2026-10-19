@@ -8,7 +8,8 @@ import {
   type CornerControlsScene,
   type CornerControlsSelection,
 } from '@weasel-js/path-tools';
-import { BarPopover, PrefsForm } from '@weasel-js/ui';
+import { BarPopover } from '@weasel-js/ui/components/Bar';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import s from './CornerShape.module.css';
 
 export interface CornerShapeProps {
