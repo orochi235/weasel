@@ -4,8 +4,9 @@
  * ribbon into the region the stroke covers.
  */
 import polygonClipping from 'polygon-clipping';
-import { multiPolygonToPath, type MultiPolygon } from './adapter';
+import { multiPolygonToPath } from './adapter';
 import { junctionRings } from './meshJunctions';
+import { meshOutline } from './meshOutline';
 import type { PolygonPath } from '../path';
 
 /**
@@ -24,6 +25,6 @@ export function trianglesToPath(vertices: ArrayLike<number>, indices: ArrayLike<
     kept.push(indices[i], indices[i + 1], indices[i + 2]);
   }
   if (kept.length === 0) return multiPolygonToPath([]);
-  const [head, ...rest]: MultiPolygon[] = junctionRings(vertices, kept).map((ring) => [[ring]]);
-  return multiPolygonToPath(polygonClipping.union(head, ...rest));
+  const outline = meshOutline(junctionRings(vertices, kept));
+  return multiPolygonToPath(outline ? polygonClipping.union([[outline]]) : []);
 }

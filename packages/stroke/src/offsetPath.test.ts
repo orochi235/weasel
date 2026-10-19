@@ -129,8 +129,7 @@ describe('offsetPath', () => {
       });
 
       it(`grows a round corner by ${distance} with round joins, everywhere at the distance`, () => {
-        // Unrefitted: the refit can stray past its tolerance between the points it samples.
-        const { out, distances } = offsetsOf(rounded, distance, { join: 'round', refit: false });
+        const { out, distances } = offsetsOf(rounded, distance, { join: 'round' });
         expect(subpaths(out)).toBe(1);
         expect(Math.min(...distances)).toBeGreaterThan(distance - 0.2);
         expect(Math.max(...distances)).toBeLessThan(distance + 0.2);
@@ -147,7 +146,7 @@ describe('offsetPath', () => {
 
     it('grows a polygon of lines with round joins, everywhere at the distance', () => {
       const tri: Path = new PathBuilder().moveTo(0, 0).lineTo(100, 10).lineTo(30, 90).close().build();
-      const { out, distances } = offsetsOf(tri, 10, { join: 'round', refit: false });
+      const { out, distances } = offsetsOf(tri, 10, { join: 'round' });
       expect(subpaths(out)).toBe(1);
       expect(Math.min(...distances)).toBeGreaterThan(9.8);
       expect(Math.max(...distances)).toBeLessThan(10.2);
