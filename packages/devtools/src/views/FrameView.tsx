@@ -5,7 +5,7 @@
  */
 import { useState, type ReactElement } from 'react';
 import type { FrameStats } from '@weasel-js/core';
-import type { SerializedValue } from '@weasel-js/core/devtools';
+import type { SerializedValue } from '@weasel-js/core/devtools-protocol';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { Switch } from '@weasel-js/ui/components/Switch';

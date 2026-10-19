@@ -79,6 +79,10 @@
       "import": "./dist/devtools.js",
       "types": "./dist/devtools.d.ts"
     },
+    "./devtools-protocol": {
+      "import": "./dist/devtools-protocol.js",
+      "types": "./dist/devtools-protocol.d.ts"
+    },
     "./patterns-builtin": {
       "import": "./dist/patterns-builtin.js",
       "types": "./dist/patterns-builtin.d.ts"

@@ -7,7 +7,7 @@ import {
   DEVTOOLS_PROTOCOL, type DevtoolsArea, type DevtoolsNodeDetail, type DevtoolsNodeSummary,
   type DevtoolsRequest, type DevtoolsRootInfo, type DevtoolsRootState, type DevtoolsTraceSlice,
   type PageMessage, type PanelTransport, type SerializedValue,
-} from '@weasel-js/core/devtools';
+} from '@weasel-js/core/devtools-protocol';
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 

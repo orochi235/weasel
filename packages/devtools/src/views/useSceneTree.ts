@@ -1,6 +1,6 @@
 /** A root's scene tree, loaded a level at a time as branches open, and reloaded where it is open when the scene changes. */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { DevtoolsNodeSummary } from '@weasel-js/core/devtools';
+import type { DevtoolsNodeSummary } from '@weasel-js/core/devtools-protocol';
 import { useLatest } from '@weasel-js/react';
 import type { DevtoolsClient } from '../client';
 

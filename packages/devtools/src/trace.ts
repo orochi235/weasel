@@ -1,5 +1,5 @@
 /** A root's dispatch trace read a slice at a time, each read picking up where the last left off. */
-import type { SerializedValue } from '@weasel-js/core/devtools';
+import type { SerializedValue } from '@weasel-js/core/devtools-protocol';
 import type { DevtoolsClient } from './client';
 
 /** What one read hands back. `coords` is present only while coord records are asked for. */
