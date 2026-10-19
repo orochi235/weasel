@@ -168,7 +168,8 @@
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
       "debug/*": ["./packages/core/src/debug/*"],
-      "@draw/*": ["./apps/draw/src/*"]
+      "@draw/*": ["./apps/draw/src/*"],
+      "@editor/*": ["./apps/shared/editor/src/*"]
     }
   },
   // `tests/perf/bench` is in here and the rest of `tests/` is not: the benches

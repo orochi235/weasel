@@ -1,48 +1,9 @@
-// Shared serialization helpers for WeaselDraw's localStorage persistence.
-//
-// A path keeps its commands and coords in typed arrays, which `JSON.stringify`
-// writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
-// encoding; loads read the tags back, and also the untagged shapes older saves
-// wrote, which is why the walk here is draw's own.
+// WeaselDraw's persistence: the legacy-paint migration layered over the shared snapshot helpers.
 
+import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@editor/index';
 import type { AddNodeSpec, SceneRegistry, SerializedScene } from '@weasel-js/core';
-import { asNodeId, solid } from '@weasel-js/core';
-import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
+import { solid } from '@weasel-js/core';
 
-/** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
-export const serializeReplacer = typedArrayReplacer;
-
-/** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
- *  place. Returns the same node for call-site convenience. */
-export function reviveTypedArrays<T>(node: T): T {
-  if (node == null || typeof node !== 'object') return node;
-  const tagged = untagTypedArray(node);
-  if (tagged) return tagged as unknown as T;
-  const obj = node as Record<string, unknown>;
-  for (const k of Object.keys(obj)) {
-    if (k === 'commands' || k === 'coords') {
-      const v = obj[k];
-      if (v instanceof Uint8Array || v instanceof Float32Array) continue;
-      if (Array.isArray(v)) {
-        obj[k] = k === 'commands' ? Uint8Array.from(v as number[]) : Float32Array.from(v as number[]);
-        continue;
-      }
-      if (v && typeof v === 'object') {
-        // Recover from older saves that lost the typed-array shape.
-        const src = v as Record<string, unknown>;
-        if (src.__ta) { obj[k] = reviveTypedArrays(v); continue; }
-        const len = Object.keys(src).filter((kk) => /^\d+$/.test(kk)).length;
-        const arr = new Array<number>(len);
-        for (let i = 0; i < len; i++) arr[i] = Number(src[String(i)] ?? 0);
-        obj[k] = k === 'commands' ? Uint8Array.from(arr) : Float32Array.from(arr);
-        continue;
-      }
-    } else {
-      obj[k] = reviveTypedArrays(obj[k]);
-    }
-  }
-  return node;
-}
 
 /** The `Paint` discriminant values as they were written before 2026-10-12,
  *  when the tag sat under `fill` rather than `kind`. A string under `fill`
@@ -150,34 +111,10 @@ export function clipboardJsonReviver(key: string, value: unknown): unknown {
   return key === '' ? reviveSnapshot(value) : value;
 }
 
-/** Rebuild the full node list from a persisted scene snapshot, shaped for
- *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
- *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the
- *  old leaf-only path dropped both. `toJSON()` emits nodes in tree preorder
- *  (parents before children), so a sequential `add` finds each
- *  node's parent already present.
- *
- *  A node's `dependsOn` and its derivations come back too, each derivation
- *  looked up by its key in `registry`: a key `registry` lacks leaves the node
- *  as authored. Container clip-paths (`clipFromPoseKey`) are not restored —
- *  WeaselDraw groups carry no clip today. */
+/** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
-  registry: SceneRegistry<TPose, TData, TLayer> = {},
+  registry?: SceneRegistry<TPose, TData, TLayer>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return json.nodes.map((n) => {
-    const derivePath = n.derivePathKey === undefined ? undefined : registry.derivePath?.[n.derivePathKey];
-    const derivePose = n.derivePoseKey === undefined ? undefined : registry.derivePose?.[n.derivePoseKey];
-    return {
-      kind: n.kind,
-      layer: n.layer,
-      pose: n.pose,
-      data: reviveSnapshot(n.data),
-      id: asNodeId(n.id),
-      ...(n.parent != null ? { parent: asNodeId(n.parent) } : {}),
-      ...(n.dependsOn !== undefined ? { dependsOn: n.dependsOn === 'children' ? 'children' : n.dependsOn.map(asNodeId) } : {}),
-      ...(derivePath ? { derivePath } : {}),
-      ...(derivePose ? { derivePose } : {}),
-    };
-  });
+  return sharedNodeSpecs(json, registry, reviveSnapshot);
 }

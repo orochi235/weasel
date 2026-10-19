@@ -30,7 +30,7 @@ import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { usePaperLayer } from './pageLayers';
+import { usePageFit, usePaperLayer } from '@editor/index';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
@@ -42,7 +42,6 @@ import { useGrid } from './useGrid';
 import { usePathDirection } from './usePathDirection';
 import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
-import { usePageFit } from './usePageFit';
 import { useSpacingHints } from './useSpacingHints';
 
 /** Every built-in but the rig tools, since a drawing has no skeletons to edit,

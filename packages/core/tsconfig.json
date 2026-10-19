@@ -155,7 +155,8 @@
       "tools/*": ["./src/tools/*"],
       "canvas/*": ["./src/canvas/*"],
       "debug/*": ["./src/debug/*"],
-      "@draw/*": ["../../apps/draw/src/*"]
+      "@draw/*": ["../../apps/draw/src/*"],
+      "@editor/*": ["../../apps/shared/editor/src/*"]
     }
   },
   "include": ["src"],

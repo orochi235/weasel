@@ -29,7 +29,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import { downloadBlob, pickFile } from './fileIO';
+import { downloadBlob, pickFile } from '@editor/index';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';

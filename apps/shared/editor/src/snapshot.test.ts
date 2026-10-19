@@ -1,0 +1,65 @@
+import { asNodeId, type SerializedScene } from '@weasel-js/core';
+import { describe, expect, it } from 'vitest';
+import { nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+
+// Regression for the reload bug where a loader filtered `kind === 'leaf'` and dropped `parent`,
+// losing containers and nesting even though `toJSON()` persisted the full tree.
+describe('snapshot — scene snapshot to node specs', () => {
+  type Data = { kind?: string; fill?: string; coords?: unknown };
+  type Layer = 'default';
+  type Pose = { x: number; y: number; width: number; height: number };
+
+  it('preserves containers and parent links so nesting survives reload', () => {
+    const json: SerializedScene<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      // Layer-major DFS-preorder, exactly as toJSON() emits: parent before child.
+      nodes: [
+        { id: 'g', kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'group' } },
+        { id: 'a', kind: 'leaf', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: { fill: '#fff' }, parent: 'g' },
+        { id: 'b', kind: 'leaf', layer: 'default', pose: { x: 50, y: 0, width: 20, height: 20 }, data: { fill: '#000' } },
+      ],
+    };
+
+    const specs = nodeSpecsFromSnapshot(json);
+
+    // All three nodes survive, in preorder.
+    expect(specs.map((s) => s.id)).toEqual([asNodeId('g'), asNodeId('a'), asNodeId('b')]);
+    // The container is restored as a container (not filtered out).
+    expect(specs.find((s) => s.id === asNodeId('g'))!.kind).toBe('container');
+    // The nested leaf keeps its parent link.
+    expect(specs.find((s) => s.id === asNodeId('a'))!.parent).toBe(asNodeId('g'));
+    // The root leaf has no parent.
+    expect(specs.find((s) => s.id === asNodeId('b'))!.parent ?? null).toBeNull();
+  });
+
+  it('revives typed arrays inside node data', () => {
+    const json: SerializedScene<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [
+        { id: 'a', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { coords: [1.5, 2.5, 3.5] } },
+      ],
+    };
+
+    const specs = nodeSpecsFromSnapshot(json);
+    const coords = (specs[0].data as { coords: unknown }).coords;
+    expect(coords).toBeInstanceOf(Float32Array);
+  });
+  it('revives a typed array under any key, not only a path\'s', () => {
+    const data = { weights: new Float32Array([0.25, 0.75]), nested: [{ ids: new Uint8Array([3, 4]) }] };
+    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
+    expect(revived.weights).toBeInstanceOf(Float32Array);
+    expect(revived).toEqual(data);
+  });
+  it('keeps an image node\'s data through the JSON hop', () => {
+    const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
+    const json = JSON.parse(JSON.stringify({
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [{ id: 'im', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { image } }],
+    }, serializeReplacer)) as SerializedScene<{ image: typeof image }, Layer, Pose>;
+
+    expect(nodeSpecsFromSnapshot(json)[0].data).toEqual({ image });
+  });
+});

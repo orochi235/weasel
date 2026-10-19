@@ -23,7 +23,7 @@ import type { DrawScene } from './drawDocument';
 import { useFileCommands } from './fileCommands';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
-import { serializeReplacer } from './persistence';
+import { serializeReplacer } from '@editor/index';
 import { StripSurfaces } from './surfaces/StripSurfaces';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
