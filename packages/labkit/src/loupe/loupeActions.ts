@@ -75,9 +75,10 @@ export function createLoupeActions(
     label: 'Peek (loupe)',
     group: 'loupe',
     // Hotkey scope: peeking must beat whatever the lab's active tool binds to
-    // the same key, the way every other held-key trigger does.
+    // the same key, the way every other held-key trigger does. `over`: the
+    // key peeks the loupe under the pointer, not the one last pressed in.
     scope: 'hotkey',
-    defaultBinding: [{ spec: heldKeySpec(peekKey), opts: {} }],
+    defaultBinding: [{ spec: heldKeySpec(peekKey), opts: { over: true } }],
     invoker: {
       timing: 'ongoing',
       start() {

@@ -423,7 +423,10 @@ goes to the canvas last pressed or scrolled in, across every root on the page,
 and to no canvas before the first such interaction, so a canvas in a side panel
 takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them
 on mount, for an app whose canvas is the page. A dispatcher with no canvas
-element, an app's own shortcuts, still follows the active scope.
+element, an app's own shortcuts, still follows the active scope. A key binding
+with `opts: { over: true }` goes the other way: it is live while the pointer is
+over its canvas, whichever canvas holds the keys, and only then — for a key
+that means "here", such as a loupe's peek.
 
 A canvas with no yoke keeps its own tool; a new scope starts on the tool in
 effect around it. Shared *state* — a selection two canvases should agree on —

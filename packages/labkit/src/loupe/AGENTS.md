@@ -97,7 +97,13 @@ In a trial the loupe's actions join the camera's dispatcher (`CameraInput`).
 `loupe.magnify` sits in the hotkey tier, so while the lens is up it outranks
 the camera's wheel zoom; while it is down its `enabled` returns a disabled
 reason and the dispatcher falls through to the zoom. Outside a camera — the DOM
-`.lk-loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own.
+`.lk-loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own, in an
+input scope of its own so two loupes never stack `loupe.peek` on one id.
+
+**The peek key goes to the loupe under the pointer.** Its binding carries
+`over: true`, so it is live on whichever host the pointer is over when the key
+goes down, not on the canvas last pressed in. A key held before the pointer
+enters raises nothing.
 
 **Aiming is a plain listener because a hover is not a gesture.**
 `GESTURE_DESCRIPTORS` names no continuous-motion gesture, so `pointermove` /

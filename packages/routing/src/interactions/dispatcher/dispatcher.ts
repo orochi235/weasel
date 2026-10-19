@@ -37,7 +37,7 @@ import { rank, walk, type Attempt } from './walk';
 import type { Dispatcher, DispatcherContext } from './dispatcherApi';
 
 export type {
-  Dispatcher, DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate, UiOngoingControl,
+  Dispatcher, DispatcherContext, KeyReach, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate, UiOngoingControl,
 } from './dispatcherApi';
 export { createDispatchTrace, createTraceRing } from './dispatchTrace';
 export type { DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing } from './dispatchTrace';

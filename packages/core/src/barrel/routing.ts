@@ -161,7 +161,7 @@ export { createDispatcher, // The precedence rule itself, so reflection surfaces
   // binding outranks another instead of re-deriving the tuple.
   specificity } from '@weasel-js/routing';
 export { useGestureDispatcher } from '@weasel-js/routing/react';
-export type { Dispatcher, DispatcherContext, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
+export type { Dispatcher, DispatcherContext, KeyReach, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
 export type {
   DispatchRecord, DispatchRecordInput, RecordCandidate, DroppedCandidate,
   RankedCandidate, PlacedBy, WalkStep, SpecificityPart,

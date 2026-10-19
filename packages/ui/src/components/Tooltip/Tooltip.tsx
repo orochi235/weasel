@@ -10,11 +10,6 @@ import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } f
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
-/** Makes a non-RAC element a {@link TooltipTrigger} trigger: supplies
- *  `tabIndex`, the hover/focus handlers and `aria-describedby`. The child must
- *  forward its ref and DOM props, and carry an interactive role (or `img`). */
-export { Focusable } from 'react-aria-components';
-
 /**
  * Props for {@link TooltipTrigger} — React Aria's `TooltipTrigger` props
  * unchanged.
