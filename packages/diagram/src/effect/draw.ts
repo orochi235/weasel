@@ -4,6 +4,7 @@ import type { Row } from '../body';
 import { edgeIdOf, type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../fromData';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
+import { formatParam } from './stageTypes';
 import type { EffectGroup, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
 
 /** The color of a value type, for a port or a wire. Answers `undefined`, a
@@ -179,7 +180,7 @@ export function stageRows(
     }
     if (opts.showPreviews === true) rows.push({ kind: 'slot', id: previewRowId(p.id), ...preview });
   }
-  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
+  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.control ? formatParam(p.control) : p.value });
   return rows;
 }
 
@@ -207,15 +208,24 @@ export function boxNode(
 }
 
 /** One edge of a look's data, from port to port. */
-export function wireEdge(from: EffectWire['from'], to: EffectWire['to'], label: string | undefined): DataEdge {
-  return { from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port, ...(label !== undefined ? { label } : {}) };
+export function wireEdge(
+  from: EffectWire['from'],
+  to: EffectWire['to'],
+  label: string | undefined,
+  id?: string,
+): DataEdge {
+  return {
+    ...(id !== undefined ? { id } : {}),
+    from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port,
+    ...(label !== undefined ? { label } : {}),
+  };
 }
 
 /** One edge per drawable wire, from port to port, named by `exitLabel` and
  *  styled by `wireStyle` in its type's color. */
 export function wireEdges(pipeline: EffectPipeline, color: TypeColor): { edge: DataEdge; style: EdgeStyle }[] {
   return drawableWires(pipeline).map((d) => ({
-    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d)),
+    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d), d.wire.id),
     style: wireStyle(color(d.type), isControl(pipeline, d.type), d.problem),
   }));
 }

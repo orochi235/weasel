@@ -46,8 +46,32 @@ export {
   grabPortBindings,
 } from './connect';
 export type { CanConnect, ConnectActionOptions, PendingEdge } from './connect';
+export { bodyAt, isBodyEnd } from './connectTargets';
+export type { BodyEnd, BodyHit, ConnectEnd, ConnectView } from './connectTargets';
+export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool } from './connectorTool';
+export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './stencil';
+export type { DiagramStencil } from './stencil';
+export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
+export type { StencilInsertOptions } from './stencilTool';
 export { createDiagramContribution, diagramPorts } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
+export {
+  EDGE_END_AFFORDANCE_KIND,
+  EDGE_END_LAYER_ID,
+  createEdgeEndAffordance,
+  edgeEndLayer,
+  edgeEndScratchOf,
+} from './edgeEndLayer';
+export type { EdgeEndAffordanceOptions, EdgeEndScratch } from './edgeEndLayer';
+export {
+  GRAB_EDGE_END_ACTION_ID,
+  RECONNECT_ACTION_ID,
+  commitReconnectToScene,
+  createReconnectAction,
+  diagramEdgeEnds,
+  reconnectBinding,
+} from './reconnect';
+export type { EndChange, ReconnectOptions } from './reconnect';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
@@ -75,10 +99,13 @@ export type {
   GraphNodeLike,
   GraphSource,
 } from './graph';
+export { EDIT_EDGE_LABEL_ACTION_ID, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
+export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
 export type { DiagramLabel } from './labelTrait';
+export { diagramResizable } from './resizable';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
 export {
@@ -192,6 +219,8 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
-export type { DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove } from './DiagramView';
+export type {
+  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange,
+} from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

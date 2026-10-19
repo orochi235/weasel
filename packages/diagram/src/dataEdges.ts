@@ -4,7 +4,8 @@ import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
-import { LABEL_DERIVE_POSE, labelCenter } from './label';
+import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
+import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
 
@@ -19,21 +20,12 @@ export interface EdgeSpecContext {
   opts: Pick<DiagramSceneOptions, 'edgeStyle' | 'router' | 'labelPlacement'>;
 }
 
-/** The face an edge label is set in: the diagram's, two sizes down. */
-export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
-
 /** Where a label sits: beside the room layout left it, at the edge's own
  *  offset or else the diagram's; else the edge's own placement, else the
  *  diagram's. */
 function placementOf(e: DataEdge, route: LayeredRoute | undefined, ctx: EdgeSpecContext): DiagramLabel {
   const placement = e.labelPlacement ?? ctx.opts.labelPlacement ?? ctx.labelPlacement;
   return route?.labelAt === undefined ? placement : { ...placement, at: { near: route.labelAt } };
-}
-
-/** The box an edge's label takes, set in the diagram's label face. */
-function labelSizeOf(text: string, ctx: EdgeSpecContext): { width: number; height: number } {
-  const style = labelStyleOf(ctx.font);
-  return { width: ctx.measure(text, style).width, height: style.fontSize };
 }
 
 /** Each edge's label as a group's box takes it in: where it sits, when layout
@@ -44,7 +36,7 @@ export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): Wi
     if (!e.label) continue;
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
-    const size = labelSizeOf(e.label, ctx);
+    const size = labelSize(e.label, labelStyleOf(ctx.font), ctx.measure);
     const placement = placementOf(e, route, ctx);
     const center = route?.waypoints !== undefined && typeof placement.at === 'object'
       ? labelCenter(polylineFromPoints([...route.waypoints]), placement, size)
@@ -104,22 +96,13 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
       derivePath: EDGE_DERIVE_PATH,
     });
     if (!e.label) continue;
-    const labelStyle = labelStyleOf(ctx.font);
-    specs.push({
-      id: `${id}/label` as never,
-      kind: 'leaf',
+    specs.push(edgeLabelSpec(id, e.label, {
       layer: 'main',
-      pickable: false,
-      pose: { x: 0, y: 0, ...labelSizeOf(e.label, ctx) },
-      data: {
-        diagram: { label: placementOf(e, route, ctx) },
-        text: e.label,
-        style: labelStyle,
-        fill: { paint: { color: style.label ?? style.stroke } },
-      },
-      dependsOn: [id as never],
-      derivePose: LABEL_DERIVE_POSE as never,
-    });
+      label: placementOf(e, route, ctx),
+      style: labelStyleOf(ctx.font),
+      fill: style.label ?? style.stroke,
+      measure: ctx.measure,
+    }) as DiagramSpec);
   }
   return specs;
 }

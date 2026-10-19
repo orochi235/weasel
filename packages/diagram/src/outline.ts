@@ -2,15 +2,15 @@
  * The shapes a built body can wear, as paths in the node's bounds.
  *
  * These are the flowchart vocabulary — a decision is a diamond, an I/O step a
- * parallelogram, a terminator a stadium, a demultiplexer a trapezoid, a preparation step a hexagon —
- * plus `'rect'` for everything else and
+ * parallelogram, a terminator a stadium, a demultiplexer a trapezoid, a preparation step a hexagon,
+ * a connector an ellipse — plus `'rect'` for everything else and
  * a `Path` escape hatch for a shape the vocabulary does not have. The path is
  * built in world coordinates from the bounds it is given, the same way the
  * kit's own `clipFromPose` factories are; a custom `Path` is drawn in a unit
  * square and stretched over them, as a mark is.
  */
 import { PathBuilder, polygonFromPoints, rectPath, type Path } from '@weasel-js/core/math';
-import { transformPath } from '@weasel-js/geom';
+import { ellipsePath, transformPath } from '@weasel-js/geom';
 
 /** An axis-aligned box. This is `PoseDescriptor.getBounds`'s return shape
  *  minus its optional `rotation`, deliberately: an outline is built in the
@@ -26,7 +26,7 @@ export interface Bounds {
 /** A named flowchart shape, or a path a consumer built themselves in a unit
  *  square — `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — so it
  *  follows its node wherever layout or a drag puts it. */
-export type Outline = 'rect' | 'diamond' | 'stadium' | 'parallelogram' | 'trapezoid' | 'hexagon' | Path;
+export type Outline = 'rect' | 'diamond' | 'stadium' | 'ellipse' | 'parallelogram' | 'trapezoid' | 'hexagon' | Path;
 
 /** How far a parallelogram's top edge leans past its bottom one, as a
  *  fraction of the box's width. The flowchart convention. */
@@ -89,6 +89,9 @@ export function outlinePath(outline: Outline, bounds: Bounds): Path {
 
     case 'stadium':
       return stadiumPath(x, y, w, h);
+
+    case 'ellipse':
+      return ellipsePath(bounds);
   }
 }
 
@@ -162,6 +165,12 @@ export function contentBox(outline: Outline, bounds: Bounds): Bounds {
       return { x, y: y + h / 4, width: w, height: h / 2 };
     case 'hexagon':
       return { x: x + w * POINT, y, width: w * (1 - POINT * 2), height: h };
+    case 'ellipse': {
+      // The inscribed rect of an ellipse is its box over root two, centered.
+      const cw = w / Math.SQRT2;
+      const ch = h / Math.SQRT2;
+      return { x: x + (w - cw) / 2, y: y + (h - ch) / 2, width: cw, height: ch };
+    }
     case 'stadium': {
       const r = Math.min(w, h) / 2;
       return w >= h
@@ -197,5 +206,7 @@ export function boxForContent(
       return { width: content.width / (1 - POINT * 2), height: content.height };
     case 'stadium':
       return { width: content.width + content.height, height: content.height };
+    case 'ellipse':
+      return { width: content.width * Math.SQRT2, height: content.height * Math.SQRT2 };
   }
 }

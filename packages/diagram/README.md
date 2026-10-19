@@ -81,6 +81,76 @@ node — so a decision's second exit can leave by its top or its bottom,
 wherever its wire goes. `portSitesOf` resolves every place; anything else that
 shows a port, the connect affordance included, shows it at `at`.
 
+### Connecting to a shape's body
+
+An edge may end on a shape rather than on one of its ports. `DiagramView` takes
+it with `connectBodies`; on a bare canvas, set `bodies` on the connect action
+and add the connector tool, which starts an edge from whatever shape the press
+lands on.
+
+```tsx
+<DiagramView specs={specs} onConnect={add} connectBodies />
+
+const participants = useMemo(() => sceneParticipants(scene), [scene]);
+const connector = useConnectorTool({ participants });
+```
+
+An end is a `ConnectEnd`: a port, or a body (`isBodyEnd` tells them apart). A
+data edge ended on a body has no `fromPort` or `toPort`.
+
+### Reconnecting an edge end
+
+Set `onReconnect` and a selected edge shows a handle at each end. Dragging one
+onto another port, or with `connectBodies` onto a shape, reports the move and
+changes nothing; update the data edge to keep it.
+
+```tsx
+<DiagramView
+  specs={specs}
+  onReconnect={({ edge, end, node, port }) => setEdges((all) => all.map((e) => edgeIdOf(e) !== edge ? e
+    : end === 'from' ? { ...e, from: node, fromPort: port } : { ...e, to: node, toPort: port }))}
+  connectBodies
+/>
+```
+
+`edge` is `edgeIdOf` the data edge, so give edges an `id` when you want it to
+survive a reorder.
+
+### Edge labels
+
+`onEditLabel` reports a double-click on an edge. `edgeLabelSpec` builds the
+label node that rides the edge's route, and `editEdgeLabelAction` creates one
+or edits the existing one in place.
+
+```tsx
+<DiagramView specs={specs} onEditLabel={(edge) => startEditing(edge)} />
+
+const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
+```
+
+`labelSize` is the box a label's text takes. Both routes size with it, so a
+label built from data and one the action creates come out the same size.
+
+### Stencils
+
+A `DiagramStencil` is a palette entry: an id, a label, an outline and a default
+size. `FLOWCHART_STENCILS` has the basic flowchart symbols. `useStencilInsert`
+makes the canvas's `insert` dep build them, and `useStencilTool` gives each a
+tool that places one on a drag. A click places nothing; to place one at a
+point, call the `insert` dep's `commit` with a zero-size box there and the
+stencil's kind, and the body comes out at the stencil's size.
+
+```tsx
+useStencilInsert(FLOWCHART_STENCILS, { layer: 'diagram' });
+const decision = useStencilTool(FLOWCHART_STENCILS[1]);
+```
+
+A drop from your own palette goes through the canvas's `ingestion` handlers:
+a handler gets the drop's world point as `ctx.point` and calls
+`ctx.insert.commit`. Elsewhere, `SceneCanvasApi.clientToWorld` turns a client
+point into a world one. `useStencilInsert` replaces the kit's `insert` dep, so a canvas
+using it cannot also use core's rect, ellipse and text tools.
+
 ### Laying it out
 
 `layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
@@ -605,6 +675,29 @@ const column: EffectLook = (pipeline) => {
   };
 };
 ```
+
+#### Editing a pipeline
+
+`EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
+stage to move it, drag from an output to an input to wire them, press Delete to
+remove the selection, and drag an end of a selected wire to move it. It keeps no
+document state. Every edit comes back through `onChange` as the next `EffectDoc` with a
+name for an undo entry, and shows once `doc` follows.
+
+```tsx
+import { EffectEditor, type EffectEditorApi } from '@weasel-js/diagram/effect';
+
+const api = useRef<EffectEditorApi>(null);
+
+<EffectEditor ref={api} doc={doc} onChange={(next, label) => commit(next, label)} />;
+
+api.current?.addStage({ type: 'gate', title: 'Gate', inputs, outputs });
+```
+
+An `EffectStageType` carries the ports and typed params a new stage starts
+with. `setParam`, `addWire`, `removeStages` and the rest of the edit model are
+plain functions from one `EffectDoc` to the next, and `canWire` asks an
+`EffectPipeline` whether two ports may be wired, for driving the edits yourself.
 
 ## Design notes
 

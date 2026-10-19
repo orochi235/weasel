@@ -248,3 +248,10 @@ describe('diagramScene', () => {
     expect(own.to).toEqual({ port: 'n', laidOut: 'n' });
   });
 });
+
+describe('edgeIdOf with an authored id', () => {
+  it('returns the id when set, and the derived one when not', () => {
+    expect(edgeIdOf({ id: 'w1', from: 'a', to: 'b', label: 'x' })).toBe('w1');
+    expect(edgeIdOf({ from: 'a', to: 'b', label: 'x' })).toBe('edge:a->b:x');
+  });
+});

@@ -32,6 +32,7 @@ const SKIP_IN = '~skip-in';
 
 /** One wire the rack draws: a pipeline wire, or one made by collapsing a decision. */
 interface RackWire {
+  id?: string;
   from: { stage: string; port: string };
   to: { stage: string; port: string };
   type: string | undefined;
@@ -69,7 +70,10 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
   const eaten = new Set<number>(skips.flatMap((s) => [s.into.index, s.through.index, s.skip.index]));
   const wires: RackWire[] = drawableWires(pipeline).filter((d) => !eaten.has(d.index)).map((d) => {
     const label = exitLabel(d);
-    return { from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}) };
+    return {
+      ...(d.wire.id !== undefined ? { id: d.wire.id } : {}),
+      from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}),
+    };
   });
   for (const s of skips) {
     wires.push({
@@ -160,7 +164,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       && wire.to.port !== line.mainIn.get(wire.to.stage) && line.at.has(wire.to.stage);
     const label = wire.label ?? (sideInput ? portOn(to, wire.to.port)?.label ?? wire.to.port : undefined);
     return {
-      edge: wireEdge(wire.from, wire.to, label),
+      edge: wireEdge(wire.from, wire.to, label, wire.id),
       style: wireStyle(color(wire.type), wire.arc === true || isControl(pipeline, wire.type), wire.problem),
     };
   });

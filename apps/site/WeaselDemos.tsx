@@ -101,6 +101,7 @@ export function WeaselDemos() {
           <p><a href="./docs/ui/forge/">UI catalog →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
+          <p><a href="./chart/">WeaselChart →</a></p>
           <ColorModeControl
             className="ckd-sidebar-mode"
             value={colorMode.preference}

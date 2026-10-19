@@ -17,6 +17,7 @@ describe('the front page', () => {
       '#__demos',
       './docs/ui/forge/',
       './draw/',
+      './chart/',
       '#__releases',
     ]);
   });

@@ -15,6 +15,7 @@ const LINKS = [
   { href: `#${DEMOS_ID}`, title: 'Demos', note: 'Live, with source' },
   { href: './docs/ui/forge/', title: 'Components', note: 'The UI workshop' },
   { href: './draw/', title: 'WeaselDraw', note: 'The app built on it' },
+  { href: './chart/', title: 'WeaselChart', note: 'A diagram editor built on it' },
   { href: `#${RELEASES_ID}`, title: 'Releases', note: 'Every version' },
 ];
 

@@ -9,7 +9,8 @@ import {
   type AddNodeSpec, type NodeId, type SerializedScene, solid,
 } from '@weasel-js/core';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { nodeSpecsFromSnapshot, reviveSnapshot, serializeReplacer } from './persistence';
+import { serializeReplacer } from '@editor/index';
+import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
 

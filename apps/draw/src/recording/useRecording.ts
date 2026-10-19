@@ -1,8 +1,8 @@
 import { useLatest, type SerializedScene, type SurfaceContribution, type View } from '@weasel-js/core';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo, useReducer } from 'react';
-import { downloadBlob, pickFile } from '../fileIO';
-import { reviveSnapshot, serializeReplacer } from '../persistence';
+import { downloadBlob, pickFile, serializeReplacer } from '@editor/index';
+import { reviveSnapshot } from '../persistence';
 import { drawPrefs } from '../prefs';
 import type { RecordingProfile } from '../recorder';
 import { recordingContribution } from './contribution';

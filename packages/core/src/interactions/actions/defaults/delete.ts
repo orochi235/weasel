@@ -2,7 +2,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '@weasel-js/routing';
+import type { Action, ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 
@@ -50,44 +50,59 @@ export function buildDeleteOps(
   return ops;
 }
 
+/** Options for {@link createDeleteAction}. */
+export interface DeleteActionOptions {
+  /** Runs in place of the default, {@link commitDeleteToScene}. */
+  commit?: (ids: readonly NodeId[], deps: ActionDeps) => void;
+}
+
+/** The default commit: removes `ids` and their dependents as one undo entry,
+ *  then empties the selection. */
+export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps): void {
+  const { selection, scene, applyOps } = deps;
+  if (!selection || !scene) return;
+  const ops = buildDeleteOps(scene, ids, 'Delete');
+  if (ops.length > 0) {
+    if (applyOps) applyOps(ops, 'Delete');
+    else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));
+  }
+  selection.set([]);
+}
+
+/** Delete on Delete and Backspace: hands the selected ids to `commit`. */
+export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { requires: string[] } {
+  const commit = opts.commit ?? commitDeleteToScene;
+  return {
+    id: 'delete',
+    label: 'Delete',
+    icon: icon('delete'),
+    group: 'edit',
+    // Suppressed while any tool is mid-gesture — accidentally hitting
+    // Delete during a drag shouldn't wipe the selection out from under
+    // the in-flight handle.
+    defaultBinding: {
+      kind: 'key',
+      key: ['Delete', 'Backspace'],
+      phase: [{ channel: '*', phase: 'initial' }],
+    },
+    eligible: { capability: 'edits-page' },
+    requires: ['scene', 'selection', 'applyOps'],
+    invoker: {
+      timing: 'immediate',
+      run: (deps) => {
+        if (!deps.selection || !deps.scene) return;
+        const ids = deps.selection.get() as readonly NodeId[];
+        if (ids.length === 0) return;
+        commit(ids, deps);
+      },
+    },
+    enabled: requiresSelection,
+  };
+}
+
 /**
  * Removes every selected node from the scene as one undo entry. Undo restores
  * everything the removal cascaded — a container's children and a deleted
  * node's dependents come back with it, at their own slots.
  */
-export const deleteAction: Action & { requires: string[] } = {
-  id: 'delete',
-  label: 'Delete',
-  icon: icon('delete'),
-  group: 'edit',
-  // Suppressed while any tool is mid-gesture — accidentally hitting
-  // Delete during a drag shouldn't wipe the selection out from under
-  // the in-flight handle.
-  defaultBinding: {
-    kind: 'key',
-    key: ['Delete', 'Backspace'],
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
-  eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection', 'applyOps'],
-  invoker: {
-    timing: 'immediate',
-    run: (deps) => {
-      const selection = deps.selection;
-      const scene = deps.scene;
-      const applyOps = deps.applyOps;
-      if (!selection || !scene) return;
-      const ids = selection.get();
-      if (ids.length === 0) return;
-
-      const ops = buildDeleteOps(scene, ids, 'Delete');
-
-      if (ops.length > 0) {
-        if (applyOps) applyOps(ops, 'Delete');
-        else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));
-      }
-      selection.set([]);
-    },
-  },
-  enabled: requiresSelection,
-};
+export const deleteAction = createDeleteAction();

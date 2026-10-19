@@ -10,13 +10,15 @@ import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
-import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
+import { edgeIdOf } from './edgeId';
+import { edgeSpecs, wireLabels } from './dataEdges';
+import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
 import { grownBy } from './footprint';
 import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
-import type { DiagramLabel } from './labelTrait';
+import { LABEL_PLACEMENT, type DiagramLabel } from './labelTrait';
 import { chain } from './chain';
 import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
@@ -61,6 +63,10 @@ export interface DataNode {
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
 export interface DataEdge {
+  /** The scene node id this edge gets, for an editor that must find it again
+   *  after its ends, ports or label change. Unset, {@link edgeIdOf} derives
+   *  one from those. */
+  id?: string;
   /** A node's id, or a group's: an edge naming a group meets its box. */
   from: string;
   to: string;
@@ -189,29 +195,16 @@ export interface DiagramSceneOptions {
   edgeStyle?: (edge: DataEdge) => EdgeStyle;
 }
 
-const FONT = { fontFamily: 'sans-serif', fontSize: 12 };
-const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
+/** What a node is drawn with when nothing says otherwise. */
+export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
-/** Where an edge label sits when neither the edge nor the scene says. */
-export const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
+export { LABEL_PLACEMENT };
 const LINE = 1.4;
-const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
-/** A part of an edge id with its separators, and the `/` sub-specs append
- *  after one, escaped by a backslash. */
-const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
-
-/** The scene node id `diagramScene` gives an edge, built from its ends, ports,
- *  and label. Two edges differing in any of those get different ids, an empty
- *  port or label included: a `.`, `>`, `:`, `/` or `\` in one of them is
- *  escaped with a backslash. */
-export const edgeIdOf = (e: DataEdge) => {
-  const part = (mark: string, p: string | undefined) => (p === undefined ? '' : `${mark}${idPart(p)}`);
-  return `edge:${idPart(e.from)}${part('.', e.fromPort)}->${idPart(e.to)}${part('.', e.toPort)}${part(':', e.label)}`;
-};
+export { edgeIdOf };
 
 function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -240,7 +233,7 @@ function labelRoomOf(e: DataEdge, opts: DiagramSceneOptions, font: { fontFamily:
   if (e.labelPlacement !== undefined && !labelFollowsLayout(e.labelPlacement.at)) return null;
   const style = labelStyleOf(font);
   const offset = (e.labelPlacement ?? opts.labelPlacement ?? LABEL_PLACEMENT).offset;
-  return { width: measure(e.label, style).width, height: style.fontSize, ...(offset !== undefined ? { offset } : {}) };
+  return { ...labelSize(e.label, style, measure), ...(offset !== undefined ? { offset } : {}) };
 }
 
 /** A data edge as layout reads it: its ends, the ports it names, and the room
@@ -301,7 +294,7 @@ function nodeSpecs(
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
-  const font = opts.font ?? FONT;
+  const font = opts.font ?? DEFAULT_FONT;
   const styleOf = (s: RowTextStyle | undefined): DiagramTextStyle => ({
     fontFamily: s?.fontFamily ?? font.fontFamily,
     fontSize: s?.fontSize ?? font.fontSize,

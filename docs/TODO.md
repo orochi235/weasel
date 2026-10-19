@@ -56,6 +56,11 @@ Priority tags:
   `ingestion={{ handlers: [kitTextHandler] }}`. Whether `ingest` canvases should take text by
   default, and whether weaseldraw should, is undecided. The node gets the default text style,
   since the `insert` dep's `text` kind carries a string and nothing else.
+  (c) A drop keeps only the string flavors in `INGEST_STRING_MIMES` (`text/plain`, `text/html`,
+  `text/uri-list`; `packages/routing/src/ingestion/ingestItems.ts`), so a handler cannot claim a
+  drag from the app's own UI by a type of its own. weaselchart's Shapes panel carries its stencil id
+  as tagged `text/plain` for this reason (`apps/chart/src/stencilDrop.ts`). Admitting the custom
+  types a registered handler's `types` names would let it use its own.
 
 - **(P3) The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in
@@ -1314,3 +1319,58 @@ only story runner in the repo.
   routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
   summary prints the label, so making them one needs a decision on what it should say. Left open by
   the selection pass.
+
+## weaselchart
+
+`apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
+
+- **(P3) Second arc.** Connectors that route around shapes while editing; containers and
+  swimlanes; multiple pages (`core/pages`); themes; waypoint editing on connectors; editing under
+  the `rack` and `lanes` looks, where dragging a stage reorders it.
+
+- **(P3) A consumer's `insert` dep hides the kit default.** A canvas using `useStencilInsert`
+  can't also use core's rect, ellipse and text insert tools, because the dep registry answers only
+  its newest source. Core needs a way for a dep to delegate to the default
+  (`packages/diagram/src/stencilTool.ts`).
+
+- **(P3) `canConnect` can't tell a new connect from moving an edge's end.** The reconnect
+  predicate should receive the edge being moved (`packages/diagram/src/reconnect.ts`,
+  `packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) Selection chrome draws from a path-derived node's 0x0 placeholder pose.** Chart works
+  around it with `diagramResizable` and an outline gate that applies to the whole selection; the
+  core fix is to measure such nodes by their path (`apps/chart/src/ChartWorkspace.tsx`).
+
+- **(P3) `DiagramView` turns on `pick` and makes edges pickable**, so a selected wire may draw the
+  same box at the origin (`packages/diagram/src/DiagramView.tsx`).
+
+- **(P3) An edge-label edit that ends empty leaves an empty label node**
+  (`packages/diagram/src/edgeLabel.ts`).
+
+- **(P3) Body label text sits left-aligned in stencil bodies** rather than centered
+  (`packages/diagram/src/stencil.ts`).
+
+- **(P3) `formatParam` always shows one decimal.** A param stepping by 0.01 shows 0.04 as "0.0",
+  and a small negative value prints "-0.0". Take the decimals from the control's `step`
+  (`packages/diagram/src/effect/stageTypes.ts`).
+
+- **(P3) `EffectEditor`'s picked wire survives a delete.** `nextWireId` reuses the lowest free id,
+  so the next wire drawn comes back already picked. Clear the pick in `onDelete`
+  (`packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) Dragging a stage pins only that stage, while `addStage` pins every stage.** After a drag,
+  layered layout can still move the stages nobody placed. Make the two agree (`packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) A body end on a node with no ports commits an edge with nothing to route to**
+  (`packages/diagram/src/connectTargets.ts`).
+
+- **(P3) The reconnect preview aims its fixed end at the pointer**, not at the edge's first
+  waypoint (`packages/diagram/src/reconnect.ts`).
+
+- **(P3) The rule for where an end aims and which point is a body's center lives twice**, in
+  `connectTargets.ts` and `edge.ts`. Fold it into one (`packages/diagram/src/`).
+
+- **(P3) Pipeline mode loses its undo history on a mode switch, and can't be saved.** The history
+  lives in `PipelineWorkspace`'s `useMemo`, so leaving the mode drops it, and the File menu is empty
+  in pipeline mode, so a pipeline can't be written to or opened from a file
+  (`apps/chart/src/pipeline`).

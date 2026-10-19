@@ -211,7 +211,7 @@ export default [
      * The dev server serves every module the root barrel reaches, about 640 of them, so one
      * import of it from draw costs every page load hundreds of requests.
      */
-    files: ['apps/draw/**/*.{ts,tsx}'],
+    files: ['apps/draw/**/*.{ts,tsx}', 'apps/chart/**/*.{ts,tsx}'],
     languageOptions,
     plugins,
     rules: {
