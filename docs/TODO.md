@@ -1036,19 +1036,20 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) A devtools panel on the hook, and a browser extension hosting it.** The hook is built
-  (`docs/devtools.md`): each `<SceneCanvas>` is a root a panel reads and steers over a versioned
-  message protocol. What is left:
-  1. The panel, as an ordinary weasel-ui/labkit component talking to the hook through a transport.
-     Mounted in-page, it serves forge, the site's demos and draw, and replaces
-     `apps/draw/src/dev/RegistryInspector.tsx` and the `DispatchTracePanel` there. The dispatcher
-     trace — which binding a gesture matched and what it beat — can reuse `Powerline` and the
-     routing reflection registry.
+- **(P2) A devtools panel on the hook, and a browser extension hosting it.** The hook and the panel
+  are built (`docs/devtools.md`): each `<SceneCanvas>` is a root that `@weasel-js/devtools`'s
+  `DevtoolsPanel` reads and steers, mounted in development in draw, the site's demos and forge.
+  What is left:
+  1. Registry and History tabs in the panel, once the protocol serves `get-registry` and
+     `get-history`; then draw's Bundle Inspector (`apps/draw/src/dev/RegistryInspector.tsx`) can go.
   2. The extension: a devtools page plus a content-script bridge (`createWindowPanelTransport`)
      hosting the same panel. Chrome, Edge and Firefox share the WebExtensions devtools API; Safari
      needs an Xcode app wrapper.
   3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
      history steps.
+  4. A selection change is announced as `scene` as well as `selection`, because a scene notifies
+     its subscribers on selection (`core/scene/scene.ts`) and the root follows that feed. The
+     panel's Scene tab then reloads its open levels on every selection (seen 2026-10-19).
 
 ## Release-gate & build hygiene
 

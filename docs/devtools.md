@@ -4,7 +4,8 @@ How a page running weasel exposes its canvases to a devtools panel: what the pag
 messages a panel sends and gets back, and what a production app has to do to allow it. For anyone
 building a panel, an extension, or a console probe against `window.__weaselDevtools__`.
 
-A panel in the page and the browser extension are not built yet (`docs/TODO.md`, "Devtools").
+The panel is `@weasel-js/devtools` ("Mounting the panel", below); the browser extension is not built
+yet (`docs/TODO.md`, "Devtools").
 
 ## What the page publishes
 
@@ -29,7 +30,8 @@ The panel inspects and steers; it never edits the scene (2026-10-18).
 A transport is `send(message)` plus `onMessage(listener)`, from `@weasel-js/core/devtools`:
 
 - `createInPageTransports()` — both ends in one page, delivered by direct call. Pass `page` to
-  `hook.connect` and talk over `panel`. `apps/draw/src/dev/dispatchTraceLog.ts` is a working client.
+  `hook.connect` and talk over `panel`. A session ends at `bye`, so a panel that reconnects needs a
+  fresh `connect`; `@weasel-js/devtools`'s `createInPagePanelTransport()` opens one on each `yo`.
 - `createWindowPanelTransport()` — over `window.postMessage`, in an envelope tagged
   `source: 'weasel-devtools'`. Installing the hook starts a `message` listener, so a content script
   needs no access to page objects: its `yo` opens the connection, replacing any earlier one.
@@ -66,3 +68,24 @@ cycles `'[cycle]'`, and depth, length and string size are capped.
 A canvas keeps two rolling buffers of 200: its dispatchers' decisions (`DispatchTrace`, on every
 `DispatcherContext` and published as the `dispatchTrace` dep) and its `clientToWorld` conversions.
 Both record in a dev build, and in production only while a panel is connected.
+
+## Mounting the panel
+
+`DevtoolsPanel` from `@weasel-js/devtools` takes the panel's end of any transport and fills its
+container. In the page itself:
+
+```tsx
+import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
+import '@weasel-js/devtools/style.css';
+
+const transport = useMemo(() => createInPagePanelTransport(), []);
+<div className="dock"><DevtoolsPanel transport={transport} /></div>
+```
+
+It says `yo` on mount and `bye` on unmount, which drops its highlight and overlay flags. Mount it
+in development only, behind a lazy import, so production bundles leave it out:
+`import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way in
+three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
+Devtools switch in the demo's header), and forge (a Devtools global in the workshop toolbar, which
+puts the panel beside the story). `tabs={['dispatch']}` shows a subset; draw's Toolkit Builder
+uses it for its dispatch widget.
