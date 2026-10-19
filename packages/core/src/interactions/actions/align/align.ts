@@ -61,7 +61,9 @@ export interface UseAlignOptions<TPose> {
    *  the same value and the alignment runs entirely in stored coordinates. */
   composition?: PoseComposition<TPose>;
   /** The nodes behind the adapter's ids. With it, a stroked node aligns by
-   *  the box it is drawn with (`drawnBoundsOf`); without, by its pose box. */
+   *  the box it is drawn with (`drawnBoundsOf`); without, by its pose box.
+   *  Pass a `Scene` through `drawnBoundsScene` so a path-derived node is
+   *  boxed by its path. */
   scene?: DrawnBoundsScene;
   /** View scale a screen-pixel stroke is resolved at. Default 1. */
   viewScale?: () => number | Scale2;

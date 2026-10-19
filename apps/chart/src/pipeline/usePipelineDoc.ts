@@ -3,6 +3,7 @@ import { createHistory, swapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 export const PIPELINE_STORAGE_KEY = 'weaselchart:pipeline-v1';
+export const PIPELINE_FILE_EXTENSION = '.weaselpipeline.json';
 
 /** Long enough that one slider drag reads as one edit, short enough that two deliberate ones stay apart. */
 const COALESCE_MS = 500;
@@ -15,12 +16,20 @@ const isDoc = (v: unknown): v is EffectDoc => {
     && Array.isArray(d.pipeline.wires) && typeof d.places === 'object' && d.places !== null;
 };
 
+/** An empty pipeline, as New makes. */
+export const emptyPipeline = (): EffectDoc => EMPTY;
+
+/** The pipeline a `.weaselpipeline.json` file holds. Throws on text that is not one. */
+export function pipelineFromJson(text: string): EffectDoc {
+  const parsed: unknown = JSON.parse(text);
+  if (!isDoc(parsed)) throw new Error('Not a saved pipeline');
+  return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
+}
+
 function load(key: string): EffectDoc {
   try {
     const raw = localStorage.getItem(key);
-    const parsed: unknown = raw === null ? null : JSON.parse(raw);
-    if (!isDoc(parsed)) return EMPTY;
-    return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
+    return raw === null ? EMPTY : pipelineFromJson(raw);
   } catch {
     return EMPTY;
   }
@@ -45,7 +54,8 @@ export interface PipelineDoc {
   canRedo: boolean;
 }
 
-/** Pipeline mode's document: an `EffectDoc` with its own undo history, autosaved under `storageKey`. */
+/** Pipeline mode's document: an `EffectDoc` with its own undo history, autosaved under `storageKey`.
+ *  Held above the mode switch, so the history survives a visit to chart mode. */
 export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): PipelineDoc {
   const [doc, setDoc] = useState(() => load(storageKey));
   const current = useRef(doc);

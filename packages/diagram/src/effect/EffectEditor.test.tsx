@@ -12,6 +12,7 @@ vi.mock('../DiagramView', () => ({
   },
 }));
 
+import { diagramEdgeOf } from '../edgeTrait';
 import type { Port } from '../types';
 import { EffectEditor, type EffectEditorApi } from './EffectEditor';
 import type { EffectStageType } from './stageTypes';
@@ -110,6 +111,35 @@ describe('EffectEditor', () => {
     expect(label).toBe('Move');
     expect(next.places.blur).toEqual({ x: 210, y: 30 });
     expect(next.places.src).toEqual({ x: 0, y: 0 });
+  });
+
+  it('pins every stage where it shows on a move, as adding a stage does', () => {
+    const { onChange, view } = mount({ ...doc, places: {} });
+    view().onMove!([{ id: 'blur', x: 210, y: 30 }], []);
+    const next = onChange.mock.calls[0]![0] as EffectDoc;
+    expect(Object.keys(next.places).sort()).toEqual(['blur', 'mix', 'src']);
+    expect(next.places.blur).toEqual({ x: 210, y: 30 });
+  });
+
+  it('drops a picked wire on delete, so the next wire minted under its id is not picked', () => {
+    const onChange = vi.fn();
+    const ui = render(<EffectEditor doc={doc} onChange={onChange} selected={null} width={600} height={400} />);
+    const edge = seen.at(-1)!.specs.find((s) => diagramEdgeOf(s) !== null)!.id as string;
+    act(() => seen.at(-1)!.onSelect!(edge));
+    expect(seen.at(-1)!.selected).toBe(edge);
+    act(() => seen.at(-1)!.onDelete!({ nodes: [], edges: [edge] }));
+    ui.rerender(<EffectEditor doc={onChange.mock.calls[0]![0]} onChange={onChange} selected={null} width={600} height={400} />);
+    ui.rerender(<EffectEditor doc={doc} onChange={onChange} selected={null} width={600} height={400} />);
+    expect(seen.at(-1)!.selected).toBeNull();
+  });
+
+  it('lets a wire whose end is moving land back on the input it feeds', () => {
+    const { view } = mount();
+    const edge = view().specs.find((s) => diagramEdgeOf(s) !== null)!.id as string;
+    const out = port('src', 'out', 'image');
+    const fedInput = port('blur', 'image', 'image');
+    expect(view().canConnect!(out, fedInput)).toBe(false);
+    expect(view().canConnect!(out, fedInput, { edge, end: 'from' })).toBe(true);
   });
 
   it('moves a wire end onto another input', () => {

@@ -3,7 +3,9 @@ import type { Stroke } from '@weasel-js/paint';
 import { PATH_L, PATH_M, PATH_Z, type Scale2 } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
+import { polylineFromPoints, type Path } from '@weasel-js/geom';
 import { drawnBoundsOf, inkExtentsOf } from './drawnBounds';
+import { drawnBoundsScene } from './derivedPath';
 
 const RED = { kind: 'solid', color: '#f00' } as const;
 const stroke = (s: Partial<Stroke> = {}): Stroke => ({ paint: RED, width: 10, ...s });
@@ -124,5 +126,41 @@ describe('inkExtentsOf', () => {
   it('is zero for an unstroked node', () => {
     const scene = sceneWith([{ id: 'a', data: { shape: 'rect' }, pose: BOX }]);
     expect(inkExtentsOf(scene, asNodeId('a'), BOX)).toEqual({ left: 0, top: 0, right: 0, bottom: 0 });
+  });
+});
+
+describe('drawnBoundsOf a node showing a derived path', () => {
+  /** Two anchors far from the origin, and an edge between them whose own pose is a 0x0 placeholder at the origin. */
+  function edgeScene(data: unknown) {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 300, y: 200, width: 10, height: 10 } });
+    const b = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 500, y: 260, width: 10, height: 10 } });
+    const edge = scene.add({
+      kind: 'leaf', layer: 'main', data, pose: { x: 0, y: 0, width: 0, height: 0 }, dependsOn: [a, b],
+      derivePath: (_n, deps): Path | null => {
+        const [from, to] = [deps[0]?.pose, deps[1]?.pose];
+        return from && to ? polylineFromPoints([{ x: from.x, y: from.y }, { x: to.x, y: to.y }]) : null;
+      },
+    });
+    return { scene, edge };
+  }
+
+  it('boxes the path, not the placeholder pose', () => {
+    const { scene, edge } = edgeScene({});
+    expect(drawnBoundsOf(drawnBoundsScene(scene), edge, scene.get(edge)!.pose)).toEqual({ x: 300, y: 200, width: 200, height: 60 });
+  });
+
+  it('grows the path box by its stroke', () => {
+    const { scene, edge } = edgeScene({ stroke: stroke({ width: 4 }) });
+    const box = drawnBoundsOf(drawnBoundsScene(scene), edge, scene.get(edge)!.pose);
+    expect(box.x).toBeLessThan(300);
+    expect(box.x).toBeGreaterThan(290);
+    expect(box.y + box.height).toBeGreaterThan(260);
+    expect(box.y + box.height).toBeLessThan(270);
+  });
+
+  it('falls back to the pose box for a scene that reads no derived paths', () => {
+    const { scene, edge } = edgeScene({});
+    expect(drawnBoundsOf(scene, edge, scene.get(edge)!.pose)).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
 });

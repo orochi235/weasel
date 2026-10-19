@@ -151,4 +151,7 @@ export interface NodeInkCtx {
    *  rotation and `transform`. With it, a `{ px }` length is measured the way
    *  the renderer builds it, exact in every direction; without, at `scale`. */
   screen?: readonly [number, number, number, number];
+  /** The path the node shows in place of its pose's, already where it is
+   *  drawn: its box is measured from this, not from the placeholder pose. */
+  derivedPath?: Path | null;
 }

@@ -13,7 +13,7 @@ import {
   type Vec2,
 } from '@weasel-js/core/math';
 import { pathContainsPoint } from '@weasel-js/geom';
-import { resolveEnd, type Router } from './edge';
+import { boxCenter, endAims, resolveEnd, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { diagramGroupOf } from './group';
 import { diagramLabelOf } from './labelTrait';
@@ -88,7 +88,8 @@ export function bodyAt<TPose>(
 /** What {@link createTargets} needs from the connect action's options. */
 export interface TargetOptions<TPose> extends PortsOptions<TPose> {
   participants: ParticipantSource<TPose>;
-  canConnect: (from: ConnectEnd, to: ConnectEnd) => boolean;
+  /** Asked with the end that stays put first, and the candidate second. */
+  canConnect: (fixed: ConnectEnd, candidate: ConnectEnd) => boolean;
   showsPort?: (port: Port) => boolean;
   snapRadius: number;
   bodies: boolean;
@@ -122,12 +123,15 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     return best;
   }
 
-  /** What a release at `at` lands on: a port in reach beats the body under it. */
+  /** What a release at `at` lands on: a port in reach beats the body under it.
+   *  A body with no ports is no target, since an edge glued to it has nothing
+   *  to route to. */
   function target(from: ConnectEnd, at: Vec2, view: ConnectView): ConnectEnd | null {
     const port = portTarget(from, at, view);
     if (port !== null || !opts.bodies) return port;
     const body = bodyAt(opts.participants, at, { ...portOpts, view });
-    return body !== null && opts.canConnect(from, body.end) ? body.end : null;
+    if (body === null || portsOf(body.participant.node, body.participant.pose, portOpts).length === 0) return null;
+    return opts.canConnect(from, body.end) ? body.end : null;
   }
 
   function participantOf(nodeId: string): ParticipantPose<TPose> | undefined {
@@ -137,11 +141,11 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     return undefined;
   }
 
-  function centerOf(nodeId: string): Vec2 | undefined {
-    const participant = participantOf(nodeId);
-    if (participant === undefined) return undefined;
-    const b = geometry.getBounds(participant.pose);
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  /** The center an end is aimed by, as the edge router takes it: its node's,
+   *  else its own point. */
+  function centerOf(end: ConnectEnd): Vec2 {
+    const participant = participantOf(end.nodeId);
+    return participant === undefined ? end.point : boxCenter(geometry, participant.pose);
   }
 
   /** The port an end is drawn to: itself, or for a body, the port facing
@@ -155,19 +159,13 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     return resolveEnd({}, dep, toward, portOpts, all) ?? null;
   }
 
-  /** Where an end aims the other: its node's center, as the edge router uses,
-   *  or the bare point for a free end. */
-  function aimOf(end: ConnectEnd | null, free: Vec2): Vec2 {
-    if (end === null) return free;
-    return centerOf(end.nodeId) ?? end.point;
-  }
-
   /**
    * The run an edge would take with `fixed` at one end and the other released
    * at `at`: snapped to the target there, else to the bare point, which as a
    * port with no facing a router aims straight at. `moving` says which end of
    * the edge the pointer carries, so the run is routed in the edge's direction,
-   * through `waypoints` in that direction.
+   * through `waypoints` in that direction, each end aimed as `endAims` aims a
+   * committed edge's.
    */
   function preview(
     route: Router,
@@ -178,15 +176,20 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     waypoints: readonly Vec2[] = [],
   ): readonly Vec2[] {
     const landed = target(fixed, at, view);
+    const [fixedCenter, landedCenter] = [centerOf(fixed), landed === null ? at : centerOf(landed)];
+    const aims = moving === 'to'
+      ? endAims(fixedCenter, landedCenter, waypoints)
+      : endAims(landedCenter, fixedCenter, waypoints);
+    const [fixedAim, landedAim] = moving === 'to' ? [aims.from, aims.to] : [aims.to, aims.from];
     const free = landed === null
       ? { id: '', nodeId: '', point: at, normal: null }
-      : portFor(landed, aimOf(fixed, at));
-    const anchored = portFor(fixed, aimOf(landed, at));
+      : portFor(landed, landedAim);
+    const anchored = portFor(fixed, fixedAim);
     if (free === null || anchored === null) return [];
     return moving === 'to'
       ? route({ from: anchored, to: free, waypoints })
       : route({ from: free, to: anchored, waypoints });
   }
 
-  return { target, portFor, aimOf, preview };
+  return { target, portFor, preview };
 }

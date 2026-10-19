@@ -4,6 +4,7 @@
  * boundsOf derived from pose shape. Caller-supplied `pickEvery` / `boundsOf`
  * overrides via the `geometry` arg take precedence.
  */
+import { drawnBoundsScene } from '../derivedPath';
 import { useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
@@ -102,7 +103,7 @@ function chromeBox<TData, TLayer extends string, TPose>(
   pose: TPose,
   scale: { x: number; y: number } | undefined,
 ): Bounds {
-  return drawnBoundsOf(scene as never, asNodeId(id), pose, {
+  return drawnBoundsOf(drawnBoundsScene(scene), asNodeId(id), pose, {
     descriptor: descriptor as PoseDescriptor<unknown>,
     worldPoseOf: (m) => adapter.getWorldPose(m),
     includeStroke,

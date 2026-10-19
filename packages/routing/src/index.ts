@@ -122,7 +122,7 @@ export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEn
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { buildDepsFromRequires } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';
-export type { DepRegistry, DepListing } from './interactions/actions/depNode';
+export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';

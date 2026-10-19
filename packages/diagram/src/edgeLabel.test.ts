@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createScene, type ActionDeps, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import {
-  EDIT_EDGE_LABEL_ACTION_ID, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding,
+  EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding,
 } from './edgeLabel';
 import { LABEL_DERIVE_POSE } from './label';
 import { diagramScene } from './fromData';
@@ -114,5 +114,17 @@ describe('editEdgeLabelAction', () => {
     const action = editEdgeLabelAction();
     expect(action.enabled?.(depsOf(scene, {}, 'a'), { x: 10, y: 10 })).not.toBe(true);
     expect(action.enabled?.(depsOf(scene), { x: 150, y: 20 })).toBe(true);
+  });
+});
+
+describe('dropEmptyEdgeLabel', () => {
+  it('removes an edge label whose text is empty or blank, and nothing else', () => {
+    const scene = sceneWithEdge(true);
+    expect(dropEmptyEdgeLabel(scene, 'e1/label')).toBe(false);
+    scene.update('e1/label' as never, { data: { ...(scene.get('e1/label' as never)!.data as object), text: '  ' } });
+    expect(dropEmptyEdgeLabel(scene, 'e1/label')).toBe(true);
+    expect(scene.get('e1/label' as never)).toBeUndefined();
+    expect(dropEmptyEdgeLabel(scene, 'e1')).toBe(false);
+    expect(scene.get('e1' as never)).toBeDefined();
   });
 });

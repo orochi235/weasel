@@ -4,10 +4,10 @@ import {
   type ReactNode,
 } from 'react';
 import type { DepSchema, DepName } from '../../index';
-import { createDepRegistry, type DepRegistry } from './depNode';
+import { createDepRegistry, type DepRegistry, type DepSource } from './depNode';
 import { useLatest } from '@weasel-js/react';
 
-export type { DepSchema, DepName, DepRegistry };
+export type { DepSchema, DepName, DepRegistry, DepSource };
 export { DepNode, depNodeOf, createDepRegistry } from './depNode';
 
 /** @internal The context `<InputScope>` provides a scope's dep registry through. */
@@ -40,11 +40,11 @@ export function useOptionalDepRegistry(): DepRegistry | null {
 
 /** Register a live source for `name` for the lifetime of the calling
  *  component. The `source` thunk is called at dispatch time and should
- *  return the latest value. */
-export function useDepSource<K extends DepName>(name: K, source: () => DepSchema[K]) {
+ *  return the latest value; its `below` reads the source it displaced. */
+export function useDepSource<K extends DepName>(name: K, source: DepSource<K>) {
   const registry = useDepRegistry();
   const sourceRef = useLatest(source);
   useEffect(() => {
-    return registry.register(name, () => sourceRef.current());
+    return registry.register(name, (below) => sourceRef.current(below));
   }, [name, registry, sourceRef]);
 }

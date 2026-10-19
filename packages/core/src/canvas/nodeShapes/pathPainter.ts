@@ -8,7 +8,7 @@ import type { RectPose } from 'core/scene/types';
 import { pathInPoseFrame } from '@weasel-js/geom';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { DERIVED_PAINTER } from './derivedPainter';
+import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
 import { inkReach, pathPaintOf, withAnimatedVertexColors, resolveNodeStroke } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
@@ -68,6 +68,7 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   bounds: (node, pose, ctx) =>
     poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
   drawnBounds: (node, pose, ctx) => {
+    if (ctx?.derivedPath != null) return derivedDrawnBounds(node, ctx);
     const d = node.data as { path: Path; stroke?: Stroke | null };
     return strokedPoseBox(node, pose, resolveNodeStroke(d.stroke), ctx, (at) => pathInPoseFrame(d.path, at));
   },

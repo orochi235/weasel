@@ -6,6 +6,7 @@ import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
 import { buildBody, type MeasureRowText, type Row } from './body';
 import { DEFAULT_FONT } from './edgeLabel';
 import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
+import { rowTextStyle } from './rowStyle';
 import type { Outline } from './outline';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
@@ -77,11 +78,7 @@ export function stencilBuild<TLayer extends string>(
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
         ? {
             text,
-            style: {
-              fontFamily: box.row.style?.fontFamily ?? DEFAULT_FONT.fontFamily,
-              fontSize: box.row.style?.fontSize ?? DEFAULT_FONT.fontSize,
-              ...(box.row.style?.bold === true ? { fontWeight: 700 } : {}),
-            },
+            style: rowTextStyle(box.row, DEFAULT_FONT),
             fill: { paint: { color: style.text } },
           }
         : null,

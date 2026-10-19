@@ -25,7 +25,7 @@ import type { Departures } from '../../animation/departures';
 import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
-import type { DrawnBoundsScene } from '../drawnBounds';
+import { drawnBoundsScene } from '../derivedPath';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
 import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
 import type { SnapReadoutStyle } from 'features/snap/types';
@@ -132,7 +132,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     merged.selectionOverlay,
     pathEditState.getEditingIds,
     poseDescriptor,
-    args.boundsIncludeStroke ? (scene as unknown as DrawnBoundsScene) : undefined,
+    args.boundsIncludeStroke ? drawnBoundsScene(scene) : undefined,
     resizeHandles,
   );
 

@@ -156,6 +156,39 @@ describe('createReconnectAction', () => {
     ]);
   });
 
+  it('aims a fixed body end at the first waypoint, as the committed edge does, not at the pointer', () => {
+    const bodyEnd = () => PARTICIPANTS().map((p) => p.node.id !== 'ab' ? p : {
+      ...p,
+      node: { ...p.node, data: { diagram: { from: {}, to: { port: 'w' }, waypoints: [{ x: 50, y: -100 }] } } },
+    });
+    const invoker = createReconnectAction<Rect>({ participants: bodyEnd, selected: () => ['ab'] }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const handle = invoker.start(ctxAt(300, 20, endPress('to')));
+    handle.onMove!(ctxAt(200, 400));
+    expect(previewPoints(handle)[0]).toEqual({ x: 50, y: 0 });
+  });
+
+  it('will not glue an end to a body with no ports', () => {
+    const portless = () => [...PARTICIPANTS(), {
+      node: { id: 'D', kind: 'leaf', data: { diagram: { ports: [] } } } as GraphNodeLike,
+      pose: { x: 0, y: 300, width: 100, height: 40 } as Rect,
+    }];
+    const commit = vi.fn();
+    const invoker = createReconnectAction<Rect>({ participants: portless, selected: () => ['ab'], commit }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    invoker.start(ctxAt(300, 20, endPress('to'))).onEnd!(ctxAt(50, 320), 'commit');
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('tells `canConnect` which end of which edge it is moving', () => {
+    const canConnect = vi.fn(() => true);
+    open({ commit: vi.fn(), canConnect }, 'from').onEnd!(ctxAt(350, 220), 'commit');
+    const asked = canConnect.mock.calls as unknown as [unknown, unknown, unknown][];
+    expect(asked.length).toBeGreaterThan(0);
+    expect(asked.every(([, , moving]) => (moving as { edge: string; end: string }).edge === 'ab'
+      && (moving as { end: string }).end === 'from')).toBe(true);
+  });
+
   it('declines a press that carries no edge end', () => {
     const invoker = createReconnectAction<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] }).invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');

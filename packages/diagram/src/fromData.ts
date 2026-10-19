@@ -20,6 +20,8 @@ import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, typ
 import type { DiagramAnchor } from './group';
 import { LABEL_PLACEMENT, type DiagramLabel } from './labelTrait';
 import { chain } from './chain';
+import { rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
+export type { DiagramTextStyle };
 import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
@@ -141,9 +143,6 @@ export interface EdgeStyle {
 
 /** How an edge is drawn between its ends. */
 export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal';
-/** The face a diagram node's text is set in. */
-export type DiagramTextStyle = { fontFamily: string; fontSize: number; fontWeight?: number };
-
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
   diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
@@ -263,11 +262,11 @@ function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyM
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
   n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
-  look: { style: NodeStyle; text: (s: RowTextStyle | undefined) => DiagramTextStyle; measure: MeasureRowText },
+  look: { style: NodeStyle; text: (row: Row | undefined) => DiagramTextStyle; measure: MeasureRowText },
 ): DiagramSpec[] {
   const { style } = look;
-  const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
-    ({ text, style: look.text(s), fill: { paint: { color: style.text } } });
+  const textData = (text: string, row: Row | undefined): DiagramSceneData =>
+    ({ text, style: look.text(row), fill: { paint: { color: style.text } } });
   const built = buildBody<DiagramSceneData, 'main', RectPose>(body, box, {
     id: n.id,
     layer: 'main',
@@ -280,7 +279,7 @@ function nodeSpecs(
     row: (text, at) =>
       at.row.kind === 'slot'
         ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
-        : text === '' ? null : textData(text, at.row.kind === 'label' || at.row.kind === 'field' ? at.row.style : undefined),
+        : text === '' ? null : textData(text, at.row),
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);
@@ -295,11 +294,7 @@ function nodeSpecs(
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
   const font = opts.font ?? DEFAULT_FONT;
-  const styleOf = (s: RowTextStyle | undefined): DiagramTextStyle => ({
-    fontFamily: s?.fontFamily ?? font.fontFamily,
-    fontSize: s?.fontSize ?? font.fontSize,
-    ...(s?.bold === true ? { fontWeight: 700 } : {}),
-  });
+  const styleOf = (s: RowTextStyle | undefined) => textFace(s, font);
   const measure: MeasureRowText = opts.measure
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
     : (text, s) => {
@@ -385,7 +380,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
     const style = opts.nodeStyle?.(n) ?? NODE;
-    specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: styleOf, measure }));
+    specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure }));
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
   specs.push(...edgeSpecs(edges, edgeCtx));
