@@ -1,4 +1,4 @@
-export { createHistory } from './history';
+export { createHistory, touchedIdsFromOps } from './history';
 export type {
   History,
   CreateHistoryOptions,
@@ -10,6 +10,7 @@ export type {
   HistoryLogger,
   HistorySelection,
   HistoryBranch,
+  HistoryStep,
   RecordEntryOptions,
 } from './history';
 export type { Op } from './op';

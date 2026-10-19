@@ -1050,8 +1050,6 @@ only story runner in the repo.
      the envelope tag and protocol number, tied to core's by type, because importing
      `@weasel-js/core/devtools` installs a hook; a side-effect-free entry for the protocol and
      transports would let it import them.
-  3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
-     history steps.
 
 ## Release-gate & build hygiene
 

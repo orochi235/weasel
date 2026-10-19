@@ -53,6 +53,7 @@ export type {
   HistoryLogger,
   HistorySelection,
   HistoryBranch,
+  HistoryStep,
   RecordEntryOptions,
   Op,
   Journal,

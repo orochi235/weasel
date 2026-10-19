@@ -39,6 +39,7 @@ export function createNotices(
       if (following.has(root.id)) return;
       const releaseTrace = root.source.trace.watch();
       const releaseCoords = root.source.coords.watch();
+      const releaseHistory = root.source.history?.watch();
       const off = root.subscribe((area) => {
         let areas = pending.get(root.id);
         if (!areas) pending.set(root.id, (areas = new Set()));
@@ -48,7 +49,7 @@ export function createNotices(
           schedule(flush);
         }
       });
-      following.set(root.id, () => { releaseTrace(); releaseCoords(); off(); });
+      following.set(root.id, () => { releaseTrace(); releaseCoords(); releaseHistory?.(); off(); });
     },
     unfollow(rootId) {
       following.get(rootId)?.();

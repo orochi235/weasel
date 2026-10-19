@@ -82,6 +82,37 @@ describe('SceneCanvas devtools root', () => {
     expect(window.__weaselDevtools__!.root(rootId)!.source.overlays()).toBeNull();
   });
 
+  it('serves what the canvas registered: its tools with their bindings, its actions, deps and node kinds', () => {
+    const { result, close } = mount();
+    const registry = result({ type: 'get-registry' }) as {
+      tools: { id: string; slot: string; bindings: { actionId: string; routes: string[] }[] }[];
+      actions: { id: string }[]; deps: { name: string }[]; routingKinds: string[];
+    };
+    const select = registry.tools.find((t) => t.id === 'select');
+    expect(select).toMatchObject({ slot: 'tool' });
+    expect(select!.bindings.some((b) => b.actionId === 'areaSelect' && b.routes.length > 0)).toBe(true);
+    expect(registry.tools.find((t) => t.id === 'selection.move')).toMatchObject({ slot: 'contribution' });
+    expect(registry.actions.map((a) => a.id)).toEqual(expect.arrayContaining(['undo', 'redo']));
+    expect(registry.deps.map((d) => d.name)).toEqual(expect.arrayContaining(['selection']));
+    expect(registry.routingKinds.length).toBeGreaterThan(0);
+    close();
+  });
+
+  it('records the scene history steps while connected', () => {
+    const { result, scene, close } = mount();
+    act(() => { scene().setPose('a' as NodeId, { x: 4, y: 0, width: 10, height: 10 }); });
+    act(() => { scene().undo(); });
+    expect(result({ type: 'get-history', cursor: 0 })).toMatchObject({
+      entries: [
+        { step: 'push', entries: [{ ops: [{ targets: ['a'] }] }], position: { index: 1, total: 1 } },
+        { step: 'undo', position: { index: 0, total: 1 } },
+      ],
+      cursor: 2,
+      position: { index: 0, total: 1, canUndo: false, canRedo: true },
+    });
+    close();
+  });
+
   it('leaves the root out when the canvas unmounts', () => {
     const before = window.__weaselDevtools__?.roots().length ?? 0;
     const { close } = mount();

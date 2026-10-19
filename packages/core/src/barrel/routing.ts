@@ -106,7 +106,7 @@ export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@we
 // ─── Dep registry ───
 export { DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource } from '@weasel-js/routing/react';
 export { createDepRegistry } from '@weasel-js/routing';
-export type { DepName, DepRegistry } from '@weasel-js/routing';
+export type { DepName, DepRegistry, DepListing } from '@weasel-js/routing';
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
