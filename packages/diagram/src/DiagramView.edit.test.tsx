@@ -69,6 +69,18 @@ describe('DiagramView editing', () => {
     expect(onReconnect).toHaveBeenCalledWith({ edge: AB, end: 'to', node: 'c' });
   });
 
+  it('reports a connect onto a body as an edge with no port at that end', () => {
+    const onConnect = vi.fn();
+    const { canvas } = mount({ onConnect, connectBodies: true });
+    act(() => {
+      pointer(canvas, 'pointerdown', 100, 20);
+      pointer(canvas, 'pointermove', 200, 120);
+      pointer(canvas, 'pointermove', 350, 220);
+      pointer(canvas, 'pointerup', 350, 220);
+    });
+    expect(onConnect).toHaveBeenCalledWith({ from: 'a', fromPort: expect.any(String), to: 'c' });
+  });
+
   it('reports a double-click on an edge for its label', () => {
     const onEditLabel = vi.fn();
     const { canvas } = mount({ onEditLabel });
@@ -79,7 +91,7 @@ describe('DiagramView editing', () => {
 
   it('maps client points to world points through the view', () => {
     const { api } = mount({ view: { x: 50, y: 20, scale: { x: 2, y: 2 } } });
-    expect(api.current!.worldAt(50, 20)).toEqual({ x: 0, y: 0 });
-    expect(api.current!.worldAt(0, 0)).toEqual({ x: -25, y: -10 });
+    expect(api.current!.worldAt(0, 0)).toEqual({ x: 50, y: 20 });
+    expect(api.current!.worldAt(50, 20)).toEqual({ x: 75, y: 30 });
   });
 });

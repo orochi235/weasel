@@ -107,6 +107,7 @@ export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
     id: EDIT_EDGE_LABEL_ACTION_ID,
     label: 'Edit edge label',
     group: 'diagram',
+    requires: ['scene', 'nodeAtPoint', 'textEdit'],
     eligible: { mode: { in: ['normal', 'isolation'] } },
     invoker: {
       timing: 'immediate',

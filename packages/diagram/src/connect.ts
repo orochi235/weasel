@@ -234,7 +234,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     id,
     label: 'Connect',
     group: 'diagram',
-    requires: ['scene'],
+    requires: ['scene', 'view'],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {

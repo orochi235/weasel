@@ -132,7 +132,7 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
     id: opts.id ?? RECONNECT_ACTION_ID,
     label: 'Reconnect',
     group: 'diagram',
-    requires: ['scene'],
+    requires: ['scene', 'view'],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
