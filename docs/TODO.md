@@ -593,14 +593,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) A `KeyDiagram` in weasel-ui that draws a keyboard and groups its keys from an optional
-  layout.** Given a layout (macOS, Windows, Linux, or a consumer's own), it groups keys into
-  `KeyBank`s the way the keyboard does — function row, main block, navigation cluster, arrows —
-  which the "Keyboard layouts" story in `packages/ui/src/components/Keycaps/` now writes out by
-  hand. Without one it draws the keys it is given, ungrouped. Base the live half on astv's stage
-  key map (`astv/packages/engine/stage/keyMap/`): lighting a key while it is held, keeping the
-  diagram up for a while after the last key, and marking keys by the action they fire.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 

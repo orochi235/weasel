@@ -1,0 +1,108 @@
+/* A keyboard drawn from a layout: each key absolutely placed in key units, so a layout of any shape
+   needs no grid of its own. A consumer resizes the whole diagram with --key-diagram-unit. */
+.diagram {
+  --u: var(--key-diagram-unit, var(--wzl-control-h-xs));
+  --gap: 3px;
+  --pitch: calc(var(--u) + var(--gap));
+  --caption-h: 0px;
+  --pitch-y: calc(var(--pitch) + var(--caption-h));
+}
+
+.diagram[data-captioned] {
+  --caption-h: calc(var(--u) * 0.6);
+}
+
+.diagram[data-lingers] {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.diagram[data-lingers][data-up] {
+  opacity: 1;
+  transition-duration: 0.12s;
+}
+
+.board {
+  position: relative;
+  width: calc(var(--cols) * var(--pitch) - var(--gap));
+  height: calc(var(--rows) * var(--pitch-y) - var(--gap));
+}
+
+.row {
+  display: inline-flex;
+  gap: var(--gap);
+  align-items: flex-start;
+  vertical-align: bottom;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  color: var(--tone, inherit);
+}
+
+.board .slot {
+  position: absolute;
+  left: calc(var(--x) * var(--pitch));
+  top: calc(var(--y) * var(--pitch-y));
+  width: calc(var(--w) * var(--pitch) - var(--gap));
+}
+
+/* Outranks the keycap's own width rules, (0,2,0): in a layout the slot sets the width. */
+.board .slot > kbd.cap {
+  width: 100%;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.slot > kbd.cap {
+  /* Between the theme's light (200) and normal: a whole keyboard of bold legends reads as a wall. */
+  font-weight: 300;
+  /* A key let go fades back, so a tap too quick to see held still shows. */
+  transition: background-color 0.35s ease-out, border-color 0.35s ease-out, color 0.35s ease-out;
+}
+
+.slot[data-toned] > kbd.cap {
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+}
+
+.slot[data-held] > kbd.cap {
+  background: var(--tone, var(--wzl-accent));
+  border-color: var(--tone, var(--wzl-accent));
+  color: var(--wzl-fg-on-accent);
+  transition: none;
+}
+
+/* A tone may be any color, so its held face takes dark ink rather than the accent's. */
+.slot[data-toned][data-held] > kbd.cap {
+  color: rgb(0 0 0 / 0.85);
+}
+
+.slot[data-dimmed] {
+  opacity: 0.35;
+}
+
+.caption {
+  height: var(--caption-h);
+  overflow: hidden;
+  font-size: calc(var(--u) * 0.45);
+  line-height: var(--caption-h);
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tone, var(--wzl-fg-muted));
+}
+
+.caption svg {
+  width: calc(var(--u) * 0.5);
+  height: calc(var(--u) * 0.5);
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagram[data-lingers],
+  .slot > kbd.cap {
+    transition: none;
+  }
+}
