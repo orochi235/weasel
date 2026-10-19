@@ -55,17 +55,23 @@ export function extensionApi(): ExtensionApi {
   return api;
 }
 
-/** Evaluate `expression` in the inspected page: `browser.*` returns a promise, `chrome.*` calls back. */
+/**
+ * Evaluate `expression` in the inspected page. Chrome now has a `browser` namespace too, but its
+ * promise resolves to the bare result where Firefox's resolves to `[result, exception]`, so the
+ * callback form, which every browser's `chrome` namespace takes, is used wherever there is one.
+ */
 export function evalInInspectedWindow(api: ExtensionApi, expression: string): Promise<unknown> {
-  const inspected = api.devtools?.inspectedWindow;
+  const withCallback = (globalThis as { chrome?: ExtensionApi }).chrome?.devtools?.inspectedWindow;
+  const inspected = withCallback ?? api.devtools?.inspectedWindow;
   if (!inspected) return Promise.reject(new Error('not a devtools page'));
   return new Promise((resolve, reject) => {
     const done: EvalCallback = (result, exception) => (exception ? reject(exception) : resolve(result));
-    if (api === (globalThis as { browser?: ExtensionApi }).browser) {
-      const promise = inspected.eval(expression);
-      if (promise) promise.then(([result, exception]) => done(result, exception), reject);
-    } else {
-      inspected.eval(expression, done);
+    if (withCallback) {
+      withCallback.eval(expression, done);
+      return;
     }
+    const promise = inspected.eval(expression);
+    if (!promise) return reject(new Error('inspectedWindow.eval returned no promise'));
+    promise.then((answer) => (Array.isArray(answer) ? done(answer[0], answer[1]) : done(answer)), reject);
   });
 }
