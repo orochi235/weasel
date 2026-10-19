@@ -10,6 +10,7 @@ import type { DebugConfig } from '../../debug/types';
 import { parseDebugFlags } from '../../debug/parseDebugFlags';
 import { recordHistory } from '../../devtools/history';
 import type { DevtoolsHistoryRecord } from '../../devtools/protocol';
+import { useDevtoolsLabel } from '../../devtools/label';
 import { describeRegistry } from '../../devtools/registry';
 import type { DevtoolsRoot } from '../../devtools/root';
 import { useDevtoolsRoot, type DevtoolsOverride } from '../../devtools/useDevtoolsRoot';
@@ -63,10 +64,11 @@ export function useCanvasDevtoolsRoot(c: {
   }));
   const actions = useActionsRegistry();
   const deps = useDepRegistry();
+  const framed = useDevtoolsLabel();
   const root = useDevtoolsRoot({
     label: () => {
       const el = c.element.current;
-      return el?.getAttribute('aria-label') || el?.id
+      return el?.getAttribute('aria-label') || el?.id || framed
         || el?.parentElement?.closest('[aria-label]')?.getAttribute('aria-label') || '';
     },
     scene: () => c.scene,

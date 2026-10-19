@@ -1048,6 +1048,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
+  Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
+  to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug
+  that Node 24.22.0 fixes, and every fleet node's nvm resolves `.nvmrc`'s `24` to 24.22.0 since
+  2026-10-19. The flag stays because the same crash is reported on Node 26.7 and 26.8.1, which ad-hoc
+  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix.
+
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check

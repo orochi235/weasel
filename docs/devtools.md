@@ -10,8 +10,10 @@ The panel is `@weasel-js/devtools` ("Mounting the panel", below); the browser ex
 ## What the page publishes
 
 Each mounted `<SceneCanvas>` is a **root**. It registers with the hook on mount and leaves on
-unmount, labeled by its `aria-label`, else its DOM id, else the `aria-label` of its nearest labeled
-ancestor, else its root id. A labkit trial's canvas takes the trial's title. A root's dimension is `3d` when its first
+unmount, labeled by its `aria-label`, else its DOM id, else the `value` of the nearest
+`<DevtoolsLabel>` above it, else the `aria-label` of its nearest labeled ancestor, else its root id.
+A host that frames canvases it did not write wraps them in `<DevtoolsLabel>`: a labkit trial does,
+with its title, so a canvas in a trial is not named after the pane it sits in. A root's dimension is `3d` when its first
 node's pose has a `position.z`, else `2d`.
 
 `window.__weaselDevtools__` is `{ protocol, kitVersion, roots(), root(id), register(root),

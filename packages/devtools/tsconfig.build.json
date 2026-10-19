@@ -22,6 +22,7 @@
     "**/*.test.tsx",
     "**/*.stories.ts",
     "**/*.stories.tsx",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "src/testing/**"
   ]
 }

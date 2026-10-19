@@ -1,3 +1,4 @@
+import v8 from 'node:v8';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
@@ -15,6 +16,10 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
+
+// Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
+// Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
+v8.setFlagsFromString('--no-sparkplug');
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
