@@ -207,15 +207,24 @@ export function boxNode(
 }
 
 /** One edge of a look's data, from port to port. */
-export function wireEdge(from: EffectWire['from'], to: EffectWire['to'], label: string | undefined): DataEdge {
-  return { from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port, ...(label !== undefined ? { label } : {}) };
+export function wireEdge(
+  from: EffectWire['from'],
+  to: EffectWire['to'],
+  label: string | undefined,
+  id?: string,
+): DataEdge {
+  return {
+    ...(id !== undefined ? { id } : {}),
+    from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port,
+    ...(label !== undefined ? { label } : {}),
+  };
 }
 
 /** One edge per drawable wire, from port to port, named by `exitLabel` and
  *  styled by `wireStyle` in its type's color. */
 export function wireEdges(pipeline: EffectPipeline, color: TypeColor): { edge: DataEdge; style: EdgeStyle }[] {
   return drawableWires(pipeline).map((d) => ({
-    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d)),
+    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d), d.wire.id),
     style: wireStyle(color(d.type), isControl(pipeline, d.type), d.problem),
   }));
 }

@@ -160,7 +160,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       && wire.to.port !== line.mainIn.get(wire.to.stage) && line.at.has(wire.to.stage);
     const label = wire.label ?? (sideInput ? portOn(to, wire.to.port)?.label ?? wire.to.port : undefined);
     return {
-      edge: wireEdge(wire.from, wire.to, label),
+      edge: wireEdge(wire.from, wire.to, label, wire.id),
       style: wireStyle(color(wire.type), wire.arc === true || isControl(pipeline, wire.type), wire.problem),
     };
   });

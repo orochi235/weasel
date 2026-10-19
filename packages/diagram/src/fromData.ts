@@ -61,6 +61,10 @@ export interface DataNode {
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
 export interface DataEdge {
+  /** The scene node id this edge gets, for an editor that must find it again
+   *  after its ends, ports or label change. Unset, {@link edgeIdOf} derives
+   *  one from those. */
+  id?: string;
   /** A node's id, or a group's: an edge naming a group meets its box. */
   from: string;
   to: string;
@@ -204,11 +208,12 @@ const LAYOUTS = { layered, tree, force, chain } as const;
  *  after one, escaped by a backslash. */
 const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
 
-/** The scene node id `diagramScene` gives an edge, built from its ends, ports,
- *  and label. Two edges differing in any of those get different ids, an empty
+/** The scene node id `diagramScene` gives an edge: its `id` when set, else one
+ *  built from its ends, ports, and label. Two edges differing in any of those get different ids, an empty
  *  port or label included: a `.`, `>`, `:`, `/` or `\` in one of them is
  *  escaped with a backslash. */
 export const edgeIdOf = (e: DataEdge) => {
+  if (e.id !== undefined) return e.id;
   const part = (mark: string, p: string | undefined) => (p === undefined ? '' : `${mark}${idPart(p)}`);
   return `edge:${idPart(e.from)}${part('.', e.fromPort)}->${idPart(e.to)}${part('.', e.toPort)}${part(':', e.label)}`;
 };

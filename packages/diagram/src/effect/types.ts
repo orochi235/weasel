@@ -16,6 +16,9 @@ export interface EffectStage {
    *  'stage' (default), 'decision', 'source' and 'sink', and draw any other
    *  value as 'stage'. */
   kind?: string;
+  /** Which palette entry or template made this stage. A tag for an editor to
+   *  read: no shipped look draws differently for it. */
+  type?: string;
   inputs?: readonly EffectPort[];
   outputs?: readonly EffectPort[];
   /** Settings worth showing, in order. */
@@ -41,6 +44,8 @@ export interface EffectPort {
 
 /** A connection from one stage's output to another stage's input. */
 export interface EffectWire {
+  /** Carried to the drawn edge's `DataEdge.id`, so the wire can be found again. */
+  id?: string;
   from: { stage: string; port: string };
   to: { stage: string; port: string };
   /** Drawn on the wire. */
