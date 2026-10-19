@@ -93,7 +93,7 @@ describe('diagramScene', () => {
     expect(box.pose).toMatchObject({ x: 500, y: 40 });
   });
 
-  it('draws rows, bolding a bold row and skipping a slot', () => {
+  it('draws rows, bolding a bold row, centering a label row, and skipping a slot', () => {
     const specs = diagramScene({
       nodes: [{
         id: 'op',
@@ -109,6 +109,7 @@ describe('diagramScene', () => {
     expect(texts.map((t) => t.data?.text)).toEqual(['mix', 'rate: 2']);
     expect(texts[0]!.data?.style?.fontWeight).toBe(700);
     expect(texts[1]!.data?.style?.fontWeight).toBeUndefined();
+    expect(texts.map((t) => t.data?.style?.align)).toEqual(['center', undefined]);
   });
 
   it('gives a slot with an id a scene node of that name, an empty frame in its box', () => {

@@ -44,6 +44,7 @@ describe('stencilBuild', () => {
     expect(text!.kind).toBe('leaf');
     expect(text!.parent).toBe(id);
     expect(text!.data.text).toBe('');
+    expect((text!.data as { style?: { align?: string } }).style?.align).toBe('center');
   });
 
   it('keeps a dragged box where it was drawn', () => {

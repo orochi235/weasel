@@ -36,9 +36,9 @@ export interface EffectEditorProps {
 /** What a `ref` on `EffectEditor` holds. */
 export interface EffectEditorApi {
   /** Adds a stage of type `type` with its top-left at the world point under
-   *  `client` when given. Without one it goes in the first free spot in view
-   *  (`freeSpot`), and every stage layout placed is pinned where it shows, so
-   *  nothing moves under it. Returns the new stage's id. */
+   *  `client` when given, or in the first free spot in view (`freeSpot`).
+   *  Like a drag, it pins every stage layout placed where it shows, so nothing
+   *  moves under it. Returns the new stage's id. */
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
 }
 
@@ -87,21 +87,21 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const pickedWire = edge === null ? undefined : built.wireOf(edge);
   const now = useLatest({ doc, built, specs, options, onChange, pickedWire });
   const view = useRef<DiagramViewApi | null>(null);
-  const handlers = useMemo(() => editHandlers(() => now.current), [now]);
+  const handlers = useMemo(() => editHandlers(() => now.current, () => setEdge(null)), [now]);
 
   useImperativeHandle(ref, () => ({
     addStage: (type, client) => {
       const { doc: d, specs: shown, options: opts, onChange: report } = now.current;
       const stage = stageFromType(type, nextStageId(d.pipeline, type.type));
+      const pinned = ensureWireIds(pinShown(d, shown));
       if (client && view.current) {
-        report(addStage(ensureWireIds(d), stage, view.current.worldAt(client.x, client.y)), 'Add stage');
+        report(addStage(pinned, stage, view.current.worldAt(client.x, client.y)), 'Add stage');
       } else {
         const boxes = stageBoxes(d, shown);
-        const places = { ...Object.fromEntries([...boxes].map(([id, b]) => [id, { x: b.x, y: b.y }])), ...d.places };
         const alone: EffectDoc = { pipeline: { ...d.pipeline, stages: [stage], wires: [], groups: [] }, places: {} };
         const size = stageBoxes(alone, drawnSpecs(alone, opts)).get(stage.id) ?? { width: 0, height: 0 };
         const at = freeSpot([...boxes.values()], size, view.current?.visible() ?? null);
-        report(addStage(ensureWireIds({ ...d, places }), stage, at), 'Add stage');
+        report(addStage(pinned, stage, at), 'Add stage');
       }
       return stage.id;
     },
@@ -147,6 +147,13 @@ function drawnSpecs(doc: EffectDoc, options: NodeGraphOptions | undefined) {
   return diagramScene(built.data, built.scene);
 }
 
+/** The doc with every stage layout placed pinned where it shows, so a later
+ *  layout pass moves nothing a person has seen. */
+function pinShown(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unknown }[]): EffectDoc {
+  const shown = Object.fromEntries([...stageBoxes(doc, specs)].map(([id, b]) => [id, { x: b.x, y: b.y }]));
+  return { ...doc, places: { ...shown, ...doc.places } };
+}
+
 /** Each stage's box as drawn, by stage id. */
 function stageBoxes(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unknown }[]): Map<string, Box> {
   const ids = new Set(doc.pipeline.stages.map((s) => s.id));
@@ -156,13 +163,14 @@ function stageBoxes(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unkno
 interface Now {
   doc: EffectDoc;
   built: EditorScene;
+  specs: readonly { id?: unknown; pose?: unknown }[];
   onChange: (next: EffectDoc, label: string) => void;
   pickedWire: string | undefined;
 }
 
 /** DiagramView's edit callbacks, each turning a report into an edit of the
  *  latest doc. Nothing is read back out of the scene. */
-function editHandlers(now: () => Now) {
+function editHandlers(now: () => Now, unpick: () => void) {
   const commit = (label: string, edit: (d: EffectDoc, b: EditorScene) => EffectDoc | null) => {
     const { doc, built, onChange } = now();
     const d = ensureWireIds(doc);
@@ -190,13 +198,15 @@ function editHandlers(now: () => Now) {
       return canWire(d.pipeline, from, to) && !fed(d.pipeline, to, id) ? reconnectWire(d, id, c.end, moved) : null;
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
+      // A freed wire id is minted again for the next wire, which would come back picked.
+      unpick();
       const stages = r.nodes.flatMap((n) => b.stageOf(n) ?? []);
       const wires = r.edges.flatMap((e) => b.wireOf(e) ?? []);
       return stages.length === 0 && wires.length === 0 ? null : removeWires(removeStages(d, stages), wires);
     }),
     onMove: (moves: readonly NodeMove[]) => commit('Move', (d, b) => {
       const mine = moves.filter((m) => b.stageOf(m.id) !== undefined);
-      return mine.length === 0 ? null : moveStages(d, mine);
+      return mine.length === 0 ? null : moveStages(pinShown(d, now().specs), mine);
     }),
   };
 }

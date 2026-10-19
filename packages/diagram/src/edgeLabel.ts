@@ -11,11 +11,12 @@ import {
   type GestureBinding,
   type InvocationCtx,
   type RectPose,
+  type Scene,
 } from '@weasel-js/core';
 import type { MeasureRowText, RowTextStyle } from './body';
 import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';
-import { LABEL_PLACEMENT, type DiagramLabel } from './labelTrait';
+import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
@@ -67,6 +68,20 @@ export function edgeLabelSpec<TLayer extends string>(
     dependsOn: [edgeId as never],
     derivePose: LABEL_DERIVE_POSE as never,
   } as AddNodeSpec<unknown, TLayer, RectPose>;
+}
+
+/**
+ * Removes node `id` if it is an edge label left with no text, and says whether
+ * it did. The default edit adds a label before its text is typed, so a host
+ * passes this as its text edit's `onEnd` to drop one that ends empty.
+ */
+export function dropEmptyEdgeLabel(scene: Scene<unknown, string, unknown>, id: string): boolean {
+  const node = scene.get(id as never);
+  if (node === undefined || diagramLabelOf(node) === null) return false;
+  const text = (node.data as { text?: unknown }).text;
+  if (typeof text === 'string' && text.trim() !== '') return false;
+  scene.remove(id as never);
+  return true;
 }
 
 /** The action that adds or edits an edge's label. */

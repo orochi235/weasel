@@ -2,7 +2,7 @@ import {
   SceneCanvas, useCanvasSize, useScene, useSceneTextEdit, useSelection,
   defaultVisibilityRules, type Rule, type SceneCanvasApi, type Tool, type ToolsApi, type View, type VisibilityRules,
 } from '@weasel-js/core';
-import { diagramResizable } from '@weasel-js/diagram';
+import { diagramResizable, dropEmptyEdgeLabel } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -49,7 +49,7 @@ export function ChartWorkspace(): ReactElement {
   const paperLayer = usePaperLayer(CHART_PAGE, CHART_PAGE_COLOR);
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
-  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit' });
+  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
   const editingId = textEdit.editingId;
   const alphaFor = useCallback((id: string) => (id === editingId ? 0 : 1), [editingId]);
 

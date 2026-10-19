@@ -1344,23 +1344,6 @@ only story runner in the repo.
 - **(P3) `DiagramView` turns on `pick` and makes edges pickable**, so a selected wire may draw the
   same box at the origin (`packages/diagram/src/DiagramView.tsx`).
 
-- **(P3) An edge-label edit that ends empty leaves an empty label node**
-  (`packages/diagram/src/edgeLabel.ts`).
-
-- **(P3) Body label text sits left-aligned in stencil bodies** rather than centered
-  (`packages/diagram/src/stencil.ts`).
-
-- **(P3) `formatParam` always shows one decimal.** A param stepping by 0.01 shows 0.04 as "0.0",
-  and a small negative value prints "-0.0". Take the decimals from the control's `step`
-  (`packages/diagram/src/effect/stageTypes.ts`).
-
-- **(P3) `EffectEditor`'s picked wire survives a delete.** `nextWireId` reuses the lowest free id,
-  so the next wire drawn comes back already picked. Clear the pick in `onDelete`
-  (`packages/diagram/src/effect/EffectEditor.tsx`).
-
-- **(P3) Dragging a stage pins only that stage, while `addStage` pins every stage.** After a drag,
-  layered layout can still move the stages nobody placed. Make the two agree (`packages/diagram/src/effect/EffectEditor.tsx`).
-
 - **(P3) A body end on a node with no ports commits an edge with nothing to route to**
   (`packages/diagram/src/connectTargets.ts`).
 
