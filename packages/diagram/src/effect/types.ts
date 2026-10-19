@@ -1,3 +1,5 @@
+import type { Vec2 } from '@weasel-js/core/math';
+
 /** An effects pipeline as plain data. It says what is wired to what and
  *  nothing about how any of it is drawn. */
 export interface EffectPipeline {
@@ -22,7 +24,7 @@ export interface EffectStage {
   inputs?: readonly EffectPort[];
   outputs?: readonly EffectPort[];
   /** Settings worth showing, in order. */
-  params?: readonly { label: string; value: string }[];
+  params?: readonly EffectParam[];
   /** For a decision that splits on a number: the input it compares, and the
    *  cut points in ascending order. N cuts need N + 1 outputs, the lowest
    *  band first. */
@@ -87,4 +89,30 @@ export interface EffectType {
   /** A control value: a condition, a gate, a modulation source. Looks draw
    *  its wires apart from data wires. */
   control?: boolean;
+}
+
+/** How a param is edited, and the value it holds. */
+export type EffectParamControl =
+  | { kind: 'number'; value: number; min?: number; max?: number; step?: number; unit?: string }
+  | { kind: 'enum'; value: string; options: readonly { value: string; label?: string }[] }
+  | { kind: 'boolean'; value: boolean }
+  | { kind: 'string'; value: string };
+
+/** One setting a stage shows. `value` is the display string; `control`, when
+ *  present, is what an editor changes and `value` is its formatted form. */
+export interface EffectParam {
+  /** Addresses the param when labels repeat; the label stands in when absent. */
+  id?: string;
+  label: string;
+  value: string;
+  control?: EffectParamControl;
+}
+
+/** Where each stage sits, by stage id, beside the pipeline rather than in it. */
+export type EffectPlaces = Readonly<Record<string, Vec2>>;
+
+/** A pipeline and where its stages sit: what an editor holds and changes. */
+export interface EffectDoc {
+  pipeline: EffectPipeline;
+  places: EffectPlaces;
 }

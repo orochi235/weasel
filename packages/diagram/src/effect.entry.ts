@@ -32,6 +32,21 @@ export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { LANE_INSET, laneId, lanes } from './effect/lanes';
 export type { LanesOptions } from './effect/lanes';
+export {
+  addStage,
+  addWire,
+  canWire,
+  ensureWireIds,
+  moveStages,
+  nextStageId,
+  nextWireId,
+  reconnectWire,
+  removeStages,
+  removeWires,
+  setParam,
+} from './effect/edit';
+export { formatParam, stageFromType } from './effect/stageTypes';
+export type { EffectStageType } from './effect/stageTypes';
 export { EFFECT_LOOKS } from './effect/looks';
 export { mainChain } from './effect/mainChain';
 export { nodeGraph } from './effect/nodeGraph';
@@ -42,7 +57,11 @@ export { costText, paintRun } from './effect/run';
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
 export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './effect/symbols';
 export type {
+  EffectDoc,
   EffectGroup,
+  EffectParam,
+  EffectParamControl,
+  EffectPlaces,
   EffectPipeline,
   EffectPort,
   EffectRun,

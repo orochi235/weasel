@@ -69,8 +69,10 @@ describe('edit', () => {
   it('setParam updates control and value, by id or by label', () => {
     const d = setParam(built(), 'b', 'r', { kind: 'number', value: 6.5, unit: 'px' });
     expect(d.pipeline.stages[1]!.params![0]).toMatchObject({ value: '6.5 px', control: { value: 6.5 } });
-    const e = setParam(built(), 'b', 'radius', { kind: 'number', value: 1, unit: 'px' });
-    expect(e.pipeline.stages[1]!.params![0]!.value).toBe('1.0 px');
+    const byLabel = addStage(empty, { id: 'x', title: 'X', params: [{ label: 'gain', value: '1.0' }] });
+    const e = setParam(byLabel, 'x', 'gain', { kind: 'number', value: 3 });
+    expect(e.pipeline.stages[0]!.params![0]!.value).toBe('3.0');
+    expect(setParam(d, 'b', 'radius', { kind: 'number', value: 1 }).pipeline.stages[1]!.params![0]!.value).toBe('6.5 px');
   });
 
   it('moveStages sets places', () => {

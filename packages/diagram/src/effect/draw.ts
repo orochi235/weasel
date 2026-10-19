@@ -4,6 +4,7 @@ import type { Row } from '../body';
 import { edgeIdOf, type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../fromData';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
+import { formatParam } from './stageTypes';
 import type { EffectGroup, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
 
 /** The color of a value type, for a port or a wire. Answers `undefined`, a
@@ -179,7 +180,7 @@ export function stageRows(
     }
     if (opts.showPreviews === true) rows.push({ kind: 'slot', id: previewRowId(p.id), ...preview });
   }
-  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
+  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.control ? formatParam(p.control) : p.value });
   return rows;
 }
 
