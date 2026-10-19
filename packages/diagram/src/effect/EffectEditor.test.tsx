@@ -1,4 +1,4 @@
-import { cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -135,8 +135,8 @@ describe('EffectEditor', () => {
     const onSelect = vi.fn();
     render(<EffectEditor doc={doc} onChange={() => {}} onSelect={onSelect} width={600} height={400} />);
     const v = seen[seen.length - 1]!;
-    v.onSelect!('blur');
-    v.onSelect!('w1');
+    act(() => v.onSelect!('blur'));
+    act(() => v.onSelect!('w1'));
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['blur', null]);
   });
 });

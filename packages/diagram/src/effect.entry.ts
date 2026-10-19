@@ -30,6 +30,10 @@ export {
 export type { DrawableWire, EffectLook, EffectLookResult, RunRowOptions, TypeColor } from './effect/draw';
 export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
+export { EffectEditor } from './effect/EffectEditor';
+export type { EffectEditorApi, EffectEditorProps } from './effect/EffectEditor';
+export { editorScene } from './effect/editorMapping';
+export type { EditorScene } from './effect/editorMapping';
 export { LANE_INSET, laneId, lanes } from './effect/lanes';
 export type { LanesOptions } from './effect/lanes';
 export {

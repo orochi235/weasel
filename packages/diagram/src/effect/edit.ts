@@ -1,6 +1,6 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { formatParam } from './stageTypes';
-import type { EffectDoc, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
+import type { EffectDoc, EffectGroup, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
 
 type Ref = { stage: string; port: string };
 
@@ -31,7 +31,20 @@ export function addStage(doc: EffectDoc, stage: EffectStage, at?: Vec2): EffectD
   return at ? { ...next, places: { ...doc.places, [stage.id]: { x: at.x, y: at.y } } } : next;
 }
 
-/** Drops the stages with their wires, places and group memberships. */
+/** Groups without the `gone` members, and without any group that leaves empty. */
+function pruneGroups(groups: readonly EffectGroup[], gone: Set<string>): EffectGroup[] {
+  let left = groups;
+  for (;;) {
+    const kept = left.map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) }));
+    const empty = kept.filter((g) => g.members.length === 0);
+    if (empty.length === 0) return kept;
+    for (const g of empty) gone.add(g.id);
+    left = kept.filter((g) => g.members.length > 0);
+  }
+}
+
+/** Drops the stages with their wires, places and group memberships, and any
+ *  group that leaves empty. */
 export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
   const { groups } = doc.pipeline;
@@ -40,7 +53,7 @@ export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc 
       ...doc.pipeline,
       stages: doc.pipeline.stages.filter((s) => !gone.has(s.id)),
       wires: doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage)),
-      ...(groups ? { groups: groups.map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) })) } : {}),
+      ...(groups ? { groups: pruneGroups(groups, new Set(gone)) } : {}),
     },
     places: Object.fromEntries(Object.entries(doc.places).filter(([id]) => !gone.has(id))),
   };
@@ -52,11 +65,13 @@ export function addWire(doc: EffectDoc, wire: EffectWire): EffectDoc {
   return withPipeline(doc, { wires: [...doc.pipeline.wires, w] });
 }
 
+/** An id-less wire is never matched: run `ensureWireIds` first. */
 export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
   return withPipeline(doc, { wires: doc.pipeline.wires.filter((w) => w.id === undefined || !gone.has(w.id)) });
 }
 
+/** An id-less wire is never matched: run `ensureWireIds` first. */
 export function reconnectWire(doc: EffectDoc, id: string, end: 'from' | 'to', to: Ref): EffectDoc {
   return withPipeline(doc, {
     wires: doc.pipeline.wires.map((w) => (w.id === id ? { ...w, [end]: { stage: to.stage, port: to.port } } : w)),
