@@ -1,5 +1,7 @@
 /** Rebuilding outlines as the non-crossing boundary of their nonzero fill. */
 
+import { forEachCrossing } from './sweep';
+
 /** Flattened contours with each vertex's anchor parameterization. */
 export interface FlattenedContours {
   coords: number[];
@@ -37,10 +39,33 @@ const keyOf = (n: Node): string => `${n.x},${n.y}`;
  * not set.
  */
 export function resolveCrossings(flat: FlattenedContours, always = false): FlattenedContours | null {
+  if (!always && !anyCrossing(flat)) return null;
   const edges = edgesOf(flat);
-  if (!cutAtCrossings(edges) && !always) return null;
+  cutAtCrossings(edges);
   const pieces = boundaryPieces(edges);
   return loopsToContours(chainLoops(pieces));
+}
+
+/** Whether any two edges of `flat` cross. Every nonzero fill asks this, and
+ *  most cross nowhere, so it reads the coordinates without building edges. */
+export function anyCrossing(flat: FlattenedContours): boolean {
+  const { coords, contourStarts } = flat;
+  const total = coords.length / 2;
+  const ends = new Float64Array(total * 4);
+  let n = 0;
+  contourStarts.forEach((start, c) => {
+    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : total;
+    for (let i = start; i < end; i++) {
+      const j = i + 1 < end ? i + 1 : start;
+      const x0 = coords[i * 2], y0 = coords[i * 2 + 1], x1 = coords[j * 2], y1 = coords[j * 2 + 1];
+      if (x0 === x1 && y0 === y1) continue;
+      ends[n * 4] = x0; ends[n * 4 + 1] = y0; ends[n * 4 + 2] = x1; ends[n * 4 + 3] = y1;
+      n++;
+    }
+  });
+  let found = false;
+  forEachCrossing(ends, n, () => (found = true));
+  return found;
 }
 
 function edgesOf(flat: FlattenedContours): Edge[] {
@@ -58,40 +83,20 @@ function edgesOf(flat: FlattenedContours): Edge[] {
   return edges;
 }
 
-/** Record every interior crossing on both edges it cuts; whether there were any. */
-function cutAtCrossings(edges: Edge[]): boolean {
-  const order = edges.slice().sort((p, q) => Math.min(p.from.x, p.to.x) - Math.min(q.from.x, q.to.x));
-  let found = false;
-  for (let i = 0; i < order.length; i++) {
-    const e = order[i];
-    const maxX = Math.max(e.from.x, e.to.x);
-    for (let j = i + 1; j < order.length; j++) {
-      const f = order[j];
-      if (Math.min(f.from.x, f.to.x) > maxX) break;
-      if (Math.max(e.from.y, e.to.y) < Math.min(f.from.y, f.to.y)) continue;
-      if (Math.max(f.from.y, f.to.y) < Math.min(e.from.y, e.to.y)) continue;
-      const hit = crossing(e, f);
-      if (!hit) continue;
-      e.cuts.push({ s: hit.s, node: hit.node });
-      f.cuts.push({ s: hit.u, node: hit.node });
-      found = true;
-    }
-  }
-  return found;
-}
-
-function crossing(e: Edge, f: Edge): { s: number; u: number; node: Node } | null {
-  const rx = e.to.x - e.from.x, ry = e.to.y - e.from.y;
-  const qx = f.to.x - f.from.x, qy = f.to.y - f.from.y;
-  const den = rx * qy - ry * qx;
-  if (den === 0) return null;
-  const dx = f.from.x - e.from.x, dy = f.from.y - e.from.y;
-  const s = (dx * qy - dy * qx) / den;
-  const u = (dx * ry - dy * rx) / den;
-  const lo = 1e-9, hi = 1 - 1e-9;
-  if (s <= lo || s >= hi || u <= lo || u >= hi) return null;
-  const x = e.from.x + rx * s, y = e.from.y + ry * s;
-  return { s, u, node: { x, y, ...anchorsAlong(e, s) } };
+/** Record every interior crossing on both edges it cuts. */
+function cutAtCrossings(edges: Edge[]): void {
+  const ends = new Float64Array(edges.length * 4);
+  edges.forEach(({ from, to }, i) => ends.set([from.x, from.y, to.x, to.y], i * 4));
+  forEachCrossing(ends, edges.length, (ei, fi, s, u) => {
+    const e = edges[ei];
+    const node = {
+      x: e.from.x + (e.to.x - e.from.x) * s,
+      y: e.from.y + (e.to.y - e.from.y) * s,
+      ...anchorsAlong(e, s),
+    };
+    e.cuts.push({ s, node });
+    edges[fi].cuts.push({ s: u, node });
+  });
 }
 
 /** Anchors for a point `s` of the way along `e`: interpolated within one

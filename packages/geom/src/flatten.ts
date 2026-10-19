@@ -53,23 +53,26 @@ function distPointToSegment(px: number, py: number, ax: number, ay: number, bx: 
   return Math.abs((px - ax) * dy - (py - ay) * dx) / Math.sqrt(len2);
 }
 
-/** Total turn of a control polygon, in radians, skipping zero-length legs. It
- *  bounds the turn of the curve it controls, so it bounds the corner a chord
- *  standing in for that curve can leave. */
-function controlTurn(
+/** Whether a control polygon turns `maxTurn` radians or less in all, skipping
+ *  zero-length legs. Its turn bounds the turn of the curve it controls, so it
+ *  bounds the corner a chord standing in for that curve can leave. */
+function turnsWithin(
   x0: number, y0: number, x1: number, y1: number,
   x2: number, y2: number, x3: number, y3: number,
-): number {
-  return legTurn(x1 - x0, y1 - y0, x2 - x1, y2 - y1)
-    + legTurn(x2 - x1, y2 - y1, x3 - x2, y3 - y2)
-    + (x2 === x1 && y2 === y1 ? legTurn(x1 - x0, y1 - y0, x3 - x2, y3 - y2) : 0);
+  maxTurn: number,
+): boolean {
+  let turn = legTurn(x1 - x0, y1 - y0, x2 - x1, y2 - y1);
+  if (turn > maxTurn) return false;
+  turn += legTurn(x2 - x1, y2 - y1, x3 - x2, y3 - y2);
+  if (x2 === x1 && y2 === y1) turn += legTurn(x1 - x0, y1 - y0, x3 - x2, y3 - y2);
+  return turn <= maxTurn;
 }
 
 /** Angle between two legs; zero when either has no length. */
 function legTurn(ax: number, ay: number, bx: number, by: number): number {
-  const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
-  if (la === 0 || lb === 0) return 0;
-  return Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (la * lb))));
+  const lens = Math.sqrt((ax * ax + ay * ay) * (bx * bx + by * by));
+  if (lens === 0) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / lens)));
 }
 
 /**
@@ -193,7 +196,7 @@ function flattenCubicArcRec(
   const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
   const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
   const flat = Math.max(d1, d2) <= tolerance
-    && (maxTurn === Infinity || controlTurn(x0, y0, x1, y1, x2, y2, x3, y3) <= maxTurn);
+    && (maxTurn === Infinity || turnsWithin(x0, y0, x1, y1, x2, y2, x3, y3, maxTurn));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
@@ -248,7 +251,7 @@ function flattenQuadraticArcRec(
 ): number {
   const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
   const flat = d <= tolerance
-    && (maxTurn === Infinity || controlTurn(x0, y0, x1, y1, x2, y2, x2, y2) <= maxTurn);
+    && (maxTurn === Infinity || turnsWithin(x0, y0, x1, y1, x2, y2, x2, y2, maxTurn));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
