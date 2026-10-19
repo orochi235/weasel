@@ -183,7 +183,7 @@ Priority tags:
 - **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
-  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
   it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
 - **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
@@ -331,12 +331,6 @@ Priority tags:
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
   public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
   which `audit:jsdoc` treats as a sibling-package surface.
-- **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
-  `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
-  Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
-  nor Firefox's Mod+Shift+J (Browser Console) and Mod+Shift+K (Web Console). path-tools' bridge is on
-  Mod+Shift+J, so adding them fails `packages/path-tools/src/browserReservedBindings.test.ts` and
-  bridge needs a new chord in the same change.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in

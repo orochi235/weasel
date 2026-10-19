@@ -26,6 +26,7 @@ const chord = (keys: string, mods: Omit<ReservedChord, 'key' | 'use'>, use: stri
 export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord('nqtwlrpmh', { mod: true }, 'new window, quit, new or close tab, address bar, reload, print, minimize, hide'),
   ...chord('ntwrbo', { mod: true, shift: true }, 'private window, reopen or close tab, hard reload, bookmarks, bookmark manager'),
+  ...chord('ijck', { mod: true, shift: true }, 'devtools, console and inspector on Windows and Linux; Firefox Browser and Web Console'),
   ...chord('ijcukbrlemhdwfn', { mod: true, alt: true }, 'devtools, console, inspector, view source, bookmarks, reload from origin, downloads, empty caches, minimize all, hide others, Dock, close all, search field'),
   ...chord('fevsbthd', { alt: true }, 'menu accelerators and address bar on Windows and Linux'),
   ...chord('ita', { alt: true, shift: true }, 'feedback, toolbar focus and accessibility commands'),
