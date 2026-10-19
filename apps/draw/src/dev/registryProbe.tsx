@@ -9,7 +9,6 @@ import {
   useActionsRegistry,
   useScene,
   type NodePropertiesEntry,
-  type NodeRoutingEntry,
   type ToolDef,
   type ToolsApi,
   BUILTIN_TOOL_IDS,
@@ -26,7 +25,6 @@ import s from './RegistryInspector.module.css';
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
   readonly actions: readonly ActionEntry[];
-  readonly routing: readonly NodeRoutingEntry[];
   readonly properties: readonly NodePropertiesEntry[];
 }
 
@@ -161,12 +159,13 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries, routing: defaultNodeRouting, properties: defaultNodeProperties });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, properties: defaultNodeProperties });
   });
 
   return (
     <div aria-hidden="true" className={s.hidden}>
       <SceneCanvas
+        aria-label="Registry probe"
         scene={scene}
         width={200}
         height={200}

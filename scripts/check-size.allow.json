@@ -37,7 +37,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 559
+    "lines": 556
   },
   "packages/core/src/features/paths/pathLayer.ts": {
     "longestFunction": 121
@@ -106,8 +106,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 695,
-    "longestFunction": 444
+    "lines": 500,
+    "longestFunction": 432
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 162
@@ -182,7 +182,7 @@
     "longestFunction": 400
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 225
+    "longestFunction": 218
   },
   "packages/paint/src/colorSpaces.ts": {
     "lines": 439

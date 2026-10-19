@@ -7,7 +7,9 @@ import type { DispatchTrace, TraceRing } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
 import type { DebugConfig } from '../debug/types';
-import type { DevtoolsArea, DevtoolsOverlays, DevtoolsRootInfo } from './protocol';
+import type {
+  DevtoolsArea, DevtoolsHistoryRecord, DevtoolsOverlays, DevtoolsRegistry, DevtoolsRootInfo,
+} from './protocol';
 
 /** What a canvas hands {@link createDevtoolsRoot}. Every getter reads the latest committed value. */
 export interface DevtoolsRootSource {
@@ -28,6 +30,12 @@ export interface DevtoolsRootSource {
   overlays(): DebugConfig | null;
   /** Lay the panel's overlay flags and highlight over the canvas's own `debug`; null drops them. */
   setOverride(override: { overlays: DevtoolsOverlays; highlight: readonly string[] } | null): void;
+  /** What the canvas has registered, described when asked. Absent, `get-registry` is refused. */
+  registry?(): DevtoolsRegistry;
+  /** Hear that what {@link DevtoolsRootSource.registry} describes may have changed. Returns the unsubscribe. */
+  subscribeRegistry?(listener: () => void): () => void;
+  /** The scene's history steps. Absent, `get-history` is refused. */
+  history?: TraceRing<DevtoolsHistoryRecord>;
 }
 
 /** One canvas as the devtools hook holds it. */
@@ -49,7 +57,9 @@ let nextId = 1;
 /** A root over `source`, with a fresh page-unique id. */
 export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
   const id = `root-${nextId++}`;
-  const versions: Record<DevtoolsArea, number> = { scene: 0, selection: 0, view: 0, tool: 0, trace: 0 };
+  const versions: Record<DevtoolsArea, number> = {
+    scene: 0, selection: 0, view: 0, tool: 0, trace: 0, registry: 0, history: 0,
+  };
   const listeners = new Set<(area: DevtoolsArea) => void>();
   const notify = (area: DevtoolsArea): void => {
     versions[area]++;
@@ -66,12 +76,27 @@ export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
     if (s === watchedScene) return;
     offScene?.();
     watchedScene = s;
-    offScene = s ? s.subscribe(() => notify('scene')) : null;
+    if (!s) {
+      offScene = null;
+      return;
+    }
+    // A selection change notifies the scene's subscribers too; the canvas reports it as `selection`.
+    let content = s.getContentVersion();
+    offScene = s.subscribe(() => {
+      const next = s.getContentVersion();
+      if (next === content) return;
+      content = next;
+      notify('scene');
+    });
   };
   const attach = (): void => {
-    const offTrace = source.trace.subscribe(() => notify('trace'));
+    const offs = [
+      source.trace.subscribe(() => notify('trace')),
+      source.history?.subscribe(() => notify('history')),
+      source.subscribeRegistry?.(() => notify('registry')),
+    ];
     detach = () => {
-      offTrace();
+      for (const off of offs) off?.();
       detach = null;
       followScene();
     };

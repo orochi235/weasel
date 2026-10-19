@@ -37,7 +37,7 @@ type Picking = ReturnType<typeof useScenePicking<unknown, string, unknown>>;
 export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   Props,
   | 'selectTool' | 'geometryProjection' | 'enableGestureDispatcher' | 'enableKeybindings'
-  | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick'
+  | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
 >;
 
 /** What `<SceneCanvas>` hands {@link SceneCanvasInput}. */
@@ -118,7 +118,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const selectionRef = useLatest(selection);
   const { targetScale } = useDeviceProfile();
   const { root, traces } = useCanvasDevtoolsRoot({
-    scene, selection, viewState, tools: p.tools.tools,
+    scene, selection, viewState, tools: p.tools.tools, contributions: p.tools.contributions, routing: props.routing,
     element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
   });
   useSceneGestureDispatcher({

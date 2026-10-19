@@ -1,0 +1,16 @@
+.host {
+  width: 720px;
+  height: 420px;
+}
+
+.narrow {
+  width: 225px;
+  height: 560px;
+}
+
+/* What the site's demo chrome does to every header inside a demo: the panel must not take it. */
+.hostile :global(header) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+}

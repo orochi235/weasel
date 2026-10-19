@@ -4,10 +4,7 @@ import type { ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
-  | ToolEntry
-  | ActionEntry
   | ShapeKindEntry
-  | RoutingKindEntry
   | PropertiesKindEntry
   | BundleEntry
   | IconEntry
@@ -16,10 +13,6 @@ export type TreeEntry =
   | PhaseOutputEntry
   | OpKindEntry
   | SlotEntry
-  | RouteTargetEntry
-  | RouteEntry
-  | ModifierSetEntry
-  | GroupEntry
   | MetaEntry;
 
 /** Gesture kinds a tool binds. `true` when at least one entry in
@@ -190,21 +183,6 @@ export interface ShapeKindEntry {
   hookName?: string;
 }
 
-export interface RoutingKindEntry {
-  kind: 'routingKind';
-  trait: 'routing';
-  id: string;          // the kind name
-  label: string;       // = name (NodeRoutingEntry v1 has no separate display label)
-  /** Provenance of this entry. `'default'` = present in `defaultNodeRouting`
-   *  with the same `matches` reference. `'override'` = name present in
-   *  defaults but `matches` differs (consumer replaced it). `'consumer'`
-   *  = name not in defaults. */
-  source: 'default' | 'consumer' | 'override';
-  /** Cross-link to the matching `ShapeKindEntry` when one exists (same
-   *  name). Set for built-in shapes; absent for non-shape node kinds. */
-  shapeKindId?: string;
-}
-
 /** One properties-trait kind. `leafPaths` lists the schema's dotted node
  *  paths so the detail pane can show what the kind exposes. */
 export interface PropertiesKindEntry {
@@ -292,28 +270,13 @@ export const TOOL_SLOTS: readonly ToolEntry['slot'][] = ['registry', 'ambient'];
 
 export interface SlotEntry { kind: 'slot'; id: ToolEntry['slot']; label: string }
 
-export interface RouteTargetEntry { kind: 'routeTarget'; id: string; label: string }
-
-export interface RouteEntry { kind: 'route'; id: string; label: string }
-
-export interface ModifierSetEntry { kind: 'modifierSet'; id: string; label: string }
-
-export interface GroupEntry {
-  kind: 'group';
-  id: string;
-  label: string;
-  /** Where the group label was sourced — palette presentation groups vs
-   *  action-registry groups occupy separate namespaces but share a list. */
-  source: 'tool' | 'action';
-}
-
 export interface MetaEntry { kind: 'meta'; id: 'tokens' | 'sceneNode'; label: string }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shape' | 'routing' | 'properties' | 'bundles'
+  | 'shape' | 'properties' | 'bundles'
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'slots'
   | 'meta';
 
 export interface TreeCategoryNode {

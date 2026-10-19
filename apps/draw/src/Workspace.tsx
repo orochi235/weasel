@@ -174,6 +174,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       {hostDims.width > 0 && hostDims.height > 0 && (
         <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={[...DRAW_FEATURES, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
+          aria-label="Drawing"
           ref={props.onCanvas}
           ambient={ambientEntries}
           width={hostDims.width}

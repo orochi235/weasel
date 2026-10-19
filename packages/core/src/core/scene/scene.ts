@@ -2,6 +2,7 @@ import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
 import { createNotifier } from './notifier';
+import { sceneChanges } from './sceneChanges';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
@@ -157,8 +158,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       notifier.notify();
     },
 
-    subscribe: notifier.subscribe,
-    getVersion: notifier.version,
+    ...sceneChanges(notifier, selection),
   };
 
   const initial = initialNodes(registry);

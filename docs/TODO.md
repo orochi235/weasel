@@ -1036,19 +1036,10 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P2) A devtools panel on the hook, and a browser extension hosting it.** The hook is built
-  (`docs/devtools.md`): each `<SceneCanvas>` is a root a panel reads and steers over a versioned
-  message protocol. What is left:
-  1. The panel, as an ordinary weasel-ui/labkit component talking to the hook through a transport.
-     Mounted in-page, it serves forge, the site's demos and draw, and replaces
-     `apps/draw/src/dev/RegistryInspector.tsx` and the `DispatchTracePanel` there. The dispatcher
-     trace — which binding a gesture matched and what it beat — can reuse `Powerline` and the
-     routing reflection registry.
-  2. The extension: a devtools page plus a content-script bridge (`createWindowPanelTransport`)
-     hosting the same panel. Chrome, Edge and Firefox share the WebExtensions devtools API; Safari
-     needs an Xcode app wrapper.
-  3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
-     history steps.
+- **(P3) The devtools extension's 16 px icon is the whole site logo shrunk.**
+  `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
+  1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
+  better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
 

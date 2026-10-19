@@ -192,6 +192,7 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     branches: () => engine.branches(),
     getVersion: () => engine.getVersion(),
     subscribe: (listener) => engine.subscribe(listener),
+    observe: (listener) => engine.observe(listener),
     serialize: methods.serializeHistory,
     allForwardOps: () => engine.allForwardOps(),
     seal: () => engine.seal(),

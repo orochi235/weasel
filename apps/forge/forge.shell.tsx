@@ -1,5 +1,6 @@
 import { defineShellConfig, FOLLOW_APP } from '@weasel-js/forge';
 import { FORGE_LAB, LABS } from '../shared/labs';
+import { DEVTOOLS_GLOBALS } from './devtools';
 import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
 import { LIBRARIES } from './libraries';
 import { chromeTheme, THEME_GLOBAL } from './themes';
@@ -33,6 +34,7 @@ export default defineShellConfig({
       ],
     },
     ...FONT_GLOBALS,
+    ...DEVTOOLS_GLOBALS,
   },
   labTheme: (globals) => fontTheme(chromeTheme, globals),
 });

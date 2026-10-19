@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { IconRef } from '@weasel-js/icons';
-import { collectIcons, collectBundles, collectRoutingTrait, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
+import { collectIcons, collectBundles, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
 import type { ActionEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
   it('collectIcons lists every draw glyph alongside the actions\' glyphs', () => {
@@ -81,43 +81,6 @@ describe('collectShapeTrait — trait tag', () => {
     for (const entry of entries) {
       expect(entry.trait).toBe('shape');
     }
-  });
-});
-
-describe('collectRoutingTrait', () => {
-  it('returns every default kind marked as "default" when no live registry is supplied', () => {
-    const entries = collectRoutingTrait();
-    expect(entries.length).toBe(defaultNodeRouting.length);
-    for (const entry of entries) {
-      expect(entry.kind).toBe('routingKind');
-      expect(entry.trait).toBe('routing');
-      expect(entry.source).toBe('default');
-      // Built-in shape kinds in defaults cross-link to a ShapeKindEntry.
-      expect(entry.shapeKindId).toBe(entry.id);
-    }
-  });
-
-  it('marks consumer-only kinds with source "consumer" at the end', () => {
-    const custom: NodeRoutingEntry = { name: 'stamp', matches: (d) => (d as { kind?: string })?.kind === 'stamp' };
-    const entries = collectRoutingTrait([...defaultNodeRouting, custom]);
-    const stamp = entries.find((e) => e.id === 'stamp');
-    expect(stamp?.source).toBe('consumer');
-    expect(stamp?.shapeKindId).toBeUndefined();
-    // Consumer entries trail the defaults.
-    expect(entries[entries.length - 1]?.id).toBe('stamp');
-  });
-
-  it('marks a default kind with a replaced matches as source "override"', () => {
-    const rectIndex = defaultNodeRouting.findIndex((k) => k.name === 'rect');
-    expect(rectIndex).toBeGreaterThan(-1);
-    const overridden: NodeRoutingEntry = {
-      name: 'rect',
-      matches: () => false, // different matches reference
-    };
-    const live = defaultNodeRouting.map((k, i) => (i === rectIndex ? overridden : k));
-    const entries = collectRoutingTrait(live);
-    const rectEntry = entries.find((e) => e.id === 'rect');
-    expect(rectEntry?.source).toBe('override');
   });
 });
 

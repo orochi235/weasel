@@ -8,6 +8,7 @@ import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { SceneChanges } from './sceneChanges';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
 
@@ -257,7 +258,7 @@ export type SceneArrivalHandler<TPose> = (
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>> {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -552,8 +553,4 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  always well-formed. */
   loadState(json: SerializedScene<TData, TLayer, TPose>): void;
 
-  // Subscription (used by useScene; also for non-React observers)
-  subscribe(listener: () => void): () => void;
-  /** Monotonically increasing version. Snapshot for `useSyncExternalStore`. */
-  getVersion(): number;
 }

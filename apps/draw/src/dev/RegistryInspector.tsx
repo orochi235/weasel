@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIconVariant } from '@weasel-js/core';
-import { Select } from '@weasel-js/ui/components/Select';
 import s from './RegistryInspector.module.css';
 import { DevShell } from './DevShell';
 import { RegistryTree } from './RegistryTree';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
-import { collectBundles, collectGestures, collectGroups, countForEntry, collectIcons, collectMeta, collectModifierSets, collectRoutingTrait, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectRoutes, collectRouteTargets, collectShapeTrait, collectSlots } from './registryData';
+import { collectBundles, collectGestures, countForEntry, collectIcons, collectMeta, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectShapeTrait, collectSlots } from './registryData';
 import type { TreeCategoryNode, TreeEntry } from './registryEntries';
-
-const BUNDLE_OPTIONS = [
-  { value: 'all', label: 'All bundles' },
-  { value: 'minimal', label: 'Minimal' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'exhaustive', label: 'Exhaustive' },
-];
 
 /** Parse the selected-entry coordinates out of the URL hash. The inspector
  *  encodes the user's selection as `#/dev/registry?kind=<entryKind>&id=<entryId>`
@@ -37,8 +29,7 @@ function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
 /** Bundle Inspector — read-only catalog browser at `#/dev/registry`.
  *  Mounted as a sibling to ToolkitBuilder. */
 export function RegistryInspector() {
-  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
-  const [bundleFilter, setBundleFilter] = useState<string>('all');
+  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], properties: [] });
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
   // Pending deep-link from the URL — the matching entry may not exist yet
@@ -55,40 +46,18 @@ export function RegistryInspector() {
   useIconVariant('draw');
   const icons = useMemo(() => collectIcons(runtime.actions), [runtime.actions]);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
-  const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
   const propertiesEntries = useMemo(() => collectPropertiesTrait(runtime.properties), [runtime.properties]);
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
   const opKinds = useMemo(() => collectOpKinds(), []);
   const slots = useMemo(() => collectSlots(), []);
-  const routes = useMemo(() => collectRoutes(runtime.tools), [runtime.tools]);
-  const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);
-  const modifierSets = useMemo(() => collectModifierSets(runtime.tools), [runtime.tools]);
-  const groups = useMemo(() => collectGroups(runtime.tools, runtime.actions), [runtime.tools, runtime.actions]);
   const meta = useMemo(() => collectMeta(), []);
 
-  const activeBundle = bundles.find((b) => b.id === bundleFilter);
-
   const nodes: readonly TreeCategoryNode[] = useMemo(() => {
-    const filterByBundle = <T extends { id: string }>(
-      entries: readonly T[],
-      allowed: readonly string[] | null,
-    ): readonly T[] => {
-      if (!allowed) return entries;
-      const allow = new Set(allowed);
-      return entries.filter((e) => allow.has(e.id));
-    };
-
-    // Bundles describe tool presets only; actions stay unfiltered.
+    // A canvas's live tools, actions and routing are the devtools panel's Registry tab;
+    // this page keeps draw's static catalog.
     const all: TreeCategoryNode[] = [
-      {
-        id: 'tools',
-        label: 'Tools',
-        entries: filterByBundle(runtime.tools, activeBundle ? activeBundle.tools : null),
-      },
-      { id: 'actions', label: 'Actions', entries: runtime.actions },
       { id: 'shape', label: 'Shape', group: { id: 'traits', label: 'Traits' }, entries: shapeKinds },
-      { id: 'routing', label: 'Routing', group: { id: 'traits', label: 'Traits' }, entries: routingEntries },
       { id: 'properties', label: 'Properties', group: { id: 'traits', label: 'Traits' }, entries: propertiesEntries },
       { id: 'bundles', label: 'Bundles', entries: bundles },
       { id: 'icons', label: 'Icons', entries: icons },
@@ -96,10 +65,6 @@ export function RegistryInspector() {
       { id: 'gestures', label: 'Gestures', entries: gestures },
       { id: 'phaseOutputs', label: 'Phase outputs', entries: phaseOutputs },
       { id: 'slots', label: 'Slots', entries: slots },
-      { id: 'routes', label: 'Routes', entries: routes },
-      { id: 'routeTargets', label: 'Route targets', entries: routeTargets },
-      { id: 'modifierSets', label: 'Modifier sets', entries: modifierSets },
-      { id: 'groups', label: 'Action groups', entries: groups },
       { id: 'meta', label: 'Meta', entries: meta },
     ];
     // Bundles convey a deliberate progression (minimal → standard →
@@ -120,7 +85,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, shapeKinds, routingEntries, propertiesEntries, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [bundles, icons, shapeKinds, propertiesEntries, gestures, phaseOutputs, opKinds, slots, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
@@ -169,16 +134,6 @@ export function RegistryInspector() {
   return (
     <DevShell
       title="Bundle Inspector"
-      header={
-        <Select
-          label="bundle"
-          orientation="row"
-          width="fit"
-          options={BUNDLE_OPTIONS}
-          selectedKey={bundleFilter}
-          onSelectionChange={setBundleFilter}
-        />
-      }
     >
       <div className={s.root}>
         <RegistryProbe onSnapshot={onSnapshot} />

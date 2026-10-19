@@ -46,6 +46,11 @@ if (typeof HTMLCanvasElement !== 'undefined') {
   };
 }
 
+// jsdom has no layout, so it leaves `scrollIntoView` out entirely.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
+
 // Same gap as getContext above: jsdom only defines `ImageData` when the native
 // `canvas` package is installed.
 if (typeof globalThis.ImageData === 'undefined') {

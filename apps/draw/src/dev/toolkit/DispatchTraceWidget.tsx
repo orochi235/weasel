@@ -1,37 +1,15 @@
+import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
-import { Switch } from '@weasel-js/ui/components/Switch';
-import { type ReactElement, useState } from 'react';
-import { useDispatchTraceLog } from '../dispatchTraceLog';
-import { DispatchTraceTable } from '../DispatchTraceTable';
+import { type ReactElement, useMemo } from 'react';
 import s from '../ToolkitBuilder.module.css';
 
-// Unhandled events (idle mousemoves, wheels over chrome) are noisy and hidden by default.
-
+/** The canvas's dispatch trace, through the devtools panel's Dispatch view. */
 export function DispatchTraceWidget(): ReactElement {
-  const { entries, live, now } = useDispatchTraceLog();
-  const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
-
+  const transport = useMemo(() => createInPagePanelTransport(), []);
   return (
-    <PropertyPanel
-      stance="debug"
-      className={s.widget}
-      title={`Dispatch · ${entries.length}`}
-      actions={(
-        <Switch isSelected={showUnhandled} onChange={setShowUnhandled}>
-          unhandled
-        </Switch>
-      )}
-    >
-      <div className={s.widgetBodyScrollY}>
-        <DispatchTraceTable
-          entries={entries}
-          live={live}
-          now={now}
-          showUnhandled={showUnhandled}
-          empty={entries.length > 0
-            ? 'All recorded events hidden — toggle “unhandled” to show them.'
-            : 'No dispatch events yet. Interact with the canvas to populate the trace.'}
-        />
+    <PropertyPanel stance="debug" className={s.widget} title="Dispatch">
+      <div className={s.widgetDevtools}>
+        <DevtoolsPanel transport={transport} tabs={['dispatch']} />
       </div>
     </PropertyPanel>
   );

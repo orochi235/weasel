@@ -1,6 +1,6 @@
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry } from '@weasel-js/core';
-import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
+import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
+import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { ICON_GROUPS, icon } from '../icons.gen';
 import {
@@ -8,18 +8,13 @@ import {
   type BundleEntry,
   GESTURE_CATALOG_KEYS,
   type GestureEntry,
-  type GroupEntry,
   type IconEntry,
   type MetaEntry,
-  type ModifierSetEntry,
   type OpFactoryEntry,
   type OpKindEntry,
   PHASE_OUTPUT_KEYS,
   type PhaseOutputEntry,
   type PropertiesKindEntry,
-  type RouteEntry,
-  type RouteTargetEntry,
-  type RoutingKindEntry,
   type ShapeKindEntry,
   type SlotEntry,
   TOOL_SLOTS,
@@ -145,19 +140,6 @@ export function countForEntry(
       return tools.filter((t) => t.surface.outputs[entry.id]).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
-    case 'route':
-      return tools.filter((t) => t.routes.includes(entry.id)).length;
-    case 'routeTarget':
-      return tools.filter((t) => t.routes.some((r) => parseRoute(r).target === entry.id)).length;
-    case 'modifierSet':
-      return tools.filter((t) => t.routes.some((r) => {
-        const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
-        return canonical === entry.id;
-      })).length;
-    case 'group':
-      return entry.source === 'tool'
-        ? tools.filter((t) => t.presentation?.group === entry.label).length
-        : actions.filter((a) => a.group === entry.label).length;
     default:
       return undefined;
   }
@@ -187,46 +169,6 @@ export function collectSlots(): readonly SlotEntry[] {
 export type ParsedRoute = KitParsedRoute;
 export const parseRoute = kitParseRoute;
 
-export function collectRoutes(tools: readonly ToolEntry[]): readonly RouteEntry[] {
-  const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) seen.add(r);
-  return [...seen].sort().map((id) => ({ kind: 'route', id, label: id }));
-}
-
-export function collectRouteTargets(tools: readonly ToolEntry[]): readonly RouteTargetEntry[] {
-  const seen = new Set<string>();
-  for (const t of tools) {
-    for (const r of t.routes) {
-      const target = parseRoute(r).target;
-      if (target !== undefined) seen.add(target);
-    }
-  }
-  return [...seen].sort().map((id) => ({ kind: 'routeTarget', id, label: id }));
-}
-
-export function collectModifierSets(tools: readonly ToolEntry[]): readonly ModifierSetEntry[] {
-  const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) {
-    const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
-    seen.add(canonical);
-  }
-  return [...seen].sort().map((id) => ({ kind: 'modifierSet', id, label: id }));
-}
-
-export function collectGroups(
-  tools: readonly ToolEntry[],
-  actions: readonly ActionEntry[],
-): readonly GroupEntry[] {
-  const out: GroupEntry[] = [];
-  const toolGroups = new Set<string>();
-  for (const t of tools) if (t.presentation?.group) toolGroups.add(t.presentation.group);
-  for (const g of [...toolGroups].sort()) out.push({ kind: 'group', id: `tool:${g}`, label: g, source: 'tool' });
-  const actionGroups = new Set<string>();
-  for (const a of actions) if (a.group) actionGroups.add(a.group);
-  for (const g of [...actionGroups].sort()) out.push({ kind: 'group', id: `action:${g}`, label: g, source: 'action' });
-  return out;
-}
-
 export function collectShapeTrait(
   tools: readonly ToolEntry[] = [],
 ): readonly ShapeKindEntry[] {
@@ -240,62 +182,6 @@ export function collectShapeTrait(
     tool: id,
     hookName: hookByToolId.get(id),
   }));
-}
-
-export function collectRoutingTrait(
-  live?: readonly NodeRoutingEntry[],
-): readonly RoutingKindEntry[] {
-  const shapeKindSet = new Set<string>(SHAPE_KIND_IDS);
-
-  // If no live registry was supplied, every default entry is 'default'.
-  if (!live) {
-    return defaultNodeRouting.map((k) => ({
-      kind: 'routingKind',
-      trait: 'routing',
-      id: k.name,
-      label: k.name,
-      source: 'default',
-      ...(shapeKindSet.has(k.name) ? { shapeKindId: k.name } : {}),
-    }));
-  }
-
-  // With a live registry, classify each entry by source.
-  const out: RoutingKindEntry[] = [];
-  const liveByName = new Map<string, NodeRoutingEntry>();
-  for (const k of live) liveByName.set(k.name, k);
-
-  // Defaults first, in their declared order.
-  for (const def of defaultNodeRouting) {
-    const liveEntry = liveByName.get(def.name);
-    let source: RoutingKindEntry['source'];
-    if (!liveEntry) source = 'default';                       // not registered live but still part of defaults; surface as 'default'
-    else if (liveEntry.matches === def.matches) source = 'default';
-    else source = 'override';
-    out.push({
-      kind: 'routingKind',
-      trait: 'routing',
-      id: def.name,
-      label: def.name,
-      source,
-      ...(shapeKindSet.has(def.name) ? { shapeKindId: def.name } : {}),
-    });
-  }
-
-  // Consumer-only kinds at the end.
-  const defaultNames = new Set(defaultNodeRouting.map((k) => k.name));
-  for (const liveK of live) {
-    if (defaultNames.has(liveK.name)) continue;
-    out.push({
-      kind: 'routingKind',
-      trait: 'routing',
-      id: liveK.name,
-      label: liveK.name,
-      source: 'consumer',
-      ...(shapeKindSet.has(liveK.name) ? { shapeKindId: liveK.name } : {}),
-    });
-  }
-
-  return out;
 }
 
 export function collectPropertiesTrait(

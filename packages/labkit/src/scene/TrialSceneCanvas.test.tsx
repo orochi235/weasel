@@ -91,6 +91,11 @@ const modZ = () =>
   });
 
 describe('<TrialSceneCanvas>', () => {
+  it("names its canvas after the trial's title, which is what devtools lists it by", async () => {
+    await mount();
+    expect(window.__weaselDevtools__?.roots().map((r) => r.label)).toContain('Scene');
+  });
+
   it("steps the scene's history from the trial's Undo and Redo", async () => {
     await mount();
     const undo = screen.getByRole('button', { name: 'Undo' });

@@ -30,12 +30,13 @@ const ARROWS: Record<string, [number, number]> = {
 
 /**
  * The box a demo is mounted in. A `DemoStage` inside it gets resize handles;
- * one outside it, such as a visual baseline's, gets none.
+ * one outside it, such as a visual baseline's, gets none. `label` names the
+ * group, and with it any canvas inside that has no label of its own.
  */
-export function DemoFrame({ children }: { children: ReactNode }) {
+export function DemoFrame({ label, children }: { label?: string; children: ReactNode }) {
   return (
     <InFrameContext.Provider value>
-      <div className="ckd-demo-frame">{children}</div>
+      <div className="ckd-demo-frame" role={label ? 'group' : undefined} aria-label={label}>{children}</div>
     </InFrameContext.Provider>
   );
 }

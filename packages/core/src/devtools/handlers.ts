@@ -7,6 +7,7 @@ import type {
   DevtoolsRootState, DevtoolsTraceSlice,
 } from './protocol';
 import { serialize } from './serialize';
+import { historySlice } from './history';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -111,6 +112,10 @@ export function answer(
     case 'get-state': return rootState(root);
     case 'get-trace': return traceSlice(root, req.cursor, req.coordCursor);
     case 'get-frame': return serialize(root.source.frame());
+    case 'get-registry':
+      if (!root.source.registry) throw new Error('this root serves no registry');
+      return root.source.registry();
+    case 'get-history': return historySlice(root, req.cursor, req.checkpoints);
     case 'select':
       root.source.select(req.ids);
       return null;

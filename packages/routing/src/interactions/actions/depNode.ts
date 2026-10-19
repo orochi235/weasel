@@ -21,6 +21,18 @@ export interface DepRegistry {
    *  so its owner is the only one who knows; chrome showing an action's
    *  `enabled` or `active` state re-reads on this. */
   changed?(): void;
+  /** Every name a `get` here would answer, sorted, with where its live
+   *  source sits. For inspection; a hand-built registry may leave it out. */
+  list?(): readonly DepListing[];
+}
+
+/** One name a dep registry answers, as {@link DepRegistry.list} reports it. */
+export interface DepListing {
+  name: string;
+  /** How many scopes above the asking one the live source was registered: 0 for its own. */
+  depth: number;
+  /** How many sources that scope holds under the name, the live one included. */
+  stacked: number;
 }
 
 /** One node of the dep tree: the sources registered at it, over its parent's.
@@ -60,6 +72,17 @@ export class DepNode extends ScopeNode<DepNode> {
       return undefined;
     },
     subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
+    list: () => {
+      const found = new Map<string, DepListing>();
+      let depth = 0;
+      for (const n of this.start().chain()) {
+        for (const [name, stack] of n.sources) {
+          if (!found.has(name)) found.set(name, { name, depth, stacked: stack.length });
+        }
+        depth++;
+      }
+      return [...found.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    },
     changed: () => this.changed(),
   };
 

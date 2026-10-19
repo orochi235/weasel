@@ -1,8 +1,5 @@
 import type { DebugConfig, DebugFeature } from './types';
-
-const ALL_FEATURES: DebugFeature[] = [
-  'hitboxes', 'handles', 'bounds', 'origins', 'snap', 'layers', 'ids', 'fps', 'viewport',
-];
+import { DEBUG_FEATURES } from './features';
 
 /**
  * Parse a URL query string (with or without leading `?`) for a `debug` param.
@@ -22,12 +19,12 @@ export function parseDebugFlags(search: string): DebugConfig | null {
   if (tokens.length === 0) return null;
   if (tokens.includes('all')) {
     const out: DebugConfig = {};
-    for (const f of ALL_FEATURES) out[f] = true;
+    for (const f of DEBUG_FEATURES) out[f] = true;
     return out;
   }
   const out: DebugConfig = {};
   for (const t of tokens) {
-    if ((ALL_FEATURES as string[]).includes(t)) out[t as DebugFeature] = true;
+    if ((DEBUG_FEATURES as readonly string[]).includes(t)) out[t as DebugFeature] = true;
   }
   return Object.keys(out).length > 0 ? out : null;
 }
