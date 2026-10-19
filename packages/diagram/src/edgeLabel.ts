@@ -69,12 +69,13 @@ export interface EditEdgeLabelOptions {
 function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
   if (deps === undefined || at === undefined) return null;
   const id = deps.nodeAtPoint?.(at);
-  const node = id == null ? undefined : deps.scene.get(id);
+  const node = id == null ? undefined : deps.scene?.get(id);
   return node !== undefined && diagramEdgeOf(node) !== null ? id! : null;
 }
 
 function beginEditing(edgeId: string, ctx: InvocationCtx): void {
   const { scene, textEdit } = ctx.deps;
+  if (scene === undefined) return;
   const labelId = `${edgeId}/label`;
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);

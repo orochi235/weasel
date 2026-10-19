@@ -58,7 +58,7 @@ describe('diagramScene labels', () => {
     const label = specs.find((s) => s.id === 'e/label')!;
     expect(label).toMatchObject({
       kind: 'leaf', layer: 'main', pickable: false, dependsOn: ['e'], derivePose: LABEL_DERIVE_POSE,
-      data: { diagram: { label: { at: 'mid', offset: 9 } }, text: 'w', style: { fontFamily: 'sans-serif', fontSize: 10 } },
+      data: { diagram: { label: { offset: 9 } }, text: 'w', style: { fontFamily: 'sans-serif', fontSize: 10 } },
     });
   });
 });
