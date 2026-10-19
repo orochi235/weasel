@@ -686,9 +686,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
-  now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
-  file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
+- **(P3) Nobody has looked at apps/site in the kit's UI face.** `canvas-kit-demo.css` stopped
+  setting `body`'s font (2026-10-19), so the site's text inherits `--wzl-font-ui` (Oswald, a
+  condensed face) from `fonts.css`'s `:root` rule. Check in a browser that the sidebar, demo
+  blurbs, and controls still fit and read well, and that Oswald loaded rather than its fallback.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
