@@ -10,8 +10,10 @@ export { installDevtoolsHook, createDevtoolsHook } from '../devtools/hook';
 export type { WeaselDevtoolsHook } from '../devtools/hook';
 export { DEVTOOLS_PROTOCOL } from '../devtools/protocol';
 export type {
-  DevtoolsArea, DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRequest,
-  DevtoolsResult, DevtoolsRootInfo, DevtoolsRootState, DevtoolsTraceSlice, PageMessage, PanelMessage,
+  DevtoolsActionEntry, DevtoolsArea, DevtoolsBinding, DevtoolsDepEntry, DevtoolsHistoryOp, DevtoolsHistoryRecord,
+  DevtoolsHistorySlice, DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRegistry, DevtoolsRequest,
+  DevtoolsResult, DevtoolsRootInfo, DevtoolsRootState, DevtoolsToolEntry, DevtoolsTraceSlice, PageMessage,
+  PanelMessage,
 } from '../devtools/protocol';
 export {
   DEVTOOLS_ENVELOPE, createInPageTransports, createWindowPageTransport, createWindowPanelTransport,

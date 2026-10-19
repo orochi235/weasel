@@ -1047,8 +1047,8 @@ only story runner in the repo.
   2. The extension: a devtools page plus a content-script bridge (`createWindowPanelTransport`)
      hosting the same panel. Chrome, Edge and Firefox share the WebExtensions devtools API; Safari
      needs an Xcode app wrapper.
-  3. Protocol areas the hook does not serve yet: the registered deps, and a stream of ops and
-     history steps.
+  3. Done (2026-10-19): `get-registry` and `get-history`, with `registry` and `history` areas in
+     `changed`.
 
 ## Release-gate & build hygiene
 

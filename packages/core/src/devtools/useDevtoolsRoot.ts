@@ -34,9 +34,10 @@ export function useDevtoolsOverride<T extends DebugConfig | false | undefined>(d
 }
 
 /** The live values a root reads, re-read from the latest render on every call. */
-export type DevtoolsRootInputs = Omit<DevtoolsRootSource, 'trace' | 'coords' | 'dimension'> & {
+export type DevtoolsRootInputs = Omit<DevtoolsRootSource, 'trace' | 'coords' | 'history' | 'dimension'> & {
   trace: DevtoolsRootSource['trace'];
   coords: DevtoolsRootSource['coords'];
+  history?: DevtoolsRootSource['history'];
   /** The view's own change feed: a pan writes the view without a render. */
   subscribeView(listener: (view: View) => void): () => void;
 };
@@ -75,6 +76,9 @@ export function useDevtoolsRoot(
       frame: () => live.current.frame(),
       overlays: () => live.current.overlays(),
       setOverride: (o) => live.current.setOverride(o),
+      ...(l.registry ? { registry: () => live.current.registry!() } : {}),
+      ...(l.subscribeRegistry ? { subscribeRegistry: (fn: () => void) => live.current.subscribeRegistry!(fn) } : {}),
+      ...(l.history ? { history: l.history } : {}),
     });
   });
 

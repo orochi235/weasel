@@ -7,6 +7,8 @@ import { createDevtoolsHook } from './hook';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from './protocol';
 import { createDevtoolsRoot, type DevtoolsRootSource } from './root';
 import { createInPageTransports } from './transport';
+import { recordHistory } from './history';
+import type { DevtoolsHistoryRecord, DevtoolsRegistry } from './protocol';
 
 const P = DEVTOOLS_PROTOCOL;
 
@@ -22,6 +24,10 @@ function setup() {
   const setOverride = vi.fn();
   const trace = createDispatchTrace(10, false);
   const coords = createTraceRing<CoordTraceEntry>(10, false);
+  const history = createTraceRing<DevtoolsHistoryRecord>(200, false);
+  recordHistory(scene.history, history);
+  const registryListeners = new Set<() => void>();
+  const registry: DevtoolsRegistry = { tools: [], actions: [], deps: [{ name: 'selection', depth: 0, stacked: 1 }], routingKinds: ['rect'] };
   const source: DevtoolsRootSource = {
     label: () => 'main canvas',
     dimension: '2d',
@@ -37,6 +43,9 @@ function setup() {
     frame: () => ({ drawCalls: 3 }),
     overlays: () => ({ bounds: true, theme: { bounds: 'red' } }),
     setOverride,
+    registry: () => registry,
+    subscribeRegistry: (l) => { registryListeners.add(l); return () => { registryListeners.delete(l); }; },
+    history,
   };
   const root = createDevtoolsRoot(source);
   let flush: (() => void) | null = null;
@@ -59,6 +68,7 @@ function setup() {
   };
   return {
     scene, group, leaf, root, hook, panel, heard, ask, result, close, unregister, trace, coords, setOverride,
+    registryChanged: () => { for (const l of registryListeners) l(); },
     flush: () => { const f = flush; flush = null; f?.(); },
     get selection() { return selection; },
     get tool() { return tool; },
@@ -131,7 +141,7 @@ describe('devtools session', () => {
     expect(t.heard.filter((m) => m.type === 'changed')).toEqual([]);
     t.flush();
     expect(t.heard.filter((m) => m.type === 'changed')).toEqual([
-      { type: 'changed', protocol: P, rootId: t.root.id, areas: { selection: 2, scene: expect.any(Number) } },
+      { type: 'changed', protocol: P, rootId: t.root.id, areas: { selection: 2, scene: expect.any(Number), history: 1 } },
     ]);
   });
 
@@ -163,5 +173,56 @@ describe('devtools session', () => {
     expect(t.heard.at(-1)).toEqual({ type: 'root-removed', protocol: P, rootId: t.root.id });
     t.hook.register(t.root);
     expect(t.heard.at(-1)).toMatchObject({ type: 'root-added', root: { id: t.root.id } });
+  });
+
+  it('describes what the root has registered, and says when that changes', () => {
+    const t = setup();
+    t.panel.send({ type: 'yo', protocol: P });
+    expect(t.result({ type: 'get-registry' })).toEqual({
+      tools: [], actions: [], deps: [{ name: 'selection', depth: 0, stacked: 1 }], routingKinds: ['rect'],
+    });
+    t.registryChanged();
+    t.flush();
+    expect(t.heard.filter((m) => m.type === 'changed')).toEqual([
+      { type: 'changed', protocol: P, rootId: t.root.id, areas: { registry: 1 } },
+    ]);
+  });
+
+  it('refuses get-registry and get-history for a root that serves neither', () => {
+    const t = setup();
+    const bare = createDevtoolsRoot({ ...t.root.source, registry: undefined, history: undefined });
+    t.hook.register(bare);
+    t.panel.send({ type: 'yo', protocol: P });
+    const ask = (type: string) => {
+      t.panel.send({ protocol: P, requestId: 99, rootId: bare.id, type, cursor: 0 } as PanelMessage);
+      return t.heard.at(-1);
+    };
+    expect(ask('get-registry')).toMatchObject({ type: 'error', message: 'this root serves no registry' });
+    expect(ask('get-history')).toMatchObject({ type: 'error', message: 'no history to read' });
+  });
+
+  it('records history steps while connected, and hands back what was recorded since a cursor', () => {
+    const t = setup();
+    t.scene.setPose(t.group as NodeId, { x: 1, y: 0, width: 10, height: 10 });
+    t.panel.send({ type: 'yo', protocol: P });
+    expect(t.result({ type: 'get-history', cursor: 0 })).toEqual({
+      entries: [], cursor: 0, position: { index: 3, total: 3, canUndo: true, canRedo: false },
+    });
+    t.scene.setPose(t.group as NodeId, { x: 7, y: 2, width: 10, height: 10 });
+    t.scene.undo();
+    t.flush();
+    expect(t.heard.filter((m) => m.type === 'changed').at(-1)).toMatchObject({ areas: { history: 2 } });
+    const slice = t.result({ type: 'get-history', cursor: 0, checkpoints: true }) as {
+      entries: { step: string; entries: { label: string; ops: { targets: string[] }[] }[] }[];
+      cursor: number; position: unknown; checkpoints: { label: string }[];
+    };
+    expect(slice.entries.map((r) => r.step)).toEqual(['push', 'undo']);
+    expect(slice.entries[0]!.entries[0]!.ops[0]!.targets).toEqual([t.group]);
+    expect(slice).toMatchObject({ cursor: 2, position: { index: 3, total: 4, canUndo: true, canRedo: true } });
+    expect(slice.checkpoints).toHaveLength(4);
+    expect(t.result({ type: 'get-history', cursor: slice.cursor })).toMatchObject({ entries: [], cursor: 2 });
+    t.panel.send({ type: 'bye', protocol: P });
+    t.scene.redo();
+    expect((t.root.source.history!.since(2)).entries).toEqual([]);
   });
 });

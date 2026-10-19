@@ -46,11 +46,13 @@ naming both versions, and the panel decides how far to degrade.
 | page → panel | `sup` | `kitVersion`, `roots` |
 | panel → page | `bye` | — : drops this panel's overlays and highlight, and stops tracing for it |
 | page → panel | `root-added` / `root-removed` | the root / its id |
-| page → panel | `changed` | `areas`: each of `scene`, `selection`, `view`, `tool`, `trace` that moved, with its version; at most one per root per animation frame |
+| page → panel | `changed` | `areas`: each of `scene`, `selection`, `view`, `tool`, `trace`, `registry`, `history` that moved, with its version; at most one per root per animation frame |
 | panel → page | `get-children` | `nodeId`, or none for the top level → each child's id, kind, layer, child count, hidden / locked / pickable |
 | panel → page | `get-node` | `nodeId` → the same, plus parent, pose and data |
 | panel → page | `get-state` | → selection, view, active tool, registered tools, overlay flags in effect, probe values |
 | panel → page | `get-trace` | `cursor`, optional `coordCursor` → dispatch and mode-switch records after the cursor, the next cursor, `live` (what a press at the pointer would do), and coord records when asked |
+| panel → page | `get-registry` | → what the canvas registered: tools, actions, deps and node routing kinds (see "Registry" below) |
+| panel → page | `get-history` | `cursor`, optional `checkpoints` → history steps after the cursor, the next cursor, where the history stands, and every entry's label when asked (see "History" below) |
 | panel → page | `get-frame` | → the debug sink's stats for the last paint; null until the `fps` overlay is on. Not announced by `changed`: poll it |
 | panel → page | `select` | `ids` |
 | panel → page | `highlight` | `ids`: outlined through the debug overlay's `highlight` feature |
@@ -66,3 +68,40 @@ cycles `'[cycle]'`, and depth, length and string size are capped.
 A canvas keeps two rolling buffers of 200: its dispatchers' decisions (`DispatchTrace`, on every
 `DispatcherContext` and published as the `dispatchTrace` dep) and its `clientToWorld` conversions.
 Both record in a dev build, and in production only while a panel is connected.
+
+## Registry
+
+`get-registry` describes what one canvas has registered, read when asked. `changed` reports
+`registry` when an action or a dep source comes or goes, or the canvas's tools, preset
+contributions or `routing` change.
+
+| Field | Each item |
+|---|---|
+| `tools` | every entry the dispatcher assembles bindings from: `slot` is `tool` (switchable), `ambient` (always on) or `contribution` (brought by a `features` preset); label, icon name, group, shortcut, hotkey, hidden, cursor, eligibility, `bindings`, the ids of the actions it brings, the names of the deps it registers, whether it draws an overlay |
+| `actions` | id, label, icon name, group, tags, shortcut, `scope` (`hotkey` or `ambient`), invoker timing, `requires`, variants, `enabled` (`true` or the reason), `active` (null for no pressed state), whether it has a preview, its eligibility rule, and the bindings its `defaultBinding` declares |
+| `deps` | each name the canvas's dep registry answers, how many scopes above the canvas's own its live source sits (`depth`), and how many sources are stacked under it there |
+| `routingKinds` | the node kinds a binding's `kind:` target can name, in classify order |
+
+A binding is `{ actionId, spec, routes, opts }`, where `routes` is the spec in the route grammar.
+`enabled` and `active` are asked with the deps each action requires at the moment of the request;
+`changed` does not announce them, so a panel showing them re-reads on `selection` or `scene`.
+
+## History
+
+A canvas keeps a rolling buffer of its scene's history steps, 200 long, fed by
+`History.observe` on `scene.history`. Like the traces, it records in a dev build, and in production
+only while a panel is connected. Each record is `{ ts, step, entries, position }`:
+
+- `step` — `push`, `coalesce` (a push merged into the entry on top), `undo`, `redo`, `goto`,
+  `branch`, `prune`, `clear` or `restore`.
+- `entries` — what the step pushed, merged into or walked across, in the order it touched them,
+  up to 50: each `{ id, label, opCount, ops }`, where `ops` holds up to 50 of the entry's ops as
+  `{ kind, targets, summary }`. `kind` is the op's registered name (`kit:setPose`, a consumer's
+  `registerOp` kind); `targets` are the node ids its args address; `summary` is its args through
+  `serialize`. A coalesce lists the ops it brought, not the merged entry's.
+- `position` — entries applied, and entries in all, after the step.
+
+`get-history` also returns the position now, with `canUndo` and `canRedo`, and with
+`checkpoints: true`, every entry on the stacks as `{ id, label }`, oldest applied first. Edits made
+inside a mode's journal reach the scene's history only when the journal commits, as one push.
+
