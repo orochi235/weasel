@@ -520,10 +520,11 @@ An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
 fov, near, far }`, plain numbers in radians and scene units. Whatever draws
 the scene reads it with `useOrbitView()`, and projects it with kernel3d's
 `cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
-`useOrbitView()` also tells the trial a 3D view is drawn there, so an
-instrument that forgets `orbit` — whose camera then cannot move — gets a
-warning in development. For a camera that should hold still, declare
-`orbit: { fixed: true }`:
+An instrument that draws 3D — through `useOrbitView()`, or a three.js
+renderer in its DOM — without declaring `orbit` has a camera labkit cannot
+move, and in development it warns and marks the trial's title bar. Declare
+`orbit: { fixed: true }` for a camera that holds still, or `orbit: false` when
+the instrument keeps a camera of its own:
 
 ```tsx
 orbit: {

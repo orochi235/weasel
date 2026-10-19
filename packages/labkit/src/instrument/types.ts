@@ -235,7 +235,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   deserialize?: (data: unknown, config: TC) => TS;
   canvas?: CanvasCapability<TS, TC>;
   stage?: StageCapability<TS, TC>;
-  orbit?: OrbitCapability<TS, TC>;
+  /** `false` says the instrument draws 3D with a camera of its own, which
+   *  silences the warning a 3D view in a trial with no orbit raises. */
+  orbit?: OrbitCapability<TS, TC> | false;
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;
