@@ -6,7 +6,7 @@
  */
 
 import { syntheticBoldGrowth, type ResolveResult } from '@weasel-js/font';
-import { growRegion, pathFromD, pathToD, type PolygonPath } from '@weasel-js/geom';
+import { growRegion, mergeRegion, pathFromD, pathToD, type PolygonPath } from '@weasel-js/geom';
 
 /** How closely the grown outline follows the font's curves, in em. */
 export const SYNTHETIC_BOLD_TOLERANCE = 0.0005;
@@ -34,8 +34,8 @@ export function syntheticBoldOffset(resolved: ResolveResult): { growth: number; 
 /**
  * `em`, a glyph's em-space outline keyed by its outline data `d`, as the
  * renderer draws it faked bold for `resolved`: unchanged when it is not.
- * The grown contours keep their curves and overlap where they meet, which
- * fills once under `'nonzero'` (`growRegion`).
+ * The grown contours keep their curves, and are merged where they overlap so
+ * a stroke traces only the glyph's edge.
  */
 export function emboldenGlyph(em: PolygonPath, d: string, resolved: ResolveResult): PolygonPath {
   const offset = syntheticBoldOffset(resolved);
@@ -43,10 +43,10 @@ export function emboldenGlyph(em: PolygonPath, d: string, resolved: ResolveResul
   const key = `${offset.growth}|${offset.join}|${d}`;
   let grown = cache.get(key);
   if (grown) return grown;
-  grown = growRegion(em, offset.growth, {
-    join: offset.join,
-    tolerance: SYNTHETIC_BOLD_TOLERANCE,
-  });
+  grown = mergeRegion(
+    growRegion(em, offset.growth, { join: offset.join, tolerance: SYNTHETIC_BOLD_TOLERANCE }),
+    { tolerance: SYNTHETIC_BOLD_TOLERANCE },
+  );
   if (cache.size >= CACHE_LIMIT) cache.clear();
   cache.set(key, grown);
   return grown;
