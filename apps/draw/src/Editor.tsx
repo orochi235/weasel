@@ -36,6 +36,8 @@ import { Workspace } from './Workspace';
 const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
 /** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
 const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
+const CORE_TOOL_STACKS = [['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil']];
+const PATH_TOOL_STACKS = [['trim', 'extend'], ['distort', 'envelope', 'puppet']];
 
 export interface EditorProps {
   scene: DrawScene;
@@ -111,6 +113,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                   <ToolPalette
                     tools={tools}
                     include={isCoreTool}
+                    stacks={CORE_TOOL_STACKS}
                     orientation="vertical"
                     lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
                     modeRegistry={modality.machine.registry}
@@ -127,6 +130,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                     include={isPathTool}
                     ariaLabel={FIXED_CHROME.pathTools.label}
                     groupOrder={PATH_TOOL_GROUPS}
+                    stacks={PATH_TOOL_STACKS}
                     orientation="vertical"
                     lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
                     modeRegistry={modality.machine.registry}
