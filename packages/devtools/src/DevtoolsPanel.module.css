@@ -11,10 +11,14 @@
   background: var(--wzl-panel-surface);
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
+  /* The views lay themselves out by the panel's own width: a sidebar gives it far less than a page. */
+  container-type: inline-size;
 }
 
 .bar {
   display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
   align-items: center;
   gap: var(--wzl-space-4);
   padding: var(--wzl-space-2) var(--wzl-space-4);
@@ -25,6 +29,7 @@
 .picker {
   flex: 0 1 auto;
   min-width: 0;
+  margin: 0;
 }
 
 .dimension {
@@ -33,6 +38,8 @@
 }
 
 .status {
+  flex: 0 1 auto;
+  min-width: 0;
   margin-inline-start: auto;
   color: var(--wzl-fg-muted);
   white-space: nowrap;
@@ -47,6 +54,8 @@
 
 .tabList {
   flex-shrink: 0;
+  /* In a narrow panel the tabs wrap onto a second row rather than run past its edge. */
+  flex-wrap: wrap;
   padding-inline: var(--wzl-space-2);
 }
 

@@ -15,6 +15,7 @@
 
 .treePane {
   border-inline-end: 1px solid var(--wzl-line-subtle);
+  --wzl-tree-selected: color-mix(in srgb, var(--wzl-accent) 28%, transparent);
 }
 
 .facts {
@@ -61,4 +62,17 @@
 .note {
   margin: 0;
   color: var(--wzl-fg-muted);
+}
+
+/* Narrow: the list above the detail, each scrolling on its own. */
+@container (width < 480px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .treePane {
+    border-inline-end: none;
+    border-block-end: 1px solid var(--wzl-line-subtle);
+  }
 }

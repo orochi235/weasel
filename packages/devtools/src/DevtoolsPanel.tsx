@@ -32,10 +32,10 @@ export function DevtoolsPanel({ transport, tabs, defaultTab, className }: Devtoo
 
   return (
     <section className={[s.panel, className].filter(Boolean).join(' ')} aria-label="Devtools">
-      <header className={s.bar}>
+      <div className={s.bar}>
         <RootPicker roots={state.roots} value={rootId} onChange={setPicked} />
         <span className={s.status}>{statusText(state.status, state.kitVersion, state.error)}</span>
-      </header>
+      </div>
       {rootId && shown.length === 1 ? (
         <div className={s.tabPanel}>{renderView(shown[0]!.View, client, rootId)}</div>
       ) : rootId ? (

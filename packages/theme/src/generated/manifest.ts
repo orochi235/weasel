@@ -259,4 +259,5 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-tree-guide', type: "color", group: "tree", defaultValue: "var(--wzl-fg-subtle)", description: "Color of the bracket a Tree draws down a branch.", hook: true },
   { name: '--wzl-tree-indent', type: "dimension", group: "tree", defaultValue: "calc(var(--wzl-control-h-xs) + var(--wzl-space-2))", description: "Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.", hook: true },
   { name: '--wzl-tree-leaf-indent', type: "dimension", group: "tree", defaultValue: "0", description: "How far in from its branches' glyphs a Tree with guides sets a row that folds nothing.", hook: true },
+  { name: '--wzl-tree-selected', type: "color", group: "tree", defaultValue: "var(--wzl-border)", description: "Background of a selected Tree row.", hook: true },
 ];

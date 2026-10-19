@@ -45,7 +45,7 @@ export function NodeDetail({ client, rootId, nodeId, onPick }: NodeDetailProps):
             </Button>
           )}
         </DetailRow>
-        <DetailRow label="Children" values="figures">{d.childCount}</DetailRow>
+        <DetailRow label="Children">{d.childCount}</DetailRow>
         <DetailRow label="Hidden">{yesNo(d.hidden)}</DetailRow>
         <DetailRow label="Locked">{yesNo(d.locked)}</DetailRow>
         <DetailRow label="Pickable">{yesNo(d.pickable)}</DetailRow>

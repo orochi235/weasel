@@ -72,8 +72,8 @@ function DepDetail({ dep, users }: { dep: DevtoolsDepEntry; users: string[] }): 
     <section className={s.detail} aria-label={`Dep ${dep.name}`}>
       <h3 className={s.title}><Code size="sm">{dep.name}</Code></h3>
       <DetailList layout="inline">
-        <DetailRow label="Scope" values="figures">{dep.depth === 0 ? 'this canvas' : `${dep.depth} above`}</DetailRow>
-        <DetailRow label="Stacked" values="figures">{dep.stacked}</DetailRow>
+        <DetailRow label="Scope">{dep.depth === 0 ? 'this canvas' : `${dep.depth} above`}</DetailRow>
+        <DetailRow label="Stacked">{dep.stacked}</DetailRow>
         <DetailRow label="Required by">{codes(users)}</DetailRow>
       </DetailList>
     </section>

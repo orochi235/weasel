@@ -319,6 +319,12 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Color of the bracket a Tree draws down a branch.',
   },
   {
+    name: 'tree-selected',
+    type: 'color',
+    value: 'var(--wzl-border)',
+    description: 'Background of a selected Tree row.',
+  },
+  {
     name: 'tree-leaf-indent',
     type: 'dimension',
     value: '0',
