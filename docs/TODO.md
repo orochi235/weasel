@@ -1052,12 +1052,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) Three labkit `ControlPanel` browser tests fail on `main`** (2026-10-19, at `fc1049c5c`,
-  run alone on msb-uai): `ControlPanel.panel.browser.test.tsx`'s "sets a field in a panel group
-  apart from the panel" in light and dark mode, and `ControlPanel.span.browser.test.tsx`'s "a custom
-  row and a bar take the whole width of a paired grid" (`expected 0 to be less than 0`, line 44);
-  `compoundRows.browser.test.tsx` failed in the same run. Not looked into past that.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
