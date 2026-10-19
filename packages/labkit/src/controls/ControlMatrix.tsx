@@ -79,6 +79,10 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 const NO_AUTO: ReadonlySet<string> = new Set();
+const firstColumnHint =
+  (fallback: ControlMatrixColumn | undefined) =>
+  (_: ControlMatrixColumn): string =>
+    fallback ? `from ${nameOf(fallback)}` : '';
 
 /**
  * One setting across several config groups of the same shape: settings down
@@ -109,9 +113,7 @@ export function ControlMatrix({
   onCollapsedChange,
   twisty,
 }: ControlMatrixProps): ReactElement {
-  const fallback = columns[0];
-  const hintFor =
-    inheritHint ?? ((_: ControlMatrixColumn) => (fallback ? `from ${nameOf(fallback)}` : ''));
+  const hintFor = inheritHint ?? firstColumnHint(columns[0]);
   const [open, setOpen] = useState<OpenCell | null>(null);
   const choices = useFieldChoicesOf(schema.group);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -203,21 +205,21 @@ export function ControlMatrix({
           ))}
         </tbody>
       </table>
-      {ready &&
-        provide(
-          <MatrixPopover
-            open={open}
-            close={() => setOpen(null)}
-            triggerRef={triggerRef}
-            schema={schema}
-            over={over}
-            config={config}
-            auto={auto}
-            setConfig={setConfig}
-            inherit={inherit}
-            inheritHint={(cell) => hintFor(cell.column)}
-          />,
-        )}
+      {ready && (
+        <MatrixPopover
+          open={open}
+          close={() => setOpen(null)}
+          triggerRef={triggerRef}
+          provide={provide}
+          schema={schema}
+          over={over}
+          config={config}
+          auto={auto}
+          setConfig={setConfig}
+          inherit={inherit}
+          inheritHint={(cell) => hintFor(cell.column)}
+        />
+      )}
     </div>
   );
 

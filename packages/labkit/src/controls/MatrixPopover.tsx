@@ -1,6 +1,6 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Button, PropertyList } from '@weasel-js/ui';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
 import { auto as autoValue } from '../config/auto';
 import { valueAtPath } from '../config/path';
@@ -13,6 +13,7 @@ export function MatrixPopover({
   open,
   close,
   triggerRef,
+  provide,
   schema,
   over,
   config,
@@ -24,6 +25,8 @@ export function MatrixPopover({
   open: OpenCell | null;
   close: () => void;
   triggerRef: RefObject<HTMLElement | null>;
+  /** `useOverlayPortal`'s `provide`, so the popover lands in the themed container. */
+  provide: (overlay: ReactNode) => ReactNode;
   schema: ResolvedConfig;
   over?: PrefGroup | PrefSection;
   config: Record<string, unknown>;
@@ -33,7 +36,7 @@ export function MatrixPopover({
   inherit: boolean;
   inheritHint: (open: OpenCell) => string;
 }) {
-  return (
+  return provide(
     <RACPopover
       triggerRef={triggerRef}
       isOpen={open !== null}
@@ -86,6 +89,6 @@ export function MatrixPopover({
           )}
         </RACDialog>
       ) : null}
-    </RACPopover>
+    </RACPopover>,
   );
 }
