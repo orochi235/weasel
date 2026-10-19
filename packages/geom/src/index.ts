@@ -53,6 +53,7 @@ export { splitSubpaths } from './paths/splitSubpaths';
 export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
+export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { measurePath, type MeasurePathOptions, type PathMeasure } from './paths/pathMeasure';
 export {

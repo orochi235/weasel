@@ -1,10 +1,13 @@
 /**
- * Create Outlines on synthetic-bold text against real WebGL2 and the real
- * Inter atlas: the outline `textToPath` grows must be as wide as the stem the
- * renderer draws by dropping the field threshold. The unit tests check the
- * growth against the formula; this checks the formula against the pixels.
+ * Synthetic-bold outlines against real WebGL2 and the real Inter atlas: the
+ * outline `textToPath` grows, and the one the renderer's outline tier draws,
+ * must each be as wide as the stem the renderer draws by dropping the field
+ * threshold. The unit tests check the growth against the formula; this checks
+ * the formula against the pixels.
  *
- * Inter's atlas is registered at 400 only, so 700 is faked from it. The
+ * Inter's atlas is registered at 400 only, so 700 is faked from it. `FAMILY`
+ * has outlines, so at this size its text is drawn on the outline tier;
+ * `FIELD_FAMILY` is the same atlas with none, which keeps it on the field. The
  * canvas tier is not measured: it rasterizes the real weight and never
  * carries the synthetic-bold flag.
  */
@@ -20,6 +23,7 @@ import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
 
 const FAMILY = 'synthetic-bold-outline-inter';
+const FIELD_FAMILY = 'synthetic-bold-field-inter';
 const SIZE = 400;
 const POSE: RectPose = { x: 40, y: 0, width: 300, height: SIZE * 1.2 };
 const SOURCE = { x: 0, y: 0, width: 240, height: SIZE * 1.2 };
@@ -30,12 +34,12 @@ const TOLERANCE_PX = 1;
 const session = createRasterSession();
 afterAll(() => session.dispose());
 
-const source = (fontWeight: number) => ({
+const source = (fontWeight: number, fontFamily = FAMILY) => ({
   text: 'I',
-  style: { fontFamily: FAMILY, fontSize: SIZE, fontWeight, lineHeight: 1.2 },
+  style: { fontFamily, fontSize: SIZE, fontWeight, lineHeight: 1.2 },
 });
 
-function renderText(fontWeight: number): RasterImage {
+function renderText(fontWeight: number, fontFamily: string): RasterImage {
   const scene = createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
   });
@@ -44,7 +48,7 @@ function renderText(fontWeight: number): RasterImage {
     layer: 'main',
     pose: { ...POSE },
     data: {
-      ...source(fontWeight),
+      ...source(fontWeight, fontFamily),
       fill: { paint: { kind: 'solid', color: '#ffffff' } },
     },
   });
@@ -117,14 +121,15 @@ function stem(img: RasterImage): { width: number; left: number } {
 
 beforeAll(async () => {
   await registerFont(FAMILY, { weight: 400 }, metricsUrl, atlasUrl);
+  await registerFont(FIELD_FAMILY, { weight: 400 }, metricsUrl, atlasUrl);
   registerFontOutlines(FAMILY, { weight: 400 }, ttfUrl);
   await loadFontOutlines(FAMILY, { weight: 400 });
   expect(outlineStatus(FAMILY, 400, 'normal')).toBe('ready');
 });
 
-describe('Create Outlines on synthetic-bold text', () => {
+describe('synthetic-bold outlines', () => {
   it('outlines each stem as wide as the field shift draws it', () => {
-    const drawn = stem(renderText(700));
+    const drawn = stem(renderText(700, FIELD_FAMILY));
     const outlined = stem(renderOutline(700));
     const regular = stem(renderOutline(400));
     const report =
@@ -133,5 +138,22 @@ describe('Create Outlines on synthetic-bold text', () => {
     expect(outlined.width - regular.width, report).toBeCloseTo(8, 0);
     expect(Math.abs(outlined.width - drawn.width), report).toBeLessThanOrEqual(TOLERANCE_PX);
     expect(Math.abs(outlined.left - drawn.left), report).toBeLessThanOrEqual(TOLERANCE_PX / 2);
+  });
+
+  it('draws each stem on the outline tier as wide as the field shift draws it', () => {
+    const field = renderText(700, FIELD_FAMILY);
+    const tierImage = renderText(700, FAMILY);
+    // A proxy for the tier having drawn it: the same atlas at the same place
+    // would come back byte for byte.
+    expect(tierImage.data.every((v, i) => v === field.data[i]), 'drawn on the outline tier').toBe(false);
+    const drawn = stem(field);
+    const tier = stem(tierImage);
+    const regular = stem(renderText(400, FAMILY));
+    const report =
+      `field ${drawn.width.toFixed(2)}px at ${drawn.left.toFixed(2)}, outline tier ` +
+      `${tier.width.toFixed(2)}px at ${tier.left.toFixed(2)}, regular ${regular.width.toFixed(2)}px`;
+    expect(tier.width - regular.width, report).toBeCloseTo(8, 0);
+    expect(Math.abs(tier.width - drawn.width), report).toBeLessThanOrEqual(TOLERANCE_PX);
+    expect(Math.abs(tier.left - drawn.left), report).toBeLessThanOrEqual(TOLERANCE_PX / 2);
   });
 });
