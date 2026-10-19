@@ -1,12 +1,12 @@
 import {
   SceneCanvas, useCanvasSize, useScene, useSceneTextEdit, useSelection,
-  type SceneCanvasApi, type Tool, type ToolsApi, type View,
+  defaultVisibilityRules, type Rule, type SceneCanvasApi, type Tool, type ToolsApi, type View, type VisibilityRules,
 } from '@weasel-js/core';
-import { CONNECTOR_TOOL_ID } from '@weasel-js/diagram';
+import { CONNECTOR_TOOL_ID, diagramResizable } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import {
   CHART_LAYERS, CHART_PAGE, CHART_PAGE_COLOR, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
@@ -21,6 +21,10 @@ const FEATURES = ['draw'] as const;
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const INGESTION = { handlers: [stencilDropHandler] };
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
+// An edge's pose is a placeholder at the origin: its box there is no outline to show, and its ends carry the handles.
+const CHROME: VisibilityRules = {
+  'selection.outline': { all: [defaultVisibilityRules['selection.outline'] as Rule, { resizable: true }] },
+};
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
@@ -34,6 +38,7 @@ export function ChartWorkspace(): ReactElement {
   useSessionPersistence(scene, SESSION);
   useChartCommands(scene);
   const diagram = useChartDiagram(scene, selection);
+  const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [host, setHost] = useState<HTMLDivElement | null>(null);
@@ -77,6 +82,8 @@ export function ChartWorkspace(): ReactElement {
             onViewChange={setView}
             viewport={{ recenter }}
             tools={diagram.tools}
+            selectTool={selectTool}
+            chromeVisibility={CHROME}
             ambient={diagram.ambient}
             ingestion={INGESTION}
             onToolsCreated={setTools}

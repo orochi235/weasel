@@ -1,6 +1,9 @@
 .wc-theme {
   width: 100%;
   height: 100%;
+  /* The page behind sits outside [data-wzl-mode], so it takes the tokens' default mode, not the chosen one. */
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
 }
 
 .wc-app {
@@ -12,4 +15,7 @@
 
 .wc-menubar {
   flex-shrink: 0;
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
 }

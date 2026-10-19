@@ -57,10 +57,16 @@ describe('usePipelineDoc', () => {
   });
 
   it('loads stored JSON written under its key', () => {
-    const stored: EffectDoc = addStage({ pipeline: { stages: [], wires: [] }, places: {} }, stageFromType(blur, 'b'));
+    const stored: EffectDoc = addStage({ pipeline: { stages: [], wires: [], types: {} }, places: {} }, stageFromType(blur, 'b'));
     localStorage.setItem('custom-key', JSON.stringify(stored));
     const { result } = renderHook(() => usePipelineDoc('custom-key'));
     expect(result.current.doc).toEqual(stored);
+  });
+
+  it('gives a stored doc without value types the empty doc\'s', () => {
+    localStorage.setItem(PIPELINE_STORAGE_KEY, JSON.stringify({ pipeline: { stages: [], wires: [] }, places: {} }));
+    const { result } = renderHook(() => usePipelineDoc());
+    expect(result.current.doc.pipeline.types).toEqual({ number: { control: true } });
   });
 
   it('ignores stored text that is not a doc', () => {

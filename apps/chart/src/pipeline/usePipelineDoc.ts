@@ -19,7 +19,8 @@ function load(key: string): EffectDoc {
   try {
     const raw = localStorage.getItem(key);
     const parsed: unknown = raw === null ? null : JSON.parse(raw);
-    return isDoc(parsed) ? parsed : EMPTY;
+    if (!isDoc(parsed)) return EMPTY;
+    return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
   } catch {
     return EMPTY;
   }

@@ -4,21 +4,14 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { createRoot, type Root } from 'react-dom/client';
-import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
-import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import '@weasel-js/theme/tokens.css';
-import { App } from './App';
-import { CHART_PAGE } from './chartDocument';
+import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { stencilDragText } from './stencilDrop';
+import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
 
 registerCanvasFont('sans-serif');
-const WithIcons = iconsWrapper();
-
-let root: Root | null = null;
-let mountPoint: HTMLDivElement | null = null;
 
 beforeEach(async () => {
   await page.viewport(1280, 800);
@@ -26,10 +19,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  root?.unmount();
-  mountPoint?.remove();
-  root = null;
-  mountPoint = null;
+  unmountChartApp();
   localStorage.clear();
 });
 
@@ -45,31 +35,6 @@ const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
   return d !== undefined && 'from' in d;
 });
-
-async function mountApp(): Promise<{ host: HTMLElement; canvas: HTMLCanvasElement }> {
-  mountPoint = document.createElement('div');
-  mountPoint.style.width = '100vw';
-  mountPoint.style.height = '100vh';
-  document.body.style.margin = '0';
-  document.body.appendChild(mountPoint);
-  root = createRoot(mountPoint);
-  root.render(
-    <WithIcons>
-      <DepRegistryProvider>
-        <ActionsProvider>
-          <SelectionContextProvider>
-            <App />
-          </SelectionContextProvider>
-        </ActionsProvider>
-      </DepRegistryProvider>
-    </WithIcons>,
-  );
-  await expect.poll(() => document.querySelector('.wc-host canvas')).not.toBeNull();
-  const host = document.querySelector<HTMLElement>('.wc-host')!;
-  // The page is fitted on the first measured size; wait for that frame.
-  await new Promise((r) => setTimeout(r, 100));
-  return { host, canvas: host.querySelector('canvas')! };
-}
 
 /** Client point of a world point: the page is fitted to the workspace with 24px of padding. */
 function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
@@ -137,6 +102,9 @@ describe('WeaselChart chart mode', () => {
     await drag(canvas, at(host, 150, 140), at(host, 560, 140));
     await expect.poll(() => edges().length).toBe(1);
     expect(edges()[0]!.data.diagram).toMatchObject({ from: {}, to: {} });
+    // Ink for a white page, not the kit's dark-ground defaults.
+    expect(edges()[0]!.data.stroke).toEqual(CHART_EDGE_STROKE);
+    expect(bodies()[0]!.data.fill).toEqual({ paint: { color: CHART_NODE_STYLE.fill } });
 
     await useTool('Select');
     click(canvas, at(host, 130, 115));
@@ -177,6 +145,7 @@ describe('WeaselChart chart mode', () => {
     editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await expect.poll(editor).toBeNull();
     await expect.poll(() => saved().find((n) => n.id === `${edgeId}/label`)?.data.text).toBe('yes');
+    expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: CHART_LABEL_FILL } });
   });
 
   it("types into a body's label and paints its text", async () => {
