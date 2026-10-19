@@ -125,6 +125,10 @@
 .autoToggle {
   cursor: pointer;
   border-radius: var(--wzl-radius-sm);
+  /* Above the slider track a stacked row pulls up under its label, which
+     otherwise takes every click on the label once the row is pinned. */
+  position: relative;
+  z-index: 1;
 }
 
 /* The same dotted line a compact `<Select>` draws under its value. Stated
