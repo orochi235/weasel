@@ -69,6 +69,7 @@ export {
   flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
   pathFromD,
+  pathToD,
   composePath,
   decomposePath,
   splitSubpaths,
