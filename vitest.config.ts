@@ -199,6 +199,7 @@ export default defineConfig({
           // jsdom environment, and no third config to keep in sync.
           include: [
             'apps/draw/**/*.test.{ts,tsx}',
+            'apps/chart/**/*.test.{ts,tsx}',
             'apps/theme-editor/**/*.test.{ts,tsx}',
             'apps/devtools-extension/**/*.test.{ts,tsx}',
             'apps/shared/**/*.test.{ts,tsx}',
