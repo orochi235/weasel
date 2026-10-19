@@ -132,6 +132,31 @@ describe('blits behaviors the animator codec relies on', () => {
     expect(h.weightOf(1)).toBe(1);
   });
 
+  it('a spring voice cued with no loop still holds its subject long after it settles', () => {
+    const m = mix<number, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const sp = spring<number, P, number[]>('p', { from: [0, 0], to: [0, 0], stiffness: 170, damping: 26, mass: 1 });
+    const h = m.cue({ patch: sp, subjects: [1] });
+    sp.to(1, [10, 0], 0);
+    m.sync(60_000);
+    const cols = { p: new Float64Array(2) };
+    m.pull([1], cols);
+    expect(cols.p[0]).toBeCloseTo(10, 6);
+    expect(h.weightOf(1)).toBe(1);
+  });
+
+  it('a patch with no duration plays on with no loop', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const h = m.cue({ patch: patch<object, P>(0, () => ({ p: [3, 0] }), { writes: ['p'] }), subjects: [subject] });
+    m.sync(5000);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect(cols.p[0]).toBe(3);
+    expect(h.state).not.toBe('done');
+  });
+
   it('a patch with a duration answers past it only when told to loop', () => {
     const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
     m.sync(0);
