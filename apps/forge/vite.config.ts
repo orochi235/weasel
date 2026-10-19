@@ -9,6 +9,7 @@ import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
 import { skipWorktrees } from '../../scripts/vite-watch.ts';
+import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
@@ -23,6 +24,7 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     react(),
     skipWorktrees(),
+    devSourcemaps(),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     weaselIcons.vite({ mode: 'app' }),
