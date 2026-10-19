@@ -133,6 +133,15 @@ describe('EffectEditor', () => {
     expect(seen.at(-1)!.selected).toBeNull();
   });
 
+  it('lets a wire whose end is moving land back on the input it feeds', () => {
+    const { view } = mount();
+    const edge = view().specs.find((s) => diagramEdgeOf(s) !== null)!.id as string;
+    const out = port('src', 'out', 'image');
+    const fedInput = port('blur', 'image', 'image');
+    expect(view().canConnect!(out, fedInput)).toBe(false);
+    expect(view().canConnect!(out, fedInput, { edge, end: 'from' })).toBe(true);
+  });
+
   it('moves a wire end onto another input', () => {
     const { onChange, view } = mount();
     view().onReconnect!({ edge: 'w1', end: 'to', node: 'mix', port: 'base' });

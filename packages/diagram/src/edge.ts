@@ -178,6 +178,21 @@ export function resolveEnd<TPose>(
   return facing(allPorts(dep), toward);
 }
 
+/** The point an end aims at when it names none: the center of its bounds. */
+export function boxCenter<TPose>(geometry: PoseDescriptor<TPose>, pose: TPose): Vec2 {
+  const b = geometry.getBounds(pose);
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+}
+
+/**
+ * Where each end of an edge aims as it resolves: its nearest authored
+ * waypoint, else the other end's center. Centers are stable while both ends
+ * resolve; aiming at the other *port* would be circular.
+ */
+export function endAims(fromCenter: Vec2, toCenter: Vec2, waypoints: readonly Vec2[]): { from: Vec2; to: Vec2 } {
+  return { from: waypoints[0] ?? toCenter, to: waypoints[waypoints.length - 1] ?? fromCenter };
+}
+
 /** The port pointing at `toward` most directly, tie-broken toward the closer. */
 function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
   let best: Port | undefined;
@@ -230,11 +245,6 @@ export function edgeDerivePath<TPose>(
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
-  const centerOf = (d: DerivedDep<TPose>): Vec2 => {
-    const b = geometry.getBounds(d.pose);
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-  };
-
   const standoffOf = (d: DerivedDep<TPose>): number => {
     const b = geometry.getBounds(d.pose);
     return Math.min(b.width, b.height) / 2;
@@ -249,12 +259,10 @@ export function edgeDerivePath<TPose>(
     const loop = fromDep.node.id === toDep.node.id && edge.from.port === undefined && edge.to.port === undefined
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
       : null;
-    // Each end aims at its first waypoint, else at the other's center, which
-    // is stable while both are being resolved — aiming at the other *port*
-    // would be circular.
     const authored = edge.waypoints ?? [];
-    const from = loop?.from ?? resolveEnd(edge.from, fromDep, authored[0] ?? centerOf(toDep), portOpts, allPorts);
-    const to = loop?.to ?? resolveEnd(edge.to, toDep, authored[authored.length - 1] ?? centerOf(fromDep), portOpts, allPorts);
+    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored);
+    const from = loop?.from ?? resolveEnd(edge.from, fromDep, aims.from, portOpts, allPorts);
+    const to = loop?.to ?? resolveEnd(edge.to, toDep, aims.to, portOpts, allPorts);
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;

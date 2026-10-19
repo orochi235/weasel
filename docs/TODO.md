@@ -1333,25 +1333,12 @@ only story runner in the repo.
   its newest source. Core needs a way for a dep to delegate to the default
   (`packages/diagram/src/stencilTool.ts`).
 
-- **(P3) `canConnect` can't tell a new connect from moving an edge's end.** The reconnect
-  predicate should receive the edge being moved (`packages/diagram/src/reconnect.ts`,
-  `packages/diagram/src/effect/EffectEditor.tsx`).
-
 - **(P3) Selection chrome draws from a path-derived node's 0x0 placeholder pose.** Chart works
   around it with `diagramResizable` and an outline gate that applies to the whole selection; the
   core fix is to measure such nodes by their path (`apps/chart/src/ChartWorkspace.tsx`).
 
 - **(P3) `DiagramView` turns on `pick` and makes edges pickable**, so a selected wire may draw the
   same box at the origin (`packages/diagram/src/DiagramView.tsx`).
-
-- **(P3) A body end on a node with no ports commits an edge with nothing to route to**
-  (`packages/diagram/src/connectTargets.ts`).
-
-- **(P3) The reconnect preview aims its fixed end at the pointer**, not at the edge's first
-  waypoint (`packages/diagram/src/reconnect.ts`).
-
-- **(P3) The rule for where an end aims and which point is a body's center lives twice**, in
-  `connectTargets.ts` and `edge.ts`. Fold it into one (`packages/diagram/src/`).
 
 - **(P3) Pipeline mode loses its undo history on a mode switch, and can't be saved.** The history
   lives in `PipelineWorkspace`'s `useMemo`, so leaving the mode drops it, and the File menu is empty

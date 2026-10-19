@@ -22,6 +22,7 @@ import {
   grabPortAction,
   grabPortBindings,
   type ConnectActionOptions,
+  type MovingEnd,
 } from './connect';
 import { createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { routerOf, type Router } from './edge';
@@ -124,10 +125,12 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
   const shared = { ...opts, snapRadius: opts.snapRadius ?? DEFAULT_SNAP, bodies: opts.bodies ?? true };
   // The resolver asks `canConnect(fixed, candidate)`; a moved `from` end
   // swaps them back so the policy sees the edge's own direction.
-  const targets = {
-    to: createTargets({ ...shared, canConnect }),
-    from: createTargets({ ...shared, canConnect: (fixed, candidate) => canConnect(candidate, fixed) }),
-  };
+  const targetsFor = (moving: MovingEnd) => createTargets({
+    ...shared,
+    canConnect: moving.end === 'to'
+      ? (fixed, candidate) => canConnect(fixed, candidate, moving)
+      : (fixed, candidate) => canConnect(candidate, fixed, moving),
+  });
 
   return {
     id: opts.id ?? RECONNECT_ACTION_ID,
@@ -150,7 +153,7 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
           open: true,
           deps: ctx.deps,
         };
-        const resolver = targets[scratch.moving];
+        const resolver = targetsFor({ edge: scratch.edgeId, end: scratch.moving });
 
         return {
           kind: 'diagram-reconnect',

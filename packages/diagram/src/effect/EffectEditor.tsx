@@ -81,11 +81,10 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     fill: (port) => ({ paint: { color: built.color(port.type) } }),
   }), [built]);
 
-  // The wire picked on the canvas: kept so a controlled `selected` of null
-  // does not clear it, and so its own input does not count as fed while its end is dragged.
+  // The wire picked on the canvas, kept so a controlled `selected` of null does not clear it.
   const [edge, setEdge] = useState<string | null>(null);
   const pickedWire = edge === null ? undefined : built.wireOf(edge);
-  const now = useLatest({ doc, built, specs, options, onChange, pickedWire });
+  const now = useLatest({ doc, built, specs, options, onChange });
   const view = useRef<DiagramViewApi | null>(null);
   const handlers = useMemo(() => editHandlers(() => now.current, () => setEdge(null)), [now]);
 
@@ -165,7 +164,6 @@ interface Now {
   built: EditorScene;
   specs: readonly { id?: unknown; pose?: unknown }[];
   onChange: (next: EffectDoc, label: string) => void;
-  pickedWire: string | undefined;
 }
 
 /** DiagramView's edit callbacks, each turning a report into an edit of the
@@ -177,10 +175,12 @@ function editHandlers(now: () => Now, unpick: () => void) {
     const next = edit(d, built);
     if (next !== null) onChange(next, label);
   };
-  const canConnect: CanConnect = (from, to) => {
+  // A wire whose end is being moved does not count as feeding its own input.
+  const canConnect: CanConnect = (from, to, moving) => {
     if (isBodyEnd(from) || isBodyEnd(to)) return false;
-    const { doc, pickedWire } = now();
-    return wireFor(doc.pipeline, { stage: from.nodeId, port: from.id }, { stage: to.nodeId, port: to.id }, pickedWire) !== null;
+    const { doc, built } = now();
+    const except = moving === undefined ? undefined : built.wireOf(moving.edge);
+    return wireFor(doc.pipeline, { stage: from.nodeId, port: from.id }, { stage: to.nodeId, port: to.id }, except) !== null;
   };
   return {
     canConnect,

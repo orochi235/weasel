@@ -38,8 +38,15 @@ import type { Port } from './types';
 /** The default action id, and what {@link connectBinding} points at. */
 export const CONNECT_ACTION_ID = 'diagram.connect';
 
-/** Whether an edge may run from `from` to `to`. */
-export type CanConnect = (from: ConnectEnd, to: ConnectEnd) => boolean;
+/** The edge end a reconnect is carrying: the scene id of the edge, and which end. */
+export interface MovingEnd {
+  edge: string;
+  end: 'from' | 'to';
+}
+
+/** Whether an edge may run from `from` to `to`. `moving` is the end being
+ *  dragged when the edge already exists, and absent for a new connect. */
+export type CanConnect = (from: ConnectEnd, to: ConnectEnd, moving?: MovingEnd) => boolean;
 
 /** The edge a finished connect describes. Each end is a resolved port, or a
  *  body whose port the edge picks each time it is routed. */
