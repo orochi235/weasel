@@ -1,5 +1,6 @@
 /**
- * WeaselDraw's own commands (the grid, snap, symmetry, and path direction toggles, Release compound
+ * WeaselDraw's own commands (the grid, snap, symmetry, and path direction toggles, showing and hiding each
+ * toolbar, palette, and panel, Release compound
  * path, Preferences, the command palette) as actions the gesture dispatcher routes and the command
  * bar draws from the registry. Each reads the live `appCommands` dep.
  */
@@ -9,6 +10,7 @@ import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import { CHROME_ITEMS, chromeActionId } from '../surfaces/chrome';
 
 /** What the app's own commands read and do. */
 export interface AppCommands {
@@ -22,6 +24,9 @@ export interface AppCommands {
   /** Whether live symmetry is on. */
   symmetryOn: boolean;
   toggleSymmetry(): void;
+  /** Whether toolbar, palette, or panel `id` is hidden. */
+  chromeHidden(id: string): boolean;
+  toggleChrome(id: string): void;
   /** Whether any selected path has more than one subpath. */
   canReleaseCompound: boolean;
   releaseCompound(): void;
@@ -74,6 +79,20 @@ export const toggleSymmetryAction: AppAction = {
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSymmetry() },
 };
 
+/** One action per toolbar, palette, and panel the View menu shows and hides, checked while it shows. In their own
+ *  group, so no action bar draws them. */
+export const chromeActions: AppAction[] = CHROME_ITEMS.map(({ id, label }) => ({
+  id: chromeActionId(id),
+  label,
+  group: 'chrome',
+  requires: ['appCommands'],
+  active: (deps) => {
+    const commands = read(deps);
+    return commands !== undefined && !commands.chromeHidden(id);
+  },
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleChrome(id) },
+}));
+
 export const releaseCompoundAction: AppAction = {
   id: 'path.releaseCompound',
   label: 'Release compound path',
@@ -116,6 +135,7 @@ export const appActions: Action[] = [
   toggleSnapAction,
   togglePathDirectionAction,
   toggleSymmetryAction,
+  ...chromeActions,
   releaseCompoundAction,
   preferencesAction,
   commandsAction,

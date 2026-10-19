@@ -21,8 +21,11 @@
   background: none;
   border: 0;
   border-radius: var(--wzl-radius-sm);
-  color: inherit;
+  color: var(--wzl-fg);
   font: inherit;
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
   white-space: nowrap;
   cursor: default;
   user-select: none;

@@ -31,6 +31,8 @@ function setup(over: Partial<AppCommands> = {}) {
     releaseCompound: vi.fn(),
     openPrefs: vi.fn(),
     openPalette: vi.fn(),
+    chromeHidden: () => false,
+    toggleChrome: vi.fn(),
     ...over,
   };
   const scene = createScene<{ kind: 'rect' }, 'main', { x: number; y: number; width: number; height: number }>(

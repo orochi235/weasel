@@ -43,6 +43,7 @@ function setup() {
     symmetryOn: false, toggleSymmetry: vi.fn(),
     canReleaseCompound: false, releaseCompound: vi.fn(),
     openPrefs: vi.fn(), openPalette: vi.fn(),
+    chromeHidden: (id: string) => id === 'history', toggleChrome: vi.fn(),
   };
   const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
   scene.add({
@@ -95,7 +96,9 @@ const ROWS = {
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
     'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical'],
-  View: ['Show grid', 'Snap to grid', 'Show path direction', 'Symmetry', 'Zoom In', 'Zoom Out', 'Reset Zoom'],
+  View: ['Show grid', 'Snap to grid', 'Show path direction', 'Symmetry', 'Zoom In', 'Zoom Out', 'Reset Zoom',
+    'Arrange', 'Pathfinder', 'Path', 'Loupe', 'Tools', 'Path tools', 'Properties', 'Colors', 'Layers', 'History',
+    'Status bar'],
 };
 
 describe('DRAW_MENU_BAR', () => {
@@ -143,6 +146,15 @@ describe('DRAW_MENU_BAR', () => {
     open('File');
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^Save/ })); });
     expect(saveSvgFile).toHaveBeenCalledOnce();
+  });
+
+  it('checks a toolbar or panel row while it shows, and toggles it by id', () => {
+    const t = setup();
+    open('View');
+    expect(menu().getByRole('menuitemcheckbox', { name: /^Layers/ })).toHaveAttribute('aria-checked', 'true');
+    expect(menu().getByRole('menuitemcheckbox', { name: /^History/ })).toHaveAttribute('aria-checked', 'false');
+    act(() => { fireEvent.click(menu().getByRole('menuitemcheckbox', { name: /^Status bar/ })); });
+    expect(t.commands.toggleChrome).toHaveBeenCalledWith('statusBar');
   });
 
   it('marks a row disabled while its action is', () => {

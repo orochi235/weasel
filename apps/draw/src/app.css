@@ -11,16 +11,12 @@
   min-height: 0;
 }
 
-/* --- Menu bar (top of window, above the command bar) ----------------- */
+/* --- Menu bar: the first group of the action bar's row ---------------- */
 .wd-menubar {
   flex-shrink: 0;
-  padding: 0 var(--wzl-space-2);
-  background: var(--wzl-surface);
-  border-bottom: 1px solid var(--wzl-border);
-  font-size: 11px;
 }
 
-/* --- Action bar (below the menu bar) ---------------------------------- */
+/* --- Action bar (top of window) ---------------------------------------- */
 .wd-commandbar {
   display: flex;
   align-items: center;

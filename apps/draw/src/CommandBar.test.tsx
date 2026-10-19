@@ -58,6 +58,12 @@ describe('CommandBar', () => {
     expect(saveRun).toHaveBeenCalledTimes(1);
   });
 
+  it('draws the menus slot first in its row, ahead of the File buttons', () => {
+    render(<CommandBar menus={<div role="menubar" aria-label="Menu bar" />} />);
+    const row = screen.getByRole('toolbar', { name: 'Actions' });
+    expect(row.firstElementChild).toBe(screen.getByRole('menubar', { name: 'Menu bar' }));
+  });
+
   it('opens a debug surface in a new tab', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     render(<CommandBar />);

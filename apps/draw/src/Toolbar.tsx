@@ -13,6 +13,7 @@ import {
 import type { CornerControlsSelection } from '@weasel-js/path-tools';
 import {
   type ReactElement,
+  type ReactNode,
   useCallback,
   useMemo,
   useState
@@ -39,12 +40,14 @@ export interface ToolbarProps {
   setBackgroundColor: (color: string) => void;
   /** The open path and its selected anchors, for the Corner shape controls. */
   cornerSelection?: CornerControlsSelection;
+  /** The menu bar, drawn first in the row. */
+  menus?: ReactNode;
 }
 
 export function Toolbar({
   scene, selection,
   paperSize, setPaperSize,
-  filename, setFilename, backgroundColor, setBackgroundColor, cornerSelection,
+  filename, setFilename, backgroundColor, setBackgroundColor, cornerSelection, menus,
 }: ToolbarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
   // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
@@ -100,6 +103,7 @@ export function Toolbar({
   return (
     <>
       <CommandBar
+        menus={menus}
         surfaces={<StripSurfaces />}
         {...(cornerSelection ? { corners: { scene, selection: cornerSelection } } : {})}
       />
