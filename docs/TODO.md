@@ -1312,3 +1312,33 @@ only story runner in the repo.
   routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
   summary prints the label, so making them one needs a decision on what it should say. Left open by
   the selection pass.
+
+## weaselchart
+
+`apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
+
+- **(P3) Second arc.** Connectors that route around shapes while editing; containers and
+  swimlanes; multiple pages (`core/pages`); themes; waypoint editing on connectors; editing under
+  the `rack` and `lanes` looks, where dragging a stage reorders it.
+
+- **(P3) A consumer's `insert` dep hides the kit default.** A canvas using `useStencilInsert`
+  can't also use core's rect, ellipse and text insert tools, because the dep registry answers only
+  its newest source. Core needs a way for a dep to delegate to the default
+  (`packages/diagram/src/stencilTool.ts`).
+
+- **(P3) `canConnect` can't tell a new connect from moving an edge's end.** The reconnect
+  predicate should receive the edge being moved (`packages/diagram/src/reconnect.ts`,
+  `packages/diagram/src/effect/EffectEditor.tsx`).
+
+- **(P3) Selection chrome draws from a path-derived node's 0x0 placeholder pose.** Chart works
+  around it with `diagramResizable` and an outline gate that applies to the whole selection; the
+  core fix is to measure such nodes by their path (`apps/chart/src/ChartWorkspace.tsx`).
+
+- **(P3) `DiagramView` turns on `pick` and makes edges pickable**, so a selected wire may draw the
+  same box at the origin (`packages/diagram/src/DiagramView.tsx`).
+
+- **(P3) An edge-label edit that ends empty leaves an empty label node**
+  (`packages/diagram/src/edgeLabel.ts`).
+
+- **(P3) Body label text sits left-aligned in stencil bodies** rather than centered
+  (`packages/diagram/src/stencil.ts`).
