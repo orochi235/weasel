@@ -7,7 +7,9 @@ import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
 beforeAll(() => {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as unknown as HTMLCanvasElement['getContext'];
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () => null,
+  ) as unknown as HTMLCanvasElement['getContext'];
 });
 
 function Board() {
@@ -24,7 +26,9 @@ const instrument = defineInstrument<null, Record<string, never>>({
 
 describe('a trial and devtools', () => {
   it("lists a plain canvas in a trial by the trial's title, not by the pane it sits in", async () => {
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Plain board" />, { wrapper: withIcons });
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Plain board" />, {
+      wrapper: withIcons,
+    });
     const labels = window.__weaselDevtools__?.roots().map((r) => r.label);
     expect(labels).toContain('Plain board');
     expect(labels).not.toContain('Content');
