@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/core';
 import { type ForwardedRef, forwardRef, type ReactElement, type Ref } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
+import { useTrialTitle } from '../trial/trialTitle';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
 /** Props for {@link TrialSceneCanvas}: a `<SceneCanvas>`'s, sized by the trial. */
@@ -34,9 +35,16 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
 ) {
   useTrialHistory(history ? scene : null);
   const toolsReported = useSceneToolSlot(trial, onToolsCreated);
+  const title = useTrialTitle();
   return (
     <div className="lk-trial-scene">
-      <SceneCanvas {...rest} ref={ref} scene={scene} onToolsCreated={toolsReported} />
+      <SceneCanvas
+        aria-label={title ?? undefined}
+        {...rest}
+        ref={ref}
+        scene={scene}
+        onToolsCreated={toolsReported}
+      />
     </div>
   );
 }

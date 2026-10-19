@@ -165,6 +165,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   return (
     <div aria-hidden="true" className={s.hidden}>
       <SceneCanvas
+        aria-label="Registry probe"
         scene={scene}
         width={200}
         height={200}

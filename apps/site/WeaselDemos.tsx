@@ -10,7 +10,7 @@ import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront,
 import { isPackagePage } from './Packages/catalog';
 import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
-import devtoolsStyles from './DemoDevtools.module.css';
+import { DevtoolsSplit } from './DevtoolsSplit';
 
 // These are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -216,17 +216,16 @@ function DemoView({ entry }: { entry: DemoEntry }) {
         {DemoDevtools && <Switch isSelected={devtools} onChange={setDevtools}>Devtools</Switch>}
       </header>
 
-      <div className={devtoolsStyles.stage}>
+      <DevtoolsSplit panel={DemoDevtools && devtools ? <Suspense fallback={null}><DemoDevtools /></Suspense> : null}>
         <div className="ckd-canvas-wrap">
           <Suspense fallback={<div className="ckd-demo-loading" />}>
-            <DemoFrame>
+            <DemoFrame label={entry.title}>
               <Component />
             </DemoFrame>
           </Suspense>
           {entry.hint && <span className="ckd-hint"><InlineMarkdown text={entry.hint} /></span>}
         </div>
-        {DemoDevtools && devtools && <Suspense fallback={null}><DemoDevtools /></Suspense>}
-      </div>
+      </DevtoolsSplit>
 
       <div className="ckd-code-panel" ref={panelRef}>
         {tabs.length > 1 ? (

@@ -66,7 +66,8 @@ export function useCanvasDevtoolsRoot(c: {
   const root = useDevtoolsRoot({
     label: () => {
       const el = c.element.current;
-      return el?.getAttribute('aria-label') || el?.id || '';
+      return el?.getAttribute('aria-label') || el?.id
+        || el?.parentElement?.closest('[aria-label]')?.getAttribute('aria-label') || '';
     },
     scene: () => c.scene,
     selection: () => c.selection.current,

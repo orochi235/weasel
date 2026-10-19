@@ -149,6 +149,15 @@ describe('SceneCanvas devtools root', () => {
     close();
   });
 
+  it('takes its label from the nearest labeled ancestor when it has none of its own', () => {
+    function Unlabeled() {
+      const s = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return <section aria-label="Pan and zoom"><SceneCanvas scene={s} width={50} height={50} /></section>;
+    }
+    render(<Unlabeled />);
+    expect(window.__weaselDevtools__!.roots().map((r) => r.label)).toContain('Pan and zoom');
+  });
+
   it('leaves the root out when the canvas unmounts', () => {
     const before = window.__weaselDevtools__?.roots().length ?? 0;
     const { close } = mount();

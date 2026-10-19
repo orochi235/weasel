@@ -1,15 +1,30 @@
-/* The demo and, in development, the devtools panel beside it. Wraps onto its own row when the page is narrow. */
+/* The demo alone lays out as it always has. */
 .stage {
-  display: flex;
-  flex-wrap: wrap;
+  display: block;
+}
+
+/* With the devtools open: the demo and the panel side by side, the demo's column giving way. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 42%);
   gap: var(--wzl-space-8);
-  align-items: flex-start;
+  align-items: start;
+}
+
+.split .demo {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* Pinned inside the page's scrolling pane, so the panel is in view wherever the demo is scrolled to. */
+.side {
+  position: sticky;
+  top: var(--wzl-space-8);
+  height: min(640px, calc(100vh - 2 * var(--wzl-space-8)));
 }
 
 .panel {
-  flex: 1 1 420px;
-  max-width: 640px;
-  height: 440px;
+  height: 100%;
   border: 1px solid var(--wzl-line-subtle);
   border-radius: var(--wzl-radius-sm);
   overflow: hidden;

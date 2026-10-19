@@ -65,6 +65,7 @@ function ToolkitForSetup({ bundle, paths }: Setup): ReactElement {
       {/* Left column: canvas. */}
       <section className={s.canvas}>
         <SceneCanvas features={paths ? ['draw', pathTools] : ['draw']}
+          aria-label="Toolkit canvas"
           scene={scene}
           width={520}
           height={360}

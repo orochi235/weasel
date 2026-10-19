@@ -10,7 +10,8 @@ The panel is `@weasel-js/devtools` ("Mounting the panel", below); the browser ex
 ## What the page publishes
 
 Each mounted `<SceneCanvas>` is a **root**. It registers with the hook on mount and leaves on
-unmount, labeled by its `aria-label` (else its root id). A root's dimension is `3d` when its first
+unmount, labeled by its `aria-label`, else its DOM id, else the `aria-label` of its nearest labeled
+ancestor, else its root id. A labkit trial's canvas takes the trial's title. A root's dimension is `3d` when its first
 node's pose has a `position.z`, else `2d`.
 
 `window.__weaselDevtools__` is `{ protocol, kitVersion, roots(), root(id), register(root),
@@ -129,11 +130,14 @@ step with its ops, where the history stands, and the checkpoint stack on request
 cost while the `fps` overlay is on). Registry re-reads on `selection` and `scene` as well as
 `registry`, since `enabled` and `active` are not announced.
 
+The panel lays itself out by its own width (a container query): below 480 px the tree or list
+stacks above the detail, and the tabs wrap onto a second row.
+
 It says `yo` on mount and `bye` on unmount, which drops its highlight and overlay flags. Mount it
 in development only, behind a lazy import, so production bundles leave it out:
 `import.meta.env.DEV ? lazy(() => import('./Devtools')) : null`. The repo mounts it that way in
 three places: draw's right sidebar (a folding Devtools panel), each demo page of the site (a
-Devtools switch in the demo's header), and forge (a Devtools global in the workshop toolbar, which
+Devtools switch in the demo's header, which splits the page with the demo narrowing), and forge (a Devtools global in the workshop toolbar, which
 puts the panel beside the story). `tabs={['dispatch']}` shows a subset; draw's Toolkit Builder
 uses it for its dispatch widget. Draw's Bundle Inspector (`#/dev/registry`) keeps only draw's static
 catalog (bundles, gestures, slots, ops, icons, traits); a canvas's live registry is the panel's.
