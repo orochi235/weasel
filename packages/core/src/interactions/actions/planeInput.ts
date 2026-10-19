@@ -193,7 +193,8 @@ function livePlane(
   }
   const snap = declared.includes('snap') ? bag.snap as SnapDep | undefined : undefined;
   if (snap) {
-    // A session runs in the plane, and carries the camera's targets into it.
+    // A session runs in the plane; a target the camera draws, a grid or a
+    // ruler guide, is carried into it.
     override('snap', { begin: (req: SnapBegin) => snap.begin({ ...req, plane: map }) } satisfies SnapDep);
   }
 

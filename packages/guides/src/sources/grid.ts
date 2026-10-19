@@ -22,7 +22,6 @@ export interface GridSnapSourceOptions {
 export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
   const pitch = resolveAxes(opts.spacing, opts.unitSystem);
   const o = opts.origin ?? { x: 0, y: 0 };
-  // The lattice is the camera's; on a parallax plane it lies at `scale * c + offset`.
   const lines = (v: number, axis: 'x' | 'y', plane: PlaneMap | null): [number, number] => {
     const s = plane ? plane.scale[axis] : 1;
     const near = roundToGridOn(v - o[axis] * s, axis, pitch[axis], plane) + o[axis] * s;

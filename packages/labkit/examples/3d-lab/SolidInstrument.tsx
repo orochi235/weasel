@@ -27,6 +27,7 @@ import {
   type NodeId,
   type Tool,
 } from '@weasel-js/core';
+import { useKitSettings } from '@weasel-js/react';
 import { f } from '../../src/config';
 import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
@@ -287,12 +288,14 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, viewportSource],
   );
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
+  const kitSettings = useKitSettings();
   const snap = useMemo(
     () => createSnap(world, {
       sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
       store: snapMarks,
+      kitSettings,
     }),
-    [world, snapMarks],
+    [world, snapMarks, kitSettings],
   );
 
   const camera3d = useMemo(

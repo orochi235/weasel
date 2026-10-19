@@ -6,6 +6,7 @@ import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import { createSession2d } from 'features/snap/session2d';
 import type { SnapCollect, SnapSource } from 'features/snap/types';
 import { ownGeometryAt, pathSnapSource, type PathSnapSourceOptions } from './pathSnapSource';
+import { createSceneSnapIndexer } from './sceneIndex';
 
 const FREE: SnapMods = { suspend: false, constrain: false };
 const ONE = { x: 1, y: 1 };
@@ -173,5 +174,23 @@ describe('ownGeometryAt', () => {
   it("is the subject's own nearest geometry point, from the shared index", () => {
     expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE)).toEqual({ x: 0, y: 0 });
     expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['zzz'], ONE)).toBeNull();
+  });
+
+  it('looks no farther from the press than the reach it is given', () => {
+    // The anchor at 0,0 is 3.6 away; the line itself passes 0.7 away.
+    expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE, 3)).toEqual({ x: expect.closeTo(2.5, 9), y: expect.closeTo(2.5, 9) });
+    expect(ownGeometryAt(cross, { x: 3, y: 2 }, ['a'], ONE, 0.5)).toBeNull();
+  });
+});
+
+describe('createSceneSnapIndexer', () => {
+  it("keeps a gesture's index with its own geometry while a query without any reads the scene's", () => {
+    const index = createSceneSnapIndexer(cross);
+    const also = { anchors: [{ x: 5, y: 5 }] };
+    const withAlso = index(also);
+    const bare = index();
+    expect(bare).not.toBe(withAlso);
+    expect(index(also)).toBe(withAlso);
+    expect(index()).toBe(bare);
   });
 });

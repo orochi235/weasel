@@ -9,6 +9,17 @@ export function snapSourcesFor<S extends Pick<SnapSource<unknown>, 'gestures'>>(
   return sources.filter((s) => (s.gestures ?? DEFAULT_GESTURES).includes(gesture));
 }
 
+/** Throws if two of `sources` share an id: one would silently replace the other. */
+export function assertSnapSourceIds(sources: readonly Pick<SnapSource<unknown>, 'id'>[]): void {
+  const seen = new Set<string>();
+  for (const { id } of sources) {
+    if (seen.has(id)) {
+      throw new Error(`[snap] two snap sources share the id '${id}'. Give one its own id, or drop one.`);
+    }
+    seen.add(id);
+  }
+}
+
 /** What a candidate draws when the result meets it. */
 export type SnapCandidateMark<P> = NonNullable<SourceCandidate<P>['mark']>;
 

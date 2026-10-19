@@ -27,7 +27,8 @@ describe('createSnapReadoutLayer', () => {
     const c = coords(cmds[0]);
     expect(Math.min(...c.filter((_, i) => i % 2 === 0))).toBe(45);
     expect(Math.max(...c.filter((_, i) => i % 2 === 1))).toBe(85);
-    expect(cmds[1]).toMatchObject({ kind: 'text', runs: [expect.objectContaining({ text: 'crossing' })] });
+    // The label sits above and right of the glyph, clear of it.
+    expect(cmds[1]).toMatchObject({ kind: 'text', x: 58, y: 62, runs: [expect.objectContaining({ text: 'crossing' })] });
   });
 
   it('draws a line as one bare segment between the screen ends', () => {

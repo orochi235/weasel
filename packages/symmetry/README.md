@@ -44,8 +44,9 @@ symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', 
 `symmetry.contribution` does three things on the canvas:
 
 - It draws the active group's guide: the mirror lines, and the handles that
-  move the center, turn the axis, and stretch a repeat. Shift holds the angle
-  to 15° steps.
+  move the center, turn the axis, and stretch a repeat. The axis snaps to
+  quarter turns and other nodes' angles, Shift holds it to 15° steps, and
+  Ctrl suspends snapping.
 - It answers core's `insertInto` dep, so every tool draws into the active
   group.
 - It answers core's `pathSymmetry` dep. When a path's anchors are dragged or

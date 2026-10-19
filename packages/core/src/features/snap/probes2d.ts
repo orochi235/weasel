@@ -28,40 +28,46 @@ export function subjectBox(ids: readonly string[], reads: ProbeReads): Bounds | 
   return unionBounds(boxes);
 }
 
-/** A resize's box and frame: the one it names, else the subjects' drawn box,
- *  axis-aligned. Null for another gesture, or with nothing to resize. */
-export function resizeSubjectOf(req: SnapBegin, reads: ProbeReads): ResizeSubject | null {
-  if (req.gesture !== 'resize' || !req.handle) return null;
-  if (req.box) return resizeSubject(req.box, req.handle);
+/** What a gesture drags, read once at press. */
+export interface Subject2d {
+  /** A move's subjects' union drawn box. */
+  box: Bounds | null;
+  /** A resize's box and frame: the one it names, else the subjects' drawn
+   *  box, axis-aligned. */
+  resize: ResizeSubject | null;
+}
+
+/** The subject of `req`, null where the gesture has none or nothing is left. */
+export function subjectOf(req: SnapBegin, reads: ProbeReads): Subject2d {
+  if (req.gesture === 'move') return { box: subjectBox(req.ids ?? [], reads), resize: null };
+  if (req.gesture !== 'resize' || !req.handle) return { box: null, resize: null };
+  if (req.box) return { box: null, resize: resizeSubject(req.box, req.handle) };
   const bounds = subjectBox(req.ids ?? [], reads);
-  return bounds ? resizeSubject({ bounds }, req.handle) : null;
+  return { box: null, resize: bounds ? resizeSubject({ bounds }, req.handle) : null };
 }
 
 /** The probes a gesture snaps, where they are at press. */
-export function buildProbes(req: SnapBegin, reads: ProbeReads): SnapProbeAt[] {
+export function buildProbes(req: SnapBegin, reads: ProbeReads, subject = subjectOf(req, reads)): SnapProbeAt[] {
   const ids = req.ids ?? [];
   switch (req.gesture) {
     case 'point':
       return [{ id: 'pointer', at: req.press, role: 'pointer' }];
-    case 'resize': {
-      const s = resizeSubjectOf(req, reads);
-      return s ? resizeProbes(s) : [{ id: 'pointer', at: req.press, role: 'pointer' }];
-    }
+    case 'resize':
+      return subject.resize ? resizeProbes(subject.resize) : [{ id: 'pointer', at: req.press, role: 'pointer' }];
     case 'move':
-      return moveProbes(req.press, ids, reads);
+      return moveProbes(req.press, ids, reads, subject.box);
     case 'rotate':
     case 'handle':
       return [];
   }
 }
 
-function moveProbes(press: Point, ids: readonly string[], reads: ProbeReads): SnapProbeAt[] {
+function moveProbes(press: Point, ids: readonly string[], reads: ProbeReads, box: Bounds | null): SnapProbeAt[] {
   const out: SnapProbeAt[] = [];
   for (const id of ids) {
     const pose = reads.pose(id);
     if (pose !== undefined) out.push({ id: `origin:${id}`, at: reads.origin(pose), role: 'origin' });
   }
-  const box = subjectBox(ids, reads);
   if (box) {
     out.push(
       { id: 'box.min', at: { x: box.x, y: box.y }, role: 'box' },

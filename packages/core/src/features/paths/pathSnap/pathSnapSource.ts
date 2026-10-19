@@ -55,19 +55,20 @@ export function pathSnapSource(opts: PathSnapSourceOptions = {}): SnapSource {
   };
 }
 
-/** The point of the nodes `ids`' own geometry nearest `press`, within the
- *  default reach, or null: where a move's `geometry` probe sits. Leaves no
- *  mark. */
+/** The point of the nodes `ids`' own geometry nearest `press`, within
+ *  `reachPx` screen px, or null: where a move's `geometry` probe sits. Leaves
+ *  no mark. */
 export function ownGeometryAt(
   scene: Pick<Scene<unknown, string, unknown>, 'nodes' | 'layers' | 'getVersion'>,
   press: Point,
   ids: readonly string[],
   scale: { x: number; y: number },
+  reachPx = DEFAULT_SNAP_PX,
 ): Point | null {
   const { ids: owners, index } = sceneSnapIndex(scene);
   const own = new Set(ids);
   const hit = findPathSnap(index, press, {
-    radius: DEFAULT_SNAP_PX,
+    radius: reachPx,
     scale,
     skip: (i) => {
       const id = owners[i];

@@ -27,7 +27,8 @@ import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
-import { createSnapReadoutLayer, type SnapReadoutStyle } from 'features/snap/readoutLayer';
+import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
+import type { SnapReadoutStyle } from 'features/snap/types';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
@@ -112,7 +113,13 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   );
 
   const [snapStore] = useState(() => createSnapOutcomeStore());
-  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore, args.snapReadoutStyle), [snapStore, args.snapReadoutStyle]);
+  // Keyed on the style's values, so an inline `readoutStyle` literal keeps the layer.
+  const { color, gapColor, lineWidth } = args.snapReadoutStyle ?? {};
+  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore, {
+    ...(color !== undefined ? { color } : {}),
+    ...(gapColor !== undefined ? { gapColor } : {}),
+    ...(lineWidth !== undefined ? { lineWidth } : {}),
+  }), [snapStore, color, gapColor, lineWidth]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
   const overlayAnchor = overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay';

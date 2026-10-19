@@ -4,6 +4,7 @@ import {
   type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
 } from '@weasel-js/core';
 import { add, intersectRayPlane, pointOnRay, type Vec3 } from '@weasel-js/geom/3d';
+import { createKitSettingsStore } from '@weasel-js/react';
 import { MAX_PITCH, createCamera } from '../camera';
 import { createPoseDescriptor, createSnap, screenBoxOf } from '../deps';
 import { createInsert, type Footprint } from '../insert';
@@ -129,6 +130,38 @@ describe('createSnap: a 3D move', () => {
     expect(behind.held).toBe(false);
     expect(behind.point.x).toBeCloseTo(move.press.x, 9);
     expect(behind.point.y).toBeCloseTo(move.press.y, 9);
+  });
+
+  /** A source offering the subject's center one target. */
+  const centerTo = (target: Vec3, id = 'probe', reachPx?: number): SnapSource<Vec3> => ({
+    id, roles: ['geometry'], ...(reachPx === undefined ? {} : { reachPx }),
+    *collect(q) {
+      for (const p of q.probes) if (p.id === 'center') yield { probe: p.id, locus: { at: target, dirs: [] } };
+    },
+  });
+
+  it('takes its reach from the kit setting targets.snapPx, which reachPx overrides', () => {
+    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
+    const vp = world.viewport();
+    const center = projectPoint({ x: 0, y: 0.5, z: 0 }, vp)!;
+    // 20px to the right of where the subject's center is drawn.
+    const target = cast(vp, { x: center.x + 20, y: center.y }, 0.5);
+    const move = moveOf(world, ids[0]!);
+    const held = (opts: { kitSettings?: ReturnType<typeof createKitSettingsStore>; reachPx?: number }) =>
+      createSnap(world, { sources: [centerTo(target)], ...opts })
+        .begin({ gesture: 'move', ids: [ids[0]!], press: move.press }).at(move.press, FREE).held;
+    const wide = createKitSettingsStore({ targets: { snapPx: 30 } });
+    expect(held({})).toBe(false);
+    expect(held({ kitSettings: wide })).toBe(true);
+    expect(held({ kitSettings: wide, reachPx: 8 })).toBe(false);
+  });
+
+  it('throws when two sources share an id', () => {
+    const { world } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
+    const near: Vec3 = { x: 0.1, y: 0.5, z: 0 };
+    const far: Vec3 = { x: 0.6, y: 0.5, z: 0 };
+    expect(() => createSnap(world, { sources: [centerTo(near, 'probe', Infinity), centerTo(far, 'probe', Infinity)] }))
+      .toThrow(/share the id 'probe'/);
   });
 
   it('holds a Shift move to the ground axes, and Ctrl suspends the targets', () => {

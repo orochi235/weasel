@@ -1,12 +1,9 @@
 /** The pen's handle drag: the modifiers it reads, and where it puts the handle. */
 import { roleReader, type InvocationCtx, type ModifierRoles } from '@weasel-js/routing';
-import { SNAP_ROLES, snapMods } from 'features/snap/roles';
+import { SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from 'features/snap/roles';
 import { inputSession } from 'features/snap/session2d';
 import type { SnapBegin } from 'interactions/actions/snapDep';
 import type { PenScratch } from './usePenTool';
-
-/** The step `snap.constrain` (Shift) holds a pen handle's direction to: 45 degrees. */
-export const PEN_HANDLE_STEP = Math.PI / 4;
 
 /** The modifiers the pen's handle drag reads on the press, every move, and
  *  the release: Alt breaks the new anchor's mirror, Shift holds the handle to
@@ -35,7 +32,7 @@ export interface PenHandlePull {
 export function pullHandle(s: PenScratch, ctx: InvocationCtx, linked: boolean): PenHandlePull {
   const at = s.current!.anchors[s.draggingHandleAt!];
   const anchor = { x: at.x, y: at.y };
-  const req: SnapBegin = { gesture: 'point', press: anchor, origin: anchor, constrain: { step: PEN_HANDLE_STEP } };
+  const req: SnapBegin = { gesture: 'point', press: anchor, origin: anchor, constrain: { step: SNAP_AXIS_STEP } };
   const session = ctx.deps.snap?.begin(req) ?? inputSession(req);
   return {
     to(c) {

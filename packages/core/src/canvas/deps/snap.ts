@@ -15,7 +15,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'features/snap/registry';
-import { snapSourcesFor } from 'features/snap/gather';
+import { assertSnapSourceIds, snapSourcesFor } from 'features/snap/gather';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import type { SnapReadoutDep } from 'features/snap/readoutDep';
@@ -56,12 +56,12 @@ const DEFAULT_SNAP_SOURCES: readonly SnapSource[] = [
   { ...pathSnapSource({ only: ['anchor'] }), gestures: ['point'] },
 ];
 
-/** `listed`, one source per id (the last one listed, where it stands),
- *  then each default whose id is neither listed nor in `omit`. */
+/** `listed`, which must not repeat an id, then each default whose id is
+ *  neither listed nor in `omit`. */
 function withDefaults(listed: readonly SnapSource[], omit: readonly string[] = []): SnapSource[] {
-  const last = new Map(listed.map((s, i) => [s.id, i]));
-  const taken = new Set([...last.keys(), ...omit]);
-  return [...listed.filter((s, i) => last.get(s.id) === i), ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
+  assertSnapSourceIds(listed);
+  const taken = new Set([...listed.map((s) => s.id), ...omit]);
+  return [...listed, ...DEFAULT_SNAP_SOURCES.filter((s) => !taken.has(s.id))];
 }
 
 export function useSnapDepSource(
@@ -81,14 +81,15 @@ export function useSnapDepSource(
       const sources = withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit);
       const wantsGeometry = snapSourcesFor(sources, req.gesture).some((src) => src.roles.includes('geometry'));
       const debug = s.debug?.() ?? undefined;
+      const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;
       return sceneSession2d({
         req,
         scene: s.scene,
         boxes: s.boxes(),
         sources,
-        ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }) } : {}),
+        ...(wantsGeometry ? { geometryAt: (press: Point, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }, reachPx) } : {}),
         view: () => viewRef.current,
-        reachPx: s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+        reachPx,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),
         ...(s.originProjection ? { originProjection: s.originProjection } : {}),
         ...(debug ? { debug } : {}),

@@ -93,6 +93,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { props, scene, selection, picking, chrome, overlay, canvas } = p;
   const { viewState } = p.camera;
   const { selectTool, enableKeybindings = true } = props;
+  const snapRegistry = useContext(SnapSourceRegistryContext);
   useEffect(() => {
     dlog('scene-canvas', 'mount');
     return () => dlog('scene-canvas', 'unmount');
@@ -106,7 +107,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,
     viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
-    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: useContext(SnapSourceRegistryContext), store: p.snapStore },
+    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
   });
 
   // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the

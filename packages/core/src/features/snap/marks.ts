@@ -5,6 +5,8 @@ type Point = { x: number; y: number };
 
 /** `marks` with repeats dropped, so a target several probes meet is drawn once. */
 export function distinct<P>(marks: readonly SnapMark<P>[]): SnapMark<P>[] {
+  // A string key keeps this linear: comparing every pair field by field more
+  // than doubled a crowded row's frame time (culling.test.ts, 2026-10-18).
   const seen = new Set<string>();
   return marks.filter((m) => {
     const key = JSON.stringify(m);

@@ -8,7 +8,7 @@ import type { OriginProjection } from 'interactions/gestures/shared/originProjec
 import { drawnBoxes, type DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
-import { buildProbes, resizeSubjectOf, subjectBox } from './probes2d';
+import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapGesture, SnapSource } from './types';
@@ -42,12 +42,13 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     ...(i.geometryAt ? { geometryAt: i.geometryAt } : {}),
     ...(i.originProjection ? { originProjection: i.originProjection } : {}),
   });
+  const subject = subjectOf(i.req, reads);
   return createSession2d({
     req: i.req,
     sources: i.sources,
-    probes: buildProbes(i.req, reads),
-    box: i.req.ids ? subjectBox(i.req.ids, reads) : null,
-    resize: resizeSubjectOf(i.req, reads),
+    probes: buildProbes(i.req, reads, subject),
+    box: subject.box,
+    resize: subject.resize,
     drawnBox: (id) => {
       const pose = reads.pose(id);
       return pose === undefined ? undefined : reads.drawnBox(id, pose);

@@ -15,7 +15,8 @@ import type {
   SnapOutcomeStore,
   SnapSource,
 } from '@weasel-js/core';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore } from '@weasel-js/core';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core';
+import type { KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
   add,
@@ -140,11 +141,15 @@ export function createAreaSelect<TData, TLayer extends string>(
 
 /** Options for `createSnap`. */
 export interface Snap3dOptions {
-  /** What a gesture snaps to, in order: earlier wins a full tie. Default none,
-   *  which leaves only the gesture's own constraint. */
+  /** What a gesture snaps to, in order: earlier wins a full tie. Two sharing
+   *  an id throw. Default none, which leaves only the gesture's own constraint. */
   sources?: readonly SnapSource<Vec3>[];
-  /** The reach of a source that sets none, in screen px. Default 8. */
+  /** The reach of a source that sets none, in screen px. Overrides the kit
+   *  setting `targets.snapPx`. */
   reachPx?: number;
+  /** Where `targets.snapPx` is read, when each gesture begins. Absent, and
+   *  with no `reachPx`, reach is `DEFAULT_SNAP_PX`. */
+  kitSettings?: KitSettingsStore;
   /** Where the marks of the snap in flight are written, for a host to draw
    *  with `projectSnapMarks`. */
   store?: SnapOutcomeStore<Vec3>;
@@ -161,9 +166,12 @@ export function createSnap<TData, TLayer extends string>(
 ): SnapDep {
   const store = opts.store ?? createSnapOutcomeStore<Vec3>();
   const sources = opts.sources ?? [];
-  const reachPx = opts.reachPx ?? DEFAULT_SNAP_PX;
+  assertSnapSourceIds(sources);
   return {
-    begin: (req) => createSession3d({ req, world, sources, reachPx, store }),
+    begin: (req) => createSession3d({
+      req, world, sources, store,
+      reachPx: opts.reachPx ?? opts.kitSettings?.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+    }),
   };
 }
 
