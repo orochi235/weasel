@@ -76,6 +76,7 @@ export {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
+export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';

@@ -11,7 +11,7 @@ const run = (group: string): PrefGroup => pref.group('', { actions: pref.actions
 
 const LEAD = { lead: 'label' } as const;
 
-const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors') }, LEAD);
+const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors'), effects: run('pathEffects') }, LEAD);
 
 const PATHFINDER = pref.group('Pathfinder', { pathfinder: run('pathfinder') }, LEAD);
 

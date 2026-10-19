@@ -355,12 +355,9 @@ Priority tags:
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
-  optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
-  nothing adds, swaps, or removes the spine of an existing blend.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
-  `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
-  bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
+  `setSpiroKind`, `releaseSpiro`, `setBlendSpine`, `releaseBlendSpine` and draw's own
+  `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
