@@ -22,4 +22,4 @@ export { serialize } from '../devtools/serialize';
 export type { SerializeLimits, SerializedValue } from '../devtools/serialize';
 export { createDevtoolsRoot } from '../devtools/root';
 export type { DevtoolsRoot, DevtoolsRootSource } from '../devtools/root';
-export type { DevtoolsSchedule } from '../devtools/session';
+export type { DevtoolsSchedule } from '../devtools/notices';

@@ -26,9 +26,10 @@ export function withOverride<D extends DebugConfig>(
 }
 
 /** A canvas's `debug` prop with the override a connected panel holds. */
-export function useDevtoolsOverride<D extends DebugConfig>(debug: D | false | undefined) {
+export function useDevtoolsOverride<T extends DebugConfig | false | undefined>(debug: T) {
   const [override, setOverride] = useState<DevtoolsOverride | null>(null);
-  const effective = useMemo(() => withOverride(debug, override), [debug, override]);
+  // An override only adds feature flags, so the canvas's own config type still describes the result.
+  const effective = useMemo(() => withOverride(debug, override) as T, [debug, override]);
   return { debug: effective, setOverride };
 }
 

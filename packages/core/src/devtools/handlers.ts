@@ -1,9 +1,10 @@
-/** The answer to each devtools read, for one root. Steering requests live in the session, which owns the override. */
+/** The answer to each devtools request, for one root. The session owns the override a steering request changes. */
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { DebugConfig } from '../debug/types';
 import type { DevtoolsRoot } from './root';
 import type {
-  DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRootState, DevtoolsTraceSlice,
+  DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRequest, DevtoolsResult,
+  DevtoolsRootState, DevtoolsTraceSlice,
 } from './protocol';
 import { serialize } from './serialize';
 
@@ -80,17 +81,48 @@ export function rootState(root: DevtoolsRoot): DevtoolsRootState {
   };
 }
 
+/** Trace records are plain data by contract, and nest deeper than a node's data is shown. */
+const RECORD = { depth: 12 };
+
 export function traceSlice(root: DevtoolsRoot, cursor: number, coordCursor: number | undefined): DevtoolsTraceSlice {
   const { trace, coords } = root.source;
   const slice = trace.since(cursor);
   const out: DevtoolsTraceSlice = {
-    entries: slice.entries.map((e) => serialize(e)),
+    entries: slice.entries.map((e) => serialize(e, RECORD)),
     cursor: slice.cursor,
-    live: serialize(trace.live()),
+    live: serialize(trace.live(), RECORD),
   };
   if (coordCursor !== undefined) {
     const c = coords.since(coordCursor);
-    out.coords = { entries: c.entries.map((e) => serialize(e)), cursor: c.cursor };
+    out.coords = { entries: c.entries.map((e) => serialize(e, RECORD)), cursor: c.cursor };
   }
   return out;
+}
+
+/** Answer `req` about `root`. `steer` lays a change over the panel's override. Throws on a bad request. */
+export function answer(
+  root: DevtoolsRoot,
+  req: DevtoolsRequest,
+  steer: (change: { overlays?: DevtoolsOverlays; highlight?: readonly string[] }) => void,
+): DevtoolsResult {
+  switch (req.type) {
+    case 'get-children': return childrenOf(root, req.nodeId);
+    case 'get-node': return nodeDetail(root, req.nodeId);
+    case 'get-state': return rootState(root);
+    case 'get-trace': return traceSlice(root, req.cursor, req.coordCursor);
+    case 'get-frame': return serialize(root.source.frame());
+    case 'select':
+      root.source.select(req.ids);
+      return null;
+    case 'set-tool':
+      if (req.toolId !== null && !root.source.tools().includes(req.toolId)) throw new Error(`no tool "${req.toolId}"`);
+      root.source.setTool(req.toolId);
+      return null;
+    case 'highlight':
+      steer({ highlight: [...req.ids] });
+      return null;
+    case 'set-overlays':
+      steer({ overlays: req.overlays });
+      return null;
+  }
 }

@@ -6,7 +6,8 @@ import { createEmitter } from '@weasel-js/registry';
 import { VERSION } from '../version';
 import { DEVTOOLS_PROTOCOL, type DevtoolsRootInfo, type PanelMessage } from './protocol';
 import type { DevtoolsRoot } from './root';
-import { openSession, type DevtoolsSchedule, type SessionHost } from './session';
+import type { DevtoolsSchedule } from './notices';
+import { openSession, type SessionHost } from './session';
 import { createWindowPageTransport, isDevtoolsEnvelope, type PageTransport } from './transport';
 
 export interface WeaselDevtoolsHook {

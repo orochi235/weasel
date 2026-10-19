@@ -1,21 +1,17 @@
 /**
  * One panel's connection to the page: the handshake, every request, the
- * coalesced change notices, and the overrides the panel holds, which go when
- * it does.
+ * change notices, and the overrides the panel holds, which go when it does.
  */
 import { VERSION } from '../version';
-import { childrenOf, nodeDetail, rootState, traceSlice } from './handlers';
+import { answer } from './handlers';
+import { createNotices, type DevtoolsSchedule } from './notices';
 import {
-  DEVTOOLS_PROTOCOL,
-  type DevtoolsArea, type DevtoolsOverlays, type DevtoolsRequest, type DevtoolsResult,
-  type DevtoolsRootInfo, type PageMessage, type PanelMessage,
+  DEVTOOLS_PROTOCOL, type DevtoolsOverlays, type DevtoolsResult, type PageMessage, type PanelMessage,
 } from './protocol';
 import type { DevtoolsRoot } from './root';
-import { serialize } from './serialize';
 import type { PageTransport } from './transport';
 
-/** Run `flush` once, soon. The hook's default waits for the next animation frame. */
-export type DevtoolsSchedule = (flush: () => void) => void;
+export type { DevtoolsSchedule };
 
 /** What a session needs from the hook. */
 export interface SessionHost {
@@ -31,7 +27,8 @@ export interface DevtoolsSession {
   close(): void;
 }
 
-interface Override {
+/** What one panel lays over one canvas. */
+export interface Override {
   overlays: DevtoolsOverlays;
   highlight: readonly string[];
 }
@@ -43,62 +40,14 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
 
   let greeted = false;
   let closed = false;
+  const notices = createNotices(host.root, host.schedule, (m) => { if (!closed) send(m); });
   const overrides = new Map<string, Override>();
-  /** Per root: the release of its trace watches and change subscription. */
-  const following = new Map<string, () => void>();
-  const pending = new Map<string, Set<DevtoolsArea>>();
-  let scheduled = false;
 
-  const flush = (): void => {
-    scheduled = false;
-    if (closed) return;
-    for (const [rootId, areas] of pending) {
-      const root = host.root(rootId);
-      if (!root) continue;
-      const versions: Partial<Record<DevtoolsArea, number>> = {};
-      for (const area of areas) versions[area] = root.version(area);
-      send({ type: 'changed', protocol: DEVTOOLS_PROTOCOL, rootId, areas: versions });
-    }
-    pending.clear();
-  };
-
-  const follow = (root: DevtoolsRoot): void => {
-    if (following.has(root.id)) return;
-    const releaseTrace = root.source.trace.watch();
-    const releaseCoords = root.source.coords.watch();
-    const off = root.subscribe((area) => {
-      let areas = pending.get(root.id);
-      if (!areas) pending.set(root.id, (areas = new Set()));
-      areas.add(area);
-      if (!scheduled) {
-        scheduled = true;
-        host.schedule(flush);
-      }
-    });
-    following.set(root.id, () => { releaseTrace(); releaseCoords(); off(); });
-  };
-
-  const unfollow = (rootId: string): void => {
-    following.get(rootId)?.();
-    following.delete(rootId);
-    pending.delete(rootId);
+  const dropOverride = (rootId: string): void => {
     if (overrides.delete(rootId)) host.root(rootId)?.source.setOverride(null);
   };
 
-  const infoOf = (root: DevtoolsRoot): DevtoolsRootInfo => root.info();
-
-  const offRoots = host.onRoots((event) => {
-    if (!greeted) return;
-    if ('added' in event) {
-      follow(event.added);
-      send({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: infoOf(event.added) });
-    } else {
-      unfollow(event.removed);
-      send({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId: event.removed });
-    }
-  });
-
-  const steer = (root: DevtoolsRoot, change: Partial<Override>): null => {
+  const steer = (root: DevtoolsRoot, change: Partial<Override>): void => {
     const prev = overrides.get(root.id) ?? { overlays: {}, highlight: [] };
     const next: Override = {
       overlays: change.overlays ? { ...prev.overlays, ...change.overlays } : prev.overlays,
@@ -106,37 +55,32 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
     };
     overrides.set(root.id, next);
     root.source.setOverride(next);
-    return null;
   };
 
-  const answer = (root: DevtoolsRoot, req: DevtoolsRequest): DevtoolsResult => {
-    switch (req.type) {
-      case 'get-children': return childrenOf(root, req.nodeId);
-      case 'get-node': return nodeDetail(root, req.nodeId);
-      case 'get-state': return rootState(root);
-      case 'get-trace': return traceSlice(root, req.cursor, req.coordCursor);
-      case 'get-frame': return serialize(root.source.frame());
-      case 'select':
-        root.source.select(req.ids);
-        return null;
-      case 'set-tool':
-        if (req.toolId !== null && !root.source.tools().includes(req.toolId)) {
-          throw new Error(`no tool "${req.toolId}"`);
-        }
-        root.source.setTool(req.toolId);
-        return null;
-      case 'highlight': return steer(root, { highlight: [...req.ids] });
-      case 'set-overlays': return steer(root, { overlays: req.overlays });
+  const offRoots = host.onRoots((event) => {
+    if (!greeted) return;
+    if ('added' in event) {
+      notices.follow(event.added);
+      send({ type: 'root-added', protocol: DEVTOOLS_PROTOCOL, root: event.added.info() });
+    } else {
+      notices.unfollow(event.removed);
+      dropOverride(event.removed);
+      send({ type: 'root-removed', protocol: DEVTOOLS_PROTOCOL, rootId: event.removed });
     }
-  };
+  });
 
   const close = (): void => {
     if (closed) return;
     closed = true;
     offRoots();
-    for (const rootId of [...following.keys()]) unfollow(rootId);
-    for (const rootId of [...overrides.keys()]) host.root(rootId)?.source.setOverride(null);
-    overrides.clear();
+    for (const rootId of notices.ids()) notices.unfollow(rootId);
+    for (const rootId of [...overrides.keys()]) dropOverride(rootId);
+  };
+
+  const greet = (): void => {
+    greeted = true;
+    for (const root of host.roots()) notices.follow(root);
+    send({ type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: VERSION, roots: host.roots().map((r) => r.info()) });
   };
 
   return {
@@ -147,33 +91,16 @@ export function openSession(host: SessionHost, transport: PageTransport): Devtoo
         fail(requestId, `protocol mismatch: the page speaks ${DEVTOOLS_PROTOCOL}, the panel ${String(message.protocol)}`);
         return;
       }
-      if (message.type === 'yo') {
-        greeted = true;
-        for (const root of host.roots()) follow(root);
-        send({
-          type: 'sup', protocol: DEVTOOLS_PROTOCOL, kitVersion: VERSION, roots: host.roots().map(infoOf),
-        });
-        return;
-      }
-      if (message.type === 'bye') {
-        close();
-        return;
-      }
-      if (!greeted) {
-        fail(requestId, 'send yo before any request');
-        return;
-      }
+      if (message.type === 'yo') return greet();
+      if (message.type === 'bye') return close();
+      if (!greeted) return fail(requestId, 'send yo before any request');
       const root = host.root(message.rootId);
-      if (!root) {
-        fail(requestId, `no root "${message.rootId}"`);
-        return;
-      }
+      if (!root) return fail(requestId, `no root "${message.rootId}"`);
       let result: DevtoolsResult;
       try {
-        result = answer(root, message);
+        result = answer(root, message, (change) => steer(root, change));
       } catch (err) {
-        fail(requestId, (err as Error).message);
-        return;
+        return fail(requestId, (err as Error).message);
       }
       send({ type: 'result', protocol: DEVTOOLS_PROTOCOL, requestId: message.requestId, result });
     },

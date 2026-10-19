@@ -22,7 +22,7 @@ describe('the highlight overlay feature', () => {
     sink.recordBounds('a', BOX);
     sink.recordBounds('b', BOX);
     const highlights = buildDebugOverlayCommands(sink.snapshot(), config, VIEW, DIMS)
-      .filter((c): c is PathDrawCommand => c.kind === 'path' && c.stroke?.paint.kind === 'solid'
+      .filter((c): c is PathDrawCommand => c.kind === 'path' && c.stroke?.paint?.kind === 'solid'
         && c.stroke.paint.color === DEFAULT_DEBUG_THEME.highlight);
     expect(highlights).toHaveLength(1);
     expect(highlights[0]!.path).toMatchObject({ width: 20, height: 20 });

@@ -53,8 +53,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   const { selectTool: selectToolOpts, selectable = true, viewport, modes } = props;
-  const devtools = useDevtoolsOverride(props.debug);
-  const debug = devtools.debug as typeof props.debug;
+  const devtools = useDevtoolsOverride(props.debug), { debug } = devtools;
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
   const scene = useBakedScene(props.scene);

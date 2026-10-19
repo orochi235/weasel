@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
-import type { Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from '../devtools/protocol';
 import { createInPageTransports } from '../devtools/transport';
@@ -26,7 +26,7 @@ function mount() {
   function Harness() {
     const s = useScene<D, L, P>({
       systemLayers: [{ id: 'main' }],
-      initial: [{ id: 'a', kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
+      initial: [{ id: 'a' as NodeId, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { color: 'red' } }],
     });
     scene = s;
     return <SceneCanvas features={['draw']} scene={s} width={200} height={200} aria-label="board" />;

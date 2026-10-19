@@ -39,9 +39,6 @@
   "packages/core/src/core/scene/types.ts": {
     "lines": 559
   },
-  "packages/core/src/debug/createDebugOverlayLayer.ts": {
-    "lines": 440
-  },
   "packages/core/src/features/paths/pathLayer.ts": {
     "longestFunction": 121
   },
