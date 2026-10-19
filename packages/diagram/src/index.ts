@@ -52,6 +52,23 @@ export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool
 export { createDiagramContribution, diagramPorts } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
+  EDGE_END_AFFORDANCE_KIND,
+  EDGE_END_LAYER_ID,
+  createEdgeEndAffordance,
+  edgeEndLayer,
+  edgeEndScratchOf,
+} from './edgeEndLayer';
+export type { EdgeEndAffordanceOptions, EdgeEndScratch } from './edgeEndLayer';
+export {
+  GRAB_EDGE_END_ACTION_ID,
+  RECONNECT_ACTION_ID,
+  commitReconnectToScene,
+  createReconnectAction,
+  diagramEdgeEnds,
+  reconnectBinding,
+} from './reconnect';
+export type { EndChange, ReconnectOptions } from './reconnect';
+export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
   ROUTERS,

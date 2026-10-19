@@ -160,11 +160,15 @@ export function grabPortAction(id: string = GRAB_PORT_ACTION_ID): Action {
   };
 }
 
-/** The two bindings that keep a port's claim from dropping the press. */
-export function grabPortBindings(actionId: string = GRAB_PORT_ACTION_ID): GestureBinding[] {
+/** The two bindings that keep a port's claim from dropping the press. `kind`
+ *  names another affordance that claims the press protocol the same way. */
+export function grabPortBindings(
+  actionId: string = GRAB_PORT_ACTION_ID,
+  kind: string = PORT_AFFORDANCE_KIND,
+): GestureBinding[] {
   return [
-    { spec: { kind: 'pointerDown', target: `affordance:${PORT_AFFORDANCE_KIND}` }, actionId },
-    { spec: { kind: 'click', target: `affordance:${PORT_AFFORDANCE_KIND}` }, actionId },
+    { spec: { kind: 'pointerDown', target: `affordance:${kind}` }, actionId },
+    { spec: { kind: 'click', target: `affordance:${kind}` }, actionId },
   ];
 }
 
@@ -197,7 +201,7 @@ export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
 }
 
 /** A body end names no port, so the edge resolves the facing one. */
-function edgeEndOf(end: ConnectEnd): EdgeEnd {
+export function edgeEndOf(end: ConnectEnd): EdgeEnd {
   return isBodyEnd(end) ? {} : { port: end.id };
 }
 
@@ -224,18 +228,6 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     if (pressed !== null) return pressed.port;
     if (opts.startFrom !== 'body') return null;
     return bodyAt(opts.participants, ctx.world, { ...opts, view: ctx.deps.view })?.end ?? null;
-  }
-
-  /** The run the edge would take if released at `at`. A free end is a port
-   *  with no facing, so a router aims straight at it. */
-  function previewAt(scratch: ConnectScratch, at: Vec2): readonly Vec2[] {
-    const target = targets.target(scratch.from, at, scratch.deps.view);
-    const to = target === null
-      ? { id: '', nodeId: '', point: at, normal: null }
-      : targets.portFor(target, targets.aimOf(scratch.from, at));
-    const from = targets.portFor(scratch.from, targets.aimOf(target, at));
-    if (from === null || to === null) return [];
-    return route({ from, to, waypoints: [] });
   }
 
   return {
@@ -265,7 +257,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           },
           overlay(): OngoingOverlay | null {
             if (!scratch.open) return null;
-            const points = previewAt(scratch, scratch.current);
+            const points = targets.preview(route, scratch.from, scratch.current, scratch.deps.view);
             if (points.length < 2) return null;
             // How a connector reads belongs to whatever surface paints the role.
             return { kind: 'polyline', points, role: 'connector' };

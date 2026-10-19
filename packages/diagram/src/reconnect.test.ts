@@ -146,7 +146,7 @@ describe('the edge-end affordance', () => {
       { kind: 'point', x: 100, y: 20 },
       { kind: 'point', x: 300, y: 20 },
     ]);
-    expect(regions.map((r) => r.bind!({} as never).initialScratch)).toEqual([
+    expect(regions.map((r) => r.bind!().initialScratch)).toEqual([
       { targetId: 'ab', edgeId: 'ab', end: 'from' },
       { targetId: 'ab', edgeId: 'ab', end: 'to' },
     ]);

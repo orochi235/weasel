@@ -13,7 +13,7 @@ import {
   type Vec2,
 } from '@weasel-js/core/math';
 import { pathContainsPoint } from '@weasel-js/geom';
-import { resolveEnd } from './edge';
+import { resolveEnd, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { diagramGroupOf } from './group';
 import { diagramLabelOf } from './labelTrait';
@@ -161,5 +161,23 @@ export function createTargets<TPose>(opts: TargetOptions<TPose>) {
     return centerOf(end.nodeId) ?? end.point;
   }
 
-  return { target, portFor, aimOf };
+  /**
+   * The run an edge would take with `fixed` at one end and the other released
+   * at `at`: snapped to the target there, else to the bare point, which as a
+   * port with no facing a router aims straight at. `moving` says which end of
+   * the edge the pointer carries, so the run is routed in the edge's direction.
+   */
+  function preview(route: Router, fixed: ConnectEnd, at: Vec2, view: ConnectView, moving: 'from' | 'to' = 'to'): readonly Vec2[] {
+    const landed = target(fixed, at, view);
+    const free = landed === null
+      ? { id: '', nodeId: '', point: at, normal: null }
+      : portFor(landed, aimOf(fixed, at));
+    const anchored = portFor(fixed, aimOf(landed, at));
+    if (free === null || anchored === null) return [];
+    return moving === 'to'
+      ? route({ from: anchored, to: free, waypoints: [] })
+      : route({ from: free, to: anchored, waypoints: [] });
+  }
+
+  return { target, portFor, aimOf, preview };
 }
