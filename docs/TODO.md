@@ -140,6 +140,16 @@ Priority tags:
 
 ## Viewport
 
+- **(P2) A labkit consumer can ship a 3D lab with no camera controls, and nothing says so.** Orbit,
+  dolly, pan, and home come only from declaring the instrument's `orbit` capability
+  (`OrbitCapability`, `packages/labkit/src/instrument/types.ts`), which mounts `Orbit` on the
+  trial's camera. An instrument that draws its 3D scene any other way — three.js or raw WebGL
+  through its `render` DOM or a surface (`src/surface/AGENTS.md`) — gets a trial whose camera
+  cannot move, with no warning and nothing in the chrome to show it is missing. Needs: the 3D path
+  of least resistance to bring the orbit camera with it, so a lab has to opt out of camera
+  controls rather than know to opt in; and a dev-time signal when a trial draws a 3D view
+  without one.
+
 - **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
   aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
   but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
