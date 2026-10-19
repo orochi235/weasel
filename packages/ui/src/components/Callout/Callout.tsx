@@ -108,7 +108,7 @@ export function Callout(props: CalloutProps) {
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
   const stanced = useStance({ stance, tone });
-  const { anchor: portalAnchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor: portalAnchor, provide, ready } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // An Escape that closes the callout is a dismissal like the close button is.
   // The key alone is not the signal: RAC's overlay stack leaves the callout up
@@ -185,7 +185,7 @@ export function Callout(props: CalloutProps) {
           />,
           document.body,
         )}
-      {ready && (
+      {ready && provide(
         <OverlayTriggerStateContext.Provider value={watched}>
           <RACPopover
             {...rest}
@@ -206,7 +206,6 @@ export function Callout(props: CalloutProps) {
             className={[s.popover, className].filter(Boolean).join(' ')}
             {...stanced}
             data-weasel-overlay=""
-            {...portalProps}
           >
             <OverlayArrow className={s.arrow}>
               <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">

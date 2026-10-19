@@ -10,7 +10,6 @@ html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 body {
   background: var(--wzl-surface);
   color: var(--wzl-fg);
-  font-family: system-ui, -apple-system, sans-serif;
 }
 
 a { color: var(--wzl-accent-fg); text-decoration: none; }

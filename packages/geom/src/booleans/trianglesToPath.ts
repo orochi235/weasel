@@ -4,25 +4,27 @@
  * ribbon into the region the stroke covers.
  */
 import polygonClipping from 'polygon-clipping';
-import { multiPolygonToPath, type MultiPolygon } from './adapter';
+import { multiPolygonToPath } from './adapter';
+import { junctionRings } from './meshJunctions';
+import { meshOutline } from './meshOutline';
 import type { PolygonPath } from '../path';
 
 /**
  * Union the triangles of an indexed mesh (`vertices` as x, y pairs; `indices`
  * three per triangle) into canonical, non-overlapping rings. Overlaps count
- * once, and triangles with no area are skipped. The result holds only M/L/Z.
+ * once, triangles with no area are skipped, and a vertex lying on another
+ * triangle's edge joins it there rather than leaving a crack. The result
+ * holds only M/L/Z.
  */
 export function trianglesToPath(vertices: ArrayLike<number>, indices: ArrayLike<number>): PolygonPath {
-  const triangles: MultiPolygon[] = [];
+  const kept: number[] = [];
   for (let i = 0; i + 2 < indices.length; i += 3) {
     const a = indices[i] * 2, b = indices[i + 1] * 2, c = indices[i + 2] * 2;
     const ax = vertices[a], ay = vertices[a + 1];
-    const bx = vertices[b], by = vertices[b + 1];
-    const cx = vertices[c], cy = vertices[c + 1];
-    if ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay) === 0) continue;
-    triangles.push([[[[ax, ay], [bx, by], [cx, cy], [ax, ay]]]]);
+    if ((vertices[b] - ax) * (vertices[c + 1] - ay) - (vertices[c] - ax) * (vertices[b + 1] - ay) === 0) continue;
+    kept.push(indices[i], indices[i + 1], indices[i + 2]);
   }
-  if (triangles.length === 0) return multiPolygonToPath([]);
-  const [head, ...rest] = triangles;
-  return multiPolygonToPath(polygonClipping.union(head, ...rest));
+  if (kept.length === 0) return multiPolygonToPath([]);
+  const outline = meshOutline(junctionRings(vertices, kept));
+  return multiPolygonToPath(outline ? polygonClipping.union([[outline]]) : []);
 }

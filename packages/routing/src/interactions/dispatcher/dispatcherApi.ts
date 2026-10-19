@@ -46,8 +46,20 @@ export interface DispatcherContext {
    * reads as the root.
    */
   viewId?: string | null;
+  /**
+   * For a key from the page: whether this surface holds the keys, and whether
+   * the pointer is over it. Bindings with `opts.over` are live only while it
+   * is, the rest only while it holds them. Absent, every binding is live.
+   */
+  keyReach?: KeyReach;
   /** Where the dispatcher records how it resolved each input. Absent records nothing. */
   trace?: DispatchTrace;
+}
+
+/** Which of a surface's key bindings a key from the page reaches. */
+export interface KeyReach {
+  held: boolean;
+  over: boolean;
 }
 
 /**

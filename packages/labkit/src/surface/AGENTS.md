@@ -38,6 +38,12 @@ const surface = useTiledSurface({
 });
 ```
 
+A tile drawing a 3D scene inside a trial takes its camera from `useOrbitView()`
+and hands the same element to its `viewportRef`, so the trial's orbit gestures
+land on the tile; `examples/3d-lab` composes the two refs. Leave the
+instrument's `orbit` out and the camera cannot move; labkit warns in
+development (`src/canvas/AGENTS.md`, "The orbit").
+
 `onFrame` carries **every** tile's rect, not only the dirty ones — a scissored
 draw has to know where it is drawing relative to a surface that may have resized
 under it. It runs before this frame's painters, and what it invalidates paints

@@ -27,6 +27,8 @@ export interface SceneMutators<TData, TLayer extends string, TPose> {
   setChildOrder(parentId: string | null, ids: string[]): void;
   setData(id: string, data: TData): void;
   setLayer(id: string, layer: TLayer): void;
+  /** What a `setDependsOn` op writes through. */
+  setDependsOn(id: string, dependsOn: readonly string[] | 'children' | undefined): void;
   setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
   /** What a `setHidden` op writes through. */
   setHidden(id: string, hidden: boolean): void;
@@ -60,6 +62,8 @@ export function sceneMutators<TData, TLayer extends string, TPose>(
     },
     setData: (id, data) => scene.update(asNodeId(id), { data }),
     setLayer: (id, layer) => scene.setLayer(asNodeId(id), layer),
+    setDependsOn: (id, dependsOn) =>
+      scene.setDependsOn(asNodeId(id), Array.isArray(dependsOn) ? dependsOn.map(asNodeId) : dependsOn as 'children' | undefined),
     setLayout: (id, layout) => scene.setLayout(asNodeId(id), layout),
     setHidden: (id, hidden) => scene.setHidden(asNodeId(id), hidden),
     setLocked: (id, locked) => scene.setLocked(asNodeId(id), locked),

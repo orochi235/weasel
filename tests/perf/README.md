@@ -431,7 +431,8 @@ the entry chunk's hash against the build you mean before believing a grep over i
 
 `bench/baseline.json` and `bench/BASELINE.md` are one run of the whole suite on
 an Apple M1 Max (10 threads, Node v26.8.1), measured 2026-09-29 on an otherwise
-idle fleet node. They are committed so a change can be measured against
+idle fleet node (studio), except the text-layout rows, re-measured there on
+2026-10-19; `BASELINE.md`'s header says why they compare only with each other. They are committed so a change can be measured against
 something and a reviewer can see numbers in a diff. They are one machine's
 numbers, not a threshold, and nothing fails when they are exceeded.
 `baseline.json` is vitest's JSON reporter output, not `weasel-perf-result/1`;

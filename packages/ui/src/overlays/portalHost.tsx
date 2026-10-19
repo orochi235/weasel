@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, type ReactElement, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useState, type ReactElement, type ReactNode } from 'react';
+import { UNSAFE_PortalProvider } from 'react-aria';
 import { nearestPortalHost } from '@weasel-js/gestures';
 
 export { nearestPortalHost };
@@ -45,47 +46,47 @@ export interface OverlayPortalProps {
   portalContainer?: Element | null;
 }
 
-/** React Aria props minus the portal key a weasel overlay owns. */
+/** React Aria props minus the portal key a weasel overlay owns: set, it
+ *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
-
-/** Spread onto the React Aria overlay. The unstable key is spelled here and
- *  nowhere else in the package, so an upstream rename lands in one file. */
-export interface OverlayPortalTarget {
-  UNSTABLE_portalContainer: Element | undefined;
-}
 
 /**
  * Resolves where an overlay should portal, and the anchor that answers it.
  *
  * Render `anchor` at the component's own position in the tree — outside the
- * portal — and spread `portalProps` onto the React Aria overlay. Render the
- * overlay only once `ready` is true: the first render has no anchor to measure
- * "nearest themed ancestor" from, and an overlay rendered then would portal
- * into the body and move on the next render, after React Aria has made
- * everything outside it `inert` — itself included. `ready` turns true on that
- * next render, still before paint.
- *
- * The result goes to React Aria as `UNSTABLE_portalContainer`. Its documented
- * replacement, `UNSAFE_PortalProvider`, is not re-exported by
- * react-aria-components 1.18, and importing it from `react-aria` risks a second
- * copy of that package whose context the overlays never read — an unthemed
- * overlay, not an error.
+ * portal — and pass the React Aria overlay through `provide`, which puts it
+ * under React Aria's portal provider. Render the overlay only once `ready` is
+ * true: the first render has no anchor to measure "nearest themed ancestor"
+ * from, and an overlay rendered then would portal into the body and move on
+ * the next render, after React Aria has made everything outside it `inert` —
+ * itself included. `ready` turns true on that next render, still before paint.
  */
 export function useOverlayPortal(explicit?: Element | null): {
   anchor: ReactElement;
-  portalProps: OverlayPortalTarget;
+  /** Wraps the React Aria overlay so it portals into `container`. */
+  provide: (overlay: ReactNode) => ReactNode;
   /** The resolved portal container, for code that portals by itself rather than through React Aria. */
   container: Element | undefined;
   ready: boolean;
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const assigned = useAssignedPortalContainer(explicit);
-  const resolved = assigned !== undefined ? assigned : nearestPortalHost(anchorEl);
+  const container = (assigned !== undefined ? assigned : nearestPortalHost(anchorEl)) ?? undefined;
+  const getContainer = useCallback(() => (container as HTMLElement | undefined) ?? null, [container]);
+  // `null` clears an enclosing provider, so an explicit body beats an outer overlay's container.
+  const providerTarget = container ? getContainer : assigned === null ? null : undefined;
+  const provide = useCallback(
+    (overlay: ReactNode) =>
+      providerTarget === undefined ? overlay : (
+        <UNSAFE_PortalProvider getContainer={providerTarget}>{overlay}</UNSAFE_PortalProvider>
+      ),
+    [providerTarget],
+  );
 
   return {
     anchor: <span hidden ref={setAnchorEl} />,
-    portalProps: { UNSTABLE_portalContainer: resolved ?? undefined },
-    container: resolved ?? undefined,
+    provide,
+    container,
     ready: assigned !== undefined || anchorEl !== null,
   };
 }

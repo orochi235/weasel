@@ -1,5 +1,5 @@
 import type { MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from '../Tooltip/Focusable';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
 

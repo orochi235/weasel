@@ -41,7 +41,7 @@ describe('SURFACE_ASSETS', () => {
     };
     expect(groups('arrange')).toEqual(['reorder', 'align', 'distribute', 'flip']);
     expect(groups('pathfinder')).toEqual(['pathfinder']);
-    expect(groups('path')).toEqual(['path', 'anchors']);
+    expect(groups('path')).toEqual(['path', 'anchors', 'pathEffects']);
   });
 
   it('lets a schema asset go on any surface and keeps a code-drawn panel a panel', () => {

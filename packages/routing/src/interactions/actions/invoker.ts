@@ -210,6 +210,12 @@ export interface BindingOpts {
    */
   yields?: boolean;
   /**
+   * For a key binding: live while the pointer is over the surface, whichever
+   * canvas holds the keys, and only then. For a key that means "here" — a
+   * magnifier's peek — on a page with more than one surface that hears it.
+   */
+  over?: boolean;
+  /**
    * Keys for some of the action's `modifierRoles` on this binding, by role
    * id, over the action's defaults and any tuning's.
    */

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from '../Tooltip/Focusable';
 import type { PrefAction } from '@weasel-js/prefs';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';

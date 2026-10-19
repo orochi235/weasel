@@ -141,7 +141,7 @@
     "longestFunction": 199
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
-    "longestFunction": 152
+    "longestFunction": 150
   },
   "packages/labkit/src/controls/panelRows.tsx": {
     "longestFunction": 232
@@ -245,7 +245,7 @@
     "longestFunction": 264
   },
   "packages/ui/src/components/Callout/Callout.tsx": {
-    "longestFunction": 174
+    "longestFunction": 173
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
     "lines": 452,
@@ -291,8 +291,8 @@
     "longestFunction": 158
   },
   "packages/ui/src/components/Select/Select.tsx": {
-    "lines": 496,
-    "longestFunction": 127
+    "lines": 495,
+    "longestFunction": 126
   },
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
     "longestFunction": 132

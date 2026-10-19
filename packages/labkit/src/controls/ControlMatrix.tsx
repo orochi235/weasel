@@ -79,6 +79,10 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 const NO_AUTO: ReadonlySet<string> = new Set();
+const firstColumnHint =
+  (fallback: ControlMatrixColumn | undefined) =>
+  (_: ControlMatrixColumn): string =>
+    fallback ? `from ${nameOf(fallback)}` : '';
 
 /**
  * One setting across several config groups of the same shape: settings down
@@ -109,13 +113,11 @@ export function ControlMatrix({
   onCollapsedChange,
   twisty,
 }: ControlMatrixProps): ReactElement {
-  const fallback = columns[0];
-  const hintFor =
-    inheritHint ?? ((_: ControlMatrixColumn) => (fallback ? `from ${nameOf(fallback)}` : ''));
+  const hintFor = inheritHint ?? firstColumnHint(columns[0]);
   const [open, setOpen] = useState<OpenCell | null>(null);
   const choices = useFieldChoicesOf(schema.group);
   const triggerRef = useRef<HTMLElement | null>(null);
-  const { anchor, portalProps, ready } = useOverlayPortal();
+  const { anchor, provide, ready } = useOverlayPortal();
 
   const targets = aliasTargetsOf(schema, config, over);
   const cellAt = (path: string): MatrixTarget | undefined => matrixTargetAt(schema, path, targets);
@@ -208,7 +210,7 @@ export function ControlMatrix({
           open={open}
           close={() => setOpen(null)}
           triggerRef={triggerRef}
-          portalProps={portalProps}
+          provide={provide}
           schema={schema}
           over={over}
           config={config}

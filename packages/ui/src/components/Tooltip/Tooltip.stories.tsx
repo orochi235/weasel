@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Focusable, Tooltip, TooltipTrigger } from './Tooltip';
+import { Focusable } from './Focusable';
+import { Tooltip, TooltipTrigger } from './Tooltip';
 
 // NOTE: native <button> triggers wrapped in <Focusable>, not the kit
 // <Button> — kit Button doesn't forward react-aria's hover/focus props,

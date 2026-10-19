@@ -49,19 +49,19 @@ describe('a forge dev server, when an editor replaces a file whole', () => {
   });
 
   /**
-   * Replaces `file` until `url` serves the first text, which a write before the watcher's first scan ends would not
-   * do, then once for each later text: a replacement that cost the path its watch would leave those unserved.
+   * Replaces `file` with each text in turn, rewriting it until `url` serves that text. One write is not enough: a
+   * write before the watcher's first scan ends goes unseen, and chokidar drops a change that lands within 50 ms of
+   * the last one it reported. A replacement that cost the path its watch leaves every later text unserved however
+   * often it is rewritten.
    */
-  const follows = async (file: string, url: string, [first = '', ...later]: string[]) => {
-    await expect
-      .poll(() => {
-        replace(file, first);
-        return served(url);
-      }, FOLLOWS)
-      .toContain(first.trim());
-    for (const text of later) {
-      replace(file, text);
-      await expect.poll(() => served(url), FOLLOWS).toContain(text.trim());
+  const follows = async (file: string, url: string, texts: string[]) => {
+    for (const text of texts) {
+      await expect
+        .poll(() => {
+          replace(file, text);
+          return served(url);
+        }, FOLLOWS)
+        .toContain(text.trim());
     }
   };
 

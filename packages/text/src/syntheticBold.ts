@@ -6,13 +6,14 @@
  */
 
 import { syntheticBoldGrowth, type ResolveResult } from '@weasel-js/font';
-import { growRegion, type PolygonPath } from '@weasel-js/geom';
+import { growRegion, mergeRegion, pathFromD, pathToD, type PolygonPath } from '@weasel-js/geom';
 
 /** How closely the grown outline follows the font's curves, in em. */
 export const SYNTHETIC_BOLD_TOLERANCE = 0.0005;
 
 const CACHE_LIMIT = 4096;
 const cache = new Map<string, PolygonPath>();
+const dCache = new Map<string, string>();
 
 /**
  * How far synthetic bold grows a glyph served as `resolved`, in em per side,
@@ -33,8 +34,8 @@ export function syntheticBoldOffset(resolved: ResolveResult): { growth: number; 
 /**
  * `em`, a glyph's em-space outline keyed by its outline data `d`, as the
  * renderer draws it faked bold for `resolved`: unchanged when it is not.
- * The grown contours keep their curves and overlap where they meet, which
- * fills once under `'nonzero'` (`growRegion`).
+ * The grown contours keep their curves, and are merged where they overlap so
+ * a stroke traces only the glyph's edge.
  */
 export function emboldenGlyph(em: PolygonPath, d: string, resolved: ResolveResult): PolygonPath {
   const offset = syntheticBoldOffset(resolved);
@@ -42,11 +43,30 @@ export function emboldenGlyph(em: PolygonPath, d: string, resolved: ResolveResul
   const key = `${offset.growth}|${offset.join}|${d}`;
   let grown = cache.get(key);
   if (grown) return grown;
-  grown = growRegion(em, offset.growth, {
-    join: offset.join,
-    tolerance: SYNTHETIC_BOLD_TOLERANCE,
-  });
+  grown = mergeRegion(
+    growRegion(em, offset.growth, { join: offset.join, tolerance: SYNTHETIC_BOLD_TOLERANCE }),
+    { tolerance: SYNTHETIC_BOLD_TOLERANCE },
+  );
   if (cache.size >= CACHE_LIMIT) cache.clear();
   cache.set(key, grown);
   return grown;
+}
+
+/**
+ * {@link emboldenGlyph} for the renderer's outline tier, which takes outline
+ * data: `d` grown as the field draws it, and a tag naming the growth for the
+ * glyph's tessellation key. `null` when the renderer draws `resolved` unshifted.
+ */
+export function emboldenGlyphD(d: string, resolved: ResolveResult): { d: string; tag: string } | null {
+  const offset = syntheticBoldOffset(resolved);
+  if (offset === null) return null;
+  const tag = `bold:${offset.growth}:${offset.join}`;
+  const key = `${tag}|${d}`;
+  let grown = dCache.get(key);
+  if (grown === undefined) {
+    grown = pathToD(emboldenGlyph(pathFromD(d), d, resolved));
+    if (dCache.size >= CACHE_LIMIT) dCache.clear();
+    dCache.set(key, grown);
+  }
+  return { d: grown, tag };
 }

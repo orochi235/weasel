@@ -15,6 +15,7 @@ export {
   pathCommandCoordCount,
   PathBuilder,
   pathFromD,
+  pathToD,
   polygonFromPoints,
   polylineFromPoints,
   rectPath,

@@ -60,7 +60,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
     onInput, onChange, className, portalContainer,
   } = props;
   const ariaLabel = props['aria-label'];
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const preview = mixed ? undefined : paintPreviewCss(value);
   const label = usePaintKind(value?.kind)?.label;
 
@@ -83,8 +83,8 @@ export function PaintField(props: PaintFieldProps): ReactElement {
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
-      {ready && (
-        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+      {ready && provide(
+        <RACPopover className={s.popover} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
             <PaintInput
               value={value}

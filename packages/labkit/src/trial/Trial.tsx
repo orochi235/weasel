@@ -55,9 +55,9 @@ import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { TrialHistoryContext, useMountedHistory } from './trialHistory';
 import { trialUndoBindings } from './trialUndo';
 import { useKeptMarks } from './useKeptMarks';
+import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
 import { useTrialMarks } from './useTrialMarks';
-import { TrialOrbitContext } from './useTrialOrbit';
 import { useTrialWrites } from './useTrialWrites';
 
 /** Props for `<Trial>`. */
@@ -479,7 +479,7 @@ function TrialRuntime({
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <TrialOrbitContext.Provider value={cam.orbit}>
+      <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={clockHandle}>
           <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
             <CameraWheelContext.Provider value={wheelSlot}>
@@ -505,7 +505,7 @@ function TrialRuntime({
             </CameraWheelContext.Provider>
           </AnnotationsContext.Provider>
         </TrialClockContext.Provider>
-      </TrialOrbitContext.Provider>
+      </TrialOrbitProvider>
     </TrialIdProvider>
   );
 }

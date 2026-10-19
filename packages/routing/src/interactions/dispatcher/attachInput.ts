@@ -94,6 +94,11 @@ export function attachInput(
   // channel is on: a press with any button makes this the scope chrome and
   // keys reach.
   listeners.on(canvas, 'pointerdown', () => { src.actions().activate(); });
+  // Whether or not the pointer channel is on: it is what an `over` key binding asks.
+  const setOver = (on: boolean) => () => { core.setPointerOver(on); };
+  listeners.on(canvas, 'pointerenter', setOver(true));
+  listeners.on(canvas, 'pointermove', setOver(true));
+  listeners.on(canvas, 'pointerleave', setOver(false));
   if (channels.pointer) {
     // Separate from the key channel's listeners, so the cursor also tracks
     // modifiers when `keyboard: false` turns gesture key dispatch off.

@@ -112,9 +112,6 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
-  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
-
 - **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
   (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
   `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
@@ -140,15 +137,13 @@ Priority tags:
 
 ## Viewport
 
-- **(P2) A labkit consumer can ship a 3D lab with no camera controls, and nothing says so.** Orbit,
-  dolly, pan, and home come only from declaring the instrument's `orbit` capability
-  (`OrbitCapability`, `packages/labkit/src/instrument/types.ts`), which mounts `Orbit` on the
-  trial's camera. An instrument that draws its 3D scene any other way — three.js or raw WebGL
-  through its `render` DOM or a surface (`src/surface/AGENTS.md`) — gets a trial whose camera
-  cannot move, with no warning and nothing in the chrome to show it is missing. Needs: the 3D path
-  of least resistance to bring the orbit camera with it, so a lab has to opt out of camera
-  controls rather than know to opt in; and a dev-time signal when a trial draws a 3D view
-  without one.
+- **(P3) Some 3D labs still escape labkit's missing-camera check.** A trial with `orbit` undeclared
+  flags a 3D view in the console and with a "no camera" title-bar badge when the instrument calls
+  `useOrbitView()` or a three.js `WebGLRenderer` lands in it (`packages/labkit/src/trial/threeWatch.ts`,
+  2026-10-19); `orbit: false` and `orbit: { fixed: true }` opt out. Not caught: raw WebGL that skips
+  `useOrbitView`, and three's `WebGPURenderer`, which does not announce itself. The three.js check is
+  tested only against a hand-fired announcement, not a real three build, and nobody has looked at the
+  badge in a browser.
 
 - **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
   aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
@@ -193,7 +188,7 @@ Priority tags:
 - **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
-  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
   it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
 - **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
@@ -226,12 +221,6 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) Offset path leaves slivers beside a curve, and spikes where a round corner shrinks to
-  nothing.** `offsetPath` (`packages/stroke/src/offsetPath.ts`) unites the region with its stroke
-  band, and the union keeps thin leftovers of the two meeting along the curve:
-  `offsetPath` of a 100×100 square with a 20-unit round corner, grown by 10, answers six subpaths,
-  five of them slivers. Grown by exactly the corner's radius, the outline also runs a spike into
-  the interior, so that corner cannot be kept as a corner.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -331,33 +320,19 @@ Priority tags:
   question: prune members the final flat already implies, or document `members` as the path the
   search took? Ties between combinations compare their members' orders, so by reading the code (not
   observed) a redundant line could decide one.
-- **(P3) The flat math's two tolerances are uncalibrated against each other** (2026-10-18).
-  `RANK_TOL` (dependence in Gram-Schmidt) and `PIVOT_TOL` (zero pivots in the solve) in
-  `packages/geom/src/snap/flat.ts` were picked, not measured; nothing checks that they agree on when
-  two near-parallel directions are one. Left: a test over lines meeting at shrinking angles, and
-  the values it settles on.
 - **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
   public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
   which `audit:jsdoc` treats as a sibling-package surface.
-- **(P2) The browser-reserved chord list misses the devtools keys of Windows and Firefox.**
-  `BROWSER_RESERVED_CHORDS` (`packages/routing/src/interactions/browserReservedKeys.ts`) lists
-  Chrome's Mac devtools chords (Mod+Alt+I/J/C) but not their Windows and Linux form, Ctrl+Shift+I/J/C,
-  nor Firefox's Mod+Shift+J (Browser Console) and Mod+Shift+K (Web Console). path-tools' bridge is on
-  Mod+Shift+J, so adding them fails `packages/path-tools/src/browserReservedBindings.test.ts` and
-  bridge needs a new chord in the same change.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
-  optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
-  nothing adds, swaps, or removes the spine of an existing blend.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
-  `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
-  bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
+  `setSpiroKind`, `releaseSpiro`, `setBlendSpine`, `releaseBlendSpine` and draw's own
+  `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
@@ -385,7 +360,6 @@ Priority tags:
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) Synthetic-bold text never reaches the outline tier.** Past the outline threshold the renderer draws a face as geometry, but `glyphOutlineD` (`packages/text/src/layout/paintRuns.ts`) keeps a faked-bold glyph on the distance field, since the face's own outline would be lighter. `emboldenGlyph` (`packages/text/src/syntheticBold.ts`) now grows that outline to the width the field draws (`syntheticBoldOutline.browser.test.ts` measures it against the pixels), so the tier could draw it instead. A stroked synthetic-bold run is the case that loses most: it stays on the atlas, unstroked.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.
@@ -423,6 +397,17 @@ Priority tags:
   fixed in tessellation alone: `PolygonPath.coords` is a `Float32Array`, so the grid is already in
   the path before the tessellator reads it. It needs the path itself to carry an origin (or
   double coords), which every reader of `coords` would then honor.
+
+- **(P3) The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
+  Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
+  reproduces them at the baseline commit, so the node has not drifted. `tessellate` slowed about
+  40% at 2026-10-17's 7cbedd8b0, which checks every nonzero fill for crossings; a faster check
+  (2026-10-19) brought the 64-curve fill from 0.21 ms to 0.18 ms, against 0.15 ms before.
+  `tessellateStroke` slowed at 2026-10-14's ab9ea7afa, which caps a thick stroke's flattening at
+  10° of turn per vertex: the 4-wide benchmark stroke now flattens to 1258 points where the fill
+  takes 474, so 64 curves take 1.44 ms against 0.48 ms, and 512 curves 12.0 ms against 1.65 ms. Left:
+  re-record those rows; and decide whether the cap should still subdivide wiggles smaller than
+  the stroke is wide, which is where the 512-curve case spends its 10034 points.
 
 ---
 
@@ -576,22 +561,6 @@ Priority tags:
 
 ## Animation
 
-### Combining animations
-
-Animations combine through targets, described in `docs/concepts.md` ("Animation target").
-
-- **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
-  restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
-  `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
-  measured inside blits with `node bench/restart.mjs 1000 10000`, a stop went from 15.4–15.7 µs to
-  2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
-  `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
-  and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first:
-  two in `packages/animator/src/engine/codec.ts` (a spring's voice and a queued tween's) and
-  `packages/core/src/core/scene/poseOverrides.ts`. After the bump, rerun
-  `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
-
 ### Earlier deferrals
 
 From `docs/specs/2026-05-04-animation-primitive-design.md`:
@@ -696,9 +665,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
-  now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
-  file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
+- **(P3) Nobody has looked at apps/site in the kit's UI face.** `canvas-kit-demo.css` stopped
+  setting `body`'s font (2026-10-19), so the site's text inherits `--wzl-font-ui` (Oswald, a
+  condensed face) from `fonts.css`'s `:root` rule. Check in a browser that the sidebar, demo
+  blurbs, and controls still fit and read well, and that Oswald loaded rather than its fallback.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -716,17 +686,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
-- **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
-  Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
-  re-exported by `react-aria-components`, and depending on `react-aria`
-  directly risks a second copy whose context the overlays never read — which
-  fails silently, as an unthemed overlay. Switch `useOverlayPortal`
-  (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
-  The same switch lets a contained `ToastRegion` drop its own region for RAC's,
-  which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-2691598d3-261008`, last
-  checked 2026-10-17.
-
+- **(P3) Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
+  (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
+  pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
+  when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
+  a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
+  worth that.
 - **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
   (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
   pointer passes out of its target or off the surface. The loupe
@@ -912,6 +877,20 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
+  first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
+  server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
+  one it last reported. If the page re-fetches the module in that window (its HMR fetch after the
+  first save), the second save never invalidates it. Run 2026-10-19 in a Linux container
+  (`node:26-alpine`, vite 8.3.1): save, wait 25 ms, save again, with a fetch 5 ms after the first
+  `change`. The server kept the first text after 3 s idle. This held for plain vite and for forge,
+  and for both rename-over and in-place writes. With
+  `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
+  second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
+  that throttle. The cost is about 60 ms more latency on every edit. Open: whether forge's plugin,
+  or each app's vite config, should set it. `replacedFile.test.ts` rewrites until served for the
+  same reason.
+
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
@@ -1078,15 +1057,6 @@ only story runner in the repo.
   apart from the panel" in light and dark mode, and `ControlPanel.span.browser.test.tsx`'s "a custom
   row and a bar take the whole width of a paired grid" (`expected 0 to be less than 0`, line 44);
   `compoundRows.browser.test.tsx` failed in the same run. Not looked into past that.
-
-- **(P1) The first-publish gate passes a package npm will not let CI publish.**
-  `check-first-publish.mjs` asks only whether a name exists on npm. `@weasel-js/menu` was published
-  by hand at 1.10.1 (2026-10-16) and never given a trusted publisher, so the gate passed and the
-  1.11.0 release (run 39172234345, 2026-10-18) died on its `E404 PUT` after 16 of 42 packages,
-  leaving the fixed group split across 1.10.1 and 1.11.0 on npm. The gate should also ask whether
-  each package has trust config (`npm trust list`, or a 1.x version carrying a provenance
-  attestation, which only an OIDC publish can make). Recovery: register `menu` with
-  `scripts/setup-trusted-publishing.mjs`, then re-run Release by `workflow_dispatch`.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no

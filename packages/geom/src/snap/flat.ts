@@ -11,10 +11,11 @@ export interface Flat {
 }
 
 /** A direction left with less than this fraction of its length after the
- *  ones before it are taken out counts as dependent on them. */
-const RANK_TOL = 1e-9;
-/** Pivots below this fraction of the largest diagonal entry count as zero. */
-const PIVOT_TOL = 1e-12;
+ *  ones before it are taken out counts as dependent on them. The solve's
+ *  pivots are those leftover lengths squared, so it shares this one value.
+ *  Squaring loses angles below about 1e-8 rad to rounding; at 1e-8 the two
+ *  verdicts part, so this sits two decades clear. */
+const RANK_TOL = 1e-6;
 
 function dotv(a: Vec, b: Vec): number {
   let s = 0;
@@ -79,35 +80,28 @@ export function closestOnFlat(f: Flat, p: Vec): Vec {
 
 /**
  * The `x` minimizing `|Σ x_j cols_j − rhs|`, through the normal equations.
- * A rank-deficient system has many minimizers; this returns the one whose
- * free unknowns are zero.
+ * A column within `RANK_TOL` of the span of the kept ones before it is
+ * dropped, the same verdict `orthonormalize` reaches, and its unknown is zero.
  */
 export function solveLeastSquares(cols: readonly Vec[], rhs: Vec): number[] {
   const k = cols.length;
   const m = cols.map((a) => [...cols.map((b) => dotv(a, b)), dotv(a, rhs)]);
-  let maxDiag = 0;
-  for (let i = 0; i < k; i++) maxDiag = Math.max(maxDiag, Math.abs(m[i][i]));
-  const tol = PIVOT_TOL * (maxDiag || 1);
-  const pivots: [row: number, col: number][] = [];
-  let row = 0;
-  for (let col = 0; col < k && row < k; col++) {
-    let best = row;
-    for (let r = row + 1; r < k; r++) if (Math.abs(m[r][col]) > Math.abs(m[best][col])) best = r;
-    if (!(Math.abs(m[best][col]) > tol)) continue;
-    [m[row], m[best]] = [m[best], m[row]];
-    for (let r = row + 1; r < k; r++) {
-      const f = m[r][col] / m[row][col];
-      for (let c = col; c <= k; c++) m[r][c] -= f * m[row][c];
+  const len2 = m.map((r, i) => r[i]);
+  const kept: number[] = [];
+  for (let col = 0; col < k; col++) {
+    if (!(m[col][col] > RANK_TOL * RANK_TOL * len2[col])) continue;
+    for (let r = col + 1; r < k; r++) {
+      const f = m[r][col] / m[col][col];
+      for (let c = col; c <= k; c++) m[r][c] -= f * m[col][c];
     }
-    pivots.push([row, col]);
-    row++;
+    kept.push(col);
   }
   const x = new Array<number>(k).fill(0);
-  for (let p = pivots.length - 1; p >= 0; p--) {
-    const [r, col] = pivots[p];
-    let s = m[r][k];
-    for (let c = col + 1; c < k; c++) s -= m[r][c] * x[c];
-    x[col] = s / m[r][col];
+  for (let p = kept.length - 1; p >= 0; p--) {
+    const col = kept[p];
+    let s = m[col][k];
+    for (let c = col + 1; c < k; c++) s -= m[col][c] * x[c];
+    x[col] = s / m[col][col];
   }
   return x;
 }

@@ -60,6 +60,13 @@ A package must already exist on npm before it can be given a trusted publisher,
 so the very first publish of a brand-new package still has to be done by hand
 from a logged-in machine.
 
+`npm run check:first-publish` runs before the release job publishes anything,
+and fails on a package that is not on npm or that no trusted publisher has ever
+published. It cannot read trust config itself (only a maintainer's token can),
+so registering a package records it in `scripts/trust-pending.json`, and the
+gate lets it through until the release job publishes it. Commit that file after
+registering.
+
 ## Publishing by hand
 
 Only when CI is unavailable. Manual publishes produce **no provenance

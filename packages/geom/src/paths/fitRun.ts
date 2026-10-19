@@ -5,8 +5,11 @@
  */
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import type { PenAnchor } from './anchors';
-import type { Point } from './cubicMath';
+import { cubicPointAt, type Point } from './cubicMath';
 import { fitCubicWithTangents } from './schneiderFit';
+
+/** Most points a fitted cubic is checked at against the run it fits. */
+const MAX_STRAY_STEPS = 512;
 
 /** Give `to`, an anchor a refit kept where `from` was, `from`'s corner spec. */
 export function keepCorner(to: PenAnchor, from: PenAnchor): void {
@@ -47,11 +50,12 @@ function fitRecursive(
   }
   const { cp1, cp2 } = fitCubicWithTangents(pts, tStart, tEnd);
   const worst = worstFromCubic(pts, a, cp1, cp2, e);
-  if (worst.dist <= tol) {
+  const stray = worst.dist <= tol ? strayFromRun(pts, a, cp1, cp2, e, tol) : -1;
+  if (worst.dist <= tol && stray < 0) {
     out.push({ c1: cp1, c2: cp2, end: e });
     return;
   }
-  const k = worst.index;
+  const k = stray < 0 ? worst.index : stray;
   const center = unit(sub2(pts[k + 1], pts[k - 1]));
   fitRecursive(pts.slice(0, k + 1), tStart, neg(center), tol, out);
   fitRecursive(pts.slice(k), center, tEnd, tol, out);
@@ -73,6 +77,33 @@ function worstFromCubic(pts: Point[], a: Point, c1: Point, c2: Point, e: Point):
     if (d > dist) { dist = d; index = i; }
   }
   return { index, dist };
+}
+
+/**
+ * Where the cubic strays more than `tol` from the polyline through `pts`
+ * between the samples, as the interior sample to split the run at; -1 when it
+ * never does. The samples hold the run to the cubic; this holds the cubic to
+ * the run, which a cubic bulging across a sparsely sampled flat fails.
+ */
+function strayFromRun(pts: Point[], a: Point, c1: Point, c2: Point, e: Point, tol: number): number {
+  const reach = Math.hypot(c1.x - a.x, c1.y - a.y) + Math.hypot(c2.x - c1.x, c2.y - c1.y) + Math.hypot(e.x - c2.x, e.y - c2.y);
+  const steps = Math.min(MAX_STRAY_STEPS, Math.max(8, Math.ceil(reach / tol)));
+  const edges = pts.length - 1;
+  let hint = 0;
+  for (let s = 1; s < steps; s++) {
+    const p = cubicPointAt(a, c1, c2, e, s / steps);
+    let near = -1;
+    // Edges in order from the last one near the cubic, which it walks along.
+    for (let j = 0; j < edges && near < 0; j++) {
+      const i = (hint + j) % edges;
+      if (nearestOnLine(p.x, p.y, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y).dist <= tol) near = i;
+    }
+    if (near >= 0) { hint = near; continue; }
+    // Split at whichever end of the edge it strayed from is nearer.
+    const along = nearestOnLine(p.x, p.y, pts[hint].x, pts[hint].y, pts[hint + 1].x, pts[hint + 1].y).t;
+    return Math.min(Math.max(hint + (along < 0.5 ? 0 : 1), 1), pts.length - 2);
+  }
+  return -1;
 }
 
 const sub2 = (p: Point, q: Point): Point => ({ x: p.x - q.x, y: p.y - q.y });

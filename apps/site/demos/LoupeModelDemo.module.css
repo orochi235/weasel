@@ -57,5 +57,5 @@
 .note {
   margin-inline-start: var(--wzl-space-6);
   color: var(--wzl-accent-fg);
-  font-family: system-ui, sans-serif;
+  font-family: var(--wzl-font-ui);
 }
