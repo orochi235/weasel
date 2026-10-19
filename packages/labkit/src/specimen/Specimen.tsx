@@ -18,6 +18,7 @@ import {
   DetentSlider,
   Dialog,
   Disclosure,
+  Focusable,
   GradientEditor,
   InlineRange,
   Input,
@@ -66,7 +67,6 @@ import {
   StatusBar as UiStatusBar,
 } from '@weasel-js/ui';
 import { type CSSProperties, type ReactNode, useId, useMemo, useRef, useState } from 'react';
-import { Focusable } from 'react-aria-components';
 import type { JobHandle } from '../job/types';
 import { FloatingPanel } from '../primitives/FloatingPanel';
 import { JobProgress } from '../primitives/JobProgress';
