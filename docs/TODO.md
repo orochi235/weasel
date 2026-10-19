@@ -112,8 +112,11 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
-  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
+- **(P3) The tessellate benchmarks have slowed since the 2026-09-29 baseline.** Run on studio,
+  the node that baseline came from, on 2026-10-19: `tessellate` over curve count came out about 40%
+  slower across the board, and `tessellateStroke` about 3x slower (64 cubics: 0.48 ms then, 1.52 ms
+  now), while the rect fast path held. Bisect `tests/perf/bench/tessellate.bench.ts` between the
+  two dates to tell a code regression from the node, then re-record the whole baseline.
 
 - **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
   (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
@@ -696,9 +699,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
-  now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
-  file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
+- **(P3) Nobody has looked at apps/site in the kit's UI face.** `canvas-kit-demo.css` stopped
+  setting `body`'s font (2026-10-19), so the site's text inherits `--wzl-font-ui` (Oswald, a
+  condensed face) from `fonts.css`'s `:root` rule. Check in a browser that the sidebar, demo
+  blurbs, and controls still fit and read well, and that Oswald loaded rather than its fallback.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
