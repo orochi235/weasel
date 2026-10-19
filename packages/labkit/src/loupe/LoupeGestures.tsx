@@ -78,7 +78,8 @@ export function LoupeGestures(props: LoupeGesturesProps) {
   const registry = useActionsRegistry();
   const camera = useContext(CameraContext);
   if (!registry) return null;
-  if (camera !== null) return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
+  if (camera !== null)
+    return <LoupeDispatch {...props} registry={registry} ownDispatcher={false} />;
   return (
     <InputScope>
       <OwnLoupeDispatch {...props} />

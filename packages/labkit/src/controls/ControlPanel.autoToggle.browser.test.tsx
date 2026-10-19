@@ -41,6 +41,8 @@ describe.each([undefined, 'tight' as const])('a pinned slider row, density %s', 
     const toggle = screen.getByRole('button', { name: 'Pin Bloom' });
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
     const hit = hitAtCenter(toggle);
-    expect(hit === toggle || toggle.contains(hit), `landed on ${hit?.outerHTML.slice(0, 60)}`).toBe(true);
+    expect(hit === toggle || toggle.contains(hit), `landed on ${hit?.outerHTML.slice(0, 60)}`).toBe(
+      true,
+    );
   });
 });

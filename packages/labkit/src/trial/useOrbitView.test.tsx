@@ -9,7 +9,16 @@ import { createCamera } from '@weasel-js/kernel3d';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext, useEffect, useRef } from 'react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument, OrbitCapability } from '../instrument/types';
 import { Lab } from '../lab/Lab';
@@ -17,8 +26,8 @@ import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import { as3DView } from '../state/view';
-import type { TrialOrbit } from './useTrialOrbit';
 import { useOrbitView } from './useOrbitView';
+import type { TrialOrbit } from './useTrialOrbit';
 
 beforeAll(() => {
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
@@ -36,7 +45,7 @@ const seen: { lab: LabContextValue | null; store: LabStore | null; view: TrialOr
 function Scene3d() {
   const view = useOrbitView();
   seen.view = view;
-  return <div className="scene3d" ref={view.viewportRef} />;
+  return <div className="lk-test-scene3d" ref={view.viewportRef} />;
 }
 
 /**
@@ -112,7 +121,7 @@ describe('useOrbitView', () => {
 
   it('lands the camera gestures on the pane it is attached to', async () => {
     const { container, view } = await mount(solid('Paned', { initialView: { distance: 20 } }));
-    const pane = container.querySelector('.scene3d') as HTMLElement;
+    const pane = container.querySelector('.lk-test-scene3d') as HTMLElement;
     await act(async () => {
       pane.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
     });
@@ -145,7 +154,7 @@ describe('a fixed orbit', () => {
     const { container, view } = await mount(
       solid('Still', { initialView: { distance: 20 }, fixed: true }),
     );
-    const pane = container.querySelector('.scene3d') as HTMLElement;
+    const pane = container.querySelector('.lk-test-scene3d') as HTMLElement;
     await act(async () => {
       pane.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
       pane.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
@@ -160,7 +169,9 @@ describe('a three.js renderer in a trial', () => {
   it('counts as a 3D view: no orbit warns and marks the title bar', async () => {
     await mount(solid('Threeish', undefined, <ThreeScene />));
     await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
-    expect(String(cameraWarnings()[0]?.[0])).toMatch(/"Threeish" draws a 3D view \(a three\.js renderer\)/);
+    expect(String(cameraWarnings()[0]?.[0])).toMatch(
+      /"Threeish" draws a 3D view \(a three\.js renderer\)/,
+    );
     await waitFor(() => expect(badge()).not.toBeNull());
   });
 

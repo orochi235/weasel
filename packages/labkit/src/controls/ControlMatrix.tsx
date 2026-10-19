@@ -203,20 +203,21 @@ export function ControlMatrix({
           ))}
         </tbody>
       </table>
-      {ready && provide(
-        <MatrixPopover
-          open={open}
-          close={() => setOpen(null)}
-          triggerRef={triggerRef}
-          schema={schema}
-          over={over}
-          config={config}
-          auto={auto}
-          setConfig={setConfig}
-          inherit={inherit}
-          inheritHint={(cell) => hintFor(cell.column)}
-        />
-      )}
+      {ready &&
+        provide(
+          <MatrixPopover
+            open={open}
+            close={() => setOpen(null)}
+            triggerRef={triggerRef}
+            schema={schema}
+            over={over}
+            config={config}
+            auto={auto}
+            setConfig={setConfig}
+            inherit={inherit}
+            inheritHint={(cell) => hintFor(cell.column)}
+          />,
+        )}
     </div>
   );
 

@@ -1,12 +1,5 @@
 import { isDev } from '@weasel-js/react';
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import type { Instrument } from '../instrument/types';
 import { installThreeWatch, watchThree } from './threeWatch';
 import { type TrialOrbit, TrialOrbitContext } from './useTrialOrbit';
