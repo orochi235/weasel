@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { boundsOfPath, pointInPath, PATH_C, PATH_Q, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, pathToCubicContours, pointInPath, PATH_C, PATH_Q, type PolygonPath } from '@weasel-js/geom';
 import { textToPath, textToPathsByPaint } from './textToPath';
 import { syntheticBoldOffset } from './syntheticBold';
 
@@ -98,6 +98,27 @@ describe('textToPath — synthetic bold', () => {
     // What the growth costs in anchors: 374 commands regular, 414 emboldened, measured 2026-10-18.
     expect(bold.commands.length, `${regular.commands.length} → ${bold.commands.length}`)
       .toBeLessThanOrEqual(regular.commands.length * 1.15);
+  });
+
+  it('outlines only the edge, so a stroke draws nothing inside the glyph', () => {
+    // Glyphs whose grown parts overlap, or loop at an inside corner, when grown alone.
+    const path = outline('bdk1@8', 700);
+    const e = 0.5;
+    const inside: string[] = [];
+    for (const { segs } of pathToCubicContours(path)) {
+      for (const { c } of segs) {
+        const x = (c[0] + 3 * c[2] + 3 * c[4] + c[6]) / 8,
+          y = (c[1] + 3 * c[3] + 3 * c[5] + c[7]) / 8;
+        const dx = c[6] + c[4] - c[2] - c[0],
+          dy = c[7] + c[5] - c[3] - c[1];
+        const l = Math.hypot(dx, dy);
+        if (l === 0) continue;
+        const [nx, ny] = [(dy / l) * e, (-dx / l) * e];
+        const filled = (px: number, py: number) => pointInPath(path, px, py, { tolerance: 0.01 });
+        if (filled(x + nx, y + ny) && filled(x - nx, y - ny)) inside.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+      }
+    }
+    expect(inside, 'edges with fill on both sides').toEqual([]);
   });
 
   it('splits by paint without refusing', () => {

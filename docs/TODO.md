@@ -377,7 +377,6 @@ Priority tags:
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) A stroke on synthetic-bold text traces the grown outline's overlaps.** The outline tier strokes a faked-bold glyph along the outline `growRegion` grew (`emboldenGlyphD`, `packages/text/src/syntheticBold.ts`), whose contours overlap where grown parts meet and loop inside the fill at an inside corner whose offset edges do not cross. The fill hides both; a stroke in another color draws them as lines inside the glyph. Reasoned from `growRegion`'s contract, not seen in a render (2026-10-19). Stroking a union of the grown contours would fix it, but `pathUnion` flattens curves at a tolerance meant for world units, not em.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
 - **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.

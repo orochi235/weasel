@@ -35,7 +35,8 @@ const SAMPLES = [0.2, 0.35, 0.5, 0.65, 0.8];
  * overlap rather than merge, and a hole grown shut winds back on itself and
  * fills. At an inside corner the two offset edges are cut back to where they
  * cross; where they do not, the gap is passed through the corner's original
- * point, which closes it with a loop inside the fill.
+ * point, which closes it with a loop inside the fill. `mergeRegion`
+ * redraws the result as its outline alone, for a stroke.
  *
  * What it costs: one segment per curve, more where `tolerance` needs the curve
  * split; a miter corner between two straight edges costs nothing, one beside
