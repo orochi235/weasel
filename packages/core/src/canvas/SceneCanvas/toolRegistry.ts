@@ -27,7 +27,9 @@ export interface ResolveToolRegistryArgs {
  * Built-ins come first, in `BUILTIN_TOOL_IDS` order whatever order they were
  * asked for in, then the presets' own tools in preset order; a patch tool
  * replaces a mounted one where it stands, and any other is appended in patch
- * order. That order is the palette's.
+ * order. That order is the palette's. Replacing a tool that is mounted only
+ * because a preset implies it is the documented way to restyle it, so only a
+ * patch tool for an id `defaultTools` also names is warned about.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, defaultTools = [], enabled, patch, dev = isDev() } = args;
@@ -50,7 +52,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
       }
       continue;
     }
-    if (dev && id in registry) {
+    if (dev && id in registry && defaultTools.includes(id as BuiltinToolId)) {
       console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
     }
     registry[id] = value;

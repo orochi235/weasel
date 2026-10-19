@@ -301,8 +301,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
      *      `'hand'`, …), the same as listing it in `defaultTools`. Unknown
      *      built-in ids warn in dev and are ignored.
-     *    - `Tool` adds a new id or replaces an existing one
-     *      (dev-only warning on replace).
+     *    - `Tool` adds a new id or replaces an existing one in place
+     *      (dev-only warning if `defaultTools` also names that id).
      *    - `false` omits a bundled tool entirely.
      *  Auto-wiring (keybindings, dispatcher, action registry) still runs.
      *
