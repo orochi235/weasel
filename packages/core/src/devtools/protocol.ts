@@ -36,12 +36,14 @@ export type DevtoolsRequest = { protocol: number; requestId: number; rootId: str
   | { type: 'set-overlays'; overlays: DevtoolsOverlays }
 );
 
+/** Every message a panel sends the page. */
 export type PanelMessage =
   | { type: 'yo'; protocol: number }
   /** The panel is closing: drop its overlays and highlight, and stop tracing for it. */
   | { type: 'bye'; protocol: number }
   | DevtoolsRequest;
 
+/** Every message the page sends a panel. */
 export type PageMessage =
   | { type: 'sup'; protocol: number; kitVersion: string; roots: DevtoolsRootInfo[] }
   | { type: 'root-added'; protocol: number; root: DevtoolsRootInfo }
@@ -63,12 +65,14 @@ export interface DevtoolsNodeSummary {
   pickable: boolean;
 }
 
+/** A node as `get-node` returns it: its row in the tree, plus its parent, pose and data. */
 export interface DevtoolsNodeDetail extends DevtoolsNodeSummary {
   parent: string | null;
   pose: SerializedValue;
   data: SerializedValue;
 }
 
+/** What `get-state` returns about a root. */
 export interface DevtoolsRootState {
   selection: string[];
   view: SerializedValue;
@@ -80,6 +84,7 @@ export interface DevtoolsRootState {
   probes: Record<string, SerializedValue>;
 }
 
+/** What `get-trace` returns: the records after the cursor, and the cursor to send next. */
 export interface DevtoolsTraceSlice {
   entries: SerializedValue[];
   cursor: number;
@@ -88,6 +93,7 @@ export interface DevtoolsTraceSlice {
   coords?: { entries: SerializedValue[]; cursor: number };
 }
 
+/** The body of a `result` reply; which one depends on the request it answers. */
 export type DevtoolsResult =
   | DevtoolsNodeSummary[]
   | DevtoolsNodeDetail

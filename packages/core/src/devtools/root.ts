@@ -30,6 +30,7 @@ export interface DevtoolsRootSource {
   setOverride(override: { overlays: DevtoolsOverlays; highlight: readonly string[] } | null): void;
 }
 
+/** One canvas as the devtools hook holds it. */
 export interface DevtoolsRoot {
   readonly id: string;
   readonly source: DevtoolsRootSource;
@@ -45,6 +46,7 @@ export interface DevtoolsRoot {
 
 let nextId = 1;
 
+/** A root over `source`, with a fresh page-unique id. */
 export function createDevtoolsRoot(source: DevtoolsRootSource): DevtoolsRoot {
   const id = `root-${nextId++}`;
   const versions: Record<DevtoolsArea, number> = { scene: 0, selection: 0, view: 0, tool: 0, trace: 0 };

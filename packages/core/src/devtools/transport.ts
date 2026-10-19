@@ -4,6 +4,7 @@
  */
 import type { PageMessage, PanelMessage } from './protocol';
 
+/** One end of a connection: it sends `Out` and hears `In`. */
 export interface DevtoolsTransport<Out, In> {
   send(message: Out): void;
   /** Hear the other side. Returns the unsubscribe. */
@@ -25,6 +26,7 @@ export interface DevtoolsEnvelope {
   message: PageMessage | PanelMessage;
 }
 
+/** Whether a posted message's `data` is devtools traffic. */
 export function isDevtoolsEnvelope(data: unknown): data is DevtoolsEnvelope {
   return typeof data === 'object' && data !== null
     && (data as { source?: unknown }).source === DEVTOOLS_ENVELOPE;

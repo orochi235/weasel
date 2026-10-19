@@ -81,6 +81,7 @@ export interface DispatchTrace extends TraceRing<TraceLogEntry> {
   live(): DispatchRecord | null;
 }
 
+/** A {@link DispatchTrace} keeping the last `limit` entries. `dev` defaults to the build's. */
 export function createDispatchTrace(limit?: number, dev?: boolean): DispatchTrace {
   const ring = createTraceRing<TraceLogEntry>(limit, dev);
   let explain: (() => DispatchRecord) | null = null;

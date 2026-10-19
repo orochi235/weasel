@@ -9,6 +9,7 @@ export type SerializedValue =
   | SerializedValue[]
   | { [key: string]: SerializedValue };
 
+/** How much of a value {@link serialize} writes out. */
 export interface SerializeLimits {
   /** Nesting below this depth is written as `'…'`. */
   depth?: number;

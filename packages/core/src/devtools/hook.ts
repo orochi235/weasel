@@ -10,6 +10,7 @@ import type { DevtoolsSchedule } from './notices';
 import { openSession, type SessionHost } from './session';
 import { createWindowPageTransport, isDevtoolsEnvelope, type PageTransport } from './transport';
 
+/** What `window.__weaselDevtools__` holds: the page's canvases, and the way a panel connects to them. */
 export interface WeaselDevtoolsHook {
   readonly protocol: number;
   readonly kitVersion: string;
