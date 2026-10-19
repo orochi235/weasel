@@ -252,8 +252,7 @@ it on the branch before merging and on `main` after. `onto` keeps one tree per r
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
 path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fleet-tree.setup.ts`
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
-line once per shard. Don't shard yet: onto `6fbd2bf` queues a shard behind its own run's claim on
-the host's tree, and it waits forever (2026-10-18).
+line once per shard.
 
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
