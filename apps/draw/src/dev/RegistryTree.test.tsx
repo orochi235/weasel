@@ -2,34 +2,22 @@ import { Profiler } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { act, screen, fireEvent, within } from '@testing-library/react';
 import { RegistryTree } from './RegistryTree';
-import type { ToolSurface, TreeCategoryNode } from './registryEntries';
+import type { TreeCategoryNode } from './registryEntries';
 import { renderWithIcons } from '../testIcons';
-
-const EMPTY_SURFACE: ToolSurface = {
-  gestures: {
-    click: false, doubleClick: false, pointerDown: false, drag: false,
-    wheel: false, key: false, keyHeld: false, contextMenu: false,
-    multiTouchTap: false,
-  },
-  outputs: { cursor: false, overlay: false },
-};
-const EMPTY_CAPS = {
-  onActivate: false, onDeactivate: false,
-};
 
 const NODES: readonly TreeCategoryNode[] = [
   {
-    id: 'tools',
-    label: 'Tools',
+    id: 'ops',
+    label: 'Ops',
     entries: [
-      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [], declaredRoutes: [], slot: 'registry', capabilities: EMPTY_CAPS, surface: EMPTY_SURFACE },
-      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [], declaredRoutes: [], slot: 'registry', capabilities: EMPTY_CAPS, surface: EMPTY_SURFACE },
+      { kind: 'opFactory', id: 'rect', label: 'useRectTool' },
+      { kind: 'opFactory', id: 'ellipse', label: 'useEllipseTool' },
     ],
   },
   {
-    id: 'actions',
-    label: 'Actions',
-    entries: [{ kind: 'action', id: 'delete', label: 'Delete' }],
+    id: 'icons',
+    label: 'Icons',
+    entries: [{ kind: 'opKind', id: 'delete', label: 'Delete' }],
   },
 ];
 
@@ -40,53 +28,53 @@ describe('RegistryTree', () => {
   it('renders the categories as collapsed branches of a tree, with their counts', () => {
     renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
     expect(screen.getByRole('tree', { name: 'Registry' })).toBeTruthy();
-    expect(item('Tools 2')).toHaveAttribute('aria-expanded', 'false');
-    expect(item('Actions 1')).toHaveAttribute('aria-level', '1');
+    expect(item('Ops 2')).toHaveAttribute('aria-expanded', 'false');
+    expect(item('Icons 1')).toHaveAttribute('aria-level', '1');
   });
 
   it('expands a category on click and shows its entries', () => {
     renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
-    fireEvent.click(screen.getByText('Tools'));
-    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
-    const group = within(item(/^Tools/)).getByRole('group');
+    fireEvent.click(screen.getByText('Ops'));
+    expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'true');
+    const group = within(item(/^Ops/)).getByRole('group');
     expect(within(group).getByRole('treeitem', { name: 'useRectTool' })).toHaveAttribute('aria-level', '2');
     expect(within(group).getByRole('treeitem', { name: 'useEllipseTool' })).toBeTruthy();
   });
 
   it('expands a category from the keyboard', () => {
     renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
-    const tools = item(/^Tools/);
-    act(() => tools.focus());
-    fireEvent.keyDown(tools, { key: 'ArrowRight' });
-    expect(tools).toHaveAttribute('aria-expanded', 'true');
+    const ops = item(/^Ops/);
+    act(() => ops.focus());
+    fireEvent.keyDown(ops, { key: 'ArrowRight' });
+    expect(ops).toHaveAttribute('aria-expanded', 'true');
     expect(item('useRectTool')).toBeTruthy();
   });
 
   it('text filter narrows leaves and auto-expands parents', () => {
     renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText('Filter…'), { target: { value: 'rect' } });
-    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+    expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'true');
     expect(item('useRectTool')).toBeTruthy();
     expect(queryItem('useEllipseTool')).toBeNull();
-    expect(queryItem(/^Actions/)).toBeNull();
+    expect(queryItem(/^Icons/)).toBeNull();
   });
 
   it('keeps categories open while filtering, and restores the unfiltered state after', () => {
     renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText('Filter…'), { target: { value: 'e' } });
-    fireEvent.click(screen.getByText('Tools'));
-    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByText('Ops'));
+    expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'true');
     fireEvent.change(screen.getByPlaceholderText('Filter…'), { target: { value: '' } });
-    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'false');
+    expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('calls onSelect when a leaf is clicked, and marks the selected leaf', () => {
     const onSelect = vi.fn();
     const { rerender } = renderWithIcons(<RegistryTree nodes={NODES} selected={null} onSelect={onSelect} />);
-    fireEvent.click(screen.getByText('Tools'));
+    fireEvent.click(screen.getByText('Ops'));
     fireEvent.click(screen.getByText('useRectTool'));
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect.mock.calls[0][0]).toMatchObject({ kind: 'tool', id: 'rect' });
+    expect(onSelect.mock.calls[0][0]).toMatchObject({ kind: 'opFactory', id: 'rect' });
     rerender(<RegistryTree nodes={NODES} selected={onSelect.mock.calls[0][0]} onSelect={onSelect} />);
     expect(item('useRectTool')).toHaveAttribute('aria-selected', 'true');
     expect(item('useEllipseTool')).toHaveAttribute('aria-selected', 'false');
@@ -97,7 +85,7 @@ describe('RegistryTree', () => {
     renderWithIcons(
       <Profiler
         id="tree"
-        onRender={() => { expanded.push(queryItem(/^Actions/)?.getAttribute('aria-expanded') ?? null); }}
+        onRender={() => { expanded.push(queryItem(/^Icons/)?.getAttribute('aria-expanded') ?? null); }}
       >
         <RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />
       </Profiler>,
@@ -108,13 +96,13 @@ describe('RegistryTree', () => {
 
   it('leaves a collapsed category shut until the selection moves into it again', () => {
     const { rerender } = renderWithIcons(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
-    fireEvent.click(screen.getByText('Actions'));
-    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(screen.getByText('Icons'));
+    expect(item(/^Icons/)).toHaveAttribute('aria-expanded', 'false');
     rerender(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
-    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'false');
+    expect(item(/^Icons/)).toHaveAttribute('aria-expanded', 'false');
     rerender(<RegistryTree nodes={NODES} selected={NODES[0].entries[0]} onSelect={() => {}} />);
     rerender(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
-    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'true');
+    expect(item(/^Icons/)).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('shows a per-leaf count from getCount', () => {
@@ -126,7 +114,7 @@ describe('RegistryTree', () => {
         getCount={(e) => (e.id === 'rect' ? 9 : undefined)}
       />,
     );
-    fireEvent.click(screen.getByText('Tools'));
+    fireEvent.click(screen.getByText('Ops'));
     expect(item('useRectTool 9')).toBeTruthy();
     expect(item('useEllipseTool')).toBeTruthy();
   });
@@ -141,10 +129,10 @@ describe('RegistryTree — collapsible group', () => {
       entries: [{ kind: 'shapeKind', trait: 'shape', id: 'rect', label: 'rect' }],
     },
     {
-      id: 'routing',
-      label: 'Routing',
+      id: 'properties',
+      label: 'Properties',
       group: { id: 'traits', label: 'Traits' },
-      entries: [{ kind: 'routingKind', trait: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
+      entries: [{ kind: 'propertiesKind', trait: 'properties', id: 'rect', label: 'rect', leafPaths: [] }],
     },
   ];
 
@@ -152,14 +140,14 @@ describe('RegistryTree — collapsible group', () => {
     renderWithIcons(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
     expect(item('Traits 2')).toHaveAttribute('aria-expanded', 'false');
     expect(queryItem(/^Shape/)).toBeNull();
-    expect(queryItem(/^Routing/)).toBeNull();
+    expect(queryItem(/^Properties/)).toBeNull();
   });
 
   it('expands the group on click and reveals its child categories', () => {
     renderWithIcons(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
     fireEvent.click(screen.getByText('Traits'));
     expect(item(/^Shape/)).toHaveAttribute('aria-level', '2');
-    expect(item(/^Routing/)).toHaveAttribute('aria-expanded', 'false');
+    expect(item(/^Properties/)).toHaveAttribute('aria-expanded', 'false');
     // The child categories are themselves collapsible — their entries
     // remain hidden until the child is also expanded.
     expect(screen.queryAllByRole('treeitem', { name: 'rect' }).length).toBe(0);
@@ -169,12 +157,12 @@ describe('RegistryTree — collapsible group', () => {
     renderWithIcons(
       <RegistryTree
         nodes={groupedNodes}
-        selected={{ kind: 'routingKind', trait: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }}
+        selected={{ kind: 'propertiesKind', trait: 'properties', id: 'rect', label: 'rect', leafPaths: [] }}
         onSelect={() => {}}
       />,
     );
     expect(item(/^Traits/)).toHaveAttribute('aria-expanded', 'true');
-    expect(item(/^Routing/)).toHaveAttribute('aria-expanded', 'true');
+    expect(item(/^Properties/)).toHaveAttribute('aria-expanded', 'true');
     expect(item('rect')).toHaveAttribute('aria-level', '3');
     expect(item('rect')).toHaveAttribute('aria-selected', 'true');
   });
