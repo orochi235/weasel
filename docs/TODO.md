@@ -1073,6 +1073,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) Three labkit `ControlPanel` browser tests fail on `main`** (2026-10-19, at `fc1049c5c`,
+  run alone on msb-uai): `ControlPanel.panel.browser.test.tsx`'s "sets a field in a panel group
+  apart from the panel" in light and dark mode, and `ControlPanel.span.browser.test.tsx`'s "a custom
+  row and a bar take the whole width of a paired grid" (`expected 0 to be less than 0`, line 44);
+  `compoundRows.browser.test.tsx` failed in the same run. Not looked into past that.
+
 - **(P1) The first-publish gate passes a package npm will not let CI publish.**
   `check-first-publish.mjs` asks only whether a name exists on npm. `@weasel-js/menu` was published
   by hand at 1.10.1 (2026-10-16) and never given a trusted publisher, so the gate passed and the
