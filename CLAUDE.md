@@ -254,6 +254,11 @@ path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fle
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
 line once per shard.
 
+**Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
+main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
+`scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running
+`npm ci` and restarting draw when the lockfile changed); `npm run view:advance` does the same by hand.
+
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
 this is what says a commit would fail there. `npm run test:gate` runs it here, in about two
