@@ -56,6 +56,11 @@ Priority tags:
   `ingestion={{ handlers: [kitTextHandler] }}`. Whether `ingest` canvases should take text by
   default, and whether weaseldraw should, is undecided. The node gets the default text style,
   since the `insert` dep's `text` kind carries a string and nothing else.
+  (c) A drop keeps only the string flavors in `INGEST_STRING_MIMES` (`text/plain`, `text/html`,
+  `text/uri-list`; `packages/routing/src/ingestion/ingestItems.ts`), so a handler cannot claim a
+  drag from the app's own UI by a type of its own. weaselchart's Shapes panel carries its stencil id
+  as tagged `text/plain` for this reason (`apps/chart/src/stencilDrop.ts`). Admitting the custom
+  types a registered handler's `types` names would let it use its own.
 
 - **(P3) The image and SVG drop handlers could leave core.** `kitImageHandler` /
   `embedFilesAsImageNodes`, `kitSvgHandler` (which reuses the image embed), and `openFilePicker` in

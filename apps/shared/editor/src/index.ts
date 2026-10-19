@@ -4,3 +4,4 @@ export { nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './s
 export { writeSession } from './sessionStore';
 export { usePageFit } from './usePageFit';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
+export { TextEditDepPublisher } from './TextEditDepPublisher';

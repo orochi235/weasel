@@ -13,10 +13,3 @@
 .wc-menubar {
   flex-shrink: 0;
 }
-
-.wc-host {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}

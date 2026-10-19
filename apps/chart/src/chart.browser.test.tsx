@@ -203,8 +203,9 @@ describe('WeaselChart chart mode', () => {
     await expect.poll(() => bodies().length).toBe(1);
     const pose = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as { nodes: { kind: string; pose: { x: number; y: number; width: number; height: number } }[] })
       .nodes.find((n) => n.kind === 'container')!.pose;
-    expect(pose.x + pose.width / 2).toBeCloseTo(400, 0);
-    expect(pose.y + pose.height / 2).toBeCloseTo(300, 0);
+    // A pointer event's client point is whole pixels, about a world unit at this zoom.
+    expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
+    expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
   });
 });
 
