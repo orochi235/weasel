@@ -10,6 +10,7 @@ import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { edgeIdOf } from './edgeId';
 import { edgeSpecs, labelStyleOf, wireLabels } from './dataEdges';
 import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
@@ -204,19 +205,7 @@ const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
-/** A part of an edge id with its separators, and the `/` sub-specs append
- *  after one, escaped by a backslash. */
-const idPart = (s: string) => s.replace(/[\\.>:/]/g, '\\$&');
-
-/** The scene node id `diagramScene` gives an edge: its `id` when set, else one
- *  built from its ends, ports, and label. Two edges differing in any of those get different ids, an empty
- *  port or label included: a `.`, `>`, `:`, `/` or `\` in one of them is
- *  escaped with a backslash. */
-export const edgeIdOf = (e: DataEdge) => {
-  if (e.id !== undefined) return e.id;
-  const part = (mark: string, p: string | undefined) => (p === undefined ? '' : `${mark}${idPart(p)}`);
-  return `edge:${idPart(e.from)}${part('.', e.fromPort)}->${idPart(e.to)}${part('.', e.toPort)}${part(':', e.label)}`;
-};
+export { edgeIdOf };
 
 function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
