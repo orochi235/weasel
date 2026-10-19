@@ -1,10 +1,22 @@
 import { isDev } from '@weasel-js/react';
-import { createContext, type ReactNode, useContext, useEffect, useMemo } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import type { Instrument } from '../instrument/types';
+import { installThreeWatch, watchThree } from './threeWatch';
 import { type TrialOrbit, TrialOrbitContext } from './useTrialOrbit';
 
-/** Tells the trial around it that a 3D view is drawn there. */
-const OrbitViewContext = createContext<(() => void) | null>(null);
+/** Tells the trial around it that a 3D view is drawn there, and how. */
+const OrbitViewContext = createContext<((how: string) => void) | null>(null);
+
+/** How a trial with no camera draws 3D, or `null` while it draws none — what
+ *  the title bar's dev-time mark reads. */
+export const CameraMissingContext = createContext<string | null>(null);
 
 const INERT: TrialOrbit = {
   camera: null,
@@ -18,45 +30,64 @@ const INERT: TrialOrbit = {
  * `viewportRef` for the element the scene is drawn in, so the camera's
  * gestures land there. Call it from whatever renders the scene — three.js, raw
  * WebGL, a surface tile. In a trial whose instrument declares no `orbit` the
- * camera is `null` and nothing moves it, and in development the trial warns:
- * declare `orbit`, or `orbit: { fixed: true }` for a camera that holds still.
+ * camera is `null` and nothing moves it, and in development the trial warns.
  */
 export function useOrbitView(): TrialOrbit {
   const declare = useContext(OrbitViewContext);
-  useEffect(() => declare?.(), [declare]);
+  useEffect(() => declare?.('useOrbitView'), [declare]);
   return useContext(TrialOrbitContext) ?? INERT;
 }
 
 const warned = new WeakSet<Instrument>();
 
-/** Provides a trial's orbit to `useTrialOrbit` and `useOrbitView`, and warns
- *  of a 3D view drawn with no orbit to move it — once per instrument. */
+function warnOfNoCamera(instrument: Instrument, how: string): void {
+  if (warned.has(instrument)) return;
+  warned.add(instrument);
+  console.warn(
+    `[labkit] instrument "${instrument.name}" draws a 3D view (${how}), but declares no \`orbit\`, so the trial has no camera: nothing labkit owns turns, dollies, pans, or homes it, and Clone, Reset, and the zoom controls pass it by. Declare \`orbit: {}\` for the trial's orbit camera, \`orbit: { fixed: true }\` for one that holds still, or \`orbit: false\` if the instrument keeps a camera of its own.`,
+  );
+}
+
+/**
+ * Provides a trial's orbit to `useTrialOrbit` and `useOrbitView`. In
+ * development it also watches for a 3D view drawn in a trial whose instrument
+ * leaves `orbit` undeclared — through `useOrbitView`, or a three.js renderer
+ * in its DOM — and warns once per instrument and marks the title bar.
+ */
 export function TrialOrbitProvider({
   orbit,
   instrument,
+  trialId,
   children,
 }: {
   orbit: TrialOrbit | null;
   instrument: Instrument;
+  trialId: string;
   children: ReactNode;
 }) {
-  const hasOrbit = orbit !== null;
-  const declare = useMemo(
-    () =>
-      hasOrbit
-        ? null
-        : () => {
-            if (!isDev() || warned.has(instrument)) return;
-            warned.add(instrument);
-            console.warn(
-              `[labkit] instrument "${instrument.name}" draws a 3D view (useOrbitView), but it declares no \`orbit\`, so nothing can turn, dolly, pan, or home its camera. Declare \`orbit: {}\` for the trial's orbit camera, or \`orbit: { fixed: true }\` for one that holds still.`,
-            );
-          },
-    [hasOrbit, instrument],
+  const undeclared = instrument.orbit === undefined && isDev();
+  // Ahead of the instrument's effects, which is where a renderer is built.
+  if (undeclared) installThreeWatch();
+  const [missing, setMissing] = useState<string | null>(null);
+  const declare = useCallback(
+    (how: string) => {
+      if (!undeclared) return;
+      warnOfNoCamera(instrument, how);
+      setMissing((was) => was ?? how);
+    },
+    [undeclared, instrument],
+  );
+  useEffect(
+    () => (undeclared ? watchThree(trialId, () => declare('a three.js renderer')) : undefined),
+    [undeclared, trialId, declare],
   );
   return (
     <TrialOrbitContext.Provider value={orbit}>
-      <OrbitViewContext.Provider value={declare}>{children}</OrbitViewContext.Provider>
+      <OrbitViewContext.Provider value={declare}>
+        <CameraMissingContext.Provider value={undeclared ? missing : null}>
+          {children}
+        </CameraMissingContext.Provider>
+      </OrbitViewContext.Provider>
     </TrialOrbitContext.Provider>
   );
 }

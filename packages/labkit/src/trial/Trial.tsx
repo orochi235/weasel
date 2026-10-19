@@ -479,7 +479,7 @@ function TrialRuntime({
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <TrialOrbitProvider orbit={cam.orbit} instrument={instrument}>
+      <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={clockHandle}>
           <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
             <CameraWheelContext.Provider value={wheelSlot}>

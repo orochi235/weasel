@@ -1,13 +1,14 @@
 /**
- * `useOrbitView` is how a 3D view joins its trial's camera, and how the trial
- * learns that it draws one: a trial drawing 3D through no `orbit` warns.
+ * A trial learns that it draws 3D from `useOrbitView`, or from a three.js
+ * renderer drawing into its DOM; drawing 3D through no `orbit` warns, and
+ * marks the title bar.
  */
 
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { createCamera } from '@weasel-js/kernel3d';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { useContext } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument, OrbitCapability } from '../instrument/types';
@@ -38,16 +39,39 @@ function Scene3d() {
   return <div className="scene3d" ref={view.viewportRef} />;
 }
 
-function solid(
-  name: string,
-  orbit?: OrbitCapability<Record<string, never>, Record<string, never>>,
-): Instrument {
+/**
+ * What three.js's `WebGLRenderer` constructor does when the page defines
+ * `__THREE_DEVTOOLS__`: announce itself, `domElement` and all. Emulated here,
+ * since the suite has no WebGL; the event is three's contract.
+ */
+function observeRenderer(domElement: HTMLCanvasElement) {
+  const hook = (globalThis as { __THREE_DEVTOOLS__?: EventTarget }).__THREE_DEVTOOLS__;
+  hook?.dispatchEvent(new CustomEvent('observe', { detail: { domElement } }));
+}
+
+/** A three.js view the way a consumer writes one: its own canvas, its own
+ *  renderer, no labkit hook. `append` creates the canvas the way three does
+ *  when handed none, and puts it in the DOM after the constructor returns. */
+function ThreeScene({ append = false }: { append?: boolean }) {
+  const host = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = host.current as HTMLDivElement;
+    const canvas = append ? document.createElement('canvas') : (el.firstChild as HTMLCanvasElement);
+    observeRenderer(canvas);
+    if (append) el.append(canvas);
+  }, [append]);
+  return <div ref={host}>{append ? null : <canvas />}</div>;
+}
+
+type Orbit = OrbitCapability<Record<string, never>, Record<string, never>> | false;
+
+function solid(name: string, orbit?: Orbit, scene = <Scene3d />): Instrument {
   return defineInstrument<Record<string, never>, Record<string, never>>({
     name,
     defaultConfig: () => ({}),
     initialState: () => ({}),
-    render: () => <Scene3d />,
-    ...(orbit ? { orbit } : {}),
+    render: () => scene,
+    ...(orbit !== undefined ? { orbit } : {}),
   }) as Instrument;
 }
 
@@ -76,6 +100,7 @@ afterEach(() => warn.mockRestore());
 
 const cameraWarnings = () =>
   warn.mock.calls.filter((call) => String(call[0]).includes('draws a 3D view'));
+const badge = () => document.querySelector('.lk-trial__no-camera');
 
 describe('useOrbitView', () => {
   it("hands a 3D view its trial's orbit camera, and says nothing", async () => {
@@ -92,6 +117,7 @@ describe('useOrbitView', () => {
       pane.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 200 }));
     });
     expect(view()?.distance).toBeGreaterThan(20);
+    expect(badge()).toBeNull();
   });
 
   it('warns once per instrument when its trials draw 3D with no orbit camera', async () => {
@@ -100,9 +126,10 @@ describe('useOrbitView', () => {
     await act(async () => seen.lab?.cloneTrial(seen.lab.trials[0]?.id ?? ''));
     expect(cameraWarnings()).toHaveLength(1);
     expect(String(cameraWarnings()[0]?.[0])).toMatch(
-      /instrument "Bare" draws a 3D view .* declares no `orbit`.*`orbit: \{ fixed: true \}`/,
+      /instrument "Bare" draws a 3D view \(useOrbitView\).* declares no `orbit`.*`orbit: \{ fixed: true \}`.*`orbit: false`/,
     );
     expect(seen.view?.camera).toBeNull();
+    expect(badge()).not.toBeNull();
   });
 
   it('is inert outside a trial', async () => {
@@ -125,6 +152,34 @@ describe('a fixed orbit', () => {
     });
     expect(view()?.distance).toBe(20);
     expect(seen.view?.camera?.distance).toBe(20);
+    expect(cameraWarnings()).toEqual([]);
+  });
+});
+
+describe('a three.js renderer in a trial', () => {
+  it('counts as a 3D view: no orbit warns and marks the title bar', async () => {
+    await mount(solid('Threeish', undefined, <ThreeScene />));
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+    expect(String(cameraWarnings()[0]?.[0])).toMatch(/"Threeish" draws a 3D view \(a three\.js renderer\)/);
+    await waitFor(() => expect(badge()).not.toBeNull());
+  });
+
+  it('is found when its canvas joins the trial after the constructor', async () => {
+    await mount(solid('Appended', undefined, <ThreeScene append />));
+    await waitFor(() => expect(cameraWarnings()).toHaveLength(1));
+  });
+
+  it('says nothing under an orbit, or under `orbit: false`', async () => {
+    await mount(solid('Owned', false, <ThreeScene />));
+    await mount(solid('Labkits', {}, <ThreeScene />));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(cameraWarnings()).toEqual([]);
+    expect(badge()).toBeNull();
+  });
+
+  it('is ignored outside any trial', async () => {
+    await renderSettled(<ThreeScene />);
+    await new Promise((r) => setTimeout(r, 300));
     expect(cameraWarnings()).toEqual([]);
   });
 });
