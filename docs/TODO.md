@@ -20,13 +20,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) The rig tools could leave core with their actions.** Under the tool-home rule in
-  CLAUDE.md ("What gets its own package"), a tool moves only with its action family. Bone and
-  weight, with the rig actions and the animator skinning they drive, are the one core family that
-  reads as a functional area of its own; the rest bind core's own actions and stay. Moving them
-  means a `rig` package, `RIG_TOOLS` and `BuiltinToolId` losing two ids, and `useBuiltinRigTools`
-  leaving `<SceneCanvas>`'s built-ins.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -850,13 +843,6 @@ only story runner in the repo.
   `<Strip>` every field kind), a generic component (`DataGrid<Route>`), or one whose
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
-
-- **(P3) Loading a story raises an unhandled "ResizeObserver loop" error.** With forge's dev
-  server running, opening `#/ui-foundations-slider--single` makes vite's terminal print
-  `[Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.`,
-  once on load and again on reload (seen 2026-10-18, headless Chromium). Some ResizeObserver
-  callback changes a size it observes in the same frame. It isn't known yet which one, or
-  whether it's the Slider's or the workshop's.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show

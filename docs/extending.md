@@ -72,8 +72,8 @@ holds just the presets it was handed.
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
 family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
-`PAGE_TOOLS`, `RIG_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
-...omit)` leaves some out, so an app takes "everything but the rig tools" without
+`PAGE_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
+...omit)` leaves some out, so an app takes "everything but the knife" without
 listing ids that a new built-in would then miss. A set names ids, not tools,
 because a tool is built by a hook holding its state: whatever mounts the set
 supplies each tool, core for its built-ins and a package's own hook for its.

@@ -1,10 +1,10 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
-import { createSetDataOp } from 'core/ops/setData';
-import type { NodeId, Scene } from 'core/scene/types';
-import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { unplaceSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
+import { createSetDataOp } from '@weasel-js/core';
+import type { NodeId, Scene } from '@weasel-js/core';
+import { defaultCommitAdapter } from '@weasel-js/core';
+import { unplaceSkeleton, type RigNodeData } from '@weasel-js/core';
 import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';

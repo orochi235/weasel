@@ -1,16 +1,16 @@
 import { useMemo, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId, Scene } from '@weasel-js/core';
 import type { Skeleton } from '@weasel-js/animator';
-import { defineTool } from '../../overlayBinding';
-import type { Tool } from '../../overlayBinding';
+import { defineTool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/core';
 import { createBoneActions, type BoneEnv } from './boneActions';
 import { createBoneOverlay } from './boneOverlay';
 import { placedRig } from './placedRig';
 import { createRigEditState, type RigEditState } from './rigEditState';
 import { createEmitter } from '@weasel-js/registry';
-import { icon } from '../../../icons.gen';
+import { icon } from '../icons.gen';
 
 /** Options for `useBoneTool`. */
 export interface UseBoneToolOptions {

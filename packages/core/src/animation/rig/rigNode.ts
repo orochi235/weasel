@@ -18,8 +18,8 @@ export interface RigNodeData {
   joint?: string;
 }
 
-/** Weights to bind in place of the document's, and word of when they change. A `RigEditState`
- *  is one: it holds what a stroke of the weight tool has painted and not yet written. */
+/** Weights to bind in place of the document's, and word of when they change. `@weasel-js/rig`'s
+ *  `RigEditState` is one: it holds what a stroke of the weight tool has painted and not yet written. */
 export interface PaintedSkins {
   /** By node. A new map whenever the weights change. */
   painted(): ReadonlyMap<NodeId, Skin>;
@@ -149,7 +149,7 @@ export interface UseRigNodeOptions<TPose>
   /** The node whose data holds the skeleton. */
   node: NodeId;
   /** Weights bound in place of a node's `data.skin` while they are held. Give it the
-   *  `RigEditState` the weight tool has, and a stroke bends the path as it is painted. */
+   *  `RigEditState` `@weasel-js/rig`'s weight tool has, and a stroke bends the path as it is painted. */
   painting?: PaintedSkins;
 }
 

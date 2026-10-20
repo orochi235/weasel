@@ -399,8 +399,8 @@ its joints relative to that node's box, and the nodes under it hold `data.skin`
 or name a `data.joint` to ride whole. `useRigNode` binds from those and binds
 again when they change, keeping its target and what is animating it. When the
 joints themselves change it has a new target, which shows what was animating the
-old one on every joint both name, and `useBoneTool` and `useWeightTool` edit them on the
-canvas, one scene op per edit.
+old one on every joint both name, and `@weasel-js/rig`'s bone and weight tools edit them on
+the canvas, one scene op per edit.
 
 The blend runs on the CPU over the path's own points, and the renderer is handed a
 new path each frame the rig moves. It is not done on the tessellated mesh or in a

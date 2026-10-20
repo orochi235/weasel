@@ -5,7 +5,6 @@ import { scopedIcon } from '@weasel-js/icons';
 /** A glyph this package draws, by its bare name. */
 export type CoreIconName =
   | 'arrow'
-  | 'bone'
   | 'ellipse'
   | 'eyedropper'
   | 'hand'
@@ -22,7 +21,6 @@ export type CoreIconName =
   | 'sticky'
   | 'text'
   | 'unknown'
-  | 'weight'
   | 'cut'
   | 'copy'
   | 'paste'
@@ -124,7 +122,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
     "label": "Tools",
     "names": [
       "arrow",
-      "bone",
       "ellipse",
       "eyedropper",
       "hand",
@@ -140,8 +137,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "star",
       "sticky",
       "text",
-      "unknown",
-      "weight"
+      "unknown"
     ]
   },
   {
@@ -295,7 +291,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
 declare module '@weasel-js/icons' {
   interface IconName {
     'core:arrow': true;
-    'core:bone': true;
     'core:ellipse': true;
     'core:eyedropper': true;
     'core:hand': true;
@@ -312,7 +307,6 @@ declare module '@weasel-js/icons' {
     'core:sticky': true;
     'core:text': true;
     'core:unknown': true;
-    'core:weight': true;
     'core:cut': true;
     'core:copy': true;
     'core:paste': true;

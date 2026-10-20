@@ -259,25 +259,19 @@ describe('SceneCanvas tools prop patch form', () => {
     expect(get()!.registry).toHaveProperty('select');
   });
 
-  it('{ bone: true } mounts the built-in bone tool', () => {
-    const get = emptyHarness({ bone: true });
-    expect(get()!.registry.bone?.id).toBe('bone');
-    expect(get()!.registry).not.toHaveProperty('weight');
-  });
-
-  it('defaultTools mounts slice, bone, and weight by id', () => {
+  it('defaultTools mounts slice by id', () => {
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
         <SceneCanvas features={['pick']} scene={scene} width={100} height={100} layers={{}}
-          defaultTools={['slice', 'bone', 'weight']}
+          defaultTools={['slice']}
           onToolsCreated={(t) => { captured = t; }}
         />
       );
     }
     render(<Harness />);
-    expect(Object.keys(captured!.registry)).toEqual(['select', 'slice', 'bone', 'weight']);
+    expect(Object.keys(captured!.registry)).toEqual(['select', 'slice']);
     expect(captured!.registry.slice.id).toBe('slice');
   });
 

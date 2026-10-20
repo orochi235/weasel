@@ -1,6 +1,5 @@
 import {
   BUILTIN_TOOLS,
-  RIG_TOOLS,
   withoutTools,
   type Measurements,
   measurementsContribution,
@@ -44,10 +43,9 @@ import { usePathDirection } from './usePathDirection';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
 
-/** Every built-in but the rig tools, since a drawing has no skeletons to edit,
- *  and the sticky tool, whose `background` and `padding` the document's
- *  SVG round trip does not carry. */
-const DRAW_TOOLS = [withoutTools(BUILTIN_TOOLS, RIG_TOOLS, 'sticky')];
+/** Every built-in but the sticky tool, whose `background` and `padding` the
+ *  document's SVG round trip does not carry. */
+const DRAW_TOOLS = [withoutTools(BUILTIN_TOOLS, 'sticky')];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
