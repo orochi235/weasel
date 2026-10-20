@@ -1,7 +1,7 @@
-import type { MenuEntry, MenuItemEntry } from '@weasel-js/menu';
+import type { MenuEntry } from '@weasel-js/menu';
 import {
   isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
-  prefNumberAt, prefUnitAccepts, resolvePrefUnit,
+  prefNumberAt, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs';
@@ -10,6 +10,7 @@ import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { endlessAllows } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/react';
 import type { MenuDef } from './types';
@@ -44,9 +45,10 @@ const noop = () => {};
 const withAccess = (access?: string): { access?: string } => (access ? { access } : {});
 const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
-function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuItemEntry {
+function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
   const point = ctx.at ? { worldX: ctx.at.x, worldY: ctx.at.y } : {};
+  if (it.action.settings) return settingsOf(ctx, it, key, label, off || !evaluateEnabled(it.action, deps, ctx.at).enabled, access);
   return {
     kind: 'item',
     key,
@@ -57,6 +59,35 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     disabled: off || !evaluateEnabled(it.action, deps, ctx.at).enabled,
     checked: evaluateActive(it.action, deps),
     run: () => { ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...point }); },
+  };
+}
+
+/** An action carrying settings as a submenu of its form's rows, read when the
+ *  menu resolves; each change triggers the action with the params it makes. */
+function settingsOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
+  const settings = it.action.settings!;
+  const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
+  const mixed = new Set(state?.mixed ?? []);
+  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAtPath(state?.values, path));
+  const onChange = (path: string, value: unknown): void => {
+    const params = actionSettingsParams(settings, path, value);
+    if (params) ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...params });
+  };
+  const form: Ctx = {
+    ...ctx,
+    src: { ...ctx.src, values, onChange, over: settings.schema },
+    root: settings.schema,
+    read: (path, from) => (from === 'item' ? undefined : values(path)),
+  };
+  const entries = state ? tidy(groupRows(form, settings.schema, '', false)) : [];
+  return {
+    kind: 'submenu',
+    key,
+    label,
+    ...(it.icon ? { icon: it.icon } : {}),
+    ...withAccess(access),
+    ...(entries.length === 0 ? { disabled: true } : {}),
+    entries,
   };
 }
 

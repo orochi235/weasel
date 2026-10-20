@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
 import { icon } from '../icons.gen';
+import { pathEffectSettingsForm } from './settingsForm';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -28,13 +29,21 @@ function selectedLeaves(deps: ActionDeps | undefined): AnyNode[] | null {
   return leaves.length >= 2 ? leaves : null;
 }
 
-/** The selected nodes holding a path effect. */
-function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[]): AnyNode[] {
+/** The selected nodes holding a path effect, of `kind` where given. */
+function selectedEffects(deps: ActionDeps | undefined, ids?: readonly string[], kind?: unknown): AnyNode[] {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene) return [];
   return (ids ?? deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
-    .filter((n): n is AnyNode => n !== undefined && pathEffectOf(n) !== null);
+    .filter((n): n is AnyNode => {
+      const effect = n === undefined ? null : pathEffectOf(n);
+      return effect !== null && (kind === undefined || effect.kind === kind);
+    });
+}
+
+/** Whether the selection holds a path effect: what editing and expanding work on. */
+function holdsEffect(deps?: ActionDeps): true | ActionDisabledReason {
+  return selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired;
 }
 
 interface CreateSpec {
@@ -125,8 +134,10 @@ const EDIT_LABEL = 'Edit Path Effect';
 
 /**
  * Change the settings of path effects: `params.ids` when given, else the
- * selected ones. Every other param is a setting, laid over each effect's
- * own, and one that would change nothing commits nothing. Consecutive edits
+ * selected ones, and of those only the `params.kind` ones when given. Every
+ * other param is a setting, laid over each effect's own, and one that would
+ * change nothing commits nothing. Its settings form shows what the selection
+ * holds. Consecutive edits
  * of one effect coalesce, so a slider dragged through many values is one
  * undo step where the scene coalesces.
  */
@@ -134,14 +145,16 @@ export const editPathEffectAction: Action & { requires: string[] } = {
   id: 'editPathEffect',
   label: EDIT_LABEL,
   icon: icon('core:tune'),
-  requires: ['scene', 'applyOps'],
+  requires: ['selection', 'scene', 'applyOps'],
+  settings: pathEffectSettingsForm,
+  enabled: holdsEffect,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
       const p = params as Record<string, unknown> | undefined;
       const ids = Array.isArray(p?.ids) ? (p.ids as string[]) : undefined;
       const ops: Op[] = [];
-      for (const node of selectedEffects(deps, ids)) {
+      for (const node of selectedEffects(deps, ids, p?.kind)) {
         const effect = pathEffectOf(node)!;
         const next = withEffectSettings(effect, p);
         if (sameEffect(effect, next)) continue;
@@ -213,5 +226,5 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       deps.selection?.set(made as never);
     },
   } satisfies ImmediateInvoker,
-  enabled: (deps) => (selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
+  enabled: holdsEffect,
 };
