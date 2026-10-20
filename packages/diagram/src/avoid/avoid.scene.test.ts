@@ -103,7 +103,7 @@ describe('avoid routing in a scene', () => {
     const { scene, routing } = load();
     scene.add(box('wall', 200, 300, 60, 260) as never);
     const frame = new Map([['wall', { x: 200, y: -100, width: 60, height: 260 }]]);
-    const preview = routing.follower.preview(frame);
+    const preview = routing.follower.preview(frame, new Map());
     expect(preview.map((p) => p.id)).toEqual(['ab']);
     const shown = (preview[0]!.data as { diagram: DiagramEdge }).diagram.route!;
     expect(shown.length).toBeGreaterThan(0);
