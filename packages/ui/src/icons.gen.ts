@@ -296,45 +296,6 @@ export type UiIconName =
   | 'curveCosecant'
   | 'curveArcsine'
   | 'curveAsymptote'
-  | 'shapeTriangle'
-  | 'shapeRightTriangle'
-  | 'shapeSquare'
-  | 'shapeRectangle'
-  | 'shapeDiamond'
-  | 'shapeParallelogram'
-  | 'shapeTrapezoid'
-  | 'shapeKite'
-  | 'shapePentagon'
-  | 'shapeHexagon'
-  | 'shapeHexagonFlat'
-  | 'shapeHeptagon'
-  | 'shapeOctagon'
-  | 'shapeDecagon'
-  | 'shapeDodecagon'
-  | 'shapeCross'
-  | 'shapeLShape'
-  | 'shapeChevron'
-  | 'shapeStar'
-  | 'shapeStar4'
-  | 'shapeStar6'
-  | 'shapeStar8'
-  | 'shapePentagram'
-  | 'shapeCircle'
-  | 'shapeEllipse'
-  | 'shapeSemicircle'
-  | 'shapeQuarter'
-  | 'shapeStadium'
-  | 'shapeRoundedSquare'
-  | 'shapeRing'
-  | 'shapeCrescent'
-  | 'shapeLens'
-  | 'shapeSector'
-  | 'shapeSegment'
-  | 'shapeArch'
-  | 'shapeTeardrop'
-  | 'shapeEgg'
-  | 'shapeHeart'
-  | 'shapeAngle'
   | 'd4'
   | 'd6'
   | 'd8'
@@ -749,50 +710,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     ]
   },
   {
-    "label": "Shapes",
-    "names": [
-      "shapeTriangle",
-      "shapeRightTriangle",
-      "shapeSquare",
-      "shapeRectangle",
-      "shapeDiamond",
-      "shapeParallelogram",
-      "shapeTrapezoid",
-      "shapeKite",
-      "shapePentagon",
-      "shapeHexagon",
-      "shapeHexagonFlat",
-      "shapeHeptagon",
-      "shapeOctagon",
-      "shapeDecagon",
-      "shapeDodecagon",
-      "shapeCross",
-      "shapeLShape",
-      "shapeChevron",
-      "shapeStar",
-      "shapeStar4",
-      "shapeStar6",
-      "shapeStar8",
-      "shapePentagram",
-      "shapeCircle",
-      "shapeEllipse",
-      "shapeSemicircle",
-      "shapeQuarter",
-      "shapeStadium",
-      "shapeRoundedSquare",
-      "shapeRing",
-      "shapeCrescent",
-      "shapeLens",
-      "shapeSector",
-      "shapeSegment",
-      "shapeArch",
-      "shapeTeardrop",
-      "shapeEgg",
-      "shapeHeart",
-      "shapeAngle"
-    ]
-  },
-  {
     "label": "Platonic solids",
     "names": [
       "d4",
@@ -1098,45 +1015,6 @@ declare module '@weasel-js/icons' {
     'ui:curveCosecant': true;
     'ui:curveArcsine': true;
     'ui:curveAsymptote': true;
-    'ui:shapeTriangle': true;
-    'ui:shapeRightTriangle': true;
-    'ui:shapeSquare': true;
-    'ui:shapeRectangle': true;
-    'ui:shapeDiamond': true;
-    'ui:shapeParallelogram': true;
-    'ui:shapeTrapezoid': true;
-    'ui:shapeKite': true;
-    'ui:shapePentagon': true;
-    'ui:shapeHexagon': true;
-    'ui:shapeHexagonFlat': true;
-    'ui:shapeHeptagon': true;
-    'ui:shapeOctagon': true;
-    'ui:shapeDecagon': true;
-    'ui:shapeDodecagon': true;
-    'ui:shapeCross': true;
-    'ui:shapeLShape': true;
-    'ui:shapeChevron': true;
-    'ui:shapeStar': true;
-    'ui:shapeStar4': true;
-    'ui:shapeStar6': true;
-    'ui:shapeStar8': true;
-    'ui:shapePentagram': true;
-    'ui:shapeCircle': true;
-    'ui:shapeEllipse': true;
-    'ui:shapeSemicircle': true;
-    'ui:shapeQuarter': true;
-    'ui:shapeStadium': true;
-    'ui:shapeRoundedSquare': true;
-    'ui:shapeRing': true;
-    'ui:shapeCrescent': true;
-    'ui:shapeLens': true;
-    'ui:shapeSector': true;
-    'ui:shapeSegment': true;
-    'ui:shapeArch': true;
-    'ui:shapeTeardrop': true;
-    'ui:shapeEgg': true;
-    'ui:shapeHeart': true;
-    'ui:shapeAngle': true;
     'ui:d4': true;
     'ui:d6': true;
     'ui:d8': true;

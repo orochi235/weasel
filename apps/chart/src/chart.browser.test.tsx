@@ -79,12 +79,12 @@ const key = (k: string): void => {
   window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
 };
 
-const useTool = (name: string) => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: new RegExp(`^${name}`) }));
+const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
 const editor = (): HTMLElement | null => document.querySelector('.wc-host [contenteditable="true"]');
 
 /** Two Process bodies, 120 by 60: one from world (100, 100), one from (500, 100). */
 async function twoBodies(host: HTMLElement, canvas: HTMLCanvasElement): Promise<string[]> {
-  await userEvent.click(page.getByRole('option', { name: 'Process' }));
+  await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
   await drag(canvas, at(host, 100, 100), at(host, 220, 160));
   await expect.poll(() => bodies().length).toBe(1);
   await drag(canvas, at(host, 500, 100), at(host, 620, 160));
