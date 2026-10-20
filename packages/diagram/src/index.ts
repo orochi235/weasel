@@ -211,9 +211,9 @@ export {
   groupDerivePose,
 } from './group';
 export type { DiagramAnchor, DiagramDerivePose, GroupPoseOptions } from './group';
-export { diagramScene, edgeIdOf } from './fromData';
+export { DEFAULT_GROUP_STYLE, DEFAULT_NODE_STYLE, diagramScene, edgeIdOf } from './fromData';
 export { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH } from './dataTypes';
-export { dataEdgeStyle, dataNodeStyle, dataRegionStyle, type StyledRegion } from './dataStyles';
+export { DEFAULT_EDGE_STYLE, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type StyledRegion } from './dataStyles';
 export type { DataContainer, DataLane } from './dataTypes';
 export { rowTextStyle } from './rowStyle';
 export type {

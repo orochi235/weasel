@@ -6,7 +6,7 @@ import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
 import { buildBody, type MeasureRowText, type Row } from './body';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
-import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
+import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './fromData';
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { rowTextStyle } from './rowStyle';
 import type { IconRef } from '@weasel-js/icons';
@@ -72,7 +72,7 @@ export function stencilBuild<TLayer extends string>(
   },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
-  const style = opts.style ?? NODE;
+  const style = opts.style ?? DEFAULT_NODE_STYLE;
   const at = placedBounds(stencil, bounds);
   const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(

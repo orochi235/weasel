@@ -57,14 +57,14 @@ describe('nodeGraph', () => {
       { from: 'q', fromPort: 'yes', to: 'blur', toPort: 'image', label: 'yes' },
       { from: 'flag', fromPort: 'out', to: 'blur', toPort: 'on' },
     ]);
-    expect(scene.edgeStyle!(data.edges[0]!).stroke).toBe(color('image'));
-    expect(scene.edgeStyle!(data.edges[0]!).dash).toBeUndefined();
-    expect(scene.edgeStyle!(data.edges[2]!).dash).toEqual([5, 4]);
+    expect(scene.edgeStyle!(data.edges[0]!)!.stroke).toBe(color('image'));
+    expect(scene.edgeStyle!(data.edges[0]!)!.dash).toBeUndefined();
+    expect(scene.edgeStyle!(data.edges[2]!)!.dash).toEqual([5, 4]);
   });
 
   it('dashes a bypassed stage\'s outline', () => {
-    expect(scene.nodeStyle!(node('blur')).dash).toEqual([4, 3]);
-    expect(scene.nodeStyle!(node('src')).dash).toBeUndefined();
+    expect(scene.nodeStyle!(node('blur'))!.dash).toEqual([4, 3]);
+    expect(scene.nodeStyle!(node('src'))!.dash).toBeUndefined();
   });
 
   it('lays out with layered, flowing right', () => {
@@ -75,7 +75,7 @@ describe('nodeGraph', () => {
   it('draws a mismatched wire in the problem color and leaves out a wire with a missing end', () => {
     const bad = nodeGraph({ ...P, wires: [...P.wires, w(['flag', 'out'], ['blur', 'image']), w(['ghost', 'out'], ['blur', 'image'])] });
     expect(bad.data.edges).toHaveLength(4);
-    expect(bad.scene.edgeStyle!(bad.data.edges[3]!).stroke).toBe(PROBLEM_COLOR);
+    expect(bad.scene.edgeStyle!(bad.data.edges[3]!)!.stroke).toBe(PROBLEM_COLOR);
   });
 
   it('keeps the first of two stages sharing an id, so diagramScene does not throw', () => {

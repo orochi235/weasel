@@ -72,15 +72,15 @@ describe('compact', () => {
   it('draws a merged line in the problem color when a wire in it was flagged', () => {
     const bad = compact({ ...P, wires: [...P.wires, w(['osc', 'value'], ['mix', 'over'])] });
     const edge = bad.data.edges.find((e) => e.from === 'osc' && e.to === 'mix')!;
-    expect(bad.scene.edgeStyle!(edge).stroke).toBe(PROBLEM_COLOR);
+    expect(bad.scene.edgeStyle!(edge)!.stroke).toBe(PROBLEM_COLOR);
     expect(bad.data.groups).toEqual(P.groups);
   });
 
   it('dashes a line only when every wire in it is a control wire', () => {
     const { drawn } = boxes(P);
     const style = (from: string, to: string) => drawn.scene.edgeStyle!(drawn.data.edges.find((e) => e.from === from && e.to === to)!);
-    expect(style('osc', 'blur').dash).toEqual([5, 4]);
-    expect(style('blur', 'mix').dash).toBeUndefined();
+    expect(style('osc', 'blur')!.dash).toEqual([5, 4]);
+    expect(style('blur', 'mix')!.dash).toBeUndefined();
     const mixed = compact({
       types: P.types,
       stages: [{ id: 'a', title: 'A', outputs: [{ id: 'img', type: 'image' }, { id: 'n', type: 'number' }] },
@@ -88,7 +88,7 @@ describe('compact', () => {
       wires: [w(['a', 'n'], ['b', 'n']), w(['a', 'img'], ['b', 'img'])],
     });
     expect(mixed.data.edges).toHaveLength(1);
-    expect(mixed.scene.edgeStyle!(mixed.data.edges[0]!).dash).toBeUndefined();
+    expect(mixed.scene.edgeStyle!(mixed.data.edges[0]!)!.dash).toBeUndefined();
   });
 
   it('draws a decision as a hexagon by default, and as the symbol `branch` names', () => {
