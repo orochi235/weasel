@@ -52,7 +52,7 @@ describe('App', () => {
     expect(screen.getByText('Select a stage to edit its params.')).toBeTruthy();
     choose('Mode', 'Chart');
     expect(screen.queryByRole('grid', { name: 'Stages' })).toBeNull();
-    expect(screen.getByRole('listbox', { name: 'Shapes' })).toBeTruthy();
+    expect(screen.getByRole('toolbar', { name: 'Shapes' })).toBeTruthy();
   });
 
   it("keeps pipeline mode's undo history through a visit to chart mode", () => {
@@ -75,6 +75,27 @@ describe('App', () => {
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['New', 'Open…', 'Save']);
   });
 
+  it('gives pipeline mode View › Look, and keeps the look picked through a visit to chart mode', () => {
+    mount();
+    expect(screen.queryByRole('menuitem', { name: 'View' })).toBeNull();
+    choose('Mode', 'Pipeline');
+    const looks = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+      const look = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Look'))!;
+      act(() => { fireEvent.click(look); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const held = (rows: HTMLElement[]) => rows.filter((r) => r.getAttribute('aria-checked') === 'true').map((r) => r.children[1]!.textContent);
+    const rows = looks();
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Node graph', 'Rack', 'Lanes']);
+    expect(held(rows)).toEqual(['Node graph']);
+    act(() => { fireEvent.click(rows[1]!); });
+    choose('Mode', 'Chart');
+    choose('Mode', 'Pipeline');
+    expect(held(looks())).toEqual(['Rack']);
+  });
+
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {
     mount();
     choose('Mode', 'Pipeline');
@@ -82,5 +103,27 @@ describe('App', () => {
     const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
     // A row's second child is its label; the shortcut follows it.
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Undo', 'Redo', 'Delete']);
+  });
+
+  it('gives chart mode a Page menu that adds and deletes pages, and pipeline mode none', () => {
+    mount();
+    const tabs = () => screen.getAllByRole('tab').map((t) => t.textContent);
+    expect(tabs()).toEqual(['Page 1']);
+    choose('Page', 'Add Page');
+    expect(tabs()).toEqual(['Page 1', 'Page 2']);
+    choose('Page', 'Delete Page');
+    expect(tabs()).toHaveLength(1);
+    choose('Edit', 'Undo');
+    expect(tabs()).toHaveLength(2);
+    choose('Mode', 'Pipeline');
+    expect(within(screen.getByRole('menubar')).queryByRole('menuitem', { name: 'Page' })).toBeNull();
+  });
+
+  it('opens Page Setup on a page from the Page menu', () => {
+    mount();
+    choose('Page', 'Page Setup');
+    expect(screen.getByRole('dialog', { name: /Page Setup: Page 1/ })).toBeTruthy();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

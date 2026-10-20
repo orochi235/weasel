@@ -165,3 +165,11 @@ describe('useScene — subscribe option', () => {
     expect(renders).toBe(1);
   });
 });
+
+describe('useScene — doc option', () => {
+  it('starts the scene with the given document values, outside history', () => {
+    const { result } = renderHook(() => useScene({ systemLayers: [{ id: 'a' }], doc: { 'core:pages': { pages: [] } } }));
+    expect(result.current.doc.get('core:pages')).toEqual({ pages: [] });
+    expect(result.current.canUndo()).toBe(false);
+  });
+});

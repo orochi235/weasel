@@ -81,7 +81,7 @@ async function click(el: Element, p: { x: number; y: number }): Promise<void> {
   await frame();
 }
 
-const shapes = (name: string) => userEvent.click(page.getByRole('option', { name, exact: true }));
+const shapes = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name, exact: true }));
 const useSelect = () => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: /^Select/ }));
 
 describe('WeaselChart containers', () => {

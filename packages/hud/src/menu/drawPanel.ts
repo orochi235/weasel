@@ -8,7 +8,7 @@ import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
-import { colorCommands, numberCommands, valueRowWidth } from './valueRows';
+import { colorCommands, numberCommands, textCommands, valueRowWidth } from './valueRows';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
 export interface MenuMetrics {
@@ -122,8 +122,8 @@ export function drawPanel(
       return;
     }
     if (i === highlight) out.push(rect(b.x + 2, b.y + r.y, b.w - 4, r.h, t['--wzl-surface-hover']));
-    // Nothing edits a color row, so it reads as a disabled one does.
-    const color = e.disabled || e.kind === 'color' ? muted : fg;
+    // Nothing here edits a color or a text row, so each reads as a disabled one does.
+    const color = e.disabled || e.kind === 'color' || e.kind === 'text' ? muted : fg;
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
@@ -145,6 +145,7 @@ export function drawPanel(
     const ink = { fg, muted, border: t['--wzl-border'], font };
     if (e.kind === 'number') out.push(...numberCommands(b, r, e, shown(e), m, ink));
     if (e.kind === 'color') out.push(...colorCommands(b, r, e, m, ink));
+    if (e.kind === 'text') out.push(...textCommands(b, r, e.value, m, ink));
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });
   return out;

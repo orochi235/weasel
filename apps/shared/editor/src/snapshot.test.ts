@@ -1,6 +1,6 @@
 import { asNodeId, type SerializedScene } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
 
 // Regression for the reload bug where a loader filtered `kind === 'leaf'` and dropped `parent`,
 // losing containers and nesting even though `toJSON()` persisted the full tree.
@@ -78,5 +78,18 @@ describe('snapshot — scene snapshot to node specs', () => {
     expect(g!.locked).toBe(true);
     expect(a!.pickable).toBe(false);
     expect(a!.hidden).toBe(true);
+  });
+});
+
+describe('docFromSnapshot', () => {
+  const base = { version: 1 as const, systemLayers: [{ id: 'default' as const }], nodes: [] };
+
+  it('reads the document values a snapshot carries', () => {
+    expect(docFromSnapshot({ ...base, doc: { 'core:pages': { pages: [] } } })).toEqual({ 'core:pages': { pages: [] } });
+  });
+
+  it('answers undefined for a snapshot written before document values, or a malformed one', () => {
+    expect(docFromSnapshot(base)).toBeUndefined();
+    expect(docFromSnapshot({ ...base, doc: [1] as never })).toBeUndefined();
   });
 });

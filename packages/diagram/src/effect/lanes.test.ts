@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { diagramScene, type DiagramSpec } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { SAMPLES } from './lab/samples';
-import { LANE_INSET, laneId, lanes } from './lanes';
+import { sequenceSlots } from '../slotReorder';
+import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
@@ -187,5 +188,34 @@ describe('lanes', () => {
         expect(box(id).y + box(id).height, `${name}: ${id}`).toBeLessThanOrEqual(bottom);
       }
     }
+  });
+});
+
+describe('lanes order', () => {
+  it('names the main line’s stages left to right, each gap between its neighbors’ boxes', () => {
+    const { drawn, box } = built(P);
+    expect(drawn.order!.axis).toBe('x');
+    const ids = drawn.order!.items.map((i) => i.id);
+    expect(ids).toEqual(['src', 'q', 'blur', 'mix', 'out']);
+    const { gaps } = sequenceSlots('x', ids.map((id) => ({ id, bounds: box(id) })));
+    for (let k = 1; k < ids.length; k++) {
+      expect(gaps[k]!.a.x).toBeGreaterThan(box(ids[k - 1]!).x + box(ids[k - 1]!).width);
+      expect(gaps[k]!.a.x).toBeLessThan(box(ids[k]!).x);
+    }
+  });
+
+  it('names the lanes top down, each gripped by its header beside the stages', () => {
+    const { drawn, box } = built(P);
+    const order = drawn.laneOrder!;
+    expect(order.axis).toBe('y');
+    expect(order.items.map((i) => i.id)).toEqual([laneId('image'), laneId('number'), laneId('mask')]);
+    const firstStage = Math.min(...stageIds(P).map((id) => box(id).x));
+    for (const item of order.items) {
+      const lane = box(item.id);
+      expect(item.grip).toEqual({ x: lane.x, y: lane.y, width: expect.any(Number), height: lane.height });
+      expect(item.grip!.width).toBeGreaterThan(0);
+      expect(item.grip!.x + item.grip!.width).toBeLessThanOrEqual(firstStage);
+    }
+    expect(laneTypeOf(order.items[1]!.id)).toBe('number');
   });
 });

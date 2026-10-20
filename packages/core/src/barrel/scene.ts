@@ -115,6 +115,7 @@ export type {
   UserLayerRecord,
   UseSceneOptions,
 } from '../core/scene';
+export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {

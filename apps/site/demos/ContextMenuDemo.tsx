@@ -5,7 +5,7 @@ import {
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { ContextMenuHost, useContextMenu } from '@weasel-js/ui';
+import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }

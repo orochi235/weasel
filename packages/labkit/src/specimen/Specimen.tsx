@@ -1,71 +1,60 @@
 import type { Track } from '@weasel-js/animator';
 import type { Paint } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { type Band, BandEditor } from '@weasel-js/ui/components/BandEditor';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
+import { Callout } from '@weasel-js/ui/components/Callout';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { ColorField } from '@weasel-js/ui/components/ColorField';
+import { ComboBox } from '@weasel-js/ui/components/ComboBox';
+import { type ControlPoint, CurveEditor } from '@weasel-js/ui/components/CurveEditor';
+import { DataGrid } from '@weasel-js/ui/components/DataGrid';
+import { DetentSlider } from '@weasel-js/ui/components/DetentSlider';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { Disclosure } from '@weasel-js/ui/components/Disclosure';
+import { GradientEditor } from '@weasel-js/ui/components/GradientEditor';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Input } from '@weasel-js/ui/components/Input';
+import { ItemList } from '@weasel-js/ui/components/ItemList';
+import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
+import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
+import { NumberField } from '@weasel-js/ui/components/NumberField';
+import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
+import { PaintInput } from '@weasel-js/ui/components/PaintInput';
+import { Plot2D } from '@weasel-js/ui/components/Plot2D';
+import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
+import { Powerline } from '@weasel-js/ui/components/Powerline';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import {
-  Badge,
-  type Band,
-  BandEditor,
-  Button,
-  ButtonBar,
-  Callout,
-  Checkbox,
-  ColorField,
-  ComboBox,
-  type ControlPoint,
-  CurveEditor,
-  createToastQueue,
-  DataGrid,
-  DetentSlider,
-  Dialog,
-  Disclosure,
-  Focusable,
-  GradientEditor,
-  InlineRange,
-  Input,
-  ItemList,
-  KeyCap,
-  KeySequence,
-  LayerList,
-  type LayerListItem,
-  MenuButton,
-  moveLayers,
-  NumberField,
-  OptionsBar,
-  PaintInput,
-  Plot2D,
-  PointPlotter,
-  Powerline,
-  PrefsForm,
   PropertyField,
   PropertyGroup,
   PropertyList,
   PropertyPanel,
-  Radio,
-  RadioGroup,
-  RangeSlider,
-  ResizeHandle,
-  Select,
-  Sidebar,
-  SidebarPanel,
-  Slider,
+} from '@weasel-js/ui/components/Properties';
+import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
+import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
+import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
+import { Select } from '@weasel-js/ui/components/Select';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import {
   StatusBarItem,
   StatusBarSpacer,
-  Switch,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
-  type Thumb,
-  Timeline,
-  ToastRegion,
-  ToggleBar,
-  ToolButton,
-  ToolGroup,
-  ToolOptionsBar,
-  Tooltip,
-  TooltipTrigger,
   StatusBar as UiStatusBar,
-} from '@weasel-js/ui';
+} from '@weasel-js/ui/components/StatusBar';
+import { Switch } from '@weasel-js/ui/components/Switch';
+import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
+import { Timeline } from '@weasel-js/ui/components/Timeline';
+import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
+import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
+import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { type CSSProperties, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import type { JobHandle } from '../job/types';
 import { FloatingPanel } from '../primitives/FloatingPanel';

@@ -5,6 +5,7 @@ import type { HudAccessibleNode } from '../widget';
 function labelOf(c: MenuController, e: MenuRowEntry): string {
   if (e.kind === 'number') return `${e.label}: ${menuNumberText(c.numberValue(e), e)}`;
   if (e.kind === 'color') return `${e.label}: ${e.value ?? '—'}`;
+  if (e.kind === 'text') return `${e.label}: ${c.textValue(e) ?? '—'}`;
   return e.label;
 }
 
@@ -22,7 +23,7 @@ function level(c: MenuController, at: number): HudAccessibleNode[] {
       label: labelOf(c, e),
       ...(deepest && stack[at] === i ? { active: true } : {}),
       ...(e.kind === 'item' && e.checked !== undefined ? { checked: e.checked } : {}),
-      ...(e.disabled || e.kind === 'color' ? { disabled: true } : {}),
+      ...(e.disabled || e.kind === 'color' || e.kind === 'text' ? { disabled: true } : {}),
       ...(e.kind === 'submenu' ? { expanded: open } : {}),
       ...(open ? { children: [{ role: 'menu', key: 'menu', label: e.label, children: level(c, at + 1) }] } : {}),
     };

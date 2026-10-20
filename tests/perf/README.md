@@ -214,8 +214,9 @@ What the numbers say:
 - **A readout that changes every frame ties on the main thread**, HUD against
   plain DOM: from 1,000 glyphs up the ranges overlap under every camera. The
   HUD spends it on script, the DOM on style, layout, and paint.
-- **Off the main thread the HUD is cheaper, by about 1 ms at 2,500 glyphs and
-  up**, with the readout changing every frame. The compositor is where the
+- **Off the main thread the HUD looked cheaper, by about 1 ms at 2,500 glyphs
+  and up**, with the readout changing every frame, until the renderer's worker
+  pool was counted (below). The compositor is where the
   ranges separate: from 1,000 glyphs up the HUD's compositor runs 0.20–0.30 ms
   a frame against the DOM's 0.51–0.76, and at 5,000 glyphs the GPU process
   runs 1.85–2.03 against 2.61–2.69. The all-thread totals lean the same way,
@@ -257,14 +258,37 @@ run in the same page first. Chromium was 153.0.8010.12 in all of them, as on
 what was different about msb-uai that night is not known. The result files are
 in `recorded/hud-vs-dom-census-2026-10-17/`.
 
-**The thread groups above leave out the renderer's worker pool.** `HVD_CENSUS=1`
-reports every thread in every process. In those runs the renderer's
-`ThreadPoolForegroundWorker` threads were busy 2.48 ms a frame under the HUD
-against 0.69 under the DOM on teitou, and 3.23 against 0.87 on msb-uai, at
-5,000 glyphs changing every frame. That difference, 1.8 and 2.4 ms, is larger
-than the HUD's lead in the all-threads table at that size, 0.86 ms, though the
-two come from different runs: the sweep has not been rerun with the pool
-counted, and what those threads do for the HUD has not been broken down.
+**Counting the renderer's worker pool reverses it.** The thread groups above leave the
+pool out; `HVD_CENSUS=1` reports every thread in every process, and the self time of the
+pool's events by name. With the readout changing every frame, the HUD keeps the pool 1.9–5.7
+ms a frame busy against the DOM's 0.6–1.6, and 78–88% of the HUD's is V8's background garbage
+collection (`V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL`, `V8.GC_MC_BACKGROUND_MARKING`).
+That the HUD's text path allocates that garbage is inferred; no allocation profile has been
+taken. All
+threads plus the pool, ms a frame, median [min–max] of 4 samples:
+
+| Node | Camera | Glyphs | HUD | DOM |
+|---|---|---:|---:|---:|
+| msb-uai | fixed  | 2,500 |  8.16 [ 5.81– 8.60] | 4.81 [4.42–5.10] |
+| msb-uai | fixed  | 5,000 | 11.74 [11.54–11.88] | 6.61 [5.34–6.87] |
+| msb-uai | moving | 5,000 | 10.52 [ 9.67–11.12] | 6.03 [5.90–6.74] |
+| msb-uai | pan    | 5,000 | 10.65 [ 9.28–12.05] | 7.05 [6.17–7.80] |
+| keiei   | fixed  | 2,500 |  7.42 [ 7.17– 7.83] | 5.30 [4.98–5.76] |
+| keiei   | fixed  | 5,000 | 12.83 [12.48–13.47] | 7.48 [6.92–8.26] |
+| keiei   | moving | 5,000 | 12.44 [12.01–13.72] | 8.05 [7.82–8.65] |
+| keiei   | pan    | 5,000 | 12.63 [12.18–12.71] | 8.48 [7.97–8.70] |
+
+From 2,500 glyphs up the ranges are apart under every camera on both nodes, React and the
+DOM layer sitting with the DOM; at 1,000 they overlap except on msb-uai's fixed camera. So
+with the readout changing every frame, the DOM is the cheaper overlay in all-thread time,
+and the HUD's lead in the table above comes from what that table leaves out. Measured
+on 2026-10-19 at `58e134fe4` plus the census change (the result files name onto's base,
+`f01d3e010`, marked dirty), one run of the every-frame half
+(1,000 to 5,000 glyphs) on each of msb-uai (Apple M3 Max, 1-minute load 9.5 on 14 cores at
+the start) and keiei (Apple M2, load 8.5 on 8 cores), each with no other onto job on the
+node; Chromium 153.0.8010.12. Census figures are not comparable with the tables above,
+since it traces more categories. The result files are in
+`recorded/hud-vs-dom-pool-2026-10-19/`.
 
 ### Widget command caching
 
@@ -277,7 +301,7 @@ result files are in `recorded/hud-command-cache/`.
 
 The default sweep is 486 measurements and took 78 minutes on msb-uai.
 `HVD_GLYPHS`, `HVD_UPDATES`, `HVD_CAMERAS`, and `HVD_APPROACHES` each narrow it.
-`HVD_CENSUS=1` adds the census of every thread and the frame pipeline's async
+`HVD_CENSUS=1` adds the census of every thread, the renderer worker pool's self time by event, and the frame pipeline's async
 stages; it traces more categories, so its busy figures are not comparable with a
 run without it.
 

@@ -21,7 +21,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { PATH_DIRECTION_CHROME_ID, pathStructurePreset } from '@weasel-js/path-tools';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';

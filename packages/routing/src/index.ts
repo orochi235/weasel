@@ -106,7 +106,7 @@ export type KernelOverlay = OverlaySchema extends { overlay: infer O } ? O : unk
 
 // ─── actions ──────────────────────────────────────────────────────────────
 export type {
-  Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant,
+  Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant, Carried,
 } from './interactions/actions/action';
 export { actionItems, actionItemTitle } from './interactions/actions/actionItems';
 export type { ActionItem } from './interactions/actions/actionItems';
@@ -202,7 +202,7 @@ export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } fro
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
-  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
+  INGEST_STRING_MIMES, admitIngestMime, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

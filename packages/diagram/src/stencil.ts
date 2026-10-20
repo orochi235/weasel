@@ -7,27 +7,31 @@ import { buildBody, type MeasureRowText, type Row } from './body';
 import { DEFAULT_FONT } from './edgeLabel';
 import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
 import { rowTextStyle } from './rowStyle';
+import type { IconRef } from '@weasel-js/icons';
+import { icon } from './icons.gen';
 import type { Outline } from './outline';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
- *  to one empty label, so the body has a text node to type into. */
+ *  to one empty label, so the body has a text node to type into. `icon` is its
+ *  tool's glyph in a palette. */
 export interface DiagramStencil {
   id: string;
   label: string;
   outline: Outline;
   size: { width: number; height: number };
   rows?: readonly Row[];
+  icon?: IconRef;
 }
 
 /** The basic flowchart symbols. */
 export const FLOWCHART_STENCILS: readonly DiagramStencil[] = [
-  { id: 'process', label: 'Process', outline: 'rect', size: { width: 120, height: 60 } },
-  { id: 'decision', label: 'Decision', outline: 'diamond', size: { width: 120, height: 80 } },
-  { id: 'terminal', label: 'Terminal', outline: 'stadium', size: { width: 120, height: 50 } },
-  { id: 'data', label: 'Data', outline: 'parallelogram', size: { width: 130, height: 60 } },
-  { id: 'manual', label: 'Manual', outline: 'trapezoid', size: { width: 130, height: 60 } },
-  { id: 'preparation', label: 'Preparation', outline: 'hexagon', size: { width: 130, height: 60 } },
-  { id: 'connector', label: 'Connector', outline: 'ellipse', size: { width: 50, height: 50 } },
+  { id: 'process', label: 'Process', outline: 'rect', size: { width: 120, height: 60 }, icon: icon('shape:rectangle') },
+  { id: 'decision', label: 'Decision', outline: 'diamond', size: { width: 120, height: 80 }, icon: icon('shape:diamond') },
+  { id: 'terminal', label: 'Terminal', outline: 'stadium', size: { width: 120, height: 50 }, icon: icon('shape:stadium') },
+  { id: 'data', label: 'Data', outline: 'parallelogram', size: { width: 130, height: 60 }, icon: icon('shape:parallelogram') },
+  { id: 'manual', label: 'Manual', outline: 'trapezoid', size: { width: 130, height: 60 }, icon: icon('shape:trapezoidSide') },
+  { id: 'preparation', label: 'Preparation', outline: 'hexagon', size: { width: 130, height: 60 }, icon: icon('shape:hexagonFlat') },
+  { id: 'connector', label: 'Connector', outline: 'ellipse', size: { width: 50, height: 50 }, icon: icon('shape:circle') },
 ];
 
 /** The insert kind a stencil's tool passes to the `insert` dep. */

@@ -44,6 +44,15 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
+/** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
+ *  `undefined` for a snapshot written before it had any. */
+export function docFromSnapshot<TData, TLayer extends string, TPose>(
+  json: SerializedScene<TData, TLayer, TPose>,
+): Readonly<Record<string, unknown>> | undefined {
+  const { doc } = json;
+  return doc !== null && typeof doc === 'object' && !Array.isArray(doc) ? doc : undefined;
+}
+
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
  *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
  *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the

@@ -1,4 +1,4 @@
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { useId, useState } from 'react';
 import { icon } from '../icons.gen';
 import { Callout } from '../passthrough/weasel-ui';

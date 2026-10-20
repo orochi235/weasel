@@ -1,6 +1,6 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
-import { iconFromData } from '@weasel-js/ui';
+import { iconFromData } from '@weasel-js/ui/components/Icon';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */

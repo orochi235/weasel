@@ -37,6 +37,7 @@ function spread(run: StyledRun, extra: readonly number[], inherited: TextStyle['
 
 /**
  * Add `tspan`'s run to the last of `lines`, spaced as its `dx` list says.
+ * `tspan` may be a `<text>` holding only text, whose `dx` reads the same way.
  * Glyph `i` takes `dx[i + 1]` as extra advance, and `dx[0]` goes on the glyph
  * before the tspan. With no glyph before it, `dx[0]` moves where the line
  * starts: returned for the first line, whose start is the text's own `x`, and
@@ -56,8 +57,9 @@ export function placeTspanRun(
     return 0;
   }
   const raw = tspan.getAttribute('dx');
+  const tag = tspan.tagName.toLowerCase();
   if (COLLAPSIBLE.test(run.text)) {
-    onWarn(`<tspan dx="${raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
+    onWarn(`<${tag} dx="${raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
     line.push(run);
     return 0;
   }
@@ -70,7 +72,7 @@ export function placeTspanRun(
   } else if (dx[0] !== 0 && lines.length === 1) {
     lead = dx[0];
   } else if (dx[0] !== 0) {
-    onWarn(`<tspan dx="${raw}"> opens a line; the line starts at the box edge, and the rest of the list is read`);
+    onWarn(`<${tag} dx="${raw}"> opens a line; the line starts at the box edge, and the rest of the list is read`);
   }
   line.push(...spread(run, dx.slice(1), inherited));
   return lead;

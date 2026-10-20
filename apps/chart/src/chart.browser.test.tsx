@@ -4,11 +4,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { fitViewToBounds } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
-import { stencilDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
 
 registerCanvasFont('sans-serif');
@@ -36,14 +37,12 @@ const edges = () => saved().filter((n) => {
   return d !== undefined && 'from' in d;
 });
 
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding. */
+/** Client point of a world point: the page is fitted to the workspace with 24px of padding, at a zoom the fit
+ *  rounds to a step. */
 function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
-  const scale = Math.min((box.width - 48) / CHART_PAGE.width, (box.height - 48) / CHART_PAGE.height);
-  return {
-    x: box.left + box.width / 2 + (x - CHART_PAGE.width / 2) * scale,
-    y: box.top + box.height / 2 + (y - CHART_PAGE.height / 2) * scale,
-  };
+  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 24 });
+  return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
 }
 
 function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
@@ -80,12 +79,12 @@ const key = (k: string): void => {
   window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
 };
 
-const useTool = (name: string) => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: new RegExp(`^${name}`) }));
+const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
 const editor = (): HTMLElement | null => document.querySelector('.wc-host [contenteditable="true"]');
 
 /** Two Process bodies, 120 by 60: one from world (100, 100), one from (500, 100). */
 async function twoBodies(host: HTMLElement, canvas: HTMLCanvasElement): Promise<string[]> {
-  await userEvent.click(page.getByRole('option', { name: 'Process' }));
+  await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
   await drag(canvas, at(host, 100, 100), at(host, 220, 160));
   await expect.poll(() => bodies().length).toBe(1);
   await drag(canvas, at(host, 500, 100), at(host, 620, 160));
@@ -198,7 +197,7 @@ describe('WeaselChart chart mode', () => {
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
     const { host, canvas } = await mountApp();
     const dt = new DataTransfer();
-    dt.setData('text/plain', stencilDragText('decision'));
+    dt.setData(STENCIL_MIME, 'decision');
     const p = at(host, 400, 300);
     for (const type of ['dragenter', 'dragover', 'drop']) {
       canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));

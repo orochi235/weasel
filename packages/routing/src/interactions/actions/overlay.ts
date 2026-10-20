@@ -20,6 +20,10 @@ export type OverlayRole =
   | 'falloff'
   /** What a lock holds a dragged point to — a line, a circle. */
   | 'lock'
+  /** Where a dragged item would land: a reorder's insertion bar. */
+  | 'insert'
+  /** Where a dragged item is over and cannot land. */
+  | 'refused'
   | (string & {});
 
 /**

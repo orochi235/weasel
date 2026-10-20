@@ -26,6 +26,7 @@ function zoomRow(extra: Partial<MenuNumberEntry> = {}): MenuNumberEntry {
   return { kind: 'number', key: 'zoom', label: 'Magnification', value: 8, min: 2, max: 16, step: 1, suffix: '×', set: vi.fn(), ...extra };
 }
 const color: MenuEntry = { kind: 'color', key: 'color', label: 'Color', value: '#336699' };
+const text: MenuEntry = { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set: vi.fn() };
 
 describe('drawPanel: value rows', () => {
   it('draws a number row as its label, its value and unit, and a step chip either side', () => {
@@ -58,6 +59,15 @@ describe('drawPanel: value rows', () => {
     expect(textOf(cmds)).toEqual(['Color', '#336699']);
     expect(JSON.stringify(cmds)).toContain('"color":"#336699"');
     expect(JSON.stringify(cmds.filter((c) => c.kind === 'text')[0])).toContain('#888');
+  });
+
+  it('draws a text row as its label and its value, muted, since nothing here edits it', () => {
+    const cmds = drawPanel(ctx, b, [text], null, m);
+    expect(textOf(cmds)).toEqual(['Name', 'Layer 1']);
+    for (const c of cmds.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#888');
+    const label = 'L'.repeat(30);
+    expect(panelSize([{ ...text, label } as MenuEntry], m, measure).w)
+      .toBe(label.length * 7 + m.padX + 'Layer 1'.length * 7 + m.padX * 2 + m.rowHeight);
   });
 
   it('widens the panel for a number row\'s chips and a color row\'s swatch and hex', () => {
@@ -120,6 +130,13 @@ describe('createMenuWidget: value rows', () => {
     expect(w.accessibleTree!.read().children).toEqual([
       { role: 'menuitem', key: 'zoom', label: 'Magnification: 7×', active: true },
       { role: 'menuitem', key: 'color', label: 'Color: #336699', disabled: true },
+    ]);
+  });
+
+  it('names a text row by label and value in its tree, disabled', () => {
+    const { w } = widget([text]);
+    expect(w.accessibleTree!.read().children).toEqual([
+      { role: 'menuitem', key: 'name', label: 'Name: Layer 1', disabled: true },
     ]);
   });
 });

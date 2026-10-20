@@ -79,6 +79,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 - 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
   Alt+J, beside the Alt-letter anchor selections.
+- 2026-10-19 (pass 7): A carry's moves are walked, while nothing is in flight, only for `carry`
+  bindings with a `target`: an untargeted ongoing binding is still asked once, as the carry comes
+  over, and one whose `enabled` refused that point does not start later where it would accept.
+  Asking every binding on every move would re-run a declining `start` per move.
+
+- 2026-10-19 (pass 7): `GroupTransform` is only the translate: its `scale` and `rotate` arms are
+  gone, since nothing produced them and resize and rotate behaviors answer bounds and angles of
+  their own, which a pivot scale cannot fully say.
 
 ## Snapping
 
@@ -132,6 +140,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-18: kernel3d's `translate` puts its plane at `up · position`, and its insert builds the
   footprint from the two drag ends cast onto the ground.
 - 2026-10-18: The site demo `point-snap` is renamed `resize-snap`; links to the old id break.
+- 2026-10-19 (pass 7): `resolveSnap`'s `members` is the smallest set that pins the move: a member
+  the others already imply (a line taken before a point on it) is dropped, and so cannot decide a
+  tie on its order. It still shows in `satisfied`.
 
 ## Scene, move, and history
 
@@ -173,6 +184,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-13 (pass 6): `overChildren`, `isOverChildren`, and `splitOverChildren` are new core
   exports; a container's `data.label` draws over its children through them.
 - 2026-10-13 (pass 6): `SceneCanvasApi.ingest` works from first render.
+- 2026-10-19 (pass 7): The symmetry guide's angle knob moves out past the farthest corner of the
+  group's contents, plus twice its hit radius, when they reach past `knobDistancePx`. With a large
+  group that can put it off screen; nothing clamps it to the canvas.
+- 2026-10-19 (pass 7): A canvas's `poseDescriptor` stays on the canvas rather than moving into
+  `useScene` beside `layoutFrame`. They measure different things: `layoutFrame` measures a
+  container in the scene's own coordinates so a layout can run with no view, while a descriptor
+  measures for a view. `Kernel3dDemo` builds its descriptor from the scene and the camera, so it
+  answers with a projected screen rectangle that no scene could own. A 2D scene whose poses are not
+  rects still states both.
 
 ## Rendering, canvas, and paint
 
@@ -208,6 +228,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
   canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
   `createViewportLayer` take an optional `clip`.
+- 2026-10-19 (pass 7): `renderSceneToPixels` leaves annotation layers out unless passed
+  `annotations: true`, as the SVG export does; `renderDebugSnapshot` defaults it to `true`, since it
+  reproduces the canvas.
 
 ## Text
 
@@ -462,3 +485,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
   and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
   on `packages/icons-plugin/src` requires the extension.
+- 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
+  and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
+  publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
+  names are a call not made; labkit's `weasel-ui` passthrough is exempt on purpose.

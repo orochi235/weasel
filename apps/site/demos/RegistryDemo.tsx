@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { createReflectable, type Registrant } from '@weasel-js/registry';
-import { Button, ToggleBar } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './RegistryDemo.module.css';
 
 type Tool = 'pen' | 'hand' | 'zoom';

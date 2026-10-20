@@ -1,4 +1,4 @@
-import { MenuBar } from '@weasel-js/ui';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo } from 'react';
 import type { LabContribution } from '../chrome/labTypes';
 import { useLabCommands } from './LabContext';

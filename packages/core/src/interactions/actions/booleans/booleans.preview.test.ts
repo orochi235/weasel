@@ -6,7 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import { applyBooleanOp, previewBooleanOp, type BooleansAdapter } from './booleans';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
 import type { TransientPath } from 'canvas/pathOverlay';
-import { pathfinderCropAction, pathfinderUnionAction } from './action';
+import { pathfinderCropAction, pathfinderDivideAction, pathfinderUnionAction } from './action';
 
 const RED = { color: '#f00' };
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });
@@ -85,5 +85,18 @@ describe('a Pathfinder action\'s preview', () => {
     expect(show).not.toHaveBeenCalled();
     const two = harness([{ id: 'a', path: rect(0, 0, 10, 10) }, { id: 'b', path: rect(5, 0, 10, 10) }]);
     expect(pathfinderUnionAction.preview!({ booleansAdapter: two.adapter })).toBeUndefined();
+  });
+
+  it('shows each piece in the paint it would wear', () => {
+    const BLUE = { color: '#00f' };
+    const h = harness([
+      { id: 'a', path: rect(0, 0, 10, 10), paint: { fill: { paint: RED } } },
+      { id: 'b', path: rect(5, 0, 10, 10), paint: { fill: { paint: BLUE } } },
+    ]);
+    const show = vi.fn((_paths: readonly TransientPath[]) => () => {});
+    pathfinderDivideAction.preview!({ booleansAdapter: h.adapter, previewPaths: { show } });
+    const shown = show.mock.calls[0][0];
+    const fills = shown.map((p) => [boundsOfPath(p.path).x, p.paint?.fill?.paint]).sort((a, b) => (a[0] as number) - (b[0] as number));
+    expect(fills).toEqual([[0, RED], [5, BLUE], [10, BLUE]]);
   });
 });

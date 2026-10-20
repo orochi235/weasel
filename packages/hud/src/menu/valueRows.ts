@@ -28,6 +28,7 @@ export function chipAt(panelW: number, m: MenuMetrics, x: number): 1 | -1 | null
 export function valueRowWidth(e: MenuEntry, m: MenuMetrics, measure: (text: string, fontSize: number) => number): number | undefined {
   if (e.kind === 'number') return m.padX + numberChips(0, m).width;
   if (e.kind === 'color') return Math.max(m.rowHeight, m.padX + measure(e.value ?? '—', m.fontSize));
+  if (e.kind === 'text') return m.padX + measure(e.value ?? '—', m.fontSize);
   return undefined;
 }
 
@@ -57,6 +58,16 @@ export function numberCommands(
     ),
     mark(`M ${cx(plus) - 4} ${cy} L ${cx(plus) + 4} ${cy} M ${cx(plus)} ${cy - 4} L ${cx(plus)} ${cy + 4}`, color(!high)),
   ];
+}
+
+/** A text row's value at the row's end, muted: nothing in a HUD menu edits it. */
+export function textCommands(
+  b: WidgetBounds, r: { y: number; h: number }, value: string | undefined, m: MenuMetrics, ink: ValueInk,
+): DrawCommand[] {
+  return [textCommandFromRuns(
+    b.x + m.padX, b.y + r.y, [{ text: value ?? '—', fill: solid(ink.muted) }],
+    { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
+  )];
 }
 
 /** The swatch a color row draws in its icon column, and its hex at the row's end. */

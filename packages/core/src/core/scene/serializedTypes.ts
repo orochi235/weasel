@@ -21,6 +21,8 @@ export interface SerializedScene<TData, TLayer extends string, TPose> {
    *  layers and is kept so existing snapshots still parse. */
   systemLayers: readonly SerializedLayer<TLayer>[];
   nodes: readonly SerializedNode<TData, TLayer, TPose>[];
+  /** The scene's document values, JSON only. Omitted when it has none. */
+  doc?: Readonly<Record<string, unknown>>;
 }
 
 /** JSON-serializable shape of a single node. Mirrors `AddNodeSpec` but

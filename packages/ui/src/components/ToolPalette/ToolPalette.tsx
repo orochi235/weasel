@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type DragEvent, type ReactNode } from 'react';
 import { toolSetHas, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -90,6 +90,12 @@ export interface ToolPaletteProps {
   stacks?: ReadonlyArray<readonly string[]>;
   /** The modifier that makes a click on a stack step through it. Default `'alt'`. */
   stackCycle?: StackCycleModifier;
+  /** Lays each group out as a grid this many buttons across, the groups stacked; `orientation`
+   *  then says nothing. */
+  columns?: number;
+  /** Makes each tool's button a drag source, so dragging one out can do what clicking it would
+   *  then do on the canvas (drop a node, say). Called as a drag starts; set the drag's data here. */
+  onToolDragStart?: (tool: Tool, e: DragEvent<HTMLButtonElement>) => void;
 }
 
 const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
@@ -108,14 +114,15 @@ export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
     groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
+    columns, onToolDragStart,
   } = props;
   const shows = include === undefined ? () => true
     : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
   const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
   const groups = partitionByGroup(list);
   const groupKeys = orderedGroupKeys(groups, groupOrder);
-  const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
-    .filter(Boolean).join(' ');
+  const horizontal = !columns && orientation === 'horizontal';
+  const cls = [s.palette, horizontal && s.horizontal, className].filter(Boolean).join(' ');
 
   const shown = new Map(list.map((t) => [t.id, t]));
   const stackOf = stackIndex(stacks);
@@ -154,10 +161,10 @@ export function ToolPalette(props: ToolPaletteProps) {
             <div
               className={s.separator}
               role="separator"
-              aria-orientation={orientation === 'horizontal' ? 'vertical' : 'horizontal'}
+              aria-orientation={horizontal ? 'vertical' : 'horizontal'}
             />
           )}
-          <ToolGroup orientation={orientation} groupKey={key}>
+          <ToolGroup orientation={orientation} columns={columns} groupKey={key}>
             {slots.map((slot) => {
               if (slot.kind === 'stack') {
                 return (
@@ -185,6 +192,7 @@ export function ToolPalette(props: ToolPaletteProps) {
                   className={[s.paletteBtn, !enabled && s.ineligibleBtn].filter(Boolean).join(' ')}
                   title={resolvedTitle}
                   onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
+                  onDragStart={onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined}
                 />
               );
             })}

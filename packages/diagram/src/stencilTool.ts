@@ -14,13 +14,13 @@ import type { NodeStyle } from './fromData';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
-export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label'>): Tool {
+export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon'>): Tool {
   return defineTool({
     id: stencilKind(stencil.id),
     hookName: 'useStencilTool',
     capabilities: ['creates-shapes'],
     cursor: 'crosshair',
-    presentation: { label: stencil.label, group: 'stencil' },
+    presentation: { label: stencil.label, icon: stencil.icon, group: 'stencil' },
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: stencilKind(stencil.id) } } },
       INSERT_REPOSITION_BINDING,
@@ -29,7 +29,7 @@ export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label'>): Tool
 }
 
 /** {@link stencilTool}, rebuilt only when the stencil changes. */
-export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label'>): Tool {
+export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon'>): Tool {
   return useMemo(() => stencilTool(stencil), [stencil]);
 }
 

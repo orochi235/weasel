@@ -13,7 +13,7 @@ import type { CanvasElements } from './useCanvasElements';
 import { NO_LAYER_VISIBILITY, type LayerGate } from './useExtraLayers';
 
 /** What a frame's paint reads that a React render owns. */
-export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'retain'> {
+export interface PaintInputs extends Pick<CanvasProps<unknown>, 'dpr' | 'layerGroups' | 'shaders' | 'flattenTolerance' | 'imageMinification' | 'retain'> {
   layers: RenderLayer<unknown>[];
   width: number;
   height: number;
@@ -76,7 +76,7 @@ export function useCanvasPaint(
       layers: paintLayers, width: w, height: h, debugSink: sink, frameStats: timed,
       dpr: dprIn,
       flattenTolerance: paintFlattenTolerance,
-      layerGroups: groups, shaders: paintShaders, retain,
+      layerGroups: groups, shaders: paintShaders, retain, imageMinification,
     } = inputsRef.current;
     if (w === 0 || h === 0) return false;
 
@@ -86,6 +86,7 @@ export function useCanvasPaint(
       tile: rect,
       flattenTolerance: paintFlattenTolerance,
       retainBudget: retain ? retain.budget : undefined,
+      imageMinification,
       shaders: paintShaders,
     });
     // No WebGL2 (jsdom), or a context that is lost for now: nothing to paint.

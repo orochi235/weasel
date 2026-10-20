@@ -1,6 +1,6 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { LABS, PALETTE_LAB } from '../../shared/labs';
-import { PropertyField, PropertyPanel } from '@weasel-js/ui';
+import { PropertyField, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useEffect, useMemo, useState } from 'react';
 import { PresetBar } from './PresetBar';
 import { SwatchPanel } from './SwatchPanel';

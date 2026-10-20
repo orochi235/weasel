@@ -20,6 +20,20 @@ export interface EffectLookResult {
    *  decision, keyed by edge id: which stage chose, and by which output. A
    *  run reads that stage's `taken` for them. */
   exits?: ReadonlyMap<string, { stage: string; port: string }>;
+  /** The stages on the main line, in the order the look draws them, for a
+   *  reorder to drag along. Looks that place stages freely leave it out. */
+  order?: LookOrder;
+  /** The lanes, top down, where the look draws lanes. */
+  laneOrder?: LookOrder;
+}
+
+/** A sequence a look draws: the scene node ids of its items in order along
+ *  `axis`. `slotReorder`'s `sequenceSlots` turns it into slots once the items
+ *  have drawn boxes. */
+export interface LookOrder {
+  axis: 'x' | 'y';
+  /** `grip` is where a press picks the item up, in world units; default its drawn box. */
+  items: readonly { id: string; grip?: { x: number; y: number; width: number; height: number } }[];
 }
 
 /** One way of drawing a pipeline. Unparameterized, a look whose options are

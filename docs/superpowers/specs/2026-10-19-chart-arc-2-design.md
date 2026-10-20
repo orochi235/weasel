@@ -1,6 +1,6 @@
 # weaselchart (`apps/chart`), second arc — design
 
-**Pieces 2, 3, 4, and 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`). Piece 5, containers and swimlanes, landed with core's `canDropInto` dep and `carriedDescendants`; the diagram README's "Containers and pools" says what it does.
+**Pieces 4 and 6 unbuilt as of 2026-10-19.** Pieces 1, 2, 3, and 5 have landed; the diagram README and `docs/concepts.md` describe them.
 
 For whoever builds each piece of the second arc. It says what the user does and sees in
 weaselchart, which engine surface each piece adds and where, how it saves and undoes, and which
@@ -20,139 +20,15 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 
 | # | Piece | Core foundation it adds | Needs |
 |---|---|---|---|
-| 2 | Stage reorder under `rack` and `lanes` | — | — |
-| 3 | Multiple pages | scene document values | — |
-| 4 | Themes | — | 3 (document values) |
-| 6 | Obstacle-avoiding routing | scene edit passes | 5 (landed) |
+| 4 | Themes | — | — |
+| 6 | Obstacle-avoiding routing | scene edit passes | — |
 
-The suggested order holds. Stage reorder sits second although it shares nothing with the others,
-because it closes out pipeline mode's first-arc gap while the scene foundations are still in review.
+The suggested order holds.
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README's
 editing section and `docs/TODO.md` in its merge; and, when it merges, deletes its own section of
 this doc (the doc is deleted with the last piece).
-
-## 2. Stage reorder under `rack` and `lanes`
-
-### What the user sees
-
-Pipeline mode gains View › Look › Node graph / Rack / Lanes. Under rack and lanes, connecting,
-reconnecting, deleting, and param editing work as under node graph; free moves do not. Instead,
-dragging a stage on the main line lifts it, it follows the pointer along the flow axis, and an
-insertion bar shows between the two stages it would land between. Releasing splices it in there.
-Where the splice cannot type-check, the bar draws in the problem color and release does nothing.
-Under lanes, dragging a lane's label up or down reorders the lanes.
-
-### What a reorder means
-
-**The wiring is the order (2026-10-19).** Both looks place stages from the wires (`mainChain` for
-rack, `columnsOf` for lanes), so a reorder rewires: the stage's main input and output wires come off,
-its old neighbors are wired to each other, the wire between its new neighbors comes off, and the
-stage is wired between them. Side wires, control wires, and params stay with the stage. A second
-stored order could contradict the wiring, so none is kept.
-
-**Only stages on the main line drag (2026-10-19).** An off-line stage sits where what it feeds
-puts it, so there is no slot to drag it to.
-
-### Engine surface
-
-- **`effect/chainEdit.ts`**: `chainLinks(pipeline, chain)` (the main-in and main-out port of each
-  chain stage, moved out of `rack.ts`'s `Line` so rack and the edit share one answer),
-  `canMoveInChain(doc, stage, to)`, and `moveInChain(doc, stage, to) → EffectDoc | null`.
-- **`EffectLookResult.order?: LookOrder`** in `effect/draw.ts`:
-  `{ axis: 'x' | 'y'; items: { id, bounds }[]; gaps: { index, a: Vec2, b: Vec2 }[] }`, the slots a
-  drag can land in, in world units. `rack` and `lanes` fill it; `lanes` also fills `laneOrder` with
-  each lane's header box.
-- **`slotReorder.ts`** in the diagram root, general to any drawing that is a sequence:
-  `REORDER_ACTION_ID = 'diagram.reorder'`, `createReorderAction({ slots, canDrop, commit })` where
-  `slots(ctx) → ReorderSlots | null` and the commit hears `{ id, from, to }`. It previews the
-  dragged node along the axis through a pose override and draws the insertion bar as its overlay.
-- **`EffectDoc.laneOrder?: readonly string[]`** and `setLaneOrder(doc, order)` in `effect/edit.ts`;
-  `editorScene` hands it to `lanes` as `LanesOptions.lanes`.
-- **`EffectEditor`** takes `look?: 'nodeGraph' | 'rack' | 'lanes'` and that look's options;
-  `editorScene(doc, look, options)` replaces the `nodeGraph`-only mapping in
-  `effect/editorMapping.ts`. Undo labels: "Reorder", "Reorder lanes".
-
-**The look is a view choice, kept in the session, not the document (2026-10-19)**: one pipeline is
-meant to read in every look. `compact` stays view-only.
-
-### Save, load, undo
-
-A reorder is a pipeline edit, so it saves with the pipeline. `laneOrder` is a new optional field;
-older files load unchanged. Each reorder is one `onChange`, so one entry in the app's pipeline
-history (`apps/chart/src/pipeline/usePipelineDoc.ts`).
-
-### Tests
-
-- `chainEdit.test.ts`: splice forward and back, to either end; type mismatch refuses; side and
-  control wires stay; `mainChain` after a splice puts the stage at its target.
-- `rack.test.ts`, `lanes.test.ts`: `order` slots match the drawn boxes.
-- `slotReorder.test.ts`; `EffectEditor.reorder.test.tsx` reporting "Reorder".
-- `EffectEditor.reorder.browser.test.tsx`: a real drag under rack; the insertion bar's place.
-- `apps/chart/src/pipeline/pipeline.browser.test.tsx`: switch look, reorder, undo.
-
-## 3. Multiple pages
-
-### What the user sees
-
-A strip of page tabs under the canvas: click a tab to fit the view to that page, double-click to
-rename, drag to reorder, + to add, context menu to delete or set the size. Page › Page Setup picks a
-size (Letter, Legal, Tabloid, A4, A3, each portrait or landscape, or custom). Page Up and Page Down
-step between pages. Pages sit side by side in one world, as `core/pages` already lays them out, so
-one scene, one view, and one history serve them all. The tab of the page most of the view shows is
-lit.
-
-A shape belongs to the page its bounds overlap most (`pageOfBounds`). Reordering or resizing pages
-moves each page's shapes with it. Deleting a page deletes what is on it and every connector attached
-to that, as one undo entry.
-
-**Connectors may cross pages and draw across the gap (2026-10-19)**: in one world nothing stops
-them, and off-page reference markers are third-arc work. **Shapes in the gap belong to no page and
-stay put when pages move (2026-10-19).**
-
-### Core foundation: scene document values
-
-Pages, page layout, and later the theme are document state that is not a node. Core has no place
-for it: `SerializedScene` holds layers and nodes only, and `registerOp` records history without
-serializing.
-
-- `packages/core/src/core/scene/docValues.ts`: `Scene.doc: SceneDoc` with `get<T>(key)`,
-  `set(key, value | undefined)`, and `keys()`. A `set` is a scene mutation: undoable, part of an
-  enclosing `batch`, elided when the value is deep-equal, and heard by `subscribe`.
-- `SerializedScene.doc?: Readonly<Record<string, unknown>>` (JSON values only; `version` stays 1,
-  since the field is additive), `docFromSnapshot(json)` beside `nodeSpecsFromSnapshot`, and
-  `useScene({ doc })` for the initial values.
-- Keys are namespaced by owner: `core:pages`, `diagram:theme`.
-
-### Engine surface
-
-- `packages/core/src/core/pages/pageEdits.ts`, exported from `barrel/viewport.ts`:
-  `PagesDoc { pages: Page[]; layout?: PageLayoutOptions }`, `PAGES_DOC_KEY = 'core:pages'`,
-  `pagesOf(scene) → PagesDoc | null`, `pageMembers(scene, placed) → Map<pageId, NodeId[]>` (roots
-  only; nodes with `dependsOn` follow their dependencies), and
-  `setPages(scene, next, label)`, which moves each page's members by the change in their page's
-  place and writes the doc value in one batch. `addPage`, `removePage`, `movePage`, `resizePage`,
-  and `renamePage` are built on it. Members move with their descendants (piece 5 relies on this).
-- `PageTabs` in `packages/ui/src/components/PageTabs/`, built on the existing `Tabs`, generic over
-  any page list, with its own stories file.
-- `usePaperLayer` (`apps/shared/editor/src/paperLayer.ts`) takes the placed pages instead of one
-  size; draw passes its single page through the same function.
-
-### Save, load, undo
-
-The page list saves in the scene's `doc` under `core:pages`; a chart saved before this piece has
-none and opens as one page of `CHART_PAGE`'s size. Every page edit is one history entry holding the
-doc value and the member moves together. `replaceChart` (`apps/chart/src/chartPersistence.ts`) sets
-the doc values in the same batch as the nodes.
-
-### Tests
-
-- `docValues.test.ts`: set, undo, redo, elision, batch, `toJSON` round trip.
-- `pageEdits.test.ts`: reorder moves members; resize keeps page-relative places and shifts later
-  pages; remove deletes members and their connectors in one entry; gap nodes stay.
-- `PageTabs` test and stories; `apps/chart` test that a v1 file without pages loads as one page.
-- Chart browser test: add a page, draw on it, reorder tabs, undo, save and reload.
 
 ## 4. Themes
 

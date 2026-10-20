@@ -1,4 +1,4 @@
-import { PropertyGroup } from '@weasel-js/ui';
+import { PropertyGroup } from '@weasel-js/ui/components/Properties';
 
 import styles from './PaletteLab.module.css';
 import { anchorFromHex, toHexPreview, type Anchor } from '@weasel-js/theme/engine';

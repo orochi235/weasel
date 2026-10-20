@@ -17,6 +17,11 @@ describe('guideHandles', () => {
     expect(knob).toEqual({ handle: 'angle', at: { x: 164, y: 100 } });
   });
 
+  it('moves the knob out past the contents\' reach, measured on screen, with room for its hit circle', () => {
+    const [knob] = guideHandles(spec({ kind: 'mirror', angle: HORIZONTAL_AXIS }), C, VIEW, 64, 40, 9);
+    expect(knob).toEqual({ handle: 'angle', at: { x: 100 + 80 + 18, y: 100 } });
+  });
+
   it('gives a radial kind only its center, since turning it changes nothing', () => {
     expect(guideHandles(spec({ kind: 'radial' }), C, VIEW, 64).map((h) => h.handle)).toEqual(['center']);
   });

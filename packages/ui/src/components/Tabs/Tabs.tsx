@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   Tabs as RACTabs,
   TabList as RACTabList,
@@ -32,6 +32,7 @@ export function Tabs({ children, className, ...rest }: TabsProps) {
 /** Props for {@link TabList}, on top of React Aria's `TabList` props. */
 export type TabListProps<T extends object> = Omit<RACTabListProps<T>, 'className'> & {
   className?: string;
+  ref?: Ref<HTMLDivElement>;
 };
 
 /** The row of tab buttons inside a {@link Tabs}. */

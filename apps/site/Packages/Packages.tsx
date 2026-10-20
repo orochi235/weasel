@@ -1,4 +1,4 @@
-import { InlineMarkdown } from '@weasel-js/ui';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import type { PackageEntry } from '../../shared/packageDocs';
 import {
   PACKAGES_ID, packageRoute, parsePackageRoute, type PackageRoute, type PackageTab,
