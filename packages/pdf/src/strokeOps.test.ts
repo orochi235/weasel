@@ -14,12 +14,16 @@ const line: Path = {
 const ink = { color: '#000000' };
 
 async function content(commands: DrawCommand[]): Promise<string> {
-  const { bytes } = await writePdf([{ width: 100, height: 100, commands }], {
+  return (await render(commands)).content;
+}
+
+async function render(commands: DrawCommand[]) {
+  const { bytes, skipped } = await writePdf([{ width: 100, height: 100, commands }], {
     fonts: NO_FONTS,
     compress: false,
   });
   const s = latin1(bytes);
-  return s.slice(s.indexOf('stream\n') + 7, s.indexOf('\nendstream'));
+  return { content: s.slice(s.indexOf('stream\n') + 7, s.indexOf('\nendstream')), skipped };
 }
 
 describe('writeStroke', () => {
@@ -72,8 +76,9 @@ describe('writeStroke', () => {
         ],
       },
     ]);
-    expect(c).toContain('2.6667 w\n');
-    expect(c).toContain('[4 4] 0 d\n');
+    // The renderer snaps a { px } scale to a grid, so the width is 2.6667 only within its tolerance.
+    expect(Math.abs(Number(/(\S+) w\n/.exec(c)?.[1]) - 2.6667)).toBeLessThan(0.2);
+    expect(Math.abs(Number(/\[(\S+) \S+\] 0 d\n/.exec(c)?.[1]) - 4)).toBeLessThan(0.3);
   });
 
   it('fills the outline of a stroke PDF cannot draw', async () => {
@@ -81,13 +86,39 @@ describe('writeStroke', () => {
       { paint: ink, width: 4, align: 'inner' as const },
       { paint: ink, width: 4, vertexWidths: [1, 3] },
       { paint: ink, width: 4, nib: { angle: 0, ratio: 0.5 } },
-      { paint: ink, width: 4, vertexColors: [1, 0, 0, 1, 0, 0, 1, 1] },
     ]) {
       const c = await content([{ kind: 'path', path: line, stroke }]);
       expect(c, JSON.stringify(stroke)).not.toMatch(/\nS\n/);
       expect(c, JSON.stringify(stroke)).toContain('0 0 0 rg\n');
       expect(c, JSON.stringify(stroke)).toMatch(/\nf\n/);
     }
+  });
+
+  it('reports vertexColors as approximated by the single paint', async () => {
+    const { content: c, skipped } = await render([
+      { kind: 'path', path: line, stroke: { paint: ink, width: 4, vertexColors: [1, 0, 0, 1, 0, 0, 1, 1] } },
+    ]);
+    expect(c).toMatch(/\nf\n/);
+    expect(skipped.map((k) => k.detail)).toEqual(['stroke vertexColors approximated by a single paint']);
+  });
+
+  it('writes nothing for a zero-width stroke', async () => {
+    const c = await content([{ kind: 'path', path: line, stroke: { paint: ink, width: 0 } }]);
+    expect(c).not.toContain(' w\n');
+    expect(c).not.toMatch(/\nS\n/);
+  });
+
+  it('resolves a { px } marker size against the accumulated scale', async () => {
+    const inGroup = (size: number | { px: number }): DrawCommand => ({
+      kind: 'group',
+      transform: Float64Array.from([0.75, 0, 0, 0, 0.75, 0, 0, 0, 1]),
+      children: [{ kind: 'path', path: line, stroke: { paint: ink, width: 2, markerEnd: { key: 'arrow', size } } }],
+    });
+    const nums = (c: string) => c.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+    const px = nums(await content([inGroup({ px: 12 })]));
+    const world = nums(await content([inGroup(16)]));
+    expect(px).toHaveLength(world.length);
+    px.forEach((n, i) => expect(Math.abs(n - (world[i] as number))).toBeLessThan(0.25));
   });
 
   it('draws a gradient stroke as a shaded outline', async () => {
@@ -126,6 +157,6 @@ describe('writeStroke', () => {
     ]);
     const fills = (s: string) => s.match(/\nf\n/g)?.length ?? 0;
     expect(fills(plain)).toBe(0);
-    expect(fills(marked)).toBeGreaterThan(0);
+    expect(fills(marked)).toBe(1);
   });
 });

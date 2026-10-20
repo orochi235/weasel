@@ -1,7 +1,7 @@
-import { mat3, type Path } from '@weasel-js/geom';
-import { type CommandStroke, isSolidPaint, resolveScreenLength, type Stroke } from '@weasel-js/paint';
-import { markerDrawCommands } from '@weasel-js/renderer';
-import { resolveStrokeWidth, strokeInsets, strokeToPath } from '@weasel-js/stroke';
+import type { Path } from '@weasel-js/geom';
+import { type CommandPaint, type CommandStroke, isSolidPaint, type Stroke } from '@weasel-js/paint';
+import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
+import { strokeInsets, strokeToPath } from '@weasel-js/stroke';
 import { colorFor } from './color';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import { pathOps } from './pathOps';
@@ -17,7 +17,7 @@ function isNative(stroke: CommandStroke, width: number): boolean {
   return start === 0 && end === 0;
 }
 
-function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, scale: number): void {
+function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, width: number): void {
   const paint = stroke.paint;
   if (!paint || !isSolidPaint(paint)) return;
   const [r, g, b, a] = colorFor(paint.color, state);
@@ -26,14 +26,11 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
   out.op('RG', r, g, b);
-  out.op('w', resolveStrokeWidth(stroke.width ?? 1, scale));
+  out.op('w', width);
   out.op('J', CAPS[stroke.cap ?? 'butt']);
   out.op('j', JOINS[stroke.join ?? 'miter']);
   out.op('M', stroke.miterLimit ?? 4);
-  if (stroke.dash?.length) {
-    const unit = typeof stroke.width === 'object' ? resolveScreenLength({ px: 1 }, scale) : 1;
-    out.op('d', `[${stroke.dash.map((d) => d * unit).join(' ')}]`, 0);
-  }
+  if (stroke.dash?.length) out.op('d', `[${stroke.dash.join(' ')}]`, 0);
   pathOps(out, path, 'all');
   out.op('S');
   out.op('Q');
@@ -42,21 +39,30 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
 /**
  * Strokes `path`: natively where PDF draws it as the renderer does, otherwise by
  * filling the stroke's outline, which also carries gradient paints. Marker heads
- * follow as their own commands.
+ * follow as their own commands; heads with their own paint are drawn over the
+ * line-colored copy that `strokeToPath` already unioned into the outline.
  */
-export async function writeStroke(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState): Promise<void> {
-  if (!stroke.paint) return;
-  const scale = mat3.meanScaleOf(state.transform);
-  const width = resolveStrokeWidth(stroke.width ?? 1, scale);
+export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandStroke, state: DrawState): Promise<void> {
+  if (!rawStroke.paint) return;
+  const { cmd } = resolveStrokeLengths(state.transform, {
+    kind: 'path',
+    path,
+    stroke: { ...rawStroke, paint: rawStroke.paint as CommandPaint },
+  });
+  const stroke = cmd.stroke;
+  const width = typeof stroke.width === 'number' ? stroke.width : 1;
+  if (!(width > 0)) return;
   let heads =
     stroke.markerStart || stroke.markerMid || stroke.markerEnd
       ? markerDrawCommands(path, stroke, width, undefined)
       : [];
-  if (isNative(stroke, width) && isSolidPaint(stroke.paint)) writeNative(ctx, path, stroke, state, scale);
+  if (isNative(stroke, width) && isSolidPaint(stroke.paint)) writeNative(ctx, path, stroke, state, width);
   else {
-    // The outline already contains every head, in the line's paint.
+    if (stroke.vertexColors) {
+      ctx.skipped.push({ kind: 'command', detail: 'stroke vertexColors approximated by a single paint' });
+    }
     heads = heads.filter((h) => h.stroke || h.fill?.paint !== stroke.paint);
-    const outline = strokeToPath(path, stroke as Stroke, { scale });
+    const outline = strokeToPath(path, stroke as Stroke);
     await writeCommands(ctx, [{ kind: 'path', path: outline, fill: { paint: stroke.paint } }], state);
   }
   if (heads.length) await writeCommands(ctx, heads, state);
