@@ -1,8 +1,10 @@
 # @weasel-js/icons
 
-Namespaced icon names (`namespace:name`) and the icon registry. No React, no DOM, no glyphs of its
-own: each weasel package that draws glyphs publishes its own table, at `@weasel-js/<package>/icons`.
-The build plugin that ships only the glyphs a build names is `@weasel-js/icons-plugin`.
+Namespaced icon names (`namespace:name`) and the icon registry. No React, no DOM. Each weasel
+package that draws glyphs publishes its own table, at `@weasel-js/<package>/icons`; this one draws
+the plain shapes every package may name (`shape:diamond`, `shape:hexagonFlat`), published at
+`@weasel-js/icons/shapes`. The build plugin that ships only the glyphs a build names is
+`@weasel-js/icons-plugin`.
 
 | Export | What it is |
 |---|---|
@@ -17,12 +19,13 @@ The build plugin that ships only the glyphs a build names is `@weasel-js/icons-p
 ```tsx
 import { IconRegistryProvider } from '@weasel-js/core';
 import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 
-const ICONS = [coreIcons, uiIcons];
+const ICONS = [coreIcons, shapeIcons, uiIcons];
 
 <IconRegistryProvider icons={ICONS}>…</IconRegistryProvider>;
 ```
 
-That registers every glyph core and ui draw. To ship only the glyphs the app names, use
+That registers every glyph core, the shapes and ui draw. To ship only the glyphs the app names, use
 `@weasel-js/icons-plugin`.

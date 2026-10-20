@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
 import { ICON_GROUPS, icon, type UiIconName } from '../icons.gen';
@@ -62,17 +63,17 @@ describe('icon set', () => {
   });
 
   it('calls a glyph fillable only when it encloses a region', () => {
-    expect(isFillable(uiIcons.icons.shapeHexagon)).toBe(true);
+    expect(isFillable(shapeIcons.icons.hexagon)).toBe(true);
     expect(isFillable(uiIcons.icons.curveTangent)).toBe(false);
     expect(isFillable(undefined)).toBe(false);
   });
 
   it('draws the shade behind the stroke, and only when asked', () => {
-    const { container: plain, unmount } = draw(<Icon name={icon('shapeHexagon')} />);
+    const { container: plain, unmount } = draw(<Icon name={icon('shape:hexagon')} />);
     expect(plain.querySelectorAll('path')).toHaveLength(1);
     unmount();
 
-    const { container } = draw(<Icon name={icon('shapeHexagon')} filled />);
+    const { container } = draw(<Icon name={icon('shape:hexagon')} filled />);
     const paths = container.querySelectorAll('path');
     expect(paths).toHaveLength(2);
     expect(paths[0]?.getAttribute('fill')).toBe('currentColor');
@@ -100,8 +101,9 @@ describe('icon set', () => {
   });
 
   it('marks the glyphs whose corners must stay points', () => {
-    expect(body('shapePentagram')).toContain('stroke-linejoin="miter"');
-    expect(body('shapeCircle')).not.toContain('stroke-linejoin');
+    expect(shapeIcons.icons.pentagram!.body).toContain('stroke-linejoin="miter"');
+    expect(shapeIcons.icons.trapezoidSide!.body).toContain('stroke-linejoin="miter"');
+    expect(shapeIcons.icons.circle!.body).not.toContain('stroke-linejoin');
     // A waveform's acute corners grow spikes under miter, so they stay round.
     expect(body('arcZigzag')).not.toContain('stroke-linejoin');
   });
@@ -143,7 +145,7 @@ describe('a marked glyph', () => {
   });
 
   it('keeps the shade\'s tint off the mark and the mask', () => {
-    const { container } = draw(<Icon name={icon('shapeHexagon')} filled mark={icon('markDot')} />);
+    const { container } = draw(<Icon name={icon('shape:hexagon')} filled mark={icon('markDot')} />);
     expect(container.querySelector('svg')?.getAttribute('fill-opacity')).toBe('0.16');
     expect(container.querySelector('mask')?.getAttribute('fill-opacity')).toBe('1');
     expect(container.querySelectorAll('svg > g')[1]?.getAttribute('fill-opacity')).toBe('1');
