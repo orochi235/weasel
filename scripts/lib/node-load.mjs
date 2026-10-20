@@ -34,12 +34,14 @@ export const sampleLoad = async (ms = 1000) => {
   return { cores: after.length, busy, gpu: readings.length ? Math.max(...readings) : null };
 };
 
-/** The most a node may be doing before a run keeps the browser project out of the jsdom phase. */
-export const LIMITS = { busyShare: 0.1, gpu: 30 };
+/**
+ * What a node needs free to run the browser project beside the rest: its six tabs and as many again
+ * for jsdom. On studio's ten cores the overlap failed 11 chart tests on timeouts that one process passed.
+ */
+export const LIMITS = { idleCores: 12, gpu: 30 };
 
 /** Whether `load` leaves room to run the browser project beside the rest, and the reading that decided it. */
 export const roomToOverlap = ({ cores, busy, gpu }, limits = LIMITS) => {
-  const share = busy / cores;
   const reading = `${busy.toFixed(1)} of ${cores} cores busy${gpu === null ? '' : `, GPU ${gpu}%`}`;
-  return { ok: share <= limits.busyShare && (gpu === null || gpu <= limits.gpu), reading };
+  return { ok: cores - busy >= limits.idleCores && (gpu === null || gpu <= limits.gpu), reading };
 };
