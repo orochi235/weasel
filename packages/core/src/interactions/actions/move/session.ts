@@ -61,6 +61,8 @@ export interface MoveSession {
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
+  /** Whether a container admits the dragged roots; every one does when absent. */
+  readonly admits: (parent: NodeId) => boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
@@ -88,6 +90,15 @@ export interface MoveGesture {
   session(): MoveSession;
   /** The latest frame: the previous one while an `onMove` is running. */
   frame(): MoveFrame;
+}
+
+function admitsOf(
+  canDropInto: ((parent: string, ids: readonly string[]) => boolean) | undefined,
+  ids: readonly NodeId[],
+): (parent: NodeId) => boolean {
+  if (canDropInto === undefined) return () => true;
+  const roots = ids as readonly string[];
+  return (parent) => canDropInto(parent as string, roots);
 }
 
 /** Capture a drag at press. Null when there is nothing to move. Runs each
@@ -166,6 +177,7 @@ export function beginMove(
     geometryProjection,
     lifecycle,
     nodeAtPoint: ctx.deps.nodeAtPoint,
+    admits: admitsOf(ctx.deps.canDropInto, ids),
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
     snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),

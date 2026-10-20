@@ -337,6 +337,14 @@ declare module '@weasel-js/routing' {
      */
     layout?: LayoutDep;
     /**
+     * Whether the nodes `ids` may be dropped into the container `parent`. A move
+     * consults it before reparenting anything: reparent-on-drop passes over a
+     * refused container to the nearest one around it that admits them, and the
+     * layout drop treats a refused layout container as if it were not there.
+     * Absent, every container takes any drop.
+     */
+    canDropInto?: (parent: string, ids: readonly string[]) => boolean;
+    /**
      * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
      * `useSliceDepSource`; a consumer overrides it with `useSliceDep`.
      *
