@@ -7,7 +7,7 @@ import { groupLabelIdOf } from '../dataGroups';
 import { groupMove, stageMove, type ReorderSource } from './editorReorder';
 import { groupGripOf, groupRuns, groupSlotsAt } from './groupOrder';
 import { mainChain } from './mainChain';
-import { io, w } from './skipFixture';
+import { io, SKIP, w } from './skipFixture';
 import type { EffectDoc, EffectGroup, EffectPipeline } from './types';
 
 const CHAIN: readonly string[] = ['src', 'a', 'b', 'c', 'd', 'out'];
@@ -147,5 +147,46 @@ describe('groupMove', () => {
   it('refuses a split group', () => {
     const units = ['src', 'g', 'b', 'd', 'out'];
     expect(groupMove(docOf([{ id: 'g', members: ['a', 'c'] }]), ORDER, units, { id: 'g', from: 1, to: 3, order: [] })).toBeNull();
+  });
+});
+
+/** SKIP with a stage `e` between mix and out: src, q, blur, mix, e, out, where rack draws q as an arc. */
+const SKIP_E: EffectPipeline = {
+  ...SKIP,
+  stages: [...SKIP.stages, io('e')],
+  wires: [...SKIP.wires.filter((x) => x.from.stage !== 'mix'), w(['mix', 'out'], ['e', 'in']), w(['e', 'out'], ['out', 'in'])],
+};
+const skipDoc = (groups: EffectGroup[]): EffectDoc => ({ pipeline: { ...SKIP_E, groups }, places: {} });
+
+describe('a drop just before a group that starts with an undrawn skip', () => {
+  const doc = skipDoc([{ id: 'g', members: ['q', 'blur'] }, { id: 'h', members: ['e'] }]);
+  const order = rackSource(doc).order!;
+
+  it('lands before the skip under stageMove', () => {
+    expect(order.items.map((i) => i.id)).toEqual(['src', 'blur', 'mix', 'e', 'out']);
+    const next = stageMove(doc, order, { id: 'e', from: 3, to: 1, order: [] })!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'e', 'q', 'blur', 'mix', 'out']);
+  });
+
+  it('lands before the skip under groupMove', () => {
+    const next = groupMove(doc, order, ['src', 'g', 'mix', 'h', 'out'], { id: 'h', from: 3, to: 1, order: [] })!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'e', 'q', 'blur', 'mix', 'out']);
+  });
+
+  it('lands past the end of a last unit that ends on an undrawn skip', () => {
+    const decision = SKIP.stages.find((s) => s.id === 'q')!;
+    const pipeline: EffectPipeline = {
+      stages: [io('src', { inputs: [] }), io('a'), io('x'), decision, io('blur'), io('mix'), io('out', { outputs: [] })],
+      wires: [
+        w(['src', 'out'], ['a', 'in']), w(['a', 'out'], ['x', 'in']), w(['x', 'out'], ['q', 'in']),
+        w(['q', 'yes'], ['blur', 'in']), w(['q', 'no'], ['mix', 'in']), w(['blur', 'out'], ['mix', 'in']), w(['mix', 'out'], ['out', 'in']),
+      ],
+      groups: [{ id: 'k', members: ['x', 'q'] }, { id: 'p', members: ['a', 'k'] }],
+    };
+    const d: EffectDoc = { pipeline, places: {} };
+    const o = rackSource(d).order!;
+    expect(o.items.some((i) => i.id === 'q')).toBe(false);
+    const next = groupMove(d, o, ['a', 'k'], { id: 'a', from: 0, to: 2, order: [] })!;
+    expect(mainChain(next.pipeline).slice(0, 4)).toEqual(['src', 'x', 'q', 'a']);
   });
 });
