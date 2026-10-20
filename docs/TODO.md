@@ -1056,33 +1056,18 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
-  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
-  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
-  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
-  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
-  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
-  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
-  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
-  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
-  closed while running tests", every file after it left unrun; at six workers too, on
-  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
-  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
-  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
-  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
-  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
-  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
-  not traced inside Chromium: every socket and request of that page closes at once from the
-  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
-  open:
+- **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
+  others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
+  so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
+  file's start until vitest's frame lookup returns that file's own frame (`settleFrame`,
+  `scripts/vitest-browser-commands.ts`); the measurements behind each are in the commits that
+  made them (2026-10-13 to 10-17). On 2026-10-19, 15 runs of the project alone on the fleet, beside
+  other jobs (teitou 12, studio 2, keiei 1), passed all 220 files with no detached frame and no
+  lost tab. Left open:
   - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test failed `frame.evaluate: Frame was
-    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. vitest finds the
-    frame a command acts on by name, `page.frame('vitest-iframe')`, and every test file's iframe has
-    that name, so while Playwright still lists the previous file's iframe it can return that one.
-    `vitest.browser.setup.ts` now waits at each file's start (`settleFrame`, in
-    `scripts/vitest-browser-commands.ts`) until the lookup returns the file's own frame. That this
-    lookup is the cause is inferred, never caught in a run; a sighting with the wait in place
-    means it is something else.
+    detached` under `userEvent.keyboard`** in 8 runs before `settleFrame`, all at the old worker
+    count. That the frame lookup was the cause is inferred, never caught in a run; a sighting
+    with the wait in place means it is something else.
   - **A trial's status strip grows 2 px when its numeric face arrives**, which refits the view a
     second time. The strip itself now takes its room on the first layout (`TrialChrome` reads an
     unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
