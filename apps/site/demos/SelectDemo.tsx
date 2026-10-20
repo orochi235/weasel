@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { intentOf, select, type SelectPolicy, type Selection } from '@weasel-js/select';
-import { ItemList, ToggleBar } from '@weasel-js/ui';
+import { ItemList } from '@weasel-js/ui/components/ItemList';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './SelectDemo.module.css';
 
 const ROWS = ['Sky', 'Hills', 'Tree', 'Background', 'House', 'Path', 'Fence', 'Sun'];

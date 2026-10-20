@@ -1,5 +1,6 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { Button, PropertyList } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { PropertyList } from '@weasel-js/ui/components/Properties';
 import type { ReactNode, RefObject } from 'react';
 import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
 import { auto as autoValue } from '../config/auto';

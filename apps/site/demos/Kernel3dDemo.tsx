@@ -13,7 +13,7 @@ import {
   useLatest,
   useScene,
 } from '@weasel-js/core';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
   cameraEye, cameraViewProjection, createCamera, createNodeAtPoint, createPoseDescriptor,

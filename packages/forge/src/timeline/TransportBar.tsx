@@ -1,4 +1,5 @@
-import { Slider, Transport } from '@weasel-js/ui';
+import { Slider } from '@weasel-js/ui/components/Slider';
+import { Transport } from '@weasel-js/ui/components/Timeline';
 import { useSyncExternalStore } from 'react';
 import type { Clock } from './clock';
 import { formatSeconds } from './playheadUrl';

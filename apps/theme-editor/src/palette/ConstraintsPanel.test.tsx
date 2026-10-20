@@ -1,5 +1,5 @@
 import { DEFAULT_CONSTRAINTS } from '@weasel-js/theme/engine';
-import { PropertyPanel } from '@weasel-js/ui';
+import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConstraintsPanel } from './ConstraintsPanel';

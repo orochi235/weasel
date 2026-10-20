@@ -13,7 +13,7 @@ import {
   commandStroke,
 } from '@weasel-js/core';
 import type { PolygonPath, Stroke, Fill } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui';
+import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
 

@@ -1,4 +1,4 @@
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../icons.gen';
 import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';

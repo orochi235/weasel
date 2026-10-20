@@ -20,7 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { MeasureReadout } from '@weasel-js/ui';
+import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';

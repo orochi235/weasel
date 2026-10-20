@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PropertyRow } from '@weasel-js/ui';
+import { PropertyRow } from '@weasel-js/ui/components/Properties';
 import { afterEach, expect, test } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';

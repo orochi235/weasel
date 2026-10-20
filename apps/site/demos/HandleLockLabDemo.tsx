@@ -1,7 +1,7 @@
 import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { handleLocksPreset } from '@weasel-js/path-tools';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar } from '@weasel-js/ui';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';

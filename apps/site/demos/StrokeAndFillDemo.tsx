@@ -26,14 +26,11 @@ import {
   type View,
   type Fill,
 } from '@weasel-js/core';
-import {
-  ColorField,
-  InlineRange,
-  PaintField,
-  SceneGradientHandles,
-  ToolPalette,
-  type PaintSlot,
-} from '@weasel-js/ui';
+import { ColorField } from '@weasel-js/ui/components/ColorField';
+import { SceneGradientHandles, type PaintSlot } from '@weasel-js/ui/components/GradientEditor';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { PaintField } from '@weasel-js/ui/components/PaintField';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import num from '@weasel-js/theme/numeric.module.css';
 import { DemoStage } from './DemoStage';
 

@@ -1,5 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { Button, Icon } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import { icon } from '../icons.gen';
 

@@ -18,7 +18,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { Button } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';

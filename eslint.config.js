@@ -209,9 +209,29 @@ export default [
   {
     /**
      * The dev server serves every module the root barrel reaches, about 640 of them, so one
-     * import of it from draw costs every page load hundreds of requests.
+     * import of it from an app costs every page load hundreds of requests.
      */
-    files: ['apps/draw/**/*.{ts,tsx}', 'apps/chart/**/*.{ts,tsx}'],
+    files: [
+      'apps/draw/**/*.{ts,tsx}',
+      'apps/chart/**/*.{ts,tsx}',
+      'apps/theme-editor/**/*.{ts,tsx}',
+      'apps/site/**/*.{ts,tsx}',
+      'packages/forge/src/**/*.{ts,tsx}',
+      'packages/labkit/src/**/*.{ts,tsx}',
+    ],
+    ignores: [
+      // labkit's `weasel-ui` subpath re-exports the barrel on purpose.
+      'packages/labkit/src/passthrough/weasel-ui.ts',
+      // These import names that no subpath publishes yet (docs/TODO.md, "Release-gate").
+      'apps/site/demos/KitSettingsDemo.tsx',
+      'apps/site/demos/PerceptualColorSlidersDemo.tsx',
+      'packages/forge/src/shell/TrialHost.tsx',
+      'packages/forge/src/story/library.ts',
+      'packages/labkit/src/chrome/regions/SidebarRegion.tsx',
+      'packages/labkit/src/chrome/types.ts',
+      'packages/labkit/src/controls/ControlMatrix.tsx',
+      'packages/labkit/src/controls/ControlPanel.tsx',
+    ],
     languageOptions,
     plugins,
     rules: {

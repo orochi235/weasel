@@ -1,12 +1,8 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import { isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs';
-import {
-  Focusable,
-  type PropertyControlProps,
-  prefFieldProps,
-  Tooltip,
-  TooltipTrigger,
-} from '@weasel-js/ui';
+import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
+import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
+import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';

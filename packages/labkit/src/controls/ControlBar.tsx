@@ -1,5 +1,5 @@
 import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui';
+import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui/components/Bar';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
 import { labField } from './fields';

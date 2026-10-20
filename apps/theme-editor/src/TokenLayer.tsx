@@ -1,6 +1,6 @@
 import { parseTokenValue, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
-import { TokenPanel } from '@weasel-js/ui';
+import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';

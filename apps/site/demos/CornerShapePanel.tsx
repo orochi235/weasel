@@ -7,7 +7,7 @@ import {
   type CornerControlsScene,
   type CornerControlsSelection,
 } from '@weasel-js/path-tools';
-import { PrefsForm } from '@weasel-js/ui';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import s from './CornerShapeLabDemo.module.css';
 
 export function CornerPanel({ scene, selection }: { scene: CornerControlsScene; selection: CornerControlsSelection }) {
