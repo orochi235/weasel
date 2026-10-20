@@ -1324,10 +1324,13 @@ only story runner in the repo.
   (2026-10-20); each piece deletes its own section there when it merges, so what the doc still
   holds is what is left: off-page reference markers for connectors that cross pages,
   and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
-  reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
-  where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
+  reports resizes; line jumps where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
   the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files, and running a pipeline.
+- **(P3) A label on a split edge should dodge on its first stub.** Label placement
+  (`packages/diagram/src/labels/`, 2026-10-20) was built beside off-page markers, not on them, so
+  a label whose connector is split across pages is placed on the route as the edge draws it. Whichever
+  of the two merges second checks that the label lands on the first stub.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

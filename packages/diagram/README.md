@@ -197,7 +197,7 @@ What a connector routes around:
 | A container, pool, or group box | neither end is inside it |
 | A lane's body | never |
 | A lane's or pool's header | always |
-| An edge label | never |
+| An edge label | always, except to its own connector, 4 world units clear |
 
 Authored waypoints are stops the route passes in order. Layout names an
 `avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
@@ -225,6 +225,40 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
+
+### Labels that dodge
+
+After any edit, a label that would sit on a shape, on another label, or across
+another connector slides along its own connector, or flips to the other side of
+it, to the nearest clear spot. It tries its preferred station first, then up to
+four stations either way, a label width and 8 apart, each on both sides of the
+line, and keeps the cheapest: area over shapes counts most, then area over
+other labels, then connectors it covers, then how far it moved. Labels move in
+id order, each an obstacle for the next, so the answer is always the same.
+
+The station placement chose is stored on the trait as `placed` (`at`, a
+fraction of the route's length, and `offset`), read before `at` and
+`offset`, which stay the author's preference; a label goes back to its
+preference once that spot is clear. `dodge: false` keeps a label where its
+author put it. Under `layered`, the room layout left a label is its preference,
+so a laid-out diagram's labels stay put unless something covers them.
+
+`useLabelPlacement(scene)` places what each edit may have covered or uncovered
+in that edit's own undo entry, and sizes a label to the text an edit gives it.
+Labels hold still while a shape is dragged and settle on release.
+`installLabelPlacement(scene)` does the same without React. Its edit pass runs
+at `DIAGRAM_PASS_ORDER.labels`, after routing: connectors route around labels as
+they stand, then labels move off the new routes, one round each per edit.
+
+```tsx
+useAvoidRouting(scene);
+useLabelPlacement(scene);
+```
+
+A data-backed `DiagramView` takes `labels="dodge"`, placed after any
+`router`, and never reports a placement; `createSpecLabelPlacer` is that step
+on its own. The arithmetic, `placeLabels`, reads plain boxes and routes and is
+in `@weasel-js/diagram/layout`.
 
 ### Overlays and hover
 
