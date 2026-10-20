@@ -174,13 +174,15 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-fg-layout={layout}
       data-pending={pending || undefined}
     >
-      {host && inView ? (
-        // The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a
-        // document of its own.
-        <LabBoundary>
-          <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
-        </LabBoundary>
-      ) : null}
+      <div className="fg-story__scroll">
+        {host && inView ? (
+          // The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a
+          // document of its own. Overlays portal to the host, outside the scroller, so they stay put as it scrolls.
+          <LabBoundary>
+            <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
+          </LabBoundary>
+        ) : null}
+      </div>
     </div>
   );
 }
