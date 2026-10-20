@@ -1307,10 +1307,25 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Fourth arc (drafted, unapproved, unbuilt).** PDF export, an audio pipeline on a patchable
+- **(P3) Fourth arc (drafted, unapproved, unbuilt).** An audio pipeline on a patchable
   `@weasel-js/audio` graph, pages in `DiagramData`, dragging an edge label, and groups under the
   `rack` and `lanes` looks. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`
   (2026-10-20).
+- **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
+  `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
+  composites against (2026-10-20).
+- **(P3) PDF export misplaces screen-unit paint inside a rasterized group.** In an effects or shader
+  group, `rasterize` places `screen`-unit paint in raster pixels, not page points. The fix needs a
+  renderer option naming a render's screen space (2026-10-20).
+- **(P3) PDF export rasterizes an effects group over the whole page.** At 2×, so a small blurred badge
+  costs a full-page bitmap. The fix needs the renderer to expose each effect's reach, so the raster
+  covers only the group's bounds grown by it (2026-10-20).
+- **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
+  the full face. Subsetting needs the glyphs a document uses collected per face before it is written
+  (2026-10-20).
+- **(P3) `@weasel-js/pdf` is unpublished.** It needs its first publish by hand and its
+  trusted-publisher registration (`docs/releasing.md`, "Setting up a new package") before a release can
+  publish it; `check:first-publish` fails the release until then (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
