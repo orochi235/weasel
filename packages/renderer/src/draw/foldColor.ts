@@ -1,3 +1,4 @@
+import { applyColorMatrix } from '../state/colorMatrix';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { DrawContext } from './drawContext';
 import { sameValues } from './uniforms';
@@ -13,8 +14,6 @@ function isIdentityColorMatrix(cm: Float32Array): boolean {
  *  still can; the barrel does not export it. Off, a matrix breaks every run it
  *  changes under, as it used to. */
 export const colorFolding = { enabled: true };
-
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
  * Whether a solid or a glyph under the live group state is mapped on the CPU,
@@ -42,12 +41,9 @@ export function foldColor(
   const alpha = ctx.state.alpha;
   if (isIdentityColorMatrix(cm)) return [r, g, b, a * alpha];
   if (!colorFolding.enabled) return [r, g, b, a];
-  return [
-    clamp01(cm[0] * r + cm[1] * g + cm[2] * b + cm[3] * a + cm[4]),
-    clamp01(cm[5] * r + cm[6] * g + cm[7] * b + cm[8] * a + cm[9]),
-    clamp01(cm[10] * r + cm[11] * g + cm[12] * b + cm[13] * a + cm[14]),
-    clamp01(cm[15] * r + cm[16] * g + cm[17] * b + cm[18] * a + cm[19]) * alpha,
-  ];
+  const out = applyColorMatrix(cm, r, g, b, a);
+  out[3] *= alpha;
+  return out;
 }
 
 /** Channel scales for a textured vertex; the fourth multiplies its alpha after the texel's. */

@@ -2,8 +2,9 @@
 
 Turns `@weasel-js/diagram` scenes into files and files into scenes. Every
 format reads and writes one interchange document, built on the diagram
-package's `DiagramData`; and one page at a time exports as an SVG document or
-a PNG image, each showing the page as the canvas draws it.
+package's `DiagramData`. One page at a time exports as an SVG document or a
+PNG image, and every page together as one PDF, each showing the page as the
+canvas draws it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -162,14 +163,15 @@ nothing from another page.
 
 ```ts
 import { placedPagesOf } from '@weasel-js/core';
-import { exportPagePng, exportPageSvg } from '@weasel-js/diagram-formats';
+import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 
-const page = placedPagesOf(scene)[0];
-const svg = await exportPageSvg(scene, page, { title: 'Page 1' });
-const png = await exportPagePng(scene, page, { scale: 2 });
+const pages = placedPagesOf(scene);
+const svg = await exportPageSvg(scene, pages[0], { title: 'Page 1' });
+const png = await exportPagePng(scene, pages[0], { scale: 2 });
+const { blob, skipped } = await exportPagesPdf(scene, pages, { title: 'Chart' });
 ```
 
-Neither writes to the scene, so an export takes no undo entry. Both take
+None writes to the scene, so an export takes no undo entry. Each takes
 `background`, the color painted under the page: by default the page color of
 the scene's diagram theme (`diagram:theme`), and `null` for none.
 
@@ -212,6 +214,23 @@ import { registerDiagramShape, registerMarkShape } from '@weasel-js/diagram';
 registerDiagramShape();
 registerMarkShape();
 ```
+
+### PDF
+
+`exportPagesPdf` writes each of `pages` as a page of one PDF, in the order
+given, at 0.75 points per unit (96 units to the inch). It answers the `Blob`,
+of type `application/pdf`, and `skipped`: what the PDF could not carry, each a
+`{ kind, detail }` from `@weasel-js/pdf`. Annotation layers are left out.
+
+Shapes and strokes are written as vectors and text as selectable text in its
+embedded face, which needs the face's outlines registered from a TrueType file
+(`registerFontOutlines` in `@weasel-js/font`). A face that cannot be embedded
+is drawn as glyph outlines, so its text is not selectable; a glyph with no
+outline at all is left out and listed in `skipped`.
+
+Effects, custom shaders, and fills in a registered paint kind are drawn through
+the renderer and placed as images, so the painters are the caller's to
+register, as for the PNG, and this needs WebGL2 and `OffscreenCanvas`.
 
 ## Scenes it reads
 

@@ -18,6 +18,7 @@
       "@weasel-js/simulation",
       "@weasel-js/stroke",
       "@weasel-js/renderer",
+      "@weasel-js/pdf",
       "@weasel-js/storage",
       "@weasel-js/prefs",
       "@weasel-js/select",

@@ -46,6 +46,37 @@ export interface OutlineFace {
   /** Kerning adjustment between two codepoints, in em units — negative pulls
    *  them together. `0` when the face kerns neither this pair nor at all. */
   kernOf(left: number, right: number): number;
+  /** The face's raw material for embedding it whole in another format (a PDF).
+   *  Optional: a custom parser that has no sfnt behind it omits it, and so
+   *  does the built-in one for a WOFF file. */
+  embedding?(): FaceEmbedding;
+}
+
+/** What a document format needs to embed one face as a font program. */
+export interface FaceEmbedding {
+  /** One face's sfnt: a collection member is cut out of its collection. */
+  sfnt: ArrayBuffer;
+  postScriptName: string;
+  unitsPerEm: number;
+  /** `'cff'` when the face has a `CFF ` table and no `glyf`. */
+  outlines: 'truetype' | 'cff';
+  /** False when OS/2 fsType forbids embedding (bit 1, 0x0002) or allows
+   *  bitmaps only (bit 9, 0x0200). */
+  embeddable: boolean;
+  /** Glyph index for a codepoint; `null` for `.notdef` (0). */
+  glyphIndexOf(cp: number): number | null;
+  /** Advance of a glyph, in font units. */
+  advanceOfGlyph(gid: number): number;
+  /** Font units. */
+  ascent: number;
+  /** Font units, negative below the baseline. */
+  descent: number;
+  /** Font units. */
+  capHeight: number;
+  /** Degrees counterclockwise from vertical; negative leans right. */
+  italicAngle: number;
+  /** `[xMin, yMin, xMax, yMax]` in font units. */
+  bbox: readonly [number, number, number, number];
 }
 
 /**

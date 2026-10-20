@@ -20,7 +20,7 @@ export interface BatchMatrix {
  * they are new to it, or -1 if it is full.
  *
  * By value, not by reference: a group carrying an identity color matrix still
- * goes through `compose4x5`, which allocates a new array holding equal numbers.
+ * goes through `composeColorMatrix`, which allocates a new array holding equal numbers.
  */
 export function matrixIndex(
   matrices: readonly BatchMatrix[], colorMatrix: Float32Array, alpha: number,

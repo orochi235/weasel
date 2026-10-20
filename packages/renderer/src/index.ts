@@ -29,6 +29,7 @@ export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
+export { commandsBounds } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from '@weasel-js/stroke';
 export {
@@ -54,6 +55,7 @@ export type { RegisterFontOptions } from '@weasel-js/font';
 export { OUTLINE_MIN_SCREEN_PX } from './draw';
 export { buildGradientRamp } from './cache/GradientRampAtlas';
 export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
+export { applyColorMatrix, composeColorMatrix } from './state/colorMatrix';
 export type { Mesh } from '@weasel-js/geom/tessellate';
 export {
   registerProgram,
@@ -68,11 +70,13 @@ export {
 export { registerEffect, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
+export { isOwnComposite } from './effects/compositeOp';
 export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';
 export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';
 export type { ShaderProgram, ShaderStage, UniformArray } from './shaders/ShaderProgram';
 export { strokeReachAt, boundsMissRect } from './cullDrawCommands';
+export { markerDrawCommands } from './markerCommands';
 export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokedPathCommand } from './strokeLengths';
 export {
   registerPaintDrawKind,

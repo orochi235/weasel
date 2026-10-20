@@ -338,6 +338,14 @@ Priority tags:
 
 ## Rendering & paint
 
+- **(P2) A dash whose entries are all zero hangs stroke tessellation.** `splitForDash`
+  (`packages/stroke/src/tessellate/dash.ts`) never advances along a segment when the current dash
+  length is 0, and `tessellateStroke` calls it whenever `dash.length > 0`, so `dash: [0, 0]` loops
+  forever (read from the code, not yet run). It wants a guard that strokes such a dash solid, and a
+  test. `@weasel-js/pdf`'s `strokeStyleOps` already writes it solid, but its comment says the
+  renderer does too; correct that once the guard lands. The same function writes a dash with a
+  `NaN` entry as solid instead of dropping the command as non-finite (2026-10-20).
+
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -1354,8 +1362,9 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Fourth arc (approved, partly built).** Left to build: PDF export, the live audio runner
-  that drives the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built). Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
+- **(P3) Fourth arc (approved, partly built).** Left to build: the live audio runner that drives
+  the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built). Design:
+  `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
@@ -1372,6 +1381,21 @@ only story runner in the repo.
 - **(P3) `lanes` doesn't route wires around group boxes.** A wire between two stages outside a
   group can run straight through the group's box, and a group title's inset reaches into the lane
   above. `lanesRoutes.ts` knows nothing of group boxes (2026-10-20).
+- **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
+  `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
+  composites against (2026-10-20).
+- **(P3) PDF export misplaces screen-unit paint inside a rasterized group.** In an effects or shader
+  group, `rasterize` places `screen`-unit paint in raster pixels, not page points. The fix needs a
+  renderer option naming a render's screen space (2026-10-20).
+- **(P3) PDF export rasterizes an effects group over the whole page.** At 2×, so a small blurred badge
+  costs a full-page bitmap. The fix needs the renderer to expose each effect's reach, so the raster
+  covers only the group's bounds grown by it (2026-10-20).
+- **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
+  the full face. Subsetting needs the glyphs a document uses collected per face before it is written
+  (2026-10-20).
+- **(P3) `@weasel-js/pdf` is unpublished.** It needs its first publish by hand and its
+  trusted-publisher registration (`docs/releasing.md`, "Setting up a new package") before a release can
+  publish it; `check:first-publish` fails the release until then (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
