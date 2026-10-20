@@ -7,7 +7,7 @@ export interface A11yHighlighter {
 
 const CSS = `[data-fg-a11y-highlight] {
   position: fixed;
-  z-index: 2147483647;
+  z-index: var(--wzl-z-drag, 10000);
   box-sizing: border-box;
   pointer-events: none;
   border: 2px solid var(--wzl-danger, #e5484d);
