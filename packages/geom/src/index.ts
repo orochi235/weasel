@@ -55,7 +55,7 @@ export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
 export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
-export { measurePath, type MeasurePathOptions, type PathMeasure } from './paths/pathMeasure';
+export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';
