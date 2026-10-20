@@ -4,6 +4,8 @@ import {
   createFakeAudioContext,
   type FakeGain, type FakeNode, type FakePanner, type FakeSource,
 } from './testing/fakeAudioContext';
+import { testNode } from './testing/graphHarness';
+import { allPaths } from './testing/graphWalk';
 
 function engineHarness(over: Record<string, unknown> = {}) {
   const ctx = createFakeAudioContext();
@@ -425,5 +427,22 @@ describe('createAudioEngine', () => {
     await engine.unlock();
     const sound = await engine.load('/a.wav');
     expect(() => engine.play(sound, { bus: 'nope' })).toThrow(/nope/);
+  });
+
+  it('graph() feeds the first bus and is disposed with the engine', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    engine.play(sound, { loop: true });
+    tick();
+    const sfxInput = chainOf(ctx._sources[0]).bus;
+    const graph = engine.graph();
+    const src = testNode(ctx, [], true);
+    graph.add('src', src.def);
+    graph.connect('src', { output: true });
+    expect(allPaths(src.output, sfxInput).length).toBeGreaterThan(0);
+    expect(() => engine.graph('nope')).toThrow(/unknown bus "nope"/);
+    engine.dispose();
+    expect(src.dispose).toHaveBeenCalledTimes(1);
   });
 });

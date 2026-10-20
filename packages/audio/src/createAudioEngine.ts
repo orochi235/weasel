@@ -1,6 +1,8 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from './analyser';
 import { defaultTimers, type Timers } from './audioTime';
 import { createBusGraph, type BusHandle } from './buses';
+import { createAudioGraph } from './graph/createAudioGraph';
+import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
 import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
@@ -70,6 +72,8 @@ export interface AudioEngine {
    *  for a future `when` is not counted until it starts. */
   activeVoices(bus?: string): number;
   analyser(busName?: string, opts?: AnalyserTapOptions): AnalyserTap;
+  /** A graph feeding `bus`'s input (default: the first bus). Disposed with the engine. */
+  graph(bus?: string): AudioGraph;
   setListener(p: Vec2, opts?: SpatialOptions): void;
   dispose(): void;
 }
@@ -142,6 +146,28 @@ function engineSynth(ctx: BaseAudioContext, opts: AudioEngineOptions, busInput: 
   };
 }
 
+/** The graphs `engine.graph` has made and not seen disposed. */
+function patchGraphs(ctx: BaseAudioContext, busInput: (bus: string) => AudioNode, opts: AudioGraphOptions) {
+  const live = new Set<AudioGraph>();
+  return {
+    create(bus: string): AudioGraph {
+      const g = createAudioGraph(ctx, busInput(bus), opts);
+      live.add(g);
+      return {
+        ...g,
+        dispose() {
+          live.delete(g);
+          g.dispose();
+        },
+      };
+    },
+    dispose() {
+      for (const g of live) g.dispose();
+      live.clear();
+    },
+  };
+}
+
 /** The timer that wakes the scheduler, and the scheduler. */
 function engineClock(ctx: BaseAudioContext, opts: AudioEngineOptions) {
   const now = (): number => ctx.currentTime * 1000;
@@ -207,6 +233,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   });
   const synth = engineSynth(ctx, opts, graph.input);
   const streams = createStreamStarters(ctx, timers);
+  const patches = patchGraphs(ctx, graph.input, { ...timers, fadeMs: opts.insertFadeMs });
 
   const engine: AudioEngine = {
     context: ctx,
@@ -258,6 +285,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         },
       };
     },
+    graph: (bus) => patches.create(bus ?? busNames[0]),
     setListener(p, o) {
       listener = p;
       if (o) spatialOpts = o;
@@ -275,6 +303,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       taps.clear();
       watch.dispose();
       synth.dispose();
+      patches.dispose();
       graph.dispose();
       graph.master.disconnect();
       if (ownsContext) void ctx.close().catch(() => undefined);

@@ -49,3 +49,14 @@ export type {
   NoiseColor, NoiseOptions, NoisePatch,
 } from './types';
 export { impulseResponse, type ImpulseResponseOptions } from './impulse';
+export { createAudioGraph } from './graph/createAudioGraph';
+export {
+  createFileSourceNode, createNoiseNode, createOscillatorNode, type OscillatorWave,
+} from './graph/sources';
+export {
+  compressorNode, createGainNode, createMixNode, createPanNode, delayNode, filterNode, insertNode,
+  reverbNode, type ReverbNodeOptions,
+} from './graph/processors';
+export type {
+  AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch, GraphTarget,
+} from './graph/types';

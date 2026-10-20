@@ -180,6 +180,27 @@ fade is `insertFadeMs`, default 15. A move is a splice out and a splice back in,
 so the moved effect drops out for one fade. A removed effect's `dispose` runs
 once it has left the graph.
 
+## Patchable graph
+
+`engine.graph(bus)` returns a graph of nodes feeding that bus's input (the
+first bus by default), which can be edited while it plays. Every structural
+edit crossfades — `add`, `remove`, `replace`, `connect`, `disconnect` — and
+`set` ramps a param. Sources are `createFileSourceNode` (a looping buffer),
+`createOscillatorNode` and `createNoiseNode`; `createGainNode`,
+`createPanNode`, `createMixNode`, `filterNode`, `delayNode`, `reverbNode` and
+`compressorNode` process, and `insertNode` wraps any insert effect. `tap(id)`
+puts an analyser on a node. The graph is disposed with the engine.
+
+```ts
+const g = engine.graph('music');
+g.add('osc', createOscillatorNode(engine.context, { frequency: 220 }));
+g.add('echo', delayNode(engine.context, { time: 300, feedback: 0.4 }));
+g.connect('osc', { node: 'echo', port: 'in' });
+g.connect('echo', { output: true });
+g.start();
+g.replace('osc', createOscillatorNode(engine.context, { wave: 'square', frequency: 220 }));
+```
+
 ## Streaming
 
 `load` and `decode` hold a whole sound in memory, which is wrong for a long
