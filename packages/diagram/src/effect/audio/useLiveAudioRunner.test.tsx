@@ -1,6 +1,7 @@
 import type { AudioEngine, AudioGraph } from '@weasel-js/audio';
 import { createFakeAudioContext } from '@weasel-js/audio/testing/fakeAudioContext';
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectPipeline } from '../types';
 import type { AudioPreview } from './scope';
@@ -49,8 +50,10 @@ describe('useLiveAudioRunner', () => {
       ({ previews }: { previews: AudioPreview }) => useLiveAudioRunner({ engine, pipeline: PIPELINE, previews, ...frames }),
       { initialProps: { previews: 'scope' as AudioPreview } },
     );
-    const frame = vi.spyOn(result.current.runner, 'frame').mockImplementation(() => {});
-    await act(() => result.current.runner.play());
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const runner = result.current.runner!;
+    const frame = vi.spyOn(runner, 'frame').mockImplementation(() => {});
+    await act(() => runner.play());
     await frames.fire(1);
     await frames.fire(2);
     expect(frame).toHaveBeenCalledTimes(2);
@@ -64,16 +67,51 @@ describe('useLiveAudioRunner', () => {
     await frames.fire(5);
     expect(frame).toHaveBeenCalledTimes(3);
 
-    act(() => result.current.runner.pause());
+    act(() => runner.pause());
     await frames.fire(6);
     expect(frame).toHaveBeenCalledTimes(3);
   });
 
-  it('disposes the runner on unmount', () => {
-    const { result, unmount } = renderHook(() => useLiveAudioRunner({ engine: fakeEngine(), pipeline: PIPELINE, previews: 'off' }));
-    const dispose = vi.spyOn(result.current.runner, 'dispose');
+  it('disposes the runner on unmount', async () => {
+    const engine = fakeEngine();
+    const { result, unmount } = renderHook(() => useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'off' }));
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const dispose = vi.spyOn(result.current.runner!, 'dispose');
     unmount();
     expect(dispose).toHaveBeenCalledOnce();
+  });
+
+  it('plays under StrictMode, leaving one graph undisposed', async () => {
+    const graphs: { start: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }[] = [];
+    const engine = {
+      context: createFakeAudioContext(),
+      unlock: async () => {},
+      graph: () => {
+        const g = { apply: vi.fn(), start: vi.fn(), stop: vi.fn(), dispose: vi.fn(), tap: vi.fn(() => ({ dispose: vi.fn() })) };
+        graphs.push(g);
+        return g as never as AudioGraph;
+      },
+    } as never as AudioEngine;
+    const { result } = renderHook(() => useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'off' }), { wrapper: StrictMode });
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    await act(() => result.current.runner!.play());
+    const live = graphs.filter((g) => g.dispose.mock.calls.length === 0);
+    expect(live).toHaveLength(1);
+    expect(live[0]!.start).toHaveBeenCalledOnce();
+  });
+
+  it('makes a new runner on a new engine and disposes the old one', async () => {
+    const { result, rerender } = renderHook(
+      ({ engine }: { engine: AudioEngine }) => useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'off' }),
+      { initialProps: { engine: fakeEngine() } },
+    );
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const first = result.current.runner!;
+    const dispose = vi.spyOn(first, 'dispose');
+    rerender({ engine: fakeEngine() });
+    await waitFor(() => expect(result.current.runner).not.toBe(first));
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(result.current.runner).not.toBeNull();
   });
 });
 
