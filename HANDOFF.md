@@ -4,6 +4,17 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## weaselchart fourth arc: designing (2026-10-20)
+
+The design is drafted in `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`. It covers
+PDF export, a patchable audio graph and a live audio runner, pages in `DiagramData`, dragging an edge
+label, and groups under `rack` and `lanes`. The four rulings Mike made are in its "Decisions"
+section. The piece-by-piece table was shown to him, and he hasn't approved it yet.
+
+Next: get his approval or changes on that table, edit the spec to match, then write the plan
+(writing-plans) and build it in the two waves the spec gives. Work runs from `main`, with no
+worktree yet.
+
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
