@@ -107,6 +107,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Snapping
 
+- 2026-10-20 (overnight pass): `SnapBegin` and `SnapCollect` take `parent`, the container a subject
+  not yet in the scene lands in; insert and click-to-place pass it, worked out by `insertParent`,
+  the container check the insert dep already used (a leaf or missing `insertInto` passes none).
+  `gridSnapSource` reads scope from `ids`, else `parent`, else the root. kernel3d passes `parent`
+  through, unlike `sources`.
 The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these calls in it.
 
 - 2026-10-18: Every `<SceneCanvas>` snaps point gestures (pen and spiro clicks, pen handles, anchor

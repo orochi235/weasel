@@ -50,7 +50,8 @@ Merged:
 - `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
   (a real-mouse browser test drags over a lens).
 - Grid snapping and node length fields read a container's unit scope (no app passes the new
-  options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
+  options yet, so nothing is seen in a browser), an insert gesture included through a new
+  `SnapBegin.parent`; the drawn grid per scope is filed.
 - Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
   session takes its key from its name.
 - Both consumer smoke tests CI runs pass again (both failed on `main`; 45 packages, rig included,
