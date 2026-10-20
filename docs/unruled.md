@@ -80,6 +80,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
   Alt+J, beside the Alt-letter anchor selections.
 
+- 2026-10-19 (pass 7): `GroupTransform` is only the translate: its `scale` and `rotate` arms are
+  gone, since nothing produced them and resize and rotate behaviors answer bounds and angles of
+  their own, which a pivot scale cannot fully say.
+
 ## Snapping
 
 The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these calls in it.
