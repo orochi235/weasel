@@ -29,7 +29,6 @@ merged.
 | 11 | Running a pipeline | diagram, app | — | 1 |
 | 3 | Off-page reference markers | diagram, app | — | 2 |
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
-| 5 | Line jumps | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
 | 7 | Containers and swimlanes in `DiagramData` | diagram | 2 | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
@@ -45,10 +44,10 @@ Shared files, and who makes room in them first:
 
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
-| `packages/diagram/src/edge.ts` | 218 | 3, 5 | done: the four routers are in `routers.ts` |
+| `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 247 | 8, 9, 11 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 5, 7 | none needed; each adds props |
+| `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -226,65 +225,6 @@ each case as it finishes.
   `placed`; `dodge: false` never moves.
 - `DiagramView.labels.test.tsx`; chart browser test: drag a shape onto a label, release, the label's
   pixels clear the shape.
-
-## 5. Line jumps
-
-### What the user sees
-
-Format › Connector › Line jumps turns hops on for the whole chart: where two connectors cross, the
-one drawn on top bows over the other in a small half circle. During a drag, hops on the connectors
-being moved disappear and come back on release.
-
-**Decisions (2026-10-20).**
-- Hops are on or off for the document, not per connector: a crossing has two connectors, and which
-  one hops is the pass's rule, so a per-connector setting would answer the question twice.
-- The connector later in render order hops, so the hop is drawn on the line that paints on top.
-- Arcs only, no gap style: a gap splits the stroke into subpaths, and the kit draws end markers on
-  every open subpath, so an arrowed connector would grow an arrowhead at each gap.
-- A hop bulges toward −y on a horizontal run and toward −x on a vertical one, whatever the direction
-  of travel, so every hop on a page bulges the same way; a diagonal run bulges to the left of travel.
-
-### Engine surface (`packages/diagram/src/hops/`)
-
-- `HOPS_DOC_KEY = 'diagram:hops'`, value `{ size: number }` (radius, default 5) while on, absent
-  while off.
-- `DiagramEdge.hops?: readonly { at: Vec2; over: string; r: number }[]`, literal, so any reader
-  draws them with no doc value, as themes write literal colors.
-- `crossings.ts`, pure, in `@weasel-js/diagram/layout`: `edgeHops(polylines, order, r)` finds
-  proper crossings of general segments through avoid's `SpatialHash` (`avoid/hash.ts`), skips
-  crossings within `2r` of either connector's ends and collinear overlaps, and merges hops closer
-  than `2r` into one longer hop.
-- `draw.ts`: `withHops(points, hops) → Path` replaces the stretch within `r` of each hop with a
-  half circle. `edgeDerivePath` uses it when a non-split edge has hops, keeping only those whose
-  point lies on the routed polyline within 0.5, so a stale hop never draws.
-- `install.ts`: `installHops(scene)` and `useHops(scene)`, an edit pass at `DIAGRAM_PASS_ORDER.hops`,
-  idle while the doc value is absent. It holds each connector's last polyline. On the key changing
-  it recomputes or clears every edge; otherwise the dirty set is connectors attached to changed
-  nodes, connectors whose data changed, and connectors whose last polyline meets a dirty one's old
-  or new box. Polylines come from `edgeRouter` (pre-hop), never from the derived path.
-- `hopFollower(scene)`: a transform follower that previews the moved connectors, and every
-  connector hopping over one, without hops.
-- `SET_HOPS_ACTION_ID = 'diagram.hops'`, a toggle that writes the doc value, in `diagramWaypoints`'
-  contribution beside the router commands. `DiagramView` takes `hops?: number`, applied by
-  `createSpecHops(r)` after the spec router and label placer.
-
-### Save, load, undo
-
-The doc value and each edge's hops save with the scene. Toggling is one entry; a recompute joins the
-edit that caused it.
-
-### Performance budget
-
-`hops/hops.bench.ts`: commit, 300 connectors with 20 dirty, 3 ms; all 300, 25 ms.
-
-### Tests
-
-- `crossings.test.ts`: proper crossings only; ends and overlaps skipped; merging; render order.
-- `draw.test.ts`: arc geometry; bulge side per axis; stale hops dropped.
-- `hops.scene.test.ts`: a move creates and removes hops in its entry; toggling off clears in one
-  entry; undo restores.
-- Chart browser test: two crossing connectors, toggle on, the top one's pixels leave its line at the
-  crossing.
 
 ## 6. Exporting one page
 

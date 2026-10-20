@@ -1324,8 +1324,8 @@ only story runner in the repo.
   (2026-10-20); each piece deletes its own section there when it merges, so what the doc still
   holds is what is left: off-page reference markers for connectors that cross pages,
   and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
-  reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
-  where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
+  reports resizes; edge labels as routing obstacles, and labels that dodge each other;
+  pipeline-mode groups as editable containers, and waypoint editing under
   the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files, and running a pipeline.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
