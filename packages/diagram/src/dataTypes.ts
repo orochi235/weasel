@@ -81,6 +81,8 @@ export interface DataEdge {
   /** Ports a layout run named, as `onMove` reports them: used like `routed`,
    *  and not part of the edge's id. `fromPort` and `toPort` win. */
   routedPorts?: LayoutPorts;
+  /** The theme role it is drawn in, under `DiagramSceneOptions.theme`: that role's stroke. Kept on its trait. */
+  style?: string;
   /** Its stroke, markers, and label color of its own, over the theme's. `stroke` and `label` are
    *  listed in the trait's `ownStyle` (as `stroke` and `text`), so a theme change leaves them. */
   colors?: Partial<EdgeStyle>;

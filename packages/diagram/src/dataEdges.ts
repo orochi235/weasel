@@ -9,6 +9,8 @@ import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
+import { roleEdgeStyle } from './theme/resolve';
+import type { DiagramTheme } from './theme/types';
 
 export interface EdgeSpecContext {
   idOf: (edge: DataEdge) => string;
@@ -17,6 +19,8 @@ export interface EdgeSpecContext {
   labelFont?: { fontFamily: string; fontSize: number };
   measure: MeasureRowText;
   fallback: EdgeStyle;
+  /** Styles an edge naming a role. */
+  theme?: DiagramTheme;
   labelPlacement: DiagramLabel;
   /** Ports and waypoints by edge id, overriding the edge's own (from `layeredRoutes`). */
   routes?: ReadonlyMap<string, LayeredRoute> | null;
@@ -74,7 +78,8 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const waypoints = router === 'avoid' ? e.waypoints : planned.waypoints;
     // Layout's own route, marked so a later layout of the live scene owns it.
     const laidOut = e.waypoints === undefined && waypoints !== undefined;
-    const style = withColors(ctx.opts.edgeStyle?.(e) ?? ctx.fallback, e.colors);
+    const role = e.style !== undefined && ctx.theme !== undefined ? roleEdgeStyle(ctx.theme, e.style) : ctx.fallback;
+    const style = withColors(ctx.opts.edgeStyle?.(e) ?? role, e.colors);
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
     specs.push({
@@ -90,6 +95,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           router,
           ...(waypoints ? { waypoints } : {}),
           ...(laidOut ? { laidOut: waypoints } : {}),
+          ...(e.style !== undefined ? { style: e.style } : {}),
           ...ownEdgeStyle(e.colors),
         },
         stroke: {

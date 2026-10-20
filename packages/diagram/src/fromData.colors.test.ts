@@ -51,6 +51,15 @@ describe('diagramScene colors', () => {
   });
 });
 
+describe('diagramScene edge roles', () => {
+  it('draws an edge naming a role in its stroke, and keeps the role on its trait', () => {
+    const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', style: 'accent' }] };
+    const edge = byId(diagramScene(data, { theme: THEME }), edgeIdOf(data.edges[0]!));
+    expect(strokeOf(edge)).toBe(THEME.roles.accent!.stroke);
+    expect(trait(edge).style).toBe('accent');
+  });
+});
+
 describe('diagramScene layer', () => {
   it('puts every spec on the layer it is given, and on main by default', () => {
     expect(diagramScene(DATA).every((s) => s.layer === 'main')).toBe(true);
