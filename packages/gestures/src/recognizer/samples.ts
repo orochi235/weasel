@@ -16,6 +16,13 @@ export interface PointerSample extends EventModifiers, PointerSampleStylus {
   clientY: number;
   /** What the originating event was aimed at. */
   target?: unknown;
+  /**
+   * When the input happened, on the recognizer clock's timeline: a DOM event's
+   * `timeStamp` beside `performance.now()`. The windows between two inputs are
+   * measured on it, so a long task that delays an event's handling does not
+   * widen them. Read as the clock's `now()` when absent, 0, or ahead of it.
+   */
+  timeStamp?: number;
 }
 
 /** A pointer going down, with what the host found under it. */

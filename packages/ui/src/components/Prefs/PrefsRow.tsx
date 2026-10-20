@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
+  prefLeafValue,
   prefValueAtPath,
   type PrefAction,
   type PrefActions,
@@ -43,7 +44,7 @@ export interface PrefRenderContext {
   path: string;
   /** The schema node. App renderers narrow this to their own kind shape. */
   pref: PrefLeaf;
-  /** Current value — `values` at `path`, falling back to `pref.default`. */
+  /** Current value: `values` at `path` as `prefLeafValue` shows it. */
   value: unknown;
   /** Everything the surface edits, from its root: a form's `values`, a control panel's `config`. What a row
    *  reads of another setting. */
@@ -181,7 +182,7 @@ export function prefRenderContext(
   const renderCtx: PrefRenderContext = {
     path,
     pref: leafAtValues(pref, ctx.values),
-    value: mixed ? undefined : stored !== undefined ? stored : pref.default,
+    value: mixed ? undefined : prefLeafValue(pref, stored),
     values: ctx.values,
     ...(ctx.changed?.has(path) ? { changed: true } : {}),
     mixed,

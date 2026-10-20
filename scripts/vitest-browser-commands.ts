@@ -91,14 +91,14 @@ const settleFrame: BrowserCommand<[]> = async (ctx) => {
  *  press, or a release of the primary button. */
 export type PointerStep = { to: [x: number, y: number] } | { down: true } | { up: true };
 
-/** Drive the real mouse through `steps`, as a person would: each move is one
- *  trusted `mousemove` and its pointer events, with the button state the steps
- *  before it left. */
-const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
+type CommandContext = Parameters<BrowserCommand<[]>>[0];
+
+/** Maps a client point of the test's frame to the page point the mouse moves to. */
+async function frameToPage(ctx: CommandContext): Promise<(at: [number, number]) => [number, number]> {
   const frame = await ctx.frame();
   const element = await frame.frameElement();
   const box = await element.boundingBox();
-  if (!box) throw new Error('pointer: the test frame has no box');
+  if (!box) throw new Error('the test frame has no box');
   // The orchestrator may scale the frame to fit; its client box is the unscaled one.
   const [width, left, top] = await element.evaluate(
     (el) => {
@@ -107,20 +107,51 @@ const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
     },
   );
   const scale = box.width / (width + 2 * left);
+  return ([x, y]) => [box.x + (left + x) * scale, box.y + (top + y) * scale];
+}
+
+/** Drive the real mouse through `steps`, as a person would: each move is one
+ *  trusted `mousemove` and its pointer events, with the button state the steps
+ *  before it left. */
+const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
+  const toPage = await frameToPage(ctx);
   for (const step of steps) {
-    if ('to' in step) {
-      await ctx.page.mouse.move(
-        box.x + (left + step.to[0]) * scale,
-        box.y + (top + step.to[1]) * scale,
-      );
-    } else if ('down' in step) await ctx.page.mouse.down();
+    if ('to' in step) await ctx.page.mouse.move(...toPage(step.to));
+    else if ('down' in step) await ctx.page.mouse.down();
     else await ctx.page.mouse.up();
+  }
+};
+
+/** Two clicks at a client point of the test's frame, the second sent while the
+ *  page's main thread is busy for `stallMs`: it happens on time and is handled
+ *  once the stall ends. */
+const clickAcrossStall: BrowserCommand<[at: [number, number], stallMs: number]> = async (ctx, at, stallMs) => {
+  const [x, y] = (await frameToPage(ctx))(at);
+  const frame = await ctx.frame();
+  const cdp = await ctx.page.context().newCDPSession(ctx.page);
+  try {
+    await ctx.page.mouse.click(x, y);
+    await frame.evaluate((ms) => {
+      setTimeout(() => {
+        const end = performance.now() + ms;
+        while (performance.now() < end) { /* the long task */ }
+      }, 0);
+    }, stallMs);
+    await new Promise((r) => setTimeout(r, 50));
+    // Sent together rather than each once the last is handled, so both queue behind the stall.
+    const button = { x, y, button: 'left', clickCount: 1 } as const;
+    await Promise.all([
+      cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', buttons: 1, ...button }),
+      cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', buttons: 0, ...button }),
+    ]);
+  } finally {
+    await cdp.detach();
   }
 };
 
 export const browserCommands = {
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
-  pointer,
+  pointer, clickAcrossStall,
 };
 
 declare module 'vitest/browser' {
@@ -133,5 +164,6 @@ declare module 'vitest/browser' {
     collectGarbage: () => Promise<void>;
     settleFrame: () => Promise<void>;
     pointer: (steps: PointerStep[]) => Promise<void>;
+    clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
   }
 }

@@ -11,6 +11,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
+  multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
+  falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
+  `Date.now()`). Long-press, pan inertia and the stylus readout cap stay on handling time.
 - 2026-10-20 (overnight pass): `HoverSpec.held` (`true | 'optional'`, the values `mods` takes;
   `hover ?held` / `hover +held` in a route) keeps reporting a held pointer's moves as hovers marked
   `held`, without claiming them. Leaving the surface is a leave pressed or not; a target-to-target
@@ -435,6 +439,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
+  `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
+  unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
+  depend on `@weasel-js/text` for `TextDirection`.
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+  (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
+  except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
+  so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its
+  unset state for a node without the property. `Bar` and `MenuBar` still draw a missing path unset.
+  path-tools' corner panel reports `shape: 'none'` where it passed `null`.
 - 2026-10-20 (overnight pass): In `PrefSchemaEditor`, only a node added in this session takes its
   key from its name; a baseline pref keeps its key when renamed, and Changes and `onSubmit` carry the
   name change alone. The Key field stays the way to change a key deliberately.

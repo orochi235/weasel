@@ -41,6 +41,17 @@ describe('a leaf whose absent value is its default', () => {
     expect(screen.getByLabelText('Size')).toHaveValue('');
   });
 
+  it('reads a node holding null at the path as holding nothing there', () => {
+    setup({ a: { turn: null, size: null } as unknown as Record<string, unknown> });
+    expect(screen.getByLabelText('Turn')).toHaveValue('0');
+    expect(screen.getByLabelText('Size')).toHaveValue('');
+  });
+
+  it('does not read a node holding null and one holding the default as mixed', () => {
+    setup({ a: { turn: null } as unknown as Record<string, unknown>, b: { turn: 0 } });
+    expect(screen.getByLabelText('Turn')).toHaveValue('0');
+  });
+
   it('does not read a node without the key and one holding the default as mixed', () => {
     setup({ a: {}, b: { turn: 0 } });
     expect(screen.getByLabelText('Turn')).toHaveValue('0');
@@ -79,6 +90,11 @@ describe('a field of an object leaf whose absent value is its default', () => {
     setupBox({ a: { box: {} } });
     expect(screen.getByLabelText('Weight')).toHaveValue('1');
     expect(screen.getByLabelText('Gap')).toHaveValue('');
+  });
+
+  it('shows the default for a field the held object holds as null', () => {
+    setupBox({ a: { box: { weight: null } } });
+    expect(screen.getByLabelText('Weight')).toHaveValue('1');
   });
 
   it('leaves the field unset where the node holds no object at all', () => {

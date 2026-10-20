@@ -1,5 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import { isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
@@ -62,7 +62,7 @@ export function MatrixCell({
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
-  const shown = value ?? leaf.default;
+  const shown = prefLeafValue(leaf, value);
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)

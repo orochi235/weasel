@@ -27,16 +27,6 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
-- **(P3) The double-click window is timed when a click is handled, not when it happened.** The
-  pointer recognizer stamps each release with `performance.now()` (`clock.now` in
-  `packages/routing/src/interactions/dispatcher/channels/pointer.ts`) and composes two clicks under
-  600ms apart. A long task that runs between a user's two clicks delays only the second one's
-  handler, so a real 300ms double-click can measure over 600ms and come out as two single clicks.
-  That is reasoned from the code, not seen with a user. What was seen is a test helper that awaited
-  a frame between its two clicks: the first click and its frame took 289ms on studio with only the
-  `browser` project running, and full fleet runs dropped the double-click (2026-10-20).
-  The input's own `event.timeStamp` shares `performance.now()`'s time origin and would not move.
-
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
@@ -555,9 +545,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   in the Key field shows as a move while the name stands; rename it afterward and the two can no
   longer be paired, so it shows as a removal plus an addition, and its key follows the new name.
 
-- **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
-  mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -732,16 +719,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
-  control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
-  `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
-  absent is the default in the form (`prefRenderContext`, `Prefs/PrefsRow.tsx`), unset in the
-  panel, and `?? default` in labkit (`controls/rows.tsx`, `panelRows.tsx`, `MatrixCell.tsx`,
-  `MatrixEditor.tsx`), where `null` also reads as absent. Two rows of the table are labkit's alone
-  and were carried over undecided: `enumAsAsked: false` (`radio` draws as segments, `menu` as a
-  select) and `openSlider: false` (a slider needs both bounds). Outside the table:
-  `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
-  always lists an enum as radios.
+- **(P3) Two control choices are labkit's alone, and two controls draw an enum their own way.**
+  Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
+  of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
+  segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
+  table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
+  `MatrixEditor` always lists an enum as radios. The value a leaf shows is one function
+  (`prefLeafValue`, 2026-10-20), which `Bar` and `MenuBar` do not call: a path their `values` lack
+  draws unset, where a params surface draws the default.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`

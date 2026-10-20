@@ -14,7 +14,8 @@ marked "overnight pass". Nothing is pushed.
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
   and `groupSelector`. Rulings: Up and Down stop at the edges, Home and End span the whole
-  palette, `rovingTarget` and `rovingGridTarget` are exported. Filed: no right-to-left handling.
+  palette, `rovingTarget` and `rovingGridTarget` are exported. Left and Right mirror under
+  right-to-left (a later arc).
 - `moveNodes` and `moveNodesOps` in core move ids the way a drag commits them; weaselchart's
   stencil drop inserts then moves in one undo step, with no probe insert. Rulings: not 2D-only, a
   zero delta commits nothing, `ingest` and paste declare three more deps, the undo entry reads "Drop".
@@ -59,8 +60,12 @@ Merged:
   among them, so nothing checks them before a merge.
 - The diagram containers double-click test that failed only in full runs: its helper waited a
   frame between clicks, and under load the gap passed the 600 ms double-click window (reproduced
-  with a 650 ms stall). Filed from it: the window is timed when a click is handled, not when it
-  happened (P3, "Tools & gestures").
+  with a 650 ms stall). The engine half, also merged: the window is measured from each event's own
+  time, so a long task between a user's two clicks no longer drops a double-click (a real-Chromium
+  test stalls the page between them).
+- Every params surface (form, panel, labkit) reads a leaf's value through one function,
+  `prefLeafValue`: absent shows the default, `null` counts as absent (not for a paint). Its tests
+  were never seen failing: the red run synced the fixed tree.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
@@ -179,6 +184,9 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - weaselchart, 2026-10-20: the grid, snap to grid, alignment and spacing marks on a move, a route
   bend snapping to the grid with Shift and Ctrl, a stencil dropped beside a shape, and the
   Preferences dialog (headless browser tests only; the grid screenshot is the one frame seen).
+- Overnight pass, 2026-10-20: a `ToolPalette` grid's arrow keys, a disabled bar button's tooltip,
+  a cleared clearable field in labkit drawing empty, the corner panel's shape row with no shape,
+  the loupe through a real drag, and a scoped container's length fields (no app passes `units` yet).
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

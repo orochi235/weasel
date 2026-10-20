@@ -12,6 +12,9 @@ import {
  *  page. Matches `aria-orientation` for the one-axis values. */
 export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
 
+/** The inline direction the items are laid out in. Under `'rtl'` Left and Right swap. */
+export type RovingDirection = 'ltr' | 'rtl';
+
 /** Options for {@link useRovingTabIndex}. */
 export type UseRovingTabIndexOptions = {
   /** Selects the items inside the container, in DOM order. Items belonging to
@@ -26,6 +29,8 @@ export type UseRovingTabIndexOptions = {
   /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
    *  groups are each a grid. Items under none of them count as one group. */
   groupSelector?: string;
+  /** Overrides the direction read from the container's computed `direction` at each keypress. */
+  dir?: RovingDirection;
   /** The item that holds the tab stop while focus is outside the container —
    *  a radiogroup-style bar passes its selected index so Tab lands on the
    *  current value. Omitted, the stop stays on whichever item last had focus,
@@ -53,15 +58,19 @@ function isEnabled(el: HTMLElement): boolean {
   return !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true';
 }
 
+const MIRRORED: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
+
 /** Where `key` takes focus from `current`, or null if it does not move it.
  *  Arrows skip disabled items and wrap; Home and End go to the first and last
- *  enabled item. */
+ *  enabled item. Under `'rtl'` Left steps forward and Right back. */
 export function rovingTarget(
   current: number,
-  key: string,
+  pressed: string,
   enabled: readonly boolean[],
   orientation: RovingOrientation = 'both',
+  dir: RovingDirection = 'ltr',
 ): number | null {
+  const key = dir === 'rtl' ? (MIRRORED[pressed] ?? pressed) : pressed;
   const n = enabled.length;
   const horizontal = orientation !== 'vertical';
   const vertical = orientation !== 'horizontal';
@@ -84,16 +93,17 @@ export function rovingTarget(
 
 /** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
  *  order, or null if it does not move it. Left, Right, Home and End behave as {@link rovingTarget}
- *  with `'horizontal'`. Up and Down keep the column, landing on the last item of a row too short
+ *  with `'horizontal'` and the same `dir`. Up and Down keep the column, landing on the last item of a row too short
  *  to have it, pass over rows where that item is disabled, and stop at the first and last rows. */
 export function rovingGridTarget(
   current: number,
   key: string,
   enabled: readonly boolean[],
   rows: readonly (readonly number[])[],
+  dir: RovingDirection = 'ltr',
 ): number | null {
   const step = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
-  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal');
+  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', dir);
   const r = rows.findIndex((row) => row.includes(current));
   if (r < 0) return null;
   const column = rows[r].indexOf(current);
@@ -123,7 +133,9 @@ function gridRows(items: readonly HTMLElement[], columns: number, groupSelector?
  * The APG roving-tabindex contract for a container of items: exactly one item
  * is in the tab order, and the arrow keys move focus among the rest, skipping
  * disabled ones (`disabled` or `aria-disabled="true"`) and wrapping at both
- * ends. Home and End go to the first and last enabled item. While focus is
+ * ends. Home and End go to the first and last enabled item. Under a
+ * right-to-left layout — the container's computed `direction`, or the `dir`
+ * option — Left and Right swap. While focus is
  * inside, the focused item holds the tab stop, so Tab and Shift+Tab both leave
  * the container.
  *
@@ -230,9 +242,10 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         return;
       }
       const enabled = found.map(isEnabled);
+      const dir = latest.current.dir ?? (getComputedStyle(e.currentTarget).direction === 'rtl' ? 'rtl' : 'ltr');
       const next = columns
-        ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector))
-        : rovingTarget(current, e.key, enabled, orientation);
+        ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector), dir)
+        : rovingTarget(current, e.key, enabled, orientation, dir);
       if (next === null || next === current) return;
       e.preventDefault();
       onNavigate?.(next);

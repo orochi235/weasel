@@ -44,7 +44,7 @@ export interface PointerInput {
 }
 
 const sampleOf = (e: PointerEvent): PointerSample => ({
-  pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY, target: e.target,
+  pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY, target: e.target, timeStamp: e.timeStamp,
   altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
   ...stylusOf(e),
 });
