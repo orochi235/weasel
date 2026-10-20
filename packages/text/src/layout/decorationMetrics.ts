@@ -113,8 +113,9 @@ export function lineDecorations(
 
   for (const g of glyphs) {
     const style = runs[g.run];
-    const paint = paintOf(g.run);
-    if (paint === null || !DECORATION_KINDS.some((kind) => style[kind])) {
+    // Flags first: `paintOf` builds a string, and most text has no rule.
+    const paint = style.underline || style.strikethrough || style.overline ? paintOf(g.run) : null;
+    if (paint === null) {
       close();
       continue;
     }

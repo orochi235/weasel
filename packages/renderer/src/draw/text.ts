@@ -217,12 +217,7 @@ function drawTextGroup(
       slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
     let cut: ClipRect | null | undefined;
-    while (!batch.pushGlyph(
-      q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
-      q.u0, q.v0, q.u1, q.v1,
-      rgba[0], rgba[1], rgba[2], rgba[3],
-      slot, mode, bold,
-    )) {
+    while (!batch.pushGlyph(q, dx, dy, tanItalic, m, rgba, slot, mode, bold)) {
       cut = enterUncut(ctx);
       slot = stageGlyphs(ctx, atlasId, fieldScale);
     }
@@ -246,6 +241,7 @@ function glyphPaintKindOf(fill: Paint): GlyphPaintKind | null {
 
 /** The atlas's unit while a glyph-paint run draws; the paint has unit 0. */
 const GLYPH_PAINT_ATLAS_UNIT = 1;
+const OPAQUE_WHITE = [1, 1, 1, 1] as const;
 
 /**
  * Draw one group of atlas glyphs with a texture paint, its coverage masking
@@ -291,12 +287,7 @@ function drawPaintedGlyphs(
   batch.clip = null;
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
-    batch.pushGlyph(
-      q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
-      q.u0, q.v0, q.u1, q.v1,
-      1, 1, 1, 1,
-      GLYPH_PAINT_ATLAS_UNIT, mode, 0,
-    );
+    batch.pushGlyph(q, dx, dy, tanItalic, m, OPAQUE_WHITE, GLYPH_PAINT_ATLAS_UNIT, mode, 0);
   }
   drawStagedGlyphs(ctx);
   batch.clip = cut;

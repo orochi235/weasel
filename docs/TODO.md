@@ -1081,13 +1081,14 @@ only story runner in the repo.
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **With the readout changing every frame the DOM is the cheaper overlay** once the renderer's
-    worker pool is counted: at 5,000 glyphs 10.5–12.8 ms a frame of all threads against 6.0–8.5,
-    ranges apart from 2,500 glyphs up under every camera, on msb-uai and keiei (one census run
-    each, 2026-10-19; README, "Frame rate"). 78–88% of the HUD's pool time is V8's background
-    GC. What allocates it is not known: a heap allocation profile of the every-frame path
-    (`attachHud` relayout, the renderer's text layout and command building) would say, and
-    cutting it is the fix if the profile names something.
+  - **With the readout changing every frame the DOM is still the cheaper overlay** once the
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
+    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
+    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
+    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
+    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
+    entries — one object per glyph with every number in it boxed. Cutting that means a layout
+    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
