@@ -1072,12 +1072,6 @@ only story runner in the repo.
   `72fe486f7` and `69662b198` on studio, and passed in `befd71b6c`'s (2026-10-20). Three in four
   stops being load noise; it likely needs more than 5 s on a busy node, or waits on something slow.
 
-- **(P3) A chart browser test times out under load.** "moves an edge label off a shape dropped on
-  it, on release" (`apps/chart/src/chart.browser.test.tsx`) hit its 15 s timeout in the full run of
-  `a64fe9501` on studio and passed on the identical tree before and after (2026-10-20). Label drag
-  had just added a label hit layer to the press path in that same app. `b2fdbdc5b` (another
-  session) made the test poll for the label's pixels; retire this if it doesn't time out again.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
