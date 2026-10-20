@@ -4,12 +4,12 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 06:50)
+## Overnight pass, 2026-10-20 (status at 07:20)
 
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
 "overnight pass". Nothing is pushed.
 
-**`main` is green at `149218ffd`** (full fleet run on teitou: 27922 passed, 0 failed). Twenty-six
+**`main` is green at `d910b2ff2`** (full fleet run on teitou: 27923 passed, 0 failed). Twenty-seven
 merges from this pass; the TODO entries it retired are in `git log`.
 
 🔴 **GitHub CI on `main` has been red since 2026-10-19 04:11**, unseen because the fleet runs only
