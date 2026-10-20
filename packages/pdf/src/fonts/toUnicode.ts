@@ -15,6 +15,7 @@ export function toUnicodeCMap(glyphs: ReadonlyMap<number, number>): string {
     '/CIDInit /ProcSet findresource begin',
     '12 dict begin',
     'begincmap',
+    '/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def',
     '/CMapName /Adobe-Identity-UCS def',
     '/CMapType 2 def',
     '1 begincodespacerange',

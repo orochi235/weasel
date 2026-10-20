@@ -4,7 +4,8 @@ import type { PdfFontSource } from './fontSource';
 import { toUnicodeCMap } from './toUnicode';
 
 export interface EmbeddedFont {
-  ref: PdfRef;
+  /** The font object; throws until `use` has returned a glyph, so a page names only faces it draws with. */
+  readonly ref: PdfRef;
   /** The glyph id for `cp`, recorded for `/W` and `/ToUnicode`; `null` when the face has no glyph for it. */
   use(cp: number): number | null;
   /** A glyph's advance in 1000/em units. */
@@ -19,22 +20,27 @@ function baseFontName(e: FaceEmbedding, family: string, weight: number, style: F
 }
 
 class Face implements EmbeddedFont {
-  readonly ref: PdfRef;
   /** Glyph id to the first codepoint that asked for it. */
   readonly used = new Map<number, number>();
+  private fontRef: PdfRef | undefined;
+  private written = false;
 
   constructor(
     private readonly objects: PdfObjects,
     private readonly emb: FaceEmbedding,
     private readonly baseFont: string,
-  ) {
-    this.ref = objects.alloc();
+  ) {}
+
+  get ref(): PdfRef {
+    if (!this.fontRef) throw new Error('pdf: font ref read before any glyph was used');
+    return this.fontRef;
   }
 
   use(cp: number): number | null {
     const gid = this.emb.glyphIndexOf(cp);
     if (gid === null || gid === 0) return null;
     if (!this.used.has(gid)) this.used.set(gid, cp);
+    this.fontRef ??= this.objects.alloc();
     return gid;
   }
 
@@ -43,6 +49,8 @@ class Face implements EmbeddedFont {
   }
 
   write(): void {
+    if (this.written || !this.fontRef) return;
+    this.written = true;
     const { objects, emb } = this;
     const k = 1000 / emb.unitsPerEm;
     const file = objects.alloc();
@@ -55,12 +63,12 @@ class Face implements EmbeddedFont {
       Type: name('FontDescriptor'),
       FontName: name(this.baseFont),
       Flags: 4,
-      FontBBox: emb.bbox.map((v) => Math.round(v * k)),
+      FontBBox: emb.bbox.map((v, i) => (i < 2 ? Math.floor(v * k) : Math.ceil(v * k))),
       ItalicAngle: emb.italicAngle,
       Ascent: Math.round(emb.ascent * k),
       Descent: Math.round(emb.descent * k),
       CapHeight: Math.round(emb.capHeight * k),
-      StemV: 80,
+      StemV: 80, // required by the spec, advisory for TrueType
       FontFile2: file,
     });
     const widths: (number | number[])[] = [];
@@ -74,7 +82,7 @@ class Face implements EmbeddedFont {
       CIDToGIDMap: name('Identity'),
       W: widths,
     });
-    objects.set(this.ref, {
+    objects.set(this.fontRef, {
       Type: name('Font'),
       Subtype: name('Type0'),
       BaseFont: name(this.baseFont),
@@ -106,7 +114,12 @@ export class DocumentFonts {
   }
 
   private async load(family: string, weight: number, style: FontStyle): Promise<Face | null> {
-    const emb = await this.source.embedding(family, weight, style);
+    let emb: FaceEmbedding | null;
+    try {
+      emb = await this.source.embedding(family, weight, style);
+    } catch {
+      return null;
+    }
     if (!emb || emb.outlines !== 'truetype' || !emb.embeddable) return null;
     return new Face(this.objects, emb, baseFontName(emb, family, weight, style));
   }

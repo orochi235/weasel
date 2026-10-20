@@ -114,9 +114,10 @@ describe('DocumentFonts', () => {
     const fonts = new DocumentFonts(objects, registryFontSource);
     const font = (await fonts.face('pdf-inter-miss', 400, 'normal'))!;
     expect(font.use(0x1f600)).toBeNull();
+    font.use(0x41);
     const s = await render(objects, fonts);
-    expect(s).not.toContain('beginbfchar');
-    expect(s).toContain('/W []');
+    expect(s).toContain('1 beginbfchar');
+    expect(s).not.toMatch(/^<0000> <00/m);
   });
 
   it('answers null for a CFF face, a restricted face, or no bytes', async () => {
@@ -159,5 +160,55 @@ describe('DocumentFonts', () => {
     const fonts = new DocumentFonts(objects, withEmbedding({ postScriptName: '' }));
     (await fonts.face('My Font (x)', 700, 'normal'))!.use(0x41);
     expect(await render(objects, fonts)).toContain('/BaseFont /MyFontx-700-normal');
+  });
+
+  it('leaves a face that was fetched and never used out of the file', async () => {
+    registerInter('pdf-inter-idle');
+    const objects = new PdfObjects();
+    const fonts = new DocumentFonts(objects, registryFontSource);
+    const font = (await fonts.face('pdf-inter-idle', 400, 'normal'))!;
+    expect(font.use(0x1f600)).toBeNull();
+    const s = await render(objects, fonts);
+    expect(s).not.toContain('/Type0');
+    expect(s).not.toContain('/FontFile2');
+  });
+
+  it('refuses a ref until a glyph has been used', async () => {
+    registerInter('pdf-inter-ref');
+    const fonts = new DocumentFonts(new PdfObjects(), registryFontSource);
+    const font = (await fonts.face('pdf-inter-ref', 400, 'normal'))!;
+    expect(() => font.ref).toThrow();
+    font.use(0x41);
+    expect(font.ref.id).toBeGreaterThan(0);
+  });
+
+  it('treats a rejected embedding as no face', async () => {
+    const source: PdfFontSource = { ...registryFontSource, embedding: async () => Promise.reject(new Error('boom')) };
+    const objects = new PdfObjects();
+    const fonts = new DocumentFonts(objects, source);
+    expect(await fonts.face('pdf-x', 400, 'normal')).toBeNull();
+    await expect(fonts.finish()).resolves.toBeUndefined();
+  });
+
+  it('writes nothing on a second finish', async () => {
+    registerInter('pdf-inter-twice');
+    const once = async (extra: number) => {
+      const objects = new PdfObjects();
+      const fonts = new DocumentFonts(objects, registryFontSource);
+      (await fonts.face('pdf-inter-twice', 400, 'normal'))!.use(0x41);
+      for (let i = 0; i < extra; i++) await fonts.finish();
+      return (await render(objects, fonts)).match(/ 0 obj\n/g)!.length;
+    };
+    expect(await once(1)).toBe(await once(0));
+  });
+
+  it('declares the CMap character collection', async () => {
+    registerInter('pdf-inter-cmap');
+    const objects = new PdfObjects();
+    const fonts = new DocumentFonts(objects, registryFontSource);
+    (await fonts.face('pdf-inter-cmap', 400, 'normal'))!.use(0x41);
+    expect(await render(objects, fonts)).toContain(
+      '/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName',
+    );
   });
 });
