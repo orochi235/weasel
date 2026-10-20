@@ -13,6 +13,8 @@ export {
   CONTAINER_STENCILS, addLane, containerBuild, lanesOf, poolAxisOf, releaseMembers,
 } from './containerStencils';
 export type { ContainerBuildOptions, ContainerStencil } from './containerStencils';
+export { firstLanes, regionSpecs } from './regionSpecs';
+export type { RegionOptions, RegionSpec } from './regionSpecs';
 export { diagramCanDropInto, diagramDropParentAt } from './canDropInto';
 export type { DropParentScene } from './canDropInto';
 export {
@@ -24,3 +26,4 @@ export {
   createLaneResizeAction, createReleaseMembersAction, diagramContainers, laneResizeFrame,
 } from './containerActions';
 export type { LaneActionOptions, LaneResize } from './containerActions';
+export { EDIT_CONTAINER_TITLE_ACTION_ID, editContainerTitleAction, editContainerTitleBinding, regionHeaderAt } from './containerTitle';

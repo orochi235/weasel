@@ -452,8 +452,8 @@ finds them again: `diagram:container`, `diagram:pool-rows`,
 `diagramContainerLayout` places members freely under a header, and
 `laneStackLayout` stacks a pool's lanes in the order they sit; a pool's size
 along the stack is the sum of its lanes. Lanes take no connectors, and
-connectors stay at the top level, drawn above every container. `DiagramView`
-does not build containers from data yet.
+connectors stay at the top level, drawn above every container. `diagramScene`
+builds them from data too (see "From data").
 
 ### Themes
 
@@ -680,6 +680,37 @@ stage. A scene built
 any other way joins in with a node whose trait carries `group` and whose
 `dependsOn` lists its members.
 
+`containers` draws the containers and pools of "Containers and pools" from data:
+
+```tsx
+diagramScene({ nodes, edges, containers: [
+  { id: 'review', role: 'container', label: 'Review', members: ['draft', 'check'] },
+  { id: 'teams', role: 'pool', label: 'Teams', box: { x: 0, y: 400, width: 600, height: 240 }, pinned: true,
+    lanes: [{ id: 'ops', label: 'Ops', members: ['deploy'] }, { id: 'qa', label: 'QA', size: 80 }] },
+] });
+```
+
+Each region is a scene container and its members are its children, so a
+region's id shares the node id namespace, and so does each lane's. A member
+already claimed by an earlier region, a pool, and a claim that would put a
+container inside itself are ignored. A node is in a group or in a region, never
+both: a region is its scene parent, and a group would draw a second box around
+it that the region's does not hold, so `diagramScene` throws on a node that
+`groups` and `containers` both name. A container with a `box` is laid out as
+one node of that size, and its members ride along with it, keeping where they
+stand in it; a member with no `at` is seeded inside its body, in rows. A
+container with no `box` is laid out as a group, and its box fits its members.
+A pool always has a box: 600 across and 120 along per lane when it gives none
+(`DEFAULT_POOL_ACROSS`, `DEFAULT_LANE_SIZE`). Its lanes stack along `axis`
+(`'y'`, rows, by default) at their `size`, and lanes giving none share what
+the pool's box leaves. An edge with an end inside a boxed region ranks against
+the outermost one holding it, and keeps none of layout's route. `pinned`
+leaves a box where it is. Under `theme`, a region naming a `style` role takes
+that role's colors; otherwise a container takes the theme's `container`, a
+pool its `lane.header`, and lanes the `lane.bodies` in turn; titles are set in
+the diagram's face, the theme's when `font` is unset. `router="avoid"`
+routes around a region neither end is inside, and around every header.
+
 Text is sized from character counts unless `measure` is given, so layout runs
 without a canvas. The layout defaults to `layered`, picked by name or passed as
 any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`, and
@@ -713,8 +744,9 @@ would make it yours, which layout never moves. A run that only rewrote routes
 calls `onMove` with no moves.
 `onMove` hears only what changes after the view is built. Where the build's own
 layout put things, `diagramLayoutOf(specs)` reads off the specs, in the same
-shape (`{ moves, routes }`): every node not pinned, and every edge whose route
-or ports layout wrote. Store them the same way and the next `diagramScene`
+shape (`{ moves, routes, containers }`): every node not pinned, every edge whose route
+or ports layout wrote, and a `box` edit for every container and pool not pinned
+whose box is its own. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
 `onResize` gives a selected node resize handles (`diagramResizable`, so none on
@@ -732,6 +764,24 @@ so a box dragged smaller than its rows grows back to them. Core's
   onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
 />
 ```
+
+`onEditContainer` edits containers and pools the way chart mode does, and
+reports each edit without keeping it (`ContainerEdit`):
+
+| The user | Reported |
+|---|---|
+| drags a shape into a container or a lane, or out | `onMove`, the move carrying `parent`: the region's id, or `null` for the top level |
+| drags a container or pool, or resizes it by a handle | `{ kind: 'box', id, box }`, with `parent` when a drop changed its region; what it carried goes to `onMove` |
+| drags a lane's boundary | `{ kind: 'lanes', pool, lanes }`, every lane with its size; the shapes in the lanes after it go to `onMove` |
+| drags a lane by its header to another place | `{ kind: 'lanes', pool, lanes }` in the new order |
+| clicks a pool's add-lane button | `{ kind: 'lanes', pool, lanes }` ending in a new lane, its id minted by the view |
+| double-clicks a header | `{ kind: 'title', id }`, for the host to edit the label |
+| runs Release members (`diagram.releaseMembers`) | `{ kind: 'release', id }` |
+
+Move ids between `members` lists on a move's `parent`, and store a `box` as the
+region's `box` with `pinned: true`. `onDelete` reports a deleted region with
+everything inside it. The view lets shapes drop only into containers and
+lanes, and lanes only into pools (`diagramCanDropInto`).
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.

@@ -17,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
+import { diagramContainerOf, titleIdOf } from './containers/trait';
 import { diagramPorts, diagramWaypoints } from './contribution';
 import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
@@ -25,6 +26,8 @@ import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
 import { groupReorderContribution } from './groupReorder';
+import { regionEditing } from './regionEditing';
+import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
 import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
 
@@ -32,18 +35,33 @@ const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
 const NO_MARQUEE = { areaSelect: null };
 
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** `id`, a region, and every node and region inside it, into `out`. */
+function regionAndMembers(scene: AnyScene, id: string, out: Set<string>): void {
+  out.add(id);
+  for (const child of scene.childrenOf(id as never)) {
+    const node = scene.get(child);
+    if (node === undefined || child === titleIdOf(id)) continue;
+    if (diagramContainerOf(node) !== null) regionAndMembers(scene, child, out);
+    else if (dataKeyReader(node) !== null) out.add(child);
+  }
+}
+
 /**
- * The data a delete of `ids` takes: the selected nodes and groups, and every
- * edge selected or ending on one of them. Not `removalClosure`: a group
- * depends on its members, and deleting a member leaves the group standing.
+ * The data a delete of `ids` takes: the selected nodes and groups, every
+ * container, pool, or lane with what it holds, and every edge selected or
+ * ending on one of them. Not `removalClosure`: a group depends on its
+ * members, and deleting a member leaves the group standing.
  */
-export function removedData(scene: Scene<unknown, string, unknown>, ids: readonly string[]): DeleteReport {
+export function removedData(scene: AnyScene, ids: readonly string[]): DeleteReport {
   const nodes = new Set<string>();
   const edges = new Set<string>();
   for (const id of ids) {
     const node = scene.get(id as never);
     if (node === undefined) continue;
     if (diagramEdgeOf(node) !== null) edges.add(id);
+    else if (diagramContainerOf(node) !== null) regionAndMembers(scene, id, nodes);
     else if (dataKeyReader(node) !== null) nodes.add(id);
   }
   for (const node of scene.renderOrderNodes()) {
@@ -64,8 +82,12 @@ export function reportDeleteAction(report: (removed: DeleteReport) => void): Act
   });
 }
 
-/** Core's `resize`, reporting the selected boxes it would leave instead of writing them. */
-export function reportResizeAction(report: (resizes: readonly NodeResize[]) => void): Action {
+/** Core's `resize`, reporting the selected boxes it would leave instead of writing them: a
+ *  container's or pool's to `region` as a box edit, any other's to `report`. */
+export function reportResizeAction(
+  report: ((resizes: readonly NodeResize[]) => void) | undefined,
+  region?: (edit: ContainerEdit) => void,
+): Action {
   return createResizeAction({
     commit: (poses, deps) => {
       const picked = new Set(deps.selection?.get() ?? []);
@@ -73,9 +95,11 @@ export function reportResizeAction(report: (resizes: readonly NodeResize[]) => v
       for (const [id, pose] of poses) {
         if (!picked.has(id)) continue;
         const { x, y, width, height } = pose as RectPose;
-        resizes.push({ id, x, y, width, height });
+        const node = deps.scene?.get(id as never);
+        if (node !== undefined && diagramContainerOf(node) !== null) region?.({ kind: 'box', id, box: { x, y, width, height } });
+        else resizes.push({ id, x, y, width, height });
       }
-      if (resizes.length > 0) report(resizes);
+      if (resizes.length > 0) report?.(resizes);
     },
   });
 }
@@ -94,8 +118,8 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 
 type EditingProps = Pick<
   DiagramViewProps,
-  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'onResize' | 'connectBodies' | 'canConnect'
-  | 'portOptions' | 'ambient'
+  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'onResize' | 'onEditContainer' | 'onMove'
+  | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
 >;
 
 export interface DiagramEditing {
@@ -106,9 +130,11 @@ export interface DiagramEditing {
 }
 
 export function useDiagramEditing(
-  props: EditingProps & { source: ParticipantSource<RectPose>; selected: () => readonly string[]; mode: 'connect' | 'show' | 'none' },
+  props: EditingProps & {
+    scene: AnyScene; source: ParticipantSource<RectPose>; selected: () => readonly string[]; mode: 'connect' | 'show' | 'none';
+  },
 ): DiagramEditing {
-  const { source, selected, mode, canConnect, portOptions, connectBodies } = props;
+  const { scene, source, selected, mode, canConnect, portOptions, connectBodies } = props;
   const report = useLatest(props);
   const reconnects = props.onReconnect !== undefined;
   const routes = props.onEditRoute !== undefined;
@@ -116,6 +142,7 @@ export function useDiagramEditing(
   const deletes = props.onDelete !== undefined;
   const reorders = props.onReorder !== undefined;
   const resizes = props.onResize !== undefined;
+  const regionEdits = props.onEditContainer !== undefined;
 
   const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
@@ -167,23 +194,27 @@ export function useDiagramEditing(
     () => (reorders ? groupReorderContribution((change) => report.current.onReorder?.(change)) : null),
     [reorders, report],
   );
+  const regions = useMemo(() => (regionEdits ? regionEditing(scene, selected, report) : null), [regionEdits, scene, selected, report]);
   const actions = useMemo(() => ({
     ...NO_MARQUEE,
     ...(deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
-    ...(resizes ? { resize: reportResizeAction((r) => report.current.onResize?.(r)) } : {}),
-  }), [deletes, resizes, report]);
+    ...(resizes || regionEdits
+      ? { resize: reportResizeAction((r) => report.current.onResize?.(r), (e) => report.current.onEditContainer?.(e)) }
+      : {}),
+  }), [deletes, resizes, regionEdits, report]);
 
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(
     // Edge ends last: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
-    () => [portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
-    [portsLayer, route, ends],
+    () => [regions?.layer, portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
+    [regions, portsLayer, route, ends],
   );
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
     ...[ports?.contribution, route?.contribution, ends?.contribution, label, reorder].filter((c): c is Contribution => c != null),
+    ...(regions?.contributions ?? []),
     ...(extra ?? []),
-  ], [ports, route, ends, label, reorder, extra]);
+  ], [ports, route, ends, label, reorder, regions, extra]);
   return { layers, ambient, actions };
 }
