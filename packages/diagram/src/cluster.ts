@@ -61,6 +61,12 @@ export function crossInset(inset: GroupInset, axes: LayoutAxes): { lo: number; h
   return { lo: c.crossLo, hi: c.crossHi };
 }
 
+/** The room `inset` keeps before and after along the rank. */
+export function rankInset(inset: GroupInset, axes: LayoutAxes): { lo: number; hi: number } {
+  const c = canonical(inset, axes);
+  return { lo: c.rankLo, hi: c.rankHi };
+}
+
 /**
  * The gap between each rank and the next, widened so a group's box fits: the
  * widest inset of a group ending at rank `i` and of one starting at `i + 1`
@@ -69,8 +75,8 @@ export function crossInset(inset: GroupInset, axes: LayoutAxes): { lo: number; h
  * that ends, or starts, at the same rank. `rows` is the nodes of each rank.
  */
 export function rankGaps(
-  graph: Graph,
-  rows: readonly (readonly GraphNode[])[],
+  graph: Pick<Graph, 'groups'>,
+  rows: readonly (readonly Pick<GraphNode, 'id'>[])[],
   axes: LayoutAxes,
   rankGap: number,
 ): number[] {
@@ -102,7 +108,7 @@ interface Span {
   children: Span[];
 }
 
-function groupSpans(graph: Graph, rows: readonly (readonly GraphNode[])[]): Span[] {
+function groupSpans(graph: Pick<Graph, 'groups'>, rows: readonly (readonly Pick<GraphNode, 'id'>[])[]): Span[] {
   const rankOf = new Map<string, number>();
   rows.forEach((row, i) => row.forEach((n) => rankOf.set(n.id, i)));
   const spans: Span[] = [];

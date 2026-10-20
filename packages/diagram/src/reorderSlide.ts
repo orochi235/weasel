@@ -4,7 +4,7 @@
  * everything that derives its pose from them follows.
  */
 import { effectivePose, type NodeId, type Scene } from '@weasel-js/core';
-import type { ReorderSlots } from './reorder';
+import type { ReorderItem, ReorderSlots } from './reorder';
 
 export type Box = { x: number; y: number; width: number; height: number };
 
@@ -29,6 +29,9 @@ function packed(items: readonly string[], spans: ReadonlyMap<string, Span>, orde
   return out;
 }
 
+/** The scene nodes that move with `item`. */
+export const carriedBy = (item: ReorderItem): readonly string[] => item.carries ?? [item.id];
+
 const RELEASE_MS = 500;
 
 /** Slides `slots`' items around `carried` until dropped, or kept past a commit. */
@@ -40,7 +43,7 @@ export function slideOthers(scene: Scene<unknown, string, unknown>, slots: Reord
   // Nodes that derive their pose follow the ones that hold theirs.
   const nodes = slots.items.map((item) => ({
     id: item.id,
-    poses: (item.carries ?? [item.id]).flatMap((id) => {
+    poses: carriedBy(item).flatMap((id) => {
       const node = scene.get(id as NodeId);
       return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) as Box }];
     }),

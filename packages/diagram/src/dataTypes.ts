@@ -111,9 +111,9 @@ export interface DataGroup {
 export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
-  /** A group may be a member of another. `layered`, `tree`, and `force` keep
-   *  each group's members together; `chain` and `'none'` ignore groups but
-   *  still draw them. */
+  /** A group may be a member of another. `layered`, `tree`, `force`, and `chain`
+   *  keep each group's members together; `'none'` ignores groups but still
+   *  draws them. */
   groups?: readonly DataGroup[];
   /** Containers and pools: regions drawn as scene containers that hold their
    *  members, which a `DiagramView` drags shapes into and out of. */

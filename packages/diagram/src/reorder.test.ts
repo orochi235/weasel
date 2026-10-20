@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
 import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
@@ -54,6 +54,33 @@ describe('createReorderAction with the insertion bar', () => {
     expect(action.enabled!({ scene }, { x: 150, y: 10 })).toBe(true);
     expect(action.enabled!({ scene }, { x: 190, y: 30 })).not.toBe(true);
     expect(action.enabled!({ scene }, { x: 130, y: 10 })).not.toBe(true);
+  });
+
+  it('never picks up an item whose grip is null, but still gaps around it', () => {
+    const slots = sequenceSlots('x', [
+      { id: 'a', bounds: box(0, 0, 10, 10), grip: null },
+      { id: 'b', bounds: box(20, 0, 10, 10) },
+    ]);
+    const action = createReorderAction({ slots: () => slots, commit: () => {} });
+    expect(action.enabled!({ scene }, { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(action.enabled!({ scene }, { x: 25, y: 5 })).toBe(true);
+    expect(slots.gaps.map((g) => g.index)).toEqual([0, 1, 2]);
+  });
+
+  it('carries every id in carries under a bar drag, each by the drag offset', () => {
+    const poses: Record<string, ReturnType<typeof box>> = { g: box(0, 0), m1: box(50, 100), m2: box(80, 200) };
+    const carryScene = { get: (id: string) => ({ id, pose: poses[id] }) } as unknown as Scene<unknown, string, unknown>;
+    const slots = sequenceSlots('x', [{ id: 'g', bounds: box(0, 0), carries: ['g', 'm1', 'm2'] }, { id: 'b', bounds: box(140, 0) }]);
+    const action = createReorderAction({ slots: () => slots, commit: () => {} });
+    if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const start = { x: 20, y: 20 };
+    const handle = action.invoker.start({ ...ctx(20, 20, start), deps: { scene: carryScene } } as InvocationCtx);
+    handle.onMove!({ ...ctx(50, 20, start), deps: { scene: carryScene } } as InvocationCtx);
+    expect([...handle.previewIds!()!]).toEqual(['g', 'm1', 'm2']);
+    expect(handle.previewPose!('m1')).toEqual(box(80, 100));
+    expect(handle.previewPose!('m2')).toEqual(box(110, 200));
+    expect(handle.previewPose!('b')).toBeNull();
+    expect([...handle.previewOpaqueIds!()!]).toEqual(['g', 'm1', 'm2']);
   });
 
   it('commits the item’s place and the gap nearest the pointer', () => {

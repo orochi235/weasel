@@ -1307,15 +1307,25 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Fourth arc (drafted, unapproved, unbuilt).** PDF export, an audio pipeline on a patchable
-  `@weasel-js/audio` graph, pages in `DiagramData`, and groups under the
-  `rack` and `lanes` looks. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`
-  (2026-10-20).
+- **(P3) Fourth arc (approved, partly built).** Left to build: PDF export, an audio pipeline on a patchable
+  `@weasel-js/audio` graph, and pages in `DiagramData`. Design:
+  `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
+- **(P3) A group's inset can overlap an outsider under `rack`.** The chain layout moves an
+  outsider one level past a group's deepest member but leaves only `nodeGap` between levels, so the
+  box's inset clears the outsider only while the inset is smaller than `nodeGap`. That holds at the
+  defaults (12 against 48); a custom `rack` `nodeGap` or a large group inset breaks it.
+  `clearColumns` in `packages/diagram/src/chainGroups.ts` (2026-10-20).
+- **(P3) The `chain` layout ignores a group's `minWidth` on a vertical line.** `lineGaps` in
+  `packages/diagram/src/chainGroups.ts` widens for it only when the line runs horizontally, though
+  `GraphGroup.minWidth`'s doc says a layout leaves room for it (2026-10-20).
+- **(P3) `lanes` doesn't route wires around group boxes.** A wire between two stages outside a
+  group can run straight through the group's box, and a group title's inset reaches into the lane
+  above. `lanesRoutes.ts` knows nothing of group boxes (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.

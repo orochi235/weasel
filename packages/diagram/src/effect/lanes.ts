@@ -1,14 +1,16 @@
 import type { MeasureRowText } from '../body';
+import { groupLabelIdOf } from '../dataGroups';
 import { diagramScene, type DataNode, type DiagramRouter } from '../fromData';
 import type { PortSpec } from '../types';
 import {
   LOOK_THEME, boxNode, drawableWires, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages,
-  wireEdges, type DrawableWire, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
+  wireEdges, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
 } from './draw';
+import { columnLefts, laneColumns, type LaneBlock, type Span } from './laneColumns';
 import { inkOf, routeWires, TRACK_GAP, type Box } from './lanesRoutes';
 import { mainChain } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
-import type { EffectPipeline, EffectPort, EffectStage } from './types';
+import type { EffectGroup, EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `lanes` look. */
 export interface LanesOptions extends RunRowOptions, LookThemeOptions {
@@ -44,9 +46,6 @@ export const laneId = (type: string): string => `~lane:${type}`;
 /** The value type of the lane `laneId` named, or `undefined` for any other id. */
 export const laneTypeOf = (id: string): string | undefined => (id.startsWith('~lane:') ? id.slice('~lane:'.length) : undefined);
 
-/** A stage's span: the first and last lane it touches. */
-type Span = readonly [number, number];
-
 /** Lane types top down: `first` that the pipeline uses, then the rest in order of first appearance. */
 function laneTypes(stages: readonly EffectStage[], first: readonly string[] = []): string[] {
   const used = [...new Set(stages.flatMap((s) => [...(s.inputs ?? []), ...(s.outputs ?? [])].map((p) => p.type)))];
@@ -57,27 +56,6 @@ function laneTypes(stages: readonly EffectStage[], first: readonly string[] = []
 function spanOf(stage: EffectStage, lane: ReadonlyMap<string, number>): Span {
   const at = [...(stage.inputs ?? []), ...(stage.outputs ?? [])].map((p) => lane.get(p.type)!);
   return at.length === 0 ? [0, 0] : [Math.min(...at), Math.max(...at)];
-}
-
-/** Each stage's column: right of every stage feeding it, and right again
- *  past any column where a stage already holds one of its lanes. On a loop
- *  the first stage left in source order goes next. */
-function columnsOf(stages: readonly EffectStage[], wires: readonly DrawableWire[], spans: ReadonlyMap<string, Span>): Map<string, number> {
-  const feeds = new Map<string, Set<string>>(stages.map((s) => [s.id, new Set()]));
-  for (const d of wires) if (d.wire.from.stage !== d.wire.to.stage) feeds.get(d.wire.to.stage)!.add(d.wire.from.stage);
-  const column = new Map<string, number>();
-  const held: Span[][] = [];
-  const left = [...stages];
-  while (left.length > 0) {
-    const i = Math.max(0, left.findIndex((s) => [...feeds.get(s.id)!].every((f) => column.has(f))));
-    const stage = left.splice(i, 1)[0]!;
-    const span = spans.get(stage.id)!;
-    let c = Math.max(0, ...[...feeds.get(stage.id)!].flatMap((f) => (column.has(f) ? [column.get(f)! + 1] : [])));
-    while (held[c]?.some(([lo, hi]) => lo <= span[1] && span[0] <= hi)) c++;
-    (held[c] ??= []).push(span);
-    column.set(stage.id, c);
-  }
-  return column;
 }
 
 /** Lane heights from `least`, each grown until every stage fits the lanes it
@@ -121,11 +99,16 @@ function controlSideOf(stage: EffectStage, pipeline: EffectPipeline, lane: Reado
 type Overhang = { left: number; top: number; right: number; bottom: number };
 
 /** Each node's size as `diagramScene` would draw it unconstrained, and how
- *  far its marks reach past it: a decision's title and cut values. */
-function sizesOf(nodes: readonly DataNode[], measure: MeasureRowText | undefined): Map<string, { box: Box; over: Overhang }> {
-  const specs = diagramScene({ nodes, edges: [] }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
+ *  far its marks reach past it: a decision's title and cut values. And the
+ *  width of each labeled group's title. */
+function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
+  const specs = diagramScene({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
-  return new Map(nodes.map((n) => {
+  const titles = new Map(groups.flatMap((g) => {
+    const title = pose.get(groupLabelIdOf(g.id));
+    return title === undefined ? [] : [[g.id, title.width] as const];
+  }));
+  const size = new Map(nodes.map((n) => {
     const box = pose.get(n.id)!;
     const ink = inkOf(n.id, specs);
     const over = {
@@ -136,6 +119,7 @@ function sizesOf(nodes: readonly DataNode[], measure: MeasureRowText | undefined
     };
     return [n.id, { box, over }];
   }));
+  return { size, titles };
 }
 
 function laneNode(type: string, box: Box, color: TypeColor): DataNode {
@@ -167,6 +151,7 @@ interface Plan {
   size: ReadonlyMap<string, { box: Box; over: Overhang }>;
   spans: ReadonlyMap<string, Span>;
   column: ReadonlyMap<string, number>;
+  blocks: readonly LaneBlock[];
   lane: ReadonlyMap<string, number>;
   rows: number;
   least: number;
@@ -199,12 +184,14 @@ function place(plan: Plan, insets: readonly number[]) {
 
   const widths: number[] = [];
   for (const s of stages) widths[column.get(s.id)!] = Math.max(widths[column.get(s.id)!] ?? 0, inkWidth(s.id));
-  const lefts = Array.from(widths, (_, c) => plan.start + Array.from(widths.slice(0, c), (wd) => (wd ?? 0) + plan.gap).reduce((a, b) => a + b, 0));
+  const offset = (id: string) => (widths[column.get(id)!]! - inkWidth(id)) / 2 + stood.get(id)!.over.left;
+  const extent = (id: string) => ({ lo: offset(id), hi: offset(id) + stood.get(id)!.width });
+  const { lefts, end } = columnLefts(widths, column, plan.blocks, plan.gap, plan.start, extent);
 
   const nodes = stages.map((stage, k): DataNode => {
     const c = column.get(stage.id)!;
-    const { y, height, width, over } = stood.get(stage.id)!;
-    const box = { x: lefts[c]! + (widths[c]! - inkWidth(stage.id)) / 2 + over.left, y, width, height };
+    const { y, height, width } = stood.get(stage.id)!;
+    const box = { x: lefts[c]! + offset(stage.id), y, width, height };
     return {
       ...plan.drawn[k]!,
       at: { x: box.x, y: box.y },
@@ -215,14 +202,14 @@ function place(plan: Plan, insets: readonly number[]) {
   });
   const columns = Array.from(widths, (wd, c) => [lefts[c]!, lefts[c]! + (wd ?? 0)] as const);
   const edges = [...tops, tops.length === 0 ? 0 : tops[tops.length - 1]! + heights[heights.length - 1]!];
-  return { nodes, tops, heights, columns, edges };
+  return { nodes, tops, heights, columns, edges, end };
 }
 
 /** The lanes look: a horizontal lane per value type, and each stage standing
  *  across the lanes of the types it reads and writes, as tall as they are,
  *  its ports in their own lanes. A decision keeps its symbol's size, centered
- *  across its lanes. Columns run left to right in the order the signal flows.
- *  A wire runs around the stages between its ends along the lane edges, each
+ *  across its lanes. Columns run left to right in the order the signal flows,
+ *  and a group's members hold columns no other stage stands in. A wire runs around the stages between its ends along the lane edges, each
  *  sharing one on a track of its own. */
 export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const theme = options.theme ?? LOOK_THEME;
@@ -236,10 +223,11 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
     ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide: controlSideOf(stage, pipeline, lane), style: stageStyle(stage, theme) }) }
     : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: [], run: options })));
   const labels = rows.map((t): DataNode => ({ id: laneId(t), lines: [t] }));
-  const size = sizesOf([...drawn, ...labels], options.measure);
-  const column = columnsOf(stages, drawableWires(pipeline), spans);
+  const groups = uniqueGroups(pipeline);
+  const { size, titles } = sizesOf([...drawn, ...labels], groups, options.measure);
+  const { column, blocks } = laneColumns(stages, drawableWires(pipeline), spans, groups, titles);
   const plan: Plan = {
-    stages, drawn, size, spans, column, lane, rows: rows.length,
+    stages, drawn, size, spans, column, blocks, lane, rows: rows.length,
     least: Math.max(options.laneHeight ?? 48, ...labels.map((l) => size.get(l.id)!.box.height)),
     gap: options.rankGap ?? 40,
     start: 2 * MARGIN + Math.max(0, ...labels.map((l) => size.get(l.id)!.box.width)),
@@ -261,7 +249,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   }
 
   const { columns, tops, heights } = laid;
-  const right = columns.length === 0 ? plan.start : columns[columns.length - 1]![1] + MARGIN;
+  const right = columns.length === 0 ? plan.start : laid.end + MARGIN;
   const laneNodes = rows.map((t, i) => laneNode(t, { x: 0, y: tops[i]!, width: right, height: heights[i]! }, color));
   const edges = routed.edges;
   const styles = sceneStyles(stages, edges, theme);
@@ -269,7 +257,7 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const laneStyle = new Map(rows.map((t, i) => [laneId(t), bodies[i % bodies.length]!]));
 
   return {
-    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },
+    data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups },
     scene: {
       layout: 'none',
       router,

@@ -1,43 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { diagramScene, type DiagramSpec } from '../fromData';
+import type { DiagramSpec } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { SAMPLES } from './lab/samples';
 import { sequenceSlots } from '../reorder';
 import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
+import { built, P, type Box } from './lanesFixture';
 import { io, w } from './skipFixture';
 import type { EffectPipeline } from './types';
 
-/** An image chain with a quality check, a blur steered by a control number,
- *  and a composite that also reads a mask. */
-const P: EffectPipeline = {
-  types: { number: { control: true } },
-  stages: [
-    io('src', { kind: 'source', inputs: [] }),
-    { id: 'q', title: 'high?', kind: 'decision', inputs: [{ id: 'in', type: 'image' }],
-      outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'image' }] },
-    io('blur', { inputs: [{ id: 'in', type: 'image' }, { id: 'radius', type: 'number' }], params: [{ label: 'radius', value: '6 px' }] }),
-    io('mix', { inputs: [{ id: 'base', type: 'image' }, { id: 'over', type: 'image' }, { id: 'mask', type: 'mask' }] }),
-    io('out', { kind: 'sink', outputs: [] }),
-    { id: 'osc', title: 'Oscillator', outputs: [{ id: 'value', type: 'number' }] },
-    { id: 'cut', title: 'Mask', outputs: [{ id: 'out', type: 'mask' }] },
-  ],
-  wires: [
-    w(['src', 'out'], ['q', 'in']), w(['q', 'yes'], ['blur', 'in']), w(['q', 'no'], ['mix', 'base']),
-    w(['blur', 'out'], ['mix', 'over']), w(['mix', 'out'], ['out', 'in']), w(['osc', 'value'], ['blur', 'radius']),
-    w(['cut', 'out'], ['mix', 'mask']),
-  ],
-  groups: [{ id: 'g', label: 'Soften', members: ['blur'] }],
-};
-
 const strokeOpacity = (spec: DiagramSpec) => (spec.data as { stroke?: { paint?: { opacity?: number } } }).stroke?.paint?.opacity;
-type Box = { x: number; y: number; width: number; height: number };
-const built = (p: EffectPipeline, options?: Parameters<typeof lanes>[1]) => {
-  const drawn = lanes(p, options);
-  const specs = diagramScene(drawn.data, drawn.scene);
-  const box = (id: string) => specs.find((s) => s.id === id)!.pose as Box;
-  return { drawn, specs, box };
-};
 const stageIds = (p: EffectPipeline) => p.stages.map((s) => s.id);
 const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 

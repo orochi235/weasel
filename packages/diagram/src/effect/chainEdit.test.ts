@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canMoveInChain, chainLinks, moveInChain } from './chainEdit';
+import { canMoveInChain, chainLinks, moveInChain, moveRunInChain } from './chainEdit';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectPipeline, EffectStage, EffectWire } from './types';
 
@@ -107,5 +107,50 @@ describe('moveInChain', () => {
     expect(moveInChain(DOC, 'b', 3)).toBeNull();
     expect(moveInChain(DOC, 'm', 1)).toBeNull();
     expect(canMoveInChain(DOC, 'a', 4)).toBe(true);
+  });
+});
+
+describe('moveRunInChain', () => {
+  it('moves a run of stages as one, keeping the wires inside it', () => {
+    const next = moveRunInChain(DOC, 'a', 'b', 4)!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'c', 'a', 'b', 'out']);
+    expect(ends(next)).toEqual([
+      'a.out>b.image', 'b.out>out.in', 'c.out>a.image', 'ctl.out>c.amount', 'm.out>b.mask', 'src.out>c.image',
+    ]);
+    expect(next.pipeline.wires.find((w) => w.id === 'w2')).toEqual(PIPELINE.wires[1]);
+  });
+
+  it('moves a run back', () => {
+    expect(mainChain(moveRunInChain(DOC, 'b', 'c', 1)!.pipeline)).toEqual(['src', 'b', 'c', 'a', 'out']);
+  });
+
+  it('refuses a gap inside the run, at either end of it, and a run given backward', () => {
+    expect(moveRunInChain(DOC, 'a', 'c', 2)).toBeNull();
+    expect(moveRunInChain(DOC, 'a', 'c', 3)).toBeNull();
+    expect(moveRunInChain(DOC, 'a', 'c', 1)).toBeNull();
+    expect(moveRunInChain(DOC, 'a', 'c', 4)).toBeNull();
+    expect(moveRunInChain(DOC, 'c', 'a', 0)).toBeNull();
+  });
+
+  it('moves a run that ends the chain back', () => {
+    const open: EffectDoc = { ...DOC, pipeline: { ...PIPELINE, wires: PIPELINE.wires.filter((w) => w.id !== 'w4') } };
+    const next = moveRunInChain(open, 'b', 'c', 1)!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'b', 'c', 'a']);
+    expect(ends(next)).toEqual(['b.out>c.image', 'c.out>a.image', 'ctl.out>c.amount', 'm.out>b.mask', 'src.out>b.image']);
+  });
+
+  it('moves a run that starts the chain to the last gap, and refuses that gap past a sink', () => {
+    const bare: EffectDoc = {
+      places: {},
+      pipeline: { stages: [img('a'), img('b'), img('c')], wires: [wire('w1', 'a', 'out', 'b', 'image'), wire('w2', 'b', 'out', 'c', 'image')] },
+    };
+    const next = moveRunInChain(bare, 'a', 'b', 3)!;
+    expect(mainChain(next.pipeline)).toEqual(['c', 'a', 'b']);
+    expect(ends(next)).toEqual(['a.out>b.image', 'c.out>a.image']);
+    expect(moveRunInChain(DOC, 'a', 'b', 5)).toBeNull();
+  });
+
+  it('is moveInChain for a run of one', () => {
+    expect(moveRunInChain(DOC, 'a', 'a', 4)).toEqual(moveInChain(DOC, 'a', 4));
   });
 });

@@ -38,10 +38,11 @@ type Ref = { stage: string; port: string };
 const portsOf = (p: EffectPipeline, stage: string, side: 'inputs' | 'outputs'): readonly EffectPort[] =>
   p.stages.find((s) => s.id === stage)?.[side] ?? [];
 
-/** The chain with `stage` taken out and put back before what was `chain[to]`. */
-function movedChain(chain: readonly string[], i: number, to: number): string[] {
-  const out = chain.filter((_, k) => k !== i);
-  out.splice(to > i ? to - 1 : to, 0, chain[i]!);
+/** The chain with `chain[i..j]` taken out and put back before what was `chain[to]`. */
+function movedChain(chain: readonly string[], i: number, j: number, to: number): string[] {
+  const run = chain.slice(i, j + 1);
+  const out = [...chain.slice(0, i), ...chain.slice(j + 1)];
+  out.splice(to > j ? to - run.length : to, 0, ...run);
   return out;
 }
 
@@ -56,13 +57,23 @@ function movedChain(chain: readonly string[], i: number, to: number): string[] {
  * in the new order.
  */
 export function moveInChain(doc: EffectDoc, stage: string, to: number): EffectDoc | null {
+  return moveRunInChain(doc, stage, stage, to);
+}
+
+/**
+ * `moveInChain` for the chain stages from `first` to `last`, which move as
+ * one: the wires inside the run stay, and it is rewired at its ends. `null`
+ * also where `last` comes before `first`, or `to` falls inside the run.
+ */
+export function moveRunInChain(doc: EffectDoc, first: string, last: string, to: number): EffectDoc | null {
   const p = doc.pipeline;
   const chain = mainChain(p);
-  const i = chain.indexOf(stage);
-  if (i < 0 || !Number.isInteger(to) || to < 0 || to > chain.length || to === i || to === i + 1) return null;
+  const i = chain.indexOf(first);
+  const j = chain.indexOf(last);
+  if (i < 0 || j < i || !Number.isInteger(to) || to < 0 || to > chain.length || (to >= i && to <= j + 1)) return null;
   const { mainIn, mainOut, between } = chainLinks(p, chain);
   const wIn = i > 0 ? between[i - 1] : undefined;
-  const wOut = i < chain.length - 1 ? between[i] : undefined;
+  const wOut = j < chain.length - 1 ? between[j] : undefined;
   const wAB = to > 0 && to < chain.length ? between[to - 1] : undefined;
   const gone = new Set([wIn, wOut, wAB].filter((k): k is number => k !== undefined));
   const kept = p.wires.filter((_, k) => !gone.has(k));
@@ -73,21 +84,21 @@ export function moveInChain(doc: EffectDoc, stage: string, to: number): EffectDo
 
   const made: { reuse: number | undefined; from: Ref; to: Ref }[] = [];
   const prev = chain[i - 1];
-  const next = chain[i + 1];
+  const next = chain[j + 1];
   if (prev !== undefined && next !== undefined) made.push({ reuse: wIn, from: p.wires[wIn!]!.from, to: p.wires[wOut!]!.to });
   const a = chain[to - 1];
   const b = chain[to];
-  const sIn = mainIn.get(stage) ?? pick(stage, 'inputs');
-  const sOut = mainOut.get(stage) ?? pick(stage, 'outputs');
+  const sIn = mainIn.get(first) ?? pick(first, 'inputs');
+  const sOut = mainOut.get(last) ?? pick(last, 'outputs');
   if (a !== undefined) {
-    const aOut = wAB !== undefined ? p.wires[wAB]!.from.port : mainOut.get(a) ?? pick(a, 'outputs', typeOf(stage, sIn));
+    const aOut = wAB !== undefined ? p.wires[wAB]!.from.port : mainOut.get(a) ?? pick(a, 'outputs', typeOf(first, sIn));
     if (aOut === undefined || sIn === undefined) return null;
-    made.push({ reuse: wAB, from: { stage: a, port: aOut }, to: { stage, port: sIn } });
+    made.push({ reuse: wAB, from: { stage: a, port: aOut }, to: { stage: first, port: sIn } });
   }
   if (b !== undefined) {
-    const bIn = wAB !== undefined ? p.wires[wAB]!.to.port : mainIn.get(b) ?? pick(b, 'inputs', typeOf(stage, sOut));
+    const bIn = wAB !== undefined ? p.wires[wAB]!.to.port : mainIn.get(b) ?? pick(b, 'inputs', typeOf(last, sOut));
     if (bIn === undefined || sOut === undefined) return null;
-    made.push({ reuse: wOut, from: { stage, port: sOut }, to: { stage: b, port: bIn } });
+    made.push({ reuse: wOut, from: { stage: last, port: sOut }, to: { stage: b, port: bIn } });
   }
   if (made.some((m) => !canWire(p, m.from, m.to) || !free(m.to))) return null;
   if (new Set(made.map((m) => `${m.to.stage}\u0000${m.to.port}`)).size !== made.length) return null;
@@ -102,7 +113,7 @@ export function moveInChain(doc: EffectDoc, stage: string, to: number): EffectDo
     wires.push({ id: nextWireId({ ...p, wires }), from: m.from, to: m.to });
   }
   const pipeline = { ...p, wires };
-  const want = movedChain(chain, i, to);
+  const want = movedChain(chain, i, j, to);
   const got = mainChain(pipeline);
   if (got.length !== want.length || got.some((id, k) => id !== want[k])) return null;
   // A freed id may be minted again for a new wire, which must not inherit the old one's route.
