@@ -21,6 +21,9 @@ Merged:
 - A disabled bar button says why: `useLeafAction`'s `reason` is now `disabledReason`, and a bar
   button disabled with a reason is `aria-disabled` and focusable. guides builds node gates only on
   a point gesture's path (no bug there: `siblingIds` already skipped hidden nodes).
+- `selectTool.rotate: false` is decided once, in preset resolution. Ruling: it is about the select
+  tool only; the rotate action stays registered, the handle is hidden, and a re-shown handle is
+  inert and silent.
 - `apps/chart/src/hops.browser.test.tsx` polls its pixels: it failed once in a full run of `main`
   under load after the line-jumps merge, and passed three of three alone.
 
@@ -30,8 +33,6 @@ In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
 - One kind classifier. Ruling: the routing kind is the only one; the selection label and
   `SelectionPanel` read it.
 - The HUD's every-frame allocations.
-- `selectTool.rotate: false` decided once. Ruling: it is about the select tool only; the rotate
-  action stays registered and the handle is hidden.
 - forge's "ResizeObserver loop" error.
 
 ## State
