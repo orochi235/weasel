@@ -21,14 +21,18 @@ function fixture(answer: 'follow' | 'refuse') {
   const deps = {
     selection: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
     scene,
-    editAnchors: { transformOps },
+    editAnchors: {
+      transformOps,
+      transformPreview: (poses: ReadonlyMap<string, unknown>) =>
+        (poses.has(a) ? [{ id: b, pose: box(50, 50), data: { followed: 'preview' } }] : []),
+    },
   } as unknown as ActionDeps;
   return { scene, a, b, deps, transformOps };
 }
 
 const DRAG = { start: { x: 5, y: 5 }, current: { x: 105, y: 5 }, delta: { x: 100, y: 0 } };
 
-function drag(deps: ActionDeps): void {
+function drag(deps: ActionDeps, during?: (handle: OngoingHandle) => void): void {
   const ctx = (moving: boolean) => ({
     world: moving ? DRAG.current : DRAG.start, screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
@@ -36,6 +40,7 @@ function drag(deps: ActionDeps): void {
   }) as unknown as InvocationCtx;
   const handle = (moveAction.invoker as OngoingInvoker).start(ctx(false), undefined) as OngoingHandle;
   handle.onMove!(ctx(true));
+  during?.(handle);
   handle.onEnd!(ctx(true), 'commit');
 }
 
@@ -72,5 +77,16 @@ describe('whole-node transforms finish through the editAnchors dep', () => {
     scene.undo();
     expect(scene.get(a)!.pose).toEqual(box(0, 0));
     expect(scene.get(b)!.data).toEqual({});
+  });
+
+  it('previews the nodes the dep says change with each frame of a move', () => {
+    const { a, b, deps } = fixture('follow');
+    drag(deps, (handle) => {
+      expect([...handle.previewIds!()!]).toEqual([a, b]);
+      expect(handle.previewPose!(a)).toEqual(box(100, 0));
+      expect(handle.previewPose!(b)).toEqual(box(50, 50));
+      expect(handle.previewData!(b)).toEqual({ followed: 'preview' });
+      expect(handle.previewData!(a)).toBeNull();
+    });
   });
 });

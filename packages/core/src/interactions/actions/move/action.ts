@@ -1,7 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import { transformPreviewFields } from '../transformFinish';
 import { pastDragThreshold } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
@@ -83,8 +83,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        previewIds: () => frame.previews.keys(),
-        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
+        ...transformPreviewFields(ctx.deps, () => frame.previews),
         previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
       };
     },

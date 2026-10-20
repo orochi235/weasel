@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
+import { transformPreviewFields } from '../transformFinish';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { commitResize } from './commit';
@@ -63,8 +63,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
             closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        previewIds: () => frame.previews.keys(),
-        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
+        ...transformPreviewFields(ctx.deps, () => frame.previews),
       };
     },
   },

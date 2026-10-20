@@ -113,6 +113,14 @@ export interface EditAnchorsDep {
    */
   transformOps?(ops: readonly Op[], label: string): Op[] | null;
   /**
+   * The other nodes a whole-node transform's frame changes, for a drag to
+   * preview: given the stored poses the frame puts the transformed nodes in,
+   * each other node's stored pose, and its data where that changes — what
+   * `transformOps` would commit for the frame. Empty when nothing changes
+   * with it. Optional.
+   */
+  transformPreview?(poses: ReadonlyMap<string, unknown>): readonly { id: string; pose: unknown; data?: unknown }[];
+  /**
    * Commit `worldPath` for `id` with `data` laid over its data, as one
    * history entry, finished by no extension: what an extension writing its
    * own data with a path it already solved commits through. Optional.

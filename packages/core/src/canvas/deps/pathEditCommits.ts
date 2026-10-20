@@ -147,16 +147,15 @@ function writtenBy(sc: AnyScene, ops: readonly Op[]): Map<string, EditableNode> 
   return after;
 }
 
-/** `ops`, a whole-node transform's batch, with the ops `extensions` add for the other nodes it changes; null when one refuses it. */
-export function transformOps(
+/** The other nodes `extensions` change along with a transform that leaves the nodes in `after` as given; null when one refuses it. */
+function transformOthers(
   sc: AnyScene,
   extensions: readonly PathEditExtension[],
-  ops: readonly Op[],
-  label: string,
-): Op[] | null {
+  after: ReadonlyMap<string, EditableNode>,
+): Map<string, PathEditOther> | null {
+  const others = new Map<string, PathEditOther>();
   const finishing = extensions.filter((e) => e.finishTransform);
-  const after = finishing.length > 0 ? writtenBy(sc, ops) : null;
-  if (!after || after.size === 0) return [...ops];
+  if (finishing.length === 0 || after.size === 0) return others;
   const nodeAfter = (id: string) => {
     const node = sc.get(id as NodeId);
     if (!node) return null;
@@ -170,11 +169,56 @@ export function transformOps(
     before: (id) => pathEditPathOf(sc.get(id as NodeId) as EditableNode | undefined, extensions),
     dependents: (id) => dependentsOf(sc, id),
   };
-  const others = new Map<string, PathEditOther>();
   for (const ext of finishing) {
     const done = ext.finishTransform!(ctx);
     if (!done) return null;
     for (const o of done) if (!after.has(o.id)) addOther(others, o);
   }
-  return [...ops, ...otherOps(sc, others, label, extensions)];
+  return others;
+}
+
+/** `ops`, a whole-node transform's batch, with the ops `extensions` add for the other nodes it changes; null when one refuses it. */
+export function transformOps(
+  sc: AnyScene,
+  extensions: readonly PathEditExtension[],
+  ops: readonly Op[],
+  label: string,
+): Op[] | null {
+  const after = extensions.some((e) => e.finishTransform) ? writtenBy(sc, ops) : null;
+  if (!after || after.size === 0) return [...ops];
+  const others = transformOthers(sc, extensions, after);
+  return others && [...ops, ...otherOps(sc, others, label, extensions)];
+}
+
+/** A node as a transform frame previews it: its pose, and its data where that changes. */
+export interface TransformPreviewNode {
+  id: string;
+  pose: unknown;
+  data?: unknown;
+}
+
+/**
+ * The other nodes `extensions` change along with a transform frame that
+ * poses the nodes in `poses` as given, each as it would be stored — what
+ * {@link transformOps} would commit for that frame, read the same way. Empty
+ * when nothing changes with it, or an extension refuses it.
+ */
+export function transformPreview(
+  sc: AnyScene,
+  extensions: readonly PathEditExtension[],
+  poses: ReadonlyMap<string, unknown>,
+): TransformPreviewNode[] {
+  if (poses.size === 0 || !extensions.some((e) => e.finishTransform)) return [];
+  const after = new Map<string, EditableNode>();
+  for (const [id, pose] of poses) {
+    const node = sc.get(id as NodeId);
+    if (node) after.set(id, { pose, data: node.data });
+  }
+  const others = transformOthers(sc, extensions, after);
+  return [...(others?.values() ?? [])].flatMap((o) => {
+    const node = sc.get(o.id as NodeId) as EditableNode | undefined;
+    const stored = node && o.path && !o.remove ? storeEditablePath(node, o.path, extensions) : null;
+    if (!node || !stored) return [];
+    return [stored.data === node.data ? { id: o.id, pose: stored.pose } : { id: o.id, pose: stored.pose, data: stored.data }];
+  });
 }
