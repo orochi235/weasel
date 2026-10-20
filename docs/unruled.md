@@ -151,6 +151,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): A node's kind has one classifier, the routing kind (`routeKind`, new
+  in core; `NodeRouting.classify` calls it). The kind published with the selection is the routing
+  kind, so the command palette says "2 paths selected"; a node the table calls `'unknown'`
+  publishes none, and `describeKind` still overrides. `SelectionPanel` classifies through
+  `routeKind`, passes the node, and has no container case of its own, so a panel given a table
+  without the group entry shows a container as `'unknown'`.
 - 2026-10-20 (overnight pass): `moveNodes(deps, ids, delta, label)` and `moveNodesOps` in core
   move ids the way a drag commits them, and the move action, nudge, Transform Again, and the
   measure tool's Move By share its op builder. The delta is in gesture coordinates and the
