@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AudioEngine } from '../createAudioEngine';
+import type { AudioEngineOptions } from '../types';
 import { renderEngineStereo } from '../testing/renderEngine';
 import { rms } from '../testing/spectrum';
 import { createGainNode, delayNode } from './processors';
@@ -20,12 +21,13 @@ async function renderGraph(
   seconds: number,
   build: (graph: AudioGraph, engine: AudioEngine) => void,
   later?: { at: number; run: (graph: AudioGraph, engine: AudioEngine) => void },
+  opts: Pick<AudioEngineOptions, 'insertFadeMs'> = {},
 ): Promise<Float32Array> {
   let graph: AudioGraph | null = null;
   const [left] = await renderEngineStereo(seconds, (e) => {
     graph = e.graph();
     build(graph, e);
-  }, RATE, {}, later && { at: later.at, run: (e) => later.run(graph!, e) });
+  }, RATE, opts, later && { at: later.at, run: (e) => later.run(graph!, e) });
   return left;
 }
 
@@ -65,6 +67,20 @@ describe('audio graph in a real engine', () => {
     // A mono graph into a bus has no panner: it is up-mixed to both channels at full gain.
     const ratio = rms(out, ms(100), ms(400)) / (0.5 * Math.SQRT1_2);
     expect(Math.abs(ratio - 1)).toBeLessThan(0.1);
+  });
+
+  it('the first start fades in rather than stepping', async () => {
+    const play = (insertFadeMs?: number) => renderGraph(0.2, (g, e) => {
+      g.add('osc', createOscillatorNode(e.context, { wave: 'square', frequency: OFF_ZERO }));
+      g.connect('osc', { output: true });
+      g.start();
+    }, undefined, insertFadeMs === undefined ? {} : { insertFadeMs });
+    const faded = await play();
+    const cut = await play(0);
+    const peak = maxAbs(faded, ms(100), ms(200));
+    expect(maxStep(faded, 0, ms(1))).toBeLessThan(peak / 3);
+    // The same measure on an unfaded start, which must see the step.
+    expect(maxStep(cut, 0, ms(1))).toBeGreaterThan(peak / 3);
   });
 
   it("patching a running graph doesn't reset a delay's tail", async () => {
