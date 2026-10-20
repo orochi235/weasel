@@ -132,6 +132,24 @@ describe('moveRunInChain', () => {
     expect(moveRunInChain(DOC, 'c', 'a', 0)).toBeNull();
   });
 
+  it('moves a run that ends the chain back', () => {
+    const open: EffectDoc = { ...DOC, pipeline: { ...PIPELINE, wires: PIPELINE.wires.filter((w) => w.id !== 'w4') } };
+    const next = moveRunInChain(open, 'b', 'c', 1)!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'b', 'c', 'a']);
+    expect(ends(next)).toEqual(['b.out>c.image', 'c.out>a.image', 'ctl.out>c.amount', 'm.out>b.mask', 'src.out>b.image']);
+  });
+
+  it('moves a run that starts the chain to the last gap, and refuses that gap past a sink', () => {
+    const bare: EffectDoc = {
+      places: {},
+      pipeline: { stages: [img('a'), img('b'), img('c')], wires: [wire('w1', 'a', 'out', 'b', 'image'), wire('w2', 'b', 'out', 'c', 'image')] },
+    };
+    const next = moveRunInChain(bare, 'a', 'b', 3)!;
+    expect(mainChain(next.pipeline)).toEqual(['c', 'a', 'b']);
+    expect(ends(next)).toEqual(['a.out>b.image', 'c.out>a.image']);
+    expect(moveRunInChain(DOC, 'a', 'b', 5)).toBeNull();
+  });
+
   it('is moveInChain for a run of one', () => {
     expect(moveRunInChain(DOC, 'a', 'a', 4)).toEqual(moveInChain(DOC, 'a', 4));
   });

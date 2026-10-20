@@ -1,6 +1,11 @@
-/** Where each group sits along the main chain. */
+/** Where each group sits along the main chain, and the sequence a group's title drags it along. */
+import type { Vec2 } from '@weasel-js/core';
+import { groupLabelIdOf } from '../dataGroups';
+import { sequenceSlots, type ReorderItem, type ReorderSlots } from '../reorder';
+import type { ReorderSource } from './editorReorder';
 import { groupContents } from './groupEdit';
-import type { EffectPipeline } from './types';
+import { mainChain } from './mainChain';
+import type { EffectDoc, EffectPipeline } from './types';
 
 /** The chain indices a group's stages span, both ends included. */
 export interface GroupRun {
@@ -25,4 +30,70 @@ export function groupRuns(pipeline: EffectPipeline, chain: readonly string[]): M
     runs.set(g.id, last - first + 1 === on.length ? { first, last } : null);
   }
   return runs;
+}
+
+type Box = { x: number; y: number; width: number; height: number };
+
+const holds = (b: Box, p: Vec2) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
+
+/** The band across a group's box from its top edge to the top of its highest
+ *  member: its title row, or the top padding where it has no title. */
+export function groupGripOf(doc: EffectDoc, group: string, boxOf: ReorderSource['boxOf']): Box | undefined {
+  const box = boxOf(group);
+  const members = doc.pipeline.groups?.find((g) => g.id === group)?.members ?? [];
+  const tops = members.flatMap((m) => boxOf(m)?.y ?? []);
+  if (box === undefined || tops.length === 0) return undefined;
+  const height = Math.min(...tops) - box.y;
+  return height > 0 ? { x: box.x, y: box.y, width: box.width, height } : undefined;
+}
+
+/** The stages a unit of a sequence stands for: a stage itself, or every stage inside a group. */
+export function unitStages(doc: EffectDoc, unit: string): Set<string> {
+  return doc.pipeline.groups?.some((g) => g.id === unit) ? groupContents(doc, unit).stages : new Set([unit]);
+}
+
+/** The group a press at `at` takes: the innermost whose grip holds it, of those whole on the main chain. */
+function groupAt(doc: EffectDoc, parent: ReadonlyMap<string, string>, boxOf: ReorderSource['boxOf'], at: Vec2): string | undefined {
+  const depth = (id: string): number => (parent.has(id) ? 1 + depth(parent.get(id)!) : 0);
+  const runs = groupRuns(doc.pipeline, mainChain(doc.pipeline));
+  const held = (doc.pipeline.groups ?? []).filter((g) => {
+    const grip = runs.get(g.id) == null ? undefined : groupGripOf(doc, g.id, boxOf);
+    return grip !== undefined && holds(grip, at);
+  });
+  return held.sort((a, b) => depth(b.id) - depth(a.id))[0]?.id;
+}
+
+/**
+ * The sequence a press at `at` drags a group along: the group {@link groupAt}
+ * picks, among the direct members of its parent, or the top level, that have
+ * stages on the drawn order. A group carries everything inside it and its
+ * label; a stage is never picked up. `null` off every such grip.
+ */
+export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | null {
+  const { doc, order, boxOf } = source;
+  const groups = doc.pipeline.groups ?? [];
+  if (order === undefined || groups.length === 0) return null;
+  const parent = new Map<string, string>();
+  for (const g of groups) for (const m of g.members) parent.set(m, g.id);
+  const held = groupAt(doc, parent, boxOf, at);
+  if (held === undefined) return null;
+
+  const up = parent.get(held);
+  const siblings = up !== undefined
+    ? groups.find((g) => g.id === up)!.members
+    : [...groups, ...doc.pipeline.stages].flatMap((u) => (parent.has(u.id) ? [] : [u.id]));
+  const drawnAt = new Map(order.items.map((i, k) => [i.id, k]));
+  const placed = siblings.flatMap((id) => {
+    const drawn = [...unitStages(doc, id)].flatMap((s) => drawnAt.get(s) ?? []);
+    const bounds = boxOf(id);
+    return drawn.length === 0 || bounds === undefined ? [] : [{ id, bounds, first: Math.min(...drawn) }];
+  }).sort((a, b) => a.first - b.first);
+  const isGroup = new Set(groups.map((g) => g.id));
+  const items: ReorderItem[] = placed.map(({ id, bounds }) => {
+    if (!isGroup.has(id)) return { id, bounds, grip: null };
+    const inside = groupContents(doc, id);
+    const carries = [...inside.groups, ...inside.stages, ...[...inside.groups].map(groupLabelIdOf)];
+    return { id, bounds, grip: groupGripOf(doc, id, boxOf) ?? null, carries };
+  });
+  return items.length < 2 ? null : sequenceSlots(order.axis, items);
 }

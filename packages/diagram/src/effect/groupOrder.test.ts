@@ -3,8 +3,9 @@ import { diagramScene } from '../fromData';
 import { contains, type Rect } from '../groupFixture';
 import type { LookOrder } from './draw';
 import { editorScene } from './editorMapping';
-import { stageMove } from './editorReorder';
-import { groupRuns } from './groupOrder';
+import { groupLabelIdOf } from '../dataGroups';
+import { groupMove, stageMove, type ReorderSource } from './editorReorder';
+import { groupGripOf, groupRuns, groupSlotsAt } from './groupOrder';
 import { mainChain } from './mainChain';
 import { io, w } from './skipFixture';
 import type { EffectDoc, EffectGroup, EffectPipeline } from './types';
@@ -68,5 +69,83 @@ describe('stageMove with groups', () => {
     const specs = diagramScene(data, scene);
     const pose = (id: string) => specs.find((s) => s.id === id)!.pose as Rect;
     expect(contains(pose('g'), pose('b'))).toBe(true);
+  });
+});
+
+/** What a press reads under rack, as drawn. */
+function rackSource(doc: EffectDoc): ReorderSource {
+  const built = editorScene(doc, 'rack');
+  const boxes = new Map(diagramScene(built.data, built.scene).map((s) => [s.id as string, s.pose as Rect]));
+  return { doc, order: built.order, laneOrder: built.laneOrder, boxOf: (id) => boxes.get(id), onChange: () => {} };
+}
+const middle = (b: Rect) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+const NESTED: EffectGroup[] = [{ id: 'g', label: 'Inner', members: ['a', 'b'] }, { id: 'h', label: 'Outer', members: ['g', 'c'] }];
+
+describe('groupGripOf', () => {
+  it('is the band from the top of the box to the top of its highest member', () => {
+    const source = rackSource(docOf(NESTED));
+    const box = source.boxOf('g')!;
+    const grip = groupGripOf(source.doc, 'g', source.boxOf)!;
+    expect(grip).toEqual({ x: box.x, y: box.y, width: box.width, height: Math.min(source.boxOf('a')!.y, source.boxOf('b')!.y) - box.y });
+    expect(contains(grip, source.boxOf(groupLabelIdOf('g'))!)).toBe(true);
+  });
+});
+
+describe('groupSlotsAt', () => {
+  it('picks the innermost group whose title holds the press', () => {
+    const source = rackSource(docOf(NESTED));
+    const slots = groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('g'))!))!;
+    expect(slots.items.map((i) => i.id)).toEqual(['g', 'c']);
+    expect(slots.items[0]!.grip).toEqual(groupGripOf(source.doc, 'g', source.boxOf));
+    expect([...slots.items[0]!.carries!].sort()).toEqual(['a', 'b', 'g', groupLabelIdOf('g')].sort());
+    expect(slots.items[1]!.grip).toBeNull();
+  });
+
+  it('gives an outer group the top level as its siblings, carrying the groups inside it', () => {
+    const source = rackSource(docOf(NESTED));
+    const slots = groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('h'))!))!;
+    expect(slots.items.map((i) => i.id)).toEqual(['src', 'h', 'd', 'out']);
+    expect([...slots.items[1]!.carries!].sort()).toEqual(['a', 'b', 'c', 'g', 'h', groupLabelIdOf('g'), groupLabelIdOf('h')].sort());
+  });
+
+  it('has no slots on a group with no stage on the line', () => {
+    const source = rackSource(docOf([{ id: 's', label: 'Side', members: ['side'] }]));
+    expect(source.boxOf(groupLabelIdOf('s'))).toBeDefined();
+    expect(groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('s'))!))).toBeNull();
+  });
+
+  it('has no slots on a split group, and does not throw', () => {
+    const source = rackSource(docOf([{ id: 'g', label: 'Split', members: ['a', 'c'] }]));
+    expect(groupSlotsAt(source, middle(source.boxOf(groupLabelIdOf('g'))!))).toBeNull();
+  });
+
+  it('has no slots off every title', () => {
+    const source = rackSource(docOf(NESTED));
+    expect(groupSlotsAt(source, middle(source.boxOf('a')!))).toBeNull();
+  });
+});
+
+describe('groupMove', () => {
+  it('moves a group past the next unit', () => {
+    const doc = docOf([{ id: 'g', members: ['a', 'b'] }]);
+    const units = ['src', 'g', 'c', 'd', 'out'];
+    const next = groupMove(doc, ORDER, units, { id: 'g', from: 1, to: 3, order: [] })!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'c', 'a', 'b', 'd', 'out']);
+  });
+
+  it('moves a group among its parent’s members, keeping the parent whole', () => {
+    const next = groupMove(docOf(NESTED), ORDER, ['g', 'c'], { id: 'g', from: 0, to: 2, order: [] })!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'c', 'a', 'b', 'd', 'out']);
+    expect(groupRuns(next.pipeline, mainChain(next.pipeline)).get('h')).toEqual({ first: 1, last: 3 });
+  });
+
+  it('moves a stage among a group’s members', () => {
+    const next = groupMove(docOf(NESTED), ORDER, ['g', 'c'], { id: 'c', from: 1, to: 0, order: [] })!;
+    expect(mainChain(next.pipeline)).toEqual(['src', 'c', 'a', 'b', 'd', 'out']);
+  });
+
+  it('refuses a split group', () => {
+    const units = ['src', 'g', 'b', 'd', 'out'];
+    expect(groupMove(docOf([{ id: 'g', members: ['a', 'c'] }]), ORDER, units, { id: 'g', from: 1, to: 3, order: [] })).toBeNull();
   });
 });
