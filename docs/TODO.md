@@ -974,6 +974,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) The fleet `gate` project skips every ci.yml step after the first build.** It reads only
+  the `check:*`, typecheck and lint steps above `npm run build` (`scripts/ci-checks.gate.ts`), so
+  `check:manifests`, `check:treeshake`, `check:react-free` and both `test:smoke:consumer` runs
+  never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
+  run green. Running them needs a full build of every package and then labkit's, on a tree other
+  jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+
 - **(P3) `DiagramView.containers.browser.test.tsx` › "reports a double-click on a header as the
   region whose title to edit" fails in full fleet runs and passes alone.** Three times on 2026-10-20
   (two runs on studio, one more on studio after main moved), each `expected [] to deeply equal
