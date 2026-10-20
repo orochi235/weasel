@@ -834,10 +834,11 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) `timeline.test.tsx`'s "lets only the focused one write t" failed twice in about 370 full fleet
-  runs (2026-10-18 to 20).** The playheads read `[0, 0]` where `[0, 4000]` is expected: after the newer trial's
+- **(P2) `timeline.test.tsx`'s "lets only the focused one write t" failed three times in about 380 full
+  fleet runs (2026-10-18 to 20).** The playheads read `[0, 0]` where `[0, 4000]` is expected: after the newer trial's
   Scrub went to its end and wrote `t=4`, the older trial's End and Home left the *newer* one at 0.
-  Seen on keiei (job d7de8418) and teitou (bf53703d) on 2026-10-20. Everything from the first
+  Seen on keiei (job d7de8418) and teitou (bf53703d) on 2026-10-20, and on teitou again at `8be76275d`,
+  a commit touching only a ui test, which passed the file three times out of three locally. Everything from the first
   keypress to the assertion is synchronous, so what varies is how far the newer trial has settled
   when `until` sees two playheads; three runs each, waiting the minimum or an extra 50 ms, did not
   reproduce it. Suspects are the older trial's transport reading the newer trial's clock, and the
