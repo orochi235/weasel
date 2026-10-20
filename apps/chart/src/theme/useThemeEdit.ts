@@ -1,6 +1,6 @@
 import { useVisibleRaf } from '@weasel-js/core';
 import {
-  applyDiagramTheme, editableTheme, setThemeValue, themeValue, type DiagramTheme, type ThemePath,
+  applyDiagramTheme, editableTheme, rendererMeasure, setThemeValue, themeValue, type DiagramTheme, type ThemePath,
 } from '@weasel-js/diagram';
 import { useRef } from 'react';
 import type { ChartScene } from '../chartDocument';
@@ -29,7 +29,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
   const apply = (path: ThemePath, value: string | number) => {
     const current = chartThemeOf(scene);
     if (themeValue(current, path) === value) return;
-    applyDiagramTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current });
+    applyDiagramTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current, measure: rendererMeasure });
   };
   const flush = () => {
     const next = pending.current;
@@ -54,7 +54,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
       const current = chartThemeOf(scene);
       const base = editableTheme(current);
       const next = edit(base);
-      if (next !== base) applyDiagramTheme(scene, next, label, { from: current });
+      if (next !== base) applyDiagramTheme(scene, next, label, { from: current, measure: rendererMeasure });
     },
   };
 }

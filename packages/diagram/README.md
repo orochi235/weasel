@@ -346,7 +346,13 @@ A theme writes literal colors into the scene, so whatever draws or exports the s
 theme. A shape or connector names its role in its trait's `style`, and lists the colors its
 author set by hand in `ownStyle`; a theme leaves those. A theme whose font size differs from the
 one the scene was in moves every text by the step between them, keeping a title or label's offset
-from the body size, except text whose owner lists `'size'` in `ownFont`.
+from the body size, except text whose owner lists `'size'` in `ownFont`. A body whose text changes
+size is laid out again in the same undo entry: it grows to what its rows need, never shrinks, and a
+body the author made larger keeps its size. A body built from text rows alone records how it
+stacks them (`DiagramNode.body`, each row's text node carrying `bodyRow`), which is what
+`relayoutBodies(scene, ids, measure)` reads back. `rendererMeasure` measures a row as the kit's
+text renderer lays it out, from the registered font, for a host whose bodies should hold their
+text exactly.
 
 ```ts
 applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`

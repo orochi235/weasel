@@ -1326,11 +1326,6 @@ only story runner in the repo.
   where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
   the `rack` and `lanes` looks; importing and exporting other diagram tools' files, and running a pipeline. Carried from the
   second arc's design (2026-10-19), deleted when the arc finished.
-- **(P3) A shape does not grow when its text size changes.** A theme's size change and
-  `setDiagramFontSize` rewrite each text row's `style.fontSize`, but a body's rows keep the poses
-  `buildBody` stacked them at, and the shape keeps its size, so text larger than its row runs past
-  it. Re-stacking needs the body's row spec, which the scene does not keep. Left open by the theme
-  builder (2026-10-20).
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

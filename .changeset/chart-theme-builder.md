@@ -17,7 +17,10 @@ Applying a theme whose font size differs from the scene's moves existing text by
 them: shape rows, titles, and connector labels keep their offset from the body size.
 `setDiagramFontSize(scene, ids, size)` sets a shape's or connector's text size by hand and records
 it in the trait's new `ownFont` (`FontField`), which a theme's size change then leaves and choosing
-a role keeps.
+a role keeps. A body whose text changes size is laid out again in the same undo entry: it grows
+to fit its rows and never shrinks. A body built from text rows alone records how it stacks them
+as `DiagramNode.body`, its rows carrying `bodyRow`; `relayoutBodies` lays such bodies out again,
+and `rendererMeasure` measures text from the registered font as the renderer draws it.
 
 Core's `scene.batch(label, fn, { coalesceKey })` folds a batch into the undo entry before it when
 that one was recorded under the same key and nothing came between, so a run of batches, such as a

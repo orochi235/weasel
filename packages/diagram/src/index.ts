@@ -281,6 +281,9 @@ export {
 } from './theme/resolve';
 export { themeWrites } from './theme/themeWrites';
 export type { ThemedNode, ThemedScene } from './theme/themeWrites';
+export { rendererMeasure } from './rendererMeasure';
+export { relayoutBodies } from './bodyRelayout';
+export type { RelayoutScene } from './bodyRelayout';
 export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle } from './theme/applyTheme';
 export type { ApplyDiagramThemeOptions, DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
 export {

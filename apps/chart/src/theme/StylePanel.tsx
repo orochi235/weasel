@@ -1,5 +1,5 @@
 import {
-  diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle, themeRoles, type DiagramStyleState, type DiagramTheme, type StyleField,
+  diagramStyleOf, rendererMeasure, setDiagramColor, setDiagramFontSize, setDiagramStyle, themeRoles, type DiagramStyleState, type DiagramTheme, type StyleField,
 } from '@weasel-js/diagram';
 import { PropertyField, PropertyList, PropertyNote, PropertyPanel, type PropertyOption } from '@weasel-js/ui/components/Properties';
 import type { CSSProperties, ReactElement } from 'react';
@@ -78,7 +78,7 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
             {field('text', 'Text', styled)}
             <PropertyField
               kind="number" label="Text size" min={4} max={96} step={1} value={size.value} mixed={size.mixed}
-              onChange={(next) => setDiagramFontSize(scene, ids, next)}
+              onChange={(next) => setDiagramFontSize(scene, ids, next, { measure: rendererMeasure })}
             />
           </>
         )}

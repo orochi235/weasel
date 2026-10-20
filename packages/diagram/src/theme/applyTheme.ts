@@ -3,6 +3,8 @@
  * naming a shape's or connector's role, and setting a color by hand.
  */
 import type { Scene } from '@weasel-js/core';
+import type { MeasureRowText } from '../body';
+import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { diagramThemeOf, themeDocValue } from './resolve';
 import { themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
@@ -36,8 +38,17 @@ export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | nul
   };
 }
 
-function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>): void {
-  for (const [id, data] of writes) scene.update(id as never, { data });
+type Sized = { style?: { fontSize?: unknown } } | undefined;
+
+/** Writes each node's new data, then lays out again every body whose text changed size. */
+function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>, measure?: MeasureRowText): void {
+  const bodies: string[] = [];
+  for (const [id, data] of writes) {
+    const node = scene.get(id as never)!;
+    if ((node.data as Sized)?.style?.fontSize !== (data as Sized)?.style?.fontSize && node.parent !== null) bodies.push(node.parent);
+    scene.update(id as never, { data });
+  }
+  relayoutBodies(scene as unknown as RelayoutScene, bodies, measure);
 }
 
 /** Options for {@link applyDiagramTheme}. */
@@ -48,6 +59,8 @@ export interface ApplyDiagramThemeOptions {
   /** The theme the scene is in now, whose font size text moves from. Default the scene's own
    *  `diagram:theme`; a host that draws a scene naming none in another theme passes that. */
   from?: DiagramTheme;
+  /** Measures text, for laying out again a body whose text changed size. Default an estimate. */
+  measure?: MeasureRowText;
 }
 
 /** Recolors the whole scene in `theme` and saves it as the `diagram:theme` document value, as one
@@ -57,7 +70,7 @@ export function applyDiagramTheme(
 ): void {
   const from = opts.from ?? diagramThemeOf(scene);
   scene.batch(label, () => {
-    writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme, undefined, from));
+    writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme, undefined, from), opts.measure);
     scene.doc.set(DIAGRAM_THEME_KEY, themeDocValue(theme));
   }, opts.coalesceKey !== undefined ? { coalesceKey: opts.coalesceKey } : {});
 }
@@ -132,8 +145,11 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
  * connector's label — to `size`, and records it in their `ownFont`, so a
  * theme's size change leaves it. One undo entry.
  */
-export function setDiagramFontSize(scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
+export function setDiagramFontSize(
+  scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
+): void {
   scene.batch(opts.label ?? 'Set text size', () => {
+    const writes = new Map<string, unknown>();
     for (const id of ids) {
       const node = scene.get(id as never);
       const state = node === undefined ? null : diagramStyleOf(node);
@@ -142,8 +158,9 @@ export function setDiagramFontSize(scene: AnyScene, ids: readonly string[], size
       if (!state.ownFont.includes('size')) scene.update(id as never, { data: withTrait(data, { ...data.diagram, ownFont: [...state.ownFont, 'size'] }) });
       for (const t of textNodesOf(scene, id, state.kind)) {
         const text = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
-        scene.update(t as never, { data: { ...text, style: { ...text.style, fontSize: size } } });
+        writes.set(t, { ...text, style: { ...text.style, fontSize: size } });
       }
     }
+    writeAll(scene, writes, opts.measure);
   });
 }

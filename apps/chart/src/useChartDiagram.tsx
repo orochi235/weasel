@@ -5,7 +5,7 @@ import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
   diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
   sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting,
-  useConnectorTool, useStencilInsert, waypointFollower, type DiagramTheme,
+  rendererMeasure, useConnectorTool, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { ChartPose, ChartScene } from './chartDocument';
@@ -67,7 +67,7 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
 export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null {
   const opts = useMemo(
     () => ({
-      style: roleStyle(theme), font: themeFont(theme),
+      style: roleStyle(theme), font: themeFont(theme), measure: rendererMeasure,
       containers: CONTAINER_STENCILS, containerStyle: theme.container, laneStyles: theme.lane,
     }),
     [theme],

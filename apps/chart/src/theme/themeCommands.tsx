@@ -1,6 +1,6 @@
 import { useCommand } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_EXTENSION, DIAGRAM_THEMES, applyDiagramTheme, diagramThemeOf, parseDiagramTheme, themeToJson,
+  DIAGRAM_THEME_EXTENSION, DIAGRAM_THEMES, applyDiagramTheme, diagramThemeOf, parseDiagramTheme, rendererMeasure, themeToJson,
   type DiagramTheme,
 } from '@weasel-js/diagram';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
@@ -30,7 +30,7 @@ export const THEME_MENU: PrefGroup = pref.group('', {
 });
 
 function ThemeCommand({ scene, theme }: { scene: ChartScene; theme: DiagramTheme }): null {
-  useCommand(themeActionId(theme.id), theme.name, () => applyDiagramTheme(scene, theme, undefined, { from: chartThemeOf(scene) }), {
+  useCommand(themeActionId(theme.id), theme.name, () => applyDiagramTheme(scene, theme, undefined, { from: chartThemeOf(scene), measure: rendererMeasure }), {
     active: () => chartThemeOf(scene) === theme,
   });
   return null;
@@ -45,7 +45,7 @@ async function importTheme(scene: ChartScene): Promise<void> {
   if (file === null) return;
   const result = parseDiagramTheme(await file.text());
   if ('errors' in result) throw new Error(result.errors.join('; '));
-  applyDiagramTheme(scene, result.theme, `Import theme: ${result.theme.name}`, { from: chartThemeOf(scene) });
+  applyDiagramTheme(scene, result.theme, `Import theme: ${result.theme.name}`, { from: chartThemeOf(scene), measure: rendererMeasure });
 }
 
 /** Registers Format › Theme's commands. Each shipped theme applies as one undo entry and reads as
