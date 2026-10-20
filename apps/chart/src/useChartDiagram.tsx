@@ -4,13 +4,14 @@ import {
 import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
   diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
-  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useConnectorTool,
-  useStencilInsert, waypointFollower, type DiagramTheme,
+  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting,
+  useConnectorTool, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { ChartPose, ChartScene } from './chartDocument';
 
-const ROUTER = 'orthogonal';
+/** New connectors route around shapes; saved ones keep the router they have. */
+const ROUTER = 'avoid';
 
 /** Double-click an edge to label it, in the theme's label color and face. */
 const edgeLabel = (theme: DiagramTheme): Contribution => ({
@@ -79,6 +80,12 @@ export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null
 export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): null {
   const follower = useMemo(() => waypointFollower<ChartPose>(scene), [scene]);
   useTransformFollower(() => follower);
+  return null;
+}
+
+/** Routes `avoid` connectors around shapes on every edit, and live while a shape is dragged. Mounted as a child of `<SceneCanvas>`. */
+export function AvoidRoutingPublisher({ scene }: { scene: ChartScene }): null {
+  useAvoidRouting<ChartPose>(scene as never);
   return null;
 }
 

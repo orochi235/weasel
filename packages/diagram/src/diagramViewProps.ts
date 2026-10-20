@@ -39,6 +39,10 @@ export interface DiagramViewProps {
    *  selection and anything moved since stay put unless the new specs change
    *  them. Pass a new `key` to start over instead. */
   specs: readonly DiagramSpec[];
+  /** `'avoid'` routes every edge around the shapes, holding one router across
+   *  new `specs` so each reroutes only what it disturbed. The routes derive
+   *  from the specs and are never reported. */
+  router?: 'avoid';
   /** The view opens fitted to the diagram, and fits again when the size or a
    *  fit option changes or a layout run settles, until the user pans or zooms;
    *  from then on the view is theirs. Omit both to fill the parent, which

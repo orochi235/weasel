@@ -37,6 +37,10 @@ export interface DiagramEdge {
    *  them, layout owns the route and rewrites it on its next run; once anyone
    *  edits them, they are the author's and layout leaves them alone. */
   laidOut?: readonly Vec2[];
+  /** The bends between the ends that the obstacle-avoiding router last
+   *  computed, kept so the edge draws without rerouting. The router owns it,
+   *  and while it is here each end aims at its nearest bend. */
+  route?: readonly Vec2[];
   /** The theme role it is drawn in. Unset, the theme's own connector style. */
   style?: string;
   /** The colors the author set by hand, which a theme leaves as they are. */
@@ -49,6 +53,12 @@ export function layoutOwnsRoute(edge: DiagramEdge): boolean {
   const points = edge.waypoints ?? [];
   if (points.length === 0) return true;
   return edge.laidOut !== undefined && samePoints(points, edge.laidOut);
+}
+
+/** Whether layout writes this edge's waypoints: it owns the route, and the
+ *  edge is not routed around obstacles, whose bends are never stops. */
+export function layoutWritesRoute(edge: DiagramEdge): boolean {
+  return edge.router !== 'avoid' && layoutOwnsRoute(edge);
 }
 
 /** Two point lists the same, point for point. */

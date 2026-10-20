@@ -119,7 +119,9 @@ describe('strokeToPath', () => {
     expect(pathContainsPoint(out, 1505, 30)).toBe(true);
     expect(pathContainsPoint(out, 1505, 40)).toBe(false);
     expect(pathContainsPoint(out, 1505, -10)).toBe(false);
-  });
+    // 300 humps is the size that overran the old union's segment limit, and it takes
+    // about 2.5 s alone, so a loaded worker pushes it past the default 5 s.
+  }, 20_000);
 
   it('answers an empty path for a stroke with no width', () => {
     expect(strokeToPath(SQUARE, { paint: PAINT, width: 0 }).commands.length).toBe(0);

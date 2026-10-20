@@ -460,6 +460,13 @@ directly against the adapter.
 **Transient** ops apply via `adapter.applyOps(ops)` — no history entry.
 Selection-only changes (e.g. marquee result) are transient by default.
 
+A **scene edit pass** (`scene.addEditPass(pass)`) hears what each live edit
+did — the ids it added, removed, posed, re-parented, and changed the data of —
+once the edit's own mutations and the arrival handler have run, and answers
+with ops that join the same undo entry. Passes do not hear their own writes,
+and undo, redo, and history replay never run them. Diagram's obstacle-avoiding
+routing stores its routes this way.
+
 ## Ongoing handle
 
 An action with `invoker.timing: 'ongoing'` opens a gesture: `start(ctx)`

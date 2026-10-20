@@ -8,9 +8,11 @@ import { createEdgeEnds } from './edgeEndLayer';
 import { diagramEdgeOf } from './edgeTrait';
 import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './waypointAction';
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
-import { removeSegment, removeWaypoint, type RouteHandle } from './waypoints';
+import { avoid } from './edge';
+import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
 
-/** The action that removes a waypoint, or straightens a segment, on a double-click of its handle. */
+/** The action that removes a waypoint, straightens a segment, or unpins an
+ *  `avoid` connector's segment, on a double-click of its handle. */
 export const REMOVE_WAYPOINT_ACTION_ID = 'diagram.removeWaypoint';
 /** The command that clears the selected edges' waypoints. */
 export const RESET_ROUTE_ACTION_ID = 'diagram.resetRoute';
@@ -20,7 +22,9 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 /** The waypoints left once `handle` is double-clicked away; null where it removes nothing. */
 function removalOf(route: EdgeRouteState, handle: RouteHandle): Vec2[] | null {
   if (handle.kind === 'vertex') return removeWaypoint(route.stops, handle.index);
-  if (handle.kind === 'segment') return removeSegment(route.drawn, handle.index);
+  if (handle.kind === 'segment') {
+    return route.router === avoid ? unpinSegment(route.drawn, route.stops, handle.index) : removeSegment(route.drawn, handle.index);
+  }
   return null;
 }
 

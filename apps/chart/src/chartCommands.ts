@@ -1,5 +1,5 @@
 import { useCommand } from '@weasel-js/core';
-import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
@@ -14,7 +14,7 @@ export const CHART_ACTIONS = {
   grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid',
 } as const;
 
-/** Chart mode's File, Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; Reset route and Release members are the diagram package's. */
+/** Chart mode's File, Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -30,7 +30,12 @@ export const CHART_MENUS: ChartMenuContributions = {
   },
   format: {
     theme: THEME_MENU,
-    connector: pref.group('', { connector: pref.group('Connector', { resetRoute: pref.action(RESET_ROUTE_ACTION_ID) }, { as: 'menu' }) }),
+    connector: pref.group('', {
+      connector: pref.group('Connector', {
+        router: run(SET_ROUTER_ACTION_IDS),
+        route: run({ resetRoute: RESET_ROUTE_ACTION_ID }),
+      }, { as: 'menu' }),
+    }),
   },
   arrange: {
     containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),

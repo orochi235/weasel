@@ -9,7 +9,7 @@ import type { GraphNodeLike } from './graph';
 import { WAYPOINT_AFFORDANCE_KIND } from './waypointLayer';
 import { createRemoveWaypointAction } from './routeCommands';
 import { createRouteEditAction, type RouteEdit, type RouteEditOptions } from './waypointAction';
-import type { RouteHandle } from './waypoints';
+import { pinSegment, type RouteHandle } from './waypoints';
 
 interface Rect { x: number; y: number; width: number; height: number }
 type AnyScene = Parameters<typeof createSnapSession2dForTests>[0]['scene'];
@@ -29,11 +29,13 @@ const edge = (id: string, to: string, diagram: Record<string, unknown>) => ({
 
 /** A at the origin, B 300 to its right, C below B. `ab` runs straight from
  *  (100, 20) to (300, 20) through `waypoints`; `ac` runs orthogonal from
- *  (100, 20) out to x = 200, down to y = 220, and in to (300, 220). */
+ *  (100, 20) out to x = 200, down to y = 220, and in to (300, 220); so does `av`,
+ *  routed `avoid` with no stored route. */
 const participants = (waypoints: Vec2[] = []) => () => [
   shape('A', 0, 0), shape('B', 300, 0), shape('C', 300, 200),
   edge('ab', 'B', { router: 'straight', ...(waypoints.length > 0 ? { waypoints, laidOut: waypoints } : {}) }),
   edge('ac', 'C', { router: 'orthogonal' }),
+  edge('av', 'C', { router: 'avoid' }),
 ];
 
 const press = (edgeId: string, handle: RouteHandle) => ({
@@ -184,6 +186,13 @@ describe('createRouteEditAction', () => {
     const second: RouteHandle = { kind: 'vertex', index: 1, at: { x: 200, y: 100 } };
     expect(dragTo('ab', second, { x: 33, y: 52 }, { waypoints: [{ x: 200, y: 50 }, { x: 200, y: 100 }], snap }))
       .toEqual([{ x: 200, y: 50 }, { x: 30, y: 50 }]);
+  });
+
+  it('pins an avoid connector\'s dragged segment at its snapped offset', () => {
+    const snap = canvasSnap([grid(10)]);
+    const drawn = [{ x: 100, y: 20 }, { x: 200, y: 20 }, { x: 200, y: 220 }, { x: 300, y: 220 }];
+    expect(dragTo('av', { kind: 'segment', index: 0, axis: 'x', at: { x: 150, y: 20 } }, { x: 150, y: 37 }, { snap }))
+      .toEqual(pinSegment(drawn, [drawn[0]!, drawn[3]!], 0, 20));
   });
 
   it('a segment drag stays on its axis under Shift and Ctrl', () => {

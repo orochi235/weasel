@@ -141,11 +141,11 @@ describe('WeaselChart chart mode', () => {
     await useTool('Select');
     click(canvas, at(host, 300, 130));
     await new Promise((r) => requestAnimationFrame(r));
-    // The bar sits in the segment's middle; both ends touch a port, so each keeps a jog.
+    // The bar sits in the segment's middle. A connector routed around shapes pins only the dragged segment: its two
+    // ends, jogged off the ports, become the waypoints.
     await drag(canvas, at(host, 360, 130), at(host, 360, 200));
-    await expect.poll(() => waypoints()?.length).toBe(4);
-    const [a, b, c, d] = waypoints()!;
-    expect([a!.y, d!.y]).toEqual([130, 130]);
+    await expect.poll(() => waypoints()?.length).toBe(2);
+    const [b, c] = waypoints()!;
     expect(Math.abs(b!.y - 200)).toBeLessThan(2);
     expect(c!.y).toBe(b!.y);
 
@@ -156,7 +156,29 @@ describe('WeaselChart chart mode', () => {
 
     await userEvent.click(page.getByRole('menuitem', { name: 'Edit' }));
     await userEvent.click(page.getByRole('menuitem', { name: /^Undo/ }));
-    await expect.poll(() => waypoints()?.length).toBe(4);
+    await expect.poll(() => waypoints()?.length).toBe(2);
+  });
+
+  it('routes a connector around a shape dragged across it, and undo puts both back', async () => {
+    const { host, canvas } = await mountApp();
+    await twoBodies(host, canvas);
+    await drag(canvas, at(host, 300, 300), at(host, 420, 360));
+    await expect.poll(() => bodies().length).toBe(3);
+    await useTool('Connector');
+    await drag(canvas, at(host, 220, 130), at(host, 500, 130));
+    await expect.poll(() => edges().length).toBe(1);
+    const route = () => (edges()[0]!.data.diagram as { route?: { x: number; y: number }[] }).route;
+    await expect.poll(route).toEqual([]);
+
+    await useTool('Select');
+    await drag(canvas, at(host, 360, 330), at(host, 360, 130));
+    await expect.poll(() => route()?.length ?? 0).toBeGreaterThan(0);
+    // Every bend keeps clear of the shape now sitting on the old line, from (300, 100) to (420, 160).
+    for (const p of route()!) expect(p.y < 100 || p.y > 160 || p.x < 300 || p.x > 420).toBe(true);
+
+    await userEvent.click(page.getByRole('menuitem', { name: 'Edit' }));
+    await userEvent.click(page.getByRole('menuitem', { name: /^Undo/ }));
+    await expect.poll(route).toEqual([]);
   });
 
   it('adds and edits an edge label on a double-click of the edge', async () => {
