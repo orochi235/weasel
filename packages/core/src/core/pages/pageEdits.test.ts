@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '../scene/scene';
+import { unionOfChildrenVia } from '../scene/unionOfChildren';
+import { RECT_POSE_DESCRIPTOR } from '../geometry/poseDescriptor';
 import type { NodeId } from '../scene/types';
 import {
   PAGES_DOC_KEY, addPage, movePage, nextPageId, pageMembers, pagesOf, placedPagesOf, removePage, renamePage,
@@ -60,6 +62,18 @@ describe('pages as a document value', () => {
     expect(pagesOf(scene)).toEqual(TWO);
     expect(x(scene, onA)).toBe(10);
     expect(x(scene, onB)).toBe(130);
+  });
+
+  it('moves the children of a group whose pose derives from them, and never writes the group', () => {
+    const { scene } = setup();
+    const group = scene.add({
+      kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { n: 'group' },
+      dependsOn: 'children', derivePose: unionOfChildrenVia(RECT_POSE_DESCRIPTOR),
+    });
+    const inner = scene.add({ kind: 'leaf', layer: 'l', parent: group, pose: { x: 140, y: 20, width: 10, height: 10 }, data: { n: 'inner' } });
+    movePage(scene, 'b', 0);
+    expect(x(scene, inner)).toBe(20);
+    expect(scene.get(group)!.pose.x).toBe(0);
   });
 
   it('resizes a page, keeping page-relative places and shifting the pages after it', () => {

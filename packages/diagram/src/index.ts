@@ -53,6 +53,7 @@ export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './st
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export type { StencilInsertOptions } from './stencilTool';
+export * from './containers';
 export { GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramPorts, diagramWaypoints } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {

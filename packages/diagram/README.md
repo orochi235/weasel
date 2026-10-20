@@ -230,8 +230,58 @@ const decision = useStencilTool(FLOWCHART_STENCILS[1]);
 A drop from your own palette goes through the canvas's `ingestion` handlers:
 a handler gets the drop's world point as `ctx.point` and calls
 `ctx.insert.commit`. Elsewhere, `SceneCanvasApi.clientToWorld` turns a client
-point into a world one. `useStencilInsert` replaces the kit's `insert` dep, so a canvas
-using it cannot also use core's rect, ellipse and text tools.
+point into a world one. `useStencilInsert` hands any kind that is not a stencil's to
+the `insert` dep it displaced, so core's rect, ellipse and text tools keep working.
+
+### Containers and pools
+
+A container is a titled box that holds other shapes; a pool is a header and a
+stack of lanes, each holding shapes. Both are core `ContainerNode`s carrying a
+`container` trait (`diagramContainerOf`): a role of `container`, `pool`, or
+`lane`, and a header. A region's title is a text child named
+`<id>/title`, so double-clicking a header renames it.
+
+| What the user does | What happens |
+|---|---|
+| drags a shape into a container's body or a lane | the shape becomes its member, in the move's undo entry |
+| drags a member out | it leaves, to the top level or the container under the drop |
+| drags a container | its members, and the waypoints of connectors between them, go with it |
+| resizes a container | its members stay where they are |
+| deletes a container | its members go with it; Release members keeps them |
+| drags a lane by its header | the lanes reorder, members and all |
+| drags the boundary after a lane | that lane resizes and the pool grows or shrinks with it |
+| clicks the button past the end of a pool | a lane is added at the end |
+
+`CONTAINER_STENCILS` offers Container, Pool (rows), and Pool (columns); pass it
+as `useStencilInsert`'s `containers` and give each a `stencilTool`. Their glyphs
+are in the `diagram` icon namespace, whose table is `@weasel-js/diagram/icons`;
+an app without the icons build plugin registers it beside the kit's. A stencil
+drawn inside a container or a lane becomes its member (`diagramDropParentAt`).
+`containerBuild` returns the ops on their own, and `addLane` and
+`releaseMembers` are the edits as functions.
+
+What a region admits is the `canDropInto` dep's call, and `diagramCanDropInto(scene)`
+is the one for a diagram: containers and lanes take shapes and containers, a
+pool takes only lanes, and a stencil body, an edge, or a label takes nothing.
+`diagramContainers` returns the lane layer to register and the contribution to
+pass as `ambient`, which carries the boundary drag (`diagram.resizeLane`), the
+add-lane click (`diagram.addLane`), and the `diagram.releaseMembers` command.
+The two lane gestures take a swappable commit.
+
+```tsx
+useStencilInsert(FLOWCHART_STENCILS, { containers: CONTAINER_STENCILS });
+useDepSource('canDropInto', () => diagramCanDropInto(scene));
+const containers = useMemo(() => diagramContainers({ scene, selected }), [scene, selected]);
+```
+
+The layouts register by key through `withDiagramRegistry`, so a saved scene
+finds them again: `diagram:container`, `diagram:pool-rows`,
+`diagram:pool-columns`, `diagram:lane-rows`, and `diagram:lane-columns`.
+`diagramContainerLayout` places members freely under a header, and
+`laneStackLayout` stacks a pool's lanes in the order they sit; a pool's size
+along the stack is the sum of its lanes. Lanes take no connectors, and
+connectors stay at the top level, drawn above every container. `DiagramView`
+does not build containers from data yet.
 
 ### Themes
 

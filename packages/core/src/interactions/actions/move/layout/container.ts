@@ -101,6 +101,7 @@ export function pickContainer(
     const plane = planeOf(session.view, node.layer);
     const at = plane ? toPlane(plane, center) : center;
     if (!testInside(id, worldPose, worldAABB, layout, at)) return;
+    if (!session.admits(id)) return;
     if (layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
       for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(session, c, plane).arg)) return;

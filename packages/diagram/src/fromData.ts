@@ -158,6 +158,7 @@ export interface DiagramSceneData {
   stroke?: Stroke;
   text?: string;
   style?: DiagramTextStyle;
+  verticalAlign?: 'top' | 'center' | 'bottom';
   /** What a slot is filled with: an image the kit's image painter draws. */
   image?: { src: string; opacity?: number };
 }

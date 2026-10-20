@@ -38,7 +38,7 @@ export interface ArrivalWindow<TPose> {
   onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
   noteArrival(id: NodeId, parent: NodeId | null, from: NodeId | null): void;
   noteDeparture(id: NodeId, from: NodeId | null, to: NodeId | null): void;
-  /** A container's child set or order changed, or it changed size. */
+  /** A container's child set or order changed, it changed size, or a child was posed. */
   noteChange(id: NodeId | null): void;
   /** Whether a bare scene call has to run as a batch of its own, so the
    *  layout pass it triggers lands in its undo step. */

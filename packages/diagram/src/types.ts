@@ -1,6 +1,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import type { GroupInset } from './cluster';
 import type { Outline } from './outline';
+import type { DiagramContainer } from './containers/trait';
 import type { StyleField } from './theme/styleField';
 
 /**
@@ -68,6 +69,9 @@ export interface DiagramNode {
    *  itself is never laid out — it derives its pose from its members — but an
    *  edge can attach to it like any participant. */
   group?: DiagramGroup;
+  /** Present on a container, a pool, or a lane: a `ContainerNode` holding
+   *  members (`containers/trait.ts`). */
+  container?: DiagramContainer;
   /** How far past its bounds something drawn with it reaches, on each side —
    *  a built body's port labels. Layout keeps neighbors that far off too. */
   margin?: GroupInset;

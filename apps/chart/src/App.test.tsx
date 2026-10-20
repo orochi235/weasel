@@ -2,9 +2,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
-import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
+import { withIcons } from './testIcons';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -24,7 +24,7 @@ const mount = () => render(
       <App />
     </ActionsProvider>
   </DepRegistryProvider>,
-  { wrapper: iconsWrapper() },
+  { wrapper: withIcons },
 );
 
 /** Opens a menu-bar menu and clicks the row whose label starts with `row`. */

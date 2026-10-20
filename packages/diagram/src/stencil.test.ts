@@ -5,6 +5,7 @@ import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSour
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
 import { NODE } from './fromData';
+import { CONTAINER_STENCILS, lanesOf } from './containers/containerStencils';
 import { useStencilInsert, useStencilTool, type StencilInsertOptions } from './stencilTool';
 
 const byId = (id: string) => FLOWCHART_STENCILS.find((s) => s.id === id)!;
@@ -149,5 +150,16 @@ describe('useStencilInsert', () => {
     const { scene, dep } = insertDep({ style: { fill: '#fafafa', stroke: '#222', text: '#000' } });
     const id = dep.commit({ x: 0, y: 0, width: 0, height: 0 }, { kind: stencilKind('process') } as never)!;
     expect((scene.get(id)!.data as { fill: { paint: { color: string } } }).fill.paint.color).toBe('#fafafa');
+  });
+
+  it('draws container stencils, and puts a shape drawn in a lane in that lane', () => {
+    const { scene, dep } = insertDep({ containers: CONTAINER_STENCILS });
+    const pool = dep.commit({ x: 0, y: 0, width: 480, height: 240 }, { kind: stencilKind('pool-rows') } as never)!;
+    expect(scene.historyEntries().map((e) => e.label)).toEqual(['Insert Pool (rows)']);
+    const [, second] = lanesOf(scene as never, pool);
+    const shape = dep.commit({ x: 200, y: 180, width: 0, height: 0 }, { kind: stencilKind('process') } as never)!;
+    expect(scene.get(shape)!.parent).toBe(second);
+    const inner = dep.commit({ x: 200, y: 60, width: 0, height: 0 }, { kind: stencilKind('pool-columns') } as never)!;
+    expect(scene.get(inner)!.parent).toBeNull();
   });
 });

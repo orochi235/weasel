@@ -21,4 +21,12 @@ describe('diagramResizable', () => {
     const resizable = diagramResizable(scene);
     expect(['a', 'b', 'e', 'e/label'].map(resizable)).toEqual([true, true, false, false]);
   });
+
+  it('refuses a lane, which its boundaries resize, and allows its pool', () => {
+    const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
+    const at = { x: 0, y: 0, width: 100, height: 40 };
+    scene.add({ id: 'p' as never, kind: 'container', layer: 'main', pose: at, data: { diagram: { container: { role: 'pool' } } } });
+    scene.add({ id: 'l' as never, kind: 'container', layer: 'main', pose: at, parent: 'p' as never, data: { diagram: { container: { role: 'lane' } } } });
+    expect(['p', 'l'].map(diagramResizable(scene))).toEqual([true, false]);
+  });
 });

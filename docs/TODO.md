@@ -1320,5 +1320,9 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Second arc.** Containers and swimlanes; connectors that route around shapes while
-  editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) Second arc.** Connectors that route around shapes while editing. Designed in
+  `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
+  `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
+  and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  containers (2026-10-19) so parallel arc pieces editing those files would not conflict.

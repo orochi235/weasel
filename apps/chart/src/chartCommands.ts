@@ -1,5 +1,5 @@
 import { useCommand } from '@weasel-js/core';
-import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
@@ -10,7 +10,7 @@ import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = { new: 'chart.new', open: 'chart.open', save: 'chart.save' } as const;
 
-/** Chart mode's File, Edit, Format and Page menus. Undo, Redo and Delete are the kit's own actions; Reset route is the diagram package's. */
+/** Chart mode's File, Edit, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; Reset route and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -23,6 +23,9 @@ export const CHART_MENUS: ChartMenuContributions = {
   format: {
     theme: THEME_MENU,
     connector: pref.group('', { connector: pref.group('Connector', { resetRoute: pref.action(RESET_ROUTE_ACTION_ID) }, { as: 'menu' }) }),
+  },
+  arrange: {
+    containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),
   },
   page: PAGE_MENU,
 };

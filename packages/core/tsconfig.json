@@ -44,6 +44,7 @@
       "@weasel-js/diagram": ["../diagram/src/index.ts"],
       "@weasel-js/diagram/layout": ["../diagram/src/layout.entry.ts"],
       "@weasel-js/diagram/effect": ["../diagram/src/effect.entry.ts"],
+      "@weasel-js/diagram/icons": ["../diagram/src/icons.table.ts"],
       "@weasel-js/diagram-elk": ["../diagram-elk/src/index.ts"],
       "@weasel-js/font": ["../font/src/index.ts"],
       "@weasel-js/font/metrics": ["../font/src/metrics.entry.ts"],

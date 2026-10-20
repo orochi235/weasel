@@ -1,27 +1,27 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { Tool, ToolsApi } from '@weasel-js/core';
-import { FLOWCHART_STENCILS, stencilTool } from '@weasel-js/diagram';
+import { CONTAINER_STENCILS, FLOWCHART_STENCILS, stencilTool } from '@weasel-js/diagram';
 import { toIconRef, type IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { StencilPanel } from './StencilPanel';
 import { STENCIL_MIME } from './stencilDrop';
+import { renderWithIcons } from './testIcons';
 
 afterEach(cleanup);
 
 function chartTools(active: string | null = null): ToolsApi {
-  const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...FLOWCHART_STENCILS.map(stencilTool)];
+  const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...[...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map(stencilTool)];
   // The palette reads only these three.
   return { active, setActive: vi.fn(), registry: Object.fromEntries(list.map((t) => [t.id, t])) } as unknown as ToolsApi;
 }
 
 describe('StencilPanel', () => {
-  it('holds a button for every flowchart stencil and no other tool', () => {
+  it('holds a button for every flowchart stencil, then the containers, and no other tool', () => {
     renderWithIcons(<StencilPanel tools={chartTools()} />);
     expect(screen.getByText('Shapes')).toBeTruthy();
     const toolbar = screen.getByRole('toolbar', { name: 'Shapes' });
-    expect([...toolbar.querySelectorAll('button')].map((b) => b.textContent)).toEqual(FLOWCHART_STENCILS.map((s) => s.label));
+    expect([...toolbar.querySelectorAll('button')].map((b) => b.textContent)).toEqual([...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => s.label));
   });
 
   it('lays the stencils out three across', () => {
@@ -33,13 +33,15 @@ describe('StencilPanel', () => {
   it("draws each stencil's own glyph, not the unknown-tool placeholder", () => {
     const drawn = (name: IconRef) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
     const placeholder = drawn(toIconRef('core:unknown')!);
-    const glyphs = FLOWCHART_STENCILS.map((s) => drawn(s.icon!));
+    const stencils = [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS];
+    const glyphs = stencils.map((s) => drawn(s.icon!));
     renderWithIcons(<StencilPanel tools={chartTools()} />);
     const buttons = [...screen.getByRole('toolbar', { name: 'Shapes' }).querySelectorAll('button')];
+    expect(buttons).toHaveLength(stencils.length);
     buttons.forEach((button, i) => {
       const svg = button.querySelector('svg')!.innerHTML;
-      expect(svg, FLOWCHART_STENCILS[i]!.id).toBe(glyphs[i]);
-      expect(svg, FLOWCHART_STENCILS[i]!.id).not.toBe(placeholder);
+      expect(svg, stencils[i]!.id).toBe(glyphs[i]);
+      expect(svg, stencils[i]!.id).not.toBe(placeholder);
     });
   });
 

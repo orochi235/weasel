@@ -6,7 +6,7 @@
 import {
   RECT_POSE_DESCRIPTOR, poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor,
 } from '../geometry/poseDescriptor';
-import { composesFrames } from '../scene/composeFrame';
+import { carriedDescendants, sceneCarrySource } from '../scene/carryDescendants';
 import { effectivePose } from '../scene/effectivePose';
 import type { NodeId, Scene } from '../scene/types';
 import { layoutPages, pageOfBounds, type Page, type PageLayoutOptions, type PlacedPage } from './pages';
@@ -80,15 +80,35 @@ export function pageMembers<TData, TLayer extends string, TPose>(
   return out;
 }
 
-/** The nodes whose stored pose changes when root `id` moves: it and, where
- *  poses are absolute, its descendants, less whatever derives its pose. */
-function moveTargets(scene: AnyScene, id: NodeId, carried: boolean, out: NodeId[]): void {
+/** Whether a node's pose derives from its children, so moving them moves it. */
+function derivesPose(scene: AnyScene, id: NodeId): boolean {
+  const node = scene.get(id);
+  return node?.dependsOn === 'children' && node.derivePose !== undefined;
+}
+
+/** The stored poses that move root `id` and what it carries by `dx`, `dy`: the
+ *  root, unless its pose derives from its children (then each child moves in
+ *  its place), and the descendants it carries, less whatever derives its pose. */
+function pageMoveWrites(
+  scene: AnyScene,
+  id: NodeId,
+  dx: number,
+  dy: number,
+  descriptor: PoseDescriptor<unknown>,
+  out: { id: NodeId; pose: unknown }[],
+): void {
   const node = scene.get(id);
   if (!node || followsOthers(scene, id)) return;
-  const derived = node.dependsOn === 'children' && node.derivePose !== undefined;
-  if (!derived && !carried) out.push(id);
-  const childCarried = carried || (!derived && composesFrames(scene.composition));
-  for (const child of scene.childrenOf(id)) moveTargets(scene, child, childCarried, out);
+  if (derivesPose(scene, id)) {
+    for (const child of scene.childrenOf(id)) pageMoveWrites(scene, child, dx, dy, descriptor, out);
+    return;
+  }
+  const move = (pose: unknown, at: NodeId) => translatePoseViaDescriptor(pose, dx, dy, poseDescriptorForNode(descriptor, scene.get(at)!));
+  out.push({ id, pose: move(node.pose, id) });
+  const carried = carriedDescendants(sceneCarrySource(scene), id, (world, at) => (
+    followsOthers(scene, at) || derivesPose(scene, at) ? null : move(world, at)
+  ));
+  for (const [at, pose] of carried) out.push({ id: at, pose });
 }
 
 /**
@@ -115,12 +135,7 @@ export function setPages<TData, TLayer extends string, TPose>(
     const dx = to.x - page.x;
     const dy = to.y - page.y;
     if (dx === 0 && dy === 0) continue;
-    const targets: NodeId[] = [];
-    for (const root of members.get(page.id) ?? []) moveTargets(s, root, false, targets);
-    for (const id of targets) {
-      const node = s.get(id)!;
-      writes.push({ id, pose: translatePoseViaDescriptor(node.pose, dx, dy, poseDescriptorForNode(descriptor, node)) });
-    }
+    for (const root of members.get(page.id) ?? []) pageMoveWrites(s, root, dx, dy, descriptor, writes);
   }
   s.batch(label, () => {
     for (const { id, pose } of writes) s.setPose(id, pose);

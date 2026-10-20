@@ -133,6 +133,7 @@ export type {
   InsertExtras,
   LassoSelectDep,
   LayoutDep,
+  CanDropIntoDep,
   NodeAtPointDep,
   ResizePolicy,
   SvgIngestOptions,

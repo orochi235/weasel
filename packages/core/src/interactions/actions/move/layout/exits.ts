@@ -11,9 +11,9 @@ import { pointInBounds } from './container';
 /** Where each dragged root that leaves its layout container on release lands.
  *  A root leaves when the drop center falls outside the body of the layout
  *  container holding it, and lands under the innermost plain container beneath
- *  the drop — a layout container there has already declined it — or at the top
- *  level of its layer. A root whose parent has no layout is not this pass's to
- *  move; `reparentOnDrop` decides for those. */
+ *  the drop that admits it (`canDropInto`) — a layout container there has
+ *  already declined it — or at the top level of its layer. A root whose parent
+ *  has no layout is not this pass's to move; `reparentOnDrop` decides for those. */
 export function resolveLayoutExits(
   session: MoveSession, dropCenter: { x: number; y: number } | null, ids: Iterable<NodeId>,
 ): Map<NodeId, NodeId | null> {
@@ -45,7 +45,7 @@ export function resolveLayoutExits(
         const node = scene.get(id);
         if (!node || node.kind !== 'container') continue;
         if (node.layer === layer && depth >= bestDepth
-          && layoutDep.getLayout(id as string) === null && holds(id, null)) {
+          && layoutDep.getLayout(id as string) === null && holds(id, null) && session.admits(id)) {
           best = id;
           bestDepth = depth;
         }
