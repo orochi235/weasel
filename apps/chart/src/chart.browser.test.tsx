@@ -219,9 +219,8 @@ describe('WeaselChart chart mode', () => {
     await drag(canvas, at(host, 360, 330), at(host, 390, 88));
     const placed = () => (saved().find((n) => n.id === labelId)?.data.diagram as { label?: { placed?: unknown } }).label?.placed;
     await expect.poll(placed).toBeDefined();
-    await new Promise((r) => requestAnimationFrame(r));
     // The shape's lower interior, where the label stood, clear of its selection handles and its stroke.
-    expect(darkPixels(canvas, at(host, 340, 100), at(host, 440, 116))).toBe(0);
+    await expect.poll(() => darkPixels(canvas, at(host, 340, 100), at(host, 440, 116))).toBe(0);
   });
 
   it("types into a body's label and paints its text", async () => {
