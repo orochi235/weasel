@@ -1,7 +1,7 @@
 import { pxExtent } from '@weasel-js/geom';
 import type { ActionDeps } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
-import { placeSkeleton, type RigNodeData } from '../../../animation/rig/rigNode';
+import type { NodeId } from '@weasel-js/core';
+import { placeSkeleton, type RigNodeData } from '@weasel-js/core';
 import type { Skeleton } from '@weasel-js/animator';
 
 const EMPTY: Skeleton = { joints: [] };

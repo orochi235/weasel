@@ -1,7 +1,7 @@
 import type { Skin } from '@weasel-js/animator';
 import { createEmitter } from '@weasel-js/registry';
-import type { NodeId } from 'core/scene/types';
-import type { PaintedSkins } from '../../../animation/rig/rigNode';
+import type { NodeId } from '@weasel-js/core';
+import type { PaintedSkins } from '@weasel-js/core';
 
 /** What the bone and weight tools share between gestures: the joint they act on, and the
  *  weights a stroke has painted and not yet written. */

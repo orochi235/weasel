@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { Skeleton } from '@weasel-js/animator';
-import { createScene } from 'core/scene/scene';
-import type { NodeId, RectPose } from 'core/scene/types';
-import { createRigEditState } from 'tools/builtin/bone/rigEditState';
-import type { Tool } from 'tools/overlayBinding';
-import { rigOfSelection, useBuiltinRigTools } from './useBuiltinRigTools';
+import { createScene, toolIdsOf } from '@weasel-js/core';
+import { RIG_TOOLS } from './toolSets';
+import type { NodeId, RectPose, Tool } from '@weasel-js/core';
+import { createRigEditState } from './bone/rigEditState';
+import { rigOfSelection, useRigTools, type UseRigToolsOptions } from './useRigTools';
 
 type Data = { skeleton?: Skeleton; label?: string };
 
@@ -62,12 +62,12 @@ describe('rigOfSelection', () => {
   });
 });
 
-describe('useBuiltinRigTools', () => {
-  function setup(options?: Parameters<typeof useBuiltinRigTools>[0]['options']) {
+describe('useRigTools', () => {
+  function setup(options?: Omit<UseRigToolsOptions, 'scene' | 'selection'>) {
     const t = sceneWithRig();
     let selected: NodeId[] = [];
-    const { result } = renderHook(() => useBuiltinRigTools({
-      scene: t.scene as never, selection: () => selected, options,
+    const { result } = renderHook(() => useRigTools({
+      scene: t.scene as never, selection: () => selected, ...options,
     }));
     return { ...t, tools: () => result.current, select: (ids: NodeId[]) => { selected = ids; } };
   }
@@ -99,10 +99,29 @@ describe('useBuiltinRigTools', () => {
   it('takes a fixed rig and a shared state from its options', () => {
     const state = createRigEditState();
     let fixed: NodeId | null = null;
-    const t = setup({ rig: { rig: () => fixed, state } });
+    const t = setup({ rig: () => fixed, state });
     fixed = t.loose;
     drawBone(t.tools().bone, [150, 150], [200, 150]);
     expect(t.scene.get(t.loose)!.data.skeleton?.joints).toHaveLength(2);
     expect(state.active()).not.toBeNull();
+  });
+
+  it('keys its tools by the ids RIG_TOOLS names', () => {
+    const t = setup();
+    expect(Object.keys(t.tools())).toEqual(toolIdsOf([RIG_TOOLS]));
+  });
+
+  it('declares both tools as editing the page', () => {
+    const t = setup();
+    expect(t.tools().bone.eligibility?.capabilities).toEqual(['edits-page']);
+    expect(t.tools().weight.eligibility?.capabilities).toEqual(['edits-page']);
+  });
+
+  it("reads the scene's own selection when given none", () => {
+    const t = sceneWithRig();
+    const { result } = renderHook(() => useRigTools({ scene: t.scene as never }));
+    t.scene.setSelection([t.sleeve]);
+    drawBone(result.current.bone, [200, 150], [250, 150]);
+    expect(t.scene.get(t.rig)!.data.skeleton?.joints.length).toBeGreaterThan(1);
   });
 });

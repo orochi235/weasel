@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import type { NodeId, Scene } from 'core/scene/types';
-import { defineTool } from '../../overlayBinding';
-import type { Tool } from '../../overlayBinding';
+import type { NodeId, Scene } from '@weasel-js/core';
+import { defineTool } from '@weasel-js/core';
+import type { Tool } from '@weasel-js/core';
 import { createBoneOverlay } from '../bone/boneOverlay';
 import { placedRig } from '../bone/placedRig';
 import { createRigEditState, type RigEditState } from '../bone/rigEditState';
 import { createWeightActions, weighedPaths, type WeightEnv } from './weightActions';
 import { createWeightOverlay } from './weightOverlay';
-import { icon } from '../../../icons.gen';
+import { icon } from '../icons.gen';
 
 /** Options for `useWeightTool`. */
 export interface UseWeightToolOptions {

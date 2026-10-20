@@ -4,12 +4,12 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 03:50)
+## Overnight pass, 2026-10-20 (status at 05:20)
 
 For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
 marked "overnight pass". Nothing is pushed.
 
-**`main` is green at `5ceb31061`** (full fleet run: 27555 passed, 0 failed).
+**`main` is green at `48ac2d533`** (full fleet run on teitou: 27836 passed, 0 failed).
 
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
@@ -39,6 +39,9 @@ Merged:
 - forge's "ResizeObserver loop" error, raised on every forge page: labkit's `SidebarPanes` kept
   observing a section bar after windease removed its panel. It now observes each bar from mount
   to removal (a browser test mounts a whole `Lab`).
+- The bone and weight tools moved out of core into a new `@weasel-js/rig` (breaking for core's
+  barrel; the changeset says so). It has never been published: the next release publishes it for
+  the first time. A checkout needs `npm ci` before a dev server there resolves `@weasel-js/rig`.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
