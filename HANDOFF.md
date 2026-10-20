@@ -38,7 +38,8 @@ Merged:
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
   `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
-  one shared reader or a lint rule (P3, "Release-gate & build hygiene").
+  one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
+  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call, all merged.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
 - forge's "ResizeObserver loop" error.

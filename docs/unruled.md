@@ -213,6 +213,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): `CANVAS_CONTEXT_ATTRIBUTES` is public core API, the one place the
+  renderer's WebGL2 context settings are written, since a consumer sharing a buffer with the renderer
+  needs them. Test pixel reads go through `@weasel-js/core/testing/canvasPixels` (`canvasGl`,
+  `readCanvas`, `pixelAt`), and a lint rule refuses a `getContext('webgl2')` with no attributes in
+  browser tests and `testing/` helpers.
 - 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
   objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
   string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and
