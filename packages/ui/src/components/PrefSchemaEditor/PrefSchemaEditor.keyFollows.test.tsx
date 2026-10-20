@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import type { SubmitChanges } from './ExportPanel';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -83,13 +84,35 @@ describe('PrefSchemaEditor: the key follows the name', () => {
     expect(keyField()).toHaveValue('view2');
   });
 
-  it('rekeys a node from the baseline only when its key was the name\'s already', () => {
+  it('keeps the key of a node from the baseline, whose values may be stored under it', () => {
     renderWithIcons(<Live />);
     select('grid');
     rename('Show the grid');
     expect(keyField()).toHaveValue('grid');
+    // Even a key that was its name in camelCase.
     select('snap');
     rename('Snap to grid');
-    expect(keyField()).toHaveValue('snapToGrid');
+    expect(keyField()).toHaveValue('snap');
+    expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid', 'snap']);
+  });
+
+  it('hands over a renamed baseline pref as a change of name alone', async () => {
+    const onSubmit = vi.fn<SubmitChanges>(async () => {});
+    function Sent() {
+      const [schema, setSchema] = useState(BASE);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} original={BASE} onSubmit={onSubmit} />;
+    }
+    renderWithIcons(<Sent />);
+    select('snap');
+    rename('Snap to grid');
+    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+    const listed = screen.getByRole('tabpanel', { name: 'Changes' }).textContent ?? '';
+    expect(listed).toMatch(/~ view\/snap\.name/);
+    expect(listed).not.toMatch(/[+−↕] /);
+    await act(async () => { fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Submit' })); });
+    const [changes, literal] = onSubmit.mock.calls[0]!;
+    expect(changes).toEqual([{ op: 'attr', path: 'view/snap', key: 'name', from: 'Snap', to: 'Snap to grid' }]);
+    expect(literal).toMatch(/\bsnap: /);
+    expect(literal).not.toMatch(/snapToGrid/);
   });
 });
