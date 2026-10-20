@@ -5,12 +5,17 @@
  */
 import { bitmapSrc } from '@weasel-js/core';
 import type { DiagramSpec } from '../fromData';
-import { NO_VALUE, previewRowId, stageStyle, uniqueStages, valueRowId, type EffectLookResult } from './draw';
+import {
+  NO_VALUE, PROBLEM_COLOR, previewRowId, shownPorts, stageStyle, uniqueStages, valueRowId, type EffectLookResult,
+} from './draw';
 import { thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectRun, EffectStage } from './types';
 
 /** How far a stage or wire the run passed by is faded. */
 export const DIM = 0.3;
+/** The outline of the stage a run taken a step at a time is `at`. */
+export const AT_COLOR = '#ffc94d';
+const AT_WIDTH = 3;
 /** How far a stage's cost sits above its top-right corner. */
 const COST_GAP = 2;
 /** Of the stage's title size. */
@@ -20,7 +25,8 @@ const COST_SCALE = 0.8;
  * `specs` as `run` leaves them: a stage the run never reached faded, with its
  * wires; a decision's wires to the outputs it did not take faded; each value
  * row a look kept filled in; a `switch` thrown to the output its decision
- * took; and each stage's cost written above its corner.
+ * took; each stage's cost, or its error in `PROBLEM_COLOR`, written above
+ * its corner; and the stage the run is `at` outlined in `AT_COLOR`.
  * No run, no change.
  */
 export function paintRun(
@@ -50,7 +56,7 @@ export function paintRun(
   const values = new Map<string, string>();
   const previews = new Map<string, ImageBitmap>();
   for (const [id, stage] of stages) {
-    for (const p of stage.outputs ?? []) {
+    for (const p of shownPorts(stage)) {
       values.set(`${id}/${valueRowId(p.id)}`, `${p.label ?? p.id}: ${run.stages[id]?.values?.[p.id] ?? NO_VALUE}`);
       const preview = run.stages[id]?.previews?.[p.id];
       if (preview !== undefined) previews.set(`${id}/${previewRowId(p.id)}`, preview);
@@ -74,12 +80,16 @@ export function paintRun(
     const dependsOn = spec.dependsOn;
     const onWire = Array.isArray(dependsOn) && dependsOn.length === 1 && passed.has(dependsOn[0] as string);
     if ((stage !== undefined && unreached.has(stage)) || passed.has(id) || onWire) next = { ...next, data: dimmed(next.data) };
+    if (id === run.at && (next.data as { stroke?: unknown }).stroke !== undefined) {
+      next = { ...next, data: { ...next.data, stroke: { paint: { color: AT_COLOR }, width: AT_WIDTH } } as DiagramSpec['data'] };
+    }
     return next;
   });
   for (const spec of specs) {
     const id = spec.id as string;
-    const cost = stages.has(id) ? run.stages[id]?.cost : undefined;
-    if (cost !== undefined) out.push(costSpec(spec, specs.filter((s) => owner(s) === id), stages.get(id)!, cost));
+    const entry = stages.has(id) ? run.stages[id] : undefined;
+    const note = entry?.error ?? (entry?.cost !== undefined ? costText(entry.cost) : undefined);
+    if (note !== undefined) out.push(costSpec(spec, specs.filter((s) => owner(s) === id), stages.get(id)!, note, entry?.error !== undefined));
   }
   return out;
 }
@@ -136,16 +146,16 @@ function dimmed(data: DiagramSpec['data']): DiagramSpec['data'] {
   } as DiagramSpec['data'];
 }
 
-/** A stage's cost as text above its top-right corner, set in its title's
- *  face a size down and its title's color: its first row, or for a symbol
- *  with no rows, the first text anchored to it. */
-function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectStage, cost: number): DiagramSpec {
+/** A stage's cost or error as text above its top-right corner, set in its
+ *  title's face a size down and its title's color, or `PROBLEM_COLOR` for an
+ *  error: its first row, or for a symbol with no rows, the first text
+ *  anchored to it. */
+function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectStage, text: string, problem: boolean): DiagramSpec {
   const title = own.find((s) => s !== stage && (s.data as { text?: string }).text !== undefined);
   const titleData = (title?.data ?? {}) as { style?: { fontFamily: string; fontSize: number }; fill?: unknown };
   const fontSize = Math.round((titleData.style?.fontSize ?? 12) * COST_SCALE);
   const style = { fontFamily: titleData.style?.fontFamily ?? 'sans-serif', fontSize };
-  const fill = titleData.fill ?? { paint: { color: stageStyle(of).text } };
-  const text = costText(cost);
+  const fill = problem ? { paint: { color: PROBLEM_COLOR } } : titleData.fill ?? { paint: { color: stageStyle(of).text } };
   const width = text.length * fontSize * 0.6;
   const height = Math.ceil(fontSize * 1.2);
   const box = stage.pose as { x: number; y: number; width: number };

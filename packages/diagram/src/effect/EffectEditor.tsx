@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
-import { DiagramView, type DiagramViewApi, type DiagramViewProps } from '../DiagramView';
+import { DiagramView, type DiagramViewApi } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, ensureWireIds, nextStageId } from './edit';
@@ -8,11 +8,14 @@ import { editHandlers, pinShown, stageBoxes, type Box } from './editorHandlers';
 import { editorScene, type EditorLookOptions } from './editorMapping';
 import { applyLookRoutes } from './lookRoutes';
 import { editorReorders } from './editorReorder';
+import { useReleaseReplaced } from './releaseReplaced';
+import { paintRun } from './run';
+import { useRunPortOptions } from './runPorts';
 import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
-import type { EffectDoc } from './types';
+import type { EffectDoc, EffectRun } from './types';
 
 /** Which look `EffectEditor` draws in, and that look's options. Keep the
  *  options object's identity steady between renders. */
@@ -33,6 +36,9 @@ export interface EffectEditorBaseProps {
    *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Edit route', 'Add stage',
    *  'Reorder' or 'Reorder lanes'. */
   onChange: (next: EffectDoc, label: string) => void;
+  /** One run of the pipeline, drawn over it as `EffectChart` draws its
+   *  `run`, with the stage it is `at` outlined. */
+  run?: EffectRun;
   /** A stage id, or null for none. */
   selected?: string | null;
   /** Hears each pick: a stage's id, or `null` for anything else, a wire included. */
@@ -64,19 +70,16 @@ export interface EffectEditorApi {
  *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
-  { doc, onChange, selected, onSelect, look = 'nodeGraph', options, width, height, background, className },
+  { doc, onChange, run, selected, onSelect, look = 'nodeGraph', options, width, height, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
   const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
     // A group box picked would stay lit while `onSelect` says none; DiagramView makes edges pickable again.
     .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built, doc, look]);
-  const portOptions = useMemo((): DiagramViewProps['portOptions'] => ({
-    shape: 'circle',
-    sizePx: 8,
-    showsPort: (port) => port.type !== undefined,
-    fill: (port) => ({ paint: { color: built.color(port.type) } }),
-  }), [built]);
+  const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
+  useReleaseReplaced(run);
+  const portOptions = useRunPortOptions(built.color, doc.pipeline, run);
 
   // The wire picked on the canvas, kept so a controlled `selected` of null does not clear it.
   const [edge, setEdge] = useState<string | null>(null);
@@ -126,7 +129,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     <DiagramView
       key={look}
       ref={view}
-      specs={specs}
+      specs={painted}
       width={width}
       height={height}
       minScale={EFFECT_MIN_SCALE}
