@@ -22,10 +22,12 @@ const FILL_STROKE = 2;
 const INVISIBLE = 3;
 const CLIP = 7;
 const JOINS = { miter: 0, round: 1 } as const;
+/** `growRegion`'s default, which synthetic bold grows with; both limits are miter length over half-width. */
+const BOLD_MITER_LIMIT = 4;
 
 /**
  * A rect over every glyph's ink, for the shading and soft mask a gradient fill needs bounds for.
- * A em past each slot on every side covers any glyph the face draws, oblique ones included.
+ * An em past each slot on every side covers any glyph the face draws, oblique ones included.
  */
 function inkBox(seg: TextSegment, dx: number, dy: number): Path {
   const { fontSize: s, baselineY } = seg.glyphs[0].g;
@@ -77,16 +79,29 @@ function solidColor(paint: CommandPaint, state: DrawState): { rgb: [number, numb
   return { rgb: [r, g, b], alpha: a * (paint.opacity ?? 1) * state.alpha };
 }
 
+/** Paints the segment's glyphs from their outlines: all of the run's paint, or only its stroke. */
+async function paintOutlines(
+  ctx: PageCtx,
+  seg: TextSegment,
+  cmd: TextDrawCommand,
+  dx: number,
+  dy: number,
+  state: DrawState,
+  paint: 'all' | 'stroke',
+): Promise<void> {
+  for (const { g } of seg.glyphs) {
+    const outline = outlineCommand(ctx, g, cmd, dx, dy, paint);
+    if (outline) await writeCommands(ctx, [outline], state);
+    else skipGlyph(ctx, g, 'has no outline to paint its ink with');
+  }
+}
+
 /** Selectable text that paints nothing, under ink drawn from the glyphs' outlines. */
 async function writeOutlinedInk(ctx: PageCtx, seg: TextSegment, cmd: TextDrawCommand, dx: number, dy: number, state: DrawState) {
   ctx.out.op('q');
   textObject(ctx, seg, INVISIBLE, dx, dy);
   ctx.out.op('Q');
-  for (const { g } of seg.glyphs) {
-    const outline = outlineCommand(ctx, g, cmd, dx, dy);
-    if (outline) await writeCommands(ctx, [outline], state);
-    else skipGlyph(ctx, g, 'has no outline to paint; written as invisible text');
-  }
+  await paintOutlines(ctx, seg, cmd, dx, dy, state, 'all');
 }
 
 /** Writes one segment as text, painted the way its run paints it. */
@@ -118,9 +133,12 @@ export async function writeSegment(
     textObject(ctx, seg, CLIP, dx, dy);
     await writeCommands(ctx, [{ kind: 'path', path: box, fill: { paint: fill } }], state);
     out.op('Q');
+    // A second text object would be extracted as a second copy of the text.
+    if (stroke) await paintOutlines(ctx, seg, cmd, dx, dy, state, 'stroke');
+    return;
   }
   const strokeColor = stroke && solidColor(stroke.stroke.paint, state);
-  const paintsFill = solidFill && fillColor;
+  const paintsFill = fillColor;
   if (!paintsFill && !strokeColor) return;
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(paintsFill ? fillColor.alpha : 1, strokeColor?.alpha ?? fillColor?.alpha ?? 1)}`);
@@ -133,6 +151,7 @@ export async function writeSegment(
     // The growth is per side and a stroke straddles the outline, so the line is twice it.
     out.op('w', 2 * bold.growth * first.fontSize);
     out.op('j', JOINS[bold.join]);
+    out.op('M', BOLD_MITER_LIMIT);
   }
   textObject(ctx, seg, paintsFill ? (strokeColor || bold ? FILL_STROKE : FILL) : STROKE, dx, dy);
   out.op('Q');

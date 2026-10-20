@@ -25,19 +25,20 @@ function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: number): Pa
   return transformPath(pathFromD(grown), [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy]);
 }
 
-/** The glyph as a path command painted as its run paints it, or null when the source has no outline for it. */
+/** The glyph as a path command painted as its run paints it (or only stroked), or null when the source has no outline for it. */
 export function outlineCommand(
   ctx: PageCtx,
   g: PlacedGlyph,
   cmd: TextDrawCommand,
   dx: number,
   dy: number,
+  paint: 'all' | 'stroke' = 'all',
 ): PathDrawCommand | null {
   const path = placedOutline(ctx, g, dx, dy);
   if (!path) return null;
   const run = cmd.runs[g.run];
   const out: PathDrawCommand = { kind: 'path', path };
-  if (fillHasInk(run.fill)) out.fill = run.fill as CommandFill;
+  if (paint !== 'stroke' && fillHasInk(run.fill)) out.fill = run.fill as CommandFill;
   if (strokeHasInk(run.stroke)) out.stroke = run.stroke as CommandStroke;
   return out;
 }

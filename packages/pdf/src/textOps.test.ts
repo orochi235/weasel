@@ -9,6 +9,7 @@ import {
   verticalAlignOffset,
 } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import { pathFromD } from '@weasel-js/geom';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -106,6 +107,25 @@ function adjustmentAfterFirst(tj: (string | number)[]): number {
   return typeof tj[1] === 'number' ? tj[1] : 0;
 }
 
+const GRADIENT = {
+  kind: 'linear-gradient' as const,
+  from: { x: 0, y: 0 },
+  to: { x: 100, y: 0 },
+  stops: [
+    { offset: 0, color: '#ff0000' },
+    { offset: 1, color: '#0000ff' },
+  ],
+};
+
+/** One text object, invisible, followed by the glyphs' outlines painted as paths: filled, or shaded under a clip. */
+function expectOutlinedInk(content: string, paint: RegExp = /\nf\n/): void {
+  expect(tjOf(content)).toHaveLength(1);
+  expect([...content.matchAll(/\n3 Tr\n/g)]).toHaveLength(1);
+  const after = content.slice(content.indexOf('\nET\n'));
+  expect(after).toMatch(/ [lc]\n/);
+  expect(after).toMatch(paint);
+}
+
 const layoutOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const, direction: 'ltr' as const };
 
 describe('writeText', () => {
@@ -153,6 +173,35 @@ describe('writeText', () => {
     expect(s).not.toContain('/Font');
   });
 
+  it('places an outline-drawn glyph at its pen, sheared for synthetic italic', async () => {
+    await registerAtlas('faux');
+    const runs = [run('H', { fontFamily: 'faux', fontStyle: 'italic' })];
+    const style = { fontFamily: 'faux', fontSize: SIZE };
+    const { content } = await render(textCmd(runs, { style }), { ...registryFontSource, embedding: async () => null });
+    const g = layoutRuns(runs, layoutOpts).lines[0].glyphs[0];
+    expect(g.resolved.synthetic.italic).toBe(true);
+    const em = pathFromD(registryFontSource.outline('faux', 400, 'normal', 0x48)!);
+    if (em.kind !== 'polygon') throw new Error('expected a polygon');
+    // The first point above the baseline, where the shear moves it.
+    let k = 0;
+    while (!(em.coords[k + 1] < 0)) k += 2;
+    const [ex, ey] = [em.coords[k], em.coords[k + 1]];
+    const tan = Math.tan(SYNTHETIC_ITALIC_RADIANS);
+    const x = 10 + g.x + (ex - ey * tan) * SIZE;
+    const y = 30 + g.baselineY + ey * SIZE;
+    expect(content).toMatch(new RegExp(`\n${num(x)} ${num(y)} [ml]\n`));
+  });
+
+  it('writes a space as its glyph, so a reader copies the word break', async () => {
+    const { content, skipped } = await render(textCmd([run('Hello World')]));
+    expect(skipped).toEqual([]);
+    const hex = tjOf(content)[0].filter((t) => typeof t === 'string').join('');
+    const space = await gidHex(0x20);
+    const glyphs = hex.match(/.{4}/g)!;
+    expect(glyphs).toHaveLength(11);
+    expect(glyphs[5]).toBe(space);
+  });
+
   it('leaves out and reports a character no source can draw, keeping the rest as text', async () => {
     const { content, skipped } = await render(textCmd([run('A😀B')]));
     const tj = tjOf(content)[0].filter((t) => typeof t === 'string').join('');
@@ -191,6 +240,8 @@ describe('writeText', () => {
     // The growth is per side and a stroke straddles the edge, so it is twice as wide.
     expect(bold).toContain(`\n${num(2 * offset.growth * SIZE)} w\n`);
     expect(bold).toContain('\n0 j\n');
+    // growRegion bevels a corner whose miter runs past 4 times the growth, which is PDF's M.
+    expect(bold).toContain('\n4 M\n');
 
     _resetLayoutCacheForTests();
     const italic = (await render(textCmd([run('H', { fontStyle: 'italic' })]))).content;
@@ -227,5 +278,37 @@ describe('writeText', () => {
     expect(content.slice(0, tr)).toMatch(/\nq\n/);
     expect(content.slice(sh)).toMatch(/\nQ\n/);
     expect(s).toContain('/ShadingType 2');
+  });
+
+  it('writes a stroked gradient run as one text object, stroking its outlines', async () => {
+    const stroke = { paint: { color: '#ff0000' }, width: 2 };
+    const { content } = await render(textCmd([run('Hi', { fill: { paint: GRADIENT }, stroke })]));
+    expect(tjOf(content)).toHaveLength(1);
+    expect(content).toContain('\n7 Tr\n');
+    const after = content.slice(content.indexOf(' sh\n'));
+    expect(after).toContain('1 0 0 RG');
+    expect(after).toMatch(/\nS\n/);
+  });
+
+  it('paints outlined ink under invisible text where a text mode cannot match the renderer', async () => {
+    const inner = { paint: { color: '#ff0000' }, width: 2, align: 'inner' as const };
+    expectOutlinedInk((await render(textCmd([run('H', { stroke: inner })]))).content);
+    _resetLayoutCacheForTests();
+    expectOutlinedInk((await render(textCmd([run('H', { stroke: { paint: GRADIENT, width: 2 } })]))).content);
+  });
+
+  it('paints faked bold as outlined ink with a stroke, a gradient, or below full opacity', async () => {
+    await registerAtlas('faux');
+    const style = { fontFamily: 'faux', fontSize: SIZE };
+    const bold = { fontFamily: 'faux', fontWeight: 700 };
+    const cases: [Partial<ResolvedRun>, RegExp][] = [
+      [{ stroke: { paint: { color: '#ff0000' }, width: 2 } }, /\nf\n[^]*\nS\n/],
+      [{ fill: { paint: GRADIENT } }, /\nW\nn\n[^]* sh\n/],
+      [{ fill: { paint: { color: '#336699', opacity: 0.5 } } }, /\nf\n/],
+    ];
+    for (const [over, paint] of cases) {
+      _resetLayoutCacheForTests();
+      expectOutlinedInk((await render(textCmd([run('H', { ...bold, ...over })], { style }))).content, paint);
+    }
   });
 });
