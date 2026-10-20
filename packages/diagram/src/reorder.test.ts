@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
 import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
@@ -62,7 +62,7 @@ describe('createReorderAction with the insertion bar', () => {
       { id: 'b', bounds: box(20, 0, 10, 10) },
     ]);
     const action = createReorderAction({ slots: () => slots, commit: () => {} });
-    expect(action.enabled!({ scene }, { x: 5, y: 5 })).not.toBe(true);
+    expect(action.enabled!({ scene }, { x: 5, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
     expect(action.enabled!({ scene }, { x: 25, y: 5 })).toBe(true);
     expect(slots.gaps.map((g) => g.index)).toEqual([0, 1, 2]);
   });

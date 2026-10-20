@@ -5,6 +5,7 @@
  */
 import { widenForMinWidth } from '../chainGroups';
 import { DEFAULT_GROUP_INSET, insetOf, rankGaps } from '../cluster';
+import { groupMinWidth } from '../dataGroups';
 import type { GraphGroup } from '../graph';
 import { nestGroups } from '../groupTree';
 import type { DrawableWire } from './draw';
@@ -54,7 +55,7 @@ export function laneColumns(
     const g = byId.get(id);
     if (g === undefined) return { stages: [id] };
     const inside = place(itemsOf(g.direct, depth + 1), wires, spans);
-    const minWidth = titles.has(g.id) ? titles.get(g.id)! + 2 * DEFAULT_GROUP_INSET : 0;
+    const minWidth = titles.has(g.id) ? groupMinWidth(titles.get(g.id)!, DEFAULT_GROUP_INSET) : 0;
     const own: LaneBlock = { group: g.id, first: 0, last: inside.width - 1, depth, minWidth };
     return { stages: g.members, inner: { ...inside, blocks: [own, ...inside.blocks] } };
   });

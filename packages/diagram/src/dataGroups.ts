@@ -23,6 +23,9 @@ export interface ResolvedGroup {
   minWidth?: number;
 }
 
+/** The width a group's box needs to hold a title `title` wide, `pad` in from either side. */
+export const groupMinWidth = (title: number, pad: number): number => title + 2 * pad;
+
 /**
  * Settle what each group holds (see `nestGroups`), outer groups ahead of the
  * groups inside them. A group left with no node inside it is dropped. Throws
@@ -57,7 +60,7 @@ export function resolveGroups(
     const inset = { top: pad + (title ? title.height + pad / 2 : 0), right: pad, bottom: pad, left: pad };
     return {
       group, direct: g.direct, members: g.members, inset, pad, title,
-      ...(title ? { minWidth: title.width + 2 * pad } : {}),
+      ...(title ? { minWidth: groupMinWidth(title.width, pad) } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
     };
   });

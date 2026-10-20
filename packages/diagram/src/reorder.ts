@@ -19,7 +19,7 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
-import { slideOthers, type Box } from './reorderSlide';
+import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */
 export const REORDER_ACTION_ID = 'diagram.reorder';
@@ -199,7 +199,7 @@ export function createReorderAction(opts: ReorderOptions): Action {
           };
         }
 
-        const carried = held.item.carries ?? [held.item.id];
+        const carried = carriedBy(held.item);
         const poses = new Map<string, Box>();
         for (const id of carried) {
           const pose = ctx.deps.scene?.get(id as never)?.pose as Box | undefined;
@@ -232,7 +232,7 @@ export function createReorderAction(opts: ReorderOptions): Action {
 
 // Matches every press, as a bare drag does, but ranks a step above one, so it
 // is asked before an ambient pan; the action declines off an item's grip.
-const ANYWHERE = bodyPredicate(() => true);
+export const ANYWHERE = bodyPredicate(() => true);
 
 /** The binding that starts a reorder: a drag pressed on `on`, by default anywhere; the action declines off an item's grip. */
 export function reorderBinding(actionId: string = REORDER_ACTION_ID, on: TargetPredicate = ANYWHERE): GestureBinding {

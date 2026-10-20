@@ -72,8 +72,8 @@ export interface EffectEditorApi {
   group(ids: readonly string[]): string | null;
   /** Dissolves a group, as `ungroup` does, and reports it as 'Ungroup'. */
   ungroup(id: string): void;
-  /** Opens the field a group's title is renamed in, over its title, or over
-   *  the top of its box where it has none; a double-click on the title does
+  /** Opens the field a group's title is renamed in, over its title, or above
+   *  its box where it has none; a double-click on the title does
    *  the same. Renaming reports 'Rename group'. */
   renameGroup(id: string): void;
 }

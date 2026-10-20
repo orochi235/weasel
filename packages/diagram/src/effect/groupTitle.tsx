@@ -20,8 +20,8 @@ const adoptFieldRule = (el: HTMLInputElement | null) => {
 };
 
 /**
- * The overlay renaming group `renaming`, held over its title, or over the top
- * of its box where it has none, or `null` for none. A new name is reported as
+ * The overlay renaming group `renaming`, held over its title, or above its box
+ * where it has none, or `null` for none. A new name is reported as
  * 'Rename group'; Escape, or the name it had, reports nothing.
  */
 export function useGroupTitle(

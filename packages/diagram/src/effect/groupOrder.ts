@@ -52,10 +52,16 @@ export function unitStages(doc: EffectDoc, unit: string): Set<string> {
   return doc.pipeline.groups?.some((g) => g.id === unit) ? groupContents(doc, unit).stages : new Set([unit]);
 }
 
-/** The innermost group whose grip holds `at`, of those `among` admits. */
-export function groupAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2, among: (group: string) => boolean = () => true): string | undefined {
+/** Each group member's id, mapped to the group that names it. */
+function parentsOf(doc: EffectDoc): Map<string, string> {
   const parent = new Map<string, string>();
   for (const g of doc.pipeline.groups ?? []) for (const m of g.members) parent.set(m, g.id);
+  return parent;
+}
+
+/** The innermost group whose grip holds `at`, of those `among` admits. */
+export function groupAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2, among: (group: string) => boolean = () => true): string | undefined {
+  const parent = parentsOf(doc);
   const depth = (id: string): number => (parent.has(id) ? 1 + depth(parent.get(id)!) : 0);
   const held = (doc.pipeline.groups ?? []).filter((g) => {
     const grip = among(g.id) ? groupGripOf(doc, g.id, boxOf) : undefined;
@@ -74,8 +80,7 @@ export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | nu
   const { doc, order, boxOf } = source;
   const groups = doc.pipeline.groups ?? [];
   if (order === undefined || groups.length === 0) return null;
-  const parent = new Map<string, string>();
-  for (const g of groups) for (const m of g.members) parent.set(m, g.id);
+  const parent = parentsOf(doc);
   const runs = groupRuns(doc.pipeline, mainChain(doc.pipeline));
   const held = groupAt(doc, boxOf, at, (g) => runs.get(g) != null);
   if (held === undefined) return null;
