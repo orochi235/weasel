@@ -338,6 +338,14 @@ Priority tags:
 
 ## Rendering & paint
 
+- **(P2) A dash whose entries are all zero hangs stroke tessellation.** `splitForDash`
+  (`packages/stroke/src/tessellate/dash.ts`) never advances along a segment when the current dash
+  length is 0, and `tessellateStroke` calls it whenever `dash.length > 0`, so `dash: [0, 0]` loops
+  forever (read from the code, not yet run). It wants a guard that strokes such a dash solid, and a
+  test. `@weasel-js/pdf`'s `strokeStyleOps` already writes it solid, but its comment says the
+  renderer does too; correct that once the guard lands. The same function writes a dash with a
+  `NaN` entry as solid instead of dropping the command as non-finite (2026-10-20).
+
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
