@@ -873,8 +873,10 @@ only story runner in the repo.
   and for both rename-over and in-place writes. With
   `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
   second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
-  that throttle. The cost is about 60 ms more latency on every edit. Open: whether forge's plugin,
-  or each app's vite config, should set it. `replacedFile.test.ts` rewrites until served for the
+  that throttle. The cost is about 60 ms more latency on every edit. The throttle sits in
+  chokidar's `_emit` (3.6.0, bundled in vite 8.3.1's `chunks/node.js`), which the fsevents handler
+  goes through too, so macOS is likely affected as well: read, not measured. Open: whether to pay
+  the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
   same reason.
 
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
@@ -974,12 +976,10 @@ only story runner in the repo.
   own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
   2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
 
-- **(P3) Package pages: undescribed exports and unchecked source links.** Every published package
-  has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and
-  only geom, gestures, and labkit have guides. About 420 exports have no doc comment, so their row
-  in a module's list has no description. A page's "Declared in"
-  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
-  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
+- **(P3) Package pages: undescribed exports.** Every published package has a page at
+  `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and only geom,
+  gestures, and labkit have guides. About 420 exports have no doc comment, so their row in a
+  module's list has no description.
 
 - **(P3) SVG text export: `rtl` and the default lines not seen in a browser.** Headless Chromium
   drew an export written with `textLayout: layoutTextPose` (Inter from `assets/fonts/inter`) with
