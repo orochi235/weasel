@@ -1,6 +1,6 @@
 # weaselchart (`apps/chart`), second arc — design
 
-**Unbuilt as of 2026-10-19.**
+**Pieces 2 to 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`).
 
 For whoever builds each piece of the second arc. It says what the user does and sees in
 weaselchart, which engine surface each piece adds and where, how it saves and undoes, and which
@@ -20,12 +20,11 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 
 | # | Piece | Core foundation it adds | Needs |
 |---|---|---|---|
-| 1 | Waypoint editing | transform followers (generalizes `editAnchors.transformOps`) | — |
 | 2 | Stage reorder under `rack` and `lanes` | — | — |
 | 3 | Multiple pages | scene document values | — |
 | 4 | Themes | — | 3 (document values) |
-| 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | 1 (followers) |
-| 6 | Obstacle-avoiding routing | scene edit passes | 1, 5 |
+| 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | — |
+| 6 | Obstacle-avoiding routing | scene edit passes | 5 |
 
 The suggested order holds. Stage reorder sits second although it shares nothing with the others,
 because it closes out pipeline mode's first-arc gap while the scene foundations are still in review.
@@ -34,87 +33,6 @@ Every piece also: writes `patch` changesets; keeps files under 400 lines and fun
 (`npm run check:size`); exports only public surface to the app; updates the diagram README's
 editing section and `docs/TODO.md` in its merge; and, when it merges, deletes its own section of
 this doc (the doc is deleted with the last piece).
-
-## 1. Waypoint editing
-
-### What the user sees
-
-A selected connector shows handles along its route as well as the end handles it has today.
-
-| Router | Handles | Drag | Remove |
-|---|---|---|---|
-| `straight`, `bezier` | a dot on each waypoint; a smaller hollow dot at the middle of each leg | a dot moves its waypoint; a hollow dot inserts one there and moves it | double-click a dot |
-| `orthogonal` | a bar on the middle of each segment | a bar slides its segment across its own axis; a segment touching a port gets a jog so the port end stays square | double-click a bar straightens that jog away when its neighbors line up |
-
-While dragging, a handle snaps to line up with the neighboring stops and with a port's axis within
-6 screen pixels, and a thin guide shows the alignment. Escape cancels. Format › Connector › Reset
-route clears the selected connectors' waypoints.
-
-### Engine surface (`packages/diagram/src/`)
-
-- **`waypoints.ts`**, pure math on stops (`from.point`, the waypoints, `to.point`):
-  `routeHandles(drawn, stops, router) → RouteHandle[]` where
-  `RouteHandle = { kind: 'vertex', index } | { kind: 'insert', leg } | { kind: 'segment', index, axis }`;
-  `dragVertex`, `insertWaypoint`, `removeWaypoint`, `dragSegment(drawn, index, offset) → Vec2[]`,
-  and `simplifyStops` (drops duplicate and collinear stops). Every shipped router passes through each
-  stop exactly, so the drawn polyline splits at the stops and a leg's middle is found on it.
-- **`waypointLayer.ts`**, an affordance layer built the way `edgeEndLayer.ts` is:
-  `WAYPOINT_LAYER_ID = 'diagram-waypoints'`, `WAYPOINT_AFFORDANCE_KIND`, scratch
-  `{ edgeId, handle: RouteHandle }` read back with `waypointScratchOf`.
-- **`waypointAction.ts`**: `ROUTE_EDIT_ACTION_ID = 'diagram.editRoute'` and
-  `REMOVE_WAYPOINT_ACTION_ID = 'diagram.removeWaypoint'`, built by
-  `createRouteEditAction({ selected, participants, routers, snapPx, commit })`. The change is
-  `RouteEdit { edgeId: string; waypoints: readonly Vec2[] }`; the default commit
-  `commitRouteToScene` writes `data.diagram.waypoints` and drops `laidOut` in one `scene.update`
-  labeled "Edit route". The preview is the edge's own data with the new waypoints, published as the
-  ongoing handle's `previewData`, so the edge's `derivePath` draws it exactly as the commit will
-  (the way reconnect previews since 87fe75028, 2026-10-19).
-- **`diagramWaypoints(opts) → { layer, contribution }`** in `contribution.ts`, beside
-  `diagramPorts` and `diagramEdgeEnds`, carrying both actions, their bindings, and a
-  `diagram.resetRoute` command. Layer order: ports, waypoints, edge ends (last is hit first).
-- **`DiagramView`**: prop `onEditRoute?: (change: RouteChange) => void` in `diagramViewProps.ts`,
-  `RouteChange { edge: string; waypoints: readonly Vec2[] }`, installed by `useDiagramEditing`
-  (`diagramEditing.ts`). The host stores it as the data edge's `waypoints` and clears `routed`.
-- **`EffectEditor`**: `EffectDoc.routes?: Readonly<Record<string, readonly Vec2[]>>` keyed by wire
-  id (a sidecar like `places`), `setWireRoute(doc, wire, points)` in `effect/edit.ts`,
-  `removeWires` and `removeStages` prune it, and `editorScene` passes it as `DataEdge.waypoints`.
-  Only the `nodeGraph` look edits routes; `rack` and `lanes` own theirs.
-
-**Waypoints ride along with a move.** When a drag moves both ends of a connector (a multi-select,
-or later a container), its authored waypoints translate with them; otherwise they stay put. This
-needs a hook into whole-node transforms, and core has one only for path editing
-(`editAnchors.transformOps` and `transformPreview`, `packages/core/src/interactions/actions/transformFinish.ts`).
-
-**Core foundation: transform followers.** `TransformFollower { preview(frame) ; finish(ops, label) }`
-in `transformFinish.ts`, supplied through a `transformFollowers` dep that composes every source
-(`useDepSource('transformFollowers', …)` appends). `editAnchors`' constraint links move onto it in
-the same change, so there is one pathway (2026-10-19). Diagram's `waypointFollower(scene)` is the
-second user; the router in piece 6 is the third.
-
-**Decisions (2026-10-19).**
-- An orthogonal segment drag writes every interior bend of the new route as waypoints, because the
-  orthogonal router recomputes elbows between stops and only a full set keeps what the user sees.
-  (Under `avoid`, piece 6 pins only the dragged segment.)
-- Every selected connector shows its handles, matching the end handles.
-- Handles take Vec2: the edge trait's waypoints are already world-plane points, and kernel3d
-  hosts route no connectors.
-
-### Save, load, undo
-
-Waypoints already save in the edge trait. One drag is one history entry; a data-backed host gets
-one `onEditRoute` per drag. Layout leaves an edited route alone through the existing
-`layoutOwnsRoute` rule.
-
-### Tests
-
-- `waypoints.test.ts`: handles per router; segment drag next to a port inserts a jog; simplify.
-- `waypointAction.test.ts`: preview data matches commit; cancel writes nothing; snap.
-- `waypoint.scene.test.ts`: one undo entry; `applyLayout` afterward keeps the route; a two-shape
-  move translates the connector's waypoints and a one-shape move does not.
-- `transformFinish.test.ts`: two followers compose; constraint links still pass unchanged.
-- `DiagramView.route.test.tsx` and `effect/edit.test.ts` additions for the data-backed path.
-- `waypoints.browser.test.tsx`: a real pointer drag on a segment bar; the handle wins the press over
-  edge pick and the port affordance. `apps/chart/src/chart.browser.test.tsx` gains a drag and undo.
 
 ## 2. Stage reorder under `rack` and `lanes`
 
@@ -367,7 +285,7 @@ release members are one entry each.
 
 - `containerLayout.test.ts`, `laneStack.test.ts`: drop regions, acceptance, stacking, gaps.
 - `containers.scene.test.ts`: drop in and out reparents in one entry; moving a container moves
-  members and translates their connectors' waypoints (piece 1's follower); resize leaves members;
+  members and translates their connectors' waypoints (`waypointFollower`); resize leaves members;
   delete takes members, release keeps them; a restack moves later lanes' members.
 - Core: `reparent.test.ts` and `dropPass` tests for `canDropInto`; `layoutPass` descendant carry.
 - `containers.browser.test.tsx`: a real drag into a container and into a lane, lane header reorder,
@@ -450,7 +368,7 @@ the last routes, and `update({ obstacles, edges }) → Map<edgeId, Vec2[]>` rero
 set: connectors attached to a changed shape, connectors whose route meets a changed obstacle's old
 or new inflated bounds, connectors whose stops or router changed, and new ones.
 
-- **During a drag** (a transform follower from piece 1), each frame reroutes attached connectors
+- **During a drag** (a transform follower, `useTransformFollower` in core), each frame reroutes attached connectors
   first and then the rest of the dirty set within a 4 ms budget; any it does not reach keep last
   frame's route and catch up next frame. No nudging, no crossing penalty, and no work when the
   pointer moved less than one screen pixel.
