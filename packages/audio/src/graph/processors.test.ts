@@ -33,6 +33,22 @@ describe('gain and pan', () => {
     expect(pan.pan.ramps).toEqual([{ value: 0.5, at: FADE / 1000 }]);
   });
 
+  it('anchor a ramp before the first render at their starting value', () => {
+    // Proxy for a real param, whose `value` does not follow `setValueAtTime` until it renders.
+    const ctx = setup();
+    const make = ctx.createGain.bind(ctx);
+    ctx.createGain = (() => {
+      const g = make();
+      g.gain.setValueAtTime = (value: number, at: number) => { g.gain.holds.push({ value, at }); return g.gain; };
+      return g;
+    }) as never;
+    const g = createGainNode(ctx, { gain: 0.5 });
+    g.params.gain(1, 15);
+    const gain = (g.output as never as FakeGain).gain;
+    expect(gain.holds.at(-1)).toEqual({ value: 0.5, at: 0 });
+    expect(gain.ramps).toEqual([{ value: 1, at: 0.015 }]);
+  });
+
   it('default to unity gain and center pan', () => {
     const ctx = setup();
     expect((createGainNode(ctx, {}).output as never as FakeGain).gain.value).toBe(1);
@@ -73,6 +89,12 @@ describe('mix', () => {
   it('throws on no inputs', () => {
     expect(() => createMixNode(setup(), { inputs: [] })).toThrow(/@weasel-js\/audio: /);
   });
+
+  it('throws on a duplicate input name', () => {
+    const make = () => createMixNode(setup(), { inputs: ['a', 'b', 'a'] });
+    expect(make).toThrow(RangeError);
+    expect(make).toThrow(/^@weasel-js\/audio: .*"a"/);
+  });
 });
 
 describe('the effect adapters', () => {
@@ -94,6 +116,12 @@ describe('the effect adapters', () => {
     expect(wet.gain.value).toBe(1);
     expect(dry.gain.value).toBe(0);
     expect(() => d.params.feedback(1, 0)).toThrow(RangeError);
+  });
+
+  it('lets a delay with no maxTime take any time up to 2000 ms', () => {
+    const d = delayNode(setup(), { time: 300 });
+    expect(() => d.params.time(2000, 0)).not.toThrow();
+    expect(() => delayNode(setup(), { time: 3000 }).params.time(3000, 0)).not.toThrow();
   });
 
   it('map filter params onto the biquad', () => {

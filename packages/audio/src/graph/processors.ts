@@ -4,12 +4,12 @@ import {
 } from '../effects';
 import { impulseResponse } from '../impulse';
 import type { InsertEffect } from '../inserts';
-import { writeParam } from '../param';
+import { initParam, writeParam } from '../param';
 import type { GraphNodeDef } from './types';
 
 export function createGainNode(ctx: BaseAudioContext, opts: { gain?: number } = {}): GraphNodeDef {
   const node = ctx.createGain();
-  writeParam(ctx, node.gain, opts.gain ?? 1);
+  initParam(ctx, node.gain, opts.gain ?? 1);
   return {
     inputs: { in: node },
     output: node,
@@ -19,7 +19,7 @@ export function createGainNode(ctx: BaseAudioContext, opts: { gain?: number } = 
 
 export function createPanNode(ctx: BaseAudioContext, opts: { pan?: number } = {}): GraphNodeDef {
   const node = ctx.createStereoPanner();
-  writeParam(ctx, node.pan, opts.pan ?? 0);
+  initParam(ctx, node.pan, opts.pan ?? 0);
   return {
     inputs: { in: node },
     output: node,
@@ -34,6 +34,9 @@ export function createMixNode(ctx: BaseAudioContext, opts: { inputs: readonly st
   const inputs: Record<string, AudioNode> = {};
   const params: Record<string, (value: number, rampMs: number) => void> = {};
   for (const name of opts.inputs) {
+    if (Object.prototype.hasOwnProperty.call(inputs, name)) {
+      throw new RangeError(`@weasel-js/audio: a mix has two inputs named "${name}"`);
+    }
     const level = ctx.createGain();
     level.connect(output);
     inputs[name] = level;
@@ -63,7 +66,7 @@ export function filterNode(ctx: BaseAudioContext, opts: FilterEffectOptions = {}
 }
 
 export function delayNode(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): GraphNodeDef {
-  const fx = createDelayEffect(ctx, opts);
+  const fx = createDelayEffect(ctx, { ...opts, maxTime: opts.maxTime ?? Math.max(2000, opts.time ?? 0) });
   return insertNode(fx, {
     time: (value, rampMs) => fx.setTime(value, rampMs),
     feedback: (value, rampMs) => fx.setFeedback(value, rampMs),
