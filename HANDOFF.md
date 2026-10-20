@@ -62,6 +62,9 @@ Merged:
   with a 650 ms stall). The engine half, also merged: the window is measured from each event's own
   time, so a long task between a user's two clicks no longer drops a double-click (a real-Chromium
   test stalls the page between them).
+- Every params surface (form, panel, labkit) reads a leaf's value through one function,
+  `prefLeafValue`: absent shows the default, `null` counts as absent (not for a paint). Its tests
+  were never seen failing: the red run synced the fixed tree.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
@@ -180,6 +183,9 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - weaselchart, 2026-10-20: the grid, snap to grid, alignment and spacing marks on a move, a route
   bend snapping to the grid with Shift and Ctrl, a stencil dropped beside a shape, and the
   Preferences dialog (headless browser tests only; the grid screenshot is the one frame seen).
+- Overnight pass, 2026-10-20: a `ToolPalette` grid's arrow keys, a disabled bar button's tooltip,
+  a cleared clearable field in labkit drawing empty, the corner panel's shape row with no shape,
+  the loupe through a real drag, and a scoped container's length fields (no app passes `units` yet).
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

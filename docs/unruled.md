@@ -439,6 +439,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+  (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
+  except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
+  so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its
+  unset state for a node without the property. `Bar` and `MenuBar` still draw a missing path unset.
+  path-tools' corner panel reports `shape: 'none'` where it passed `null`.
 - 2026-10-20 (overnight pass): In `PrefSchemaEditor`, only a node added in this session takes its
   key from its name; a baseline pref keeps its key when renamed, and Changes and `onSubmit` carry the
   name change alone. The Key field stays the way to change a key deliberately.
