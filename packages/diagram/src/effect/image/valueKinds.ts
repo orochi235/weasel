@@ -1,7 +1,5 @@
+import { PREVIEW_DENSITY } from '../draw';
 import type { EffectValueKind, EffectValueKinds } from '../runner/types';
-
-/** Device pixels per preview unit, so a preview stays sharp on a 2× display. */
-const PREVIEW_DENSITY = 2;
 
 const bitmapKind: EffectValueKind = {
   show: (value) => `${(value as ImageBitmap).width}×${(value as ImageBitmap).height}`,
