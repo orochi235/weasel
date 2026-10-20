@@ -207,6 +207,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
+  objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
+  string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and
+  do nothing for a real readout. `resolveTextStyle`'s defaults stay read in one place, though they
+  cost about 0.2 MB a frame. The allocation profile is `HVD_ALLOC=1` on the existing spec.
 - 2026-10-11: `GlMat3` is `Float32Array | Float64Array`. `PathDrawCommand` takes `CommandFill` /
   `CommandStroke` only. `RectPose.transform` applies to any box pose.
 - 2026-10-12: A `LayerGroup` with alpha fades as a group. The image cache has a 256MB budget. A

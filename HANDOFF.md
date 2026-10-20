@@ -24,6 +24,9 @@ Merged:
 - `selectTool.rotate: false` is decided once, in preset resolution. Ruling: it is about the select
   tool only; the rotate action stays registered, the handle is hidden, and a re-shown handle is
   inert and silent.
+- The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
+  msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
+  around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
 - `apps/chart/src/hops.browser.test.tsx` polls its pixels: it failed once in a full run of `main`
   under load after the line-jumps merge, and passed three of three alone.
 
@@ -32,7 +35,6 @@ In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
 - Prefs Rail Filterable's fleet timeout.
 - One kind classifier. Ruling: the routing kind is the only one; the selection label and
   `SelectionPanel` read it.
-- The HUD's every-frame allocations.
 - forge's "ResizeObserver loop" error.
 
 ## State
