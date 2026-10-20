@@ -4,13 +4,14 @@
  *
  * Installs into one scratch tree on the node (`weasel-dev`, so a node holds at most one), runs the named apps there
  * as one onto service, prints their addresses, and syncs every edit made here until Ctrl-C, which stops the service.
- * `--drop` also removes the tree from the node.
+ * `--drop` also removes the tree from the node. A tree already serving is refused unless `--take` replaces it.
  *
  *   npm run dev:fleet                         # draw and forge
  *   npm run dev:fleet -- draw site --node teitou
  *   npm run dev:fleet -- --drop
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { lookup } from 'node:dns/promises';
 import { fileURLToPath } from 'node:url';
 import ports from './dev-ports.json' with { type: 'json' };
 
@@ -29,6 +30,7 @@ const flag = (name) => {
   return at < 0 ? undefined : args.splice(at, 2)[1];
 };
 const drop = args.includes('--drop') && args.splice(args.indexOf('--drop'), 1);
+const take = args.includes('--take') && args.splice(args.indexOf('--take'), 1);
 const pinned = flag('--node');
 const tree = flag('--tree') ?? 'weasel-dev';
 const names = args.length ? args : ['draw', 'forge'];
@@ -38,13 +40,20 @@ const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).tr
 const onto = (a, opts = {}) => spawnSync('onto', a, { cwd: ROOT, encoding: 'utf8', stdio: ['inherit', 'pipe', 'pipe'], ...opts });
 const say = (line) => console.log(`fleet-dev: ${line}`);
 
-const nodeOfService = () => onto(['service', 'where', tree]).stdout.trim().split(/\s+/)[0] || undefined;
+const nodeOfService = () => onto(['service', 'where', tree]).stdout.trim().split(/[\s.:]/)[0] || undefined;
 
 if (drop) {
   const node = pinned ?? nodeOfService();
   onto(['service', 'down', '--drop', tree], { stdio: 'inherit' });
   if (node) onto(['drop', node, tree], { stdio: 'inherit' });
   process.exit(0);
+}
+
+// Another session's servers in the same tree would be stopped and its files synced over.
+const serving = nodeOfService();
+if (serving && !take) {
+  say(`${tree} is already serving on ${serving}. Pass --tree <name> for a second copy, or --take to replace it.`);
+  process.exit(1);
 }
 
 // Reinstall only when the lockfile differs from the one last installed, so a warm tree starts in seconds.
@@ -69,7 +78,12 @@ const up = onto(['service', 'up', tree, '--in', tree, '--prefer', node, ...names
   '--icon', 'rectangle.and.pencil.and.ellipsis', '--about', `Dev servers (${names.join(', ')}) for a session driving them from another machine.`,
   '--', 'sh', '-c', `npx concurrently -n ${names.join(',')} ${servers.join(' ')}`], { stdio: 'inherit' });
 if (up.status !== 0) process.exit(up.status ?? 1);
-for (const n of names) say(`${n}  http://${node}.local:${APPS[n].port}${APPS[n].path}`);
+// Headless Chrome does not resolve `.local` names, so the address goes beside the name.
+const address = await lookup(`${node}.local`, { family: 4 }).then((a) => a.address, () => null);
+for (const n of names) {
+  const at = `:${APPS[n].port}${APPS[n].path}`;
+  say(`${n}  http://${node}.local${at}${address ? `  http://${address}${at}` : ''}`);
+}
 
 const stop = () => {
   onto(['service', 'down', tree], { stdio: 'inherit' });

@@ -265,6 +265,12 @@ main checkout don't reload the browser tab mid-session. A local `pre-push` hook 
 `scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running
 `npm ci` and restarting draw when the lockfile changed); `npm run view:advance` does the same by hand.
 
+**`npm run dev:fleet -- draw forge` serves dev servers from a fleet node instead of this machine.**
+It installs into one scratch tree there (`weasel-dev`), runs the apps as an onto service, prints each
+address, and syncs every edit made here until Ctrl-C stops the servers; `--drop` removes the tree. Drive
+it headless from here with chrome-devtools or Playwright by the printed IP: headless Chrome resolves no
+`.local` names. `DRAW_E2E_URL=http://<ip>:33452 npm run test:e2e:draw` runs draw's e2e suite against it.
+
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
 this is what says a commit would fail there. `npm run test:gate` runs it here, in about two
