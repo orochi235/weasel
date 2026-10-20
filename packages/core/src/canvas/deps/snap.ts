@@ -78,7 +78,12 @@ export function useSnapDepSource(
     begin: (req) => {
       const s = sessionRef.current;
       const view = viewRef.current;
-      const sources = withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit);
+      const omit = new Set(req.omit);
+      const sources = [
+        ...withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit).filter((src) => !omit.has(src.id)),
+        ...(req.sources ?? []),
+      ];
+      assertSnapSourceIds(sources);
       const wantsGeometry = snapSourcesFor(sources, req.gesture).some((src) => src.roles.includes('geometry'));
       const debug = s.debug?.() ?? undefined;
       const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;

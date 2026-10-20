@@ -2,6 +2,7 @@ import { ActionDisabledReason, useCommand } from '@weasel-js/core';
 import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
+import { CHART_ACTIONS } from '../chartCommands';
 import { run, type ChartMenuContributions } from '../menuBar';
 import { LOOK_MENU } from './pipelineLook';
 import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
@@ -20,7 +21,7 @@ export const PIPELINE_MENUS: ChartMenuContributions = {
     history: run({ undo: PIPELINE_ACTIONS.undo, redo: PIPELINE_ACTIONS.redo }),
     remove: run({ delete: 'delete' }),
   },
-  view: LOOK_MENU,
+  view: { ...LOOK_MENU, prefs: run({ preferences: CHART_ACTIONS.preferences }) },
   format: {
     connector: pref.group('', {
       connector: pref.group('Connector', { route: run({ resetRoute: RESET_ROUTE_ACTION_ID }) }, { as: 'menu' }),

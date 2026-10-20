@@ -80,8 +80,6 @@ export {
   simplifyStops, unpinSegment,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
-export { portTarget, snapPoint, stopTarget } from './routeSnap';
-export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {

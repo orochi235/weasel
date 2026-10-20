@@ -17,6 +17,17 @@ value held once per option of an enum leaf, folded by weight when read, and edit
 `prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
 form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
 
+weaselchart's grid and snapping merged on 2026-10-20. It brings a page grid, snap to grid,
+alignment and spacing snaps, and a prefs schema with a Preferences dialog. Underneath, core's
+`SnapBegin` gained per-gesture `sources` and `omit`, and diagram's route handles now snap through
+core's snap session rather than their own (`docs/snapping.md`). Decisions taken in conversation and
+not visible in the code (2026-10-19):
+- Pipeline mode's route editing takes the same snap change, with no opt-out. That means
+  readout-colored guides, Shift to lock a bend's direction, and Ctrl to turn snapping off.
+- Grid and snapping are chart mode only. Pipeline mode's Look is a pref.
+- kernel3d honors `SnapBegin.omit` but not `sources`. Gesture sources are 2D-typed on purpose, and
+  a 3D host warns once if it is handed any.
+
 ## Menus: done
 
 All of the menus design has landed: `MenuBar` with access letters, `MenuButton` on the menu
@@ -99,6 +110,9 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - Menus, 2026-10-16: a bar's menu flipping above its button near the viewport bottom, the WebGL
   menu placed under a rect, and a menu asset previewing open in the asset editor without taking
   focus while a row is renamed.
+- weaselchart, 2026-10-20: the grid, snap to grid, alignment and spacing marks on a move, a route
+  bend snapping to the grid with Shift and Ctrl, a stencil dropped beside a shape, and the
+  Preferences dialog (headless browser tests only; the grid screenshot is the one frame seen).
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence

@@ -5,12 +5,12 @@
  * the route. The drag previews the edge's own data with the new waypoints,
  * so its `derivePath` draws the preview exactly as the commit will.
  */
-import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/core';
+import { SNAP_ROLES, snapMods, type Action, type InvocationCtx, type OngoingHandle, type SnapSession } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { createEdgeEnds, type EdgeEndOptions } from './edgeEndLayer';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
 import type { ParticipantSource } from './portAffordance';
-import { portTarget, snapPoint, stopTarget } from './routeSnap';
+import { routeSnapSource } from './routeSnapSource';
 import { routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
 import { dragSegment, dragVertex, insertWaypoint, pinSegment, type RouteHandle } from './waypoints';
@@ -29,7 +29,8 @@ export interface RouteEditOptions<TPose> extends EdgeEndOptions<TPose> {
   participants: ParticipantSource<TPose>;
   /** The selected edge ids, whose routes show handles. */
   selected: () => readonly string[];
-  /** Screen pixels within which a dragged handle lines up with a neighbor. Default 6. */
+  /** Screen pixels within which a dragged handle lines up with a neighbor
+   *  or a port's axis. Default 6. */
   snapPx?: number;
   /** Screen-pixel reach of a handle, as the handle layer's `hitRadiusPx`. Default 7. */
   hitRadiusPx?: number;
@@ -39,6 +40,9 @@ export interface RouteEditOptions<TPose> extends EdgeEndOptions<TPose> {
 }
 
 const DEFAULT_SNAP_PX = 6;
+
+/** The id of the snap source each route drag brings. */
+const ROUTE_SNAP_ID = 'diagram-route';
 
 /** `data` with its edge trait routed through `waypoints`: owned by the author
  *  from now on, so layout's mark is dropped, and no waypoints at all when there are none. */
@@ -67,44 +71,59 @@ interface RoutePress {
   data: unknown;
   pose: unknown;
   press: Vec2;
-  tolerance: number;
   deps: InvocationCtx['deps'];
 }
 
-/** What one frame of a route drag proposes: the new waypoints, and the guides
- *  its snaps drew. Null waypoints propose nothing. */
-interface RouteFrame {
-  waypoints: readonly Vec2[] | null;
-  guides: readonly (readonly [Vec2, Vec2])[];
+/** The snap session for dragging `handle`, whose point is its probe: a
+ *  segment held to the axis it slides across, a bend free to turn. */
+function beginSnap(ctx: InvocationCtx, p: RoutePress, reachPx: number): SnapSession | null {
+  const { handle, route } = p;
+  const segment = handle.kind === 'segment';
+  const stops = segment
+    ? route.drawn.filter((_, i) => i !== handle.index && i !== handle.index + 1)
+    : neighborsOf(handle, route.stops);
+  const source = routeSnapSource({ id: ROUTE_SNAP_ID, stops, ports: segment ? [] : [route.from, route.to], reachPx });
+  return ctx.deps.snap?.begin({
+    gesture: 'point',
+    press: handle.at,
+    ids: [p.edgeId],
+    omit: ['path-snap'],
+    sources: [source],
+    ...(segment ? { handle: handle.axis === 'x' ? { x: 'free', y: 'min' } : { x: 'min', y: 'free' } } : { constrain: 'axis' }),
+  }) ?? null;
 }
 
-const NONE: RouteFrame = { waypoints: null, guides: [] };
+/** The stops either side of a dragged bend or of the leg a bend is inserted in. */
+function neighborsOf(handle: Exclude<RouteHandle, { kind: 'segment' }>, stops: readonly Vec2[]): Vec2[] {
+  const at = handle.kind === 'vertex' ? handle.index + 1 : handle.leg + 1;
+  return [stops[at - 1]!, stops[handle.kind === 'vertex' ? at + 1 : at]!];
+}
 
-/** The frame of `p` with the pointer at `current`. */
-function frameAt(p: RoutePress, current: Vec2): RouteFrame {
-  const d = { x: current.x - p.press.x, y: current.y - p.press.y };
-  if (d.x === 0 && d.y === 0) return NONE;
+/** How far the handle moves with the pointer at `ctx.world`, snapped through `session`. */
+function moveOf(p: RoutePress, session: SnapSession | null, ctx: InvocationCtx): Vec2 {
+  const d = { x: ctx.world.x - p.press.x, y: ctx.world.y - p.press.y };
+  if (session === null) return d;
+  const at = session.at({ x: p.handle.at.x + d.x, y: p.handle.at.y + d.y }, snapMods(ctx)).point;
+  return { x: at.x - p.handle.at.x, y: at.y - p.handle.at.y };
+}
+
+/** The waypoints the handle proposes moved by `d`, or null for none. A
+ *  segment reads only the axis it slides across. */
+function waypointsAt(p: RoutePress, d: Vec2): readonly Vec2[] | null {
+  if (d.x === 0 && d.y === 0) return null;
   const { handle, route } = p;
-  const { stops, drawn } = route;
   let next: Vec2[];
-  let guides: (readonly [Vec2, Vec2])[];
   if (handle.kind === 'segment') {
     const across = handle.axis === 'x' ? 'y' : 'x';
-    const others = drawn.filter((_, i) => i !== handle.index && i !== handle.index + 1).map(stopTarget);
-    const mid = { x: handle.at.x + (across === 'x' ? d.x : 0), y: handle.at.y + (across === 'y' ? d.y : 0) };
-    const snapped = snapPoint(mid, others, p.tolerance, { x: across === 'x', y: across === 'y' });
-    const offset = snapped.point[across] - handle.at[across];
-    next = route.router === avoid ? pinSegment(drawn, stops, handle.index, offset) : dragSegment(drawn, handle.index, offset);
-    guides = snapped.guides;
+    const offset = d[across];
+    next = route.router === avoid
+      ? pinSegment(route.drawn, route.stops, handle.index, offset)
+      : dragSegment(route.drawn, handle.index, offset);
   } else {
-    const at = handle.kind === 'vertex' ? handle.index + 1 : handle.leg + 1;
-    const neighbors = [stops[at - 1]!, stops[handle.kind === 'vertex' ? at + 1 : at]!];
-    const ends = [portTarget(p.route.from), portTarget(p.route.to)];
-    const snapped = snapPoint({ x: handle.at.x + d.x, y: handle.at.y + d.y }, [...neighbors.map(stopTarget), ...ends], p.tolerance);
-    next = handle.kind === 'vertex' ? dragVertex(stops, handle.index, snapped.point) : insertWaypoint(stops, handle.leg, snapped.point);
-    guides = snapped.guides;
+    const point = { x: handle.at.x + d.x, y: handle.at.y + d.y };
+    next = handle.kind === 'vertex' ? dragVertex(route.stops, handle.index, point) : insertWaypoint(route.stops, handle.leg, point);
   }
-  return samePoints(next, p.trait.waypoints ?? []) ? { waypoints: null, guides } : { waypoints: next, guides };
+  return samePoints(next, p.trait.waypoints ?? []) ? null : next;
 }
 
 /** The `diagram.editRoute` action: an ongoing drag reshaping one edge's route. */
@@ -115,7 +134,8 @@ export function createRouteEditAction<TPose>(opts: RouteEditOptions<TPose>): Act
     id: opts.id ?? ROUTE_EDIT_ACTION_ID,
     label: 'Edit route',
     group: 'diagram',
-    requires: ['scene', 'view'],
+    requires: ['scene', 'view', 'snap'],
+    modifierRoles: SNAP_ROLES,
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
@@ -130,31 +150,28 @@ export function createRouteEditAction<TPose>(opts: RouteEditOptions<TPose>): Act
           data: ends.edge.node.data,
           pose: ends.edge.pose,
           press: ctx.drag?.start ?? { x: ctx.world.x, y: ctx.world.y },
-          tolerance: snapPx / Math.abs(ctx.deps.view?.get().scale.x || 1),
           deps: ctx.deps,
         };
-        let frame = NONE;
+        const session = beginSnap(ctx, p, snapPx);
+        let waypoints: readonly Vec2[] | null = null;
         let open = true;
-        const proposed = () => (open ? frame.waypoints : null);
+        const proposed = () => (open ? waypoints : null);
         return {
           kind: 'diagram-edit-route',
           onMove(moveCtx: InvocationCtx): void {
-            frame = frameAt(p, moveCtx.world);
+            waypoints = waypointsAt(p, moveOf(p, session, moveCtx));
           },
           previewIds: () => (proposed() === null ? null : [p.edgeId]),
           previewPose: (id) => (id === p.edgeId && proposed() !== null ? p.pose : null),
           previewData: (id) => {
-            const waypoints = proposed();
-            return id === p.edgeId && waypoints !== null ? routedData(p.data, p.trait, waypoints) : null;
-          },
-          overlay(): OngoingOverlay[] | null {
-            return open ? frame.guides.map((g) => ({ kind: 'polyline', points: [g[0], g[1]], role: 'guide' })) : null;
+            const next = proposed();
+            return id === p.edgeId && next !== null ? routedData(p.data, p.trait, next) : null;
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             open = false;
-            if (reason === 'cancel') return;
-            const waypoints = frameAt(p, endCtx.world).waypoints;
-            if (waypoints !== null) commit({ edgeId: p.edgeId, waypoints }, { ...endCtx, deps: p.deps });
+            const final = reason === 'commit' ? waypointsAt(p, moveOf(p, session, endCtx)) : null;
+            session?.end();
+            if (final !== null) commit({ edgeId: p.edgeId, waypoints: final }, { ...endCtx, deps: p.deps });
           },
         };
       },

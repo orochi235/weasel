@@ -19,7 +19,8 @@ A gesture never talks to a source. It hands the session the point the dispatcher
 back the point it should use. Points are ctx coordinates: world in 2D, screen in a 3D host.
 
 Gestures that snap: move, resize, rotate, insert (drag and click-place), pen and spiro placement,
-pen handles, anchor and handle drags in path edit, measure, and the symmetry center and axis.
+pen handles, anchor and handle drags in path edit, measure, the symmetry center and axis, and
+diagram's route handles.
 
 ## The model
 
@@ -203,6 +204,11 @@ session?.end();
 which is what Shift turns into `H`. Declare `snap` in the action's `requires`. `pointSnap()`
 wraps the cycle for a tool that places one point per click.
 
+A gesture can change what it asks without touching the canvas. `sources` adds sources for this
+gesture only, asked after the canvas's and ranked with them; `omit` names ids this gesture skips,
+whether listed, registered or a default (diagram's route handles omit `'path-snap'`). A gesture
+source sharing an id with one still asked throws, as two canvas sources do.
+
 ## The readout
 
 Every `<SceneCanvas>` mounts one screen-space readout layer that draws the marks of the snap in
@@ -218,8 +224,9 @@ the last frame, filled where the result met it.
 
 The resolver is written over n-vectors, so a 3D host uses the same sources, ranking and marks with
 `Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, kitSettings, store })` is its
-`snap` dep, reading its reach from `targets.snapPx` in `kitSettings`. Two sources sharing an id
-throw, as on a canvas:
+`snap` dep, reading its reach from `targets.snapPx` in `kitSettings`. It honors a gesture's
+`omit`; a gesture's `sources` are 2D, so it does not ask them and warns once in dev. Two sources
+sharing an id throw, as on a canvas:
 
 - A move's `H` is the plane through the subject perpendicular to `up`, the plane `translate`
   already moves on; an insert snaps the pointer on the ground plane.

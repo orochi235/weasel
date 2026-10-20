@@ -126,8 +126,14 @@ A selected edge shows handles along its route as well as at its ends.
 | `orthogonal` | a bar in the middle of each segment | slides the segment across its axis; a segment touching a port gets a jog, so the port end stays square | straightens a jog away, when a neighbor touching no port can slide into line |
 | `avoid` | a bar in the middle of each segment | slides the segment and pins only it: its two ends become waypoints, and the router keeps the rest | unpins it, dropping the waypoints at its ends |
 
-A dragged handle snaps into line with the stops beside it and with a port's
-axis within 6 screen pixels, and a guide shows the alignment. Escape cancels.
+A dragged handle snaps through the canvas's snap session: into line with the
+stops beside it and with a port's axis within 6 screen pixels (`snapPx`), and to
+whatever else the canvas snaps to, such as a grid, with the readout drawing each
+alignment. It leaves out the canvas's `'path-snap'` default, so a bend never
+catches a shape's corner anchors, and the edge being edited offers nothing to
+itself. A neighbor or port within reach claims its axis, and a grid fills the
+other. Ctrl suspends snapping, Shift holds a dragged bend to the axes and
+diagonals, and a segment always slides across its own axis. Escape cancels.
 A double-click that would remove nothing falls through, to label editing say.
 
 `DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and
