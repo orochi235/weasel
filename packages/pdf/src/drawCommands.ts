@@ -10,6 +10,7 @@ import { pathOps } from './pathOps';
 import type { PageResources } from './resources';
 import { paintShading } from './shading';
 import { writeStroke } from './strokeOps';
+import { writeText } from './textOps';
 import type { PdfSkip, WritePdfOptions } from './writePdf';
 
 export interface DrawState {
@@ -124,6 +125,7 @@ export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], 
     if (cmd.kind === 'path') await writePath(ctx, cmd, state);
     else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
     else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
+    else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
     else skip(ctx, `${cmd.kind} not yet supported`);
   }
 }

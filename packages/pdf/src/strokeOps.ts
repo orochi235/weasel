@@ -10,11 +10,31 @@ const CAPS = { butt: 0, round: 1, square: 2 } as const;
 const JOINS = { miter: 0, round: 1, bevel: 2 } as const;
 
 /** Whether PDF's own stroke operator draws this stroke as the renderer would. */
-function isNative(stroke: CommandStroke, width: number): boolean {
+export function isNative(stroke: CommandStroke, width: number): boolean {
   if (stroke.align && stroke.align !== 'center') return false;
   if (stroke.vertexWidths || stroke.nib || stroke.vertexColors) return false;
   const { start, end } = strokeInsets(stroke as Stroke, width);
   return start === 0 && end === 0;
+}
+
+/** The line style operators for a native stroke; the caller sets its color. */
+export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number): void {
+  const { out } = ctx;
+  out.op('w', width);
+  out.op('J', CAPS[stroke.cap ?? 'butt']);
+  out.op('j', JOINS[stroke.join ?? 'miter']);
+  out.op('M', stroke.miterLimit ?? 4);
+  if (stroke.dash?.length) out.op('d', `[${stroke.dash.join(' ')}]`, 0);
+}
+
+/** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
+export function resolveStroke(
+  path: Path,
+  raw: CommandStroke & { paint: CommandPaint },
+  state: DrawState,
+): { stroke: CommandStroke & { paint: CommandPaint }; width: number } {
+  const { cmd } = resolveStrokeLengths(state.transform, { kind: 'path', path, stroke: raw }, { quantize: false });
+  return { stroke: cmd.stroke, width: typeof cmd.stroke.width === 'number' ? cmd.stroke.width : 1 };
 }
 
 function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, width: number): void {
@@ -26,11 +46,7 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
   out.op('RG', r, g, b);
-  out.op('w', width);
-  out.op('J', CAPS[stroke.cap ?? 'butt']);
-  out.op('j', JOINS[stroke.join ?? 'miter']);
-  out.op('M', stroke.miterLimit ?? 4);
-  if (stroke.dash?.length) out.op('d', `[${stroke.dash.join(' ')}]`, 0);
+  strokeStyleOps(ctx, stroke, width);
   pathOps(out, path, 'all');
   out.op('S');
   out.op('Q');
@@ -44,13 +60,7 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
  */
 export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandStroke, state: DrawState): Promise<void> {
   if (!rawStroke.paint) return;
-  const { cmd } = resolveStrokeLengths(
-    state.transform,
-    { kind: 'path', path, stroke: { ...rawStroke, paint: rawStroke.paint as CommandPaint } },
-    { quantize: false },
-  );
-  const stroke = cmd.stroke;
-  const width = typeof stroke.width === 'number' ? stroke.width : 1;
+  const { stroke, width } = resolveStroke(path, { ...rawStroke, paint: rawStroke.paint as CommandPaint }, state);
   if (!(width > 0)) return;
   let heads =
     stroke.markerStart || stroke.markerMid || stroke.markerEnd
