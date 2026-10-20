@@ -691,13 +691,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
   drag. Only jsdom has run a hover binding.
 
-- **(P3) A `carry` spec takes no `target`.** A carry (`startCarry`, `CarrySpec`)
-  is matched on the surface as a whole, like an OS `drop`, so a binding cannot
-  say "dropped onto a selected body" or onto an affordance: the carry channel
-  (`routing/src/interactions/dispatcher/channels/carry.ts`) classifies nothing
-  under the pointer. Nor does `Action.enabled`'s `carried` argument see a
-  carry's payload; it is typed for ingest items only.
-
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
   binds, and swallows ctrl+wheel while a claimed gesture is live. All of it is

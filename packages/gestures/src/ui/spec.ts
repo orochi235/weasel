@@ -266,10 +266,15 @@ export interface DropSpec {
  * its moves update it, the release commits it, and leaving the surface or
  * canceling the press cancels it. An immediate action fires once, on the
  * release.
+ *
+ * `target` is matched against what is under the carry. With one, an ongoing
+ * action starts on the first step that is over its target, as the carry comes
+ * over or as it moves on, and an immediate action fires only on a release over it.
  */
 export interface CarrySpec {
   kind: 'carry';
   types?: string[];
+  target?: TargetSpec;
   mods?: ModSpec;
   phase?: PhaseSpec;
 }

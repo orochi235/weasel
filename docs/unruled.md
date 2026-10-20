@@ -79,6 +79,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
 - 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
   Alt+J, beside the Alt-letter anchor selections.
+- 2026-10-19 (pass 7): A carry's moves are walked, while nothing is in flight, only for `carry`
+  bindings with a `target`: an untargeted ongoing binding is still asked once, as the carry comes
+  over, and one whose `enabled` refused that point does not start later where it would accept.
+  Asking every binding on every move would re-run a declining `start` per move.
 
 ## Snapping
 
