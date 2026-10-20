@@ -7,6 +7,7 @@ import type { RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from './move/action';
 import { nudgeRightAction } from './defaults/nudge';
+import { alignRightAction } from './align/action';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 
@@ -60,5 +61,16 @@ describe('whole-node transforms finish through the editAnchors dep', () => {
     const { scene, b, deps } = fixture('follow');
     (nudgeRightAction.invoker as ImmediateInvoker).run(deps, undefined);
     expect(scene.get(b)!.data).toEqual({ followed: 'Nudge' });
+  });
+
+  it('finishes an align, in the align\'s one undo step', () => {
+    const { scene, a, b, deps } = fixture('follow');
+    const both = { ...deps, selection: { get: () => [a, b], adapterMethods: undefined } } as unknown as ActionDeps;
+    (alignRightAction.invoker as ImmediateInvoker).run(both, undefined);
+    expect(scene.get(a)!.pose).toEqual(box(50, 0));
+    expect(scene.get(b)!.data).toEqual({ followed: 'Align' });
+    scene.undo();
+    expect(scene.get(a)!.pose).toEqual(box(0, 0));
+    expect(scene.get(b)!.data).toEqual({});
   });
 });
