@@ -104,6 +104,8 @@ export type {
   RemovedNode,
   Scene,
   SceneArrivalHandler,
+  SceneEditPass,
+  SceneEditSummary,
   ScenePoseReports,
   SceneRegistry,
   SerializedLayer,

@@ -1,6 +1,8 @@
 import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
+import { createEditPasses } from './editPass';
+import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier } from './notifier';
 import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
@@ -91,9 +93,16 @@ function buildScene<TData, TLayer extends string, TPose>(
    *  document content, never reaches `toJSON`, and never touches history. */
   const overrides = createPoseOverrides<TPose>((id) => state.nodes.get(id), doc.store.invalidateDependents);
 
+  let passAdapter: unknown = null;
+  const passes = createEditPasses({
+    adapter: () => (passAdapter ??= { ...sceneMutators(scene), ...documentReads(scene) }),
+    untracked: mode.untracked,
+  });
+
   const recording = createSceneRecording({
     notifier,
     mode,
+    passes,
     stale: doc.stale,
     lifted: locks.lifted,
     selection,
@@ -137,6 +146,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     unlocked: (fn) => locks.lifted(fn),
 
     setArrivalHandler: arrivals.setHandler,
+    addEditPass: passes.add,
     onReflow: arrivals.onReflow,
     onPoseWrite: poseWrites.subscribe,
 
