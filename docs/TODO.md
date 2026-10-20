@@ -877,8 +877,10 @@ only story runner in the repo.
   and for both rename-over and in-place writes. With
   `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
   second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
-  that throttle. The cost is about 60 ms more latency on every edit. Open: whether forge's plugin,
-  or each app's vite config, should set it. `replacedFile.test.ts` rewrites until served for the
+  that throttle. The cost is about 60 ms more latency on every edit. The throttle sits in
+  chokidar's `_emit` (3.6.0, bundled in vite 8.3.1's `chunks/node.js`), which the fsevents handler
+  goes through too, so macOS is likely affected as well: read, not measured. Open: whether to pay
+  the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
   same reason.
 
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
