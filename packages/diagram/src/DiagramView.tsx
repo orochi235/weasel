@@ -13,6 +13,7 @@ import {
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
+import { createSpecRouter } from './avoid/specRoutes';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
@@ -62,14 +63,16 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
+  specs: given, router, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
   connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined);
-  const specs = useMemo(() => (edgesPick ? withPickableEdges(given) : given), [edgesPick, given]);
+  const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
+  const routed = useMemo(() => (avoid === null ? given : avoid(given)), [avoid, given]);
+  const specs = useMemo(() => (edgesPick ? withPickableEdges(routed) : routed), [edgesPick, routed]);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
     return () => disposers.forEach((dispose) => dispose());
