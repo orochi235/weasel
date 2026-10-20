@@ -4,11 +4,13 @@ import {
 } from '@weasel-js/core';
 import { diagramResizable, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
+import { ImportExportCommands } from './importExport';
 import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
@@ -135,6 +137,8 @@ export function ChartWorkspace(): ReactElement {
         {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
       </Sidebar>
       <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
+      <ImportExportCommands scene={scene} pages={pages} />
+      <ToastRegion />
     </div>
   );
 }

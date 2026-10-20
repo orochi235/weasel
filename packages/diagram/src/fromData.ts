@@ -14,11 +14,13 @@ import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
+import { ownNodeStyle, withColors } from './dataColors';
+import { dataNodeStyle } from './dataStyles';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
   NODE,
   type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
-  type EdgeStyle, type NodeStyle,
+  type NodeStyle,
 } from './dataTypes';
 import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import { force } from './force';
@@ -31,7 +33,7 @@ import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
 import { markSpecs } from './marks';
 import { authoredOver } from './route';
-import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
+import { themeFont, themeLabelFont } from './theme/resolve';
 import { tree } from './tree';
 import type { Vec2 } from '@weasel-js/core/math';
 
@@ -44,7 +46,6 @@ export type {
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
 export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
-const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
@@ -95,6 +96,7 @@ function nodeSpecs(
     body: (trait) => ({
       diagram: {
         ...trait, ...bodyLayoutOf(body, trait), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+        ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
@@ -115,7 +117,16 @@ function nodeSpecs(
  *  nodes, groups, containers and lanes, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
-export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
+export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> & { layer: TLayer }): DiagramSpec<TLayer>[];
+export function diagramScene(data: DiagramData, opts?: DiagramSceneOptions): DiagramSpec[];
+export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> = {}): DiagramSpec<TLayer>[] {
+  const { layer, ...rest } = opts;
+  const specs = mainSpecs(data, rest);
+  return (layer === undefined ? specs : specs.map((s) => ({ ...s, layer }))) as DiagramSpec<TLayer>[];
+}
+
+/** {@link diagramScene}'s specs, on `main`. */
+function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] {
   const { theme } = opts;
   const font = opts.font ?? (theme ? themeFont(theme) : DEFAULT_FONT);
   const labelFont = theme ? themeLabelFont(theme, font) : font;
@@ -186,8 +197,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   // The author's own ports and waypoints win over the plan's; an edge layout ranked against a region keeps none of the plan's.
   const routes = laid.plan === null ? null
     : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
-  const fallback = theme ? roleEdgeStyle(theme) : EDGE;
-  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, fallback, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, labelPlacement: LABEL_PLACEMENT, routes, opts, ...(theme ? { theme } : {}) };
   const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and group boxes first, so a box never paints over what it holds.
@@ -196,7 +206,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
-    const style = opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE);
+    const own = opts.nodeStyle?.(n);
+    const style = own !== undefined ? withColors(own, n.colors) : dataNodeStyle(n, theme);
     const parent = regions.parentOf.get(n.id);
     const built = nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure });
     specs.push(...(parent === undefined ? built : built.map((s) => (s.id === n.id ? { ...s, parent: parent as never } : s))));

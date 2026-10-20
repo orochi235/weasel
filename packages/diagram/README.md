@@ -611,7 +611,14 @@ label row each. A `slot` row is reserved space, `height` tall and, with a
 `width`, that wide and centered; one with an `id` becomes a scene node of that
 name, `<node>/<id>`, drawn as an empty frame until you fill it by changing its
 data — with `{ image: { src } }`, say. An edge can name `fromPort`/`toPort`, its own `router`,
-`waypoints` and `labelPlacement`.
+`waypoints`, `labelPlacement`, and a theme role in `style`.
+
+A node, an edge, a container, or a lane can carry `colors` of its own: a node's `fill`, `stroke`,
+and `text`, an edge's `stroke`, `label`, `width`, `dash`, and markers. `diagramScene` draws them
+over the theme and lists the colors in the trait's `ownStyle`, so a later theme change leaves
+them, as it leaves a color set by hand. `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle`
+give the style an item is drawn in, for a writer that needs it without drawing. `layer` puts every
+spec on a layer other than `'main'`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
 `'trapezoid'` (a demultiplexer: tall at the right, short at the left),

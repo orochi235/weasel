@@ -47,6 +47,9 @@ export interface DataNode {
   marks?: readonly DataMark[];
   /** The theme role it is drawn in, under `DiagramSceneOptions.theme`. Kept on its trait. */
   style?: string;
+  /** Colors of its own, over its role's. Each one set is listed in the trait's `ownStyle`, so a
+   *  theme change leaves it. */
+  colors?: Partial<NodeStyle>;
 }
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
@@ -78,6 +81,11 @@ export interface DataEdge {
   /** Ports a layout run named, as `onMove` reports them: used like `routed`,
    *  and not part of the edge's id. `fromPort` and `toPort` win. */
   routedPorts?: LayoutPorts;
+  /** The theme role it is drawn in, under `DiagramSceneOptions.theme`: that role's stroke. Kept on its trait. */
+  style?: string;
+  /** Its stroke, markers, and label color of its own, over the theme's. `stroke` and `label` are
+   *  listed in the trait's `ownStyle` (as `stroke` and `text`), so a theme change leaves them. */
+  colors?: Partial<EdgeStyle>;
 }
 
 /** A box drawn around some nodes, which layout keeps together. */
@@ -144,6 +152,8 @@ export interface DataContainer {
   /** The theme role it is drawn in. Unset, a container takes the theme's
    *  `container` style, a pool its `lane.header`. */
   style?: string;
+  /** Colors of its own, over its style's, listed in its trait's `ownStyle` as a node's are. */
+  colors?: Partial<NodeStyle>;
 }
 
 /** One lane of a pool. Its id shares the node id namespace. */
@@ -154,6 +164,8 @@ export interface DataLane {
   size?: number;
   /** Node ids and container ids, claimed as a container's are. */
   members?: readonly string[];
+  /** Colors of its own, as a container's. A lane draws no fill. */
+  colors?: Partial<NodeStyle>;
 }
 
 /** A pool's size across its stack when it gives no box. */
@@ -206,10 +218,12 @@ export interface DiagramSceneData {
 }
 
 /** A scene node spec, as `diagramScene` returns them. */
-export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
+export type DiagramSpec<TLayer extends string = 'main'> = AddNodeSpec<DiagramSceneData, TLayer, RectPose>;
 
 /** How `diagramScene` lays out, routes, and styles a {@link DiagramData}. */
-export interface DiagramSceneOptions {
+export interface DiagramSceneOptions<TLayer extends string = 'main'> {
+  /** The layer every spec goes on. Default `'main'`. */
+  layer?: TLayer;
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
   layout?: 'layered' | 'tree' | 'force' | 'chain' | 'none' | LayoutFn;

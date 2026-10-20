@@ -23,7 +23,6 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 12 | Interchange document model | `diagram-formats`, diagram, app | 6 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
 | 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
 
@@ -46,55 +45,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 12. Interchange document model
-
-### What the user sees
-
-File › Import… opens a supported file as a new chart: one undo entry, "Import". Anything the
-format had that a chart cannot hold is listed in a toast. File › Export › As … writes the whole
-chart, or the current page for formats with no pages (piece 13).
-
-### The model (`packages/diagram-formats/src/document.ts`)
-
-```ts
-interface DiagramDocument { pages: readonly DocumentPage[]; theme?: string | DiagramTheme }
-interface DocumentPage { id: string; name?: string; width: number; height: number; data: DiagramData }
-interface ImportResult { document: DiagramDocument; warnings: readonly string[] }
-interface DiagramFormat {
-  id: string; name: string; extensions: readonly string[];
-  detect(text: string): boolean;
-  read?(text: string): ImportResult | Promise<ImportResult>;
-  write?(doc: DiagramDocument, opts?: { page?: string }): string;
-}
-```
-
-`DIAGRAM_FORMATS` lists the codecs; `detectFormat(text, fileName?)` picks one. A page's
-coordinates are page-relative.
-
-**Decision (2026-10-20).** Every codec reads and writes `DiagramDocument`, built on the package's
-existing `DiagramData`, and only `fromScene` and `toScene` know scenes, so a codec is written once
-for both chart mode and a data-backed host.
-
-### Engine surface
-
-- In diagram (`dataTypes.ts`, `fromData.ts`): `DataNode.colors?: Partial<NodeStyle>`,
-  `DataEdge.colors?: Partial<EdgeStyle>`, `DataContainer.colors?`; `diagramScene` writes them as
-  literal colors and lists them in `ownStyle`, so a theme change leaves an imported color.
-  `DiagramSceneOptions.layer` (default `'main'`).
-- `fromScene.ts`: `documentFromScene(scene)`, reading pages (`pagesOf`, `pageMembers`), each
-  participant's outline, box, rows, and colors, each edge's ends, ports, router, waypoints (an
-  `avoid` connector's stored `route` as waypoints), and label, and containers and pools.
-- `toScene.ts`: `documentSpecs(doc, { layer, theme, measure }) → { specs; doc: SerializedDoc }`:
-  pages placed with `layoutPages`; each page through `diagramScene` with `layout: 'none'` when every
-  node has `at`, else `'layered'` with the placed ones pinned; offset by its page's place;
-  `core:pages` and `diagram:theme` in `doc`.
-- App: `apps/chart/src/importExport.ts` (`pickFile`, `detectFormat`, `replaceChart`).
-
-### Tests
-
-- `fromScene.test.ts`, `toScene.test.ts`; `roundTrip.test.ts`: scene → document → specs gives the
-  same places, outlines, colors, edges, labels, containers, and pages.
 
 ## 13. Mermaid and Graphviz DOT
 

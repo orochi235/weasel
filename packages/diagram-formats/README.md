@@ -1,8 +1,9 @@
 # @weasel-js/diagram-formats
 
-Turns a `@weasel-js/diagram` scene into files. Today that is one page at a
-time, as an SVG document or as a PNG image, each showing the page as the canvas
-draws it, cut to the page's edges and on the page's color.
+Turns `@weasel-js/diagram` scenes into files and files into scenes. Every
+format reads and writes one interchange document, built on the diagram
+package's `DiagramData`; and one page at a time exports as an SVG document or
+a PNG image, each showing the page as the canvas draws it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -11,6 +12,60 @@ scene-graph canvas kit for React. See the
 ```sh
 npm install @weasel-js/diagram-formats
 ```
+
+## The interchange document
+
+A `DiagramDocument` is a diagram's pages and its theme. Each page has an id,
+an optional name, a sheet size, and a `DiagramData` whose places, boxes,
+waypoints, and label points run from the page's top-left corner. Ids share one
+namespace across the document. Edges whose ends are on different pages sit in
+`crossPageEdges`, with no waypoints, since they draw as two stubs and their
+off-page tags.
+
+```ts
+import { documentFromScene, documentSpecs } from '@weasel-js/diagram-formats';
+
+const doc = documentFromScene(scene);
+const { specs, doc: values } = documentSpecs(doc, { layer: 'shapes', measure });
+// values holds `core:pages` and `diagram:theme`; replace the scene's nodes with specs.
+```
+
+`documentFromScene(scene, { theme })` puts each shape, container, pool, and
+group on the page its outermost container overlaps most, or the first page
+when it overlaps none; a scene with no pages gets one page around everything.
+It keeps the colors the scene's theme would not give: those the author set by
+hand (the trait's `ownStyle`) and any that differ from the theme, as `colors`.
+A route or a port that layout chose, and an avoiding connector's computed
+route, are read as `routed` and `routedPorts`, not as waypoints, so they stay
+layout's. `theme` is what colors are compared against when the scene names
+none.
+
+`documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
+placed with core's `layoutPages`, as `core:pages` places them. A page where a
+node has no `at`, or a pool has no box, is laid out first with `layered`,
+running the way its `direction` says, with whatever it places pinned; the
+result is kept as places and routes, a page that placed nothing is moved to sit
+40 inside its corner, and the page grows to hold it. Then one `diagramScene`
+call with no layout draws every page and the edges between them, so no layout
+runs again after an import.
+
+## Formats
+
+A `DiagramFormat` has an `id`, a `name`, its `extensions`, and `detect(text)`,
+which judges by content alone. `read(text)` returns the document and the
+warnings, one sentence each, for what the file had that a diagram cannot hold;
+`write(doc, { page })` returns the text and the warnings for what the format
+cannot carry. A format with `onePage` writes the page `page` names, else the
+first (`writtenPage`).
+
+`DIAGRAM_FORMATS` lists them. `detectFormat(text, fileName)` takes, of the
+formats whose `detect` passes, the first claiming the file's extension, else the
+first; an extension alone never picks one. `readDocument(text, fileName)` reads
+with it and rejects on a file nothing reads.
+
+| Format | Extensions | Reads | Writes |
+| --- | --- | --- | --- |
+| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
 
 ## Exporting a page
 
