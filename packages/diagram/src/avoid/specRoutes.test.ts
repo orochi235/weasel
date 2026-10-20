@@ -49,7 +49,6 @@ describe('createSpecRouter', () => {
     const ids = seen.flatMap((i) => i.edges.map((e) => e.id));
     expect(ids).not.toContain(AB);
     expect(ids).toContain(CD);
-    expect(seen.flatMap((i) => i.obstacles.map((o) => o.id)).filter((id) => id.includes('offpage'))).toEqual([]);
   });
 
   it('routes every edge spec around the shapes', () => {

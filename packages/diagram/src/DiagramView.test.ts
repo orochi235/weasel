@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { layoutPages, pagesBounds } from '@weasel-js/core';
 import { fitDiagram } from './DiagramView';
 import type { DiagramSpec } from './fromData';
 
@@ -8,6 +9,16 @@ const wide = [
 const size = { width: 360, height: 600 };
 
 describe('fitDiagram', () => {
+  it('fits the extra bounds when no box is in the specs, and still gives up with neither', () => {
+    const pages = layoutPages([{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }]);
+    const extra = pagesBounds(pages)!;
+    expect(fitDiagram([], size)).toBeUndefined();
+    const view = fitDiagram([], size, { padding: 0 }, extra)!;
+    expect(view).toBeDefined();
+    expect(extra.width * view.scale.x).toBeLessThanOrEqual(size.width + 1e-6);
+    expect(view.scale.x).toBeLessThan(1);
+  });
+
   it('fits everything when minScale is unset', () => {
     expect(fitDiagram(wide, size)!.scale.x).toBeLessThan(0.2);
   });
