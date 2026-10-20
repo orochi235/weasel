@@ -1320,8 +1320,7 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Fourth arc (approved, partly built).** Left to build: PDF export, the live audio runner
-  that drives the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built), and pages in
-  `DiagramData`. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
+  that drives the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built). Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).

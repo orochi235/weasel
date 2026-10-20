@@ -5,6 +5,7 @@ import { ParamPanel } from './ParamPanel';
 import { usePipelineCommands } from './pipelineCommands';
 import { useGroupCommands } from './pipelineGroups';
 import { useLookCommands } from './pipelineLook';
+import { usePipelinePageCommands } from './pipelinePages';
 import { usePipelineRun } from './pipelineRun';
 import { StagePalette } from './StagePalette';
 import type { PipelineDoc } from './usePipelineDoc';
@@ -18,6 +19,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
 }): ReactElement {
   usePipelineCommands(pipeline);
   useLookCommands(look, setLook);
+  usePipelinePageCommands(pipeline);
   const { doc, change } = pipeline;
   const { run, rows } = usePipelineRun(doc.pipeline);
   const editor = useRef<EffectEditorApi | null>(null);

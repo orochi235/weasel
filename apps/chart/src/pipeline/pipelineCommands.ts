@@ -6,6 +6,7 @@ import { CHART_ACTIONS } from '../chartCommands';
 import { can, run, type ChartMenuContributions } from '../menuBar';
 import { ARRANGE_MENU } from './pipelineGroups';
 import { LOOK_MENU } from './pipelineLook';
+import { PIPELINE_PAGE_MENU } from './pipelinePages';
 import { RUN_MENU, SHOW_MENU } from './pipelineRun';
 import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
 
@@ -13,7 +14,7 @@ export const PIPELINE_ACTIONS = {
   new: 'pipeline.new', open: 'pipeline.open', save: 'pipeline.save', undo: 'pipeline.undo', redo: 'pipeline.redo',
 } as const;
 
-/** Pipeline mode's File, Edit, View, Format, Arrange, and Run menus. Delete and Reset route are kit actions the editor's canvas registers: Delete removes stages and wires alike, and Reset route gives a wire back to its look. */
+/** Pipeline mode's File, Edit, View, Format, Arrange, Page, and Run menus. Delete and Reset route are kit actions the editor's canvas registers: Delete removes stages and wires alike, and Reset route gives a wire back to its look. */
 export const PIPELINE_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: PIPELINE_ACTIONS.new, open: PIPELINE_ACTIONS.open }),
@@ -30,6 +31,7 @@ export const PIPELINE_MENUS: ChartMenuContributions = {
     }),
   },
   arrange: ARRANGE_MENU,
+  page: PIPELINE_PAGE_MENU,
   run: RUN_MENU,
 };
 

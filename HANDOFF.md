@@ -17,6 +17,9 @@ plan depends on the graph plan's `AudioGraph` API, and `impulseResponse` lives i
 conflicts there when merging. `@weasel-js/pdf` needs its first npm publish and trusted-publisher
 setup done by hand before it can release.
 
+Pages in `DiagramData` are built on the `worktree-agent-a7d3012de73cf984b` branch (2026-10-20),
+awaiting merge.
+
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
