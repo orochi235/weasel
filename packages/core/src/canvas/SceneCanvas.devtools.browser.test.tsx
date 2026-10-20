@@ -29,7 +29,7 @@ const settle = async () => { await frame(); await frame(); await frame(); };
 
 /** RGBA at a device pixel, counted from the top-left. */
 function pixel(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const out = new Uint8Array(4);
   gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
   return Array.from(out);

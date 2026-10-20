@@ -4,6 +4,44 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Overnight pass, 2026-10-20 (status at 03:50)
+
+For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
+marked "overnight pass". Nothing is pushed.
+
+**`main` is green at `5ceb31061`** (full fleet run: 27555 passed, 0 failed).
+
+Merged:
+- `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
+  and `groupSelector`. Rulings: Up and Down stop at the edges, Home and End span the whole
+  palette, `rovingTarget` and `rovingGridTarget` are exported. Filed: no right-to-left handling.
+- `moveNodes` and `moveNodesOps` in core move ids the way a drag commits them; weaselchart's
+  stencil drop inserts then moves in one undo step, with no probe insert. Rulings: not 2D-only, a
+  zero delta commits nothing, `ingest` and paste declare three more deps, the undo entry reads "Drop".
+- A disabled bar button says why: `useLeafAction`'s `reason` is now `disabledReason`, and a bar
+  button disabled with a reason is `aria-disabled` and focusable. guides builds node gates only on
+  a point gesture's path (no bug there: `siblingIds` already skipped hidden nodes).
+- `selectTool.rotate: false` is decided once, in preset resolution. Ruling: it is about the select
+  tool only; the rotate action stays registered, the handle is hidden, and a re-shown handle is
+  inert and silent.
+- The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
+  msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
+  around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
+- Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
+  for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
+  viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
+- weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
+  canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
+  canvas for good (both failing logs carry the error). Every pixel reader that made a bare
+  `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
+  one shared reader or a lint rule (P3, "Release-gate & build hygiene").
+
+In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
+- ui subpaths for the eight barrel importers.
+- One kind classifier. Ruling: the routing kind is the only one; the selection label and
+  `SelectionPanel` read it.
+- forge's "ResizeObserver loop" error.
+
 ## State
 
 The sixth TODO pass merged on 2026-10-13: fifteen agents, one per `docs/TODO.md` section, took the

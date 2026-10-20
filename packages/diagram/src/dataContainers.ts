@@ -8,7 +8,7 @@ import type { GroupInset } from './cluster';
 import { CONTAINER_HEADER } from './containers/layouts';
 import { MIN_LANE_SIZE } from './containers/laneStack';
 import type { ContainerRole } from './containers/trait';
-import { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, type DataContainer } from './dataTypes';
+import { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, type DataContainer, type NodeStyle } from './dataTypes';
 import type { GraphGroup, GraphNode } from './graph';
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -24,6 +24,7 @@ export interface DataRegion {
   axis: 'x' | 'y';
   label?: string;
   style?: string;
+  colors?: Partial<NodeStyle>;
   /** The region it is directly inside. */
   parent?: string;
   /** What it holds directly: a pool its lanes, else node and container ids. */
@@ -69,6 +70,7 @@ export function resolveContainers(
     declare({
       ...base, direct: [], id: c.id, role: c.role, axis, pinned: c.pinned === true,
       ...(c.label !== undefined ? { label: c.label } : {}), ...(c.style !== undefined ? { style: c.style } : {}),
+      ...(c.colors !== undefined ? { colors: c.colors } : {}),
       ...(c.box !== undefined ? { box: { ...c.box } } : {}),
     });
     if (c.role !== 'pool') continue;
@@ -76,6 +78,7 @@ export function resolveContainers(
       declare({
         ...base, direct: [], id: l.id, role: 'lane', axis, index, parent: c.id,
         ...(l.label !== undefined ? { label: l.label } : {}), ...(l.size !== undefined ? { size: l.size } : {}),
+        ...(l.colors !== undefined ? { colors: l.colors } : {}),
       });
       parentOf.set(l.id, c.id);
       byId.get(c.id)!.direct.push(l.id);

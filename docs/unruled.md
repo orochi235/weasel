@@ -11,6 +11,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): `selectTool.rotate: false` is decided once, in `resolveFeatures`
+  (`selectRotates`): every enabled preset loses its ambient `rotate` bindings and
+  `selection.rotation-handle`, while the `rotate` action stays registered. A tool that binds
+  `rotate` rotates from the handle, a partial `actions.rotate` merges onto the default, and a
+  handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
 - 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
   "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
   and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
@@ -202,6 +207,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
+  objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
+  string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and
+  do nothing for a real readout. `resolveTextStyle`'s defaults stay read in one place, though they
+  cost about 0.2 MB a frame. The allocation profile is `HVD_ALLOC=1` on the existing spec.
 - 2026-10-11: `GlMat3` is `Float32Array | Float64Array`. `PathDrawCommand` takes `CommandFill` /
   `CommandStroke` only. `RectPose.transform` applies to any box pose.
 - 2026-10-12: A `LayerGroup` with alpha fades as a group. The image cache has a 256MB budget. A
@@ -435,6 +445,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
+  the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
+  node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
+  `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
+  see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a

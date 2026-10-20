@@ -1,8 +1,9 @@
 # @weasel-js/diagram-formats
 
-Turns a `@weasel-js/diagram` scene into files. Today that is one page at a
-time, as an SVG document or as a PNG image, each showing the page as the canvas
-draws it, cut to the page's edges and on the page's color.
+Turns `@weasel-js/diagram` scenes into files and files into scenes. Every
+format reads and writes one interchange document, built on the diagram
+package's `DiagramData`; and one page at a time exports as an SVG document or
+a PNG image, each showing the page as the canvas draws it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -11,6 +12,102 @@ scene-graph canvas kit for React. See the
 ```sh
 npm install @weasel-js/diagram-formats
 ```
+
+## The interchange document
+
+A `DiagramDocument` is a diagram's pages and its theme. Each page has an id,
+an optional name, a sheet size, and a `DiagramData` whose places, boxes,
+waypoints, and label points run from the page's top-left corner. Ids share one
+namespace across the document. Edges whose ends are on different pages sit in
+`crossPageEdges`, with no waypoints, since they draw as two stubs and their
+off-page tags.
+
+```ts
+import { documentFromScene, documentSpecs } from '@weasel-js/diagram-formats';
+
+const doc = documentFromScene(scene);
+const { specs, doc: values } = documentSpecs(doc, { layer: 'shapes', measure });
+// values holds `core:pages` and `diagram:theme`; replace the scene's nodes with specs.
+```
+
+`documentFromScene(scene, { theme })` puts each shape, container, pool, and
+group on the page its outermost container overlaps most, or the first page
+when it overlaps none; a scene with no pages gets one page around everything.
+It keeps the colors the scene's theme would not give: those the author set by
+hand (the trait's `ownStyle`) and any that differ from the theme, as `colors`.
+A route or a port that layout chose, and an avoiding connector's computed
+route, are read as `routed` and `routedPorts`, not as waypoints, so they stay
+layout's. `theme` is what colors are compared against when the scene names
+none.
+
+`documentSpecs(doc, { layer, theme, measure })` is the way back. Pages are
+placed with core's `layoutPages`, as `core:pages` places them. A page where a
+node has no `at`, or a pool has no box, is laid out first with `layered`,
+running the way its `direction` says, with whatever it places pinned; the
+result is kept as places and routes, a page that placed nothing is moved to sit
+40 inside its corner, and the page grows to hold it. Then one `diagramScene`
+call with no layout draws every page and the edges between them, so no layout
+runs again after an import.
+
+## Formats
+
+A `DiagramFormat` has an `id`, a `name`, its `extensions`, and `detect(text)`,
+which judges by content alone. `read(text)` returns the document and the
+warnings, one sentence each, for what the file had that a diagram cannot hold;
+`write(doc, { page })` returns the text and the warnings for what the format
+cannot carry. A format with `onePage` writes the page `page` names, else the
+first (`writtenPage`).
+
+`DIAGRAM_FORMATS` lists them. `detectFormat(text, fileName)` takes, of the
+formats whose `detect` passes, the first claiming the file's extension, else the
+first; an extension alone never picks one. `readDocument(text, fileName)` reads
+with it and rejects on a file nothing reads.
+
+| Format | Extensions | Reads | Writes |
+| --- | --- | --- | --- |
+| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
+| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
+
+Not read, by decision (2026-10-20): packaged office-suite drawing formats,
+which are zip archives of many XML parts built on master shapes a scene has no
+equivalent for; and SVG, which carries drawn paths rather than shapes and
+connectors, so a connector would arrive as a path that follows nothing.
+
+### Draw-style XML
+
+The format that keeps a chart laid out. A file is an `<mxfile>` holding a
+`<diagram name=…>` per page, each a graph model of cells; a bare
+`<mxGraphModel>` reads as one page. A cell has a `key=value;` style string and
+a geometry measured from the corner of the cell holding it. A compressed page
+is base64 of raw deflate of the URI-encoded model, so `read` answers a promise.
+The file is known by its root element, not its `.xml` extension.
+
+| Diagram | Draw-style XML |
+| --- | --- |
+| Outline | `rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is a stadium; any other shape reads as a rect, with a warning |
+| Colors and font | `fillColor` (`none` is transparent), `strokeColor`, `fontColor`, `strokeWidth`, `dashed`; `fontSize`, `fontFamily`, and bold in `fontStyle` as label rows' style |
+| Text | `value`; with `html=1`, tags stripped and `<br>` and blocks kept as line breaks. Written plain. |
+| Router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, else straight; `avoid` writes as orthogonal along its route |
+| Route | the edge geometry's points: `waypoints`, else `routed`, read back as `waypoints` |
+| Ports | `exitX`/`exitY` and `entryX`/`entryY`, read as the nearest compass port |
+| Edge label | the edge's `value`, or a label cell on it; its geometry `x` (-1 to 1) is where along, `y` how far off the line |
+| Arrowheads | `startArrow`/`endArrow` and their `Fill` |
+| Container, pool, lane | `container=1` or a `swimlane` is a container; a swimlane whose swimlanes span its body is a pool of lanes, stacked in rows with `horizontal=0` |
+| Group | a `group` cell around its members |
+| Page | one `<diagram>` each, `pageWidth` and `pageHeight` its size |
+
+Reading leaves a color the style does not name unset, so the chart's theme
+draws it. A page grows to hold what is on it, and what sits left of or above it
+moves onto it. An id an earlier page used is prefixed with its page's id.
+Layers merge into one, and edges with a loose end are left out, each with a
+warning.
+
+Writing spells out every color as the document's theme draws it, so the file
+looks the same anywhere. A node is written the size it states, which is its
+drawn size in a document read from a scene; a page with unplaced nodes is laid
+out first, as an import would. Edges between pages are left out, with a
+warning, since a page's cells cannot reach another's; so are marks, port rows,
+and outline paths, which become rects.
 
 ## Exporting a page
 

@@ -3,6 +3,7 @@ import { exportPagePng, exportPageSvg } from '@weasel-js/diagram-formats';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob } from '@editor/index';
 import type { ChartScene } from './chartDocument';
+import { FORMAT_EXPORT_RUN } from './importExport';
 import { run } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 
@@ -10,9 +11,9 @@ export const EXPORT_ACTIONS = {
   svg: 'chart.export.svg', png1: 'chart.export.png1', png2: 'chart.export.png2', png4: 'chart.export.png4',
 } as const;
 
-/** File › Export. */
+/** File › Export: the page in view as an image, then the chart in each diagram format. */
 export const EXPORT_MENU: PrefGroup = pref.group('', {
-  export: pref.group('Export', { page: run(EXPORT_ACTIONS) }, { as: 'menu' }),
+  export: pref.group('Export', { page: run(EXPORT_ACTIONS), formats: FORMAT_EXPORT_RUN }, { as: 'menu' }),
 });
 
 /** The page an export draws: the one in view, else the first. */

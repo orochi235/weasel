@@ -25,7 +25,7 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 /** How many pixels of the canvas are not the clear color. */
 function inked(canvas: HTMLCanvasElement): number {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const px = new Uint8Array(canvas.width * canvas.height * 4);
   gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
   let n = 0;
@@ -35,7 +35,7 @@ function inked(canvas: HTMLCanvasElement): number {
 
 /** Every pixel of the canvas, RGBA. */
 function pixels(canvas: HTMLCanvasElement): Uint8Array {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const px = new Uint8Array(canvas.width * canvas.height * 4);
   gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
   return px;
