@@ -256,6 +256,12 @@ Priority tags:
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
+- **(P2) Draw's Warp Settings button does nothing.** It triggers `configureWarp` with no params,
+  and with `{}` `withWarpSettings` returns the held warp unchanged, so nothing is committed; only
+  `apps/site/demos/warpLab.tsx` passes settings. It also has no `enabled`, so it stays live with no
+  warp selected, unlike Expand Warp. It wants a popover holding the selected warp's settings — Mode
+  for a distort, Rows, Columns and mapping for an envelope, tolerance for every kind — and an
+  `enabled` matching Expand Warp's (`configureWarpAction`, `packages/path-tools/src/warp/warpActions.ts`).
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -1323,20 +1329,5 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P2) `@weasel-js/diagram` has two reorder drags; make them one.** `slotReorder.ts`
-  (`createSlotReorderAction`, the pipeline editor's stage reorder) carries one item of any drawn
-  sequence, given its items and gaps, and draws an insertion bar. `reorder.ts`
-  (`createReorderAction`, `DiagramView`'s `onReorder`) carries a member of a group marked `reorder`
-  and slides its siblings into their slots as pose overrides. They landed on separate branches
-  under the same names and action id; the merge renamed the first (2026-10-19). One drag should
-  serve both: the slot model is the general one, and the group drag could build its slots from the
-  group.
-
 - **(P3) Second arc.** Containers and swimlanes; connectors that route around shapes while
   editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
-
-- **(P3) Pipeline mode keeps its own session.** `pipeline/usePipelineDoc.ts` reads and writes
-  local storage with its own `load`/`save` and its own undo coalescing, beside the shared
-  `useSessionPersistence` (`apps/shared/editor`) that chart mode and draw use. That hook is bound
-  to a `Scene` and its history, and an `EffectDoc` is neither, so folding the two needs a
-  document-agnostic layer under the hook first.

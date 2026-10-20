@@ -29,7 +29,7 @@ import { registerDiagramShape } from './shape';
 export type { EdgeRoute, NodeMove } from './sceneSync';
 export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange, RouteChange } from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
-export type { ReorderChange } from './reorder';
+export type { ReorderChange } from './groupReorder';
 
 /** The view's box holds the canvas and the overlays placed over it, and is as
  *  big as the canvas: its parent's box on an axis the canvas fills. */

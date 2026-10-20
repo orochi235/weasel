@@ -14,14 +14,16 @@ export function extensionVersion(kitVersion: string): string {
 }
 
 export function manifestFor(target: Target, kitVersion: string): Record<string, unknown> {
+  const icons = Object.fromEntries(ICON_SIZES.map((n) => [String(n), `icons/icon-${n}.png`]));
   return {
     manifest_version: 3,
     name: 'weasel devtools',
     description: 'Inspect and steer the weasel canvases on a page.',
     version: extensionVersion(kitVersion),
-    icons: Object.fromEntries(ICON_SIZES.map((n) => [String(n), `icons/icon-${n}.png`])),
+    icons,
     devtools_page: 'devtools.html',
-    // `scripting` reaches tabs that loaded before the extension did.
+    action: { default_title: 'weasel devtools', default_popup: 'popup.html', default_icon: icons },
+    // `scripting` reaches tabs that loaded before the extension did, and reads a page's hook for the toolbar button.
     permissions: ['scripting'],
     host_permissions: ['<all_urls>'],
     content_scripts: [{ matches: ['<all_urls>'], js: ['content.js'], all_frames: true }],

@@ -250,8 +250,12 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
-          // Enough for typecheck, lint, and check:needs to overlap; more starves the browser tests beside them.
-          maxConcurrency: 3,
+          // Its heavy checks run four at a time, and in the browser project's group rather than beside
+          // the jsdom projects: there they slowed labkit's storyArgs.test.tsx from 4 s to past its timeout.
+          maxConcurrency: 4,
+          sequence: { groupOrder: 1 },
+          // A group's projects must agree on this; the gate has two files, so it changes nothing here.
+          maxWorkers: 6,
           include: ['scripts/**/*.gate.ts'],
         },
       },

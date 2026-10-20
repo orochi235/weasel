@@ -1,7 +1,6 @@
 /**
- * Which members a reorderable group holds, what moves with each, and where
- * each one lands when one of them is carried along the group's axis. Plain
- * reads of the scene; the action in `reorder.ts` drives them.
+ * Which members a reorderable group holds, and what moves with each. Plain
+ * reads of the scene; `groupReorder.ts` builds a reorder's slots from them.
  */
 import type { Bounds } from '@weasel-js/core';
 import { diagramAnchorOf, diagramGroupOf } from './group';
@@ -89,45 +88,5 @@ export function carriedWith(scene: ReorderScene, member: string): Set<string> {
     const on = depsOf(node)[0];
     if (on !== undefined && out.has(on) && diagramAnchorOf(node) !== null) out.add(node.id);
   }
-  return out;
-}
-
-/** Where a member stands along the axis: its start and its length. */
-export interface Span {
-  start: number;
-  size: number;
-}
-
-/**
- * The order the members take with `member` carried `by` along the axis: it
- * goes ahead of every other member whose middle its own middle has passed.
- */
-export function orderWith(
-  members: readonly string[],
-  spans: ReadonlyMap<string, Span>,
-  member: string,
-  by: number,
-): string[] {
-  const mid = (id: string) => {
-    const s = spans.get(id)!;
-    return s.start + s.size / 2 + (id === member ? by : 0);
-  };
-  const others = members.filter((m) => m !== member);
-  const at = others.filter((m) => mid(m) < mid(member)).length;
-  return [...others.slice(0, at), member, ...others.slice(at)];
-}
-
-/**
- * Where each member starts along the axis once they stand in `order`: packed
- * from where the first stood, each gap kept at its place in the row.
- */
-export function packed(members: readonly string[], spans: ReadonlyMap<string, Span>, order: readonly string[]): Map<string, number> {
-  const gaps = members.slice(1).map((m, i) => spans.get(m)!.start - (spans.get(members[i]!)!.start + spans.get(members[i]!)!.size));
-  const out = new Map<string, number>();
-  let at = members.length > 0 ? spans.get(members[0]!)!.start : 0;
-  order.forEach((m, i) => {
-    out.set(m, at);
-    at += spans.get(m)!.size + (gaps[i] ?? gaps[gaps.length - 1] ?? 0);
-  });
   return out;
 }

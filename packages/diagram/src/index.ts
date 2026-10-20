@@ -94,13 +94,11 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './reorder';
+export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
-  SLOT_REORDER_ACTION_ID, createSlotReorderAction, sequenceSlots, slotReorderBinding, slotReorderContribution,
-} from './slotReorder';
-export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './slotReorder';
-export {
-  REORDER_ACTION_ID, STEP_REORDER_ACTION_ID, createReorderAction, createStepReorderAction, reorderBindings, reorderContribution,
-} from './reorder';
+  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, groupReorderSlots,
+} from './groupReorder';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,

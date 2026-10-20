@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DOC_KEY, loadDoc, saveDoc } from './docPersistence';
+import { DOC_KEY, loadDoc } from './docPersistence';
 
 afterEach(() => localStorage.clear());
 
@@ -9,7 +9,7 @@ describe('document persistence', () => {
   });
 
   it('brings the paper size back with the filename and background', () => {
-    saveDoc({ filename: 'poster.svg', backgroundColor: '#ffffcc', paperSize: 'a4' });
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'poster.svg', backgroundColor: '#ffffcc', paperSize: 'a4' }));
     expect(loadDoc()).toEqual({ filename: 'poster.svg', backgroundColor: '#ffffcc', paperSize: 'a4' });
   });
 

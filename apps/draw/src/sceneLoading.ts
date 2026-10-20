@@ -8,6 +8,7 @@ import {
   solid,
   strokeOf
 } from '@weasel-js/core';
+import { readStored } from '@editor/index';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 
@@ -25,17 +26,16 @@ export const LEGACY_HISTORY_KEY = 'weaseldraw:history-v1';
  *  Best-effort — any parse error yields a fresh starter scene with one
  *  example rectangle so the canvas isn't empty on first run. */
 export function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
-      if (json && json.version === 1 && Array.isArray(json.nodes)) {
-        return nodeSpecsFromSnapshot(json, DRAW_REGISTRY);
-      }
-    }
-  } catch {
-    // fall through to starter
-  }
+  return readStored(LS_KEY, parseScene, starterScene);
+}
+
+function parseScene(raw: string): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
+  const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+  if (json?.version !== 1 || !Array.isArray(json.nodes)) throw new Error('Not a saved drawing');
+  return nodeSpecsFromSnapshot(json, DRAW_REGISTRY);
+}
+
+function starterScene(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
   return [{
     kind: 'leaf' as const,
     layer: 'default' as WeaselDrawLayer,
@@ -57,15 +57,14 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
  *  returns null AND removes the key so a broken snapshot can't wedge every
  *  boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  try {
-    const raw = localStorage.getItem(SCENE_HISTORY_KEY);
-    if (raw) {
-      const snap = JSON.parse(raw) as SerializedSceneHistory;
-      if (snap && snap.version === 1 && snap.form === SCENE_HISTORY_FORM) return reviveSnapshot(snap);
-    }
-  } catch {
-    // fall through to wipe
+  const snap = readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
+  if (snap === null) {
+    try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
   }
-  try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
-  return null;
+  return snap;
+}
+
+function parseSceneHistory(raw: string): SerializedSceneHistory | null {
+  const snap = JSON.parse(raw) as SerializedSceneHistory;
+  return snap?.version === 1 && snap.form === SCENE_HISTORY_FORM ? reviveSnapshot(snap) : null;
 }
