@@ -31,7 +31,6 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
   return {
     onMove(ctx, proposed): BehaviorResult<unknown> | void {
       drop = null;
-      if (proposed.kind !== 'translate') return;
       const session = move.session();
       drop = runDropPass(
         session,

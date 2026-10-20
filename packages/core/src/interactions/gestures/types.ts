@@ -120,14 +120,12 @@ export interface BehaviorEnd {
 // ----- move -----
 
 /**
- * Uniform group transform proposed by a gesture and shaped by behaviors.
- * Applied identically to every dragged id so a multi-select gesture cannot
- * drift apart. Only `'translate'` is wired end-to-end.
+ * The translation a drag proposes and its behaviors shape, applied identically
+ * to every dragged id so a multi-select gesture cannot drift apart. Resize and
+ * rotate behaviors answer in their own terms (`ResizeMoveResult`,
+ * `RotateMoveResult`), not through this.
  */
-export type GroupTransform =
-  | { kind: 'translate'; dx: number; dy: number }
-  | { kind: 'scale';     pivot: { x: number; y: number }; sx: number; sy: number }
-  | { kind: 'rotate';    pivot: { x: number; y: number }; angle: number };
+export type GroupTransform = { kind: 'translate'; dx: number; dy: number };
 
 /**
  * Per-frame result a `MoveBehavior.onMove` can return. `snap` announces a
@@ -166,8 +164,8 @@ export interface MoveEnd extends BehaviorEnd {
 }
 
 /** A behavior on a move — shapes the proposed transform during a drag.
- *  Behaviors receive a `GroupTransform` (currently always `'translate'`) and
- *  return a `BehaviorResult` shaping it. */
+ *  Behaviors receive a `GroupTransform` and return a `BehaviorResult` shaping
+ *  it. */
 export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>, MoveEnd>;
 
 // ----- resize -----

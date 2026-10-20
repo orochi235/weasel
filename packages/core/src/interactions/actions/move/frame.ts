@@ -11,12 +11,9 @@ function foldBehaviors(
   session: MoveSession,
   readers: GestureReaders,
   moveCtx: InvocationCtx,
-  dx0: number,
-  dy0: number,
+  dx: number,
+  dy: number,
 ): { dx: number; dy: number; posed: Map<NodeId, unknown>; opaque: Set<NodeId> } {
-  let dx = dx0;
-  let dy = dy0;
-
   const posed = new Map<NodeId, unknown>();
   const opaque = new Set<NodeId>();
   const gctx = session.gestureCtx;
@@ -39,11 +36,10 @@ function foldBehaviors(
     if (!r) continue;
     if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
     if (r.opaque) for (const id of r.opaque) opaque.add(id as NodeId);
-    if (r.transform && r.transform.kind === 'translate') transform = r.transform;
+    if (r.transform) transform = r.transform;
     if (r.snap !== undefined) gctx.snap = r.snap;
   }
-  if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
-  return { dx, dy, posed, opaque };
+  return { dx: transform.dx, dy: transform.dy, posed, opaque };
 }
 
 /** The pointer's delta, moved so the subject lands on what the snap session
