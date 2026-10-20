@@ -594,3 +594,48 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
   names are a call not made; labkit's `weasel-ui` passthrough is exempt on purpose.
+
+## weaselchart fourth arc
+
+The arc's design is `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`. These are the
+calls its builds made where the spec was silent.
+
+- 2026-10-20 (arc 4, PDF): Text with neither font bytes nor outlines (the canvas text tier, emoji)
+  is left out of the PDF and reported through `reportFileWarnings`. CFF/OTF faces and faces whose
+  OS/2 `fsType` forbids embedding are drawn as outlines. Spaces are written as glyphs, so copied
+  text keeps them.
+- 2026-10-20 (arc 4, PDF): Effects, shader and custom-paint groups go to an injected `rasterize`
+  hook, which gets a wrapper group carrying the effects and the page view as a fourth argument;
+  without a hook they are skipped. Porter-Duff composites draw source-over and are listed in
+  `skipped`. `writePdf([])` throws. `exportPagesPdf` lives in `@weasel-js/diagram-formats`, so
+  `@weasel-js/pdf` stays free of core.
+- 2026-10-20 (arc 4, PDF): `resolveStrokeLengths` takes `{ quantize: false }`, so `{ px }` stroke
+  widths resolve at the exact scale in a PDF. `markerDrawCommands`, `syntheticBoldOffset` and
+  `emboldenGlyphD` are now exported rather than copied.
+- 2026-10-20 (arc 4, audio graph): `connect` refuses any cycle, delay or not. A connect that closes
+  a cycle only through an edge still fading out is wired once that edge has closed. The graph's
+  output starts at gain 0, so the first `start()` fades in. `apply` validates the whole list first,
+  but a `set` that throws lets the rest apply and then rethrows. `dispose()` fades out over `fadeMs`
+  while sounding. `delayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
+  `@weasel-js/audio`, and `reverbNode` builds its impulse from `seconds` (default 2).
+- 2026-10-20 (arc 4, live runner): Audio stage types are prefixed `audio.`, and pipeline mode splits a
+  mixed pipeline so the image runner never sees them. The runner ships from
+  `@weasel-js/diagram/effect-audio`, with `@weasel-js/audio` an optional peer. Stages on a feedback
+  loop get the error "on a feedback loop" and no patch. Two wires into one input are summed (the
+  editor only allows one; see `docs/TODO.md`). The engine is made lazily on Play or Choose Source
+  Audio…. View › Show Spectrum toggles the previews and is off while Show Previews is off.
+- 2026-10-20 (arc 4, label drag): Pipeline mode can't drag labels (filed in `docs/TODO.md`). A
+  click on a label selects its connector; a double-click edits its text. Reset label skips locked
+  and hidden labels and labels on locked edges. Near an outside route corner the dropped label
+  sits on the nearest normal, not exactly under the pointer. The menu item reads "Reset label".
+- 2026-10-20 (arc 4, groups): Under `rack`, a group whose line members are split by an outsider
+  keeps a box over the outsider and can't be dragged; a group with no stage on the main line can't
+  be dragged either. Reordering a group rewires the pipeline under both looks. An untitled group's
+  grip is the top band of its box, and its rename field opens above the box.
+- 2026-10-20 (arc 4, pages): A data-backed diagram reassigns its off-page letters in edge order on
+  every build. Pipeline mode gets Page › Add Page and Delete Page (Delete removes the last page and
+  leaves its stages). Export puts a shape between pages on the nearest page (`pageHolding`, ties to
+  the earlier one) and sends every connector the split splits to `crossPageEdges`. `fitDiagram`
+  takes optional extra bounds. `documentBoundsOf` is a new export of `@weasel-js/diagram`.
+- 2026-10-20 (arc 4): The `browser` vitest project's `testTimeout` is 45 s, because a chart drag
+  test runs 10–24 s on a loaded node; the case rests on one one-process failure on keiei.
