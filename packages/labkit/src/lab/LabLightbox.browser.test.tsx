@@ -48,8 +48,8 @@ function Solid() {
   useEffect(
     () =>
       surface.registerPainter(id, (rect, frame) => {
-        const gl = canvas?.getContext('webgl2', { preserveDrawingBuffer: true });
-        if (!gl) return;
+        if (!canvas) return;
+        const gl = canvasGl(canvas);
         const v = toDeviceRect(rect, frame.size.height, frame.dpr);
         const px = (n: number) => Math.round(n * frame.dpr);
         gl.enable(gl.SCISSOR_TEST);

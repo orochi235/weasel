@@ -1011,11 +1011,6 @@ only story runner in the repo.
   swap in `onto status`. Either what these tests wait on scales badly with a loaded machine, or keiei
   should take no full runs.
 
-- **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
-  `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
-  probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
-  against a bare `getContext('webgl2')` does not catch a call that passes attributes.
-
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
   (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
