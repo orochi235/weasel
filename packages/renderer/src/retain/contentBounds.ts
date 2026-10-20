@@ -79,3 +79,10 @@ function clipped(a: ScreenBox, clip: ScreenBox | null): ScreenBox {
   };
   return box.minX > box.maxX || box.minY > box.maxY ? EMPTY : box;
 }
+
+/** The whole-unit rect `commands` can paint under `transform` within a `width × height` page; zero-sized where nothing lands on it. */
+export function commandsBounds(
+  commands: readonly DrawCommand[], transform: GlMat3, page: { width: number; height: number },
+): DeviceRect {
+  return contentBounds(commands, transform, [], 1, page.width, page.height);
+}

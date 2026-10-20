@@ -29,7 +29,7 @@ export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
-export { contentBounds, type DeviceRect } from './retain/contentBounds';
+export { commandsBounds } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from '@weasel-js/stroke';
 export {
@@ -69,6 +69,7 @@ export {
 export { registerEffect, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
+export { isOwnComposite } from './effects/compositeOp';
 export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';
 export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';

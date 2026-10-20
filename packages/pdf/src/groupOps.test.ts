@@ -1,7 +1,7 @@
 import type { Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it, vi } from 'vitest';
-import { foldColor, foldPixels } from './color';
+import { composeMatrix, foldColor, foldPixels } from './color';
 import { latin1 } from './testing/latin1';
 import { NO_FONTS } from './testing/noFonts';
 import { type RasterPixels, type WritePdfOptions, writePdf } from './writePdf';
@@ -28,6 +28,18 @@ describe('foldColor', () => {
     expect(foldColor([1, 0, 0, 1], GRAY)).toEqual([0.3, 0.3, 0.3, 1]);
     expect(foldColor([1, 1, 1, 0.5], [2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0.25])).toEqual([1, 1, 1, 0.75]);
     expect(foldColor([0.2, 0.4, 0.6, 1], null)).toEqual([0.2, 0.4, 0.6, 1]);
+  });
+});
+
+describe('composeMatrix', () => {
+  it('carries an inner bias through the outer matrix', () => {
+    const inner = [1, 0, 0, 0, 0.5, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const outer = [2, 0, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const out = composeMatrix(outer, inner);
+    expect(out?.[0]).toBe(2);
+    expect(out?.[4]).toBeCloseTo(1.1);
+    expect(composeMatrix(null, undefined)).toBeNull();
+    expect(composeMatrix(null, inner)).toEqual(inner);
   });
 });
 
@@ -84,30 +96,81 @@ describe('writeGroup', () => {
     expect(content).toMatch(/100 0 0 -100 0 100 cm\n\/Im1 Do\n/);
   });
 
-  it('rasterizes shader commands and non-source-over composites', async () => {
+  it('bakes the group transform into the raster commands and places the image under a transformed ancestor', async () => {
     const rasterize = vi.fn(async () => pixels());
-    const shader = { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 10, y: 20, w: 30, h: 40 } } as never;
-    const { skipped } = await render(
-      [shader, { kind: 'group', composite: 'source-in', children: [red] }, { kind: 'group', composite: 'source-over', children: [red] }],
+    const fx: DrawCommand = { kind: 'group', effects: [{ kind: 'blur', radius: 2 } as never], transform: Float64Array.from([1, 0, 0, 0, 1, 0, 5, 0, 1]), children: [red] };
+    const { content } = await render(
+      [{ kind: 'group', transform: Float64Array.from([2, 0, 0, 0, 2, 0, 0, 0, 1]), children: [fx] }],
       { rasterize },
     );
+    const [cmds] = rasterize.mock.calls[0] as unknown as [{ transform: Float64Array }[]];
+    expect([...cmds[0].transform]).toEqual([2, 0, 0, 0, 2, 0, 10, 0, 1]);
+    expect(content).toMatch(/q\n0\.5 0 0 0\.5 0 0 cm\n.*\n?q\n100 0 0 -100 0 100 cm\n\/Im1 Do\nQ\nQ/s);
+  });
+
+  it('rasterizes shader commands', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const shader = { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 10, y: 20, w: 30, h: 40 } } as never;
+    const { skipped } = await render([shader], { rasterize });
     expect(skipped).toEqual([]);
-    expect(rasterize).toHaveBeenCalledTimes(2);
     const [cmds, box] = rasterize.mock.calls[0] as unknown as [DrawCommand[], unknown];
     expect(cmds).toEqual([shader]);
     expect(box).toEqual({ x: 10, y: 20, width: 30, height: 40 });
   });
 
+  it('draws a composite group as vector source-over and says so', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const { skipped, content } = await render(
+      [
+        { kind: 'group', composite: 'destination-out', children: [red] },
+        { kind: 'group', composite: { source: 'one', destination: 'zero' }, children: [red] },
+        { kind: 'group', composite: 'source-over', children: [red] },
+      ],
+      { rasterize },
+    );
+    expect(rasterize).not.toHaveBeenCalled();
+    expect(skipped.map((k) => k.detail)).toEqual([
+      'composite destination-out drawn as source-over',
+      'composite one/zero drawn as source-over',
+    ]);
+    expect(content.match(/1 0 0 rg/g)).toHaveLength(3);
+  });
+
+  it('rasterizes for effects and still reports the composite', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const { skipped } = await render(
+      [{ kind: 'group', composite: 'xor', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] }],
+      { rasterize },
+    );
+    expect(rasterize).toHaveBeenCalledTimes(1);
+    expect(skipped.map((k) => k.detail)).toEqual(['composite xor drawn as source-over']);
+  });
+
+  it('skips a failed or malformed raster instead of failing the document', async () => {
+    const fx: DrawCommand = { kind: 'group', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] };
+    const failed = await render([fx], { rasterize: async () => Promise.reject(new Error('no gl')) });
+    expect(failed.skipped.map((k) => k.detail)).toEqual(['effects raster failed: no gl']);
+    const short = await render([fx], {
+      rasterize: async () => ({ width: 2, height: 2, data: new Uint8ClampedArray(4) }),
+    });
+    expect(short.skipped.map((k) => k.detail)).toEqual(['effects raster has the wrong number of pixels']);
+    expect(short.s).not.toContain('/Subtype /Image');
+  });
+
+  it('reports the alpha offset an isolated group cannot carry', async () => {
+    const bias = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0.2];
+    const { skipped } = await render([{ kind: 'group', isolate: true, colorMatrix: bias, children: [red] }]);
+    expect(skipped.map((k) => k.detail)).toEqual(['group color matrix alpha offset is not drawn']);
+  });
+
   it('skips and reports what needs a raster when no hook is given', async () => {
     const { skipped, content } = await render([
       { kind: 'group', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] },
-      { kind: 'group', composite: 'xor', children: [red] },
       { kind: 'shader', program: {}, uniforms: {}, bounds: { x: 0, y: 0, w: 5, h: 5 } } as never,
     ]);
-    expect(skipped.map((k) => k.kind)).toEqual(['command', 'command', 'command']);
+    expect(skipped.map((k) => k.kind)).toEqual(['command', 'command']);
     expect(skipped[0].detail).toMatch(/effects/);
-    expect(skipped[1].detail).toBe('composite xor');
-    expect(skipped[2].detail).toMatch(/shader/);
+    expect(skipped[1].detail).toMatch(/shader/);
     expect(content).not.toContain('rg');
   });
 });
