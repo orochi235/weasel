@@ -20,7 +20,9 @@ interface FileDates {
   created: string;
   modified: string;
   /** The commit that added the file. */
-  commit: string;
+  createdBy: string;
+  /** The commit that last changed it. */
+  modifiedBy: string;
 }
 
 /**
@@ -43,7 +45,13 @@ export function fileDates(log: string, paths: readonly string[]): Map<string, Fi
     const name = files.at(-1);
     const path = name === undefined ? undefined : names.get(name);
     if (!status || name === undefined || path === undefined) continue;
-    out.set(path, { created: date, modified: out.get(path)?.modified ?? date, commit });
+    const newer = out.get(path);
+    out.set(path, {
+      created: date,
+      modified: newer?.modified ?? date,
+      createdBy: commit,
+      modifiedBy: newer?.modifiedBy ?? commit,
+    });
     const renamed = status.startsWith('R') ? files[0] : undefined;
     if (status === 'A' || renamed !== undefined) names.delete(name);
     if (renamed !== undefined) names.set(renamed, path);
@@ -101,11 +109,16 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
     const history: Record<string, ComponentHistory> = {};
     for (const [name, paths] of byPackage) {
       const refs = ['v[0-9]*', '[0-9]*', ...(name === null ? [] : [`${name}@[0-9]*`])].map((ref) => `--refs=${ref}`);
-      const commits = paths.map((path) => dates.get(path)!.commit);
+      const commits = paths.flatMap((path) => [dates.get(path)!.createdBy, dates.get(path)!.modifiedBy]);
       const named = (await git(['name-rev', '--tags', '--name-only', ...refs, ...commits], top)).split('\n');
       paths.forEach((path, i) => {
         const { created, modified } = dates.get(path)!;
-        history[inRepo.get(path)!] = { created, modified, introduced: versionOf(named[i] ?? '') };
+        history[inRepo.get(path)!] = {
+          created,
+          modified,
+          introduced: versionOf(named[2 * i] ?? ''),
+          modifiedIn: versionOf(named[2 * i + 1] ?? ''),
+        };
       });
     }
     return history;

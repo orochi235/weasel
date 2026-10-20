@@ -194,18 +194,18 @@ export function IndexDependencies() {
 
 const DAY = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
-function HistoryDate({ label, iso }: { label: string; iso: string }) {
+function HistoryDate({ label, iso, version }: { label: string; iso: string; version: string | null }) {
   return (
     <div className="fg-index-history__item">
       <dt className="fg-index-history__label">{label}</dt>
       <dd className={`fg-index-history__value ${num.numeric}`}>
-        <time dateTime={iso}>{DAY.format(new Date(iso))}</time>
+        <time dateTime={iso}>{DAY.format(new Date(iso))}</time> ({version ?? 'unreleased'})
       </dd>
     </div>
   );
 }
 
-/** The release the component first shipped in, and when its source file was created and last changed, read from
+/** When the component's source file was created and last changed, each with the release that shipped it, read from
  *  git. Nothing for a gallery, or for a source file git has never committed. */
 export function IndexHistory() {
   const { gallery, dependencies } = useEnv();
@@ -213,12 +213,8 @@ export function IndexHistory() {
   if (!history) return null;
   return (
     <dl className="fg-index-history" aria-label="History">
-      <div className="fg-index-history__item">
-        <dt className="fg-index-history__label">Since</dt>
-        <dd className={`fg-index-history__value ${num.numeric}`}>{history.introduced ?? 'Unreleased'}</dd>
-      </div>
-      <HistoryDate label="Created" iso={history.created} />
-      <HistoryDate label="Modified" iso={history.modified} />
+      <HistoryDate label="Created" iso={history.created} version={history.introduced} />
+      <HistoryDate label="Modified" iso={history.modified} version={history.modifiedIn} />
     </dl>
   );
 }
