@@ -1,9 +1,11 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from '../analyser';
 import { defaultTimers, type Timers } from '../audioTime';
 import { initParam } from '../param';
-import { createEdits, graphError } from './edits';
+import { createEdits } from './edits';
+import { graphError } from './errors';
 import { createTransport } from './transport';
 import type { AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch } from './types';
+import { validatePatches } from './validate';
 import { startWrapper } from './wrapper';
 
 export type { NodeWrapper } from './wrapper';
@@ -60,6 +62,8 @@ export function createAudioGraph(
     disconnect: guard(edits.disconnect),
     set: guard(edits.set),
     apply: guard((patches: readonly GraphPatch[]): void => {
+      validatePatches(edits.view(), patches);
+      let failed: { error: unknown } | null = null;
       for (const p of patches) {
         switch (p.kind) {
           case 'add': graph.add(p.id, p.def); break;
@@ -67,9 +71,16 @@ export function createAudioGraph(
           case 'replace': graph.replace(p.id, p.def); break;
           case 'connect': graph.connect(p.from, p.to); break;
           case 'disconnect': graph.disconnect(p.from, p.to); break;
-          case 'set': graph.set(p.id, p.param, p.value, p.rampMs); break;
+          case 'set':
+            try {
+              graph.set(p.id, p.param, p.value, p.rampMs);
+            } catch (error) {
+              failed ??= { error };
+            }
+            break;
         }
       }
+      if (failed) throw failed.error;
     }),
     start: guard(transport.start),
     stop: guard(transport.stop),

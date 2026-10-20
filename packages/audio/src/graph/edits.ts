@@ -3,10 +3,9 @@ import { blocked, drop, findLive, logical, reaches, touches, type Edge } from '.
 import { createFader } from './fader';
 import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
+import { closesCycle, duplicateNode, noNode, noParam, noPort, owns } from './errors';
+import type { GraphView } from './validate';
 import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
-
-export const graphError = (msg: string): Error => new Error(`@weasel-js/audio: ${msg}`);
-const owns = (rec: object, key: string): boolean => Object.prototype.hasOwnProperty.call(rec, key);
 
 export interface EditsDeps {
   ctx: BaseAudioContext;
@@ -25,7 +24,7 @@ export interface EditsDeps {
 function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrapper | null, string] {
   if ('output' in to) return [null, ''];
   const w = live(to.node);
-  if (!owns(w.ins, to.port)) throw graphError(`node "${to.node}" has no input port "${to.port}"`);
+  if (!owns(w.ins, to.port)) throw noPort(to.node, to.port);
   return [w, to.port];
 }
 
@@ -40,7 +39,7 @@ export function createEdits(deps: EditsDeps) {
 
   const live = (id: string): NodeWrapper => {
     const w = nodes.get(id);
-    if (!w) throw graphError(`no node "${id}"`);
+    if (!w) throw noNode(id);
     return w;
   };
 
@@ -82,12 +81,17 @@ export function createEdits(deps: EditsDeps) {
     liveNodes: () => [...nodes.values()],
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
+    /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
+    view: (): GraphView => ({
+      nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
+      edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
+    }),
     /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
       edges.some((e) => e.state !== 'open') ||
       [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
     add(id: string, def: GraphNodeDef): void {
-      if (nodes.has(id)) throw graphError(`a node "${id}" already exists`);
+      if (nodes.has(id)) throw duplicateNode(id);
       const w = createWrapper(ctx, timers, id, def);
       nodes.set(id, w);
       deps.onAdd(w);
@@ -116,7 +120,7 @@ export function createEdits(deps: EditsDeps) {
       const [tw, port] = target(live, to);
       if (findLive(edges, w, tw, port)) return;
       if (tw && reaches(edges, tw, w, logical)) {
-        throw graphError(`connecting "${from}" to "${tw.id}" would close a cycle`);
+        throw closesCycle(from, tw.id);
       }
       const e: Edge = { from: w, to: tw, port, state: 'deferred', fader: null };
       edges.push(e);
@@ -133,7 +137,7 @@ export function createEdits(deps: EditsDeps) {
     },
     set(id: string, param: string, value: number, rampMs?: number): void {
       const w = live(id);
-      if (!owns(w.def.params, param)) throw graphError(`node "${id}" has no param "${param}"`);
+      if (!owns(w.def.params, param)) throw noParam(id, param);
       w.def.params[param](value, rampMs ?? fade());
     },
     /** Cut every edge, canceling its close, then release every def. */

@@ -223,6 +223,86 @@ describe('createAudioGraph lifetime', () => {
     expect(() => h.graph.apply([{ kind: 'replace', id: 'a', def: testNode(h.ctx).def }])).toThrow(/no node "a"/);
   });
 
+  it('apply changes nothing when a later patch is structurally wrong', () => {
+    const { ctx, graph, dest } = harness();
+    const a = testNode(ctx, []);
+    const b = testNode(ctx);
+    graph.add('a', a.def);
+    const fresh = testNode(ctx);
+    expect(() => graph.apply([
+      { kind: 'add', id: 'b', def: b.def },
+      { kind: 'connect', from: 'a', to: { node: 'b', port: 'in' } },
+      { kind: 'connect', from: 'a', to: { output: true } },
+      { kind: 'set', id: 'a', param: 'level', value: 0.5 },
+      { kind: 'replace', id: 'a', def: fresh.def },
+      { kind: 'remove', id: 'a' },
+      { kind: 'add', id: 'a', def: testNode(ctx).def },
+      { kind: 'set', id: 'a', param: 'nope', value: 1 },
+    ])).toThrow('@weasel-js/audio: node "a" has no param "nope"');
+    expect(graph.ids()).toEqual(['a']);
+    expect(allPaths(a.output, dest)).toHaveLength(0);
+    expect(allPaths(a.output, b.inputs.in)).toHaveLength(0);
+    expect(a.level).not.toHaveBeenCalled();
+    expect(a.dispose).not.toHaveBeenCalled();
+    expect(b.dispose).not.toHaveBeenCalled();
+    expect(fresh.dispose).not.toHaveBeenCalled();
+  });
+
+  it('apply changes nothing when a connect would close a cycle', () => {
+    const { ctx, graph } = harness();
+    const a = testNode(ctx);
+    const b = testNode(ctx);
+    graph.add('a', a.def);
+    graph.add('b', b.def);
+    expect(() => graph.apply([
+      { kind: 'connect', from: 'a', to: { node: 'b', port: 'in' } },
+      { kind: 'connect', from: 'b', to: { node: 'a', port: 'in' } },
+    ])).toThrow('@weasel-js/audio: connecting "b" to "a" would close a cycle');
+    expect(allPaths(a.output, b.inputs.in)).toHaveLength(0);
+    expect(allPaths(b.output, a.inputs.in)).toHaveLength(0);
+  });
+
+  it('apply validates against the patches before it, in order', () => {
+    const { ctx, graph, dest } = harness();
+    const old = testNode(ctx, []);
+    const fresh = testNode(ctx, []);
+    const amp = testNode(ctx);
+    graph.add('a', old.def);
+    graph.apply([
+      { kind: 'remove', id: 'a' },
+      { kind: 'add', id: 'a', def: fresh.def },
+      { kind: 'add', id: 'amp', def: amp.def },
+      { kind: 'connect', from: 'a', to: { node: 'amp', port: 'in' } },
+      { kind: 'connect', from: 'amp', to: { output: true } },
+    ]);
+    expect(graph.ids()).toEqual(['a', 'amp']);
+    expect(allPaths(fresh.output, dest)).toHaveLength(1);
+  });
+
+  it('apply finishes the list past a param write that throws, then rethrows it', () => {
+    const { ctx, graph, dest } = harness();
+    const a = testNode(ctx, []);
+    const bad = new RangeError('@weasel-js/audio: out of range');
+    const picky = testNode(ctx);
+    const def = { ...picky.def, params: { ...picky.def.params, time: () => { throw bad; } } };
+    graph.add('a', a.def);
+    graph.add('p', def);
+    let thrown: unknown;
+    try {
+      graph.apply([
+        { kind: 'set', id: 'p', param: 'time', value: 9999 },
+        { kind: 'connect', from: 'a', to: { node: 'p', port: 'in' } },
+        { kind: 'connect', from: 'p', to: { output: true } },
+        { kind: 'set', id: 'a', param: 'level', value: 0.5 },
+      ]);
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBe(bad);
+    expect(allPaths(a.output, dest)).toHaveLength(1);
+    expect(a.level).toHaveBeenCalledWith(0.5, FADE);
+  });
+
   it('starts sources on start and on add while playing; stop fades out then stops them', () => {
     const { ctx, graph, dest, settle } = harness();
     const s1 = testNode(ctx, [], true);

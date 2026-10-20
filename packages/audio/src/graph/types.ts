@@ -38,7 +38,9 @@ export interface AudioGraph {
   connect(from: string, to: GraphTarget): void; // idempotent; throws on unknown id/port or a cycle
   disconnect(from: string, to: GraphTarget): void; // no-op when not connected
   set(id: string, param: string, value: number, rampMs?: number): void; // throws on unknown id/param
-  /** Applies in order; each patch calls the method of the same name. */
+  /** Applies in order; each patch calls the method of the same name.
+   *  A structural error anywhere in the list throws before anything changes.
+   *  A param write that throws is skipped; the rest apply, then its error is rethrown. */
   apply(patches: readonly GraphPatch[]): void;
   /** Start every source now, and every source added later, until `stop`. */
   start(): void;
