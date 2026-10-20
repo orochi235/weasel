@@ -20,78 +20,17 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 
 | # | Piece | Core foundation it adds | Needs |
 |---|---|---|---|
-| 2 | Stage reorder under `rack` and `lanes` | — | — |
 | 3 | Multiple pages | scene document values | — |
 | 4 | Themes | — | 3 (document values) |
 | 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | — |
 | 6 | Obstacle-avoiding routing | scene edit passes | 5 |
 
-The suggested order holds. Stage reorder sits second although it shares nothing with the others,
-because it closes out pipeline mode's first-arc gap while the scene foundations are still in review.
+The suggested order holds.
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README's
 editing section and `docs/TODO.md` in its merge; and, when it merges, deletes its own section of
 this doc (the doc is deleted with the last piece).
-
-## 2. Stage reorder under `rack` and `lanes`
-
-### What the user sees
-
-Pipeline mode gains View › Look › Node graph / Rack / Lanes. Under rack and lanes, connecting,
-reconnecting, deleting, and param editing work as under node graph; free moves do not. Instead,
-dragging a stage on the main line lifts it, it follows the pointer along the flow axis, and an
-insertion bar shows between the two stages it would land between. Releasing splices it in there.
-Where the splice cannot type-check, the bar draws in the problem color and release does nothing.
-Under lanes, dragging a lane's label up or down reorders the lanes.
-
-### What a reorder means
-
-**The wiring is the order (2026-10-19).** Both looks place stages from the wires (`mainChain` for
-rack, `columnsOf` for lanes), so a reorder rewires: the stage's main input and output wires come off,
-its old neighbors are wired to each other, the wire between its new neighbors comes off, and the
-stage is wired between them. Side wires, control wires, and params stay with the stage. A second
-stored order could contradict the wiring, so none is kept.
-
-**Only stages on the main line drag (2026-10-19).** An off-line stage sits where what it feeds
-puts it, so there is no slot to drag it to.
-
-### Engine surface
-
-- **`effect/chainEdit.ts`**: `chainLinks(pipeline, chain)` (the main-in and main-out port of each
-  chain stage, moved out of `rack.ts`'s `Line` so rack and the edit share one answer),
-  `canMoveInChain(doc, stage, to)`, and `moveInChain(doc, stage, to) → EffectDoc | null`.
-- **`EffectLookResult.order?: LookOrder`** in `effect/draw.ts`:
-  `{ axis: 'x' | 'y'; items: { id, bounds }[]; gaps: { index, a: Vec2, b: Vec2 }[] }`, the slots a
-  drag can land in, in world units. `rack` and `lanes` fill it; `lanes` also fills `laneOrder` with
-  each lane's header box.
-- **`slotReorder.ts`** in the diagram root, general to any drawing that is a sequence:
-  `REORDER_ACTION_ID = 'diagram.reorder'`, `createReorderAction({ slots, canDrop, commit })` where
-  `slots(ctx) → ReorderSlots | null` and the commit hears `{ id, from, to }`. It previews the
-  dragged node along the axis through a pose override and draws the insertion bar as its overlay.
-- **`EffectDoc.laneOrder?: readonly string[]`** and `setLaneOrder(doc, order)` in `effect/edit.ts`;
-  `editorScene` hands it to `lanes` as `LanesOptions.lanes`.
-- **`EffectEditor`** takes `look?: 'nodeGraph' | 'rack' | 'lanes'` and that look's options;
-  `editorScene(doc, look, options)` replaces the `nodeGraph`-only mapping in
-  `effect/editorMapping.ts`. Undo labels: "Reorder", "Reorder lanes".
-
-**The look is a view choice, kept in the session, not the document (2026-10-19)**: one pipeline is
-meant to read in every look. `compact` stays view-only.
-
-### Save, load, undo
-
-A reorder is a pipeline edit, so it saves with the pipeline. `laneOrder` is a new optional field;
-older files load unchanged. Each reorder is one `onChange`, so one entry in the app's pipeline
-history (`apps/chart/src/pipeline/usePipelineDoc.ts`).
-
-### Tests
-
-- `chainEdit.test.ts`: splice forward and back, to either end; type mismatch refuses; side and
-  control wires stay; `mainChain` after a splice puts the stage at its target.
-- `rack.test.ts`, `lanes.test.ts`: `order` slots match the drawn boxes.
-- `slotReorder.test.ts`; `EffectEditor.reorder.test.tsx` reporting "Reorder".
-- `EffectEditor.reorder.browser.test.tsx`: a real drag under rack; the insertion bar's place.
-- `apps/chart/src/pipeline/pipeline.browser.test.tsx`: switch look, reorder, undo.
 
 ## 3. Multiple pages
 

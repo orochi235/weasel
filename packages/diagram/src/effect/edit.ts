@@ -114,6 +114,11 @@ export function moveStages(doc: EffectDoc, moves: readonly { id: string; x: numb
   return { ...doc, places };
 }
 
+/** Sets the value types whose lanes `lanes` draws first, top down. */
+export function setLaneOrder(doc: EffectDoc, order: readonly string[]): EffectDoc {
+  return { ...doc, laneOrder: [...order] };
+}
+
 /** Mints ids for id-less wires; returns `doc` itself when none lacks one. */
 export function ensureWireIds(doc: EffectDoc): EffectDoc {
   if (doc.pipeline.wires.every((w) => w.id !== undefined)) return doc;

@@ -4,6 +4,7 @@ import {
   boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
   wireEdge, wireStyle, type EffectLook, type RunRowOptions,
 } from './draw';
+import { chainLinks } from './chainEdit';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
@@ -93,19 +94,9 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
   return wires;
 }
 
-function lineOf(pipeline: EffectPipeline, chain: readonly string[], wires: readonly RackWire[]): Line {
-  const at = new Map(chain.map((id, i) => [id, i]));
-  const mainIn = new Map<string, string>();
-  const mainOut = new Map<string, string>();
-  for (const wire of wires) {
-    if (wire.arc || isControl(pipeline, wire.type)) continue;
-    const a = at.get(wire.from.stage);
-    const b = at.get(wire.to.stage);
-    if (a === undefined || b !== a + 1) continue;
-    if (!mainOut.has(wire.from.stage)) mainOut.set(wire.from.stage, wire.from.port);
-    if (!mainIn.has(wire.to.stage)) mainIn.set(wire.to.stage, wire.to.port);
-  }
-  return { at, mainIn, mainOut };
+function lineOf(pipeline: EffectPipeline, ordered: readonly string[], chain: readonly string[]): Line {
+  const { mainIn, mainOut } = chainLinks(pipeline, ordered);
+  return { at: new Map(chain.map((id, i) => [id, i])), mainIn, mainOut };
 }
 
 /** `near` and `far` are the `v` of the edge facing the side stages and the one facing away. */
@@ -144,7 +135,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const gone = new Set(skips.map((s) => s.decision.id));
   const chain = ordered.filter((id) => !gone.has(id));
   const wires = rackWires(pipeline, skips);
-  const line = lineOf(pipeline, chain, wires);
+  const line = lineOf(pipeline, ordered, chain);
 
   const kept = stages.filter((s) => !gone.has(s.id));
   const controlSide = below ? 'bottom' : 'top';
@@ -188,6 +179,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       ...sceneStyles(kept, edges),
     },
     color,
+    order: { axis: 'x', items: chain.map((id) => ({ id })) },
     exits: new Map(wires.flatMap((wire, i) => (wire.exit === undefined ? [] : [[edgeIdOf(edges[i]!.edge), wire.exit]]))),
   };
 };
