@@ -571,6 +571,21 @@ shape (`{ moves, routes }`): every node not pinned, and every edge whose route
 or ports layout wrote. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
+`onResize` gives a selected node resize handles (`diagramResizable`, so none on
+an edge, an edge label, a lane, or a group's box). The box resizes live under
+the drag; on release the view reports `{ id, x, y, width, height }` for each
+resized node and draws the new box only once the specs do. Store it as the
+node's `width`, `height`, and `at`, with `pinned: true`. The size is a minimum,
+so a box dragged smaller than its rows grows back to them. Core's
+`createResizeAction({ commit })` is what reports: it hands the release poses to
+`commit` in place of writing them.
+
+```tsx
+<DiagramView
+  specs={specs}
+  onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
+/>
+```
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.

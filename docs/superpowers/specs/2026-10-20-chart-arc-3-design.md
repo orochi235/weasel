@@ -23,7 +23,6 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
 | 8 | Waypoint editing under `rack` and `lanes` | diagram | — | 1 |
 | 10 | Theme builder | core, diagram, app | — | 1 |
 | 11 | Running a pipeline | diagram, app | — | 1 |
@@ -31,7 +30,7 @@ merged.
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
 | 5 | Line jumps | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
-| 7 | Containers and swimlanes in `DiagramData` | diagram | 2 | 2 |
+| 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
@@ -48,7 +47,7 @@ Shared files, and who makes room in them first:
 | `packages/diagram/src/edge.ts` | 218 | 3, 5 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 247 | 8, 9, 11 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 5, 7 | none needed; each adds props |
+| `packages/diagram/src/diagramViewProps.ts` | 185 | 4, 5, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -57,39 +56,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-## 2. Resize reporting in `DiagramView`
-
-### What the user sees
-
-In a `DiagramView` with `onResize` set, a selected node shows resize handles. Dragging one resizes
-the box live; releasing reports the new box and changes nothing until the data follows.
-
-### Engine surface (`packages/diagram/src/`)
-
-- `diagramViewProps.ts`: `onResize?: (resizes: readonly NodeResize[]) => void`.
-- `sceneSync.ts`: `NodeResize { id: string; x: number; y: number; width: number; height: number }`.
-  `Standing` keeps each node's size beside its place; `changes` reports a node whose size changed
-  as a resize, not a move.
-- `DiagramView.tsx`: with `onResize`, `features` gains `'resize'` and the select tool takes
-  `resize: { resizable: diagramResizable(scene) }` (`resizable.ts`), which already refuses edges,
-  labels, and lanes; it also refuses group boxes, which derive their size.
-
-The host stores `width` and `height` on the `DataNode` (with `at` and `pinned`). Those are minimums
-already, so a box dragged smaller than its rows grows back to them, the rule scene bodies follow.
-
-**Decision (2026-10-20).** `EffectEditor` sets no `onResize`: every look sizes a stage from its
-rows, so a stored stage size would contradict the look.
-
-### Save, load, undo
-
-The host's data holds the size; undo is the host's, one entry per reported resize. Under
-`router="avoid"` the next specs reroute what the new box disturbs, as for a move.
-
-### Tests
-
-- `sceneSync.test.ts`: a size change is a resize, a place change a move, a layout run neither.
-- `DiagramView.resize.test.tsx`: handles only with `onResize`; nothing changes until specs follow.
-- `DiagramView.resize.browser.test.tsx`: a real handle drag reports one resize on release.
 
 ## 3. Off-page reference markers
 
@@ -382,7 +348,10 @@ interface DataLane { id: string; label?: string; size?: number; members?: readon
     (resized, reordered, or added: a new lane id is minted by the view) | `{ kind: 'release'; id }`
     | `{ kind: 'title'; id }` (double-click on a header; the host edits the label, as with
     `onEditLabel`).
-- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`.
+- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`. A
+  region's handle resize is not among them: `DiagramView` reports handle resizes from the resize
+  action's swapped commit (`reportResizeAction` in `diagramEditing.ts`) and writes nothing, since
+  `reconcileSpecs` diffs spec against spec and could never put back a size the data clamped.
 - `diagramEditing.ts` installs, when `onEditContainer` is set, `diagramContainers` with its lane
   commits swapped for reports, `diagramCanDropInto` as the `canDropInto` dep, and the lane layer.
   `DeleteReport.nodes` includes a deleted region's members, as a chart-mode delete takes them.
