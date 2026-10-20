@@ -46,7 +46,8 @@ export function CodeBlock({ code, language = 'tsx', lineNumbers = false, classNa
         // The gutter holds the widest number; a custom property is the one thing set inline.
         const gutter = { '--code-gutter': `${String(tokens.length).length}ch` } as CSSProperties;
         return (
-          <pre className={[s.block, lineNumbers && s.numbered, className].filter(Boolean).join(' ')}
+          // It scrolls, so the keyboard has to be able to reach it to scroll it.
+          <pre className={[s.block, lineNumbers && s.numbered, className].filter(Boolean).join(' ')} tabIndex={0}
             style={lineNumbers ? gutter : undefined} data-testid={rest['data-testid']}>
             <code>
               {tokens.map((line, i) => {
