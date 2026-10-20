@@ -39,6 +39,7 @@ export const RULES = [
   ['packages/core/src/affordances', 'Selection & actions'],
   ['packages/core/src/animation', 'Rendering'],
   ['packages/core/src/debug', 'Extension points'],
+  ['packages/core/src/devtools', 'Extension points'],
   ['packages/core/src/icons', 'Extension points'],
   ['packages/core/src/iconRegistry', 'Extension points'],
   ['packages/core/src/kitSettings', 'Extension points'],

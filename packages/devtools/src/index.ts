@@ -3,6 +3,8 @@
  * a page through the devtools hook (`@weasel-js/core/devtools`). Mount
  * `DevtoolsPanel` over any transport; `connectDevtools` is the same protocol
  * client without React.
+ *
+ * @packageDocumentation
  */
 export { connectDevtools, createDevtoolsClient } from './client';
 export type { DevtoolsClient, DevtoolsClientState, DevtoolsRequestBody, DevtoolsResultMap } from './client';

@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { RULES } from './categories.mjs';
 import { categoryOf } from './categoryOf.mjs';
@@ -93,5 +95,16 @@ describe('the rule table', () => {
       }
     }
     expect(shadowed).toEqual([]);
+  });
+
+  it("covers every directory of core's source that declares exports", () => {
+    // These hold tests, re-export lists, and module shims, never a declaration the reference documents.
+    const noDeclarations = new Set(['__tests__', 'barrel', 'import-shims', 'test-hook']);
+    const src = join(import.meta.dirname, '../packages/core/src');
+    const uncovered = readdirSync(src, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !noDeclarations.has(e.name))
+      .map((e) => `packages/core/src/${e.name}`)
+      .filter((dir) => categoryOf(`${dir}/any.ts`, 'any') === null);
+    expect(uncovered).toEqual([]);
   });
 });
