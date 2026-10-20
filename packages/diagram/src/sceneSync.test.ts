@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSpec } from './fromData';
-import { diagramLayoutOf, type EdgeRoute, type NodeMove } from './sceneSync';
+import { describe, expect, it, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { createScene, type NodeId, type RectPose } from '@weasel-js/core';
+import { withDiagramRegistry } from './edge';
+import { diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSpec } from './fromData';
+import { diagramLayoutOf, useSceneSync, type ContainerEdit, type EdgeRoute, type NodeMove } from './sceneSync';
 
 /** `a -> c` skips a rank, so `layered` gives it waypoints. */
 const DATA: DiagramData = {
@@ -75,5 +78,76 @@ describe('diagramLayoutOf', () => {
     const next = diagramScene(edited);
     for (const id of ['a', 'b', 'c']) expect(poseOf(next, id)).toEqual(poseOf(first, id));
     expect(diagramLayoutOf(next).moves).toEqual([{ id: 'd', ...poseOf(next, 'd') }]);
+  });
+
+  it('reports a boxed container not pinned as a box, and leaves out its fitted and pinned ones', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],
+      edges: [],
+      containers: [
+        { id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 100 } },
+        { id: 'f', role: 'container', members: ['b'] },
+        { id: 'p', role: 'pool', pinned: true, lanes: [{ id: 'l' }] },
+      ],
+    };
+    const specs = diagramScene(data);
+    const { containers, moves } = diagramLayoutOf(specs);
+    const k = specs.find((s) => s.id === 'k')!.pose;
+    expect(containers).toEqual([{ kind: 'box', id: 'k', box: { x: k.x, y: k.y, width: 200, height: 100 } }]);
+    expect(moves.map((m) => m.id).sort()).toEqual(['a', 'b']);
+  });
+});
+
+/** A container `k` holding `a`, and `b` on its own. */
+const REGIONS: DiagramData = {
+  nodes: [{ id: 'a', lines: ['a'], at: { x: 20, y: 40 } }, { id: 'b', lines: ['b'], at: { x: 400, y: 0 } }],
+  edges: [],
+  containers: [{ id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 120 } }],
+};
+
+function synced(data: DiagramData) {
+  const specs = diagramScene(data, { layout: 'none' });
+  const scene = createScene<DiagramSceneData, 'main', RectPose>({ systemLayers: [{ id: 'main' }], initial: specs, registry: withDiagramRegistry() });
+  const onMove = vi.fn<(moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void>();
+  const onEditContainer = vi.fn<(edit: ContainerEdit) => void>();
+  const hook = renderHook(({ s }) => useSceneSync(scene, s, { onMove, onEditContainer }), { initialProps: { s: specs } });
+  return { scene, onMove, onEditContainer, rerender: (next: DiagramData) => hook.rerender({ s: diagramScene(next, { layout: 'none' }) }) };
+}
+
+describe('useSceneSync with regions', () => {
+  it('reports a node dropped into a region with its new parent, and one dropped out with null', () => {
+    const { scene, onMove } = synced(REGIONS);
+    act(() => {
+      scene.batch('Drop', () => {
+        scene.move('b' as NodeId, 'k' as NodeId);
+        scene.setPose('b' as NodeId, { ...scene.get('b' as NodeId)!.pose, x: 100, y: 50 });
+      });
+    });
+    expect(onMove).toHaveBeenLastCalledWith([{ id: 'b', x: 100, y: 50, parent: 'k' }], []);
+    act(() => scene.move('a' as NodeId, null));
+    expect(onMove).toHaveBeenLastCalledWith([{ id: 'a', x: 20, y: 40, parent: null }], []);
+  });
+
+  it('reports a region moved as its box, beside the moves of what it carried', () => {
+    const { scene, onMove, onEditContainer } = synced(REGIONS);
+    act(() => {
+      scene.batch('Move', () => {
+        scene.setPose('k' as NodeId, { x: 10, y: 0, width: 200, height: 120 });
+        scene.setPose('a' as NodeId, { ...scene.get('a' as NodeId)!.pose, x: 30 });
+      });
+    });
+    expect(onEditContainer).toHaveBeenCalledWith({ kind: 'box', id: 'k', box: { x: 10, y: 0, width: 200, height: 120 } });
+    expect(onMove).toHaveBeenLastCalledWith([{ id: 'a', x: 30, y: 40 }], []);
+  });
+
+  it('reports nothing for a change that arrives as new specs', () => {
+    const { onMove, onEditContainer, rerender } = synced(REGIONS);
+    act(() => rerender({
+      ...REGIONS,
+      nodes: [REGIONS.nodes[0]!, { ...REGIONS.nodes[1]!, at: { x: 50, y: 50 } }],
+      containers: [{ ...REGIONS.containers![0]!, members: ['a', 'b'], box: { x: 0, y: 0, width: 300, height: 120 } }],
+    }));
+    expect(onMove).not.toHaveBeenCalled();
+    expect(onEditContainer).not.toHaveBeenCalled();
   });
 });

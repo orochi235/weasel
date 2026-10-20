@@ -24,6 +24,23 @@ describe('ToolPalette columns', () => {
     expect(screen.getByRole('separator').getAttribute('aria-orientation')).toBe('horizontal');
   });
 
+  it('moves Up and Down a row of its group, each group starting a row of its own', () => {
+    // a b c
+    // d
+    // e f
+    const list = ['a', 'b', 'c', 'd'].map((id) => tool(id, 'one')).concat(['e', 'f'].map((id) => tool(id, 'two')));
+    renderWithIcons(<ToolPalette tools={fakeTools(list)} columns={3} groupOrder={['one', 'two']} />);
+    const btn = (name: string) => screen.getByRole('button', { name });
+    fireEvent.keyDown(btn('a'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(btn('d'));
+    fireEvent.keyDown(btn('d'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(btn('e'));
+    fireEvent.keyDown(btn('e'), { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(btn('f'));
+    fireEvent.keyDown(btn('f'), { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(btn('d'));
+  });
+
   it('leaves the groups a single line without columns', () => {
     renderWithIcons(<ToolPalette tools={fakeTools([tool('a'), tool('b')])} />);
     expect(groups()[0]!.style.getPropertyValue('--wzl-tool-columns')).toBe('');

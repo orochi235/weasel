@@ -1,3 +1,4 @@
+import type { DataContainer } from '../dataTypes';
 import { edgeIdOf, type DataEdge } from '../fromData';
 import { drawableWires, type EffectLookResult } from './draw';
 import { ensureWireIds } from './edit';
@@ -23,6 +24,8 @@ export interface EditorLookOptions {
 export interface EditorScene extends EffectLookResult {
   /** The stage a scene node is, or `undefined` for a group box, a lane, or anything else. */
   stageOf(node: string): string | undefined;
+  /** The group a scene node is: a container under `nodeGraph`, a group box under the others. */
+  groupOf(node: string): string | undefined;
   /** The wire a data edge id (`edgeIdOf`) draws, by its id in
    *  `ensureWireIds(doc)`, so an id-less wire is found by the id it will get.
    *  `undefined` for an edge standing in for more than one wire, such as
@@ -35,8 +38,10 @@ const edgeEnds = (e: DataEdge) => endsKey({ stage: e.from, port: e.fromPort ?? '
 
 /** The look's drawing of the doc's pipeline. Under `nodeGraph` every placed
  *  stage is pinned at its place, so layered layout places only the stages
- *  that have none; the other looks place every stage themselves. `lanes`
- *  takes the doc's `laneOrder` over its options' `lanes`. */
+ *  that have none, and each group is a container, at its `groupBoxes` box or
+ *  fitting its members; the other looks place every stage themselves and draw
+ *  groups as boxes around their members. `lanes` takes the doc's `laneOrder`
+ *  over its options' `lanes`. */
 export function editorScene<L extends EditorLook = 'nodeGraph'>(
   doc: EffectDoc,
   look: L = 'nodeGraph' as L,
@@ -44,6 +49,7 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
 ): EditorScene {
   const drawn = drawLook(doc, look, options);
   const stages = new Set(doc.pipeline.stages.map((s) => s.id));
+  const groups = new Set((doc.pipeline.groups ?? []).map((g) => g.id));
   const ids = ensureWireIds(doc).pipeline.wires.map((w) => w.id!);
   const byEnds = new Map<string, string>();
   for (const d of drawableWires(doc.pipeline)) {
@@ -65,6 +71,7 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
     ...drawn,
     data: { ...drawn.data, edges },
     stageOf: (node) => (stages.has(node) ? node : undefined),
+    groupOf: (node) => (groups.has(node) && !stages.has(node) ? node : undefined),
     wireOf: (edge) => wires.get(edge),
   };
 }
@@ -81,5 +88,13 @@ function drawLook(doc: EffectDoc, look: EditorLook, options: EditorLookOptions[E
     const at = doc.places[n.id];
     return at === undefined ? n : { ...n, at: { x: at.x, y: at.y }, pinned: true };
   });
-  return { ...drawn, data: { ...drawn.data, nodes } };
+  const { groups = [], ...rest } = drawn.data;
+  const containers = groups.map((g): DataContainer => {
+    const box = doc.groupBoxes?.[g.id];
+    return {
+      id: g.id, role: 'container', label: g.label ?? '', members: g.members,
+      ...(box !== undefined ? { box: { ...box }, pinned: true } : {}),
+    };
+  });
+  return { ...drawn, data: { ...rest, nodes, ...(containers.length > 0 ? { containers } : {}) } };
 }

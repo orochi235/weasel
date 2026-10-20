@@ -31,6 +31,7 @@ import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
 import { diagramEdgeOf, type EdgeEnd } from './edgeTrait';
+import { withHops } from './hops/draw';
 import { ROUTERS, straight, type Router } from './routers';
 import type { Port } from './types';
 
@@ -127,6 +128,8 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
  * sides {@link selfLoop} picks, and where the author set no waypoints the
  * router is handed that rule's point outside the node as one.
  *
+ * An edge carrying `hops` bows over each one that still lies on its route.
+ *
  * Returns `null` — nothing to draw — when the node is not an edge, when either
  * dependency is gone, or when an endpoint offers no ports at all.
  */
@@ -138,7 +141,9 @@ export function edgeDerivePath<TPose>(
     const route = routeOf(node, deps);
     if (route?.stubs !== undefined) return stubsPath(route.stubs);
     const points = route?.points;
-    return points === undefined || points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
+    if (points === undefined || points.length < 2) return null;
+    const hops = diagramEdgeOf(node)?.hops;
+    return hops !== undefined && hops.length > 0 ? withHops(points, hops) : polylineFromPoints(points as { x: number; y: number }[]);
   };
 }
 

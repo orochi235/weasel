@@ -84,13 +84,16 @@ describe('BarAction', () => {
     expect(run).toHaveBeenCalledWith({ to: 'right' });
   });
 
-  it('is disabled while the action says it cannot run', () => {
+  it('is disabled while the action says it cannot run, and stays focusable to say why', () => {
     render(
       <Host actions={[action('text.bold', { enabled: () => 'selection-required' })]}>
         <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
       </Host>,
     );
-    expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Bold' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute('aria-description', 'Selection required');
   });
 
   it('follows a dep whose owner says it changed', () => {
@@ -113,9 +116,9 @@ describe('BarAction', () => {
         </Host>
       </DepRegistryProvider>,
     );
-    expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-disabled', 'true');
     act(() => { gate.open = true; registry.changed!(); });
-    expect(screen.getByRole('button', { name: 'Bold' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Bold' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('reads as held down while the action says it is active', () => {

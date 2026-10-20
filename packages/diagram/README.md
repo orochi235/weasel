@@ -178,7 +178,8 @@ fits its ends, after something that did not reroute moved one, draws as
 `useAvoidRouting(scene)`, mounted as a child of `<SceneCanvas>`, reroutes what
 each edit disturbed — a move, an insert onto a route, a delete, a paste, a
 panel edit — in that edit's own undo entry, and while a shape is dragged it
-reroutes the connectors near it each frame. Installing it reroutes nothing.
+reroutes the connectors near it each frame, through the waypoints a
+`waypointFollower` registered before it carried. Installing it reroutes nothing.
 `installAvoidRouting(scene)` does the same for a host without React, and hands
 back the drag's transform follower. Its scene edit pass runs at
 `DIAGRAM_PASS_ORDER.avoid`; a pass of your own that should see the routes it
@@ -203,7 +204,7 @@ What a connector routes around:
 | A container, pool, or group box | neither end is inside it |
 | A lane's body | never |
 | A lane's or pool's header | always |
-| An edge label | never |
+| An edge label | always, except to its own connector, 4 world units clear |
 
 Authored waypoints are stops the route passes in order. Layout names an
 `avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
@@ -216,6 +217,37 @@ each new `specs` around the shapes, holding one router across them so each
 reroutes only what changed, and never reports a route. `createSpecRouter` is
 that step on its own. The search itself, `createAvoidRouter`, reads plain boxes
 and ports and is in `@weasel-js/diagram/layout`.
+
+### Line jumps
+
+While the document value `HOPS_DOC_KEY` (`'diagram:hops'`) holds `{ size }`,
+wherever two connectors cross, the one later in render order bows over the other
+in a half circle of radius `size`. Hops are on or off for the whole document.
+A hop bulges toward −y on a horizontal run and −x on a vertical one, whichever
+way the connector travels, and to the left of travel on a diagonal. A crossing
+within `2 × size` of either connector's ends or within `size` of a bend makes no
+hop, nor does a collinear overlap; hops closer than `2 × size` merge into one
+longer hop. A connector split across pages takes no part: its stubs are too
+short to hold a hop clear of their ends, and the run between them is not drawn.
+
+Each connector stores its hops as `diagram.hops`, `{ at, over, r }` in world
+units, so a saved file draws them with no pass running. `edgeDerivePath` draws
+only the hops that still lie on the route, so one left behind by an edit that
+did not recompute never draws.
+
+`useHops(scene)`, mounted as a child of `<SceneCanvas>` after `useAvoidRouting`,
+recomputes the hops each edit disturbed in that edit's own undo entry, and
+setting or clearing the value recomputes or clears every connector in the entry
+that sets it. While a drag is in progress, the connectors it moves and those
+hopping over them draw without hops; the release puts them back.
+`installHops(scene)` does the same without React. Its pass runs at
+`DIAGRAM_PASS_ORDER.hops`, after routing.
+
+`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
+`hops={radius}`, applied after `router`; `createSpecHops` is that step on its
+own. `edgeHops`, which finds the hops over plain polylines, is in
+`@weasel-js/diagram/layout`.
 
 ### Edge labels
 
@@ -231,6 +263,40 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
+
+### Labels that dodge
+
+After any edit, a label that would sit on a shape, on another label, or across
+another connector slides along its own connector, or flips to the other side of
+it, to the nearest clear spot. It tries its preferred station first, then up to
+four stations either way, a label width and 8 apart, each on both sides of the
+line, and keeps the cheapest: area over shapes counts most, then area over
+other labels, then connectors it covers, then how far it moved. Labels move in
+id order, each an obstacle for the next, so the answer is always the same.
+
+The station placement chose is stored on the trait as `placed` (`at`, a
+fraction of the route's length, and `offset`), read before `at` and
+`offset`, which stay the author's preference; a label goes back to its
+preference once that spot is clear. `dodge: false` keeps a label where its
+author put it. Under `layered`, the room layout left a label is its preference,
+so a laid-out diagram's labels stay put unless something covers them.
+
+`useLabelPlacement(scene)` places what each edit may have covered or uncovered
+in that edit's own undo entry, and sizes a label to the text an edit gives it.
+Labels hold still while a shape is dragged and settle on release.
+`installLabelPlacement(scene)` does the same without React. Its edit pass runs
+at `DIAGRAM_PASS_ORDER.labels`, after routing: connectors route around labels as
+they stand, then labels move off the new routes, one round each per edit.
+
+```tsx
+useAvoidRouting(scene);
+useLabelPlacement(scene);
+```
+
+A data-backed `DiagramView` takes `labels="dodge"`, placed after any
+`router`, and never reports a placement; `createSpecLabelPlacer` is that step
+on its own. The arithmetic, `placeLabels`, reads plain boxes and routes and is
+in `@weasel-js/diagram/layout`.
 
 ### Connectors between pages
 
@@ -274,6 +340,10 @@ const offPage = diagramOffPage();
 Tags take the theme's label color and face on its page color, and applying a
 theme recolors them. A host whose text editing opens on any text node should
 leave tags out: the pass owns their text.
+
+To save one page as an SVG document or a PNG image, cut to the page with its
+stubs and tags, use `exportPageSvg` and `exportPagePng` from
+`@weasel-js/diagram-formats`.
 
 ### Overlays and hover
 
@@ -382,8 +452,8 @@ finds them again: `diagram:container`, `diagram:pool-rows`,
 `diagramContainerLayout` places members freely under a header, and
 `laneStackLayout` stacks a pool's lanes in the order they sit; a pool's size
 along the stack is the sum of its lanes. Lanes take no connectors, and
-connectors stay at the top level, drawn above every container. `DiagramView`
-does not build containers from data yet.
+connectors stay at the top level, drawn above every container. `diagramScene`
+builds them from data too (see "From data").
 
 ### Themes
 
@@ -395,12 +465,21 @@ such as a look's value types. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprin
 
 A theme writes literal colors into the scene, so whatever draws or exports the scene needs no
 theme. A shape or connector names its role in its trait's `style`, and lists the colors its
-author set by hand in `ownStyle`; a theme leaves those.
+author set by hand in `ownStyle`; a theme leaves those. A theme whose font size differs from the
+one the scene was in moves every text by the step between them, keeping a title or label's offset
+from the body size, except text whose owner lists `'size'` in `ownFont`. A body whose text changes
+size is laid out again in the same undo entry: it grows to what its rows need, never shrinks, and a
+body the author made larger keeps its size. A body built from text rows alone records how it
+stacks them (`DiagramNode.body`, each row's text node carrying `bodyRow`), which is what
+`relayoutBodies(scene, ids, measure)` reads back. `rendererMeasure` measures a row as the kit's
+text renderer lays it out, from the registered font, for a host whose bodies should hold their
+text exactly.
 
 ```ts
 applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`
 setDiagramStyle(scene, selection.get(), 'warning');          // name a role, and recolor in it
 setDiagramColor(scene, selection.get(), 'fill', '#ffcc00');  // by hand: survives the next theme
+setDiagramFontSize(scene, selection.get(), 16);              // by hand, recorded in `ownFont`
 const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's theme, or a fallback
 ```
 
@@ -410,6 +489,24 @@ New shapes and connectors take the theme from whatever inserts them: pass `roleS
 `edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
+
+A theme is edited as a value: each edit returns a new theme, so a shipped one is never changed.
+`editableTheme(theme)` is where an editor starts: a shipped theme forked as "<name> (edited)", a
+custom one as it is. A custom theme lives in the document's `diagram:theme` value and travels
+between documents as a `.weasel-theme.json` file.
+
+```ts
+let theme = editableTheme(diagramThemeOf(scene));
+theme = setThemeValue(theme, ['roles', 'accent', 'fill'], '#ff8800');  // also edge, lane, page, font, series…
+theme = addThemeRole(theme, 'Critical').theme;                         // in the default role's colors
+theme = removeThemeRole(theme, 'muted');                               // its shapes fall to the default role
+applyDiagramTheme(scene, theme, 'Edit theme', { coalesceKey: 'theme:roles.accent.fill' });
+const file = themeToJson(theme);                                       // and back: parseDiagramTheme(file)
+```
+
+Applies made under one `coalesceKey` with nothing between fold into one undo entry, so a color
+dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTheme` answers
+`{ theme }` or `{ errors }`, each error naming the bad value by its path.
 
 ### Laying it out
 
@@ -514,7 +611,14 @@ label row each. A `slot` row is reserved space, `height` tall and, with a
 `width`, that wide and centered; one with an `id` becomes a scene node of that
 name, `<node>/<id>`, drawn as an empty frame until you fill it by changing its
 data — with `{ image: { src } }`, say. An edge can name `fromPort`/`toPort`, its own `router`,
-`waypoints` and `labelPlacement`.
+`waypoints`, `labelPlacement`, and a theme role in `style`.
+
+A node, an edge, a container, or a lane can carry `colors` of its own: a node's `fill`, `stroke`,
+and `text`, an edge's `stroke`, `label`, `width`, `dash`, and markers. `diagramScene` draws them
+over the theme and lists the colors in the trait's `ownStyle`, so a later theme change leaves
+them, as it leaves a color set by hand. `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle`
+give the style an item is drawn in, for a writer that needs it without drawing. `layer` puts every
+spec on a layer other than `'main'`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
 `'trapezoid'` (a demultiplexer: tall at the right, short at the left),
@@ -583,6 +687,37 @@ stage. A scene built
 any other way joins in with a node whose trait carries `group` and whose
 `dependsOn` lists its members.
 
+`containers` draws the containers and pools of "Containers and pools" from data:
+
+```tsx
+diagramScene({ nodes, edges, containers: [
+  { id: 'review', role: 'container', label: 'Review', members: ['draft', 'check'] },
+  { id: 'teams', role: 'pool', label: 'Teams', box: { x: 0, y: 400, width: 600, height: 240 }, pinned: true,
+    lanes: [{ id: 'ops', label: 'Ops', members: ['deploy'] }, { id: 'qa', label: 'QA', size: 80 }] },
+] });
+```
+
+Each region is a scene container and its members are its children, so a
+region's id shares the node id namespace, and so does each lane's. A member
+already claimed by an earlier region, a pool, and a claim that would put a
+container inside itself are ignored. A node is in a group or in a region, never
+both: a region is its scene parent, and a group would draw a second box around
+it that the region's does not hold, so `diagramScene` throws on a node that
+`groups` and `containers` both name. A container with a `box` is laid out as
+one node of that size, and its members ride along with it, keeping where they
+stand in it; a member with no `at` is seeded inside its body, in rows. A
+container with no `box` is laid out as a group, and its box fits its members.
+A pool always has a box: 600 across and 120 along per lane when it gives none
+(`DEFAULT_POOL_ACROSS`, `DEFAULT_LANE_SIZE`). Its lanes stack along `axis`
+(`'y'`, rows, by default) at their `size`, and lanes giving none share what
+the pool's box leaves. An edge with an end inside a boxed region ranks against
+the outermost one holding it, and keeps none of layout's route. `pinned`
+leaves a box where it is. Under `theme`, a region naming a `style` role takes
+that role's colors; otherwise a container takes the theme's `container`, a
+pool its `lane.header`, and lanes the `lane.bodies` in turn; titles are set in
+the diagram's face, the theme's when `font` is unset. `router="avoid"`
+routes around a region neither end is inside, and around every header.
+
 Text is sized from character counts unless `measure` is given, so layout runs
 without a canvas. The layout defaults to `layered`, picked by name or passed as
 any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`, and
@@ -616,8 +751,9 @@ would make it yours, which layout never moves. A run that only rewrote routes
 calls `onMove` with no moves.
 `onMove` hears only what changes after the view is built. Where the build's own
 layout put things, `diagramLayoutOf(specs)` reads off the specs, in the same
-shape (`{ moves, routes }`): every node not pinned, and every edge whose route
-or ports layout wrote. Store them the same way and the next `diagramScene`
+shape (`{ moves, routes, containers }`): every node not pinned, every edge whose route
+or ports layout wrote, and a `box` edit for every container and pool not pinned
+whose box is its own. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
 `onResize` gives a selected node resize handles (`diagramResizable`, so none on
@@ -635,6 +771,24 @@ so a box dragged smaller than its rows grows back to them. Core's
   onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
 />
 ```
+
+`onEditContainer` edits containers and pools the way chart mode does, and
+reports each edit without keeping it (`ContainerEdit`):
+
+| The user | Reported |
+|---|---|
+| drags a shape into a container or a lane, or out | `onMove`, the move carrying `parent`: the region's id, or `null` for the top level |
+| drags a container or pool, or resizes it by a handle | `{ kind: 'box', id, box }`, with `parent` when a drop changed its region; what it carried goes to `onMove` |
+| drags a lane's boundary | `{ kind: 'lanes', pool, lanes }`, every lane with its size; the shapes in the lanes after it go to `onMove` |
+| drags a lane by its header to another place | `{ kind: 'lanes', pool, lanes }` in the new order |
+| clicks a pool's add-lane button | `{ kind: 'lanes', pool, lanes }` ending in a new lane, its id minted by the view |
+| double-clicks a header | `{ kind: 'title', id }`, for the host to edit the label |
+| runs Release members (`diagram.releaseMembers`) | `{ kind: 'release', id }` |
+
+Move ids between `members` lists on a move's `parent`, and store a `box` as the
+region's `box` with `pinned: true`. `onDelete` reports a deleted region with
+everything inside it. The view lets shapes drop only into containers and
+lanes, and lanes only into pools (`diagramCanDropInto`).
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
@@ -956,7 +1110,7 @@ const column: EffectLook = (pipeline) => {
 #### Editing a pipeline
 
 `EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
-stage to move it, drag from an output to an input to wire them, press Delete to
+stage to move it, drag it into or out of a group (below), drag from an output to an input to wire them, press Delete to
 remove the selection, drag an end of a selected wire to move it, and drag the
 handles along a selected wire to route it (`EffectDoc.routes`, set with
 `setWireRoute`). It keeps no
@@ -1022,6 +1176,36 @@ group's members. `reorderContribution` packs the action and its binding to pass
 as `ambient`.
 
 `EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
+
+##### Groups
+
+Under `nodeGraph` each `EffectGroup` is a titled box, drawn as a `DiagramData`
+container. Drag a stage into or out of it to change what it holds, drag the
+box to carry the stages and groups inside it with the routes of the wires
+between them (`'Move'`), drag a picked box's handles to resize it
+(`'Resize group'`), and double-click its title to rename it in a field held
+over the title (`'Rename group'`). A resized box is kept in
+`EffectDoc.groupBoxes`, by group id; a group with no box fits its members.
+Under `rack` and `lanes` groups draw as boxes around their members, and
+membership does not drag. A drag's moves and box edits come in as separate
+reports, so the editor gathers them and reports one edit once the drag is done
+reporting, a microtask later.
+
+`selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
+`onSelect`, under every look. The ref's `group(ids)` and `ungroup(id)` report
+`'Group'` and `'Ungroup'`, and `renameGroup(id)` opens the title field. The
+edits are plain functions too:
+
+| Function | What it does |
+| --- | --- |
+| `groupStages(doc, ids, label?)` | A new group, id from `nextGroupId`, holding `ids`; nested inside the group they all share, else at the top level. |
+| `ungroup(doc, id)` | Its members go to its parent group, in its place. |
+| `renameGroup(doc, id, label)` | An empty label removes it. |
+| `moveToGroup(doc, ids, group \| null)` | Into a group, or out to the top level. A group left empty goes too unless it has a box. |
+| `setGroupBox(doc, id, box \| null)` | `null` has it fit its members again. |
+| `moveGroup(doc, id, offset)` | Its stages' places, its box and the boxes inside it, and its inner wires' routes, by one offset. |
+
+`removeStages` drops a group it leaves empty, with its box.
 
 #### Running a pipeline
 

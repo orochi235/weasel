@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createScene } from './scene';
-import { documentPose, effectivePose } from './effectivePose';
+import { derivedDepOf, documentDepOf, documentPose, effectivePose } from './effectivePose';
 import { PATH_L, PATH_M, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { DerivedDep, NodeId, RectPose } from './types';
 
@@ -32,6 +32,10 @@ const poseOf = (scene: Scene, id: NodeId): RectPose =>
 /** The first coordinate pair of a path, which is enough to tell two apart. */
 const startOf = (path: Path | null): number[] =>
   path === null ? [] : [...(path as { coords: Float32Array }).coords].slice(0, 2);
+
+/** The last coordinate pair of a path. */
+const endOf = (path: Path | null): number[] =>
+  path === null ? [] : [...(path as { coords: Float32Array }).coords].slice(-2);
 
 /**
  * A scene holding a line between two boxes, and a marker deriving its pose
@@ -168,6 +172,13 @@ describe('a document read of a path-derived pose', () => {
     expect(poseOf(scene, l)).toEqual(box(300, 50, 4, 4));
     expect(documentPose(scene, scene.get(l)!)).toEqual(box(100, 0, 4, 4));
     expect(poseOf(scene, l)).toEqual(box(300, 50, 4, 4));
+  });
+  it('answers a dependency’s path as the document holds it, through documentDepOf', () => {
+    const { scene, b, line } = labeled();
+    scene.overrides.set(b, { pose: box(300, 50) });
+    expect(endOf(derivedDepOf(scene, line)!.path)).toEqual([300, 50]);
+    expect(endOf(documentDepOf(scene, line)!.path)).toEqual([100, 0]);
+    expect(documentDepOf(scene, 'missing' as NodeId)).toBeUndefined();
   });
 });
 

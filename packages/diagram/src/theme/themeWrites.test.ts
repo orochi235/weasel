@@ -58,6 +58,18 @@ describe('themeWrites', () => {
     expect(themeWrites(scene as unknown as ThemedScene, blueprint, new Set(['a'])).has(`${AB}/offpage-from`)).toBe(false);
   });
 
+  it('moves an off-page tag\'s size by as much as the label size moves', () => {
+    const scene = themedScene();
+    const night = DIAGRAM_THEMES.night!;
+    scene.add(offPageTagSpec(AB, 'from', 'Page 2 · A', { ...offPageTagLook(night), layer: 'main' }) as never);
+    const size = (scene.get(`${AB}/offpage-from` as never)!.data as Painted).style!.fontSize!;
+    const bigger = { ...night, font: { ...night.font, size: night.font.size + 4 } };
+    const step = themeLabelStyle(bigger).fontSize - themeLabelStyle(night).fontSize;
+    const tag = (themeWrites(scene as unknown as ThemedScene, bigger, undefined, night) as Map<string, Painted>).get(`${AB}/offpage-from`)!;
+    expect(step).not.toBe(0);
+    expect(tag.style!.fontSize).toBe(size + step);
+  });
+
   it('recolors a group box as a container, and its title in the container text color', () => {
     const { writes } = writesOf();
     expect(writes.get('g')!.fill!.paint.color).toBe(blueprint.container.fill);

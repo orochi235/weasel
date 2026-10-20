@@ -7,7 +7,7 @@ import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
 import type { ReorderChange } from './groupReorder';
-import type { EdgeRoute, NodeMove } from './sceneSync';
+import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */
 export interface ReconnectChange {
@@ -47,6 +47,14 @@ export interface DiagramViewProps {
    *  new `specs` so each reroutes only what it disturbed. The routes derive
    *  from the specs and are never reported. */
   router?: 'avoid';
+  /** `'dodge'` moves each edge label off whatever covers it, along its
+   *  route or across it, after any `router` has run. Placement derives from
+   *  the specs and is never reported. */
+  labels?: 'dodge';
+  /** Line jumps of this radius: where two edges cross, the later one bows
+   *  over the earlier in a half circle. Applied after `router` and `labels`; derived from
+   *  the specs and never reported. */
+  hops?: number;
   /** The view opens fitted to the diagram, and fits again when the size or a
    *  fit option changes or a layout run settles, until the user pans or zooms;
    *  from then on the view is theirs. Omit both to fill the parent, which
@@ -97,7 +105,8 @@ export interface DiagramViewProps {
    *  as the data edge's `waypoints` and clear its `routed`. */
   onEditRoute?: (change: RouteChange) => void;
   /** Set to let Delete and Backspace remove the selection. Reports the
-   *  selected data nodes (a selected group, not its members) and every edge
+   *  selected data nodes (a selected group, not its members; a selected
+   *  container, pool, or lane with everything inside it) and every edge
    *  selected or ending on one of them, and removes nothing. */
   onDelete?: (removed: DeleteReport) => void;
   /** Set to let a member of a group marked `reorder` be dragged along that
@@ -107,6 +116,14 @@ export interface DiagramViewProps {
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
+  /** Set to edit `DiagramData` containers and pools: drag a lane's boundary,
+   *  click a pool's add-lane button, drag a lane by its header to reorder,
+   *  move or resize a region, double-click a header, or run Release members.
+   *  Each is reported and nothing is kept until the specs follow. A region's
+   *  move also reports what it carried to `onMove`, and a lane resize the
+   *  members of the lanes it shifts. Store a `box` edit as the container's
+   *  `box` with `pinned: true`. */
+  onEditContainer?: (edit: ContainerEdit) => void;
   /** Whether a connect or a reconnect may end on a shape's body, away from
    *  its ports. Default false. */
   connectBodies?: boolean;
