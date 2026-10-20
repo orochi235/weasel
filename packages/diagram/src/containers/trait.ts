@@ -23,6 +23,9 @@ export interface ContainerHeader {
 export interface DiagramContainer {
   role: ContainerRole;
   header?: ContainerHeader;
+  /** Its box is fitted to its members each time the diagram is built from data
+   *  (`DataContainer` with no `box`), so a move that carries it along is no edit of its own. */
+  fitted?: true;
 }
 
 type Box = { x: number; y: number; width: number; height: number };

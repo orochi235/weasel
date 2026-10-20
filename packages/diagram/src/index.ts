@@ -200,6 +200,8 @@ export {
 } from './group';
 export type { DiagramAnchor, DiagramDerivePose, GroupPoseOptions } from './group';
 export { diagramScene, edgeIdOf } from './fromData';
+export { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS } from './dataTypes';
+export type { DataContainer, DataLane } from './dataTypes';
 export { rowTextStyle } from './rowStyle';
 export type {
   DataEdge,
@@ -300,7 +302,7 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
+  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
   ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
