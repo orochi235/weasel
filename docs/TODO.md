@@ -642,14 +642,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
   a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
   worth that.
-- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
-  pointer passes out of its target or off the surface. The loupe
-  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
-  itself: its lens follows a pressed pointer too, which a hover stands down for, and
-  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
-  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
-  drag. Only jsdom has run a hover binding.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`

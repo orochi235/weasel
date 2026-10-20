@@ -9,9 +9,14 @@ import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider'
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import type { Action } from '../actions/action';
+import type { DispatcherChannels } from './gestureDispatcherOptions';
 import { useGestureDispatcher } from './useGestureDispatcher';
 
-function Probe({ actions, body }: { actions: readonly Action[]; body: () => 'empty' | 'unselected-body' }) {
+function Probe({ actions, body, channels }: {
+  actions: readonly Action[];
+  body: () => 'empty' | 'unselected-body';
+  channels?: DispatcherChannels;
+}) {
   const registry = useActionsRegistry();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   for (const action of actions) registry?.register(action);
@@ -20,16 +25,21 @@ function Probe({ actions, body }: { actions: readonly Action[]; body: () => 'emp
     actions: registry!,
     entriesById: new Map(),
     classifyTarget: () => ({ body: body() }),
+    ...(channels ? { channels } : {}),
   });
   return <canvas ref={canvasRef} />;
 }
 
-function mount(actions: readonly Action[], body: () => 'empty' | 'unselected-body' = () => 'empty') {
+function mount(
+  actions: readonly Action[],
+  body: () => 'empty' | 'unselected-body' = () => 'empty',
+  channels?: DispatcherChannels,
+) {
   const { container } = render(
     <DepRegistryProvider>
       <ActiveToolContextProvider>
         <ActionsProvider>
-          <Probe actions={actions} body={body} />
+          <Probe actions={actions} body={body} {...(channels ? { channels } : {})} />
         </ActionsProvider>
       </ActiveToolContextProvider>
     </DepRegistryProvider>,
@@ -193,3 +203,88 @@ describe('a hover binding for the pointer leaving', () => {
   });
 });
 
+
+describe('a hover binding that a held button does not stand down', () => {
+  it('with held optional, runs through a pressed drag and after it, saying which moves were held', () => {
+    const run = vi.fn();
+    const fire = mount([follow('aim', run, { defaultBinding: { kind: 'hover', held: 'optional' } })]);
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 40, clientY: 40, buttons: 1 });
+    fire('pointermove', { clientX: 60, clientY: 40, buttons: 1 });
+    fire('pointerup', { clientX: 60, clientY: 40, button: 0 });
+    fire('pointermove', { clientX: 61, clientY: 40 });
+    expect(run.mock.calls.map((c) => [c[0].clientX, c[0].held])).toEqual([
+      [5, false], [40, true], [60, true], [61, false],
+    ]);
+  });
+
+  it('leaves the drag its moves', () => {
+    const onMove = vi.fn();
+    const aim = vi.fn();
+    const fire = mount([
+      follow('aim', aim, { defaultBinding: { kind: 'hover', held: 'optional' } }),
+      {
+        id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' },
+        invoker: { timing: 'ongoing', start: () => ({ onMove, onEnd: () => {} }) },
+      },
+    ]);
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 40, clientY: 40, buttons: 1 });
+    fire('pointermove', { clientX: 60, clientY: 40, buttons: 1 });
+    expect(onMove).toHaveBeenCalled();
+    expect(aim.mock.calls.map((c) => c[0].clientX)).toEqual([40, 60]);
+  });
+
+  it('with held required, runs only while a button is held', () => {
+    const run = vi.fn();
+    const fire = mount([follow('trail', run, { defaultBinding: { kind: 'hover', held: true } })]);
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 40, clientY: 40, buttons: 1 });
+    fire('pointerup', { clientX: 40, clientY: 40, button: 0 });
+    fire('pointermove', { clientX: 41, clientY: 40 });
+    expect(run.mock.calls.map((c) => c[0].clientX)).toEqual([40]);
+  });
+});
+
+describe('the hover channel on its own', () => {
+  const HOVER_ONLY: DispatcherChannels = { pointer: false, hover: true };
+
+  it('dispatches moves, held moves and the pointer leaving', () => {
+    const aim = vi.fn();
+    const left = vi.fn();
+    const fire = mount([
+      follow('aim', aim, { defaultBinding: { kind: 'hover', held: 'optional' } }),
+      follow('left', left, { defaultBinding: { kind: 'hover', motion: 'leave' } }),
+    ], () => 'empty', HOVER_ONLY);
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 9, clientY: 5, buttons: 1 });
+    fire('pointerleave', { clientX: 9, clientY: 5, buttons: 1 });
+    expect(aim.mock.calls.map((c) => [c[0].clientX, c[0].held])).toEqual([[5, false], [9, true]]);
+    expect(left).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens no press: nothing captures the pointer and a drag binding never starts', () => {
+    // A proxy: jsdom captures nothing, so the test asserts nothing asked to.
+    const start = vi.fn(() => ({ onMove: () => {}, onEnd: () => {} }));
+    const fire = mount([{
+      id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' }, invoker: { timing: 'ongoing', start },
+    }], () => 'empty', HOVER_ONLY);
+    const capture = vi.fn();
+    document.querySelector('canvas')!.setPointerCapture = capture;
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 40, clientY: 40, buttons: 1 });
+    fire('pointerup', { clientX: 40, clientY: 40, button: 0 });
+    expect(capture).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it('stays off with the pointer channel unless asked for', () => {
+    const aim = vi.fn();
+    const fire = mount([follow('aim', aim)], () => 'empty', { pointer: false });
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    expect(aim).not.toHaveBeenCalled();
+  });
+});

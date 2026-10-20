@@ -87,8 +87,40 @@ const settleFrame: BrowserCommand<[]> = async (ctx) => {
   if (ctx.testPath) await waitForOwnFrame(ctx.page, ctx.testPath);
 };
 
+/** One step of a real mouse: a move to a client point of the test's frame, a
+ *  press, or a release of the primary button. */
+export type PointerStep = { to: [x: number, y: number] } | { down: true } | { up: true };
+
+/** Drive the real mouse through `steps`, as a person would: each move is one
+ *  trusted `mousemove` and its pointer events, with the button state the steps
+ *  before it left. */
+const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
+  const frame = await ctx.frame();
+  const element = await frame.frameElement();
+  const box = await element.boundingBox();
+  if (!box) throw new Error('pointer: the test frame has no box');
+  // The orchestrator may scale the frame to fit; its client box is the unscaled one.
+  const [width, left, top] = await element.evaluate(
+    (el) => {
+      const box = el as HTMLElement;
+      return [box.clientWidth, box.clientLeft, box.clientTop] as const;
+    },
+  );
+  const scale = box.width / (width + 2 * left);
+  for (const step of steps) {
+    if ('to' in step) {
+      await ctx.page.mouse.move(
+        box.x + (left + step.to[0]) * scale,
+        box.y + (top + step.to[1]) * scale,
+      );
+    } else if ('down' in step) await ctx.page.mouse.down();
+    else await ctx.page.mouse.up();
+  }
+};
+
 export const browserCommands = {
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
+  pointer,
 };
 
 declare module 'vitest/browser' {
@@ -100,5 +132,6 @@ declare module 'vitest/browser' {
     takeDownload: () => Promise<{ filename: string; text: string } | null>;
     collectGarbage: () => Promise<void>;
     settleFrame: () => Promise<void>;
+    pointer: (steps: PointerStep[]) => Promise<void>;
   }
 }

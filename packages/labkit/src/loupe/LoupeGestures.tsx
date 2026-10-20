@@ -1,12 +1,13 @@
 /**
  * Registers the loupe's actions, and mounts the gesture dispatcher on the
- * loupe's host when no camera already has one there, so the peek key and the
- * wheel route the way every other weasel binding does.
+ * loupe's host when no camera already has one there, so the aim, the peek key
+ * and the wheel route the way every other weasel binding does.
  *
- * Three of the dispatcher's four element channels are off. Only `wheel` is
- * wanted here; `contextMenu` suppresses the native menu unconditionally and
- * `ingest` makes the host a file-drop target, neither of which a lab asked
- * for by turning a magnifier on.
+ * Of the dispatcher's element channels only `hover` and `wheel` are wanted
+ * here. `pointer` would open a gesture on every press and capture the pointer,
+ * taking clicks from the content under the lens; `contextMenu` suppresses the
+ * native menu unconditionally and `ingest` makes the host a file-drop target,
+ * none of which a lab asked for by turning a magnifier on.
  */
 import {
   type ActionsRegistry,
@@ -30,7 +31,7 @@ export interface LoupeGesturesProps {
 
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 
-const CHANNELS = { pointer: false, contextMenu: false, ingest: false } as const;
+const CHANNELS = { pointer: false, hover: true, contextMenu: false, ingest: false } as const;
 
 function LoupeDispatch({
   hostRef,

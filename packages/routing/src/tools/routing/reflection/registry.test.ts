@@ -194,6 +194,11 @@ describe('routesForSpec', () => {
       .toEqual(['[*:*] drop(image/png)']);
   });
 
+  it('routes a hover that keeps reporting while a button is held', () => {
+    expect(routesForSpec({ kind: 'hover', held: 'optional' })).toEqual(['[*:*] hover ?held']);
+    expect(routesForSpec({ kind: 'hover', motion: 'leave', held: true })).toEqual(['[*:*] hover(leave) +held']);
+  });
+
   it('routes a pinch with its direction arg', () => {
     expect(routesForSpec({ kind: 'pinch' } as GestureSpec)).toEqual(['[*:*] pinch']);
     expect(routesForSpec({ kind: 'pinch', direction: 'out' } as GestureSpec)).toEqual(['[*:*] pinch(out)']);
