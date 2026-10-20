@@ -4,6 +4,7 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { EdgeHop } from './hops/types';
 import type { StyleField } from './theme/styleField';
 
 /** Where an edge attaches at one end. */
@@ -41,6 +42,9 @@ export interface DiagramEdge {
    *  computed, kept so the edge draws without rerouting. The router owns it,
    *  and while it is here each end aims at its nearest bend. */
   route?: readonly Vec2[];
+  /** Where it bows over the connectors drawn before it, as the line-jump
+   *  pass last computed. Literal, so any reader draws them. */
+  hops?: readonly EdgeHop[];
   /** The theme role it is drawn in. Unset, the theme's own connector style. */
   style?: string;
   /** The colors the author set by hand, which a theme leaves as they are. */
