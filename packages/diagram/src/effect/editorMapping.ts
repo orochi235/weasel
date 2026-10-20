@@ -96,5 +96,12 @@ function drawLook(doc: EffectDoc, look: EditorLook, options: EditorLookOptions[E
       ...(box !== undefined ? { box: { ...box }, pinned: true } : {}),
     };
   });
-  return { ...drawn, data: { ...rest, nodes, ...(containers.length > 0 ? { containers } : {}) } };
+  return {
+    ...drawn,
+    data: {
+      ...rest, nodes,
+      ...(containers.length > 0 ? { containers } : {}),
+      ...(doc.pages !== undefined ? { pages: doc.pages } : {}),
+    },
+  };
 }
