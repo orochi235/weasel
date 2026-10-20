@@ -3,11 +3,12 @@
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
 import type { DeleteReport, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
-import type { DataEdge } from '../fromData';
+import type { DataEdge, DiagramSpec } from '../fromData';
 import {
   addWire, canWire, ensureWireIds, moveStages, reconnectWire, removeStages, removeWires, setWireRoute,
 } from './edit';
-import type { EditorScene } from './editorMapping';
+import type { EditorLook, EditorScene } from './editorMapping';
+import { setLookRoute, wireEnds } from './lookRoutes';
 import type { EffectDoc, EffectPipeline, EffectWire } from './types';
 
 type Ref = { stage: string; port: string };
@@ -49,7 +50,9 @@ export function stageBoxes(doc: EffectDoc, specs: Shown): Map<string, Box> {
 export interface EditorNow {
   doc: EffectDoc;
   built: EditorScene;
-  specs: Shown;
+  look: EditorLook;
+  /** What `DiagramView` was handed. */
+  specs: readonly DiagramSpec[];
   onChange: (next: EffectDoc, label: string) => void;
 }
 
@@ -86,7 +89,15 @@ export function editHandlers(now: () => EditorNow, unpick: () => void) {
     }),
     onEditRoute: (c: RouteChange) => commit('Edit route', (d, b) => {
       const id = b.wireOf(c.edge);
-      return id === undefined ? null : setWireRoute(d, id, c.waypoints);
+      const { look, specs } = now();
+      if (id === undefined) return null;
+      if (look === 'nodeGraph') return setWireRoute(d, id, c.waypoints);
+      if (c.waypoints.length === 0) {
+        const was = d.lookRoutes?.[look]?.[id];
+        return was === undefined ? null : setLookRoute(d, look, id, [], was.ends);
+      }
+      const ends = wireEnds(specs, c.edge);
+      return ends === undefined ? null : setLookRoute(d, look, id, c.waypoints, ends);
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
       // A freed wire id is minted again for the next wire, which would come back picked.

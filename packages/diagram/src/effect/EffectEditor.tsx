@@ -6,6 +6,7 @@ import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, ensureWireIds, nextStageId } from './edit';
 import { editHandlers, pinShown, stageBoxes, type Box } from './editorHandlers';
 import { editorScene, type EditorLookOptions } from './editorMapping';
+import { applyLookRoutes } from './lookRoutes';
 import { editorReorders } from './editorReorder';
 import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
@@ -57,17 +58,19 @@ export interface EffectEditorApi {
  *  ports wire output to input, and whose wires and stages reconnect and
  *  delete. Under `nodeGraph` stages drag freely; under `rack` and `lanes` a
  *  stage on the main line drags along it to another place, rewiring the
- *  pipeline, and under `lanes` a lane drags by its header. Every edit is a
- *  doc handed to `onChange`. Text paints only in a registered font family,
+ *  pipeline, and under `lanes` a lane drags by its header. A selected
+ *  wire's route drags under every look: into `routes` under `nodeGraph`, and
+ *  into `lookRoutes` under the others, where it holds only while the wire's
+ *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
   { doc, onChange, selected, onSelect, look = 'nodeGraph', options, width, height, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
-  const specs = useMemo(() => diagramScene(built.data, built.scene)
+  const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
     // A group box picked would stay lit while `onSelect` says none; DiagramView makes edges pickable again.
-    .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built]);
+    .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built, doc, look]);
   const portOptions = useMemo((): DiagramViewProps['portOptions'] => ({
     shape: 'circle',
     sizePx: 8,
@@ -133,7 +136,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       canConnect={handlers.canConnect}
       onConnect={handlers.onConnect}
       onReconnect={handlers.onReconnect}
-      {...(look === 'nodeGraph' ? { onEditRoute: handlers.onEditRoute } : {})}
+      onEditRoute={handlers.onEditRoute}
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient: reorders })}
       onSelect={pick}
