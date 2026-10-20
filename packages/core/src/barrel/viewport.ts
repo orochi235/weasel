@@ -71,6 +71,11 @@ export { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds } from '..
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage } from '../core/pages/fitViewToPage';
+export {
+  PAGES_DOC_KEY, addPage, movePage, nextPageId, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage,
+  setPages,
+} from '../core/pages/pageEdits';
+export type { PageEditOptions, PagesDoc } from '../core/pages/pageEdits';
 export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
 export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';
