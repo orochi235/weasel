@@ -85,11 +85,15 @@ for (const n of names) {
   say(`${n}  http://${node}.local${at}${address ? `  http://${address}${at}` : ''}`);
 }
 
+let sync;
 const stop = () => {
+  sync?.kill();
   onto(['service', 'down', tree], { stdio: 'inherit' });
   process.exit(0);
 };
 process.once('SIGINT', stop);
 process.once('SIGTERM', stop);
+process.once('SIGHUP', stop);
 say('syncing edits; Ctrl-C stops the servers');
-spawn('onto', ['sync', '--watch', '--alone', '--ref', base, '--in', tree, node], { cwd: ROOT, stdio: 'inherit' }).on('close', stop);
+sync = spawn('onto', ['sync', '--watch', '--alone', '--ref', base, '--in', tree, node], { cwd: ROOT, stdio: 'inherit' });
+sync.on('close', stop);
