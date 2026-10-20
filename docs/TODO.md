@@ -935,14 +935,11 @@ only story runner in the repo.
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
   and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
-- **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
-  new stamp on every hot update and the page kept the one it loaded with, so about three seconds
-  after forge reloaded a story in place the tab reloaded itself, and every isolated frame polled
-  and reloaded on its own. wake `c9f75c3` sends the stamp to the page with the update and skips the
-  client in a frame whose parent already runs it. Tested in wake against stubbed globals only.
-  To confirm: build wake (`npm run build` there; weasel reads `~/src/wake/dist`), edit a story in
-  forge, and watch that trial state survives past the grace and that `/frame.html` draws no
-  `.wake-badge`.
+- **(P3) One of forge's two idle `/frame.html` frames reloads with every hot update.** Seen
+  2026-10-19 in headless Chrome on the Button story: each edit reached the page in place, with no
+  reload of the page and no `.wake-badge` in either frame past wake's grace, but the second frame's
+  document was replaced at the instant the update arrived, three edits running. The first frame
+  kept its state. Whether that frame is meant to rebuild on an update is not known.
 
 - **(P3) wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
   registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
