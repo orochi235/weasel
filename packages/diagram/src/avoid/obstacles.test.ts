@@ -10,7 +10,7 @@ describe('ObstacleIndex', () => {
   const view = index.forEdge('x', 'y');
 
   it('inflates each obstacle by the clearance', () => {
-    expect(index.all[0]!.box).toEqual({ x: -10, y: -10, width: 120, height: 80 });
+    expect(index.get('a')!.box).toEqual({ x: -10, y: -10, width: 120, height: 80 });
   });
 
   it('finds a point inside an inflated obstacle, but not one on its edge', () => {
@@ -23,6 +23,14 @@ describe('ObstacleIndex', () => {
     expect(view.crosses(-50, 30, 200, 30)).toBe(true);
     expect(view.crosses(-50, -10, 200, -10)).toBe(false);
     expect(view.crosses(-50, -20, 200, -20)).toBe(false);
+  });
+
+  it('files a replaced obstacle where it now is, and nowhere it was', () => {
+    const moving = new ObstacleIndex([shape('a', 0, 0)], 10);
+    moving.replace(shape('a', 500, 0));
+    const view = moving.forEdge('x', 'y');
+    expect(view.inside(50, 30)).toBe(false);
+    expect(view.inside(550, 30)).toBe(true);
   });
 
   it('finds obstacles in cells far from the origin', () => {

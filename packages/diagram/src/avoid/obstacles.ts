@@ -17,12 +17,29 @@ const EPS = 1e-7;
 
 /** Every obstacle, inflated, filed in a spatial hash. */
 export class ObstacleIndex {
-  readonly all: readonly Inflated[];
+  private readonly byId = new Map<string, Inflated>();
   private readonly hash = new SpatialHash<Inflated>();
 
-  constructor(obstacles: readonly AvoidObstacle[], clearance: number) {
-    this.all = obstacles.map((obstacle) => ({ obstacle, box: inflate(obstacle.box, clearance) }));
-    for (const item of this.all) this.hash.insert(item, item.box);
+  constructor(obstacles: readonly AvoidObstacle[], private readonly clearance: number) {
+    for (const obstacle of obstacles) this.file(obstacle);
+  }
+
+  private file(obstacle: AvoidObstacle): void {
+    const item = { obstacle, box: inflate(obstacle.box, this.clearance) };
+    this.byId.set(obstacle.id, item);
+    this.hash.insert(item, item.box);
+  }
+
+  /** Obstacle `id` as filed, inflated. */
+  get(id: string): Inflated | undefined {
+    return this.byId.get(id);
+  }
+
+  /** File `obstacle` in place of the one with its id, which leaves the hash. */
+  replace(obstacle: AvoidObstacle): void {
+    const old = this.byId.get(obstacle.id);
+    if (old !== undefined) this.hash.remove(old, old.box);
+    this.file(obstacle);
   }
 
   /** The inflated obstacles touching `box`. */

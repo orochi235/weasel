@@ -95,6 +95,21 @@ describe('createAvoidRouter', () => {
     expect(router.update(input).size).toBe(0);
   });
 
+  it('previews a frame whose shapes are back where they were committed as rerouting nothing', () => {
+    const { router, input } = routed();
+    expect([...router.update(replace(input, moved(shapes.a, 0, -40)), { preview: true }).keys()]).toEqual(['top']);
+    expect(router.update(input, { preview: true }).size).toBe(0);
+  });
+
+  it('previews a shape dragged onto a route it is not attached to, and then off it again', () => {
+    const { router, input } = routed();
+    const onto = replace(input, { ...shapes.far, box: { x: 200, y: -20, width: 60, height: 120 } });
+    const routes = router.update(onto, { preview: true });
+    expect([...routes.keys()]).toEqual(['top']);
+    expect(routes.get('top')!.length).toBeGreaterThan(0);
+    expect(router.update(replace(input, moved(shapes.far, 10, 0)), { preview: true }).size).toBe(0);
+  });
+
   it('keeps last frame’s preview for a connector the budget does not reach', () => {
     const { router, input } = routed();
     const first = router.update(replace(input, moved(shapes.a, 0, -40)), { preview: true }).get('top');

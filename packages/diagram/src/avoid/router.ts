@@ -5,6 +5,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
+import { DragIndex } from './dragIndex';
 import { routeEdge } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
 import { ObstacleIndex } from './obstacles';
@@ -71,6 +72,9 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   const raw = new Map<string, Vec2[]>();
   const shown = new Map<string, Vec2[]>();
   const previews = new Map<string, Vec2[] | null>();
+  let drag: DragIndex | null = null;
+  /** Where each connector sat in the last committed input, to find a dirty one in a frame without a scan. */
+  let positions = new Map<string, number>();
 
   /** The route `edge` holds now, with its ends. */
   const routeOf = (edge: AvoidEdge): Vec2[] => {
@@ -88,21 +92,36 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     for (const map of [keys, raw, shown]) for (const id of [...map.keys()]) if (!live.has(id)) map.delete(id);
   }
 
-  function preview(input: AvoidInput, dirty: AvoidEdge[], budgetMs: number): AvoidRoutes {
-    const index = new ObstacleIndex(input.obstacles, opts.clearance);
-    const limit = limitOf(input, opts.margin);
+  /** Index what `input`, as committed, holds now, for the drag frames that follow. */
+  function indexForDrag(input: AvoidInput): void {
+    const routes = new Map(input.edges.map((e) => [e.id, routeOf(e)]));
+    drag = new DragIndex(input, routes, opts.clearance, limitOf(input, opts.margin));
+    positions = new Map(input.edges.map((e, k) => [e.id, k]));
+  }
+
+  /** Connector `id` of `edges`, found where it sat at the last commit when it is still there. */
+  const edgeIn = (edges: readonly AvoidEdge[], id: string): AvoidEdge | undefined => {
+    const at = positions.get(id);
+    return at !== undefined && edges[at]?.id === id ? edges[at] : edges.find((e) => e.id === id);
+  };
+
+  function preview(input: AvoidInput, budgetMs: number): AvoidRoutes {
     const start = now();
+    if (drag === null) indexForDrag({ obstacles: [...committed.values()], edges: input.edges });
+    const frame = drag!.frame(input.obstacles);
     const out: AvoidRoutes = new Map();
-    for (const edge of dirty) {
+    for (const id of frame.dirty) {
       if (now() - start > budgetMs) {
-        const last = previews.get(edge.id);
-        if (last !== undefined) out.set(edge.id, last);
+        const last = previews.get(id);
+        if (last !== undefined) out.set(id, last);
         continue;
       }
-      const full = routeEdge(edge, { index, options: opts, limit });
+      const edge = edgeIn(input.edges, id);
+      if (edge === undefined) continue;
+      const full = routeEdge(edge, { index: frame.index, options: opts, limit: frame.limit });
       const route = full === null ? null : full.slice(1, -1);
-      previews.set(edge.id, route);
-      out.set(edge.id, route);
+      previews.set(id, route);
+      out.set(id, route);
     }
     return out;
   }
@@ -127,17 +146,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       keys.set(edge.id, stopsKey(edge));
     }
     const byId = new Map(input.edges.map((e) => [e.id, e]));
-    const bundle = new Map<string, NudgeRoute>();
-    const mates = new Set<string>();
-    for (const [id, full] of fresh) {
-      if (full === null) continue;
-      bundle.set(id, { points: full, waypoints: byId.get(id)!.waypoints ?? [] });
-      for (let i = 1; i + 2 < full.length; i++) clean.edgesMeeting(segmentBox(full[i]!, full[i + 1]!), mates);
-    }
-    for (const e of input.edges) {
-      if (!mates.has(e.id) || bundle.has(e.id) || dirtyIds.has(e.id)) continue;
-      bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
-    }
+    const bundle = bundleOf(fresh, input.edges, clean, rawOf);
     const nudged = nudge(bundle, opts.spacing, index);
     const out: AvoidRoutes = new Map();
     for (const [id, full] of fresh) if (full === null) { raw.delete(id); shown.delete(id); out.set(id, null); }
@@ -147,6 +156,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       shown.set(id, full);
       if (was === null || !samePoints(was, full)) out.set(id, full.slice(1, -1));
     }
+    indexForDrag({ obstacles: input.obstacles, edges: input.edges.map((e) => withRoute(e, out)) });
     return out;
   }
 
@@ -157,16 +167,48 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       raw.clear();
       shown.clear();
       for (const e of input.edges) keys.set(e.id, stopsKey(e));
+      previews.clear();
+      indexForDrag(input);
     },
     update(input, updateOpts = {}) {
+      if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
       const changed = changedObstacles(committed, input.obstacles);
       const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, routeOf);
-      if (updateOpts.preview === true) return preview(input, dirty, updateOpts.budgetMs ?? Infinity);
       committed = new Map(input.obstacles.map((o) => [o.id, o]));
       forget(input);
       return commit(input, dirty);
     },
   };
+}
+
+/** The routes to nudge: each one just made, and each clean one whose
+ *  segments `clean` finds meeting theirs, as it was before nudging. */
+function bundleOf(
+  fresh: ReadonlyMap<string, Vec2[] | null>,
+  edges: readonly AvoidEdge[],
+  clean: SegmentIndex,
+  rawOf: (edge: AvoidEdge) => Vec2[],
+): Map<string, NudgeRoute> {
+  const bundle = new Map<string, NudgeRoute>();
+  const mates = new Set<string>();
+  const waypoints = new Map(edges.map((e) => [e.id, e.waypoints ?? []]));
+  for (const [id, full] of fresh) {
+    if (full === null) continue;
+    bundle.set(id, { points: full, waypoints: waypoints.get(id)! });
+    for (let i = 1; i + 2 < full.length; i++) clean.edgesMeeting(segmentBox(full[i]!, full[i + 1]!), mates);
+  }
+  for (const e of edges) {
+    if (mates.has(e.id) && !fresh.has(e.id)) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
+  }
+  return bundle;
+}
+
+/** `edge` holding the route `routes` gave it, when they gave it one. */
+function withRoute(edge: AvoidEdge, routes: AvoidRoutes): AvoidEdge {
+  const route = routes.get(edge.id);
+  if (route === undefined) return edge;
+  const { route: _r, ...rest } = edge;
+  return route === null ? rest : { ...rest, route };
 }
 
 /** A segment's box, its thickness zero. */

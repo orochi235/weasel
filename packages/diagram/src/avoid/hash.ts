@@ -42,6 +42,18 @@ export class SpatialHash<T> {
     }
   }
 
+  /** Take `item`, filed under `box`, back out. */
+  remove(item: T, box: Box): void {
+    const [i0, j0, i1, j1] = this.range(box);
+    for (let i = i0; i <= i1; i++) {
+      for (let j = j0; j <= j1; j++) {
+        const list = this.cells.get(SpatialHash.key(i, j));
+        const at = list?.findIndex((f) => f.item === item) ?? -1;
+        if (at >= 0) list!.splice(at, 1);
+      }
+    }
+  }
+
   /** Every item filed in a cell `box` touches, each once. */
   query(box: Box, out: T[] = []): T[] {
     const [i0, j0, i1, j1] = this.range(box);
