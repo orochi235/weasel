@@ -104,6 +104,7 @@ export type {
   RemovedNode,
   Scene,
   SceneArrivalHandler,
+  SceneBatchOptions,
   SceneEditPass,
   SceneEditSummary,
   ScenePoseReports,

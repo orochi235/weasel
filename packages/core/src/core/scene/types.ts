@@ -474,7 +474,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   redo(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
-  batch<T>(label: string, fn: () => T): T;
+  batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
   /** The layout container `id` declares, or `null` for a leaf or a
    *  container that declares none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
