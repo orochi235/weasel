@@ -36,6 +36,36 @@ describe('createSpecRouter', () => {
     expect(edgeOf(second, CD).route).not.toEqual(edgeOf(first, CD).route);
   });
 
+  it('routes around a region neither end is in, and into one an end is in, clear of its header', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'a', lines: ['a'], at: { x: 0, y: 0 }, width: 60 },
+        { id: 'b', lines: ['b'], at: { x: 400, y: 0 }, width: 60 },
+        { id: 'm', lines: ['m'], at: { x: 220, y: 200 }, width: 60 },
+      ],
+      edges: [{ from: 'a', to: 'b' }, { from: 'a', to: 'm' }],
+      containers: [{ id: 'k', role: 'container', label: 'K', members: ['m'], box: { x: 150, y: -60, width: 200, height: 320 }, pinned: true }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const k = specs.find((s) => s.id === 'k')!.pose;
+    const header = { ...k, height: 28 };
+    const crosses = (route: readonly { x: number; y: number }[], box: typeof k) => route.slice(1).some((p, i) => {
+      const q = route[i]!;
+      for (let t = 0; t <= 1; t += 0.05) {
+        const x = q.x + (p.x - q.x) * t;
+        const y = q.y + (p.y - q.y) * t;
+        if (x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height) return true;
+      }
+      return false;
+    });
+    const ab = edgeOf(specs, edgeIdOf({ from: 'a', to: 'b' })).route!;
+    const am = edgeOf(specs, edgeIdOf({ from: 'a', to: 'm' })).route!;
+    expect(ab.length).toBeGreaterThan(0);
+    expect(crosses(ab, k)).toBe(false);
+    expect(am.length).toBeGreaterThan(0);
+    expect(crosses(am, header)).toBe(false);
+  });
+
   it('leaves specs without edges as they are', () => {
     const specs = diagramScene({ nodes: DATA.nodes, edges: [] }, { layout: 'none' });
     expect(createSpecRouter()(specs)).toEqual(specs);
