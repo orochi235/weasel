@@ -1,13 +1,14 @@
-import { fillsOpenSubpaths, type GlMat3, type Path } from '@weasel-js/geom';
+import type { GlMat3 } from '@weasel-js/geom';
 import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { colorFor } from './color';
 import type { ContentStream } from './content';
 import type { DocumentFonts } from './fonts/embedFont';
-import { writeGroup, writeShader } from './groupOps';
+import { rasterFill, writeGroup, writeShader } from './groupOps';
 import { type TextureFill, texturePattern, writeImage } from './images';
 import type { PdfObjects } from './objects';
-import { pathOps } from './pathOps';
+import { NonFiniteNumber } from './num';
+import { fillPathOps } from './pathOps';
 import type { PageResources } from './resources';
 import { paintShading } from './shading';
 import { writeStroke } from './strokeOps';
@@ -42,13 +43,6 @@ function setAlpha(ctx: PageCtx, fill: number, stroke: number): void {
   ctx.out.op('gs', `/${ctx.resources.extGState(fill, stroke)}`);
 }
 
-/** Writes the fill's path and answers whether it fills even-odd. */
-function fillPathOps(out: ContentStream, path: Path): boolean {
-  const closeOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
-  pathOps(out, path, closeOpen ? 'all' : 'closed');
-  return path.kind === 'polygon' && path.fillRule === 'evenodd';
-}
-
 function writeShadedFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, paint: CommandPaint): void {
   const sh = paintShading(ctx, paint, state, cmd.path);
   if (!sh) return;
@@ -76,12 +70,14 @@ function writeTextureFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, 
   out.op('Q');
 }
 
-function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
+async function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): Promise<void> {
   const paint = cmd.fill?.paint;
   if (!paint) return;
   if (isGradientPaint(paint)) return writeShadedFill(ctx, cmd, state, paint);
   if (paint.kind === 'texture') return writeTextureFill(ctx, cmd, state, paint);
-  if (!isSolidPaint(paint)) return skip(ctx, 'fill paint not yet supported');
+  // A registered paint kind, which the paint union does not name.
+  if (!isSolidPaint(paint)) return rasterFill(ctx, cmd, state, (paint as { kind: string }).kind);
+  if (cmd.vertexColors?.length) skip(ctx, 'fill vertexColors approximated by the solid fill');
   const [r, g, b, a] = colorFor(paint.color, state);
   const alpha = a * (paint.opacity ?? 1) * state.alpha;
   const { out } = ctx;
@@ -93,16 +89,32 @@ function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
 }
 
 async function writePath(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): Promise<void> {
-  writeFill(ctx, cmd, state);
+  await writeFill(ctx, cmd, state);
   if (cmd.stroke) await writeStroke(ctx, cmd.path, cmd.stroke, state);
 }
 
+async function writeCommand(ctx: PageCtx, cmd: DrawCommand, state: DrawState): Promise<void> {
+  if (cmd.kind === 'path') await writePath(ctx, cmd, state);
+  else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
+  else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
+  else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
+  else await writeShader(ctx, cmd, state);
+}
+
+/** Writes each command; one holding a number PDF cannot write is dropped whole and reported. */
 export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], state: DrawState): Promise<void> {
   for (const cmd of cmds) {
-    if (cmd.kind === 'path') await writePath(ctx, cmd, state);
-    else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
-    else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
-    else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
-    else await writeShader(ctx, cmd, state);
+    const line = ctx.out.mark();
+    const object = ctx.objects.mark();
+    const skips = ctx.skipped.length;
+    try {
+      await writeCommand(ctx, cmd, state);
+    } catch (err) {
+      if (!(err instanceof NonFiniteNumber)) throw err;
+      ctx.out.rollback(line);
+      ctx.objects.nullUnset(object);
+      ctx.skipped.length = skips;
+      skip(ctx, `${cmd.kind} has a non-finite coordinate`);
+    }
   }
 }

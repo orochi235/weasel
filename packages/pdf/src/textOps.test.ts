@@ -173,6 +173,19 @@ describe('writeText', () => {
     expect(s).not.toContain('/Font');
   });
 
+  it('treats an outline source that throws as having no outline', async () => {
+    const fonts: PdfFontSource = {
+      embedding: async () => null,
+      outline: () => {
+        throw new Error('broken source');
+      },
+    };
+    const { content, skipped } = await render(textCmd([run('H')]), fonts);
+    expect(content).not.toMatch(/\nf\n/);
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0].detail).toContain('U+0048');
+  });
+
   it('places an outline-drawn glyph at its pen, sheared for synthetic italic', async () => {
     await registerAtlas('faux');
     const runs = [run('H', { fontFamily: 'faux', fontStyle: 'italic' })];

@@ -1,3 +1,4 @@
+import { num } from './num';
 import { name, type PdfDict, PdfRef } from './objects';
 
 /** Hands out resource names (`GS1`, `Sh1`, …) for one page and writes them as its `/Resources`. */
@@ -12,6 +13,9 @@ export class PageResources {
   };
 
   extGState(fillAlpha: number, strokeAlpha: number): string {
+    // Checked now: the dict is written after the page, outside the command that asked for it.
+    num(fillAlpha);
+    num(strokeAlpha);
     const key = `${fillAlpha} ${strokeAlpha}`;
     let n = this.gstates.get(key);
     if (n === undefined) {

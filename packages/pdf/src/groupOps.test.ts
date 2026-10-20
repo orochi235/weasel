@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/geom';
+import { PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { composeMatrix, foldColor, foldPixels } from './color';
@@ -183,5 +183,19 @@ describe('writeGroup', () => {
     expect(skipped[0].detail).toMatch(/effects/);
     expect(skipped[1].detail).toMatch(/shader/);
     expect(content).not.toContain('rg');
+  });
+
+  it('clips through the fill, leaving out open contours under openFill none', async () => {
+    const mixed: Path = {
+      kind: 'polygon',
+      commands: Uint8Array.from([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L]),
+      coords: Float32Array.from([0, 0, 10, 0, 10, 10, 20, 20, 30, 20, 30, 30]),
+      fillRule: 'nonzero',
+      openFill: 'none',
+    };
+    const { content } = await render([{ kind: 'group', clip: mixed, children: [red] }]);
+    const clip = content.slice(0, content.indexOf('W\nn\n'));
+    expect(clip).toContain('0 0 m');
+    expect(clip).not.toContain('20 20 m');
   });
 });

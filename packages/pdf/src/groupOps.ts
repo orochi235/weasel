@@ -4,6 +4,7 @@ import {
   type DrawCommand,
   type GroupDrawCommand,
   isOwnComposite,
+  type PathDrawCommand,
   type ShaderDrawCommand,
 } from '@weasel-js/renderer';
 import { composeMatrix, foldPixels } from './color';
@@ -11,7 +12,7 @@ import { ContentStream } from './content';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import { writeRaster } from './images';
 import { name } from './objects';
-import { pathOps } from './pathOps';
+import { fillPathOps } from './pathOps';
 import { PageResources } from './resources';
 import type { RasterPixels, Rect } from './writePdf';
 
@@ -24,9 +25,9 @@ function skip(ctx: PageCtx, detail: string): void {
 
 const cm = (m: GlMat3): [number, number, number, number, number, number] => [m[0], m[1], m[3], m[4], m[6], m[7]];
 
+/** The renderer clips through the fill mesh, so a clip covers what a fill of its path would. */
 function setClip(ctx: PageCtx, clip: NonNullable<GroupDrawCommand['clip']>): void {
-  pathOps(ctx.out, clip, 'all');
-  ctx.out.op(clip.kind === 'polygon' && clip.fillRule === 'evenodd' ? 'W*' : 'W');
+  ctx.out.op(fillPathOps(ctx.out, clip) ? 'W*' : 'W');
   ctx.out.op('n');
 }
 
@@ -36,7 +37,8 @@ function compositeName(op: NonNullable<GroupDrawCommand['composite']>): string {
 
 /**
  * Hands `commands` (already in the page's frame) to the raster hook and draws what comes back over `box`.
- * The pixels are folded through `state`'s color matrix and drawn at its alpha.
+ * The pixels are folded through `state`'s color matrix and drawn at its alpha. `unhooked` is the skip
+ * reported when there is no hook.
  */
 async function drawRaster(
   ctx: PageCtx,
@@ -44,9 +46,10 @@ async function drawRaster(
   box: Rect,
   state: DrawState,
   reason: string,
+  unhooked = reason,
 ): Promise<void> {
   const hook = ctx.opts.rasterize;
-  if (!hook) return skip(ctx, reason);
+  if (!hook) return skip(ctx, unhooked);
   if (box.width <= 0 || box.height <= 0) return;
   let px: RasterPixels;
   try {
@@ -72,6 +75,17 @@ export function writeShader(ctx: PageCtx, cmd: ShaderDrawCommand, state: DrawSta
   const x1 = Math.min(ctx.width, Math.ceil(x + w));
   const y1 = Math.min(ctx.height, Math.ceil(y + h));
   return drawRaster(ctx, [cmd], { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, state, 'shader');
+}
+
+/** A fill in a paint kind only the renderer can draw, rasterized on its own in the page's frame. */
+export function rasterFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, kind: string): Promise<void> {
+  const wrapper: GroupDrawCommand = {
+    kind: 'group',
+    transform: state.transform,
+    children: [{ kind: 'path', path: cmd.path, fill: cmd.fill }],
+  };
+  const box = commandsBounds([wrapper], mat3.identity(), ctx);
+  return drawRaster(ctx, [wrapper], box, state, `paint kind ${kind}`, `paint kind ${kind} needs a raster`);
 }
 
 /** The group's own frame is dropped from the state: its alpha and color matrix apply to the finished raster. */

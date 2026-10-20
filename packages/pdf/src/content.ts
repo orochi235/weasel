@@ -11,6 +11,16 @@ export class ContentStream {
     return this;
   }
 
+  /** Where the stream ends now, for `rollback`. */
+  mark(): number {
+    return this.lines.length;
+  }
+
+  /** Drops every operator written since `mark` answered `at`. */
+  rollback(at: number): void {
+    this.lines.length = at;
+  }
+
   bytes(): Uint8Array {
     return Uint8Array.from(`${this.lines.join('\n')}\n`, (c) => c.charCodeAt(0));
   }

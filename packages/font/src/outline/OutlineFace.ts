@@ -47,7 +47,8 @@ export interface OutlineFace {
    *  them together. `0` when the face kerns neither this pair nor at all. */
   kernOf(left: number, right: number): number;
   /** The face's raw material for embedding it whole in another format (a PDF).
-   *  Optional: a custom parser that has no sfnt behind it omits it. */
+   *  Optional: a custom parser that has no sfnt behind it omits it, and so
+   *  does the built-in one for a WOFF file. */
   embedding?(): FaceEmbedding;
 }
 
@@ -59,7 +60,8 @@ export interface FaceEmbedding {
   unitsPerEm: number;
   /** `'cff'` when the face has a `CFF ` table and no `glyf`. */
   outlines: 'truetype' | 'cff';
-  /** False when OS/2 fsType forbids embedding (bit 1, 0x0002). */
+  /** False when OS/2 fsType forbids embedding (bit 1, 0x0002) or allows
+   *  bitmaps only (bit 9, 0x0200). */
   embeddable: boolean;
   /** Glyph index for a codepoint; `null` for `.notdef` (0). */
   glyphIndexOf(cp: number): number | null;

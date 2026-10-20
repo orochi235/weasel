@@ -44,6 +44,7 @@ export interface PdfResult {
   skipped: readonly PdfSkip[];
 }
 
+/** One PDF page per entry of `pages`, which must hold at least one. */
 export function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions): Promise<PdfResult> {
   return writePdfWith(pages, opts, zlibDeflate);
 }
@@ -54,6 +55,7 @@ export async function writePdfWith(
   opts: WritePdfOptions,
   deflate: Deflater,
 ): Promise<PdfResult> {
+  if (pages.length === 0) throw new Error('pdf: a document needs at least one page');
   const objects = new PdfObjects();
   const catalog = objects.alloc();
   const tree = objects.alloc();

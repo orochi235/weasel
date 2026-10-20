@@ -106,7 +106,22 @@ export class PdfObjects {
 
   /** Like `stream`, but takes the raw bytes: `settle` compresses them (or not) before `serialize`. */
   streamDeflated(ref: PdfRef, dict: PdfDict, data: Uint8Array): void {
+    // Written now so a bad number throws inside the command that made the stream.
+    writeDict(dict);
     this.pending.push({ ref, dict, data });
+  }
+
+  /** How many objects are allocated, for `nullUnset`. */
+  mark(): number {
+    return this.bodies.length;
+  }
+
+  /** Sets every object allocated since `mark` answered `at` and not yet written to `null`, so a dropped command leaves no hole. */
+  nullUnset(at: number): void {
+    const waiting = new Set(this.pending.map((p) => p.ref.id));
+    for (let id = at + 1; id <= this.bodies.length; id++) {
+      if (!this.bodies[id - 1] && !waiting.has(id)) this.set(new PdfRef(id), null);
+    }
   }
 
   /** Writes every `streamDeflated` stream, FlateDecode-compressed when `compress` is set. */

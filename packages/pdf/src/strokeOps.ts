@@ -4,6 +4,7 @@ import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { strokeInsets, strokeToPath } from '@weasel-js/stroke';
 import { colorFor } from './color';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
+import { num } from './num';
 import { pathOps } from './pathOps';
 
 const CAPS = { butt: 0, round: 1, square: 2 } as const;
@@ -24,7 +25,9 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   out.op('J', CAPS[stroke.cap ?? 'butt']);
   out.op('j', JOINS[stroke.join ?? 'miter']);
   out.op('M', stroke.miterLimit ?? 4);
-  if (stroke.dash?.length) out.op('d', `[${stroke.dash.join(' ')}]`, 0);
+  // An all-zero dash draws nothing in PDF, and the renderer draws it solid.
+  const dash = stroke.dash ?? [];
+  if (dash.reduce((a, b) => a + b, 0) > 0) out.op('d', `[${dash.map(num).join(' ')}]`, 0);
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */

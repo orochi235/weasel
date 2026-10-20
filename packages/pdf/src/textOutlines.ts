@@ -21,7 +21,12 @@ export function skipGlyph(ctx: PageCtx, g: PlacedGlyph, why: string): void {
 /** The glyph's outline where the renderer's outline tier places it, faked bold and oblique as it fakes them. */
 function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: number): Path | null {
   const { family, weight, style } = g.resolved.resolved;
-  const d = ctx.opts.fonts.outline(family, weight, style, g.cp);
+  let d: string | null;
+  try {
+    d = ctx.opts.fonts.outline(family, weight, style, g.cp);
+  } catch {
+    return null;
+  }
   if (d === null) return null;
   const grown = emboldenGlyphD(d, g.resolved)?.d ?? d;
   const s = g.fontSize;

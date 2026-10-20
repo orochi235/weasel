@@ -38,4 +38,8 @@ describe('writePdf', () => {
     });
     expect(latin1(bytes)).toContain('/Title (Chart)');
   });
+
+  it('refuses an empty page list', async () => {
+    await expect(writePdf([], { fonts: NO_FONTS, compress: false })).rejects.toThrow('pdf: a document needs at least one page');
+  });
 });

@@ -154,4 +154,10 @@ describe('writeStroke', () => {
     expect(fills(plain)).toBe(0);
     expect(fills(marked)).toBe(1);
   });
+
+  it('writes dash lengths as PDF numbers and an all-zero dash as solid', async () => {
+    const stroked = (dash: number[]) => content([{ kind: 'path', path: line, stroke: { paint: ink, width: 1, dash } }]);
+    expect(await stroked([1 / 3, 2])).toContain('[0.3333 2] 0 d\n');
+    expect(await stroked([0, 0])).not.toMatch(/ d\n/);
+  });
 });

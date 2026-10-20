@@ -1,17 +1,18 @@
 import type { Path } from '@weasel-js/geom';
 import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
-import { describe, expect, it } from 'vitest';
+import { type DrawCommand, registerPaintDrawKind } from '@weasel-js/renderer';
+import { describe, expect, it, vi } from 'vitest';
 import { latin1 } from './testing/latin1';
 import { NO_FONTS } from './testing/noFonts';
-import { writePdf } from './writePdf';
+import { type WritePdfOptions, writePdf } from './writePdf';
 
 const rect: Path = { kind: 'rect', x: 0, y: 0, width: 10, height: 20 };
 
-async function render(commands: DrawCommand[]) {
+async function render(commands: DrawCommand[], opts: Partial<WritePdfOptions> = {}) {
   const { bytes, skipped } = await writePdf([{ width: 100, height: 100, commands }], {
     fonts: NO_FONTS,
     compress: false,
+    ...opts,
   });
   const s = latin1(bytes);
   const content = s.slice(s.indexOf('stream\n') + 7, s.indexOf('\nendstream'));
@@ -111,5 +112,51 @@ describe('writeCommands', () => {
       { kind: 'path', path: rect, fill: { paint: { kind: 'texture', texture: { id: 'tex_none' } } } },
     ]);
     expect(skipped.map((k) => k.detail)).toEqual(['texture tex_none cannot be drawn']);
+  });
+
+  it('reports a vertex-colored fill as drawn in its solid fill', async () => {
+    const { content, skipped } = await render([
+      { kind: 'path', path: rect, fill: { paint: { color: '#000' } }, vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1] },
+    ]);
+    expect(content).toContain('0 0 0 rg\n');
+    expect(skipped.map((k) => k.detail)).toEqual(['fill vertexColors approximated by the solid fill']);
+  });
+
+  it('rasterizes a fill in a registered paint kind, and skips it with no hook', async () => {
+    const dispose = registerPaintDrawKind({ id: 'pdf-test-kind' });
+    try {
+      const fill = { paint: { kind: 'pdf-test-kind' } as never };
+      const cmd: DrawCommand = { kind: 'path', path: rect, fill, stroke: { paint: { color: '#00f' }, width: 1 } };
+      const rasterize = vi.fn(async () => ({ width: 2, height: 2, data: new Uint8ClampedArray(16).fill(255) }));
+      const drawn = await render([cmd], { rasterize });
+      expect(drawn.skipped).toEqual([]);
+      const [cmds, box] = rasterize.mock.calls[0] as unknown as [DrawCommand[], { width: number; height: number }];
+      expect(cmds).toHaveLength(1);
+      expect(cmds[0]).toMatchObject({ kind: 'group', children: [{ kind: 'path', path: rect, fill }] });
+      expect((cmds[0] as { children: { stroke?: unknown }[] }).children[0].stroke).toBeUndefined();
+      expect(box.width).toBeGreaterThan(0);
+      expect(drawn.content).toMatch(/\/Im1 Do\n/);
+      expect(drawn.content).toContain('0 0 1 RG\n');
+
+      const bare = await render([cmd]);
+      expect(bare.skipped.map((k) => k.detail)).toEqual(['paint kind pdf-test-kind needs a raster']);
+    } finally {
+      dispose();
+    }
+  });
+
+  it('drops a command with a non-finite coordinate and draws the rest', async () => {
+    const { content, skipped } = await render([
+      { kind: 'path', path: { ...rect, x: Number.NaN }, fill: { paint: { color: '#0f0' } } },
+      { kind: 'group', transform: Float64Array.from([1, 0, 0, 0, 1, 0, Infinity, 0, 1]), children: [{ kind: 'path', path: rect, fill: { paint: { color: '#0f0' } } }] },
+      { kind: 'path', path: rect, fill: { paint: { color: '#f00' } } },
+    ]);
+    expect(skipped).toEqual([
+      { kind: 'command', detail: 'path has a non-finite coordinate' },
+      { kind: 'command', detail: 'group has a non-finite coordinate' },
+    ]);
+    expect(content).not.toContain('0 1 0 rg');
+    expect(content).toContain('1 0 0 rg\n');
+    expect(content.match(/^Q$/gm)).toHaveLength(content.match(/^q$/gm)?.length ?? -1);
   });
 });

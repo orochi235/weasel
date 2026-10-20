@@ -1,4 +1,5 @@
 import {
+  fillsOpenSubpaths,
   forEachSegment,
   PATH_C,
   PATH_L,
@@ -52,4 +53,11 @@ export function pathOps(out: ContentStream, path: Path, which: 'all' | 'closed')
     if (which === 'closed' && !c.closed) continue;
     for (const [op, args] of c.ops) out.op(op, ...args);
   }
+}
+
+/** Writes the region a fill of `path` covers, which a clip covers too, and answers whether it is even-odd. */
+export function fillPathOps(out: ContentStream, path: Path): boolean {
+  const closeOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
+  pathOps(out, path, closeOpen ? 'all' : 'closed');
+  return path.kind === 'polygon' && path.fillRule === 'evenodd';
 }

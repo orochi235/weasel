@@ -50,6 +50,7 @@ function usePngCommand(scene: ChartScene, pages: ChartPages, scale: 1 | 2 | 4): 
 
 function usePdfCommand(scene: ChartScene, pages: ChartPages): void {
   useCommand(EXPORT_ACTIONS.pdf, 'Pages as PDF…', () => {
+    if (pages.placed.length === 0) return;
     exportPagesPdf(scene, pages.placed)
       .then(({ blob, skipped }) => {
         downloadBlob(blob, 'chart.pdf');

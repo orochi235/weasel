@@ -63,7 +63,7 @@ function faceFor(
       if (!index) return null;
       return (font.glyphs.get(index).advanceWidth ?? 0) / upem;
     },
-    embedding: () => embeddingOf(font, sfnt),
+    ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt) } : {}),
     kernOf(left: number, right: number): number {
       const l = font.charToGlyphIndex(String.fromCodePoint(left));
       const r = font.charToGlyphIndex(String.fromCodePoint(right));
@@ -89,6 +89,16 @@ interface EmbedTables {
   cff?: unknown;
 }
 
+/** TrueType (`00 01 00 00`, `true`) or CFF (`OTTO`): a WOFF's bytes are not what FontFile2 holds. */
+function isSfnt(bytes: ArrayBuffer): boolean {
+  if (bytes.byteLength < 4) return false;
+  const tag = new DataView(bytes).getUint32(0);
+  return tag === 0x00010000 || tag === 0x74727565 || tag === 0x4f54544f;
+}
+
+/** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
+const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
+
 function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
@@ -99,7 +109,7 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceE
     postScriptName: englishName ?? '',
     unitsPerEm: font.unitsPerEm,
     outlines: t.cff && !t.glyf ? 'cff' : 'truetype',
-    embeddable: ((t.os2?.fsType ?? 0) & 0x0002) === 0,
+    embeddable: ((t.os2?.fsType ?? 0) & NO_OUTLINE_EMBEDDING) === 0,
     glyphIndexOf(cp) {
       return font.charToGlyphIndex(String.fromCodePoint(cp)) || null;
     },
