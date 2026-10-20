@@ -2,6 +2,8 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
 import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+import { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
+import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import type { LayoutChild, LayoutContainer } from '../../../../layout/types';
 import type { MoveSession } from '../session';
 import { pickContainer, type Candidate } from './container';
@@ -113,6 +115,19 @@ function sourceReflow(
   return sourceReflow;
 }
 
+/** The stored poses that bring `id`'s descendants along to `world`, where a reflow shows it. */
+function reflowCarry(
+  session: MoveSession, id: NodeId, world: unknown, moving: (id: NodeId) => boolean,
+): Map<NodeId, unknown> {
+  const { scene, pc, projection: d } = session;
+  const a = d.getBounds(composeWorldPose(scenePoseAdapter(scene), id as string, pc.compose));
+  const b = d.getBounds(world);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  if (dx === 0 && dy === 0) return new Map();
+  return carriedDescendants(sceneCarrySource(scene), id, (pose) => translatePoseViaDescriptor(pose, dx, dy, d), moving);
+}
+
 /** One frame's layout result, or null with no layout dep or nothing dragged. */
 export function runDropPass(
   session: MoveSession,
@@ -156,6 +171,13 @@ export function runDropPass(
     const parent = scene.get(asNodeId(cid))?.parent ?? null;
     reflow.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
     reflowIds.add(asNodeId(cid));
+  }
+  const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
+  for (const [cid, pose] of [...placed.destReflow, ...leftovers] as [string, unknown][]) {
+    for (const [id, carried] of reflowCarry(session, asNodeId(cid), pose, (d) => reflow.has(d) || draggedIds.has(d))) {
+      reflow.set(id, carried);
+      reflowIds.add(id);
+    }
   }
 
   return {
