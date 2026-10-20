@@ -34,13 +34,22 @@ function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>): void {
   for (const [id, data] of writes) scene.update(id as never, { data });
 }
 
+/** Options for {@link applyDiagramTheme}. */
+export interface ApplyDiagramThemeOptions {
+  /** Fold this apply into the undo entry before it when that one was made under the same key, so a
+   *  run of applies, such as a theme color dragged, undoes as one. See `scene.batch`. */
+  coalesceKey?: string;
+}
+
 /** Recolors the whole scene in `theme` and saves it as the `diagram:theme` document value, as one
  *  undo entry. Colors the author set by hand stay. */
-export function applyDiagramTheme(scene: AnyScene, theme: DiagramTheme, label = `Theme: ${theme.name}`): void {
+export function applyDiagramTheme(
+  scene: AnyScene, theme: DiagramTheme, label = `Theme: ${theme.name}`, opts: ApplyDiagramThemeOptions = {},
+): void {
   scene.batch(label, () => {
     writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme));
     scene.doc.set(DIAGRAM_THEME_KEY, themeDocValue(theme));
-  });
+  }, opts);
 }
 
 /** Options for {@link setDiagramStyle} and {@link setDiagramColor}. */

@@ -282,4 +282,10 @@ export {
 export { themeWrites } from './theme/themeWrites';
 export type { ThemedNode, ThemedScene } from './theme/themeWrites';
 export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './theme/applyTheme';
-export type { DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
+export type { ApplyDiagramThemeOptions, DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
+export {
+  addThemeRole, editableTheme, forkTheme, isShippedTheme, removeThemeRole, renameThemeRole, setThemeValue, themeRoles,
+  themeValue,
+} from './theme/themeEdit';
+export type { ThemePath } from './theme/themeEdit';
+export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme/themeFile';
