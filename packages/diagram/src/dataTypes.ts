@@ -106,7 +106,59 @@ export interface DiagramData {
    *  each group's members together; `chain` and `'none'` ignore groups but
    *  still draw them. */
   groups?: readonly DataGroup[];
+  /** Containers and pools: regions drawn as scene containers that hold their
+   *  members, which a `DiagramView` drags shapes into and out of. */
+  containers?: readonly DataContainer[];
 }
+
+/**
+ * A container or a pool, drawn as a region that holds its members. Its id
+ * shares one namespace with node, group, and lane ids.
+ *
+ * With a `box` it is laid out as one node of that size, and its members ride
+ * along with it: a member with no `at` is seeded inside its body, in rows.
+ * With none, a container is laid out as a group and its box fits its members.
+ * A pool always has a box, {@link DEFAULT_POOL_ACROSS} across and
+ * {@link DEFAULT_LANE_SIZE} along per lane when none is given. An edge with
+ * an end inside a boxed region ranks against the outermost one holding it.
+ */
+export interface DataContainer {
+  id: string;
+  role: 'container' | 'pool';
+  /** Its title, drawn in its header. */
+  label?: string;
+  /** A container's direct members: node ids and container ids. A member
+   *  already claimed by an earlier container, a pool, an unknown id, and one
+   *  that would put a container inside itself are ignored. */
+  members?: readonly string[];
+  /** A pool's lanes, in the order they stack. */
+  lanes?: readonly DataLane[];
+  /** The axis a pool stacks its lanes along: `'y'` for rows. Default `'y'`. */
+  axis?: 'x' | 'y';
+  /** Where it stands and how big it is, in world units. A pool's size along
+   *  its stack is shared by the lanes that give no `size`. */
+  box?: { x: number; y: number; width: number; height: number };
+  /** Layout leaves its box where it is. */
+  pinned?: boolean;
+  /** The theme role it is drawn in. Unset, a container takes the theme's
+   *  `container` style, a pool its `lane.header`. */
+  style?: string;
+}
+
+/** One lane of a pool. Its id shares the node id namespace. */
+export interface DataLane {
+  id: string;
+  label?: string;
+  /** Its depth along the pool's stack, in world units. */
+  size?: number;
+  /** Node ids and container ids, claimed as a container's are. */
+  members?: readonly string[];
+}
+
+/** A pool's size across its stack when it gives no box. */
+export const DEFAULT_POOL_ACROSS = 600;
+/** A lane's size along its pool's stack when neither it nor the pool's box gives one. */
+export const DEFAULT_LANE_SIZE = 120;
 
 /** The colors and outline a node is drawn with. */
 export interface NodeStyle {

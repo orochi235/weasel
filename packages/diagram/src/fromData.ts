@@ -8,7 +8,9 @@
  */
 import type { RectPose } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
-import { groupSpecs, resolveGroups } from './dataGroups';
+import { placeContainers, containerSpecs } from './dataContainerPlace';
+import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
+import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -25,7 +27,7 @@ import { LABEL_PLACEMENT } from './labelTrait';
 import { chain } from './chain';
 import { rowTextStyle, textFace, type DiagramTextStyle } from './rowStyle';
 import { layered } from './layered';
-import { planOf, type LayoutFn, type LayoutOptions } from './layout';
+import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
 import { markSpecs } from './marks';
 import { authoredOver } from './route';
 import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
@@ -77,15 +79,6 @@ function graphEdgeOf(e: DataEdge, room: EdgeLabelRoom | null): GraphEdge {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-/** Each node's box where layout put it, or where it started if layout left it. */
-function placed(data: DiagramData, seeds: readonly GraphNode[], moved: ReadonlyMap<string, Vec2>): Map<string, Rect> {
-  return new Map(data.nodes.map((n, i) => {
-    const seed = seeds[i]!.bounds;
-    const at = moved.get(n.id) ?? seed;
-    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
-  }));
-}
-
 /** A node's box, its rows' text and slots, and its port labels, laid out in `box`. */
 function nodeSpecs(
   n: DataNode, body: BodySpec, box: { x: number; y: number; width: number; height: number },
@@ -114,9 +107,9 @@ function nodeSpecs(
 
 /** Every spec carries an id — a node's own, `<id>/<k>` for its text,
  *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
- *  `<group id>/label` — so a later call's
+ *  `<group id>/label`, a region's own and `<region id>/title` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
- *  nodes and groups, which names two things as one. An edge whose
+ *  nodes, groups, containers and lanes, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
@@ -137,9 +130,12 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     ids.add(n.id);
   }
   const nodeIds = new Set(ids);
+  const pad = opts.groupPadding ?? DEFAULT_GROUP_INSET;
+  const regions = resolveContainers(data.containers ?? [], ids, nodeIds);
+  const boxes = containerLayoutNodes(regions, { padding: pad, seed: (k) => ({ x: data.nodes.length + k, y: data.nodes.length + k }) });
   const titleStyle = { ...font, fontSize: font.fontSize - 1 };
-  const groups = resolveGroups(data.groups ?? [], ids, nodeIds, {
-    padding: opts.groupPadding ?? DEFAULT_GROUP_INSET,
+  const groups = resolveGroups(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
+    padding: pad,
     title: (text) => measure(text, titleStyle),
   });
   const seen = new Set<string>();
@@ -170,50 +166,88 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     return { id: n.id, bounds: pose, pinned: n.pinned === true, ...(ports !== undefined ? { ports } : {}),
       ...(outline !== undefined ? { outline } : {}), ...(margin !== undefined ? { margin } : {}) };
   });
-  const graphGroups: GraphGroup[] = groups.map((g) => ({
+  const laid = layOut(seeds, edges, groups, boxes, opts, (e) => labelRoomOf(e, opts, labelFont, measure));
+
+  const specs: DiagramSpec[] = [];
+  const sizes = new Map(data.nodes.map((n, i) => [n.id, { ...seeds[i]!.bounds, ...(n.at ? { at: n.at } : {}),
+    ...(seeds[i]!.margin ? { margin: seeds[i]!.margin } : {}) }]));
+  const placedAt = new Map([...laid.placed, ...placeContainers(regions, boxes, laid.placed, sizes, pad)]);
+  // The author's own ports and waypoints win over the plan's; an edge layout ranked against a region keeps none of the plan's.
+  const routes = laid.plan === null ? null
+    : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
+  const fallback = theme ? roleEdgeStyle(theme) : EDGE;
+  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, fallback, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
+  const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
+  // Regions and group boxes first, so a box never paints over what it holds.
+  specs.push(...containerSpecs(regions, placedAt, theme));
+  specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
+  for (const [i, n] of data.nodes.entries()) {
+    const seed = seeds[i]!.bounds;
+    const at = placedAt.get(n.id)!;
+    const style = opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE);
+    const parent = regions.parentOf.get(n.id);
+    const built = nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure });
+    specs.push(...(parent === undefined ? built : built.map((s) => (s.id === n.id ? { ...s, parent: parent as never } : s))));
+    if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
+  }
+  specs.push(...edgeSpecs(edges, edgeCtx));
+  return specs;
+}
+
+/**
+ * Lay out what layout sees: every node outside a boxed region, each outermost
+ * boxed region as one node, and the groups and fitted containers around
+ * them. An edge with an end inside a boxed region ranks against the
+ * outermost one, and one with both ends inside the same one ranks nothing.
+ */
+function layOut(
+  seeds: readonly GraphNode[],
+  edges: readonly DataEdge[],
+  groups: readonly ResolvedGroup[],
+  boxes: ContainerLayout,
+  opts: DiagramSceneOptions,
+  room: (e: DataEdge) => EdgeLabelRoom | null,
+): { placed: Map<string, Rect>; plan: LayoutPlan | null; remapped: ReadonlySet<DataEdge> } {
+  const graphGroups: GraphGroup[] = [...groups.map((g) => ({
     id: g.group.id,
     members: g.members,
     inset: g.inset,
     ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
     ...(g.group.reorder !== undefined ? { ordered: g.direct } : {}),
-  }));
-  const seedOf = new Map(seeds.map((n) => [n.id, n]));
+  })), ...boxes.groups];
+  const visible = [...seeds.filter((s) => !boxes.hidden.has(s.id)), ...boxes.nodes];
+  const seedOf = new Map(visible.map((n) => [n.id, n]));
+  for (const [id, group] of boxes.groupOf) seedOf.get(id)!.group = group;
   for (const g of groups) {
     for (const m of g.direct) {
       const seed = seedOf.get(m);
       if (seed !== undefined) seed.group = g.group.id;
     }
   }
-  const graph = graphOf(
-    seeds,
-    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, labelFont, measure))), graphGroups),
-    graphGroups,
-  );
+  const remapped = new Set<DataEdge>();
+  const graphEdges = edges.flatMap((e): GraphEdge[] => {
+    const edge = graphEdgeOf(e, room(e));
+    const from = boxes.endOf(e.from);
+    const to = boxes.endOf(e.to);
+    if (from === e.from && to === e.to) return [edge];
+    remapped.add(e);
+    if (from === to) return [];
+    const { fromPort: _f, toPort: _t, ...rest } = edge;
+    return [{ ...rest, from, to, ...(from === e.from && e.fromPort ? { fromPort: e.fromPort } : {}),
+      ...(to === e.to && e.toPort ? { toPort: e.toPort } : {}) }];
+  });
+  const graph = graphOf(visible, expandGroupEdges(graphEdges, graphGroups), graphGroups);
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const layoutOptions: LayoutOptions = { order: 'barycenter', ...opts.layoutOptions };
   const plan = layout === null ? null : planOf(layout, graph, layoutOptions);
-  const moved = plan?.moves ?? new Map();
-
-  const specs: DiagramSpec[] = [];
-  const placedAt = placed(data, seeds, moved);
-  // The author's own ports and waypoints win over the plan's.
-  const routes = plan === null || layout?.plan === undefined ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
-  // Behind every node, so a box never paints over what it holds.
-  const fallback = theme ? roleEdgeStyle(theme) : EDGE;
-  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, fallback, labelPlacement: LABEL_PLACEMENT, routes, opts };
-  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
-  const footprints = new Map(seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)]));
-  specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
-  for (const [i, n] of data.nodes.entries()) {
-    const seed = seeds[i]!.bounds;
-    const at = placedAt.get(n.id)!;
-    const style = opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE);
-    specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure }));
-    if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
-  }
-  specs.push(...edgeSpecs(edges, edgeCtx));
-  return specs;
+  const moved = plan?.moves ?? new Map<string, Vec2>();
+  const placed = new Map(visible.map((n) => {
+    const at = moved.get(n.id) ?? n.bounds;
+    return [n.id, { x: at.x, y: at.y, width: n.bounds.width, height: n.bounds.height }];
+  }));
+  return { placed, plan: layout?.plan === undefined ? null : plan, remapped };
 }
