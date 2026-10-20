@@ -1,4 +1,4 @@
-import { isBuiltinPref, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import { isBuiltinPref, prefLeafValue, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
 import { valueAtPath } from '../config/path';
@@ -45,7 +45,7 @@ export function MatrixEditor({
   const disabled = !isLeafEnabled(schema, path, config, over);
   const field = isBuiltinPref(leaf)
     ? prefFieldProps(leaf, {
-        value: valueAtPath(config, path) ?? leaf.default,
+        value: prefLeafValue(leaf, valueAtPath(config, path)),
         setValue: (next) => setConfig(path, next),
         fields: choices,
         disabled,

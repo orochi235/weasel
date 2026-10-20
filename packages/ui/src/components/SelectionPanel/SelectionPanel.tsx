@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import type { PropertyRenderer } from './renderContext';
-import { absentValue, classifyKind, kindBreakdown, type AnyNode } from './model';
+import { classifyKind, kindBreakdown, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from './conditions';
 import type { MarkHiddenProps } from '../Prefs/hidden';
@@ -122,11 +122,6 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
   );
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
-  /** What a node holding nothing at `path` reads as there. */
-  const absentAt = (path: string): unknown => {
-    const leaf = leaves.get(path);
-    return leaf && absentValue(leaf);
-  };
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
@@ -143,7 +138,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     draft: (leaf, next) => writes.draft(selection, leaf, next),
     selectionKey,
     fields,
-    absentAt,
+    leafAt: (path) => leaves.get(path),
     disabled: scope.disabled,
     hidden: scope.hidden,
     entryAt: scope.entryAt,

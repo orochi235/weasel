@@ -3,6 +3,7 @@ import {
   type PrefBoundReader,
   type PrefLeaf,
   type PrefNumber,
+  prefLeafValue,
   prefNumberAt,
 } from '@weasel-js/prefs';
 import {
@@ -14,7 +15,7 @@ import {
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { hasConfigPath, valueAtPath } from '../config/path';
+import { valueAtPath } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -36,13 +37,9 @@ export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What the row of `leaf` at `path` shows of `config`: the value there, else the leaf's default. A clearable
- *  number held unset stays unset. */
+/** What the row of `leaf` at `path` shows of `config` ({@link prefLeafValue}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  const held = valueAtPath(config, path);
-  if (held !== undefined || (extra<boolean>(leaf, 'clearable') && hasConfigPath(config, path)))
-    return held;
-  return extra<unknown>(leaf, 'default');
+  return prefLeafValue(leaf, valueAtPath(config, path));
 }
 
 /**
