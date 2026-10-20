@@ -3,7 +3,7 @@ import { registerTexture, unregisterTexture } from '@weasel-js/renderer';
 import { afterEach, describe, expect, it } from 'vitest';
 import { latin1 } from './testing/latin1';
 import { NO_FONTS } from './testing/noFonts';
-import { type RasterPixels, writePdf } from './writePdf';
+import { type RasterPixels, type WritePdfOptions, writePdf } from './writePdf';
 
 const fakeImage = (width: number, height: number) => ({ width, height }) as unknown as ImageBitmap;
 
@@ -13,11 +13,11 @@ function pixels(width: number, height: number, alpha = 255): RasterPixels {
   return { width, height, data };
 }
 
-async function render(commands: DrawCommand[], alpha = 255) {
+async function render(commands: DrawCommand[], alpha = 255, readPixels?: WritePdfOptions['readPixels']) {
   const { bytes, skipped } = await writePdf([{ width: 200, height: 100, commands }], {
     fonts: NO_FONTS,
     compress: false,
-    readPixels: (img) => pixels(img.width, img.height, alpha),
+    readPixels: readPixels ?? ((img) => pixels(img.width, img.height, alpha)),
   });
   const s = latin1(bytes);
   const content = s.slice(s.indexOf('stream\n') + 7, s.indexOf('\nendstream'));
@@ -81,6 +81,16 @@ describe('images', () => {
     expect(content.match(/\/Im1 Do/g)).toHaveLength(2);
     expect(s).toContain('/ca 0.5');
     expect(s.match(/\/Subtype \/Image/g)).toHaveLength(1);
+    // sw < 0 mirrors x: source columns 0..2 land in the dest rect right to left
+    expect(content).toContain('-20 0 0 -20 30 10 cm');
+  });
+
+  it('skips an image whose pixels cannot be read instead of failing the document', async () => {
+    const { content, skipped } = await render([image(fakeImage(2, 1))], 255, () => {
+      throw new Error('no canvas');
+    });
+    expect(skipped).toEqual([{ kind: 'command', detail: 'image could not be read' }]);
+    expect(content).not.toContain('Do');
   });
 
   it('folds opacity and group alpha into one constant alpha', async () => {
@@ -113,6 +123,34 @@ describe('texture paint', () => {
     expect(content).toContain('/Pattern cs');
     expect(content).toContain('/P1 scn');
     expect(s).toContain('/Subtype /Image');
+  });
+
+  const texturePath = (paint: object): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 50, height: 50 },
+    fill: { paint: { kind: 'texture', texture: handles[0], ...paint } as never },
+  });
+
+  it('carries a group transform into the pattern matrix for local units', async () => {
+    handles.push(registerTexture(fakeImage(4, 2)));
+    const group: DrawCommand = {
+      kind: 'group',
+      transform: Float64Array.from([2, 0, 0, 0, 3, 0, 5, 6, 1]),
+      children: [texturePath({ units: 'local', origin: { x: 3, y: 5 }, transform: [2, 0, 0, 2] })],
+    };
+    const { s } = await render([group]);
+    expect(s).toContain('/Matrix [4 0 0 -6 11 79]');
+  });
+
+  it('ignores the group transform for page units', async () => {
+    handles.push(registerTexture(fakeImage(4, 2)));
+    const group: DrawCommand = {
+      kind: 'group',
+      transform: Float64Array.from([2, 0, 0, 0, 3, 0, 5, 6, 1]),
+      children: [texturePath({ origin: { x: 3, y: 5 }, transform: [2, 0, 0, 2] })],
+    };
+    const { s } = await render([group]);
+    expect(s).toContain('/Matrix [2 0 0 -2 3 95]');
   });
 
   it('skips a texture that is not registered', async () => {

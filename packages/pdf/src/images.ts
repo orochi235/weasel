@@ -64,14 +64,20 @@ export function imageXObject(
   image: Source,
   state: DrawState = { transform: mat3.identity(), alpha: 1, colorMatrix: null },
   sampling: Sampling = 'linear',
-): PdfRef {
+): PdfRef | null {
   const interpolate = sampling !== 'nearest';
   const key = `${idOf(image)} ${interpolate} ${state.colorMatrix?.join(',') ?? ''}`;
   const cache = memo(ctx);
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const raw = (ctx.opts.readPixels ?? defaultReadPixels)(image);
+  let raw: RasterPixels;
+  try {
+    raw = (ctx.opts.readPixels ?? defaultReadPixels)(image);
+  } catch {
+    ctx.skipped.push({ kind: 'command', detail: 'image could not be read' });
+    return null;
+  }
   const rgba = foldPixels(raw.data, state);
   const n = raw.width * raw.height;
   const rgb = new Uint8Array(n * 3);
@@ -136,6 +142,7 @@ function place(ctx: PageCtx, ref: PdfRef, iw: number, ih: number, p: Place): voi
 export function writeImage(ctx: PageCtx, cmd: ImageDrawCommand | SpritesDrawCommand, state: DrawState): void {
   const { w: iw, h: ih } = sizeOf(cmd.image);
   const ref = imageXObject(ctx, cmd.image, state, cmd.sampling);
+  if (!ref) return;
   if (cmd.kind === 'image') {
     place(ctx, ref, iw, ih, { ...cmd, opacity: (cmd.opacity ?? 1) * state.alpha });
     return;
@@ -180,6 +187,7 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
   if (!ref) {
     const { w, h } = sizeOf(entry.source);
     const image = imageXObject(ctx, entry.source, state, 'linear');
+    if (!image) return null;
     ref = ctx.objects.alloc();
     ctx.objects.streamDeflated(
       ref,
