@@ -1,6 +1,7 @@
 import type { Timers } from '../audioTime';
 import { blocked, drop, findLive, logical, reaches, touches, type Edge } from './edges';
 import { createFader } from './fader';
+import { replaceDef } from './replace';
 import type { GraphNodeDef, GraphTarget } from './types';
 import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
 
@@ -81,8 +82,10 @@ export function createEdits(deps: EditsDeps) {
     liveNodes: () => [...nodes.values()],
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
-    /** An edge is fading out or waiting to be wired. */
-    busy: () => edges.some((e) => e.state !== 'open'),
+    /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
+    busy: () =>
+      edges.some((e) => e.state !== 'open') ||
+      [...nodes.values(), ...leaving].some((w) => w.outgoing.size > 0),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw graphError(`a node "${id}" already exists`);
       const w = createWrapper(ctx, timers, id, def);
@@ -96,6 +99,17 @@ export function createEdits(deps: EditsDeps) {
       leaving.add(w);
       for (const e of edges.filter((x) => touches(x, w))) close(e);
       sweep();
+    },
+    /** Crossfade `id` into `def`; edges into a port `def` lacks close with it. */
+    replace(id: string, def: GraphNodeDef, playing: boolean): void {
+      const w = live(id);
+      replaceDef(ctx, timers, w, def, fade(), playing, {
+        closePort: (port) => {
+          for (const e of edges.filter((x) => x.to === w && x.port === port)) close(e);
+        },
+        onSettle: deps.onSettle,
+      });
+      deps.onSettle();
     },
     connect(from: string, to: GraphTarget): void {
       const w = live(from);

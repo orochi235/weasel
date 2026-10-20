@@ -54,8 +54,8 @@ export function createAudioGraph(
   const graph: AudioGraph = {
     add: guard(edits.add),
     remove: guard(edits.remove),
-    replace: guard((_id: string, _def: GraphNodeDef): void => {
-      throw graphError('replace is not yet supported');
+    replace: guard((id: string, def: GraphNodeDef): void => {
+      edits.replace(id, def, transport.playing());
     }),
     connect: guard(edits.connect),
     disconnect: guard(edits.disconnect),

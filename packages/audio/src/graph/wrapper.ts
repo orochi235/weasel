@@ -20,6 +20,15 @@ export interface NodeWrapper {
   readonly taps: Set<AnalyserTap>;
   /** Whether `def.start` has run since the last `def.stop`. */
   running: boolean;
+  /** Defs a `replace` is fading out, each until its own faders close. */
+  readonly outgoing: Set<Outgoing>;
+}
+
+/** A def on its way out of a wrapper, behind the faders that are closing it. */
+export interface Outgoing {
+  readonly def: GraphNodeDef;
+  readonly faders: readonly Fader[];
+  running: boolean;
 }
 
 export function createWrapper(
@@ -38,7 +47,7 @@ export function createWrapper(
   const out = ctx.createGain();
   const outFader = createFader(ctx, timers, def.output, out);
   outFader.open(0);
-  return { id, def, ins, inFaders, out, outFader, taps: new Set(), running: false };
+  return { id, def, ins, inFaders, out, outFader, taps: new Set(), running: false, outgoing: new Set() };
 }
 
 export function startWrapper(w: NodeWrapper, when: number): void {
@@ -53,9 +62,19 @@ export function stopWrapper(w: NodeWrapper, when: number): void {
   w.def.stop?.(when);
 }
 
+/** Stop, cut and dispose a def leaving; cutting its faders cancels their closes. */
+export function releaseOutgoing(w: NodeWrapper, o: Outgoing, when: number): void {
+  w.outgoing.delete(o);
+  if (o.running) o.def.stop?.(when);
+  o.running = false;
+  for (const f of o.faders) f.cut();
+  o.def.dispose?.();
+}
+
 /** Tear down a wrapper whose edges are already cut. Its faders go before
  *  `def.dispose`, which may blanket-disconnect the nodes they are wired from. */
 export function releaseWrapper(w: NodeWrapper, when: number): void {
+  for (const o of [...w.outgoing]) releaseOutgoing(w, o, when);
   stopWrapper(w, when);
   for (const f of Object.values(w.inFaders)) f.cut();
   w.outFader.cut();
