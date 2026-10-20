@@ -558,6 +558,9 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
+  mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
+
 - **(P2) A bar's action button never says why it is disabled.** `BarActionOne`
   (`packages/ui/src/components/Bar/BarAction.tsx`) spreads `useLeafAction`'s `reason` into
   `BarActionButton`, which reads `disabledReason`, so a disabled bar button gets no tooltip and is
