@@ -202,8 +202,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const rows = rowElements(c, optsRef.current);
     const flat: DropRow[] = rows.map((row, i) => {
       const r = row.getBoundingClientRect();
-      const top = across ? r.left : r.top;
-      const height = across ? r.width : r.height;
+      const [top, height] = across ? [r.left, r.width] : [r.top, r.height];
       return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top, height };
     });
     const raw = resolveDrop(flat, { x: 0, y: across ? client.clientX : client.clientY }).target.index;

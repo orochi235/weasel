@@ -1,8 +1,9 @@
 /**
- * The scene's edits to its document — tree, node fields, and layers — with
+ * The scene's edits to its document — tree, node fields, layers, and document values — with
  * the kit ops they record.
  */
 import type { ArrivalWindow } from './arrivalWindow';
+import { createSceneDoc, type SceneDocValues } from './docValues';
 import { createFieldEdits, type FieldEdits } from './fieldEdits';
 import { registerKitOps } from './kitOps';
 import { createNodeFlags } from './nodeFlags';
@@ -21,6 +22,8 @@ export interface SceneEditsEnv<TData, TLayer extends string, TPose> {
     nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
     layers: LayerRecord<TLayer>[];
     layerIndex: Map<TLayer, number>;
+    /** The scene's document values, which `doc` reads and records. */
+    docValues: Map<string, unknown>;
   };
   store: ReturnType<typeof createNodeStore<TData, TLayer, TPose>>;
   locks: Pick<LockGuard<TLayer>, 'refuse' | 'refuseLayer' | 'lifted'>;
@@ -44,7 +47,8 @@ export interface SceneEdits<TData, TLayer extends string, TPose> {
   methods: Omit<TreeEdits<TData, TLayer, TPose>, 'construct'>
     & FieldEdits<TData, TLayer, TPose>
     & LayerEdits<TData, TLayer, TPose>
-    & ReturnType<typeof createNodeFlags<TData, TLayer, TPose>>;
+    & ReturnType<typeof createNodeFlags<TData, TLayer, TPose>>
+    & SceneDocValues;
 }
 
 export function createSceneEdits<TData, TLayer extends string, TPose>(
@@ -105,5 +109,7 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     narrowSelection: () => env.narrowSelection(),
   });
 
-  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits, ...flagEdits } };
+  const doc = createSceneDoc({ values: state.docValues, register: env.ops.register, record: recorder.record });
+
+  return { construct, methods: { ...treeEdits, ...fieldEdits, ...layerEdits, ...flagEdits, doc } };
 }

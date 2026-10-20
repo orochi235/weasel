@@ -2,7 +2,7 @@ import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
 import { createNotifier } from './notifier';
-import { createSceneDoc, type SerializedDoc } from './docValues';
+import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
 import { createPoseWriteLog } from './poseWrites';
 import { effectivePose } from './effectivePose';
@@ -65,7 +65,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   // reloads in any scene, not only one whose consumer registered the key.
   const registry = withKitRegistry(options.registry ?? {});
 
-  const doc = createSceneState<TData, TLayer, TPose>(registry, layers, () => arrivals.layoutDeclared());
+  const doc = createSceneState<TData, TLayer, TPose>(registry, layers, () => arrivals.layoutDeclared(), initialDoc);
   const { state, locks, reads } = doc;
   const notifier = createNotifier();
   const mode = createEditMode();
@@ -119,18 +119,12 @@ function buildScene<TData, TLayer extends string, TPose>(
     clearOverride: overrides.clear,
   });
   for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
-  const sceneDoc = createSceneDoc({
-    values: doc.docValues.values,
-    register: recording.ops.register,
-    record: recording.recorder.record,
-  });
 
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
     get roots() { return state.roots; },
     get layers() { return state.layers; },
     registry,
-    doc: sceneDoc,
 
     ...reads,
 
@@ -160,8 +154,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       }
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
-      doc.reset(json.systemLayers.map(layerFromSerialized));
-      doc.docValues.reset(json.doc);
+      doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
       selection.replace(locks.reachable(selection.get().filter((id) => state.nodes.has(id))));
@@ -171,7 +164,6 @@ function buildScene<TData, TLayer extends string, TPose>(
     ...sceneChanges(notifier, selection),
   };
 
-  doc.docValues.reset(initialDoc);
   const initial = initialNodes(registry);
   if (initial) {
     poseWrites.quiet(() => edits.construct(initial));

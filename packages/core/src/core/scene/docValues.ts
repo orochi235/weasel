@@ -36,11 +36,9 @@ function write(values: Map<string, unknown>, key: string, to: unknown): void {
   else values.set(key, to);
 }
 
-/** The store a scene's document values live in. */
-export function createDocStore() {
-  const values = new Map<string, unknown>();
+/** The snapshot side of a scene's document values, kept in `values`. */
+export function createDocStore(values: Map<string, unknown>) {
   return {
-    values,
     /** The values as a snapshot holds them, or `undefined` when there are none. */
     toJSON(): SerializedDoc | undefined {
       return values.size === 0 ? undefined : Object.fromEntries(values);
