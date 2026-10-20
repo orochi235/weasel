@@ -23,14 +23,9 @@
   font-variant-numeric: proportional-nums;
 }
 
-/* The bar runs past the digits on its right; the margin takes that back out of the width, so the
- * digits, not the bar, are what a centered fraction centers. */
-.math mfrac {
-  margin-inline-end: -0.15em;
-}
-
+/* The bar runs past the digits by the same amount on each side. */
 .math mfrac > * {
-  padding-inline-end: 0.15em;
+  padding-inline: 0.1em;
 }
 
 .math mfrac > :first-child {
