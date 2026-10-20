@@ -193,15 +193,30 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
   return (run) => faces[run];
 }
 
+/** The group the previous glyph joined, and every input its key was built from. */
+interface LastGroup {
+  group: LaidOutGroup | null;
+  run: number; family: string; weight: number; style: FontStyle;
+  bold: boolean; italic: boolean; source: LaidOutGroup['source']; page: number;
+}
+
 function groupFor(
   groups: Map<string, LaidOutGroup>,
   g: PlacedGlyph,
   run: ResolvedRun,
   source: LaidOutGroup['source'],
+  last: LastGroup,
 ): LaidOutGroup {
   const { family, weight, style } = g.resolved.resolved;
   const { synthetic } = g.resolved;
   const page = source === 'outline' ? 0 : g.glyph!.page;
+  // A glyph keyed like the one before it joins that group without building the
+  // key, which, a string per glyph, was the largest allocation in painting text.
+  if (last.group !== null && last.run === g.run && last.source === source && last.page === page
+    && last.family === family && last.weight === weight && last.style === style
+    && last.bold === synthetic.bold && last.italic === synthetic.italic) {
+    return last.group;
+  }
   // Only the outline tier can paint a stroke; an SDF group carrying one would
   // be a promise the renderer cannot keep.
   const stroke = source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
@@ -217,6 +232,9 @@ function groupFor(
     };
     groups.set(key, group);
   }
+  last.group = group;
+  last.run = g.run; last.family = family; last.weight = weight; last.style = style;
+  last.bold = synthetic.bold; last.italic = synthetic.italic; last.source = source; last.page = page;
   return group;
 }
 
@@ -230,6 +248,9 @@ export function paintRuns(
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
   const groups = new Map<string, LaidOutGroup>();
+  const last: LastGroup = {
+    group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
+  };
   const decorations: LaidOutDecoration[] = [];
   const faceOf = runFaces(runs);
   // A rule is a solid rect with only a fill to paint it.
@@ -247,15 +268,15 @@ export function paintRuns(
       // refused, so it gets none.
       if (!fillHasInk(run.fill) && !(outline !== null && strokeHasInk(run.stroke))) continue;
       if (outline !== null) {
-        groupFor(groups, g, run, 'outline').glyphs.push({
+        groupFor(groups, g, run, 'outline', last).glyphs.push({
           ...outline, x: g.x, baselineY: g.baselineY, scale: g.fontSize,
         });
         continue;
       }
       const quad = glyphQuad(g);
       if (!quad) continue;
-      if (g.glyph?.color) groupFor(groups, g, run, 'color').quads.push({ ...quad, colorGlyph: g.glyph });
-      else groupFor(groups, g, run, g.resolved.source).quads.push(quad);
+      if (g.glyph?.color) groupFor(groups, g, run, 'color', last).quads.push({ ...quad, colorGlyph: g.glyph });
+      else groupFor(groups, g, run, g.resolved.source, last).quads.push(quad);
     }
     for (const rule of lineDecorations(line.glyphs, runs, faceOf, rulePaint)) {
       const { run, ...rect } = rule;
