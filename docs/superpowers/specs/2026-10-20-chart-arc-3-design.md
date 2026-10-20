@@ -23,9 +23,8 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
-| 13 | Mermaid and Graphviz DOT | `diagram-formats`, app tests | — | 4 |
-| 14 | Draw-style XML | `diagram-formats`, svg, app tests | — | 4 |
+| 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
+| 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
 
 Pieces are numbered by topic; build them by wave. Piece 6 needs nothing from piece 3 to compile,
 so it is built alongside it, but a page export is only right once cross-page connectors stop
@@ -36,7 +35,8 @@ Shared files, and who makes room in them first:
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
+| `packages/diagram/src/fromData.ts` | 264 | 12 | done: the data types are in `dataTypes.ts`, re-exported |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 181 | 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -46,65 +46,10 @@ boxes on purpose: everything in this arc lives on the page plane, and kernel3d h
 connectors (the second arc's call, kept).
 
 
-## 9. Pipeline groups as editable containers
-
-### What the user sees
-
-Under Node graph, a pipeline group is a titled box like a chart container: drag a stage in or out
-to change membership, drag the box to carry its stages, resize it, double-click its title to
-rename. Arrange › Group (⌘G) groups the selected stages; Arrange › Ungroup (⇧⌘G) dissolves the
-picked group. Under Rack and Lanes, groups draw as today, and Group, Ungroup, and renaming in the
-Params sidebar work; dragging membership does not.
-
-**Decision (2026-10-20).** Groups become data containers only under `nodeGraph`: rack and lanes
-place every stage, so an authored box would contradict the look, while a box fitting its members
-holds in every look.
-
-### Engine surface (`packages/diagram/src/effect/`)
-
-- `EffectDoc.groupBoxes?: Readonly<Record<groupId, Box>>`, a sidecar like `places`.
-- `editorMapping.ts`: under `nodeGraph`, each `EffectGroup` maps to a `DataContainer` with
-  `box: doc.groupBoxes?.[id]` (fitting its members while unset); other looks keep mapping
-  it to a `DataGroup`.
-- `groupEdit.ts`: `groupStages(doc, ids, label?)` (nested inside the group all of them share, if
-  any), `ungroup(doc, id)` (members go to its parent group), `renameGroup`, `moveToGroup(doc, ids,
-  group | null)`, `setGroupBox(doc, id, box | null)`, and `moveGroup(doc, id, offset)`, which moves
-  member places, the box, and inner wires' `routes` together; `removeStages` prunes `groupBoxes`.
-- `EffectEditor`: `selectedGroup` and `onSelectGroup` beside the stage pick; `onMove` with
-  `parent` and `onEditContainer` map to the edits above. Labels: "Move", "Resize group", "Group",
-  "Ungroup", "Rename group".
-- App: `apps/chart/src/pipeline/pipelineCommands.ts` gains the Arrange items; `ParamPanel.tsx`
-  shows a picked group's name field.
-
-### Save, load, undo
-
-Membership saves in `EffectPipeline.groups`, as now, and boxes in `groupBoxes`; older files load
-with every group fitting its members. Each edit is one `onChange`, one entry in the pipeline history.
-A dragged group is one `moveGroup` (below): its stages, its box, and the routes of wires with both
-ends inside move by one offset, the rule `waypointFollower` keeps in chart mode.
-
-### Tests
-
-- `groupEdit.test.ts`: nesting, ungroup to parent, pruning.
-- `editorMapping.test.ts`: a container under `nodeGraph`, a group under the others.
-- `EffectEditor.groups.browser.test.tsx`: drag a stage into a group box; resize it; undo through
-  the app's pipeline history (`usePipelineDoc.ts`).
-
-## Formats on the interchange document
-
-Pieces 13 and 14 are codecs on the interchange document already in `@weasel-js/diagram-formats`
-(its README, "The interchange document" and "Formats"): each is a `DiagramFormat` added to
-`DIAGRAM_FORMATS`, reading to and writing from a `DiagramDocument`, with warnings both ways.
-weaselchart's File › Import… and File › Export › As … list every registered format, so neither
-piece touches the app beyond its tests. A writer reads an item's drawn colors with diagram's
-`dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle` under the document's theme, and a route as
-`waypoints ?? routed`.
-
 ## 13. Mermaid and Graphviz DOT
 
 Both carry a graph's topology and labels, not its geometry (DOT's only when every node has `pos`),
-so import leaves `at` unset and `documentSpecs` lays the page out with `layered`, the way the
-page's `direction` says.
+so import lays out with `layered`, which the package already does well.
 
 ### Mappings
 
@@ -119,7 +64,7 @@ page's `direction` says.
 | trapezoid | `A[/text\]` | `shape=trapezium` |
 | edge, label | `A -->|text| B` | `A -> B [label=…]` |
 | container | `subgraph` | `subgraph cluster_*` |
-| page `direction` | `flowchart TD/LR/BT/RL` | `rankdir` |
+| direction | `flowchart TD/LR/BT/RL` | `rankdir` |
 | colors | `style` and `classDef` fill and stroke | `fillcolor`, `color`, `fontcolor` |
 | ports | — | `node:port:compass`, compass only |
 
@@ -131,9 +76,8 @@ either and export as nested containers.
 ### Engine surface (`packages/diagram-formats/src/`)
 
 `mermaid/` and `dot/`, each `lex.ts`, `parse.ts` (to a syntax tree), `read.ts`, and `write.ts`,
-registered in `DIAGRAM_FORMATS` with extensions `.mmd`/`.mermaid` and `.dot`/`.gv`, each with
-`onePage`, so export writes the page in view. An import is one undo entry, "Import"; an export
-writes nothing to the scene.
+registered in `DIAGRAM_FORMATS` with extensions `.mmd`/`.mermaid` and `.dot`/`.gv`. Export writes
+the current page. Saving and undo are piece 12's: an import is one entry, an export writes nothing.
 
 ### Tests
 
@@ -155,7 +99,7 @@ and swimlanes.
 | outline | `shape=rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is stadium; other shapes are rect, with a warning |
 | colors, font | `fillColor`, `strokeColor`, `fontColor`, `fontSize`, `fontFamily` |
 | text | `value`; with `html=1`, tags stripped and `<br>` kept as a line break |
-| router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, none straight; `avoid` exports as orthogonal with its `routed` points |
+| router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, none straight; `avoid` exports as orthogonal with its route as points |
 | waypoints | the edge geometry's points array |
 | ports | `exitX`/`exitY`, `entryX`/`entryY` to the nearest compass port |
 | container, pool, lane | `container=1`; `swimlane` with `horizontal` for pools and lanes |
@@ -168,7 +112,7 @@ compressed content is base64, raw deflate (`DecompressionStream('deflate-raw')`)
 so its `read` answers a promise. `write.ts` writes uncompressed, escaping with `escapeAttr` and
 `escapeText` from `@weasel-js/svg`'s `xmlEscape.ts`, exported from its barrel in this piece.
 `style.ts` parses and writes style strings. The extension is `.xml`, and a file is recognized by
-its root element rather than its extension. It writes every page; an import is one undo entry.
+its root element rather than its extension. Saving and undo are piece 12's.
 
 **Decisions (2026-10-20).**
 - In scope: draw-style XML, Mermaid, DOT, SVG export, and PNG export. Packaged office-suite drawing

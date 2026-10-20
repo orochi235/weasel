@@ -1316,10 +1316,6 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `selectTool.rotate === false` is decided in three places that do not agree.** Making them
-  one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
-  lists them. Left open by the preset table and the rule context.
-
 - **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
   routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
   summary prints the label, so making them one needs a decision on what it should say. Left open by
@@ -1329,9 +1325,23 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P2) `hops.browser.test.tsx` ("bows the upper connector over the crossing") fails in full fleet
+  runs: the chart canvas never paints.** Twice on 2026-10-20 (a run of `main` at `b3431621f` and a
+  branch run at `cefc52e68`), both on teitou in the full `browser` project; three runs of the file
+  alone passed. The failure screenshot shows the app's chrome and an empty workspace with not even
+  the page drawn, so polling the pixels (`5ceb31061`) cannot help; the canvas painted nothing for over
+  a second. Unchecked candidates: the WebGL context lost or never made under six tabs, or the seed
+  in `localStorage` (one origin, shared by every tab) cleared by another chart test's `afterEach`
+  before the app read it, though an empty scene would still draw the page.
+
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
+- **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
+  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
+  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
+  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
+  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
   each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

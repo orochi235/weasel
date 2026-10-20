@@ -61,25 +61,22 @@ export function useSceneHover(args: {
  * An unselectable canvas hides the marquee and lasso by default: every
  * selection write no-ops there, so the select tool's empty-drag binding still
  * claims the gesture, keeping it from falling through to an ambient drag such
- * as insert, but paints nothing. `rotateOff` hides the rotation handle.
+ * as insert, but paints nothing.
  */
 export function useChromeRules(args: {
   enabled: EnabledPresets;
   selectable: boolean;
-  /** `selectTool.rotate === false`. */
-  rotateOff: boolean;
   chromeVisibility: VisibilityRules | undefined;
 }): VisibilityRules {
-  const { enabled, selectable, rotateOff, chromeVisibility } = args;
+  const { enabled, selectable, chromeVisibility } = args;
   return useMemo(() => {
     const defaults = presetChromeRules(enabled, PRESET_OWNED_CHROME);
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;
     }
-    if (rotateOff) defaults['selection.rotation-handle'] = never;
     return { ...defaults, ...chromeVisibility };
-  }, [chromeVisibility, selectable, rotateOff, enabled]);
+  }, [chromeVisibility, selectable, enabled]);
 }
 
 /** The chrome-caps answers for the surface's own view. */

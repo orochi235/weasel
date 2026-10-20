@@ -11,6 +11,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): `selectTool.rotate: false` is decided once, in `resolveFeatures`
+  (`selectRotates`): every enabled preset loses its ambient `rotate` bindings and
+  `selection.rotation-handle`, while the `rotate` action stays registered. A tool that binds
+  `rotate` rotates from the handle, a partial `actions.rotate` merges onto the default, and a
+  handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
 - 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
   "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
   and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
