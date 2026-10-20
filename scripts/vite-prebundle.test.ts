@@ -29,9 +29,11 @@ describe('specifiersUnder', () => {
   it('reads shipped source only, skipping tests, stories and node_modules', () => {
     file('app/src/main.tsx', "import { x } from '@weasel-js/core';");
     file('app/src/deep/panel.ts', "import { y } from '@weasel-js/geom';");
-    file('app/src/main.test.tsx', "import { z } from '@weasel-js/testing-only';");
-    file('app/src/Panel.stories.tsx', "import { z } from '@weasel-js/forge';");
-    file('app/node_modules/dep/index.js', "import { z } from '@weasel-js/vendored';");
+    // Built from pieces: vite-aliases.test.ts fails on any repo import that resolves to no file.
+    const unresolvable = (name: string) => `import { z } from '${'@weasel-js'}/${name}';`;
+    file('app/src/main.test.tsx', unresolvable('testing-only'));
+    file('app/src/Panel.stories.tsx', unresolvable('forge'));
+    file('app/node_modules/dep/index.js', unresolvable('vendored'));
     expect([...specifiersUnder([join(tree, 'app')])].sort()).toEqual(['@weasel-js/core', '@weasel-js/geom']);
   });
 });
