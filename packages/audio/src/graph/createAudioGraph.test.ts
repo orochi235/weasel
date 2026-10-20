@@ -254,6 +254,33 @@ describe('createAudioGraph lifetime', () => {
     expect(out.gain.ramps.at(-1)!.value).toBe(1);
   });
 
+  it('the first start fades the output in from silence', () => {
+    const { ctx, graph, dest } = harness();
+    const out = dest.connectedFrom[0] as FakeGain;
+    expect(out.gain.value).toBe(0);
+    graph.add('s', testNode(ctx, [], true).def);
+    ctx._advance(3);
+    const now = ctx.currentTime;
+    graph.start();
+    expect(out.gain.holds.at(-1)).toEqual({ value: 0, at: now });
+    expect(out.gain.ramps).toEqual([{ value: 1, at: now + FADE / 1000 }]);
+  });
+
+  it('a start inside a stop\'s fade cancels the stop', () => {
+    const { ctx, graph, dest, settle } = harness();
+    const s = testNode(ctx, [], true);
+    graph.add('s', s.def);
+    graph.start();
+    settle();
+    graph.stop();
+    graph.start();
+    settle();
+    expect(s.stop).not.toHaveBeenCalled();
+    expect(s.start).toHaveBeenCalledTimes(1);
+    expect(graph.playing()).toBe(true);
+    expect((dest.connectedFrom[0] as FakeGain).gain.ramps.at(-1)!.value).toBe(1);
+  });
+
   it('stops a playing source it removes', () => {
     const { ctx, graph, settle } = harness();
     const s = testNode(ctx, [], true);

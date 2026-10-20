@@ -1,5 +1,5 @@
 import { atAudioTime, type Timers } from '../audioTime';
-import { writeParam } from '../param';
+import { initParam, writeParam } from '../param';
 
 export interface Fader {
   readonly gain: GainNode;
@@ -19,9 +19,7 @@ export function createFader(
   to: AudioNode,
 ): Fader {
   const gain = ctx.createGain();
-  // `.value` first, so `writeParam` anchors a ramp at it rather than at 1.
-  gain.gain.value = 0;
-  writeParam(ctx, gain.gain, 0);
+  initParam(ctx, gain.gain, 0);
   from.connect(gain);
   gain.connect(to);
 

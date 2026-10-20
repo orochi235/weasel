@@ -1,6 +1,6 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from '../analyser';
 import { defaultTimers, type Timers } from '../audioTime';
-import { writeParam } from '../param';
+import { initParam } from '../param';
 import { createEdits, graphError } from './edits';
 import { createTransport } from './transport';
 import type { AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch } from './types';
@@ -26,8 +26,7 @@ export function createAudioGraph(
   const fade = (): number => (ctx.state === 'running' ? fadeMs : 0);
 
   const output = ctx.createGain();
-  output.gain.value = 1;
-  writeParam(ctx, output.gain, 1);
+  initParam(ctx, output.gain, 0);
   output.connect(destination);
 
   let waiters: (() => void)[] = [];
