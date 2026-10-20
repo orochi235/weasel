@@ -6,3 +6,4 @@ export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutos
 export { usePageFit } from './usePageFit';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
+export { usePageGrid, type PageGridOptions } from './usePageGrid';

@@ -80,8 +80,6 @@ export {
   simplifyStops, unpinSegment,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
-export { portTarget, snapPoint, stopTarget } from './routeSnap';
-export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
@@ -119,6 +117,7 @@ export {
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
+  OFF_PAGE_STUB,
   ROUTERS,
   avoid,
   bezier,
@@ -157,6 +156,23 @@ export { installLabelPlacement } from './labels/install';
 export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
 export { useLabelPlacement } from './labels/useLabelPlacement';
 export { createSpecLabelPlacer } from './labels/specLabels';
+export { nextOffPageRef, offPageSplits } from './offPage/split';
+export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
+export {
+  DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE, OFF_PAGE_TAG_PADDING, offPageTagData, offPageTagDerivePose, offPageTagLook,
+  offPageTagSize, offPageTagSpec, offPageTagText,
+} from './offPage/tag';
+export type { OffPageTagLook } from './offPage/tag';
+export { offPageTagId, offPageTagOf } from './offPage/trait';
+export type { OffPageSplit, OffPageTag } from './offPage/trait';
+export { installOffPageMarkers, offPageOps } from './offPage/install';
+export type { OffPageMarkerOptions } from './offPage/install';
+export { useOffPageMarkers } from './offPage/useOffPageMarkers';
+export {
+  FOLLOW_OFF_PAGE_ACTION_ID, createFollowOffPageAction, diagramOffPage, followOffPageBinding, offPageTargetOf,
+} from './offPage/follow';
+export type { FollowOffPageOptions, OffPageTarget } from './offPage/follow';
+export { subpathOf } from './subpaths';
 export { diagramResizable } from './resizable';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
@@ -273,8 +289,8 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, ReorderChange,
-  RouteChange,
+  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
+  ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

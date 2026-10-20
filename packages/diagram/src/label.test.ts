@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  asNodeId, createScene, effectivePose, polylineFromPoints, type DerivedDep, type Path, type RectPose, type Vec2,
+  asNodeId, createScene, effectivePose, PathBuilder, polylineFromPoints, type DerivedDep, type Path, type RectPose, type Vec2,
 } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
@@ -46,6 +46,12 @@ describe('labelDerivePose', () => {
   it('centers the label on the middle of the route', () => {
     // Halfway along 200 units of elbow is the corner.
     expect(poseOf({ at: 'mid' }, edgeDep(elbow))).toEqual(box(90, -4));
+  });
+
+  it('stations on the first subpath of a path that has several, as a split edge draws', () => {
+    const stubs = new PathBuilder().moveTo(0, 0).lineTo(40, 0).moveTo(300, 0).lineTo(340, 0).build();
+    expect(poseOf({ at: 'mid' }, edgeDep(stubs))).toEqual(box(10, -4));
+    expect(poseOf({ at: { near: { x: 320, y: 0 } } }, edgeDep(stubs))).toEqual(box(30, -4));
   });
 
   it('takes a parameter as readily as a name', () => {

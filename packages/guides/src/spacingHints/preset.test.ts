@@ -61,4 +61,12 @@ describe('createSpacingHintsPreset', () => {
     expect(store.get().length).toBeGreaterThan(0);
     expect(store.get().every((m) => m.color === '#e0397f')).toBe(true);
   });
+
+  it('gives its filter to both sources', () => {
+    const { scene, moving, preset } = fixture({ align: true, filter: () => false });
+    const out = moveBy({
+      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
+    }).by(0, 0);
+    expect(out).toMatchObject({ point: { x: 0, y: 0 }, marks: [] });
+  });
 });

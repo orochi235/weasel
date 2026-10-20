@@ -26,6 +26,10 @@ export interface RouteChange {
   waypoints: readonly Vec2[];
 }
 
+/** A node's box as a resize handle's drag left it: its place too, since a
+ *  handle on its top or left edge moves it. */
+export interface NodeResize { id: string; x: number; y: number; width: number; height: number }
+
 /** What a delete would take: the data nodes, and every data edge that goes with them. */
 export interface DeleteReport {
   nodes: readonly string[];
@@ -78,6 +82,12 @@ export interface DiagramViewProps {
    *  the data edge's `routed` and `routedPorts`, or the next `diagramScene`
    *  lays them out again. */
   onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
+  /** Set to give a selected node resize handles. The box resizes live while
+   *  a handle is dragged; on release the new box is reported and the view
+   *  draws it only once the specs do. Store it as the data node's `width`,
+   *  `height`, and `at` with `pinned: true`; the size is a minimum, so a box
+   *  dragged smaller than its rows grows back to them. */
+  onResize?: (resizes: readonly NodeResize[]) => void;
   /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. An
    *  end on a shape's body (`connectBodies`) has no port field. */

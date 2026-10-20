@@ -1,21 +1,30 @@
-import { nodeGates, type Bounds, type NodeId, type Scene, type SnapCollect } from '@weasel-js/core';
+import { nodeGates, type Bounds, type NodeId, type Scene, type SceneNode, type SnapCollect } from '@weasel-js/core';
 import { siblingIds } from '../guides/alignment/sceneBounds';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
+/** Which nodes may be targets; one that fails offers no lines or gaps. */
+export type TargetFilter = (node: SceneNode<unknown, string, unknown>) => boolean;
+
 /** The nodes a gesture's subject lines up with: its siblings when it has
  *  ids, the scene's visible top-level nodes for a point gesture. */
-function targetIds(scene: AnyScene, exclude: readonly string[]): readonly NodeId[] {
-  if (exclude.length > 0) return siblingIds(scene, exclude as readonly NodeId[]);
+function targetIds(scene: AnyScene, exclude: readonly string[], filter?: TargetFilter): readonly NodeId[] {
   const gates = nodeGates(scene);
-  return scene.roots.filter((id) => !gates.hidden(id));
+  const ids = exclude.length > 0
+    ? siblingIds(scene, exclude as readonly NodeId[])
+    : scene.roots.filter((id) => !gates.hidden(id));
+  if (!filter) return ids;
+  return ids.filter((id) => {
+    const node = scene.get(id);
+    return node !== undefined && filter(node);
+  });
 }
 
 /** The target nodes' boxes, measured as the session measures its subject;
  *  none from a host that measures no boxes. */
-export function targetBoxes(q: SnapCollect, scene: AnyScene): Bounds[] {
+export function targetBoxes(q: SnapCollect, scene: AnyScene, filter?: TargetFilter): Bounds[] {
   const drawn = q.drawnBox;
-  return drawn ? targetIds(scene, q.exclude).flatMap((id) => drawn(id) ?? []) : [];
+  return drawn ? targetIds(scene, q.exclude, filter).flatMap((id) => drawn(id) ?? []) : [];
 }
 
 /**
@@ -23,7 +32,9 @@ export function targetBoxes(q: SnapCollect, scene: AnyScene): Bounds[] {
  * the excluded ids stand still: a drag asks every frame, and nothing it
  * reads changes until it commits.
  */
-export function cachedPerScene<T>(derive: (boxes: readonly Bounds[]) => T): (q: SnapCollect) => T | null {
+export function cachedPerScene<T>(
+  derive: (boxes: readonly Bounds[]) => T, filter?: TargetFilter,
+): (q: SnapCollect) => T | null {
   let key: { scene: AnyScene; version: number; exclude: string } | null = null;
   let value: T | null = null;
   return (q) => {
@@ -32,7 +43,7 @@ export function cachedPerScene<T>(derive: (boxes: readonly Bounds[]) => T): (q: 
     const version = scene.getVersion();
     const exclude = q.exclude.join('\n');
     if (key === null || key.scene !== scene || key.version !== version || key.exclude !== exclude) {
-      value = derive(targetBoxes(q, scene));
+      value = derive(targetBoxes(q, scene, filter));
       key = { scene, version, exclude };
     }
     return value;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createScene, insertAction, placeAction,
   type ImmediateInvoker, type InvocationCtx, type NodeId, type OngoingInvoker, type SnapSource,
@@ -154,6 +154,38 @@ describe('createSnap: a 3D move', () => {
     expect(held({})).toBe(false);
     expect(held({ kitSettings: wide })).toBe(true);
     expect(held({ kitSettings: wide, reachPx: 8 })).toBe(false);
+  });
+
+  it('omit drops a listed source for that gesture only', () => {
+    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
+    const snap = createSnap(world, { sources: [centerTo({ x: 0.6, y: 0.5, z: 0 }, 'probe', Infinity)] });
+    const move = moveOf(world, ids[0]!);
+    const held = (omit?: readonly string[]) =>
+      snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press, ...(omit ? { omit } : {}) }).at(move.press, FREE).held;
+    expect(held(['probe'])).toBe(false);
+    expect(held()).toBe(true);
+  });
+
+  it('does not ask a gesture\'s 2D sources, and warns once', () => {
+    const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 })]);
+    const snap = createSnap(world);
+    const move = moveOf(world, ids[0]!);
+    let asked = false;
+    const spy: SnapSource = {
+      id: 'gesture', roles: ['geometry', 'pointer', 'origin', 'box'],
+      collect() { asked = true; return []; },
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const begin = () => snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press, sources: [spy] });
+      begin().at(move.press, FREE);
+      begin().at(move.press, FREE);
+      expect(asked).toBe(false);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toMatch(/not asked in a 3D host/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('throws when two sources share an id', () => {

@@ -1,7 +1,7 @@
 /** The main line as a sequence that can be reordered: which ports carry the
  *  signal between neighbors, and the rewiring that moves a stage along it. */
 import { drawableWires, isControl } from './draw';
-import { canWire, nextWireId } from './edit';
+import { canWire, nextWireId, pruneRoutes } from './edit';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectPipeline, EffectPort, EffectWire } from './types';
 
@@ -104,7 +104,9 @@ export function moveInChain(doc: EffectDoc, stage: string, to: number): EffectDo
   const pipeline = { ...p, wires };
   const want = movedChain(chain, i, to);
   const got = mainChain(pipeline);
-  return got.length === want.length && got.every((id, k) => id === want[k]) ? { ...doc, pipeline } : null;
+  if (got.length !== want.length || got.some((id, k) => id !== want[k])) return null;
+  // A freed id may be minted again for a new wire, which must not inherit the old one's route.
+  return pruneRoutes({ ...doc, pipeline }, [...gone].flatMap((k) => p.wires[k]!.id ?? []));
 }
 
 /** Whether `moveInChain` would make the move. */
