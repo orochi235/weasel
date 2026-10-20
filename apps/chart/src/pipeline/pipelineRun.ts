@@ -1,11 +1,11 @@
-import { ActionDisabledReason, useCommand } from '@weasel-js/core';
+import { useCommand } from '@weasel-js/core';
 import {
   imageEvaluators, imageValueKinds, testCard, useEffectRunner, type EffectPipeline, type EffectRun, type RunRowOptions,
 } from '@weasel-js/diagram/effect';
 import { pickFile } from '@editor/index';
 import { pref } from '@weasel-js/prefs';
 import { useMemo, useState } from 'react';
-import { run, type MenuRuns } from '../menuBar';
+import { can, run, type MenuRuns } from '../menuBar';
 
 export const RUN_ACTIONS = {
   run: 'pipeline.run', step: 'pipeline.step', play: 'pipeline.play', pause: 'pipeline.pause', reset: 'pipeline.reset',
@@ -26,8 +26,6 @@ export const SHOW_MENU: MenuRuns = {
 
 /** The side of a test card sources start from. */
 const CARD_SIZE = 256;
-
-const can = (yes: boolean): true | ActionDisabledReason => (yes ? true : ActionDisabledReason.NotApplicable);
 
 /** What pipeline mode draws a run with: the run, and the look options that keep rows for it. */
 export interface PipelineRun {

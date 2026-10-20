@@ -1,4 +1,4 @@
-import { setParam, type EffectDoc, type EffectParam, type EffectParamControl } from '@weasel-js/diagram/effect';
+import { renameGroup, setParam, type EffectDoc, type EffectParam, type EffectParamControl } from '@weasel-js/diagram/effect';
 import { PropertyField, PropertyList, PropertyNote, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import type { PipelineDoc } from './usePipelineDoc';
@@ -7,6 +7,8 @@ export interface ParamPanelProps {
   doc: EffectDoc;
   /** The selected stage's id, or null. */
   selected: string | null;
+  /** The picked group's id, shown while no stage is selected. */
+  group?: string | null;
   change: PipelineDoc['change'];
 }
 
@@ -43,8 +45,22 @@ function ParamField({ param, set }: { param: EffectParam; set: (c: EffectParamCo
   }
 }
 
-/** The selected stage's params, each edited through its control and recorded as 'Set <label>'. */
-export function ParamPanel({ doc, selected, change }: ParamPanelProps): ReactElement {
+/** The selected stage's params, each edited through its control and recorded as 'Set <label>'; with no
+ *  stage selected, the picked group's name, recorded as 'Rename group'. */
+export function ParamPanel({ doc, selected, group, change }: ParamPanelProps): ReactElement {
+  const picked = selected === null && group != null ? doc.pipeline.groups?.find((g) => g.id === group) : undefined;
+  if (picked !== undefined) {
+    return (
+      <PropertyPanel title="Group">
+        <PropertyList>
+          <PropertyField
+            kind="string" control="input" label="Name" value={picked.label ?? ''}
+            onChange={(name) => change(renameGroup(doc, picked.id, name), 'Rename group')}
+          />
+        </PropertyList>
+      </PropertyPanel>
+    );
+  }
   const stage = selected === null ? undefined : doc.pipeline.stages.find((s) => s.id === selected);
   const params = stage?.params ?? [];
   return (

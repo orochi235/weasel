@@ -18,7 +18,7 @@ import { ownNodeStyle, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
-  NODE,
+  NODE, NODE_STROKE_WIDTH,
   type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
@@ -99,7 +99,7 @@ function nodeSpecs(
         ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },
-      stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
+      stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
     }),
     row: (text, at) =>
       at.row.kind === 'slot'

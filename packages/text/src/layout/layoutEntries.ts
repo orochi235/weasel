@@ -114,7 +114,7 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size)
         : 0;
       // A slot with nothing in it: no glyph, no width, and none of the
-      // tracking or kerning a width would carry.
+      // tracking or kerning a width would carry. Filled in place when it inks.
       const blank: Entry = {
         run: runIndex, cp, fontSize,
         lineSize: Math.max(run.fontSize, run.strutSize ?? 0),
@@ -125,17 +125,8 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
         advance: 0, tracking: 0, kerningBefore: 0, drawsInk: false,
       };
 
-      // An escalated code point is served in another tier's units, so its
-      // scale is its own.
-      const inked = (hit: ResolvedGlyph, kerning: number): Entry => ({
-        ...blank,
-        resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
-        advance: hit.advance * (fontSize / hit.metrics.size),
-        tracking, kerningBefore: kerning, drawsInk: true,
-      });
-
       if (color) {
-        entries.push(clusterEnd ? inked(color, 0) : blank);
+        entries.push(clusterEnd ? ink(blank, color, 0, tracking) : blank);
         prev = undefined;
       } else if (isHardLineBreak(cp)) {
         entries.push(blank);
@@ -151,21 +142,37 @@ export function measureRuns(runs: readonly ResolvedRun[], tabSize: number): Entr
           // Its record in the run's own tier, for an atlas that draws one. It
           // never escalates: a face without a space still parts words.
           const own = glyphIn(resolved, 32);
-          prev = {
-            ...blank, font: own?.font ?? null, glyph: own?.glyph ?? null,
-            advance, tracking, kerningBefore,
-          };
+          blank.font = own?.font ?? null;
+          blank.glyph = own?.glyph ?? null;
+          blank.advance = advance;
+          blank.tracking = tracking;
+          blank.kerningBefore = kerningBefore;
+          prev = blank;
           entries.push(prev);
         }
       } else {
         const hit = resolveGlyph(resolved, run.fontFamily, run.fontWeight, run.fontStyle, cp);
-        const entry = hit ? inked(hit, kerningBefore) : blank;
+        const entry = hit ? ink(blank, hit, kerningBefore, tracking) : blank;
         entries.push(entry);
         if (!mark) prev = entry;
       }
     }
   });
   return entries;
+}
+
+/** Fill the empty slot `e` with `hit`, in place: one object a code point. An
+ *  escalated code point is served in another tier's units, so its scale is its own. */
+function ink(e: Entry, hit: ResolvedGlyph, kerning: number, tracking: number): Entry {
+  e.resolved = hit.resolved;
+  e.metrics = hit.metrics;
+  e.font = hit.font;
+  e.glyph = hit.glyph;
+  e.advance = hit.advance * (e.fontSize / hit.metrics.size);
+  e.tracking = tracking;
+  e.kerningBefore = kerning;
+  e.drawsInk = true;
+  return e;
 }
 
 /**

@@ -10,6 +10,7 @@ import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
 import { dataEdgeStyle } from './dataStyles';
+import { EDGE_STROKE_WIDTH } from './dataTypes';
 import type { DiagramTheme } from './theme/types';
 
 export interface EdgeSpecContext {
@@ -99,7 +100,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
         },
         stroke: {
           paint: { color: style.stroke },
-          width: style.width ?? 1.5,
+          width: style.width ?? EDGE_STROKE_WIDTH,
           ...(style.dash ? { dash: style.dash } : {}),
           ...(markerStart !== null ? { markerStart } : {}),
           ...(markerEnd !== null ? { markerEnd } : {}),

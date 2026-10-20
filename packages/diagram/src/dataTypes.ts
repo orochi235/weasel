@@ -184,6 +184,12 @@ export interface NodeStyle {
 
 /** What a node is drawn with when nothing says otherwise. */
 export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
+/** A node's or region's outline width when its style gives none. */
+export const NODE_STROKE_WIDTH = 2;
+/** A lane's outline width, which its style does not change. */
+export const LANE_STROKE_WIDTH = 1;
+/** An edge's stroke width when its style gives none. */
+export const EDGE_STROKE_WIDTH = 1.5;
 
 /** The stroke, markers, and label color an edge is drawn with. */
 export interface EdgeStyle {

@@ -4,6 +4,39 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Overnight pass, 2026-10-20 (status at 03:50)
+
+For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
+marked "overnight pass". Nothing is pushed.
+
+**`main` is green at `5ceb31061`** (full fleet run: 27555 passed, 0 failed).
+
+Merged:
+- `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
+  and `groupSelector`. Rulings: Up and Down stop at the edges, Home and End span the whole
+  palette, `rovingTarget` and `rovingGridTarget` are exported. Filed: no right-to-left handling.
+- `moveNodes` and `moveNodesOps` in core move ids the way a drag commits them; weaselchart's
+  stencil drop inserts then moves in one undo step, with no probe insert. Rulings: not 2D-only, a
+  zero delta commits nothing, `ingest` and paste declare three more deps, the undo entry reads "Drop".
+- A disabled bar button says why: `useLeafAction`'s `reason` is now `disabledReason`, and a bar
+  button disabled with a reason is `aria-disabled` and focusable. guides builds node gates only on
+  a point gesture's path (no bug there: `siblingIds` already skipped hidden nodes).
+- `selectTool.rotate: false` is decided once, in preset resolution. Ruling: it is about the select
+  tool only; the rotate action stays registered, the handle is hidden, and a re-shown handle is
+  inert and silent.
+- The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
+  msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
+  around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
+- `apps/chart/src/hops.browser.test.tsx` polls its pixels: it failed once in a full run of `main`
+  under load after the line-jumps merge, and passed three of three alone.
+
+In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
+- ui subpaths for the eight barrel importers.
+- Prefs Rail Filterable's fleet timeout.
+- One kind classifier. Ruling: the routing kind is the only one; the selection label and
+  `SelectionPanel` read it.
+- forge's "ResizeObserver loop" error.
+
 ## State
 
 The sixth TODO pass merged on 2026-10-13: fifteen agents, one per `docs/TODO.md` section, took the

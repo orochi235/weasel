@@ -2,10 +2,11 @@
 import type { DiagramFormat, ImportResult } from './document';
 import { DIAGRAM_DOT } from './dot/format';
 import { DIAGRAM_JSON } from './jsonFormat';
+import { DRAW_XML } from './drawXml/format';
 import { DIAGRAM_MERMAID } from './mermaid/format';
 
 /** Every format this package reads or writes. */
-export const DIAGRAM_FORMATS: readonly DiagramFormat[] = [DIAGRAM_JSON, DIAGRAM_MERMAID, DIAGRAM_DOT];
+export const DIAGRAM_FORMATS: readonly DiagramFormat[] = [DIAGRAM_JSON, DRAW_XML, DIAGRAM_MERMAID, DIAGRAM_DOT];
 
 const extensionOf = (format: DiagramFormat, fileName: string): boolean =>
   format.extensions.some((ext) => fileName.toLowerCase().endsWith(ext.toLowerCase()));

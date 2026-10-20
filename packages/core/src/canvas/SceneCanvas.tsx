@@ -73,7 +73,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selection = useCanvasSelection({
     scene, supplied: props.selection, options: props.selectionOptions, selectable, describeKind: props.describeKind,
   });
-  const enabled = useEnabledFeatures(props.features, props.presetSource.named, viewport !== undefined);
+  const enabled = useEnabledFeatures(
+    props.features, props.presetSource.named, viewport !== undefined, selectToolOpts?.rotate !== false,
+  );
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
@@ -85,10 +87,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
     scene: scene as Scene<unknown, string, unknown>, selection, enabled, presetSource: props.presetSource,
   });
-
-  // `selectTool.rotate === false` disables rotation: its action is muted by the standard
-  // actions and its handle hidden by `useChromeRules`.
-  const rotateOff = selectToolOpts?.rotate === false;
 
   // The wrapper's `<InputScope>` provides it.
   const actionsRegistry = useActionsRegistry();
@@ -110,7 +108,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       editingAnchors: () => pathEditState.getEditingId() !== '',
       device: deviceProfile,
     },
-    rules: { enabled, selectable, rotateOff, chromeVisibility: props.chromeVisibility },
+    rules: { enabled, selectable, chromeVisibility: props.chromeVisibility },
     hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef, ...(props.onHover ? { onChange: props.onHover } : {}) },
     selection: selection.current as readonly NodeId[], viewRef, dispatcher,
   });
@@ -154,7 +152,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         props={props as SceneCanvasInputOptions} scene={scene as Scene<unknown, string, unknown>}
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
-        tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
+        tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
         dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} devtools={devtools}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}

@@ -617,7 +617,8 @@ A node, an edge, a container, or a lane can carry `colors` of its own: a node's 
 and `text`, an edge's `stroke`, `label`, `width`, `dash`, and markers. `diagramScene` draws them
 over the theme and lists the colors in the trait's `ownStyle`, so a later theme change leaves
 them, as it leaves a color set by hand. `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle`
-give the style an item is drawn in, for a writer that needs it without drawing. `layer` puts every
+give the style an item is drawn in, for a writer that needs it without drawing; where a style gives
+no width, `NODE_STROKE_WIDTH`, `LANE_STROKE_WIDTH`, and `EDGE_STROKE_WIDTH` are what is drawn. `layer` puts every
 spec on a layer other than `'main'`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
@@ -1110,7 +1111,7 @@ const column: EffectLook = (pipeline) => {
 #### Editing a pipeline
 
 `EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
-stage to move it, drag from an output to an input to wire them, press Delete to
+stage to move it, drag it into or out of a group (below), drag from an output to an input to wire them, press Delete to
 remove the selection, drag an end of a selected wire to move it, and drag the
 handles along a selected wire to route it (`EffectDoc.routes`, set with
 `setWireRoute`). It keeps no
@@ -1176,6 +1177,36 @@ group's members. `reorderContribution` packs the action and its binding to pass
 as `ambient`.
 
 `EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
+
+##### Groups
+
+Under `nodeGraph` each `EffectGroup` is a titled box, drawn as a `DiagramData`
+container. Drag a stage into or out of it to change what it holds, drag the
+box to carry the stages and groups inside it with the routes of the wires
+between them (`'Move'`), drag a picked box's handles to resize it
+(`'Resize group'`), and double-click its title to rename it in a field held
+over the title (`'Rename group'`). A resized box is kept in
+`EffectDoc.groupBoxes`, by group id; a group with no box fits its members.
+Under `rack` and `lanes` groups draw as boxes around their members, and
+membership does not drag. A drag's moves and box edits come in as separate
+reports, so the editor gathers them and reports one edit once the drag is done
+reporting, a microtask later.
+
+`selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
+`onSelect`, under every look. The ref's `group(ids)` and `ungroup(id)` report
+`'Group'` and `'Ungroup'`, and `renameGroup(id)` opens the title field. The
+edits are plain functions too:
+
+| Function | What it does |
+| --- | --- |
+| `groupStages(doc, ids, label?)` | A new group, id from `nextGroupId`, holding `ids`; nested inside the group they all share, else at the top level. |
+| `ungroup(doc, id)` | Its members go to its parent group, in its place. |
+| `renameGroup(doc, id, label)` | An empty label removes it. |
+| `moveToGroup(doc, ids, group \| null)` | Into a group, or out to the top level. A group left empty goes too unless it has a box. |
+| `setGroupBox(doc, id, box \| null)` | `null` has it fit its members again. |
+| `moveGroup(doc, id, offset)` | Its stages' places, its box and the boxes inside it, and its inner wires' routes, by one offset. |
+
+`removeStages` drops a group it leaves empty, with its box.
 
 #### Running a pipeline
 

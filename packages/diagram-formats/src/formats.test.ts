@@ -9,6 +9,7 @@ import { documentFromScene } from './fromScene';
 import { DIAGRAM_MERMAID } from './mermaid/format';
 import { MEASURE } from './testing/docScene';
 import { documentSpecs } from './toScene';
+import { DRAW_XML } from './drawXml/format';
 
 const DOC: DiagramDocument = {
   pages: [{ id: 'p1', name: 'One', width: 300, height: 200, data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 20 } }], edges: [] } }],
@@ -31,6 +32,14 @@ describe('detectFormat', () => {
 
   it('never picks a format by extension alone', () => {
     expect(detectFormat('plain', 'chart.xml', formats)).toBeNull();
+  });
+
+  it('lists draw-style XML, known by its root element whatever the file is called', () => {
+    expect(DIAGRAM_FORMATS).toContain(DRAW_XML);
+    const text = DRAW_XML.write!(DOC).text;
+    expect(detectFormat(text, 'chart.xml')).toBe(DRAW_XML);
+    expect(detectFormat(text, 'chart.txt')).toBe(DRAW_XML);
+    expect(detectFormat('<svg/>', 'chart.xml')).toBeNull();
   });
 
   it('lists the native JSON format', () => {
