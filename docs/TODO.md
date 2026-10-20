@@ -705,14 +705,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
 
-- **(P3) Renaming a shipped pref can rename its stored key.** In the schema editor, a pref from
-  the baseline whose key is its name in camelCase (`gridDensity`, "Grid density") takes a new key
-  from a new name when the Name field loses focus: "Grid spacing" makes it `gridSpacing`, and the
-  Changes list shows a removal and an addition. Every value stored under the old key is then
-  orphaned. Deliberate since `bd2a870af` (2026-10-10), and pinned by
-  `PrefSchemaEditor.keyFollows.test.tsx`; found by e2e testing (2026-10-19). Needs a call: keep it,
-  or let only a node added in this session follow its name.
-
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
