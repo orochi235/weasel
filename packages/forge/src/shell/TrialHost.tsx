@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { LabBoundary, TrialIdContext } from '@weasel-js/labkit';
-import { OverlayPortalProvider } from '@weasel-js/ui';
+import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import {
   type ReactNode,
   type RefObject,

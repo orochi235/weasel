@@ -1,4 +1,4 @@
-import type { StanceProps } from '@weasel-js/ui';
+import type { StanceProps } from '@weasel-js/ui/stance';
 import { createContext } from 'react';
 
 /** One library of a project: the story files under `path` carry `label`. */

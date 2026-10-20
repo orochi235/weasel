@@ -1018,19 +1018,6 @@ only story runner in the repo.
   bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
   components only through package specifiers.
 
-- **(P3) Eight modules still import the `@weasel-js/ui` barrel, for names no subpath publishes.**
-  The rule in `eslint.config.js` that forbids importing the root barrel, which reaches about 640
-  modules a dev server serves one by one, covers draw, chart, theme-editor, site, and forge's and
-  labkit's `src`, and exempts these files by name. They import `useStance` and `StanceProps`
-  (`components/stance.ts`; forge's `story/library.ts`, labkit's `SidebarRegion`, `chrome/types`,
-  `ControlPanel`, `ControlMatrix`), `OverlayPortalProvider` and `useOverlayPortal`
-  (`overlays/portalHost.tsx`; forge's `TrialHost`, labkit's `ControlMatrix`), `oklchToHex`,
-  `chromaAt`, and `paintGradientTrack` (site's `PerceptualColorSlidersDemo`), and
-  `uiKitSettingsSchema` (site's `KitSettingsDemo`). Each needs a subpath in ui's `exports`, its
-  vite entry, and the root and core `tsconfig` paths, under a name not yet chosen; then the
-  exemption goes. labkit's `passthrough/weasel-ui.ts` re-exports the barrel on purpose and stays
-  exempt.
-
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
   to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug

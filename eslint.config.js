@@ -222,15 +222,6 @@ export default [
     ignores: [
       // labkit's `weasel-ui` subpath re-exports the barrel on purpose.
       'packages/labkit/src/passthrough/weasel-ui.ts',
-      // These import names that no subpath publishes yet (docs/TODO.md, "Release-gate").
-      'apps/site/demos/KitSettingsDemo.tsx',
-      'apps/site/demos/PerceptualColorSlidersDemo.tsx',
-      'packages/forge/src/shell/TrialHost.tsx',
-      'packages/forge/src/story/library.ts',
-      'packages/labkit/src/chrome/regions/SidebarRegion.tsx',
-      'packages/labkit/src/chrome/types.ts',
-      'packages/labkit/src/controls/ControlMatrix.tsx',
-      'packages/labkit/src/controls/ControlPanel.tsx',
     ],
     languageOptions,
     plugins,
@@ -242,7 +233,7 @@ export default [
             {
               name: '@weasel-js/ui',
               message:
-                'Import from a subpath (@weasel-js/ui/components/<Name>, @weasel-js/ui/paint-value) instead of the barrel.',
+                "Import from a subpath (@weasel-js/ui/components/<Name>, or another in ui's package.json exports) instead of the barrel.",
             },
           ],
         },
