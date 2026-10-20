@@ -50,7 +50,7 @@ async function drawRaster(
   if (box.width <= 0 || box.height <= 0) return;
   let px: RasterPixels;
   try {
-    px = await hook(commands, box, RASTER_SCALE);
+    px = await hook(commands, box, RASTER_SCALE, ctx.view);
   } catch (err) {
     return skip(ctx, `${reason} raster failed: ${err instanceof Error ? err.message : String(err)}`);
   }

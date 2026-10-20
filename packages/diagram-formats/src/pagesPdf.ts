@@ -1,10 +1,11 @@
 /**
  * Every page of a diagram as one PDF.
  */
-import { createRasterSession, createScene, mat3, planPixelRender, viewToMat3, warmRender } from '@weasel-js/core';
+import { createRasterSession, planPixelRender, viewToMat3, warmRender } from '@weasel-js/core';
 import { registryFontSource, writePdf, type PdfPage, type PdfSkip } from '@weasel-js/pdf';
 import type { PageExportScene, PageRect } from './pageNodes';
 import { pageBackground } from './pageSvg';
+import { pageRasterizer } from './pdfRaster';
 
 /** PDF points per page unit: 72 points to the inch over 96 units to the inch. */
 const PT_PER_UNIT = 0.75;
@@ -41,34 +42,26 @@ export async function exportPagesPdf(
       scene,
       sourceRect: { x: page.x, y: page.y, width: page.width, height: page.height },
       scale: { x: PT_PER_UNIT, y: PT_PER_UNIT },
-      ...(background !== null ? { background } : {}),
     };
     await warmRender({ render: args });
     const plan = planPixelRender(args);
-    out.push({
-      width: page.width * PT_PER_UNIT,
-      height: page.height * PT_PER_UNIT,
-      commands: plan.commands,
-      view: viewToMat3(plan.view),
-    });
+    const width = page.width * PT_PER_UNIT;
+    const height = page.height * PT_PER_UNIT;
+    // The planner sizes a background to whole pixels, which can stop short of the page's edge.
+    const ground = background === null ? [] : [{
+      kind: 'path' as const,
+      path: { kind: 'rect' as const, x: 0, y: 0, width, height },
+      fill: { paint: { kind: 'solid' as const, color: background } },
+    }];
+    out.push({ width, height, commands: [...ground, ...plan.commands], view: viewToMat3(plan.view) });
   }
 
   const session = createRasterSession();
-  const empty = createScene({ systemLayers: [{ id: 'main' }] });
   try {
     const { bytes, skipped } = await writePdf(out, {
       fonts: registryFontSource,
       ...(opts.title !== undefined ? { title: opts.title } : {}),
-      async rasterize(commands, rect, scale) {
-        await warmRender({ commands });
-        const toPixels = mat3.translated(mat3.scaled(mat3.identity(), scale, scale), -rect.x, -rect.y);
-        return session.render({
-          scene: empty,
-          sourceRect: { x: 0, y: 0, width: rect.width, height: rect.height },
-          scale: { x: scale, y: scale },
-          overlay: [{ kind: 'group', transform: toPixels, children: [...commands] }],
-        });
-      },
+      rasterize: pageRasterizer(session),
     });
     const copy = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(copy).set(bytes);

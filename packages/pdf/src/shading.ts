@@ -218,7 +218,7 @@ function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box): PdfRef {
       Type: name('XObject'),
       Subtype: name('Form'),
       BBox: [box.x0, box.y0, box.x1, box.y1],
-      Group: { Type: name('Group'), S: name('Transparency'), CS: name('DeviceGray') },
+      Group: { Type: name('Group'), S: name('Transparency'), CS: name('DeviceGray'), I: true },
       Resources: { Shading: { Sh1: mask } },
     },
     body,

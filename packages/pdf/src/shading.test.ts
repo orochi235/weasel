@@ -162,7 +162,7 @@ describe('paintShading', () => {
       }),
     ]);
     expect(s).toMatch(/\/SMask <<\/Type \/Mask \/S \/Luminosity \/G \d+ 0 R>>/);
-    expect(s).toContain('/Group <</Type /Group /S /Transparency /CS /DeviceGray>>');
+    expect(s).toContain('/Group <</Type /Group /S /Transparency /CS /DeviceGray /I true>>');
     expect(s).toContain('/ColorSpace /DeviceGray');
     expect(s).toContain('/C0 [0] /C1 [1]');
     expect(content).toMatch(/W\nn\n\/GS\d+ gs\n\/Sh1 sh\n/);

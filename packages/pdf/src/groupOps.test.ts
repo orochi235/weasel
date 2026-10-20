@@ -89,11 +89,22 @@ describe('writeGroup', () => {
     expect(rasterize).toHaveBeenCalledTimes(1);
     const [cmds, box, scale] = rasterize.mock.calls[0] as unknown as [DrawCommand[], { x: number; y: number; width: number; height: number }, number];
     expect(scale).toBe(2);
+    expect((rasterize.mock.calls[0] as unknown[])[3]).toBeUndefined();
     expect(box).toEqual({ x: 0, y: 0, width: 100, height: 100 });
     expect(cmds).toHaveLength(1);
     expect(cmds[0]).toMatchObject({ kind: 'group', children });
     expect(s).toContain('/Subtype /Image');
     expect(content).toMatch(/100 0 0 -100 0 100 cm\n\/Im1 Do\n/);
+  });
+
+  it('hands the hook the page view', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const view = Float64Array.from([0.75, 0, 0, 0, 0.75, 0, -3, 0, 1]);
+    await writePdf(
+      [{ width: 100, height: 100, view, commands: [{ kind: 'group', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] }] }],
+      { fonts: NO_FONTS, compress: false, rasterize },
+    );
+    expect((rasterize.mock.calls[0] as unknown[])[3]).toBe(view);
   });
 
   it('bakes the group transform into the raster commands and places the image under a transformed ancestor', async () => {

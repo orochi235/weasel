@@ -30,7 +30,8 @@ export interface WritePdfOptions {
   /** Default true; unit tests pass false because jsdom realms lack `CompressionStream`. */
   compress?: boolean;
   readPixels?: (image: ImageBitmap | HTMLImageElement) => RasterPixels;
-  rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number) => Promise<RasterPixels>;
+  /** `view` is the page's `PdfPage.view`: what a `world`-unit paint in `commands` resolves through. */
+  rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number, view: GlMat3 | undefined) => Promise<RasterPixels>;
 }
 
 export interface PdfSkip {
