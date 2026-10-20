@@ -97,7 +97,7 @@ function doubleClick(canvas: HTMLCanvasElement, x: number, y: number): void {
 
 /** The color the canvas drew at a CSS point, as `#rrggbb`. */
 function colorAt(canvas: HTMLCanvasElement, x: number, y: number): string {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const out = new Uint8Array(4);
   gl.readPixels(Math.round(x * dpr), Math.round(canvas.height - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);

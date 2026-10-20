@@ -842,12 +842,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) `Prefs.stories.tsx` › Rail Filterable times out on the fleet and passes here.** Three
-  fleet runs on 2026-10-20 (after `66cd6d6e5`, and on two branches) failed it on the 15 s timeout
-  in the `forge-stories` project; locally the same file renders it in 34 ms, so it hangs rather
-  than runs slow. The story has no play function, so the wait is in rendering or settling. Find
-  what it waits on there (fonts, a frame, a pending promise) with the fleet log's trace.
-
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
@@ -1010,6 +1004,13 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
+
+- **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit
+  in diagram, core, labkit, chart and the site demos, each opening the context itself. A reader that opens it before the app's first paint must ask for the renderer's
+  attributes (`{ preserveDrawingBuffer: true, stencil: true }`), or the renderer refuses the canvas;
+  weaselchart's line-jumps test failed under fleet load that way (2026-10-20). Each copy now asks
+  for them, but nothing stops a new one forgetting: one shared reader, or a lint on a bare
+  `getContext('webgl2')` in a `*.browser.test.*` file, would.
 
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
@@ -1325,15 +1326,6 @@ only story runner in the repo.
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
-
-- **(P2) `hops.browser.test.tsx` ("bows the upper connector over the crossing") fails in full fleet
-  runs: the chart canvas never paints.** Twice on 2026-10-20 (a run of `main` at `b3431621f` and a
-  branch run at `cefc52e68`), both on teitou in the full `browser` project; three runs of the file
-  alone passed. The failure screenshot shows the app's chrome and an empty workspace with not even
-  the page drawn, so polling the pixels (`5ceb31061`) cannot help; the canvas painted nothing for over
-  a second. Unchecked candidates: the WebGL context lost or never made under six tabs, or the seed
-  in `localStorage` (one origin, shared by every tab) cleared by another chart test's `afterEach`
-  before the app read it, though an empty scene would still draw the page.
 
 - **(P3) Fourth arc (not designed).** PDF export, as its own package; playing an audio pipeline
   through `@weasel-js/audio`, a graph built once on the audio clock and patched as the pipeline is

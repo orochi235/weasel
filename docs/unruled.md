@@ -445,6 +445,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
+  the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
+  node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
+  `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
+  see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a

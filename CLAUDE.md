@@ -540,7 +540,10 @@ Called on a canvas no renderer has opened yet, it creates the context with defau
 attributes, and the renderer's later `getContext('webgl2', { stencil: true, … })`
 gets that same context back without a stencil buffer — every path fill then draws
 nothing, with no error anywhere. A labkit surface clear did this to every
-annotation mark. Only touch a shared context once a tenant has painted into it.
+annotation mark. Only touch a shared context once a tenant has painted into it. A test's
+pixel reader counts: one reading before the app's first paint refuses the canvas
+(`weasel: this canvas cannot be painted: … no stencil buffer` on stderr), so a reader
+asks for `{ preserveDrawingBuffer: true, stencil: true }`.
 
 **A tile repainted before its position commits leaves a ghost after a clear.**
 `<Canvas paintInto>` reads its `x`/`y` from the last render, so a surface painter

@@ -7,6 +7,13 @@ import { runStory } from './runStory';
 const FILE = '/repo/x.stories.tsx';
 const AUTO_TITLE = 'Auto';
 
+/** The element runStory mounted into: the story host's ancestor that is a child of the body. */
+function outermost(el: HTMLElement): HTMLElement {
+  let box = el;
+  while (box.parentElement && box.parentElement !== document.body) box = box.parentElement;
+  return box;
+}
+
 function boom(): never {
   throw new Error('button missing');
 }
@@ -33,6 +40,23 @@ const mod = {
       if (config.label !== 'renamed') throw new Error(`config.label is "${config.label}"`);
     },
   }),
+  Sized: story({
+    viewport: { width: 960, height: 640 },
+    render: () => null,
+    play: async ({ canvasElement }) => {
+      const box = outermost(canvasElement);
+      if (box.style.width !== '960px' || box.style.height !== '640px') {
+        throw new Error(`the story's box is ${box.style.width} by ${box.style.height}`);
+      }
+    },
+  }),
+  Unsized: story({
+    render: () => null,
+    play: async ({ canvasElement }) => {
+      const box = outermost(canvasElement);
+      if (box.style.width || box.style.height) throw new Error(`the story's box is ${box.style.width} by ${box.style.height}`);
+    },
+  }),
   Throwing: story({
     render: () => {
       throw new Error('render broke');
@@ -57,6 +81,15 @@ describe('runStory', () => {
   it('renders the story in the page, and plays it against its host with the config it wrote', async () => {
     await expect(runStory(mod, 'Seen', FILE, AUTO_TITLE)).resolves.toBeUndefined();
     expect(document.body.children).toHaveLength(0);
+  });
+
+  it("gives a story with a viewport a box of that size, as the workshop's stage does", async () => {
+    await expect(runStory(mod, 'Sized', FILE, AUTO_TITLE)).resolves.toBeUndefined();
+  });
+
+  it('leaves a story with no viewport in an unsized box, even after a sized one', async () => {
+    await runStory(mod, 'Sized', FILE, AUTO_TITLE);
+    await expect(runStory(mod, 'Unsized', FILE, AUTO_TITLE)).resolves.toBeUndefined();
   });
 
   it("loads a CSF story under the setup's project parameters", async () => {
