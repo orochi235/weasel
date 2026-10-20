@@ -1,7 +1,8 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
  * pool, group box, and header as an obstacle, and every `avoid` connector not
- * split across pages, with the ports each end may use and its label.
+ * split across pages, with the ports each end may use and its label. A split
+ * connector's label, on its first stub, is an obstacle of its own.
  */
 import {
   AUTO_POSE_DESCRIPTOR,
@@ -72,17 +73,23 @@ export function avoidSceneInput<TPose>(
   const obstacles: AvoidObstacle[] = [];
   const edgeNodes: SceneNode[] = [];
   const labels = new Map<string, AvoidLabel>();
+  const labelNodes = new Map<string, SceneNode>();
+  const split: string[] = [];
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
     if (edge !== null) {
       if (edge.router === key && edge.offPage === undefined) edgeNodes.push(node);
+      else if (edge.router === key) split.push(node.id);
       continue;
     }
     const label = diagramLabelOf(node);
     if (label !== null) {
       const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
       const { width, height } = geometry.getBounds(node.pose as TPose);
-      if (owner !== undefined && !labels.has(owner)) labels.set(owner, { id: node.id, placement: label, size: { width, height } });
+      if (owner !== undefined && !labels.has(owner)) {
+        labels.set(owner, { id: node.id, placement: label, size: { width, height } });
+        labelNodes.set(owner, node);
+      }
       continue;
     }
     const container = diagramContainerOf(node);
@@ -96,6 +103,11 @@ export function avoidSceneInput<TPose>(
     obstacles.push(region
       ? { id: node.id, kind: 'region', box, members: members(sc, node, new Set()) }
       : { id: node.id, kind: 'shape', box });
+  }
+
+  for (const id of split) {
+    const node = labelNodes.get(id);
+    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: geometry.getBounds(pose(node)) });
   }
 
   const edges: AvoidEdge[] = [];
