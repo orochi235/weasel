@@ -10,9 +10,12 @@
  *   argSlot     = '(' argValue ')'                     -- whitespace inside parens is significant
  *   targetSlot  = '=>' WS targetValue                  -- omitted slot defaults to '*' for hasTarget
  *   modSlot     = modAtom (WS modAtom)*
- *   modAtom     = sigil modName
+ *   modAtom     = sigil (modName | 'held')
  *   sigil       = '+' | '?'                            -- ! @ # $ % ^ & * reserved as id-prefix
  *   modName     = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta'
+ *
+ * `held` is a pressed button, read as a modifier is: `?held` a button may be
+ * held, `+held` one must be, absent none may. Only `hover` takes it.
  *
  * The truly-loose form (any channel, any phase) is `[*:*]`.
  *
@@ -98,6 +101,9 @@ export interface ParsedRoute {
   target: string | undefined;
   /** Structured modifier requirements; empty map = "no modifiers held". */
   modifiers: ParsedModifiers;
+  /** Whether a pressed button may or must be held. Absent, none may. Only on
+   *  `hover`. */
+  held?: ModRequirement;
 }
 
 /** Parse a route string into its slots, filling in the shorthand defaults the
@@ -158,6 +164,7 @@ export function parseRoute(input: string): ParsedRoute {
 
   // 5) modSlot — zero or more sigil-prefixed atoms.
   const modifiers: ParsedModifiers = {};
+  let held: ModRequirement | undefined;
   while (rest.length > 0) {
     const ch = rest[0]!;
     if (RESERVED_SIGILS.has(ch)) {
@@ -171,6 +178,13 @@ export function parseRoute(input: string): ParsedRoute {
     const nameMatch = /^([a-z]+)/.exec(rest);
     if (!nameMatch) throw new Error(`invalid route (sigil "${sigil}" without modifier name): ${input}`);
     const name = nameMatch[1]!;
+    if (name === HELD) {
+      if (gestureName !== 'hover') throw new Error(`invalid route (${gestureName} takes no "${HELD}"): ${input}`);
+      if (held !== undefined) throw new Error(`invalid route (duplicate "${HELD}"): ${input}`);
+      held = sigil === '+' ? 'required' : 'optional';
+      rest = rest.slice(nameMatch[0].length).trimStart();
+      continue;
+    }
     if (!MOD_NAME_SET.has(name)) {
       throw new Error(`invalid route (unknown modifier "${name}"): ${input}`);
     }
@@ -181,8 +195,11 @@ export function parseRoute(input: string): ParsedRoute {
     rest = rest.slice(nameMatch[0].length).trimStart();
   }
 
-  return { phases, gesture: gestureName, arg, target, modifiers };
+  return { phases, gesture: gestureName, arg, target, modifiers, ...(held ? { held } : {}) };
 }
+
+/** The modSlot atom for a pressed button. */
+const HELD = 'held';
 
 function parsePhaseList(raw: string, input: string): readonly PhaseAtom[] {
   if (raw === '') throw new Error(`invalid route (empty phase list): ${input}`);
@@ -273,6 +290,7 @@ export function collapseShiftPairs(routes: readonly string[]): string[] {
 
 function isShiftTwin(a: ParsedRoute, b: ParsedRoute): boolean {
   if (a.gesture !== b.gesture) return false;
+  if (a.held !== b.held) return false;
   if (a.arg !== b.arg) return false;
   if (a.target !== b.target) return false;
   if (!samePhases(a.phases, b.phases)) return false;
@@ -339,6 +357,8 @@ export function formatRoute(r: ParsedRoute): string {
     if (req === 'required') out += ` +${name}`;
     else if (req === 'optional') out += ` ?${name}`;
   }
+  if (r.held === 'required') out += ` +${HELD}`;
+  else if (r.held === 'optional') out += ` ?${HELD}`;
 
   return out;
 }

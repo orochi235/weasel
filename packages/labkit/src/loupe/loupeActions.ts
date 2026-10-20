@@ -1,7 +1,7 @@
 /**
- * The loupe's two bindable interactions, as `Action` descriptors the gesture
- * dispatcher routes: hold a key to peek, and walk the magnification with the
- * wheel.
+ * The loupe's bindable interactions, as `Action` descriptors the gesture
+ * dispatcher routes: aim at the pointer, pressed or not, and put the lens away
+ * when it leaves; hold a key to peek; walk the magnification with the wheel.
  *
  * Free of React so the routing can be tested without a DOM.
  */
@@ -11,6 +11,19 @@ import { type Action, heldKeySpec } from '@weasel-js/core';
 export const LOUPE_PEEK_ID = 'loupe.peek';
 /** Canonical id of the wheel-magnify action. */
 export const LOUPE_MAGNIFY_ID = 'loupe.magnify';
+/** Canonical id of the action that aims the lens at the pointer. */
+export const LOUPE_AIM_ID = 'loupe.aim';
+/** Canonical id of the action that learns the pointer has left the host. */
+export const LOUPE_LEAVE_ID = 'loupe.leave';
+
+/** Every modifier optional: the lens follows the pointer with any held, the
+ *  peek key among them. */
+const ANY_MODS = {
+  alt: 'optional',
+  ctrl: 'optional',
+  meta: 'optional',
+  shift: 'optional',
+} as const;
 
 /** How fast the wheel walks the magnification. Gentler than the pan-zoom
  *  wheel: the lens' whole range is one order of magnitude. */
@@ -28,6 +41,10 @@ export interface LoupeInputApi {
   setPeeking: (on: boolean) => void;
   /** Multiply the magnification by one wheel notch of `deltaY`. */
   magnifyBy: (deltaY: number) => void;
+  /** The pointer is over the host at this client point. */
+  aimAt: (clientX: number, clientY: number) => void;
+  /** The pointer has left the host. */
+  leave: () => void;
 }
 
 /**
@@ -50,15 +67,7 @@ export function createLoupeActions(
     // Every modifier optional: the lens claims the wheel whenever it is up,
     // which is what the hand-rolled capture-phase listener did. A bare spec
     // would forbid modifiers and hand Cmd+wheel back to the lab mid-peek.
-    defaultBinding: [
-      {
-        spec: {
-          kind: 'wheel',
-          mods: { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' },
-        },
-        opts: {},
-      },
-    ],
+    defaultBinding: [{ spec: { kind: 'wheel', mods: ANY_MODS }, opts: {} }],
     enabled: () => (input.shown() ? true : 'not-applicable'),
     invoker: {
       timing: 'immediate',
@@ -68,7 +77,35 @@ export function createLoupeActions(
     },
   };
 
-  if (peekKey === null) return [magnify];
+  // `held`: the lens keeps following through a drag, which a plain hover
+  // stands down for.
+  const aim: Action = {
+    id: LOUPE_AIM_ID,
+    label: 'Aim (loupe)',
+    group: 'loupe',
+    defaultBinding: [{ spec: { kind: 'hover', held: 'optional', mods: ANY_MODS }, opts: {} }],
+    invoker: {
+      timing: 'immediate',
+      run(_deps, params) {
+        input.aimAt(params?.clientX as number, params?.clientY as number);
+      },
+    },
+  };
+
+  const leave: Action = {
+    id: LOUPE_LEAVE_ID,
+    label: 'Put away (loupe)',
+    group: 'loupe',
+    defaultBinding: [{ spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, opts: {} }],
+    invoker: {
+      timing: 'immediate',
+      run() {
+        input.leave();
+      },
+    },
+  };
+
+  if (peekKey === null) return [aim, leave, magnify];
 
   const peek: Action = {
     id: LOUPE_PEEK_ID,
@@ -87,5 +124,5 @@ export function createLoupeActions(
       },
     },
   };
-  return [peek, magnify];
+  return [aim, leave, peek, magnify];
 }

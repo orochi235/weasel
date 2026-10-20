@@ -122,7 +122,10 @@ export function routesForSpec(spec: GestureSpec): readonly string[] {
   const args = descriptor.arg
     ? routeArgsForSpec(spec, descriptor.arg.default)
     : [undefined];
-  return args.map((arg) => formatRoute({ phases, gesture, arg, target, modifiers }));
+  const held = spec.kind === 'hover' && spec.held !== undefined
+    ? { held: spec.held === true ? ('required' as const) : ('optional' as const) }
+    : {};
+  return args.map((arg) => formatRoute({ phases, gesture, arg, target, modifiers, ...held }));
 }
 
 function entryFor(

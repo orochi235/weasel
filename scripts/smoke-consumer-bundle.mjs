@@ -305,6 +305,8 @@ await writeFile(
     // guides, built on core. Whether core still exports every name it
     // imports is Phase 4's sibling-import check.
     `import * as guides from '@weasel-js/guides';\n` +
+    // rig, built on core, ships tools and its own icon table.
+    `import * as rig from '@weasel-js/rig';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
     // ui and hud are built with Vite library mode because they ship assets: ui
     // its bundled stylesheet and hud its data-URI font atlas.
@@ -341,7 +343,7 @@ await writeFile(
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides, devtools,\n` +
+    `  guides, devtools, rig,\n` +
     `  toolPalette, prefs, callout, icon, paintValue, stance, portalHost, color, paintGradientTrack, kitSettings,\n` +
     `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
@@ -494,12 +496,13 @@ await writeFile(
     `  foreign: routingDefineTool<number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
     `};\n` +
     // Routing, core and ui each augment `@weasel-js/react`'s `KitSettings`, and
-    // ui and core both add to `KitTargetSettings`. If a merge is lost in the
+    // ui, core and rig all add to `KitTargetSettings`. If a merge is lost in the
     // published .d.ts the path types read `never`, and these fail TS2322.
     `import type { KitSettingAt, KitSettingPath } from '@weasel-js/react';\n` +
+    `import type {} from '@weasel-js/rig';\n` +
     `const _kitTree: KitSettingAt<'tree.typeaheadMs'> = 500;\n` +
     `const _kitGesture: KitSettingAt<'gestures.doubleClickMs'> = 600;\n` +
-    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx'];\n` +
+    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx', 'targets.boneJointRadiusPx'];\n` +
     `// @ts-expect-error no such kit setting\n` +
     `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
     `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +

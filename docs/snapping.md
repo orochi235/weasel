@@ -96,7 +96,7 @@ combination's: when three siblings share the edge you landed on, all three lines
 | `pathSnapSource(opts)` | core | target | path targets: anchors, box centers, crossings, tangent and perpendicular points from the gesture's `origin`, midpoints, extremes, quadrant points, the nearest point on a stroke; `only` and `kinds` pick them |
 | `measureEndSource(opts)` | core | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
-| `gridSnapSource({ spacing, origin?, unitSystem? })` | guides | fallback | the grid line either side of each origin or pointer probe, on each axis |
+| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each origin or pointer probe, on each axis; with `scopes`, on the pitch of the unit scope the subject sits in |
 | `guideSnapSource(getGuides)` | guides | target | ruler guides |
 | `alignmentSnapSource(opts)` | guides | target | siblings' edges and centers, and an optional page box |
 | `spacingSnapSource(opts)` | guides | target | positions that repeat a gap already between siblings, or center between two |

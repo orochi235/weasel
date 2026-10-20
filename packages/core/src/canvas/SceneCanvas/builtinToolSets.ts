@@ -2,7 +2,7 @@ import { KIT_SHAPE_KINDS, kitShapeKindsOf, type BuiltinShapeToolId } from 'core/
 import { toolIdsOf, toolSet, type ToolSet } from '@weasel-js/routing';
 
 /** Built-in tool ids SceneCanvas knows how to mount, through `defaultTools` or a preset. */
-export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId | 'slice' | 'bone' | 'weight';
+export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId | 'slice';
 
 /** The selection tools: click and marquee, and the lasso. */
 export const SELECT_TOOLS: ToolSet<BuiltinToolId> = toolSet('select', ['select', ...kitShapeKindsOf('select')]);
@@ -16,13 +16,11 @@ export const DRAW_TOOLS: ToolSet<BuiltinToolId> = toolSet('draw', kitShapeKindsO
 export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'));
 /** The tools that cut the page itself. */
 export const PAGE_TOOLS: ToolSet<BuiltinToolId> = toolSet('page', ['slice']);
-/** The rigging tools: bones, and the weights that bind a mesh to them. */
-export const RIG_TOOLS: ToolSet<BuiltinToolId> = toolSet('rig', ['bone', 'weight']);
 
 /** Every built-in tool, in palette order: the navigation tools, the shape-kind
- *  table's tools in its order, then the knife and the rig tools. */
+ *  table's tools in its order, then the knife. */
 export const BUILTIN_TOOLS: ToolSet<BuiltinToolId> = toolSet('builtin', [
-  'select', 'hand', ...KIT_SHAPE_KINDS, PAGE_TOOLS, RIG_TOOLS,
+  'select', 'hand', ...KIT_SHAPE_KINDS, PAGE_TOOLS,
 ]);
 
 /** Every built-in tool id, in palette order: {@link BUILTIN_TOOLS} opened. */

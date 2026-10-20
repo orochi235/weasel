@@ -24,8 +24,6 @@ export interface CoreKitTargetSettings {
   penCloseHintRadiusPx: number;
   /** How near the pen's first anchor a click closes the subpath. */
   penCloseHitPx: number;
-  boneJointRadiusPx: number;
-  weightPointRadiusPx: number;
   sliceVertexRadiusPx: number;
   /** How near the knife's first point a click closes the cut. */
   sliceCloseHitPx: number;

@@ -89,6 +89,18 @@ describe('useLoupe', () => {
     expect(read('visible')).toBe('false');
   });
 
+  it('follows a pressed pointer, and still learns when it leaves', () => {
+    render(<Harness />);
+    const host = screen.getByTestId('host');
+    move(10, 10);
+    fireEvent.pointerDown(host, { clientX: 10, clientY: 10, button: 0, buttons: 1 });
+    fireEvent.pointerMove(host, { clientX: 30, clientY: 15, buttons: 1 });
+    expect(read('visible')).toBe('true');
+    expect(read('aim')).toBe('30,15');
+    fireEvent.pointerLeave(host, { buttons: 1 });
+    expect(read('visible')).toBe('false');
+  });
+
   it('ignores the pointer while it is turned off', () => {
     render(<Harness enabled={false} />);
     move(40, 25);

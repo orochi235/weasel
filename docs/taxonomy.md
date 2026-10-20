@@ -314,6 +314,16 @@ Crossing from one target to another is therefore a leave for a binding that
 targets the first, and nothing for one that targets neither or both. A press is
 not a leave.
 
+A `hover` spec with `held` keeps reporting while a button is down, read the way
+`mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires
+pressed or not, `held: true` (`hover +held`) only pressed, and without it a held
+pointer's moves are not hovers. It still claims nothing, so the drag keeps its
+moves and every such binding runs beside it; its params say which moves were
+held. It applies to a leave from one target to another as to a move, but
+leaving the surface is a leave whether or not a button is down. The loupe's aim
+is one. A dispatcher that wants hovers and nothing else turns on its `hover`
+channel with `pointer` off, so no press opens a gesture or captures the pointer.
+
 Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
 input arrives; an action is *what to do* with it. The same gesture (a rectangular
 drag) can power different actions (insert a rect, marquee-select, area-erase); the

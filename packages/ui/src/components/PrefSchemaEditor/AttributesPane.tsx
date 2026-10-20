@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
@@ -114,7 +114,6 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
   );
-  const nameAtFocus = useRef('');
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
   const [seen, setSeen] = useState(path);
@@ -153,15 +152,14 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     onRename(path, key);
   };
 
-  // A key something may be stored under is left alone unless it was following the name already.
+  // Only a node added since the baseline follows its name: values may be stored under any other's key.
   const followName = () => {
-    if (path === null || !keyed) return;
+    if (path === null || !keyed || !added) return;
     const parent = parentPath(path);
     const host = nodeAt(schema, parent)!;
     const current = keyOf(path);
     const next = keyFromName(node.name);
     if (takesDottedKey(host, node) || next === '' || next === current) return;
-    if (!added && current !== keyFromName(nameAtFocus.current)) return;
     const unique = uniqueKey(keysTakenAt(schema, parent, isPrefLeaf(node)), next);
     onRename(path, unique);
   };
@@ -181,7 +179,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, targets, over),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
-        onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />
+        onBlur={several ? undefined : followName} />
     ),
     [KEY_KIND]: () => (
       <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}

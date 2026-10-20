@@ -143,6 +143,10 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
    *  reads `2.00M`. Presentation only: the stored value stays a number. */
   display?: Display;
   unit?: PrefNumberUnit;
+  /** What the number measures. `'length'` is a length stored in world units: a
+   *  surface showing a scene node's field gives it the unit of the unit scopes
+   *  the node sits in (`prefLeafInScopes`). A `unit` of the leaf's own wins. */
+  measure?: 'length';
   /** Which end of a slider gets a stop for ±Infinity, one step beyond the range. */
   endless?: 'min' | 'max' | 'both';
   /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */

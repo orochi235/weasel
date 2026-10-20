@@ -341,8 +341,8 @@ const DEMO_META: DemoMeta[] = [
   {
     id: 'rig-tools',
     title: 'Rig tools',
-    category: 'Animation',
-    description: "A rig kept in the scene and edited on the canvas. The skeleton is `data.skeleton` on a container node and the weights are `data.skin` on the path under it, so undo, save, and paste treat a rig like any other node data, and `useRigNode` binds a rig from them again after each edit. `defaultTools={['bone', 'weight']}` mounts the bone tool, which draws, moves, and removes joints, and the weight tool, which paints how much the active joint weighs each point, shown as a dot per point colored by that joint's share. The two share one `RigEditState`, so a joint picked in one is the active joint in the other; `toolOptions.rig` fixes the rig to the arm and hands that state to `useRigNode` too. Every edit is one scene op.",
+    package: 'rig',
+    description: "A rig kept in the scene and edited on the canvas. The skeleton is `data.skeleton` on a container node and the weights are `data.skin` on the path under it, so undo, save, and paste treat a rig like any other node data, and `useRigNode` binds a rig from them again after each edit. `useRigTools` builds the bone tool, which draws, moves, and removes joints, and the weight tool, which paints how much the active joint weighs each point, shown as a dot per point colored by that joint's share, and `<SceneCanvas tools>` mounts them. The two share one `RigEditState`, so a joint picked in one is the active joint in the other; `rig` fixes the rig to the arm, and the same state goes to `useRigNode` too. Every edit is one scene op.",
     hint: '<kbd>J</kbd>: bone tool, drag a joint or draw a bone · <kbd>W</kbd>: weight tool, click a joint and brush the dots, <kbd>Alt</kbd> to erase · bend to see the result · "weigh from bones" runs autoSkin again · <kbd>V</kbd>, then double-click the sleeve to edit its points.',
     load: () => import('./demos/RigToolsDemo').then((m) => m.RigToolsDemo),
     path: 'apps/site/demos/RigToolsDemo.tsx',

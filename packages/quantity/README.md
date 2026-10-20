@@ -97,6 +97,25 @@ non-literal part in a `<span data-part>`, which is the whole styling surface.
 `IMPERIAL_INCHES`, `ANGLE_RADIANS`, `PIXELS`). `qty(tag(12, unit(), 'mm')).to('cm', METRIC_MM)`
 is `1.2cm`. `parseNumber('5ft 3in', { in: 1, ft: 12 })` is 63.
 
+A `UnitScope` nests one system in another: a sub-assembly measured in millimeters inside a
+drawing measured in inches, with `scale` saying what one millimeter is worth in inches. A chain
+of scopes runs outermost first, and `resolveScoped` and `formatScoped` convert across it:
+
+```ts
+const INCHES = { system: IMPERIAL_INCHES };
+const MM = { system: METRIC_MM, scale: 1 / 25.4 };
+resolveScoped({ value: 10, unit: 'mm' }, [INCHES, MM])   // 0.3937…, in inches
+formatScoped(1, 'mm', [INCHES, MM])                      // '25.4mm'
+```
+
+A scope converts what is shown, typed and snapped to, never what is stored: a value is held in
+the outermost scope's units however deep it sits (ruled 2026-10-20). In weasel a container
+declares one (`ContainerNode.units`), its children's poses stay in world units, and pose
+composition does not scale by it. `sceneUnitScopes` and `sceneSharedUnitScopes` in
+`@weasel-js/core` read a scene's chain; `scopedPrefUnit` and `prefLeafInScopes` in
+`@weasel-js/prefs` make a field's unit from one; `gridSnapSource`'s `scopes` option in
+`@weasel-js/guides` snaps on one.
+
 ## License
 
 MIT

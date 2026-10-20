@@ -141,9 +141,9 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
-  /** The unit system this container's contents are written in, and what one
-   *  of its base units is worth in the enclosing scope's. It covers the
-   *  children, not the container; `sceneUnitScopes` reads the chain. */
+  /** The units its children are shown, typed and snapped in (their poses stay
+   *  in world units), and what one base unit is worth in the enclosing scope's.
+   *  It covers the children, not the container; `sceneUnitScopes` reads the chain. */
   units?: UnitScope;
 }
 

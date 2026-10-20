@@ -1,5 +1,6 @@
-import { Visitor, type ParseResult } from 'oxc-parser';
+import type { ParseResult } from 'oxc-parser';
 import { parseModule } from './parse.ts';
+import { walk } from './walk.ts';
 
 const ANNOTATED = /\/\*\s*@icon\s*\*\/\s*(['"])([^'"]+)\1/g;
 const ANNOTATION = /^\s*@icon\s*$/;
@@ -7,7 +8,7 @@ const ANNOTATION = /^\s*@icon\s*$/;
 /** Every string literal in a parsed module, a template with no substitution included, by start offset. */
 export function stringLiterals(parsed: ParseResult): Map<number, string> {
   const literals = new Map<number, string>();
-  new Visitor({
+  walk(parsed.program, {
     Literal(node) {
       if (typeof node.value === 'string') literals.set(node.start, node.value);
     },
@@ -15,7 +16,7 @@ export function stringLiterals(parsed: ParseResult): Map<number, string> {
       const cooked = node.expressions.length === 0 ? node.quasis[0]?.value.cooked : undefined;
       if (typeof cooked === 'string') literals.set(node.start, cooked);
     },
-  }).visit(parsed.program);
+  });
   return literals;
 }
 

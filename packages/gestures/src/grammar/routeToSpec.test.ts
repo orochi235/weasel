@@ -58,6 +58,11 @@ describe('routeToSpec', () => {
     expect(spec('[*:*] hover')).toEqual({ kind: 'hover' });
   });
 
+  it('maps a hover that keeps reporting while a button is held', () => {
+    expect(spec('[*:*] hover ?held')).toEqual({ kind: 'hover', held: 'optional' });
+    expect(spec('[*:*] hover(leave) +held ?shift')).toEqual({ kind: 'hover', motion: 'leave', held: true, mods: { shift: 'optional' } });
+  });
+
   it('maps wheel and pinch directions, dropping the wildcard', () => {
     expect(spec('[*:*] wheel(up)')).toEqual({ kind: 'wheel', direction: 'up' });
     expect(spec('[*:*] wheel')).toEqual({ kind: 'wheel' });

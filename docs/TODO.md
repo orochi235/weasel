@@ -20,13 +20,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) The rig tools could leave core with their actions.** Under the tool-home rule in
-  CLAUDE.md ("What gets its own package"), a tool moves only with its action family. Bone and
-  weight, with the rig actions and the animator skinning they drive, are the one core family that
-  reads as a functional area of its own; the rest bind core's own actions and stay. Moving them
-  means a `rig` package, `RIG_TOOLS` and `BuiltinToolId` losing two ids, and `useBuiltinRigTools`
-  leaving `<SceneCanvas>`'s built-ins.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -499,16 +492,21 @@ Priority tags:
 
 ### Units
 
-- **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container
-  declares one (`ContainerNode.units`), and `sceneUnitScopes(scene, id, root)` answers the chain
-  `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapSource`,
-  `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides`
-  resolve their spacing against one `unitSystem` option; a snap source is handed the scene and the
-  subject's ids, so the grid source needs a scope read of them before a grid inside a millimeter
-  sub-assembly can snap in millimeters. A property field's unit is built from one unit
-  system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
-  `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
-  so whether a scoped container's children are also stored in its units is undecided.
+- **(P3) The drawn grid ignores a container's unit scope.** Grid snapping reads one
+  (`gridSnapSource({ scopes })`), and so does a node's length field (`SelectionPanel`'s `units`,
+  through `prefLeafInScopes`), but `createGridLayer`, `createCellHighlightLayer`,
+  `useGridCellHover`, and `pointToGridCell` in `packages/guides/src/grid` still draw and hit-test
+  one lattice against one `unitSystem`. Drawing a millimeter lattice inside a millimeter
+  sub-assembly is painting work past the pitch, which `scopedGridPitch` already answers: the
+  layer has no scene to find scoped containers in, the root lattice needs clipping out of each
+  one (an even-odd clip of the view with holes, nested per scope), a rotated container wants its
+  lattice turned with its frame, and a hovered cell has to name the lattice it belongs to. The
+  result needs a human eye on the drawn grid at both zoom extremes.
+
+- **(P3) Drawing a new node snaps on the root grid inside a scoped container.** A snap source
+  learns the subject's scope from its ids, and an insert gesture has none until the node exists,
+  so `gridSnapSource` falls back to the root pitch even when the node will land in a millimeter
+  sub-assembly. The insert target's parent is the scope it wants, if the session is told it.
 
 ---
 
@@ -546,6 +544,11 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P3) A baseline pref whose key and then name are both changed in the schema editor reads as
+  new.** The editor calls a node new when the Changes list shows it as an addition. A key edited
+  in the Key field shows as a move while the name stands; rename it afterward and the two can no
+  longer be paired, so it shows as a removal plus an addition, and its key follows the new name.
 
 - **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
   mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
@@ -649,14 +652,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
   a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
   worth that.
-- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
-  pointer passes out of its target or off the surface. The loupe
-  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
-  itself: its lens follows a pressed pointer too, which a hover stands down for, and
-  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
-  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
-  drag. Only jsdom has run a hover binding.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
@@ -704,14 +699,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
-
-- **(P3) Renaming a shipped pref can rename its stored key.** In the schema editor, a pref from
-  the baseline whose key is its name in camelCase (`gridDensity`, "Grid density") takes a new key
-  from a new name when the Name field loses focus: "Grid spacing" makes it `gridSpacing`, and the
-  Changes list shows a removal and an addition. Every value stored under the old key is then
-  orphaned. Deliberate since `bd2a870af` (2026-10-10), and pinned by
-  `PrefSchemaEditor.keyFollows.test.tsx`; found by e2e testing (2026-10-19). Needs a call: keep it,
-  or let only a node added in this session follow its name.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
@@ -993,6 +980,28 @@ only story runner in the repo.
   never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
   run green. Running them needs a full build of every package and then labkit's, on a tree other
   jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+
+- **(P3) `DiagramView.containers.browser.test.tsx` › "reports a double-click on a header as the
+  region whose title to edit" fails in full fleet runs and passes alone.** Three times on 2026-10-20
+  (two runs on studio, one more on studio after main moved), each `expected [] to deeply equal
+  [{ kind: 'title', id: 'k' }]`, an assertion rather than a timeout, so the double-click reached
+  nothing; seven of seven alone.
+
+- **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
+  Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
+  `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
+  `Unexpected token 'export'` under vitest's vm pools on Node 22 from 2026-10-19 until the plugin
+  stopped using oxc-parser's `Visitor` (2026-10-20). A Node 22 pass can be run by hand —
+  `onto do --kind test -- npx -y -p node@22 node node_modules/.bin/vitest run …` — but nothing
+  runs one. The `browser` project has the same gap for Linux: CI run 39349499006 (2026-10-20, at
+  `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
+  `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
+  and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
+  `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
+  whether they still fail is unknown. Two fixes, not exclusive: a Node 22 leg in `test:fleet` or
+  the gate, and a Linux node (or container) for the `browser` project.
+  `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
+  needs `>=22.12.0`.
 
 - **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
   `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
