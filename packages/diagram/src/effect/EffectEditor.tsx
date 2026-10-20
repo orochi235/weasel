@@ -3,7 +3,7 @@ import { useLatest, type Paint } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
 import {
-  DiagramView, type DeleteReport, type DiagramViewApi, type DiagramViewProps, type NodeMove, type ReconnectChange, type RouteChange,
+  DiagramView, type DeleteReport, type DiagramViewApi, type NodeMove, type ReconnectChange, type RouteChange,
 } from '../DiagramView';
 import { diagramScene, type DataEdge } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
@@ -14,6 +14,7 @@ import { editorScene, type EditorLookOptions, type EditorScene } from './editorM
 import { editorReorders } from './editorReorder';
 import { useReleaseReplaced } from './releaseReplaced';
 import { paintRun } from './run';
+import { useRunPortOptions } from './runPorts';
 import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
@@ -100,12 +101,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built]);
   const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
   useReleaseReplaced(run);
-  const portOptions = useMemo((): DiagramViewProps['portOptions'] => ({
-    shape: 'circle',
-    sizePx: 8,
-    showsPort: (port) => port.type !== undefined,
-    fill: (port) => ({ paint: { color: built.color(port.type) } }),
-  }), [built]);
+  const portOptions = useRunPortOptions(built.color, doc.pipeline, run);
 
   // The wire picked on the canvas, kept so a controlled `selected` of null does not clear it.
   const [edge, setEdge] = useState<string | null>(null);

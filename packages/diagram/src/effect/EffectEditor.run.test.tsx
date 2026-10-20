@@ -14,7 +14,7 @@ const released: unknown[] = [];
 vi.mock('@weasel-js/core/renderer', () => ({ releaseImageSource: (source: unknown) => released.push(source) }));
 
 import type { DiagramSpec } from '../fromData';
-import { AT_COLOR } from './run';
+import { AT_COLOR, DIM } from './run';
 import { EffectEditor } from './EffectEditor';
 import type { EffectDoc, EffectRun } from './types';
 
@@ -46,6 +46,13 @@ describe('EffectEditor with a run', () => {
     expect((spec('src/cost')!.data as { text: string }).text).toBe('1.5 ms');
     expect((spec('src')!.data as { stroke: { paint: { color: string } } }).stroke.paint.color).toBe(AT_COLOR);
     expect((spec('blur')!.data as { fill: { paint: { opacity?: number } } }).fill.paint.opacity).toBeLessThan(1);
+  });
+
+  it('fades the port dots of a stage the run never reached', () => {
+    render(<EffectEditor doc={doc} onChange={() => {}} run={{ stages: { src: { cost: 1 } } }} />);
+    const fill = view().portOptions!.fill as (port: { nodeId: string; type?: string }) => { paint: { opacity?: number } };
+    expect(fill({ nodeId: 'blur', type: 'image' }).paint.opacity).toBe(DIM);
+    expect(fill({ nodeId: 'src', type: 'image' }).paint.opacity).toBeUndefined();
   });
 
   it('frees the texture of a preview once a newer run no longer shows it', () => {
