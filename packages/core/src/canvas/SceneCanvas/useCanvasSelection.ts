@@ -23,8 +23,14 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   options: UseSelectionOptions | undefined;
   selectable: boolean;
   describeKind: ((node: Node<TData, TLayer, TPose>) => string | undefined) | undefined;
+  /** The canvas's routing kind, published for each node unless `describeKind` is given. */
+  kindOf: ((node: { kind: string; data: TData }) => string) | undefined;
 }): SelectionApi {
-  const { scene, supplied, options, selectable, describeKind } = args;
+  const { scene, supplied, options, selectable, describeKind, kindOf } = args;
+  const describe = useMemo(() => describeKind ?? (kindOf && ((node: Node<TData, TLayer, TPose>) => {
+    const kind = kindOf(node);
+    return kind === 'unknown' ? undefined : kind;
+  })), [describeKind, kindOf]);
   const derivedOptions = useMemo<UseSelectionOptions>(
     () => ({ scene, ...(options ?? {}) }),
     [scene, options],
@@ -32,6 +38,6 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   const internal = useSelection(derivedOptions);
   const base = supplied ?? internal;
   const selection = selectable ? base : readOnlySelection(base);
-  usePublishSceneSelection(scene, selection.current as readonly NodeId[], describeKind);
+  usePublishSceneSelection(scene, selection.current as readonly NodeId[], describe);
   return selection;
 }

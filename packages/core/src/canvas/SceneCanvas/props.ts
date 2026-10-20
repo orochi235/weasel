@@ -400,8 +400,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * Given a scene node, return a short human-readable "kind" label (e.g. `'rectangle'`,
      * `'sticky note'`), which the kit publishes per id into any surrounding
      * `<SelectionContextProvider>`. Return `undefined` to skip an entry. When omitted,
-     * containers report `'group'`, poses with a `kind` property report `'path'`, and
-     * everything else is left unlabelled.
+     * each node reports its routing kind (see `routing`), and a node that routes as
+     * `'unknown'` is left unlabeled.
      */
     describeKind?: (node: Node<TData, TLayer, TPose>) => string | undefined;
 

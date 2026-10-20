@@ -1317,11 +1317,6 @@ only story runner in the repo.
   one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
   lists them. Left open by the preset table and the rule context.
 
-- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
-  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
-  summary prints the label, so making them one needs a decision on what it should say. Left open by
-  the selection pass.
-
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
