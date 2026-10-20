@@ -153,6 +153,13 @@ export const NO_VALUE = '–';
 /** What a value row is measured as, so most values a run writes fit. */
 const VALUE_ROOM = '00000.000';
 
+/** The ports a run shows values and previews on: a stage's outputs, or for a
+ *  stage with none, such as a sink, its inputs, so the end of a pipeline
+ *  shows what reached it. */
+export function shownPorts(stage: EffectStage): readonly EffectPort[] {
+  return (stage.outputs?.length ?? 0) > 0 ? stage.outputs! : stage.inputs ?? [];
+}
+
 /** The row id of the value row for an output, under its stage's body. */
 export const valueRowId = (port: string): string => `value:${port}`;
 /** The row id of the preview slot for an output, under its stage's body. */
@@ -184,8 +191,9 @@ function runRowsOf(o: RunRowOptions): RunRowOptions {
 }
 
 /** The body rows of an ordinary stage: its title, a row of its ports when
- *  `withPorts` (inputs left, outputs right), then for each output its value
- *  row when `showValues` and its preview slot when `showPreviews`, then its
+ *  `withPorts` (inputs left, outputs right), then for each of its
+ *  `shownPorts` its value row when `showValues` and its preview slot when
+ *  `showPreviews`, then its
  *  params when `showParams`. */
 export function stageRows(
   stage: EffectStage,
@@ -200,7 +208,7 @@ export function stageRows(
   const preview = typeof size === 'number' ? { width: size, height: size } : size;
   // A repeated port id is a problem `checkPipeline` reports; one row for it.
   const seen = new Set<string>();
-  for (const p of stage.outputs ?? []) {
+  for (const p of shownPorts(stage)) {
     if (seen.has(p.id)) continue;
     seen.add(p.id);
     if (opts.showValues === true) {

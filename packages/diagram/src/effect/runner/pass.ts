@@ -1,4 +1,4 @@
-import { PREVIEW_SIZE, uniqueStages } from '../draw';
+import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
 import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
 import type { EffectEvaluator, EffectEvaluators, EffectValueKinds } from './types';
@@ -53,12 +53,15 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
     return inputs;
   };
 
-  const record = async (stage: EffectStage, outputs: Readonly<Record<string, unknown>>, entry: EffectStageRun) => {
+  const record = async (
+    stage: EffectStage, inputs: Readonly<Record<string, unknown>>, outputs: Readonly<Record<string, unknown>>, entry: EffectStageRun,
+  ) => {
     made.set(stage.id, outputs);
     const values: Record<string, string> = {};
     const previews: Record<string, ImageBitmap> = {};
-    for (const port of stage.outputs ?? []) {
-      const value = outputs[port.id];
+    const seen = { ...inputs, ...outputs };
+    for (const port of shownPorts(stage)) {
+      const value = seen[port.id];
       if (value === undefined) continue;
       const kind = opts.kinds?.[port.type];
       const text = kind?.show !== undefined ? kind.show(value) : plainText(value);
@@ -75,7 +78,7 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
   };
 
   const evaluate = async (stage: EffectStage, inputs: Record<string, unknown>) => {
-    if (stage.bypassed === true) return record(stage, passThrough(stage, inputs), {});
+    if (stage.bypassed === true) return record(stage, inputs, passThrough(stage, inputs), {});
     const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : opts.evaluators[stage.type];
     const params = Object.fromEntries((stage.params ?? []).map((p) => [p.id ?? p.label, p.control?.value ?? p.value]));
     const start = performance.now();
@@ -83,7 +86,7 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
       if (evaluator === undefined) throw new Error(`no evaluator for type "${stage.type ?? ''}"`);
       const result = await evaluator({ stage, inputs, params, sources, time: opts.time ?? 0, signal });
       const cost = performance.now() - start;
-      return record(stage, result.outputs, { cost, ...(result.taken !== undefined ? { taken: result.taken } : {}) });
+      return record(stage, inputs, result.outputs, { cost, ...(result.taken !== undefined ? { taken: result.taken } : {}) });
     } catch (err) {
       signal.throwIfAborted();
       const cost = performance.now() - start;

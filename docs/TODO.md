@@ -1327,10 +1327,6 @@ only story runner in the repo.
   the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files. Carried from the
   second arc's design (2026-10-19), deleted when the arc finished.
-- **(P3) A sink stage shows no picture of what reached it.** A run previews outputs only, so
-  pipeline mode's Out stage, which has an input and no output, shows nothing of the finished image
-  under Show Previews. Either a run previews a sink's inputs, or a look keeps a slot for them; both
-  touch `stageRows` and `EffectStageRun`. Left open by running a pipeline (2026-10-20).
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

@@ -5,7 +5,9 @@
  */
 import { bitmapSrc } from '@weasel-js/core';
 import type { DiagramSpec } from '../fromData';
-import { NO_VALUE, PROBLEM_COLOR, previewRowId, stageStyle, uniqueStages, valueRowId, type EffectLookResult } from './draw';
+import {
+  NO_VALUE, PROBLEM_COLOR, previewRowId, shownPorts, stageStyle, uniqueStages, valueRowId, type EffectLookResult,
+} from './draw';
 import { thrownToSecond } from './symbols';
 import type { EffectPipeline, EffectRun, EffectStage } from './types';
 
@@ -54,7 +56,7 @@ export function paintRun(
   const values = new Map<string, string>();
   const previews = new Map<string, ImageBitmap>();
   for (const [id, stage] of stages) {
-    for (const p of stage.outputs ?? []) {
+    for (const p of shownPorts(stage)) {
       values.set(`${id}/${valueRowId(p.id)}`, `${p.label ?? p.id}: ${run.stages[id]?.values?.[p.id] ?? NO_VALUE}`);
       const preview = run.stages[id]?.previews?.[p.id];
       if (preview !== undefined) previews.set(`${id}/${previewRowId(p.id)}`, preview);

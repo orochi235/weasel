@@ -20,6 +20,7 @@ export {
   kindOf,
   portOn,
   previewRowId,
+  shownPorts,
   stageRows,
   stageStyle,
   typeColors,

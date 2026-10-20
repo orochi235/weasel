@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene, type DiagramSpec } from '../fromData';
-import { NO_VALUE, PROBLEM_COLOR } from './draw';
+import { NO_VALUE, PROBLEM_COLOR, previewRowId, valueRowId } from './draw';
 import { nodeGraph } from './nodeGraph';
 import { rack } from './rack';
 import { AT_COLOR, costText, paintRun } from './run';
@@ -214,6 +214,23 @@ describe('paintRun over a run taken a step at a time, or one that failed', () =>
     const note = byId(painted, 'soft/cost').data as { text: string; fill: { paint: { color: string } } };
     expect(note.text).toBe('no mask');
     expect(note.fill.paint.color).toBe(PROBLEM_COLOR);
+  });
+});
+
+describe('a stage with no outputs', () => {
+  it('keeps value and preview rows for its inputs, which a run fills in', () => {
+    const P: EffectPipeline = {
+      stages: [
+        { id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] },
+        { id: 'end', title: 'Out', kind: 'sink', inputs: [{ id: 'in', type: 'image' }] },
+      ],
+      wires: [{ from: { stage: 'src', port: 'out' }, to: { stage: 'end', port: 'in' } }],
+    };
+    const drawn = nodeGraph(P, { showValues: true, showPreviews: true });
+    const specs = diagramScene(drawn.data, drawn.scene);
+    expect(specs.some((s) => s.id === `end/${previewRowId('in')}`)).toBe(true);
+    const painted = paintRun(P, specs, { stages: { src: {}, end: { values: { in: '256×256' } } } });
+    expect((byId(painted, `end/${valueRowId('in')}`).data as { text: string }).text).toBe('in: 256×256');
   });
 });
 

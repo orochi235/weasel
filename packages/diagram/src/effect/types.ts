@@ -77,9 +77,10 @@ export interface EffectStageRun {
   cost?: number;
   /** For a decision: the output it chose. */
   taken?: string;
-  /** What each output carried, by port id, as text to show. */
+  /** What each output carried, by port id, as text to show; for a stage with
+   *  no outputs, what reached each input. */
   values?: Readonly<Record<string, string>>;
-  /** What each output carried, by port id, as a picture, drawn in the slot a
+  /** What each port `values` covers carried, by port id, as a picture, drawn in the slot a
    *  look keeps for it (`showPreviews`). A bitmap rather than a canvas
    *  because its pixels cannot change: hand back the same one and nothing is
    *  uploaded again; draw new pixels into a new one. */

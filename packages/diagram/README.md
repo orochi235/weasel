@@ -977,7 +977,10 @@ first input of each output's type through. An evaluator that throws sets the
 stage's `error`, and what it feeds is left unreached. Each stage's `cost` is the
 time its evaluator took. Every value the run made is disposed before it
 resolves, but never a source; the previews in the run are yours to close.
-`createPass` takes the same run a stage at a time.
+`createPass` takes the same run a stage at a time. A stage with no outputs, such
+as a sink, shows and previews what reached its inputs instead, so the end of a
+pipeline shows the finished result; `shownPorts(stage)` says which ports a look
+keeps value rows and preview slots for.
 
 `createEffectRunner` keeps one pipeline running: `run()`, `step()` (the next
 stage, as the run's `at`, and back to the first after the last), `play()`,

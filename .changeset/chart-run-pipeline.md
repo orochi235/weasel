@@ -5,7 +5,8 @@
 An effect pipeline can be run, not only drawn. `runPipeline` evaluates it in `runOrder` with an
 `EffectEvaluator` per stage type and an `EffectValueKind` per value type, filling each stage's cost,
 values, and previews; a stage nothing reaches is skipped, a bypassed stage passes its input through,
-a throwing evaluator records its `error`, and stages on a cycle never run. `createEffectRunner` runs
+a throwing evaluator records its `error`, and stages on a cycle never run. A stage with no outputs
+shows and previews what reached its inputs (`shownPorts`), so a sink shows the finished result. `createEffectRunner` runs
 one pipeline whole, a stage at a time (the run's new `at`), or every frame while playing, and closes
 the previews of runs that are off screen; `useEffectRunner` plays it through `useVisibleRaf`.
 `IMAGE_STAGE_TYPES`, `imageEvaluators`, `imageValueKinds`, and `testCard` run image pipelines on

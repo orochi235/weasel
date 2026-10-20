@@ -134,17 +134,21 @@ describe('WeaselChart pipeline mode', () => {
     const typed = (type: string, id: string) => stageFromType(IMAGE_STAGE_TYPES.find((t) => t.type === type)!, id);
     const RUN_DOC: EffectDoc = {
       pipeline: {
-        stages: [typed('source', 'src'), typed('blur', 'blur')],
-        wires: [{ id: 'w1', from: { stage: 'src', port: 'out' }, to: { stage: 'blur', port: 'in' } }],
+        stages: [typed('source', 'src'), typed('blur', 'blur'), typed('out', 'out')],
+        wires: [
+          { id: 'w1', from: { stage: 'src', port: 'out' }, to: { stage: 'blur', port: 'in' } },
+          { id: 'w2', from: { stage: 'blur', port: 'out' }, to: { stage: 'out', port: 'in' } },
+        ],
         types: { number: { control: true } },
       },
-      places: { src: { x: 0, y: 0 }, blur: { x: 200, y: 0 } },
+      places: { src: { x: 0, y: 0 }, blur: { x: 200, y: 0 }, out: { x: 400, y: 0 } },
     };
     const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-    /** The canvas pixel, RGBA, under the world point `fx`, `fy` of the way across spec `id`'s box,
-     *  in the view the editor opened on. Read straight after a frame, before the buffer is cleared. */
-    async function pixelOn(id: string, fx: number, fy: number): Promise<number[]> {
+    /** The canvas pixel, RGBA, under the world point `fx`, `fy` of the way across spec `id`'s box and
+     *  `dx` further right, in the view the editor opened on. Read straight after a frame, before the
+     *  buffer is cleared. */
+    async function pixelOn(id: string, fx: number, fy: number, dx = 0): Promise<number[]> {
       const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
       const r = canvas.getBoundingClientRect();
       const opened = editorScene(RUN_DOC);
@@ -160,7 +164,7 @@ describe('WeaselChart pipeline mode', () => {
       const drawn = editorScene(RUN_DOC, 'nodeGraph', { showValues: false, showPreviews: true });
       const box = diagramScene(drawn.data, drawn.scene).find((s) => s.id === id)!.pose as RectPose;
       const dpr = canvas.width / r.width;
-      const x = Math.round((t.panX + (box.x + box.width * fx) * t.zoom.x) * dpr);
+      const x = Math.round((t.panX + (box.x + box.width * fx + dx) * t.zoom.x) * dpr);
       const y = Math.round((t.panY + (box.y + box.height * fy) * t.zoom.y) * dpr);
       await frame();
       const gl = canvas.getContext('webgl2')!;
@@ -168,15 +172,17 @@ describe('WeaselChart pipeline mode', () => {
       gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return [...px];
     }
-    /** Whether blur's preview slot shows the test card's middle bar, which is green. */
-    const greenPreview = async () => {
-      const [r, g] = await pixelOn(`blur/${previewRowId('out')}`, 0.5, 0.5);
+    /** Whether a preview slot shows the test card's middle bar, which is green: blur's by default. */
+    const greenPreview = async (slot = `blur/${previewRowId('out')}`) => {
+      const [r, g] = await pixelOn(slot, 0.5, 0.5);
       return g! > 120 && r! < 80;
     };
+    /** Whether `id`'s left edge is drawn in the outline's amber rather than the stage's blue-gray. At an
+     *  opening scale below 1 the outline is antialiased into the fill, so its hue is tested, not its exact color. */
     const outlined = async (id: string) => {
-      const [r, g, b] = await pixelOn(id, 0, 0.5);
-      const want = [1, 3, 5].map((i) => parseInt(AT_COLOR.slice(i, i + 2), 16));
-      return Math.abs(r! - want[0]!) < 12 && Math.abs(g! - want[1]!) < 12 && Math.abs(b! - want[2]!) < 12;
+      const [r, g, b] = await pixelOn(id, 0, 0.5, 0.5);
+      const [ar, ag, ab] = [1, 3, 5].map((i) => parseInt(AT_COLOR.slice(i, i + 2), 16));
+      return r! > ar! * 0.6 && g! > ag! * 0.6 && b! < ab! * 1.5 && r! > b! * 2;
     };
     const runItem = async (name: RegExp) => {
       await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'Run' }));
@@ -191,10 +197,11 @@ describe('WeaselChart pipeline mode', () => {
       await choose('View', /^Show Previews/);
     });
 
-    it('runs the pipeline once over the test card, filling each preview', async () => {
+    it('runs the pipeline once over the test card, filling each preview, Out\'s with the finished image', async () => {
       expect(await greenPreview()).toBe(false);
       await choose('Run', /^Run/);
-      await expect.poll(greenPreview).toBe(true);
+      await expect.poll(() => greenPreview()).toBe(true);
+      expect(await greenPreview(`out/${previewRowId('in')}`)).toBe(true);
     });
 
     it('steps a stage at a time, outlining the stage it is on', async () => {
@@ -212,14 +219,14 @@ describe('WeaselChart pipeline mode', () => {
       expect((await runItem(/^Pause/)).getAttribute('aria-disabled')).toBe('true');
       await userEvent.keyboard('{Escape}');
       await choose('Run', /^Play/);
-      await expect.poll(greenPreview).toBe(true);
+      await expect.poll(() => greenPreview()).toBe(true);
       expect((await runItem(/^Play/)).getAttribute('aria-disabled')).toBe('true');
       await userEvent.keyboard('{Escape}');
       await choose('Run', /^Pause/);
       expect((await runItem(/^Play/)).getAttribute('aria-disabled')).not.toBe('true');
       await userEvent.keyboard('{Escape}');
       await choose('Run', /^Reset/);
-      await expect.poll(greenPreview).toBe(false);
+      await expect.poll(() => greenPreview()).toBe(false);
     });
   });
 });

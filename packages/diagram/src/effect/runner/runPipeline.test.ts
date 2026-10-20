@@ -112,6 +112,13 @@ describe('runPipeline', () => {
     expect(dispose.mock.calls).toEqual([[6]]);
   });
 
+  it('shows and previews what reached a stage with no outputs, on its inputs', async () => {
+    const shown = { kind: 'bitmap' } as unknown as ImageBitmap;
+    const p: EffectPipeline = { stages: [stage('src', 'two'), stage('end', 'sink', ['in'], [])], wires: [wire('src', 'end')] };
+    const run = await runPipeline(p, { evaluators: { ...EVAL, sink: () => ({ outputs: {} }) }, kinds: { number: { preview: () => shown } } });
+    expect(run.stages.end).toMatchObject({ values: { in: '2' }, previews: { in: shown } });
+  });
+
   it('rejects once its signal aborts, and evaluates nothing after', async () => {
     const controller = new AbortController();
     const after = vi.fn(EVAL.double!);
