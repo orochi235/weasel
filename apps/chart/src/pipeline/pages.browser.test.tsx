@@ -4,7 +4,7 @@
  */
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { page } from 'vitest/browser';
 import { layoutPages } from '@weasel-js/core';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 import type { DiagramViewApi, DiagramViewProps } from '@weasel-js/diagram';
@@ -12,6 +12,7 @@ import { LOOK_THEME, type EffectDoc } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_PAGE } from '../chartDocument';
+import { choose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 
@@ -43,13 +44,6 @@ afterEach(() => {
 
 const saved = (): EffectDoc => JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY) ?? '{}') as EffectDoc;
 const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-async function choose(menu: string, row: RegExp): Promise<void> {
-  await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: menu }));
-  const item = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')]
-    .find((el) => row.test(el.textContent ?? ''));
-  await userEvent.click(item!);
-}
 
 /** The canvas pixel, RGBA, under the world point `x`, `y`, in the view the editor holds now. */
 async function pixelAtWorld(x: number, y: number): Promise<number[]> {
