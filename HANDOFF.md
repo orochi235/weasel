@@ -54,9 +54,13 @@ a lint rule), the diagram containers double-click (a frame's wait between clicks
 "ResizeObserver loop" error on every page (a stale observer in labkit's sidebar). Both consumer
 smokes pass again, and `check:imports` now counts a `testing/` module a manifest exports.
 
-📌 **Still running:** why forge's timeline and site's routing tests time out only on keiei (its
-worktree is `.claude/worktrees/agent-a354aa04dff67079c`). If it finishes after this, its result is
-its own commit on that branch, unmerged.
+❓ **Should a swapping node take full fleet runs?** forge's timeline file took 88–102 s in the keiei
+runs that failed, 42 s in a keiei full run with 16 GB free, and 20–44 s on the other nodes; that the
+failures coincided with keiei's swap is inferred from `onto status`, not measured inside them. Keeping
+a swapping node out would be an onto setting; nothing was changed. The tests' own faults are fixed:
+the site routing test rendered all 46,000 elements of the real release history to find one heading
+(now a mocked changelog, 1.9–3 s to 0.32 s), and a timed-out timeline test's body leaked a mount into
+the next test (now tied to the test's abort signal). The entry is rewritten in `docs/TODO.md`.
 
 ℹ️ **Weak evidence:** the params absent-value tests were never seen failing (the red run synced the
 fixed tree); the unit-scope grid tests likewise. Nothing tonight was looked at in a browser by a
