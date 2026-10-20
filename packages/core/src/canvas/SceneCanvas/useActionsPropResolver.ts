@@ -81,14 +81,3 @@ export function useActionsPropResolver(actions: ActionsProp | undefined, rev?: s
     return () => { for (const u of unregisters) u(); };
   }, [reg, actions, actionsRef, rev]);
 }
-
-/**
- * `actions` with `id` muted. A caller's own entry for `id` still wins, and
- * `null` (every default muted) is left as it is.
- */
-export function actionsMuting(actions: ActionsProp | undefined, id: string): ActionsProp {
-  if (actions === null) return null;
-  const merged = { ...(actions ?? {}) } as Record<string, unknown>;
-  if (!(id in merged)) merged[id] = null;
-  return merged as ActionsProp;
-}
