@@ -5,6 +5,7 @@ import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots
 import { moveInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';
+import { groupRuns } from './groupOrder';
 import { laneTypeOf } from './lanes';
 import { mainChain } from './mainChain';
 import type { EffectDoc } from './types';
@@ -35,11 +36,16 @@ function slotsOf(order: LookOrder | undefined, boxOf: ReorderSource['boxOf']): R
 
 /** The doc with the drawn stage moved as `move` says. A look may leave stages
  *  of the main chain out of its order, as rack does a skip it draws as an arc,
- *  so the drawn gap is read as "before that drawn stage". */
+ *  so the drawn gap is read as "before that drawn stage". `null` also where
+ *  the move would split a group whose stages sat together on the chain. */
 export function stageMove(doc: EffectDoc, order: LookOrder, move: ReorderMove): EffectDoc | null {
   const chain = mainChain(doc.pipeline);
   const before = order.items[move.to];
-  return moveInChain(ensureWireIds(doc), move.id, before === undefined ? chain.length : chain.indexOf(before.id));
+  const next = moveInChain(ensureWireIds(doc), move.id, before === undefined ? chain.length : chain.indexOf(before.id));
+  if (next === null) return null;
+  const after = groupRuns(next.pipeline, mainChain(next.pipeline));
+  for (const [id, run] of groupRuns(doc.pipeline, chain)) if (run !== null && after.get(id) === null) return null;
+  return next;
 }
 
 /** The doc with the lane order the drag leaves. */
