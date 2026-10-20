@@ -83,4 +83,26 @@ describe('App', () => {
     // A row's second child is its label; the shortcut follows it.
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Undo', 'Redo', 'Delete']);
   });
+
+  it('gives chart mode a Page menu that adds and deletes pages, and pipeline mode none', () => {
+    mount();
+    const tabs = () => screen.getAllByRole('tab').map((t) => t.textContent);
+    expect(tabs()).toEqual(['Page 1']);
+    choose('Page', 'Add Page');
+    expect(tabs()).toEqual(['Page 1', 'Page 2']);
+    choose('Page', 'Delete Page');
+    expect(tabs()).toHaveLength(1);
+    choose('Edit', 'Undo');
+    expect(tabs()).toHaveLength(2);
+    choose('Mode', 'Pipeline');
+    expect(within(screen.getByRole('menubar')).queryByRole('menuitem', { name: 'Page' })).toBeNull();
+  });
+
+  it('opens Page Setup on a page from the Page menu', () => {
+    mount();
+    choose('Page', 'Page Setup');
+    expect(screen.getByRole('dialog', { name: /Page Setup: Page 1/ })).toBeTruthy();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });

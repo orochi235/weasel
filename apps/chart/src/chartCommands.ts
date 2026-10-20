@@ -1,8 +1,9 @@
 import { useCommand } from '@weasel-js/core';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
-import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
+import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
 import { run, type ChartMenuContributions } from './menuBar';
+import { PAGE_MENU } from './pages/pageCommands';
 
 export const CHART_ACTIONS = { new: 'chart.new', open: 'chart.open', save: 'chart.save' } as const;
 
@@ -16,6 +17,7 @@ export const CHART_MENUS: ChartMenuContributions = {
     history: run({ undo: 'undo', redo: 'redo' }),
     remove: run({ delete: 'delete' }),
   },
+  page: PAGE_MENU,
 };
 
 async function openChart(scene: ChartScene): Promise<void> {
@@ -26,7 +28,7 @@ async function openChart(scene: ChartScene): Promise<void> {
 
 /** Registers New, Open and Save on the nearest `<ActionsProvider>`. */
 export function useChartCommands(scene: ChartScene): void {
-  useCommand(CHART_ACTIONS.new, 'New', () => replaceChart(scene, [], 'New chart'));
+  useCommand(CHART_ACTIONS.new, 'New', () => replaceChart(scene, emptyChart(), 'New chart'));
   useCommand(CHART_ACTIONS.open, 'Open…', () => {
     openChart(scene).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
   });

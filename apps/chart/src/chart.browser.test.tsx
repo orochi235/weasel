@@ -4,6 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { fitViewToBounds } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
@@ -36,14 +37,12 @@ const edges = () => saved().filter((n) => {
   return d !== undefined && 'from' in d;
 });
 
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding. */
+/** Client point of a world point: the page is fitted to the workspace with 24px of padding, at a zoom the fit
+ *  rounds to a step. */
 function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
-  const scale = Math.min((box.width - 48) / CHART_PAGE.width, (box.height - 48) / CHART_PAGE.height);
-  return {
-    x: box.left + box.width / 2 + (x - CHART_PAGE.width / 2) * scale,
-    y: box.top + box.height / 2 + (y - CHART_PAGE.height / 2) * scale,
-  };
+  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 24 });
+  return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
 }
 
 function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
