@@ -23,7 +23,6 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
 | 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
@@ -50,48 +49,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 6. Exporting one page
-
-### What the user sees
-
-File › Export › Page as SVG… and Page as PNG (1×, 2×, 4×) download the page the view shows (the
-first page when the view is between pages), cut to the page's edges, on the page color. A
-cross-page connector shows as its stub and tag (piece 3).
-
-### Engine surface: new package `@weasel-js/diagram-formats` (`packages/diagram-formats/`)
-
-It owns converting diagrams to and from files: an obviously well-defined functional area, and it
-depends on `@weasel-js/svg`, which `@weasel-js/diagram` does not. Peer dependencies: core, diagram,
-svg. It joins the changesets `fixed` group, is laid out like `packages/diagram-elk`, and needs its
-first npm publish seeded by hand.
-
-- `pageSvg.ts`: `exportPageSvg(scene, page, opts?) → Promise<string>`. It walks the nodes whose box
-  meets the page through `@weasel-js/svg`'s `svgNodesFromKit` (`fromKit.ts`), with a diagram leaf
-  lowering: outlines through `outline.ts`'s path for the box, edges from `derivedDepOf(scene, id)
-  .path` with their stroke and markers, marks from their unit-square paths and text points. Any
-  other leaf goes to `svgLeafFromKit`. `viewBox` is the page rect; a background rect in the theme's
-  `page` color comes first.
-- `pagePng.ts`: `exportPagePng(scene, page, { scale, background? }) → Promise<Blob>` through core's
-  `renderSceneToPixels`, put into an `OffscreenCanvas` and encoded with `convertToBlob`. The caller
-  has registered the diagram painters (`registerDiagramShape`, `registerMarkShape`) and fonts, as
-  it must to draw at all.
-
-**Decision (2026-10-20).** A page export is the scene clipped to the page rect: pages sit apart in
-one world, and once cross-page connectors draw as stubs, nothing on one page reaches another.
-
-App: `apps/chart/src/exportCommands.ts` registers the commands with `useChartPages`' `current` and
-`downloadBlob` (`apps/shared/editor/src/fileIO.ts`).
-
-An export reads the scene and writes nothing, so it has no history entry. Hops (`diagram.hops`), placed
-labels (`diagram.label.placed`), and stored routes are in the scene, so the export draws them as the canvas does.
-
-### Tests
-
-- `pageSvg.test.ts`: viewBox is the page; a shape on page 2 is absent from page 1; an edge is one
-  path with its markers; rows are text; tags appear.
-- `pagePng.browser.test.ts`: page color at a corner, a shape's fill at its center, size is page × scale.
-- Chart test: the export commands hand `downloadBlob` an SVG and a PNG named for the page.
 
 ## 7. Containers and swimlanes in `DiagramData`
 

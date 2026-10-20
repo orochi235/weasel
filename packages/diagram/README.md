@@ -341,6 +341,10 @@ Tags take the theme's label color and face on its page color, and applying a
 theme recolors them. A host whose text editing opens on any text node should
 leave tags out: the pass owns their text.
 
+To save one page as an SVG document or a PNG image, cut to the page with its
+stubs and tags, use `exportPageSvg` and `exportPagePng` from
+`@weasel-js/diagram-formats`.
+
 ### Overlays and hover
 
 `overlays` holds DOM against a node, a group or an edge, and places it again
