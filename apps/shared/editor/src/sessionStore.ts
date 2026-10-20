@@ -1,26 +1,40 @@
-type Entry = readonly [key: string, json: string];
+/** One local-storage entry: its key and the JSON text it holds. */
+export type SessionEntry = readonly [key: string, json: string];
 
 /**
- * Write the scene and the undo stacks recorded against it, best-effort. A
- * history that fails to save after its scene did is removed along with the
- * other stacks, because an older stack would replay against the wrong scene.
- * When the scene itself fails, the previous scene and its stacks stay as
- * they are. Answers whether the scene was saved.
+ * The entry under `key` read through `parse`, or `fallback()` when there is none, when storage
+ * cannot be reached, or when `parse` throws on what is there.
+ */
+export function readStored<T>(key: string, parse: (raw: string) => T, fallback: () => T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? parse(raw) : fallback();
+  } catch {
+    return fallback();
+  }
+}
+
+/**
+ * Write a document and the entries that depend on it, such as its undo stacks, best-effort.
+ * A dependent that fails to save after its document did is removed along with the other
+ * dependents, because an older undo stack would replay against the wrong document. When the
+ * document itself fails, the previous document and its dependents stay as they are. Answers
+ * whether the document was saved.
  */
 export function writeSession(
   storage: Pick<Storage, 'setItem' | 'removeItem'>,
-  scene: Entry,
-  histories: readonly Entry[],
+  primary: SessionEntry,
+  dependents: readonly SessionEntry[] = [],
 ): boolean {
   try {
-    storage.setItem(scene[0], scene[1]);
+    storage.setItem(primary[0], primary[1]);
   } catch {
     return false;
   }
   try {
-    for (const [key, json] of histories) storage.setItem(key, json);
+    for (const [key, json] of dependents) storage.setItem(key, json);
   } catch {
-    for (const [key] of histories) {
+    for (const [key] of dependents) {
       try { storage.removeItem(key); } catch { /* best-effort */ }
     }
   }

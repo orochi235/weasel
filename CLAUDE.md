@@ -260,6 +260,13 @@ path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fle
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
 line once per shard.
 
+**On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
+a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so
+does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
+runs everything too — the `triggers` list there. A file read at build time rather than imported,
+such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
+the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
+
 **Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
 main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
 `scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running

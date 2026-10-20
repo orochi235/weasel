@@ -20,6 +20,12 @@ describe('the extension manifest', () => {
     });
   });
 
+  it('puts a button in the toolbar that opens the popup', () => {
+    for (const target of ['chrome', 'firefox'] as const) {
+      expect(manifestFor(target, '1.0.0').action).toMatchObject({ default_popup: 'popup.html' });
+    }
+  });
+
   it('gives a browser a version it accepts', () => {
     expect(extensionVersion('1.12.0-next.3')).toBe('1.12.0');
     expect(manifestFor('chrome', '2.0.1').version).toBe('2.0.1');

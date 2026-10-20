@@ -95,8 +95,11 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './slotReorder';
-export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './slotReorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './reorder';
+export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
+export {
+  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, groupReorderSlots,
+} from './groupReorder';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
@@ -247,7 +250,8 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, RouteChange,
+  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, ReorderChange,
+  RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

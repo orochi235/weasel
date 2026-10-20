@@ -1,5 +1,5 @@
 import type { AddNodeSpec, SerializedDoc, SerializedScene } from '@weasel-js/core';
-import { docFromSnapshot, nodeSpecsFromSnapshot, serializeReplacer } from '@editor/index';
+import { docFromSnapshot, nodeSpecsFromSnapshot, readStored, serializeReplacer } from '@editor/index';
 import { CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer, type ChartPose, type ChartScene } from './chartDocument';
 
 export const CHART_SCENE_KEY = 'weaselchart:scene-v1';
@@ -31,12 +31,7 @@ export function chartFromJson(text: string): ChartFile {
 
 /** The chart the last session left, or an empty one. */
 export function loadChartSession(): ChartFile {
-  try {
-    const raw = localStorage.getItem(CHART_SCENE_KEY);
-    return raw ? chartFromJson(raw) : emptyChart();
-  } catch {
-    return emptyChart();
-  }
+  return readStored(CHART_SCENE_KEY, chartFromJson, emptyChart);
 }
 
 /** Replaces everything in the chart, nodes and document values, with `file`, as one undo entry. */

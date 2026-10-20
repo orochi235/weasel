@@ -173,6 +173,46 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
 
+### Overlays and hover
+
+`overlays` holds DOM against a node, a group or an edge, and places it again
+after every paint, so it follows pans, zooms, resizes and layout. A side
+placement uses geom's `placeRect` inside the view, flipping to the far side
+when the near one has no room; the default centers it on the target. An
+edge's place is the midpoint along its route.
+
+```tsx
+<DiagramView
+  specs={specs}
+  pickEdges
+  onHover={setHovered}
+  overlays={[
+    ...(hoveredEdge ? [{ target: hoveredEdge, content: <button onClick={insert}>+</button> }] : []),
+    ...(picked ? [{ target: picked, placement: { side: 'right', align: 'start' }, offset: 8, content: <Card /> }] : []),
+  ]}
+/>
+```
+
+`onHover` reports the node, group or edge under the pointer, and `null` when
+there is none or the pointer leaves the canvas, which it also does when the
+pointer moves onto an overlay. Edges answer only with `pickEdges`. For DOM
+the view does not hold, `rectOf(id)` on the ref gives a target's client rect
+and `subscribeFrame` says when to read it again.
+
+### Reordering a group's members
+
+A group with `reorder: 'x' | 'y'` lets `onReorder` drag any of its members
+along that axis; a member that is a group carries everything inside it. The
+other members slide into the places they would take, and the release reports
+the new order without moving anything. With a member picked, Alt and an arrow
+key steps it one place. `layered` keeps a reorderable group's members in the
+order given across every rank, so writing the order back is all it takes.
+
+```tsx
+const data = { nodes, edges, groups: [...rows, { id: 'layers', members: order, reorder: 'y' }] };
+<DiagramView specs={diagramScene(data)} onReorder={({ order }) => setOrder(order)} />
+```
+
 ### Stencils
 
 A `DiagramStencil` is a palette entry: an id, a label, an outline and a default
@@ -815,10 +855,14 @@ off, wires its old neighbors to each other, and wires it into gap `to` of
 given chain could disagree with the wiring.
 
 The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
-carries one item of any drawn sequence along its axis and draws the insertion
-bar. Give it `slots`, the items and gaps that `sequenceSlots(axis, items)` builds
-from their boxes, and a `commit` that hears `{ id, from, to }`.
-`reorderContribution` packs the action and its binding to pass as `ambient`.
+carries one item of any drawn sequence along its axis, and the item lands in
+the gap nearest its middle. Give it `slots`, the items and gaps that
+`sequenceSlots(axis, items)` builds from their boxes, and a `commit` that hears
+`{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
+`show: 'slide'` slides the other items into the places they would take instead,
+moving each item's `carries` as pose overrides, which is how `onReorder` shows a
+group's members. `reorderContribution` packs the action and its binding to pass
+as `ambient`.
 
 ## Design notes
 

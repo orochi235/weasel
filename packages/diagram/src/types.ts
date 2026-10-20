@@ -84,6 +84,8 @@ export interface DiagramGroup {
   /** The narrowest the box may be, in world units, as room for its label.
    *  A box its members leave narrower grows evenly on both sides. */
   minWidth?: number;
+  /** The axis its members can be dragged along to change their order. */
+  reorder?: 'x' | 'y';
 }
 
 /** A port resolved against a node's current pose: where it is in world

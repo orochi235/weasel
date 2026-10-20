@@ -148,7 +148,14 @@ export function groupSpecs(
       layer: 'main',
       pose: { x, y, width, height },
       data: {
-        diagram: { outline: 'rect', group: { inset: g.inset, ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}) } },
+        diagram: {
+          outline: 'rect',
+          group: {
+            inset: g.inset,
+            ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
+            ...(g.group.reorder !== undefined ? { reorder: g.group.reorder } : {}),
+          },
+        },
         fill: { paint: { color: style.fill } },
         stroke: {
           paint: { color: style.stroke },

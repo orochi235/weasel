@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, matchesGlob } from 'node:path';
 
 /** Untracked and not ignored, so `onto test` sends it with the tree and the next sync cleans it away. */
 export const MARKER = '.onto/fleet-tree.json';
@@ -57,6 +57,21 @@ export const checkTree = (root, env) => {
   const entries = Object.entries(marker.files);
   const problems = entries.flatMap(([path, id]) => fileProblem(root, path, id) ?? []);
   return { armed: true, commit: marker.commit, checked: entries.length, problems };
+};
+
+/**
+ * The paths a branch run limits the suite to, absolute, for vitest's `related`: what the commit
+ * changes plus `always`. Undefined, so everything runs, unless the marker asks for selection and is
+ * this run's, and when a changed path matches one of `triggers`.
+ */
+export const selection = (root, env, { always, triggers }) => {
+  const at = join(root, MARKER);
+  if (!existsSync(at)) return undefined;
+  const marker = JSON.parse(readFileSync(at, 'utf8'));
+  if (!marker.select || !env[COMMIT_ENV] || marker.commit !== env[COMMIT_ENV]) return undefined;
+  const changed = Object.keys(marker.files);
+  if (changed.some((path) => triggers.some((glob) => matchesGlob(path, glob)))) return undefined;
+  return [...changed, ...always].map((path) => join(root, path));
 };
 
 /** What a fleet run prints about its tree: the line that proves the match, or why nothing else in the run counts. */

@@ -5,6 +5,8 @@ import type { DiagramContributionOptions } from './contribution';
 import type { DataEdge, DiagramSpec } from './fromData';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
+import type { DiagramOverlay } from './overlays';
+import type { ReorderChange } from './groupReorder';
 import type { EdgeRoute, NodeMove } from './sceneSync';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */
@@ -49,6 +51,19 @@ export interface DiagramViewProps {
    *  picked node reports it again. The canvas keeps the pick even if
    *  `selected` does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null) => void;
+  /** Reports the node, group or edge the pointer comes to be over, and `null`
+   *  once it is over none or leaves the canvas. An edge answers only while
+   *  edges are picked (`pickEdges`). */
+  onHover?: (id: string | null) => void;
+  /** Whether a click or a hover can land on an edge, which is then picked
+   *  like a node. Default: on when `onReconnect`, `onDelete` or
+   *  `onEditLabel` is set. */
+  pickEdges?: boolean;
+  /** DOM held against nodes, groups and edges, kept in place through pans,
+   *  zooms, resizes and layout runs. The view's box is their containing
+   *  block; their content takes the pointer, and the canvas beneath does not
+   *  see it. */
+  overlays?: readonly DiagramOverlay[];
   /** Set to let nodes be dragged. Reports every node a drag or a layout run
    *  moved, and every edge whose route or ports a layout run rewrote. Store
    *  each move as the data node's `at` with `pinned: true`, and each route as
@@ -71,6 +86,11 @@ export interface DiagramViewProps {
    *  selected data nodes (a selected group, not its members) and every edge
    *  selected or ending on one of them, and removes nothing. */
   onDelete?: (removed: DeleteReport) => void;
+  /** Set to let a member of a group marked `reorder` be dragged along that
+   *  axis among its siblings, or the selected one stepped with Alt and an
+   *  arrow key. Reports the members' new order and moves nothing: write it to
+   *  the group's `members`, which layered layout keeps. */
+  onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
   /** Whether a connect or a reconnect may end on a shape's body, away from
@@ -136,6 +156,15 @@ export interface DiagramViewApi {
   worldAt(clientX: number, clientY: number): Vec2;
   /** The world rect the canvas shows, or `null` before it has a size. */
   visible(): { x: number; y: number; width: number; height: number } | null;
+  /** Where a node, group or edge is drawn, in client coordinates — for an
+   *  edge, an empty rect at the midpoint along its route. `null` for an id the
+   *  diagram does not hold, or before the canvas mounts. Read it again from
+   *  {@link subscribeFrame}, after every paint. */
+  rectOf(id: string): { x: number; y: number; width: number; height: number } | null;
+  /** Run `fn` after every paint: a pan, a zoom, a layout frame, a change of
+   *  specs. Returns an unsubscribe; a call before the canvas mounts returns one
+   *  and never runs `fn`. */
+  subscribeFrame(fn: () => void): () => void;
 }
 
 /** What {@link DiagramViewApi.layout} runs. */

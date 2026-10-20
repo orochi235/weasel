@@ -107,6 +107,10 @@ export interface DataGroup {
   /** Between the box and its members, and around the label. Default
    *  `DiagramSceneOptions.groupPadding`. */
   padding?: number;
+  /** The axis its members can be dragged along to change their order, in a
+   *  `DiagramView` given `onReorder`. A member that is a group carries
+   *  everything inside it. */
+  reorder?: 'x' | 'y';
 }
 
 /** A diagram as plain data, the input to `diagramScene`. */
@@ -348,6 +352,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     inset: g.inset,
     ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
     ...(g.parent !== undefined ? { parent: g.parent } : {}),
+    ...(g.group.reorder !== undefined ? { ordered: g.direct } : {}),
   }));
   const seedOf = new Map(seeds.map((n) => [n.id, n]));
   for (const g of groups) {

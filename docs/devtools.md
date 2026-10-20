@@ -149,5 +149,6 @@ catalog (bundles, gestures, slots, ops, icons, traits); a canvas's live registry
 `apps/devtools-extension` hosts `DevtoolsPanel` in the browser's own devtools, for Chrome, Edge, and
 Firefox, and for Safari through an Xcode wrapper. Its content script relays
 `createWindowPanelTransport`'s envelopes, so it works on any page with a hook, frames included. A
-content script connects only while a panel is open on its tab. Building it, loading it unpacked, and
+content script connects only while a panel is open on its tab. Its toolbar button badges each tab with
+the number of canvases the page's hook reports. Building it, loading it unpacked, and
 packaging it for Safari are in its [README](../apps/devtools-extension/README.md).

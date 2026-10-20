@@ -256,6 +256,12 @@ Priority tags:
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
+- **(P2) Draw's Warp Settings button does nothing.** It triggers `configureWarp` with no params,
+  and with `{}` `withWarpSettings` returns the held warp unchanged, so nothing is committed; only
+  `apps/site/demos/warpLab.tsx` passes settings. It also has no `enabled`, so it stays live with no
+  warp selected, unlike Expand Warp. It wants a popover holding the selected warp's settings — Mode
+  for a distort, Rows, Columns and mapping for an envelope, tolerance for every kind — and an
+  `enabled` matching Expand Warp's (`configureWarpAction`, `packages/path-tools/src/warp/warpActions.ts`).
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -1005,6 +1011,15 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
+
+- **(P2) The `site` test project spends nearly all its time transforming.** Run alone on teitou
+  (2026-10-19), its 106 files took 112 s, 97% of it transform; `core`'s 724 files took 9 s, and every
+  other jsdom project 10 to 29 s. `fsModuleCache` did not fix it: a cold and a warm run of `site`
+  alone took 401 s and 300 s, on a node that was busy with other jobs, so those two runs compare only
+  with each other. The likely cost, not yet traced, is the virtual modules `vitest.config.ts` wires
+  for it (`demoSources`, `changelogs`, `packageDocs`) being rebuilt for each file's VM context. Start
+  with `--experimental.importDurations.print=true` on a quiet node; that flag printed nothing in the
+  run above.
 
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled

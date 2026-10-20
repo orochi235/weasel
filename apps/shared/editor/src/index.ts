@@ -1,7 +1,8 @@
 export { downloadBlob, pickFile } from './fileIO';
 export { usePaperLayer, useSinglePage, type PageSize } from './paperLayer';
 export { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
-export { writeSession } from './sessionStore';
+export { readStored, writeSession, type SessionEntry } from './sessionStore';
+export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
