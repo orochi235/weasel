@@ -466,17 +466,6 @@ Priority tags:
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
 
-### Derived geometry follow-ups
-
-- **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
-  frame to the scene's pose overrides *and* keep their own `previews` map behind `previewIds` /
-  `previewPose`. The overrides are what the scene reads (derived geometry, picking); the map is
-  what the ghost layer and the selection-chrome bounds read. Collapsing them means teaching those
-  two readers to resolve through `effectivePose`, after which the map is redundant for pose. It
-  cannot go entirely: `previewData`, a path-anchor drag's in-flight `data`, has no override
-  equivalent, and `PoseOverride` is `{ pose?, alpha? }`. Decide whether overrides grow a `data`
-  field or the two channels stay split by what they carry rather than by who writes them.
-
 ### `useScene` follow-ups
 
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
@@ -870,13 +859,6 @@ only story runner in the repo.
   props are all supplied by the harness (`DragGhost`, `BarAction`'s `Snap`). Open:
   whether a matrix story should take args and apply them to every cell.
 
-- **(P3) Loading a story raises an unhandled "ResizeObserver loop" error.** With forge's dev
-  server running, opening `#/ui-foundations-slider--single` makes vite's terminal print
-  `[Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.`,
-  once on load and again on reload (seen 2026-10-18, headless Chromium). Some ResizeObserver
-  callback changes a size it observes in the same frame. It isn't known yet which one, or
-  whether it's the Slider's or the workshop's.
-
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments do not declare labkit's `annotations` capability, so trials show
   no Marks section and no tool rail. The removed wiring — the story as the one
@@ -1021,12 +1003,19 @@ only story runner in the repo.
   `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
   needs `>=22.12.0`.
 
-- **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit
-  in diagram, core, labkit, chart and the site demos, each opening the context itself. A reader that opens it before the app's first paint must ask for the renderer's
-  attributes (`{ preserveDrawingBuffer: true, stencil: true }`), or the renderer refuses the canvas;
-  weaselchart's line-jumps test failed under fleet load that way (2026-10-20). Each copy now asks
-  for them, but nothing stops a new one forgetting: one shared reader, or a lint on a bare
-  `getContext('webgl2')` in a `*.browser.test.*` file, would.
+- **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
+  `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
+  three playheads where it expected two, likely left by the one that timed out) and
+  `apps/site/__tests__/WeaselDemos.routing.test.tsx` › "opens the releases view on its own id" (5 s)
+  failed in three keiei runs on 2026-10-20, `main` at `416328e36` among them, and passed alone each
+  time and in full runs on teitou, studio and msb-uai. keiei reports memory pressure and 7–11 GB of
+  swap in `onto status`. Either what these tests wait on scales badly with a loaded machine, or keiei
+  should take no full runs.
+
+- **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
+  `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
+  probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
+  against a bare `getContext('webgl2')` does not catch a call that passes attributes.
 
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
@@ -1325,9 +1314,11 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
-  (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
-  left.
+- **(P3) Fourth arc (not designed).** PDF export, as its own package; playing an audio pipeline
+  through `@weasel-js/audio`, a graph built once on the audio clock and patched as the pipeline is
+  edited; pages and off-page markers in a data-backed `DiagramView`; dragging an edge label by
+  hand, which label placement then keeps; authored group boxes under the `rack` and `lanes` looks.
+  Carried from the third arc's design (2026-10-20), deleted when that arc finished.
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.

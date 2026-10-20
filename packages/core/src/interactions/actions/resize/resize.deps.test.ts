@@ -5,7 +5,7 @@
  */
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
-import { stubDeps } from '../testUtils';
+import { stubDeps, heldPose } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { resizeAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -110,7 +110,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       drag: { start: { x: 100, y: 100 }, current: { x: 10, y: 10 }, delta: { x: -90, y: -90 } },
     });
 
-    const preview = handle.previewPose!('a') as RectPose;
+    const preview = heldPose(ctx.deps.scene, 'a') as RectPose;
     expect(preview.width).toBeCloseTo(40);
     expect(preview.height).toBeCloseTo(40);
   });
@@ -207,8 +207,8 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
     });
     const previewIds = Array.from(handle.previewIds!() ?? []);
     expect(previewIds.sort()).toEqual(['leaf1', 'leaf2']);
-    const p1 = handle.previewPose!('leaf1') as RectPose;
-    const p2 = handle.previewPose!('leaf2') as RectPose;
+    const p1 = heldPose(ctx.deps.scene, 'leaf1') as RectPose;
+    const p2 = heldPose(ctx.deps.scene, 'leaf2') as RectPose;
     // leaf1 origin 0,0,50,50 → scale 2× → 0,0,100,100
     expect(p1.width).toBeCloseTo(100);
     expect(p1.height).toBeCloseTo(100);
@@ -242,7 +242,7 @@ describe('resizeAction — geometry via poseDescriptor dep', () => {
       ...ctx,
       drag: { start: { x: 100, y: 100 }, current: { x: 150, y: 130 }, delta: { x: 50, y: 30 } },
     });
-    const preview = handle.previewPose!('a') as RectPose;
+    const preview = heldPose(ctx.deps.scene, 'a') as RectPose;
     expect(preview.width).toBeCloseTo(150);
     expect(preview.height).toBeCloseTo(130);
   });
@@ -267,7 +267,7 @@ describe('resizeAction — reads the poseDescriptor dep', () => {
       ...ctx,
       drag: { start: { x: 100, y: 100 }, current: { x: 200, y: 200 }, delta: { x: 100, y: 100 } },
     });
-    expect(handle.previewPose!('a')).toEqual(circle(100, 100, 100));
+    expect(heldPose(ctx.deps.scene, 'a')).toEqual(circle(100, 100, 100));
   });
 });
 
@@ -326,43 +326,43 @@ describe('resizeAction — a rotated leaf inside a group', () => {
   it('scales a 90° leaf along its own axes, not the group\'s', () => {
     // Union is 0,0..100,100; dragging BR to (200, 100) doubles width only.
     // The leaf is 20×10 turned 90°, so its world-x extent is its height.
-    const { handle } = dragGroup(
+    const { ctx } = dragGroup(
       { x: 40, y: 45, width: 20, height: 10, rotation: Math.PI / 2 },
       { x: 200, y: 100 },
     );
-    const turned = handle.previewPose!('turned') as RotatedPose;
+    const turned = heldPose(ctx.deps.scene, 'turned') as RotatedPose;
     expect(turned.height).toBeCloseTo(20);
     expect(turned.width).toBeCloseTo(20);
     expect(turned.rotation).toBeCloseTo(Math.PI / 2);
   });
 
   it('leaves the unrotated sibling on the plain affine', () => {
-    const { handle } = dragGroup(
+    const { ctx } = dragGroup(
       { x: 40, y: 45, width: 20, height: 10, rotation: Math.PI / 2 },
       { x: 200, y: 100 },
     );
-    const upright = handle.previewPose!('upright') as RectPose;
+    const upright = heldPose(ctx.deps.scene, 'upright') as RectPose;
     expect(upright.width).toBeCloseTo(200);
     expect(upright.height).toBeCloseTo(100);
   });
 
   it('moves the rotated leaf\'s centre by the group affine', () => {
-    const { handle } = dragGroup(
+    const { ctx } = dragGroup(
       { x: 40, y: 45, width: 20, height: 10, rotation: 0.6 },
       { x: 200, y: 100 },
     );
-    const turned = handle.previewPose!('turned') as RotatedPose;
+    const turned = heldPose(ctx.deps.scene, 'turned') as RotatedPose;
     // Centre was (50, 50) in a 100×100 union stretched 2× on x only.
     expect(turned.x + turned.width / 2).toBeCloseTo(100);
     expect(turned.y + turned.height / 2).toBeCloseTo(50);
   });
 
   it('still takes the naive affine for an unrotated leaf', () => {
-    const { handle } = dragGroup(
+    const { ctx } = dragGroup(
       { x: 40, y: 45, width: 20, height: 10, rotation: 0 },
       { x: 200, y: 100 },
     );
-    const turned = handle.previewPose!('turned') as RotatedPose;
+    const turned = heldPose(ctx.deps.scene, 'turned') as RotatedPose;
     expect(turned.width).toBeCloseTo(40);
     expect(turned.height).toBeCloseTo(10);
   });

@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
-import { transformPreviewFields } from '../transformFinish';
+import { transformPreview } from '../transformFinish';
 import { pastDragThreshold } from '@weasel-js/routing';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
@@ -47,6 +47,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
+      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       // Where the last move put the pointer, once the drag has passed its
       // threshold; null until then.
       let engaged: { x: number; y: number } | null = null;
@@ -61,7 +62,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
           engaged = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
-          hold.set(frame.previews);
+          hold.set(preview.poses());
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
@@ -83,7 +84,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        ...transformPreviewFields(ctx.deps, () => frame.previews),
+        previewIds: preview.previewIds,
+        previewData: preview.previewData,
         previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
       };
     },

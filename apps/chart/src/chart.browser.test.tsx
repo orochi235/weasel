@@ -338,7 +338,8 @@ describe('WeaselChart chart mode', () => {
     const inkOnPage = () => offWhitePixels(canvas, at(host, 300, 300), at(host, 700, 600));
     // A strip of workspace just left of the page, inside the fit's 24px of padding.
     const workspace = () => readClientPixels(canvas, at(host, -15, 300), at(host, -3, 600));
-    expect(inkOnPage()).toBe(0);
+    // Read before the first paint, the canvas is blank and the page reads as ink.
+    await expect.poll(inkOnPage).toBe(0);
     const bare = workspace();
     await userEvent.click(page.getByRole('menuitem', { name: 'View' }));
     await userEvent.click(page.getByRole('menuitemcheckbox', { name: /^Show grid/ }));

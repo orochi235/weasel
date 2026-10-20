@@ -6,6 +6,7 @@
  * A derived child captured at its authored placeholder previews from there —
  * the override wins over the derivation, so it jumps to placeholder + delta.
  */
+import { heldPose } from '../testUtils';
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
@@ -65,7 +66,7 @@ describe('moveAction — a derived child inside a dragged container', () => {
     handle.onMove!(ctx(scene, [c], DRAG));
 
     expect(poseOf(scene, d)).toEqual(box(140, 10));
-    expect(handle.previewPose!(d as string)).toEqual(box(140, 10));
+    expect(heldPose(scene, d as string)).toEqual(box(140, 10));
   });
 
   it('lands where the preview showed it', () => {

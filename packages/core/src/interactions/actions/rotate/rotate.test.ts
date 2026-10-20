@@ -1,6 +1,6 @@
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
-import { stubDeps } from '../testUtils';
+import { stubDeps, heldPose } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { rotateAction } from './action';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -209,7 +209,7 @@ describe('rotateAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
-  it('previewIds/previewPose expose in-flight rotated poses; cleared on commit', () => {
+  it('previewIds names the in-flight ids and the overrides hold their rotated poses; cleared on commit', () => {
     const invoker = getOngoingInvoker(rotateAction);
     const { scene, ...ctx } = makeCtx({
       selectionIds: ['a'],
@@ -219,7 +219,7 @@ describe('rotateAction descriptor', () => {
     const handle = invoker.start(ctx as InvocationCtx, undefined);
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
     handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
-    const preview = handle.previewPose!('a') as { rotation: number };
+    const preview = heldPose(scene, 'a') as { rotation: number };
     expect(preview.rotation).toBeCloseTo(-Math.PI / 2);
     expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
     expect(scene.poses.get('a')).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });

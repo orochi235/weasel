@@ -2,6 +2,7 @@
  * Resize of a node whose pose is a polygon `Path`: a pose with no top-level
  * `x`/`y`/`width`/`height`, so anything reading it as bounds reads `undefined`.
  */
+import { heldPose } from '../testUtils';
 import { describe, it, expect } from 'vitest';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
@@ -67,7 +68,7 @@ describe('resizeAction on a polygon path pose', () => {
     const handle = start(scene, { shift: true });
     // Width is the dominant axis: 40 -> 80, so height follows 20 -> 40.
     handle.onMove!(ctxAt(scene, { x: 90, y: 45 }, { shift: true }));
-    const preview = handle.previewPose!(ID as string) as Path;
+    const preview = heldPose(scene, ID as string) as Path;
     const near = (b: Bounds) => {
       expect(b.x).toBeCloseTo(10);
       expect(b.y).toBeCloseTo(20);
@@ -110,7 +111,7 @@ describe('resizeAction on a polygon path pose', () => {
     const handle = start(scene, { deps: { snap } });
     handle.onMove!(ctxAt(scene, { x: 90, y: 55 }, { deps: { snap } }));
 
-    const preview = handle.previewPose!(ID as string) as Path & Partial<Bounds>;
+    const preview = heldPose(scene, ID as string) as Path & Partial<Bounds>;
     expect(preview.kind).toBe('polygon');
     expect(preview.width).toBeUndefined();
     expect(boundsOf(preview)).toMatchObject({ x: 10, y: 20, width: 90, height: 40 });

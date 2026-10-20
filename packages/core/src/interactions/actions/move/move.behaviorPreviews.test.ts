@@ -45,19 +45,18 @@ describe('BehaviorResult.poses — a node the drag does not move', () => {
     const { near, ctx, start, shown } = fixture();
     const handle = start(scripted({ poses: new Map([[near, box(50, 30)]]) }));
     handle.onMove!(ctx(5));
-    expect(handle.previewPose!(near)).toEqual(box(50, 30));
     expect([...(handle.previewIds!() ?? [])]).toContain(near);
     expect(shown(near)).toEqual(box(50, 30));
   });
 
   it('takes the last behavior\'s pose when two answer for it', () => {
-    const { near, ctx, start } = fixture();
+    const { near, ctx, start, shown } = fixture();
     const handle = start(
       scripted({ poses: new Map([[near, box(50, 30)]]) }),
       scripted({ poses: new Map([[near, box(50, 60)]]) }),
     );
     handle.onMove!(ctx(5));
-    expect(handle.previewPose!(near)).toEqual(box(50, 60));
+    expect(shown(near)).toEqual(box(50, 60));
   });
 
   it('goes back to its stored pose on the first frame no behavior returns it', () => {
@@ -66,7 +65,6 @@ describe('BehaviorResult.poses — a node the drag does not move', () => {
     handle.onMove!(ctx(5));
     expect(shown(near)).toEqual(box(50, 30));
     handle.onMove!(ctx(6));
-    expect(handle.previewPose!(near)).toBeNull();
     expect(scene.overrides.get(near)).toBeUndefined();
     expect(shown(near)).toEqual(box(50, 0));
     // The dragged node is still previewed.
@@ -86,13 +84,13 @@ describe('BehaviorResult.poses — a node the drag does not move', () => {
 
 describe('BehaviorResult.transform', () => {
   it('is the one way a behavior moves the drag: a pose on the result is not read', () => {
-    const { dragged, ctx, start } = fixture();
+    const { dragged, ctx, start, shown } = fixture();
     const stray = { pose: box(40, 0) } as unknown as BehaviorResult<unknown>;
     const handle = start(scripted(stray, { transform: { kind: 'translate', dx: 8, dy: 0 } }));
     handle.onMove!(ctx(5));
-    expect(handle.previewPose!(dragged)).toEqual(box(5, 0));
+    expect(shown(dragged)).toEqual(box(5, 0));
     handle.onMove!(ctx(5));
-    expect(handle.previewPose!(dragged)).toEqual(box(8, 0));
+    expect(shown(dragged)).toEqual(box(8, 0));
   });
 });
 

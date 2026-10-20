@@ -151,6 +151,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): A transform preview carries pose once, in the scene's overrides:
+  `move`, `resize`, and `rotate` handles drop `previewPose` (read `effectivePose(scene, node)`), the
+  ghost resolves through `effectivePose`, and selection chrome boxes an in-flight id at its effective
+  pose (`useInFlightBounds`). `PoseOverride` gained no `data`; `previewData` stays on the handle. A
+  transform follower that previews a node away from its own pose publishes that pose as an
+  override; one answering the node's own pose pins nothing, so a derived edge keeps deriving.
 - 2026-10-20 (overnight pass): A node's kind has one classifier, the routing kind (`routeKind`, new
   in core; `NodeRouting.classify` calls it). The kind published with the selection is the routing
   kind, so the command palette says "2 paths selected"; a node the table calls `'unknown'`
@@ -213,6 +219,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): `CANVAS_CONTEXT_ATTRIBUTES` is public core API, the one place the
+  renderer's WebGL2 context settings are written, since a consumer sharing a buffer with the renderer
+  needs them. Test pixel reads go through `@weasel-js/core/testing/canvasPixels` (`canvasGl`,
+  `readCanvas`, `pixelAt`), and a lint rule refuses a `getContext('webgl2')` with no attributes in
+  browser tests and `testing/` helpers.
 - 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
   objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
   string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and

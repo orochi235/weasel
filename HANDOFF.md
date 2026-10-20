@@ -34,14 +34,19 @@ Merged:
   (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
 - A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
   the command palette names it) and `SelectionPanel` (new core export `routeKind`).
+- A move, resize or rotate preview carries pose once, in the scene's overrides; the ghost and the
+  selection chrome read `effectivePose`, and the three handles drop `previewPose`.
+- forge's "ResizeObserver loop" error, raised on every forge page: labkit's `SidebarPanes` kept
+  observing a section bar after windease removed its panel. It now observes each bar from mount
+  to removal (a browser test mounts a whole `Lab`).
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
   `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
-  one shared reader or a lint rule (P3, "Release-gate & build hygiene").
+  one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
+  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call, all merged.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
-- forge's "ResizeObserver loop" error.
 
 ## State
 

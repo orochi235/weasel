@@ -10,6 +10,7 @@ import {
   type P,
   makeScene,
   makeCtx,
+  heldPose,
 } from './testing/moveLayoutStubs';
 
 describe('moveAction layout reflow', () => {
@@ -35,7 +36,7 @@ describe('moveAction layout reflow', () => {
 
     const ids = [...(handle.previewIds!() as Iterable<string>)];
     expect(ids).toContain('b'); // sibling reflowed into the preview channel
-    const bPose = handle.previewPose!('b') as P;
+    const bPose = heldPose(scene, 'b')!;
     expect(bPose.x).toBe(0); // b swapped to cell 0
   });
 
@@ -100,7 +101,7 @@ describe('moveAction layout reflow', () => {
 
     const ids = [...(handle.previewIds!() as Iterable<string>)];
     expect(ids).toContain('b'); // sibling reflowed → container WAS found
-    const bPose = handle.previewPose!('b') as P;
+    const bPose = heldPose(scene, 'b')!;
     expect(bPose.x).toBe(0); // b swapped to cell 0
   });
 

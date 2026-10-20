@@ -12,6 +12,8 @@ export {
 export { DIAGRAM_FORMATS, detectFormat, readDocument } from './formats';
 export { DIAGRAM_JSON } from './jsonFormat';
 export { DRAW_XML } from './drawXml/format';
+export { DIAGRAM_MERMAID } from './mermaid/format';
+export { DIAGRAM_DOT } from './dot/format';
 export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
 export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';

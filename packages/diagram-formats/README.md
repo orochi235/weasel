@@ -67,6 +67,8 @@ with it and rejects on a file nothing reads.
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
 | `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
+| `DIAGRAM_MERMAID`, a Mermaid flowchart | `.mmd`, `.mermaid` | yes | one page |
+| `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
 Not read, by decision (2026-10-20): packaged office-suite drawing formats,
 which are zip archives of many XML parts built on master shapes a scene has no
@@ -108,6 +110,48 @@ drawn size in a document read from a scene; a page with unplaced nodes is laid
 out first, as an import would. Edges between pages are left out, with a
 warning, since a page's cells cannot reach another's; so are marks, port rows,
 and outline paths, which become rects.
+
+### Mermaid and Graphviz DOT
+
+Both hold a graph's topology and text, not its places (DOT holds them when
+every node has a `pos`), so a file reads into one page whose nodes have no
+`at`, and `documentSpecs` lays it out the way the page's `direction` says.
+Both readers are hand-written and throw an error naming the line on text they
+cannot read.
+
+| Diagram | Mermaid flowchart | Graphviz DOT |
+| --- | --- | --- |
+| rect | `A[text]` | `shape=box` |
+| stadium | `A([text])`, and `A(text)` | `shape=box, style=rounded` |
+| diamond | `A{text}` | `shape=diamond` |
+| ellipse | `A((text))` | `shape=ellipse`, the default, and `circle` |
+| hexagon | `A{{text}}` | `shape=hexagon` |
+| parallelogram | `A[/text/]` | `shape=parallelogram` |
+| trapezoid | `A[/text\]` | `shape=trapezium` |
+| edge and label | `A -->\|text\| B`, `A -- text --> B` | `A -> B [label=…]` |
+| no arrowhead, dashed, thick | `---`, `-.->`, `==>` | `dir`, `arrowhead`, `style=dashed`, `penwidth` |
+| container | `subgraph` | `subgraph cluster_*` |
+| page name | front matter `title` | the graph's `label`, else its name |
+| page `direction` | `flowchart TD/LR/BT/RL` | `rankdir` |
+| colors | `classDef`, `class`, `:::`, `style`, `linkStyle` | `fillcolor` with `style=filled`, `color`, `fontcolor` |
+| ports | — | `node:compass`, `n`, `e`, `s`, and `w` only |
+
+A Mermaid shape with no outline here reads as a rect, with a warning; a
+Mermaid diagram of another kind is refused with an error naming the kind. DOT
+reads its whole grammar: `strict`, `graph` and `digraph`, attribute
+statements and their scoping, edge chains, and subgraphs as edge ends. Its
+HTML labels read as their text, and the attributes it does not read are
+listed in one warning. A cluster's container drops its `cluster_` prefix when
+that id is free.
+
+Writing, each writes the theme's colors once (Mermaid's `classDef default`,
+DOT's `node` and `edge` defaults) and each item's own where they differ. DOT
+writes every node's `pos`, `width`, and `height` when each has a place and a
+size, so a DOT file read back keeps the layout. Pools, lanes, and groups are
+written as nested clusters or subgraphs and read back as containers. Mermaid
+ids that are keywords or not plain names are renamed, keeping their text.
+Bends, connectors to other pages, drawn outlines, and ports a format lacks
+are dropped with a warning.
 
 ## Exporting a page
 

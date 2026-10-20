@@ -1,3 +1,4 @@
+import { heldPose } from '../testUtils';
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import { snapToContainer } from './behaviors/snapToContainer';
@@ -87,8 +88,8 @@ describe('moveAction behavior pipeline', () => {
     const drag = { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf, second]), opts) as OngoingHandle;
     handle.onMove!(ctx(scene, [leaf, second], drag));
-    expect(handle.previewPose!(leaf)).toEqual(slots[leaf]);
-    expect(handle.previewPose!(second)).toEqual(slots[second]);
+    expect(heldPose(scene, leaf)).toEqual(slots[leaf]);
+    expect(heldPose(scene, second)).toEqual(slots[second]);
     handle.onEnd!(ctx(scene, [leaf, second], drag), 'commit');
     for (const id of [leaf, second]) {
       expect(scene.get(asNodeId(id))?.parent).toBe(box);

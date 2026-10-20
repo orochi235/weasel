@@ -1,0 +1,10 @@
+// One node per shape the diagram knows, and a few it does not.
+graph shapes {
+  r [shape=box]; s [shape=box, style="rounded"]; d [shape=diamond]; e [shape=ellipse]; plain;
+  h [shape=hexagon]; p [shape=parallelogram]; t [shape=trapezium]; c [shape=circle];
+  cyl [shape=cylinder]; n [shape=note];
+  html [label=<<b>Bold</b><br/>and &amp; more>];
+  r -- s -- d;
+  e:n -- h:s;
+  p:port1 -- t:ne;
+}
