@@ -1,12 +1,12 @@
 import { createAudioEngine, type AudioEngine } from '@weasel-js/audio';
 import type { EffectPipeline, EffectRun } from '@weasel-js/diagram/effect';
 import {
-  AUDIO_STAGE_TYPES, audioStageNodes, createLiveAudioRunner, livePlan,
-  type AudioPreview, type AudioSources, type LiveAudioRunner, type LiveAudioRunnerState,
+  AUDIO_STAGE_TYPES, createLiveAudioRunner, useFollowAudioRunner,
+  type AudioPreview, type AudioSources, type LiveAudioRunner,
 } from '@weasel-js/diagram/effect-audio';
 import { pickFile } from '@editor/index';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useLatest } from '@weasel-js/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const AUDIO_TYPES = new Set(AUDIO_STAGE_TYPES.map((t) => t.type));
 
@@ -42,8 +42,6 @@ export interface PipelineAudio {
 
 interface Live { engine: AudioEngine; runner: LiveAudioRunner }
 
-const noSubscribe = () => () => {};
-
 /**
  * Plays the audio pipeline `pipeline` through an engine made on the first `wake` or `chooseSource`,
  * never on mount, and disposed with the component. Until then the run carries the plan's errors, so a
@@ -70,28 +68,7 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   }, []);
 
   const runner = live?.runner ?? null;
-  useEffect(() => { runner?.setPipeline(pipeline); }, [runner, pipeline]);
-  useEffect(() => { runner?.setSources(sources); }, [runner, sources]);
-  useEffect(() => { runner?.setPreviews(previews); }, [runner, previews]);
-  const state = useSyncExternalStore<LiveAudioRunnerState | null>(runner?.subscribe ?? noSubscribe, () => runner?.state ?? null);
-  const playing = state?.playing ?? false;
-
-  const loop = useVisibleRaf((_now, self) => {
-    if (runner === null || !runner.state.playing || previews === 'off') return;
-    runner.frame();
-    self.request();
-  });
-  useEffect(() => {
-    if (playing && previews !== 'off') loop.request();
-    else loop.cancel();
-  }, [playing, previews, loop]);
-  useEffect(() => { runner?.drawn(state?.run); }, [runner, state?.run]);
-
-  const planned = useMemo(() => {
-    if (runner !== null) return undefined;
-    const { errors } = livePlan(pipeline, audioStageNodes, sources);
-    return { stages: Object.fromEntries(Object.entries(errors).map(([id, error]) => [id, { error }])) };
-  }, [runner, pipeline, sources]);
+  const { run } = useFollowAudioRunner(runner, { pipeline, sources, previews });
 
   const chooseSource = useCallback(async () => {
     const file = await pickFile('audio/*');
@@ -101,5 +78,5 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   }, [awake]);
   const wake = useCallback(() => awake().runner, [awake]);
 
-  return { run: runner === null ? planned : state?.run, runner, wake, chooseSource };
+  return { run, runner, wake, chooseSource };
 }

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectPipeline } from '../types';
 import type { AudioPreview } from './scope';
 import { AUDIO_STAGE_TYPES } from './stageTypes';
+import { useFollowAudioRunner } from './useFollowAudioRunner';
 import { useLiveAudioRunner } from './useLiveAudioRunner';
 
 const OSC = AUDIO_STAGE_TYPES.find((t) => t.type === 'audio.oscillator')!;
@@ -73,5 +74,21 @@ describe('useLiveAudioRunner', () => {
     const dispose = vi.spyOn(result.current.runner, 'dispose');
     unmount();
     expect(dispose).toHaveBeenCalledOnce();
+  });
+});
+
+describe('useFollowAudioRunner', () => {
+  it('holds the plan\'s errors while there is no runner', () => {
+    const FILE = AUDIO_STAGE_TYPES.find((t) => t.type === 'audio.file')!;
+    const OUT = AUDIO_STAGE_TYPES.find((t) => t.type === 'audio.output')!;
+    const pipeline: EffectPipeline = {
+      stages: [
+        { id: 'file', title: 'file', type: FILE.type, outputs: FILE.outputs },
+        { id: 'out', title: 'out', type: OUT.type, inputs: OUT.inputs },
+      ],
+      wires: [{ from: { stage: 'file', port: 'out' }, to: { stage: 'out', port: 'in' } }],
+    };
+    const { result } = renderHook(() => useFollowAudioRunner(null, { pipeline, previews: 'off' }));
+    expect(result.current).toEqual({ run: { stages: { file: { error: 'no source audio' } } }, playing: false });
   });
 });

@@ -5,11 +5,13 @@ import { paramValues } from '../runner/params';
 import type { EffectPipeline, EffectStage } from '../types';
 import type { AudioSources, AudioStageNodes } from './nodes';
 
+/** A node the plan builds: its stage type, its discrete settings and its numeric levels. */
 export interface PlanNode {
   type: string;
   settings: Readonly<Record<string, unknown>>;
   levels: Readonly<Record<string, number>>;
 }
+/** A connection the plan makes, from a node to another node's port or to the graph's output. */
 export interface PlanEdge { from: string; to: GraphTarget }
 
 /** The graph an audio pipeline should play: what to build, how it connects, and which stages it left out. */
@@ -21,6 +23,7 @@ export interface LivePlan {
   errors: Readonly<Record<string, string>>;
 }
 
+/** The plan of a graph holding nothing. */
 export const EMPTY_PLAN: LivePlan = { nodes: {}, edges: [], errors: {} };
 
 const OUTPUT_TYPE = 'audio.output';

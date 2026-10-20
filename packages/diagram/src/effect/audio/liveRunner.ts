@@ -6,8 +6,10 @@ import { diffPlans } from './patches';
 import { EMPTY_PLAN, livePlan, type LivePlan } from './plan';
 import type { AudioPreview } from './scope';
 
+/** What a live runner last published: its run, and whether it plays. */
 export interface LiveAudioRunnerState { run: EffectRun | undefined; playing: boolean }
 
+/** What a live runner plays, and through which engine. */
 export interface LiveAudioRunnerOptions {
   engine: AudioEngine;
   pipeline: EffectPipeline;
@@ -72,9 +74,11 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
   }
 }
 
-const errorsRun = (errors: Readonly<Record<string, string>>): EffectRun =>
+/** A run holding only `errors`, by stage id. */
+export const errorsRun = (errors: Readonly<Record<string, string>>): EffectRun =>
   ({ stages: Object.fromEntries(Object.entries(errors).map(([id, error]) => [id, { error }])) });
 
+/** A runner over `opts.pipeline` holding a fresh graph on `opts.engine`, not playing. */
 export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRunner {
   const { engine, bus } = opts;
   const nodes = opts.nodes ?? audioStageNodes;

@@ -15,5 +15,7 @@ export type { LiveAudioRunner, LiveAudioRunnerOptions, LiveAudioRunnerState } fr
 export { drawScope, drawSpectrum } from './effect/audio/scope';
 export type { AudioPreview } from './effect/audio/scope';
 export { AUDIO_STAGE_TYPES } from './effect/audio/stageTypes';
+export { useFollowAudioRunner } from './effect/audio/useFollowAudioRunner';
+export type { FollowAudioRunnerOptions } from './effect/audio/useFollowAudioRunner';
 export { useLiveAudioRunner } from './effect/audio/useLiveAudioRunner';
 export type { LiveAudioRunnerHandle, UseLiveAudioRunnerOptions } from './effect/audio/useLiveAudioRunner';

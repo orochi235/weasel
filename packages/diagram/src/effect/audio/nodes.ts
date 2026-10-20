@@ -8,6 +8,7 @@ export interface AudioSources { audio?: AudioBuffer }
 
 type Values = Readonly<Record<string, unknown>>;
 
+/** How one stage type becomes a graph node: its settings, its levels, and the node it builds. */
 export interface AudioStageNode {
   /** The stage's discrete settings, from its param values and the run's sources. Throws to fail the stage. */
   settings(params: Values, sources: AudioSources): Values;
@@ -15,6 +16,7 @@ export interface AudioStageNode {
   levels: readonly string[];
   build(ctx: BaseAudioContext, settings: Values, levels: Readonly<Record<string, number>>): GraphNodeDef;
 }
+/** The graph node of each stage type, by `type`. */
 export type AudioStageNodes = Readonly<Record<string, AudioStageNode>>;
 
 /** A node whose settings are the named param values; the factory takes them with the levels as one options bag. */

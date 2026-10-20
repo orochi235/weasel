@@ -117,7 +117,7 @@ async function inkedColumns(empty: number[][][]): Promise<number> {
 }
 
 describe('WeaselChart pipeline mode, audio', () => {
-  it('plays an oscillator into the output, draws it as a scope or a spectrum, and closes its engine with the mode', async () => {
+  it('plays an oscillator into the output, draws it as a scope or a spectrum, and closes its engine when the mode is left while it plays', async () => {
     await mountChartApp();
     await choose('Mode', /^Pipeline/);
     await userEvent.click(page.getByRole('radio', { name: 'Audio' }));
@@ -147,6 +147,9 @@ describe('WeaselChart pipeline mode, audio', () => {
     await choose('Run', /^Pause/);
     await expect.poll(() => disabled('Run', /^Play/)).toBe(false);
 
+    // Leaving the mode while it sounds disposes the graph and closes the engine.
+    await choose('Run', /^Play/);
+    await expect.poll(() => disabled('Run', /^Pause/)).toBe(false);
     await choose('Mode', /^Chart/);
     await expect.poll(() => contexts[0]!.state).toBe('closed');
   });
