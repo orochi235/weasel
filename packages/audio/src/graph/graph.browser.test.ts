@@ -15,6 +15,9 @@ const RATE = 48000;
 const ms = (t: number) => Math.round((t / 1000) * RATE);
 /** Hz. At 0.2 s it is 90.4 cycles in, far from a zero crossing, so a cut there would step. */
 const OFF_ZERO = 452;
+/** A render pauses on a 128-frame block edge: 4608 frames is exactly 96 ms, where 100 ms would land late. */
+const START_MS = 96;
+const START = START_MS / 1000;
 
 /** Render a graph on the engine's first bus; `later` runs with the render held at `at` seconds. */
 async function renderGraph(
@@ -74,13 +77,13 @@ describe('audio graph in a real engine', () => {
     const play = (insertFadeMs?: number) => renderGraph(0.3, (g, e) => {
       g.add('osc', createOscillatorNode(e.context, { wave: 'square', frequency: OFF_ZERO }));
       g.connect('osc', { output: true });
-    }, { at: 0.1, run: (g) => g.start() }, insertFadeMs === undefined ? {} : { insertFadeMs });
+    }, { at: START, run: (g) => g.start() }, insertFadeMs === undefined ? {} : { insertFadeMs });
     const faded = await play();
     const cut = await play(0);
     const peak = maxAbs(faded, ms(200), ms(300));
-    expect(maxStep(faded, ms(100) - 1, ms(101))).toBeLessThan(peak / 3);
+    expect(maxStep(faded, ms(START_MS) - 1, ms(START_MS + 1))).toBeLessThan(peak / 3);
     // The same measure on an unfaded start, which must see the step.
-    expect(maxStep(cut, ms(100) - 1, ms(101))).toBeGreaterThan(peak / 3);
+    expect(maxStep(cut, ms(START_MS) - 1, ms(START_MS + 1))).toBeGreaterThan(peak / 3);
   });
 
   it("patching a running graph doesn't reset a delay's tail", async () => {
