@@ -109,6 +109,8 @@ export type {
   Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant, Carried,
 } from './interactions/actions/action';
 export { actionItems, actionItemTitle } from './interactions/actions/actionItems';
+export { actionSettingsParams, readActionSettings } from './interactions/actions/actionSettings';
+export type { ActionSettings, ActionSettingsState } from './interactions/actions/actionSettings';
 export type { ActionItem } from './interactions/actions/actionItems';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';

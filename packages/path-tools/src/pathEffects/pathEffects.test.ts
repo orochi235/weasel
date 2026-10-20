@@ -5,6 +5,7 @@ import {
   createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
+import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
 
 type TestScene = Scene<unknown, 'default', RectPose>;
 
@@ -196,6 +197,40 @@ describe('bend and repeat along a path', () => {
     run(repeatAlongAction, deps, { count: 3, orient: false });
     const xs = partsOf(scene, selected()[0]!).map((p) => boundsOfPath(p.path).x);
     expect(xs).toEqual([-10, 90, 190]);
+  });
+});
+
+describe('the Edit Path Effect form', () => {
+  /** A blend of a and b, and a repeat of a along the spine, both selected. */
+  function twoEffects() {
+    const { scene, deps, selected } = setup(['a', 'b']);
+    run(blendAction, deps, {});
+    const blend = selected()[0]!;
+    (deps.selection as unknown as { set(ids: string[]): void }).set(['a', 'spine']);
+    run(repeatAlongAction, deps, { count: 3 });
+    const repeat = selected()[0]!;
+    (deps.selection as unknown as { set(ids: string[]): void }).set([blend, repeat]);
+    return { scene, deps, blend, repeat };
+  }
+  const effectOf = (scene: TestScene, id: string) => pathEffectOf(scene.get(id as NodeId))!;
+
+  it('is disabled with no path effect selected', () => {
+    const { deps } = setup(['a']);
+    expect(editPathEffectAction.enabled?.(deps)).not.toBe(true);
+  });
+
+  it('reads each selected kind, filling what an effect leaves unset', () => {
+    const { deps } = twoEffects();
+    const { values } = readPathEffectSettings(deps);
+    expect(values).toMatchObject({ blends: 1, bends: 0, repeats: 1, blend: { steps: 4, orient: false }, repeatAlong: { count: 3, orient: true } });
+  });
+
+  it('changes a field only on effects of the kind whose section it was made in', () => {
+    const { scene, deps, blend, repeat } = twoEffects();
+    run(editPathEffectAction, deps, pathEffectSettingsParams('blend.orient', true)!);
+    expect(effectOf(scene, blend)).toMatchObject({ orient: true });
+    expect(effectOf(scene, repeat)).toMatchObject({ kind: 'repeatAlong' });
+    expect((effectOf(scene, repeat) as { orient?: boolean }).orient).toBeUndefined();
   });
 });
 

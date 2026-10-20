@@ -12,6 +12,7 @@ import {
   type ActionItem,
 } from '@weasel-js/core';
 import { Dialog } from '../Dialog';
+import { ActionSettingsDialog } from '../ActionSettings/ActionSettingsDialog';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { KeySequence, keySpecFromKey, keySpecsFromShortcut } from '../Keycaps';
 import { describeSelection } from './selectionSummary';
@@ -42,6 +43,21 @@ const HINTS = [
   { keys: [keySpecFromKey('Enter')], label: 'run' },
   { keys: [keySpecFromKey('Escape')], label: 'close' },
 ];
+
+/** How much is selected, when known, and the keys the palette answers to. */
+function PaletteFooter({ selection }: { selection: string | null }) {
+  return (
+    <>
+      {selection && <span className={styles.selection}>{selection}</span>}
+      {HINTS.map((h) => (
+        <span className={styles.hint} key={h.label}>
+          <KeySequence keys={h.keys} joins="none" variant="inverse" />
+          {h.label}
+        </span>
+      ))}
+    </>
+  );
+}
 
 /** Props for {@link CommandPalette}. */
 export interface CommandPaletteProps {
@@ -109,7 +125,8 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
  * `<ActionsProvider>`, filters by label or tag, and runs the chosen one. The host
  * owns `open`. The list and each row's `enabled` state are read when it
  * opens and not again while it is open. A row found by a tag and not its
- * label names that tag beside the label. With a `<SelectionContextProvider>`
+ * label names that tag beside the label. An entry whose action carries
+ * settings opens their form in a dialog rather than running bare. With a `<SelectionContextProvider>`
  * in scope the footer says how much is selected.
  */
 export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {
@@ -125,6 +142,8 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
       setPicked(null);
     }
   }
+  // An entry carrying settings, whose form opens once the palette has closed.
+  const [settingsOf, setSettingsOf] = useState<ActionItem | null>(null);
   const items = usePaletteItems(open, query);
   const { registry, filtered } = items;
 
@@ -148,6 +167,10 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   const run = (item: ActionItem) => {
     if (!items.enabledOf(item).enabled) return;
     onClose();
+    if (item.action.settings) {
+      setSettingsOf(item);
+      return;
+    }
     queueMicrotask(() => {
       registry?.trigger(item.action.id, item.params);
     });
@@ -171,56 +194,49 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   const listId = useId();
 
   return (
-    <Dialog
-      isOpen={open}
-      onOpenChange={(next) => { if (!next) onClose(); }}
-      isDismissable
-      title="Commands"
-      showCloseButton={false}
-      className={styles.palette}
-      bodyClassName={styles.body}
-      footer={
-        <>
-          {headerText && <span className={styles.selection}>{headerText}</span>}
-          {HINTS.map((h) => (
-            <span className={styles.hint} key={h.label}>
-              <KeySequence keys={h.keys} joins="none" variant="inverse" />
-              {h.label}
-            </span>
-          ))}
-        </>
-      }
-    >
-      <input
-        className={styles.input}
-        type="text"
-        placeholder="Search actions…"
-        aria-label="Search actions"
-        role="combobox"
-        aria-expanded={filtered.length > 0}
-        aria-controls={listId}
-        aria-activedescendant={filtered.length > 0 ? `${listId}-${highlight}` : undefined}
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); setPicked(null); }}
-        onKeyDown={onInputKeyDown}
-        spellCheck={false}
-        autoComplete="off"
-        autoFocus
-      />
-      {!registry ? (
-        <div className={styles.empty}>No actions available.</div>
-      ) : filtered.length === 0 ? (
-        <div className={styles.empty}>No matching actions.</div>
-      ) : (
-        <PaletteList
-          id={listId}
-          items={items}
-          highlight={highlight}
-          reasonLabels={reasonLabels ?? DEFAULT_REASON_LABELS}
-          onHighlight={setPicked}
-          onRun={run}
+    <>
+      <ActionSettingsDialog item={settingsOf} onClose={() => setSettingsOf(null)} />
+      <Dialog
+        isOpen={open}
+        onOpenChange={(next) => { if (!next) onClose(); }}
+        isDismissable
+        title="Commands"
+        showCloseButton={false}
+        className={styles.palette}
+        bodyClassName={styles.body}
+        footer={<PaletteFooter selection={headerText} />}
+      >
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="Search actions…"
+          aria-label="Search actions"
+          role="combobox"
+          aria-expanded={filtered.length > 0}
+          aria-controls={listId}
+          aria-activedescendant={filtered.length > 0 ? `${listId}-${highlight}` : undefined}
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setPicked(null); }}
+          onKeyDown={onInputKeyDown}
+          spellCheck={false}
+          autoComplete="off"
+          autoFocus
         />
-      )}
-    </Dialog>
+        {!registry ? (
+          <div className={styles.empty}>No actions available.</div>
+        ) : filtered.length === 0 ? (
+          <div className={styles.empty}>No matching actions.</div>
+        ) : (
+          <PaletteList
+            id={listId}
+            items={items}
+            highlight={highlight}
+            reasonLabels={reasonLabels ?? DEFAULT_REASON_LABELS}
+            onHighlight={setPicked}
+            onRun={run}
+          />
+        )}
+      </Dialog>
+    </>
   );
 }

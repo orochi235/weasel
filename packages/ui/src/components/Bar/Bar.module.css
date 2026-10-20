@@ -241,7 +241,8 @@
   padding: 0 var(--wzl-space-3);
 }
 
-.action:hover:not([disabled], [aria-disabled='true']) {
+.action:hover:not([disabled], [aria-disabled='true']),
+.action[aria-expanded='true'] {
   background: var(--wzl-border);
 }
 

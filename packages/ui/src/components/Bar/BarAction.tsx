@@ -3,6 +3,7 @@ import { Focusable } from '../Tooltip/Focusable';
 import type { PrefAction } from '@weasel-js/prefs';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
+import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
 import { segmentTooltipContent } from '../segmentTooltip';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Bar.module.css';
@@ -26,6 +27,8 @@ export interface BarActionButtonProps {
   disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
+  /** It opens a dialog, which is open now. Leave unset for a button that opens nothing. */
+  expanded?: boolean;
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
   missing?: string;
   onPress: () => void;
@@ -41,7 +44,7 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, disabled = false, active, missing, onPress, disabledReason, preview } = props;
+  const { label, description, icon, shortcut, row = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
   const labeled = row || props.labeled === true;
   const dead = missing !== undefined;
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
@@ -62,6 +65,7 @@ export function BarActionButton(props: BarActionButtonProps) {
           aria-disabled={disabled || dead || undefined}
           {...(disabled && disabledReason !== undefined ? { 'aria-description': disabledReason } : {})}
           aria-pressed={active}
+          {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}
           disabled={disabled && !explained}
           className={[s.action, words && s.actionLabeled, row && s.actionRow].filter(Boolean).join(' ')}
           {...(dead ? { 'data-missing': missing } : {})}
@@ -116,6 +120,7 @@ export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: st
 }
 
 function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
-  const { press, ...button } = useLeafAction(leaf, path, disabled);
+  const { press, settings, ...button } = useLeafAction(leaf, path, disabled);
+  if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} />;
   return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} onPress={press} />;
 }
