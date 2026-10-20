@@ -4,78 +4,71 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 05:40)
+## Overnight pass, 2026-10-20 (status at 06:50)
 
-For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
-marked "overnight pass". Nothing is pushed.
+For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
+"overnight pass"; each line there names how to read it back. Nothing is pushed.
 
-**`main` is green at `1c3dbb092`** (full fleet run on msb-uai: 27858 passed, 0 failed).
+**`main` is green at `149218ffd`** (full fleet run on teitou: 27922 passed, 0 failed). Twenty-one
+merges; fourteen TODO entries retired.
 
-Merged:
-- `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
-  and `groupSelector`. Rulings: Up and Down stop at the edges, Home and End span the whole
-  palette, `rovingTarget` and `rovingGridTarget` are exported. Left and Right mirror under
-  right-to-left (a later arc).
-- `moveNodes` and `moveNodesOps` in core move ids the way a drag commits them; weaselchart's
-  stencil drop inserts then moves in one undo step, with no probe insert. Rulings: not 2D-only, a
-  zero delta commits nothing, `ingest` and paste declare three more deps, the undo entry reads "Drop".
-- A disabled bar button says why: `useLeafAction`'s `reason` is now `disabledReason`, and a bar
-  button disabled with a reason is `aria-disabled` and focusable. guides builds node gates only on
-  a point gesture's path (no bug there: `siblingIds` already skipped hidden nodes).
-- `selectTool.rotate: false` is decided once, in preset resolution. Ruling: it is about the select
-  tool only; the rotate action stays registered, the handle is hidden, and a re-shown handle is
-  inert and silent.
-- The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
-  msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
-  around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
-- Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
-  for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
-  viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
-- Nothing outside labkit's passthrough imports the `@weasel-js/ui` barrel: five new subpaths
-  (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
-- A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
-  the command palette names it) and `SelectionPanel` (new core export `routeKind`).
-- A move, resize or rotate preview carries pose once, in the scene's overrides; the ghost and the
-  selection chrome read `effectivePose`, and the three handles drop `previewPose`.
-- forge's "ResizeObserver loop" error, raised on every forge page: labkit's `SidebarPanes` kept
-  observing a section bar after windease removed its panel. It now observes each bar from mount
-  to removal (a browser test mounts a whole `Lab`).
-- The bone and weight tools moved out of core into a new `@weasel-js/rig` (breaking for core's
-  barrel; the changeset says so). It has never been published: the next release publishes it for
-  the first time. A checkout needs `npm ci` before a dev server there resolves `@weasel-js/rig`.
-- GitHub CI's Node 22 leg, red on every push since 2026-10-19 (the fleet runs only Node 24): the
-  icon plugin now walks its parse tree itself, and the leg's failing files pass on Node 22 on the
-  fleet. CI has not run it, since nothing is pushed. Still open there, filed as a P2 under
-  "Release-gate & build hygiene": the fleet runs neither Node 22 nor Linux Chromium; ten Linux
-  browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
-- `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
-  (a real-mouse browser test drags over a lens).
-- Grid snapping and node length fields read a container's unit scope (no app passes the new
-  options yet, so nothing is seen in a browser), an insert gesture included through a new
-  `SnapBegin.parent`; the drawn grid per scope is filed.
-- Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
-  session takes its key from its name.
-- Both consumer smoke tests CI runs pass again (both failed on `main`; 45 packages, rig included,
-  run on keiei). Filed as a P2: the fleet gate skips every CI step after the build, the smokes
-  among them, so nothing checks them before a merge.
-- The diagram containers double-click test that failed only in full runs: its helper waited a
-  frame between clicks, and under load the gap passed the 600 ms double-click window (reproduced
-  with a 650 ms stall). The engine half, also merged: the window is measured from each event's own
-  time, so a long task between a user's two clicks no longer drops a double-click (a real-Chromium
-  test stalls the page between them).
-- Every params surface (form, panel, labkit) reads a leaf's value through one function,
-  `prefLeafValue`: absent shows the default, `null` counts as absent (not for a paint). Its tests
-  were never seen failing: the red run synced the fixed tree.
-- weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
-  canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
-  canvas for good (both failing logs carry the error). Every pixel reader that made a bare
-  `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
-  one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
-  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call or one without a stencil,
-  all merged. LabLightbox's test and labkit's 3D example were opening their shared buffer first
-  without a stencil (measured), and now do not.
+🔴 **GitHub CI on `main` has been red since 2026-10-19 04:11**, unseen because the fleet runs only
+Node 24 on macOS. The Node 22 leg's cause is fixed here (the icon plugin walks its parse tree
+itself) and passes on Node 22 on the fleet, but CI has not run it: nothing is pushed. Also open
+there, in the P2 "CI tests Node 22 and Linux Chromium": ten Linux-only browser failures last seen
+00:45 with no run since, and Visual Regression failing 7 of 87.
 
-In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
+🧨 **API changes made on my rulings**, each one commit plus a `patch` changeset saying so:
+`useLeafAction`'s `reason` is `disabledReason`; `RunStoryOptions.viewport` is gone; move, resize and
+rotate handles drop `previewPose` (read `effectivePose`); `bone` and `weight` left core for a new
+`@weasel-js/rig`; `useLoupe` alone no longer aims (it needs `<LoupeGestures>`); a clearable params
+leaf holding nothing draws cleared. Revert the merge to undo any one.
+
+⚠️ **`@weasel-js/rig` has never been published.** The next release publishes it for the first
+time, and a checkout needs `npm ci` before a dev server there resolves it.
+
+⚠️ **The fleet gate skips every CI step after the build**, both consumer smokes among them; both
+had failed on `main` for a day under green fleet runs. Filed as a P2.
+
+✅ **Engine and UI:**
+- `ToolPalette` grid arrows (`useRovingTabIndex` `columns`), mirrored under right-to-left.
+- `moveNodes` moves ids as a drag commits them; weaselchart's stencil drop is insert-then-move.
+- A disabled bar button says why.
+- `selectTool.rotate: false` decided once, in preset resolution.
+- One node-kind classifier, the routing kind (`routeKind`), for canvas, palette and panel.
+- A transform preview carries pose once, in the scene's overrides.
+- `hover` takes `held`; the loupe aims through it.
+- Grid snapping and length fields read a container's unit scope, inserts included
+  (`SnapBegin.parent`). The document stores world units.
+- Every params surface reads a leaf's value through `prefLeafValue`.
+- A renamed baseline pref keeps its stored key in the schema editor.
+- The double-click window is measured from each event's own time.
+- The HUD's every-frame text makes about 38% less garbage (8.4 ms a frame at 5,000 glyphs, from
+  11.3; the DOM's 6.1 still wins, so its entry stays).
+- Five ui subpaths; nothing but labkit's passthrough imports the barrel.
+
+✅ **Tests that failed only under load, each fixed at its cause:** Rail Filterable (a 6–13 s
+Chromium page resize per story viewport), weaselchart's line jumps (a pixel reader opened the
+canvas's context first, without a stencil; now one shared reader, `CANVAS_CONTEXT_ATTRIBUTES`, and
+a lint rule), the diagram containers double-click (a frame's wait between clicks), and forge's
+"ResizeObserver loop" error on every page (a stale observer in labkit's sidebar). Both consumer
+smokes pass again, and `check:imports` now counts a `testing/` module a manifest exports.
+
+📌 **Still running:** why forge's timeline and site's routing tests time out only on keiei (its
+worktree is `.claude/worktrees/agent-a354aa04dff67079c`). If it finishes after this, its result is
+its own commit on that branch, unmerged.
+
+ℹ️ **Weak evidence:** the params absent-value tests were never seen failing (the red run synced the
+fixed tree); the unit-scope grid tests likewise. Nothing tonight was looked at in a browser by a
+person; the list is under "Not seen in a browser". keiei is short on memory and fails two files in
+most full runs (filed P3).
+
+🎫 *Filed: CI's Node 22 and Linux gap (P2), the gate's post-build gap (P2), keiei-only timeouts,
+the drawn grid per unit scope, a rekeyed-then-renamed pref reading as new (all P3).*
+
+🧹 *`main` is far ahead of `origin/main`; nothing pushed. One agent pushed its branch against its
+brief and deleted it at once; it is not on origin and started no CI run. An untracked
+`scripts/time-overlap.sh` in the main checkout is not from this pass.*
 
 ## State
 
