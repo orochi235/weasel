@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { checkPipeline } from './check';
 import {
   addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, nextWireId,
-  reconnectWire, removeStages, removeWires, setParam,
+  reconnectWire, removeStages, removeWires, setParam, setWireRoute,
 } from './edit';
 import { nodeGraph } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
@@ -112,5 +112,31 @@ describe('edit', () => {
     expect(text).toContain('6 px');
     expect(text).toContain('2.0');
     expect(text).not.toContain('stale');
+  });
+});
+
+describe('wire routes', () => {
+  const routed = (): EffectDoc => {
+    const d = ensureWireIds(built());
+    return setWireRoute(setWireRoute(d, 'w1', [{ x: 5, y: 40 }]), 'w2', [{ x: 15, y: 40 }]);
+  };
+
+  it('setWireRoute keeps a route by wire id beside the pipeline, and an empty one clears it', () => {
+    const d = routed();
+    expect(d.routes).toEqual({ w1: [{ x: 5, y: 40 }], w2: [{ x: 15, y: 40 }] });
+    const before = ensureWireIds(built());
+    expect(setWireRoute(before, 'w1', [{ x: 5, y: 40 }]).pipeline).toBe(before.pipeline);
+    expect(setWireRoute(d, 'w1', []).routes).toEqual({ w2: [{ x: 15, y: 40 }] });
+  });
+
+  it('removeWires and removeStages drop the routes of the wires they take', () => {
+    expect(removeWires(routed(), ['w1']).routes).toEqual({ w2: [{ x: 15, y: 40 }] });
+    expect(removeStages(routed(), ['c']).routes).toEqual({ w1: [{ x: 5, y: 40 }] });
+  });
+
+  it('every other edit carries the routes along', () => {
+    const d = routed();
+    expect(moveStages(d, [{ id: 'a', x: 1, y: 1 }]).routes).toBe(d.routes);
+    expect(addWire(d, { from: ref('a', 'out'), to: ref('c', 'amount') }).routes).toBe(d.routes);
   });
 });

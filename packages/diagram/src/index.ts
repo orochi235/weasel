@@ -111,7 +111,7 @@ export {
   straight,
   withDiagramRegistry,
 } from './edge';
-export type { EdgeRoute, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export type { EdgeRouteOptions, ResolvedRoute, RouteRequest, Router } from './edge';
 export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute } from './edgeTrait';
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
@@ -249,7 +249,7 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange,
+  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

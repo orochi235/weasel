@@ -24,7 +24,7 @@ import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 
 export type { EdgeRoute, NodeMove } from './sceneSync';
-export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange } from './diagramViewProps';
+export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange, RouteChange } from './diagramViewProps';
 
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const sameView = (a: View, b: View) =>
@@ -44,11 +44,11 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, width, height, selected, onSelect, onMove, onConnect, onReconnect, onDelete, onEditLabel, connectBodies,
+  specs: given, width, height, selected, onSelect, onMove, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, connectBodies,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = onReconnect !== undefined || onDelete !== undefined || onEditLabel !== undefined;
+  const edgesPick = onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined;
   const specs = useMemo(() => (edgesPick ? withPickableEdges(given) : given), [edgesPick, given]);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
@@ -119,7 +119,7 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onDelete, onEditLabel, connectBodies, canConnect, portOptions, ambient: extraAmbient,
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   useEffect(() => {
     const canvas = canvasRef.current;

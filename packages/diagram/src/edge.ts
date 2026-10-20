@@ -249,7 +249,7 @@ export function edgeDerivePath<TPose>(
 }
 
 /** An edge's route as {@link edgeDerivePath} draws it, before it becomes a path. */
-export interface EdgeRoute {
+export interface ResolvedRoute {
   /** The two ends, resolved. */
   from: Port;
   to: Port;
@@ -264,7 +264,7 @@ export interface EdgeRoute {
  *  does, answering the route itself; null where that draws nothing. */
 export function edgeRouter<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
-): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => EdgeRoute | null {
+): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>

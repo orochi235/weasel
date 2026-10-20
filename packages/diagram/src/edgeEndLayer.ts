@@ -18,7 +18,7 @@ import {
   type RenderLayer,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { edgeRouter, type EdgeRoute, type Router } from './edge';
+import { edgeRouter, type ResolvedRoute, type Router } from './edge';
 import { diagramEdgeOf, type DiagramEdge } from './edgeTrait';
 import type { GraphNodeLike } from './graph';
 import { offersPorts, type ParticipantPose, type ParticipantSource } from './portAffordance';
@@ -54,7 +54,7 @@ export interface EdgeEnds<TPose> {
   to: ParticipantPose<TPose>;
   points: { from: Vec2; to: Vec2 };
   /** The route as the edge's own `derivePath` draws it. */
-  route: EdgeRoute;
+  route: ResolvedRoute;
 }
 
 /** Options shared by the edge-end affordance and the reconnect action. */
