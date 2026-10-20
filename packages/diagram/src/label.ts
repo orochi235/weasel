@@ -20,6 +20,7 @@ import {
   PATH_C, PATH_L, PATH_Q, forEachSegment, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
 } from '@weasel-js/geom';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
+import { subpathOf } from './subpaths';
 
 const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
 
@@ -64,9 +65,10 @@ function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } 
   return found === null ? null : { point: { x: found.x, y: found.y }, tangent: heading };
 }
 
-/** Where the center of a label `size` big sits along `path`; `null` for a
- *  path with no points. */
-export function labelCenter(path: Path, label: DiagramLabel, size: { width: number; height: number }): Vec2 | null {
+/** Where the center of a label `size` big sits along `whole`, on its first
+ *  subpath; `null` for a path with no points. */
+export function labelCenter(whole: Path, label: DiagramLabel, size: { width: number; height: number }): Vec2 | null {
+  const path = subpathOf(whole, 0) ?? whole;
   const station = typeof label.at === 'object'
     ? nearestStation(path, label.at.near) ?? pointAlongPath(path, 0.5)
     : pointAlongPath(path, typeof label.at === 'number' ? label.at : NAMED[label.at] ?? 0.5);

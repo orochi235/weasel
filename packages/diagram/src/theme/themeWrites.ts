@@ -1,6 +1,6 @@
 /**
  * What applying a theme writes: every color the theme owns, on every box,
- * text row, connector, and label, as new node `data`. A color named in the
+ * text row, connector, label, and off-page tag, as new node `data`. A color named in the
  * owner's `ownStyle` is the author's, and stays.
  */
 import type { NodeStyle } from '../fromData';
@@ -87,6 +87,14 @@ function paintText(data: Data, color: string | undefined, family: string): Data 
   return { ...data, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
 }
 
+/** An off-page tag's `data` in `theme`'s label color and face, on its page color, or `null`. */
+function paintTag(data: Data, theme: DiagramTheme): Data | null {
+  const text = paintText(data, theme.label.fill, themeLabelFamily(theme));
+  const background = recolored(data.background as Paint | undefined, theme.page);
+  if (text === null && background === undefined) return null;
+  return { ...(text ?? data), ...(background ? { background } : {}) };
+}
+
 /** A connector's own colors, and its label's, under `theme`. */
 function edgeLook(trait: Trait, theme: DiagramTheme): { stroke: string; label: string; own: ReadonlySet<StyleField> } {
   const style = roleEdgeStyle(theme, trait.style);
@@ -130,6 +138,11 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
       if (edgeId === null || edgeTrait === null || (ids !== undefined && !ids.has(edgeId))) continue;
       const look = edgeLook(edgeTrait, theme);
       write(node.id, paintText(data, look.own.has('text') ? undefined : look.label, themeLabelFamily(theme)));
+      continue;
+    }
+    if (trait !== null && 'offPageTag' in trait) {
+      const edgeId = ownerOf(node);
+      if (ids === undefined || (edgeId !== null && ids.has(edgeId))) write(node.id, paintTag(data, theme));
       continue;
     }
     if (trait !== null && 'mark' in trait) continue;

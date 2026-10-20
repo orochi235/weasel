@@ -16,6 +16,7 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
+  PathBuilder,
   polylineFromPoints,
   type DerivedDep,
   type Path,
@@ -26,6 +27,7 @@ import {
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
+import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
 import { diagramEdgeOf, type EdgeEnd } from './edgeTrait';
@@ -133,7 +135,9 @@ export function edgeDerivePath<TPose>(
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => Path | null {
   const routeOf = edgeRouter(opts);
   return (node, deps) => {
-    const points = routeOf(node, deps)?.points;
+    const route = routeOf(node, deps);
+    if (route?.stubs !== undefined) return stubsPath(route.stubs);
+    const points = route?.points;
     return points === undefined || points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
   };
 }
@@ -148,6 +152,30 @@ export interface ResolvedRoute {
   waypoints: readonly Vec2[];
   /** The router's answer, `from.point` first and `to.point` last. */
   points: readonly Vec2[];
+  /** Set while the edge is split across pages (`DiagramEdge.offPage`): the
+   *  two runs drawn in place of `points`, one out of `from` to its tag's
+   *  side and one from the other tag's side into `to`. */
+  stubs?: readonly [readonly Vec2[], readonly Vec2[]];
+}
+
+/** How far a split edge's stub runs out of its shape, in world units. */
+export const OFF_PAGE_STUB = 24;
+
+/** The stub end `port` leaves by: along its normal, else toward `toward`. */
+function stubTip(port: Port, toward: Vec2): Vec2 {
+  const n = port.normal ?? unit(toward.x - port.point.x, toward.y - port.point.y);
+  return { x: port.point.x + n.x * OFF_PAGE_STUB, y: port.point.y + n.y * OFF_PAGE_STUB };
+}
+
+function unit(x: number, y: number): Vec2 {
+  const len = Math.hypot(x, y);
+  return len === 0 ? { x: 1, y: 0 } : { x: x / len, y: y / len };
+}
+
+function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
+  const b = new PathBuilder();
+  for (const run of stubs) run.forEach((p, i) => (i === 0 ? b.moveTo(p.x, p.y) : b.lineTo(p.x, p.y)));
+  return b.build();
 }
 
 /** Routes an edge between its two dependencies the way {@link edgeDerivePath}
@@ -180,7 +208,10 @@ export function edgeRouter<TPose>(
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
-    return { from, to, waypoints, points: routerOf(edge, opts.routers)({ from, to, waypoints, route: edge.route }) };
+    const points = routerOf(edge, opts.routers)({ from, to, waypoints, route: edge.route });
+    if (edge.offPage === undefined) return { from, to, waypoints, points };
+    const stubs = [[from.point, stubTip(from, to.point)], [stubTip(to, from.point), to.point]] as const;
+    return { from, to, waypoints, points, stubs };
   };
 }
 
@@ -207,6 +238,7 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
       [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_OFF_PAGE_TAG]: OFF_PAGE_TAG_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
     },
     layout: {

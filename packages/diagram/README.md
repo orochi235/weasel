@@ -232,6 +232,49 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
 
+### Connectors between pages
+
+On a scene with pages (core's `core:pages` document value), a connector whose
+two shapes sit on different pages draws nothing across the gap. Each end draws
+a stub `OFF_PAGE_STUB` (24) world units out of its shape, ending at a tag that
+reads the other page's name and a reference letter, such as "Page 2 · A". The
+start stub ends in the connector's end marker, so it reads as leaving the page.
+A shape in the gap between pages belongs to none, and its connectors stay
+whole.
+
+`useOffPageMarkers(scene)` splits and joins connectors as edits move their
+ends or change the pages, in that edit's own undo entry; installing it
+recomputes nothing. `installOffPageMarkers(scene)` does the same without React.
+Its pass runs at `DIAGRAM_PASS_ORDER.offPage`, before routing, so the `avoid`
+router skips a split connector and routes it again in the entry that joins it.
+A split connector shows no route handles and keeps its waypoints for when it
+joins.
+
+```tsx
+function Markers({ scene }) {
+  useOffPageMarkers(scene);
+  return null;
+}
+
+const offPage = diagramOffPage();
+<SceneCanvas scene={scene} ambient={[offPage.contribution]} /* … */>
+  <Markers scene={scene} />
+</SceneCanvas>
+```
+
+| Surface | What it is |
+|---|---|
+| `DiagramEdge.offPage` | `{ ref, from, to }`: the reference and the two ends' page ids, written by the pass |
+| `offPageSplits`, `nextOffPageRef` | which connectors split, as arithmetic on page rects and end boxes; refs run A…Z, AA… and stay while a split does |
+| `offPageTagSpec`, `offPageTagOf` | a tag: a text node with a background, id `<edge>/offpage-<end>`, that stations itself past its stub |
+| `offPageOps` | the pass's ops for named connectors, or `'all'`, for a document saved before it had markers |
+| `diagramOffPage`, `createFollowOffPageAction` | a double-click on a tag selects the far shape and fits the view to its page; `follow` replaces that |
+| `offPageTargetOf` | where a tag leads: the far shape and its page |
+
+Tags take the theme's label color and face on its page color, and applying a
+theme recolors them. A host whose text editing opens on any text node should
+leave tags out: the pass owns their text.
+
 ### Overlays and hover
 
 `overlays` holds DOM against a node, a group or an edge, and places it again
