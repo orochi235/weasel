@@ -20,6 +20,8 @@ over plain polylines, is in `@weasel-js/diagram/layout`.
 
 Core's `TransformFollower.preview` gets a second argument: the data the followers before it
 previewed, by id, so a follower can build on a route an earlier one previewed. A follower that
-calls `preview` itself now passes it.
+calls `preview` itself now passes it. `useAvoidRouting`'s drag preview reads the waypoints a
+`waypointFollower` registered before it carried, rather than carrying them itself, so without one
+the preview leaves waypoints where the commit will.
 
 weaselchart adds Format › Connector › Line jumps.
