@@ -7,7 +7,7 @@ import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
-import type { Node, Scene, SerializedScene } from 'core/scene/types';
+import type { Node, NodeId, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import type { ContentHandlerEntry } from 'features/ingestion';
 import type { SceneCanvasSnap } from 'features/snap/types';
@@ -443,6 +443,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * entirely (also unhittable), or to `always` to force-show.
      */
     chromeVisibility?: import('features/chrome-caps').VisibilityRules;
+
+    /** Called when the topmost pickable node under the pointer changes, and with
+     *  `null` once there is none or the pointer leaves the canvas. */
+    onHover?: (id: NodeId | null) => void;
 
     /**
      * The app's mode registry (`createModeRegistry` in `@weasel-js/modes`).

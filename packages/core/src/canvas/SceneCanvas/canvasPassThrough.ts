@@ -10,7 +10,7 @@ const OWN_PROPS = [
   'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions',
   'initialActiveTool', 'ambient', 'versionCheck', 'longPress', 'viewport', 'layers', 'actions',
   'tune', 'describeKind', 'animator', 'views', 'children', 'debug', 'alphaFor', 'layerVisibility',
-  'layerOrder', 'isPointerInteractive', 'isolatedGroup', 'onDoubleClick', 'onClick', 'chromeVisibility', 'modes',
+  'layerOrder', 'isPointerInteractive', 'isolatedGroup', 'onDoubleClick', 'onClick', 'onHover', 'chromeVisibility', 'modes',
   'pathEdit', 'defaultPathEdit', 'getFocused', 'cursorCoordsHud', 'pickHud', 'modalityHud', 'view',
   'onViewChange', 'defaultView', 'viewBounds', 'redrawOn', 'snap',
 ] as const satisfies readonly (keyof Props)[];

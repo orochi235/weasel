@@ -29,8 +29,9 @@ export function useSceneHover(args: {
   viewRef: { readonly current: View };
   nodeAtPointRef: { readonly current: NodeAtPoint | undefined };
   enabled: boolean;
+  onChange?: (id: NodeId | null) => void;
 }): HoverTracking {
-  const { canvasApiRef, viewRef, nodeAtPointRef, enabled } = args;
+  const { canvasApiRef, viewRef, nodeAtPointRef, enabled, onChange } = args;
   const surfaceViewRegistry = useOptionalViewRegistry();
   return useHoverTracking({
     nodeAtClientPoint: (clientX, clientY) => {
@@ -49,6 +50,7 @@ export function useSceneHover(args: {
       return hit ? { id: hit.id as NodeId } : null;
     },
     enabled,
+    ...(onChange ? { onChange } : {}),
   });
 }
 
@@ -126,7 +128,7 @@ export function useSceneCanvasChrome(args: {
 }) {
   const { rules, viewRef } = args;
   const { getHover, canvasRef: trackHoverOn } = useSceneHover({
-    ...args.hover, viewRef, enabled: rules.chromeVisibility !== undefined,
+    ...args.hover, viewRef, enabled: rules.chromeVisibility !== undefined || args.hover.onChange !== undefined,
   });
   const chromeRules = useChromeRules(rules);
   const caps = useSurfaceChromeCaps({

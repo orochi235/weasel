@@ -9,6 +9,8 @@ export interface UseHoverTrackingArgs {
   /** Topmost id under a client point, or null. */
   nodeAtClientPoint: (clientX: number, clientY: number) => { id: NodeId } | null;
   enabled?: boolean;
+  /** Called when the hovered id changes, `null` once the pointer is over no node or has left. */
+  onChange?: (id: NodeId | null) => void;
 }
 
 /** What `useHoverTracking` returns. Both members keep their identity. */
@@ -27,27 +29,32 @@ export function useHoverTracking(args: UseHoverTrackingArgs): HoverTracking {
   const { nodeAtClientPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);
   const nodeAtRef = useLatest(nodeAtClientPoint);
+  const onChangeRef = useLatest(args.onChange);
   const elementRef = useRef<HTMLElement | null>(null);
   const enabledRef = useRef(enabled);
   const detachRef = useRef<(() => void) | null>(null);
 
+  const hover = useCallback((id: NodeId | null) => {
+    if (hoverRef.current === id) return;
+    hoverRef.current = id;
+    onChangeRef.current?.(id);
+  }, [onChangeRef]);
+
   const sync = useCallback(() => {
     detachRef.current?.();
     detachRef.current = null;
-    hoverRef.current = null;
+    hover(null);
     const el = elementRef.current;
     if (!el || !enabledRef.current) return;
-    const onMove = (e: PointerEvent) => {
-      hoverRef.current = nodeAtRef.current(e.clientX, e.clientY)?.id ?? null;
-    };
-    const onLeave = () => { hoverRef.current = null; };
+    const onMove = (e: PointerEvent) => hover(nodeAtRef.current(e.clientX, e.clientY)?.id ?? null);
+    const onLeave = () => hover(null);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerleave', onLeave);
     detachRef.current = () => {
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
     };
-  }, [nodeAtRef]);
+  }, [nodeAtRef, hover]);
 
   useEffect(() => {
     enabledRef.current = enabled;
@@ -55,9 +62,9 @@ export function useHoverTracking(args: UseHoverTrackingArgs): HoverTracking {
     return () => {
       detachRef.current?.();
       detachRef.current = null;
-      hoverRef.current = null;
+      hover(null);
     };
-  }, [enabled, sync]);
+  }, [enabled, sync, hover]);
 
   const canvasRef = useCallback((element: HTMLElement | null) => {
     if (elementRef.current === element) return;
