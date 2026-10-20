@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createScene } from '@weasel-js/core';
-import { DIAGRAM_THEME_KEY, DIAGRAM_THEMES, applyDiagramTheme, diagramScene, withDiagramRegistry, type DiagramTheme } from '@weasel-js/diagram';
+import {
+  DIAGRAM_THEME_KEY, DIAGRAM_THEMES, applyDiagramTheme, diagramScene, setDiagramFontSize, withDiagramRegistry, type DiagramTheme,
+} from '@weasel-js/diagram';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import type { ChartScene } from '../chartDocument';
 import { chartThemeOf } from './themeCommands';
@@ -12,6 +14,8 @@ afterEach(cleanup);
 const paper = DIAGRAM_THEMES.paper!;
 const fillOf = (scene: ChartScene, id: string) =>
   (scene.get(id as never)!.data as { fill: { paint: { color: string } } }).fill.paint.color;
+
+const textSizeOf = (scene: ChartScene, id: string) => (scene.get(id as never)!.data as { style: { fontSize: number } }).style.fontSize;
 
 function setup() {
   const scene = createScene({
@@ -78,5 +82,19 @@ describe('ThemePanel', () => {
     expect(chartThemeOf(scene).roles.accent).toBeUndefined();
     expect(fillOf(scene, 'a')).toBe(paper.roles.default!.fill);
     expect(scene.historyIndex()).toBe(depth + 3);
+  });
+  it('moves existing text with the theme size, one undo entry, but not a size set by hand', () => {
+    const { scene, depth } = setup();
+    setDiagramFontSize(scene, ['a'], 20);
+    const size = screen.getByRole('spinbutton', { name: 'Size' }) as HTMLInputElement;
+    act(() => {
+      fireEvent.change(size, { target: { value: '16' } });
+      fireEvent.blur(size);
+    });
+    expect(textSizeOf(scene, 'b/1')).toBe(16);
+    expect(textSizeOf(scene, 'a/1')).toBe(20);
+    expect(scene.historyIndex()).toBe(depth + 2);
+    scene.undo();
+    expect(textSizeOf(scene, 'b/1')).toBe(12);
   });
 });

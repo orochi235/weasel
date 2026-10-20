@@ -344,12 +344,15 @@ such as a look's value types. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprin
 
 A theme writes literal colors into the scene, so whatever draws or exports the scene needs no
 theme. A shape or connector names its role in its trait's `style`, and lists the colors its
-author set by hand in `ownStyle`; a theme leaves those.
+author set by hand in `ownStyle`; a theme leaves those. A theme whose font size differs from the
+one the scene was in moves every text by the step between them, keeping a title or label's offset
+from the body size, except text whose owner lists `'size'` in `ownFont`.
 
 ```ts
 applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`
 setDiagramStyle(scene, selection.get(), 'warning');          // name a role, and recolor in it
 setDiagramColor(scene, selection.get(), 'fill', '#ffcc00');  // by hand: survives the next theme
+setDiagramFontSize(scene, selection.get(), 16);              // by hand, recorded in `ownFont`
 const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's theme, or a fallback
 ```
 

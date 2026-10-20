@@ -272,7 +272,7 @@ export type {
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';
 export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
-export type { DiagramFont, DiagramRole, DiagramTheme, StyleField } from './theme/types';
+export type { DiagramFont, DiagramRole, DiagramTheme, FontField, StyleField } from './theme/types';
 export { DIAGRAM_THEMES } from './theme/themes';
 export { diagramThemeFromTokens } from './theme/fromTokens';
 export {
@@ -281,7 +281,7 @@ export {
 } from './theme/resolve';
 export { themeWrites } from './theme/themeWrites';
 export type { ThemedNode, ThemedScene } from './theme/themeWrites';
-export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './theme/applyTheme';
+export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle } from './theme/applyTheme';
 export type { ApplyDiagramThemeOptions, DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
 export {
   addThemeRole, editableTheme, forkTheme, isShippedTheme, removeThemeRole, renameThemeRole, setThemeValue, themeRoles,

@@ -29,7 +29,7 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
   const apply = (path: ThemePath, value: string | number) => {
     const current = chartThemeOf(scene);
     if (themeValue(current, path) === value) return;
-    applyDiagramTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path) });
+    applyDiagramTheme(scene, setThemeValue(editableTheme(current), path, value), EDIT_THEME_LABEL, { coalesceKey: keyOf(path), from: current });
   };
   const flush = () => {
     const next = pending.current;
@@ -51,9 +51,10 @@ export function useThemeEdit(scene: ChartScene): ThemeEdit {
       scene.history.seal();
     },
     change(edit, label) {
-      const base = editableTheme(chartThemeOf(scene));
+      const current = chartThemeOf(scene);
+      const base = editableTheme(current);
       const next = edit(base);
-      if (next !== base) applyDiagramTheme(scene, next, label);
+      if (next !== base) applyDiagramTheme(scene, next, label, { from: current });
     },
   };
 }

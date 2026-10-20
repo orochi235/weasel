@@ -5,7 +5,7 @@
 import type { Scene } from '@weasel-js/core';
 import { diagramThemeOf, themeDocValue } from './resolve';
 import { themeWrites, type ThemedScene } from './themeWrites';
-import { DIAGRAM_THEME_KEY, type DiagramTheme, type StyleField } from './types';
+import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Paint = { paint?: Record<string, unknown> } & Record<string, unknown>;
@@ -17,6 +17,8 @@ export interface DiagramStyleState {
   kind: 'shape' | 'connector';
   role?: string;
   own: readonly StyleField[];
+  /** The parts of its text face the author set: a theme's size change leaves those. */
+  ownFont: readonly FontField[];
 }
 
 /** The style state of a shape (a body) or a connector, or `null` for anything else — a text row,
@@ -27,7 +29,11 @@ export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | nul
   const kind = 'from' in trait && 'to' in trait ? 'connector' : 'outline' in trait && !('group' in trait) && !('container' in trait) ? 'shape' : null;
   if (kind === null) return null;
   const role = trait.style as string | undefined;
-  return { kind, ...(role !== undefined ? { role } : {}), own: (trait.ownStyle as readonly StyleField[] | undefined) ?? [] };
+  return {
+    kind, ...(role !== undefined ? { role } : {}),
+    own: (trait.ownStyle as readonly StyleField[] | undefined) ?? [],
+    ownFont: (trait.ownFont as readonly FontField[] | undefined) ?? [],
+  };
 }
 
 function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>): void {
@@ -39,6 +45,9 @@ export interface ApplyDiagramThemeOptions {
   /** Fold this apply into the undo entry before it when that one was made under the same key, so a
    *  run of applies, such as a theme color dragged, undoes as one. See `scene.batch`. */
   coalesceKey?: string;
+  /** The theme the scene is in now, whose font size text moves from. Default the scene's own
+   *  `diagram:theme`; a host that draws a scene naming none in another theme passes that. */
+  from?: DiagramTheme;
 }
 
 /** Recolors the whole scene in `theme` and saves it as the `diagram:theme` document value, as one
@@ -46,10 +55,11 @@ export interface ApplyDiagramThemeOptions {
 export function applyDiagramTheme(
   scene: AnyScene, theme: DiagramTheme, label = `Theme: ${theme.name}`, opts: ApplyDiagramThemeOptions = {},
 ): void {
+  const from = opts.from ?? diagramThemeOf(scene);
   scene.batch(label, () => {
-    writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme));
+    writeAll(scene, themeWrites(scene as unknown as ThemedScene, theme, undefined, from));
     scene.doc.set(DIAGRAM_THEME_KEY, themeDocValue(theme));
-  }, opts);
+  }, opts.coalesceKey !== undefined ? { coalesceKey: opts.coalesceKey } : {});
 }
 
 /** Options for {@link setDiagramStyle} and {@link setDiagramColor}. */
@@ -112,6 +122,27 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
       for (const t of textNodesOf(scene, id, state.kind)) {
         const text = scene.get(t as never)!.data as Data;
         scene.update(t as never, { data: { ...text, fill: painted(text.fill, color) } });
+      }
+    }
+  });
+}
+
+/**
+ * Sets the text of every shape and connector among `ids` — a shape's rows, a
+ * connector's label — to `size`, and records it in their `ownFont`, so a
+ * theme's size change leaves it. One undo entry.
+ */
+export function setDiagramFontSize(scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
+  scene.batch(opts.label ?? 'Set text size', () => {
+    for (const id of ids) {
+      const node = scene.get(id as never);
+      const state = node === undefined ? null : diagramStyleOf(node);
+      if (state === null) continue;
+      const data = node!.data as Data;
+      if (!state.ownFont.includes('size')) scene.update(id as never, { data: withTrait(data, { ...data.diagram, ownFont: [...state.ownFont, 'size'] }) });
+      for (const t of textNodesOf(scene, id, state.kind)) {
+        const text = scene.get(t as never)!.data as Data & { style?: Record<string, unknown> };
+        scene.update(t as never, { data: { ...text, style: { ...text.style, fontSize: size } } });
       }
     }
   });

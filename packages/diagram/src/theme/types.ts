@@ -13,7 +13,7 @@ export const DIAGRAM_ROLES = [
 /** The id of one of {@link DIAGRAM_ROLES}. A theme may style roles of its own besides. */
 export type DiagramRole = (typeof DIAGRAM_ROLES)[number]['id'];
 
-export type { StyleField } from './styleField';
+export type { FontField, StyleField } from './styleField';
 
 /** The face a theme sets diagram text in. A text row keeps its own size. */
 export interface DiagramFont {

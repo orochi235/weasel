@@ -30,7 +30,7 @@ export const THEME_MENU: PrefGroup = pref.group('', {
 });
 
 function ThemeCommand({ scene, theme }: { scene: ChartScene; theme: DiagramTheme }): null {
-  useCommand(themeActionId(theme.id), theme.name, () => applyDiagramTheme(scene, theme), {
+  useCommand(themeActionId(theme.id), theme.name, () => applyDiagramTheme(scene, theme, undefined, { from: chartThemeOf(scene) }), {
     active: () => chartThemeOf(scene) === theme,
   });
   return null;
@@ -45,7 +45,7 @@ async function importTheme(scene: ChartScene): Promise<void> {
   if (file === null) return;
   const result = parseDiagramTheme(await file.text());
   if ('errors' in result) throw new Error(result.errors.join('; '));
-  applyDiagramTheme(scene, result.theme, `Import theme: ${result.theme.name}`);
+  applyDiagramTheme(scene, result.theme, `Import theme: ${result.theme.name}`, { from: chartThemeOf(scene) });
 }
 
 /** Registers Format › Theme's commands. Each shipped theme applies as one undo entry and reads as
