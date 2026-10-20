@@ -83,7 +83,7 @@ function dragFrames(): void {
     times.push(ms(t0));
     dirty.push(routes.size);
   }
-  console.log(`1/${CASES} drag frame   200 shapes  300 connectors  dirty ${String(Math.max(...dirty)).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget    4.00 ms`);
+  process.stdout.write(`1/${CASES} drag frame   200 shapes  300 connectors  dirty ${String(Math.max(...dirty)).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget    4.00 ms\n`);
 }
 
 function commits(): void {
@@ -101,7 +101,7 @@ function commits(): void {
     dirty.push(routes.size);
     input = stored(next, routes);
   }
-  console.log(`2/${CASES} commit       200 shapes  300 connectors  dirty ${String(Math.max(...dirty)).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget   30.00 ms`);
+  process.stdout.write(`2/${CASES} commit       200 shapes  300 connectors  dirty ${String(Math.max(...dirty)).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget   30.00 ms\n`);
 }
 
 function fullRoute(): void {
@@ -114,7 +114,7 @@ function fullRoute(): void {
     times.push(ms(t0));
     failed = [...routes.values()].filter((r) => r === null).length;
   }
-  console.log(`3/${CASES} full route   500 shapes  800 connectors  unrouted ${String(failed).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget  150.00 ms`);
+  process.stdout.write(`3/${CASES} full route   500 shapes  800 connectors  unrouted ${String(failed).padStart(3)}  median ${fmt(median(times))} ms  max ${fmt(Math.max(...times))} ms  budget  150.00 ms\n`);
 }
 
 dragFrames();

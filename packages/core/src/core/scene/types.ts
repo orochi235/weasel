@@ -12,10 +12,10 @@ import type { SceneChanges } from './sceneChanges';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
 import type { SceneDocValues } from './docValues';
+import type { SceneEditPasses } from './editPass';
 import type { RectPose } from '../geometry/rectPose';
-export type { RectPose };
+export type { RectPose, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
-export type { UseSceneOptions };
 export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
 
@@ -258,7 +258,7 @@ export type SceneArrivalHandler<TPose> = (
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -424,13 +424,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  removes this handler, and does nothing once another has replaced it.
    *  See {@link SceneArrivalHandler}. */
   setArrivalHandler(handler: SceneArrivalHandler<TPose> | null): () => void;
-
-  /** Add a pass that hears each live edit once its own mutations and the
-   *  arrival handler have run, and answers with ops that join the same undo
-   *  entry. A bare scene call runs as an edit of its own while any pass is
-   *  added. Passes do not hear their own writes, and undo, redo, and history
-   *  replays never run them. Returns the pass's remover. */
-  addEditPass(pass: import('./editPass').SceneEditPass): () => void;
 
   /** Apply a batch of ops against `adapter` as one undo entry.
    *

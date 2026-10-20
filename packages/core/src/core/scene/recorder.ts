@@ -75,10 +75,11 @@ export function createRecorder(env: RecorderEnv): Recorder {
   /** The kit ops applied since the innermost `capturing` opened. */
   let captured: Op[] | null = null;
 
-  /** `fn`, then the poses its arrivals settle to when this edit owns them. */
-  function withArrivalsSettled<T>(fn: () => T, owns: boolean): T {
+  /** `fn`, then the poses its arrivals settle to and its passes' ops, for whichever this edit owns. */
+  function withArrivalsSettled<T>(fn: () => T, owns: boolean, ownsPasses = false): T {
     const result = fn();
     if (owns) for (const p of arrivals.settle()) env.writePose(p.id, p.to);
+    if (ownsPasses) passes.run();
     return result;
   }
 
@@ -93,11 +94,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
       if (!outermost) return fn();
       try {
         const result = log.atomically(
-          () => {
-            const out = withArrivalsSettled(fn, ownsArrivals);
-            if (ownsPasses) passes.run();
-            return out;
-          },
+          () => withArrivalsSettled(fn, ownsArrivals, ownsPasses),
           () => (collecting?.ops.length ?? 0) > 0,
         );
         if (ownsArrivals) arrivals.emitReflow();
@@ -123,8 +120,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
   }
 
   function record(kind: string, payload: unknown, label: string): void {
-    // A bare edit runs as a batch of its own while passes listen, so they
-    // hear it and their ops land in its entry.
+    // While passes listen, a bare edit is a batch of its own, so their ops land in its entry.
     if (mode.records() && !collecting && passes.any()) return void batch(label, () => record(kind, payload, label));
     passes.note(kind, payload);
     env.labeled(label, 'call', () => {

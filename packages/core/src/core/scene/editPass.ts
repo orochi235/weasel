@@ -23,6 +23,16 @@ export interface SceneEditSummary {
 /** A scene edit pass: the ops `summary`'s edit also makes, or null for none. */
 export type SceneEditPass = (summary: SceneEditSummary) => readonly Op[] | null;
 
+/** The scene's edit-pass member. */
+export interface SceneEditPasses {
+  /** Add a pass that hears each live edit once its own mutations and the
+   *  arrival handler have run, and answers with ops that join the same undo
+   *  entry. A bare scene call runs as an edit of its own while any pass is
+   *  added. Passes do not hear their own writes, and undo, redo, and history
+   *  replays never run them. Returns the pass's remover. */
+  addEditPass(pass: SceneEditPass): () => void;
+}
+
 /** What the passes need from the scene they serve. */
 export interface EditPassEnv {
   /** The adapter a pass's ops apply through. */

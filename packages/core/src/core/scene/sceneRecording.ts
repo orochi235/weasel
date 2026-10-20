@@ -8,7 +8,7 @@ import { createHistory } from 'core/ops/createHistory';
 import { createAppliedLog } from './appliedLog';
 import type { ArrivalWindow } from './arrivalWindow';
 import type { EditMode } from './editMode';
-import type { EditPasses } from './editPass';
+import { createEditPasses } from './editPass';
 import { createSceneHistory, type SceneHistoryMethods } from './historyFacade';
 import type { Notifier } from './notifier';
 import type { PoseWriteLog } from './poseWrites';
@@ -27,7 +27,8 @@ export interface SceneRecordingEnv {
   lifted<T>(fn: () => T): T;
   selection: Pick<SceneSelection, 'get' | 'set' | 'replace'>;
   arrivals: RecorderEnv['arrivals'] & Pick<ArrivalWindow<unknown>, 'runEdit'>;
-  passes: EditPasses;
+  /** The adapter an edit pass's ops apply through. */
+  passAdapter(): unknown;
   writePose(id: string, pose: unknown): void;
   poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'replaying'>;
   config: {
@@ -44,13 +45,14 @@ export interface SceneRecording {
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
     | 'registerOp' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
-    | 'setActiveJournalAccessor' | 'setHistoryAdapter'
+    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'addEditPass'
   >;
 }
 
 export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
-  const { notifier, mode, stale, lifted, selection, arrivals, passes, config, poseWrites } = env;
+  const { notifier, mode, stale, lifted, selection, arrivals, config, poseWrites } = env;
   const { notify } = notifier;
+  const passes = createEditPasses({ adapter: env.passAdapter, untracked: mode.untracked });
 
   /** Run an op-driven edit with its arrivals settled and its passes run at
    *  its end, in the same entry, when this call owns them. */
@@ -162,6 +164,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       untracked: recorder.untracked,
       setActiveJournalAccessor: outer.setActiveJournalAccessor,
       setHistoryAdapter: outer.setHistoryAdapter,
+      addEditPass: passes.add,
     },
   };
 }

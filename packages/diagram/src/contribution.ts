@@ -96,7 +96,7 @@ export function diagramWaypoints<TPose>(
         createRouteEditAction({ ...opts, id: actionId }),
         createRemoveWaypointAction(opts),
         createResetRouteAction(opts),
-        ...routerActions(opts),
+        ...routerActions({ participants: opts.participants, selected: opts.selected }),
         grabPortAction(GRAB_WAYPOINT_ACTION_ID),
       ],
       bindings: [

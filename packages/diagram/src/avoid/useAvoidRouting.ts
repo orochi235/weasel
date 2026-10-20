@@ -1,5 +1,5 @@
 import { useLatest, useOptionalDepRegistry, useTransformFollower, type Scene, type TransformFollower } from '@weasel-js/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { installAvoidRouting, type AvoidRoutingOptions } from './install';
 
 /**
@@ -13,15 +13,15 @@ import { installAvoidRouting, type AvoidRoutingOptions } from './install';
 export function useAvoidRouting<TPose>(scene: Scene<unknown, string, TPose>, opts: AvoidRoutingOptions<TPose> = {}): void {
   const deps = useOptionalDepRegistry();
   const latest = useLatest(opts);
-  const [follower, setFollower] = useState<TransformFollower | null>(null);
+  const follower = useRef<TransformFollower | null>(null);
   useEffect(() => {
     const pixelSize = () => latest.current.pixelSize?.() ?? 1 / Math.abs(deps?.get('view')?.get().scale.x || 1);
     const routing = installAvoidRouting(scene, { ...latest.current, pixelSize });
-    setFollower(routing.follower);
+    follower.current = routing.follower;
     return () => {
       routing.dispose();
-      setFollower(null);
+      follower.current = null;
     };
   }, [scene, deps, latest]);
-  useTransformFollower(() => follower);
+  useTransformFollower(() => follower.current);
 }
