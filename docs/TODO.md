@@ -1322,13 +1322,12 @@ only story runner in the repo.
 
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20); each piece deletes its own section there when it merges, so what the doc still
-  holds is what is left: off-page reference markers for connectors that cross pages,
-  and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
-  reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
+  holds is what is left: export of one page; containers and swimlanes in data-backed
+  `DiagramData`, once `DiagramView` reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
   where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
   the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files, and running a pipeline.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
-  and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
+  each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
   containers (2026-10-19) so parallel arc pieces editing those files would not conflict.
