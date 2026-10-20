@@ -564,10 +564,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   not focusable; `PrefActionOne` maps it and a panel's row does say why. In draw, Warp Settings
   greyed out with nothing warped selected is the visible case.
 
-- **(P3) A `ToolPalette` with `columns` steps its arrow keys through the buttons in order.** Up
-  and Down should move a row, the way a grid does; `useRovingTabIndex` has no grid mode, so all
-  four arrows step one button. weaselchart's Shapes panel is the palette that has one.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
