@@ -280,6 +280,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   reads where the anchor was released, nearest anchor within 6 screen px first, then a segment,
   rather than asking the snap for what it held to, and puts the anchor exactly there. The link
   goes on the scene's first annotation layer, else on the edited node's.
+- 2026-10-19: Linked nodes follow a move, resize or rotate drag through the drag's preview
+  (`previewIds`/`previewPose`/`previewData`), as path edit's other nodes do, not through the
+  scene's pose overrides, so mid-drag hit-testing and snapping still read them where they were. A
+  frame an extension refuses previews the transform alone. A resize's frame is read from poses
+  only, so a `data.path` node it scales previews its links from the unscaled path; the commit
+  reads the scaled one.
+- 2026-10-19: A broken constraint link is drawn on every canvas with `constraintsPreset`, in or out
+  of path edit, by a screen-space layer of its own (`createConstraintLinkMarks`): the link's
+  constraint mark by the anchor it holds and a dashed line to where the link wants that anchor,
+  both in the conflict red. A link that holds draws nothing there. The layer reads the committed
+  scene, so a drag that breaks or mends a link shows it on release.
 
 ## Animation
 
