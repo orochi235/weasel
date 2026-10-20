@@ -1,0 +1,99 @@
+import {
+  type CompressorEffectOptions, createCompressorEffect, createDelayEffect, createFilterEffect,
+  createReverbEffect, type DelayEffectOptions, type FilterEffectOptions, type ReverbEffectOptions,
+} from '../effects';
+import { impulseResponse } from '../impulse';
+import type { InsertEffect } from '../inserts';
+import { writeParam } from '../param';
+import type { GraphNodeDef } from './types';
+
+export function createGainNode(ctx: BaseAudioContext, opts: { gain?: number } = {}): GraphNodeDef {
+  const node = ctx.createGain();
+  writeParam(ctx, node.gain, opts.gain ?? 1);
+  return {
+    inputs: { in: node },
+    output: node,
+    params: { gain: (value, rampMs) => writeParam(ctx, node.gain, value, rampMs) },
+  };
+}
+
+export function createPanNode(ctx: BaseAudioContext, opts: { pan?: number } = {}): GraphNodeDef {
+  const node = ctx.createStereoPanner();
+  writeParam(ctx, node.pan, opts.pan ?? 0);
+  return {
+    inputs: { in: node },
+    output: node,
+    params: { pan: (value, rampMs) => writeParam(ctx, node.pan, value, rampMs) },
+  };
+}
+
+/** One port and one level param per name in `inputs`, summed into `output`. */
+export function createMixNode(ctx: BaseAudioContext, opts: { inputs: readonly string[] }): GraphNodeDef {
+  if (opts.inputs.length === 0) throw new RangeError('@weasel-js/audio: a mix needs at least one input');
+  const output = ctx.createGain();
+  const inputs: Record<string, AudioNode> = {};
+  const params: Record<string, (value: number, rampMs: number) => void> = {};
+  for (const name of opts.inputs) {
+    const level = ctx.createGain();
+    level.connect(output);
+    inputs[name] = level;
+    params[name] = (value, rampMs) => writeParam(ctx, level.gain, value, rampMs);
+  }
+  return { inputs, output, params };
+}
+
+/** Wrap an insert effect as a node with one port, `in`. */
+export function insertNode(effect: InsertEffect, params: GraphNodeDef['params']): GraphNodeDef {
+  return {
+    inputs: { in: effect.input },
+    output: effect.output,
+    params,
+    ...(effect.dispose ? { dispose: () => effect.dispose!() } : {}),
+  };
+}
+
+export function filterNode(ctx: BaseAudioContext, opts: FilterEffectOptions = {}): GraphNodeDef {
+  const { filter } = createFilterEffect(ctx, opts);
+  const write = (p: AudioParam) => (value: number, rampMs: number) => writeParam(ctx, p, value, rampMs);
+  return insertNode({ input: filter, output: filter }, {
+    frequency: write(filter.frequency),
+    Q: write(filter.Q),
+    gain: write(filter.gain),
+  });
+}
+
+export function delayNode(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): GraphNodeDef {
+  const fx = createDelayEffect(ctx, opts);
+  return insertNode(fx, {
+    time: (value, rampMs) => fx.setTime(value, rampMs),
+    feedback: (value, rampMs) => fx.setFeedback(value, rampMs),
+    mix: (value, rampMs) => fx.setMix(value, rampMs),
+  });
+}
+
+export type ReverbNodeOptions = Omit<ReverbEffectOptions, 'impulse'> & {
+  impulse?: AudioBuffer;
+  /** Length of the synthesized impulse when none is given. Default 2. */
+  seconds?: number;
+};
+
+export function reverbNode(ctx: BaseAudioContext, opts: ReverbNodeOptions = {}): GraphNodeDef {
+  const { seconds, impulse, ...rest } = opts;
+  const fx = createReverbEffect(ctx, { ...rest, impulse: impulse ?? impulseResponse(ctx, seconds ?? 2) });
+  return insertNode(fx, { mix: (value, rampMs) => fx.setMix(value, rampMs) });
+}
+
+export function compressorNode(ctx: BaseAudioContext, opts: CompressorEffectOptions = {}): GraphNodeDef {
+  const fx = createCompressorEffect(ctx, opts);
+  const { compressor, makeup } = fx;
+  const write = (p: AudioParam, scale = 1) => (value: number, rampMs: number) =>
+    writeParam(ctx, p, value * scale, rampMs);
+  return insertNode(fx, {
+    threshold: write(compressor.threshold),
+    knee: write(compressor.knee),
+    ratio: write(compressor.ratio),
+    attack: write(compressor.attack, 0.001),
+    release: write(compressor.release, 0.001),
+    makeup: write(makeup.gain),
+  });
+}

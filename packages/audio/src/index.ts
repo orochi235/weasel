@@ -48,3 +48,4 @@ export type {
   NoteOptions, SynthPatch, Waveform, Glide, Inharmonic, SynthPartial, VoiceFilter,
   NoiseColor, NoiseOptions, NoisePatch,
 } from './types';
+export { impulseResponse, type ImpulseResponseOptions } from './impulse';
