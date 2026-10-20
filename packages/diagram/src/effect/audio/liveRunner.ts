@@ -1,0 +1,146 @@
+import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
+import type { EffectPipeline, EffectRun } from '../types';
+import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
+import { diffPlans } from './patches';
+import { EMPTY_PLAN, livePlan, type LivePlan } from './plan';
+
+export interface LiveAudioRunnerState { run: EffectRun | undefined; playing: boolean }
+
+export interface LiveAudioRunnerOptions {
+  engine: AudioEngine;
+  pipeline: EffectPipeline;
+  nodes?: AudioStageNodes;
+  sources?: AudioSources;
+  /** The engine bus the graph plays through. */
+  bus?: string;
+}
+
+/** Plays an audio pipeline through a patchable graph, editing the graph as the pipeline changes. */
+export interface LiveAudioRunner {
+  readonly state: LiveAudioRunnerState;
+  /** The graph follows `pipeline` while it plays, or while it does not. */
+  setPipeline(pipeline: EffectPipeline): void;
+  /** A new buffer replaces each file node. */
+  setSources(sources: AudioSources): void;
+  /** Unlocks the engine, then starts the graph. */
+  play(): Promise<void>;
+  pause(): void;
+  /** A fresh graph holding the current plan, not playing: files start again from 0. */
+  reset(): void;
+  subscribe(listener: () => void): () => void;
+  /** Disposes the graph; the runner does nothing after. The engine is the caller's. */
+  dispose(): void;
+}
+
+const GRAPH_ERROR = '@weasel-js/audio:';
+
+const messageOf = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+const idsOf = (p: GraphPatch): string[] =>
+  'id' in p ? [p.id] : [p.from, ...('node' in p.to ? [p.to.node] : [])];
+
+/** The stage a failed apply names: the patch whose id the message quotes, else the first `set`. */
+function failingStage(patches: readonly GraphPatch[], message: string): string | undefined {
+  const named = patches.flatMap(idsOf).find((id) => message.includes(`"${id}"`));
+  if (named !== undefined) return named;
+  const firstSet = patches.find((p) => p.kind === 'set');
+  return firstSet?.kind === 'set' ? firstSet.id : undefined;
+}
+
+const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean => {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
+};
+
+export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRunner {
+  const { engine, bus } = opts;
+  const nodes = opts.nodes ?? audioStageNodes;
+  let pipeline = opts.pipeline;
+  let sources: AudioSources = opts.sources ?? {};
+  let graph: AudioGraph = engine.graph(bus);
+  let plan: LivePlan = EMPTY_PLAN;
+  let errors: Readonly<Record<string, string>> = {};
+  let state: LiveAudioRunnerState = { run: { stages: {} }, playing: false };
+  let disposed = false;
+  const listeners = new Set<() => void>();
+
+  const set = (next: Partial<LiveAudioRunnerState>) => {
+    const merged = { ...state, ...next };
+    if (merged.run === state.run && merged.playing === state.playing) return;
+    state = merged;
+    for (const l of [...listeners]) l();
+  };
+  const publishErrors = (next: Readonly<Record<string, string>>) => {
+    if (sameErrors(errors, next)) return;
+    errors = next;
+    set({ run: { stages: Object.fromEntries(Object.entries(next).map(([id, error]) => [id, { error }])) } });
+  };
+
+  /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. */
+  const sync = (from: LivePlan) => {
+    const next = livePlan(pipeline, nodes, sources);
+    let patches: GraphPatch[] = [];
+    let adopted = next;
+    let applyError: string | undefined;
+    try {
+      patches = diffPlans(from, next, (_id, n) => nodes[n.type]!.build(engine.context, n.settings, n.levels));
+      if (patches.length > 0) graph.apply(patches);
+    } catch (err) {
+      applyError = messageOf(err);
+      // A `set` that throws lets the rest of the list apply; every other failure leaves the graph as it was.
+      adopted = applyError.startsWith(GRAPH_ERROR) ? from : next;
+    }
+    plan = adopted;
+    const merged: Record<string, string> = { ...next.errors };
+    if (applyError !== undefined) {
+      const id = failingStage(patches, applyError);
+      if (id !== undefined) merged[id] = applyError;
+      console.warn(`@weasel-js/diagram: audio graph edit failed: ${applyError}`);
+    }
+    publishErrors(merged);
+  };
+
+  sync(EMPTY_PLAN);
+
+  return {
+    get state() { return state; },
+    setPipeline(next) {
+      if (disposed) return;
+      pipeline = next;
+      sync(plan);
+    },
+    setSources(next) {
+      if (disposed) return;
+      sources = next;
+      sync(plan);
+    },
+    async play() {
+      if (disposed) return;
+      await engine.unlock();
+      if (disposed) return;
+      graph.start();
+      set({ playing: true });
+    },
+    pause() {
+      if (disposed) return;
+      graph.stop();
+      set({ playing: false });
+    },
+    reset() {
+      if (disposed) return;
+      graph.dispose();
+      graph = engine.graph(bus);
+      sync(EMPTY_PLAN);
+      set({ playing: false });
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      graph.dispose();
+    },
+  };
+}
