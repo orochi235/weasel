@@ -1092,15 +1092,16 @@ only story runner in the repo.
     rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
-- **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
-  the HUD against plain DOM, a React overlay, and a DOM layer moved as one element
-  (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **The all-threads figures leave out the renderer's worker pool**, which the HUD keeps 1.8–2.4
-    ms a frame busier than the DOM at 5,000 glyphs changing every frame (`HVD_CENSUS=1`, teitou and
-    msb-uai, 2026-10-17; README, "Frame rate"). Rerunning the every-frame half of the sweep with
-    the census on would say whether "off the main thread the HUD is cheaper" survives, and the
-    pool's self times would say what it is doing. The 70 ms frame gap this entry used to ask about
-    no longer reproduces.
+- **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
+  `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
+  layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
+  - **With the readout changing every frame the DOM is the cheaper overlay** once the renderer's
+    worker pool is counted: at 5,000 glyphs 10.5–12.8 ms a frame of all threads against 6.0–8.5,
+    ranges apart from 2,500 glyphs up under every camera, on msb-uai and keiei (one census run
+    each, 2026-10-19; README, "Frame rate"). 78–88% of the HUD's pool time is V8's background
+    GC. What allocates it is not known: a heap allocation profile of the every-frame path
+    (`attachHud` relayout, the renderer's text layout and command building) would say, and
+    cutting it is the fix if the profile names something.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
