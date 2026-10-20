@@ -18,6 +18,7 @@ import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
+import { ThemePanel } from './theme/ThemePanel';
 import {
   AvoidRoutingPublisher, ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher,
 } from './useChartDiagram';
@@ -54,6 +55,7 @@ export function ChartWorkspace(): ReactElement {
   const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
   const editingId = textEdit.editingId;
@@ -108,8 +110,9 @@ export function ChartWorkspace(): ReactElement {
       </div>
       <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
         <StylePanel scene={scene} selected={selection.current} theme={theme} />
+        {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
       </Sidebar>
-      <ThemeCommands scene={scene} />
+      <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
     </div>
   );
 }

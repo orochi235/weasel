@@ -1,5 +1,5 @@
 import {
-  DIAGRAM_ROLES, diagramStyleOf, setDiagramColor, setDiagramStyle, type DiagramStyleState, type DiagramTheme, type StyleField,
+  diagramStyleOf, setDiagramColor, setDiagramStyle, themeRoles, type DiagramStyleState, type DiagramTheme, type StyleField,
 } from '@weasel-js/diagram';
 import { PropertyField, PropertyList, PropertyNote, PropertyPanel, type PropertyOption } from '@weasel-js/ui/components/Properties';
 import type { CSSProperties, ReactElement } from 'react';
@@ -45,8 +45,7 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
     return state === null ? [] : [{ id, state, data: node!.data as Record<string, unknown> }];
   });
   const ids = styled.map((s) => s.id);
-  const roles: PropertyOption<string>[] = DIAGRAM_ROLES.filter((r) => theme.roles[r.id] !== undefined)
-    .map((r) => ({ value: r.id, label: r.label, glyph: swatch(theme, r.id) }));
+  const roles: PropertyOption<string>[] = themeRoles(theme).map((r) => ({ value: r.id, label: r.label, glyph: swatch(theme, r.id) }));
   const role = common(styled.map((s) => s.state.role ?? theme.defaultRole));
   const field = (name: StyleField, label: string, among: readonly Styled[]) => {
     const color = common(among.map((s) => colorOf(scene, s, name)));

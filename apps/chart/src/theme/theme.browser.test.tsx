@@ -60,3 +60,30 @@ describe('Format › Theme', () => {
     await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
   });
 });
+
+describe('Format › Theme › Edit Theme…', () => {
+  it('repaints a shape while its role color is dragged, and one undo restores the pixels and the theme', async () => {
+    const { host, canvas } = await mountChartApp();
+    await dropProcess(canvas, host);
+    const shape = at(host, 380, 290);
+    await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
+
+    await menu('Format', /^Theme/, /^Edit Theme/);
+    const input = page.getByLabelText('Default fill', { exact: true }).element() as HTMLInputElement;
+    // A picker drag: a run of input events, a frame or more apart, then the picker closing.
+    for (const hex of ['#400000', '#800000', '#c00000']) {
+      input.value = hex;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await expect.poll(() => colorAt(canvas, shape)).toBe(hex);
+    }
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').toContain('Paper (edited)');
+
+    await menu('Edit', /^Undo/);
+    await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
+    await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').not.toContain('Paper (edited)');
+    // The undo before the drag takes back the shape, so the drag was one entry.
+    await menu('Edit', /^Undo/);
+    await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"container"')).toBe(false);
+  });
+});
