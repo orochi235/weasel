@@ -6,7 +6,7 @@ import { toIconRef, type IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { StencilPanel } from './StencilPanel';
-import { stencilIdOfDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 
 afterEach(cleanup);
 
@@ -62,6 +62,6 @@ describe('StencilPanel', () => {
     expect(button.getAttribute('draggable')).toBe('true');
     const data = new Map<string, string>();
     fireEvent.dragStart(button, { dataTransfer: { setData: (t: string, v: string) => data.set(t, v), effectAllowed: '' } });
-    expect(stencilIdOfDragText(data.get('text/plain') ?? '')).toBe('data');
+    expect(data.get(STENCIL_MIME)).toBe('data');
   });
 });

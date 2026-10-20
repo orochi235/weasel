@@ -1,5 +1,6 @@
 import { isBuiltinPref, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
-import { PropertyField, prefFieldProps } from '@weasel-js/ui';
+import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
+import { PropertyField } from '@weasel-js/ui/components/Properties';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { isLeafEnabled } from '../config/visible';

@@ -1,4 +1,4 @@
-import { formatShortcut } from '@weasel-js/ui';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { LabChromeContext, LabHeaderItem } from '@weasel-js/labkit';
 import { icon } from '../../icons.gen';
 

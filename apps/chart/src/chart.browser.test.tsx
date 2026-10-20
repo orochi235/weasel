@@ -8,7 +8,7 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
-import { stencilDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
 
 registerCanvasFont('sans-serif');
@@ -198,7 +198,7 @@ describe('WeaselChart chart mode', () => {
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
     const { host, canvas } = await mountApp();
     const dt = new DataTransfer();
-    dt.setData('text/plain', stencilDragText('decision'));
+    dt.setData(STENCIL_MIME, 'decision');
     const p = at(host, 400, 300);
     for (const type of ['dragenter', 'dragover', 'drop']) {
       canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));

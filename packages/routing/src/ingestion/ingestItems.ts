@@ -14,14 +14,15 @@
  *
  * Output shape: **files first (source order), then strings (item order)**.
  * For paste (`itemsFromClipboardData`) string flavors are emitted in
- * `INGEST_STRING_MIMES` order: text/plain, text/html, text/uri-list.
+ * `INGEST_STRING_MIMES` order: text/plain, text/html, text/uri-list, then
+ * the admitted ones in the order they were first admitted.
  */
 import { UNKNOWN_MIME, type IngestItem } from '@weasel-js/gestures';
 
 export type { IngestItem };
 
-/** The string flavors the kit normalizes. Everything else (browser-internal
- *  custom flavors, etc.) is dropped at materialization. */
+/** The string flavors the kit always keeps. Any other is dropped at
+ *  materialization unless {@link admitIngestMime} has admitted it. */
 export const INGEST_STRING_MIMES: ReadonlySet<string> = new Set([
   'text/plain',
   'text/html',
@@ -35,6 +36,30 @@ function normalizeMime(raw: string): string {
   const bare = raw.split(';')[0].trim().toLowerCase();
   return bare || FALLBACK_MIME;
 }
+
+const admitted = new Map<string, number>();
+
+/**
+ * Keep string flavors of `mime` on drops, drags and pastes as well as the
+ * {@link INGEST_STRING_MIMES}, so content from the app's own UI can travel
+ * under a type of its own. Returns a release; the flavor is kept while any
+ * admission of it is unreleased. Core admits each exact MIME a registered
+ * content handler names.
+ */
+export function admitIngestMime(mime: string): () => void {
+  const key = normalizeMime(mime);
+  admitted.set(key, (admitted.get(key) ?? 0) + 1);
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    const n = (admitted.get(key) ?? 1) - 1;
+    if (n > 0) admitted.set(key, n);
+    else admitted.delete(key);
+  };
+}
+
+const keepsString = (mime: string): boolean => INGEST_STRING_MIMES.has(mime) || admitted.has(mime);
 
 /** Wrap raw `File`s (file picker, `CanvasExtensionApi.ingest`) as
  *  `IngestItem`s, normalizing each MIME the same way the drop/paste paths
@@ -56,7 +81,7 @@ export function itemsFromDataTransfer(dt: DataTransfer): Promise<IngestItem[]> {
       if (file) files.push({ kind: 'file', mime: normalizeMime(file.type), file });
     } else if (item.kind === 'string') {
       const mime = normalizeMime(item.type);
-      if (INGEST_STRING_MIMES.has(mime)) {
+      if (keepsString(mime)) {
         const slot = strings.length;
         strings.push(null as never);
         reads.push(
@@ -93,7 +118,7 @@ export function itemTypesFromDataTransfer(dt: DataTransfer): readonly IngestItem
   for (const item of Array.from(dt.items ?? [])) {
     const mime = item.type ? normalizeMime(item.type) : '';
     if (item.kind === 'file') mimes.push(mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME);
-    else if (INGEST_STRING_MIMES.has(mime)) mimes.push(mime);
+    else if (keepsString(mime)) mimes.push(mime);
   }
   if (mimes.length === 0 && Array.from(dt.types ?? []).includes('Files')) mimes.push(UNKNOWN_MIME);
   return mimes.map((mime) => ({ mime })) as unknown as IngestItem[];
@@ -105,7 +130,7 @@ export function itemsFromClipboardData(cd: DataTransfer): IngestItem[] {
   for (const file of Array.from(cd.files ?? [])) {
     out.push({ kind: 'file', mime: normalizeMime(file.type), file });
   }
-  for (const mime of INGEST_STRING_MIMES) {
+  for (const mime of new Set([...INGEST_STRING_MIMES, ...admitted.keys()])) {
     const text = cd.getData(mime);
     if (text) out.push({ kind: 'string', mime, text });
   }

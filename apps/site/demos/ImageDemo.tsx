@@ -6,7 +6,7 @@ import {
   useImageTool,
   type ToolsApi,
 } from '@weasel-js/core';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;

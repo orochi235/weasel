@@ -284,12 +284,16 @@ export function matchSpec(
 
 /** Content arriving from off the surface: an OS drop, a paste, or a carry. A
  *  carry starts as it comes over and, if nothing took it then, may still be
- *  taken on release; its moves and its leave belong to the handle in flight. */
+ *  taken on release; its leave belongs to the handle in flight. A move with
+ *  none in flight is offered to a spec with a target, which waits for the
+ *  carry to reach it. */
 function matchArrival(e: InputEvent, spec: DropSpec | CarrySpec | PasteSpec, isMac: boolean): boolean {
   if (e.kind !== spec.kind) return false;
   if (e.kind === 'carry') {
-    if (e.stage !== 'enter' && e.stage !== 'drop') return false;
+    const target = 'target' in spec ? spec.target : undefined;
+    if (e.stage === 'leave' || (e.stage === 'move' && target === undefined)) return false;
     if (!matchIngestTypes([{ mime: e.type }], spec.types)) return false;
+    if (!matchTarget(e.affordance, target, e.bodyTarget, e.bodyKind)) return false;
   } else if (e.kind === 'drop' || e.kind === 'paste') {
     if (!matchIngestTypes(e.items, spec.types)) return false;
   }

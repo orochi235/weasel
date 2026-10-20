@@ -1,5 +1,5 @@
 import { defineInstrument, Lab, useClockFrame, useTrialClock } from '@weasel-js/labkit';
-import { Button } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
 import { useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';

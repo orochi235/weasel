@@ -1,4 +1,4 @@
-import { DialogRow, type DialogRowProps } from '@weasel-js/ui';
+import { DialogRow, type DialogRowProps } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useState } from 'react';
 
 /** Props for {@link DraftDialogRow}: a `DialogRow`'s, with the value its body edits. */

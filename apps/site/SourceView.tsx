@@ -1,4 +1,4 @@
-import { CodeBlock } from '@weasel-js/ui';
+import { CodeBlock } from '@weasel-js/ui/components/CodeBlock';
 import type { DemoSourceTab } from './registry';
 
 /** Syntax-highlighted source for one code-panel tab.

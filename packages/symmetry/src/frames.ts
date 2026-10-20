@@ -1,6 +1,8 @@
 import {
-  composesFrames, composeWorldPose, definesFrame, rebaseLocalPose, scenePoseAdapter, type NodeId, type Scene,
+  AUTO_POSE_DESCRIPTOR, composesFrames, composeWorldPose, definesFrame, poseDescriptorForNode, rebaseLocalPose,
+  scenePoseAdapter, visualBoundsViaDescriptor, type NodeId, type Scene,
 } from '@weasel-js/core';
+import type { Point } from '@weasel-js/geom';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -41,4 +43,27 @@ export function keepContentsPut(scene: AnyScene, id: NodeId, change: () => void)
   const held = heldIn(scene, id).map((n) => ({ n, world: worldPoseOf(scene, n) }));
   change();
   for (const { n, world } of held) scene.setPose(n, localPoseUnder(scene, world, scene.get(n)!.parent));
+}
+
+/**
+ * How far from `center` anything inside `id` draws: the farthest corner of
+ * any descendant's drawn box, rotation included. A symmetry's copies turn and
+ * reflect about `center`, so they reach no further.
+ */
+export function reachFrom(scene: AnyScene, id: NodeId, center: Point): number {
+  let reach = 0;
+  const walk = (at: NodeId): void => {
+    for (const c of scene.childrenOf(at)) {
+      const node = scene.get(c);
+      if (!node) continue;
+      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
+      const dx = Math.max(Math.abs(b.x - center.x), Math.abs(b.x + b.width - center.x));
+      const dy = Math.max(Math.abs(b.y - center.y), Math.abs(b.y + b.height - center.y));
+      const r = Math.hypot(dx, dy);
+      if (Number.isFinite(r)) reach = Math.max(reach, r);
+      walk(c);
+    }
+  };
+  walk(id);
+  return reach;
 }

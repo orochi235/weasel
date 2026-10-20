@@ -4,7 +4,7 @@ import { usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { themeAxisPath, themeFromPrefs, themePrefsSchema, themePrefsSelection, themePrefsValues } from '@weasel-js/theme/prefs';
 import { weaselTheme, type Theme } from '@weasel-js/theme';
-import { PrefsForm } from '@weasel-js/ui';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { useState } from 'react';
 import { LABS, THEME_PREFS_LAB } from '../../shared/labs';
 import { ThemePreview } from './ThemePreview';

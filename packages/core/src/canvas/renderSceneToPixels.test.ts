@@ -150,6 +150,30 @@ describe('planPixelRender', () => {
   });
 });
 
+describe('planPixelRender — annotation layers', () => {
+  function annotatedScene() {
+    const content = leaf('a', { x: 10, y: 20, width: 40, height: 20 }, { fill: { paint: { color: '#000' } } });
+    const note = { ...leaf('n', { x: 10, y: 20, width: 40, height: 20 }, { fill: { paint: { color: '#f00' } } }), layer: 'notes' };
+    const scene = fakeScene([content, note as typeof content]);
+    return {
+      ...scene,
+      layers: [{ id: 'default', visible: true, locked: false }, { id: 'notes', visible: true, locked: false, annotation: true }],
+    } as unknown as typeof scene;
+  }
+  const layerGroups = (commands: readonly DrawCommand[]) =>
+    (commands[0] as unknown as { children: DrawCommand[] }).children;
+
+  it('leaves an annotation layer out, as an export does', () => {
+    const p = planPixelRender({ scene: annotatedScene(), sourceRect: RECT, scale: { x: 1, y: 1 } });
+    expect(layerGroups(p.commands)).toHaveLength(1);
+  });
+
+  it('draws an annotation layer when asked to, as the canvas does', () => {
+    const p = planPixelRender({ scene: annotatedScene(), sourceRect: RECT, scale: { x: 1, y: 1 }, annotations: true });
+    expect(layerGroups(p.commands)).toHaveLength(2);
+  });
+});
+
 describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   const recorderFactory = (rec: ReturnType<typeof makeGLRecorder>) =>
     (w: number, h: number) => ({ width: w, height: h, getContext: () => rec.gl });

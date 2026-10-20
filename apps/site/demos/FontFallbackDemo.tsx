@@ -8,7 +8,7 @@ import {
   resolveFontVariant, subscribeGlyphReady, glyphGeneration,
   type FontFallbackPolicy, type ResolveResult,
 } from '@weasel-js/font';
-import { ToggleBar } from '@weasel-js/ui';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './FontFallbackDemo.module.css';
 import { DemoStage } from './DemoStage';
 

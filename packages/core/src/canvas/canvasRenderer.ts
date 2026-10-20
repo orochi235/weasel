@@ -7,7 +7,7 @@
  * the element's one context. Release frees only what that renderer created;
  * the context itself is never lost.
  */
-import { WeaselRenderer, type FlattenTolerance, type RenderOptions } from '@weasel-js/renderer';
+import { WeaselRenderer, type FlattenTolerance, type ImageMinification, type RenderOptions } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -46,6 +46,8 @@ export interface CanvasPaintOptions {
   flattenTolerance?: FlattenTolerance;
   /** `WeaselRendererOptions.retainBudget`, applied from this paint on. */
   retainBudget?: number;
+  /** `WeaselRendererOptions.imageMinification`, applied from this paint on. */
+  imageMinification?: ImageMinification;
   /** Custom programs to compile on the renderer. Compiled when the renderer
    *  is created, and again when the set of ids changes. */
   shaders?: readonly ShaderProgramHandle[];
@@ -100,6 +102,7 @@ interface Held {
   tileY: number | null;
   flattenTolerance: FlattenTolerance | undefined;
   retainBudget: number | undefined;
+  imageMinification: ImageMinification | undefined;
   shaderKey: string;
 }
 
@@ -153,6 +156,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
           width, height, dpr,
           flattenTolerance: options.flattenTolerance,
           retainBudget: options.retainBudget,
+          imageMinification: options.imageMinification,
         });
       } catch (e) {
         // A lost context fails to compile and may yet come back; anything
@@ -167,7 +171,8 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       // a renderer that has already recompiled.
       const mine: Held = held = {
         canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
-        flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget, shaderKey: '',
+        flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget,
+        imageMinification: options.imageMinification, shaderKey: '',
         lost: false,
         onLost: () => { mine.lost = true; },
         onRestored: () => {
@@ -199,6 +204,10 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       if (held.retainBudget !== options.retainBudget) {
         held.renderer.setRetainBudget(options.retainBudget);
         held.retainBudget = options.retainBudget;
+      }
+      if (held.imageMinification !== options.imageMinification) {
+        held.renderer.setImageMinification(options.imageMinification);
+        held.imageMinification = options.imageMinification;
       }
     }
 

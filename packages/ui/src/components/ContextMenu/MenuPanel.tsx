@@ -51,7 +51,7 @@ export function MenuPanel(props: {
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const at = highlight == null ? undefined : entries[highlight];
-    if (e.key === 'Enter' && at?.kind === 'number' && !at.disabled) {
+    if (e.key === 'Enter' && (at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
       e.preventDefault();
       document.getElementById(menuFieldId(`${idBase}-${level}-${highlight}`))?.focus();
       return;

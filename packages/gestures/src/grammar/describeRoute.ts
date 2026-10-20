@@ -90,6 +90,12 @@ function targetClause(target: string | undefined, hasTarget: boolean): string {
   return ` on a ${target}`;
 }
 
+function carryOnto(target: string | undefined): string {
+  if (target === undefined || target === '*') return 'onto the canvas';
+  if (target === 'empty') return 'onto empty canvas';
+  return `onto a ${target}`;
+}
+
 /** The gesture's arg, or undefined when it is the `'*'` wildcard — which
  *  `parseRoute` fills in for every omitted slot, so prose must not print it. */
 function concreteArg(parsed: ParsedRoute): string | undefined {
@@ -154,7 +160,7 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
     case 'drop':
       return userDoes(required, `drops ${arg ?? 'any'} content onto the canvas`);
     case 'carry':
-      return userDoes(required, `carries ${arg ?? 'anything'} onto the canvas`);
+      return userDoes(required, `carries ${arg ?? 'anything'} ${carryOnto(parsed.target)}`);
     case 'paste':
       return userDoes(required, `pastes ${arg ?? 'any'} content`);
   }

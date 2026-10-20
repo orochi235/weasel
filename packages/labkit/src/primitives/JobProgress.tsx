@@ -1,4 +1,4 @@
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../icons.gen';
 import type { JobHandle } from '../job/types';
 

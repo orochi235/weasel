@@ -65,4 +65,11 @@ describe('a tspan dx list read as letter spacing', () => {
     expect(node.text).toBe('a b');
     expect(warnings).toEqual([expect.stringMatching(/dx="0 2 2"/)]);
   });
+  it('reads a dx list on a text holding only text, the same way', () => {
+    const { node, warnings } = text('<text x="10" y="5" dx="3 1 2">abc</text>');
+    expect(warnings).toEqual([]);
+    expect(node.x).toBeCloseTo(13);
+    expect(node.text).toBe('abc');
+    expect(spacing(node)).toEqual([['a', 1], ['b', 2], ['c', undefined]]);
+  });
 });

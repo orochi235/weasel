@@ -1,4 +1,4 @@
-import { DragGhost as UiDragGhost } from '@weasel-js/ui';
+import { DragGhost as UiDragGhost } from '@weasel-js/ui/components/DragGhost';
 import type { PaletteItem, Point } from '../instrument/types';
 
 /** Props for `DragGhost`. `screenPos` is in client pixels. */

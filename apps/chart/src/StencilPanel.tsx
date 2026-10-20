@@ -3,13 +3,13 @@ import { stencilIdOf } from '@weasel-js/diagram';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import type { DragEvent, ReactElement } from 'react';
-import { stencilDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 
 /** A stencil's tool, which the Shapes panel holds rather than the main palette. */
 export const isStencilTool = (tool: Tool): boolean => stencilIdOf(tool.id) !== null;
 
 const onDragStart = (tool: Tool, e: DragEvent<HTMLButtonElement>): void => {
-  e.dataTransfer.setData('text/plain', stencilDragText(stencilIdOf(tool.id)!));
+  e.dataTransfer.setData(STENCIL_MIME, stencilIdOf(tool.id)!);
   e.dataTransfer.effectAllowed = 'copy';
 };
 

@@ -1,4 +1,9 @@
-import { DetailList, type DetailListValues, DetailRow, type DetailRowStatus } from '@weasel-js/ui';
+import {
+  DetailList,
+  type DetailListValues,
+  DetailRow,
+  type DetailRowStatus,
+} from '@weasel-js/ui/components/DetailList';
 import type { ReactNode } from 'react';
 
 /** One measurement in a {@link Readout}. */

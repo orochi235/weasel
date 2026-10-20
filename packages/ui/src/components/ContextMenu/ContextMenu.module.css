@@ -78,3 +78,20 @@ a.row {
 .unit {
   color: var(--wzl-fg-muted);
 }
+
+/* A text row's field draws no box until it is focused, as a number row's ghost field does. */
+.text {
+  --_frame-h: auto;
+  --_frame-bg: transparent;
+  --_frame-border: 1px solid transparent;
+  --_frame-focus-shadow: none;
+}
+
+.text input {
+  width: 12ch;
+  padding: 1px 0;
+}
+
+.text:focus-within {
+  --_frame-bg: var(--wzl-surface-sunken);
+}

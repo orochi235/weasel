@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { MenuEntry, MenuNumberEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { percent } from '@weasel-js/quantity';
 import { resolveSchemaMenu, type MenuSources } from './resolveMenu';
@@ -95,8 +95,25 @@ describe('resolveSchemaMenu: color and string leaves', () => {
     ]);
   });
 
-  it('draws a string as a disabled row reading its name and value', () => {
-    const e = only(resolveSchemaMenu(menu({ name: pref.string('Name', '') }), valued({ name: 'Layer 1' }, false)));
-    expect(e).toMatchObject({ kind: 'item', label: 'Name: Layer 1', disabled: true });
+  it('draws a string as a text row holding its value, that writes it', () => {
+    const src = valued({ name: 'Layer 1' });
+    const e = only(resolveSchemaMenu(menu({ name: pref.string('Name', '', { access: 'n' }) }), src));
+    expect(e).toMatchObject({ kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', access: 'n' });
+    expect(e).not.toHaveProperty('disabled');
+    (e as MenuTextEntry).set('Layer 2');
+    expect(src.onChange).toHaveBeenCalledWith('name', 'Layer 2');
+  });
+
+  it('draws a string read-only, as its name and value, when it is a readout or nothing writes it', () => {
+    const readOnly = only(resolveSchemaMenu(menu({ name: pref.string('Name', '') }), valued({ name: 'Layer 1' }, false)));
+    expect(readOnly).toMatchObject({ kind: 'item', label: 'Name: Layer 1', disabled: true });
+    const readout = only(resolveSchemaMenu(menu({ name: pref.string('Name', '', { readout: true }) }), valued({ name: 'Layer 1' })));
+    expect(readout).toMatchObject({ kind: 'item', label: 'Name: Layer 1', disabled: true });
+  });
+
+  it('disables a text row whose enableIf fails', () => {
+    const schema = menu({ name: pref.string('Name', '', { enableIf: { path: 'on' } }) });
+    const e = resolveSchemaMenu(schema, valued({ name: 'x', on: false })).find((x) => x.kind === 'text');
+    expect(e).toMatchObject({ kind: 'text', disabled: true });
   });
 });

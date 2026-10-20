@@ -13,7 +13,7 @@ import {
   type ToolsApi,
   type UseSceneTextEditReturn,
 } from '@weasel-js/core';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 
 const W = 520, H = 340;
 

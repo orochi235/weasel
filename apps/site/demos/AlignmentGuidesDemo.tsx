@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SceneCanvas, useScene, useSelection, rectPath, solid } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
 // The same `{ path, fill }` shape the rect tool's insert dep mints, so the

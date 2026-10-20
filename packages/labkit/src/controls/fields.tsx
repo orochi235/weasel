@@ -8,12 +8,11 @@ import {
 import {
   PARAMS_SETTLES,
   type PrefFieldChoice,
-  PropertyControl,
-  type PropertyControlProps,
   prefFieldProps,
   useParamsPolicy,
   withDrafts,
-} from '@weasel-js/ui';
+} from '@weasel-js/ui/components/Prefs';
+import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { hasConfigPath, valueAtPath } from '../config/path';
 import { useFieldChoices } from './fieldChoices';
