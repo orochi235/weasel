@@ -9,8 +9,8 @@ traps from finished arcs are `docs/retained.md`.
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
 "overnight pass"; each line there names how to read it back. Nothing is pushed.
 
-**`main` is green at `149218ffd`** (full fleet run on teitou: 27922 passed, 0 failed). Twenty-one
-merges; fourteen TODO entries retired.
+**`main` is green at `149218ffd`** (full fleet run on teitou: 27922 passed, 0 failed). Twenty-six
+merges from this pass; the TODO entries it retired are in `git log`.
 
 🔴 **GitHub CI on `main` has been red since 2026-10-19 04:11**, unseen because the fleet runs only
 Node 24 on macOS. The Node 22 leg's cause is fixed here (the icon plugin walks its parse tree
