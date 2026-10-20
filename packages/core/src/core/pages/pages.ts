@@ -57,6 +57,11 @@ export function layoutPages(pages: readonly Page[], options: PageLayoutOptions =
   });
 }
 
+/** The name page `index` of the page order shows: its own, else "Page" and its place. */
+export function pageName(page: { readonly name?: string | undefined }, index: number): string {
+  return page.name ?? `Page ${index + 1}`;
+}
+
 /** The page under a world point, or `null` between and outside them. A point on an edge is on the page. */
 export function pageAt(
   pages: readonly PlacedPage[],

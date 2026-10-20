@@ -1,11 +1,14 @@
-import { formatParam, type EffectParam, type EffectParamControl, type EffectPort, type EffectStageType } from '@weasel-js/diagram/effect';
+import { formatParam, type EffectStageType } from '../stageTypes';
+import type { EffectParam, EffectParamControl, EffectPort } from '../types';
 
 const param = (label: string, control: EffectParamControl): EffectParam => ({ label, value: formatParam(control), control });
 
 const image = (id: string, label?: string): EffectPort => ({ id, type: 'image', ...(label !== undefined ? { label } : {}) });
 
-/** Pipeline mode's palette. Ports carry `image`, `number` or `mask`, and a wire joins only like to like. */
-export const CHART_STAGE_TYPES: readonly EffectStageType[] = [
+/** Stage types over images, each with an evaluator in `imageEvaluators`.
+ *  Ports carry `image`, `number`, or `mask`, and a wire joins only like to
+ *  like. Mark `number` as control in a pipeline's `types`. */
+export const IMAGE_STAGE_TYPES: readonly EffectStageType[] = [
   { type: 'source', title: 'Source', kind: 'source', outputs: [image('out')] },
   {
     type: 'blur', title: 'Blur',
