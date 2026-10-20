@@ -323,15 +323,18 @@ Priority tags:
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
-  by three pins went from 12 anchors to 5, but a 4-anchor bar pushed into an S still refits with 18
-  (19 before). A smooth interpolation of the solved vertices would refit with fewer.
+  that turned differently. Measured on the fleet (2026-10-19) at the default 0.5 tolerance with
+  `foldCases.ts`: the squashed 4-anchor disc refits with 5 anchors and the bar pushed into an S
+  with 21. Blending each vertex's area-weighted Jacobian across its triangles (a C0 quadratic map)
+  did worse, 6 and 23; a map smooth across the edges is what would refit with fewer.
 - **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
-  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` takes 30 to
-  60 rounds on a ~500-vertex mesh, about 4 to 5 ms a solve on the fleet, where an unfolded solve
-  takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
-  (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
-  cut it.
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` runs many
+  rounds: measured on the fleet (2026-10-19), the disc squash takes 28 rounds and 5.3 ms a solve
+  on a 547-vertex mesh, the bar S 51 rounds and 6.8 ms on 517. The back-solves are not the bulk of
+  a round: each of its two takes 15 to 33 µs, and a George–Liu starting vertex for the
+  Cuthill–McKee order (`profileCholesky.ts`) left them unchanged. The rest is the per-triangle
+  passes (gradient, flip bound, energy per line-search step, least area); fewer rounds from a
+  better step is the larger lever.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
