@@ -151,6 +151,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): A node's kind has one classifier, the routing kind (`routeKind`, new
+  in core; `NodeRouting.classify` calls it). The kind published with the selection is the routing
+  kind, so the command palette says "2 paths selected"; a node the table calls `'unknown'`
+  publishes none, and `describeKind` still overrides. `SelectionPanel` classifies through
+  `routeKind`, passes the node, and has no container case of its own, so a panel given a table
+  without the group entry shows a container as `'unknown'`.
 - 2026-10-20 (overnight pass): `moveNodes(deps, ids, delta, label)` and `moveNodesOps` in core
   move ids the way a drag commits them, and the move action, nudge, Transform Again, and the
   measure tool's Move By share its op builder. The delta is in gesture coordinates and the
@@ -207,6 +213,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): `CANVAS_CONTEXT_ATTRIBUTES` is public core API, the one place the
+  renderer's WebGL2 context settings are written, since a consumer sharing a buffer with the renderer
+  needs them. Test pixel reads go through `@weasel-js/core/testing/canvasPixels` (`canvasGl`,
+  `readCanvas`, `pixelAt`), and a lint rule refuses a `getContext('webgl2')` with no attributes in
+  browser tests and `testing/` helpers.
 - 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
   objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
   string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and
@@ -445,6 +456,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
+  the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
+  node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
+  `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
+  see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
@@ -489,6 +505,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Build
 
+- 2026-10-20 (overnight pass): Five `@weasel-js/ui` subpaths, named in kebab-case after their
+  source module as `./paint-value` and `./kit-icons` are: `./stance`, `./portal-host`, `./color`
+  (the whole color module, oklch and ramps, from a new `color/index.ts`), `./paint-gradient-track`,
+  and `./kit-settings`. Only labkit's `passthrough/weasel-ui.ts` still imports the barrel.
 - 2026-10-07: `react-hooks/set-state-in-effect` is on.
 - 2026-10-11 (core split): two size allowlist entries went up one line each (`Specimen.tsx`,
   `createKeyframeLayer.tsx`).

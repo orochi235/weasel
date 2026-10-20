@@ -831,12 +831,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) `Prefs.stories.tsx` › Rail Filterable times out on the fleet and passes here.** Three
-  fleet runs on 2026-10-20 (after `66cd6d6e5`, and on two branches) failed it on the 15 s timeout
-  in the `forge-stories` project; locally the same file renders it in 34 ms, so it hangs rather
-  than runs slow. The story has no play function, so the wait is in rendering or settling. Find
-  what it waits on there (fonts, a frame, a pending promise) with the fleet log's trace.
-
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
@@ -1000,24 +994,16 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
+  `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
+  probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
+  against a bare `getContext('webgl2')` does not catch a call that passes attributes.
+
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
   (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
   bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
   components only through package specifiers.
-
-- **(P3) Eight modules still import the `@weasel-js/ui` barrel, for names no subpath publishes.**
-  The rule in `eslint.config.js` that forbids importing the root barrel, which reaches about 640
-  modules a dev server serves one by one, covers draw, chart, theme-editor, site, and forge's and
-  labkit's `src`, and exempts these files by name. They import `useStance` and `StanceProps`
-  (`components/stance.ts`; forge's `story/library.ts`, labkit's `SidebarRegion`, `chrome/types`,
-  `ControlPanel`, `ControlMatrix`), `OverlayPortalProvider` and `useOverlayPortal`
-  (`overlays/portalHost.tsx`; forge's `TrialHost`, labkit's `ControlMatrix`), `oklchToHex`,
-  `chromaAt`, and `paintGradientTrack` (site's `PerceptualColorSlidersDemo`), and
-  `uiKitSettingsSchema` (site's `KitSettingsDemo`). Each needs a subpath in ui's `exports`, its
-  vite entry, and the root and core `tsconfig` paths, under a name not yet chosen; then the
-  exemption goes. labkit's `passthrough/weasel-ui.ts` re-exports the barrel on purpose and stays
-  exempt.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
@@ -1306,27 +1292,15 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
-  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
-  summary prints the label, so making them one needs a decision on what it should say. Left open by
-  the selection pass.
-
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P2) `hops.browser.test.tsx` ("bows the upper connector over the crossing") fails in full fleet
-  runs: the chart canvas never paints.** Twice on 2026-10-20 (a run of `main` at `b3431621f` and a
-  branch run at `cefc52e68`), both on teitou in the full `browser` project; three runs of the file
-  alone passed. The failure screenshot shows the app's chrome and an empty workspace with not even
-  the page drawn, so polling the pixels (`5ceb31061`) cannot help; the canvas painted nothing for over
-  a second. Unchecked candidates: the WebGL context lost or never made under six tabs, or the seed
-  in `localStorage` (one origin, shared by every tab) cleared by another chart test's `afterEach`
-  before the app read it, though an empty scene would still draw the page.
-
-- **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
-  (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
-  left.
+- **(P3) Fourth arc (not designed).** PDF export, as its own package; playing an audio pipeline
+  through `@weasel-js/audio`, a graph built once on the audio clock and patched as the pipeline is
+  edited; pages and off-page markers in a data-backed `DiagramView`; dragging an edge label by
+  hand, which label placement then keeps; authored group boxes under the `rack` and `lanes` looks.
+  Carried from the third arc's design (2026-10-20), deleted when that arc finished.
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.

@@ -16,6 +16,7 @@ import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { registerDiagramShape } from '../shape';
 import { diagramOffPage } from './follow';
 import { installOffPageMarkers } from './install';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 type OffPageScene = Scene<unknown, 'main', RectPose>;
 
@@ -97,7 +98,7 @@ function doubleClick(canvas: HTMLCanvasElement, x: number, y: number): void {
 
 /** The color the canvas drew at a CSS point, as `#rrggbb`. */
 function colorAt(canvas: HTMLCanvasElement, x: number, y: number): string {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const out = new Uint8Array(4);
   gl.readPixels(Math.round(x * dpr), Math.round(canvas.height - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);

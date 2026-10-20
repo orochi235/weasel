@@ -1,15 +1,13 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import {
   type CollapseProps,
-  Focusable,
   PropertyHelp,
   PropertyPanel,
-  type StanceProps,
-  Tooltip,
-  TooltipTrigger,
   useCollapse,
-  useOverlayPortal,
-} from '@weasel-js/ui';
+} from '@weasel-js/ui/components/Properties';
+import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
+import { useOverlayPortal } from '@weasel-js/ui/portal-host';
+import type { StanceProps } from '@weasel-js/ui/stance';
 import { type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';

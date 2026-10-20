@@ -4,6 +4,7 @@ import { afterEach, expect, it } from 'vitest';
 import { registerCanvasFont } from '@weasel-js/font';
 import { DiagramView, type NodeMove } from './DiagramView';
 import { diagramScene } from './fromData';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
 
@@ -40,7 +41,7 @@ afterEach(() => {
 });
 
 function read(canvas: HTMLCanvasElement) {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const px = new Uint8Array(canvas.width * canvas.height * 4);
   gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);

@@ -9,6 +9,7 @@
 
 import {
   MIXED,
+  routeKind,
   type Mixed,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -87,18 +88,13 @@ export interface PanelSection {
   rows: PanelRow[];
 }
 
-/** Derive a node's kind: containers are `'group'`; leaves classify their
- *  `data` through the routing entries (first match wins, `'unknown'`
- *  otherwise) — same semantics as core's `NodeRouting.classify`. */
+/** A node's routing kind under `routing`, as a canvas given the same table names it. A
+ *  container is `'group'` only when the table carries `groupNodeRouting`. */
 export function classifyKind(
   node: AnyNode,
   routing: readonly NodeRoutingEntry[],
 ): string {
-  if (node.kind === 'container') return 'group';
-  for (const entry of routing) {
-    if (entry.matches(node.data)) return entry.name;
-  }
-  return 'unknown';
+  return routeKind(routing, node.data, node);
 }
 
 const ALWAYS = (): boolean => true;

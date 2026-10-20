@@ -8,6 +8,7 @@ import { previewRowId } from './draw';
 import { EffectChart } from './EffectChart';
 import { nodeGraph } from './nodeGraph';
 import type { EffectPipeline, EffectRun } from './types';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
 afterEach(cleanup);
@@ -38,7 +39,7 @@ function slotPixel(canvas: HTMLCanvasElement): number[] {
   const dpr = canvas.width / SIZE.width;
   const x = Math.round((t.panX + (box.x + box.width / 2) * t.zoom.x) * dpr);
   const y = Math.round((t.panY + (box.y + box.height / 2) * t.zoom.y) * dpr);
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const px = new Uint8Array(4);
   gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
   return [...px];

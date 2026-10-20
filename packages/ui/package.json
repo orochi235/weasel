@@ -31,6 +31,26 @@
       "types": "./dist/components/paintValue.d.ts",
       "import": "./dist/components/paintValue.js"
     },
+    "./stance": {
+      "types": "./dist/components/stance.d.ts",
+      "import": "./dist/components/stance.js"
+    },
+    "./portal-host": {
+      "types": "./dist/overlays/portalHost.d.ts",
+      "import": "./dist/overlays/portalHost.js"
+    },
+    "./color": {
+      "types": "./dist/color/index.d.ts",
+      "import": "./dist/color/index.js"
+    },
+    "./paint-gradient-track": {
+      "types": "./dist/paintGradientTrack.d.ts",
+      "import": "./dist/paintGradientTrack.js"
+    },
+    "./kit-settings": {
+      "types": "./dist/kitSettings.d.ts",
+      "import": "./dist/kitSettings.js"
+    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },

@@ -11,6 +11,7 @@ import { EffectEditor } from './EffectEditor';
 import { editorScene } from './editorMapping';
 import { mainChain } from './mainChain';
 import type { EffectDoc, EffectStage } from './types';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
 
@@ -59,7 +60,7 @@ function drawn() {
 
 function pixel(canvas: HTMLCanvasElement, at: { x: number; y: number }): number[] {
   const dpr = canvas.width / SIZE.width;
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const px = new Uint8Array(4);
   gl.readPixels(Math.round(at.x * dpr), canvas.height - 1 - Math.round(at.y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
   return [...px].slice(0, 3);

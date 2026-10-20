@@ -3,6 +3,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { DiagramView, type NodeResize } from './DiagramView';
 import { diagramScene, type DiagramData } from './fromData';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
@@ -39,7 +40,7 @@ async function mount(onResize: (r: readonly NodeResize[]) => void): Promise<{ ca
 
 /** RGB at a CSS-pixel point in the canvas, read back from the framebuffer. */
 function pixelAt(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const out = new Uint8Array(4);
   gl.readPixels(Math.round(x * dpr), Math.round(canvas.height - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);

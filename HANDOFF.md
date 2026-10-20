@@ -27,14 +27,21 @@ Merged:
 - The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
   msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
   around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
-- `apps/chart/src/hops.browser.test.tsx` polls its pixels: it failed once in a full run of `main`
-  under load after the line-jumps merge, and passed three of three alone.
+- Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
+  for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
+  viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
+- Nothing outside labkit's passthrough imports the `@weasel-js/ui` barrel: five new subpaths
+  (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
+- A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
+  the command palette names it) and `SelectionPanel` (new core export `routeKind`).
+- weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
+  canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
+  canvas for good (both failing logs carry the error). Every pixel reader that made a bare
+  `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
+  one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
+  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call, all merged.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
-- ui subpaths for the eight barrel importers.
-- Prefs Rail Filterable's fleet timeout.
-- One kind classifier. Ruling: the routing kind is the only one; the selection label and
-  `SelectionPanel` read it.
 - forge's "ResizeObserver loop" error.
 
 ## State

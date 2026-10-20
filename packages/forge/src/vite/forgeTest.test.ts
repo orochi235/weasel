@@ -75,10 +75,11 @@ export const Edge = story({ isolate: 'asserts placement against the window edge'
     for (const line of tests) expect(line).not.toContain(file);
   });
 
-  it('sizes the browser page to the story’s viewport through vitest’s page', async () => {
+  // A page resize is a round trip through Playwright, which took 7 to 13 s on a loaded fleet node; runStory sizes the
+  // story's box instead.
+  it('never resizes the browser page', async () => {
     const code = await transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
-    expect(code).toContain(`import { page as __forge_page } from "vitest/browser";`);
-    expect(code).toContain('viewport: (width, height) => __forge_page.viewport(width, height)');
+    expect(code).not.toContain('vitest/browser');
   });
 
   it('hands the frame config module to every story', async () => {

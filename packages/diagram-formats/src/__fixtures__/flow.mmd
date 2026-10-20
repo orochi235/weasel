@@ -1,0 +1,30 @@
+---
+title: "Order flow"
+---
+%%{init: {"theme": "forest"}}%%
+flowchart LR
+    %% Shapes, one each
+    start([Start]) --> check{Is it in stock?}
+    check -->|Yes| pick[Pick the order]
+    check -- No --> wait((Wait))
+    wait -.-> check
+    pick ==> pack{{Pack}} & label[/Print a label/]
+    label --> ship[/Ship\]
+    ship --- done["Done: #quot;shipped#quot;<br>and billed"]
+    pack --> db[(Ledger)]
+    click pick "https://example.com" "Pick"
+
+    subgraph warehouse [Warehouse floor]
+        direction TB
+        pick
+        pack
+        subgraph dock[Loading dock]
+            ship
+        end
+    end
+
+    classDef hot fill:#f96,stroke:#333,stroke-width:4px,font-size:12px
+    class check,wait hot
+    style done fill:#bbf,color:#000
+    style warehouse fill:#eee
+    linkStyle 0 stroke:#f00,color:#00f

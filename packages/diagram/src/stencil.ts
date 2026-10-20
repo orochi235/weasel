@@ -7,6 +7,7 @@ import { buildBody, type MeasureRowText, type Row } from './body';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
 import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
+import { NODE_STROKE_WIDTH } from './dataTypes';
 import { rowTextStyle } from './rowStyle';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from './icons.gen';
@@ -84,7 +85,7 @@ export function stencilBuild<TLayer extends string>(
       body: (trait) => ({
         diagram: { ...trait, ...bodyLayoutOf(spec, trait) },
         fill: { paint: { color: style.fill } },
-        stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
+        stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? NODE_STROKE_WIDTH, ...(style.dash ? { dash: style.dash } : {}) },
       }),
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
         ? {

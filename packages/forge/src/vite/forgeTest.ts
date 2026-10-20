@@ -64,7 +64,6 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
         const lines = [
           '',
           `import { test as __forge_test } from "vitest";`,
-          `import { page as __forge_page } from "vitest/browser";`,
           `import { runStory as __forge_runStory } from "@weasel-js/forge/test";`,
           // shell.css draws the story host; frame.css still holds the boundary's fault rule.
           `import "@weasel-js/forge/shell.css";`,
@@ -75,7 +74,6 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `const __forge_timeout = ${TIMEOUT_MS};`,
           'const __forge_options = {',
           `  setup: ${options.frameConfig ? '__forge_frame_config' : 'undefined'},`,
-          '  viewport: (width, height) => __forge_page.viewport(width, height),',
           '};',
           'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
           // An isolated story asks for a document of its own, which the test page is not; its reason goes in the name.

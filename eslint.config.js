@@ -222,15 +222,6 @@ export default [
     ignores: [
       // labkit's `weasel-ui` subpath re-exports the barrel on purpose.
       'packages/labkit/src/passthrough/weasel-ui.ts',
-      // These import names that no subpath publishes yet (docs/TODO.md, "Release-gate").
-      'apps/site/demos/KitSettingsDemo.tsx',
-      'apps/site/demos/PerceptualColorSlidersDemo.tsx',
-      'packages/forge/src/shell/TrialHost.tsx',
-      'packages/forge/src/story/library.ts',
-      'packages/labkit/src/chrome/regions/SidebarRegion.tsx',
-      'packages/labkit/src/chrome/types.ts',
-      'packages/labkit/src/controls/ControlMatrix.tsx',
-      'packages/labkit/src/controls/ControlPanel.tsx',
     ],
     languageOptions,
     plugins,
@@ -242,7 +233,7 @@ export default [
             {
               name: '@weasel-js/ui',
               message:
-                'Import from a subpath (@weasel-js/ui/components/<Name>, @weasel-js/ui/paint-value) instead of the barrel.',
+                "Import from a subpath (@weasel-js/ui/components/<Name>, or another in ui's package.json exports) instead of the barrel.",
             },
           ],
         },
@@ -317,6 +308,19 @@ export default [
       'weasel/no-render-ref-write': 'off',
       'react-hooks/globals': 'off',
       'react-hooks/immutability': 'off',
+    },
+  },
+  {
+    /**
+     * A context keeps the attributes of whoever opens it first, and the renderer refuses one without a
+     * stencil buffer, so a pixel read that comes before the app's first paint breaks the canvas for good.
+     */
+    files: ['**/*.browser.test.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "CallExpression[callee.property.name='getContext'][arguments.length=1][arguments.0.value='webgl2']",
+        message: "Read a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: a bare getContext('webgl2') can open the context without the stencil buffer the renderer needs.",
+      }],
     },
   },
   {
