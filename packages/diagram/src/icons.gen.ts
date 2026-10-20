@@ -2,5 +2,31 @@
 
 import { scopedIcon } from '@weasel-js/icons';
 
-/** This package draws no glyphs of its own, so every name it writes is qualified: `icon('ui:close')`. */
-export const icon = scopedIcon<never>('diagram');
+/** A glyph this package draws, by its bare name. */
+export type DiagramIconName =
+  | 'container'
+  | 'poolRows'
+  | 'poolColumns';
+
+/** This package's `icon()`: a bare name means `diagram:<name>`. */
+export const icon = scopedIcon<DiagramIconName>('diagram');
+
+/** This package's glyphs, in the families they were drawn in. */
+export const ICON_GROUPS: readonly { label: string; names: readonly DiagramIconName[] }[] = [
+  {
+    "label": "Containers",
+    "names": [
+      "container",
+      "poolRows",
+      "poolColumns"
+    ]
+  }
+];
+
+declare module '@weasel-js/icons' {
+  interface IconName {
+    'diagram:container': true;
+    'diagram:poolRows': true;
+    'diagram:poolColumns': true;
+  }
+}

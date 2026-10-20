@@ -213,7 +213,9 @@ stack of lanes, each holding shapes. Both are core `ContainerNode`s carrying a
 | clicks the button past the end of a pool | a lane is added at the end |
 
 `CONTAINER_STENCILS` offers Container, Pool (rows), and Pool (columns); pass it
-as `useStencilInsert`'s `containers` and give each a `stencilTool`. A stencil
+as `useStencilInsert`'s `containers` and give each a `stencilTool`. Their glyphs
+are in the `diagram` icon namespace, whose table is `@weasel-js/diagram/icons`;
+an app without the icons build plugin registers it beside the kit's. A stencil
 drawn inside a container or a lane becomes its member (`diagramDropParentAt`).
 `containerBuild` returns the ops on their own, and `addLane` and
 `releaseMembers` are the edits as functions.

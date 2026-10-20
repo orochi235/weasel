@@ -57,6 +57,7 @@
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],
       "@weasel-js/diagram/layout": ["./packages/diagram/src/layout.entry.ts"],
       "@weasel-js/diagram/effect": ["./packages/diagram/src/effect.entry.ts"],
+      "@weasel-js/diagram/icons": ["./packages/diagram/src/icons.table.ts"],
       "@weasel-js/diagram-elk": ["./packages/diagram-elk/src/index.ts"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/font/metrics": ["./packages/font/src/metrics.entry.ts"],

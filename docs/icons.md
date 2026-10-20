@@ -40,6 +40,8 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `core` | `@weasel-js/core` | `packages/core/icons/` | Tools, edit and history actions, align, booleans, path and anchor commands, text styling, stroke and paint |
 | `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
+| `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
+| `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container stencils: a titled box and pools of rows and of columns |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
 
 `labkit`, `forge`, `site`, `theme-editor` and `forge-app` draw nothing. Their `icons/index.mjs`
@@ -112,7 +114,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 ```
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
-`@weasel-js/core/icons`, `@weasel-js/ui/icons` or `@weasel-js/path-tools/icons`. The list is a
+`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons` or `@weasel-js/diagram/icons`. The list is a
 module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
