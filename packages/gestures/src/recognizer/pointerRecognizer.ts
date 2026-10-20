@@ -137,6 +137,15 @@ function thresholdsOf(opts: PointerRecognizerOptions) {
   };
 }
 
+/** When a sample's input happened, on `clock`'s timeline. */
+function sampleTime(clock: RecognizerClock): (s: PointerSample) => number {
+  return (s) => {
+    const now = clock.now();
+    const t = s.timeStamp;
+    return t !== undefined && t > 0 && t <= now ? t : now;
+  };
+}
+
 /** Build a recognizer holding no pointers. It touches no DOM: time and timers come from `opts.clock`. */
 export function createPointerRecognizer(opts: PointerRecognizerOptions): PointerRecognizer {
   const { sink, clock, observer = {}, toSurface = (p) => p } = opts;
@@ -147,17 +156,18 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   const touches = createMultiTouchEpisode(tapPx);
   const hold = createLongPressHold(clock, (pending) => { observer.holdChanged?.(pending); });
   const geometry = (extra: Point[] = []) => heldGeometry(held, toSurface, extra);
+  const happenedAt = sampleTime(clock);
 
   // MULTI-POINTER POLICY: multitouch takes every pointer that has not already
   // committed to a gesture, by clearing its buffered press. One that already
   // opened a drag has no buffer left to claim, so its drag survives the second
   // finger: yanking it from someone who rested a palm is worse than letting it finish.
-  const claimForMultiTouch = (mods: EventModifiers): void => {
+  const claimForMultiTouch = (s: PointerSample): void => {
     hold.cancel();
     for (const p of held.values()) p.buffered = null;
     const g = geometry();
-    touches.join(positionsOf(held), g.centroid, clock.now());
-    sink.dispatch(multiTouchEvent(held.size, mods, g));
+    touches.join(positionsOf(held), g.centroid, happenedAt(s));
+    sink.dispatch(multiTouchEvent(held.size, s, g));
   };
 
   return {
@@ -207,7 +217,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       if (before >= 2 && held.size < 2) {
         // The centroid as it was with this pointer still down.
         const fingers = touches.finish(
-          geometry([{ x: s.clientX, y: s.clientY }]).centroid, clock.now(), longPressMs(),
+          geometry([{ x: s.clientX, y: s.clientY }]).centroid, happenedAt(s), longPressMs(),
         );
         if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
       }
@@ -220,7 +230,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       const up = {
         target: s.target, clientX: s.clientX, clientY: s.clientY, worldX: at.x, worldY: at.y, ...modifiersOf(s),
       };
-      return composeClick(rec.down, up, clicks, () => clock.now(), (ev) => sink.dispatch(ev), observer, doubleClick());
+      return composeClick(rec.down, up, clicks, () => happenedAt(s), (ev) => sink.dispatch(ev), observer, doubleClick());
     },
 
     cancel(pointerId) {
