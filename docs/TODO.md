@@ -1026,12 +1026,11 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) The `@weasel-js/ui` barrel lint covers only draw.** The rule in `eslint.config.js` that
-  forbids importing the root barrel is scoped to `apps/draw/**`, and the barrel reaches about 640
-  modules the dev server serves one by one. `apps/site` still imports it in 48 non-test files and
-  `apps/theme-editor` in 13; forge and labkit do too. chart is already clean: a dev load there was
-  2,009 requests, 385 of them ui, none the barrel (measured 2026-10-19), and core's barrel is now
-  its largest share at 744.
+- **(P3) forge's dev server still serves every package file on its own request.** The other apps
+  pre-bundle the packages (`scripts/vite-prebundle.ts`), but forge's stories live inside the
+  packages and import their components by relative path, so a bundled copy would sit beside the
+  one each story loads. Bundling forge needs the stories to reach components only through package
+  specifiers, or a bundle boundary drawn per package.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
