@@ -5,6 +5,7 @@ import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import type { WeighedPath } from './weightActions';
 
+/** A weighed point's dot radius in screen px, where `targets.weightPointRadiusPx` sets none. */
 export const POINT_RADIUS_PX = 3.5;
 const RIM = '#10161d';
 /** No weight, and all of it. */

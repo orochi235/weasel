@@ -8,6 +8,7 @@ import type { Skeleton } from '@weasel-js/animator';
 
 const BONE = '#4f9cf7';
 const JOINT_FILL = '#ffffff';
+/** A joint dot's radius in screen px, where `targets.boneJointRadiusPx` sets none. */
 export const JOINT_RADIUS_PX = 4.5;
 
 const dot = (x: number, y: number, r: number) => ellipsePath({ x: x - r, y: y - r, width: 2 * r, height: 2 * r });
