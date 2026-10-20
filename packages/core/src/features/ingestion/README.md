@@ -42,15 +42,24 @@ registered no drag is refused.
 `registerContentHandler` is the extension point — register your own to handle a
 domain format (a `.dxf`, a CSV that becomes a table) before the kit's fallbacks.
 
+A drop or paste keeps the string flavors in `INGEST_STRING_MIMES` and drops the
+rest, except any exact MIME a registered handler names in `match` or `types`:
+those are admitted for as long as the handler stays registered
+(`admitIngestMime` in `@weasel-js/routing`). So a drag from the app's own UI can
+carry its payload under a type of its own, as weaselchart's Shapes panel does.
+
 `acquireKitContentHandlers` is refcounted registration for mounted canvases:
 several canvases can be mounted at once without registering the kit handlers
 several times, and the last unmount cleans up.
 
 ## Files
 
+Normalization, `INGEST_STRING_MIMES`, and `admitIngestMime` live in
+`packages/routing/src/ingestion/ingestItems.ts`, since the dispatcher
+materializes items before any handler is asked.
+
 | File | Role |
 | --- | --- |
-| `ingestItems.ts` | Normalization + `INGEST_STRING_MIMES`. |
 | `contentHandlers.ts` | Registry, `runIngest`, `IngestCtx`. |
 | `openFilePicker.ts` | Programmatic file picker → the same `IngestItem[]`. |
 | `registerKitHandlers.ts` | Refcounted default registration. |

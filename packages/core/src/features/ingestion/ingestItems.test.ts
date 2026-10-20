@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles } from '@weasel-js/routing';
+import {
+  admitIngestMime, itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles, itemTypesFromDataTransfer,
+} from '@weasel-js/routing';
 
 /** Minimal DataTransferItem stand-in (jsdom has no DataTransfer constructor). */
 function fileItem(name: string, type: string) {
@@ -122,5 +124,42 @@ describe('itemsFromClipboardData', () => {
       { kind: 'file', mime: 'image/png', file: f },
       { kind: 'string', mime: 'text/plain', text: 'pasted' },
     ]);
+  });
+});
+
+describe('admitIngestMime', () => {
+  const CUSTOM = 'application/x-app-stencil';
+
+  it('keeps an admitted string flavor on drop, drag and paste until released', async () => {
+    const drop = () => dt([stringItem(CUSTOM, 'decision')]);
+    const cd = { files: [], getData: (t: string) => (t === CUSTOM ? 'decision' : '') } as unknown as DataTransfer;
+    const release = admitIngestMime('Application/X-App-Stencil; charset=utf-8');
+    try {
+      expect(await itemsFromDataTransfer(drop())).toEqual([{ kind: 'string', mime: CUSTOM, text: 'decision' }]);
+      expect(itemTypesFromDataTransfer(drop())).toEqual([{ mime: CUSTOM }]);
+      expect(itemsFromClipboardData(cd)).toEqual([{ kind: 'string', mime: CUSTOM, text: 'decision' }]);
+    } finally {
+      release();
+    }
+    expect(await itemsFromDataTransfer(drop())).toEqual([]);
+    expect(itemTypesFromDataTransfer(drop())).toEqual([]);
+    expect(itemsFromClipboardData(cd)).toEqual([]);
+  });
+
+  it('counts admissions, so one release leaves another admitter\'s flavor in place', async () => {
+    const a = admitIngestMime(CUSTOM);
+    const b = admitIngestMime(CUSTOM);
+    a();
+    a();
+    expect(await itemsFromDataTransfer(dt([stringItem(CUSTOM, 'x')]))).toHaveLength(1);
+    b();
+    expect(await itemsFromDataTransfer(dt([stringItem(CUSTOM, 'x')]))).toHaveLength(0);
+  });
+
+  it('pastes the default flavors before admitted ones', () => {
+    const release = admitIngestMime(CUSTOM);
+    const cd = { files: [], getData: (t: string) => (t === CUSTOM || t === 'text/plain' ? t : '') } as unknown as DataTransfer;
+    expect(itemsFromClipboardData(cd).map((it) => it.mime)).toEqual(['text/plain', CUSTOM]);
+    release();
   });
 });

@@ -2,7 +2,7 @@ import { FLOWCHART_STENCILS, stencilKind } from '@weasel-js/diagram';
 import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { DragEvent, ReactElement } from 'react';
-import { stencilDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 
 export interface StencilPanelProps {
   /** The active tool's id. */
@@ -11,7 +11,7 @@ export interface StencilPanelProps {
 }
 
 const onDragStart = (id: string) => (e: DragEvent<HTMLDivElement>): void => {
-  e.dataTransfer.setData('text/plain', stencilDragText(id));
+  e.dataTransfer.setData(STENCIL_MIME, id);
   e.dataTransfer.effectAllowed = 'copy';
 };
 

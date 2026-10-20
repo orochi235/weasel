@@ -6,7 +6,7 @@ import {
   _resetContentHandlersForTests,
   type IngestCtx,
 } from './contentHandlers';
-import type { IngestItem } from '@weasel-js/routing';
+import { itemTypesFromDataTransfer, type IngestItem } from '@weasel-js/routing';
 
 const png: IngestItem = { kind: 'file', mime: 'image/png', file: new File(['x'], 'a.png', { type: 'image/png' }) };
 const csv: IngestItem = { kind: 'file', mime: 'text/csv', file: new File(['x'], 'a.csv', { type: 'text/csv' }) };
@@ -137,5 +137,36 @@ describe('runIngest', () => {
 
     // Under concurrent execution this completes; under sequential it times out.
     await runIngest([png, txt], ctx);
+  });
+});
+
+describe('a registered handler\'s own MIME', () => {
+  const dragOf = (...types: string[]) => ({
+    items: types.map((type) => ({ kind: 'string', type })),
+    types,
+  }) as unknown as DataTransfer;
+
+  it('is kept on a drop while the handler is registered', () => {
+    const off = registerContentHandler({
+      id: 'app:stencil', match: (it) => it.mime === 'application/x-app-stencil', types: ['application/x-app-stencil'], handle: () => {},
+    });
+    expect(itemTypesFromDataTransfer(dragOf('application/x-app-stencil'))).toEqual([{ mime: 'application/x-app-stencil' }]);
+    off();
+    expect(itemTypesFromDataTransfer(dragOf('application/x-app-stencil'))).toEqual([]);
+  });
+
+  it('is read from a glob-free string match too, and released by the test reset', () => {
+    registerContentHandler({ id: 'app:csv', match: ['text/csv', 'image/*'], handle: () => {} });
+    expect(itemTypesFromDataTransfer(dragOf('text/csv'))).toEqual([{ mime: 'text/csv' }]);
+    _resetContentHandlersForTests();
+    expect(itemTypesFromDataTransfer(dragOf('text/csv'))).toEqual([]);
+  });
+
+  it('admits no glob and no application/octet-stream', () => {
+    const off = registerContentHandler({
+      id: 'app:any', match: () => true, types: ['image/*', 'application/octet-stream', '*/*'], handle: () => {},
+    });
+    expect(itemTypesFromDataTransfer(dragOf('image/png', 'application/octet-stream'))).toEqual([]);
+    off();
   });
 });

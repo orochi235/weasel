@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { FLOWCHART_STENCILS } from '@weasel-js/diagram';
 import { StencilPanel } from './StencilPanel';
-import { stencilIdOfDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
 
 afterEach(cleanup);
 
@@ -33,6 +33,6 @@ describe('StencilPanel', () => {
     expect(row.getAttribute('draggable')).toBe('true');
     const data = new Map<string, string>();
     fireEvent.dragStart(row, { dataTransfer: { setData: (t: string, v: string) => data.set(t, v), effectAllowed: '' } });
-    expect(stencilIdOfDragText(data.get('text/plain') ?? '')).toBe('data');
+    expect(data.get(STENCIL_MIME)).toBe('data');
   });
 });
