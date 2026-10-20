@@ -74,6 +74,8 @@ export interface SnapSession2dOptions {
   press: Point;
   /** The subject, whose geometry offers no targets. */
   ids?: readonly string[];
+  /** The container a subject not yet in the scene lands in. */
+  parent?: string;
   /** Point gestures: the previous anchor, a line's start. */
   origin?: Point;
   constrain?: SnapConstrain;
@@ -116,6 +118,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     gesture: opts.gesture,
     press: opts.press,
     ...(opts.ids ? { ids: opts.ids } : {}),
+    ...(opts.parent !== undefined ? { parent: opts.parent } : {}),
     ...(opts.origin ? { origin: opts.origin } : {}),
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),

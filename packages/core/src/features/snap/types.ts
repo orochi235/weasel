@@ -69,6 +69,9 @@ export interface SnapCollect<P = Point> {
   /** The subject: the nodes the gesture moves or resizes. Absent for a
    *  gesture with none, such as drawing a new shape. */
   ids?: readonly string[];
+  /** Where a gesture with no subject yet puts what it draws: the container a
+   *  new node lands in. Absent for the top of the tree. */
+  parent?: string;
   /** Nodes that offer no targets: what the gesture moves. */
   exclude: readonly string[];
   /** Only these nodes offer targets. */

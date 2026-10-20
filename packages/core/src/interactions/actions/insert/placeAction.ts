@@ -3,6 +3,7 @@ import { SNAP_ROLES, snapMods } from 'features/snap/roles';
 import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText } from './commit';
+import { insertParent } from './parent';
 import { insertKind } from './shape';
 import { minSizeOf } from 'core/scene/minSize';
 
@@ -30,7 +31,7 @@ export const placeAction: Action & { requires: string[] } = inPlane({
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
   modifierRoles: SNAP_ROLES,
-  requires: ['insert', 'selection', 'snap', 'textEdit'],
+  requires: ['insert', 'insertInto', 'selection', 'snap', 'textEdit', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps: ActionDeps, params?: Record<string, unknown>): void {
@@ -46,7 +47,8 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       if (!(size.width > 0 && size.height > 0)) return;
 
       deps.selection?.clear();
-      const snap = deps.snap?.begin({ gesture: 'point', press: { x, y } });
+      const parent = insertParent(deps.scene, deps.insertInto?.get());
+      const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
       const mods = snapMods({ modifiers: (params?.['mods'] as ModifierState | undefined) ?? NO_KEYS });
       const at = snap ? snap.at({ x, y }, mods).point : { x, y };
       snap?.end();

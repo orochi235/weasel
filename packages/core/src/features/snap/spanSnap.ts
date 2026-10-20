@@ -26,9 +26,14 @@ export interface SpanSnap {
  * snapped start as its `origin`, so a `constrain` step turns about the start
  * as drawn. `constrain` is read whenever the end snaps, and a new value
  * reopens the end's session. With no `snap` dep, or one that runs no
- * sessions, only `constrain` applies.
+ * sessions, only `constrain` applies. `common` goes into every session's
+ * request.
  */
-export function spanSnap(dep: SnapDep | undefined, constrain: () => SnapConstrain | undefined = () => undefined): SpanSnap {
+export function spanSnap(
+  dep: SnapDep | undefined,
+  constrain: () => SnapConstrain | undefined = () => undefined,
+  common: Pick<SnapBegin, 'parent'> = {},
+): SpanSnap {
   const begin = (req: SnapBegin): SnapSession => dep?.begin(req) ?? inputSession(req);
   let raw: Point = { x: 0, y: 0 };
   let start: Point = raw;
@@ -40,14 +45,14 @@ export function spanSnap(dep: SnapDep | undefined, constrain: () => SnapConstrai
     const key = JSON.stringify(c ?? null);
     if (live?.key === key) return live.session;
     live?.session.end();
-    live = { session: begin({ gesture: 'point', press: start, origin: start, ...(c ? { constrain: c } : {}) }), key };
+    live = { session: begin({ ...common, gesture: 'point', press: start, origin: start, ...(c ? { constrain: c } : {}) }), key };
     return live.session;
   };
   const place = (p: Point, mods: SnapMods): SnapOutcome => {
     raw = p;
     live?.session.end();
     live = null;
-    const out = begin({ gesture: 'point', press: p });
+    const out = begin({ ...common, gesture: 'point', press: p });
     const landed = out.at(p, mods);
     out.end();
     start = landed.point;

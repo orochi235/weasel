@@ -1,5 +1,5 @@
 import {
-  asNodeId, resolveAxes, sceneSharedUnitScopes,
+  asNodeId, resolveAxes, sceneSharedUnitScopes, sceneUnitScopes,
   type PerAxis, type PlaneMap, type PlaneUnits, type PlaneValue, type SnapCollect, type SnapSource,
 } from '@weasel-js/core';
 import { scopedGridPitch, type GridScopes } from '../grid/scopedPitch';
@@ -17,7 +17,8 @@ export interface GridSnapSourceOptions {
   unitSystem?: PlaneUnits;
   /** Read the unit scope the subject sits in: a node inside a millimeter
    *  sub-assembly snaps on that scope's pitch. The subject's scope is the one
-   *  all its nodes share, and the root for a gesture with no subject. */
+   *  all its nodes share; for a gesture with none, the scope of the
+   *  container it draws into (`SnapCollect.parent`), else the root. */
   scopes?: GridScopes;
 }
 
@@ -31,8 +32,10 @@ export function gridSnapSource(opts: GridSnapSourceOptions): SnapSource {
   const { scopes } = opts;
   const rootPitch = scopes ? scopedGridPitch(opts.spacing, scopes, [scopes.root]) : resolveAxes(opts.spacing, opts.unitSystem);
   const pitchFor = (q: SnapCollect): PerAxis<number> => {
-    if (!scopes || !q.scene || !q.ids?.length) return rootPitch;
-    return scopedGridPitch(opts.spacing, scopes, sceneSharedUnitScopes(q.scene, q.ids.map(asNodeId), scopes.root));
+    if (!scopes || !q.scene) return rootPitch;
+    if (q.ids?.length) return scopedGridPitch(opts.spacing, scopes, sceneSharedUnitScopes(q.scene, q.ids.map(asNodeId), scopes.root));
+    if (q.parent === undefined) return rootPitch;
+    return scopedGridPitch(opts.spacing, scopes, sceneUnitScopes(q.scene, asNodeId(q.parent), scopes.root, { inclusive: true }));
   };
   const o = opts.origin ?? { x: 0, y: 0 };
   const lines = (v: number, axis: 'x' | 'y', pitch: PerAxis<number>, plane: PlaneMap | null): [number, number] => {

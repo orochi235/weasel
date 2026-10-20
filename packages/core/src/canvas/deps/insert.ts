@@ -10,6 +10,7 @@ import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
+import { insertParent } from 'interactions/actions/insert/parent';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
@@ -141,10 +142,11 @@ function insertSite(
   sc: Scene<unknown, string, unknown>,
   into: string | null | undefined,
 ): { parent: NodeId | null; layer: string; local: (world: unknown) => unknown } {
-  const parent = into == null ? undefined : sc.get(into as NodeId);
-  if (parent === undefined || parent.kind !== 'container') {
+  const parentId = insertParent(sc, into);
+  if (parentId === null) {
     return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
   }
+  const parent = sc.get(parentId)!;
   const composition = sc.composition;
   if (composition === undefined || !composesFrames(composition)) {
     return { parent: parent.id, layer: parent.layer, local: (p) => p };

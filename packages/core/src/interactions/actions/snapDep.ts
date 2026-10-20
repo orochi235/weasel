@@ -36,6 +36,9 @@ export interface SnapBegin {
   press: Point;
   /** The subject, whose geometry offers no targets. */
   ids?: readonly string[];
+  /** The container a subject not yet in the scene lands in: an insert's
+   *  target. Absent for the top of the tree, or a gesture with `ids`. */
+  parent?: string;
   /** Resize: the sides the drag pins. An axis left `free` is an edge handle. */
   handle?: ResizeAnchor;
   /** Resize: the box `handle` belongs to. Default: the subject's drawn box,

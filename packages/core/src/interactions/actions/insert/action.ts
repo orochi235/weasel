@@ -1,4 +1,4 @@
-import type { Action, NodeId } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { shapeKindInfo } from 'core/shapeKinds';
@@ -48,8 +48,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       if (live) live.gesture = gesture;
       // Where the shape will land decides the copies it will be drawn in.
       const scene = ctx.deps.scene;
-      const into = (ctx.deps.insertInto?.get() ?? null) as NodeId | null;
-      const copies = scene ? copiesWithin(scene, into, scenePaintedPoseOf(scene)) : [];
+      const copies = scene ? copiesWithin(scene, session.parent, scenePaintedPoseOf(scene)) : [];
 
       return {
         kind: 'insert',

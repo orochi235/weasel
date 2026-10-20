@@ -96,7 +96,7 @@ combination's: when three siblings share the edge you landed on, all three lines
 | `pathSnapSource(opts)` | core | target | path targets: anchors, box centers, crossings, tangent and perpendicular points from the gesture's `origin`, midpoints, extremes, quadrant points, the nearest point on a stroke; `only` and `kinds` pick them |
 | `measureEndSource(opts)` | core | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
-| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each origin or pointer probe, on each axis; with `scopes`, on the pitch of the unit scope the subject sits in |
+| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each origin or pointer probe, on each axis; with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
 | `guideSnapSource(getGuides)` | guides | target | ruler guides |
 | `alignmentSnapSource(opts)` | guides | target | siblings' edges and centers, and an optional page box |
 | `spacingSnapSource(opts)` | guides | target | positions that repeat a gap already between siblings, or center between two |
@@ -153,6 +153,7 @@ What `collect` is handed (`SnapCollect`):
 | `delta0` | the raw move |
 | `box`, `edges` | the subject's drawn box at `δ₀` and the sides that move (move and resize) |
 | `drawnBox(id)` | another node's box, measured the way `box` is |
+| `ids`, `parent` | the subject; for a gesture with none yet, the container what it draws lands in, absent for the top of the tree |
 | `exclude`, `include` | nodes that offer nothing (the subject and its subtree); nodes that alone offer targets |
 | `origin` | where the geometry being drawn starts: a line's first end, the pen's previous anchor |
 | `also` | geometry the gesture brings that is in no node: the still parts of a path being edited |
@@ -199,7 +200,8 @@ const point = session ? session.at(ctx.world, snapMods(ctx)).point : ctx.world;
 session?.end();
 ```
 
-`SnapBegin` also takes `ids` (the subject, which offers nothing), `handle` and `box` for a resize,
+`SnapBegin` also takes `ids` (the subject, which offers nothing), `parent` (where an insert's new
+node lands: `insertAction` and `placeAction` pass the container the `insertInto` dep names), `handle` and `box` for a resize,
 `pivot` and `theta0` for a rotate, `also`, and `constrain` (`{ step }`, `'axis'` or `'aspect'`),
 which is what Shift turns into `H`. Declare `snap` in the action's `requires`. `pointSnap()`
 wraps the cycle for a tool that places one point per click.
@@ -225,7 +227,8 @@ the last frame, filled where the result met it.
 The resolver is written over n-vectors, so a 3D host uses the same sources, ranking and marks with
 `Vec3` points. kernel3d's `createSnap(world, { sources, reachPx, kitSettings, store })` is its
 `snap` dep, reading its reach from `targets.snapPx` in `kitSettings`. It honors a gesture's
-`omit`; a gesture's `sources` are 2D, so it does not ask them and warns once in dev. Two sources
+`omit` and passes `ids` and `parent` on to its sources; a gesture's `sources` are 2D, so it does not
+ask them and warns once in dev. Two sources
 sharing an id throw, as on a canvas:
 
 - A move's `H` is the plane through the subject perpendicular to `up`, the plane `translate`

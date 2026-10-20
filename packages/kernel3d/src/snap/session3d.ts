@@ -143,6 +143,7 @@ function candidatesOf<TData, TLayer extends string>(
   const found = gatherSnapCandidates(sources, shifted, (_source, offered, reachPx) => ({
     gesture: req.gesture, probes: offered, delta0, exclude: req.ids ?? [],
     ...(req.ids ? { ids: req.ids } : {}),
+    ...(req.parent !== undefined ? { parent: req.parent } : {}),
     ...(origin ? { origin } : {}),
     reachWorld: (px) => px * perPx,
     reachPx,

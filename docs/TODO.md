@@ -503,11 +503,6 @@ Priority tags:
   lattice turned with its frame, and a hovered cell has to name the lattice it belongs to. The
   result needs a human eye on the drawn grid at both zoom extremes.
 
-- **(P3) Drawing a new node snaps on the root grid inside a scoped container.** A snap source
-  learns the subject's scope from its ids, and an insert gesture has none until the node exists,
-  so `gridSnapSource` falls back to the root pitch even when the node will land in a millimeter
-  sub-assembly. The insert target's parent is the scope it wants, if the session is told it.
-
 ---
 
 ## Animation
