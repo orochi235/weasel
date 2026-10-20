@@ -209,9 +209,3 @@ Passed its tests and was never looked at. Delete a line when someone has.
   events to `fs.watch`, which made forge's dev server serve stale modules. The cause was not
   found. forge warns at startup when its watcher is silent.
 
-## BandEditor label crowding: in flight (2026-10-20)
-
-Branch `bandeditor-labels` in `.claude/worktrees/bandeditor-labels`, being built by an agent: drop
-ruler labels that would crowd (the notches stay drawn) and try stacked fractions. Crowding was
-confirmed in the browser: the 1/30, 1/24 and 1/18 labels overlap, and the linear scale piles up.
-Merge it once its fleet run is green, then delete this section.
