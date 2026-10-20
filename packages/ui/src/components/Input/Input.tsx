@@ -66,9 +66,9 @@ export const Input = forwardRef(function Input(
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
-        {leadingAdornment !== undefined && <span className={s.adornment}>{leadingAdornment}</span>}
+        {leadingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{leadingAdornment}</span>}
         <RACInput ref={ref} placeholder={placeholder} />
-        {trailingAdornment !== undefined && <span className={s.adornment}>{trailingAdornment}</span>}
+        {trailingAdornment !== undefined && <span className={s.adornment} data-wzl-subordinate="">{trailingAdornment}</span>}
       </div>
       {description !== undefined && (
         <Text slot="description" className={`${f.hint} ${f.below}`}>

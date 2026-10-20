@@ -85,7 +85,7 @@
 
 /* A leaf's row is a PropertyRow, inline; this only sets the form's type. */
 .row {
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   cursor: default;
 }

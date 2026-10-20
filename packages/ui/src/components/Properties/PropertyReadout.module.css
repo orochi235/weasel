@@ -6,7 +6,7 @@
   gap: var(--wzl-space-2);
   min-block-size: var(--wzl-control-h);
   min-inline-size: 0;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   white-space: nowrap;
   user-select: text;

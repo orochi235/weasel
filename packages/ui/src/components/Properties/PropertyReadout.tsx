@@ -61,7 +61,7 @@ function numberText(p: PropertyNumberFieldProps): ReactNode {
   if (typeof p.value !== 'number' || Number.isNaN(p.value)) return none();
   const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? stepDisplay(p.step)).text;
   if (p.unit == null || !Number.isFinite(p.value)) return text;
-  return <>{text}<span className={s.unit}>{p.unit}</span></>;
+  return <>{text}<span className={s.unit} data-wzl-subordinate="">{p.unit}</span></>;
 }
 
 /** A chip of `color`, which is data and so reaches the stylesheet as a custom property. Also what a menu color row shows. */

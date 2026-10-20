@@ -21,6 +21,7 @@
 /* In a row's label the glyph stands on the label's first line: left to the
    label's centering, it sits between the two lines of one that wrapped. */
 [data-property-row] .help {
+  font-size: inherit;
   align-self: flex-start;
   margin-block: calc((var(--wzl-leading-snug) * 1em - 1.15em) / 2);
 }

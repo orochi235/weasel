@@ -74,7 +74,7 @@
   border-radius: var(--wzl-radius-sm);
   box-shadow: var(--wzl-bevel-sunken, none);
   color: var(--_frame-fg, var(--wzl-fg));
-  font-size: var(--_frame-font-size, var(--wzl-font-size));
+  font-size: var(--_frame-font-size, var(--wzl-field-font-size, var(--wzl-font-size)));
   line-height: 1;
   transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }

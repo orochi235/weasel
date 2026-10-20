@@ -282,6 +282,7 @@ function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperPr
     <button
       type="button"
       className={s.stepper}
+      data-wzl-subordinate=""
       aria-label={label}
       tabIndex={-1}
       disabled={disabled}

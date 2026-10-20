@@ -16,6 +16,8 @@
      via a negative margin on the label below. */
   gap: 0;
   min-width: 0;
+  /* What a row holds without setting its own size — a renderer's words — reads at the label's. */
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
 }
 
 /* `hug`: the row is as wide as its label and control, at the leading edge of
@@ -38,7 +40,7 @@
 .rowLabel {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   line-height: var(--wzl-leading-snug);
   color: var(--wzl-fg-muted);
   text-transform: var(--wzl-params-label-case, uppercase);
@@ -81,7 +83,7 @@
 
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   line-height: var(--wzl-leading-snug);
   font-style: normal;
   font-weight: var(--wzl-font-weight-medium);
@@ -260,6 +262,11 @@
   pointer-events: none;
 }
 
-.fieldUnitGroup > sup {
+.fieldUnitGroup > .unitMark > sup {
   align-self: flex-start;
+}
+
+/* A unit's wrapper, marking it smaller than the value on purpose; it draws no box of its own. */
+.unitMark {
+  display: contents;
 }

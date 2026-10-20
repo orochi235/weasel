@@ -91,8 +91,8 @@ export const NumberField = forwardRef(function NumberField(
         <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>
-            <RACButton slot="increment" className={s.stepper} aria-label="Increment">▲</RACButton>
-            <RACButton slot="decrement" className={s.stepper} aria-label="Decrement">▼</RACButton>
+            <RACButton slot="increment" className={s.stepper} aria-label="Increment" data-wzl-subordinate="">▲</RACButton>
+            <RACButton slot="decrement" className={s.stepper} aria-label="Decrement" data-wzl-subordinate="">▼</RACButton>
           </div>
         )}
       </Group>

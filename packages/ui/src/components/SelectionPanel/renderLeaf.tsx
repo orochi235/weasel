@@ -160,7 +160,7 @@ export function renderBuiltin(
       );
     case 'number':
       return (
-        <PropertyControl {...field} name={ariaLabel} className={field.control === 'slider' ? s.slider : s.number} />
+        <PropertyControl {...field} name={ariaLabel} className={field.control === 'slider' ? s.slider : undefined} />
       );
     case 'string':
       return <PropertyControl {...field} name={ariaLabel} />;
@@ -174,13 +174,13 @@ export function renderBuiltin(
           className={
             field.control === 'toggle'
               ? field.onClear ? s.flagToggle : s.toggle
-              : field.control === 'radio' || field.control === 'menu' ? undefined : s.select
+              : undefined
           }
         />
       );
     case 'font-family':
     case 'font-weight':
-      return <PropertyControl {...field} name={ariaLabel} className={s.select} />;
+      return <PropertyControl {...field} name={ariaLabel} />;
     case 'paint':
       return (
         <PropertyControl
