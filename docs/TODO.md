@@ -27,6 +27,16 @@ Priority tags:
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
 
+- **(P3) The double-click window is timed when a click is handled, not when it happened.** The
+  pointer recognizer stamps each release with `performance.now()` (`clock.now` in
+  `packages/routing/src/interactions/dispatcher/channels/pointer.ts`) and composes two clicks under
+  600ms apart. A long task that runs between a user's two clicks delays only the second one's
+  handler, so a real 300ms double-click can measure over 600ms and come out as two single clicks.
+  That is reasoned from the code, not seen with a user. What was seen is a test helper that awaited
+  a frame between its two clicks: the first click and its frame took 289ms on studio with only the
+  `browser` project running, and full fleet runs dropped the double-click (2026-10-20).
+  The input's own `event.timeStamp` shares `performance.now()`'s time origin and would not move.
+
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
   (a) an insertion ghost under the pointer during a drag. A ghost needs two things nothing has
@@ -979,12 +989,6 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
 
 ## Release-gate & build hygiene
-
-- **(P3) `DiagramView.containers.browser.test.tsx` › "reports a double-click on a header as the
-  region whose title to edit" fails in full fleet runs and passes alone.** Three times on 2026-10-20
-  (two runs on studio, one more on studio after main moved), each `expected [] to deeply equal
-  [{ kind: 'title', id: 'k' }]`, an assertion rather than a timeout, so the double-click reached
-  nothing; seven of seven alone.
 
 - **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
   Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
