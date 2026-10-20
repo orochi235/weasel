@@ -21,10 +21,12 @@
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, readFile, mkdir, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { isShipped } from './check-declared-imports.mjs';
+import { SOURCE, importSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -160,74 +162,7 @@ console.log(
     `${seenDts.size} in types; no alias leaks.`,
 );
 
-// The same undeclared-dependency rule, applied to every published package.
-// Packing cannot catch this on its own: every @weasel-js package lands in the
-// smoke tree whether or not the importer declared it, so a bare specifier
-// resolves either way and the bundle passes.
-{
-  // The clause may wrap across lines but never contains `;` or `*`. Without
-  // that bound the lazy scan walks out of a non-import `export` and on until
-  // it hits a quoted specifier inside a JSDoc `@example`.
-  const IMPORTS = /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
-  const problems = [];
-
-  for (const name of PACKAGES) {
-    const pkgDir = join(repoRoot, 'packages', name);
-    let manifest;
-    try {
-      manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
-    } catch {
-      continue;
-    }
-    const allowed = new Set([
-      ...Object.keys(manifest.dependencies ?? {}),
-      ...Object.keys(manifest.peerDependencies ?? {}),
-    ]);
-
-    const files = [];
-    const walkSrc = async (dir) => {
-      let entries;
-      try {
-        entries = await readdir(dir, { withFileTypes: true });
-      } catch {
-        return;
-      }
-      for (const e of entries) {
-        const child = join(dir, e.name);
-        if (e.isDirectory()) await walkSrc(child);
-        // Tests and stories are not published surface.
-        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
-          files.push(child);
-        }
-      }
-    };
-    await walkSrc(join(pkgDir, 'src'));
-
-    for (const file of files) {
-      const text = await readFile(file, 'utf8');
-      for (const [, , clause, spec] of text.matchAll(IMPORTS)) {
-        const trimmed = clause.trim();
-        if (/^type\b/.test(trimmed)) continue;
-        const named = trimmed.match(/^\{([\s\S]*)\}$/);
-        if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
-          continue;
-        }
-        const pkg = spec.split('/').slice(0, 2).join('/');
-        if (pkg === manifest.name || allowed.has(pkg)) continue;
-        problems.push(`${manifest.name}: imports ${pkg} (${file.slice(repoRoot.length + 1)})`);
-      }
-    }
-  }
-
-  if (problems.length) {
-    fail(
-      'packages import @weasel-js dependencies they do not declare — a clean install\n' +
-        'cannot resolve these, even though the monorepo and this smoke tree both can:',
-      [...new Set(problems)].join('\n'),
-    );
-  }
-  console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
-}
+// Whether every package declares what its source imports is `npm run check:imports`.
 
 // A @weasel-js peer is a package the consumer must resolve exactly once: it
 // owns something whose identity matters — core's registries, theme's React
@@ -264,18 +199,9 @@ console.log(
       for (const e of entries) {
         const child = join(dir, e.name);
         if (e.isDirectory()) await walkSrc(child);
-        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
-          const text = await readFile(child, 'utf8');
-          for (const [, , clause, spec] of text.matchAll(
-            /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm,
-          )) {
-            const trimmed = clause.trim();
-            if (/^type\b/.test(trimmed)) continue;
-            const named = trimmed.match(/^\{([\s\S]*)\}$/);
-            if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
-              continue;
-            }
-            runtime.add(spec.split('/').slice(0, 2).join('/'));
+        else if (SOURCE.test(e.name) && isShipped(relative(repoRoot, child), `packages/${name}`, manifest)) {
+          for (const spec of importSpecifiers(await readFile(child, 'utf8'), child)) {
+            if (spec.startsWith('@weasel-js/')) runtime.add(packageOf(spec));
           }
         }
       }

@@ -1005,6 +1005,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) The fleet `gate` project skips every ci.yml step after the first build.** It reads only
+  the `check:*`, typecheck and lint steps above `npm run build` (`scripts/ci-checks.gate.ts`), so
+  `check:manifests`, `check:treeshake`, `check:react-free` and both `test:smoke:consumer` runs
+  never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
+  run green. Running them needs a full build of every package and then labkit's, on a tree other
+  jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+
 - **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit
   in diagram, core, labkit, chart and the site demos, each opening the context itself. A reader that opens it before the app's first paint must ask for the renderer's
   attributes (`{ preserveDrawingBuffer: true, stencil: true }`), or the renderer refuses the canvas;
