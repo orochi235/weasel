@@ -984,6 +984,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) The fleet `gate` project skips every ci.yml step after the first build.** It reads only
+  the `check:*`, typecheck and lint steps above `npm run build` (`scripts/ci-checks.gate.ts`), so
+  `check:manifests`, `check:treeshake`, `check:react-free` and both `test:smoke:consumer` runs
+  never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
+  run green. Running them needs a full build of every package and then labkit's, on a tree other
+  jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+
 - **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
   Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
   `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
