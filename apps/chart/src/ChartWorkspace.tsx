@@ -1,8 +1,8 @@
 import {
-  SceneCanvas, useCanvasSize, useScene, useSceneTextEdit, useSelection,
+  SceneCanvas, isTextData, useCanvasSize, useScene, useSceneTextEdit, useSelection,
   type PlacedPage, type SceneCanvasApi, type Tool, type ToolsApi, type View,
 } from '@weasel-js/core';
-import { diagramResizable, dropEmptyEdgeLabel } from '@weasel-js/diagram';
+import { diagramResizable, dropEmptyEdgeLabel, offPageTagOf } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
@@ -30,6 +30,9 @@ const INGESTION = { handlers: [stencilDropHandler] };
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const FALLBACK_PAGE = { x: 0, y: 0, ...CHART_PAGE };
+
+/** Text a double-click edits: an off-page tag's is the pass's to write. */
+const isEditableText = (data: ChartData): boolean => isTextData(data) && offPageTagOf({ data }) === null;
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
@@ -71,7 +74,7 @@ export function ChartWorkspace(): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
 
-  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
+  const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
   const editingId = textEdit.editingId;
   const alphaFor = useCallback((id: string) => (id === editingId ? 0 : 1), [editingId]);
 

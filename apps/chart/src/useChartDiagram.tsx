@@ -3,12 +3,14 @@ import {
 } from '@weasel-js/core';
 import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
-  diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
+  diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
   sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting,
-  rendererMeasure, useConnectorTool, useStencilInsert, waypointFollower, type DiagramTheme,
+  rendererMeasure, useConnectorTool, useOffPageMarkers, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { ChartPose, ChartScene } from './chartDocument';
+import { PAGE_FIT_PADDING } from './pages/useChartPages';
+import { CHART_DEFAULT_THEME } from './theme/themeCommands';
 
 /** New connectors route around shapes; saved ones keep the router they have. */
 const ROUTER = 'avoid';
@@ -21,6 +23,9 @@ const edgeLabel = (theme: DiagramTheme): Contribution => ({
   bindings: [editEdgeLabelBinding()],
 });
 
+/** Double-click an off-page tag to go to the other page. */
+const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING }).contribution;
+
 const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(
   [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => [stencilKind(s.id), stencilTool(s)]),
 );
@@ -32,8 +37,8 @@ export interface ChartDiagram {
   tools: Record<string, Tool>;
 }
 
-/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, lanes, the connector
- *  and the stencils. What it inserts is drawn in `theme`. */
+/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, lanes, off-page
+ *  tags, the connector and the stencils. What it inserts is drawn in `theme`. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
@@ -51,10 +56,11 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
   const connector = useConnectorTool<ChartPose>({ participants, router: ROUTER, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
+  useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends last: an edge's end sits on a port and beside a route handle, and a press on it must start neither.
     layers: [containers.layer, ports.layer, route.layer, ends.layer],
-    ambient: [containers.contribution, ports.contribution, route.contribution, ends.contribution, label],
+    ambient: [containers.contribution, ports.contribution, route.contribution, ends.contribution, label, OFF_PAGE],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
   }), [containers, ports, route, ends, connector, label]);
 }

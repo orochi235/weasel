@@ -23,7 +23,6 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 3 | Off-page reference markers | diagram, app | — | 2 |
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
 | 5 | Line jumps | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
@@ -53,71 +52,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 3. Off-page reference markers
-
-### What the user sees
-
-A connector whose two shapes sit on different pages stops drawing across the gap. Each end draws a
-short stub out of its shape, ending at a small tag reading the other page's name and a reference
-letter, such as "Page 2 · A". The arrowhead still points into the target shape, and the start stub
-gets the connector's end marker at its tag, so it reads as leaving the page. Double-clicking a tag
-fits the view to the other page and selects the shape at the far end. Dragging a shape back onto
-the other's page joins the connector again on release; during a drag it draws across, as now.
-
-**Decision (2026-10-20).** Splitting is automatic, with no per-connector opt-out: a line across the
-gap prints as nothing on paper, and piece 6 exports pages one at a time.
-
-### Engine surface (`packages/diagram/src/offPage/`)
-
-- `trait.ts`: `DiagramEdge.offPage?: { ref: string; from: string; to: string }` (the reference and
-  the two page ids), owned by the pass the way `route` is owned by the router. A tag carries
-  `data.diagram.offPageTag: { edge: string; end: 'from' | 'to' }`, read with `offPageTagOf`.
-- `split.ts`, pure: `offPageSplits({ pages, edges }) → Map<edgeId, OffPageSplit | null>`, using
-  core's `pageOfBounds` on each end's box. An end in a gap belongs to no page and never splits.
-  `nextOffPageRef(used)` gives A…Z, AA…; a ref, once given, stays while the split does.
-- `tag.ts`: `offPageTagSpec(edgeId, end, text, style)`, a kit text leaf `<edge>/offpage-<end>`
-  with a `background` and `padding`, `dependsOn: [edge]`, and `derivePose: OFF_PAGE_TAG_DERIVE_POSE`
-  (registry key `diagram:offPageTag`, added in `withDiagramRegistry`), stationed past its stub's tip.
-- `install.ts`: `installOffPageMarkers(scene)` and `useOffPageMarkers(scene)`, an edit pass at
-  `DIAGRAM_PASS_ORDER.offPage`. It recomputes every edge when `docChanged` has `core:pages`, and
-  otherwise the edges attached to posed, added, removed, or re-parented nodes. It writes `offPage`,
-  and adds, removes, or retexts the two tags.
-- `edge.ts`: `edgeRouter` answers a split edge with `ResolvedRoute.stubs`, two two-point runs
-  `OFF_PAGE_STUB` (24) long along each port's normal, and `edgeDerivePath` draws them as two
-  subpaths. The kit draws end markers on every open subpath, which is what gives the start stub its
-  tag-end marker.
-- `follow.ts`: `FOLLOW_OFF_PAGE_ACTION_ID = 'diagram.followOffPage'`,
-  `createFollowOffPageAction({ follow? })`, bound to a double-click on a tag the way
-  `editEdgeLabelBinding` binds one. The default `follow` selects the far shape and sets the `view`
-  dep with `fitViewToPage`. `diagramOffPage(opts) → { contribution }` packs it.
-
-**Decision (2026-10-20).** A tag is a text node with a background, not a shaped symbol: the kit's
-text painter and SVG lowering already draw that, so no new painter or exporter is needed.
-
-### Works with
-
-| Second-arc code | Effect |
-|---|---|
-| `avoid/sceneInput.ts` | skips edges with `offPage`; when a split ends, the edge is new to the router and is routed in the same entry (piece 1's order puts this pass first) |
-| `waypoints.ts` `routeHandles` | none for a split edge; its waypoints are kept and come back when it joins again |
-| `label.ts` `labelCenter` | stations on the first subpath of a path that has several |
-| `theme/themeWrites.ts` | colors tags: text in `label.fill`, background in `page` |
-| `core/pages/pageEdits.ts` | moving or resizing pages re-splits through `docChanged`, in the page edit's entry |
-
-### Save, load, undo
-
-`offPage` and the tags save with the scene. On load nothing recomputes. A split or join is part of
-the edit that caused it: a move, a page reorder, or a resize.
-
-### Tests
-
-- `split.test.ts`: overlap rule, gap ends, ref reuse and next ref.
-- `offPage.scene.test.ts`: a move to another page splits in the move's entry; undo joins; a page
-  reorder keeps the ref and retexts tags; deleting a shape removes its edge's tags.
-- `edge.test.ts`: a split edge derives two subpaths; markers on both.
-- `offPage.browser.test.tsx`: double-click a tag, the view lands on the other page.
-- Chart browser test: two pages, connect across, the canvas pixels in the gap show no line.
 
 ## 4. Edge labels as obstacles, and labels that dodge
 

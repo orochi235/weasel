@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds, type Page } from './pages';
+import { adjacentPage, layoutPages, pageAt, pageName, pageOfBounds, pagesBounds, type Page } from './pages';
 import { pagesLayer } from './pagesLayer';
 import { fitViewToPage, pageInView } from './fitViewToPage';
 
@@ -128,5 +128,12 @@ describe('pageInView', () => {
 
   it('answers null when the view shows no page', () => {
     expect(pageInView(pages, { x: -500, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })).toBeNull();
+  });
+});
+
+describe('pageName', () => {
+  it('is the page’s own name, else "Page" and its place', () => {
+    expect(pageName({ name: 'Intro' }, 3)).toBe('Intro');
+    expect(pageName({}, 1)).toBe('Page 2');
   });
 });
