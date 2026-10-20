@@ -26,6 +26,7 @@ export type {
   SetChildOrderArgs,
 } from './reorder';
 export { createSetPathOp } from './setPath';
+export { writtenBy, type WrittenNode } from './writtenBy';
 export type { SetPathFields, SetPathArgs } from './setPath';
 export type { SiblingSlot } from './slot';
 export { registerOpFactory, rebuildOp, registeredOpNames, opFactoryRegistry } from './registry';

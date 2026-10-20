@@ -8,6 +8,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from './move/action';
 import { nudgeRightAction } from './defaults/nudge';
 import { alignRightAction } from './align/action';
+import type { TransformFollower } from './transformFinish';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 
@@ -21,11 +22,11 @@ function fixture(answer: 'follow' | 'refuse') {
   const deps = {
     selection: { get: () => [a], adapterMethods: undefined } as unknown as SelectionApi,
     scene,
-    editAnchors: {
-      transformOps,
-      transformPreview: (poses: ReadonlyMap<string, unknown>) =>
+    transformFollowers: [{
+      finish: transformOps,
+      preview: (poses: ReadonlyMap<string, unknown>) =>
         (poses.has(a) ? [{ id: b, pose: box(50, 50), data: { followed: 'preview' } }] : []),
-    },
+    }],
   } as unknown as ActionDeps;
   return { scene, a, b, deps, transformOps };
 }
@@ -44,7 +45,7 @@ function drag(deps: ActionDeps, during?: (handle: OngoingHandle) => void): void 
   handle.onEnd!(ctx(true), 'commit');
 }
 
-describe('whole-node transforms finish through the editAnchors dep', () => {
+describe('whole-node transforms finish through the transformFollowers dep', () => {
   it('commits what a move changes beside the moved node in its history entry', () => {
     const { scene, a, b, deps, transformOps } = fixture('follow');
     drag(deps);
@@ -88,5 +89,32 @@ describe('whole-node transforms finish through the editAnchors dep', () => {
       expect(handle.previewData!(b)).toEqual({ followed: 'preview' });
       expect(handle.previewData!(a)).toBeNull();
     });
+  });
+
+  it('composes two followers: the second finishes the first one\'s batch, and previews over its frame', () => {
+    const { scene, a, b, deps } = fixture('follow');
+    const c = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: box(90, 0) });
+    const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;
+    const second: TransformFollower = {
+      finish: (ops, label) => [...ops, createSetDataOp({ id: c, from: {}, to: { after: ops.length, label }, label })],
+      preview: (frame) => (frame.has(b) ? [{ id: c, pose: box(90, 90) }] : []),
+    };
+    const both = { ...deps, transformFollowers: [first, second] } as unknown as ActionDeps;
+    drag(both, (handle) => {
+      expect([...handle.previewIds!()!]).toEqual([a, b, c]);
+      expect(handle.previewPose!(c)).toEqual(box(90, 90));
+    });
+    expect(scene.get(b)!.data).toEqual({ followed: 'Move' });
+    expect(scene.get(c)!.data).toEqual({ after: 2, label: 'Move' });
+    scene.undo();
+    expect(scene.get(c)!.data).toEqual({});
+  });
+
+  it('commits nothing when any follower refuses', () => {
+    const { scene, a, deps } = fixture('follow');
+    const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;
+    const refuse: TransformFollower = { finish: () => null, preview: () => [] };
+    drag({ ...deps, transformFollowers: [first, refuse] } as unknown as ActionDeps);
+    expect(scene.get(a)!.pose).toEqual(box(0, 0));
   });
 });

@@ -16,7 +16,7 @@ import {
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
-import { diagramPorts } from './contribution';
+import { diagramPorts, diagramWaypoints } from './contribution';
 import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './fromData';
@@ -76,7 +76,7 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 
 type EditingProps = Pick<
   DiagramViewProps,
-  'onConnect' | 'onReconnect' | 'onDelete' | 'onEditLabel' | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
+  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
 >;
 
 export interface DiagramEditing {
@@ -92,6 +92,7 @@ export function useDiagramEditing(
   const { source, selected, mode, canConnect, portOptions, connectBodies } = props;
   const report = useLatest(props);
   const reconnects = props.onReconnect !== undefined;
+  const routes = props.onEditRoute !== undefined;
   const labels = props.onEditLabel !== undefined;
   const deletes = props.onDelete !== undefined;
 
@@ -126,6 +127,13 @@ export function useDiagramEditing(
         commit: (change) => report.current.onReconnect?.(reconnectChangeOf(change)),
       })
     : null, [reconnects, source, selected, connectBodies, canConnect, portOptions, report]);
+  const route = useMemo(() => routes
+    ? diagramWaypoints<RectPose>({
+        participants: source,
+        selected,
+        commit: ({ edgeId, waypoints }) => report.current.onEditRoute?.({ edge: edgeId, waypoints }),
+      })
+    : null, [routes, source, selected, report]);
   const label = useMemo((): Contribution | null => labels
     ? {
         id: 'weasel-diagram-edge-label',
@@ -141,15 +149,15 @@ export function useDiagramEditing(
 
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(
-    // Edge ends after ports: an edge's end sits on a port, and the last layer is hit first.
-    () => [portsLayer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
-    [portsLayer, ends],
+    // Edge ends last: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
+    () => [portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
+    [portsLayer, route, ends],
   );
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, ends?.contribution, label].filter((c): c is Contribution => c != null),
+    ...[ports?.contribution, route?.contribution, ends?.contribution, label].filter((c): c is Contribution => c != null),
     ...(extra ?? []),
-  ], [ports, ends, label, extra]);
+  ], [ports, route, ends, label, extra]);
   return { layers, ambient, actions };
 }

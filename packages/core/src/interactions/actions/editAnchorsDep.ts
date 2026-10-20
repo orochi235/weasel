@@ -105,22 +105,6 @@ export interface EditAnchorsDep {
    */
   finishEdit?(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]): FinishedEditFrame | null;
   /**
-   * `ops`, a whole-node transform's batch — a move, resize, rotate, flip or
-   * nudge — with the ops each extension's `finishTransform` adds after them:
-   * the other nodes that change with the ones it transforms. Null when an
-   * extension refuses the transform. The transform actions run it on the
-   * batch they commit. Optional: absent, a transform commits as it is.
-   */
-  transformOps?(ops: readonly Op[], label: string): Op[] | null;
-  /**
-   * The other nodes a whole-node transform's frame changes, for a drag to
-   * preview: given the stored poses the frame puts the transformed nodes in,
-   * each other node's stored pose, and its data where that changes — what
-   * `transformOps` would commit for the frame. Empty when nothing changes
-   * with it. Optional.
-   */
-  transformPreview?(poses: ReadonlyMap<string, unknown>): readonly { id: string; pose: unknown; data?: unknown }[];
-  /**
    * Commit `worldPath` for `id` with `data` laid over its data, as one
    * history entry, finished by no extension: what an extension writing its
    * own data with a path it already solved commits through. Optional.

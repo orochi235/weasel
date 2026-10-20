@@ -47,6 +47,13 @@ describe('editorScene', () => {
     expect(wireOf('nope')).toBeUndefined();
   });
 
+  it('draws a wire through its route, found by the id ensureWireIds gives it', () => {
+    const ids = ensureWireIds(doc).pipeline.wires.map((w) => w.id!);
+    const { data } = editorScene({ ...doc, routes: { [ids[1]!]: [{ x: 300, y: 10 }] } });
+    expect(data.edges[0]!.waypoints).toBeUndefined();
+    expect(data.edges[1]!.waypoints).toEqual([{ x: 300, y: 10 }]);
+  });
+
   it('maps a stage node to its stage and nothing else', () => {
     const { stageOf } = editorScene(doc);
     expect(stageOf('blur')).toBe('blur');

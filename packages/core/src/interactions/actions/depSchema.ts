@@ -21,8 +21,9 @@ import type { GeometryProjection } from './geometryProjection';
 import type { DragSample, DebugSink, LongPressState } from '@weasel-js/routing';
 import type { EditAnchorsDep, FinishedEditFrame } from './editAnchorsDep';
 import type { SnapDep } from './snapDep';
+import type { TransformFollower, TransformPreviewNode } from './transformFinish';
 
-export type { EditAnchorsDep, FinishedEditFrame };
+export type { EditAnchorsDep, FinishedEditFrame, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
 
 /** Minimal view API the action layer consumes. */
@@ -280,6 +281,9 @@ declare module '@weasel-js/routing' {
     /** Edit-anchors dep — narrow read/write of one polygon's path. If
      *  absent, `editAnchorsAction`'s `start` returns an empty handle (no-op). */
     editAnchors: EditAnchorsDep;
+    /** What changes other nodes along with a whole-node transform, in order;
+     *  add one with `useTransformFollower`. Absent: only what it transforms changes. */
+    transformFollowers?: readonly TransformFollower[];
     /** The transforms a path being edited should stay its own image under.
      *  Absent: an anchor drag moves only what is dragged. */
     pathSymmetry?: PathSymmetryDep;

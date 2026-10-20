@@ -26,10 +26,15 @@ export function editorScene(doc: EffectDoc, options?: NodeGraphOptions): EditorS
   const stages = new Set(doc.pipeline.stages.map((s) => s.id));
   const ids = ensureWireIds(doc).pipeline.wires.map((w) => w.id!);
   // `nodeGraph` draws one edge per drawable wire, in the same order.
-  const wires = new Map(drawableWires(doc.pipeline).map((d, i) => [edgeIdOf(drawn.data.edges[i]!), ids[d.index]!]));
+  const drawable = drawableWires(doc.pipeline);
+  const wires = new Map(drawable.map((d, i) => [edgeIdOf(drawn.data.edges[i]!), ids[d.index]!]));
+  const edges = drawn.data.edges.map((e, i) => {
+    const route = doc.routes?.[ids[drawable[i]!.index]!];
+    return route === undefined ? e : { ...e, waypoints: route };
+  });
   return {
     ...drawn,
-    data: { ...drawn.data, nodes },
+    data: { ...drawn.data, nodes, edges },
     stageOf: (node) => (stages.has(node) ? node : undefined),
     wireOf: (edge) => wires.get(edge),
   };

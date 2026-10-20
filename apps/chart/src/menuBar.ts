@@ -6,6 +6,7 @@ export type MenuRuns = Record<string, PrefGroup>;
 export interface ChartMenuContributions {
   file?: MenuRuns;
   edit?: MenuRuns;
+  format?: MenuRuns;
   mode?: MenuRuns;
 }
 
@@ -21,6 +22,7 @@ export function chartMenuBar(contributions: ChartMenuContributions = {}): PrefGr
   return pref.group('Menu bar', {
     file: menu('File', 'f', contributions.file ?? {}),
     edit: menu('Edit', 'e', contributions.edit ?? {}),
+    ...(contributions.format ? { format: menu('Format', 'o', contributions.format) } : {}),
     mode: menu('Mode', 'm', contributions.mode ?? {}),
   }, { as: 'bar' });
 }

@@ -241,6 +241,30 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
 export function edgeDerivePath<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => Path | null {
+  const routeOf = edgeRouter(opts);
+  return (node, deps) => {
+    const points = routeOf(node, deps)?.points;
+    return points === undefined || points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
+  };
+}
+
+/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a path. */
+export interface ResolvedRoute {
+  /** The two ends, resolved. */
+  from: Port;
+  to: Port;
+  /** What the router was handed between them: the author's waypoints, or a
+   *  self-loop's turning point. */
+  waypoints: readonly Vec2[];
+  /** The router's answer, `from.point` first and `to.point` last. */
+  points: readonly Vec2[];
+}
+
+/** Routes an edge between its two dependencies the way {@link edgeDerivePath}
+ *  does, answering the route itself; null where that draws nothing. */
+export function edgeRouter<TPose>(
+  opts: EdgeRouteOptions<TPose> = {},
+): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
@@ -266,8 +290,7 @@ export function edgeDerivePath<TPose>(
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
-    const points = routerOf(edge, opts.routers)({ from, to, waypoints });
-    return points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
+    return { from, to, waypoints, points: routerOf(edge, opts.routers)({ from, to, waypoints }) };
   };
 }
 

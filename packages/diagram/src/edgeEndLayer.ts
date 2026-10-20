@@ -18,7 +18,7 @@ import {
   type RenderLayer,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { edgeDerivePath, type Router } from './edge';
+import { edgeRouter, type ResolvedRoute, type Router } from './edge';
 import { diagramEdgeOf, type DiagramEdge } from './edgeTrait';
 import type { GraphNodeLike } from './graph';
 import { offersPorts, type ParticipantPose, type ParticipantSource } from './portAffordance';
@@ -53,6 +53,8 @@ export interface EdgeEnds<TPose> {
   from: ParticipantPose<TPose>;
   to: ParticipantPose<TPose>;
   points: { from: Vec2; to: Vec2 };
+  /** The route as the edge's own `derivePath` draws it. */
+  route: ResolvedRoute;
 }
 
 /** Options shared by the edge-end affordance and the reconnect action. */
@@ -63,7 +65,7 @@ export interface EdgeEndOptions<TPose> extends PortsOptions<TPose> {
 /** Resolves an edge's two ends from `participants`, routed as the edge's own
  *  `derivePath` routes it. `null` for a node that is not a drawable edge. */
 export function createEdgeEnds<TPose>(participants: ParticipantSource<TPose>, opts: EdgeEndOptions<TPose> = {}) {
-  const derive = edgeDerivePath<TPose>({
+  const derive = edgeRouter<TPose>({
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.routers ? { routers: opts.routers } : {}),
@@ -80,13 +82,10 @@ export function createEdgeEnds<TPose>(participants: ParticipantSource<TPose>, op
     const to = byId.get(deps[1]!);
     if (from === undefined || to === undefined) return null;
     const dep = (p: ParticipantPose<TPose>) => ({ node: p.node, pose: p.pose }) as unknown as DerivedDep<TPose>;
-    const path = derive(edge.node, [dep(from), dep(to)]) as { coords?: ArrayLike<number> } | null;
-    const c = path?.coords;
-    if (c === undefined || c.length < 4) return null;
-    return {
-      edge, trait, from, to,
-      points: { from: { x: c[0]!, y: c[1]! }, to: { x: c[c.length - 2]!, y: c[c.length - 1]! } },
-    };
+    const route = derive(edge.node, [dep(from), dep(to)]);
+    const p = route?.points;
+    if (route === null || p === undefined || p.length < 2) return null;
+    return { edge, trait, from, to, points: { from: p[0]!, to: p[p.length - 1]! }, route };
   };
 }
 

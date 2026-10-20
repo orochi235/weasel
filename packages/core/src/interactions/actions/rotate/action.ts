@@ -29,7 +29,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   // (`selectionRotateBindings`).
   eligible: { capability: 'transforms-selection' },
   modifierRoles: SNAP_ROLES,
-  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap', 'editAnchors'],
+  requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
