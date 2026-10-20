@@ -2,7 +2,7 @@ import { type GlMat3, mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { ContentStream } from './content';
 import { deflate as zlibDeflate } from './deflate';
-import { type PageCtx, writeCommands } from './drawCommands';
+import { type PageCtx, pageFlip, writeCommands } from './drawCommands';
 import { DocumentFonts } from './fonts/embedFont';
 import type { PdfFontSource } from './fonts/fontSource';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
@@ -79,7 +79,7 @@ export async function writePdfWith(
       height: page.height,
     };
     // Page units are points, origin top left, y down.
-    ctx.out.op('cm', 1, 0, 0, -1, 0, page.height);
+    ctx.out.op('cm', ...mat3.toAffine(pageFlip(page)));
     await writeCommands(ctx, page.commands, { transform: mat3.identity(), alpha: 1, colorMatrix: null });
     const raw = ctx.out.bytes();
     objects.streamDeflated(contentRef, {}, raw);

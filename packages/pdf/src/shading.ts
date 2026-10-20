@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/paint';
 import { colorFor, type Rgba } from './color';
 import type { DrawState, PageCtx } from './drawCommands';
+import { latin1Bytes } from './latin1';
 import { name, type PdfDict, type PdfRef, type PdfValue } from './objects';
 
 type Gradient = Extract<CommandPaint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
@@ -211,7 +212,7 @@ function writeShading(ctx: PageCtx, g: Geometry, fn: PdfDict, colorSpace: string
 /** A luminosity group painting the gray alpha shading, for an ExtGState's `/SMask`. */
 function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box): PdfRef {
   const ref = ctx.objects.alloc();
-  const body = Uint8Array.from('/Sh1 sh\n', (c) => c.charCodeAt(0));
+  const body = latin1Bytes('/Sh1 sh\n');
   ctx.objects.streamDeflated(
     ref,
     {

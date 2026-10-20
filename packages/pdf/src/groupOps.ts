@@ -1,4 +1,4 @@
-import { type GlMat3, mat3 } from '@weasel-js/geom';
+import { mat3 } from '@weasel-js/geom';
 import {
   commandsBounds,
   type DrawCommand,
@@ -9,7 +9,7 @@ import {
 } from '@weasel-js/renderer';
 import { composeMatrix, foldPixels } from './color';
 import { ContentStream } from './content';
-import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
+import { type DrawState, type PageCtx, pageFlip, skip, writeCommands } from './drawCommands';
 import { writeRaster } from './images';
 import { name } from './objects';
 import { fillPathOps } from './pathOps';
@@ -18,12 +18,6 @@ import type { RasterPixels, Rect } from './writePdf';
 
 /** Rasters are made at twice the page's point scale. */
 const RASTER_SCALE = 2;
-
-function skip(ctx: PageCtx, detail: string): void {
-  ctx.skipped.push({ kind: 'command', detail });
-}
-
-const cm = (m: GlMat3): [number, number, number, number, number, number] => [m[0], m[1], m[3], m[4], m[6], m[7]];
 
 /** The renderer clips through the fill mesh, so a clip covers what a fill of its path would. */
 function setClip(ctx: PageCtx, clip: NonNullable<GroupDrawCommand['clip']>): void {
@@ -62,7 +56,7 @@ async function drawRaster(
   if (!inverse) return;
   const { out } = ctx;
   out.op('q');
-  out.op('cm', ...cm(inverse));
+  out.op('cm', ...mat3.toAffine(inverse));
   writeRaster(ctx, { ...px, data: foldPixels(px.data, state) }, box, state.alpha);
   out.op('Q');
 }
@@ -113,12 +107,12 @@ async function rasterGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: DrawState
  */
 async function isolatedGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: DrawState, inner: DrawState): Promise<void> {
   if (cmd.colorMatrix?.[19]) skip(ctx, 'group color matrix alpha offset is not drawn');
-  const flip = mat3.fromAffine([1, 0, 0, -1, 0, ctx.height]);
+  const flip = pageFlip(ctx);
   const toPage = mat3.multiply(flip, Float64Array.from(state.transform));
   const fromPage = mat3.invert(toPage);
   if (!fromPage) return;
   const sub: PageCtx = { ...ctx, out: new ContentStream(), resources: new PageResources() };
-  sub.out.op('cm', ...cm(mat3.multiply(flip, Float64Array.from(inner.transform))));
+  sub.out.op('cm', ...mat3.toAffine(mat3.multiply(flip, Float64Array.from(inner.transform))));
   if (cmd.clip) setClip(sub, cmd.clip);
   await writeCommands(sub, cmd.children, { ...inner, alpha: 1 });
 
@@ -136,7 +130,7 @@ async function isolatedGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: DrawSta
   );
   const { out } = ctx;
   out.op('q');
-  out.op('cm', ...cm(fromPage));
+  out.op('cm', ...mat3.toAffine(fromPage));
   if (inner.alpha < 1) out.op('gs', `/${ctx.resources.extGState(inner.alpha, inner.alpha)}`);
   out.op('Do', `/${ctx.resources.xobject(form)}`);
   out.op('Q');
@@ -156,7 +150,7 @@ export async function writeGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: Dra
   if (cmd.isolate) return isolatedGroup(ctx, cmd, state, inner);
   const { out } = ctx;
   out.op('q');
-  if (m) out.op('cm', ...cm(m));
+  if (m) out.op('cm', ...mat3.toAffine(m));
   if (cmd.clip) setClip(ctx, cmd.clip);
   await writeCommands(ctx, cmd.children, inner);
   out.op('Q');

@@ -1,7 +1,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import { registerTexture, unregisterTexture } from '@weasel-js/renderer';
 import { afterEach, describe, expect, it } from 'vitest';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
 import { type RasterPixels, type WritePdfOptions, writePdf } from './writePdf';
 

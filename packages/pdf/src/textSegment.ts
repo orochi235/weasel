@@ -1,8 +1,15 @@
 import type { Path } from '@weasel-js/geom';
-import { type CommandPaint, type CommandStroke, fillHasInk, isSolidPaint, strokeHasInk } from '@weasel-js/paint';
+import {
+  type CommandPaint,
+  type CommandStroke,
+  fillHasInk,
+  isSolidPaint,
+  type SolidPaint,
+  strokeHasInk,
+} from '@weasel-js/paint';
 import type { TextDrawCommand } from '@weasel-js/renderer';
 import { type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
-import { colorFor } from './color';
+import { solidColor } from './color';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { num } from './num';
@@ -73,12 +80,6 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   out.op('ET');
 }
 
-function solidColor(paint: CommandPaint, state: DrawState): { rgb: [number, number, number]; alpha: number } {
-  if (!isSolidPaint(paint)) return { rgb: [0, 0, 0], alpha: 0 };
-  const [r, g, b, a] = colorFor(paint.color, state);
-  return { rgb: [r, g, b], alpha: a * (paint.opacity ?? 1) * state.alpha };
-}
-
 /** Paints the segment's glyphs from their outlines: all of the run's paint, or only its stroke. */
 async function paintOutlines(
   ctx: PageCtx,
@@ -123,7 +124,7 @@ export async function writeSegment(
   const nativeStroke = stroke && isNative(stroke.stroke, stroke.width) && isSolidPaint(stroke.stroke.paint);
   const solidFill = !fill || isSolidPaint(fill);
   const bold = syntheticBoldOffset(first.resolved);
-  const fillColor = fill && solidColor(fill, state);
+  const fillColor = fill && isSolidPaint(fill) ? solidColor(fill, state) : undefined;
   // A text object paints a fill-and-stroke glyph twice, which only matches a grown outline when opaque.
   const boldInText = bold && !stroke && solidFill && fillColor!.alpha >= 1;
   if ((stroke && !nativeStroke) || (bold && !boldInText)) return writeOutlinedInk(ctx, seg, cmd, dx, dy, state);
@@ -138,7 +139,7 @@ export async function writeSegment(
     if (stroke) await paintOutlines(ctx, seg, cmd, dx, dy, state, 'stroke');
     return;
   }
-  const strokeColor = stroke && solidColor(stroke.stroke.paint, state);
+  const strokeColor = nativeStroke ? solidColor(stroke.stroke.paint as SolidPaint, state) : undefined;
   const paintsFill = fillColor;
   if (!paintsFill && !strokeColor) return;
   out.op('q');

@@ -2,7 +2,7 @@ import { PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { composeMatrix, foldColor, foldPixels } from './color';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
 import { type RasterPixels, type WritePdfOptions, writePdf } from './writePdf';
 

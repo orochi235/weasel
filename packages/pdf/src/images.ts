@@ -7,7 +7,8 @@ import {
   textureRegistry,
 } from '@weasel-js/renderer';
 import { foldPixels } from './color';
-import type { DrawState, PageCtx } from './drawCommands';
+import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
+import { latin1Bytes } from './latin1';
 import { name, type PdfDict, type PdfRef } from './objects';
 import { paintToFrame } from './shading';
 import type { RasterPixels, Rect } from './writePdf';
@@ -75,7 +76,7 @@ export function imageXObject(
   try {
     raw = (ctx.opts.readPixels ?? defaultReadPixels)(image);
   } catch {
-    ctx.skipped.push({ kind: 'command', detail: 'image could not be read' });
+    skip(ctx, 'image could not be read');
     return null;
   }
   const ref = pixelsXObject(ctx, { ...raw, data: foldPixels(raw.data, state) }, interpolate);
@@ -193,9 +194,8 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
   const placement = mat3.fromAffine([a, b, c, d, o.x, o.y]);
   if (!mat3.invert(placement)) return null;
   // A pattern's matrix maps to the page's own space, below the flip that opens the content stream.
-  const flip = mat3.fromAffine([1, 0, 0, -1, 0, ctx.height]);
-  const m = mat3.multiply(mat3.multiply(flip, mat3.multiply(Float64Array.from(state.transform), toFrame)), placement);
-  const matrix = [m[0], m[1], m[3], m[4], m[6], m[7]];
+  const m = mat3.multiply(mat3.multiply(pageFlip(ctx), mat3.multiply(Float64Array.from(state.transform), toFrame)), placement);
+  const matrix = mat3.toAffine(m);
 
   const key = `pattern ${paint.texture.id} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
   const cache = memo(ctx);
@@ -218,7 +218,7 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
         Matrix: matrix,
         Resources: { XObject: { Im1: image } },
       },
-      Uint8Array.from(`${w} 0 0 -${h} 0 ${h} cm\n/Im1 Do\n`, (ch) => ch.charCodeAt(0)),
+      latin1Bytes(`${w} 0 0 -${h} 0 ${h} cm\n/Im1 Do\n`),
     );
     cache.set(key, ref);
   }

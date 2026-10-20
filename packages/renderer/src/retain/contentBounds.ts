@@ -1,4 +1,4 @@
-import { mat3, type GlMat3 } from '@weasel-js/geom';
+import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from '../DrawCommand';
 import { CULL_SLACK_PX, paintedBox, pathBox, type ScreenBox } from '../cullDrawCommands';
 import type { RetainedClip } from './retainedKey';
@@ -80,9 +80,13 @@ function clipped(a: ScreenBox, clip: ScreenBox | null): ScreenBox {
   return box.minX > box.maxX || box.minY > box.maxY ? EMPTY : box;
 }
 
-/** The whole-unit rect `commands` can paint under `transform` within a `width × height` page; zero-sized where nothing lands on it. */
+/**
+ * The rect `commands` can paint under `transform`, in whole units of the space
+ * `transform` maps into, within a `width × height` page from that space's
+ * origin; zero-sized where nothing lands on it.
+ */
 export function commandsBounds(
   commands: readonly DrawCommand[], transform: GlMat3, page: { width: number; height: number },
-): DeviceRect {
+): Rect {
   return contentBounds(commands, transform, [], 1, page.width, page.height);
 }

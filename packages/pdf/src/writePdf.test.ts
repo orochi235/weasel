@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
 import { writePdf, writePdfWith } from './writePdf';
 

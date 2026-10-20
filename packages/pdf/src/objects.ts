@@ -1,3 +1,4 @@
+import { latin1Bytes as latin1 } from './latin1';
 import { num } from './num';
 
 export class PdfName {
@@ -75,8 +76,6 @@ function writeDict(d: PdfDict): string {
   for (const [k, v] of Object.entries(d)) if (v !== undefined) parts.push(`${writeName(k)} ${write(v)}`);
   return `<<${parts.join(' ')}>>`;
 }
-
-const latin1 = (s: string): Uint8Array => Uint8Array.from(s, (c) => c.charCodeAt(0));
 
 export type Deflater = (data: Uint8Array) => Promise<Uint8Array>;
 

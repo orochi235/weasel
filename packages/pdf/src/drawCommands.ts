@@ -1,7 +1,7 @@
-import type { GlMat3 } from '@weasel-js/geom';
+import { type GlMat3, mat3 } from '@weasel-js/geom';
 import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
-import { colorFor } from './color';
+import { solidColor } from './color';
 import type { ContentStream } from './content';
 import type { DocumentFonts } from './fonts/embedFont';
 import { rasterFill, writeGroup, writeShader } from './groupOps';
@@ -35,8 +35,13 @@ export interface PageCtx {
   height: number;
 }
 
-function skip(ctx: PageCtx, detail: string): void {
+export function skip(ctx: PageCtx, detail: string): void {
   ctx.skipped.push({ kind: 'command', detail });
+}
+
+/** The page's default space from its y-down frame, origin top left: the matrix every content stream opens with. */
+export function pageFlip(ctx: { height: number }): GlMat3 {
+  return mat3.fromAffine([1, 0, 0, -1, 0, ctx.height]);
 }
 
 function setAlpha(ctx: PageCtx, fill: number, stroke: number): void {
@@ -51,7 +56,7 @@ function writeShadedFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, p
   out.op(fillPathOps(out, cmd.path) ? 'W*' : 'W');
   out.op('n');
   if (sh.alpha < 1) setAlpha(ctx, sh.alpha, sh.alpha);
-  if (sh.matrix) out.op('cm', sh.matrix[0], sh.matrix[1], sh.matrix[3], sh.matrix[4], sh.matrix[6], sh.matrix[7]);
+  if (sh.matrix) out.op('cm', ...mat3.toAffine(sh.matrix));
   if (sh.softMask) out.op('gs', `/${sh.softMask}`);
   out.op('sh', `/${sh.shading}`);
   out.op('Q');
@@ -78,12 +83,11 @@ async function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): 
   // A registered paint kind, which the paint union does not name.
   if (!isSolidPaint(paint)) return rasterFill(ctx, cmd, state, (paint as { kind: string }).kind);
   if (cmd.vertexColors?.length) skip(ctx, 'fill vertexColors approximated by the solid fill');
-  const [r, g, b, a] = colorFor(paint.color, state);
-  const alpha = a * (paint.opacity ?? 1) * state.alpha;
+  const { rgb, alpha } = solidColor(paint, state);
   const { out } = ctx;
   out.op('q');
   setAlpha(ctx, alpha, alpha);
-  out.op('rg', r, g, b);
+  out.op('rg', ...rgb);
   out.op(fillPathOps(out, cmd.path) ? 'f*' : 'f');
   out.op('Q');
 }

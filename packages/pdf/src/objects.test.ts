@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { num } from './num';
 import { bytes, name, PdfObjects, text } from './objects';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 
 describe('num', () => {
   it('rounds to four decimals without an exponent', () => {

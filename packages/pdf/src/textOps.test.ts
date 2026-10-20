@@ -15,7 +15,7 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { num } from './num';
 import { type PdfFontSource, registryFontSource } from './fonts/fontSource';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 import { writePdf } from './writePdf';
 
 const INTER = resolve(import.meta.dirname, '../../../assets/fonts/inter');

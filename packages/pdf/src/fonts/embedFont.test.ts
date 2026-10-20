@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { name, PdfObjects } from '../objects';
-import { latin1 } from '../testing/latin1';
+import { latin1 } from '../latin1';
 import { DocumentFonts } from './embedFont';
 import { type PdfFontSource, registryFontSource } from './fontSource';
 

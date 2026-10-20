@@ -3,7 +3,7 @@ import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '@weasel-js/geom';
 import { describe, expect, it } from 'vitest';
 import { ContentStream } from './content';
 import { pathOps } from './pathOps';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 
 function ops(path: Path, which: 'all' | 'closed' = 'all'): string {
   const out = new ContentStream();

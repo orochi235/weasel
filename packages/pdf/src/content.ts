@@ -1,3 +1,4 @@
+import { latin1Bytes } from './latin1';
 import { num } from './num';
 
 /** A page's content stream, built one operator per line. */
@@ -22,6 +23,6 @@ export class ContentStream {
   }
 
   bytes(): Uint8Array {
-    return Uint8Array.from(`${this.lines.join('\n')}\n`, (c) => c.charCodeAt(0));
+    return latin1Bytes(`${this.lines.join('\n')}\n`);
   }
 }

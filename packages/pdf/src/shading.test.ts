@@ -2,7 +2,7 @@ import { type GlMat3, PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom'
 import type { CommandPaint, GradStop } from '@weasel-js/paint';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it } from 'vitest';
-import { latin1 } from './testing/latin1';
+import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
 import { writePdf } from './writePdf';
 

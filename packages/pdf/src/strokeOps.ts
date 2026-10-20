@@ -2,8 +2,8 @@ import type { Path } from '@weasel-js/geom';
 import { type CommandPaint, type CommandStroke, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { strokeInsets, strokeToPath } from '@weasel-js/stroke';
-import { colorFor } from './color';
-import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
+import { solidColor } from './color';
+import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { num } from './num';
 import { pathOps } from './pathOps';
 
@@ -43,12 +43,11 @@ export function resolveStroke(
 function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: DrawState, width: number): void {
   const paint = stroke.paint;
   if (!paint || !isSolidPaint(paint)) return;
-  const [r, g, b, a] = colorFor(paint.color, state);
-  const alpha = a * (paint.opacity ?? 1) * state.alpha;
+  const { rgb, alpha } = solidColor(paint, state);
   const { out } = ctx;
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
-  out.op('RG', r, g, b);
+  out.op('RG', ...rgb);
   strokeStyleOps(ctx, stroke, width);
   pathOps(out, path, 'all');
   out.op('S');
@@ -71,9 +70,7 @@ export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandSt
       : [];
   if (isNative(stroke, width) && isSolidPaint(stroke.paint)) writeNative(ctx, path, stroke, state, width);
   else {
-    if (stroke.vertexColors) {
-      ctx.skipped.push({ kind: 'command', detail: 'stroke vertexColors approximated by a single paint' });
-    }
+    if (stroke.vertexColors) skip(ctx, 'stroke vertexColors approximated by a single paint');
     heads = heads.filter((h) => h.stroke || h.fill?.paint !== stroke.paint);
     const outline = strokeToPath(path, stroke as Stroke);
     await writeCommands(ctx, [{ kind: 'path', path: outline, fill: { paint: stroke.paint } }], state);
