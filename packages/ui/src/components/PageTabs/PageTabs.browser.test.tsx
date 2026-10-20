@@ -66,11 +66,14 @@ test('dragging a tab past another reorders the strip', async () => {
   await expect.poll(labels).toEqual(['Two', 'Three', 'One']);
 });
 
-test('the strip is one row as tall as a tab, with the + beside the tabs', () => {
+test('the strip is one bar-high row, its tabs filling it, with the + beside them', () => {
   render(<Strip onSelect={() => {}} />);
   const tabs = screen.getAllByRole('tab').map((t) => t.getBoundingClientRect());
   const add = screen.getByRole('button', { name: 'Add page' }).getBoundingClientRect();
+  const strip = screen.getByRole('tablist').parentElement!.parentElement!.getBoundingClientRect();
   expect(new Set(tabs.map((r) => Math.round(r.top))).size).toBe(1);
-  expect(tabs[0]!.height).toBeGreaterThan(16);
+  expect(strip.height).toBe(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wzl-tb-height')));
+  // The strip's top border is the only part of it a tab does not cover.
+  expect(tabs[0]!.height).toBeCloseTo(strip.height - 1, 0);
   expect(add.left).toBeGreaterThanOrEqual(tabs[2]!.right - 1);
 });

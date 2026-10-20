@@ -1,6 +1,9 @@
+/* A bar's height, not its content's: a font arriving late must not resize what the strip sits under. */
 .strip {
+  box-sizing: border-box;
   display: flex;
   align-items: stretch;
+  height: var(--wzl-tb-height);
   min-width: 0;
   background: var(--wzl-surface);
   border-top: 1px solid var(--wzl-border);
@@ -14,14 +17,17 @@
 /* The strip sits under what it switches, so its tabs hang from the top edge: the rules below
    restate `Tabs`' bottom-edge ones, and carry the strip's class to outrank them. */
 .strip .list {
+  flex: 1;
   border-bottom: none;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 
 .strip .tab {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
-  padding: var(--wzl-space-2) var(--wzl-space-4);
+  padding: 0 var(--wzl-space-4);
   white-space: nowrap;
   user-select: none;
 }
