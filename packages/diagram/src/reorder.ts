@@ -29,9 +29,9 @@ export interface ReorderItem {
   /** The scene node drawn for it. */
   id: string;
   bounds: Box;
-  /** Where a press picks it up. Default `bounds`. */
-  grip?: Box;
-  /** The scene nodes that move with it. Default `[id]`. */
+  /** Where a press picks it up. Default `bounds`; `null` never picks it up, though it keeps its gaps. */
+  grip?: Box | null;
+  /** The scene nodes that move with it, in either `show` mode. Default `[id]`. */
   carries?: readonly string[];
 }
 
@@ -69,7 +69,7 @@ export interface ReorderOptions {
   /** Deps `slots` reads beyond `scene`. */
   requires?: Action['requires'];
   /**
-   * `'bar'` (default) carries the item alone and draws an insertion bar at its
+   * `'bar'` (default) carries the item and draws an insertion bar at its
    * gap. `'slide'` carries everything each item `carries` as pose overrides,
    * so what derives from them follows, and slides the others into place; the
    * overrides stay after a commit until the scene next changes.
@@ -119,7 +119,7 @@ interface Held {
 }
 
 function pickAt(slots: ReorderSlots | null, at: Vec2): { from: number; item: ReorderItem } | null {
-  const from = slots?.items.findIndex((i) => inside(at, i.grip ?? i.bounds)) ?? -1;
+  const from = slots?.items.findIndex((i) => i.grip !== null && inside(at, i.grip ?? i.bounds)) ?? -1;
   return from < 0 ? null : { from, item: slots!.items[from]! };
 }
 
@@ -199,15 +199,23 @@ export function createReorderAction(opts: ReorderOptions): Action {
           };
         }
 
-        const pose = ctx.deps.scene?.get(held.item.id as never)?.pose as Box | undefined;
+        const carried = held.item.carries ?? [held.item.id];
+        const poses = new Map<string, Box>();
+        for (const id of carried) {
+          const pose = ctx.deps.scene?.get(id as never)?.pose as Box | undefined;
+          if (pose !== undefined) poses.set(id, pose);
+        }
         return {
           kind: 'diagram-reorder',
           onMove(moveCtx: InvocationCtx): void {
             by = moveCtx.world[axis] - start[axis];
           },
-          previewIds: () => (open && pose !== undefined ? [held.item.id] : null),
-          previewPose: (id) => (id !== held.item.id || pose === undefined ? null : { ...pose, [axis]: pose[axis] + by }),
-          previewOpaqueIds: () => [held.item.id],
+          previewIds: () => (open && poses.size > 0 ? [...poses.keys()] : null),
+          previewPose: (id) => {
+            const pose = poses.get(id);
+            return pose === undefined ? null : { ...pose, [axis]: pose[axis] + by };
+          },
+          previewOpaqueIds: () => [...carried],
           overlay(): OngoingOverlay | null {
             const gap = open ? gapAt(held, by) : null;
             if (gap === null) return null;
