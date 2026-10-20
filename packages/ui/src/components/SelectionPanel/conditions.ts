@@ -1,7 +1,7 @@
 import type { NodePropertiesEntry } from '@weasel-js/core';
 import { applyPrefConditions, prefAliasTargets, prefJudge, prefLeafAt, prefSchemaHolding, type PrefAliasTargets, type PrefConditionJudge, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
-import { absentValue, effectiveSections, nodeValueAt, type AnyNode, type PanelSection } from './model';
+import { effectiveSections, nodeLeafValue, nodeValueAt, type AnyNode, type PanelSection } from './model';
 
 /**
  * Whether a condition of `schema` holds across `nodes`, each read at its own
@@ -17,9 +17,8 @@ export function selectionJudge(
   const judges = nodes.map((node) =>
     prefJudge(schema, (path) => {
       const held = nodeValueAt(node, path);
-      if (held !== undefined) return held;
       const leaf = prefLeafAt(prefSchemaHolding(schema, path, over), path);
-      return leaf && absentValue(leaf);
+      return leaf ? nodeLeafValue(leaf, held) : held;
     }, entry, over),
   );
   return (condition, field) =>

@@ -21,6 +21,7 @@ import {
   pairRuns,
   prefAliasTargets,
   prefHeadingKey,
+  prefLeafValue,
   prefSectionLeaves,
   type PrefAlias,
   type PrefAliasTargets,
@@ -237,9 +238,15 @@ export function setAtPath(root: object, segments: readonly string[], value: unkn
     : { ...root, [head]: nested };
 }
 
-/** What a node holding nothing at a leaf's path reads as there: the leaf's default where it says absence means
- *  that, else `undefined`, which a panel draws as unset. */
-export const absentValue = (leaf: PrefLeaf): unknown => (leaf.absentIsDefault === true ? leaf.default : undefined);
+/** What a node holding `held` at a leaf's path shows there ({@link prefLeafValue}). Holding nothing reads as the
+ *  leaf's default only where it says absence means that, else as `undefined`, which a panel draws as unset. */
+export const nodeLeafValue = (leaf: PrefLeaf, held: unknown): unknown =>
+  prefLeafValue(leaf, held, { unset: leaf.absentIsDefault !== true });
+
+/** {@link aggregateValue} for the leaf at `path`: each node's value as {@link nodeLeafValue} shows it. */
+export function aggregateLeaf(nodes: readonly AnyNode[], path: string, leaf: PrefLeaf): unknown | Mixed {
+  return sharedValue(nodes.map((node) => nodeLeafValue(leaf, nodeValueAt(node, path))));
+}
 
 /** Aggregate a path across nodes: the shared value, or `MIXED`. A node
  *  holding nothing there reads as `absent`. */

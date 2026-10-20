@@ -92,9 +92,12 @@ the same for its buffers, or an expanded tile shows without them.
 
 ## Traps
 
-- **`preserveDrawingBuffer` is the consumer's job and is usually required.** A
-  partial redraw touches one tile; without it the default framebuffer's contents
-  are undefined after the page composites, and every other tile goes black.
+- **Open the context with core's `CANVAS_CONTEXT_ATTRIBUTES`.** labkit never
+  opens it, so whichever tenant paints first fixes the attributes for every
+  tenant of that buffer, and a weasel renderer refuses a context without a
+  stencil buffer. Its `preserveDrawingBuffer` matters too: a partial redraw
+  touches one tile, and without it the default framebuffer's contents are
+  undefined after the page composites, so every other tile goes black.
 - **Gutters lie outside every scissor**, so a tile that moves leaves its old
   picture where nothing will paint over it — a cloned trial strands the whole
   previous layout in the gap. Register a `registerClear(id, fn)` beside the

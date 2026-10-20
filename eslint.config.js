@@ -320,6 +320,9 @@ export default [
       'no-restricted-syntax': ['error', {
         selector: "CallExpression[callee.property.name='getContext'][arguments.length=1][arguments.0.value='webgl2']",
         message: "Read a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: a bare getContext('webgl2') can open the context without the stencil buffer the renderer needs.",
+      }, {
+        selector: "CallExpression[callee.property.name='getContext'][arguments.0.value='webgl2'] > ObjectExpression:nth-child(2):not(:has(Property[key.name='stencil'][value.value=true])):not(:has(SpreadElement))",
+        message: "Open a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: attributes without stencil: true can open the context without the stencil buffer the renderer needs.",
       }],
     },
   },
