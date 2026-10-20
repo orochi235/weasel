@@ -72,12 +72,27 @@ export {
 } from './routeCommands';
 export type { RouteEdit, RouteEditOptions } from './waypointAction';
 export {
-  dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, routeHandles, segmentAxis, simplifyStops,
+  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, routerActions, withRouter,
+} from './routerCommands';
+export type { RouterEdit, SetRouterOptions } from './routerCommands';
+export {
+  dragSegment, dragVertex, insertWaypoint, pinSegment, removeSegment, removeWaypoint, routeHandles, segmentAxis,
+  simplifyStops, unpinSegment,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
 export { portTarget, snapPoint, stopTarget } from './routeSnap';
 export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
+export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
+export type {
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+} from './avoid';
+export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
+export type { AvoidSceneOptions } from './avoid/sceneInput';
+export { installAvoidRouting, routeDataOps } from './avoid/install';
+export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
+export { useAvoidRouting } from './avoid/useAvoidRouting';
+export { createSpecRouter } from './avoid/specRoutes';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
@@ -104,6 +119,7 @@ export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
   ROUTERS,
+  avoid,
   bezier,
   edgeDerivePath,
   edgeRouter,
@@ -113,7 +129,7 @@ export {
   withDiagramRegistry,
 } from './edge';
 export type { EdgeRouteOptions, ResolvedRoute, RouteRequest, Router } from './edge';
-export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute } from './edgeTrait';
+export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, layoutWritesRoute } from './edgeTrait';
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
 export type { SelfLoop } from './selfLoop';

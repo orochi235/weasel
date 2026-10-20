@@ -2,6 +2,8 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiagramView, type DiagramViewProps } from './DiagramView';
+import { createSpecRouter } from './avoid/specRoutes';
+import type { DiagramEdge } from './edgeTrait';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 
 afterEach(() => { cleanup(); });
@@ -67,5 +69,26 @@ describe('DiagramView route editing', () => {
       canvas.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: 200, clientY: 100, detail: 2 }));
     });
     expect(onEditRoute).toHaveBeenCalledWith({ edge: edgeIdOf(data.edges[0]!), waypoints: [] });
+  });
+});
+
+describe('DiagramView router="avoid"', () => {
+  it('draws each edge around the shapes in its way', () => {
+    const data: DiagramData = {
+      nodes: [...DATA.nodes.map((n) => ({ ...n, at: { x: n.at!.x, y: 100 } })), { id: 'wall', lines: [], width: 40, height: 120, at: { x: 180, y: 60 } }],
+      edges: [{ from: 'a', to: 'b' }],
+    };
+    const specs = diagramScene(data, { layout: 'none' });
+    const routed = createSpecRouter()(specs).find((s) => s.id === AB)!;
+    const route = (routed.data as { diagram: DiagramEdge }).diagram.route!;
+    const run = route.findIndex((p, i) => i > 0 && p.y === route[i - 1]!.y);
+    const on = { x: (route[run - 1]!.x + route[run]!.x) / 2, y: route[run]!.y };
+    const onSelect = vi.fn();
+    const { container } = render(
+      <DiagramView specs={specs} router="avoid" pickEdges onSelect={onSelect} width={500} height={300} view={IDENTITY} onViewChange={() => {}} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    click(canvas, on.x, on.y);
+    expect(onSelect).toHaveBeenLastCalledWith(AB);
   });
 });

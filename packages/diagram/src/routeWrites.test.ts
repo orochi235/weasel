@@ -63,3 +63,28 @@ describe('ports layout named', () => {
     expect(edge(AB).to).toEqual({});
   });
 });
+
+describe('an avoid connector under layout', () => {
+  const SPAN: DiagramData = {
+    nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] }],
+    edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'a', to: 'c', router: 'avoid' }],
+  };
+  const AC = edgeIdOf({ from: 'a', to: 'c' });
+
+  it('gets no waypoints from layout, but still its ports', () => {
+    const { scene, relayout, edge } = load(SPAN);
+    expect(edge(AC).waypoints).toBeUndefined();
+    const data = scene.get(AC as never)!.data as { diagram: DiagramEdge };
+    scene.update(AC as never, { data: { ...data, diagram: { ...data.diagram, from: {}, to: {} } } });
+    relayout();
+    expect(edge(AC).waypoints).toBeUndefined();
+    expect(edge(AC).laidOut).toBeUndefined();
+    expect(edge(AC).from).toMatchObject({ port: 's' });
+  });
+
+  it('is the only one layout leaves without waypoints', () => {
+    const { relayout, edge } = load({ ...SPAN, edges: SPAN.edges.map(({ router: _r, ...e }) => e) });
+    relayout();
+    expect(edge(AC).waypoints?.length).toBeGreaterThan(0);
+  });
+});

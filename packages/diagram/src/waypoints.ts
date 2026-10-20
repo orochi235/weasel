@@ -9,7 +9,10 @@
  * Each edit answers the edge's new waypoints, never the whole route.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { orthogonal, type Router } from './edge';
+import { avoid, orthogonal, type Router } from './edge';
+import { simplifyStops } from './polyline';
+
+export { simplifyStops };
 
 /** A handle a selected edge shows along its route. `at` is where it sits, in world units. */
 export type RouteHandle =
@@ -63,10 +66,10 @@ function middleOf(drawn: readonly Vec2[], a: number, b: number): Vec2 {
   return drawn[a]!;
 }
 
-/** The handles an edge shows: a bar per segment under `orthogonal`, else a
- *  dot per waypoint and a hollow dot per leg. */
+/** The handles an edge shows: a bar per segment under `orthogonal` and
+ *  `avoid`, else a dot per waypoint and a hollow dot per leg. */
 export function routeHandles(drawn: readonly Vec2[], stops: readonly Vec2[], router: Router): RouteHandle[] {
-  if (router === orthogonal) {
+  if (router === orthogonal || router === avoid) {
     const out: RouteHandle[] = [];
     for (let i = 0; i + 1 < drawn.length; i++) {
       const a = drawn[i]!;
@@ -148,6 +151,37 @@ export function dragSegment(drawn: readonly Vec2[], index: number, offset: numbe
 }
 
 /**
+ * The waypoints of an `avoid` route with segment `index` of `drawn` slid
+ * `offset` across its axis and pinned there: its two ends join the author's
+ * waypoints, in route order, and the router keeps the rest. A waypoint at one
+ * of its ends moves with it, and a segment meeting a port jogs off it so the
+ * port end stays square.
+ */
+export function pinSegment(drawn: readonly Vec2[], stops: readonly Vec2[], index: number, offset: number): Vec2[] {
+  const a = drawn[index]!;
+  const b = drawn[index + 1]!;
+  const axis = segmentAxis(a, b);
+  const waypoints = interior(stops);
+  if (axis === null) return waypoints;
+  const jog = Math.min(JOG, Math.hypot(b.x - a.x, b.y - a.y) / 2);
+  const start = index === 0 ? toward(a, b, jog) : a;
+  const end = index === drawn.length - 2 ? toward(b, a, jog) : b;
+  const at = waypoints.map((w) => drawn.findIndex((p) => same(p, w)));
+  const before = waypoints.filter((w, k) => at[k]! >= 0 && at[k]! <= index && !same(w, a));
+  const after = waypoints.filter((w, k) => (at[k]! < 0 || at[k]! > index) && !same(w, b));
+  return [...before, shifted(start, axis, offset), shifted(end, axis, offset), ...after];
+}
+
+/** The waypoints of an `avoid` route without those at either end of segment
+ *  `index`, which hands the segment back to the router; null when neither end is one. */
+export function unpinSegment(drawn: readonly Vec2[], stops: readonly Vec2[], index: number): Vec2[] | null {
+  const ends = [drawn[index]!, drawn[index + 1]!];
+  const waypoints = interior(stops);
+  const kept = waypoints.filter((w) => !ends.some((e) => same(e, w)));
+  return kept.length === waypoints.length ? null : kept;
+}
+
+/**
  * The waypoints with segment `index` straightened away: its neighbors run in
  * parallel, and the one touching no port slides onto the other's line. Null
  * when it is the first or last segment, or both neighbors touch a port.
@@ -163,23 +197,4 @@ export function removeSegment(drawn: readonly Vec2[], index: number): Vec2[] | n
   if (next < last) return dragSegment(drawn, next, across(drawn[index]!) - across(drawn[index + 1]!));
   if (prev > 0) return dragSegment(drawn, prev, across(drawn[index + 1]!) - across(drawn[index]!));
   return null;
-}
-
-/** `points` without repeats, and without any interior point lying straight
- *  between its neighbors. The first and last always stay. */
-export function simplifyStops(points: readonly Vec2[]): Vec2[] {
-  const out: Vec2[] = [];
-  for (const p of points) {
-    if (out.length > 0 && same(out[out.length - 1]!, p)) continue;
-    while (out.length >= 2 && between(out[out.length - 2]!, out[out.length - 1]!, p)) out.pop();
-    out.push(p);
-  }
-  return out;
-}
-
-/** Whether `m` lies on the segment from `a` to `b`, going the same way. */
-function between(a: Vec2, m: Vec2, b: Vec2): boolean {
-  const cross = (m.x - a.x) * (b.y - a.y) - (m.y - a.y) * (b.x - a.x);
-  const dot = (m.x - a.x) * (b.x - m.x) + (m.y - a.y) * (b.y - m.y);
-  return Math.abs(cross) <= EPS && dot > 0;
 }

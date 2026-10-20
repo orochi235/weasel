@@ -124,6 +124,7 @@ A selected edge shows handles along its route as well as at its ends.
 |---|---|---|---|
 | `straight`, `bezier` | a dot on each waypoint; a smaller hollow dot in the middle of each leg | a dot moves its waypoint; a hollow dot inserts one there | a dot removes its waypoint |
 | `orthogonal` | a bar in the middle of each segment | slides the segment across its axis; a segment touching a port gets a jog, so the port end stays square | straightens a jog away, when a neighbor touching no port can slide into line |
+| `avoid` | a bar in the middle of each segment | slides the segment and pins only it: its two ends become waypoints, and the router keeps the rest | unpins it, dropping the waypoints at its ends |
 
 A dragged handle snaps into line with the stops beside it and with a port's
 axis within 6 screen pixels, and a guide shows the alignment. Escape cancels.
@@ -151,12 +152,62 @@ const route = useMemo(() => diagramWaypoints({ participants, selected }), [parti
 An orthogonal segment drag writes every bend of the new route as a waypoint,
 since the router recomputes elbows between stops. The math is exported on its
 own: `routeHandles`, `dragVertex`, `insertWaypoint`, `removeWaypoint`,
-`dragSegment`, `removeSegment`, and `simplifyStops`.
+`dragSegment`, `removeSegment`, `pinSegment`, `unpinSegment`, and `simplifyStops`.
 
 Waypoints ride along with a move that carries both of an edge's ends by the
 same offset: `waypointFollower(scene)` is a transform follower, added to the
 canvas with core's `useTransformFollower`. An edge with one end moved keeps its
 waypoints where they are.
+
+### Routing around shapes
+
+The `avoid` router draws connectors around shapes: orthogonal, with few bends,
+10 world units clear of every shape, and parallel runs spread 8 apart. Routes
+are computed when the scene is edited and stored on the edge as
+`diagram.route`, the bends between its ends, so a saved file draws them with no
+router running and undo restores them exactly. A stored route that no longer
+fits its ends, after something that did not reroute moved one, draws as
+`orthogonal` instead.
+
+`useAvoidRouting(scene)`, mounted as a child of `<SceneCanvas>`, reroutes what
+each edit disturbed — a move, an insert onto a route, a delete, a paste, a
+panel edit — in that edit's own undo entry, and while a shape is dragged it
+reroutes the connectors near it each frame. Installing it reroutes nothing.
+`installAvoidRouting(scene)` does the same for a host without React, and hands
+back the drag's transform follower.
+
+```tsx
+function Routing({ scene }) {
+  useAvoidRouting(scene);
+  return null;
+}
+
+<SceneCanvas scene={scene} /* … */>
+  <Routing scene={scene} />
+</SceneCanvas>
+```
+
+What a connector routes around:
+
+| Thing | In the way when |
+|---|---|
+| A shape | always, beyond the stubs where a connector leaves or meets it |
+| A container, pool, or group box | neither end is inside it |
+| A lane's body | never |
+| A lane's or pool's header | always |
+| An edge label | never |
+
+Authored waypoints are stops the route passes in order. Layout names an
+`avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
+`.orthogonal`, `.straight`, and `.bezier` (`SET_ROUTER_ACTION_IDS`, carried by
+`diagramWaypoints`) set the selected connectors' router; leaving `avoid` drops
+the stored route.
+
+A data-backed `DiagramView` takes `router="avoid"`: it routes every edge of
+each new `specs` around the shapes, holding one router across them so each
+reroutes only what changed, and never reports a route. `createSpecRouter` is
+that step on its own. The search itself, `createAvoidRouter`, reads plain boxes
+and ports and is in `@weasel-js/diagram/layout`.
 
 ### Edge labels
 
