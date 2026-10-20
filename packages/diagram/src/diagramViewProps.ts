@@ -43,6 +43,10 @@ export interface DiagramViewProps {
    *  new `specs` so each reroutes only what it disturbed. The routes derive
    *  from the specs and are never reported. */
   router?: 'avoid';
+  /** `'dodge'` moves each edge label off whatever covers it, along its
+   *  route or across it, after any `router` has run. Placement derives from
+   *  the specs and is never reported. */
+  labels?: 'dodge';
   /** The view opens fitted to the diagram, and fits again when the size or a
    *  fit option changes or a layout run settles, until the user pans or zooms;
    *  from then on the view is theirs. Omit both to fill the parent, which

@@ -147,10 +147,16 @@ export type {
 } from './graph';
 export { EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
-export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
 export type { DiagramLabel, LabelSpot } from './labelTrait';
+export { placeLabels } from './labels/place';
+export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
+export { installLabelPlacement } from './labels/install';
+export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
+export { useLabelPlacement } from './labels/useLabelPlacement';
+export { createSpecLabelPlacer } from './labels/specLabels';
 export { diagramResizable } from './resizable';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';
