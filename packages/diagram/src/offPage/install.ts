@@ -12,7 +12,6 @@ import {
   createSetDataOp,
   createTransformOp,
   documentPose,
-  pageName,
   placedPagesOf,
   type Op,
   type PlacedPage,
@@ -25,7 +24,7 @@ import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
 import { offPageSplits, type OffPageEdgeInput } from './split';
-import { offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, offPageTagText, type OffPageTagLook } from './tag';
+import { offPageFarText, offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, type OffPageTagLook } from './tag';
 import { offPageTagId, type OffPageSplit } from './trait';
 
 /** Options for {@link installOffPageMarkers} and `useOffPageMarkers`. */
@@ -80,9 +79,7 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
       if (tag !== undefined) ops.push(createDeleteOp({ node: tag as never, label: 'Off-page' }));
       continue;
     }
-    const far = end === 'from' ? split.to : split.from;
-    const index = pages.findIndex((p) => p.id === far);
-    const text = offPageTagText(index < 0 ? far : pageName(pages[index]!, index), split.ref);
+    const text = offPageFarText(pages, split, end);
     if (tag === undefined) {
       const spec = offPageTagSpec(edge.id, end, text, { ...lookOf(), layer: edge.layer });
       ops.push(createInsertOp({ node: { ...spec, parent: null } as never, label: 'Off-page' }));

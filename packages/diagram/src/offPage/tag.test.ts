@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { asNodeId, createScene, PathBuilder, type DerivedDep, type Path, type RectPose } from '@weasel-js/core';
+import { asNodeId, createScene, layoutPages, PathBuilder, type DerivedDep, type Path, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
-import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE, offPageTagSize, offPageTagSpec, offPageTagText } from './tag';
+import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE, offPageFarText, offPageTagSize, offPageTagSpec, offPageTagSpecs, offPageTagText } from './tag';
 import { offPageTagOf } from './trait';
 
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: '#111111', background: '#ffffff', padding: 2 };
@@ -56,4 +56,24 @@ describe('off-page tags', () => {
     const json = scene.toJSON();
     expect(json.nodes.find((n) => n.id === `${a}/offpage-from`)?.derivePoseKey).toBe(DIAGRAM_OFF_PAGE_TAG);
   });
+});
+
+const pages = layoutPages([{ id: 'p1', width: 200, height: 100 }, { id: 'p2', name: 'Detail', width: 200, height: 100 }]);
+
+describe('offPageFarText', () => {
+  it('names the page at the other end, by its name or its place', () => {
+    const split = { ref: 'A', from: 'p1', to: 'p2' };
+    expect(offPageFarText(pages, split, 'from')).toBe('Detail · A');
+    expect(offPageFarText(pages, split, 'to')).toBe('Page 1 · A');
+  });
+  it('falls back to the page id when that page is gone', () => {
+    expect(offPageFarText(pages, { ref: 'B', from: 'p1', to: 'gone' }, 'from')).toBe('gone · B');
+  });
+});
+
+it('offPageTagSpecs makes the from tag then the to tag, each depending on the edge', () => {
+  const specs = offPageTagSpecs('e1', { ref: 'A', from: 'p1', to: 'p2' }, pages, { ...LOOK, layer: 'main' });
+  expect(specs.map((s) => s.id)).toEqual(['e1/offpage-from', 'e1/offpage-to']);
+  expect(specs.every((s) => s.dependsOn?.[0] === 'e1')).toBe(true);
+  expect((specs[0]!.data as { text: string }).text).toBe('Detail · A');
 });

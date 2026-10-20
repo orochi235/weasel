@@ -181,7 +181,7 @@ export { nextOffPageRef, offPageSplits } from './offPage/split';
 export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
 export {
   DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE, OFF_PAGE_TAG_PADDING, offPageTagData, offPageTagDerivePose, offPageTagLook,
-  offPageTagSize, offPageTagSpec, offPageTagText,
+  offPageFarText, offPageTagSize, offPageTagSpec, offPageTagSpecs, offPageTagText,
 } from './offPage/tag';
 export type { OffPageTagLook } from './offPage/tag';
 export { offPageTagId, offPageTagOf } from './offPage/trait';

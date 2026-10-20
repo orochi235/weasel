@@ -6,7 +6,9 @@ import {
   AUTO_POSE_DESCRIPTOR,
   translatePoseViaDescriptor,
   type AddNodeSpec,
+  pageName,
   type DerivedDep,
+  type PlacedPage,
   type PoseDescriptor,
   type RectPose,
   type Vec2,
@@ -16,7 +18,7 @@ import { labelSize } from '../edgeLabel';
 import { subpathOf } from '../subpaths';
 import { themeLabelStyle } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
-import { offPageTagId, offPageTagOf } from './trait';
+import { offPageTagId, offPageTagOf, type OffPageSplit } from './trait';
 
 /** How a tag is drawn: its face, its text color, and the box behind the text. */
 export interface OffPageTagLook {
@@ -41,6 +43,13 @@ export const offPageTagLook = (theme: DiagramTheme): OffPageTagLook =>
 
 /** What a tag reads: the far page's name and the connector's reference. */
 export const offPageTagText = (pageName: string, ref: string): string => `${pageName} · ${ref}`;
+
+/** What the tag at `end` of a split reads: the page at the other end, by name or place, else its raw id, and the reference. */
+export function offPageFarText(pages: readonly PlacedPage[], split: OffPageSplit, end: 'from' | 'to'): string {
+  const far = end === 'from' ? split.to : split.from;
+  const index = pages.findIndex((p) => p.id === far);
+  return offPageTagText(index < 0 ? far : pageName(pages[index]!, index), split.ref);
+}
 
 /** The box a tag of `text` takes in `look`. */
 export function offPageTagSize(text: string, look: OffPageTagLook): { width: number; height: number } {
@@ -74,6 +83,13 @@ export function offPageTagSpec<TLayer extends string>(
     dependsOn: [edgeId as never],
     derivePose: OFF_PAGE_TAG_DERIVE_POSE as never,
   } as AddNodeSpec<unknown, TLayer, RectPose>;
+}
+
+/** A split connector's two tag specs, `from` then `to`. */
+export function offPageTagSpecs<TLayer extends string>(
+  edgeId: string, split: OffPageSplit, pages: readonly PlacedPage[], look: OffPageTagLook & { layer: TLayer },
+): AddNodeSpec<unknown, TLayer, RectPose>[] {
+  return (['from', 'to'] as const).map((end) => offPageTagSpec(edgeId, end, offPageFarText(pages, split, end), look));
 }
 
 /** The tip of the stub at `end` of a split connector's path, and the way the stub runs out to it. */
