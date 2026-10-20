@@ -3,6 +3,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
 import type { DiagramContributionOptions } from './contribution';
 import type { DataEdge, DiagramSpec } from './fromData';
+import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
@@ -24,6 +25,13 @@ export interface RouteChange {
   edge: string;
   /** Empty when the edge no longer has any. */
   waypoints: readonly Vec2[];
+}
+
+/** Where a drag left a data edge's label, or `null` for Reset label. */
+export interface LabelMove {
+  /** The data edge's id, `edgeIdOf` of it. */
+  edge: string;
+  placement: DiagramLabel | null;
 }
 
 /** A node's box as a resize handle's drag left it: its place too, since a
@@ -72,8 +80,8 @@ export interface DiagramViewProps {
    *  edges are picked (`pickEdges`). */
   onHover?: (id: string | null) => void;
   /** Whether a click or a hover can land on an edge, which is then picked
-   *  like a node. Default: on when `onReconnect`, `onDelete` or
-   *  `onEditLabel` is set. */
+   *  like a node. Default: on when `onReconnect`, `onEditRoute`, `onDelete`,
+   *  `onEditLabel` or `onMoveLabel` is set. */
   pickEdges?: boolean;
   /** DOM held against nodes, groups and edges, kept in place through pans,
    *  zooms, resizes and layout runs. The view's box is their containing
@@ -116,6 +124,11 @@ export interface DiagramViewProps {
   onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
+  /** Set to let an edge's label be dragged along and beside it, and to enable
+   *  Reset label for the selected edge. Reports the placement and draws
+   *  nothing; store it as the data edge's `labelPlacement`, and delete that
+   *  field for `null`. */
+  onMoveLabel?: (change: LabelMove) => void;
   /** Set to edit `DiagramData` containers and pools: drag a lane's boundary,
    *  click a pool's add-lane button, drag a lane by its header to reorder,
    *  move or resize a region, double-click a header, or run Release members.

@@ -34,7 +34,7 @@ import { registerDiagramShape } from './shape';
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 export type {
-  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, NodeResize, ReconnectChange, RouteChange,
+  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
 export type { ReorderChange } from './groupReorder';
@@ -70,13 +70,13 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
-  onEditContainer, connectBodies,
+  specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  onReorder, onEditContainer, connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined);
+  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
   const placer = useMemo(() => (labels === 'dodge' ? createSpecLabelPlacer() : null), [labels]);
   const routed = useMemo(() => {
@@ -139,7 +139,7 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     scene: scene as never, source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder, onResize, onEditContainer, onMove,
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove,
     connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   useEffect(() => {
