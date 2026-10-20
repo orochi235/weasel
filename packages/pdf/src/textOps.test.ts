@@ -297,6 +297,17 @@ describe('writeText', () => {
     expectOutlinedInk((await render(textCmd([run('H', { stroke: { paint: GRADIENT, width: 2 } })]))).content);
   });
 
+  it('reports no skip for a space when the text is drawn from outlines', async () => {
+    const inner = { paint: { color: '#ff0000' }, width: 2, align: 'inner' as const };
+    const outlined = await render(textCmd([run('Hi There', { stroke: inner })]));
+    expectOutlinedInk(outlined.content);
+    expect(outlined.skipped).toEqual([]);
+    _resetLayoutCacheForTests();
+    const fallback = await render(textCmd([run('Hi There')]), { ...registryFontSource, embedding: async () => null });
+    expect(fallback.content).not.toContain('BT');
+    expect(fallback.skipped).toEqual([]);
+  });
+
   it('paints faked bold as outlined ink with a stroke, a gradient, or below full opacity', async () => {
     await registerAtlas('faux');
     const style = { fontFamily: 'faux', fontSize: SIZE };

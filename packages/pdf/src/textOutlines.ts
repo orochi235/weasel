@@ -4,6 +4,11 @@ import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { emboldenGlyphD, type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
 import type { PageCtx } from './drawCommands';
 
+/** Word breaks a reader copies and searches by: written as glyphs where the face has one, and never ink. */
+export function isSpace(cp: number): boolean {
+  return cp === 0x20 || cp === 0xa0;
+}
+
 export function codepointLabel(cp: number): string {
   return `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`;
 }

@@ -7,7 +7,7 @@ import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { num } from './num';
 import { isNative, resolveStroke, strokeStyleOps } from './strokeOps';
-import { outlineCommand, skipGlyph } from './textOutlines';
+import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
 
 /** Glyphs one text object draws: one line, run, face, size and baseline. */
 export interface TextSegment {
@@ -90,6 +90,7 @@ async function paintOutlines(
   paint: 'all' | 'stroke',
 ): Promise<void> {
   for (const { g } of seg.glyphs) {
+    if (isSpace(g.cp)) continue;
     const outline = outlineCommand(ctx, g, cmd, dx, dy, paint);
     if (outline) await writeCommands(ctx, [outline], state);
     else skipGlyph(ctx, g, 'has no outline to paint its ink with');

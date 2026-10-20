@@ -9,13 +9,12 @@ import {
   verticalAlignOffset,
 } from '@weasel-js/text';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
-import { outlineCommand, skipGlyph } from './textOutlines';
+import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
 import { type TextSegment, writeSegment } from './textSegment';
 
 /** Code points that hold a slot and never ink: they advance and are left out silently. */
 const BLANK = /^[\s\p{Default_Ignorable_Code_Point}]$/u;
-/** Word breaks a reader copies and searches by, written as glyphs where the face has one. */
-const SPACES = new Set([0x20, 0xa0]);
+
 
 /** Whether `g` can join `seg`: one text object holds one line, run, face, size and baseline. */
 function joins(seg: TextSegment | undefined, g: PlacedGlyph, line: number): seg is TextSegment {
@@ -60,7 +59,7 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
     for (const g of box.glyphs) {
       const run = cmd.runs[g.run];
       if (!fillHasInk(run.fill) && !strokeHasInk(run.stroke)) continue;
-      const space = SPACES.has(g.cp);
+      const space = isSpace(g.cp);
       if (!space && BLANK.test(String.fromCodePoint(g.cp))) continue;
       // A slot the layout left empty has no width, so drawing into it would land on its neighbor.
       if (!space && (g.glyph?.color || (g.resolved.source !== 'outline' && g.glyph === null))) {
