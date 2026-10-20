@@ -269,7 +269,7 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
+  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
   ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';

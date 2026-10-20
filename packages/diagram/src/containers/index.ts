@@ -26,3 +26,4 @@ export {
   createLaneResizeAction, createReleaseMembersAction, diagramContainers, laneResizeFrame,
 } from './containerActions';
 export type { LaneActionOptions, LaneResize } from './containerActions';
+export { EDIT_CONTAINER_TITLE_ACTION_ID, editContainerTitleAction, editContainerTitleBinding, regionHeaderAt } from './containerTitle';

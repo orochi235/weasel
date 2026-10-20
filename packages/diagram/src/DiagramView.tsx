@@ -1,6 +1,7 @@
 import {
   fitViewToBounds,
   SceneCanvas,
+  useDepSource,
   useLatest,
   useScene,
   useSelection,
@@ -14,6 +15,7 @@ import {
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
+import { diagramCanDropInto } from './containers/canDropInto';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
@@ -28,7 +30,7 @@ import { diagramResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 
-export type { EdgeRoute, NodeMove } from './sceneSync';
+export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
@@ -67,7 +69,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 
 function Inner({
   specs: given, router, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
-  connectBodies,
+  onEditContainer, connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
@@ -89,7 +91,7 @@ function Inner({
   const selection = useSelection({ scene, mode: 'single' });
   const onClick = useMirroredSelection(selection, selected, onSelect);
 
-  useSceneSync(scene, specs, onMove);
+  useSceneSync(scene, specs, { onMove, onEditContainer });
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
@@ -129,8 +131,9 @@ function Inner({
 
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
-    source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder, onResize, connectBodies, canConnect, portOptions, ambient: extraAmbient,
+    scene: scene as never, source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder, onResize, onEditContainer, onMove,
+    connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -138,8 +141,11 @@ function Inner({
     const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
     return () => disposers.forEach((dispose) => dispose());
   }, [editing.layers]);
-  const edits = onMove !== undefined || onConnect !== undefined || onReorder !== undefined || onResize !== undefined || edgesPick;
-  const features = useMemo(() => ['view', 'pick', ...(onMove ? ['move' as const] : []), ...(onResize ? ['resize' as const] : [])] as const, [onMove, onResize]);
+  const regionEdits = onEditContainer !== undefined;
+  const moves = onMove !== undefined || regionEdits;
+  const resizes = onResize !== undefined || regionEdits;
+  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick;
+  const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   useRefit(canvasRef, fit);
@@ -153,7 +159,7 @@ function Inner({
         scene={scene}
         selection={selection}
         features={features}
-        {...(onResize ? { selectTool } : {})}
+        {...(resizes ? { selectTool } : {})}
         enableKeybindings={enableKeybindings ?? edits}
         ambient={editing.ambient}
         actions={editing.actions}
@@ -166,7 +172,9 @@ function Inner({
         {...(view ? { view } : {})}
         {...(onViewChange ? { onViewChange } : {})}
         {...(background ? { backgroundFill: background } : {})}
-      />
+      >
+        <DropRules scene={scene} />
+      </SceneCanvas>
       {shown.map((o) => {
         const key = o.key ?? o.target;
         return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
@@ -176,6 +184,13 @@ function Inner({
 }
 
 const NO_OVERLAYS: readonly never[] = [];
+
+/** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */
+function DropRules({ scene }: { scene: Scene<DiagramSceneData, 'main', RectPose> }): null {
+  const canDropInto = useMemo(() => diagramCanDropInto(scene as never), [scene]);
+  useDepSource('canDropInto', () => canDropInto);
+  return null;
+}
 
 /** What a `ref` on the view holds. */
 function useDiagramApi(

@@ -98,6 +98,8 @@ export interface LaneActionOptions extends LaneLayerOptions {
   commitResize?: (resize: LaneResize, ctx: InvocationCtx) => void;
   /** Defaults to `addLane` on `deps.scene`, at the end of the stack. */
   commitAddLane?: (poolId: string, ctx: InvocationCtx) => void;
+  /** Runs for each selected region in place of `releaseMembers`. */
+  commitRelease?: (id: string) => void;
 }
 
 /** The `diagram.resizeLane` action: an ongoing drag moving one lane's far boundary. */
@@ -188,6 +190,11 @@ export function createReleaseMembersAction(opts: LaneActionOptions): Action {
       run() {
         const ids = selectedContainers(opts);
         if (ids.length === 0) return;
+        const commit = opts.commitRelease;
+        if (commit !== undefined) {
+          for (const id of ids) commit(id);
+          return;
+        }
         opts.scene.batch('Release members', () => {
           for (const id of ids) releaseMembers(opts.scene, id);
         });
