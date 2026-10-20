@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { CANVAS_CONTEXT_ATTRIBUTES } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
@@ -47,7 +48,7 @@ function SourceScene({
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
   useEffect(() => {
     const ctx = ref.current?.getContext('webgl2', {
-      preserveDrawingBuffer: true,
+      ...CANVAS_CONTEXT_ATTRIBUTES,
       antialias: false,
     });
     if (!ctx) throw new Error('no WebGL2');
