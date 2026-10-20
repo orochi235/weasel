@@ -4,3 +4,20 @@
   contain: inline-size;
   min-width: 0;
 }
+
+/* The default role's row, shaped as `ListEditor`'s entries are: its fields, then a remove button's room. */
+.wc-theme-role-fixed {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wzl-space-2);
+  min-width: 0;
+}
+
+.wc-theme-role-fixed > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wc-theme-role-spacer {
+  visibility: hidden;
+}

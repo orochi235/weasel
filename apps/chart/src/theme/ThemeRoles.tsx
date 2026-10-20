@@ -1,4 +1,5 @@
 import { addThemeRole, removeThemeRole, renameThemeRole, themeRoles } from '@weasel-js/diagram';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
 import { ListEditor } from '@weasel-js/ui/components/ListEditor';
 import { PropertyField, PropertyGroup, PropertyList } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
@@ -33,7 +34,11 @@ export function ThemeRoles({ edit }: { edit: ThemeEdit }): ReactElement {
   };
   return (
     <PropertyGroup title="Roles" pack="one-up">
-      <RoleFields edit={edit} role={fixed} />
+      {/* Laid out as a list entry, a remove button's room held empty, so its columns line up with the rest. */}
+      <div className="wc-theme-role-fixed">
+        <PropertyList pack="one-up"><RoleFields edit={edit} role={fixed} /></PropertyList>
+        <span className="wc-theme-role-spacer" aria-hidden="true"><CloseButton ariaLabel="" disabled /></span>
+      </div>
       <div className="wc-theme-roles">
         <ListEditor<RoleEntry>
           aria-label="Role" addLabel="Add role" value={rest} onChange={onChange}

@@ -42,7 +42,13 @@ describe('the Theme panel', () => {
     const box = sidebar.getBoundingClientRect();
     expect(box.bottom).toBeLessThanOrEqual(window.innerHeight);
 
-    const controls = [...sidebar.querySelectorAll<HTMLElement>('input, button, select, textarea, [role="combobox"]')];
+    // The default role's rows sit in the same columns as the other roles'.
+    const left = (label: string) => page.getByLabelText(label, { exact: true }).element().getBoundingClientRect().left;
+    expect(left('Default fill')).toBe(left('Accent fill'));
+    expect(left('Default fill opacity')).toBe(left('Accent fill opacity'));
+
+    const controls = [...sidebar.querySelectorAll<HTMLElement>('input, button, select, textarea, [role="combobox"]')]
+      .filter((c) => c.closest('[aria-hidden="true"]') === null);
     expect(controls.length).toBeGreaterThan(40);
     const stranded: string[] = [];
     for (const control of controls) {
