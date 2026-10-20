@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createScene, type ActionDeps, type Scene } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR, createScene, effectivePose, type ActionDeps, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH } from './edge';
 import {
   EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding,
@@ -107,6 +107,32 @@ describe('editEdgeLabelAction', () => {
     runOn(editEdgeLabelAction({ commit }), deps);
     expect(commit).toHaveBeenCalledWith('e1', expect.objectContaining({ deps }));
     expect(scene.get('e1/label' as never)).toBeUndefined();
+  });
+
+  it("edits the label under the pointer, not the label of a connector passing beneath it", () => {
+    const scene = sceneWithEdge(true);
+    scene.add({
+      id: 'e2' as never, kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+      data: { diagram: { from: { nodeId: 'b' }, to: { nodeId: 'a' }, router: 'straight' } },
+      dependsOn: ['b' as never, 'a' as never], derivePath: EDGE_DERIVE_PATH as never,
+    });
+    const box = AUTO_POSE_DESCRIPTOR.getBounds(effectivePose(scene as never, scene.get('e1/label' as never)! as never));
+    const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const commit = vi.fn();
+    const action = editEdgeLabelAction({ commit });
+    runOn(action, depsOf(scene, {}, 'e2'), at);
+    expect(commit).toHaveBeenCalledWith('e1', expect.anything());
+    expect(action.enabled?.(depsOf(scene, {}, 'e2'), at)).toBe(true);
+  });
+
+  it("edits the label a press on the label layer reports", () => {
+    const scene = sceneWithEdge(true);
+    const commit = vi.fn();
+    const action = editEdgeLabelAction({ commit });
+    if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    const payload = { targetId: 'e1/label', labelId: 'e1/label', edgeId: 'e1' };
+    action.invoker.run(depsOf(scene, {}, null), { worldX: -500, worldY: -500, affordance: { payload } });
+    expect(commit).toHaveBeenCalledWith('e1', expect.anything());
   });
 
   it('declines a double-click that is not on an edge', () => {

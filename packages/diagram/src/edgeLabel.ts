@@ -16,7 +16,7 @@ import {
 import type { MeasureRowText, RowTextStyle } from './body';
 import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';
-import { labelUnder } from './labelDragLayer';
+import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
@@ -100,11 +100,12 @@ export interface EditEdgeLabelOptions {
 
 function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | undefined): string | null {
   if (deps === undefined || at === undefined) return null;
+  // A label is not pickable, so a connector passing under it would win the pick.
+  const label = deps.scene === undefined ? null : labelUnder(deps.scene, at);
+  if (label !== null) return label.edgeId;
   const id = deps.nodeAtPoint?.(at);
   const node = id == null ? undefined : deps.scene?.get(id);
-  if (node !== undefined && diagramEdgeOf(node) !== null) return id!;
-  // A label is not pickable and the label layer claims its press, so a double-click on one finds its edge here.
-  return deps.scene === undefined ? null : labelUnder(deps.scene, at)?.edgeId ?? null;
+  return node !== undefined && diagramEdgeOf(node) !== null ? id! : null;
 }
 
 function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>): void {
@@ -142,7 +143,8 @@ export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
       timing: 'immediate',
       run(deps, params) {
         const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
-        const edgeId = edgeUnder(deps, world);
+        const pressed = labelScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
+        const edgeId = pressed?.edgeId ?? edgeUnder(deps, world);
         if (edgeId === null) return;
         const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
         commit(edgeId, ctx);
