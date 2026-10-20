@@ -1,4 +1,4 @@
-import type { AnalyserTap } from '../analyser';
+import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from '../analyser';
 import type { Timers } from '../audioTime';
 import { createFader, type Fader } from './fader';
 import type { GraphNodeDef } from './types';
@@ -48,6 +48,19 @@ export function createWrapper(
   const outFader = createFader(ctx, timers, def.output, out);
   outFader.open(0);
   return { id, def, ins, inFaders, out, outFader, taps: new Set(), running: false, outgoing: new Set() };
+}
+
+export function tapWrapper(ctx: BaseAudioContext, w: NodeWrapper, opts?: AnalyserTapOptions): AnalyserTap {
+  const inner = createAnalyserTap(ctx, w.out, opts);
+  const t: AnalyserTap = {
+    ...inner,
+    dispose() {
+      w.taps.delete(t);
+      inner.dispose();
+    },
+  };
+  w.taps.add(t);
+  return t;
 }
 
 export function startWrapper(w: NodeWrapper, when: number): void {

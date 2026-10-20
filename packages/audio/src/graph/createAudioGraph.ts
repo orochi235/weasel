@@ -1,4 +1,4 @@
-import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from '../analyser';
+import type { AnalyserTap, AnalyserTapOptions } from '../analyser';
 import { defaultTimers, type Timers } from '../audioTime';
 import { initParam } from '../param';
 import { createEdits } from './edits';
@@ -6,7 +6,7 @@ import { graphError } from './errors';
 import { createTransport } from './transport';
 import type { AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch } from './types';
 import { validatePatches } from './validate';
-import { startWrapper } from './wrapper';
+import { startWrapper, tapWrapper } from './wrapper';
 
 export type { NodeWrapper } from './wrapper';
 
@@ -95,12 +95,8 @@ export function createAudioGraph(
     playing: transport.playing,
     has: edits.has,
     ids: edits.ids,
-    tap: guard((id: string, tapOpts?: AnalyserTapOptions): AnalyserTap => {
-      const w = edits.live(id);
-      const t = createAnalyserTap(ctx, w.out, tapOpts);
-      w.taps.add(t);
-      return t;
-    }),
+    tap: guard((id: string, tapOpts?: AnalyserTapOptions): AnalyserTap =>
+      tapWrapper(ctx, edits.live(id), tapOpts)),
     settled() {
       return new Promise((resolve) => {
         waiters.push(resolve);
