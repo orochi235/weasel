@@ -58,7 +58,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
-    'boundsIncludeStroke', 'editAnchors',
+    'boundsIncludeStroke', 'transformFollowers',
   ],
   invoker: {
     timing: 'immediate',
