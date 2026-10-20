@@ -87,4 +87,14 @@ describe('PageTabs', () => {
     fireEvent.pointerUp(document, { pointerId: 1, clientX: 210, clientY: 15 });
     expect(onMove).toHaveBeenCalledWith('a', 2);
   });
+
+  it('moves a tab one place with Alt+Left and Alt+Right', () => {
+    const { onMove } = setup();
+    fireEvent.keyDown(tab('Page 2'), { key: 'ArrowRight', altKey: true });
+    expect(onMove).toHaveBeenLastCalledWith('b', 2);
+    fireEvent.keyDown(tab('Page 2'), { key: 'ArrowLeft', altKey: true });
+    expect(onMove).toHaveBeenLastCalledWith('b', 0);
+    fireEvent.keyDown(tab('Cover'), { key: 'ArrowLeft', altKey: true });
+    expect(onMove).toHaveBeenCalledTimes(2);
+  });
 });

@@ -21,7 +21,8 @@ export interface PageTabsProps<P extends PageTabItem> {
   onSelect(id: string): void;
   /** A double press renames; absent, tabs cannot be renamed. */
   onRename?(id: string, name: string): void;
-  /** A tab was dragged to `index`, its place in the new order; absent, tabs cannot be dragged. */
+  /** A tab was dragged, or moved with Alt+Left or Alt+Right, to `index`, its place in the new order; absent, tabs
+   *  cannot be moved. */
   onMove?(id: string, index: number): void;
   /** Absent, there is no + button. */
   onAdd?(): void;
@@ -42,7 +43,7 @@ const defaultLabel = (page: PageTabItem, index: number) => page.name ?? `Page ${
 
 /**
  * A strip of tabs over a document's pages: press one to go to its page, press
- * twice to rename it, drag to reorder, and + to add one. Built on {@link Tabs},
+ * twice to rename it, drag or Alt+arrow to reorder, and + to add one. Built on {@link Tabs},
  * with no panels: what a tab shows is the caller's to show.
  */
 export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode {
@@ -120,6 +121,13 @@ export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactN
                 className={cls.join(' ')}
                 onPointerDown={(e) => { if (e.button === 0 && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
                 onContextMenu={(e) => onTabContextMenu?.(page.id, e)}
+                onKeyDown={(e) => {
+                  const by = e.altKey && onMove ? ({ ArrowLeft: -1, ArrowRight: 1 } as const)[e.key as 'ArrowLeft'] : undefined;
+                  if (by === undefined) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  drag.nudge(page.id, i, by);
+                }}
               >
                 {editing === page.id
                   ? <RenameField initial={page.name ?? labelOf(page, i)} onDone={(name) => commit(page.id, name)} />
