@@ -66,6 +66,13 @@ test('dragging a tab past another reorders the strip', async () => {
   await expect.poll(labels).toEqual(['Two', 'Three', 'One']);
 });
 
+test('Alt+Right moves the focused tab one place, rather than moving focus', async () => {
+  render(<Strip onSelect={() => {}} />);
+  screen.getByRole('tab', { name: 'One' }).focus();
+  await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}');
+  await expect.poll(labels).toEqual(['Two', 'One', 'Three']);
+});
+
 test('the strip is one bar-high row, its tabs filling it, with the + beside them', () => {
   render(<Strip onSelect={() => {}} />);
   const tabs = screen.getAllByRole('tab').map((t) => t.getBoundingClientRect());

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList } from '../../useReorderDragList';
 import { DragGhost } from '../DragGhost';
@@ -38,6 +38,8 @@ export interface PageTabsProps<P extends PageTabItem> {
 const DOUBLE_PRESS_MS = 500;
 /** Lit when no page is current: a key no tab has, so React Aria does not light the first. */
 const NONE = '\u0000none';
+
+const ARROW_STEP: Partial<Record<string, -1 | 1>> = { ArrowLeft: -1, ArrowRight: 1 };
 
 const defaultLabel = (page: PageTabItem, index: number) => page.name ?? `Page ${index + 1}`;
 
@@ -102,10 +104,22 @@ export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactN
     onSelect(String(key));
   };
 
+  // Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus.
+  const onKeyDownCapture = (e: KeyboardEvent) => {
+    const by = e.altKey && onMove ? ARROW_STEP[e.key] : undefined;
+    const tab = (e.target as Element).closest('[role="tab"]');
+    const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
+    if (by === undefined || at < 0 || pages[at] === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();
+    drag.nudge(pages[at].id, at, by);
+  };
+
   return (
     <div
       className={[s.strip, props.className].filter(Boolean).join(' ')}
       onPointerDownCapture={() => { selectedByPress.current = null; }}
+      onKeyDownCapture={onKeyDownCapture}
     >
       <Tabs className={s.tabs} selectedKey={current ?? NONE} onSelectionChange={onSelectionChange}>
         <TabList aria-label={props['aria-label'] ?? 'Pages'} className={s.list} ref={bindList}>
@@ -121,13 +135,6 @@ export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactN
                 className={cls.join(' ')}
                 onPointerDown={(e) => { if (e.button === 0 && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
                 onContextMenu={(e) => onTabContextMenu?.(page.id, e)}
-                onKeyDown={(e) => {
-                  const by = e.altKey && onMove ? ({ ArrowLeft: -1, ArrowRight: 1 } as const)[e.key as 'ArrowLeft'] : undefined;
-                  if (by === undefined) return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  drag.nudge(page.id, i, by);
-                }}
               >
                 {editing === page.id
                   ? <RenameField initial={page.name ?? labelOf(page, i)} onDone={(name) => commit(page.id, name)} />
