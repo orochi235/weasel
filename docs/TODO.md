@@ -492,16 +492,21 @@ Priority tags:
 
 ### Units
 
-- **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container
-  declares one (`ContainerNode.units`), and `sceneUnitScopes(scene, id, root)` answers the chain
-  `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapSource`,
-  `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides`
-  resolve their spacing against one `unitSystem` option; a snap source is handed the scene and the
-  subject's ids, so the grid source needs a scope read of them before a grid inside a millimeter
-  sub-assembly can snap in millimeters. A property field's unit is built from one unit
-  system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
-  `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
-  so whether a scoped container's children are also stored in its units is undecided.
+- **(P3) The drawn grid ignores a container's unit scope.** Grid snapping reads one
+  (`gridSnapSource({ scopes })`), and so does a node's length field (`SelectionPanel`'s `units`,
+  through `prefLeafInScopes`), but `createGridLayer`, `createCellHighlightLayer`,
+  `useGridCellHover`, and `pointToGridCell` in `packages/guides/src/grid` still draw and hit-test
+  one lattice against one `unitSystem`. Drawing a millimeter lattice inside a millimeter
+  sub-assembly is painting work past the pitch, which `scopedGridPitch` already answers: the
+  layer has no scene to find scoped containers in, the root lattice needs clipping out of each
+  one (an even-odd clip of the view with holes, nested per scope), a rotated container wants its
+  lattice turned with its frame, and a hovered cell has to name the lattice it belongs to. The
+  result needs a human eye on the drawn grid at both zoom extremes.
+
+- **(P3) Drawing a new node snaps on the root grid inside a scoped container.** A snap source
+  learns the subject's scope from its ids, and an insert gesture has none until the node exists,
+  so `gridSnapSource` falls back to the root pitch even when the node will land in a millimeter
+  sub-assembly. The insert target's parent is the scope it wants, if the session is told it.
 
 ---
 

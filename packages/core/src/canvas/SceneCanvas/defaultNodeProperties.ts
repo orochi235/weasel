@@ -208,10 +208,10 @@ const minSizeAt = (side: keyof MinSize): PrefBoundAt => (read) => minSizeOf({ mi
 const LAYOUT: PrefSection = {
   name: 'Layout',
   members: {
-    'pose.x': { kind: 'number', display: TWO_PLACES, name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
-    'pose.y': { kind: 'number', display: TWO_PLACES, name: 'Y', description: 'Top edge, world units.', default: 0 },
-    'pose.width': { kind: 'number', display: TWO_PLACES, name: 'W', description: 'Width, world units.', default: 0, min: 0, minAt: minSizeAt('width'), pair: { with: 'pose.height', label: 'Size' } },
-    'pose.height': { kind: 'number', display: TWO_PLACES, name: 'H', description: 'Height, world units.', default: 0, min: 0, minAt: minSizeAt('height') },
+    'pose.x': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+    'pose.y': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'Y', description: 'Top edge, world units.', default: 0 },
+    'pose.width': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'W', description: 'Width, world units.', default: 0, min: 0, minAt: minSizeAt('width'), pair: { with: 'pose.height', label: 'Size' } },
+    'pose.height': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'H', description: 'Height, world units.', default: 0, min: 0, minAt: minSizeAt('height') },
     'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
     'pose.transform': { kind: 'boolean', name: 'Skew', description: 'The skew or per-axis scale the box and rotation cannot hold. Off removes it.', default: false, control: 'switch', encoding: transformEncoding },
   },
@@ -311,7 +311,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[] } = 
                     },
                   },
                 },
-                'data.padding': { kind: 'number', display: TWO_PLACES, name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
+                'data.padding': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
                 'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
                 'data.overflow': { kind: 'boolean', name: 'Clip', description: 'Cut the text at the box\'s edge instead of drawing it past.', default: false, control: 'switch', encoding: overflowEncoding },
               },

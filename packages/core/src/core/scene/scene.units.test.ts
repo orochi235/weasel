@@ -3,7 +3,7 @@ import { resolveScoped, type UnitScope } from '@weasel-js/quantity';
 import { createScene, sceneFromJSON } from './scene';
 import { reconcileSpecs } from './reconcileSpecs';
 import { sceneMutators } from './sceneMutators';
-import { sceneUnitScopes } from './unitScopes';
+import { sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
 import { asNodeId, type AddNodeSpec, type ContainerNode, type RectPose } from './types';
 
 type Spec = AddNodeSpec<object, 'main', RectPose>;
@@ -103,5 +103,36 @@ describe('sceneUnitScopes', () => {
     // 5 cm is 50 mm, which is 50 / 25.4 in.
     const scopes = sceneUnitScopes(nested(), LEAF, INCHES);
     expect(resolveScoped({ value: 5, unit: 'cm' }, scopes)).toBeCloseTo(50 / 25.4);
+  });
+});
+
+describe('sceneSharedUnitScopes', () => {
+  const MM_TOO: UnitScope = { system: { base: 'mm', units: { mm: 1, cm: 10 } }, scale: 1 / 25.4 };
+  const TWIN = asNodeId('twin');
+  const scene = () => sceneOf([
+    spec('g', { kind: 'container', units: MM }),
+    spec('inner', { kind: 'container', parent: G, units: CM }),
+    spec('leaf', { parent: INNER }),
+    spec('beside', { parent: G }),
+    spec('twin', { kind: 'container', units: MM_TOO }),
+    spec('inTwin', { parent: TWIN }),
+    spec('loose'),
+  ]);
+
+  it("is one node's own chain", () => {
+    expect(sceneSharedUnitScopes(scene(), [LEAF], INCHES)).toEqual([INCHES, MM, CM]);
+  });
+
+  it('keeps the scopes every node sits in', () => {
+    expect(sceneSharedUnitScopes(scene(), [LEAF, asNodeId('beside')], INCHES)).toEqual([INCHES, MM]);
+    expect(sceneSharedUnitScopes(scene(), [LEAF, asNodeId('loose')], INCHES)).toEqual([INCHES]);
+  });
+
+  it('counts two containers declaring the same scope as one', () => {
+    expect(sceneSharedUnitScopes(scene(), [asNodeId('beside'), asNodeId('inTwin')], INCHES)).toEqual([INCHES, MM]);
+  });
+
+  it('is the root alone for no nodes', () => {
+    expect(sceneSharedUnitScopes(scene(), [], INCHES)).toEqual([INCHES]);
   });
 });
