@@ -1,9 +1,10 @@
 import { useCommand } from '@weasel-js/core';
-import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
+import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_HOPS_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
+import { EXPORT_MENU } from './exportCommands';
 import { run, type ChartMenuContributions } from './menuBar';
 import { PAGE_MENU } from './pages/pageCommands';
 import { useChartPref } from './prefs';
@@ -14,11 +15,12 @@ export const CHART_ACTIONS = {
   grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid',
 } as const;
 
-/** Chart mode's File, Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, and Release members are the diagram package's. */
+/** Chart mode's File (Export included), Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, Line jumps, and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
     save: run({ save: CHART_ACTIONS.save }),
+    export: EXPORT_MENU,
   },
   edit: {
     history: run({ undo: 'undo', redo: 'redo' }),
@@ -34,6 +36,7 @@ export const CHART_MENUS: ChartMenuContributions = {
       connector: pref.group('Connector', {
         router: run(SET_ROUTER_ACTION_IDS),
         route: run({ resetRoute: RESET_ROUTE_ACTION_ID }),
+        hops: run({ hops: SET_HOPS_ACTION_ID }),
       }, { as: 'menu' }),
     }),
   },

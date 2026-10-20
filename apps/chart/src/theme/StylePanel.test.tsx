@@ -44,4 +44,16 @@ describe('StylePanel', () => {
     expect(fillOf(scene, 'a')).toBe(theme.roles.default!.fill);
     expect(fillOf(scene, 'b')).toBe(theme.roles.default!.fill);
   });
+  it("sets the selected shapes' text size by hand, marking it the author's", () => {
+    const { scene } = setup(['a']);
+    const size = screen.getByRole('spinbutton', { name: 'Text size' }) as HTMLInputElement;
+    expect(size.value).toBe('12');
+    act(() => {
+      fireEvent.change(size, { target: { value: '18' } });
+      fireEvent.blur(size);
+    });
+    const row = scene.childrenOf('a' as never)[0]!;
+    expect((scene.get(row)!.data as { style: { fontSize: number } }).style.fontSize).toBe(18);
+    expect((scene.get('a' as never)!.data as { diagram: { ownFont?: string[] } }).diagram.ownFont).toEqual(['size']);
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramWaypoints } from './contribution';
+import { SET_HOPS_ACTION_ID } from './hops/hopsAction';
 import { PORT_AFFORDANCE_KIND } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
 import { ROUTE_EDIT_ACTION_ID } from './waypointAction';
@@ -72,6 +73,10 @@ describe('diagramWaypoints', () => {
 
   it('carries the reset-route command', () => {
     expect(bundle().contribution.actions!.map((a) => a.id)).toContain(RESET_ROUTE_ACTION_ID);
+  });
+
+  it('carries the line jumps command', () => {
+    expect(bundle().contribution.actions!.map((a) => a.id)).toContain(SET_HOPS_ACTION_ID);
   });
 
   it('hands back the layer the handles are composed into', () => {

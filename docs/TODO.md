@@ -558,15 +558,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) A bar's action button never says why it is disabled.** `BarActionOne`
-  (`packages/ui/src/components/Bar/BarAction.tsx`) spreads `useLeafAction`'s `reason` into
-  `BarActionButton`, which reads `disabledReason`, so a disabled bar button gets no tooltip and is
-  not focusable; `PrefActionOne` maps it and a panel's row does say why. In draw, Warp Settings
-  greyed out with nothing warped selected is the visible case.
-
-- **(P3) A `ToolPalette` with `columns` steps its arrow keys through the buttons in order.** Up
-  and Down should move a row, the way a grid does; `useRovingTabIndex` has no grid mode, so all
-  four arrows step one button. weaselchart's Shapes panel is the palette that has one.
+- **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
+  mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
@@ -1048,6 +1041,16 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
+- **(P3) The `browser` project spends about a second per file outside its tests.** Alone on teitou
+  (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
+  310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
+  files paying it. Splitting the longest files would not help: the tail is the small ones.
+  `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
+  Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
+  servers, is the likely fix (inferred, not tried); tests that import their own package by relative
+  path would then load a second copy of it beside the bundle, splitting module state such as the
+  font registry, the same obstacle the forge entry above names.
+
 - **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
   so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
@@ -1320,19 +1323,10 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) A dropped stencil finds its snap by inserting and rolling back.** `stencilDropHandler`
-  (`apps/chart/src/stencilDrop.ts`) inserts the body inside a `scene.batch`, reads a `'move'`
-  snap session's delta, throws to revert, then inserts again at the shifted spot. That is because
-  core has no public way to move ids the way a drag does, carrying children whose poses are
-  world-space. With one, the handler becomes insert-then-move. Until then: inside an already-open
-  batch the probe would not revert, which no caller does today because handlers run from a microtask; and
-  `session.end()` is not in a `finally`.
-- **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
-  (`packages/guides/src/sources/targets.ts`).
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
-  and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
+  each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
   containers (2026-10-19) so parallel arc pieces editing those files would not conflict.

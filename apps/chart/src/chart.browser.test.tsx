@@ -199,6 +199,31 @@ describe('WeaselChart chart mode', () => {
     expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: paper.label.fill } });
   });
 
+  it('moves an edge label off a shape dropped on it, on release', async () => {
+    const { host, canvas } = await mountApp();
+    await twoBodies(host, canvas);
+    await drag(canvas, at(host, 300, 300), at(host, 420, 360));
+    await expect.poll(() => bodies().length).toBe(3);
+    await useTool('Connector');
+    await drag(canvas, at(host, 220, 130), at(host, 500, 130));
+    await expect.poll(() => edges().length).toBe(1);
+    const labelId = `${edges()[0]!.id}/label`;
+    await useTool('Select');
+    doubleClick(canvas, at(host, 360, 130));
+    await expect.poll(editor).not.toBeNull();
+    await userEvent.keyboard('label');
+    editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await expect.poll(() => saved().find((n) => n.id === labelId)?.data.text).toBe('label');
+
+    // Onto (330, 58)–(450, 118): over the label above the line, clear of the line's own clearance.
+    await drag(canvas, at(host, 360, 330), at(host, 390, 88));
+    const placed = () => (saved().find((n) => n.id === labelId)?.data.diagram as { label?: { placed?: unknown } }).label?.placed;
+    await expect.poll(placed).toBeDefined();
+    await new Promise((r) => requestAnimationFrame(r));
+    // The shape's lower interior, where the label stood, clear of its selection handles and its stroke.
+    expect(darkPixels(canvas, at(host, 340, 100), at(host, 440, 116))).toBe(0);
+  });
+
   it("types into a body's label and paints its text", async () => {
     const { host, canvas } = await mountApp();
     const [first] = await twoBodies(host, canvas);
@@ -264,6 +289,21 @@ describe('WeaselChart chart mode', () => {
     await expect.poll(() => bodies().length).toBe(1);
     const pose = bodies()[0]!.pose!;
     expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
+
+    // The label rides the snap: it sits in its body as it does in one dropped with no snapping.
+    chartPrefs().set('view.snapToGrid', false);
+    chartPrefs().set('view.alignmentSnap', false);
+    chartPrefs().set('view.spacingSnap', false);
+    const q = at(host, 700, 500);
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: q.x, clientY: q.y }));
+    }
+    await expect.poll(() => bodies().length).toBe(2);
+    const labelOffset = (body: SavedNode) => {
+      const label = saved().find((n) => n.parent === body.id)!.pose!;
+      return [label.x - body.pose!.x, label.y - body.pose!.y].map((v) => Math.round(v * 100) / 100);
+    };
+    expect(labelOffset(bodies()[0]!)).toEqual(labelOffset(bodies()[1]!));
   });
 
   it('lines a dropped stencil up with its neighbor the way a move would, in one undo step', async () => {

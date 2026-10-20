@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
-import { releaseImageSource } from '@weasel-js/core/renderer';
-import { DiagramView, type DiagramViewProps } from '../DiagramView';
+import { DiagramView } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
 import type { EffectLook } from './draw';
 import { nodeGraph } from './nodeGraph';
-import { DIM, paintRun, unreachedStages } from './run';
+import { useReleaseReplaced } from './releaseReplaced';
+import { paintRun } from './run';
+import { useRunPortOptions } from './runPorts';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** Props for `EffectChart`. */
@@ -88,22 +89,6 @@ function useSameContent<T>(value: T): T {
   return value;
 }
 
-/** Free the texture of each preview a new run no longer shows, and of every
- *  one on unmount, rather than leave it until the bitmap is collected. Runs
- *  after `DiagramView` has reconciled the run that replaced it. */
-function useReleaseReplaced(run: EffectRun | undefined): void {
-  const shown = useRef(new Set<ImageBitmap>());
-  useEffect(() => {
-    const now = new Set(Object.values(run?.stages ?? {}).flatMap((s) => Object.values(s.previews ?? {})));
-    for (const old of shown.current) if (!now.has(old)) releaseImageSource(old);
-    shown.current = now;
-  }, [run]);
-  useEffect(() => () => {
-    for (const old of shown.current) releaseImageSource(old);
-    shown.current = new Set();
-  }, []);
-}
-
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints
  *  only in a registered font family, so call `registerCanvasFont('sans-serif')`
  *  once before mounting one. */
@@ -127,19 +112,7 @@ export function EffectChart<TOptions = never>({
     return { specs, color: drawn.color, exits: drawn.exits };
   }, [pipeline, look, options, stageIds]);
 
-  // Keyed by which stages the run missed, not by the run, so a run that only
-  // changes values keeps the port layer.
-  const missed = JSON.stringify([...unreachedStages(pipeline, run)].sort());
-  const portOptions = useMemo((): DiagramViewProps['portOptions'] => {
-    const faded = new Set(JSON.parse(missed) as string[]);
-    return {
-      shape: 'circle',
-      sizePx: 8,
-      // Every port a look declares has a value type; the compass defaults have none.
-      showsPort: (port) => port.type !== undefined,
-      fill: (port) => ({ paint: { color: built.color(port.type), ...(faded.has(port.nodeId) ? { opacity: DIM } : {}) } }),
-    };
-  }, [built, missed]);
+  const portOptions = useRunPortOptions(built.color, pipeline, run);
 
   // Keyed by the layout alone: a run edits the scene in place.
   const painted = useMemo(() => paintRun(pipeline, built.specs, run, built.exits), [pipeline, built, run]);

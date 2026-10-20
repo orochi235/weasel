@@ -96,14 +96,18 @@ function order(s: Run, t: Run): number {
 }
 
 /** The free span across a bundle's line at `c`, between the nearest
- *  obstacles on either side over `lo` to `hi`. */
-function freeSpan(obstacles: ObstacleIndex, axis: Axis, c: number, lo: number, hi: number, reach: number): [number, number] {
+ *  obstacles on either side over `lo` to `hi`, the labels of the bundle's
+ *  own `edges` aside. */
+function freeSpan(
+  obstacles: ObstacleIndex, axis: Axis, c: number, lo: number, hi: number, reach: number, edges: ReadonlySet<string>,
+): [number, number] {
   const probe = axis === 'h'
     ? { x: lo, y: c - reach, width: hi - lo, height: 2 * reach }
     : { x: c - reach, y: lo, width: 2 * reach, height: hi - lo };
   let low = c - reach;
   let high = c + reach;
   for (const { obstacle } of obstacles.near(probe)) {
+    if (obstacle.kind === 'label' && edges.has(obstacle.edge!)) continue;
     const b = obstacle.box;
     const [bLo, bHi, bAcross, bSize] = axis === 'h' ? [b.x, b.x + b.width, b.y, b.height] : [b.y, b.y + b.height, b.x, b.width];
     if (bHi <= lo + EPS || bLo >= hi - EPS) continue;
@@ -131,7 +135,7 @@ function nudgeAxis(routes: Map<string, NudgeRoute>, axis: Axis, spacing: number,
     bundle.sort(order);
     const lo = Math.min(...bundle.map((r) => r.lo));
     const hi = Math.max(...bundle.map((r) => r.hi));
-    const span = freeSpan(obstacles, axis, bundle[0]!.c, lo, hi, spacing * bundle.length);
+    const span = freeSpan(obstacles, axis, bundle[0]!.c, lo, hi, spacing * bundle.length, new Set(bundle.map((r) => r.edge)));
     spread(bundle, spacing, span).forEach((value, k) => {
       const run = bundle[k]!;
       const points = routes.get(run.edge)!.points;

@@ -71,7 +71,7 @@ export * from '../core/adapters/types';
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, SCENE_HISTORY_FORM,
-  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
+  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose,
   UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneUnitScopes,
 } from '../core/scene';
 export type { PoseSource, PosedNode, ScopedScene } from '../core/scene';
@@ -104,6 +104,7 @@ export type {
   RemovedNode,
   Scene,
   SceneArrivalHandler,
+  SceneBatchOptions,
   SceneEditPass,
   SceneEditPassOptions,
   SceneEditSummary,

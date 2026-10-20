@@ -20,6 +20,7 @@ import {
   grabPortBindings,
   type ConnectActionOptions,
 } from './connect';
+import { createSetHopsAction } from './hops/hopsAction';
 import { portLayer } from './portLayer';
 import type { PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
@@ -77,8 +78,9 @@ export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
  * the port layer and before the edge-end layer, so an end handle wins over a
  * route handle beside it — and the contribution to pass as `ambient`, which
  * carries the drag, the double-click that removes, the
- * `diagram.resetRoute` command, and the commands that set the selected
- * connectors' router (`SET_ROUTER_ACTION_IDS`). Like `diagramPorts`, one without the other
+ * `diagram.resetRoute` command, the commands that set the selected
+ * connectors' router (`SET_ROUTER_ACTION_IDS`), and the line jumps toggle
+ * (`SET_HOPS_ACTION_ID`). Like `diagramPorts`, one without the other
  * fails quietly.
  */
 export function diagramWaypoints<TPose>(
@@ -97,6 +99,7 @@ export function diagramWaypoints<TPose>(
         createRemoveWaypointAction(opts),
         createResetRouteAction(opts),
         ...routerActions({ participants: opts.participants, selected: opts.selected }),
+        createSetHopsAction(),
         grabPortAction(GRAB_WAYPOINT_ACTION_ID),
       ],
       bindings: [

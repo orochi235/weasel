@@ -1,4 +1,4 @@
-import { useMenuHost, useMenus } from '@weasel-js/core';
+import { pageName, useMenuHost, useMenus } from '@weasel-js/core';
 import { PageTabs } from '@weasel-js/ui/components/PageTabs';
 import { useState, type ReactElement } from 'react';
 import { PAGE_TAB_MENU_ID, PAGE_TAB_MENUS, usePageCommands } from './pageCommands';
@@ -31,7 +31,7 @@ export function ChartPageStrip({ pages }: { pages: ChartPages }): ReactElement {
         }}
       />
       <PageSetupDialog
-        page={setupPage ? { name: setupPage.name ?? `Page ${index + 1}`, size: setupPage } : null}
+        page={setupPage ? { name: pageName(setupPage, index), size: setupPage } : null}
         onApply={(size) => { if (setupFor !== null) pages.resize(setupFor, size); }}
         onClose={() => setSetupFor(null)}
       />

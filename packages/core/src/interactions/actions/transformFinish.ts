@@ -22,8 +22,9 @@ export interface TransformPreviewNode {
  */
 export interface TransformFollower {
   /** The other nodes a drag's frame changes, given the stored pose the frame
-   *  puts each transformed node in: what `finish` would commit for it. */
-  preview(frame: ReadonlyMap<string, unknown>): readonly TransformPreviewNode[];
+   *  puts each transformed node in: what `finish` would commit for it.
+   *  `data` holds the data the followers before this one previewed, by id. */
+  preview(frame: ReadonlyMap<string, unknown>, data: ReadonlyMap<string, unknown>): readonly TransformPreviewNode[];
   /** `ops`, the batch so far, with this follower's ops added after it; null
    *  when it refuses the transform. */
   finish(ops: readonly Op[], label: string): Op[] | null;
@@ -66,17 +67,19 @@ export function transformApplyOps(deps: ActionDeps): ((ops: Op[], label: string)
   return (ops, label) => { commitTransformOps(deps, ops, label); };
 }
 
-/** Every follower's preview of `frame`, each reading the frame with the poses the ones before it previewed. */
+/** Every follower's preview of `frame`, each reading the frame with the poses and data the ones before it previewed. */
 function previewFollowers(followers: readonly TransformFollower[], frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {
   const out = new Map<string, TransformPreviewNode>();
   let seen = frame;
+  const data = new Map<string, unknown>();
   for (const follower of followers) {
-    const more = follower.preview(seen);
+    const more = follower.preview(seen, data);
     if (more.length === 0) continue;
     const next = new Map(seen);
     for (const node of more) {
       const had = out.get(node.id);
       out.set(node.id, node.data === undefined && had?.data !== undefined ? { ...node, data: had.data } : node);
+      if (node.data !== undefined) data.set(node.id, node.data);
       next.set(node.id, node.pose);
     }
     seen = next;

@@ -258,7 +258,9 @@ it on the branch before merging and on `main` after. `onto` keeps one tree per r
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
 path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fleet-tree.setup.ts`
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
-line once per shard.
+line once per shard. Sharding is not a way to make a run faster: each of its slices starts vitest
+afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-minutes where an
+unsharded run took 4.5 and 35.
 
 **On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
 a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so

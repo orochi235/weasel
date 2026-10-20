@@ -1,3 +1,4 @@
+import { pageName } from '@weasel-js/core';
 import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList } from '../../useReorderDragList';
@@ -41,8 +42,6 @@ const NONE = '\u0000none';
 
 const ARROW_STEP: Partial<Record<string, -1 | 1>> = { ArrowLeft: -1, ArrowRight: 1 };
 
-const defaultLabel = (page: PageTabItem, index: number) => page.name ?? `Page ${index + 1}`;
-
 /**
  * A strip of tabs over a document's pages: press one to go to its page, press
  * twice to rename it, drag or Alt+arrow to reorder, and + to add one. Built on {@link Tabs},
@@ -50,7 +49,7 @@ const defaultLabel = (page: PageTabItem, index: number) => page.name ?? `Page ${
  */
 export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode {
   const { pages, current, onSelect, onRename, onMove, onAdd, onTabContextMenu } = props;
-  const labelOf = props.labelOf ?? defaultLabel;
+  const labelOf = props.labelOf ?? pageName;
   const [editing, setEditing] = useState<string | null>(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
   /** The tab React Aria selected during the press under way, which the press must not report again. */

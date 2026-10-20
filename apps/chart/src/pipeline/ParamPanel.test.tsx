@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
+import { IMAGE_STAGE_TYPES, addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
 import { ParamPanel } from './ParamPanel';
-import { CHART_STAGE_TYPES } from './stageTypes';
 
 afterEach(cleanup);
 
-const typeOf = (t: string) => CHART_STAGE_TYPES.find((s) => s.type === t)!;
+const typeOf = (t: string) => IMAGE_STAGE_TYPES.find((s) => s.type === t)!;
 const EMPTY: EffectDoc = { pipeline: { stages: [], wires: [] }, places: {} };
 const withBlur = addStage(EMPTY, stageFromType(typeOf('blur'), 'blur'));
 

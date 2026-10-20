@@ -3,6 +3,7 @@
  * nothing of scenes, so a host with its own nodes routes with it directly.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { DiagramLabel } from '../labelTrait';
 import type { Bounds } from '../outline';
 
 /** An axis-aligned box in world units. */
@@ -31,6 +32,17 @@ export interface AvoidEdge {
   waypoints?: readonly Vec2[];
   /** The route it holds now: the bends between its ends. */
   route?: readonly Vec2[];
+  /** Its label, which every other connector routes around. The router
+   *  stations it on this connector's route as `labelCenter` does. */
+  label?: AvoidLabel;
+}
+
+/** A connector's label as the router reads it: where along the route it
+ *  sits, and how big it is. */
+export interface AvoidLabel {
+  id: string;
+  placement: DiagramLabel;
+  size: { width: number; height: number };
 }
 
 /**
@@ -39,13 +51,16 @@ export interface AvoidEdge {
  * - `shape` blocks every connector beyond its own port stubs.
  * - `region` (a container or pool) blocks a connector only when neither of
  *   its ends is one of `members`.
+ * - `label` blocks every connector but `edge`, the one it labels.
  */
 export interface AvoidObstacle {
   id: string;
   box: Box;
-  kind: 'shape' | 'region';
+  kind: 'shape' | 'region' | 'label';
   /** For a region: the shapes inside it, at any depth. */
   members?: ReadonlySet<string>;
+  /** For a label: the connector it labels. */
+  edge?: string;
 }
 
 /** What one update reads: every obstacle and every connector there is now. */
@@ -67,6 +82,8 @@ export interface AvoidOptions {
   /** How far past a leg's stops the search first looks; it doubles while no
    *  path fits. Default 100. */
   margin?: number;
+  /** How far a route keeps from another connector's label. Default 4. */
+  labelClearance?: number;
 }
 
 /** {@link AvoidOptions} with every default filled in. */
@@ -79,6 +96,7 @@ export const AVOID_DEFAULTS: ResolvedAvoidOptions = Object.freeze({
   crossPenalty: 20,
   spacing: 8,
   margin: 100,
+  labelClearance: 4,
 });
 
 /** `box` grown by `by` on every side. */
@@ -89,9 +107,17 @@ export const inflate = (box: Box, by: number): Box =>
 export const overlaps = (a: Box, b: Box): boolean =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-/** Whether `obstacle` blocks a connector between shapes `from` and `to`. */
-export function blocks(obstacle: AvoidObstacle, from: string, to: string): boolean {
+/** A connector as {@link blocks} reads it: its id and the shapes it joins. */
+export interface BlockedEdge {
+  id: string;
+  from: { node: string };
+  to: { node: string };
+}
+
+/** Whether `obstacle` blocks connector `edge`. */
+export function blocks(obstacle: AvoidObstacle, edge: BlockedEdge): boolean {
   if (obstacle.kind === 'shape') return true;
+  if (obstacle.kind === 'label') return obstacle.edge !== edge.id;
   const members = obstacle.members;
-  return members === undefined || (!members.has(from) && !members.has(to));
+  return members === undefined || (!members.has(edge.from.node) && !members.has(edge.to.node));
 }

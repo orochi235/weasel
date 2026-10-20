@@ -7,14 +7,20 @@
 import { reconcileSpecs, useLatest, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
+import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
 import { diagramGroupOf } from './group';
 import type { LayoutPorts } from './layout';
+import { readRegions, regionChanges, type ContainerEdit, type RegionStanding } from './regionSync';
 import { isPinned } from './trait';
 
-/** Where a moved node now stands. */
-export interface NodeMove { id: string; x: number; y: number }
+export type { ContainerEdit };
+
+/** Where a moved node now stands. `parent` is present when a drop changed
+ *  the region it is in: that container's or lane's id, or `null` for the top
+ *  level. The host moves the id from one `members` list to the other. */
+export interface NodeMove { id: string; x: number; y: number; parent?: string | null }
 
 /** An edge whose route or ports a layout run rewrote. `id` is the edge's
  *  scene id, `edgeIdOf` of its data edge; `waypoints` is empty when the run
@@ -29,8 +35,9 @@ type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
 interface Route { waypoints: readonly Vec2[]; ports: LayoutPorts }
 
 interface Standing {
-  nodes: Map<string, { x: number; y: number }>;
+  nodes: Map<string, { x: number; y: number; parent: string | null }>;
   routes: Map<string, Route>;
+  regions: RegionStanding;
 }
 
 const NONE: readonly Vec2[] = [];
@@ -49,31 +56,40 @@ const samePorts = (a: LayoutPorts, b: LayoutPorts) => a.from === b.from && a.to 
 const routeOf = (edge: DiagramEdge): Route => ({ waypoints: edge.waypoints ?? NONE, ports: portsOf(edge.from, edge.to) });
 
 function readScene(scene: DiagramScene): Standing {
-  const nodes = new Map<string, { x: number; y: number }>();
+  const nodes = new Map<string, { x: number; y: number; parent: string | null }>();
   const routes = new Map<string, Route>();
   for (const n of scene.renderOrderNodes()) {
     if (n.kind === 'container') {
-      nodes.set(n.id, { x: n.pose.x, y: n.pose.y });
+      if (diagramContainerOf(n) === null) nodes.set(n.id, { x: n.pose.x, y: n.pose.y, parent: n.parent });
       continue;
     }
     const edge = diagramEdgeOf(n);
     if (edge !== null) routes.set(n.id, routeOf(edge));
   }
-  return { nodes, routes };
+  return { nodes, routes, regions: readRegions(scene as never) };
 }
 
-/** What layout placed in a `diagramScene` build, in the shape `DiagramView`'s
- *  `onMove` reports: every node not pinned, where it stands, and every edge
- *  whose route or ports layout wrote. Store them the way `onMove` says and
- *  the next build leaves those nodes where they are. */
-export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMove[]; routes: EdgeRoute[] } {
+/** What layout placed in a `diagramScene` build, in the shapes `DiagramView`
+ *  reports: every node not pinned, where it stands, every edge whose route
+ *  or ports layout wrote, and the box of every container and pool not pinned
+ *  whose box is its own rather than fitted. Store them the way `onMove` and
+ *  `onEditContainer` say and the next build leaves them where they are. */
+export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMove[]; routes: EdgeRoute[]; containers: ContainerEdit[] } {
   const moves: NodeMove[] = [];
   const routes: EdgeRoute[] = [];
+  const containers: ContainerEdit[] = [];
   for (const s of specs) {
     const id = s.id;
     if (id === undefined) continue;
     if (s.kind === 'container') {
-      if (diagramGroupOf(s) === null && !isPinned({ id, kind: s.kind, data: s.data })) moves.push({ id, x: s.pose.x, y: s.pose.y });
+      const region = diagramContainerOf(s);
+      const pinned = isPinned({ id, kind: s.kind, data: s.data });
+      if (region !== null) {
+        if (!pinned && region.role !== 'lane' && region.fitted !== true) {
+          const { x, y, width, height } = s.pose;
+          containers.push({ kind: 'box', id, box: { x, y, width, height } });
+        }
+      } else if (diagramGroupOf(s) === null && !pinned) moves.push({ id, x: s.pose.x, y: s.pose.y });
       continue;
     }
     const edge = diagramEdgeOf(s);
@@ -84,14 +100,18 @@ export function diagramLayoutOf(specs: readonly DiagramSpec[]): { moves: NodeMov
       routes.push({ id, waypoints: laid ? route.waypoints : NONE, ports: route.ports });
     }
   }
-  return { moves, routes };
+  return { moves, routes, containers };
 }
 
-function changes(was: Standing, now: Standing): { moves: NodeMove[]; routes: EdgeRoute[] } {
+interface Changes { moves: NodeMove[]; routes: EdgeRoute[]; containers: ContainerEdit[] }
+
+function changes(was: Standing, now: Standing): Changes {
   const moves: NodeMove[] = [];
-  for (const [id, at] of now.nodes) {
+  for (const [id, { x, y, parent }] of now.nodes) {
     const before = was.nodes.get(id);
-    if (before !== undefined && (before.x !== at.x || before.y !== at.y)) moves.push({ id, ...at });
+    if (before === undefined) continue;
+    const reparented = before.parent !== parent;
+    if (before.x !== x || before.y !== y || reparented) moves.push({ id, x, y, ...(reparented ? { parent } : {}) });
   }
   const routes: EdgeRoute[] = [];
   for (const [id, after] of now.routes) {
@@ -100,17 +120,20 @@ function changes(was: Standing, now: Standing): { moves: NodeMove[]; routes: Edg
     const moved = before.waypoints !== after.waypoints && !samePoints(before.waypoints, after.waypoints);
     if (moved || !samePorts(before.ports, after.ports)) routes.push({ id, ...after });
   }
-  return { moves, routes };
+  return { moves, routes, containers: regionChanges(was.regions, now.regions) };
+}
+
+/** The callbacks {@link useSceneSync} reports to. */
+export interface SceneSyncReports {
+  onMove?: ((moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void) | undefined;
+  onEditContainer?: ((edit: ContainerEdit) => void) | undefined;
 }
 
 /** Reconcile `specs` into `scene` as they change, and report every move and
- *  route change that did not come from a reconcile to `onMove`. */
-export function useSceneSync(
-  scene: DiagramScene,
-  specs: readonly DiagramSpec[],
-  onMove: ((moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void) | undefined,
-): void {
-  const onMoveRef = useLatest(onMove);
+ *  route change that did not come from a reconcile to `onMove`, and every
+ *  region change to `onEditContainer`. */
+export function useSceneSync(scene: DiagramScene, specs: readonly DiagramSpec[], reports: SceneSyncReports): void {
+  const reportsRef = useLatest(reports);
   const syncing = useRef(false);
   const applied = useRef(specs);
   useEffect(() => {
@@ -119,11 +142,11 @@ export function useSceneSync(
       const now = readScene(scene);
       const found = syncing.current ? null : changes(known, now);
       known = now;
-      if (found !== null && (found.moves.length > 0 || found.routes.length > 0)) {
-        onMoveRef.current?.(found.moves, found.routes);
-      }
+      if (found === null) return;
+      if (found.moves.length > 0 || found.routes.length > 0) reportsRef.current.onMove?.(found.moves, found.routes);
+      for (const edit of found.containers) reportsRef.current.onEditContainer?.(edit);
     });
-  }, [scene, onMoveRef]);
+  }, [scene, reportsRef]);
   useEffect(() => {
     if (applied.current === specs) return;
     syncing.current = true;
