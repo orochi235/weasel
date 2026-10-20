@@ -547,7 +547,10 @@ diagramScene({ nodes, edges, containers: [
 Each region is a scene container and its members are its children, so a
 region's id shares the node id namespace, and so does each lane's. A member
 already claimed by an earlier region, a pool, and a claim that would put a
-container inside itself are ignored. A container with a `box` is laid out as
+container inside itself are ignored. A node is in a group or in a region, never
+both: a region is its scene parent, and a group would draw a second box around
+it that the region's does not hold, so `diagramScene` throws on a node that
+`groups` and `containers` both name. A container with a `box` is laid out as
 one node of that size, and its members ride along with it, keeping where they
 stand in it; a member with no `at` is seeded inside its body, in rows. A
 container with no `box` is laid out as a group, and its box fits its members.
@@ -558,7 +561,8 @@ the pool's box leaves. An edge with an end inside a boxed region ranks against
 the outermost one holding it, and keeps none of layout's route. `pinned`
 leaves a box where it is. Under `theme`, a region naming a `style` role takes
 that role's colors; otherwise a container takes the theme's `container`, a
-pool its `lane.header`, and lanes the `lane.bodies` in turn. `router="avoid"`
+pool its `lane.header`, and lanes the `lane.bodies` in turn; titles are set in
+the diagram's face, the theme's when `font` is unset. `router="avoid"`
 routes around a region neither end is inside, and around every header.
 
 Text is sized from character counts unless `measure` is given, so layout runs

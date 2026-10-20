@@ -8,7 +8,8 @@ members, outer regions first. A container with a `box` is laid out as one node o
 members ride along with it, a member with no `at` seeded inside it in rows; one with no `box` is laid
 out as a group and fits its members. A pool always has a box, and its lanes stack at their `size` or
 share what the box leaves. An edge with an end inside a boxed region ranks against the outermost one.
-Under `theme`, regions take the theme's container and lane colors, or a `style` role's.
+Under `theme`, regions take the theme's container and lane colors, or a `style` role's, and their
+titles the theme's face. A node named by both a group and a region is refused: `diagramScene` throws.
 
 `DiagramView` takes `onEditContainer`, which reports a region moved or resized (`box`), a lane
 boundary dragged, a lane reordered by its header, or a lane added (`lanes`), a header

@@ -133,17 +133,19 @@ function regionStyle(r: DataRegion, theme: DiagramTheme | undefined): NodeStyle 
   return theme.container;
 }
 
-/** Each region's specs and its title's, outer regions first, as `createScene` needs parents before what they hold. */
+/** Each region's specs and its title's, outer regions first, as `createScene` needs parents before what they hold.
+ *  Titles are set in `fontFamily`, the diagram's face. */
 export function containerSpecs(
   { regions }: DataRegions,
   boxes: ReadonlyMap<string, Rect>,
   theme: DiagramTheme | undefined,
+  fontFamily: string,
 ): DiagramSpec[] {
   return regions.flatMap((r) => {
     const box = boxes.get(r.id);
     if (box === undefined) return [];
     const specs = regionSpecs(r.role, r.axis, { ...box }, r.label ?? null, {
-      id: r.id, layer: 'main', parent: r.parent ?? null, style: regionStyle(r, theme), fitted: r.fitted,
+      id: r.id, layer: 'main', parent: r.parent ?? null, style: regionStyle(r, theme), fitted: r.fitted, fontFamily,
     });
     if (!r.pinned) return specs as DiagramSpec[];
     const [region, ...rest] = specs;

@@ -132,6 +132,14 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   const nodeIds = new Set(ids);
   const pad = opts.groupPadding ?? DEFAULT_GROUP_INSET;
   const regions = resolveContainers(data.containers ?? [], ids, nodeIds);
+  // A region is a node's scene parent and a group only gathers it for layout and draws around it: a
+  // node in both would have two owners whose boxes disagree, so the data is refused rather than guessed at.
+  for (const g of data.groups ?? []) {
+    for (const m of g.members) {
+      const region = nodeIds.has(m) ? regions.parentOf.get(m) : undefined;
+      if (region !== undefined) throw new Error(`diagramScene: node "${m}" is in group "${g.id}" and in region "${region}"; a node may be in one or the other`);
+    }
+  }
   const boxes = containerLayoutNodes(regions, { padding: pad, seed: (k) => ({ x: data.nodes.length + k, y: data.nodes.length + k }) });
   const titleStyle = { ...font, fontSize: font.fontSize - 1 };
   const groups = resolveGroups(data.groups ?? [], ids, new Set([...nodeIds].filter((id) => !boxes.hidden.has(id))), {
@@ -180,7 +188,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and group boxes first, so a box never paints over what it holds.
-  specs.push(...containerSpecs(regions, placedAt, theme));
+  specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));
   specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;

@@ -39,6 +39,8 @@ export interface RegionOptions<TLayer extends string> {
   style?: NodeStyle;
   /** Marks a region whose box is fitted to its members each time it is built from data. */
   fitted?: boolean;
+  /** The title's family. Default sans-serif. */
+  fontFamily?: string;
 }
 
 function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitted: boolean): DiagramSceneData {
@@ -50,9 +52,9 @@ function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitt
   };
 }
 
-const titleData = (text: string, style: NodeStyle): DiagramSceneData => ({
+const titleData = (text: string, style: NodeStyle, fontFamily = DEFAULT_FONT.fontFamily): DiagramSceneData => ({
   text,
-  style: { ...DEFAULT_FONT, fontSize: 13, fontWeight: 700, align: 'center' },
+  style: { fontFamily, fontSize: 13, fontWeight: 700, align: 'center' },
   verticalAlign: 'center',
   fill: { paint: { color: style.text } },
 });
@@ -70,7 +72,7 @@ export function regionSpecs<TLayer extends string>(
   if (title === null) return [region];
   return [region, {
     id: titleIdOf(opts.id) as NodeId, kind: 'leaf', layer: opts.layer, parent: opts.id as NodeId, pickable: false,
-    pose: titlePose(pose, header), data: titleData(title, style),
+    pose: titlePose(pose, header), data: titleData(title, style, opts.fontFamily),
   }];
 }
 

@@ -141,4 +141,27 @@ describe('diagramScene with containers', () => {
     expect(stroke('l2')).toBe(theme.lane.bodies[1 % theme.lane.bodies.length]!.stroke);
     expect(fill('r')).toBe(theme.roles.accent!.fill);
   });
+
+  it('sets region titles in the theme\'s face, as the rest of a themed diagram\'s text', () => {
+    const theme = { ...DIAGRAM_THEMES.night!, font: { family: 'Themed Face', size: 14 } };
+    const data: DiagramData = {
+      nodes: [node('a')],
+      edges: [],
+      containers: [{ id: 'c', role: 'container', label: 'C', members: ['a'] }, { id: 'p', role: 'pool', label: 'P', lanes: [{ id: 'l', label: 'L' }] }],
+    };
+    const specs = diagramScene(data, { theme });
+    for (const id of ['c', 'p', 'l']) expect(specOf(specs, titleIdOf(id)).data.style?.fontFamily).toBe('Themed Face');
+    expect(specs.find((s) => s.parent === 'a' && s.data.text === 'a')!.data.style?.fontFamily).toBe('Themed Face');
+  });
+
+  it('refuses a node that a group and a region both claim, naming both', () => {
+    const data: DiagramData = {
+      nodes: [node('a'), node('b')],
+      edges: [],
+      groups: [{ id: 'g', members: ['a', 'b'] }],
+      containers: [{ id: 'k', role: 'container', members: ['a'], box: { x: 0, y: 0, width: 200, height: 100 } }],
+    };
+    expect(() => diagramScene(data)).toThrow(/"a".*group "g".*region "k"/);
+    expect(() => diagramScene({ ...data, containers: [{ id: 'k', role: 'container', members: ['a'] }] })).toThrow(/"a"/);
+  });
 });
