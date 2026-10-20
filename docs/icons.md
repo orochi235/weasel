@@ -40,6 +40,7 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `core` | `@weasel-js/core` | `packages/core/icons/` | Tools, edit and history actions, align, booleans, path and anchor commands, text styling, stroke and paint |
 | `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
+| `rig` | `@weasel-js/rig` | `packages/rig/icons/` | The bone and weight tools |
 | `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
 | `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container stencils: a titled box and pools of rows and of columns |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
@@ -114,7 +115,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 ```
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
-`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons` or `@weasel-js/diagram/icons`. The list is a
+`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons`, `@weasel-js/rig/icons` or `@weasel-js/diagram/icons`. The list is a
 module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
@@ -210,7 +211,7 @@ gen:icons, and `packages/icons/scripts/gen-icons.test.ts` fails on a hand-writte
 | A `.vue` or `.svelte` module | Not transformed; only `.js`, `.ts`, `.jsx`, `.tsx` and their `m`/`c` forms are |
 
 Forge registers `kitIcons` whole, plus whatever `FrameSetup.icons` passes
-(`apps/forge/forge.frame.tsx` passes path-tools' and draw's), so forge's frames are never trimmed.
+(`apps/forge/forge.frame.tsx` passes path-tools', rig's and draw's), so forge's frames are never trimmed.
 
 ## Guards
 

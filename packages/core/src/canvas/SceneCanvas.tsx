@@ -85,7 +85,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    scene: scene as Scene<unknown, string, unknown>, selection, enabled, presetSource: props.presetSource,
+    enabled, presetSource: props.presetSource,
   });
 
   // The wrapper's `<InputScope>` provides it.
@@ -218,7 +218,7 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
 
 export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
 export {
-  BUILTIN_TOOLS, SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS, RIG_TOOLS,
+  BUILTIN_TOOLS, SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
 } from './SceneCanvas/builtinToolSets';
 export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {

@@ -3,12 +3,12 @@ import { act, render } from '@testing-library/react';
 import { polygonFromPoints, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { IDENTITY_JOINT, type Skeleton, type Skin } from '@weasel-js/animator';
-import { createScene } from 'core/scene/scene';
-import type { RectPose } from 'core/scene/types';
-import type { Rig } from '../../../animation/rig/bindRig';
-import { useRigNode } from '../../../animation/rig/rigNode';
+import { createScene } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
+import type { Rig } from '@weasel-js/core';
+import { useRigNode } from '@weasel-js/core';
 import { createRigEditState } from '../bone/rigEditState';
-import type { Tool } from '../../overlayBinding';
+import type { Tool } from '@weasel-js/core';
 import { useWeightTool } from './useWeightTool';
 
 type Data = { skeleton?: Skeleton; skin?: Skin; path?: Path };

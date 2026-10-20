@@ -10,8 +10,6 @@ import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
 import {
   ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX,
 } from 'features/paths/penPreviewLayer';
-import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
-import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 
@@ -45,8 +43,6 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     penHandleDotRadiusPx: pxLeaf('Pen handle dot', HANDLE_DOT_RADIUS_PX, 16),
     penCloseHintRadiusPx: pxLeaf('Pen close hint', CLOSE_HINT_RADIUS_PX, 24),
     penCloseHitPx: pxLeaf('Pen close reach', PEN_CLOSE_HIT_PX),
-    boneJointRadiusPx: pxLeaf('Bone joint dot', JOINT_RADIUS_PX, 16),
-    weightPointRadiusPx: pxLeaf('Weight point dot', POINT_RADIUS_PX, 16),
     sliceVertexRadiusPx: pxLeaf('Slice vertex dot', VERTEX_RADIUS_PX, 16),
     sliceCloseHitPx: pxLeaf('Slice close reach', SLICE_CLOSE_HIT_PX),
   }),

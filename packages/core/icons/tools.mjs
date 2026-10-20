@@ -5,12 +5,6 @@ export const TOOLS = {
       <path d="M3.5 16.5 12.9 7.1" stroke-linecap="round"/>
       <path d="M16.5 3.5 11.06 5.98 14.03 8.95Z" fill="currentColor" stroke-linejoin="round"/>
     </g>`,
-  bone: `
-    <g stroke-linecap="butt">
-      <path d="M 5.6 14.4 L 8.9 14.7 L 15.2 4.8 L 5.3 11.1 Z"/>
-      <circle cx="4.6" cy="15.4" r="2" stroke-width="1.25"/>
-      <circle cx="15.6" cy="4.4" r="1.4" stroke-width="1.25"/>
-    </g>`,
   ellipse: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <ellipse cx="10" cy="10" rx="7" ry="5"/>
@@ -96,11 +90,5 @@ export const TOOLS = {
       <circle cx="10" cy="10" r="7.5"/>
       <path d="M 7.5 8 Q 7.5 5.5 10 5.5 Q 12.5 5.5 12.5 8 Q 12.5 9.5 10 11 L 10 12.5" stroke-linecap="round"/>
       <circle cx="10" cy="14.5" r="0.6" fill="currentColor" stroke="none"/>
-    </g>`,
-  weight: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <circle cx="10" cy="10" r="7" stroke-width="1" stroke-dasharray="1.6 1.6"/>
-      <circle cx="10" cy="10" r="4.25" stroke-width="1.25"/>
-      <circle cx="10" cy="10" r="2" fill="currentColor" stroke="none"/>
     </g>`,
 };

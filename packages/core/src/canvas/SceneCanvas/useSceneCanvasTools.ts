@@ -1,5 +1,3 @@
-import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../tools/overlayBinding';
 import type { EnabledPresets, FeatureBindingOptions, PresetSource } from './features';
 import type { SceneCanvasProps } from './props';
@@ -20,14 +18,12 @@ export function useSceneCanvasTools(args: {
   select: Tool;
   /** The select tool's move options, which the selection's `move` binding takes. */
   move: unknown;
-  scene: Scene<unknown, string, unknown>;
-  selection: SelectionApi;
   enabled: EnabledPresets;
   presetSource: PresetSource;
 }) {
-  const { props, select, scene, selection, enabled } = args;
+  const { props, select, enabled } = args;
   const { tools, internal, takeover } = useCanvasTools({
-    select, scene, selection,
+    select,
     enabled,
     tools: props.tools,
     defaultTools: props.defaultTools,
