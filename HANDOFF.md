@@ -42,6 +42,11 @@ Merged:
 - The bone and weight tools moved out of core into a new `@weasel-js/rig` (breaking for core's
   barrel; the changeset says so). It has never been published: the next release publishes it for
   the first time. A checkout needs `npm ci` before a dev server there resolves `@weasel-js/rig`.
+- GitHub CI's Node 22 leg, red on every push since 2026-10-19 (the fleet runs only Node 24): the
+  icon plugin now walks its parse tree itself, and the leg's failing files pass on Node 22 on the
+  fleet. CI has not run it, since nothing is pushed. Still open there, filed as a P2 under
+  "Release-gate & build hygiene": the fleet runs neither Node 22 nor Linux Chromium; ten Linux
+  browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

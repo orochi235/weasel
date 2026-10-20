@@ -985,6 +985,28 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) `DiagramView.containers.browser.test.tsx` › "reports a double-click on a header as the
+  region whose title to edit" fails in full fleet runs and passes alone.** Three times on 2026-10-20
+  (two runs on studio, one more on studio after main moved), each `expected [] to deeply equal
+  [{ kind: 'title', id: 'k' }]`, an assertion rather than a timeout, so the double-click reached
+  nothing; seven of seven alone.
+
+- **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
+  Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
+  `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
+  `Unexpected token 'export'` under vitest's vm pools on Node 22 from 2026-10-19 until the plugin
+  stopped using oxc-parser's `Visitor` (2026-10-20). A Node 22 pass can be run by hand —
+  `onto do --kind test -- npx -y -p node@22 node node_modules/.bin/vitest run …` — but nothing
+  runs one. The `browser` project has the same gap for Linux: CI run 39349499006 (2026-10-20, at
+  `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
+  `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
+  and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
+  `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
+  whether they still fail is unknown. Two fixes, not exclusive: a Node 22 leg in `test:fleet` or
+  the gate, and a Linux node (or container) for the `browser` project.
+  `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
+  needs `>=22.12.0`.
+
 - **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
   `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
   three playheads where it expected two, likely left by the one that timed out) and

@@ -517,6 +517,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Build
 
+- 2026-10-20 (overnight pass): `@weasel-js/icons-plugin` walks oxc-parser's tree itself from the
+  public `visitorKeys` (`src/walk.ts`) instead of `Visitor`, whose `require()` of an ES module fails
+  under vitest's vm pool on Node 22 and turned CI's Node 22 leg red from 2026-10-19.
 - 2026-10-20 (overnight pass): Five `@weasel-js/ui` subpaths, named in kebab-case after their
   source module as `./paint-value` and `./kit-icons` are: `./stance`, `./portal-host`, `./color`
   (the whole color module, oklch and ramps, from a new `color/index.ts`), `./paint-gradient-track`,
