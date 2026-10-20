@@ -108,8 +108,8 @@ function harness(signal: AbortSignal) {
 }
 
 const it = base.extend<{ lab: ReturnType<typeof harness> }>({
-  lab: async ({ signal }, use) => {
-    await use(harness(signal));
+  lab: async ({ signal }, provide) => {
+    await provide(harness(signal));
   },
 });
 
