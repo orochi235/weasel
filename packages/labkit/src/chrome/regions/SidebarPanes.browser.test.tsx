@@ -5,10 +5,10 @@ import '../../lab/presentation.browser.test.less';
 import { cleanup } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
-import type { LabContribution } from '../labTypes';
-import type { TrialContribution } from '../types';
 import type { Instrument } from '../../instrument/types';
 import { Lab } from '../../lab/Lab';
+import type { LabContribution } from '../labTypes';
+import type { TrialContribution } from '../types';
 
 afterEach(cleanup);
 
@@ -46,7 +46,12 @@ test('a lab with sidebar sections loads without a ResizeObserver loop error', as
   try {
     const { container } = renderWithIcons(
       <div className="lk-present-frame">
-        <Lab instruments={[Stub]} defaultInstrument="Stub" chrome={[controls]} labChrome={[stories]} />
+        <Lab
+          instruments={[Stub]}
+          defaultInstrument="Stub"
+          chrome={[controls]}
+          labChrome={[stories]}
+        />
       </div>,
     );
     await expect.poll(() => container.querySelectorAll('.lk-sidebar-section__bar').length).toBe(2);
