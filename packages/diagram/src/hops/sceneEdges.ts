@@ -31,7 +31,9 @@ export function sceneEdges(scene: AnyScene): SceneEdge[] {
 }
 
 /** A function from a connector to the points it is routed through, as its
- *  `derivePath` routes it before drawing any hop; null where it draws nothing. */
+ *  `derivePath` routes it before drawing any hop; null where it draws nothing,
+ *  and for a connector split across pages: its stubs are shorter than a hop's
+ *  clearance from their ends, and the run between them is not drawn. */
 export function edgePolylines<TPose>(scene: AnyScene, opts: EdgeRouteOptions<TPose> = {}): (edge: SceneEdge) => Vec2[] | null {
   const route = edgeRouter<unknown>({ geometry: AUTO_POSE_DESCRIPTOR, ...(opts as EdgeRouteOptions<unknown>) });
   const dep = (id: string): DerivedDep<unknown> | undefined => {
@@ -39,7 +41,8 @@ export function edgePolylines<TPose>(scene: AnyScene, opts: EdgeRouteOptions<TPo
     return node === undefined ? undefined : ({ node, pose: documentPose(scene, node as never), path: null } as DerivedDep<unknown>);
   };
   return (edge) => {
-    const points = route(edge.node, [dep(edge.ends[0]), dep(edge.ends[1])])?.points;
+    const routed = route(edge.node, [dep(edge.ends[0]), dep(edge.ends[1])]);
+    const points = routed?.stubs === undefined ? routed?.points : undefined;
     return points === undefined || points.length < 2 ? null : [...points];
   };
 }

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, type ReactElement } from 'react';
 import { ParamPanel } from './ParamPanel';
 import { usePipelineCommands } from './pipelineCommands';
 import { useLookCommands } from './pipelineLook';
+import { usePipelineRun } from './pipelineRun';
 import { StagePalette } from './StagePalette';
 import type { PipelineDoc } from './usePipelineDoc';
 import '../workspace.css';
@@ -17,6 +18,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
   usePipelineCommands(pipeline);
   useLookCommands(look, setLook);
   const { doc, change } = pipeline;
+  const { run, rows } = usePipelineRun(doc.pipeline);
   const editor = useRef<EffectEditorApi | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   // An undo can take the picked stage away.
@@ -33,7 +35,9 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
         <StagePalette onAdd={add} />
       </Sidebar>
       <div className="wc-host">
-        <EffectEditor ref={editor} doc={doc} onChange={change} look={look} selected={selected} onSelect={setPicked} />
+        <EffectEditor
+          ref={editor} doc={doc} onChange={change} look={look} options={rows} run={run} selected={selected} onSelect={setPicked}
+        />
       </div>
       <Sidebar side="right" className="wc-sidebar" ariaLabel="Params">
         <ParamPanel doc={doc} selected={selected} change={change} />

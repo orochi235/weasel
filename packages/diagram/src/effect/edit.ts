@@ -1,4 +1,5 @@
 import type { Vec2 } from '@weasel-js/core/math';
+import { pruneLookRoutes } from './lookRoutes';
 import { formatParam } from './stageTypes';
 import type { EffectDoc, EffectGroup, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
 
@@ -50,7 +51,7 @@ export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc 
   const gone = new Set(ids);
   const { groups } = doc.pipeline;
   const wires = doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage));
-  return withRoutesOf({
+  return pruneRoutes({
     ...doc,
     pipeline: {
       ...doc.pipeline,
@@ -62,11 +63,13 @@ export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc 
   });
 }
 
-/** `doc` keeping only the routes of wires it still has. */
-function withRoutesOf(doc: EffectDoc): EffectDoc {
-  if (doc.routes === undefined) return doc;
-  const ids = new Set(doc.pipeline.wires.map((w) => w.id));
-  return { ...doc, routes: Object.fromEntries(Object.entries(doc.routes).filter(([id]) => ids.has(id))) };
+/** `doc` keeping only the routes, under every look, of wires it still has,
+ *  less those of the `rewired` wires, whose ends now join other ports. */
+export function pruneRoutes(doc: EffectDoc, rewired: readonly string[] = []): EffectDoc {
+  const pruned = pruneLookRoutes(doc, rewired);
+  if (pruned.routes === undefined) return pruned;
+  const ids = new Set(doc.pipeline.wires.flatMap((w) => (w.id === undefined || rewired.includes(w.id) ? [] : [w.id])));
+  return { ...pruned, routes: Object.fromEntries(Object.entries(pruned.routes).filter(([id]) => ids.has(id))) };
 }
 
 /** Routes wire `wire` through `points`; none clears its route. */
@@ -84,7 +87,7 @@ export function addWire(doc: EffectDoc, wire: EffectWire): EffectDoc {
 /** An id-less wire is never matched: run `ensureWireIds` first. */
 export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
-  return withRoutesOf(withPipeline(doc, { wires: doc.pipeline.wires.filter((w) => w.id === undefined || !gone.has(w.id)) }));
+  return pruneRoutes(withPipeline(doc, { wires: doc.pipeline.wires.filter((w) => w.id === undefined || !gone.has(w.id)) }));
 }
 
 /** An id-less wire is never matched: run `ensureWireIds` first. */

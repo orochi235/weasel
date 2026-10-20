@@ -33,7 +33,7 @@ export const ANY_INGEST_MODS = {
 } as const;
 
 /** The deps {@link ingestFromEvent} reads; an action calling it declares these. */
-export const INGEST_REQUIRES = ['scene', 'selection', 'insert', 'applyOps', 'ingestion'] as const;
+export const INGEST_REQUIRES = ['scene', 'selection', 'insert', 'applyOps', 'ingestion', 'snap'] as const;
 
 /**
  * Route one drop or paste event's dispatcher params through the content
@@ -76,6 +76,7 @@ export function ingestFromEvent(
     resolveSrc: ingestion.resolveSrc,
     svg: ingestion.svg,
     clipboard: ingestion.clipboard,
+    ...(deps.snap ? { snap: deps.snap } : {}),
     deps,
   };
   // Fire-and-forget: handler errors are caught inside runIngest, but a

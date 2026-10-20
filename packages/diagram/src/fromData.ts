@@ -25,6 +25,7 @@ export type { DiagramTextStyle };
 import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
+import type { OffPageTag } from './offPage/trait';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
 import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
@@ -153,7 +154,7 @@ export interface EdgeStyle {
 export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal' | 'avoid';
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark } | { offPageTag: OffPageTag };
   fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
@@ -161,6 +162,9 @@ export interface DiagramSceneData {
   verticalAlign?: 'top' | 'center' | 'bottom';
   /** What a slot is filled with: an image the kit's image painter draws. */
   image?: { src: string; opacity?: number };
+  /** An off-page tag's box, behind its text, and the room between them. */
+  background?: { paint: { color: string } };
+  padding?: number;
 }
 
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */

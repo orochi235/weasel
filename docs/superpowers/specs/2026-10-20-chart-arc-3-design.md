@@ -23,14 +23,10 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
-| 8 | Waypoint editing under `rack` and `lanes` | diagram | — | 1 |
 | 10 | Theme builder | core, diagram, app | — | 1 |
-| 11 | Running a pipeline | diagram, app | — | 1 |
-| 3 | Off-page reference markers | diagram, app | — | 2 |
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
-| 7 | Containers and swimlanes in `DiagramData` | diagram | 2 | 2 |
+| 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
@@ -46,8 +42,8 @@ Shared files, and who makes room in them first:
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 247 | 8, 9, 11 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 7 | none needed; each adds props |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
+| `packages/diagram/src/diagramViewProps.ts` | 185 | 4, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -56,104 +52,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-## 2. Resize reporting in `DiagramView`
-
-### What the user sees
-
-In a `DiagramView` with `onResize` set, a selected node shows resize handles. Dragging one resizes
-the box live; releasing reports the new box and changes nothing until the data follows.
-
-### Engine surface (`packages/diagram/src/`)
-
-- `diagramViewProps.ts`: `onResize?: (resizes: readonly NodeResize[]) => void`.
-- `sceneSync.ts`: `NodeResize { id: string; x: number; y: number; width: number; height: number }`.
-  `Standing` keeps each node's size beside its place; `changes` reports a node whose size changed
-  as a resize, not a move.
-- `DiagramView.tsx`: with `onResize`, `features` gains `'resize'` and the select tool takes
-  `resize: { resizable: diagramResizable(scene) }` (`resizable.ts`), which already refuses edges,
-  labels, and lanes; it also refuses group boxes, which derive their size.
-
-The host stores `width` and `height` on the `DataNode` (with `at` and `pinned`). Those are minimums
-already, so a box dragged smaller than its rows grows back to them, the rule scene bodies follow.
-
-**Decision (2026-10-20).** `EffectEditor` sets no `onResize`: every look sizes a stage from its
-rows, so a stored stage size would contradict the look.
-
-### Save, load, undo
-
-The host's data holds the size; undo is the host's, one entry per reported resize. Under
-`router="avoid"` the next specs reroute what the new box disturbs, as for a move.
-
-### Tests
-
-- `sceneSync.test.ts`: a size change is a resize, a place change a move, a layout run neither.
-- `DiagramView.resize.test.tsx`: handles only with `onResize`; nothing changes until specs follow.
-- `DiagramView.resize.browser.test.tsx`: a real handle drag reports one resize on release.
-
-## 3. Off-page reference markers
-
-### What the user sees
-
-A connector whose two shapes sit on different pages stops drawing across the gap. Each end draws a
-short stub out of its shape, ending at a small tag reading the other page's name and a reference
-letter, such as "Page 2 · A". The arrowhead still points into the target shape, and the start stub
-gets the connector's end marker at its tag, so it reads as leaving the page. Double-clicking a tag
-fits the view to the other page and selects the shape at the far end. Dragging a shape back onto
-the other's page joins the connector again on release; during a drag it draws across, as now.
-
-**Decision (2026-10-20).** Splitting is automatic, with no per-connector opt-out: a line across the
-gap prints as nothing on paper, and piece 6 exports pages one at a time.
-
-### Engine surface (`packages/diagram/src/offPage/`)
-
-- `trait.ts`: `DiagramEdge.offPage?: { ref: string; from: string; to: string }` (the reference and
-  the two page ids), owned by the pass the way `route` is owned by the router. A tag carries
-  `data.diagram.offPageTag: { edge: string; end: 'from' | 'to' }`, read with `offPageTagOf`.
-- `split.ts`, pure: `offPageSplits({ pages, edges }) → Map<edgeId, OffPageSplit | null>`, using
-  core's `pageOfBounds` on each end's box. An end in a gap belongs to no page and never splits.
-  `nextOffPageRef(used)` gives A…Z, AA…; a ref, once given, stays while the split does.
-- `tag.ts`: `offPageTagSpec(edgeId, end, text, style)`, a kit text leaf `<edge>/offpage-<end>`
-  with a `background` and `padding`, `dependsOn: [edge]`, and `derivePose: OFF_PAGE_TAG_DERIVE_POSE`
-  (registry key `diagram:offPageTag`, added in `withDiagramRegistry`), stationed past its stub's tip.
-- `install.ts`: `installOffPageMarkers(scene)` and `useOffPageMarkers(scene)`, an edit pass at
-  `DIAGRAM_PASS_ORDER.offPage`. It recomputes every edge when `docChanged` has `core:pages`, and
-  otherwise the edges attached to posed, added, removed, or re-parented nodes. It writes `offPage`,
-  and adds, removes, or retexts the two tags.
-- `edge.ts`: `edgeRouter` answers a split edge with `ResolvedRoute.stubs`, two two-point runs
-  `OFF_PAGE_STUB` (24) long along each port's normal, and `edgeDerivePath` draws them as two
-  subpaths. The kit draws end markers on every open subpath, which is what gives the start stub its
-  tag-end marker.
-- `follow.ts`: `FOLLOW_OFF_PAGE_ACTION_ID = 'diagram.followOffPage'`,
-  `createFollowOffPageAction({ follow? })`, bound to a double-click on a tag the way
-  `editEdgeLabelBinding` binds one. The default `follow` selects the far shape and sets the `view`
-  dep with `fitViewToPage`. `diagramOffPage(opts) → { contribution }` packs it.
-
-**Decision (2026-10-20).** A tag is a text node with a background, not a shaped symbol: the kit's
-text painter and SVG lowering already draw that, so no new painter or exporter is needed.
-
-### Works with
-
-| Second-arc code | Effect |
-|---|---|
-| `avoid/sceneInput.ts` | skips edges with `offPage`; when a split ends, the edge is new to the router and is routed in the same entry (piece 1's order puts this pass first) |
-| `waypoints.ts` `routeHandles` | none for a split edge; its waypoints are kept and come back when it joins again |
-| `label.ts` `labelCenter` | stations on the first subpath of a path that has several |
-| `theme/themeWrites.ts` | colors tags: text in `label.fill`, background in `page` |
-| `core/pages/pageEdits.ts` | moving or resizing pages re-splits through `docChanged`, in the page edit's entry |
-
-### Save, load, undo
-
-`offPage` and the tags save with the scene. On load nothing recomputes. A split or join is part of
-the edit that caused it: a move, a page reorder, or a resize.
-
-### Tests
-
-- `split.test.ts`: overlap rule, gap ends, ref reuse and next ref.
-- `offPage.scene.test.ts`: a move to another page splits in the move's entry; undo joins; a page
-  reorder keeps the ref and retexts tags; deleting a shape removes its edge's tags.
-- `edge.test.ts`: a split edge derives two subpaths; markers on both.
-- `offPage.browser.test.tsx`: double-click a tag, the view lands on the other page.
-- Chart browser test: two pages, connect across, the canvas pixels in the gap show no line.
 
 ## 4. Edge labels as obstacles, and labels that dodge
 
@@ -258,7 +156,7 @@ one world, and once cross-page connectors draw as stubs, nothing on one page rea
 App: `apps/chart/src/exportCommands.ts` registers the commands with `useChartPages`' `current` and
 `downloadBlob` (`apps/shared/editor/src/fileIO.ts`).
 
-An export reads the scene and writes nothing, so it has no history entry. Hops (piece 5), placed
+An export reads the scene and writes nothing, so it has no history entry. Hops (`diagram.hops`), placed
 labels (piece 4), and stored routes are in the scene, so the export draws them as the canvas does.
 
 ### Tests
@@ -322,7 +220,10 @@ interface DataLane { id: string; label?: string; size?: number; members?: readon
     (resized, reordered, or added: a new lane id is minted by the view) | `{ kind: 'release'; id }`
     | `{ kind: 'title'; id }` (double-click on a header; the host edits the label, as with
     `onEditLabel`).
-- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`.
+- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`. A
+  region's handle resize is not among them: `DiagramView` reports handle resizes from the resize
+  action's swapped commit (`reportResizeAction` in `diagramEditing.ts`) and writes nothing, since
+  `reconcileSpecs` diffs spec against spec and could never put back a size the data clamped.
 - `diagramEditing.ts` installs, when `onEditContainer` is set, `diagramContainers` with its lane
   commits swapped for reports, `diagramCanDropInto` as the `canDropInto` dep, and the lane layer.
   `DeleteReport.nodes` includes a deleted region's members, as a chart-mode delete takes them.
@@ -342,47 +243,6 @@ The host's data holds it all. Members' `at` stay absolute world points, as every
 - `DiagramView.containers.browser.test.tsx`: drag into a container and a lane, resize a boundary,
   reorder by header, add a lane: each reports once.
 - `specRoutes.test.ts`: a route avoids a region neither end is in.
-
-## 8. Waypoint editing under `rack` and `lanes`
-
-### What the user sees
-
-In pipeline mode under Rack and Lanes, a selected wire shows route handles as under Node graph, and
-dragging them reroutes it. Format › Connector › Reset route gives the wire back to the look. A
-reorder, an added stage, or a deleted one that moves either end of the wire gives it back too.
-
-### The model
-
-`EffectDoc.lookRoutes?: { rack?: Record<wireId, LookRoute>; lanes?: Record<wireId, LookRoute> }`,
-`LookRoute { waypoints: readonly Vec2[]; ends: readonly [Vec2, Vec2] }`.
-
-**Decision (2026-10-20).** A look route holds only while the wire's two port points are where they
-were when it was drawn (`ends`), the rule `laidOut` uses for layout's routes: rack and lanes move
-stages on every reorder and insert, and a route drawn for one arrangement means nothing in another.
-
-### Engine surface (`packages/diagram/src/effect/`)
-
-- `EffectEditor.tsx` first moves `editHandlers` and its helpers to `editorHandlers.ts`.
-- `lookRoutes.ts`: `setLookRoute(doc, look, wire, waypoints, ends)`, `applyLookRoutes(specs, doc,
-  look, built)`, which sets an edge's `waypoints` where `ends` match the port points of the built
-  specs (the author's `waypoints` win over `lanes`' `routed`, by `DataEdge`'s rule), and
-  `pruneLookRoutes(doc)`, called by `removeWires`, `removeStages`, `moveInChain`, and
-  `setLaneOrder`.
-- `EffectEditor` passes `onEditRoute` under every look; the handler writes `setWireRoute` under
-  `nodeGraph` and `setLookRoute`, with ends read from the shown specs, under the others. Label:
-  "Edit route".
-
-### Save, load, undo
-
-`lookRoutes` saves with the pipeline document; older files have none and load unchanged. Each
-drag is one `onChange`, so one entry in the app's pipeline history. Reset route under rack and
-lanes is `setLookRoute` with no waypoints, also one entry.
-
-### Tests
-
-- `lookRoutes.test.ts`: applied while ends match, ignored after a reorder, pruned by each edit.
-- `EffectEditor.route.test.tsx`: a route edit under `lanes` reports "Edit route" with `lookRoutes`.
-- `EffectEditor.lookRoute.browser.test.tsx`: a real segment drag under lanes, then a reorder drops it.
 
 ## 9. Pipeline groups as editable containers
 
@@ -485,75 +345,6 @@ edited theme through the inserts chart already builds from it (`useChartDiagram.
   between makes two; undo restores the first state.
 - `ThemePanel.test.tsx`; `theme.browser.test.tsx`: drag a role color, read a shape's pixels, one
   undo restores both the pixels and the doc value.
-
-## 11. Running a pipeline
-
-### What it means
-
-`effect/` already draws a run (`EffectRun`: cost, values, previews, the decision `taken`), and
-chart's stage types carry `image`, `mask`, and `number` values. Running means evaluating the
-pipeline over an input image and drawing the run on the editor: once, a stage at a time, or every
-frame while playing.
-
-**Decision (2026-10-20).** Not audio playback: the stage types are image types, and an audio graph
-runs continuously on the audio clock rather than evaluating once per pass, which needs a different
-runner contract (fourth arc).
-
-### What the user sees
-
-A Run menu in pipeline mode: Run, Step, Play, Pause, Reset, and Choose Source Image…. Run fills
-every stage's cost, its output values, and a preview of each image output. Step evaluates the next
-stage and outlines it; its values appear as it finishes. Play re-runs every frame with time
-advancing, so an Oscillator's value moves and a Decision flips. A stage that fails shows its error
-in the problem color, and what it feeds stays faded. Editing a param while playing shows on the
-next frame. View › Show Values and Show Previews turn the look's rows on. Without a chosen image,
-sources start from a generated test card.
-
-### Engine surface (`packages/diagram/src/effect/runner/`, in `@weasel-js/diagram/effect`)
-
-- `types.ts`: `EffectEvaluator` (`(ctx: { stage; inputs; params; time; signal }) =>
-  { outputs; taken? }`, sync or async) and `EffectValueKind` (`show(value)`, `preview(value,
-  size)`, `dispose(value)`), each keyed by stage `type` and value type.
-- `order.ts`: `runOrder(pipeline) → { order; cyclic }`, topological over data and control wires,
-  stable by stage order.
-- `runPipeline.ts`: `runPipeline(pipeline, opts) → Promise<EffectRun>`. A stage none of whose fed
-  inputs is reached is skipped; a bypassed stage passes its first input of each output's type
-  through; a throwing evaluator sets `EffectStageRun.error` and leaves what it feeds unreached;
-  stages in a cycle never run.
-- `runner.ts`: `createEffectRunner(opts)` with `run()`, `step()`, `play()`, `pause()`, `reset()`,
-  `setPipeline`, `setInputs`, and `subscribe`. It owns its values and closes the bitmaps of a run
-  once a newer one has been drawn.
-- `useEffectRunner.ts`: play through `useVisibleRaf` (`@weasel-js/react`), with `onResume`
-  rebasing the clock; a frame starts a run only once the last finished.
-- `effect/types.ts`: `EffectStageRun.error?: string`, `EffectRun.at?: string` (the stage Step is on);
-  `run.ts`'s `paintRun` outlines `at` and writes `error` where the cost goes.
-- `EffectEditor` takes `run?: EffectRun`, painted with `paintRun` as `EffectChart` does.
-- `image/`: `IMAGE_STAGE_TYPES` (chart's `CHART_STAGE_TYPES` moved here; chart imports them),
-  `imageEvaluators` on `OffscreenCanvas` 2D (blur by `filter`, composite by
-  `globalCompositeOperation`, mask by `destination-in`, oscillator `sin(2π·rate·t)`, decision by
-  its `split`, else its first output while the tested number is above 0), `imageValueKinds`, and
-  `testCard(size)`.
-
-**Decision (2026-10-20).** A stage type and its evaluator ship together in the engine: they are one
-definition, and labkit's pipeline labs need both.
-
-### Save, load, undo
-
-A run is not document state: nothing saves and nothing undoes. The chosen source image is held for
-the session.
-
-A run draws under every look. A stage reorder, a rewire, or a param edit is a new doc, which the
-runner takes with `setPipeline`, so the next run or played frame follows it. `paintRun` edits data
-only, so a running chart never lays out again, and groups (piece 9) and look routes (piece 8) are
-untouched by it.
-
-### Tests
-
-- `order.test.ts`; `runPipeline.test.ts` with fake evaluators: order, skipped exits, bypass,
-  error, cycle.
-- `runner.test.ts`: step advances `at`; reset; play with a fake frame source; old bitmaps closed.
-- `imageEvaluators.browser.test.ts`: each operation changes the pixels it should.
-- `EffectEditor.run.test.tsx`; chart `pipeline.browser.test.tsx`: run, step, play, pause.
 
 ## 12. Interchange document model
 

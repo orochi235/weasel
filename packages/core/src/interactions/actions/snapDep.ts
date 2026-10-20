@@ -4,7 +4,7 @@ import type { Path } from '@weasel-js/geom';
 import type { ResizeAnchor } from '@weasel-js/routing';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { SnapGesture, SnapMark } from 'features/snap/types';
+import type { SnapGesture, SnapMark, SnapSource } from 'features/snap/types';
 
 type Point = { x: number; y: number };
 
@@ -59,6 +59,13 @@ export interface SnapBegin {
   /** How the camera's world maps into the parallax plane the gesture's points
    *  are in, read each frame; absent or null in the camera's own world. */
   plane?: () => PlaneMap | null;
+  /** Sources asked for this gesture only, after the canvas's own, under the
+   *  same ranking; one sharing an id with a source still asked throws. Their
+   *  points are 2D world coordinates, so a 3D host does not take them. */
+  sources?: readonly SnapSource[];
+  /** Ids of sources this gesture does not ask: listed, registered or a
+   *  canvas default. */
+  omit?: readonly string[];
 }
 
 /** The snap roles held this frame. */

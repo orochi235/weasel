@@ -8,7 +8,7 @@ connectors cross, the one later in render order bows over the other in a half ci
 `size`. A hop bulges toward −y on a horizontal run and toward −x on a vertical one, whichever way the
 connector travels, and to the left of travel on a diagonal. Crossings near either connector's ends
 or a bend, and collinear overlaps, make no hop, and hops closer than twice their radius merge into
-one longer hop. Each connector stores its hops as `diagram.hops`, so a saved file draws them with no
+one longer hop. A connector split across pages neither hops nor is hopped over. Each connector stores its hops as `diagram.hops`, so a saved file draws them with no
 pass running, and a hop no longer on its connector's route does not draw.
 
 `useHops(scene)` (or `installHops` outside React) recomputes the hops an edit disturbed in that

@@ -849,6 +849,12 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P2) `Prefs.stories.tsx` › Rail Filterable times out on the fleet and passes here.** Three
+  fleet runs on 2026-10-20 (after `66cd6d6e5`, and on two branches) failed it on the 15 s timeout
+  in the `forge-stories` project; locally the same file renders it in 34 ms, so it hangs rather
+  than runs slow. The story has no play function, so the wait is in rendering or settling. Find
+  what it waits on there (fonts, a frame, a pending promise) with the fleet log's trace.
+
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
@@ -1320,15 +1326,19 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P3) A dropped stencil finds its snap by inserting and rolling back.** `stencilDropHandler`
+  (`apps/chart/src/stencilDrop.ts`) inserts the body inside a `scene.batch`, reads a `'move'`
+  snap session's delta, throws to revert, then inserts again at the shifted spot. That is because
+  core has no public way to move ids the way a drag does, carrying children whose poses are
+  world-space. With one, the handler becomes insert-then-move. Until then: inside an already-open
+  batch the probe would not revert, which no caller does today because handlers run from a microtask; and
+  `session.end()` is not in a `finally`.
+- **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
+  (`packages/guides/src/sources/targets.ts`).
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
-  (2026-10-20); each piece deletes its own section there when it merges, so what the doc still
-  holds is what is left: off-page reference markers for connectors that cross pages,
-  and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
-  reports resizes; edge labels as routing obstacles, and labels that dodge each other;
-  pipeline-mode groups as editable containers, and waypoint editing under
-  the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
-  importing and exporting other diagram tools' files, and running a pipeline.
+  (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
+  left.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
-  and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
+  each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
   containers (2026-10-19) so parallel arc pieces editing those files would not conflict.

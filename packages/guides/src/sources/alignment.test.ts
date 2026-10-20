@@ -128,4 +128,13 @@ describe('alignmentSnapSource', () => {
       expectNear(drive({ sources: [alignmentSnapSource()], scene }).at({ x: 23, y: 50 }).point, { x: 20, y: 50 });
     });
   });
+
+  it('filter keeps a rejected sibling from offering lines', () => {
+    const { scene, ids } = sceneOf([BOX, { x: 40, y: 300, width: 50, height: 50, data: { skip: true } }]);
+    // The sibling's right edge is at 90; the box's left edge at 100 is 10 away.
+    const run = (filter?: (n: { data: unknown }) => boolean) =>
+      moveBy({ sources: [alignmentSnapSource({ ...(filter ? { filter } : {}) })], scene, ids: [ids[0]], reachPx: 12 }).by(0, 0);
+    expectNear(run().point, { x: -10, y: 0 });
+    expect(run((n) => !(n.data as { skip?: boolean }).skip)).toMatchObject({ point: { x: 0, y: 0 }, marks: [] });
+  });
 });

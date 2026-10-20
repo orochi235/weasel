@@ -32,4 +32,15 @@ describe('createSpecHops', () => {
     const apart = crossed.map((s) => (s.id === 'c' || s.id === 'd' ? { ...s, pose: { ...(s.pose as object), x: 700 } } : s)) as DiagramSpec[];
     expect(edgeOf(hop(apart), CD).hops).toBeUndefined();
   });
+
+  it('gives no hop to or over an edge split across pages', () => {
+    const specs = diagramScene(DATA, { layout: 'none' }).map((s) => {
+      if (s.id !== AB) return s;
+      const data = s.data as { diagram: DiagramEdge };
+      return { ...s, data: { ...data, diagram: { ...data.diagram, offPage: { ref: 'A', from: 'p1', to: 'p2' } } } } as DiagramSpec;
+    });
+    const hopped = createSpecHops(6)(specs);
+    expect(edgeOf(hopped, CD).hops).toBeUndefined();
+    expect(edgeOf(hopped, AB).hops).toBeUndefined();
+  });
 });

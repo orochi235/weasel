@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
-import { CHART_STAGE_TYPES } from './stageTypes';
+import { IMAGE_STAGE_TYPES, addStage, stageFromType, type EffectDoc } from '@weasel-js/diagram/effect';
 import { PIPELINE_STORAGE_KEY, usePipelineDoc } from './usePipelineDoc';
 
-const blur = CHART_STAGE_TYPES.find((t) => t.type === 'blur')!;
-const source = CHART_STAGE_TYPES.find((t) => t.type === 'source')!;
+const blur = IMAGE_STAGE_TYPES.find((t) => t.type === 'blur')!;
+const source = IMAGE_STAGE_TYPES.find((t) => t.type === 'source')!;
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {

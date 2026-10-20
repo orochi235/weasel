@@ -12,7 +12,8 @@ import { edgeHops } from './crossings';
 import { withHopsData } from './sceneEdges';
 
 /** A function from specs to the same specs with every edge's hops of radius
- *  `r`, edges hopping those earlier in the list. */
+ *  `r`, edges hopping those earlier in the list. An edge split across pages
+ *  takes no part. */
 export function createSpecHops(r: number): (specs: readonly DiagramSpec[]) => DiagramSpec[] {
   const route = edgeRouter<RectPose>();
   return (specs) => {
@@ -26,7 +27,8 @@ export function createSpecHops(r: number): (specs: readonly DiagramSpec[]) => Di
     for (const spec of specs) {
       const ends = spec.dependsOn;
       if (diagramEdgeOf(spec) === null || !Array.isArray(ends) || ends.length !== 2) continue;
-      const points = route(spec, [dep(ends[0] as string), dep(ends[1] as string)])?.points;
+      const routed = route(spec, [dep(ends[0] as string), dep(ends[1] as string)]);
+      const points = routed?.stubs === undefined ? routed?.points : undefined;
       if (points === undefined || points.length < 2) continue;
       polylines.set(spec.id as string, [...points]);
       order.push(spec.id as string);

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { EDGE_DERIVE_PATH } from './edge';
+import { EDGE_DERIVE_PATH, withDiagramRegistry } from './edge';
 import { edgeLabelSpec } from './edgeLabel';
+import { diagramScene } from './fromData';
 import { diagramResizable } from './resizable';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -28,5 +29,11 @@ describe('diagramResizable', () => {
     scene.add({ id: 'p' as never, kind: 'container', layer: 'main', pose: at, data: { diagram: { container: { role: 'pool' } } } });
     scene.add({ id: 'l' as never, kind: 'container', layer: 'main', pose: at, parent: 'p' as never, data: { diagram: { container: { role: 'lane' } } } });
     expect(['p', 'l'].map(diagramResizable(scene))).toEqual([true, false]);
+  });
+
+  it("refuses a group's box, which takes its size from its members", () => {
+    const specs = diagramScene({ nodes: [{ id: 'a', lines: ['a'] }], edges: [], groups: [{ id: 'g', members: ['a'] }] });
+    const scene = createScene<unknown, 'main', Rect>({ systemLayers: [{ id: 'main' }], initial: specs as never, registry: withDiagramRegistry() });
+    expect(['a', 'g'].map(diagramResizable(scene))).toEqual([true, false]);
   });
 });

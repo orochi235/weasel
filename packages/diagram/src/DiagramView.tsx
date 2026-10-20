@@ -25,11 +25,14 @@ import { useMirroredSelection } from './mirrorSelection';
 import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
+import { diagramResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 
 export type { EdgeRoute, NodeMove } from './sceneSync';
-export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange, RouteChange } from './diagramViewProps';
+export type {
+  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, NodeResize, ReconnectChange, RouteChange,
+} from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
 export type { ReorderChange } from './groupReorder';
 
@@ -64,7 +67,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, hops, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
+  specs: given, router, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
   connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
@@ -129,7 +132,7 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder, connectBodies, canConnect, portOptions, ambient: extraAmbient,
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder, onResize, connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,7 +140,9 @@ function Inner({
     const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
     return () => disposers.forEach((dispose) => dispose());
   }, [editing.layers]);
-  const edits = onMove !== undefined || onConnect !== undefined || onReorder !== undefined || edgesPick;
+  const edits = onMove !== undefined || onConnect !== undefined || onReorder !== undefined || onResize !== undefined || edgesPick;
+  const features = useMemo(() => ['view', 'pick', ...(onMove ? ['move' as const] : []), ...(onResize ? ['resize' as const] : [])] as const, [onMove, onResize]);
+  const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   useRefit(canvasRef, fit);
   const shown = overlays ?? NO_OVERLAYS;
@@ -149,7 +154,8 @@ function Inner({
         ref={canvasRef}
         scene={scene}
         selection={selection}
-        features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
+        features={features}
+        {...(onResize ? { selectTool } : {})}
         enableKeybindings={enableKeybindings ?? edits}
         ambient={editing.ambient}
         actions={editing.actions}

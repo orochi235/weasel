@@ -129,4 +129,22 @@ describe('line jumps in a scene', () => {
     expect(preview[0]!.data).toMatchObject({ routedBy: 'earlier' });
     expect((preview[0]!.data as { diagram: DiagramEdge }).diagram.hops).toBeUndefined();
   });
+
+  it('leaves a connector split across pages out: it neither hops nor is hopped over, and splitting clears its hops', () => {
+    const { scene } = load(false);
+    scene.doc.set(HOPS_DOC_KEY, { size: 5 });
+    expect(hopsOf(scene, 'cd')).toHaveLength(1);
+    const split = (id: string) => {
+      const node = scene.get(id as never)!;
+      const data = node.data as { diagram: DiagramEdge };
+      scene.update(id as never, { data: { ...data, diagram: { ...data.diagram, offPage: { ref: 'A', from: 'p1', to: 'p2' } } } as never });
+    };
+    split('cd');
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+    expect(hopsOf(scene, 'ab')).toBeUndefined();
+    scene.undo();
+    expect(hopsOf(scene, 'cd')).toHaveLength(1);
+    split('ab');
+    expect(hopsOf(scene, 'cd')).toBeUndefined();
+  });
 });
