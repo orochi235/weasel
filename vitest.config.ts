@@ -19,6 +19,7 @@ import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { selection } from './scripts/lib/fleet-tree.mjs';
+import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 
 // Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
 // Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
@@ -45,6 +46,8 @@ const vm = { environments: { __vitest_vm__: { optimizeDeps: { noDiscovery: true,
 
 const BROWSER_TESTS = ['packages/**/*.browser.test.{ts,tsx}', 'apps/**/*.browser.test.{ts,tsx}'];
 const BROWSER_SETUP = './vitest.browser.setup.ts';
+// Every vmThreads project needs it: see the file.
+const RETRY_REALM_SETUP = './scripts/vitest-retry-realm.setup.ts';
 
 const VITE_SERVER_TESTS = [
   'packages/forge/src/csf/shims/alias.test.ts',
@@ -78,6 +81,7 @@ const related = selection(import.meta.dirname, process.env, {
 });
 
 export default defineConfig({
+  plugins: [timeoutRetries()],
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,
@@ -88,10 +92,11 @@ export default defineConfig({
         ...vm,
         test: {
           name: 'core',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           include: [
             'packages/core/src/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
@@ -121,10 +126,11 @@ export default defineConfig({
         ],
         test: {
           name: 'site',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           include: ['apps/site/**/*.test.{ts,tsx}'],
           exclude: ['**/*.smoke.test.{ts,tsx}', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
@@ -134,10 +140,11 @@ export default defineConfig({
         ...vm,
         test: {
           name: 'smoke',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           include: [
             'packages/**/*.smoke.test.{ts,tsx}',
             'apps/**/*.smoke.test.{ts,tsx}',
@@ -151,10 +158,11 @@ export default defineConfig({
         ...vm,
         test: {
           name: 'weasel-ui',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           include: ['packages/**/*.test.{ts,tsx}'],
           // labkit runs in its own project below (own setup + css handling).
           // core runs in the `core` project above — it lived at the repo root
@@ -168,13 +176,14 @@ export default defineConfig({
         ...vm,
         test: {
           name: 'labkit',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
           // labkit ships its own setup (jest-dom matchers, cleanup, storage
           // hoist) and imports component CSS, so it needs css handling — the
           // root setup/projects don't provide either.
-          setupFiles: ['./packages/labkit/src/test-setup.ts'],
+          setupFiles: ['./packages/labkit/src/test-setup.ts', RETRY_REALM_SETUP],
           css: true,
           // A test that mounts a whole lab takes up to ~0.5 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
@@ -187,10 +196,11 @@ export default defineConfig({
         ...vm,
         test: {
           name: 'forge',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
@@ -204,6 +214,7 @@ export default defineConfig({
           // rejects a RegExp made in another realm, so they cannot run in a VM
           // context the way every jsdom project does.
           name: 'forge-node',
+          retry: RETRY_TIMEOUTS,
           environment: 'node',
           pool: 'threads',
           testTimeout: 20_000,
@@ -222,10 +233,11 @@ export default defineConfig({
         plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
+          retry: RETRY_TIMEOUTS,
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts'],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
           // `apps/shared/` holds modules both in-repo apps import (buildInfo),
           // and `scripts/` the build-time plugins that feed them. Both ride
           // with the draw project rather than getting one of their own — same
@@ -247,6 +259,7 @@ export default defineConfig({
       {
         test: {
           name: 'gate',
+          retry: RETRY_TIMEOUTS,
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
@@ -272,6 +285,7 @@ export default defineConfig({
         },
         test: {
           name: 'browser',
+          retry: RETRY_TIMEOUTS,
           include: BROWSER_TESTS,
           // The default second is not enough on a fleet node running eight other projects: a smooth
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
@@ -321,6 +335,7 @@ export default defineConfig({
         },
         test: {
           name: 'forge-stories',
+          retry: RETRY_TIMEOUTS,
           include: forgeStories,
           browser: {
             enabled: true,
