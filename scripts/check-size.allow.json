@@ -159,7 +159,7 @@
     "longestFunction": 214
   },
   "packages/labkit/src/loupe/useLoupe.ts": {
-    "longestFunction": 196
+    "longestFunction": 181
   },
   "packages/labkit/src/primitives/FloatingPanel.tsx": {
     "longestFunction": 149

@@ -18,7 +18,12 @@ export const LOUPE_LEAVE_ID = 'loupe.leave';
 
 /** Every modifier optional: the lens follows the pointer with any held, the
  *  peek key among them. */
-const ANY_MODS = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' } as const;
+const ANY_MODS = {
+  alt: 'optional',
+  ctrl: 'optional',
+  meta: 'optional',
+  shift: 'optional',
+} as const;
 
 /** How fast the wheel walks the magnification. Gentler than the pan-zoom
  *  wheel: the lens' whole range is one order of magnitude. */

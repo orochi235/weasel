@@ -57,8 +57,9 @@ describe('the loupe aim bindings', () => {
 
   it('hand the aim its client point', () => {
     const seen: [number, number][] = [];
-    const aim = createLoupeActions({ ...input, aimAt: (x, y) => seen.push([x, y]) }, null)
-      .find((a) => a.id === LOUPE_AIM_ID)!;
+    const aim = createLoupeActions({ ...input, aimAt: (x, y) => seen.push([x, y]) }, null).find(
+      (a) => a.id === LOUPE_AIM_ID,
+    )!;
     if (aim.invoker?.timing !== 'immediate') throw new Error('aim is not immediate');
     aim.invoker.run({} as never, { clientX: 7, clientY: 9 });
     expect(seen).toEqual([[7, 9]]);

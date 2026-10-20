@@ -101,7 +101,10 @@ const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
   if (!box) throw new Error('pointer: the test frame has no box');
   // The orchestrator may scale the frame to fit; its client box is the unscaled one.
   const [width, left, top] = await element.evaluate(
-    (el) => [el.clientWidth, el.clientLeft, el.clientTop] as const,
+    (el) => {
+      const box = el as HTMLElement;
+      return [box.clientWidth, box.clientLeft, box.clientTop] as const;
+    },
   );
   const scale = box.width / (width + 2 * left);
   for (const step of steps) {
