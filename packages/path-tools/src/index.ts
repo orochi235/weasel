@@ -80,6 +80,8 @@ export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spin
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';
+export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
+export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
 export { DEFAULT_CORNER_SHAPE, editCornerAction } from './cornerShape/editCorner';
 export { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './cornerShape/cornerCommands';
 

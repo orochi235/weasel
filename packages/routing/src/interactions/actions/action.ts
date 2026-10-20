@@ -8,6 +8,7 @@ import type { ModifierRoles } from './modifierRoles';
 import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
+import type { ActionSettings } from './actionSettings';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
@@ -63,6 +64,11 @@ export interface ActionPresentation {
    *  triggers the action with that variant's `params`. Omitted = the action
    *  is one entry. See `actionItems`. */
   variants?: readonly ActionVariant[];
+  /** A form of the settings the action changes on the selection. A surface
+   *  draws the action as that form instead of a bare trigger, and each change
+   *  triggers it with the params `settings.params` makes. Not combined with
+   *  `variants`. */
+  settings?: ActionSettings;
 }
 
 /**

@@ -12,6 +12,8 @@ import type { LayeredRoute } from './route';
 export interface EdgeSpecContext {
   idOf: (edge: DataEdge) => string;
   font: { fontFamily: string; fontSize: number };
+  /** The face labels are sized from. Default `font`. */
+  labelFont?: { fontFamily: string; fontSize: number };
   measure: MeasureRowText;
   fallback: EdgeStyle;
   labelPlacement: DiagramLabel;
@@ -36,7 +38,7 @@ export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): Wi
     if (!e.label) continue;
     const id = ctx.idOf(e);
     const route = ctx.routes?.get(id);
-    const size = labelSize(e.label, labelStyleOf(ctx.font), ctx.measure);
+    const size = labelSize(e.label, labelStyleOf(ctx.labelFont ?? ctx.font), ctx.measure);
     const placement = placementOf(e, route, ctx);
     const center = route?.waypoints !== undefined && typeof placement.at === 'object'
       ? labelCenter(polylineFromPoints([...route.waypoints]), placement, size)
@@ -103,7 +105,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     specs.push(edgeLabelSpec(id, e.label, {
       layer: 'main',
       label: placementOf(e, route, ctx),
-      style: labelStyleOf(ctx.font),
+      style: labelStyleOf(ctx.labelFont ?? ctx.font),
       fill: style.label ?? style.stroke,
       measure: ctx.measure,
     }) as DiagramSpec);

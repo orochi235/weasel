@@ -6,8 +6,8 @@
  * the rest through it (and may shrink). One that gained children and whose
  * strategy has `arrive` then places them through it (and may refuse, or
  * grow). Any other changed container — one that reordered children, was
- * resized, or gained or lost children with neither hook — is put back in its
- * resting arrangement, `childPoses`.
+ * resized, had a child moved, or gained or lost children with neither hook —
+ * is put back in its resting arrangement, `childPoses`.
  *
  * `LayoutStrategy` is world-framed, so each pose is composed to world before
  * a strategy sees it and each result is rebased into its node's parent frame

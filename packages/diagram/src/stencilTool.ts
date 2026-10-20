@@ -40,8 +40,14 @@ export interface StencilInsertOptions {
   measure?: MeasureRowText;
   /** The body's fill, stroke and text colors. Default `diagramScene`'s node style. */
   style?: NodeStyle;
+  /** The face the body's text rows fall back on. Default 12px sans-serif. */
+  font?: { fontFamily: string; fontSize: number };
   /** Container stencils to draw beside the shapes (`CONTAINER_STENCILS`). */
   containers?: readonly ContainerStencil[];
+  /** Container stencils' box and title colors. Default `style`. */
+  containerStyle?: NodeStyle;
+  /** A new pool's header colors and its lanes' bodies in turn. Default `containerStyle`. */
+  laneStyles?: { header: NodeStyle; bodies: readonly NodeStyle[] };
 }
 
 type Bounds = { x: number; y: number; width: number; height: number };
@@ -70,16 +76,21 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
       if (scene === undefined) return null;
       const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
       const role = 'role' in stencil ? stencil.role : null;
-      const { style, measure } = optsRef.current;
+      const { style, measure, font, containerStyle, laneStyles } = optsRef.current;
       const common = {
         layer: layer(),
         newId: () => scene.mintId() as string,
         parent: diagramDropParentAt(scene as unknown as DropParentScene, center, role),
-        ...(style ? { style } : {}),
       };
-      return 'role' in stencil
-        ? containerBuild(stencil, bounds, common)
-        : stencilBuild(stencil, bounds, { ...common, ...(measure ? { measure } : {}) });
+      if ('role' in stencil) {
+        const boxStyle = containerStyle ?? style;
+        return containerBuild(stencil, bounds, {
+          ...common, ...(boxStyle ? { style: boxStyle } : {}), ...(laneStyles ? { laneStyles } : {}),
+        });
+      }
+      return stencilBuild(stencil, bounds, {
+        ...common, ...(style ? { style } : {}), ...(measure ? { measure } : {}), ...(font ? { font } : {}),
+      });
     };
     const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
       const stencil = stencilOf(extras.kind);

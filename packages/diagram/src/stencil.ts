@@ -58,12 +58,16 @@ function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
  * The ops that insert `stencil` at `bounds`: its container first, then one
  * text node per text row. Applied as one batch, they are one undo entry.
  * `style` colors the body and its text; default `diagramScene`'s node style.
+ * `font` is the face its text rows fall back on; default 12px sans-serif.
  * `parent` is the container the body goes in; default the top level.
  */
 export function stencilBuild<TLayer extends string>(
   stencil: DiagramStencil,
   bounds: Bounds,
-  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle; parent?: string | null },
+  opts: {
+    layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle;
+    font?: { fontFamily: string; fontSize: number }; parent?: string | null;
+  },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
   const style = opts.style ?? NODE;
@@ -83,7 +87,7 @@ export function stencilBuild<TLayer extends string>(
       row: (text, box) => box.row.kind === 'label' || box.row.kind === 'field'
         ? {
             text,
-            style: rowTextStyle(box.row, DEFAULT_FONT),
+            style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
             fill: { paint: { color: style.text } },
           }
         : null,

@@ -256,12 +256,6 @@ Priority tags:
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-- **(P2) Draw's Warp Settings button does nothing.** It triggers `configureWarp` with no params,
-  and with `{}` `withWarpSettings` returns the held warp unchanged, so nothing is committed; only
-  `apps/site/demos/warpLab.tsx` passes settings. It also has no `enabled`, so it stays live with no
-  warp selected, unlike Expand Warp. It wants a popover holding the selected warp's settings — Mode
-  for a distort, Rows, Columns and mapping for an envelope, tolerance for every kind — and an
-  `enabled` matching Expand Warp's (`configureWarpAction`, `packages/path-tools/src/warp/warpActions.ts`).
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
@@ -563,6 +557,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) A bar's action button never says why it is disabled.** `BarActionOne`
+  (`packages/ui/src/components/Bar/BarAction.tsx`) spreads `useLeafAction`'s `reason` into
+  `BarActionButton`, which reads `disabledReason`, so a disabled bar button gets no tooltip and is
+  not focusable; `PrefActionOne` maps it and a panel's row does say why. In draw, Warp Settings
+  greyed out with nothing warped selected is the visible case.
 
 - **(P3) A `ToolPalette` with `columns` steps its arrow keys through the buttons in order.** Up
   and Down should move a row, the way a grid does; `useRovingTabIndex` has no grid mode, so all
@@ -1012,15 +1012,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) The `site` test project spends nearly all its time transforming.** Run alone on teitou
-  (2026-10-19), its 106 files took 112 s, 97% of it transform; `core`'s 724 files took 9 s, and every
-  other jsdom project 10 to 29 s. `fsModuleCache` did not fix it: a cold and a warm run of `site`
-  alone took 401 s and 300 s, on a node that was busy with other jobs, so those two runs compare only
-  with each other. The likely cost, not yet traced, is the virtual modules `vitest.config.ts` wires
-  for it (`demoSources`, `changelogs`, `packageDocs`) being rebuilt for each file's VM context. Start
-  with `--experimental.importDurations.print=true` on a quiet node; that flag printed nothing in the
-  run above.
-
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
   (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
@@ -1329,7 +1320,13 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Second arc.** Themes. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) Third arc (not designed).** Off-page reference markers for connectors that cross pages,
+  and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
+  reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
+  where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
+  the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
+  importing and exporting other diagram tools' files, and running a pipeline. Carried from the
+  second arc's design (2026-10-19), deleted when the arc finished.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

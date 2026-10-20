@@ -135,8 +135,8 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  Re-evaluated each render; `null` or `[]` draws no copies. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** How this container arranges its children. Whenever the container's
-   *  child set or order changes, or its bounds change size, the scene hands
-   *  the change to the strategy — `depart` for children that left it,
+   *  child set or order changes, its bounds change size, or a child's pose is
+   *  written, the scene hands the change to the strategy — `depart` for children that left it,
    *  `arrive` for children that joined it, `childPoses` otherwise — and records the poses it writes in the same
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
@@ -225,8 +225,8 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
  * `arrivals` maps each container to the ids that joined it — by an `add`
  * under it or a `move` into it, whatever op or call made them — in the order
  * they arrived. `changed` names every container whose child set or order
- * changed, or whose pose changed size, arrivals included. Both are read once
- * the edit's other mutations have landed.
+ * changed, whose pose changed size, or one of whose children was posed,
+ * arrivals included. Both are read once the edit's other mutations have landed.
  *
  * Return the poses to write, in each node's stored frame; they become part of
  * the same edit, and so of the same undo step. An empty map writes nothing.

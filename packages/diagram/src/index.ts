@@ -271,3 +271,15 @@ export type {
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';
+export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
+export type { DiagramFont, DiagramRole, DiagramTheme, StyleField } from './theme/types';
+export { DIAGRAM_THEMES } from './theme/themes';
+export { diagramThemeFromTokens } from './theme/fromTokens';
+export {
+  diagramThemeFrom, diagramThemeOf, roleEdgeStyle, roleStyle, themeDocValue, themeEdgeStroke, themeFont, themeLabelFont,
+  themeLabelStyle,
+} from './theme/resolve';
+export { themeWrites } from './theme/themeWrites';
+export type { ThemedNode, ThemedScene } from './theme/themeWrites';
+export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './theme/applyTheme';
+export type { DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';

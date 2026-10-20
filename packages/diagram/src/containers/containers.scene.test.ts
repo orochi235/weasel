@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  commitOps, createScene, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
+  commitOps, createScene, editPreset, moveAction, resizeAction, sceneFromJSON, type ActionDeps, type InvocationCtx, type NodeId, type OngoingHandle,
   type OngoingInvoker, type RectPose,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -186,6 +186,19 @@ describe('pools in a scene', () => {
     expect(lanesOf(scene as never, pool)[2]).toBe(second);
     expect(pose(scene, second!)).toMatchObject({ y: 240 });
     expect(pose(scene, 's')).toMatchObject({ x: 100, y: 270 });
+  });
+
+  it('put a lane nudged out of its stack back in it, members and all, in the nudge\'s entry', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    const [first] = lanesOf(scene as never, pool);
+    shape(scene, 's', { x: 100, y: 30, width: 40, height: 20 }, first);
+    const entries = scene.historyIndex();
+    const nudge = editPreset.actions!.find((a) => a.id === 'nudge.down')!.invoker as { run: (d: never, p?: never) => void };
+    nudge.run({ scene, selection: { get: () => [first!] } } as never, { magnitude: 'large' } as never);
+    expect(pose(scene, first!)).toEqual({ x: 32, y: 0, width: 448, height: 120 });
+    expect(pose(scene, 's')).toMatchObject({ y: 30 });
+    expect(scene.historyIndex()).toBe(entries + 1);
   });
 
   it('reorder lanes dragged by the header, members and all', () => {

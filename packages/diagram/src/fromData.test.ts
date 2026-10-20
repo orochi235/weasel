@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
+import { DIAGRAM_THEMES } from './theme/themes';
+import { NODE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
 import type { DiagramNode } from './types';
 
@@ -254,5 +255,46 @@ describe('edgeIdOf with an authored id', () => {
   it('returns the id when set, and the derived one when not', () => {
     expect(edgeIdOf({ id: 'w1', from: 'a', to: 'b', label: 'x' })).toBe('w1');
     expect(edgeIdOf({ from: 'a', to: 'b', label: 'x' })).toBe('edge:a->b:x');
+  });
+});
+
+describe('diagramScene under a theme', () => {
+  const theme = DIAGRAM_THEMES.pastel!;
+  const data: DiagramData = {
+    nodes: [{ id: 'a', lines: ['a'], style: 'warning' }, { id: 'b', lines: ['b'] }],
+    edges: [{ from: 'a', to: 'b', label: 'go' }],
+    groups: [{ id: 'g', members: ['a'], label: 'G' }],
+  };
+  type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string } }; style?: { fontFamily: string }; diagram?: DiagramNode };
+  const byId = (specs: ReturnType<typeof diagramScene>) => new Map(specs.map((s) => [s.id as string, s.data as Painted]));
+
+  it('draws a node in its role, keeping the role on its trait, and one naming none in the default role', () => {
+    const specs = byId(diagramScene(data, { theme }));
+    expect(specs.get('a')!.fill!.paint.color).toBe(theme.roles.warning!.fill);
+    expect(specs.get('a')!.stroke!.paint.color).toBe(theme.roles.warning!.stroke);
+    expect(specs.get('a')!.diagram!.style).toBe('warning');
+    expect(specs.get('b')!.fill!.paint.color).toBe(theme.roles.default!.fill);
+    expect(specs.get('b')!.diagram!.style).toBeUndefined();
+  });
+
+  it("draws edges, labels, groups, and text in the theme's colors and face", () => {
+    const specs = diagramScene(data, { theme });
+    const map = byId(specs);
+    const edge = edgeIdOf(data.edges[0]!);
+    expect(map.get(edge)!.stroke!.paint.color).toBe(theme.edge.stroke);
+    expect(map.get(`${edge}/label`)!.fill!.paint.color).toBe(theme.label.fill);
+    expect(map.get('g')!.fill!.paint.color).toBe(theme.container.fill);
+    const row = specs.find((s) => s.parent === 'b')!.data as Painted;
+    expect(row.fill!.paint.color).toBe(theme.roles.default!.text);
+    expect(row.style!.fontFamily).toBe(theme.font.family);
+  });
+
+  it('lets nodeStyle win over the role', () => {
+    const style = { fill: '#010101', stroke: '#020202', text: '#030303' };
+    expect(byId(diagramScene(data, { theme, nodeStyle: () => style })).get('a')!.fill!.paint.color).toBe('#010101');
+  });
+
+  it('ignores a role without a theme', () => {
+    expect(byId(diagramScene(data)).get('a')!.fill!.paint.color).toBe(NODE.fill);
   });
 });

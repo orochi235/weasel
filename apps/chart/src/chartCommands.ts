@@ -6,10 +6,11 @@ import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
 import { run, type ChartMenuContributions } from './menuBar';
 import { PAGE_MENU } from './pages/pageCommands';
+import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = { new: 'chart.new', open: 'chart.open', save: 'chart.save' } as const;
 
-/** Chart mode's File, Edit, Format, and Arrange menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, and Release members are the diagram package's. */
+/** Chart mode's File, Edit, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -20,6 +21,7 @@ export const CHART_MENUS: ChartMenuContributions = {
     remove: run({ delete: 'delete' }),
   },
   format: {
+    theme: THEME_MENU,
     connector: pref.group('', {
       connector: pref.group('Connector', {
         router: run(SET_ROUTER_ACTION_IDS),

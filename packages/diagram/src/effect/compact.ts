@@ -1,14 +1,15 @@
 import type { DataEdge, DataNode, DiagramRouter, EdgeStyle } from '../fromData';
 import type { PortSpec } from '../types';
 import {
-  boxNode, drawableWires, exitLabel, isControl, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages,
-  wireEdge, wireStyle, type DrawableWire, type EffectLook,
+  LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups,
+  uniqueStages, wireEdge, wireStyle, type DrawableWire, type EffectLook, type LookThemeOptions,
 } from './draw';
 import { branchNode, type BranchChoice } from './symbols';
+import type { DiagramTheme } from '../theme/types';
 import type { EffectPipeline, EffectStage } from './types';
 
 /** Options for the `compact` look. */
-export interface CompactOptions {
+export interface CompactOptions extends LookThemeOptions {
   /** Default `'bezier'`. */
   router?: DiagramRouter;
   /** Default 16. */
@@ -36,11 +37,11 @@ function sidePorts(stage: EffectStage): PortSpec[] {
 const untyped = (ports: readonly PortSpec[] | undefined): PortSpec[] =>
   (ports ?? []).map(({ type: _type, ...port }) => port);
 
-function nodeOf(stage: EffectStage, pipeline: EffectPipeline, branch: BranchChoice): DataNode {
+function nodeOf(stage: EffectStage, pipeline: EffectPipeline, branch: BranchChoice, theme: DiagramTheme): DataNode {
   if (kindOf(stage) !== 'decision') {
     return { ...boxNode(stage, { showParams: false, rowPorts: false, ports: sidePorts(stage) }), padding: COMPACT_PADDING };
   }
-  const symbol = branchNode(stage, pipeline, branch);
+  const symbol = branchNode(stage, pipeline, branch, { style: stageStyle(stage, theme) });
   return { id: stage.id, ...symbol, ports: untyped(symbol.ports), padding: symbol.padding ?? COMPACT_PADDING };
 }
 
@@ -60,9 +61,10 @@ function lines(pipeline: EffectPipeline): DrawableWire[][] {
  *  drawn; the wires between two stages one line between them. For a
  *  pipeline too big to read as a node graph. */
 export const compact: EffectLook<CompactOptions> = (pipeline, options = {}) => {
-  const color = typeColors(pipeline, options.colors);
+  const theme = options.theme ?? LOOK_THEME;
+  const color = typeColors(pipeline, options.colors, theme.series);
   const stages = uniqueStages(pipeline);
-  const nodes = stages.map((stage) => nodeOf(stage, pipeline, options.branch ?? 'hexagon'));
+  const nodes = stages.map((stage) => nodeOf(stage, pipeline, options.branch ?? 'hexagon', theme));
   const edges = lines(pipeline).map((line): { edge: DataEdge; style: EdgeStyle } => {
     // Drawn as the data wire among them, if there is one.
     const first = line.find((d) => !isControl(pipeline, d.type)) ?? line[0]!;
@@ -78,7 +80,7 @@ export const compact: EffectLook<CompactOptions> = (pipeline, options = {}) => {
       layout: 'layered',
       layoutOptions: { direction: 'right', nodeGap: options.nodeGap ?? 16, rankGap: options.rankGap ?? 48 },
       router: options.router ?? 'bezier',
-      ...sceneStyles(stages, edges),
+      ...sceneStyles(stages, edges, theme),
     },
     color,
   };
