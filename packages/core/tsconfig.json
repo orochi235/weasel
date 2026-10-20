@@ -105,6 +105,8 @@
       "@weasel-js/parallax": ["../parallax/src/index.ts"],
       "@weasel-js/path-tools": ["../path-tools/src/index.ts"],
       "@weasel-js/path-tools/icons": ["../path-tools/src/icons.table.ts"],
+      "@weasel-js/pdf": ["../pdf/src/index.ts"],
+      "@weasel-js/pdf/testing/*": ["../pdf/src/testing/*"],
       "@weasel-js/prefs": ["../prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["../prefs/src/react.ts"],
       "@weasel-js/prefs/vite": ["../prefs/src/vite.ts"],

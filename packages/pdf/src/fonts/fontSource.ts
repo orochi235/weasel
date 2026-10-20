@@ -1,5 +1,6 @@
 import { type FaceEmbedding, type FontStyle, fontEmbedding, glyphOutline } from '@weasel-js/font';
 
+/** Where the writer gets font faces to embed and glyph outlines to draw, so tests can supply their own. */
 export interface PdfFontSource {
   embedding(family: string, weight: number, style: FontStyle): Promise<FaceEmbedding | null>;
   /** Em-space SVG path data, as glyphOutline answers it. */

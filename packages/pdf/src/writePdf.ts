@@ -8,8 +8,10 @@ import type { PdfFontSource } from './fonts/fontSource';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
 
-export type Rect = { x: number; y: number; width: number; height: number };
+/** An axis-aligned rectangle in page units. */
+export type Rect ={ x: number; y: number; width: number; height: number };
 
+/** One page of the document: its size in points and the draw commands painted onto it. */
 export interface PdfPage {
   width: number;
   height: number;
@@ -17,6 +19,7 @@ export interface PdfPage {
   view?: GlMat3;
 }
 
+/** A decoded bitmap handed back by the host, for images and paints the PDF cannot express directly. */
 export interface RasterPixels {
   width: number;
   height: number;
@@ -24,6 +27,7 @@ export interface RasterPixels {
   data: Uint8ClampedArray;
 }
 
+/** Settings and host callbacks for `writePdf`; only `fonts` is required. */
 export interface WritePdfOptions {
   fonts: PdfFontSource;
   title?: string;
@@ -34,11 +38,13 @@ export interface WritePdfOptions {
   rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number, view: GlMat3 | undefined) => Promise<RasterPixels>;
 }
 
+/** A glyph or command the writer left out of the file, with the reason. */
 export interface PdfSkip {
   kind: 'glyph' | 'command';
   detail: string;
 }
 
+/** The finished file and everything the writer had to leave out of it. */
 export interface PdfResult {
   bytes: Uint8Array;
   skipped: readonly PdfSkip[];

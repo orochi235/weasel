@@ -119,6 +119,7 @@
       "@weasel-js/path-tools": ["./packages/path-tools/src/index.ts"],
       "@weasel-js/path-tools/icons": ["./packages/path-tools/src/icons.table.ts"],
       "@weasel-js/pdf": ["./packages/pdf/src/index.ts"],
+      "@weasel-js/pdf/testing/*": ["./packages/pdf/src/testing/*"],
       "@weasel-js/prefs": ["./packages/prefs/src/index.ts"],
       "@weasel-js/prefs/react": ["./packages/prefs/src/react.ts"],
       "@weasel-js/prefs/vite": ["./packages/prefs/src/vite.ts"],
