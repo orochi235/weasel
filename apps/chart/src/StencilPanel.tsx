@@ -1,36 +1,23 @@
-import { FLOWCHART_STENCILS, stencilKind } from '@weasel-js/diagram';
-import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
+import type { Tool, ToolsApi } from '@weasel-js/core';
+import { stencilIdOf } from '@weasel-js/diagram';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import type { DragEvent, ReactElement } from 'react';
 import { stencilDragText } from './stencilDrop';
 
-export interface StencilPanelProps {
-  /** The active tool's id. */
-  active: string | null;
-  setActive: (toolId: string) => void;
-}
+/** A stencil's tool, which the Shapes panel holds rather than the main palette. */
+export const isStencilTool = (tool: Tool): boolean => stencilIdOf(tool.id) !== null;
 
-const onDragStart = (id: string) => (e: DragEvent<HTMLDivElement>): void => {
-  e.dataTransfer.setData('text/plain', stencilDragText(id));
+const onDragStart = (tool: Tool, e: DragEvent<HTMLButtonElement>): void => {
+  e.dataTransfer.setData('text/plain', stencilDragText(stencilIdOf(tool.id)!));
   e.dataTransfer.effectAllowed = 'copy';
 };
 
-/** The shapes palette: a row picks that stencil's tool, and dragging a row onto the canvas drops one. */
-export function StencilPanel({ active, setActive }: StencilPanelProps): ReactElement {
-  const rows: ItemListRow[] = FLOWCHART_STENCILS.map((s) => ({
-    id: s.id,
-    label: s.label,
-    selected: active === stencilKind(s.id),
-    rowProps: { draggable: true, onDragStart: onDragStart(s.id) },
-  }));
+/** The shapes palette: a button picks that stencil's tool, and dragging one onto the canvas drops one. */
+export function StencilPanel({ tools }: { tools: ToolsApi }): ReactElement {
   return (
     <SidebarPanel title="Shapes">
-      <ItemList
-        rows={rows}
-        selection="single"
-        onActivate={(id) => setActive(stencilKind(id))}
-        containerProps={{ 'aria-label': 'Shapes' }}
-      />
+      <ToolPalette tools={tools} include={isStencilTool} columns={3} ariaLabel="Shapes" onToolDragStart={onDragStart} />
     </SidebarPanel>
   );
 }

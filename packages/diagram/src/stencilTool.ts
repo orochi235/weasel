@@ -18,7 +18,7 @@ export function stencilTool(stencil: DiagramStencil): Tool {
     hookName: 'useStencilTool',
     capabilities: ['creates-shapes'],
     cursor: 'crosshair',
-    presentation: { label: stencil.label, group: 'stencil' },
+    presentation: { label: stencil.label, icon: stencil.icon, group: 'stencil' },
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: stencilKind(stencil.id) } } },
       INSERT_REPOSITION_BINDING,

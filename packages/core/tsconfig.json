@@ -71,6 +71,7 @@
       "@weasel-js/hud": ["../hud/src/index.ts"],
       "@weasel-js/hud/react": ["../hud/src/react/index.ts"],
       "@weasel-js/icons": ["../icons/src/index.ts"],
+      "@weasel-js/icons/shapes": ["../icons/src/shapes.ts"],
       "@weasel-js/icons-plugin": ["../icons-plugin/src/index.ts"],
       "@weasel-js/icons-plugin/virtual": ["../icons-plugin/virtual.d.ts"],
       "@weasel-js/kernel3d": ["../kernel3d/src/index.ts"],

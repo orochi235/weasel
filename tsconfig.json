@@ -84,6 +84,7 @@
       "@weasel-js/hud": ["./packages/hud/src/index.ts"],
       "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
       "@weasel-js/icons": ["./packages/icons/src/index.ts"],
+      "@weasel-js/icons/shapes": ["./packages/icons/src/shapes.ts"],
       "@weasel-js/icons-plugin": ["./packages/icons-plugin/src/index.ts"],
       "@weasel-js/icons-plugin/virtual": ["./packages/icons-plugin/virtual.d.ts"],
       "@weasel-js/kernel3d": ["./packages/kernel3d/src/index.ts"],

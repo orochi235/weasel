@@ -1,4 +1,4 @@
-import type { MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
+import type { DragEvent, MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
 import { Focusable } from '../Tooltip/Focusable';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
@@ -24,6 +24,8 @@ export interface ToolButtonProps {
   ariaDisabled?: boolean;
   /** Click handler. */
   onClick(e: MouseEvent): void;
+  /** Makes the button a drag source, starting a drag with this. */
+  onDragStart?(e: DragEvent<HTMLButtonElement>): void;
   /** The button opens a menu: it takes the menu trigger's ref, id and press handler, says
    *  `aria-haspopup="menu"`, and draws a mark in its corner. */
   menu?: {
@@ -48,7 +50,7 @@ export interface ToolButtonProps {
 export function ToolButton(props: ToolButtonProps) {
   const {
     icon, label, shortcut, active, disabled, ariaDisabled,
-    onClick, title, className, menu,
+    onClick, onDragStart, title, className, menu,
   } = props;
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
@@ -67,6 +69,8 @@ export function ToolButton(props: ToolButtonProps) {
           aria-disabled={ariaDisabled ? 'true' : undefined}
           disabled={disabled}
           onClick={onClick}
+          draggable={onDragStart ? true : undefined}
+          onDragStart={onDragStart}
         >
           <span className={s.icon} aria-hidden="true">{icon}</span>
           <span className={s.label}>{label}</span>
