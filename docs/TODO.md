@@ -1335,13 +1335,6 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) A dropped stencil finds its snap by inserting and rolling back.** `stencilDropHandler`
-  (`apps/chart/src/stencilDrop.ts`) inserts the body inside a `scene.batch`, reads a `'move'`
-  snap session's delta, throws to revert, then inserts again at the shifted spot. That is because
-  core has no public way to move ids the way a drag does, carrying children whose poses are
-  world-space. With one, the handler becomes insert-then-move. Until then: inside an already-open
-  batch the probe would not revert, which no caller does today because handlers run from a microtask; and
-  `session.end()` is not in a `finally`.
 - **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
   (`packages/guides/src/sources/targets.ts`).
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
