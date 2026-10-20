@@ -117,6 +117,9 @@ export interface NodeStyle {
   dash?: number[];
 }
 
+/** What a node is drawn with when nothing says otherwise. */
+export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
+
 /** The stroke, markers, and label color an edge is drawn with. */
 export interface EdgeStyle {
   stroke: string;

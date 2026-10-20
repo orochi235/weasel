@@ -12,8 +12,10 @@ import { groupSpecs, resolveGroups } from './dataGroups';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
 import { edgeSpecs, wireLabels } from './dataEdges';
-import type {
-  DataEdge, DataGroup, DataNode, DiagramData, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
+import {
+  NODE,
+  type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
+  type EdgeStyle, type NodeStyle,
 } from './dataTypes';
 import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import { force } from './force';
@@ -31,6 +33,7 @@ import { tree } from './tree';
 import type { Vec2 } from '@weasel-js/core/math';
 
 export type { DiagramTextStyle };
+export { NODE };
 export type {
   DataEdge, DataGroup, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
 } from './dataTypes';
@@ -38,8 +41,6 @@ export type {
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
 export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
-/** What a node is drawn with when nothing says otherwise. */
-export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
 const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
