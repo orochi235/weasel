@@ -72,7 +72,12 @@ export {
 } from './routeCommands';
 export type { RouteEdit, RouteEditOptions } from './waypointAction';
 export {
-  dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, routeHandles, segmentAxis, simplifyStops,
+  ROUTER_LABELS, SET_ROUTER_ACTION_IDS, commitRouterToScene, createSetRouterAction, routerActions, withRouter,
+} from './routerCommands';
+export type { RouterEdit, SetRouterOptions } from './routerCommands';
+export {
+  dragSegment, dragVertex, insertWaypoint, pinSegment, removeSegment, removeWaypoint, routeHandles, segmentAxis,
+  simplifyStops, unpinSegment,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
 export { portTarget, snapPoint, stopTarget } from './routeSnap';

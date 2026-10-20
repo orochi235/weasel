@@ -16,7 +16,9 @@ import { ChartPageStrip } from './pages/ChartPageStrip';
 import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
-import { ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
+import {
+  AvoidRoutingPublisher, ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher,
+} from './useChartDiagram';
 import './workspace.css';
 
 const FEATURES = ['draw'] as const;
@@ -93,6 +95,7 @@ export function ChartWorkspace(): ReactElement {
             >
               <StencilInsertPublisher />
               <WaypointFollowerPublisher scene={scene} />
+              <AvoidRoutingPublisher scene={scene} />
               <ContainerDropPublisher scene={scene} />
               <TextEditDepPublisher edit={textEdit} />
             </SceneCanvas>

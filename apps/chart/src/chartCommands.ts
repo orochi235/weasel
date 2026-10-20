@@ -1,5 +1,5 @@
 import { useCommand } from '@weasel-js/core';
-import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID, SET_ROUTER_ACTION_IDS } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
@@ -9,7 +9,7 @@ import { PAGE_MENU } from './pages/pageCommands';
 
 export const CHART_ACTIONS = { new: 'chart.new', open: 'chart.open', save: 'chart.save' } as const;
 
-/** Chart mode's File, Edit, Format, and Arrange menus. Undo, Redo and Delete are the kit's own actions; Reset route and Release members are the diagram package's. */
+/** Chart mode's File, Edit, Format, and Arrange menus. Undo, Redo and Delete are the kit's own actions; the connector routers, Reset route, and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -20,7 +20,12 @@ export const CHART_MENUS: ChartMenuContributions = {
     remove: run({ delete: 'delete' }),
   },
   format: {
-    connector: pref.group('', { connector: pref.group('Connector', { resetRoute: pref.action(RESET_ROUTE_ACTION_ID) }, { as: 'menu' }) }),
+    connector: pref.group('', {
+      connector: pref.group('Connector', {
+        router: run(SET_ROUTER_ACTION_IDS),
+        route: run({ resetRoute: RESET_ROUTE_ACTION_ID }),
+      }, { as: 'menu' }),
+    }),
   },
   arrange: {
     containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),

@@ -4,12 +4,13 @@ import {
 import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
   diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, sceneParticipants,
-  stencilKind, stencilTool, useConnectorTool, useStencilInsert, waypointFollower,
+  stencilKind, stencilTool, useAvoidRouting, useConnectorTool, useStencilInsert, waypointFollower,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, type ChartPose, type ChartScene } from './chartDocument';
 
-const ROUTER = 'orthogonal';
+/** New connectors route around shapes; saved ones keep the router they have. */
+const ROUTER = 'avoid';
 
 const EDGE_LABEL: Contribution = {
   id: 'weaselchart-edge-label',
@@ -69,6 +70,12 @@ export function StencilInsertPublisher(): null {
 export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): null {
   const follower = useMemo(() => waypointFollower<ChartPose>(scene), [scene]);
   useTransformFollower(() => follower);
+  return null;
+}
+
+/** Routes `avoid` connectors around shapes on every edit, and live while a shape is dragged. Mounted as a child of `<SceneCanvas>`. */
+export function AvoidRoutingPublisher({ scene }: { scene: ChartScene }): null {
+  useAvoidRouting<ChartPose>(scene as never);
   return null;
 }
 

@@ -23,6 +23,7 @@ import {
 import { portLayer } from './portLayer';
 import type { PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
+import { routerActions } from './routerCommands';
 import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
 import {
   WAYPOINT_AFFORDANCE_KIND,
@@ -75,8 +76,9 @@ export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
  * Both halves of route editing: the handle layer to `registerLayer` — after
  * the port layer and before the edge-end layer, so an end handle wins over a
  * route handle beside it — and the contribution to pass as `ambient`, which
- * carries the drag, the double-click that removes, and the
- * `diagram.resetRoute` command. Like `diagramPorts`, one without the other
+ * carries the drag, the double-click that removes, the
+ * `diagram.resetRoute` command, and the commands that set the selected
+ * connectors' router (`SET_ROUTER_ACTION_IDS`). Like `diagramPorts`, one without the other
  * fails quietly.
  */
 export function diagramWaypoints<TPose>(
@@ -94,6 +96,7 @@ export function diagramWaypoints<TPose>(
         createRouteEditAction({ ...opts, id: actionId }),
         createRemoveWaypointAction(opts),
         createResetRouteAction(opts),
+        ...routerActions(opts),
         grabPortAction(GRAB_WAYPOINT_ACTION_ID),
       ],
       bindings: [
