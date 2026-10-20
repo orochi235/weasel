@@ -11,6 +11,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): `HoverSpec.held` (`true | 'optional'`, the values `mods` takes;
+  `hover ?held` / `hover +held` in a route) keeps reporting a held pointer's moves as hovers marked
+  `held`, without claiming them. Leaving the surface is a leave pressed or not; a target-to-target
+  leave during a press reaches only a `held` binding. A new dispatcher channel, `channels.hover`,
+  attaches hovers without the pointer channel. The loupe aims through `loupe.aim` and
+  `loupe.leave`, so `useLoupe` alone no longer aims; it needs `<LoupeGestures>`.
 - 2026-10-20 (overnight pass): The bone and weight tools left core with their actions for a new
   `@weasel-js/rig` (`RIG_TOOLS`, `useRigTools`, glyphs `rig:bone` and `rig:weight`), not for
   animator, which core depends on. Core keeps `animation/rig` (`useRigNode`, `bindRig`,

@@ -47,6 +47,8 @@ Merged:
   fleet. CI has not run it, since nothing is pushed. Still open there, filed as a P2 under
   "Release-gate & build hygiene": the fleet runs neither Node 22 nor Linux Chromium; ten Linux
   browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
+- `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
+  (a real-mouse browser test drags over a lens).
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
