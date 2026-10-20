@@ -9,14 +9,19 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
-import type { Action } from '../actions/action';
+import { ActionDisabledReason, type Action } from '../actions/action';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
+import type { BodyClassification } from '@weasel-js/gestures';
 import type { DispatcherChannels } from './gestureDispatcherOptions';
 import { startCarry } from '../carry';
 import { useGestureDispatcher } from './useGestureDispatcher';
 
-function Probe({ actions, channels }: { actions: Action[]; channels?: DispatcherChannels }) {
+function Probe({ actions, channels, classifyTarget }: {
+  actions: Action[];
+  channels?: DispatcherChannels;
+  classifyTarget?: (w: { x: number; y: number }) => BodyClassification;
+}) {
   const registry = useActionsRegistry();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   for (const a of actions) registry?.register(a);
@@ -26,6 +31,7 @@ function Probe({ actions, channels }: { actions: Action[]; channels?: Dispatcher
     entriesById: new Map(),
     clientToWorld: (x, y) => ({ x: x - 100, y: y - 100 }),
     channels,
+    classifyTarget,
   });
   return <canvas ref={canvasRef} />;
 }
@@ -136,6 +142,54 @@ describe('useGestureDispatcher — carry channel', () => {
     unmount();
     carryFrom(source());
     move('pointerup', 150, 150);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  describe('over a target', () => {
+    // World x in 50..100 is a selected body; everywhere else is empty.
+    const classify = (w: { x: number; y: number }): BodyClassification =>
+      (w.x >= 50 && w.x <= 100 ? { body: 'selected-body', kind: 'rect' } : { body: 'empty' });
+
+    it('fires an immediate binding only when released over its target', () => {
+      const run = vi.fn();
+      const action: Action = { id: 'tag', label: 'Tag', defaultBinding: { kind: 'carry', target: 'selected-body' }, invoker: { timing: 'immediate', run } };
+      render(<Harness><Probe classifyTarget={classify} actions={[action]} /></Harness>);
+      carryFrom(source());
+      move('pointermove', 120, 120);
+      move('pointerup', 120, 120);
+      expect(run).not.toHaveBeenCalled();
+      carryFrom(source());
+      move('pointermove', 120, 120);
+      move('pointerup', 170, 120);
+      expect(run).toHaveBeenCalledOnce();
+      expect(run.mock.calls[0]![1]).toMatchObject({ worldX: 70, bodyTarget: 'selected-body', carry: PAYLOAD });
+    });
+
+    it('starts an ongoing binding when the carry moves onto its target, not where it came over', () => {
+      const onEnd = vi.fn();
+      const start = vi.fn(() => ({ onEnd }));
+      const action: Action = { id: 'link', label: 'Link', defaultBinding: { kind: 'carry', target: 'selected-body' }, invoker: { timing: 'ongoing', start } };
+      render(<Harness><Probe classifyTarget={classify} actions={[action]} /></Harness>);
+      carryFrom(source());
+      move('pointermove', 110, 110);
+      expect(start).not.toHaveBeenCalled();
+      move('pointermove', 160, 110);
+      expect(start).toHaveBeenCalledOnce();
+      move('pointermove', 170, 110);
+      expect(start).toHaveBeenCalledOnce();
+      move('pointerup', 170, 110);
+      expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
+    });
+  });
+
+  it("hands the carry's payload to `enabled`, which can refuse it", () => {
+    const run = vi.fn();
+    const enabled: NonNullable<Action['enabled']> = vi.fn((_d, _at, carried) =>
+      ((carried?.carry?.value as { id: string } | undefined)?.id === 'b' ? true : ActionDisabledReason.NotApplicable));
+    render(<Harness><Probe actions={[{ id: 'place', label: 'Place', defaultBinding: { kind: 'carry' }, enabled, invoker: { timing: 'immediate', run } }]} /></Harness>);
+    carryFrom(source());
+    move('pointerup', 150, 150);
+    expect(enabled).toHaveBeenCalledWith(expect.anything(), { x: 50, y: 50 }, { items: [], carry: PAYLOAD });
     expect(run).not.toHaveBeenCalled();
   });
 });

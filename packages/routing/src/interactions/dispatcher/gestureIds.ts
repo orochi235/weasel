@@ -24,6 +24,11 @@ export function pointerGestureId(pointerId: number | undefined): string {
   return `pointer-${pointerId ?? 'mouse'}`;
 }
 
+/** The gesture id a carry by this pointer runs under. */
+export function carryGestureId(pointerId: number | undefined): string {
+  return `carry-${pointerId ?? 'mouse'}`;
+}
+
 /** The in-flight handle slot a multitouch gesture of `fingers` fingers keys into. */
 export function multiTouchGestureId(fingers: number): string {
   return `multitouch-${fingers}`;
@@ -50,7 +55,7 @@ export function gestureIdFor(event: InputEvent): string {
     return multiTouchGestureId(event.fingers);
   }
   if (event.kind === 'carry') {
-    return `carry-${event.pointerId ?? 'mouse'}`;
+    return carryGestureId(event.pointerId);
   }
   return `ongoing-${event.kind}`;
 }

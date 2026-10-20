@@ -90,8 +90,23 @@ export interface MenuColorEntry {
   value: string | undefined;
 }
 
+/** A row holding a line of text that is edited in place: the menu stays open while it changes. Its
+ *  controller's `textValue` is what it holds now. A renderer with no text entry draws it read-only. */
+export interface MenuTextEntry {
+  kind: 'text';
+  key: string;
+  label: string;
+  icon?: unknown;
+  disabled?: boolean;
+  access?: string;
+  /** What it held when the menu opened. `undefined` for none. */
+  value: string | undefined;
+  set(value: string): void;
+}
+
 /** One line of a menu. */
-export type MenuEntry = MenuItemEntry | MenuSeparatorEntry | SubmenuEntry | MenuNumberEntry | MenuColorEntry;
+export type MenuEntry =
+  | MenuItemEntry | MenuSeparatorEntry | SubmenuEntry | MenuNumberEntry | MenuColorEntry | MenuTextEntry;
 
 /** An entry the highlight can land on. */
 export type MenuRowEntry = Exclude<MenuEntry, MenuSeparatorEntry>;

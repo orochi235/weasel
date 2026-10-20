@@ -87,7 +87,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   // matches any payload, which is what an omitted arg slot means for a
   // `'free'` arg.
   { name: 'drop',          hasTarget: false, arg: { name: 'types',     values: 'free' } },
-  { name: 'carry',         hasTarget: false, arg: { name: 'types',     values: 'free' } },
+  { name: 'carry',         hasTarget: true,  arg: { name: 'types',     values: 'free' } },
   { name: 'paste',         hasTarget: false, arg: { name: 'types',     values: 'free' } },
 ];
 

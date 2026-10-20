@@ -79,8 +79,9 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case 'multiTouchTap':
       if (arg === undefined) return fail(`a ${kind} spec needs concrete fingers`);
       return withMods({ kind, fingers: Number(arg) });
-    case 'drop':
     case 'carry':
+      return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}), ...t });
+    case 'drop':
     case 'paste':
       return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}) });
   }

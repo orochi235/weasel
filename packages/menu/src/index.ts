@@ -5,7 +5,7 @@
  */
 export { entriesAt, isRow } from './entries';
 export type {
-  MenuEntry, MenuItemEntry, MenuSeparatorEntry, SubmenuEntry, MenuNumberEntry, MenuColorEntry, MenuRowEntry, MenuShortcut,
+  MenuEntry, MenuItemEntry, MenuSeparatorEntry, SubmenuEntry, MenuNumberEntry, MenuColorEntry, MenuTextEntry, MenuRowEntry, MenuShortcut,
 } from './entries';
 export { placeMenu, placeMenuUnder, placeSubmenu } from './placement';
 export type { Point, Rect, Size } from './placement';

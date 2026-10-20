@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMenuController } from './controller';
-import type { MenuEntry, MenuNumberEntry } from './entries';
+import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from './entries';
 import { keyStep } from './keys';
 import { menuNumberText } from './numberText';
 
@@ -116,5 +116,47 @@ describe('menuNumberText', () => {
     expect(menuNumberText(8, { suffix: '×' })).toBe('8×');
     expect(menuNumberText(0.25)).toBe('0.25');
     expect(menuNumberText(undefined, { suffix: '×' })).toBe('—');
+  });
+});
+
+describe('a text row', () => {
+  function text(extra: Partial<MenuTextEntry> = {}) {
+    const set = vi.fn();
+    const name: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set, ...extra };
+    const onClose = vi.fn();
+    const c = createMenuController({ entries: [{ kind: 'item', key: 'cut', label: 'Cut', run: () => {} }, name], onClose });
+    return { c, name, set, onClose };
+  }
+
+  it('is a row the highlight lands on, and Enter on it neither chooses nor closes', () => {
+    const { c, onClose } = text();
+    c.key('ArrowDown');
+    c.key('ArrowDown');
+    expect(c.stack()).toEqual([1]);
+    c.key('Enter');
+    c.press(0, 1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('holds what was set while the menu is open, writes it once, and tells subscribers', () => {
+    const { c, name, set } = text();
+    const heard = vi.fn();
+    c.subscribe(heard);
+    expect(c.textValue(name)).toBe('Layer 1');
+    c.setText(name, 'Layer 2');
+    c.setText(name, 'Layer 2');
+    expect(set.mock.calls).toEqual([['Layer 2']]);
+    expect(c.textValue(name)).toBe('Layer 2');
+    expect(heard).toHaveBeenCalledOnce();
+  });
+
+  it('writes nothing while disabled or once the menu has closed', () => {
+    const off = text({ disabled: true });
+    off.c.setText(off.name, 'x');
+    expect(off.set).not.toHaveBeenCalled();
+    const { c, name, set } = text();
+    c.key('Escape');
+    c.setText(name, 'x');
+    expect(set).not.toHaveBeenCalled();
   });
 });

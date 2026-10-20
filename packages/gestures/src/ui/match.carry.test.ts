@@ -22,9 +22,23 @@ describe('matchSpec — carry', () => {
     expect(matchSpec(carry({ stage: 'drop' }), { kind: 'carry' }, false)).toBe(true);
   });
 
-  it('never matches the moves and the leave, which belong to the carry in flight', () => {
+  it('matches a move only for a spec with a target, which waits for the carry to reach it', () => {
     expect(matchSpec(carry({ stage: 'move' }), { kind: 'carry' }, false)).toBe(false);
+    expect(matchSpec(carry({ stage: 'move', bodyTarget: 'empty' }), { kind: 'carry', target: 'empty' }, false)).toBe(true);
+  });
+
+  it('never matches the leave, which belongs to the carry in flight', () => {
     expect(matchSpec(carry({ stage: 'leave' }), { kind: 'carry' }, false)).toBe(false);
+  });
+
+  it('holds the target to what the carry is over', () => {
+    const onSelected = carry({ stage: 'drop', bodyTarget: 'selected-body', bodyKind: 'rect' });
+    expect(matchSpec(onSelected, { kind: 'carry', target: 'selected-body' }, false)).toBe(true);
+    expect(matchSpec(onSelected, { kind: 'carry', target: 'kind:rect:selected' }, false)).toBe(true);
+    expect(matchSpec(onSelected, { kind: 'carry', target: 'empty' }, false)).toBe(false);
+    expect(matchSpec(carry({ stage: 'drop' }), { kind: 'carry', target: 'selected-body' }, false)).toBe(false);
+    const onHandle = carry({ affordance: { kind: 'port' } });
+    expect(matchSpec(onHandle, { kind: 'carry', target: 'affordance:port' }, false)).toBe(true);
   });
 
   it('filters by the payload type as a glob', () => {
@@ -55,9 +69,12 @@ describe('carry in the route grammar', () => {
     expect(routeToSpec(parseRoute('[*:*] carry(lab/*|text/plain)')))
       .toEqual({ kind: 'carry', types: ['lab/*', 'text/plain'] });
     expect(routeToSpec(parseRoute('[*:*] carry'))).toEqual({ kind: 'carry' });
+    expect(routeToSpec(parseRoute('[*:*] carry(lab/*) => selected-body')))
+      .toEqual({ kind: 'carry', types: ['lab/*'], target: 'selected-body' });
   });
 
   it('describes the route', () => {
     expect(describeRoute(parseRoute('[*:*] carry(lab/*)'))).toContain('carries lab/* onto the canvas');
+    expect(describeRoute(parseRoute('[*:*] carry(lab/*) => selected-body'))).toContain('carries lab/* onto a selected-body');
   });
 });
