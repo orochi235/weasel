@@ -11,6 +11,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): The bone and weight tools left core with their actions for a new
+  `@weasel-js/rig` (`RIG_TOOLS`, `useRigTools`, glyphs `rig:bone` and `rig:weight`), not for
+  animator, which core depends on. Core keeps `animation/rig` (`useRigNode`, `bindRig`,
+  `skinBinding`) as the runtime binding. Rig declares its two kit settings at their old paths.
+  `useRigTools` reads `scene.getSelection()` unless handed one. The rig demo is filed under the rig
+  package rather than Animation.
 - 2026-10-20 (overnight pass): `selectTool.rotate: false` is decided once, in `resolveFeatures`
   (`selectRotates`): every enabled preset loses its ambient `rotate` bindings and
   `selection.rotation-handle`, while the `rotate` action stays registered. A tool that binds
