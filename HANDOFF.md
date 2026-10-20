@@ -4,12 +4,12 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 03:50)
+## Overnight pass, 2026-10-20 (status at 05:20)
 
 For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
 marked "overnight pass". Nothing is pushed.
 
-**`main` is green at `5ceb31061`** (full fleet run: 27555 passed, 0 failed).
+**`main` is green at `48ac2d533`** (full fleet run on teitou: 27836 passed, 0 failed).
 
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
