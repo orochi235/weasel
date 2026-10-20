@@ -1,7 +1,7 @@
 import MagicString, { type SourceMap } from 'magic-string';
-import { Visitor } from 'oxc-parser';
 import { qualify } from '../../icons/src/names.ts';
 import { parseModule } from './parse.ts';
+import { walk } from './walk.ts';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
 const NAME = /^[^'"`\s\\]+$/;
@@ -77,7 +77,7 @@ export function rewriteIconCalls(
   if (locals.size === 0) return null;
   const s = new MagicString(code);
   let dynamic = 0;
-  new Visitor({
+  walk(parsed.program, {
     CallExpression(node) {
       if (node.callee.type !== 'Identifier' || !locals.has(node.callee.name)) return;
       const name = literalArg(node.arguments as unknown as Node[]);
@@ -87,6 +87,6 @@ export function rewriteIconCalls(
       }
       s.overwrite(node.start, node.end, `/* @icon */ '${qualify(locals.get(node.callee.name)!, name)}'`);
     },
-  }).visit(parsed.program);
+  });
   return { code: s.toString(), map: s.generateMap({ source: id, hires: true }), dynamic };
 }
