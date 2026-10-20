@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
+import { useInFlightBounds } from './useInFlightBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
@@ -218,38 +219,8 @@ export function useViewHelpers<TPose>(
 
   const multiActive = selection.length > 1;
 
-  const previewPoseExtraRef = useLatest(previewPoseExtra);
-
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
-
-  const previewPoseOf = useCallback((id: string): TPose | null => {
-    const p = previewPoseExtraRef.current?.(id);
-    return p != null ? (p as TPose) : null;
-  }, [previewPoseExtraRef]);
-  // A gesture source's ids, re-read only when its version moves.
-  const inFlight = useRef<{ source: GestureSource; version: number; ids: ReadonlySet<string> } | null>(null);
-  const isInFlight = useCallback((id: string): boolean => {
-    if (!gestureSource) return false;
-    const version = gestureSource.getVersion();
-    let entry = inFlight.current;
-    if (entry === null || entry.source !== gestureSource || entry.version !== version) {
-      entry = { source: gestureSource, version, ids: new Set(gestureSource.ids() ?? []) };
-      inFlight.current = entry;
-    }
-    return entry.ids.has(id);
-  }, [gestureSource]);
-
-  /** Bounds of an in-flight `id`: at the pose a source previews, else at its
-   *  effective pose — a transform's poses live in the scene's overrides.
-   *  Boxed through `boxOf` either way, since a consumer `boundsOf` answers
-   *  for the document pose only. */
-  const previewBoundsOf = useCallback((id: string): Bounds | null => {
-    const p = previewPoseOf(id);
-    if (p != null) return boxOf(id, p);
-    if (!isInFlight(id)) return null;
-    const shown = committedPoseOf(id);
-    return shown != null ? boxOf(id, shown) : null;
-  }, [previewPoseOf, boxOf, isInFlight, committedPoseOf]);
+  const { previewPoseOf, previewBoundsOf } = useInFlightBounds({ gestureSource, previewPoseExtra, boxOf, committedPoseOf });
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can
