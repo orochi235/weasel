@@ -72,10 +72,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
   const { viewRef } = viewState;
   const kinds = useNodeKinds(scene, props.routing);
-  const selection = useCanvasSelection({
-    scene, supplied: props.selection, options: props.selectionOptions, selectable, describeKind: props.describeKind,
-    kindOf: kinds.kindOf,
-  });
+  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
   const enabled = useEnabledFeatures(props.features, props.presetSource.named, viewport !== undefined);
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
