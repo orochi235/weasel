@@ -1,0 +1,24 @@
+{
+  "namespace": "diagram",
+  "owner": "@weasel-js/diagram",
+  "icons": {
+    "container": {
+      "body": "<path d=\"M3.125 4.375H16.875V15.625H3.125ZM3.125 8.125L16.875 8.125\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M3.125 4.375H16.875V15.625H3.125Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Containers",
+      "tags": []
+    },
+    "poolRows": {
+      "body": "<path d=\"M3.125 4.375H16.875V15.625H3.125ZM6.875 4.375L6.875 15.625M6.875 10.625L16.875 10.625\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M3.125 4.375H16.875V15.625H3.125Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Containers",
+      "tags": []
+    },
+    "poolColumns": {
+      "body": "<path d=\"M3.125 4.375H16.875V15.625H3.125ZM3.125 8.125L16.875 8.125M10.625 8.125L10.625 15.625\" stroke-linejoin=\"miter\"/>",
+      "fill": "<path d=\"M3.125 4.375H16.875V15.625H3.125Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Containers",
+      "tags": []
+    }
+  }
+}

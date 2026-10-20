@@ -4,7 +4,9 @@
  * members.
  */
 import { createInsertOp, type AddNodeSpec, type NodeId, type Op, type RectPose, type Scene } from '@weasel-js/core';
+import type { IconRef } from '@weasel-js/icons';
 import { DEFAULT_FONT } from '../edgeLabel';
+import { icon } from '../icons.gen';
 import { NODE, type DiagramSceneData, type NodeStyle } from '../fromData';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -17,13 +19,15 @@ export interface ContainerStencil {
   role: 'container' | 'pool';
   axis?: 'x' | 'y';
   size: { width: number; height: number };
+  /** The glyph a palette draws on its button. */
+  icon?: IconRef;
 }
 
 /** A titled box, and pools of rows and of columns. */
 export const CONTAINER_STENCILS: readonly ContainerStencil[] = [
-  { id: 'container', label: 'Container', role: 'container', size: { width: 240, height: 160 } },
-  { id: 'pool-rows', label: 'Pool (rows)', role: 'pool', axis: 'y', size: { width: 480, height: 240 } },
-  { id: 'pool-columns', label: 'Pool (columns)', role: 'pool', axis: 'x', size: { width: 480, height: 300 } },
+  { id: 'container', label: 'Container', role: 'container', size: { width: 240, height: 160 }, icon: icon('container') },
+  { id: 'pool-rows', label: 'Pool (rows)', role: 'pool', axis: 'y', size: { width: 480, height: 240 }, icon: icon('poolRows') },
+  { id: 'pool-columns', label: 'Pool (columns)', role: 'pool', axis: 'x', size: { width: 480, height: 300 }, icon: icon('poolColumns') },
 ];
 
 /** How many lanes a new pool starts with. */

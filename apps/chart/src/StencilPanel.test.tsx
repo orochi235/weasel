@@ -4,9 +4,9 @@ import type { Tool, ToolsApi } from '@weasel-js/core';
 import { CONTAINER_STENCILS, FLOWCHART_STENCILS, stencilTool } from '@weasel-js/diagram';
 import { toIconRef, type IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { StencilPanel } from './StencilPanel';
 import { STENCIL_MIME } from './stencilDrop';
+import { renderWithIcons } from './testIcons';
 
 afterEach(cleanup);
 
@@ -33,13 +33,15 @@ describe('StencilPanel', () => {
   it("draws each stencil's own glyph, not the unknown-tool placeholder", () => {
     const drawn = (name: IconRef) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
     const placeholder = drawn(toIconRef('core:unknown')!);
-    const glyphs = FLOWCHART_STENCILS.map((s) => drawn(s.icon!));
+    const stencils = [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS];
+    const glyphs = stencils.map((s) => drawn(s.icon!));
     renderWithIcons(<StencilPanel tools={chartTools()} />);
     const buttons = [...screen.getByRole('toolbar', { name: 'Shapes' }).querySelectorAll('button')];
-    buttons.slice(0, FLOWCHART_STENCILS.length).forEach((button, i) => {
+    expect(buttons).toHaveLength(stencils.length);
+    buttons.forEach((button, i) => {
       const svg = button.querySelector('svg')!.innerHTML;
-      expect(svg, FLOWCHART_STENCILS[i]!.id).toBe(glyphs[i]);
-      expect(svg, FLOWCHART_STENCILS[i]!.id).not.toBe(placeholder);
+      expect(svg, stencils[i]!.id).toBe(glyphs[i]);
+      expect(svg, stencils[i]!.id).not.toBe(placeholder);
     });
   });
 
