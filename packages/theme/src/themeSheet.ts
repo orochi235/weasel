@@ -52,6 +52,7 @@ function write(root: StyleRoot, held: RootSheet): void {
       // The bare rule first: it matches a variant's elements too, and the variant's has to win the tie.
       [...variants].sort((a, b) => a.id - b.id).map((v) => `${selector}${only(v.id)} { ${v.body} }`))
     .join('\n');
+  // Not `@weasel-js/react`'s `adoptCss`: this entry loads without React.
   const win = documentOf(root).defaultView;
   const Sheet = win?.CSSStyleSheet;
   if (Sheet && 'replaceSync' in Sheet.prototype && Array.isArray(root.adoptedStyleSheets)) {
