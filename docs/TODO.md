@@ -1048,6 +1048,16 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
+- **(P3) The `browser` project spends about a second per file outside its tests.** Alone on teitou
+  (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
+  310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
+  files paying it. Splitting the longest files would not help: the tail is the small ones.
+  `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
+  Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
+  servers, is the likely fix (inferred, not tried); tests that import their own package by relative
+  path would then load a second copy of it beside the bundle, splitting module state such as the
+  font registry, the same obstacle the forge entry above names.
+
 - **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
   so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
