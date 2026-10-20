@@ -166,6 +166,7 @@ export {
 export type { DraggableLabel, LabelScratch } from './labelDragLayer';
 export { MOVE_LABEL_ACTION_ID, commitLabelToScene, createLabelDragAction, movedLabelData } from './labelDragAction';
 export type { LabelDragOptions, LabelEdit } from './labelDragAction';
+export { RESET_LABEL_ACTION_ID, createResetLabelAction } from './labelCommands';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';

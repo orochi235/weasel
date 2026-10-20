@@ -30,6 +30,7 @@ import {
 } from './connect';
 import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
 import { createSetHopsAction } from './hops/hopsAction';
+import { createResetLabelAction } from './labelCommands';
 import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
 import { LABEL_DRAG_AFFORDANCE_KIND, labelDragLayer, labelScratchOf } from './labelDragLayer';
 import { portLayer } from './portLayer';
@@ -166,6 +167,7 @@ export function diagramLabelDrag(
       eligibility: { claimed: true },
       actions: [
         createLabelDragAction({ ...opts, id: actionId }),
+        createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),
         grabPortAction(GRAB_LABEL_ACTION_ID),
         selectLabelEdgeAction(),
       ],
