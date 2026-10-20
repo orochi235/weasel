@@ -173,6 +173,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-13 (pass 6): `overChildren`, `isOverChildren`, and `splitOverChildren` are new core
   exports; a container's `data.label` draws over its children through them.
 - 2026-10-13 (pass 6): `SceneCanvasApi.ingest` works from first render.
+- 2026-10-19 (pass 7): The symmetry guide's angle knob moves out past the farthest corner of the
+  group's contents, plus twice its hit radius, when they reach past `knobDistancePx`. With a large
+  group that can put it off screen; nothing clamps it to the canvas.
 
 ## Rendering, canvas, and paint
 
