@@ -16,7 +16,7 @@ import { DEFAULT_FONT, GLYPH, labelSize, labelStyleOf } from './edgeLabel';
 import type { DiagramEdge } from './edgeTrait';
 import { force } from './force';
 import { grownBy } from './footprint';
-import { labelFollowsLayout, type EdgeLabelRoom, type Graph, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
+import { graphOf, labelFollowsLayout, type EdgeLabelRoom, type GraphEdge, type GraphGroup, type GraphNode } from './graph';
 import type { DiagramAnchor } from './group';
 import { LABEL_PLACEMENT, type DiagramLabel } from './labelTrait';
 import { chain } from './chain';
@@ -27,6 +27,8 @@ import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './l
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
+import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
+import type { DiagramTheme } from './theme/types';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -61,6 +63,8 @@ export interface DataNode {
   /** Drawn over the box besides its rows: shapes in a unit square stretched
    *  over it, and text pinned to a point on it. */
   marks?: readonly DataMark[];
+  /** The theme role it is drawn in, under `DiagramSceneOptions.theme`. Kept on its trait. */
+  style?: string;
 }
 
 /** One edge of a {@link DiagramData}, between two nodes or groups by id. */
@@ -196,6 +200,9 @@ export interface DiagramSceneOptions {
   /** A group's box and label. `text` colors the label. */
   groupStyle?: (group: DataGroup) => NodeStyle;
   edgeStyle?: (edge: DataEdge) => EdgeStyle;
+  /** Styles nodes by their `style` role, and edges, groups and text by the theme, where the
+   *  functions above leave them; and its face is the default `font`. */
+  theme?: DiagramTheme;
 }
 
 /** What a node is drawn with when nothing says otherwise. */
@@ -208,24 +215,6 @@ const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force, chain } as const;
 
 export { edgeIdOf };
-
-function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
-  const byId = new Map(nodes.map((n) => [n.id, n]));
-  const out = new Map<string, GraphEdge[]>();
-  const inc = new Map<string, GraphEdge[]>();
-  for (const e of edges) {
-    out.set(e.from, [...(out.get(e.from) ?? []), e]);
-    inc.set(e.to, [...(inc.get(e.to) ?? []), e]);
-  }
-  return {
-    nodes,
-    edges,
-    groups,
-    node: (id) => byId.get(id),
-    outgoing: (id) => out.get(id) ?? [],
-    incoming: (id) => inc.get(id) ?? [],
-  };
-}
 
 /** The room an edge's label asks layout for: none when the edge puts its
  *  label somewhere layout does not station it, or routes itself through
@@ -276,7 +265,7 @@ function nodeSpecs(
     layer: 'main',
     measure: look.measure,
     body: (trait) => ({
-      diagram: n.pinned === true ? { ...trait, pinned: true } : trait,
+      diagram: { ...trait, ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}) },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
     }),
@@ -297,7 +286,9 @@ function nodeSpecs(
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
-  const font = opts.font ?? DEFAULT_FONT;
+  const { theme } = opts;
+  const font = opts.font ?? (theme ? themeFont(theme) : DEFAULT_FONT);
+  const labelFont = theme ? themeLabelFont(theme, font) : font;
   const styleOf = (s: RowTextStyle | undefined) => textFace(s, font);
   const measure: MeasureRowText = opts.measure
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
@@ -362,7 +353,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   }
   const graph = graphOf(
     seeds,
-    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, font, measure))), graphGroups),
+    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, labelFont, measure))), graphGroups),
     graphGroups,
   );
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
@@ -377,14 +368,15 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   // The author's own ports and waypoints win over the plan's.
   const routes = plan === null || layout?.plan === undefined ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
-  const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
-  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? GROUP, text: styleOf(titleStyle) });
+  const fallback = theme ? roleEdgeStyle(theme) : EDGE;
+  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, fallback, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
   const footprints = new Map(seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)]));
   specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
-    const style = opts.nodeStyle?.(n) ?? NODE;
+    const style = opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE);
     specs.push(...nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure }));
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }

@@ -1,6 +1,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import type { GroupInset } from './cluster';
 import type { Outline } from './outline';
+import type { StyleField } from './theme/styleField';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:
@@ -70,6 +71,10 @@ export interface DiagramNode {
   /** How far past its bounds something drawn with it reaches, on each side —
    *  a built body's port labels. Layout keeps neighbors that far off too. */
   margin?: GroupInset;
+  /** The theme role it is drawn in. Unset, the theme's default role. */
+  style?: string;
+  /** The colors the author set by hand, which a theme leaves as they are. */
+  ownStyle?: readonly StyleField[];
 }
 
 /** The group half of a {@link DiagramNode}. */

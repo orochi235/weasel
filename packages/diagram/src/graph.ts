@@ -222,19 +222,24 @@ export function buildGraph<TPose>(
     const room = rooms.get(e.id);
     return room !== undefined && routed.has(e.id) ? { ...e, label: room } : e;
   });
-  const edges = expandGroupEdges(roomed.filter((e) => known(e.from) && known(e.to)), live);
+  return graphOf(nodes, expandGroupEdges(roomed.filter((e) => known(e.from) && known(e.to)), live), live);
+}
+
+const NONE: readonly GraphEdge[] = Object.freeze([]);
+
+/** The graph over `nodes`, `edges`, and `groups`, indexed for lookup. */
+export function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = new Map<string, GraphEdge[]>();
   const into = new Map<string, GraphEdge[]>();
   for (const edge of edges) {
     push(out, edge.from, edge);
     push(into, edge.to, edge);
   }
-
-  const NONE: readonly GraphEdge[] = Object.freeze([]);
   return {
     nodes,
     edges,
-    groups: live,
+    groups,
     node: (id) => byId.get(id),
     outgoing: (id) => out.get(id) ?? NONE,
     incoming: (id) => into.get(id) ?? NONE,

@@ -1329,5 +1329,5 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Second arc.** Themes; containers and swimlanes; connectors that route around shapes
-  while editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) Second arc.** Containers and swimlanes; connectors that route around shapes while
+  editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.

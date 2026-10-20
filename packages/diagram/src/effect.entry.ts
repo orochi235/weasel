@@ -28,8 +28,9 @@ export {
   valueRowId,
   wireEdges,
   wireStyle,
+  LOOK_THEME,
 } from './effect/draw';
-export type { DrawableWire, EffectLook, EffectLookResult, LookOrder, RunRowOptions, TypeColor } from './effect/draw';
+export type { DrawableWire, EffectLook, EffectLookResult, LookOrder, LookThemeOptions, RunRowOptions, TypeColor } from './effect/draw';
 export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { EffectEditor } from './effect/EffectEditor';
