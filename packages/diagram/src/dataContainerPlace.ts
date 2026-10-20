@@ -9,8 +9,9 @@ import { stackedLanes } from './containers/laneStack';
 import { regionSpecs } from './containers/regionSpecs';
 import { bodyBox } from './containers/trait';
 import { EMPTY_CONTAINER, fittedInset, laneSizes, type ContainerLayout, type DataRegion, type DataRegions } from './dataContainers';
-import { NODE, type DiagramSpec, type NodeStyle } from './dataTypes';
-import { ownNodeStyle, withColors } from './dataColors';
+import type { DiagramSpec } from './dataTypes';
+import { ownNodeStyle } from './dataColors';
+import { dataRegionStyle } from './dataStyles';
 import { grownBy } from './footprint';
 import type { DiagramTheme } from './theme/types';
 
@@ -124,21 +125,6 @@ export function placeContainers(
   return out;
 }
 
-/** The style a region is drawn in: its own colors over its theme role's, else over the theme's container, pool
- *  header, or lane body in turn. */
-function regionStyle(r: DataRegion, theme: DiagramTheme | undefined): NodeStyle {
-  return withColors(themeRegionStyle(r, theme), r.colors);
-}
-
-function themeRegionStyle(r: DataRegion, theme: DiagramTheme | undefined): NodeStyle {
-  if (theme === undefined) return NODE;
-  const own = r.style !== undefined ? theme.roles[r.style] : undefined;
-  if (own !== undefined) return own;
-  if (r.role === 'pool') return theme.lane.header;
-  if (r.role === 'lane') return theme.lane.bodies[r.index % Math.max(1, theme.lane.bodies.length)] ?? theme.container;
-  return theme.container;
-}
-
 /** Each region's specs and its title's, outer regions first, as `createScene` needs parents before what they hold.
  *  Titles are set in `fontFamily`, the diagram's face. */
 export function containerSpecs(
@@ -151,7 +137,7 @@ export function containerSpecs(
     const box = boxes.get(r.id);
     if (box === undefined) return [];
     const specs = regionSpecs(r.role, r.axis, { ...box }, r.label ?? null, {
-      id: r.id, layer: 'main', parent: r.parent ?? null, style: regionStyle(r, theme), fitted: r.fitted, fontFamily,
+      id: r.id, layer: 'main', parent: r.parent ?? null, style: dataRegionStyle(r, theme, r.index), fitted: r.fitted, fontFamily,
     });
     const marks = { ...(r.pinned ? { pinned: true } : {}), ...ownNodeStyle(r.colors) };
     if (Object.keys(marks).length === 0) return specs as DiagramSpec[];

@@ -5,7 +5,7 @@ import { DIAGRAM_JSON } from './jsonFormat';
 
 const DOC: DiagramDocument = {
   pages: [{ id: 'p1', name: 'One', width: 300, height: 200, data: { nodes: [{ id: 'a', lines: ['A'], at: { x: 10, y: 20 } }], edges: [] } }],
-  theme: 'day',
+  theme: 'paper',
 };
 
 const fake = (id: string, extensions: string[], detect: (t: string) => boolean): DiagramFormat => ({ id, name: id, extensions, detect });

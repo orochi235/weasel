@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dataEdgeStyle, dataNodeStyle, dataRegionStyle } from './dataStyles';
 import type { DiagramData } from './dataTypes';
 import { diagramScene, edgeIdOf, type DiagramSpec } from './fromData';
 import { DIAGRAM_THEMES } from './theme/themes';
@@ -57,6 +58,16 @@ describe('diagramScene edge roles', () => {
     const edge = byId(diagramScene(data, { theme: THEME }), edgeIdOf(data.edges[0]!));
     expect(strokeOf(edge)).toBe(THEME.roles.accent!.stroke);
     expect(trait(edge).style).toBe('accent');
+  });
+});
+
+describe('the data styles a writer reads', () => {
+  it('give what diagramScene draws', () => {
+    const specs = diagramScene(DATA, { theme: THEME });
+    expect(dataNodeStyle(DATA.nodes[0]!, THEME).fill).toBe(byId(specs, 'a').data.fill?.paint.color);
+    expect(dataEdgeStyle(DATA.edges[0]!, THEME).stroke).toBe(strokeOf(byId(specs, edgeIdOf(DATA.edges[0]!))));
+    expect(dataRegionStyle(DATA.containers![0]!, THEME).stroke).toBe(strokeOf(byId(specs, 'k')));
+    expect(dataRegionStyle({ role: 'lane', ...DATA.containers![1]!.lanes![0]! }, THEME, 0).stroke).toBe(strokeOf(byId(specs, 'l1')));
   });
 });
 

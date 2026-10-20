@@ -3,13 +3,13 @@ import { polylineFromPoints } from '@weasel-js/core';
 import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
-import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
+import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './fromData';
 import { ownEdgeStyle, withColors } from './dataColors';
 import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
-import { roleEdgeStyle } from './theme/resolve';
+import { dataEdgeStyle } from './dataStyles';
 import type { DiagramTheme } from './theme/types';
 
 export interface EdgeSpecContext {
@@ -18,8 +18,7 @@ export interface EdgeSpecContext {
   /** The face labels are sized from. Default `font`. */
   labelFont?: { fontFamily: string; fontSize: number };
   measure: MeasureRowText;
-  fallback: EdgeStyle;
-  /** Styles an edge naming a role. */
+  /** Styles each edge under its role. Unset, edges take `dataEdgeStyle`'s defaults. */
   theme?: DiagramTheme;
   labelPlacement: DiagramLabel;
   /** Ports and waypoints by edge id, overriding the edge's own (from `layeredRoutes`). */
@@ -78,8 +77,8 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const waypoints = router === 'avoid' ? e.waypoints : planned.waypoints;
     // Layout's own route, marked so a later layout of the live scene owns it.
     const laidOut = e.waypoints === undefined && waypoints !== undefined;
-    const role = e.style !== undefined && ctx.theme !== undefined ? roleEdgeStyle(ctx.theme, e.style) : ctx.fallback;
-    const style = withColors(ctx.opts.edgeStyle?.(e) ?? role, e.colors);
+    const own = ctx.opts.edgeStyle?.(e);
+    const style = own !== undefined ? withColors(own, e.colors) : dataEdgeStyle(e, ctx.theme);
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
     specs.push({
