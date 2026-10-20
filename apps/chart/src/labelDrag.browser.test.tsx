@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { createScene, effectivePose, type RectPose } from '@weasel-js/core';
+import { createScene, derivedDepOf, effectivePose, type RectPose } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, LABEL_PLACEMENT, edgeLabelSpec } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
@@ -47,11 +47,37 @@ const savedNode = (id: string) =>
     .find((n) => n.id === id);
 const savedLabel = () => (savedNode(LABEL_ID)?.data.diagram as { label?: Record<string, unknown> } | undefined)?.label;
 
-/** The label's center in client pixels, from the saved chart rebuilt into a scene. */
+const savedScene = () => chartScene(chartFromJson(savedText()).specs);
+
+/** The label's pose, from the saved chart rebuilt into a scene. */
+function labelPose(): RectPose {
+  const scene = savedScene();
+  return effectivePose(scene, scene.get(LABEL_ID as never)!) as RectPose;
+}
+
+const centerOf = (r: RectPose) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+
+/** The label's center in client pixels. */
 function labelCenter(host: HTMLElement): { x: number; y: number } {
-  const scene = chartScene(chartFromJson(savedText()).specs);
-  const pose = effectivePose(scene, scene.get(LABEL_ID as never)!) as RectPose;
-  return at(host, pose.x + pose.width / 2, pose.y + pose.height / 2);
+  const c = centerOf(labelPose());
+  return at(host, c.x, c.y);
+}
+
+/**
+ * Where a label `size` big stands at fraction `t` and `offset` along the straight connector `ab`, worked out here
+ * from the connector's own route rather than by the kit's label code: its near side sits `offset` off the line, to
+ * the left of travel.
+ */
+function expectedCenter(t: number, offset: number, size: RectPose): { x: number; y: number } {
+  const path = derivedDepOf(savedScene(), 'ab' as never)!.path as { kind: string; coords: ArrayLike<number> };
+  expect(path.kind).toBe('polygon');
+  const c = path.coords;
+  expect(c.length).toBe(4);
+  const d = { x: c[2]! - c[0]!, y: c[3]! - c[1]! };
+  const len = Math.hypot(d.x, d.y);
+  const n = { x: d.y / len, y: -d.x / len };
+  const reach = offset + Math.sign(offset) * (Math.abs(n.x) * size.width + Math.abs(n.y) * size.height) / 2;
+  return { x: c[0]! + d.x * t + n.x * reach, y: c[1]! + d.y * t + n.y * reach };
 }
 
 /** Whether any pixel within 8 of a client point is the route handles' blue. */
@@ -108,12 +134,17 @@ describe('WeaselChart edge label dragging', () => {
     const dragged = savedLabel()!;
     expect(dragged.at as number).toBeCloseTo(0.5, 1);
     expect(dragged.offset as number).toBeLessThan(0);
+    const before = centerOf(labelPose());
 
     // Box b up by 70: the connector now climbs from a to b, its middle at (450, 295).
     await drag(canvas, at(host, 650, 330), at(host, 650, 260));
     await expect.poll(() => savedNode('b')!.pose!.y).toBeLessThan(260);
     await frames(2);
     expect(savedLabel()).toEqual(dragged);
+    const moved = labelPose();
+    const want = expectedCenter(dragged.at as number, dragged.offset as number, moved);
+    expect(Math.hypot(centerOf(moved).x - want.x, centerOf(moved).y - want.y)).toBeLessThan(1.5);
+    expect(Math.hypot(centerOf(moved).x - before.x, centerOf(moved).y - before.y)).toBeGreaterThan(10);
 
     const middle = at(host, 450, 295);
     click(canvas, at(host, 1000, 700));

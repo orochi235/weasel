@@ -1311,10 +1311,11 @@ only story runner in the repo.
   `@weasel-js/audio` graph, pages in `DiagramData`, and groups under the
   `rack` and `lanes` looks. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`
   (2026-10-20).
-- **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire` (`effect/types.ts`) has nowhere to
-  store a placement, and the `lanes` look rewrites each label's `labelPlacement` on every build
-  (`effect/lanesRoutes.ts`). Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for
-  which of the two wins. Left open by label drag (2026-10-20).
+- **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
+  (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
+  rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
+  Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
+  Left open by label drag (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
