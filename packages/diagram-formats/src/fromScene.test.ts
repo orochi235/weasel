@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { setDiagramColor, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
-import { DOC_DATA, docScene, type DocScene } from './testing/docScene';
+import { documentSpecs } from './toScene';
+import { DOC_DATA, MEASURE, docScene, type DocScene } from './testing/docScene';
 
 const pageOf = (scene: DocScene, id: string) => documentFromScene(scene).pages.find((p) => p.id === id)!;
 const nodeOf = (scene: DocScene, page: string, id: string): DataNode => pageOf(scene, page).data.nodes.find((n) => n.id === id)!;
@@ -87,5 +88,38 @@ describe('documentFromScene', () => {
   it('leaves out a fitted container\'s box, which fits its members again', () => {
     const data = { ...DOC_DATA, containers: [{ ...DOC_DATA.containers![0]!, box: undefined }] };
     expect(pageOf(docScene(data), 'p1').data.containers![0]!.box).toBeUndefined();
+  });
+
+  describe('a shape in the gap between pages', () => {
+    // 37 wide, the narrowest a shape gets, so at x 1001 or 1002 it fits the 40 gap with 1 and 2 to spare.
+    const withGap = (x: number, edge: DataEdge): DocScene => docScene({
+      ...DOC_DATA,
+      nodes: [...DOC_DATA.nodes, { id: 'g', lines: ['Gap'], at: { x, y: 60 }, width: 37 }],
+      edges: [...DOC_DATA.edges, edge],
+    });
+
+    it('exports a shape in the gap with the page nearest it, not the first', () => {
+      const scene = withGap(1002, { id: 'gc', from: 'g', to: 'c' });
+      expect(pageOf(scene, 'p2').data.nodes.map((n) => n.id)).toContain('g');
+      expect(pageOf(scene, 'p1').data.nodes.map((n) => n.id)).not.toContain('g');
+    });
+
+    it('marks a connector cross-page exactly when the scene splits it', () => {
+      const scene = withGap(1002, { id: 'gc', from: 'g', to: 'c' });
+      const doc = documentFromScene(scene);
+      expect(doc.crossPageEdges?.map((e) => e.id)).toEqual(['ac']);
+      expect(pageOf(scene, 'p2').data.edges.map((e) => e.id)).toEqual(['gc']);
+    });
+
+    it('keeps a connector from a gap shape to another page whole, with its waypoints', () => {
+      const wp = [{ x: 1020, y: 200 }];
+      const scene = withGap(1001, { id: 'gc', from: 'g', to: 'c', router: 'orthogonal', waypoints: wp });
+      const doc = documentFromScene(scene);
+      expect(pageOf(scene, 'p1').data.nodes.map((n) => n.id)).toContain('g');
+      expect(doc.crossPageEdges?.find((e) => e.id === 'gc')?.waypoints).toEqual(wp);
+      const { specs } = documentSpecs(doc, { measure: MEASURE });
+      const edge = (specs as { id?: string; data?: unknown }[]).find((n) => n.id === 'gc');
+      expect(JSON.stringify(edge)).not.toContain('offPage');
+    });
   });
 });

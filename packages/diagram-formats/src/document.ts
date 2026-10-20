@@ -25,8 +25,9 @@ export interface DiagramDocument {
   pages: readonly DocumentPage[];
   /**
    * Edges whose ends sit on different pages: their ends, ports, router,
-   * label, and colors. They carry no waypoints, since they draw as two stubs
-   * ending at off-page tags.
+   * label, and colors. One the scene splits off-page carries no waypoints,
+   * since it draws as two stubs ending at off-page tags; one it keeps whole
+   * (an end in the gap between pages) keeps them, in world coordinates.
    */
   crossPageEdges?: readonly DataEdge[];
   /** A shipped theme's id, or a whole theme. Unset, the host's own. */

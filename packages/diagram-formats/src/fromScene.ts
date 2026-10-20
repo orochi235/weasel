@@ -1,8 +1,8 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
-import { pageOfBounds, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
+import { pageHolding, placedPagesOf, type PlacedPage, type RectPose, type Scene } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramLabelOf, diagramThemeFrom, type DataContainer, type DataEdge, type DataGroup, type DataNode,
-  type DiagramTheme,
+  DIAGRAM_THEME_KEY, diagramLabelOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
+  type DataNode, type DiagramTheme,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage } from './document';
 import { kindOf, readEdge, readGroup, readRegion, readShape, type ReadNode, type ReadScene } from './sceneReaders';
@@ -36,8 +36,10 @@ function contentPage(scene: AnyScene): PlacedPage {
  * (one page around everything when it has none), each holding the shapes,
  * connectors, containers and pools, and groups on it, in coordinates from the
  * page's corner. A shape belongs to the page its outermost container does, and
- * that is the one its box overlaps most, or the first page when it overlaps
- * none. A connector between pages goes in `crossPageEdges`. Colors are kept
+ * that is the one its box overlaps most, or the nearest one when it overlaps
+ * none. A connector whose ends export to different pages goes in
+ * `crossPageEdges`, without waypoints when the scene splits it off-page and
+ * with them in world coordinates when it does not. Colors are kept
  * where the scene's theme would not give them: the author's own, and any a
  * theme never set.
  */
@@ -54,7 +56,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   const pageOf = (node: ReadNode): PlacedPage => {
     let root = node;
     while (root.parent !== null) root = s.get(root.parent as never)!;
-    if (!pageCache.has(root.id)) pageCache.set(root.id, pageOfBounds(pages, root.pose as RectPose) ?? pages[0]!);
+    if (!pageCache.has(root.id)) pageCache.set(root.id, pageHolding(pages, root.pose as RectPose)!);
     return pageCache.get(root.id)!;
   };
 
@@ -80,6 +82,13 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     else if (isContainerOrPool(node)) bucket.containers.push(readRegion(s, node, page, theme));
   }
 
+  const pose = (id: string) => s.get(id as never)!.pose as RectPose;
+  const splitInputs = edges.flatMap((node) => {
+    const [from, to] = Array.isArray(node.dependsOn) ? node.dependsOn : [];
+    if (from === undefined || to === undefined || !itemPage.has(from) || !itemPage.has(to)) return [];
+    return [{ id: node.id, from: pose(from), to: pose(to) }];
+  });
+  const splits = offPageSplits({ pages, edges: splitInputs });
   const crossPageEdges: DataEdge[] = [];
   for (const node of edges) {
     const [from, to] = Array.isArray(node.dependsOn) ? node.dependsOn : [];
@@ -87,7 +96,10 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     const toPage = itemPage.get(to ?? '');
     if (fromPage === undefined || toPage === undefined) continue;
     if (fromPage === toPage) buckets.get(fromPage.id)!.edges.push(readEdge(node, labels.get(node.id), fromPage, theme));
-    else crossPageEdges.push(readEdge(node, labels.get(node.id), null, theme));
+    else {
+      const world = splits.get(node.id) === null ? { x: 0, y: 0 } : null;
+      crossPageEdges.push(readEdge(node, labels.get(node.id), world, theme));
+    }
   }
 
   return {
