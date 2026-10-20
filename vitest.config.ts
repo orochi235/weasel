@@ -277,8 +277,9 @@ export default defineConfig({
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
           expect: { poll: { timeout: 5000 } },
           setupFiles: [BROWSER_SETUP],
-          // After every other project, not beside them: a browser test's clicks and screenshots
-          // stall when the node's cores are taken, and time out.
+          // After every other project in one process: a browser test's clicks and screenshots stall
+          // when the node's cores are taken, and time out. `npm test` and the fleet run it beside
+          // them instead, with the rest held to fewer workers (scripts/vitest-overlap.mjs).
           sequence: { groupOrder: 1 },
           // Every tab shares one Chromium. Past six, the project took no less wall time on 14- and
           // 18-core nodes, and a test making WebGL contexts ran three to five times as long.
