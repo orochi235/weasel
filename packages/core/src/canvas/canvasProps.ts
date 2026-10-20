@@ -1,7 +1,7 @@
 /** The props `<Canvas>` takes. */
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
-import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
+import type { FlattenTolerance, ImageMinification, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { LayerGroup, RedrawSource, RenderLayer } from 'core/layers/render';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -41,6 +41,13 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  zoom, whatever the scene's world unit. A number holds a fixed world
    *  tolerance instead. */
   flattenTolerance?: FlattenTolerance;
+
+  /** How images drawn smaller than their pixels are filtered, forwarded to
+   *  `WeaselRendererOptions.imageMinification`. Default `'linear'`, one tap,
+   *  which aliases an image drawn at half size or less; `'auto'` builds an
+   *  image's mipmaps the first time a frame draws it that small. Changing it
+   *  re-uploads every image. */
+  imageMinification?: ImageMinification;
 
   /** Which unchanged layers the renderer keeps as pixels between frames and
    *  composites as one quad, instead of drawing their commands again — see

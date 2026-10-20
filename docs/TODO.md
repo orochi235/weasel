@@ -1007,9 +1007,9 @@ only story runner in the repo.
   find a Node binding that provides WebGL2, or host the render in headless Chromium.
 - **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
   `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
-  smaller, so only an image that is drawn small pays for them. The screen path still builds its
-  renderer with the default `'linear'` (`packages/core/src/canvas/canvasRenderer.ts`), and
-  `<Canvas>` has no prop for it. Making `'auto'` the screen default changes the pixels of every
+  smaller, so only an image that is drawn small pays for them. `<Canvas imageMinification>`
+  (and `<SceneCanvas>` through it) opts a canvas in; the default is still `'linear'`. Making
+  `'auto'` the screen default changes the pixels of every
   minified image, so it needs the visual baselines regenerated and a look at a sprite sheet drawn
   small: trilinear filtering blends neighboring cells at the higher mip levels, which `'linear'`
   does not. The cost of `generateMipmap` on a large sheet is not measured. Never mipmap
