@@ -114,17 +114,22 @@ export class LineTracker {
   }
 }
 
+/** Whether `el` holds no element, only text. */
+export const holdsOnlyText = (el: Element): boolean =>
+  !Array.from(el.childNodes).some((child) => child.nodeType === 1 /* ELEMENT_NODE */);
+
 /** Report the glyph positioning on a `<text>` or `<tspan>` that import does
  *  not read: every value after the first in an `x` or `y` list, a `rotate`
- *  that is not all zeros, and such a `dx` on a `<text>`. A `<tspan dx>` is
- *  read, by `placeTspanRun`. */
+ *  that is not all zeros, and such a `dx` on a `<text>` holding a `<tspan>`.
+ *  A `dx` on a `<tspan>`, or on a `<text>` holding only text, is read, by
+ *  `placeTspanRun`. */
 export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
   const tag = el.tagName.toLowerCase();
   for (const name of ['x', 'y']) {
     const raw = el.getAttribute(name)?.trim() ?? '';
     if (/[\s,]/.test(raw)) onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
   }
-  for (const name of tag === 'tspan' ? ['rotate'] : ['dx', 'rotate']) {
+  for (const name of tag === 'tspan' || holdsOnlyText(el) ? ['rotate'] : ['dx', 'rotate']) {
     const raw = el.getAttribute(name)?.trim() ?? '';
     if (raw.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
       onWarn(`<${tag} ${name}="${raw}"> is not read; the glyphs keep their own advance and angle`);

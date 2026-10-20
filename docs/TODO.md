@@ -150,8 +150,9 @@ Priority tags:
 ## Paths & booleans
 
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
-  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
-  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
+  holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that
+  holds a `<tspan>` are not applied; each warns
   (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
   glyphs run together: turning a position into a letter spacing or a space needs the advance of
   the glyphs before it, which a parse with no face loaded cannot measure.

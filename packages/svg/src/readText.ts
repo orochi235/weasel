@@ -11,7 +11,7 @@ import { placeNode } from './placeBox';
 import { readLength } from './lengths';
 import { fontSizeOf } from './fontSize';
 import {
-  DEFAULT_LINE_HEIGHT, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
+  DEFAULT_LINE_HEIGHT, holdsOnlyText, joinLines, LINE_HEIGHT_ATTR, LineTracker, statesLines, warnUnreadPositions,
 } from './tspanLines';
 import { LAID_ATTR } from './laidLines';
 import { placeTspanRun } from './glyphShifts';
@@ -206,7 +206,10 @@ function readRuns(
   let leading = 0;
   let lead = 0;
   const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
-  for (let i = 0; i < el.childNodes.length; i++) {
+  if (holdsOnlyText(el) && el.hasAttribute('dx')) {
+    const t = el.textContent ?? '';
+    if (t) lead = placeTspanRun(el, { text: t, ...inheritedShift }, runLines, letterSpacing, onWarn);
+  } else for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
     if (child.nodeType === 3 /* TEXT_NODE */) {
       const t = child.textContent ?? '';
