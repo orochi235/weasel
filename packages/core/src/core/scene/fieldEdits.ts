@@ -53,8 +53,12 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
       const node = requireNode(id);
       refuse(id, 'set the pose of');
       const resizes = node.kind === 'container' && resized(layoutFrame, id, node.pose, pose);
-      edit('setPose', resizes, () => {
+      // A container with a layout owns where its children go, however one is moved.
+      const parent = node.parent === null ? undefined : requireNode(node.parent);
+      const arranger = parent?.kind === 'container' && parent.layout !== undefined ? parent.id : null;
+      edit('setPose', resizes || arranger !== null, () => {
         if (resizes) noteChange(id);
+        noteChange(arranger);
         record('kit:setPose', { id, from: node.pose, to: pose }, 'setPose');
       });
     },
