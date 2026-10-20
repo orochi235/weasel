@@ -15,10 +15,22 @@
   user-select: none;
 }
 
-/* The theme's numeric face, not the browser's math font. Only a math font carries the gap between a
- * fraction's bar and its digits, so without one the gap is set here. */
+/* The UI face with proportional digits, not the browser's math font. Equal-width digits align a column
+ * but tilt a fraction: a narrow 1 sits off center in a wide 6's slot. Only a math font carries the gap
+ * between a fraction's bar and its digits, so without one the gap is set here. */
 .math math {
-  font-family: inherit;
+  font-family: var(--wzl-font-ui);
+  font-variant-numeric: proportional-nums;
+}
+
+/* The bar runs past the digits on its right; the margin takes that back out of the width, so the
+ * digits, not the bar, are what a centered fraction centers. */
+.math mfrac {
+  margin-inline-end: -0.15em;
+}
+
+.math mfrac > * {
+  padding-inline-end: 0.15em;
 }
 
 .math mfrac > :first-child {

@@ -18,7 +18,7 @@
  * body drags, so neither gesture has to guess which the pointer meant. */
 .ruler {
   position: relative;
-  height: var(--be-ruler-height, 20px);
+  height: var(--be-ruler-height, 22px);
   cursor: crosshair;
 }
 
@@ -35,8 +35,8 @@
 .tickLabel {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: absolute;
-  bottom: 7px;
-  left: 0;
+  bottom: 9px;
+  left: 50%;
   transform: translateX(-50%);
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
@@ -47,7 +47,7 @@
 
 /* Taller where a label stacks, so a fraction's numerator stays inside the strip. */
 .ruler:has(mfrac) {
-  height: var(--be-ruler-height, 28px);
+  height: var(--be-ruler-height, 30px);
 }
 
 /* A label that would crowd a neighbor that outranks it gives way; its notch stays. */

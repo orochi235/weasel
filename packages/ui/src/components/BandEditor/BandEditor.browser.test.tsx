@@ -154,3 +154,30 @@ describe('BandEditor band captions', () => {
     expect(text.getBoundingClientRect().bottom).toBeLessThanOrEqual(band.getBoundingClientRect().bottom);
   });
 });
+
+test('a fraction label centers its digits on its tick, three pixels clear of the notch', () => {
+  const { container } = render(
+    <div style={{ width: 600 }}>
+      <BandEditor
+        value={[{ from: 1 / 64, data: 'a' }, { from: 1 / 8, data: 'b' }]}
+        min={1 / 64}
+        max={1 / 2}
+        scale="linear"
+        ticks={[1 / 6, 1 / 3].map((at) => ({ at }))}
+        display={fraction()}
+        onChange={() => {}}
+      />
+    </div>,
+  );
+  const ticks = [...container.querySelectorAll<HTMLElement>('[data-tick-at]')];
+  expect(ticks.length).toBeGreaterThan(0);
+  for (const tick of ticks) {
+    const notch = tick.getBoundingClientRect();
+    const denominator = tick.querySelector('mfrac > :last-child')!;
+    const range = document.createRange();
+    range.selectNodeContents(denominator);
+    const digits = range.getBoundingClientRect();
+    expect(Math.abs(digits.left + digits.width / 2 - (notch.left + notch.width / 2))).toBeLessThan(0.5);
+    expect(notch.top - tick.firstElementChild!.getBoundingClientRect().bottom).toBeCloseTo(3, 0);
+  }
+});
