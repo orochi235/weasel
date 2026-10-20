@@ -10,6 +10,23 @@ function post(data: unknown, source: MessageEventSource | null = window): void {
   window.dispatchEvent(new MessageEvent('message', { data, source }));
 }
 
+/**
+ * Resolves once every `postMessage` to the window so far has been dispatched. jsdom queues each on
+ * `setImmediate`, in order; a `setTimeout(0)` wait can fire before them on a busy node.
+ */
+function drain(): Promise<void> {
+  const mark = {};
+  return new Promise((resolve) => {
+    const listen = (e: MessageEvent) => {
+      if (e.data !== mark) return;
+      window.removeEventListener('message', listen);
+      resolve();
+    };
+    window.addEventListener('message', listen);
+    window.postMessage(mark, '*');
+  });
+}
+
 const stops: (() => void)[] = [];
 afterEach(() => { for (const s of stops.splice(0)) s(); });
 
@@ -62,7 +79,7 @@ describe('the content-script bridge', () => {
   it('says bye to the page when the port goes, and stops forwarding', async () => {
     const background = bridge();
     background.postMessage({ type: 'yo', protocol: 7 });
-    await new Promise((r) => setTimeout(r));
+    await drain();
     const heard = new Promise<unknown>((resolve) => {
       window.addEventListener('message', (e) => resolve(e.data), { once: true });
     });
@@ -76,12 +93,12 @@ describe('the content-script bridge', () => {
     const background = bridge();
     background.postMessage({ type: 'yo', protocol: PROTOCOL });
     background.postMessage({ type: 'bye', protocol: PROTOCOL });
-    await new Promise((r) => setTimeout(r));
+    await drain();
     const heard: unknown[] = [];
-    const listen = (e: MessageEvent) => heard.push(e.data);
+    const listen = (e: MessageEvent) => { if (e.data?.source === ENVELOPE) heard.push(e.data); };
     window.addEventListener('message', listen);
     background.disconnect();
-    await new Promise((r) => setTimeout(r));
+    await drain();
     window.removeEventListener('message', listen);
     expect(heard).toEqual([]);
   });
@@ -89,10 +106,10 @@ describe('the content-script bridge', () => {
   it('says nothing to the page on disconnect when no panel ever said yo', async () => {
     const background = bridge();
     const heard: unknown[] = [];
-    const listen = (e: MessageEvent) => heard.push(e.data);
+    const listen = (e: MessageEvent) => { if (e.data?.source === ENVELOPE) heard.push(e.data); };
     window.addEventListener('message', listen);
     background.disconnect();
-    await new Promise((r) => setTimeout(r));
+    await drain();
     window.removeEventListener('message', listen);
     expect(heard).toEqual([]);
   });
