@@ -28,12 +28,23 @@ export interface ExtensionApi {
     readonly onConnect: ExtEvent<[port: PortLike]>;
     sendMessage(message: unknown): Promise<unknown>;
     readonly onMessage: ExtEvent<[message: unknown, sender: PortLike['sender'], respond: (r?: unknown) => void]>;
+    readonly onInstalled?: ExtEvent<[]>;
   };
   tabs?: {
     sendMessage(tabId: number, message: unknown): Promise<unknown> | void;
+    query(info: { active?: boolean; currentWindow?: boolean }): Promise<{ id?: number }[]>;
+    readonly onUpdated: ExtEvent<[tabId: number, info: { status?: string }]>;
   };
   scripting?: {
-    executeScript(injection: { target: { tabId: number; allFrames: boolean }; files: string[] }): Promise<unknown>;
+    executeScript(injection: {
+      target: { tabId: number; allFrames: boolean };
+      files?: string[];
+      func?: () => unknown;
+      world?: 'MAIN' | 'ISOLATED';
+    }): Promise<{ result?: unknown }[] | undefined>;
+  };
+  action?: {
+    setBadgeText(details: { tabId: number; text: string }): Promise<void> | void;
   };
   devtools?: {
     inspectedWindow: {
