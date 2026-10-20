@@ -1,5 +1,10 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { type CollapseProps, PropertyHelp, PropertyPanel, useCollapse } from '@weasel-js/ui/components/Properties';
+import {
+  type CollapseProps,
+  PropertyHelp,
+  PropertyPanel,
+  useCollapse,
+} from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 import { useOverlayPortal } from '@weasel-js/ui/portal-host';
 import type { StanceProps } from '@weasel-js/ui/stance';
