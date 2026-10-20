@@ -32,6 +32,7 @@ export function commitRotate(session: RotateSession, frame: RotateFrame): boolea
   const target = {
     scene: session.scene,
     applyOps: session.applyOps,
+    finish: session.finish,
     adapter: defaultCommitAdapter(session.scene, session.selectionMethods),
   };
   if (session.behaviors.length > 0) {

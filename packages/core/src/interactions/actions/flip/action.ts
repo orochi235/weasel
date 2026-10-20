@@ -21,6 +21,7 @@ import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { RectPose } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from '../defaults/requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
@@ -168,7 +169,10 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke'],
+  requires: [
+    'selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke',
+    'editAnchors',
+  ],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -176,7 +180,7 @@ export const flipAction: Action & { requires: string[] } = {
       const pivot = (params?.pivot as FlipPivot | undefined) ?? 'each';
       const selection = deps.selection;
       const scene = deps.scene;
-      const applyOps = deps.applyOps;
+      const applyOps = transformApplyOps(deps);
       const geometryProjection = deps.geometryProjection;
       if (!selection || !scene) return;
       flipSelection(

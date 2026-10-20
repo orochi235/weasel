@@ -7,6 +7,7 @@ import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { translateEach } from '../selectionSubtree';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -40,6 +41,7 @@ function distributeSelection(
   mode: DistributeMode,
   geom: PoseDescriptor<unknown>,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
+  finish?: TransformFinisher,
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
@@ -56,7 +58,7 @@ function distributeSelection(
     const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
     return { id: it.id, dx: axis === 'x' ? delta : 0, dy: axis === 'y' ? delta : 0 };
   });
-  scene.batch('Distribute', () => translateEach(scene, frame, geom, moves));
+  scene.batch('Distribute', () => translateEach(scene, frame, geom, moves, finish, 'Distribute'));
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +72,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'editAnchors'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -81,6 +83,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
         distributeSelection(
           selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), (frame) => drawnBoxes(deps, frame),
+          transformFinisher(deps),
         );
       },
     } satisfies ImmediateInvoker,

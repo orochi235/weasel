@@ -1,5 +1,6 @@
 import type { PoseLinear } from '@weasel-js/geom';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -67,6 +68,8 @@ export interface ResizeSession {
   /** Reused across the drag; constraints mutate its `scratch`. */
   readonly gestureCtx: GestureContext<Bounds>;
   readonly applyOps?: (ops: Op[], label: string) => void;
+  /** Finishes the committed batch with the other nodes that change with it. */
+  readonly finish?: TransformFinisher;
   /** When present, the commit maps each leaf's data-held geometry by the
    *  affine its pose underwent. */
   readonly geometryProjection?: GeometryProjection;
@@ -190,6 +193,7 @@ export function beginResize(
     constraints,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
+    finish: transformFinisher(ctx.deps),
     geometryProjection: ctx.deps.geometryProjection,
     selectionMethods: selection.adapterMethods,
     lifecycle: readGestureLifecycle(policy, 'Resize', constraints),

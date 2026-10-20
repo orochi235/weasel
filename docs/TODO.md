@@ -341,14 +341,10 @@ Priority tags:
   takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
   (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
   cut it.
-- **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
-  node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
-  solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
-  anchor in one node and a segment in another; a consumer adds the node itself. A whole-node move,
-  resize, or rotate solves no links, and nothing reports one it breaks: `constraintConflictsOf`
-  reads a node's own list. The drags that preview through `pathEditPreview` without finishing each
-  frame — bend segment, corner, Lengthen, Balance, Simplify brush — commit the linked nodes but
-  do not preview them, as they do not preview a node's own constraints.
+- **(P2) A constraint link does not preview through a whole-node drag, and a broken one is drawn
+  nowhere.** Move, resize and rotate finish links at commit (`PathEditExtension.finishTransform`),
+  so a linked node jumps on release rather than following the drag. `constraintLinkConflictsOf`
+  reports a link a transform broke, but no mark shows it.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 

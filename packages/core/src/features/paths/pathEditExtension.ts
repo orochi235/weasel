@@ -141,6 +141,17 @@ export interface PathEditFinishCtx {
   dependents(id: string): readonly string[];
 }
 
+/**
+ * The scene as {@link PathEditExtension.finishTransform} reads it: `node` and
+ * `path` answer each node as the transform leaves it, `before` as it was.
+ */
+export interface PathTransformFinishCtx extends Omit<PathEditFinishCtx, 'id'> {
+  /** The nodes the transform moves, resizes or turns. */
+  ids: readonly string[];
+  /** A node's committed editable path before the transform, in world space; null when it has none. */
+  before(id: string): PolygonPath | null;
+}
+
 /** One feature's share of path edit. Every member is optional. */
 export interface PathEditExtension {
   /** Names it as a {@link PathEditMark}'s owner. Unique per canvas. */
@@ -175,6 +186,14 @@ export interface PathEditExtension {
     origins?: readonly (PointOrigin | null)[],
     ctx?: PathEditFinishCtx,
   ): FinishedPathEdit | null;
+  /**
+   * The other nodes a whole-node transform — a move, resize, rotate, flip or
+   * nudge — changes along with the nodes it transforms, so whatever this
+   * extension keeps true across nodes holds; committed in the transform's
+   * history entry. Null when the transform should not happen. An entry
+   * naming a node the transform itself moves is ignored.
+   */
+  finishTransform?(ctx: PathTransformFinishCtx): readonly PathEditOther[] | null;
   /** How path edit reads and writes the nodes whose `data.representation`
    *  is of its kind. */
   representation?: PathRepresentation;

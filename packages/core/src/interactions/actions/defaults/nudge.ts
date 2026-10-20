@@ -8,6 +8,7 @@ import { translatePoseViaDescriptor } from '../resize/geometry';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { scenePoseFrame } from '../poseFrame';
@@ -80,14 +81,14 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'editAnchors'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selection = deps.selection;
         const scene = deps.scene;
-        const applyOps = deps.applyOps;
+        const applyOps = transformApplyOps(deps);
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
         if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {

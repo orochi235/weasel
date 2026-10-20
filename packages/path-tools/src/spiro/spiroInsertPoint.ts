@@ -63,7 +63,7 @@ function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
     points: [...c.points.slice(0, slot), { x, y, kind: 'smooth' }, ...c.points.slice(slot)],
   })));
   let current: PolygonPath | null = null;
-  const preview = pathEditPreview(dep, id, () => current);
+  const preview = pathEditPreview(dep, id, () => current && { path: current });
   if (!preview) return {};
   dep.setSelectedAnchors([flat]);
   return {

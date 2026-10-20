@@ -1,5 +1,6 @@
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { sceneGestureFrames } from '../gestureFrames';
 import { resolveParams } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
@@ -62,6 +63,8 @@ export interface RotateSession {
   /** Reused across the drag; behaviors mutate its `scratch`. */
   readonly gestureCtx: GestureContext<unknown>;
   readonly applyOps?: (ops: Op[], label: string) => void;
+  /** Finishes the committed batch with the other nodes that change with it. */
+  readonly finish?: TransformFinisher;
   readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
   readonly lifecycle: GestureLifecycle;
 }
@@ -208,6 +211,7 @@ export function beginRotate(
     behaviors,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
+    finish: transformFinisher(ctx.deps),
     selectionMethods: selection.adapterMethods,
     lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
   };

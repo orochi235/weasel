@@ -88,7 +88,7 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
       const press = ctx.drag?.start ?? ctx.world;
       let current: PolygonPath = origin;
       let active = false;
-      const preview = pathEditPreview(dep, dep.editingId, () => (active ? current : null));
+      const preview = pathEditPreview(dep, dep.editingId, () => (active ? { path: current } : null));
       if (!preview) return {};
       const id = dep.editingId;
       return {

@@ -1,6 +1,9 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { PoseFrame } from './poseFrame';
+import type { TransformFinisher } from './transformFinish';
+import { createTransformOp } from 'core/ops/transform';
+import { sceneMutators } from 'core/scene/sceneMutators';
 import { poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -126,6 +129,8 @@ export function translateEach(
   frame: PoseFrame<unknown>,
   descriptor: PoseDescriptor<unknown>,
   moves: readonly { id: string; dx: number; dy: number }[],
+  finish?: TransformFinisher,
+  label = 'Translate',
 ): void {
   const writes: { id: NodeId; to: unknown }[] = [];
   const seen = new Set<NodeId>();
@@ -140,7 +145,11 @@ export function translateEach(
       writes.push({ id: target, to: frame.local(target, translatePoseViaDescriptor(frame.world(target), dx, dy, d)) });
     }
   }
-  for (const { id, to } of writes) scene.setPose(id, to);
+  const ops = writes.map(({ id, to }) => createTransformOp({ id, from: scene.get(id)!.pose, to, label }));
+  const all = finish && ops.length > 0 ? finish(ops, label) : ops;
+  if (!all) return;
+  const adapter = sceneMutators(scene);
+  for (const op of all) op.apply(adapter);
 }
 
 /** The world translation `(dx, dy)` as a translation of `id`'s stored pose,

@@ -55,7 +55,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
       const id = dep.editingId;
       const press = { x: ctx.world.x, y: ctx.world.y };
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current?.path ?? null);
+      const preview = pathEditPreview(dep, id, () => current);
       if (!preview) return {};
 
       return {
