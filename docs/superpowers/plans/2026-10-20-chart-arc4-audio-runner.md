@@ -2,10 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Unbuilt (2026-10-20).** Wave 2 of the fourth arc. It cannot start until the patchable audio graph
-(`docs/superpowers/plans/2026-10-20-chart-arc4-audio-graph.md`) has merged.
+**Unbuilt (2026-10-20).** Wave 2 of the fourth arc. The patchable audio graph it builds on has
+merged (2026-10-20); its contract, JSDoc included, is `packages/audio/src/graph/types.ts`.
 
-**Depends on:** the API pinned in that plan's "Interfaces" section, used as written there:
+**Depends on:** that API, as written there:
 `AudioEngine.graph(bus?)` returning an `AudioGraph` (`add`, `remove`, `replace`, `connect`, `disconnect`,
 `set(id, param, value, rampMs?)`, `apply(patches)`, `start`, `stop`, `playing`, `has`, `ids`, `tap(id)`,
 `settled`, `dispose`); `GraphNodeDef`; `GraphTarget = { node, port } | { output: true }`; `GraphPatch`
@@ -15,7 +15,10 @@ with kinds `add | remove | replace | connect | disconnect | set`; and the node f
 setting and makes its own impulse with that plan's `impulseResponse`. Three of its rules shape this
 plan: a discrete setting (oscillator wave, noise color, filter type, a file's buffer) changes through
 `replace`, never `set`; `connect` throws on a cycle, so feedback wires are flagged before any patch is
-made; and pausing is `stop()` (sources stop, the output fades), playing is `start()`.
+made; and pausing is `stop()` (sources stop, the output fades), playing is `start()`. Three more, settled while building it (2026-10-20): the output starts at gain 0, so a graph
+never started is silent; `apply` validates the whole list before changing anything, but a `set` that
+throws (a delay's `RangeError`) lets the rest of the list apply and then rethrows; and `dispose()`
+fades out over `fadeMs` while sounding before it tears down.
 
 **Goal:** Pipeline mode in weaselchart plays audio pipelines live: each edit is diffed against the
 running graph and applied as patches, so editing never restarts the sound.
@@ -266,9 +269,9 @@ function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRunner
 
 The runner's `BuildNode` is `(id, n) => nodes[n.type]!.build(engine.context, n.settings, n.levels)`.
 `state.run` carries each plan error as that stage's `error`, and nothing else yet (previews come in
-Task 6); it is a new object only when the errors change. If `graph.apply` throws, the runner keeps the
+Task 6); it is a new object only when the errors change. If `graph.apply` throws on a structural error, the runner keeps the
 previous plan, records the message as the error of the stage the failing patch names, and logs once
-with `console.warn('@weasel-js/diagram: …')`.
+with `console.warn('@weasel-js/diagram: …')`. When the throw comes from a `set` (the rest of the list has applied), the runner adopts the next plan instead, records the message on that stage, and still warns once; a test pins both cases.
 
 - [ ] **Step 1: Write the failing tests** against the fake graph:
   - creating the runner over osc → output records one `apply` holding `add osc` then `connect osc → { output: true }`.

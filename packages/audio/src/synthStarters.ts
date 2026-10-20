@@ -1,4 +1,5 @@
 import { resolveEnvelope, type Envelope } from './envelope';
+import { periodicWave } from './periodicWave';
 import { sourceGroup, type LiveVoice, type SourceLike, type Starter } from './liveVoice';
 import {
   envelopeOnParam, noiseBuffer, resolveNote, voiceFilter, type ResolvedNote,
@@ -97,22 +98,12 @@ function noteOscillators(
 }
 
 export function createSynthStarters(ctx: BaseAudioContext, random: () => number): SynthStarters {
-  const waves = new Map<string, PeriodicWave>();
   const applyWave = (osc: OscillatorNode, wave: Exclude<Waveform, Inharmonic>): void => {
     if (typeof wave === 'string') {
       osc.type = wave;
       return;
     }
-    const key = wave.join(',');
-    let periodic = waves.get(key);
-    if (!periodic) {
-      // Sine terms only: partial k sits at imag[k], and index 0 is the DC term.
-      const imag = new Float32Array(wave.length + 1);
-      imag.set(wave, 1);
-      periodic = ctx.createPeriodicWave(new Float32Array(wave.length + 1), imag);
-      waves.set(key, periodic);
-    }
-    osc.setPeriodicWave(periodic);
+    osc.setPeriodicWave(periodicWave(ctx, wave));
   };
 
   return {

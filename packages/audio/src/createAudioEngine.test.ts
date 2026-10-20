@@ -4,6 +4,8 @@ import {
   createFakeAudioContext,
   type FakeGain, type FakeNode, type FakePanner, type FakeSource,
 } from './testing/fakeAudioContext';
+import { testNode } from './testing/graphHarness';
+import { allPaths } from './testing/graphWalk';
 
 function engineHarness(over: Record<string, unknown> = {}) {
   const ctx = createFakeAudioContext();
@@ -425,5 +427,54 @@ describe('createAudioEngine', () => {
     await engine.unlock();
     const sound = await engine.load('/a.wav');
     expect(() => engine.play(sound, { bus: 'nope' })).toThrow(/nope/);
+  });
+
+  it('graph() feeds the first bus and is disposed with the engine', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    engine.play(sound, { loop: true });
+    tick();
+    const sfxInput = chainOf(ctx._sources[0]).bus;
+    const graph = engine.graph();
+    const src = testNode(ctx, [], true);
+    graph.add('src', src.def);
+    graph.connect('src', { output: true });
+    expect(allPaths(src.output, sfxInput).length).toBeGreaterThan(0);
+    expect(() => engine.graph('nope')).toThrow(/unknown bus "nope"/);
+    engine.dispose();
+    expect(src.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('dispose tears playing graphs down at once, a fading one included', async () => {
+    const timers = new Map<number, () => void>();
+    let next = 0;
+    const { ctx, engine } = engineHarness({
+      setTimer: (cb: () => void) => { next += 1; timers.set(next, cb); return next; },
+      clearTimer: (h: unknown) => { timers.delete(h as number); },
+    });
+    await engine.unlock();
+    const sources = [testNode(ctx, [], true), testNode(ctx, [], true)];
+    const graphs = sources.map((src) => {
+      const g = engine.graph();
+      g.add('src', src.def);
+      g.connect('src', { output: true });
+      g.start();
+      return g;
+    });
+    graphs[1].dispose();
+    expect(sources[1].dispose).not.toHaveBeenCalled();
+    engine.dispose();
+    expect(timers.size).toBe(0);
+    for (const src of sources) {
+      expect(src.stop).toHaveBeenCalledTimes(1);
+      expect(src.dispose).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('graph() throws once the engine is disposed', () => {
+    const { engine } = engineHarness();
+    engine.dispose();
+    expect(() => engine.graph()).toThrow('@weasel-js/audio: engine is disposed');
   });
 });

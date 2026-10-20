@@ -21,3 +21,13 @@ export function writeParam(
     param.setValueAtTime(value, now);
   }
 }
+
+/**
+ * Give a param nothing has scheduled yet its starting value. `.value` is
+ * written as well, so a ramp `writeParam` anchors before the first render
+ * starts there rather than at the param's default.
+ */
+export function initParam(ctx: BaseAudioContext, param: AudioParam, value: number): void {
+  param.value = value;
+  writeParam(ctx, param, value);
+}

@@ -1,5 +1,5 @@
 import type { InsertEffect } from './inserts';
-import { writeParam } from './param';
+import { initParam, writeParam } from './param';
 
 // Built-in insert effects. Each exposes its Web Audio nodes for anything its
 // options do not cover; times are ms, as everywhere else in the package.
@@ -24,9 +24,9 @@ export interface FilterEffect extends InsertEffect {
 export function createFilterEffect(ctx: BaseAudioContext, opts: FilterEffectOptions = {}): FilterEffect {
   const filter = ctx.createBiquadFilter();
   filter.type = opts.type ?? 'lowpass';
-  if (opts.frequency !== undefined) writeParam(ctx, filter.frequency, opts.frequency);
-  if (opts.Q !== undefined) writeParam(ctx, filter.Q, opts.Q);
-  if (opts.gain !== undefined) writeParam(ctx, filter.gain, opts.gain);
+  if (opts.frequency !== undefined) initParam(ctx, filter.frequency, opts.frequency);
+  if (opts.Q !== undefined) initParam(ctx, filter.Q, opts.Q);
+  if (opts.gain !== undefined) initParam(ctx, filter.gain, opts.gain);
   return { input: filter, output: filter, filter };
 }
 
@@ -65,7 +65,8 @@ function wetDry(
     writeParam(ctx, dry.gain, 1 - mix, rampMs);
     writeParam(ctx, wet.gain, mix, rampMs);
   };
-  write();
+  initParam(ctx, dry.gain, 1 - mix);
+  initParam(ctx, wet.gain, mix);
   return {
     input, output,
     mix: () => mix,
@@ -142,8 +143,8 @@ export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOption
   const m = wetDry(ctx, delay, delay, opts.mix ?? 0.35);
   delay.connect(loop);
   loop.connect(delay);
-  writeParam(ctx, delay.delayTime, time / 1000);
-  writeParam(ctx, loop.gain, fb);
+  initParam(ctx, delay.delayTime, time / 1000);
+  initParam(ctx, loop.gain, fb);
   return {
     input: m.input, output: m.output, delay, mix: m.mix, setMix: m.setMix,
     setTime(ms, rampMs) {
@@ -195,7 +196,7 @@ export function createCompressorEffect(
   const makeup = ctx.createGain();
   compressor.connect(makeup);
   const set = (param: AudioParam, value: number | undefined): void => {
-    if (value !== undefined) writeParam(ctx, param, value);
+    if (value !== undefined) initParam(ctx, param, value);
   };
   set(compressor.threshold, opts.threshold);
   set(compressor.knee, opts.knee);
