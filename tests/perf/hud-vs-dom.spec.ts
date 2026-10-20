@@ -551,16 +551,19 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
   const reactJs = reactBundle.outputFiles[0].text;
   await page.route(`**${REACT_URL}`, (r) => r.fulfill({ contentType: 'text/javascript', body: reactJs }));
   // A dev server that discovers a dependency on the first import reloads the
-  // page under it; the second load finds it optimized.
-  const installOnce = async () => {
-    await page.goto('/weasel/__perf/hud-vs-dom');
-    return page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
+  // page under it, as often as it finds more; a later load finds them optimized.
+  const installed = async () => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await page.goto('/weasel/__perf/hud-vs-dom');
+        return await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
+      } catch (e) {
+        if (attempt === 5 || !/Execution context was destroyed|interrupted by another navigation/.test((e as Error).message)) throw e;
+        await page.waitForTimeout(2000);
+      }
+    }
   };
-  const { glRenderer, gpuTimer } = await installOnce().catch(async (e: Error) => {
-    if (!/Execution context was destroyed/.test(e.message)) throw e;
-    await page.waitForLoadState('load');
-    return installOnce();
-  });
+  const { glRenderer, gpuTimer } = await installed();
   run.params({ gpuTimer });
 
   console.log('');
