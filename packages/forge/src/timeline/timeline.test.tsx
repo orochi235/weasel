@@ -2,7 +2,7 @@ import { createMemoryAdapter, type StorageAdapter, useLabContext } from '@weasel
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useEffect } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it as base, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { StoryHost } from '../frame/StoryHost';
 import { installResizeObserver } from '../shell/labHarness';
@@ -73,27 +73,49 @@ function LabProbe() {
 
 const probeConfig = { labChrome: [{ id: 'probe', region: 'header', render: () => <LabProbe /> }] } as const;
 
-function mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
-  history.replaceState(null, '', url);
-  return renderWithIcons(
-    <Workshop
-      index={[timed, still, late]}
-      frameUrl="/frame.html"
-      importers={importers()}
-      setup={{}}
-      storage={storage}
-      config={probeConfig}
-    />,
-  );
+/**
+ * The workshop helpers, bound to one test. A test that times out keeps running after cleanup, and
+ * its next mount would land in the following test's document; once its signal aborts, every wait
+ * here throws instead of resuming.
+ */
+function harness(signal: AbortSignal) {
+  const live = <T,>(value: T): T => {
+    signal.throwIfAborted();
+    return value;
+  };
+  const until = <T,>(cb: () => T, options?: Parameters<typeof waitFor>[1]) => waitFor(cb, options).then(live);
+  return {
+    mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
+      signal.throwIfAborted();
+      history.replaceState(null, '', url);
+      return renderWithIcons(
+        <Workshop
+          index={[timed, still, late]}
+          frameUrl="/frame.html"
+          importers={importers()}
+          setup={{}}
+          storage={storage}
+          config={probeConfig}
+        />,
+      );
+    },
+    until,
+    loaded: () =>
+      until(() => expect(screen.getAllByRole('status', { name: 'playhead' }).length).toBeGreaterThan(0), { timeout: 15_000 }),
+    /** Past labkit's write-behind, so what the lab holds has reached storage. */
+    persisted: () => act(() => new Promise((r) => setTimeout(r, 400))).then(live),
+  };
 }
+
+const it = base.extend<{ lab: ReturnType<typeof harness> }>({
+  lab: async ({ signal }, use) => {
+    await use(harness(signal));
+  },
+});
 
 const trial = () => screen.getAllByRole('region', { name: /^Trial / })[0]!;
 const playhead = () => Number(screen.getAllByRole('status', { name: 'playhead' })[0]!.textContent);
 const playheads = () => screen.getAllByRole('status', { name: 'playhead' }).map((el) => Number(el.textContent));
-const loaded = () =>
-  waitFor(() => expect(screen.getAllByRole('status', { name: 'playhead' }).length).toBeGreaterThan(0), { timeout: 15_000 });
-/** Past labkit's write-behind, so what the lab holds has reached storage. */
-const persisted = () => act(() => new Promise((r) => setTimeout(r, 400)));
 const tParam = () => readRouteParams().t ?? null;
 
 afterEach(() => {
@@ -102,10 +124,25 @@ afterEach(() => {
   history.replaceState(null, '', '/');
 });
 
+describe('the workshop helpers', () => {
+  it('refuse to mount or resume for a test that has timed out', async () => {
+    const timedOut = new AbortController();
+    const { mount, until } = harness(timedOut.signal);
+    const waiting = until(() => expect(document.body.dataset.never).toBe('set'), { timeout: 5000 });
+    timedOut.abort(new Error('timed out'));
+    document.body.dataset.never = 'set';
+    await expect(waiting).rejects.toThrow('timed out');
+    expect(() => mount('/#/t--timed')).toThrow('timed out');
+    expect(screen.queryAllByRole('region', { name: /^Trial / })).toEqual([]);
+    delete document.body.dataset.never;
+  });
+});
+
 describe('a story with a timeline, in the workshop', () => {
-  it('gets a transport and a scrub bar in its trial, and a story without one gets neither', async () => {
+  it('gets a transport and a scrub bar in its trial, and a story without one gets neither', async ({ lab }) => {
+    const { mount, until } = lab;
     mount('/#/t--timed');
-    await waitFor(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
+    await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
     expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
     expect(within(trial()).getByRole('slider', { name: 'Scrub' })).toBeInTheDocument();
     expect(within(trial()).getByTestId('timeline-time').textContent).toBe('0.00s / 4.00s');
@@ -113,16 +150,17 @@ describe('a story with a timeline, in the workshop', () => {
     act(() => {
       location.hash = '#/t--still';
     });
-    await waitFor(() => expect(screen.getByText('still')).toBeInTheDocument(), { timeout: 15_000 });
+    await until(() => expect(screen.getByText('still')).toBeInTheDocument(), { timeout: 15_000 });
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   });
 
-  it('advances the playhead the story reads while playing, and holds it in the URL as t once paused', async () => {
+  it('advances the playhead the story reads while playing, and holds it in the URL as t once paused', async ({ lab }) => {
+    const { mount, until } = lab;
     mount('/#/t--timed');
-    await waitFor(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
+    await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
     expect(playhead()).toBe(0);
     fireEvent.click(within(trial()).getByRole('button', { name: 'Play' }));
-    await waitFor(() => expect(playhead()).toBeGreaterThan(50));
+    await until(() => expect(playhead()).toBeGreaterThan(50));
     expect(tParam()).toBeNull();
     fireEvent.click(within(trial()).getByRole('button', { name: 'Pause' }));
     const held = playhead();
@@ -130,17 +168,19 @@ describe('a story with a timeline, in the workshop', () => {
     expect(readRoute()).toBe('t--timed');
   });
 
-  it('opens paused at the time a URL holds', async () => {
+  it('opens paused at the time a URL holds', async ({ lab }) => {
+    const { mount, until } = lab;
     mount('/#/t--timed?t=1.5');
-    await waitFor(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
+    await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
     expect(playhead()).toBe(1500);
     expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
     expect(within(trial()).getByTestId('timeline-time').textContent).toBe('1.50s / 4.00s');
   });
 
-  it('writes a scrub while paused to the URL, and drops t when the route names another story', async () => {
+  it('writes a scrub while paused to the URL, and drops t when the route names another story', async ({ lab }) => {
+    const { mount, until } = lab;
     mount('/#/t--timed');
-    await waitFor(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
+    await until(() => expect(screen.getByRole('status', { name: 'playhead' })).toBeInTheDocument(), { timeout: 15_000 });
     const scrub = within(trial()).getByRole('slider', { name: 'Scrub' });
     fireEvent.keyDown(scrub, { key: 'End' });
     expect(playhead()).toBe(4000);
@@ -148,19 +188,20 @@ describe('a story with a timeline, in the workshop', () => {
     act(() => {
       location.hash = '#/t--still';
     });
-    await waitFor(() => expect(tParam()).toBeNull());
+    await until(() => expect(tParam()).toBeNull());
   });
 });
 
 describe('a hash change under the open story', () => {
-  it('seeks to a t that differs and pauses there, and leaves the clock alone when the hash holds none', async () => {
+  it('seeks to a t that differs and pauses there, and leaves the clock alone when the hash holds none', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
     mount('/#/t--timed');
     await loaded();
     fireEvent.click(within(trial()).getByRole('button', { name: 'Play' }));
     act(() => {
       location.hash = '#/t--timed?t=2';
     });
-    await waitFor(() => expect(playhead()).toBe(2000));
+    await until(() => expect(playhead()).toBe(2000));
     expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
 
     fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
@@ -173,7 +214,8 @@ describe('a hash change under the open story', () => {
 });
 
 describe('the playhead kept with the trial', () => {
-  it('comes back at its paused time after a reload, and a URL holding t wins over it', async () => {
+  it('comes back at its paused time after a reload, and a URL holding t wins over it', async ({ lab }) => {
+    const { mount, loaded, persisted } = lab;
     const storage = createMemoryAdapter();
     const first = mount('/#/t--timed', storage);
     await loaded();
@@ -192,7 +234,8 @@ describe('the playhead kept with the trial', () => {
     expect(playhead()).toBe(1000);
   });
 
-  it('comes back at its paused time when a snapshot is loaded', async () => {
+  it('comes back at its paused time when a snapshot is loaded', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
     mount('/#/t--timed');
     await loaded();
     const scrub = within(trial()).getByRole('slider', { name: 'Scrub' });
@@ -201,26 +244,28 @@ describe('the playhead kept with the trial', () => {
     fireEvent.keyDown(scrub, { key: 'Home' });
     expect(playhead()).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
-    await waitFor(() => expect(playhead()).toBe(4000));
+    await until(() => expect(playhead()).toBe(4000));
   });
 });
 
 describe('a story that learns its span only once it runs', () => {
-  it('lands a URL t beyond the placeholder span once the real one arrives, never rewriting t', async () => {
+  it('lands a URL t beyond the placeholder span once the real one arrives, never rewriting t', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
     const replace = vi.spyOn(history, 'replaceState');
     mount('/#/t--late?t=2.5');
     await loaded();
-    await waitFor(() => expect(playhead()).toBe(2500));
+    await until(() => expect(playhead()).toBe(2500));
     expect(tParam()).toBe('2.5');
     const written = replace.mock.calls.map((call) => String(call[2]));
     expect(written.filter((url) => /[?&]t=(?!2\.5\b)/.test(url))).toEqual([]);
   });
 
-  it('comes back at a persisted time beyond the placeholder span after a reload', async () => {
+  it('comes back at a persisted time beyond the placeholder span after a reload', async ({ lab }) => {
+    const { mount, until, loaded, persisted } = lab;
     const storage = createMemoryAdapter();
     const first = mount('/#/t--late', storage);
     await loaded();
-    await waitFor(() => expect(playhead()).toBe(-300));
+    await until(() => expect(playhead()).toBe(-300));
     fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
     expect(playhead()).toBe(3700);
     await persisted();
@@ -237,16 +282,17 @@ describe('a story that learns its span only once it runs', () => {
     lateDelay = 20;
     mount('/#/t--late', storage);
     await loaded();
-    await waitFor(() => expect(playhead()).toBe(3700));
+    await until(() => expect(playhead()).toBe(3700));
   });
 });
 
 describe('two trials of the routed story', () => {
-  it('lets only the focused one write t', async () => {
+  it('lets only the focused one write t', async ({ lab }) => {
+    const { mount, until, loaded } = lab;
     mount('/#/t--timed');
     await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'probe: add' }));
-    await waitFor(() => expect(playheads()).toHaveLength(2));
+    await until(() => expect(playheads()).toHaveLength(2));
     const [older, newer] = screen.getAllByRole('region', { name: /^Trial / });
     fireEvent.keyDown(within(newer!).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
     expect(tParam()).toBe('4');
@@ -257,18 +303,19 @@ describe('two trials of the routed story', () => {
     expect(tParam()).toBe('4');
   });
 
-  it('applies a t the URL opens with to that trial alone', async () => {
+  it('applies a t the URL opens with to that trial alone', async ({ lab }) => {
+    const { mount, until, loaded, persisted } = lab;
     const storage = createMemoryAdapter();
     const first = mount('/#/t--timed', storage);
     await loaded();
     fireEvent.click(screen.getByRole('button', { name: 'probe: add' }));
-    await waitFor(() => expect(playheads()).toHaveLength(2));
+    await until(() => expect(playheads()).toHaveLength(2));
     await persisted();
     first.unmount();
 
     mount('/#/t--timed?t=1.5', storage);
-    await waitFor(() => expect(playheads()).toHaveLength(2), { timeout: 15_000 });
-    await waitFor(() => expect(playheads().filter((t) => t === 1500)).toHaveLength(1));
+    await until(() => expect(playheads()).toHaveLength(2), { timeout: 15_000 });
+    await until(() => expect(playheads().filter((t) => t === 1500)).toHaveLength(1));
     expect(playheads().filter((t) => t === 0)).toHaveLength(1);
   });
 });

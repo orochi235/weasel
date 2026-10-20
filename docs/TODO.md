@@ -899,6 +899,10 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) The site's Releases view mounts every changelog entry: about 46,000 elements** in jsdom
+  (measured 2026-10-20), closed `<details>` included. A test rendering it spent 3 s committing and
+  0.5 s a `getByRole` under fleet load; in a browser the cost is unmeasured.
+
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
   write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
@@ -992,14 +996,24 @@ only story runner in the repo.
   `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
   needs `>=22.12.0`.
 
-- **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
-  `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
-  three playheads where it expected two, likely left by the one that timed out) and
-  `apps/site/__tests__/WeaselDemos.routing.test.tsx` › "opens the releases view on its own id" (5 s)
-  failed in three keiei runs on 2026-10-20, `main` at `416328e36` among them, and passed alone each
-  time and in full runs on teitou, studio and msb-uai. keiei reports memory pressure and 7–11 GB of
-  swap in `onto status`. Either what these tests wait on scales badly with a loaded machine, or keiei
-  should take no full runs.
+- **(P3) Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
+  (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
+  full runs, `main` at `416328e36` among them; msb-uai failed it once. Nothing in the tests waits
+  on a timer or a load that could be cut: the time is the whole workshop mounting, which is React
+  in development mode plus jsdom, and the tests that fail mount it two or three times.
+
+  | keiei, 2026-10-20 | one mount, to the first playhead | the timeline file |
+  |---|---:|---:|
+  | alone | 0.5–0.7 s | 14 s |
+  | full run, 16 GB free | 1.4–2.7 s | 42 s, passed |
+  | full runs that failed | — | 88–102 s |
+
+  teitou, studio and msb-uai run the file in 20–44 s. That the failing runs were the swapping ones
+  is inferred from `onto status` at the time, not measured inside them. Keeping a node that reports swap out of full runs is an onto setting, left unchanged.
+  Of a mount's CPU, 11% is `Element.closest` in jsdom, which `useOverlayPortal` calls through
+  `nearestPortalHost` on every render of every `Tooltip`, and about 4% is axe, which the a11y panel
+  runs on each mount. A timeout no longer leaks: the file's helpers stop once vitest aborts the
+  test's signal, where before a timed-out test could mount into the next one's document.
 
 - **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
   `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
