@@ -25,7 +25,6 @@ merged.
 |---|---|---|---|---|
 | 1 | Edit-pass composition | core, diagram | — | 1 |
 | 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
-| 8 | Waypoint editing under `rack` and `lanes` | diagram | — | 1 |
 | 10 | Theme builder | core, diagram, app | — | 1 |
 | 11 | Running a pipeline | diagram, app | — | 1 |
 | 3 | Off-page reference markers | diagram, app | 1 | 2 |
@@ -48,7 +47,7 @@ Shared files, and who makes room in them first:
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 351 | 3, 5 | piece 1: the four routers move to `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 247 | 8, 9, 11 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` and its helpers are in `effect/editorHandlers.ts` |
 | `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 5, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
@@ -444,47 +443,6 @@ The host's data holds it all. Members' `at` stay absolute world points, as every
   reorder by header, add a lane: each reports once.
 - `specRoutes.test.ts`: a route avoids a region neither end is in.
 
-## 8. Waypoint editing under `rack` and `lanes`
-
-### What the user sees
-
-In pipeline mode under Rack and Lanes, a selected wire shows route handles as under Node graph, and
-dragging them reroutes it. Format › Connector › Reset route gives the wire back to the look. A
-reorder, an added stage, or a deleted one that moves either end of the wire gives it back too.
-
-### The model
-
-`EffectDoc.lookRoutes?: { rack?: Record<wireId, LookRoute>; lanes?: Record<wireId, LookRoute> }`,
-`LookRoute { waypoints: readonly Vec2[]; ends: readonly [Vec2, Vec2] }`.
-
-**Decision (2026-10-20).** A look route holds only while the wire's two port points are where they
-were when it was drawn (`ends`), the rule `laidOut` uses for layout's routes: rack and lanes move
-stages on every reorder and insert, and a route drawn for one arrangement means nothing in another.
-
-### Engine surface (`packages/diagram/src/effect/`)
-
-- `EffectEditor.tsx` first moves `editHandlers` and its helpers to `editorHandlers.ts`.
-- `lookRoutes.ts`: `setLookRoute(doc, look, wire, waypoints, ends)`, `applyLookRoutes(specs, doc,
-  look, built)`, which sets an edge's `waypoints` where `ends` match the port points of the built
-  specs (the author's `waypoints` win over `lanes`' `routed`, by `DataEdge`'s rule), and
-  `pruneLookRoutes(doc)`, called by `removeWires`, `removeStages`, `moveInChain`, and
-  `setLaneOrder`.
-- `EffectEditor` passes `onEditRoute` under every look; the handler writes `setWireRoute` under
-  `nodeGraph` and `setLookRoute`, with ends read from the shown specs, under the others. Label:
-  "Edit route".
-
-### Save, load, undo
-
-`lookRoutes` saves with the pipeline document; older files have none and load unchanged. Each
-drag is one `onChange`, so one entry in the app's pipeline history. Reset route under rack and
-lanes is `setLookRoute` with no waypoints, also one entry.
-
-### Tests
-
-- `lookRoutes.test.ts`: applied while ends match, ignored after a reorder, pruned by each edit.
-- `EffectEditor.route.test.tsx`: a route edit under `lanes` reports "Edit route" with `lookRoutes`.
-- `EffectEditor.lookRoute.browser.test.tsx`: a real segment drag under lanes, then a reorder drops it.
-
 ## 9. Pipeline groups as editable containers
 
 ### What the user sees
@@ -645,7 +603,7 @@ the session.
 
 A run draws under every look. A stage reorder, a rewire, or a param edit is a new doc, which the
 runner takes with `setPipeline`, so the next run or played frame follows it. `paintRun` edits data
-only, so a running chart never lays out again, and groups (piece 9) and look routes (piece 8) are
+only, so a running chart never lays out again, and groups (piece 9) and look routes (`EffectDoc.lookRoutes`) are
 untouched by it.
 
 ### Tests

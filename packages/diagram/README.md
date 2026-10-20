@@ -918,6 +918,18 @@ insertion bar marks the gap it would land in, drawn in the problem color where
 the wiring cannot take it, and releasing it there reports `'Reorder'`. Under
 lanes, dragging a lane's label up or down reports `'Reorder lanes'`.
 
+A selected wire's route handles work under every look, and report
+`'Edit route'`. Under rack and lanes the route goes in `EffectDoc.lookRoutes`,
+by look and then by wire, with the points of the wire's two ports as they were
+drawn (`setLookRoute(doc, look, wire, waypoints, ends)`). These looks move
+stages on every reorder or added stage, so a route is drawn only while both
+ports are still at those points; once one moves, the look routes the wire
+again. Reset route, or `setLookRoute` with no waypoints, gives the wire back to
+the look. `applyLookRoutes(specs, doc, look, built)` draws the routes that
+hold over a look's specs, and `wireEnds(specs, edge)` reads a drawn wire's
+port points. A reorder drops the routes of the wires it rewires or removes,
+and removing a wire or a stage drops that wire's routes.
+
 ```tsx
 <EffectEditor doc={doc} onChange={commit} look="rack" />
 ```

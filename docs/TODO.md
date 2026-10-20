@@ -1323,8 +1323,7 @@ only story runner in the repo.
 - **(P3) Third arc (not designed).** Off-page reference markers for connectors that cross pages,
   and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
   reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
-  where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
-  the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
+  where connectors cross; pipeline-mode groups as editable containers; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files, and running a pipeline. Carried from the
   second arc's design (2026-10-19), deleted when the arc finished.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,

@@ -55,6 +55,7 @@ export {
   removeWires,
   setLaneOrder,
   setParam,
+  setWireRoute,
 } from './effect/edit';
 export { formatParam, stageFromType } from './effect/stageTypes';
 export type { EffectStageType } from './effect/stageTypes';
