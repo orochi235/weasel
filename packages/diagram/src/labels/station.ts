@@ -5,9 +5,9 @@
  */
 import { pointAlongPath, type Path, type Vec2 } from '@weasel-js/core/math';
 import {
-  PATH_C, PATH_L, PATH_Q, forEachSegment, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
+  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
 } from '@weasel-js/geom';
-import type { DiagramLabel } from '../labelTrait';
+import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import { subpathOf } from '../subpaths';
 
 const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
@@ -70,4 +70,19 @@ export function labelCenter(whole: Path, label: DiagramLabel, size: { width: num
   const reach = offset + Math.sign(offset) * (Math.abs(nx) * size.width + Math.abs(ny) * size.height) / 2;
   // Left of travel: with y down, that is above an edge running rightward.
   return { x: station.point.x + nx * reach, y: station.point.y + ny * reach };
+}
+
+/** The inverse of `labelCenter`: the route fraction and offset a label `size`
+ *  big stands at when its center is at `center`, measured on the first
+ *  subpath. `null` for a path with no points. */
+export function labelSpotAt(whole: Path, center: Vec2, size: { width: number; height: number }): LabelSpot | null {
+  const measure = measurePath(subpathOf(whole, 0) ?? whole);
+  if (measure === null) return null;
+  const station = measure.nearest(center);
+  const nx = station.tangent.y;
+  const ny = -station.tangent.x;
+  const d = (center.x - station.point.x) * nx + (center.y - station.point.y) * ny;
+  const half = (Math.abs(nx) * size.width + Math.abs(ny) * size.height) / 2;
+  const offset = Math.sign(d) * Math.max(Math.abs(d) - half, 0);
+  return { at: measure.length === 0 ? 0.5 : station.s / measure.length, offset: offset === 0 ? 0 : offset };
 }
