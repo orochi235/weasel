@@ -6,6 +6,7 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
 import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
+import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
@@ -24,6 +25,7 @@ export default defineConfig({
     react(),
     skipWorktrees(),
     devSourcemaps(),
+    prebundleWorkspace(repoRoot, [resolve(import.meta.dirname, 'src'), resolve(repoRoot, 'apps/shared')]),
     weaselIcons.vite({ mode: 'app' }),
     localWake(),
   ],
