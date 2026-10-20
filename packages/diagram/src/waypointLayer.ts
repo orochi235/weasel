@@ -61,7 +61,8 @@ export function routeStateOf(ends: EdgeEnds<unknown>, routers?: Readonly<Record<
   const { route } = ends;
   const stops = [route.from.point, ...route.waypoints, route.to.point];
   const router = routerOf(ends.trait, routers);
-  return { from: route.from, to: route.to, stops, drawn: route.points, router, handles: routeHandles(route.points, stops, router) };
+  const handles = route.stubs !== undefined ? [] : routeHandles(route.points, stops, router);
+  return { from: route.from, to: route.to, stops, drawn: route.points, router, handles };
 }
 
 /** Options for {@link createWaypointAffordance}. */

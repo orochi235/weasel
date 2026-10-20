@@ -4,6 +4,7 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { OffPageSplit } from './offPage/trait';
 import type { StyleField } from './theme/styleField';
 
 /** Where an edge attaches at one end. */
@@ -41,6 +42,9 @@ export interface DiagramEdge {
    *  computed, kept so the edge draws without rerouting. The router owns it,
    *  and while it is here each end aims at its nearest bend. */
   route?: readonly Vec2[];
+  /** Set while its ends sit on different pages, when it draws as two stubs
+   *  ending at off-page tags. The off-page pass owns it (`installOffPageMarkers`). */
+  offPage?: OffPageSplit;
   /** The theme role it is drawn in. Unset, the theme's own connector style. */
   style?: string;
   /** The colors the author set by hand, which a theme leaves as they are. */
