@@ -38,6 +38,8 @@ export interface StencilInsertOptions {
   measure?: MeasureRowText;
   /** The body's fill, stroke and text colors. Default `diagramScene`'s node style. */
   style?: NodeStyle;
+  /** The face the body's text rows fall back on. Default 12px sans-serif. */
+  font?: { fontFamily: string; fontSize: number };
 }
 
 /**
@@ -67,6 +69,7 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
         newId: () => scene.mintId(),
         ...(optsRef.current.measure ? { measure: optsRef.current.measure } : {}),
         ...(optsRef.current.style ? { style: optsRef.current.style } : {}),
+        ...(optsRef.current.font ? { font: optsRef.current.font } : {}),
       });
       return { id: built.id as NodeId, ops: built.ops };
     };

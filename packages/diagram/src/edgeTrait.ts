@@ -4,6 +4,7 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { StyleField } from './theme/types';
 
 /** Where an edge attaches at one end. */
 export interface EdgeEnd {
@@ -36,6 +37,10 @@ export interface DiagramEdge {
    *  them, layout owns the route and rewrites it on its next run; once anyone
    *  edits them, they are the author's and layout leaves them alone. */
   laidOut?: readonly Vec2[];
+  /** The theme role it is drawn in. Unset, the theme's own connector style. */
+  style?: string;
+  /** The colors the author set by hand, which a theme leaves as they are. */
+  ownStyle?: readonly StyleField[];
 }
 
 /** Whether layout may rewrite this edge's route: it has no waypoints, or only

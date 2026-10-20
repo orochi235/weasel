@@ -1,9 +1,9 @@
 import type { MeasureRowText } from '../body';
-import { diagramScene, type DataNode, type DiagramRouter, type NodeStyle } from '../fromData';
+import { diagramScene, type DataNode, type DiagramRouter } from '../fromData';
 import type { PortSpec } from '../types';
 import {
-  boxNode, drawableWires, isControl, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges,
-  type DrawableWire, type EffectLook, type RunRowOptions, type TypeColor,
+  LOOK_THEME, boxNode, drawableWires, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages,
+  wireEdges, type DrawableWire, type EffectLook, type LookThemeOptions, type RunRowOptions, type TypeColor,
 } from './draw';
 import { inkOf, routeWires, TRACK_GAP, type Box } from './lanesRoutes';
 import { mainChain } from './mainChain';
@@ -11,7 +11,7 @@ import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `lanes` look. */
-export interface LanesOptions extends RunRowOptions {
+export interface LanesOptions extends RunRowOptions, LookThemeOptions {
   /** The value types whose lanes come first, top down. The rest follow in
    *  the order their types first appear on the pipeline's ports. */
   lanes?: readonly string[];
@@ -38,10 +38,6 @@ export interface LanesOptions extends RunRowOptions {
 export const LANE_INSET = 6;
 /** Around the chart and beside the lane labels. */
 const MARGIN = 16;
-const LANE_STYLES: readonly NodeStyle[] = [
-  { fill: 'rgba(255, 255, 255, 0.035)', stroke: 'rgba(255, 255, 255, 0.06)', text: '#9fbdd6', strokeWidth: 1 },
-  { fill: 'rgba(255, 255, 255, 0)', stroke: 'rgba(255, 255, 255, 0.06)', text: '#9fbdd6', strokeWidth: 1 },
-];
 
 /** The node id of the lane for a value type. */
 export const laneId = (type: string): string => `~lane:${type}`;
@@ -229,14 +225,15 @@ function place(plan: Plan, insets: readonly number[]) {
  *  A wire runs around the stages between its ends along the lane edges, each
  *  sharing one on a track of its own. */
 export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
-  const color = typeColors(pipeline, options.colors);
+  const theme = options.theme ?? LOOK_THEME;
+  const color = typeColors(pipeline, options.colors, theme.series);
   const stages = uniqueStages(pipeline);
   const types = laneTypes(stages, options.lanes);
   const rows = types.length > 0 ? types : [''];
   const lane = new Map(types.map((t, i) => [t, i]));
   const spans = new Map(stages.map((s) => [s.id, spanOf(s, lane)]));
   const drawn = stages.map((stage): DataNode => (kindOf(stage) === 'decision'
-    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide: controlSideOf(stage, pipeline, lane) }) }
+    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide: controlSideOf(stage, pipeline, lane), style: stageStyle(stage, theme) }) }
     : boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports: [], run: options })));
   const labels = rows.map((t): DataNode => ({ id: laneId(t), lines: [t] }));
   const size = sizesOf([...drawn, ...labels], options.measure);
@@ -267,8 +264,9 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const right = columns.length === 0 ? plan.start : columns[columns.length - 1]![1] + MARGIN;
   const laneNodes = rows.map((t, i) => laneNode(t, { x: 0, y: tops[i]!, width: right, height: heights[i]! }, color));
   const edges = routed.edges;
-  const styles = sceneStyles(stages, edges);
-  const laneStyle = new Map(rows.map((t, i) => [laneId(t), LANE_STYLES[i % LANE_STYLES.length]!]));
+  const styles = sceneStyles(stages, edges, theme);
+  const bodies = theme.lane.bodies;
+  const laneStyle = new Map(rows.map((t, i) => [laneId(t), bodies[i % bodies.length]!]));
 
   return {
     data: { nodes: [...laneNodes, ...laid.nodes], edges: edges.map((e) => e.edge), groups: uniqueGroups(pipeline) },

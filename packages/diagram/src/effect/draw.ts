@@ -2,6 +2,8 @@
  *  styled, and the lookups a look does over a pipeline. */
 import type { Row } from '../body';
 import { edgeIdOf, type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../fromData';
+import { DIAGRAM_THEMES } from '../theme/themes';
+import type { DiagramTheme } from '../theme/types';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
 import { formatParam } from './stageTypes';
@@ -40,22 +42,32 @@ export interface LookOrder {
  *  not known: any look fits it, and it is called with none. */
 export type EffectLook<TOptions = never> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
 
-const PALETTE = ['#6fb3ff', '#c58bff', '#f2c14e', '#5ad07f', '#ff8a6b', '#4fd1c5', '#e58fb8', '#b0bec5'];
+/** The theme the shipped looks draw in when their options name none. */
+export const LOOK_THEME: DiagramTheme = DIAGRAM_THEMES.night!;
+
+/** The option every shipped look takes for its colors. */
+export interface LookThemeOptions {
+  /** Stages take its default role, bypassed ones its muted role; value types its `series` in
+   *  turn; groups its container; lanes its lane bodies. Default `night`. */
+  theme?: DiagramTheme;
+}
+
 const UNTYPED = '#8aa2b5';
 /** The color `wireStyle` draws a wire in when `checkPipeline` reported it. */
 export const PROBLEM_COLOR = '#ff5d5d';
 
-const NORMAL: NodeStyle = { fill: '#16222c', stroke: '#3d566b', text: '#dbe7f2', strokeWidth: 1.5 };
-const BYPASSED: NodeStyle = { fill: '#121a21', stroke: '#3d566b', text: '#6d8496', strokeWidth: 1.5, dash: [4, 3] };
+const BYPASSED_DASH = [4, 3];
 
-/** A color per type: the one given, or the next in the palette in the order
+/** A color per type: the one given, or the next in `series` in the order
  *  types first appear on the pipeline's ports. */
-export function typeColors(pipeline: EffectPipeline, given: Readonly<Record<string, string>> = {}): TypeColor {
+export function typeColors(
+  pipeline: EffectPipeline, given: Readonly<Record<string, string>> = {}, series: readonly string[] = LOOK_THEME.series,
+): TypeColor {
   const colors = new Map<string, string>();
   for (const stage of pipeline.stages) {
     for (const port of [...(stage.inputs ?? []), ...(stage.outputs ?? [])]) {
       if (colors.has(port.type)) continue;
-      colors.set(port.type, given[port.type] ?? PALETTE[colors.size % PALETTE.length]!);
+      colors.set(port.type, given[port.type] ?? series[colors.size % series.length]!);
     }
   }
   return (type) => (type === undefined ? UNTYPED : colors.get(type) ?? given[type] ?? UNTYPED);
@@ -66,9 +78,11 @@ export function isControl(pipeline: EffectPipeline, type: string | undefined): b
   return type !== undefined && pipeline.types?.[type]?.control === true;
 }
 
-/** The node style the shipped looks give a stage: dashed and dim when it is bypassed. */
-export function stageStyle(stage: EffectStage): NodeStyle {
-  return stage.bypassed === true ? BYPASSED : NORMAL;
+/** The node style the shipped looks give a stage: the theme's default role, or dashed in its
+ *  muted role when the stage is bypassed. */
+export function stageStyle(stage: EffectStage, theme: DiagramTheme = LOOK_THEME): NodeStyle {
+  const { roles, defaultRole } = theme;
+  return stage.bypassed === true ? { ...(roles.muted ?? roles[defaultRole]!), dash: BYPASSED_DASH } : roles[defaultRole]!;
 }
 
 /** The edge style the shipped looks give a wire: `color`, dashed for a
@@ -244,16 +258,18 @@ export function wireEdges(pipeline: EffectPipeline, color: TypeColor): { edge: D
   }));
 }
 
-/** A look's `nodeStyle` and `edgeStyle`: `stageStyle` for each stage, and for
- *  each edge the style paired with it. */
+/** A look's `nodeStyle`, `edgeStyle`, and `theme`: `stageStyle` for each stage,
+ *  and for each edge the style paired with it. */
 export function sceneStyles(
   stages: readonly EffectStage[],
   edges: readonly { edge: DataEdge; style: EdgeStyle }[],
-): Required<Pick<DiagramSceneOptions, 'nodeStyle' | 'edgeStyle'>> {
-  const nodes = new Map(stages.map((s) => [s.id, stageStyle(s)]));
+  theme: DiagramTheme = LOOK_THEME,
+): Required<Pick<DiagramSceneOptions, 'nodeStyle' | 'edgeStyle' | 'theme'>> {
+  const nodes = new Map(stages.map((s) => [s.id, stageStyle(s, theme)]));
   const wires = new Map(edges.map((e) => [edgeIdOf(e.edge), e.style]));
   return {
-    nodeStyle: (n) => nodes.get(n.id) ?? NORMAL,
+    theme,
+    nodeStyle: (n) => nodes.get(n.id) ?? theme.roles[theme.defaultRole]!,
     edgeStyle: (e) => wires.get(edgeIdOf(e)) ?? wireStyle(UNTYPED, false, false),
   };
 }

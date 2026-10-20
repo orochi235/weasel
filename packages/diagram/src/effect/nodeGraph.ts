@@ -1,9 +1,12 @@
 import type { DiagramRouter } from '../fromData';
-import { boxNode, kindOf, sceneStyles, typeColors, uniqueGroups, uniqueStages, wireEdges, type EffectLook, type RunRowOptions } from './draw';
+import {
+  LOOK_THEME, boxNode, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages, wireEdges,
+  type EffectLook, type LookThemeOptions, type RunRowOptions,
+} from './draw';
 import { branchNode, type BranchChoice } from './symbols';
 
 /** Options for the `nodeGraph` look. */
-export interface NodeGraphOptions extends RunRowOptions {
+export interface NodeGraphOptions extends RunRowOptions, LookThemeOptions {
   /** Default `'bezier'`. */
   router?: DiagramRouter;
   nodeGap?: number;
@@ -20,10 +23,11 @@ export interface NodeGraphOptions extends RunRowOptions {
 /** The node-graph look: every port a named row on its stage, a wire from port
  *  to port in the color of what it carries, flowing left to right. */
 export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) => {
-  const color = typeColors(pipeline, options.colors);
+  const theme = options.theme ?? LOOK_THEME;
+  const color = typeColors(pipeline, options.colors, theme.series);
   const stages = uniqueStages(pipeline);
   const nodes = stages.map((stage) => (kindOf(stage) === 'decision'
-    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch) }
+    ? { id: stage.id, ...branchNode(stage, pipeline, options.branch, { style: stageStyle(stage, theme) }) }
     : boxNode(stage, { showParams: options.showParams !== false, rowPorts: true, ports: [], run: options })));
   const edges = wireEdges(pipeline, color);
 
@@ -37,7 +41,7 @@ export const nodeGraph: EffectLook<NodeGraphOptions> = (pipeline, options = {}) 
         ...(options.rankGap !== undefined ? { rankGap: options.rankGap } : {}),
       },
       router: options.router ?? 'bezier',
-      ...sceneStyles(stages, edges),
+      ...sceneStyles(stages, edges, theme),
     },
     color,
   };
