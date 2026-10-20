@@ -250,12 +250,10 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
-          // Its heavy checks run four at a time, and in the browser project's group rather than beside
-          // the jsdom projects: there they slowed labkit's storyArgs.test.tsx from 4 s to past its timeout.
-          maxConcurrency: 4,
-          sequence: { groupOrder: 1 },
-          // A group's projects must agree on this; the gate has two files, so it changes nothing here.
-          maxWorkers: 6,
+          // One check at a time beside a full run's jsdom projects, where several at once slowed labkit's
+          // storyArgs.test.tsx from 4 s past its timeout and running it later lengthened the run. A branch
+          // run has few tests for it to crowd, and the gate is then its longest part.
+          maxConcurrency: related ? 3 : 1,
           include: ['scripts/**/*.gate.ts'],
         },
       },

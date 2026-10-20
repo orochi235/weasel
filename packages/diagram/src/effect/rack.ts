@@ -1,8 +1,8 @@
 import type { PortAnchor, PortSpec } from '../types';
 import { edgeIdOf } from '../fromData';
 import {
-  boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
-  wireEdge, wireStyle, type EffectLook, type RunRowOptions,
+  LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, stageStyle, typeColors,
+  uniqueGroups, uniqueStages, wireEdge, wireStyle, type EffectLook, type LookThemeOptions, type RunRowOptions,
 } from './draw';
 import { chainLinks } from './chainEdit';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
@@ -10,7 +10,7 @@ import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `rack` look. */
-export interface RackOptions extends RunRowOptions {
+export interface RackOptions extends RunRowOptions, LookThemeOptions {
   /** The stage ids on the line, in order. Default the longest path over data wires. */
   chain?: readonly string[];
   /** Where what feeds the chain from the side sits. Default `'below'`. */
@@ -124,7 +124,8 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], nea
 /** The rack look: the main signal on one straight line with its stages in
  *  order, and whatever feeds a stage from the side hung beside it. */
 export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
-  const color = typeColors(pipeline, options.colors);
+  const theme = options.theme ?? LOOK_THEME;
+  const color = typeColors(pipeline, options.colors, theme.series);
   const below = options.side !== 'above';
   const near = below ? 1 : 0;
   const far = below ? 0 : 1;
@@ -140,7 +141,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const kept = stages.filter((s) => !gone.has(s.id));
   const controlSide = below ? 'bottom' : 'top';
   const nodes = kept.map((stage) => {
-    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide }) };
+    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide, style: stageStyle(stage, theme) }) };
     const ports = portsOf(stage, line, wires, near, far);
     const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, run: options });
     const room = roomFor(ports);
@@ -176,7 +177,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
         ...(options.rankGap !== undefined ? { rankGap: options.rankGap } : {}),
       },
       router: 'bezier',
-      ...sceneStyles(kept, edges),
+      ...sceneStyles(kept, edges, theme),
     },
     color,
     order: { axis: 'x', items: chain.map((id) => ({ id })) },

@@ -85,6 +85,13 @@ describe('stencilBuild', () => {
     expect(colors()).toEqual([NODE.fill, NODE.stroke, 2, NODE.text]);
     expect(colors({ fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 })).toEqual(['#fff', '#333', 1.5, '#111']);
   });
+
+  it('sets its text rows in the face it is given', () => {
+    const [, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
+      layer: 'main', newId: idMinter(), font: { fontFamily: 'serif', fontSize: 15 },
+    }).ops as never);
+    expect((text!.data as { style?: { fontFamily: string; fontSize: number } }).style).toMatchObject({ fontFamily: 'serif', fontSize: 15 });
+  });
 });
 
 describe('useStencilTool', () => {

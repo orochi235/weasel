@@ -8,6 +8,9 @@ import type { IconRef } from '@weasel-js/icons';
 import { DEFAULT_FONT } from '../edgeLabel';
 import { icon } from '../icons.gen';
 import { NODE, type DiagramSceneData, type NodeStyle } from '../fromData';
+import { diagramThemeOf } from '../theme/resolve';
+import { themeWrites, type ThemedScene } from '../theme/themeWrites';
+import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
 import { titlePose } from './titlePose';
@@ -48,6 +51,8 @@ export interface ContainerBuildOptions<TLayer extends string> {
   style?: NodeStyle;
   /** The container the new one goes in. Default the top level. */
   parent?: string | null;
+  /** A pool's header colors and its lanes' bodies in turn. Default `style` for both. */
+  laneStyles?: { header: NodeStyle; bodies: readonly NodeStyle[] };
 }
 
 function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle): DiagramSceneData {
@@ -96,7 +101,11 @@ function firstLanes<TLayer extends string>(
     const pose: RectPose = axis === 'y'
       ? { x: at.x + header.size, y: at.y + i * size, width: at.width - header.size, height: size }
       : { x: at.x + i * size, y: at.y + header.size, width: size, height: at.height - header.size };
-    out.push(...regionSpecs('lane', axis, pose, `Lane ${i + 1}`, { ...opts, id: opts.newId(), parent: poolId }));
+    const bodies = opts.laneStyles?.bodies ?? [];
+    const style = bodies.length > 0 ? bodies[i % bodies.length] : opts.style;
+    out.push(...regionSpecs('lane', axis, pose, `Lane ${i + 1}`, {
+      ...opts, id: opts.newId(), parent: poolId, ...(style ? { style } : {}),
+    }));
   }
   return out;
 }
@@ -120,7 +129,9 @@ export function containerBuild<TLayer extends string>(
   const at = placedBounds(stencil, bounds);
   const title = stencil.role === 'pool' ? 'Pool' : stencil.label;
   const specs = [
-    ...regionSpecs(stencil.role, axis, at, title, { ...opts, id }),
+    ...regionSpecs(stencil.role, axis, at, title, {
+      ...opts, id, ...(stencil.role === 'pool' && opts.laneStyles ? { style: opts.laneStyles.header } : {}),
+    }),
     ...(stencil.role === 'pool' ? firstLanes(id, axis, at, opts) : []),
   ];
   const label = `Insert ${stencil.label}`;
@@ -171,6 +182,11 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   });
   scene.batch('Add lane', () => {
     for (const spec of specs) scene.add(spec as never);
+    // A themed scene colors the lane as a theme change would, by its place in the stack.
+    if (style === undefined && scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set([id]));
+      for (const [at, data] of writes) scene.update(at as never, { data } as never);
+    }
   });
   return id;
 }

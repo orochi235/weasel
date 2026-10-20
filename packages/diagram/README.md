@@ -283,6 +283,32 @@ along the stack is the sum of its lanes. Lanes take no connectors, and
 connectors stay at the top level, drawn above every container. `DiagramView`
 does not build containers from data yet.
 
+### Themes
+
+A `DiagramTheme` is a document's colors and face: a style per role (`DIAGRAM_ROLES`: Default,
+Accent, Muted, Positive, Warning, Negative), the connector and label colors, the container and
+lane looks, the page color, a font, and a `series` of colors for things it cannot name ahead,
+such as a look's value types. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprint`, `pastel`, and
+`mono`; `diagramThemeFromTokens(read)` builds one from a host's resolved `--wzl-*` values.
+
+A theme writes literal colors into the scene, so whatever draws or exports the scene needs no
+theme. A shape or connector names its role in its trait's `style`, and lists the colors its
+author set by hand in `ownStyle`; a theme leaves those.
+
+```ts
+applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`
+setDiagramStyle(scene, selection.get(), 'warning');          // name a role, and recolor in it
+setDiagramColor(scene, selection.get(), 'fill', '#ffcc00');  // by hand: survives the next theme
+const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's theme, or a fallback
+```
+
+`themeWrites(scene, theme)` is the pure half: the new `data` for every node the theme recolors.
+New shapes and connectors take the theme from whatever inserts them: pass `roleStyle(theme)` and
+`themeFont(theme)` to `useStencilInsert`, `themeEdgeStroke(theme)` as a connect action's
+`edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
+`diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
+looks take one in their options (default `night`, which draws them as they always were).
+
 ### Laying it out
 
 `layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
