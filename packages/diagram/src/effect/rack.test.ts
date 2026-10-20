@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
-import { sequenceSlots } from '../slotReorder';
+import { sequenceSlots } from '../reorder';
 import { PROBLEM_COLOR } from './draw';
 import { mainChain, skipDecisions } from './mainChain';
 import { rack, SIDE_PORT_GAP } from './rack';

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { diagramScene, type DiagramSpec } from '../fromData';
 import { PROBLEM_COLOR } from './draw';
 import { SAMPLES } from './lab/samples';
-import { sequenceSlots } from '../slotReorder';
+import { sequenceSlots } from '../reorder';
 import { LANE_INSET, laneId, laneTypeOf, lanes } from './lanes';
 import { paintRun } from './run';
 import { io, w } from './skipFixture';

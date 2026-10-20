@@ -1329,15 +1329,6 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P2) `@weasel-js/diagram` has two reorder drags; make them one.** `slotReorder.ts`
-  (`createSlotReorderAction`, the pipeline editor's stage reorder) carries one item of any drawn
-  sequence, given its items and gaps, and draws an insertion bar. `reorder.ts`
-  (`createReorderAction`, `DiagramView`'s `onReorder`) carries a member of a group marked `reorder`
-  and slides its siblings into their slots as pose overrides. They landed on separate branches
-  under the same names and action id; the merge renamed the first (2026-10-19). One drag should
-  serve both: the slot model is the general one, and the group drag could build its slots from the
-  group.
-
 - **(P3) Second arc.** Themes; containers and swimlanes; connectors that route around shapes
   while editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
 

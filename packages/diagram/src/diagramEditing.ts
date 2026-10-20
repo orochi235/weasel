@@ -23,7 +23,7 @@ import type { DiagramSpec } from './fromData';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
-import { reorderContribution } from './reorder';
+import { groupReorderContribution } from './groupReorder';
 import { dataKeyReader } from './trait';
 import type { DeleteReport, DiagramViewProps, ReconnectChange } from './diagramViewProps';
 
@@ -146,7 +146,7 @@ export function useDiagramEditing(
       }
     : null, [labels, report]);
   const reorder = useMemo(
-    () => (reorders ? reorderContribution((change) => report.current.onReorder?.(change)) : null),
+    () => (reorders ? groupReorderContribution((change) => report.current.onReorder?.(change)) : null),
     [reorders, report],
   );
   const actions = useMemo(

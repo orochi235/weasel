@@ -804,11 +804,15 @@ off, wires its old neighbors to each other, and wires it into gap `to` of
 `lanes` over `options.lanes`. Rack's `chain` option is not offered here, since a
 given chain could disagree with the wiring.
 
-The drag itself is general: `createSlotReorderAction` (in `@weasel-js/diagram`)
-carries one item of any drawn sequence along its axis and draws the insertion
-bar. Give it `slots`, the items and gaps that `sequenceSlots(axis, items)` builds
-from their boxes, and a `commit` that hears `{ id, from, to }`.
-`slotReorderContribution` packs the action and its binding to pass as `ambient`.
+The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
+carries one item of any drawn sequence along its axis, and the item lands in
+the gap nearest its middle. Give it `slots`, the items and gaps that
+`sequenceSlots(axis, items)` builds from their boxes, and a `commit` that hears
+`{ id, from, to, order }`. `show: 'bar'` (the default) draws the insertion bar;
+`show: 'slide'` slides the other items into the places they would take instead,
+moving each item's `carries` as pose overrides, which is how `onReorder` shows a
+group's members. `reorderContribution` packs the action and its binding to pass
+as `ambient`.
 
 ## Design notes
 

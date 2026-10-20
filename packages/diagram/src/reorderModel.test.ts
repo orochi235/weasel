@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene, type DiagramData, type DiagramSpec } from './fromData';
-import { carriedWith, orderWith, packed, reorderTargetOf, type ReorderScene } from './reorderModel';
+import { carriedWith, reorderTargetOf, type ReorderScene } from './reorderModel';
 
 /** One row per layer, each patch → pool, every pool into the shared word. */
 const layers = (order: readonly string[]): DiagramData => ({
@@ -65,20 +65,5 @@ describe('reorderTargetOf', () => {
     const rows = rowsOf(specs, 'b.patch');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((id) => carried.has(id))).toBe(true);
-  });
-});
-
-describe('orderWith and packed', () => {
-  const spans = new Map([['a', { start: 0, size: 40 }], ['b', { start: 50, size: 20 }], ['c', { start: 80, size: 40 }]]);
-  const members = ['a', 'b', 'c'];
-
-  it('moves a member past each middle it crosses', () => {
-    expect(orderWith(members, spans, 'a', 30)).toEqual(['a', 'b', 'c']);
-    expect(orderWith(members, spans, 'a', 45)).toEqual(['b', 'a', 'c']);
-    expect(orderWith(members, spans, 'c', -80)).toEqual(['c', 'a', 'b']);
-  });
-
-  it('packs the new order from the first start, keeping each gap in its place', () => {
-    expect(Object.fromEntries(packed(members, spans, ['c', 'a', 'b']))).toEqual({ c: 0, a: 50, b: 100 });
   });
 });
