@@ -4,7 +4,7 @@ import {
 } from '../guides/alignment/spacing';
 import type { SpacingGap } from '../guides/types';
 import { axisLine, landedShift } from './lines';
-import { cachedPerScene } from './targets';
+import { cachedPerScene, type TargetFilter } from './targets';
 
 type Point = { x: number; y: number };
 
@@ -12,6 +12,8 @@ type Point = { x: number; y: number };
 export interface SpacingSnapSourceOptions {
   /** The boxes to measure gaps between, in place of the subject's siblings. */
   getTargets?: () => readonly Bounds[];
+  /** Which nodes offer gaps. Narrows the default siblings; not `getTargets`. */
+  filter?: TargetFilter;
   /** The color of the gaps it marks. Default: the readout layer's. */
   color?: string;
   /** Overrides the canvas's reach for these targets, in screen px. */
@@ -38,7 +40,7 @@ function gapMark(g: SpacingGap, color: string | undefined): SnapMark {
  * size, the box's own included.
  */
 export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSource {
-  const fromScene = cachedPerScene(measureAll);
+  const fromScene = cachedPerScene(measureAll, opts.filter);
   return {
     id: 'spacing',
     ...(opts.reachPx === undefined ? {} : { reachPx: opts.reachPx }),

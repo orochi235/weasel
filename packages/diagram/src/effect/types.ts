@@ -67,6 +67,8 @@ export interface EffectGroup {
  *  put. A stage the run has no entry for is one it never reached. */
 export interface EffectRun {
   stages: Readonly<Record<string, EffectStageRun>>;
+  /** The stage a run taken a step at a time is on, drawn outlined. */
+  at?: string;
 }
 
 /** What one stage did in a run. */
@@ -75,13 +77,17 @@ export interface EffectStageRun {
   cost?: number;
   /** For a decision: the output it chose. */
   taken?: string;
-  /** What each output carried, by port id, as text to show. */
+  /** What each output carried, by port id, as text to show; for a stage with
+   *  no outputs, what reached each input. */
   values?: Readonly<Record<string, string>>;
-  /** What each output carried, by port id, as a picture, drawn in the slot a
+  /** What each port `values` covers carried, by port id, as a picture, drawn in the slot a
    *  look keeps for it (`showPreviews`). A bitmap rather than a canvas
    *  because its pixels cannot change: hand back the same one and nothing is
    *  uploaded again; draw new pixels into a new one. */
   previews?: Readonly<Record<string, ImageBitmap>>;
+  /** Why the stage failed, written where its cost goes. What it feeds is
+   *  left unreached. */
+  error?: string;
 }
 
 /** What a value type means, as `EffectPipeline.types` records it. */
@@ -117,8 +123,24 @@ export interface EffectDoc {
   places: EffectPlaces;
   /** The value types whose lanes the `lanes` look draws first, top down. */
   laneOrder?: readonly string[];
-  /** The waypoints a person routed each wire through, by wire id, beside the
-   *  pipeline as `places` is. Only `nodeGraph` draws them; `rack` and `lanes`
-   *  route their own wires. */
+  /** The waypoints a person routed each wire through under `nodeGraph`, by
+   *  wire id, beside the pipeline as `places` is. */
   routes?: Readonly<Record<string, readonly Vec2[]>>;
+  /** The routes a person drew under `rack` and `lanes`, by look, then by wire id. */
+  lookRoutes?: LookRoutes;
+}
+
+/** A wire's route under a look that places its stages itself. */
+export interface LookRoute {
+  waypoints: readonly Vec2[];
+  /** Where the wire's from and to ports were when it was routed. The route
+   *  is drawn only while they are still there: a reorder or an added stage
+   *  moves stages, and a route drawn for one arrangement means nothing in another. */
+  ends: readonly [Vec2, Vec2];
+}
+
+/** `EffectDoc.lookRoutes`. */
+export interface LookRoutes {
+  rack?: Readonly<Record<string, LookRoute>>;
+  lanes?: Readonly<Record<string, LookRoute>>;
 }

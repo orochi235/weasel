@@ -4,6 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
+import { chartPrefs } from './prefs';
 import { withIcons } from './testIcons';
 
 beforeAll(() => {
@@ -15,6 +16,8 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
+  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
+  chartPrefs().reset();
   localStorage.clear();
 });
 
@@ -79,7 +82,6 @@ describe('App', () => {
 
   it('gives pipeline mode View › Look, and keeps the look picked through a visit to chart mode', () => {
     mount();
-    expect(screen.queryByRole('menuitem', { name: 'View' })).toBeNull();
     choose('Mode', 'Pipeline');
     const looks = () => {
       act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
@@ -96,6 +98,69 @@ describe('App', () => {
     choose('Mode', 'Chart');
     choose('Mode', 'Pipeline');
     expect(held(looks())).toEqual(['Rack']);
+  });
+
+  it('opens Preferences from View in chart mode', () => {
+    mount();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    choose('View', 'Preferences');
+    expect(within(screen.getByRole('dialog')).getByText('Show grid')).toBeTruthy();
+  });
+
+  it('flips the grid prefs from View in chart mode, each row held while its pref is on', () => {
+    mount();
+    const rows = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const label = (r: HTMLElement) => r.children[1]!.textContent;
+    const first = rows();
+    expect(first.map(label)).toEqual(['Show grid', 'Snap to grid', 'Preferences…']);
+    act(() => { fireEvent.click(first[0]!); });
+    expect(chartPrefs().get('view.gridVisible')).toBe(true);
+    choose('View', 'Snap to grid');
+    expect(chartPrefs().get('view.snapToGrid')).toBe(true);
+    const again = rows();
+    expect(again.filter((r) => r.getAttribute('aria-checked') === 'true').map(label)).toEqual(['Show grid', 'Snap to grid']);
+    act(() => { fireEvent.click(again[0]!); });
+    expect(chartPrefs().get('view.gridVisible')).toBe(false);
+  });
+
+  it('opens Preferences from View in pipeline mode', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    choose('View', 'Preferences');
+    expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('keeps the pipeline look across a remount', async () => {
+    const first = mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+    const rows = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Look'))!); });
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Lanes'))!); });
+    first.unmount();
+    await chartPrefs().flush();
+    expect(localStorage.getItem('weaselchart.prefs/pipeline.look')).toContain('lanes');
+
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Look'))!); });
+    const held = rows().filter((el) => el.getAttribute('aria-checked') === 'true').map((el) => el.children[1]!.textContent);
+    expect(held).toEqual(['Lanes']);
+  });
+
+  it('gives pipeline mode Format › Connector › Reset route', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Format' })); });
+    const connector = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+      .find((el) => el.textContent?.startsWith('Connector'))!;
+    act(() => { fireEvent.click(connector); });
+    const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Reset route']);
   });
 
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {

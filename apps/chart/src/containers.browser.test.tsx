@@ -9,6 +9,8 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
+import { chartPrefs } from './prefs';
+import { STENCIL_MIME } from './stencilDrop';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
 
 registerCanvasFont('sans-serif');
@@ -163,5 +165,26 @@ describe('WeaselChart containers', () => {
     await useSelect();
     await drag(again.canvas, at(again.host, 760, 430), at(again.host, 350, 440));
     await expect.poll(() => byId(late).parent).toBe(lanesInOrder()[2]!.id);
+  });
+
+  it('puts a stencil dropped inside a container into it, on the grid under snap to grid', async () => {
+    chartPrefs().set('view.snapToGrid', true);
+    // The container's centerlines would otherwise out-rank the grid.
+    chartPrefs().set('view.alignmentSnap', false);
+    const { host, canvas } = await mountChartApp();
+    await shapes('Container');
+    await drag(canvas, at(host, 100, 100), at(host, 500, 400));
+    await expect.poll(() => role('container').length).toBe(1);
+    const box = role('container')[0]!.id;
+    const dt = new DataTransfer();
+    dt.setData(STENCIL_MIME, 'decision');
+    const p = at(host, 300, 250);
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
+    }
+    await expect.poll(() => bodies().length).toBe(1);
+    const body = bodies()[0]!;
+    expect(body.parent).toBe(box);
+    expect([Math.round(body.pose.x) % 12, Math.round(body.pose.y) % 12]).toEqual([0, 0]);
   });
 });

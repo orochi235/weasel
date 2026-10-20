@@ -1,14 +1,18 @@
 import { ActionDisabledReason, useCommand } from '@weasel-js/core';
+import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
+import { CHART_ACTIONS } from '../chartCommands';
 import { run, type ChartMenuContributions } from '../menuBar';
 import { LOOK_MENU } from './pipelineLook';
+import { RUN_MENU, SHOW_MENU } from './pipelineRun';
 import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
 
 export const PIPELINE_ACTIONS = {
   new: 'pipeline.new', open: 'pipeline.open', save: 'pipeline.save', undo: 'pipeline.undo', redo: 'pipeline.redo',
 } as const;
 
-/** Pipeline mode's File, Edit, and View menus. Delete is the kit action the editor's canvas registers, which removes stages and wires alike. */
+/** Pipeline mode's File, Edit, View, Format, and Run menus. Delete and Reset route are kit actions the editor's canvas registers: Delete removes stages and wires alike, and Reset route gives a wire back to its look. */
 export const PIPELINE_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: PIPELINE_ACTIONS.new, open: PIPELINE_ACTIONS.open }),
@@ -18,7 +22,13 @@ export const PIPELINE_MENUS: ChartMenuContributions = {
     history: run({ undo: PIPELINE_ACTIONS.undo, redo: PIPELINE_ACTIONS.redo }),
     remove: run({ delete: 'delete' }),
   },
-  view: LOOK_MENU,
+  view: { ...LOOK_MENU, ...SHOW_MENU, prefs: run({ preferences: CHART_ACTIONS.preferences }) },
+  format: {
+    connector: pref.group('', {
+      connector: pref.group('Connector', { route: run({ resetRoute: RESET_ROUTE_ACTION_ID }) }, { as: 'menu' }),
+    }),
+  },
+  run: RUN_MENU,
 };
 
 const can = (yes: boolean): true | ActionDisabledReason => (yes ? true : ActionDisabledReason.NotApplicable);

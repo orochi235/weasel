@@ -43,7 +43,7 @@ export { actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
 export type { ActionShortcut } from '@weasel-js/routing';
 export { moveAction } from '../interactions/actions/move/action';
 export { flipAction } from '../interactions/actions/flip/action';
-export { resizeAction } from '../interactions/actions/resize/action';
+export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';

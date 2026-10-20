@@ -106,6 +106,7 @@ export type {
   SceneArrivalHandler,
   SceneBatchOptions,
   SceneEditPass,
+  SceneEditPassOptions,
   SceneEditSummary,
   ScenePoseReports,
   SceneRegistry,
