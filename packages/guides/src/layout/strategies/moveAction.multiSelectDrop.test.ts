@@ -9,6 +9,7 @@ import {
   type P,
   makeScene,
   makeCtx,
+  heldPose,
 } from './testing/moveLayoutStubs';
 
 describe('moveAction multi-select layout drop', () => {
@@ -83,11 +84,11 @@ describe('moveAction multi-select layout drop', () => {
 
     const ids = [...(handle.previewIds!() as Iterable<string>)];
     expect(ids).toContain('e');
-    expect((handle.previewPose!('e') as P).x).toBe(0);
+    expect(heldPose(scene, 'e')!.x).toBe(0);
     // The dragged children still ghost at the translated position, not in
     // their snapped cells.
-    expect((handle.previewPose!('a') as P).x).toBe(200);
-    expect((handle.previewPose!('b') as P).x).toBe(250);
+    expect(heldPose(scene, 'a')!.x).toBe(200);
+    expect(heldPose(scene, 'b')!.x).toBe(250);
     // Reflowed siblings paint settled; the dragged pair does not.
     const opaque = [...((handle.previewOpaqueIds!() ?? []) as Iterable<string>)];
     expect(opaque).toEqual(['e']);

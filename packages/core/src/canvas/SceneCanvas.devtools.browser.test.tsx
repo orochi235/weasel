@@ -10,6 +10,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from '../core/scene/scene';
 import { DEVTOOLS_PROTOCOL, type PanelMessage } from '../devtools/protocol';
 import { createInPageTransports } from '../devtools/transport';
+import { pixelAt } from '../testing/canvasPixels';
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
@@ -26,14 +27,6 @@ afterEach(() => {
 
 const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const settle = async () => { await frame(); await frame(); await frame(); };
-
-/** RGBA at a device pixel, counted from the top-left. */
-function pixel(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
-  const out = new Uint8Array(4);
-  gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
-  return Array.from(out);
-}
 
 async function mount() {
   const scene = createScene<unknown, 'main', { x: number; y: number; width: number; height: number }>({
@@ -70,22 +63,22 @@ const YELLOW = [0xff, 0xeb, 0x3b];
 describe('a devtools panel steering a real canvas', () => {
   it('outlines a highlighted node, and stops when the panel leaves', async () => {
     const { canvas, id, send } = await mount();
-    expect(near(pixel(canvas, 20, 40), PINK)).toBe(false);
+    expect(near(pixelAt(canvas, 20, 40), PINK)).toBe(false);
     await send({ type: 'highlight', ids: [id] });
-    expect(pixel(canvas, 20, 40)).toSatisfy((p: number[]) => near(p, PINK));
+    expect(pixelAt(canvas, 20, 40)).toSatisfy((p: number[]) => near(p, PINK));
     close!();
     close = null;
     await settle();
-    expect(near(pixel(canvas, 20, 40), PINK)).toBe(false);
+    expect(near(pixelAt(canvas, 20, 40), PINK)).toBe(false);
   });
 
   // A 1px bounds line centered on the node's edge half-covers the pixel outside
   // it, over a transparent clear: its color is the line's once unpremultiplied.
   it('turns on an overlay feature the canvas did not ask for', async () => {
     const { canvas, send } = await mount();
-    expect(pixel(canvas, 19, 40)[3]).toBe(0);
+    expect(pixelAt(canvas, 19, 40)[3]).toBe(0);
     await send({ type: 'set-overlays', overlays: { bounds: true } });
-    const [r, g, b, a] = pixel(canvas, 19, 40) as [number, number, number, number];
+    const [r, g, b, a] = pixelAt(canvas, 19, 40) as [number, number, number, number];
     expect(a).toBeGreaterThan(0);
     expect([r, g, b].map((c) => Math.round((c * 255) / a))).toSatisfy((p: number[]) => near(p, YELLOW));
   });

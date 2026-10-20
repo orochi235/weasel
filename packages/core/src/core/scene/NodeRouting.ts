@@ -37,6 +37,19 @@ export interface NodeRouting {
   list(): readonly NodeRoutingEntry[];
 }
 
+/** The routing kind of a node: the name of the first entry whose `matches(data, node)` returns
+ *  true, or `'unknown'`. What `NodeRouting.classify` answers, for a caller holding a plain list. */
+export function routeKind(
+  entries: readonly NodeRoutingEntry[],
+  data: unknown,
+  node?: RoutedNode,
+): string {
+  for (const kind of entries) {
+    if (kind.matches(data, node)) return kind.name;
+  }
+  return 'unknown';
+}
+
 /** Build a registry of per-node-kind routing entries. Registering a duplicate
  *  kind name throws. */
 export function createNodeRouting(): NodeRouting {
@@ -53,10 +66,7 @@ export function createNodeRouting(): NodeRouting {
       entries.push(kind);
     },
     classify(data, node) {
-      for (const kind of entries) {
-        if (kind.matches(data, node)) return kind.name;
-      }
-      return 'unknown';
+      return routeKind(entries, data, node);
     },
     get(name) {
       return byName.get(name);

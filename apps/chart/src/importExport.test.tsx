@@ -79,6 +79,16 @@ describe('File › Import…', () => {
     expect(stored()!.nodes.find((n) => n.id === 'a')!.pose).toMatchObject({ x: 40, y: 50 });
   });
 
+  it('lays out a Mermaid flowchart, which carries no places', async () => {
+    io.picked = new File(['flowchart LR\n  a[Alpha] --> b{Beta}\n  b --> c((Gamma))\n'], 'flow.mmd');
+    mount();
+    choose('Import');
+    await vi.waitFor(() => expect(stored()?.nodes.map((n) => n.id)).toEqual(expect.arrayContaining(['a', 'b', 'c'])));
+    const at = (id: string) => stored()!.nodes.find((n) => n.id === id)!.pose;
+    expect(at('a').x).toBeLessThan(at('b').x);
+    expect(at('b').x).toBeLessThan(at('c').x);
+  });
+
   it('lists what the file had that a chart cannot hold in a toast', async () => {
     io.picked = new File([DIAGRAM_JSON.write!(DOC).text], 'flow.diagram.json');
     extra.warnings = ['A lost thing'];

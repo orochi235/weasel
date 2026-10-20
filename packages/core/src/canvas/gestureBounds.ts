@@ -14,6 +14,8 @@ import type { OngoingOverlay } from '@weasel-js/routing';
  */
 export interface GesturePreviewSource {
   previewIds?(): Iterable<string> | null;
+  /** Absent/null falls back to the node's effective pose, which is where a
+   *  transform publishing to the scene's overrides puts it. */
   previewPose?(id: string): unknown;
   /** Companion to `previewPose` for actions that mutate node data (anchor
    *  edits on `data.path` nodes). Absent/null falls back to committed data. */

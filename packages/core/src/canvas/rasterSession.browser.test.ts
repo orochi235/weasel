@@ -80,7 +80,10 @@ describe('one-shot renders in a loop', () => {
   it('do not push a canvas already on the page out of its context', { timeout: 45_000 }, () => {
     const onPage = document.createElement('canvas');
     document.body.appendChild(onPage);
+    // Contexts nothing renders into, held only to fill Chromium's quota; their attributes don't matter.
+    // eslint-disable-next-line no-restricted-syntax
     const gl = onPage.getContext('webgl2')!;
+    // eslint-disable-next-line no-restricted-syntax
     const idle = Array.from({ length: 14 }, () => document.createElement('canvas').getContext('webgl2')!);
     const scene = sceneOf([{ x: 0, y: 0, width: 4, height: 4, color: '#ff0000' }]);
     try {

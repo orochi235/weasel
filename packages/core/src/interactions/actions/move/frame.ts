@@ -61,8 +61,8 @@ export function nextFrame(session: MoveSession, readers: GestureReaders, moveCtx
 
   // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };
-  // Refresh preview poses for every displaced id (roots + cascade).
-  // The preview-ghost layer reads these via `previewIds`/`previewPose`.
+  // Every displaced id's pose (roots + cascade), published to the scene's
+  // overrides by the action.
   const previews = new Map<NodeId, unknown>();
   for (const [id, ori] of session.startPoses) {
     const dragged = draggedStoredPose(session, id, ori, dx, dy);

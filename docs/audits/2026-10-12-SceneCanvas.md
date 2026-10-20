@@ -2,8 +2,8 @@
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
 > acted on. Sections B (built-in tool registry assembly) and C have landed and are deleted from here,
 > and so have A and D except for the items still listed under them, which were checked against the code
-> and are written as found. E, F, G, I, J, and N have landed and are deleted, F except for the item still listed
-> under it, and H has landed except for the item still listed under it. Every other lettered
+> and are written as found. E, F, G, H, I, J, and N have landed and are deleted, F except for the item
+> still listed under it. Every other lettered
 > section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
@@ -59,28 +59,6 @@ The mirror landed: `SceneCanvas/useCanvasCamera.ts` makes the one camera with `u
 - **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
   `useViewportActions`, which should take `viewport` and the preset flag. Left because they are
   props of `StandardActionsRegistrar`, which section E replaces.
-
-### H. Two kind classifiers that disagree
-
-The read-only wrapper landed as `core/selection/readOnlySelection.ts`, and the label published with
-the selection moved to `core/selection/usePublishSceneSelection.ts`. The label was not folded into
-the routing kind, because the two answer differently for every node tried
-(`SceneCanvas.selectionKinds.test.tsx`, run against the code) and the difference shows: the command
-palette's selection summary (`ui/CommandPalette/selectionSummary.ts`) prints the label.
-
-| Node | Published label | Routing kind (`inferredNodeRouting`) |
-|---|---|---|
-| leaf, `data.path`, plain box pose | none | `'path'` |
-| leaf, pose carrying a string `kind` | `'path'` | `'unknown'` |
-| leaf, `data.kind: 'rect'`, plain box pose | none | `'unknown'` |
-| leaf, `data.text` | none | `'text'` |
-| leaf, `data.image` | none | `'image'` |
-| leaf matching a consumer `routing` entry | none | the entry's name |
-| container | `'group'` | `'unknown'` |
-
-`describeKind` replaces the label for every node, containers included. A third classifier,
-`classifyKind` in `ui/SelectionPanel/model.ts`, answers `'group'` for a container and the routing
-entry otherwise. Making these one needs a decision on what the palette should print.
 
 ### K. Dead or vestigial (grep-verified)
 

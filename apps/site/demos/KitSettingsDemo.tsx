@@ -3,7 +3,11 @@ import { alignmentSnapSource } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
-import { Button, PrefsForm, Tree, type TreeNode, UnitField, uiKitSettingsSchema } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { UnitField } from '@weasel-js/ui/components/NumberField';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
+import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
+import { uiKitSettingsSchema } from '@weasel-js/ui/kit-settings';
 import { useState } from 'react';
 import s from './KitSettingsDemo.module.css';
 

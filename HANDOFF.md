@@ -30,17 +30,23 @@ Merged:
 - Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
   for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
   viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
+- Nothing outside labkit's passthrough imports the `@weasel-js/ui` barrel: five new subpaths
+  (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
+- A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
+  the command palette names it) and `SelectionPanel` (new core export `routeKind`).
+- A move, resize or rotate preview carries pose once, in the scene's overrides; the ghost and the
+  selection chrome read `effectivePose`, and the three handles drop `previewPose`.
+- forge's "ResizeObserver loop" error, raised on every forge page: labkit's `SidebarPanes` kept
+  observing a section bar after windease removed its panel. It now observes each bar from mount
+  to removal (a browser test mounts a whole `Lab`).
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
   `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
-  one shared reader or a lint rule (P3, "Release-gate & build hygiene").
+  one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
+  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call, all merged.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
-- ui subpaths for the eight barrel importers.
-- One kind classifier. Ruling: the routing kind is the only one; the selection label and
-  `SelectionPanel` read it.
-- forge's "ResizeObserver loop" error.
 
 ## State
 

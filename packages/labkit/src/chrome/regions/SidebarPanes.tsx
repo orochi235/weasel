@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type RefCallback, useCallback, useMemo, useState } from 'react';
 import { asNodeId, stripStrategy } from 'windease';
 import { Panel, Provider, StrategyRegistryProvider, Zone } from 'windease/react';
 import type {
@@ -19,12 +19,41 @@ const BAR = 32;
 
 const FREE = {};
 
+/**
+ * The section bars' height, and the ref each bar takes. A bar is watched from the commit that mounts it to the one
+ * that removes it: windease remounts panels on renders of its own, and an observer left on a removed bar reports
+ * it shrinking to nothing, which Chrome raises as a ResizeObserver loop error.
+ */
+function useBarHeight(): [number, RefCallback<HTMLDivElement>] {
+  const [bar, setBar] = useState(BAR);
+  const [observer] = useState(() =>
+    typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver((entries) => {
+          const h = Math.round(entries.at(-1)?.target.getBoundingClientRect().height ?? 0);
+          if (h) setBar(h);
+        }),
+  );
+  const ref = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (!el) return;
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h) setBar(h);
+      observer?.observe(el);
+      return () => observer?.unobserve(el);
+    },
+    [observer],
+  );
+  return [bar, ref];
+}
+
 /** One contribution as a pane of the stack. */
 function Pane<TCtx extends SidebarSlotContext>({
   contribution: c,
   ctx,
   order,
   bar,
+  barRef,
   collapsed,
   fills,
   height,
@@ -34,6 +63,7 @@ function Pane<TCtx extends SidebarSlotContext>({
   ctx: TCtx;
   order: number;
   bar: number;
+  barRef: RefCallback<HTMLDivElement>;
   collapsed: boolean;
   /** Takes the height the other panes leave, whatever a seam last gave it. */
   fills: boolean;
@@ -82,6 +112,7 @@ function Pane<TCtx extends SidebarSlotContext>({
       }}
     >
       <Section
+        barRef={barRef}
         title={item.title}
         stance={item.stance}
         tone={item.tone}
@@ -129,23 +160,8 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
   onHeightsChange,
   viewport,
 }: SidebarPanesProps<TCtx>) {
-  const root = useRef<HTMLDivElement>(null);
-  const [bar, setBar] = useState(BAR);
-  const count = contributions.length;
-  // Measured as it changes: a density switch resizes the bar without rendering this.
-  useLayoutEffect(() => {
-    const el = count > 0 ? root.current?.querySelector('.lk-sidebar-section__bar') : null;
-    if (!el) return;
-    const read = () => {
-      const h = Math.round(el.getBoundingClientRect().height);
-      if (h) setBar(h);
-    };
-    read();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(read);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [count]);
+  // Measured as it changes: a density switch resizes the bars without rendering this.
+  const [bar, barRef] = useBarHeight();
 
   const shown = contributions.filter(
     (c: RegionContribution<TCtx>) =>
@@ -157,7 +173,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
   const filler = shown.filter((c) => !c.render && !folded(c)).at(-1)?.id;
 
   return (
-    <div ref={root} className="lk-sidebar-panes">
+    <div className="lk-sidebar-panes">
       <Provider>
         <StrategyRegistryProvider strategies={STRATEGIES}>
           <Zone
@@ -175,6 +191,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
                 ctx={ctx}
                 order={order}
                 bar={bar}
+                barRef={barRef}
                 collapsed={!c.render && folded(c)}
                 fills={c.id === filler}
                 height={heights[c.id]}

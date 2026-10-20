@@ -5,7 +5,7 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  createScene, createTransformOp, defaultCommitAdapter, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
+  createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type Scene, type SelectionApi, type TransformFollower,
 } from '@weasel-js/core';
 import {
@@ -138,8 +138,8 @@ function setup() {
     }) as unknown as InvocationCtx;
     const handle = (moveAction.invoker as OngoingInvoker).start(at(false), undefined);
     handle.onMove!(at(true));
-    const ids = [...(handle.previewIds!() ?? [])];
-    const previews = new Map(ids.map((pid) => [pid, pathAnchorPoints(handle.previewPose!(pid) as PolygonPath)]));
+    const ids = [...(handle.previewIds!() ?? [])] as NodeId[];
+    const previews = new Map(ids.map((pid) => [pid, pathAnchorPoints(effectivePose(scene, scene.get(pid)!) as PolygonPath)]));
     handle.onEnd!(at(true), 'commit');
     return previews;
   };

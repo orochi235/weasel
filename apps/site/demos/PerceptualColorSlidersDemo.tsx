@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@weasel-js/ui';
+import { chromaAt, oklchToHex, type ChromaCurve } from '@weasel-js/ui/color';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';

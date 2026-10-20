@@ -9,14 +9,14 @@ import { composeAlphaFor } from '../sceneSlotWiring';
 import { useSceneAdapter } from '../useSceneAdapter';
 import type { SceneCanvasProps } from './props';
 import { useNodeAtPoint } from './useNodeAtPoint';
-import { useNodeKinds } from './useNodeKinds';
+import type { NodeKinds } from './useNodeKinds';
 import { useSceneSelectTool, type UseSceneSelectToolArgs } from './useSceneSelectTool';
 import { useOptionalViewRegistry } from '../viewRegistry';
 import { useViewLayerGate } from '../useViewLayerGate';
 
 type PickingProps<TData, TLayer extends string, TPose> = Pick<
   SceneCanvasProps<TData, TLayer, TPose>,
-  'geometry' | 'routing' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive' | 'isolatedGroup'
+  'geometry' | 'alphaFor' | 'layerVisibility' | 'layerOrder' | 'isPointerInteractive' | 'isolatedGroup'
 >;
 
 /**
@@ -30,10 +30,11 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   props: PickingProps<TData, TLayer, TPose>;
   viewRef: RefObject<View>;
   selectTool: UseSceneSelectToolArgs<TData, TLayer, TPose>['selectTool'];
+  kinds: NodeKinds<TData>;
 }) {
   const { scene, selection, descriptor, viewRef } = args;
-  const { geometry, routing, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
-  const { kindOf, kindOfNode } = useNodeKinds(scene, routing);
+  const { geometry, alphaFor, layerVisibility, layerOrder, isPointerInteractive } = args.props;
+  const { kindOf, kindOfNode } = args.kinds;
 
   // The painted alpha of a node in this view: the caller's `alphaFor` times any per-node
   // override alpha. The pick path reads the same number the painter does, or a node faded

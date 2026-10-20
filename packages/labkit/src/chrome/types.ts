@@ -1,5 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
-import type { StanceProps } from '@weasel-js/ui';
+import type { StanceProps } from '@weasel-js/ui/stance';
 import type { ReactNode } from 'react';
 import type { ResolvedConfig } from '../config/types';
 import type { ConfigField } from '../controls/types';

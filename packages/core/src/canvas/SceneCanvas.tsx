@@ -40,6 +40,7 @@ import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
+import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
@@ -70,9 +71,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
   const { viewRef } = viewState;
-  const selection = useCanvasSelection({
-    scene, supplied: props.selection, options: props.selectionOptions, selectable, describeKind: props.describeKind,
-  });
+  const kinds = useNodeKinds(scene, props.routing);
+  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
   const enabled = useEnabledFeatures(
     props.features, props.presetSource.named, viewport !== undefined, selectToolOpts?.rotate !== false,
   );
@@ -80,7 +80,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
   });
-  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults });
+  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds });
   const { adapter, boundsOf, planeOfNode } = picking;
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const tools = useSceneCanvasTools({

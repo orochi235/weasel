@@ -15,6 +15,7 @@ import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
 
@@ -214,7 +215,7 @@ describe('WeaselChart pipeline mode', () => {
       const x = Math.round((t.panX + (box.x + box.width * fx + dx) * t.zoom.x) * dpr);
       const y = Math.round((t.panY + (box.y + box.height * fy) * t.zoom.y) * dpr);
       await frame();
-      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
+      const gl = canvasGl(canvas);
       const px = new Uint8Array(4);
       gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
       return [...px];

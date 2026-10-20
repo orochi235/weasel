@@ -3,6 +3,7 @@
  * default absolute poses: the sibling's own children have to move with it,
  * in the drag's preview and in its commit.
  */
+import { heldPose } from '../testUtils';
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { moveAction } from './action';
@@ -48,7 +49,7 @@ describe('moveAction — layout drop shifting a sibling container', () => {
     const drag = { start: { x: 20, y: 20 }, current: { x: 150, y: 120 }, delta: { x: 130, y: 100 } };
     const handle: OngoingHandle = invoker.start(base as unknown as InvocationCtx, undefined);
     handle.onMove!({ ...base, world: drag.current, drag } as unknown as InvocationCtx);
-    expect(handle.previewPose!(member as string)).toEqual({ x: 110, y: 150, width: 10, height: 10 });
+    expect(heldPose(scene, member as string)).toEqual({ x: 110, y: 150, width: 10, height: 10 });
     handle.onEnd!({ ...base, world: drag.current, drag } as unknown as InvocationCtx, 'commit');
 
     expect(scene.get(sibling)!.pose).toEqual(shifted);
