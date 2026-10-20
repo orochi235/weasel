@@ -26,6 +26,17 @@
   opacity: 1;
 }
 
+/* Inside a contained portal the container is the viewport: the scrim covers it, and the box fits it. */
+.overlay[data-contained] {
+  position: absolute;
+  opacity: 1;
+}
+
+.overlay[data-contained] > .modal {
+  max-width: min(var(--wzl-dialog-max-width, 900px), calc(100% - 32px));
+  max-height: calc(100% - 32px);
+}
+
 .modal {
   background: var(--_s-fill);
   border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);

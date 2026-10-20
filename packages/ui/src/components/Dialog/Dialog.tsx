@@ -7,7 +7,8 @@ import {
   type ModalOverlayProps,
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { ContainedModal } from './ContainedModal';
 import { CloseButton } from '../CloseButton';
 import { type StanceProps, useStance } from '../stance';
 import s from './Dialog.module.css';
@@ -77,6 +78,7 @@ export function Dialog(props: DialogProps) {
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const containedRoot = useContainedRoot(portalContainer);
   const box = (close: () => void) => (
     <>
       {(title !== undefined || showClose) && (
@@ -100,6 +102,26 @@ export function Dialog(props: DialogProps) {
           {box(() => onOpenChange?.(false))}
         </RACDialog>
       </div>
+    );
+  }
+
+  if (containedRoot) {
+    return (
+      <ContainedModal
+        root={containedRoot}
+        isOpen={isOpen}
+        defaultOpen={rest.defaultOpen}
+        onOpenChange={onOpenChange}
+        isDismissable={rest.isDismissable}
+        isKeyboardDismissDisabled={rest.isKeyboardDismissDisabled}
+        overlayClassName={s.overlay}
+        modalClassName={[s.modal, className].filter(Boolean).join(' ')}
+        modalProps={stanced}
+      >
+        <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
+          {({ close }) => box(close)}
+        </RACDialog>
+      </ContainedModal>
     );
   }
 

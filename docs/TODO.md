@@ -552,6 +552,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P2) The Prefs rail dialog overflows its own box below about 700px wide.** Its pane's fields
+  keep their width, so the Zoom step field and the sliders run past the box's right edge and are
+  cut off: seen 2026-10-20 in `Prefs › Rail In Dialog` in a 698px forge trial, where the box itself
+  fit at 664px. A window that narrow cuts it off the same way. The rail or the pane needs to give
+  way: narrow the rail, or let the field column shrink.
+
 - **(P3) A baseline pref whose key and then name are both changed in the schema editor reads as
   new.** The editor calls a node new when the Changes list shows it as an addition. A key edited
   in the Key field shows as a move while the name stands; rename it afterward and the two can no
@@ -837,11 +843,11 @@ only story runner in the repo.
   same reason.
 
 - **(P2) The Accessibility panel blames the workshop for a story taller than its trial.** axe
-  audits the trial host (`.fg-story`, which scrolls), not just the story, so any story that
-  overflows reports `scrollable-region-focusable` (serious) against `.fg-story` itself: seen
-  2026-10-20 on `ColorRamp › Each Interpolation Space`. Either the host takes `tabindex="0"` while it
-  overflows, as a scroll pane should, or `runAxe` audits the host's children. The first fixes the
-  workshop's own keyboard access too.
+  audits the trial host, scroller included, so any story that overflows reports
+  `scrollable-region-focusable` (serious) against forge's own `.fg-story__scroll`: seen
+  2026-10-20 on `ColorRamp › Each Interpolation Space`. Either the scroller takes `tabindex="0"` while
+  it overflows, as a scroll pane should, or `runAxe` audits only the story inside it. The first fixes
+  the workshop's own keyboard access too.
 
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),

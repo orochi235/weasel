@@ -44,6 +44,19 @@ const VARS_SETTLE_MS = 100;
 const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
 
 /**
+ * The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a document of
+ * its own. Overlays portal to the host, outside the scroller, so they stay put as it scrolls, and a modal takes the
+ * host for its viewport.
+ */
+function StoryContent({ host, children }: { host: HTMLElement; children: ReactNode }) {
+  return (
+    <LabBoundary>
+      <OverlayPortalProvider container={host} contained>{children}</OverlayPortalProvider>
+    </LabBoundary>
+  );
+}
+
+/**
  * One story's box in the workshop document: what a frame document was, as an element. It applies the globals to
  * itself, keeps its CSS variable overrides on itself, contains fixed-position descendants and portals, reports its
  * vars and audits to the trial's frame registry, and unmounts its content while out of view.
@@ -175,13 +188,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-pending={pending || undefined}
     >
       <div className="fg-story__scroll">
-        {host && inView ? (
-          // The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a
-          // document of its own. Overlays portal to the host, outside the scroller, so they stay put as it scrolls.
-          <LabBoundary>
-            <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
-          </LabBoundary>
-        ) : null}
+        {host && inView ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}
       </div>
     </div>
   );
