@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, createTransformOp, documentPose, type RectPose, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
-import { edgeLabelSpec } from '../edgeLabel';
+import type { RowTextStyle } from '../body';
+import { edgeLabelSpec, labelSize } from '../edgeLabel';
 import { diagramLabelOf, type DiagramLabel } from '../labelTrait';
 import { installLabelPlacement } from './install';
 
@@ -80,5 +81,18 @@ describe('label placement in a scene', () => {
     placement.dispose();
     move('c', { x: 230, y: -10, width: 40, height: 24 });
     expect(labelOf(scene).placed).toBeUndefined();
+  });
+
+  it('sizes a label to the text an edit gives it, in the edit’s own entry', () => {
+    const { scene } = load();
+    const node = scene.get('ab/label' as never)!;
+    const depth = scene.historyEntries().length;
+    scene.update('ab/label' as never, { data: { ...(node.data as object), text: 'a much longer note' } });
+    expect(scene.historyEntries().length).toBe(depth + 1);
+    const { style } = node.data as { style: RowTextStyle };
+    const pose = scene.get('ab/label' as never)!.pose;
+    expect({ width: pose.width, height: pose.height }).toEqual(labelSize('a much longer note', style));
+    scene.undo();
+    expect(scene.get('ab/label' as never)!.pose.width).toBe(node.pose.width);
   });
 });

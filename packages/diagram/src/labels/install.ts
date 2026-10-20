@@ -15,6 +15,7 @@ import {
   type SceneEditSummary,
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
+import type { MeasureRowText } from '../body';
 import { diagramContainerOf } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramGroupOf } from '../group';
@@ -22,6 +23,7 @@ import { diagramLabelOf, type DiagramLabel, type LabelSpot } from '../labelTrait
 import type { Bounds } from '../outline';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { diagramNodeOf, type DiagramNodeReader } from '../trait';
+import { labelFitOps } from './fit';
 import { placeLabels, type PlaceLabel, type PlaceLabelsOptions, type PlaceRoute } from './place';
 import { labelCenter } from './station';
 
@@ -30,6 +32,8 @@ export interface LabelPlacementOptions<TPose> extends PlaceLabelsOptions {
   geometry?: PoseDescriptor<TPose>;
   /** How a node's diagram trait is read. Default its own `data.diagram`. */
   read?: DiagramNodeReader;
+  /** Sizes a label to the text an edit gives it. Default a per-character estimate. */
+  measure?: MeasureRowText;
 }
 
 /** Placement installed on a scene. */
@@ -39,6 +43,7 @@ export interface LabelPlacement {
 }
 
 type AnyScene = Scene<unknown, string, unknown>;
+type Size = { width: number; height: number };
 type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 
 /** The scene as placement reads it. */
@@ -56,7 +61,9 @@ function pointsOf(path: Path | null): Vec2[] {
   return out;
 }
 
-function read(sc: AnyScene, geometry: PoseDescriptor<unknown>, reader: DiagramNodeReader | undefined): Reading {
+function read(
+  sc: AnyScene, geometry: PoseDescriptor<unknown>, reader: DiagramNodeReader | undefined, sizes?: ReadonlyMap<string, Size>,
+): Reading {
   const out: Reading = { shapes: [], routes: new Map(), labels: [] };
   for (const node of sc.renderOrderNodes()) {
     const ends = Array.isArray(node.dependsOn) ? node.dependsOn as readonly string[] : [];
@@ -68,7 +75,7 @@ function read(sc: AnyScene, geometry: PoseDescriptor<unknown>, reader: DiagramNo
     }
     const placement = diagramLabelOf(node);
     if (placement !== null) {
-      const { width, height } = geometry.getBounds(node.pose);
+      const { width, height } = sizes?.get(node.id) ?? geometry.getBounds(node.pose);
       if (ends[0] !== undefined) out.labels.push({ id: node.id, edge: ends[0], placement, size: { width, height }, node });
       continue;
     }
@@ -173,7 +180,8 @@ function withSpot(data: unknown, label: DiagramLabel, spot: LabelSpot | undefine
   return { ...(data as Record<string, unknown>), diagram: { ...diagram, label: spot === undefined ? rest : { ...rest, placed: spot } } };
 }
 
-/** The data writes that place the labels `summary`'s edit covered, skipping any that stay put. */
+/** The writes that size each label to its edited text and place the labels
+ *  `summary`'s edit covered, skipping any that stay put. */
 function placementOps<TPose>(
   scene: Scene<unknown, string, TPose>,
   summary: SceneEditSummary,
@@ -182,14 +190,15 @@ function placementOps<TPose>(
 ): Op[] {
   const sc = scene as unknown as AnyScene;
   const geometry = (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
-  const reading = read(sc, geometry, opts.read);
+  const fit = labelFitOps(sc, summary, opts.measure);
+  const reading = read(sc, geometry, opts.read, fit.sizes);
   const moving = movingOf(reading, summary, seen, opts.gap ?? 2);
   seen.shapes = new Map(reading.shapes.map((s) => [s.id, s.box]));
   seen.routes = new Map([...reading.routes.values()].map((r) => [r.id, r.points]));
-  if (moving.size === 0) return [];
+  if (moving.size === 0) return fit.ops;
   const labels = reading.labels.map((l) => ({ ...l, moving: moving.has(l.id) }));
   const placed = placeLabels({ shapes: reading.shapes, routes: [...reading.routes.values()], labels }, opts);
-  const ops: Op[] = [];
+  const ops: Op[] = [...fit.ops];
   for (const l of labels) {
     if (!placed.has(l.id)) continue;
     const spot = placed.get(l.id) ?? undefined;
