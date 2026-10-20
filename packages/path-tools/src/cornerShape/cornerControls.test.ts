@@ -18,7 +18,7 @@ describe('cornerControlsState', () => {
   });
 
   it('shows a parameter between the keywords with no keyword pressed', () => {
-    expect(cornerControlsState(path(), new Set([2])).values).toEqual({ count: 1, shape: null, k: 0.5, radius: 20 });
+    expect(cornerControlsState(path(), new Set([2])).values).toEqual({ count: 1, shape: 'none', k: 0.5, radius: 20 });
   });
 
   it('marks the fields the selected corners disagree on', () => {
@@ -28,7 +28,7 @@ describe('cornerControlsState', () => {
 
   it('counts no corners for no selection, and shows a sharp corner with no shape', () => {
     expect(cornerControlsState(path(), new Set()).values.count).toBe(0);
-    expect(cornerControlsState(path(), new Set([3])).values).toEqual({ count: 1, shape: null, radius: 0 });
+    expect(cornerControlsState(path(), new Set([3])).values).toEqual({ count: 1, shape: 'none', radius: 0 });
   });
 
   it('pins square and notch to the ends of the parameter slider', () => {
