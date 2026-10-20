@@ -7,6 +7,7 @@ import {
   WeaselProvider,
   type RectPose,
   type CanvasSize,
+  type Scene,
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
@@ -17,7 +18,7 @@ import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramV
 import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
-import { useLiveLayout } from './live';
+import { useLiveLayout, type LiveLayout } from './live';
 import { useMirroredSelection } from './mirrorSelection';
 import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -117,31 +118,7 @@ function Inner({
     if (run !== null) live.restart();
   }, [run, live]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useImperativeHandle(apiRef, () => ({
-    layout: (algorithm = 'force') => setRun({ algorithm }),
-    live,
-    worldAt: (clientX, clientY) => {
-      const [x, y] = canvasRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY];
-      return { x, y };
-    },
-    visible: () => {
-      const canvas = canvasRef.current;
-      const r = canvas?.element?.getBoundingClientRect();
-      if (canvas == null || r === undefined || r.width === 0 || r.height === 0) return null;
-      const [x0, y0] = canvas.clientToWorld(r.left, r.top);
-      const [x1, y1] = canvas.clientToWorld(r.right, r.bottom);
-      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
-    },
-    rectOf: (id) => {
-      const canvas = canvasRef.current;
-      const world = worldRectOf(scene, id);
-      const r = canvas?.element?.getBoundingClientRect();
-      if (canvas == null || world === null || r === undefined) return null;
-      const rect = screenRectOf(world, canvas.getView());
-      return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
-    },
-    subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
-  }), [live, scene]);
+  useDiagramApi(apiRef, canvasRef, scene, live, setRun);
 
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
@@ -189,6 +166,41 @@ function Inner({
 }
 
 const NO_OVERLAYS: readonly never[] = [];
+
+/** What a `ref` on the view holds. */
+function useDiagramApi(
+  apiRef: Ref<DiagramViewApi>,
+  canvasRef: RefObject<SceneCanvasApi | null>,
+  scene: Scene<DiagramSceneData, 'main', RectPose>,
+  live: LiveLayout,
+  setRun: (run: { algorithm: DiagramLayout }) => void,
+): void {
+  useImperativeHandle(apiRef, () => ({
+    layout: (algorithm = 'force') => setRun({ algorithm }),
+    live,
+    worldAt: (clientX, clientY) => {
+      const [x, y] = canvasRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY];
+      return { x, y };
+    },
+    visible: () => {
+      const canvas = canvasRef.current;
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || r === undefined || r.width === 0 || r.height === 0) return null;
+      const [x0, y0] = canvas.clientToWorld(r.left, r.top);
+      const [x1, y1] = canvas.clientToWorld(r.right, r.bottom);
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    },
+    rectOf: (id) => {
+      const canvas = canvasRef.current;
+      const world = worldRectOf(scene, id);
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || world === null || r === undefined) return null;
+      const rect = screenRectOf(world, canvas.getView());
+      return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
+    },
+    subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
+  }), [canvasRef, live, scene, setRun]);
+}
 
 /** Apply each new fit while the view is still the last one applied. */
 function useRefit(canvasRef: RefObject<SceneCanvasApi | null>, fit: View | undefined): void {

@@ -15,6 +15,7 @@ import {
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/react';
 import { placeRect, type Placement } from '@weasel-js/geom';
 import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { diagramEdgeOf } from './edgeTrait';
@@ -85,8 +86,7 @@ export function useOverlayPlacement(
   overlays: readonly DiagramOverlay[],
 ): (key: string) => (el: HTMLElement | null) => void {
   const elements = useRef(new Map<string, HTMLElement>());
-  const current = useRef(overlays);
-  current.current = overlays;
+  const current = useLatest(overlays);
 
   const placeAll = useCallback(() => {
     const canvas = canvasRef.current;
@@ -103,7 +103,7 @@ export function useOverlayPlacement(
       const anchor = { ...rect, x: rect.x + surface.offsetLeft, y: rect.y + surface.offsetTop };
       place(el, overlay, anchor, surface.offsetWidth, surface.offsetHeight);
     }
-  }, [canvasRef, scene]);
+  }, [canvasRef, scene, current]);
 
   useLayoutEffect(() => {
     placeAll();
