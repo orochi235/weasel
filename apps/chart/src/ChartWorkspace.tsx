@@ -8,6 +8,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
+import { useExportCommands } from './exportCommands';
 import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
@@ -63,6 +64,7 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const [view, setView] = useState<View>(NO_VIEW);
   const pages = useChartPages(scene, view, dims, setView);
+  useExportCommands(scene, pages);
   const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const { gridLayer, snap, features } = useChartSnap(useGridPage(pages), theme.page);
