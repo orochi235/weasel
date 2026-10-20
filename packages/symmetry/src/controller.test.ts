@@ -200,7 +200,7 @@ describe('in a scene that composes frames', () => {
 describe('the guide\'s angle knob', () => {
   const guideOf = (sym: ReturnType<typeof setup>['sym']) => {
     let layer: RenderLayer<unknown> | null = null;
-    sym.contribution.attach!({ registerLayer: (l: RenderLayer<unknown>) => { layer = l; return () => {}; }, requestRedraw: () => {} } as never);
+    sym.contribution.attach!({ registerLayer: (l: RenderLayer<unknown>) => { layer = l; return () => {}; }, requestRedraw: () => {} } as never, undefined as never);
     return layer! as RenderLayer<unknown>;
   };
   const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
