@@ -27,12 +27,14 @@ Merged:
 - The HUD's every-frame text makes about 38% less garbage: 11.3 ms a frame at 5,000 glyphs on
   msb-uai became 8.4, against the DOM's 6.1, so the DOM still wins and the TODO entry stays, rewritten
   around the layout's own per-glyph output (`tests/perf/README.md`, "What the HUD allocates").
+- Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
+  for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
+  viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
 - `apps/chart/src/hops.browser.test.tsx` polls its pixels: it failed once in a full run of `main`
   under load after the line-jumps merge, and passed three of three alone.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
 - ui subpaths for the eight barrel importers.
-- Prefs Rail Filterable's fleet timeout.
 - One kind classifier. Ruling: the routing kind is the only one; the selection label and
   `SelectionPanel` read it.
 - forge's "ResizeObserver loop" error.
