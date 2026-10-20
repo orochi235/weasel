@@ -1038,7 +1038,9 @@ only story runner in the repo.
   to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug
   that Node 24.22.0 fixes, and every fleet node's nvm resolves `.nvmrc`'s `24` to 24.22.0 since
   2026-10-19. The flag stays because the same crash is reported on Node 26.7 and 26.8.1, which ad-hoc
-  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix.
+  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix. The fix is the
+  backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
+  2026-10-19).
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
