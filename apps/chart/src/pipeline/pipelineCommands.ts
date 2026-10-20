@@ -2,13 +2,14 @@ import { ActionDisabledReason, useCommand } from '@weasel-js/core';
 import { downloadBlob, pickFile } from '@editor/index';
 import { run, type ChartMenuContributions } from '../menuBar';
 import { LOOK_MENU } from './pipelineLook';
+import { RUN_MENU, SHOW_MENU } from './pipelineRun';
 import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
 
 export const PIPELINE_ACTIONS = {
   new: 'pipeline.new', open: 'pipeline.open', save: 'pipeline.save', undo: 'pipeline.undo', redo: 'pipeline.redo',
 } as const;
 
-/** Pipeline mode's File, Edit, and View menus. Delete is the kit action the editor's canvas registers, which removes stages and wires alike. */
+/** Pipeline mode's File, Edit, View, and Run menus. Delete is the kit action the editor's canvas registers, which removes stages and wires alike. */
 export const PIPELINE_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: PIPELINE_ACTIONS.new, open: PIPELINE_ACTIONS.open }),
@@ -18,7 +19,8 @@ export const PIPELINE_MENUS: ChartMenuContributions = {
     history: run({ undo: PIPELINE_ACTIONS.undo, redo: PIPELINE_ACTIONS.redo }),
     remove: run({ delete: 'delete' }),
   },
-  view: LOOK_MENU,
+  view: { ...LOOK_MENU, ...SHOW_MENU },
+  run: RUN_MENU,
 };
 
 const can = (yes: boolean): true | ActionDisabledReason => (yes ? true : ActionDisabledReason.NotApplicable);

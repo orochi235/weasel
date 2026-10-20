@@ -123,6 +123,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
       dropStepping();
     },
     setSources(sources) {
+      if (sources === options.sources) return;
       options = { ...options, sources };
       dropStepping();
     },
