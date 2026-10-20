@@ -3,7 +3,8 @@
 // sessions' edits to main don't reload the browser tab) to a commit. Run by the pre-push hook for
 // every push to main; `npm run view:advance [<rev>]` does it by hand, defaulting to main.
 //
-// When package-lock.json differs between the old and new commits it runs `npm ci` there, then
+// When package-lock.json differs between the old and new commits it runs `npm ci` there, without
+// the root `prepare` build (draw aliases every package to its source), then
 // starts draw again from the worktree; wake replaces the copy already running.
 import { execFileSync, spawn } from 'node:child_process';
 import { closeSync, existsSync, openSync } from 'node:fs';
@@ -40,7 +41,7 @@ const lockChanged = execFileSync('git', ['-C', view, 'diff', '--name-only', befo
 if (!lockChanged) process.exit(0);
 
 log('package-lock.json changed; npm ci');
-execFileSync('npm', ['ci', '--no-audit', '--no-fund'], { cwd: view, stdio: 'inherit' });
+execFileSync('npm', ['ci', '--no-audit', '--no-fund', '--ignore-scripts'], { cwd: view, stdio: 'inherit' });
 
 const out = openSync(join(common, 'view-draw.log'), 'w');
 spawn('npm', ['run', 'dev:draw'], { cwd: view, detached: true, stdio: ['ignore', out, out] }).unref();
