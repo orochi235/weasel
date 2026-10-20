@@ -1,8 +1,8 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
-> acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
-> A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. E, F, G, I, J, and N have landed and are deleted, F except for the item still listed
+> acted on. Sections B (built-in tool registry assembly) and C have landed and are deleted from here,
+> and so have A and D except for the items still listed under them, which were checked against the code
+> and are written as found. E, F, G, I, J, and N have landed and are deleted, F except for the item still listed
 > under it, and H has landed except for the item still listed under it. Every other lettered
 > section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
@@ -39,24 +39,6 @@ shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
 - **`useEditAnchorsDepSource` still takes its state as an optional argument.** It is not a public
   export, but `usePenTool.test.tsx` and `editAnchors.test.tsx` call it without one, and it then makes
   a state of its own.
-
-### C. `selectTool.rotate === false` is still decided three times
-
-The preset table landed: `FEATURE_PRESETS` in `SceneCanvas/features.ts` holds each preset's actions,
-tools, ambient entry, and chrome. What is left is the rotate opt-out, which was pinned and not
-collapsed, because the three sites do not agree and the difference can be observed
-(`SceneCanvas.rotateOff.test.tsx`, run against the code):
-
-- `useSceneStandardActions` mutes the `rotate` action. That also covers a tool that binds `rotate`, and it
-  yields to a consumer's own `actions.rotate`, which stays registered and merged.
-- `chromeRules` hides `selection.rotation-handle`, and a consumer `chromeVisibility` rule can put it back.
-- `useSceneCanvasTools` turns `false` into `undefined` for the rotate binding, and the rotate preset's ambient entry stays installed.
-  With the handle put back, a drag on it resolves the `rotate` binding, finds the action muted, and the
-  dispatcher warns `binding resolved actionId "rotate" which has no registered action`.
-
-Dropping `rotate` from the resolved preset set would remove that warning, register `rotate` again for
-a tool that binds it, and leave a partial `actions.rotate` with no default to merge onto. Each is a
-behavior change that needs a decision.
 
 ### D. Left over from the chrome-caps rule context
 
