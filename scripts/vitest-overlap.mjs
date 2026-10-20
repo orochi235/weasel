@@ -4,13 +4,16 @@
 // alone would leave the browser project waiting for every jsdom file. Takes vitest's own arguments.
 //
 // WEASEL_JSDOM_WORKERS sets the other process's workers (default 50%): at the full count the
-// browser tests' clicks and screenshots stall on a busy node and time out.
+// browser tests' clicks and screenshots stall on a busy node and time out. On a node already busy
+// before the run, they stall at any count, so the run keeps to one process there; WEASEL_OVERLAP=1
+// or 0 skips the check.
 import { spawn } from 'node:child_process';
 import { writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { mergeProgress } from './lib/merge-progress.mjs';
+import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 
 const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
@@ -23,13 +26,22 @@ const common = args.filter((a) => !isProject(a));
 const browser = projects.filter((a) => a === '--project=browser');
 const rest = projects.filter((a) => a !== '--project=browser');
 
+const overlap = async () => {
+  if (!browser.length || !rest.length) return false;
+  const forced = process.env.WEASEL_OVERLAP;
+  if (forced === '0' || forced === '1') return forced === '1';
+  const { ok, reading } = roomToOverlap(await sampleLoad());
+  console.log(`vitest-overlap: ${reading}; ${ok ? 'running the browser project beside the rest' : 'running it after the rest, in one process'}`);
+  return ok;
+};
+
 const runs = [];
-if (rest.length) {
+if (!(await overlap())) runs.push(args);
+else {
   const workers = common.some((a) => a.startsWith('--maxWorkers')) ? [] : [`--maxWorkers=${process.env.WEASEL_JSDOM_WORKERS || '50%'}`];
-  runs.push([...common, ...rest, ...(browser.length ? workers : [])]);
+  // --passWithNoTests: a branch run can select no browser file at all.
+  runs.push([...common, ...rest, ...workers], [...common, ...browser, '--passWithNoTests']);
 }
-// --passWithNoTests: a branch run can select no browser file at all.
-if (browser.length) runs.push([...common, ...browser, ...(rest.length ? ['--passWithNoTests'] : [])]);
 
 // The protocol channel onto reads; run without onto, it is closed and stdout stands in, as the
 // reporter itself does.
