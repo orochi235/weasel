@@ -1318,11 +1318,6 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
-  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
-  summary prints the label, so making them one needs a decision on what it should say. Left open by
-  the selection pass.
-
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.

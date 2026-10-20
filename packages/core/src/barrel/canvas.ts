@@ -67,6 +67,7 @@ export { useSceneAdapter } from '../canvas/useSceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {
   createNodeRouting,
+  routeKind,
   type NodeRoutingEntry,
   type NodeRouting,
   type RoutedNode,

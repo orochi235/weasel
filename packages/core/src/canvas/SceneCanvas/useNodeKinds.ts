@@ -3,6 +3,11 @@ import { createNodeRouting, type NodeRoutingEntry } from 'core/scene/NodeRouting
 import type { NodeId, Scene } from 'core/scene/types';
 import { inferredNodeRouting } from './defaultNodeRouting';
 
+export interface NodeKinds<TData> {
+  kindOf: ((node: { kind: string; data: TData }) => string) | undefined;
+  kindOfNode: ((id: string) => string | undefined) | undefined;
+}
+
 /**
  * The canvas's routing-trait classifier, by node data and by node id, so
  * `target: 'kind:text'` on a binding speaks the vocabulary of `Hit.kind`.
@@ -13,10 +18,7 @@ import { inferredNodeRouting } from './defaultNodeRouting';
 export function useNodeKinds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   routing: readonly NodeRoutingEntry[] | undefined,
-): {
-  kindOf: ((node: { kind: string; data: TData }) => string) | undefined;
-  kindOfNode: ((id: string) => string | undefined) | undefined;
-} {
+): NodeKinds<TData> {
   const kindOf = useMemo(() => {
     const effective = routing === undefined ? inferredNodeRouting : routing;
     if (effective.length === 0) return undefined;
