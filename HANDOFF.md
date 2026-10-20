@@ -56,6 +56,10 @@ Merged:
 - Both consumer smoke tests CI runs pass again (both failed on `main`; 45 packages, rig included,
   run on keiei). Filed as a P2: the fleet gate skips every CI step after the build, the smokes
   among them, so nothing checks them before a merge.
+- The diagram containers double-click test that failed only in full runs: its helper waited a
+  frame between clicks, and under load the gap passed the 600 ms double-click window (reproduced
+  with a 650 ms stall). Filed from it: the window is timed when a click is handled, not when it
+  happened (P3, "Tools & gestures").
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
