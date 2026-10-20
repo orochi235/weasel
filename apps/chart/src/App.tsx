@@ -1,3 +1,4 @@
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import type { EditorLook } from '@weasel-js/diagram/effect';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo, useState, type ReactElement } from 'react';
@@ -27,6 +28,7 @@ export function App(): ReactElement {
     <div className="wc-app" data-mode={mode}>
       <MenuBar schema={menuBar} className="wc-menubar" />
       {mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace pipeline={pipeline} look={look} setLook={setLook} />}
+      <ContextMenuHost />
     </div>
   );
 }

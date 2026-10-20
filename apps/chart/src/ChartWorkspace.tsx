@@ -12,6 +12,8 @@ import {
   CHART_LAYERS, CHART_PAGE, CHART_PAGE_COLOR, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
+import { ChartPageStrip } from './pages/ChartPageStrip';
+import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
@@ -29,7 +31,9 @@ const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
   const [initial] = useState(loadChartSession);
-  const scene = useScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial });
+  const scene = useScene<ChartData, ChartLayer, ChartPose>({
+    systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial.specs, doc: initial.doc,
+  });
   const selection = useSelection({ mode: 'multi', scene });
   useSessionPersistence(scene, SESSION);
   useChartCommands(scene);
@@ -41,8 +45,9 @@ export function ChartWorkspace(): ReactElement {
   const attachHost = useCallback((el: HTMLDivElement | null) => { hostRef.current = el; setHost(el); }, []);
   const dims = useCanvasSize(hostRef);
   const [view, setView] = useState<View>(NO_VIEW);
-  const recenter = usePageFit(dims, 'chart', CHART_PAGE, setView);
-  const paperLayer = usePaperLayer(CHART_PAGE, CHART_PAGE_COLOR);
+  const pages = useChartPages(scene, view, dims, setView);
+  const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
+  const paperLayer = usePaperLayer(pages.placed, CHART_PAGE_COLOR);
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
@@ -63,33 +68,36 @@ export function ChartWorkspace(): ReactElement {
         {tools && <ToolPalette tools={tools} include={isPaletteTool} orientation="horizontal" />}
         {tools && <StencilPanel tools={tools} />}
       </Sidebar>
-      <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
-        {dims.width > 0 && dims.height > 0 && (
-          <SceneCanvas<ChartData, ChartLayer, ChartPose>
-            aria-label="Chart"
-            ref={setCanvas}
-            features={FEATURES}
-            claimKeys
-            scene={scene}
-            selection={selection}
-            width={dims.width}
-            height={dims.height}
-            view={view}
-            onViewChange={setView}
-            viewport={{ recenter }}
-            tools={diagram.tools}
-            selectTool={selectTool}
-            ambient={diagram.ambient}
-            ingestion={INGESTION}
-            onToolsCreated={setTools}
-            alphaFor={alphaFor}
-            layers={{ paper: { layer: paperLayer, before: 'scene' } }}
-          >
-            <StencilInsertPublisher />
-            <WaypointFollowerPublisher scene={scene} />
-            <TextEditDepPublisher edit={textEdit} />
-          </SceneCanvas>
-        )}
+      <div className="wc-stage">
+        <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
+          {dims.width > 0 && dims.height > 0 && (
+            <SceneCanvas<ChartData, ChartLayer, ChartPose>
+              aria-label="Chart"
+              ref={setCanvas}
+              features={FEATURES}
+              claimKeys
+              scene={scene}
+              selection={selection}
+              width={dims.width}
+              height={dims.height}
+              view={view}
+              onViewChange={setView}
+              viewport={{ recenter }}
+              tools={diagram.tools}
+              selectTool={selectTool}
+              ambient={diagram.ambient}
+              ingestion={INGESTION}
+              onToolsCreated={setTools}
+              alphaFor={alphaFor}
+              layers={{ paper: { layer: paperLayer, before: 'scene' } }}
+            >
+              <StencilInsertPublisher />
+              <WaypointFollowerPublisher scene={scene} />
+              <TextEditDepPublisher edit={textEdit} />
+            </SceneCanvas>
+          )}
+        </div>
+        <ChartPageStrip pages={pages} />
       </div>
     </div>
   );

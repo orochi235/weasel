@@ -39,6 +39,8 @@ export interface UseReorderDragListOptions {
    *  rows in a group of its own), so each one's children are rows of this
    *  list. */
   groupSelector?: string;
+  /** Which way the rows run: `'y'`, a column, by default; `'x'` for a row of tabs. */
+  axis?: 'x' | 'y';
 }
 
 /** Modifier keys held when a press began. */
@@ -168,7 +170,7 @@ function isNoopDrop(items: readonly ReorderItem[], draggedIds: readonly string[]
 }
 
 /**
- * Drag-to-reorder for a vertical list of rows. Dragging a row that is part of
+ * Drag-to-reorder for a list of rows, a column by default or a row with `axis: 'x'`. Dragging a row that is part of
  * the current selection drags the whole selection; dragging any other row
  * drags just that row. Locked rows can neither be dragged nor crossed by a
  * drop. A drop that would leave a contiguous block where it already is does
@@ -192,16 +194,18 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
 
   useEffect(() => () => { dragRef.current?.cancel(); }, []);
 
-  const computeTargetIndex = useCallback((clientY: number, sourceIndex: number): number => {
+  const computeTargetIndex = useCallback((client: { clientX: number; clientY: number }, sourceIndex: number): number => {
+    const across = optsRef.current.axis === 'x';
     const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
     if (!c) return lo;
     const rows = rowElements(c, optsRef.current);
     const flat: DropRow[] = rows.map((row, i) => {
       const r = row.getBoundingClientRect();
-      return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top: r.top, height: r.height };
+      const [top, height] = across ? [r.left, r.width] : [r.top, r.height];
+      return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top, height };
     });
-    const raw = resolveDrop(flat, { x: 0, y: clientY }).target.index;
+    const raw = resolveDrop(flat, { x: 0, y: across ? client.clientX : client.clientY }).target.index;
     return Math.max(lo, Math.min(raw, hi));
   }, [optsRef]);
 
@@ -246,15 +250,15 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         : optsRef.current.threshold,
       onActivate: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
-        targetIndex = computeTargetIndex(ev.clientY, index);
+        targetIndex = computeTargetIndex(ev, index);
         setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onMove: (ev) => {
-        targetIndex = computeTargetIndex(ev.clientY, index);
+        targetIndex = computeTargetIndex(ev, index);
         setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
       },
       onCommit: (ev) => {
-        const drop = computeTargetIndex(ev.clientY, index);
+        const drop = computeTargetIndex(ev, index);
         if (!isNoopDrop(optsRef.current.items, draggedIds, drop)) {
           optsRef.current.onReorder(draggedIds, drop);
         }

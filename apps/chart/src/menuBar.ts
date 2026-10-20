@@ -8,6 +8,7 @@ export interface ChartMenuContributions {
   edit?: MenuRuns;
   view?: MenuRuns;
   format?: MenuRuns;
+  page?: MenuRuns;
   mode?: MenuRuns;
 }
 
@@ -25,6 +26,7 @@ export function chartMenuBar(contributions: ChartMenuContributions = {}): PrefGr
     edit: menu('Edit', 'e', contributions.edit ?? {}),
     ...(contributions.view !== undefined ? { view: menu('View', 'v', contributions.view) } : {}),
     ...(contributions.format ? { format: menu('Format', 'o', contributions.format) } : {}),
+    ...(contributions.page ? { page: menu('Page', 'p', contributions.page) } : {}),
     mode: menu('Mode', 'm', contributions.mode ?? {}),
   }, { as: 'bar' });
 }

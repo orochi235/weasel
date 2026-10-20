@@ -20,8 +20,7 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 
 | # | Piece | Core foundation it adds | Needs |
 |---|---|---|---|
-| 3 | Multiple pages | scene document values | — |
-| 4 | Themes | — | 3 (document values) |
+| 4 | Themes | — | — |
 | 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | — |
 | 6 | Obstacle-avoiding routing | scene edit passes | 5 |
 
@@ -31,68 +30,6 @@ Every piece also: writes `patch` changesets; keeps files under 400 lines and fun
 (`npm run check:size`); exports only public surface to the app; updates the diagram README's
 editing section and `docs/TODO.md` in its merge; and, when it merges, deletes its own section of
 this doc (the doc is deleted with the last piece).
-
-## 3. Multiple pages
-
-### What the user sees
-
-A strip of page tabs under the canvas: click a tab to fit the view to that page, double-click to
-rename, drag to reorder, + to add, context menu to delete or set the size. Page › Page Setup picks a
-size (Letter, Legal, Tabloid, A4, A3, each portrait or landscape, or custom). Page Up and Page Down
-step between pages. Pages sit side by side in one world, as `core/pages` already lays them out, so
-one scene, one view, and one history serve them all. The tab of the page most of the view shows is
-lit.
-
-A shape belongs to the page its bounds overlap most (`pageOfBounds`). Reordering or resizing pages
-moves each page's shapes with it. Deleting a page deletes what is on it and every connector attached
-to that, as one undo entry.
-
-**Connectors may cross pages and draw across the gap (2026-10-19)**: in one world nothing stops
-them, and off-page reference markers are third-arc work. **Shapes in the gap belong to no page and
-stay put when pages move (2026-10-19).**
-
-### Core foundation: scene document values
-
-Pages, page layout, and later the theme are document state that is not a node. Core has no place
-for it: `SerializedScene` holds layers and nodes only, and `registerOp` records history without
-serializing.
-
-- `packages/core/src/core/scene/docValues.ts`: `Scene.doc: SceneDoc` with `get<T>(key)`,
-  `set(key, value | undefined)`, and `keys()`. A `set` is a scene mutation: undoable, part of an
-  enclosing `batch`, elided when the value is deep-equal, and heard by `subscribe`.
-- `SerializedScene.doc?: Readonly<Record<string, unknown>>` (JSON values only; `version` stays 1,
-  since the field is additive), `docFromSnapshot(json)` beside `nodeSpecsFromSnapshot`, and
-  `useScene({ doc })` for the initial values.
-- Keys are namespaced by owner: `core:pages`, `diagram:theme`.
-
-### Engine surface
-
-- `packages/core/src/core/pages/pageEdits.ts`, exported from `barrel/viewport.ts`:
-  `PagesDoc { pages: Page[]; layout?: PageLayoutOptions }`, `PAGES_DOC_KEY = 'core:pages'`,
-  `pagesOf(scene) → PagesDoc | null`, `pageMembers(scene, placed) → Map<pageId, NodeId[]>` (roots
-  only; nodes with `dependsOn` follow their dependencies), and
-  `setPages(scene, next, label)`, which moves each page's members by the change in their page's
-  place and writes the doc value in one batch. `addPage`, `removePage`, `movePage`, `resizePage`,
-  and `renamePage` are built on it. Members move with their descendants (piece 5 relies on this).
-- `PageTabs` in `packages/ui/src/components/PageTabs/`, built on the existing `Tabs`, generic over
-  any page list, with its own stories file.
-- `usePaperLayer` (`apps/shared/editor/src/paperLayer.ts`) takes the placed pages instead of one
-  size; draw passes its single page through the same function.
-
-### Save, load, undo
-
-The page list saves in the scene's `doc` under `core:pages`; a chart saved before this piece has
-none and opens as one page of `CHART_PAGE`'s size. Every page edit is one history entry holding the
-doc value and the member moves together. `replaceChart` (`apps/chart/src/chartPersistence.ts`) sets
-the doc values in the same batch as the nodes.
-
-### Tests
-
-- `docValues.test.ts`: set, undo, redo, elision, batch, `toJSON` round trip.
-- `pageEdits.test.ts`: reorder moves members; resize keeps page-relative places and shifts later
-  pages; remove deletes members and their connectors in one entry; gap nodes stay.
-- `PageTabs` test and stories; `apps/chart` test that a v1 file without pages loads as one page.
-- Chart browser test: add a page, draw on it, reorder tabs, undo, save and reload.
 
 ## 4. Themes
 
@@ -201,8 +138,9 @@ interior selects the container.
 - **Layout passes carry descendants.** Under absolute poses a layout writing a child container's
   pose leaves that child's own children behind, so a restacked lane would lose its members.
   `layoutPass.ts` translates each laid-out container's descendants by its delta, reusing
-  `landedDescendants.ts`, which already does this for drags. `setPages` (piece 3) uses the same
-  helper.
+  `landedDescendants.ts`, which already does this for drags. `setPages` (`core/pages/pageEdits.ts`)
+  carries descendants with its own walk, `moveTargets`, since `core/` may not import from
+  `interactions/`; fold the two together if the pass moves into `core/`.
 - Container resize must leave members put. If core's resize remaps a container's descendants (not
   yet checked), the fix is a `carriesChildren(id)` option beside `resizable` in
   `resize/options.ts`, and `diagramResizable` answers it.
