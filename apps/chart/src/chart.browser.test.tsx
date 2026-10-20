@@ -21,8 +21,6 @@ beforeEach(async () => {
 
 afterEach(() => {
   unmountChartApp();
-  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
-  chartPrefs().reset();
   localStorage.clear();
 });
 

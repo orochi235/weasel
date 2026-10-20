@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from '../App';
+import { chartPrefs } from '../prefs';
 
 const WithIcons = iconsWrapper();
 let root: Root | null = null;
@@ -37,6 +38,8 @@ export async function mountChartApp(): Promise<{ host: HTMLElement; canvas: HTML
 export function unmountChartApp(): void {
   root?.unmount();
   mountPoint?.remove();
+  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
+  chartPrefs().reset();
   root = null;
   mountPoint = null;
 }
