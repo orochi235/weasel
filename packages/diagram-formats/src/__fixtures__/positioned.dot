@@ -1,0 +1,7 @@
+digraph laid {
+  graph [bb="0,0,300,200"];
+  node [shape=box];
+  a [pos="50,180", width=1, height=0.5];
+  b [pos="250,30!", width=1.5, height=0.5];
+  a -> b [pos="e,250,48 50,162 150,100"];
+}
