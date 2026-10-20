@@ -1,3 +1,4 @@
+import { ActionDisabledReason } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 
 /** A menu's runs: each is a group of items, set off from the next by a separator. */
@@ -13,6 +14,9 @@ export interface ChartMenuContributions {
   run?: MenuRuns;
   mode?: MenuRuns;
 }
+
+/** A command's `enabled` answer: on, or off as not applicable here. */
+export const can = (yes: boolean): true | ActionDisabledReason => (yes ? true : ActionDisabledReason.NotApplicable);
 
 /** A run of menu items from `{ key: actionId }`. */
 export const run = (ids: Record<string, string>): PrefGroup =>
