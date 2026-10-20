@@ -1,3 +1,4 @@
 [
-  "@weasel-js/devtools"
+  "@weasel-js/devtools",
+  "@weasel-js/pdf"
 ]

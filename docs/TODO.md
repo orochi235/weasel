@@ -1401,9 +1401,10 @@ only story runner in the repo.
 - **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
   the full face. Subsetting needs the glyphs a document uses collected per face before it is written
   (2026-10-20).
-- **(P3) `@weasel-js/pdf` is unpublished.** It needs its first publish by hand and its
-  trusted-publisher registration (`docs/releasing.md`, "Setting up a new package") before a release can
-  publish it; `check:first-publish` fails the release until then (2026-10-20).
+- **(P3) `@weasel-js/rig` and `@weasel-js/diagram-formats` are unpublished.** Each needs its first
+  publish by hand, under `--tag pre` at the version the next release cuts, and its trusted-publisher
+  registration (`docs/releasing.md`, "Setting up a new package"); `check:first-publish` fails the
+  release until then. `@weasel-js/pdf` was seeded this way at 1.11.1 (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
