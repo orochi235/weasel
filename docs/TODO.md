@@ -256,6 +256,12 @@ Priority tags:
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
+- **(P2) Draw's Warp Settings button does nothing.** It triggers `configureWarp` with no params,
+  and with `{}` `withWarpSettings` returns the held warp unchanged, so nothing is committed; only
+  `apps/site/demos/warpLab.tsx` passes settings. It also has no `enabled`, so it stays live with no
+  warp selected, unlike Expand Warp. It wants a popover holding the selected warp's settings — Mode
+  for a distort, Rows, Columns and mapping for an envelope, tolerance for every kind — and an
+  `enabled` matching Expand Warp's (`configureWarpAction`, `packages/path-tools/src/warp/warpActions.ts`).
 - **(P2) Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
   `apps/draw/src/useSymmetry.ts`).
