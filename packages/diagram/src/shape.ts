@@ -9,14 +9,17 @@
 import {
   commandFill,
   commandStroke,
+  polylineFromPoints,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
   type NodeShapeEntry,
+  type Path,
   type PoseDescriptor,
   type Stroke,
   type Fill,
 } from '@weasel-js/core';
 import { outlinePath } from './outline';
+import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
 
 /** Options for {@link diagramShape} and {@link registerDiagramShape}. */
@@ -39,7 +42,7 @@ export function diagramShape<TPose>(
 ): NodeShapeEntry<unknown, TPose> {
   const geometry = opts.geometry ?? (RECT_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const outlineOf = (node: { id: string; kind: 'leaf' | 'container'; data: unknown }) =>
-    diagramNodeOf(node, opts.read)?.outline;
+    diagramNodeOf(node, opts.read)?.outline ?? laneOutlineOf(node);
 
   return {
     id: opts.id ?? 'diagram:outline',
@@ -53,12 +56,14 @@ export function diagramShape<TPose>(
       const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
       const fill = declaredFill && commandFill(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
+      const header = headerBox(box, diagramContainerOf(node)?.header);
+      const divider = header === null || !stroke ? [] : [{ kind: 'path' as const, path: dividerPath(box, header), stroke }];
       return [{
         kind: 'path',
         path: outlinePath(outline, box),
         ...(fill ? { fill } : {}),
         ...(stroke ? { stroke } : {}),
-      }];
+      }, ...divider];
     },
     // The drawn boundary, so picking and clipping follow the diamond rather
     // than its bounding box.
@@ -67,6 +72,15 @@ export function diagramShape<TPose>(
       return outline === undefined ? null : outlinePath(outline, geometry.getBounds(pose));
     },
   };
+}
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/** The line between a container's header and its body. */
+function dividerPath(box: Box, header: Box): Path {
+  return header.width < box.width
+    ? polylineFromPoints([{ x: header.x + header.width, y: box.y }, { x: header.x + header.width, y: box.y + box.height }])
+    : polylineFromPoints([{ x: box.x, y: header.y + header.height }, { x: box.x + box.width, y: header.y + header.height }]);
 }
 
 /**

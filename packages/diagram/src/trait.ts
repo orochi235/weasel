@@ -46,7 +46,7 @@ export interface DiagramNodeEntry {
  *  the two apart. Without that test an edge reads as a participant declaring
  *  no ports, and collects the four defaults on the degenerate pose an edge
  *  carries. An edge label's `label` trait and an anchored node's `anchor` are
- *  excluded the same way. */
+ *  excluded the same way, and so is a pool's lane, which takes no connectors. */
 export const dataKeyReader: DiagramNodeReader = (node) => {
   const data = node.data;
   if (data === null || typeof data !== 'object') return null;
@@ -54,6 +54,7 @@ export const dataKeyReader: DiagramNodeReader = (node) => {
   if (trait === null || typeof trait !== 'object') return null;
   if ('from' in trait && 'to' in trait) return null;
   if ('label' in trait || 'anchor' in trait || 'mark' in trait) return null;
+  if ((trait as DiagramNode).container?.role === 'lane') return null;
   return trait as DiagramNode;
 };
 
