@@ -9,7 +9,7 @@ import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
 
 /** An axis-aligned rectangle in page units. */
-export type Rect ={ x: number; y: number; width: number; height: number };
+export type Rect = { x: number; y: number; width: number; height: number };
 
 /** One page of the document: its size in points and the draw commands painted onto it. */
 export interface PdfPage {
