@@ -545,9 +545,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   in the Key field shows as a move while the name stands; rename it afterward and the two can no
   longer be paired, so it shows as a removal plus an addition, and its key follows the new name.
 
-- **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
-  mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
