@@ -75,8 +75,13 @@ function readReleases(root: string): Release[] {
   }
 
   const releases = releasesFromChangelogs(sources);
+  const dates = new Map<string, Map<string, string>>();
   for (const release of releases) {
-    release.date = releaseDate(release.version, sources, root);
+    const heading = new RegExp(`^## ${release.version.replace(/\./g, '\\.')}$`, 'm');
+    const source = sources.find((s) => heading.test(s.text));
+    if (!source) continue;
+    if (!dates.has(source.pkg)) dates.set(source.pkg, headingDates(changelogLog(source.pkg, root)));
+    release.date = dates.get(source.pkg)?.get(release.version);
   }
 
   const pending = readPendingChangesets(root);
@@ -304,27 +309,36 @@ function renderBlock(markdown: string): string {
 }
 
 /**
- * When this version's heading first appeared. Changesets records no dates, so
- * the `chore: version packages` commit that wrote the heading is the release.
+ * A package changelog's history, oldest commit first, as added and removed lines. One pass per
+ * changelog: a `git log -G` per version took the site's test run past a timeout on a busy node.
  */
-function releaseDate(
-  version: string,
-  sources: readonly ChangelogSource[],
-  cwd: string,
-): string | undefined {
-  const heading = new RegExp(`^## ${version.replace(/\./g, '\\.')}$`, 'm');
-  const source = sources.find((s) => heading.test(s.text));
-  if (!source) return undefined;
-  const pattern = `^## ${version.replace(/\./g, '\\.')}$`;
+function changelogLog(pkg: string, cwd: string): string {
   try {
-    const log = execSync(
-      `git log -G"${pattern}" --format=%aI -- "packages/${source.pkg}/CHANGELOG.md"`,
-      { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-    );
-    return log.trim().split('\n').filter(Boolean).pop() ?? undefined;
+    return execSync(`git log --reverse --format=%x00%aI -p --unified=0 -- "packages/${pkg}/CHANGELOG.md"`, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 1 << 28,
+    });
   } catch {
-    return undefined;
+    return '';
   }
+}
+
+/**
+ * When each version's heading first appeared in `log` (from `changelogLog`). Changesets records no
+ * dates, so the `chore: version packages` commit that wrote the heading is the release.
+ */
+export function headingDates(log: string): Map<string, string> {
+  const dates = new Map<string, string>();
+  for (const commit of log.split('\0').slice(1)) {
+    const [date, ...lines] = commit.split('\n');
+    for (const line of lines) {
+      const version = /^\+## (\S+)$/.exec(line)?.[1];
+      if (version && !dates.has(version)) dates.set(version, date);
+    }
+  }
+  return dates;
 }
 
 export function compareVersions(a: string, b: string): number {

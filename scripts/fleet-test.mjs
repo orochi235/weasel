@@ -86,7 +86,11 @@ try {
   const select = Boolean(branch) && branch !== 'main' && !full;
   armTree(tree, { commit, files, select });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
-  console.log(select ? 'fleet-test: running the tests the branch reaches; --full runs them all' : 'fleet-test: running every test');
+  console.log(
+    select
+      ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of vitest.config.ts's triggers; --full runs them all"
+      : 'fleet-test: running every test',
+  );
   // A node runs one job per tree, so a run started while another session's is on the chosen node is
   // refused. Wait for it rather than fail: the refusal comes before anything has run.
   for (let attempt = 1; ; attempt++) {
