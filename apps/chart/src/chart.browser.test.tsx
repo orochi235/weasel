@@ -264,6 +264,21 @@ describe('WeaselChart chart mode', () => {
     await expect.poll(() => bodies().length).toBe(1);
     const pose = bodies()[0]!.pose!;
     expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
+
+    // The label rides the snap: it sits in its body as it does in one dropped with no snapping.
+    chartPrefs().set('view.snapToGrid', false);
+    chartPrefs().set('view.alignmentSnap', false);
+    chartPrefs().set('view.spacingSnap', false);
+    const q = at(host, 700, 500);
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: q.x, clientY: q.y }));
+    }
+    await expect.poll(() => bodies().length).toBe(2);
+    const labelOffset = (body: SavedNode) => {
+      const label = saved().find((n) => n.parent === body.id)!.pose!;
+      return [label.x - body.pose!.x, label.y - body.pose!.y].map((v) => Math.round(v * 100) / 100);
+    };
+    expect(labelOffset(bodies()[0]!)).toEqual(labelOffset(bodies()[1]!));
   });
 
   it('lines a dropped stencil up with its neighbor the way a move would, in one undo step', async () => {
