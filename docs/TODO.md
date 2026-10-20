@@ -998,6 +998,15 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
+  `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
+  three playheads where it expected two, likely left by the one that timed out) and
+  `apps/site/__tests__/WeaselDemos.routing.test.tsx` › "opens the releases view on its own id" (5 s)
+  failed in three keiei runs on 2026-10-20, `main` at `416328e36` among them, and passed alone each
+  time and in full runs on teitou, studio and msb-uai. keiei reports memory pressure and 7–11 GB of
+  swap in `onto status`. Either what these tests wait on scales badly with a loaded machine, or keiei
+  should take no full runs.
+
 - **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
   `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
   probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
@@ -1300,9 +1309,11 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
-  (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
-  left.
+- **(P3) Fourth arc (not designed).** PDF export, as its own package; playing an audio pipeline
+  through `@weasel-js/audio`, a graph built once on the audio clock and patched as the pipeline is
+  edited; pages and off-page markers in a data-backed `DiagramView`; dragging an edge label by
+  hand, which label placement then keeps; authored group boxes under the `rack` and `lanes` looks.
+  Carried from the third arc's design (2026-10-20), deleted when that arc finished.
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
