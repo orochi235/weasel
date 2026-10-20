@@ -8,6 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DrawCanvas, type DrawCanvasProps } from './DrawCanvas';
+import { canvasGl, pixelAt } from '../testing/canvasPixels';
 
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
@@ -27,14 +28,6 @@ function mount(props: DrawCanvasProps): HTMLCanvasElement {
   return host.querySelector('canvas')!;
 }
 
-/** RGBA at a device pixel, counted from the top-left. */
-function pixel(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
-  const out = new Uint8Array(4);
-  gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
-  return Array.from(out);
-}
-
 const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 const red: DrawCommand = {
@@ -49,8 +42,8 @@ describe('<DrawCanvas> in a real browser', () => {
       width: 20, height: 10, dpr: 2, draw: [red], background: { kind: 'solid', color: '#ffffff' },
     });
     expect([canvas.width, canvas.height]).toEqual([40, 20]);
-    expect(pixel(canvas, 4, 10)).toEqual([255, 0, 0, 255]);
-    expect(pixel(canvas, 30, 10)).toEqual([255, 255, 255, 255]);
+    expect(pixelAt(canvas, 4, 10)).toEqual([255, 0, 0, 255]);
+    expect(pixelAt(canvas, 30, 10)).toEqual([255, 255, 255, 255]);
   });
 
   it('maps its commands through the view', () => {
@@ -58,15 +51,15 @@ describe('<DrawCanvas> in a real browser', () => {
       width: 20, height: 10, dpr: 1, draw: [red], view: { x: 0, y: 0, scale: { x: 2, y: 1 } },
       background: { kind: 'solid', color: '#ffffff' },
     });
-    expect(pixel(canvas, 8, 5)).toEqual([255, 0, 0, 255]);
-    expect(pixel(canvas, 12, 5)).toEqual([255, 255, 255, 255]);
+    expect(pixelAt(canvas, 8, 5)).toEqual([255, 0, 0, 255]);
+    expect(pixelAt(canvas, 12, 5)).toEqual([255, 255, 255, 255]);
   });
 
   it('repaints by itself once a lost context is restored', async () => {
     const canvas = mount({
       width: 20, height: 10, dpr: 1, draw: [red], background: { kind: 'solid', color: '#ffffff' },
     });
-    const ext = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!.getExtension('WEBGL_lose_context')!;
+    const ext = canvasGl(canvas).getExtension('WEBGL_lose_context')!;
     const event = (name: string) => new Promise<void>((r) => canvas.addEventListener(name, () => r(), { once: true }));
     const lost = event('webglcontextlost');
     ext.loseContext();
@@ -78,7 +71,7 @@ describe('<DrawCanvas> in a real browser', () => {
     await restored;
     await frame();
     await frame();
-    expect(pixel(canvas, 2, 5)).toEqual([255, 0, 0, 255]);
+    expect(pixelAt(canvas, 2, 5)).toEqual([255, 0, 0, 255]);
   });
 
   it('keeps the device-pixel buffer when the size changes and changes back before a paint', async () => {
@@ -92,6 +85,6 @@ describe('<DrawCanvas> in a real browser', () => {
     await frame();
     await frame();
     expect([canvas.width, canvas.height]).toEqual([40, 20]);
-    expect(pixel(canvas, 4, 10)).toEqual([255, 0, 0, 255]);
+    expect(pixelAt(canvas, 4, 10)).toEqual([255, 0, 0, 255]);
   });
 });

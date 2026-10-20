@@ -7,6 +7,7 @@ import { page, userEvent } from 'vitest/browser';
 import { createLabScene, PuppetSolverLabDemo, SHAPE_ID } from '../PuppetSolverLabDemo';
 import { meshModelOf } from '../puppetSolverLab/meshModel';
 import { withIcons } from '../../testIcons';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 afterEach(cleanup);
 
@@ -15,7 +16,7 @@ const TWO_STEP = 1;
 
 /** How many of the scene canvas's pixels are magenta inside a CSS-pixel rect, read back from its GL context. */
 function magentaIn(canvas: HTMLCanvasElement, x0 = 0, y0 = 0, x1 = Infinity, y1 = Infinity): number {
-  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
+  const gl = canvasGl(canvas);
   const rect = canvas.getBoundingClientRect();
   const dpr = canvas.width / rect.width;
   const px = new Uint8Array(canvas.width * canvas.height * 4);

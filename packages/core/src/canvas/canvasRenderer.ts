@@ -13,6 +13,7 @@ import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import { createEmitter } from '@weasel-js/registry';
+import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 /** The live renderers painting into each element, across every lease. */
 const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
@@ -146,7 +147,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
     }
     if (!held) {
       if (REFUSED.has(canvas)) return null;
-      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+      const gl = canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
       let renderer: WeaselRenderer;
       try {

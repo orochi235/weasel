@@ -320,6 +320,19 @@ export default [
     },
   },
   {
+    /**
+     * A context keeps the attributes of whoever opens it first, and the renderer refuses one without a
+     * stencil buffer, so a pixel read that comes before the app's first paint breaks the canvas for good.
+     */
+    files: ['**/*.browser.test.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "CallExpression[callee.property.name='getContext'][arguments.length=1][arguments.0.value='webgl2']",
+        message: "Read a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: a bare getContext('webgl2') can open the context without the stencil buffer the renderer needs.",
+      }],
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     ignores: ['**/*.browser.test.{ts,tsx}', 'vitest.browser.setup.ts'],
     rules: {

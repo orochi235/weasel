@@ -37,6 +37,7 @@ import { renderNeeds } from './renderNeeds';
 import { straightTopDown } from './rasterReadback';
 import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
+import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
  *  data }), deliberately free of printer/dpi/physical-unit concepts. */
@@ -239,8 +240,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
         canvas = (options.createCanvas ?? defaultCreateCanvas)(width, height);
         canvas.width = width;
         canvas.height = height;
-        // Same context attributes as the screen path (Canvas.tsx).
-        gl = (canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext | null) ?? undefined;
+        gl = (canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES) as WebGL2RenderingContext | null) ?? undefined;
       } else {
         if (canvas.width < width) canvas.width = width;
         if (canvas.height < height) canvas.height = height;
