@@ -1,9 +1,9 @@
-import { createAnalyserTap } from '../analyser';
+import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from '../analyser';
 import { defaultTimers, type Timers } from '../audioTime';
 import { writeParam } from '../param';
 import { createEdits, graphError } from './edits';
 import { createTransport } from './transport';
-import type { AudioGraph, AudioGraphOptions } from './types';
+import type { AudioGraph, AudioGraphOptions, GraphNodeDef, GraphPatch } from './types';
 import { startWrapper } from './wrapper';
 
 export type { NodeWrapper } from './wrapper';
@@ -33,7 +33,7 @@ export function createAudioGraph(
   let waiters: (() => void)[] = [];
   let disposed = false;
   const onSettle = (): void => {
-    if (!disposed && (edits.closing() || transport.stopping())) return;
+    if (!disposed && (edits.busy() || transport.busy())) return;
     const done = waiters;
     waiters = [];
     for (const w of done) w();
@@ -46,17 +46,21 @@ export function createAudioGraph(
   const transport = createTransport({
     ctx, timers, fade, output, onSettle, live: edits.liveNodes, all: edits.allNodes,
   });
+  const guard = <A extends unknown[], R>(f: (...args: A) => R) => (...args: A): R => {
+    if (disposed) throw graphError('graph is disposed');
+    return f(...args);
+  };
 
   const graph: AudioGraph = {
-    add: edits.add,
-    remove: edits.remove,
-    replace() {
+    add: guard(edits.add),
+    remove: guard(edits.remove),
+    replace: guard((_id: string, _def: GraphNodeDef): void => {
       throw graphError('replace is not yet supported');
-    },
-    connect: edits.connect,
-    disconnect: edits.disconnect,
-    set: edits.set,
-    apply(patches) {
+    }),
+    connect: guard(edits.connect),
+    disconnect: guard(edits.disconnect),
+    set: guard(edits.set),
+    apply: guard((patches: readonly GraphPatch[]): void => {
       for (const p of patches) {
         switch (p.kind) {
           case 'add': graph.add(p.id, p.def); break;
@@ -67,18 +71,18 @@ export function createAudioGraph(
           case 'set': graph.set(p.id, p.param, p.value, p.rampMs); break;
         }
       }
-    },
-    start: transport.start,
-    stop: transport.stop,
+    }),
+    start: guard(transport.start),
+    stop: guard(transport.stop),
     playing: transport.playing,
     has: edits.has,
     ids: edits.ids,
-    tap(id, tapOpts) {
+    tap: guard((id: string, tapOpts?: AnalyserTapOptions): AnalyserTap => {
       const w = edits.live(id);
       const t = createAnalyserTap(ctx, w.out, tapOpts);
       w.taps.add(t);
       return t;
-    },
+    }),
     settled() {
       return new Promise((resolve) => {
         waiters.push(resolve);

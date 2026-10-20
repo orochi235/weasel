@@ -383,3 +383,93 @@ describe('createAudioGraph lifetime', () => {
     await expect(settled).resolves.toBeUndefined();
   });
 });
+
+const tick = (): Promise<void> => new Promise((r) => { setTimeout(r, 0); });
+
+/** a → b, then the edge reversed inside the old one's fade. */
+function reversed() {
+  const h = harness();
+  const a = testNode(h.ctx);
+  const b = testNode(h.ctx);
+  h.graph.add('a', a.def);
+  h.graph.add('b', b.def);
+  h.graph.connect('a', { node: 'b', port: 'in' });
+  h.graph.disconnect('a', { node: 'b', port: 'in' });
+  h.graph.connect('b', { node: 'a', port: 'in' });
+  return { ...h, a, b };
+}
+
+describe('createAudioGraph deferred edges and settling', () => {
+  it('defers a reversed edge until the old one has faded', async () => {
+    const { graph, a, b, settle } = reversed();
+    expect(reachesCycle(a.inputs.in)).toBe(false);
+    expect(allPaths(b.output, a.inputs.in)).toHaveLength(0);
+    expect(() => graph.connect('b', { node: 'a', port: 'in' })).not.toThrow();
+    expect(() => graph.connect('a', { node: 'b', port: 'in' })).toThrow(/cycle/);
+    let done = false;
+    void graph.settled().then(() => { done = true; });
+    await tick();
+    expect(done).toBe(false);
+    settle();
+    expect(allPaths(b.output, a.inputs.in)).toHaveLength(1);
+    expect(allPaths(a.output, b.inputs.in)).toHaveLength(0);
+    expect(reachesCycle(a.inputs.in)).toBe(false);
+    await tick();
+    expect(done).toBe(true);
+  });
+
+  it('drops a deferred edge on disconnect, with no fade', async () => {
+    const { graph, a, b, settle } = reversed();
+    graph.disconnect('b', { node: 'a', port: 'in' });
+    settle();
+    expect(allPaths(b.output, a.inputs.in)).toHaveLength(0);
+    await expect(graph.settled()).resolves.toBeUndefined();
+    expect(() => graph.connect('a', { node: 'b', port: 'in' })).not.toThrow();
+  });
+
+  it('drops a deferred edge when either end is removed', async () => {
+    for (const gone of ['a', 'b'] as const) {
+      const h = reversed();
+      h.graph.remove(gone);
+      h.settle();
+      expect(h[gone].dispose).toHaveBeenCalledTimes(1);
+      expect(allPaths(h.b.output, h.a.inputs.in)).toHaveLength(0);
+      expect(allPaths(h.a.output, h.b.inputs.in)).toHaveLength(0);
+      await expect(h.graph.settled()).resolves.toBeUndefined();
+    }
+  });
+
+  it('settled waits for the output fade-in a start begins', async () => {
+    const { ctx, graph, step } = harness();
+    graph.add('s', testNode(ctx, [], true).def);
+    graph.start();
+    let done = false;
+    void graph.settled().then(() => { done = true; });
+    await tick();
+    expect(done).toBe(false);
+    step();
+    await tick();
+    expect(done).toBe(true);
+  });
+
+  it('throws from every mutator once disposed', () => {
+    const { ctx, graph } = harness();
+    graph.add('a', testNode(ctx).def);
+    graph.dispose();
+    const def = testNode(ctx).def;
+    const calls: (() => unknown)[] = [
+      () => graph.add('b', def),
+      () => graph.remove('a'),
+      () => graph.replace('a', def),
+      () => graph.connect('a', { output: true }),
+      () => graph.disconnect('a', { output: true }),
+      () => graph.set('a', 'level', 1),
+      () => graph.apply([]),
+      () => graph.start(),
+      () => graph.stop(),
+      () => graph.tap('a'),
+    ];
+    for (const call of calls) expect(call).toThrow('@weasel-js/audio: graph is disposed');
+    expect(() => graph.dispose()).not.toThrow();
+  });
+});

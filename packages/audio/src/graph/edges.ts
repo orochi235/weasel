@@ -1,30 +1,45 @@
 import type { Fader } from './fader';
 import type { NodeWrapper } from './wrapper';
 
-/** One connection, from a wrapper's `out` to another's `ins[port]` or to the graph's output. */
+/**
+ * One connection, from a wrapper's `out` to another's `ins[port]` or to the graph's output.
+ * `deferred`: accepted, but wiring it now would close a cycle through edges still fading
+ * out, so it has no fader until they finish. `closing`: fading out; never reopened, since a
+ * reopened close still cuts when its timer fires.
+ */
 export interface Edge {
   readonly from: NodeWrapper;
   /** `null` is the graph's output. */
   readonly to: NodeWrapper | null;
   readonly port: string;
-  readonly fader: Fader;
-  /** Fading out; never reopened, since a reopened close still cuts when its timer fires. */
-  closing: boolean;
+  state: 'deferred' | 'open' | 'closing';
+  fader: Fader | null;
 }
 
+/** The edge a caller can still see: open or deferred, never one fading out. */
 export function findLive(
   edges: readonly Edge[],
   from: NodeWrapper,
   to: NodeWrapper | null,
   port: string,
 ): Edge | undefined {
-  return edges.find((e) => !e.closing && e.from === from && e.to === to && e.port === port);
+  return edges.find((e) => e.state !== 'closing' && e.from === from && e.to === to && e.port === port);
 }
 
 export const touches = (e: Edge, w: NodeWrapper): boolean => e.from === w || e.to === w;
 
-/** Whether `goal` is downstream of `start` along live edges. */
-export function reaches(edges: readonly Edge[], start: NodeWrapper, goal: NodeWrapper): boolean {
+/** The edges the caller sees, which a new connection must not close a cycle through. */
+export const logical = (e: Edge): boolean => e.state !== 'closing';
+/** The edges wired in the audio graph, which Web Audio mutes a cycle through. */
+export const wired = (e: Edge): boolean => e.state !== 'deferred';
+
+/** Whether `goal` is downstream of `start` along the edges `admit` accepts. */
+export function reaches(
+  edges: readonly Edge[],
+  start: NodeWrapper,
+  goal: NodeWrapper,
+  admit: (e: Edge) => boolean,
+): boolean {
   const seen = new Set<NodeWrapper>();
   const stack = [start];
   while (stack.length > 0) {
@@ -32,7 +47,17 @@ export function reaches(edges: readonly Edge[], start: NodeWrapper, goal: NodeWr
     if (w === goal) return true;
     if (seen.has(w)) continue;
     seen.add(w);
-    for (const e of edges) if (!e.closing && e.from === w && e.to) stack.push(e.to);
+    for (const e of edges) if (admit(e) && e.from === w && e.to) stack.push(e.to);
   }
   return false;
+}
+
+/** Whether wiring `e` now would close a cycle in the audio graph. */
+export const blocked = (edges: readonly Edge[], e: Edge): boolean =>
+  e.to !== null && reaches(edges, e.to, e.from, wired);
+
+/** Drop `e` from `edges` if it is still there. */
+export function drop(edges: Edge[], e: Edge): void {
+  const i = edges.indexOf(e);
+  if (i >= 0) edges.splice(i, 1);
 }

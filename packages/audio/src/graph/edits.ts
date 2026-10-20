@@ -1,5 +1,5 @@
 import type { Timers } from '../audioTime';
-import { findLive, reaches, touches, type Edge } from './edges';
+import { blocked, drop, findLive, logical, reaches, touches, type Edge } from './edges';
 import { createFader } from './fader';
 import type { GraphNodeDef, GraphTarget } from './types';
 import { createWrapper, releaseWrapper, type NodeWrapper } from './wrapper';
@@ -20,6 +20,14 @@ export interface EditsDeps {
   onSettle(): void;
 }
 
+/** The far end of `to`, checked: its wrapper (null for the output) and port. */
+function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrapper | null, string] {
+  if ('output' in to) return [null, ''];
+  const w = live(to.node);
+  if (!owns(w.ins, to.port)) throw graphError(`node "${to.node}" has no input port "${to.port}"`);
+  return [w, to.port];
+}
+
 /** The graph's nodes and edges: every structural edit, and the bookkeeping that
  *  lets a removed node finish fading out after its id is free again. */
 export function createEdits(deps: EditsDeps) {
@@ -35,7 +43,15 @@ export function createEdits(deps: EditsDeps) {
     return w;
   };
 
+  const wire = (e: Edge): void => {
+    e.state = 'open';
+    e.fader = createFader(ctx, timers, e.from.out, e.to ? e.to.ins[e.port] : output);
+    e.fader.open(fade());
+  };
+
+  /** Wire what is no longer blocked, release what nothing touches, then wake `settled`. */
   const sweep = (): void => {
+    for (const e of edges) if (e.state === 'deferred' && !blocked(edges, e)) wire(e);
     for (const w of [...leaving]) {
       if (edges.some((e) => touches(e, w))) continue;
       leaving.delete(w);
@@ -44,20 +60,18 @@ export function createEdits(deps: EditsDeps) {
     deps.onSettle();
   };
 
+  /** Fade an open edge out; a deferred one was never wired and just goes. */
   const close = (e: Edge): void => {
-    if (e.closing) return;
-    e.closing = true;
-    e.fader.close(fade(), () => {
-      edges.splice(edges.indexOf(e), 1);
+    if (e.state === 'closing') return;
+    if (e.state === 'deferred') {
+      drop(edges, e);
+      return;
+    }
+    e.state = 'closing';
+    e.fader!.close(fade(), () => {
+      drop(edges, e);
       sweep();
     });
-  };
-
-  const target = (to: GraphTarget): [NodeWrapper | null, string] => {
-    if ('output' in to) return [null, ''];
-    const w = live(to.node);
-    if (!owns(w.ins, to.port)) throw graphError(`node "${to.node}" has no input port "${to.port}"`);
-    return [w, to.port];
   };
 
   return {
@@ -67,7 +81,8 @@ export function createEdits(deps: EditsDeps) {
     liveNodes: () => [...nodes.values()],
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
-    closing: () => edges.some((e) => e.closing),
+    /** An edge is fading out or waiting to be wired. */
+    busy: () => edges.some((e) => e.state !== 'open'),
     add(id: string, def: GraphNodeDef): void {
       if (nodes.has(id)) throw graphError(`a node "${id}" already exists`);
       const w = createWrapper(ctx, timers, id, def);
@@ -84,21 +99,23 @@ export function createEdits(deps: EditsDeps) {
     },
     connect(from: string, to: GraphTarget): void {
       const w = live(from);
-      const [tw, port] = target(to);
+      const [tw, port] = target(live, to);
       if (findLive(edges, w, tw, port)) return;
-      if (tw && reaches(edges, tw, w)) {
+      if (tw && reaches(edges, tw, w, logical)) {
         throw graphError(`connecting "${from}" to "${tw.id}" would close a cycle`);
       }
-      const fader = createFader(ctx, timers, w.out, tw ? tw.ins[port] : output);
-      edges.push({ from: w, to: tw, port, fader, closing: false });
-      fader.open(fade());
+      const e: Edge = { from: w, to: tw, port, state: 'deferred', fader: null };
+      edges.push(e);
+      if (!blocked(edges, e)) wire(e);
     },
     disconnect(from: string, to: GraphTarget): void {
       const w = nodes.get(from);
       const tw = 'output' in to ? null : nodes.get(to.node);
       if (!w || tw === undefined) return;
       const e = findLive(edges, w, tw, 'output' in to ? '' : to.port);
-      if (e) close(e);
+      if (!e) return;
+      close(e);
+      deps.onSettle();
     },
     set(id: string, param: string, value: number, rampMs?: number): void {
       const w = live(id);
@@ -107,7 +124,7 @@ export function createEdits(deps: EditsDeps) {
     },
     /** Cut every edge, canceling its close, then release every def. */
     dispose(): void {
-      for (const e of edges.splice(0)) e.fader.cut();
+      for (const e of edges.splice(0)) e.fader?.cut();
       const all = [...nodes.values(), ...leaving];
       nodes.clear();
       leaving.clear();
