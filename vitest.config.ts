@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import v8 from 'node:v8';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -16,6 +18,7 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
+import { selection } from './scripts/lib/fleet-tree.mjs';
 
 // Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
 // Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
@@ -51,9 +54,34 @@ const VITE_SERVER_TESTS = [
   'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
+// A branch's fleet run seeds vitest's `related` with what the branch changes, so only the test files
+// importing it run. Every path seeded counts as affected, which is how the gate project always runs.
+const related = selection(import.meta.dirname, process.env, {
+  always: readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
+  // Changes that reach tests with no import edge to follow, this config and what it loads among them:
+  // any of these runs everything.
+  triggers: [
+    '**/package.json',
+    'package-lock.json',
+    '**/tsconfig*.json',
+    '.onto/tests',
+    '**/{vitest,vite}.config.*',
+    'vitest.*setup.ts',
+    'packages/labkit/src/test-setup.ts',
+    'scripts/{vite,vitest}-*.ts',
+    'scripts/lib/**',
+    'apps/draw/vite-plugin-*.ts',
+    'apps/forge/viteShared.ts',
+    'packages/forge/src/vite/**',
+    'packages/icons-plugin/**',
+  ],
+});
+
 export default defineConfig({
   test: {
-    globalSetup: ['./scripts/fleet-tree.setup.ts'],
+    globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
+    fsModuleCache: true,
+    ...(related && { related }),
     projects: [
       {
         ...shared,
@@ -222,6 +250,7 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
+          maxConcurrency: 8,
           include: ['scripts/**/*.gate.ts'],
         },
       },
