@@ -1,3 +1,4 @@
+import { readStored, useAutosave } from '@editor/index';
 import type { EffectDoc } from '@weasel-js/diagram/effect';
 import { createHistory, swapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
@@ -26,23 +27,6 @@ export function pipelineFromJson(text: string): EffectDoc {
   return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
 }
 
-function load(key: string): EffectDoc {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw === null ? EMPTY : pipelineFromJson(raw);
-  } catch {
-    return EMPTY;
-  }
-}
-
-function save(key: string, doc: EffectDoc): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(doc));
-  } catch {
-    // No storage, or no room: the doc lives on in memory.
-  }
-}
-
 export interface PipelineDoc {
   doc: EffectDoc;
   /** Records `next` as one undo step named `label`. Successive changes sharing a `coalesceKey`
@@ -57,7 +41,7 @@ export interface PipelineDoc {
 /** Pipeline mode's document: an `EffectDoc` with its own undo history, autosaved under `storageKey`.
  *  Held above the mode switch, so the history survives a visit to chart mode. */
 export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): PipelineDoc {
-  const [doc, setDoc] = useState(() => load(storageKey));
+  const [doc, setDoc] = useState(() => readStored(storageKey, pipelineFromJson, emptyPipeline));
   const current = useRef(doc);
   const history = useMemo(() => createHistory(null, { coalesceWindowMs: COALESCE_MS }), []);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -66,8 +50,8 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
   const emit = useCallback((next: EffectDoc) => {
     current.current = next;
     setDoc(next);
-    save(storageKey, next);
-  }, [storageKey]);
+  }, []);
+  useAutosave(() => ({ primary: [storageKey, JSON.stringify(doc)] }), { revision: doc });
 
   const change = useCallback((next: EffectDoc, label: string, coalesceKey?: string) => {
     history.apply(swapOp({

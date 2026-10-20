@@ -55,16 +55,16 @@ describe('App', () => {
     expect(screen.getByRole('toolbar', { name: 'Shapes' })).toBeTruthy();
   });
 
-  it("keeps pipeline mode's undo history through a visit to chart mode", () => {
+  it("keeps pipeline mode's undo history through a visit to chart mode", async () => {
     mount();
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
-    const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as { pipeline: { stages: unknown[] } }).pipeline.stages;
-    expect(stages()).toHaveLength(1);
+    const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY) ?? '{"pipeline":{"stages":[]}}') as { pipeline: { stages: unknown[] } }).pipeline.stages;
+    await vi.waitFor(() => expect(stages()).toHaveLength(1));
     choose('Mode', 'Chart');
     choose('Mode', 'Pipeline');
     choose('Edit', 'Undo');
-    expect(stages()).toHaveLength(0);
+    await vi.waitFor(() => expect(stages()).toHaveLength(0));
   });
 
   it('gives pipeline mode a File menu of its own', () => {

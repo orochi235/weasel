@@ -1,5 +1,31 @@
-import { describe, expect, it } from 'vitest';
-import { writeSession } from './sessionStore';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readStored, writeSession } from './sessionStore';
+
+describe('readStored', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const parse = (raw: string): number => {
+    const n = JSON.parse(raw) as unknown;
+    if (typeof n !== 'number') throw new Error('not a number');
+    return n;
+  };
+
+  it('parses the entry under its key', () => {
+    localStorage.setItem('k', '7');
+    expect(readStored('k', parse, () => 0)).toBe(7);
+  });
+
+  it('falls back when there is no entry, when parse throws, and when storage is unreachable', () => {
+    expect(readStored('k', parse, () => -1)).toBe(-1);
+    localStorage.setItem('k', '"seven"');
+    expect(readStored('k', parse, () => -2)).toBe(-2);
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('denied'); });
+    expect(readStored('k', parse, () => -3)).toBe(-3);
+  });
+});
 
 /** A store that refuses writes to the keys in `full`, as a quota error does. */
 function store(initial: Record<string, string>, full: readonly string[]) {

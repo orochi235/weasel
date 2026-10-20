@@ -1331,9 +1331,3 @@ only story runner in the repo.
 
 - **(P3) Second arc.** Themes; containers and swimlanes; connectors that route around shapes
   while editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
-
-- **(P3) Pipeline mode keeps its own session.** `pipeline/usePipelineDoc.ts` reads and writes
-  local storage with its own `load`/`save` and its own undo coalescing, beside the shared
-  `useSessionPersistence` (`apps/shared/editor`) that chart mode and draw use. That hook is bound
-  to a `Scene` and its history, and an `EffectDoc` is neither, so folding the two needs a
-  document-agnostic layer under the hook first.
