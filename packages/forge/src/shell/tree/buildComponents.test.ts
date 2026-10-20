@@ -154,6 +154,40 @@ describe('componentNodes', () => {
   });
 });
 
+describe('componentNodes sub-pages', () => {
+  const shape = (list: readonly TreeNode[]): unknown[] =>
+    list.map((n) =>
+      n.kind === 'folder' ? { [`${n.label}${n.tag ? ` [${n.tag}]` : ''}`]: shape(n.children) } : (n.label ?? n.entry.name),
+    );
+
+  it('nests a component whose title extends another one inside it, ahead of its stories', () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('Primitives/Prefs', 'Form', UI),
+        entry('Primitives/Prefs/Action rows', 'In a form', UI),
+        entry('Primitives/Prefs/Split values', 'Not split', UI),
+        entry('Primitives/Checkbox', 'Basic', UI),
+      ]),
+    );
+    expect(shape(nodes)).toEqual([
+      { 'Checkbox [ui]': ['Basic'] },
+      { 'Prefs [ui]': [{ 'Action rows': ['In a form'] }, { 'Split values': ['Not split'] }, 'Form'] },
+    ]);
+  });
+
+  it('leaves the sub-page on its own row when a filter dropped the component it extends', () => {
+    const rows = buildComponents([entry('Primitives/Prefs', 'Form', UI), entry('Primitives/Prefs/Split values', 'Not split', UI)]);
+    expect(shape(componentNodes(filterComponents(rows, 'split')))).toEqual([{ 'Split values [ui]': ['Not split'] }]);
+  });
+
+  it('does not nest across libraries', () => {
+    const nodes = componentNodes(
+      buildComponents([entry('Shared/Panel', 'Default', UI), entry('Shared/Panel/Docked', 'Default', LABKIT)]),
+    );
+    expect(shape(nodes)).toEqual([{ 'Docked [labkit]': ['Default'] }, { 'Panel [ui]': ['Default'] }]);
+  });
+});
+
 describe('componentNodes galleries', () => {
   const gallery = (title: string, name: string): IndexEntry => ({ ...entry(title, name, UI), tags: ['gallery'] });
   const shape = (list: readonly TreeNode[]): unknown[] =>

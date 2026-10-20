@@ -3,7 +3,7 @@ import { PrefKindBadge } from './PrefKindBadge';
 import s from './PrefKindBadge.stories.module.css';
 
 const meta: Meta<typeof PrefKindBadge> = {
-  title: 'Primitives/PrefKindBadge',
+  title: 'Primitives/Prefs/PrefKindBadge',
   component: PrefKindBadge,
   args: { kind: 'number' },
 };

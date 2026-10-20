@@ -97,22 +97,39 @@ export function filterComponents(rows: readonly ComponentRow[], query: string): 
   return out;
 }
 
+/** The row whose title `row`'s extends, in its library: the longest such, so a page of a page nests under it. */
+function parentOf(row: ComponentRow, byPath: ReadonlyMap<string, ComponentRow>): ComponentRow | undefined {
+  const segments = row.path.split('/');
+  for (let take = segments.length - 1; take > 0; take--) {
+    const parent = byPath.get(segments.slice(0, take).join('/'));
+    if (parent && parent.library === row.library) return parent;
+  }
+  return undefined;
+}
+
 /**
  * The component list as tree nodes, so the sidebar renders and navigates both
  * views with one code path. A slash in a label is a directory: `Icons/Gallery`
  * is a `Gallery` folder inside an `Icons` folder, which it shares with any
  * other row of its library widened to the same prefix. Every component is a
- * folder carrying its index page and holding its stories. A folder a gallery's label opened, holding only that
- * gallery, is folded into it.
+ * folder carrying its index page and holding its stories. A component whose
+ * title extends another's, `Prefs/Action rows` beside `Prefs`, is a folder inside
+ * that one, ahead of its stories as in the tree. A folder a gallery's label opened,
+ * holding only that gallery, is folded into it.
  */
 export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
   const root: TreeNode[] = [];
   const folders = new Map<string, Folder>();
+  const byPath = new Map(rows.map((row) => [row.path, row]));
+  const nodes = new Map<string, Folder>();
+  const subs = new Map<string, TreeNode[]>();
+  for (const row of rows) subs.set(row.path, []);
   for (const row of rows) {
-    const labels = row.label.split('/');
+    const parent = parentOf(row, byPath);
     const title = row.path.split('/');
-    let siblings = root;
-    let tag: string | undefined = row.library;
+    const labels = parent ? title.slice(parent.path.split('/').length) : row.label.split('/');
+    let siblings = parent ? subs.get(parent.path)! : root;
+    let tag: string | undefined = parent ? undefined : row.library;
     for (let i = 0; i < labels.length - 1; i++) {
       const path = title.slice(0, title.length - labels.length + i + 1).join('/');
       let folder = folders.get(path);
@@ -124,14 +141,22 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
       siblings = folder.children;
       tag = undefined;
     }
-    siblings.push({
+    const node: Folder = {
       kind: 'folder',
       label: labels[labels.length - 1],
       path: row.path,
       tag,
       ...(row.index ? { index: row.index } : {}),
-      children: row.entries.map((entry) => ({ kind: 'story', entry }) as const),
-    });
+      children: [],
+    };
+    nodes.set(row.path, node);
+    siblings.push(node);
+  }
+  for (const row of rows) {
+    nodes.get(row.path)!.children = [
+      ...subs.get(row.path)!,
+      ...row.entries.map((entry) => ({ kind: 'story', entry }) as const),
+    ];
   }
   return foldGalleries(root);
 }
