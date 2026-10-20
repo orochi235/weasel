@@ -14,7 +14,8 @@ marked "overnight pass". Nothing is pushed.
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
   and `groupSelector`. Rulings: Up and Down stop at the edges, Home and End span the whole
-  palette, `rovingTarget` and `rovingGridTarget` are exported. Filed: no right-to-left handling.
+  palette, `rovingTarget` and `rovingGridTarget` are exported. Left and Right mirror under
+  right-to-left (a later arc).
 - `moveNodes` and `moveNodesOps` in core move ids the way a drag commits them; weaselchart's
   stencil drop inserts then moves in one undo step, with no probe insert. Rulings: not 2D-only, a
   zero delta commits nothing, `ingest` and paste declare three more deps, the undo entry reads "Drop".
