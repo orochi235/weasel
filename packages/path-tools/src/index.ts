@@ -116,6 +116,9 @@ export {
 export {
   constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
 } from './constraints/constraintLinks';
+export {
+  linkAnchorAction, linkConstraint, linkTargetAt, type LinkAnchorParams, type LinkTarget,
+} from './constraints/linkAnchor';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
   CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,

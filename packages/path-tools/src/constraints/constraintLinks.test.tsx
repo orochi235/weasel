@@ -12,6 +12,7 @@ import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
 } from '@weasel-js/core/test-seams';
 import { constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf } from './constraintLinks';
+import { linkAnchorAction } from './linkAnchor';
 import { createConstraintsExtension } from './constraintsExtension';
 
 type Data = { constraints?: PathConstraint[]; constraintLink?: PathConstraint };
@@ -24,7 +25,7 @@ const poly = (...pts: [number, number][]) => polygonFromPoints(pts.map(([x, y]) 
  * square's anchors 0 → 1 are 3 → 4.
  */
 function setup() {
-  const scene = createScene<Data, 'main' | 'notes', unknown>({ systemLayers: [{ id: 'main' }, { id: 'notes' }] });
+  const scene = createScene<Data, 'main' | 'notes', unknown>({ systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }] });
   const square = scene.add({ kind: 'leaf', layer: 'main', pose: poly([0, 0], [100, 0], [100, 100], [0, 100]), data: {} });
   const triangle = scene.add({
     kind: 'leaf', layer: 'main', pose: poly([40, 0], [40, -50], [10, -50]),
@@ -63,7 +64,9 @@ function setup() {
     return useDepRegistry();
   }, { wrapper: ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children) });
   const dep = () => (result.current.get as (key: string) => EditAnchorsDep)('editAnchors');
-  const deps = () => ({ editAnchors: dep(), selection: { get: () => [editing] } }) as unknown as ActionDeps;
+  const deps = () => ({
+    editAnchors: dep(), selection: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
+  }) as unknown as ActionDeps;
   const points = (id: NodeId) => pathAnchorPoints(scene.get(id)!.pose as PolygonPath);
   const ctx = (x: number, y: number, anchor: number): InvocationCtx => ({
     world: { x, y },
@@ -110,7 +113,24 @@ function setup() {
     handle.onEnd!(at(x + dx, y + dy), 'commit');
     return previews;
   };
-  return { scene, square, triangle, link, drag, points, select, run, move, bend };
+  /** Alt-drag `id`'s anchor `anchor` by `(dx, dy)` and release. */
+  const linkDrag = (id: NodeId, anchor: number, dx: number, dy: number) => {
+    editing = id;
+    rerender();
+    const p = points(id)[anchor];
+    const alt = (x: number, y: number): InvocationCtx => {
+      const c = ctx(x, y, anchor);
+      return { ...c, modifiers: { ...c.modifiers, alt: true } };
+    };
+    const handle = (linkAnchorAction.invoker as OngoingInvoker).start(alt(p.x, p.y), undefined);
+    handle.onMove!(alt(p.x + dx, p.y + dy));
+    handle.onEnd!(alt(p.x + dx, p.y + dy), 'commit');
+  };
+  const links = () => [...scene.renderOrderNodes()].flatMap((n) => {
+    const c = constraintLinkOf(n.data);
+    return c && n.id !== link ? [{ id: n.id, nodes: n.dependsOn, constraint: c }] : [];
+  });
+  return { scene, square, triangle, link, drag, points, select, run, move, bend, linkDrag, links };
 }
 
 describe('constraint links', () => {
@@ -188,5 +208,30 @@ describe('constraint links', () => {
     expect([...previews.keys()].sort()).toEqual([t.square, t.triangle].sort());
     expect(previews.get(t.triangle)).toEqual(t.points(t.triangle));
     expect(t.points(t.triangle)[0].y).toBeGreaterThan(1);
+  });
+  it('links an anchor Alt-dragged onto another node\'s anchor, in the move\'s undo step', () => {
+    const t = setup();
+    t.linkDrag(t.triangle, 2, -9, 49);
+    expect(t.points(t.triangle)[2]).toEqual({ x: 0, y: 0 });
+    const [made] = t.links();
+    expect(made.nodes).toEqual([t.triangle, t.square]);
+    expect(made.constraint).toEqual({ kind: 'coincident', anchors: [2, 3] });
+    expect(t.scene.get(made.id as NodeId)!.layer).toBe('notes');
+    t.move(t.square, 5, 0);
+    expect(t.points(t.triangle)[2].x).toBeCloseTo(5, 3);
+    t.scene.undo();
+    t.scene.undo();
+    expect(t.links()).toEqual([]);
+    expect(t.points(t.triangle)[2]).toEqual({ x: 10, y: -50 });
+  });
+
+  it('links an anchor Alt-dragged onto another node\'s segment, and moves it plainly anywhere else', () => {
+    const t = setup();
+    t.linkDrag(t.triangle, 2, 50, 51);
+    expect(t.points(t.triangle)[2]).toEqual({ x: 60, y: 0 });
+    expect(t.links().map((l) => l.constraint)).toEqual([{ kind: 'onPath', anchor: 2, segment: [3, 4] }]);
+    t.linkDrag(t.triangle, 1, 0, -20);
+    expect(t.points(t.triangle)[1]).toEqual({ x: 40, y: -70 });
+    expect(t.links()).toHaveLength(1);
   });
 });

@@ -14,6 +14,7 @@ import { editCornerAction } from './cornerShape/editCorner';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './constraints/anchorConstraints';
 import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension } from './constraints/constraintsExtension';
+import { linkAnchorAction } from './constraints/linkAnchor';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
@@ -146,12 +147,13 @@ export function createBalancePreset(style: PathEditBalanceStyle = {}): FeaturePr
 /** Balance handles with their default look. */
 export const balancePreset: FeaturePreset = createBalancePreset();
 
-/** Path constraints: their actions, their marks in `style`'s colors, and
- *  every edit of a constrained path finished so they hold. */
+/** Path constraints: their actions, Alt-dragging an anchor onto another
+ *  node to link it there, their marks in `style`'s colors, and every edit of
+ *  a constrained path finished so they hold. */
 export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {}): FeaturePreset {
   return {
     id: 'constraints',
-    actions: [constrainAnchorsAction, unconstrainAnchorsAction, deleteConstraintAction],
+    actions: [constrainAnchorsAction, unconstrainAnchorsAction, deleteConstraintAction, linkAnchorAction],
     pathEdit: [createConstraintsExtension(style)],
   };
 }
