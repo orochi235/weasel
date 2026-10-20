@@ -1,4 +1,5 @@
 export type { PdfFontSource } from './fonts/fontSource';
+export { registryFontSource } from './fonts/fontSource';
 export type {
   PdfPage,
   PdfResult,

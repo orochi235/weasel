@@ -36,6 +36,9 @@
   "scripts": {
     "build": "tsup"
   },
+  "dependencies": {
+    "@weasel-js/pdf": "1.11.0"
+  },
   "peerDependencies": {
     "@weasel-js/core": "1.11.0",
     "@weasel-js/diagram": "1.11.0",

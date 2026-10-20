@@ -1,7 +1,7 @@
 /**
  * `@weasel-js/diagram-formats` — `@weasel-js/diagram` scenes to and from
  * files: the interchange document every format reads and writes, the formats
- * themselves, and one page as an SVG document or a PNG image.
+ * themselves, and one page as an SVG document or a PNG image, and every page as one PDF.
  *
  * @packageDocumentation
  */
@@ -18,4 +18,5 @@ export { documentFromScene, type DocumentFromSceneOptions } from './fromScene';
 export { documentSpecs, type DocumentScene, type DocumentSpecsOptions } from './toScene';
 export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';
 export { exportPagePng, type ExportPagePngOptions } from './pagePng';
+export { exportPagesPdf, type ExportPagesPdfOptions } from './pagesPdf';
 export { pageSvgNodes, type PageExportScene, type PageRect } from './pageNodes';
