@@ -78,9 +78,9 @@ describe('audio graph in a real engine', () => {
     const faded = await play();
     const cut = await play(0);
     const peak = maxAbs(faded, ms(200), ms(300));
-    expect(maxStep(faded, ms(100), ms(101))).toBeLessThan(peak / 3);
+    expect(maxStep(faded, ms(100) - 1, ms(101))).toBeLessThan(peak / 3);
     // The same measure on an unfaded start, which must see the step.
-    expect(maxStep(cut, ms(100), ms(101))).toBeGreaterThan(peak / 3);
+    expect(maxStep(cut, ms(100) - 1, ms(101))).toBeGreaterThan(peak / 3);
   });
 
   it("patching a running graph doesn't reset a delay's tail", async () => {
