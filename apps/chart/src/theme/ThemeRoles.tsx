@@ -2,6 +2,7 @@ import { addThemeRole, removeThemeRole, renameThemeRole, themeRoles } from '@wea
 import { ListEditor } from '@weasel-js/ui/components/ListEditor';
 import { PropertyField, PropertyGroup, PropertyList } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
+import './themePanel.css';
 import { ThemeBox } from './themeFields';
 import type { ThemeEdit } from './useThemeEdit';
 
@@ -31,13 +32,15 @@ export function ThemeRoles({ edit }: { edit: ThemeEdit }): ReactElement {
     for (const r of next) if (r.id === '') edit.change((t) => addThemeRole(t, r.label).theme, 'Add role');
   };
   return (
-    <PropertyGroup title="Roles">
+    <PropertyGroup title="Roles" pack="one-up">
       <RoleFields edit={edit} role={fixed} />
-      <ListEditor<RoleEntry>
-        aria-label="Role" addLabel="Add role" value={rest} onChange={onChange}
-        newEntry={() => ({ id: '', label: 'New role' })}
-        renderEntry={(role) => <PropertyList><RoleFields edit={edit} role={role} /></PropertyList>}
-      />
+      <div className="wc-theme-roles">
+        <ListEditor<RoleEntry>
+          aria-label="Role" addLabel="Add role" value={rest} onChange={onChange}
+          newEntry={() => ({ id: '', label: 'New role' })}
+          renderEntry={(role) => <PropertyList pack="one-up"><RoleFields edit={edit} role={role} /></PropertyList>}
+        />
+      </div>
     </PropertyGroup>
   );
 }

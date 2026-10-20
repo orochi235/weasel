@@ -1,0 +1,6 @@
+/* `ListEditor` asks for a fixed width, which as a grid item's contribution would widen the panel's
+   columns past the sidebar; contained, it takes the column's width instead. */
+.wc-theme-roles {
+  contain: inline-size;
+  min-width: 0;
+}
