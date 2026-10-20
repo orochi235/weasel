@@ -1,3 +1,4 @@
+/** Options for `impulseResponse`: the tail's decay, channel count and noise seed. */
 export interface ImpulseResponseOptions {
   /** How far the tail falls by its end, dB. Default 60 (an RT60). */
   decayDb?: number;

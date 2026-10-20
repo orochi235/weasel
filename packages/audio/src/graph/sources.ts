@@ -4,6 +4,7 @@ import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
 import type { GraphNodeDef } from './types';
 
+/** The waves an oscillator node takes: any `Waveform` except an inharmonic one. */
 export type OscillatorWave = Exclude<Waveform, Inharmonic>;
 
 type Scheduled = AudioBufferSourceNode | OscillatorNode;
@@ -50,6 +51,7 @@ function sourceShell<N extends Scheduled>(ctx: BaseAudioContext, make: () => N) 
   };
 }
 
+/** Options for `createFileSourceNode`: the buffer to play and whether it loops. */
 export interface FileSourceNodeOptions {
   buffer: AudioBuffer;
   /** Default true. */
@@ -105,6 +107,7 @@ export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceNode
   };
 }
 
+/** Options for `createOscillatorNode`: the wave shape and starting frequency. */
 export interface OscillatorNodeOptions {
   /** Default 'sine'. An array is the amplitude of each whole-number partial. */
   wave?: OscillatorWave;
@@ -149,6 +152,7 @@ export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNode
   };
 }
 
+/** Options for `createNoiseNode`: the noise color whose shared buffer it loops. */
 export interface NoiseNodeOptions {
   color: NoiseColor;
 }

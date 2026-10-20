@@ -18,6 +18,7 @@ export interface GraphNodeDef {
 /** A connection's far end: a node's named input port, or the graph's output. */
 export type GraphTarget = { node: string; port: string } | { output: true };
 
+/** One edit to an `AudioGraph`, applied by its `apply` in order. */
 export type GraphPatch =
   | { kind: 'add'; id: string; def: GraphNodeDef }
   | { kind: 'remove'; id: string }
@@ -26,11 +27,13 @@ export type GraphPatch =
   | { kind: 'disconnect'; from: string; to: GraphTarget }
   | { kind: 'set'; id: string; param: string; value: number; rampMs?: number };
 
+/** Options for `AudioGraph`: the crossfade length (`fadeMs`) and any timer overrides. */
 export interface AudioGraphOptions extends Partial<Timers> {
   /** Crossfade for every structural edit, and the default ramp for `set`, in ms. Default 15. */
   fadeMs?: number;
 }
 
+/** A patchable graph of nodes that can be added, wired and set while it plays. */
 export interface AudioGraph {
   add(id: string, def: GraphNodeDef): void; // throws on a live duplicate id
   remove(id: string): void; // no-op on an unknown id
