@@ -1321,8 +1321,7 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Third arc (not designed).** Off-page reference markers for connectors that cross pages,
-  and export of one page; containers and swimlanes in data-backed `DiagramData`, once `DiagramView`
-  reports resizes; edge labels as routing obstacles, and labels that dodge each other; line jumps
+  and export of one page; containers and swimlanes in data-backed `DiagramData`; edge labels as routing obstacles, and labels that dodge each other; line jumps
   where connectors cross; pipeline-mode groups as editable containers, and waypoint editing under
   the `rack` and `lanes` looks; editing a theme in the app, beyond picking one and assigning roles;
   importing and exporting other diagram tools' files, and running a pipeline. Carried from the
