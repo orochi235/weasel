@@ -8,6 +8,7 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
+import { chartPrefs } from './prefs';
 import { stencilDragText } from './stencilDrop';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
 
@@ -20,10 +21,15 @@ beforeEach(async () => {
 
 afterEach(() => {
   unmountChartApp();
+  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
+  chartPrefs().reset();
   localStorage.clear();
 });
 
-interface SavedNode { id: string; kind: string; parent?: string | null; dependsOn?: string[]; data: Record<string, unknown> }
+interface SavedNode {
+  id: string; kind: string; parent?: string | null; dependsOn?: string[]; data: Record<string, unknown>;
+  pose?: { x: number; y: number; width: number; height: number };
+}
 
 /** The chart as the session store last saved it. */
 function saved(): SavedNode[] {
@@ -31,6 +37,7 @@ function saved(): SavedNode[] {
   return raw ? (JSON.parse(raw) as { nodes: SavedNode[] }).nodes : [];
 }
 const bodies = () => saved().filter((n) => n.kind === 'container');
+const poseOf = (id: string) => saved().find((n) => n.id === id)!.pose!;
 const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
   return d !== undefined && 'from' in d;
@@ -210,10 +217,67 @@ describe('WeaselChart chart mode', () => {
     expect(Math.abs(pose.x + pose.width / 2 - 400)).toBeLessThan(2);
     expect(Math.abs(pose.y + pose.height / 2 - 300)).toBeLessThan(2);
   });
+
+  it('snaps a moved body to the grid once View › Snap to grid is on', async () => {
+    chartPrefs().set('view.alignmentSnap', false);
+    chartPrefs().set('view.spacingSnap', false);
+    const { host, canvas } = await mountApp();
+    await userEvent.click(page.getByRole('option', { name: 'Process' }));
+    await drag(canvas, at(host, 100, 100), at(host, 220, 160));
+    await expect.poll(() => bodies().length).toBe(1);
+    const id = bodies()[0]!.id;
+
+    await userEvent.click(page.getByRole('menuitem', { name: 'View' }));
+    await userEvent.click(page.getByRole('menuitemcheckbox', { name: /^Snap to grid/ }));
+    expect(chartPrefs().get('view.snapToGrid')).toBe(true);
+
+    await useTool('Select');
+    await drag(canvas, at(host, 160, 130), at(host, 177, 139));
+    // Unsnapped, the origin would land near (117, 109).
+    await expect.poll(() => poseOf(id).x).toBeCloseTo(120);
+    expect(poseOf(id).y).toBeCloseTo(108);
+  });
+
+  it('drops a stencil with its origin on the grid under snap to grid', async () => {
+    chartPrefs().set('view.snapToGrid', true);
+    const { host, canvas } = await mountApp();
+    const dt = new DataTransfer();
+    dt.setData('text/plain', stencilDragText('decision'));
+    // A Decision is 120 by 80, so its origin would sit at (340, 260): the grid's (336, 264).
+    const p = at(host, 400, 300);
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
+    }
+    await expect.poll(() => bodies().length).toBe(1);
+    const pose = bodies()[0]!.pose!;
+    expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
+  });
+
+  it('draws the grid on the page while View › Show grid is on', async () => {
+    const { host, canvas } = await mountApp();
+    const inkOnPage = () => offWhitePixels(canvas, at(host, 300, 300), at(host, 700, 600));
+    expect(inkOnPage()).toBe(0);
+    await userEvent.click(page.getByRole('menuitem', { name: 'View' }));
+    await userEvent.click(page.getByRole('menuitemcheckbox', { name: /^Show grid/ }));
+    await expect.poll(inkOnPage).toBeGreaterThan(1000);
+    await page.screenshot({ element: host, path: '__screenshots__/chart.browser.test.tsx/grid.png' });
+  });
 });
 
 /** Pixels darker than 128 on every channel inside a client rect: label ink on a body's white fill. */
 function darkPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  return countPixels(canvas, a, b, (r, g, bl) => r < 128 && g < 128 && bl < 128);
+}
+
+/** Pixels short of white inside a client rect: grid lines on the white page. */
+function offWhitePixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): number {
+  return countPixels(canvas, a, b, (r, g, bl) => r < 252 || g < 252 || bl < 252);
+}
+
+function countPixels(
+  canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number },
+  test: (r: number, g: number, bl: number) => boolean,
+): number {
   const gl = canvas.getContext('webgl2')!;
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
@@ -226,6 +290,6 @@ function darkPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: {
   const px = new Uint8Array(w * h * 4);
   gl.readPixels(x0, canvas.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
   let n = 0;
-  for (let i = 0; i < px.length; i += 4) if (px[i]! < 128 && px[i + 1]! < 128 && px[i + 2]! < 128) n++;
+  for (let i = 0; i < px.length; i += 4) if (test(px[i]!, px[i + 1]!, px[i + 2]!)) n++;
   return n;
 }

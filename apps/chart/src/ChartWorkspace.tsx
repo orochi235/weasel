@@ -14,10 +14,10 @@ import {
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
+import { useChartSnap } from './useChartSnap';
 import { StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
 import './workspace.css';
 
-const FEATURES = ['draw'] as const;
 // Module consts: SceneCanvas keys its wiring off these props' identity.
 const INGESTION = { handlers: [stencilDropHandler] };
 const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
@@ -43,6 +43,11 @@ export function ChartWorkspace(): ReactElement {
   const [view, setView] = useState<View>(NO_VIEW);
   const recenter = usePageFit(dims, 'chart', CHART_PAGE, setView);
   const paperLayer = usePaperLayer(CHART_PAGE, CHART_PAGE_COLOR);
+  const { gridLayer, snap, features } = useChartSnap();
+  const layers = useMemo(() => ({
+    paper: { layer: paperLayer, before: 'grid' },
+    ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
+  }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
@@ -68,7 +73,8 @@ export function ChartWorkspace(): ReactElement {
           <SceneCanvas<ChartData, ChartLayer, ChartPose>
             aria-label="Chart"
             ref={setCanvas}
-            features={FEATURES}
+            features={features}
+            snap={snap}
             claimKeys
             scene={scene}
             selection={selection}
@@ -83,7 +89,7 @@ export function ChartWorkspace(): ReactElement {
             ingestion={INGESTION}
             onToolsCreated={setTools}
             alphaFor={alphaFor}
-            layers={{ paper: { layer: paperLayer, before: 'scene' } }}
+            layers={layers}
           >
             <StencilInsertPublisher />
             <WaypointFollowerPublisher scene={scene} />

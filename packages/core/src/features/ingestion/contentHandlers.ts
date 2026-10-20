@@ -16,7 +16,7 @@ import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { ClipboardIngestCtx, InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
+import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { IngestItem } from '@weasel-js/routing';
 
@@ -31,6 +31,9 @@ export interface IngestCtx {
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;
+  /** The canvas's snap dep, for a handler that places what it inserts where a
+   *  gesture would: begin a `'point'` session, take `at()`, `end()`. */
+  snap?: SnapDep;
   /** Raw op commit for handlers that build their own ops. */
   applyOps(ops: Op[], label?: string): void;
   scene: Scene<unknown, string, unknown>;
