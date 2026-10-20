@@ -33,6 +33,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
   const pointerChannel = channels?.pointer !== false;
+  const hoverChannel = channels?.hover ?? pointerChannel;
   const wheelChannel = channels?.wheel !== false;
   const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
@@ -124,12 +125,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     }, {
       keyboard,
       pointer: pointerChannel,
+      hover: hoverChannel,
       wheel: wheelChannel,
       pinch: pinchChannel,
       contextMenu: contextMenuChannel,
       ingest: ingestChannel,
       carry: carryChannel,
     });
-  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
+  }, [enabled, keyboard, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

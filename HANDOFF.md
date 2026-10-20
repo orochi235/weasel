@@ -4,12 +4,12 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 05:20)
+## Overnight pass, 2026-10-20 (status at 05:40)
 
 For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
 marked "overnight pass". Nothing is pushed.
 
-**`main` is green at `48ac2d533`** (full fleet run on teitou: 27836 passed, 0 failed).
+**`main` is green at `1c3dbb092`** (full fleet run on msb-uai: 27858 passed, 0 failed).
 
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
@@ -47,6 +47,12 @@ Merged:
   fleet. CI has not run it, since nothing is pushed. Still open there, filed as a P2 under
   "Release-gate & build hygiene": the fleet runs neither Node 22 nor Linux Chromium; ten Linux
   browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
+- `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
+  (a real-mouse browser test drags over a lens).
+- Grid snapping and node length fields read a container's unit scope (no app passes the new
+  options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
+- Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
+  session takes its key from its name.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

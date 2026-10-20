@@ -11,6 +11,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): `HoverSpec.held` (`true | 'optional'`, the values `mods` takes;
+  `hover ?held` / `hover +held` in a route) keeps reporting a held pointer's moves as hovers marked
+  `held`, without claiming them. Leaving the surface is a leave pressed or not; a target-to-target
+  leave during a press reaches only a `held` binding. A new dispatcher channel, `channels.hover`,
+  attaches hovers without the pointer channel. The loupe aims through `loupe.aim` and
+  `loupe.leave`, so `useLoupe` alone no longer aims; it needs `<LoupeGestures>`.
 - 2026-10-20 (overnight pass): The bone and weight tools left core with their actions for a new
   `@weasel-js/rig` (`RIG_TOOLS`, `useRigTools`, glyphs `rig:bone` and `rig:weight`), not for
   animator, which core depends on. Core keeps `animation/rig` (`useRigNode`, `bindRig`,
@@ -157,6 +163,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
+  scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
+  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
+  the grid's origin stays in world space. Only box position, size and text padding are lengths.
+  The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
 - 2026-10-20 (overnight pass): A transform preview carries pose once, in the scene's overrides:
   `move`, `resize`, and `rotate` handles drop `previewPose` (read `effectivePose(scene, node)`), the
   ghost resolves through `effectivePose`, and selection chrome boxes an in-flight id at its effective
@@ -418,6 +430,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): In `PrefSchemaEditor`, only a node added in this session takes its
+  key from its name; a baseline pref keeps its key when renamed, and Changes and `onSubmit` carry the
+  name change alone. The Key field stays the way to change a key deliberately.
 - 2026-10-20 (overnight pass): `useLeafAction`'s `reason` is renamed `disabledReason`, the prop
   `BarActionButton` reads, so a bar button and a panel row explain themselves the same way. A bar
   button disabled with a reason (ActionBar, BarAction, the loupe) is now focusable and

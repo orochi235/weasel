@@ -247,6 +247,7 @@ export function matchSpec(
     case 'hover': {
       if (e.kind !== 'hover') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!e.off && (e.held === true ? spec.held === undefined : spec.held === true)) return false;
       const on = !e.off && matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
       if (spec.motion !== 'leave') return on;
       return !on && e.from !== undefined && matchTarget(e.from.affordance, spec.target, e.from.bodyTarget, e.from.bodyKind);

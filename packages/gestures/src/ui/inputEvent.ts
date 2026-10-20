@@ -231,6 +231,8 @@ export interface HoverEvent extends EventModifiers {
   from?: HoverWhere;
   /** The pointer has left the surface. Where it is and what it is over are its last move's. */
   off?: boolean;
+  /** A button was held through this move. Never set on `off`. */
+  held?: boolean;
   /** World-space position of the pointer. */
   x: number;
   y: number;

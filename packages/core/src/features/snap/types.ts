@@ -66,6 +66,9 @@ export interface SnapCollect<P = Point> {
   /** `id`'s drawn box, measured as `box` is. Absent in a host with no 2D
    *  scene. */
   drawnBox?(id: string): Bounds | undefined;
+  /** The subject: the nodes the gesture moves or resizes. Absent for a
+   *  gesture with none, such as drawing a new shape. */
+  ids?: readonly string[];
   /** Nodes that offer no targets: what the gesture moves. */
   exclude: readonly string[];
   /** Only these nodes offer targets. */

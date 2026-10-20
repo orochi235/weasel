@@ -75,6 +75,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     unit: { kind: 'unit', name: 'Unit', description: 'What it is shown and typed in, over the unit it is stored in: stored = shown × scale + offset, shown to that many places. A suffix it also takes is typed in place of its own, where shown = typed × that suffix\'s scale + its offset.', default: undefined },
     control: control(['input', 'slider']),
     endless: choice('Endless', 'Which ends run to infinity.', ['min', 'max', 'both']),
+    measure: choice('Measure', 'What it measures. A length is stored in world units and shown in the unit scope of the node it belongs to.', ['length']),
   },
   boolean: { control: control(['checkbox', 'switch', 'toggle']) },
   string: { control: control(['input', 'textarea']) },
