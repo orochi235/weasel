@@ -1122,20 +1122,36 @@ only story runner in the repo.
     (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
     clip only the stencil expresses, and a paint that draws for itself (a pattern, a shader,
     per-vertex colors).
-  - **What joined the run since is checked in a browser but not timed.** Each is pinned by draw
-    count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium (run
-    2026-10-17):
+  - **What joined the run since is checked in a browser.** Each is pinned
+    by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
+    (run 2026-10-17):
     - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
     - Fifteen textures where a run held seven, fetched through a tree of four compares where the
-      chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
-      (`fill-rate.spec.ts`), and the wider `u_samplers` and `u_fieldScale` uploads per flush.
+      chain took up to seven (`batchSlots.browser.test.ts`). The tree costs a fragment what the
+      chain's deepest slot did: `fill-rate.spec.ts`'s `batch` came within 1.2% of
+      `batch-chain8-7` on msb-uai (Apple M3 Max) and keiei (Apple M2), two passes each with no
+      other onto job on the node, 2026-10-19; the chain's slot 1 was 2–4% cheaper. The wider
+      `u_samplers` and `u_fieldScale` uploads are under `flush-anatomy`'s noise: dropping them
+      saved 0.06 us a flush on teitou (2026-10-17), and 0.1–1.9 us in four passes on msb-uai
+      (2026-10-19) where a flush cost 31–34 (result files with the ring measurement below).
     - A gradient or an image under any color matrix: each vertex names one of up to eight
       (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
       (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
-      only scales channels down rides a vertex tint, as an image does. Not timed: the indexed
-      matrix per fragment, and three array uniforms a flush where the matrices changed.
+      only scales channels down rides a vertex tint, as an image does. The program such a run
+      draws with costs each of its fragments 12–13% more than the one-matrix program on msb-uai
+      and 22–23% on keiei (`batch-8-matrices`, the same runs). The matrix uploads are under the
+      same noise as the sampler uploads (`-colormatrix`: 0.08 us on teitou, 0.3–2.2 on msb-uai).
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
+  - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
+    `batch` variant draws `BATCH_FRAG_SRC` through `BATCH_VERT_SRC` (`tests/perf/lib/batchFragments.ts`);
+    it cost 2.95–2.98 times `split-sample`, the hand-written fragment the spec's older variants
+    price the glyph math and the gradient split against, on both nodes, and 4.7 (M3 Max) and 5.9
+    (M2) times a plain textured fragment. So those variants' percentages are shares of a fragment
+    a third as dear as the real one. What the rest is spent on (the color matrix and clamp,
+    `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
+    ran 2.5–4 times slower in both passes, every variant alike; the spec keeps the fastest run,
+    so they do not reach a figure. Result files: `tests/perf/recorded/fill-rate-batch-2026-10-19/`.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 2.2 us a push and pop around a
