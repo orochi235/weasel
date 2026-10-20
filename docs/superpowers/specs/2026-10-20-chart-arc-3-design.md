@@ -24,7 +24,6 @@ merged.
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
 | 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
-| 13 | Mermaid and Graphviz DOT | `diagram-formats`, app tests | — | 4 |
 | 14 | Draw-style XML | `diagram-formats`, svg, app tests | — | 4 |
 
 Pieces are numbered by topic; build them by wave. Piece 6 needs nothing from piece 3 to compile,
@@ -99,47 +98,6 @@ weaselchart's File › Import… and File › Export › As … list every regis
 piece touches the app beyond its tests. A writer reads an item's drawn colors with diagram's
 `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle` under the document's theme, and a route as
 `waypoints ?? routed`.
-
-## 13. Mermaid and Graphviz DOT
-
-Both carry a graph's topology and labels, not its geometry (DOT's only when every node has `pos`),
-so import leaves `at` unset and `documentSpecs` lays the page out with `layered`, the way the
-page's `direction` says.
-
-### Mappings
-
-| Diagram | Mermaid flowchart | Graphviz DOT |
-|---|---|---|
-| rect | `A[text]` | `shape=box` |
-| stadium | `A([text])` | `shape=box, style=rounded` |
-| diamond | `A{text}` | `shape=diamond` |
-| ellipse | `A((text))` | `shape=ellipse` |
-| hexagon | `A{{text}}` | `shape=hexagon` |
-| parallelogram | `A[/text/]` | `shape=parallelogram` |
-| trapezoid | `A[/text\]` | `shape=trapezium` |
-| edge, label | `A -->|text| B` | `A -> B [label=…]` |
-| container | `subgraph` | `subgraph cluster_*` |
-| page `direction` | `flowchart TD/LR/BT/RL` | `rankdir` |
-| colors | `style` and `classDef` fill and stroke | `fillcolor`, `color`, `fontcolor` |
-| ports | — | `node:port:compass`, compass only |
-
-Unknown Mermaid shapes read as rect with a warning; other Mermaid diagram kinds are refused with an
-error naming the kind. DOT reads the full grammar (strict, graph and digraph, attribute statements,
-edge chains, subgraphs); HTML labels are read as their text. Pools and lanes have no equivalent in
-either and export as nested containers.
-
-### Engine surface (`packages/diagram-formats/src/`)
-
-`mermaid/` and `dot/`, each `lex.ts`, `parse.ts` (to a syntax tree), `read.ts`, and `write.ts`,
-registered in `DIAGRAM_FORMATS` with extensions `.mmd`/`.mermaid` and `.dot`/`.gv`, each with
-`onePage`, so export writes the page in view. An import is one undo entry, "Import"; an export
-writes nothing to the scene.
-
-### Tests
-
-- Parser tests over fixtures in `__fixtures__/`; read tests per row of the table; write then read
-  gives the same topology, labels, shapes, and containers; warnings for each unsupported construct.
-- Chart test: import a `.mmd`, the canvas holds the laid-out nodes.
 
 ## 14. Draw-style XML
 

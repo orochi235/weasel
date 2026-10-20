@@ -1,9 +1,11 @@
 /** The formats a diagram reads from and writes to, and how a file finds its format. */
 import type { DiagramFormat, ImportResult } from './document';
+import { DIAGRAM_DOT } from './dot/format';
 import { DIAGRAM_JSON } from './jsonFormat';
+import { DIAGRAM_MERMAID } from './mermaid/format';
 
 /** Every format this package reads or writes. */
-export const DIAGRAM_FORMATS: readonly DiagramFormat[] = [DIAGRAM_JSON];
+export const DIAGRAM_FORMATS: readonly DiagramFormat[] = [DIAGRAM_JSON, DIAGRAM_MERMAID, DIAGRAM_DOT];
 
 const extensionOf = (format: DiagramFormat, fileName: string): boolean =>
   format.extensions.some((ext) => fileName.toLowerCase().endsWith(ext.toLowerCase()));
