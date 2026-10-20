@@ -78,6 +78,12 @@ function measure(form: Element): Frame {
     return scrollers.length - 1;
   };
   const twoAcross = form.getAttribute('data-across') === '2';
+  // Two across falls back to one column in a narrow form, so whether a row shares its line is the grid's to say.
+  const sharesLine = (el: Element): boolean => {
+    let grid = el.parentElement;
+    while (grid && grid !== form && getComputedStyle(grid).display === 'contents') grid = grid.parentElement;
+    return !!grid && getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length > 1;
+  };
   const sections = [...form.querySelectorAll('[data-pref-sticky]')].map((title) => ({ title, el: title.parentElement! }));
   const els = [...form.querySelectorAll(`[${RAIL_ATTR}], [${PATH_ATTR}], [data-pref-into]`)];
   const index = new Map(els.map((el, i) => [el, i]));
@@ -92,7 +98,7 @@ function measure(form: Element): Frame {
       rect: rectOf(el),
       scroller: scrollerOf(el),
       owner: owner ? index.get(owner) ?? -1 : -1,
-      across: bar ? bar.getAttribute('data-orientation') !== 'vertical' : twoAcross && !el.hasAttribute('data-wide'),
+      across: bar ? bar.getAttribute('data-orientation') !== 'vertical' : twoAcross && !el.hasAttribute('data-wide') && sharesLine(el),
       cover: sections.findIndex((s) => s.el !== el && s.el.contains(el)),
       fragments: [],
     };

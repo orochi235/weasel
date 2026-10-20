@@ -4,6 +4,8 @@
  *
  * @packageDocumentation
  */
+export { canMoveInChain, chainLinks, moveInChain } from './effect/chainEdit';
+export type { ChainLinks } from './effect/chainEdit';
 export { checkPipeline } from './effect/check';
 export { COMPACT_PADDING, compact } from './effect/compact';
 export type { CompactOptions } from './effect/compact';
@@ -27,14 +29,15 @@ export {
   wireEdges,
   wireStyle,
 } from './effect/draw';
-export type { DrawableWire, EffectLook, EffectLookResult, RunRowOptions, TypeColor } from './effect/draw';
+export type { DrawableWire, EffectLook, EffectLookResult, LookOrder, RunRowOptions, TypeColor } from './effect/draw';
 export { EFFECT_MIN_SCALE, EffectChart } from './effect/EffectChart';
 export type { EffectChartProps } from './effect/EffectChart';
 export { EffectEditor } from './effect/EffectEditor';
-export type { EffectEditorApi, EffectEditorProps } from './effect/EffectEditor';
+export type { EffectEditorApi, EffectEditorBaseProps, EffectEditorLookProps, EffectEditorProps } from './effect/EffectEditor';
 export { editorScene } from './effect/editorMapping';
-export type { EditorScene } from './effect/editorMapping';
-export { LANE_INSET, laneId, lanes } from './effect/lanes';
+export type { EditorLook, EditorLookOptions, EditorScene } from './effect/editorMapping';
+export { REORDER_LANES_ACTION_ID } from './effect/editorReorder';
+export { LANE_INSET, laneId, laneTypeOf, lanes } from './effect/lanes';
 export type { LanesOptions } from './effect/lanes';
 export {
   addStage,
@@ -47,6 +50,7 @@ export {
   reconnectWire,
   removeStages,
   removeWires,
+  setLaneOrder,
   setParam,
 } from './effect/edit';
 export { formatParam, stageFromType } from './effect/stageTypes';

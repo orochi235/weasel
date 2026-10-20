@@ -119,6 +119,8 @@ export type {
   ClipboardIngestCtx,
   EditAnchorsDep,
   FinishedEditFrame,
+  TransformFollower,
+  TransformPreviewNode,
   IngestionDep,
   InsertDep,
   InsertEnds,

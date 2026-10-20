@@ -93,7 +93,7 @@ describe('PrefSchemaEditor', () => {
     fireEvent.click(row('view'));
     const dialog = openAdd('Add pref');
     settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Line width');
-    expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('lineWidth');
+    expect(within(dialog).getByRole('textbox', { name: 'Key' })).toHaveValue('lineWidth');
     pickKind(dialog, 'number');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
     expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
@@ -112,14 +112,14 @@ describe('PrefSchemaEditor', () => {
     pickKind(dialog, 'boolean');
     expect(within(dialog).getByText(/"snap" is taken here/)).toBeInTheDocument();
     expect(add).toBeDisabled();
-    settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'snapAngle');
+    settle(within(dialog).getByRole('textbox', { name: 'Key' }), 'snapAngle');
     expect(add).toBeEnabled();
   });
 
   it('adds a group with no name, keyed by the id given', () => {
     renderWithIcons(<Live />);
     const dialog = openAdd('Add group');
-    settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'misc');
+    settle(within(dialog).getByRole('textbox', { name: 'Key' }), 'misc');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
     expect(within(structure()).getByText('misc')).toBeInTheDocument();
   });
@@ -668,13 +668,13 @@ describe('PrefSchemaEditor', () => {
       fireEvent.click(row('layout'));
       const dialog = openAdd('Add pref');
       settle(within(dialog).getByRole('textbox', { name: 'Name' }), 'Width');
-      settle(within(dialog).getByRole('textbox', { name: 'Id' }), 'pose.width');
+      settle(within(dialog).getByRole('textbox', { name: 'Key' }), 'pose.width');
       pickKind(dialog, 'number');
       fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
       expect(row('pose.width')).toBeInTheDocument();
       fireEvent.click(row('layout'));
       const section = openAdd('Add section');
-      settle(within(section).getByRole('textbox', { name: 'Id' }), 'more');
+      settle(within(section).getByRole('textbox', { name: 'Key' }), 'more');
       fireEvent.click(within(section).getByRole('button', { name: 'Add' }));
       expect(screen.getByTestId('schema-literal')).toHaveTextContent(/more: \{[^}]*members: \{\}/);
     });

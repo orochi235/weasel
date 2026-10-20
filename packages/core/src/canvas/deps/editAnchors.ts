@@ -23,8 +23,9 @@ import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'feat
 import { representationOf } from 'features/paths/pathRepresentation';
 import type { PathEditExtension } from 'features/paths/pathEditExtension';
 import {
-  finishCtx, finishEdit, otherOps, reshapeOps, transformOps, transformPreview, type EditableNode,
+  finishCtx, finishEdit, otherOps, pathEditFollower, reshapeOps, type EditableNode,
 } from './pathEditCommits';
+import { useTransformFollower } from './transformFollowers';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -133,6 +134,7 @@ export function useEditAnchorsDepSource(
       ...pathAccess(sc, ad, state.getExtensions()),
     };
   });
+  useTransformFollower(() => pathEditFollower(sceneRef.current, stateRef.current.getExtensions()));
 }
 
 /** The members of the dep that read the scene and commit to it. */
@@ -143,7 +145,7 @@ function pathAccess(
 ): Pick<
   EditAnchorsDep,
   | 'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit'
-  | 'transformOps' | 'transformPreview' | 'store'
+  | 'store'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = sc.get(id as NodeId) as EditableNode | undefined;
@@ -189,8 +191,6 @@ function pathAccess(
       const others = [...done.others.values()].flatMap((o) => (o.path && !o.remove ? [{ id: o.id, path: o.path }] : []));
       return { path: done.path, others };
     },
-    transformOps: (ops, label) => transformOps(sc, extensions, ops, label),
-    transformPreview: (poses) => transformPreview(sc, extensions, poses),
     store(id, worldPath, label, data) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
       const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null, extensions) : [];

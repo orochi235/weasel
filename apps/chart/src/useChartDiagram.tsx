@@ -1,7 +1,8 @@
-import type { Contribution, RenderLayer, SelectionApi, Tool } from '@weasel-js/core';
+import { useTransformFollower, type Contribution, type RenderLayer, type SelectionApi, type Tool } from '@weasel-js/core';
 import {
-  CONNECTOR_TOOL_ID, FLOWCHART_STENCILS, diagramEdgeEnds, diagramPorts, editEdgeLabelAction, editEdgeLabelBinding,
-  registerDiagramShape, sceneParticipants, stencilKind, stencilTool, useConnectorTool, useStencilInsert,
+  CONNECTOR_TOOL_ID, FLOWCHART_STENCILS, diagramEdgeEnds, diagramPorts, diagramWaypoints, editEdgeLabelAction,
+  editEdgeLabelBinding, registerDiagramShape, sceneParticipants, stencilKind, stencilTool, useConnectorTool,
+  useStencilInsert, waypointFollower,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, type ChartPose, type ChartScene } from './chartDocument';
@@ -28,7 +29,7 @@ export interface ChartDiagram {
   tools: Record<string, Tool>;
 }
 
-/** The diagram editing chart mode adds to its canvas: ports, edge ends, edge labels, the connector and the stencils. */
+/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, the connector and the stencils. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
@@ -41,13 +42,14 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi): Cha
     () => diagramEdgeEnds<ChartPose>({ selected, participants, bodies: true }),
     [selected, participants],
   );
+  const route = useMemo(() => diagramWaypoints<ChartPose>({ selected, participants }), [selected, participants]);
   const connector = useConnectorTool<ChartPose>({ participants, router: ROUTER, edgeStroke: CHART_EDGE_STROKE });
   return useMemo(() => ({
-    // Edge ends after ports: an edge's end sits on a port, and a press on its handle must not start a connect.
-    layers: [ports.layer, ends.layer],
-    ambient: [ports.contribution, ends.contribution, EDGE_LABEL],
+    // Edge ends last: an edge's end sits on a port and beside a route handle, and a press on it must start neither.
+    layers: [ports.layer, route.layer, ends.layer],
+    ambient: [ports.contribution, route.contribution, ends.contribution, EDGE_LABEL],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
-  }), [ports, ends, connector]);
+  }), [ports, route, ends, connector]);
 }
 
 /**
@@ -57,5 +59,12 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi): Cha
  */
 export function StencilInsertPublisher(): null {
   useStencilInsert(FLOWCHART_STENCILS, STENCIL_INSERT);
+  return null;
+}
+
+/** Carries a connector's waypoints along when a move takes both its ends. Mounted as a child of `<SceneCanvas>`. */
+export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): null {
+  const follower = useMemo(() => waypointFollower<ChartPose>(scene), [scene]);
+  useTransformFollower(() => follower);
   return null;
 }

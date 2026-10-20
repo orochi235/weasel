@@ -60,6 +60,9 @@ export interface TreeProps {
   /** Default `'none'`. `'multiple'` adds to the selection with Cmd/Ctrl,
    *  extends it over visible rows with Shift, and takes them all with Cmd/Ctrl+A. */
   selectionMode?: TreeSelectionMode;
+  /** The arrow keys, Home and End select the row they reach, rather than only focusing it: for a tree whose selection
+   *  drives something drawn beside it, such as an inspector. Default false. */
+  selectionFollowsFocus?: boolean;
   /** Selected rows, controlled. */
   selectedIds?: Iterable<string>;
   /** Selected rows on first render, when uncontrolled. */

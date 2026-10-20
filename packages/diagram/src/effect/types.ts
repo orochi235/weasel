@@ -115,4 +115,10 @@ export type EffectPlaces = Readonly<Record<string, Vec2>>;
 export interface EffectDoc {
   pipeline: EffectPipeline;
   places: EffectPlaces;
+  /** The value types whose lanes the `lanes` look draws first, top down. */
+  laneOrder?: readonly string[];
+  /** The waypoints a person routed each wire through, by wire id, beside the
+   *  pipeline as `places` is. Only `nodeGraph` draws them; `rack` and `lanes`
+   *  route their own wires. */
+  routes?: Readonly<Record<string, readonly Vec2[]>>;
 }

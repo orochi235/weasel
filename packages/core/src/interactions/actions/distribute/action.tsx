@@ -72,7 +72,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'editAnchors'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'transformFollowers'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',

@@ -9,6 +9,7 @@ import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 
@@ -29,7 +30,7 @@ export default defineConfig({
     weaselIcons.vite({ mode: 'app' }),
     localWake(),
   ],
-  server: { port: ports.chart, strictPort: true, host: '::' },
+  server: { port: ports.chart, strictPort: true, ...LAN_SERVER },
   define: weaselDefines(repoRoot),
   build: {
     outDir: resolve(repoRoot, 'dist-chart'),

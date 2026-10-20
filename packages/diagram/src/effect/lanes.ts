@@ -6,6 +6,7 @@ import {
   type DrawableWire, type EffectLook, type RunRowOptions, type TypeColor,
 } from './draw';
 import { inkOf, routeWires, TRACK_GAP, type Box } from './lanesRoutes';
+import { mainChain } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
@@ -44,6 +45,8 @@ const LANE_STYLES: readonly NodeStyle[] = [
 
 /** The node id of the lane for a value type. */
 export const laneId = (type: string): string => `~lane:${type}`;
+/** The value type of the lane `laneId` named, or `undefined` for any other id. */
+export const laneTypeOf = (id: string): string | undefined => (id.startsWith('~lane:') ? id.slice('~lane:'.length) : undefined);
 
 /** A stage's span: the first and last lane it touches. */
 type Span = readonly [number, number];
@@ -277,5 +280,12 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
       nodeStyle: (n) => laneStyle.get(n.id) ?? styles.nodeStyle(n),
     },
     color,
+    order: { axis: 'x', items: mainChain(pipeline).map((id) => ({ id })) },
+    ...(types.length > 0 ? {
+      laneOrder: {
+        axis: 'y' as const,
+        items: types.map((t, i) => ({ id: laneId(t), grip: { x: 0, y: tops[i]!, width: plan.start, height: heights[i]! } })),
+      },
+    } : {}),
   };
 };

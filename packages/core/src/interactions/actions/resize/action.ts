@@ -29,7 +29,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   modifierRoles: SNAP_ROLES,
   requires: [
     'selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'view',
-    'boundsIncludeStroke', 'kitSettings', 'snap', 'editAnchors',
+    'boundsIncludeStroke', 'kitSettings', 'snap', 'transformFollowers',
   ],
   invoker: {
     timing: 'ongoing',

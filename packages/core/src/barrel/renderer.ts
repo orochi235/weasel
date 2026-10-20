@@ -162,7 +162,7 @@ export type {
 } from '../core/shapeKinds';
 export type { BuiltinToolOptions } from '../canvas/SceneCanvas/useBuiltinShapeTools';
 export type { InsertNodeFactory, InsertPaint, PreviewPathsDep } from '../canvas/deps';
-export { paletteInsertPaint } from '../canvas/deps';
+export { paletteInsertPaint, useTransformFollower } from '../canvas/deps';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,
