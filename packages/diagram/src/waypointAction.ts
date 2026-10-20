@@ -130,7 +130,7 @@ export function createRouteEditAction<TPose>(opts: RouteEditOptions<TPose>): Act
     id: opts.id ?? ROUTE_EDIT_ACTION_ID,
     label: 'Edit route',
     group: 'diagram',
-    requires: ['scene', 'snap'],
+    requires: ['scene', 'view', 'snap'],
     modifierRoles: SNAP_ROLES,
     invoker: {
       timing: 'ongoing',

@@ -4,6 +4,17 @@
 import { openPrefsSync, type PrefGroup, type PrefPath, type PrefsStore, type PrefValueAt } from '@weasel-js/prefs';
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
+import type { EditorLook } from '@weasel-js/diagram/effect';
+
+const LOOK_OPTIONS = [
+  { value: 'nodeGraph', label: 'Node graph' },
+  { value: 'rack', label: 'Rack' },
+  { value: 'lanes', label: 'Lanes' },
+] as const satisfies readonly { value: EditorLook; label: string }[];
+
+// Fails to typecheck when `EditorLook` gains a look the options leave out.
+const everyLookOffered: [Exclude<EditorLook, (typeof LOOK_OPTIONS)[number]['value']>] extends [never] ? true : false = true;
+void everyLookOffered;
 
 export const CHART_PREFS = {
   name: 'WeaselChart preferences',
@@ -32,7 +43,7 @@ export const CHART_PREFS = {
         snapToGrid: {
           kind: 'boolean',
           name: 'Snap to grid',
-          description: 'Snap moves and resizes to the grid.',
+          description: 'Snap to the grid when moving, resizing or inserting shapes, dropping stencils, and dragging connector route handles.',
           default: false,
         },
         alignmentSnap: {
@@ -58,11 +69,7 @@ export const CHART_PREFS = {
           name: 'Look',
           description: 'How the pipeline editor draws stages and wires.',
           default: 'nodeGraph',
-          options: [
-            { value: 'nodeGraph', label: 'Node graph' },
-            { value: 'rack', label: 'Rack' },
-            { value: 'lanes', label: 'Lanes' },
-          ],
+          options: LOOK_OPTIONS,
         },
       },
     },

@@ -253,13 +253,44 @@ describe('WeaselChart chart mode', () => {
     expect([pose.x, pose.y, pose.width, pose.height].map(Math.round)).toEqual([336, 264, 120, 80]);
   });
 
+  it('lines a dropped stencil up with its neighbor the way a move would, in one undo step', async () => {
+    chartPrefs().set('view.spacingSnap', false);
+    const { host, canvas } = await mountApp();
+    const drop = (stencil: string, x: number, y: number) => {
+      const dt = new DataTransfer();
+      dt.setData('text/plain', stencilDragText(stencil));
+      const p = at(host, x, y);
+      for (const type of ['dragenter', 'dragover', 'drop']) {
+        canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
+      }
+    };
+    // A Decision spanning y 260..340.
+    drop('decision', 400, 300);
+    await expect.poll(() => bodies().length).toBe(1);
+    // A Process centered at y 312 spans 282..342: its corner is out of reach of every line, its
+    // bottom edge 2 from the Decision's. A move lines the bottoms up; a corner-only snap left it at 282.
+    drop('process', 640, 312);
+    await expect.poll(() => bodies().length).toBe(2);
+    const decision = bodies().find((b) => b.pose!.height === 80)!.pose!;
+    const process = bodies().find((b) => b.pose!.height === 60)!.pose!;
+    expect(process.y + process.height).toBeCloseTo(decision.y + decision.height);
+
+    await userEvent.click(page.getByRole('menuitem', { name: 'Edit' }));
+    await userEvent.click(page.getByRole('menuitem', { name: /^Undo/ }));
+    await expect.poll(() => bodies().length).toBe(1);
+  });
+
   it('draws the grid on the page while View › Show grid is on', async () => {
     const { host, canvas } = await mountApp();
     const inkOnPage = () => offWhitePixels(canvas, at(host, 300, 300), at(host, 700, 600));
+    // A strip of workspace just left of the page, inside the fit's 24px of padding.
+    const workspace = () => readRect(canvas, at(host, -15, 300), at(host, -3, 600));
     expect(inkOnPage()).toBe(0);
+    const bare = workspace();
     await userEvent.click(page.getByRole('menuitem', { name: 'View' }));
     await userEvent.click(page.getByRole('menuitemcheckbox', { name: /^Show grid/ }));
     await expect.poll(inkOnPage).toBeGreaterThan(1000);
+    expect(workspace()).toEqual(bare);
     await page.screenshot({ element: host, path: '__screenshots__/chart.browser.test.tsx/grid.png' });
   });
 });
@@ -278,6 +309,14 @@ function countPixels(
   canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number },
   test: (r: number, g: number, bl: number) => boolean,
 ): number {
+  const px = readRect(canvas, a, b);
+  let n = 0;
+  for (let i = 0; i < px.length; i += 4) if (test(px[i]!, px[i + 1]!, px[i + 2]!)) n++;
+  return n;
+}
+
+/** The RGBA bytes of the canvas inside a client rect. */
+function readRect(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): Uint8Array {
   const gl = canvas.getContext('webgl2')!;
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
@@ -289,7 +328,5 @@ function countPixels(
   const h = y1 - y0;
   const px = new Uint8Array(w * h * 4);
   gl.readPixels(x0, canvas.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-  let n = 0;
-  for (let i = 0; i < px.length; i += 4) if (test(px[i]!, px[i + 1]!, px[i + 2]!)) n++;
-  return n;
+  return px;
 }

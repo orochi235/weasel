@@ -32,7 +32,8 @@ export interface IngestCtx {
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;
   /** The canvas's snap dep, for a handler that places what it inserts where a
-   *  gesture would: begin a `'point'` session, take `at()`, `end()`. */
+   *  gesture would: begin a session, take `at()`, `end()`. Its points are ctx
+   *  coordinates: world on a 2D canvas, screen in a 3D host. */
   snap?: SnapDep;
   /** Raw op commit for handlers that build their own ops. */
   applyOps(ops: Op[], label?: string): void;

@@ -1,4 +1,4 @@
-import type { ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
+import type { ContentHandlerEntry, IngestCtx, InsertExtras } from '@weasel-js/core';
 import { FLOWCHART_STENCILS, stencilKind } from '@weasel-js/diagram';
 
 // The kit's drop path keeps only text/plain, text/html and text/uri-list string flavors, so a
@@ -13,20 +13,35 @@ export const stencilIdOfDragText = (text: string): string | null =>
   text.startsWith(PREFIX) ? text.slice(PREFIX.length) : null;
 
 type Point = { x: number; y: number };
+type Bounds = Point & { width: number; height: number };
 
-/** Where a stencil centered on `at` puts its origin, snapped as a moved body's origin would be. */
-function snappedOrigin(ctx: IngestCtx, at: Point, size: { width: number; height: number }): Point {
-  const origin = { x: at.x - size.width / 2, y: at.y - size.height / 2 };
-  // A move offers no other node's anchors, so neither does a drop.
-  const session = ctx.snap?.begin({ gesture: 'point', press: origin, omit: ['path-snap'] });
-  if (!session) return origin;
-  const landed = session.at(origin, { suspend: false, constrain: false }).point;
-  session.end();
-  return landed;
+const PROBE = Symbol('stencil drop probe');
+
+/** How far a move pressed at `press` snaps a body inserted at `bounds` before it has moved.
+ *  The body is inserted in a batch that is thrown away, so the probe never reaches history. */
+function landingDelta(ctx: IngestCtx, bounds: Bounds, extras: InsertExtras, press: Point): Point {
+  const snap = ctx.snap;
+  if (!snap) return { x: 0, y: 0 };
+  let delta = { x: 0, y: 0 };
+  try {
+    ctx.scene.batch('Drop', () => {
+      const id = ctx.insert.commit(bounds, extras);
+      if (id !== null) {
+        const session = snap.begin({ gesture: 'move', press, ids: [id] });
+        const landed = session.at(press, { suspend: false, constrain: false }).point;
+        session.end();
+        delta = { x: landed.x - press.x, y: landed.y - press.y };
+      }
+      throw PROBE;
+    });
+  } catch (err) {
+    if (err !== PROBE) throw err;
+  }
+  return delta;
 }
 
 /** The content handler that inserts a dropped stencil centered on the drop point, through the
- *  `insert` dep, its origin snapped through the `snap` dep. */
+ *  `insert` dep, shifted as far as a move of it from there would snap it. */
 export const stencilDropHandler: ContentHandlerEntry = {
   id: 'weaselchart:stencil',
   match: (item) => item.kind === 'string' && item.mime === 'text/plain' && stencilIdOfDragText(item.text) !== null,
@@ -38,8 +53,10 @@ export const stencilDropHandler: ContentHandlerEntry = {
       const id = item.kind === 'string' ? stencilIdOfDragText(item.text) : null;
       const stencil = FLOWCHART_STENCILS.find((s) => s.id === id);
       if (stencil === undefined) continue;
-      const origin = snappedOrigin(ctx, at, stencil.size);
-      ctx.insert.commit({ ...origin, ...stencil.size }, { kind: stencilKind(stencil.id) });
+      const bounds = { x: at.x - stencil.size.width / 2, y: at.y - stencil.size.height / 2, ...stencil.size };
+      const extras: InsertExtras = { kind: stencilKind(stencil.id) };
+      const d = landingDelta(ctx, bounds, extras, at);
+      ctx.insert.commit({ ...bounds, x: bounds.x + d.x, y: bounds.y + d.y }, extras);
     }
   },
 };

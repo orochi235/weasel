@@ -114,6 +114,11 @@ const ONE_BEND = [{ x: 200, y: 100 }];
 const AC_UPRIGHT: RouteHandle = { kind: 'segment', index: 1, axis: 'y', at: { x: 200, y: 120 } };
 
 describe('createRouteEditAction', () => {
+  it('declares view, so a custom commit can read deps.view through the dev deps proxy', () => {
+    const action = createRouteEditAction<Rect>({ participants: participants(ONE_BEND), selected: () => [], commit: vi.fn() });
+    expect(action.requires).toContain('view');
+  });
+
   it('inserts a waypoint from a leg\'s hollow dot, previewing the edge as the commit writes it', () => {
     const commit = vi.fn();
     const { handle, at } = open({ commit }, 'ab', { kind: 'insert', leg: 0, at: { x: 200, y: 20 } });

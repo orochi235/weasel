@@ -128,7 +128,10 @@ A selected edge shows handles along its route as well as at its ends.
 A dragged handle snaps through the canvas's snap session: into line with the
 stops beside it and with a port's axis within 6 screen pixels (`snapPx`), and to
 whatever else the canvas snaps to, such as a grid, with the readout drawing each
-alignment. Ctrl suspends snapping, Shift holds a dragged bend to the axes and
+alignment. It leaves out the canvas's `'path-snap'` default, so a bend never
+catches a shape's corner anchors, and the edge being edited offers nothing to
+itself. A neighbor or port within reach claims its axis, and a grid fills the
+other. Ctrl suspends snapping, Shift holds a dragged bend to the axes and
 diagonals, and a segment always slides across its own axis. Escape cancels.
 A double-click that would remove nothing falls through, to label editing say.
 

@@ -140,8 +140,14 @@ describe('App', () => {
     act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Lanes'))!); });
     first.unmount();
     await chartPrefs().flush();
-    expect(chartPrefs().get('pipeline.look')).toBe('lanes');
     expect(localStorage.getItem('weaselchart.prefs/pipeline.look')).toContain('lanes');
+
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Look'))!); });
+    const held = rows().filter((el) => el.getAttribute('aria-checked') === 'true').map((el) => el.children[1]!.textContent);
+    expect(held).toEqual(['Lanes']);
   });
 
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {

@@ -1,5 +1,4 @@
 import { useCommand } from '@weasel-js/core';
-import type { EditorLook } from '@weasel-js/diagram/effect';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo, useState, type ReactElement } from 'react';
 import './app.css';
@@ -19,8 +18,7 @@ export function App(): ReactElement {
   const [mode, setMode] = useState<ChartMode>('chart');
   const pipeline = usePipelineDoc();
   // A view choice, not part of the pipeline doc.
-  const [storedLook, setLook] = useChartPref('pipeline.look');
-  const look = storedLook as EditorLook;
+  const [look, setLook] = useChartPref('pipeline.look');
   const [prefsOpen, setPrefsOpen] = useState(false);
   useModeCommands(mode, setMode);
   useCommand(CHART_ACTIONS.preferences, 'Preferences…', () => setPrefsOpen(true));
