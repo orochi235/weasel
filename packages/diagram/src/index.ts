@@ -54,7 +54,10 @@ export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export type { StencilInsertOptions } from './stencilTool';
 export * from './containers';
-export { GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramPorts, diagramWaypoints } from './contribution';
+export {
+  GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
+  createDiagramContribution, diagramLabelDrag, diagramPorts, diagramWaypoints,
+} from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
   WAYPOINT_AFFORDANCE_KIND,
@@ -157,9 +160,16 @@ export type {
 } from './graph';
 export { EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
+export {
+  LABEL_DRAG_AFFORDANCE_KIND, LABEL_DRAG_LAYER_ID, draggableLabels, labelDragLayer, labelScratchOf, labelUnder,
+} from './labelDragLayer';
+export type { DraggableLabel, LabelScratch } from './labelDragLayer';
+export { MOVE_LABEL_ACTION_ID, commitLabelToScene, createLabelDragAction, movedLabelData } from './labelDragAction';
+export type { LabelDragOptions, LabelEdit } from './labelDragAction';
+export { RESET_LABEL_ACTION_ID, createResetLabelAction } from './labelCommands';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
-export { diagramLabelOf } from './labelTrait';
+export { LABEL_PLACEMENT, diagramLabelOf } from './labelTrait';
 export type { DiagramLabel, LabelSpot } from './labelTrait';
 export { placeLabels } from './labels/place';
 export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
@@ -303,8 +313,8 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
-  ReorderChange, RouteChange,
+  ContainerEdit, DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
+  ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

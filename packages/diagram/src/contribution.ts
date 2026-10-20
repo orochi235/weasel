@@ -11,7 +11,15 @@
  * `hitTest` call — so the port layer as an overlay would paint every port and
  * make none of them grabbable. {@link diagramPorts} hands back both.
  */
-import type { Contribution, RenderLayer } from '@weasel-js/core';
+import {
+  ActionDisabledReason,
+  type Action,
+  type Contribution,
+  type CursorSpec,
+  type NodeId,
+  type RenderLayer,
+  type Scene,
+} from '@weasel-js/core';
 import {
   CONNECT_ACTION_ID,
   connectBinding,
@@ -20,7 +28,11 @@ import {
   grabPortBindings,
   type ConnectActionOptions,
 } from './connect';
+import { EDIT_EDGE_LABEL_ACTION_ID } from './edgeLabel';
 import { createSetHopsAction } from './hops/hopsAction';
+import { createResetLabelAction } from './labelCommands';
+import { MOVE_LABEL_ACTION_ID, createLabelDragAction, type LabelDragOptions } from './labelDragAction';
+import { LABEL_DRAG_AFFORDANCE_KIND, labelDragLayer, labelScratchOf } from './labelDragLayer';
 import { portLayer } from './portLayer';
 import type { PortAffordanceOptions } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
@@ -106,6 +118,68 @@ export function diagramWaypoints<TPose>(
         { spec: { kind: 'drag', target }, actionId },
         { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID },
         ...grabPortBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
+      ],
+    },
+  };
+}
+
+/** The action id that absorbs a press on an edge label, so it reaches neither marquee nor pan. */
+export const GRAB_LABEL_ACTION_ID = 'diagram.grabLabel';
+
+/** The action id that selects a clicked label's edge. */
+export const SELECT_LABEL_EDGE_ACTION_ID = 'diagram.selectLabelEdge';
+
+const NO_MODIFIERS = { shift: false, meta: false, ctrl: false };
+const ANY_MODIFIERS = { shift: 'optional', meta: 'optional', ctrl: 'optional', alt: 'optional' } as const;
+
+function selectLabelEdgeAction(): Action {
+  return {
+    id: SELECT_LABEL_EDGE_ACTION_ID,
+    label: 'Select label edge',
+    group: 'diagram',
+    requires: ['selection'],
+    invoker: {
+      timing: 'immediate',
+      run(deps, params) {
+        const p = params as { affordance?: { payload?: unknown }; mods?: { shift: boolean; meta: boolean; ctrl: boolean } } | undefined;
+        const pressed = labelScratchOf(p?.affordance);
+        if (pressed !== null) deps.selection?.applyClick(pressed.edgeId as NodeId, p?.mods ?? NO_MODIFIERS);
+      },
+    },
+    enabled: (deps) => (deps?.selection !== undefined ? true : ActionDisabledReason.NotApplicable),
+  };
+}
+
+/**
+ * Both halves of label dragging: the label layer to `registerLayer` — before
+ * the port layer, so a port or a route handle wins over a label beside it —
+ * and the contribution to pass as `ambient`, which carries the drag
+ * (`diagram.moveLabel`), a click that selects the label's edge, and a
+ * double-click that edits the label's text through
+ * `EDIT_EDGE_LABEL_ACTION_ID`, which the host registers. Like `diagramPorts`,
+ * one without the other fails quietly.
+ */
+export function diagramLabelDrag(
+  opts: LabelDragOptions & { scene: Scene<unknown, string, unknown>; selected: () => readonly string[]; cursor?: CursorSpec },
+): { layer: RenderLayer<unknown>; contribution: Contribution } {
+  const actionId = opts.id ?? MOVE_LABEL_ACTION_ID;
+  const target = `affordance:${LABEL_DRAG_AFFORDANCE_KIND}` as const;
+  return {
+    layer: labelDragLayer(opts.scene, opts.cursor !== undefined ? { cursor: opts.cursor } : {}),
+    contribution: {
+      id: 'weasel-diagram-label-drag',
+      eligibility: { claimed: true },
+      actions: [
+        createLabelDragAction({ ...opts, id: actionId }),
+        createResetLabelAction({ selected: opts.selected, ...(opts.commit ? { commit: opts.commit } : {}) }),
+        grabPortAction(GRAB_LABEL_ACTION_ID),
+        selectLabelEdgeAction(),
+      ],
+      bindings: [
+        { spec: { kind: 'drag', target }, actionId },
+        { spec: { kind: 'pointerDown', target }, actionId: GRAB_LABEL_ACTION_ID },
+        { spec: { kind: 'click', target, mods: ANY_MODIFIERS }, actionId: SELECT_LABEL_EDGE_ACTION_ID },
+        { spec: { kind: 'doubleClick', target }, actionId: EDIT_EDGE_LABEL_ACTION_ID },
       ],
     },
   };

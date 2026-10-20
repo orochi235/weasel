@@ -18,7 +18,7 @@ import {
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
 import { diagramContainerOf, titleIdOf } from './containers/trait';
-import { diagramPorts, diagramWaypoints } from './contribution';
+import { diagramLabelDrag, diagramPorts, diagramWaypoints } from './contribution';
 import { editEdgeLabelAction, editEdgeLabelBinding } from './edgeLabel';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSpec } from './fromData';
@@ -118,7 +118,7 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 
 type EditingProps = Pick<
   DiagramViewProps,
-  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'onResize' | 'onEditContainer' | 'onMove'
+  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onMoveLabel' | 'onReorder' | 'onResize' | 'onEditContainer' | 'onMove'
   | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
 >;
 
@@ -139,6 +139,7 @@ export function useDiagramEditing(
   const reconnects = props.onReconnect !== undefined;
   const routes = props.onEditRoute !== undefined;
   const labels = props.onEditLabel !== undefined;
+  const labelMoves = props.onMoveLabel !== undefined;
   const deletes = props.onDelete !== undefined;
   const reorders = props.onReorder !== undefined;
   const resizes = props.onResize !== undefined;
@@ -182,6 +183,13 @@ export function useDiagramEditing(
         commit: ({ edgeId, waypoints }) => report.current.onEditRoute?.({ edge: edgeId, waypoints }),
       })
     : null, [routes, source, selected, report]);
+  const labelDrag = useMemo(() => labelMoves
+    ? diagramLabelDrag({
+        scene,
+        selected,
+        commit: ({ edgeId, placement }) => report.current.onMoveLabel?.({ edge: edgeId, placement }),
+      })
+    : null, [labelMoves, scene, selected, report]);
   const label = useMemo((): Contribution | null => labels
     ? {
         id: 'weasel-diagram-edge-label',
@@ -206,15 +214,16 @@ export function useDiagramEditing(
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(
     // Edge ends last: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
-    () => [regions?.layer, portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
-    [regions, portsLayer, route, ends],
+    () => [regions?.layer, labelDrag?.layer, portsLayer, route?.layer, ends?.layer].filter((l): l is RenderLayer<unknown> => l != null),
+    [regions, labelDrag, portsLayer, route, ends],
   );
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, route?.contribution, ends?.contribution, label, reorder].filter((c): c is Contribution => c != null),
+    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, reorder]
+      .filter((c): c is Contribution => c != null),
     ...(regions?.contributions ?? []),
     ...(extra ?? []),
-  ], [ports, route, ends, label, reorder, regions, extra]);
+  ], [ports, route, ends, labelDrag, label, reorder, regions, extra]);
   return { layers, ambient, actions };
 }

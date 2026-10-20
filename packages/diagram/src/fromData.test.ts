@@ -4,6 +4,8 @@ import { DIAGRAM_THEMES } from './theme/themes';
 import { NODE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
 import type { DiagramNode } from './types';
+import { createSpecLabelPlacer } from './labels/specLabels';
+import type { DiagramLabel } from './labelTrait';
 
 const DATA: DiagramData = {
   nodes: [
@@ -200,6 +202,21 @@ describe('diagramScene', () => {
     const label = specs.find((s) => s.data?.text === 'w')!;
     expect(label.data?.diagram).toEqual({ label: { at: 0.25 } });
     expect(label.data?.fill).toEqual({ paint: { color: '#222' } });
+  });
+
+  it('keeps a dragged label where it was left under layered layout and dodging', () => {
+    const labelUnderCover = (labelPlacement: DiagramLabel) => {
+      const edge = { from: 'a', to: 'b', label: 'w', labelPlacement };
+      const laid = diagramScene({ nodes: DATA.nodes.slice(0, 2), edges: [edge] }, { layout: 'layered' });
+      const [a, b] = ['a', 'b'].map((id) => laid.find((s) => s.id === id)!.pose as { x: number; y: number; width: number; height: number });
+      const top = a!.y + a!.height + 4;
+      // Added after layout, which would otherwise lay the edge out around it.
+      const cover = diagramScene({ nodes: [{ id: 'cover', lines: [], at: { x: a!.x - 40, y: top }, width: a!.width + 80, height: (b!.y - top) / 2 }], edges: [] }, { layout: 'none' });
+      const specs = createSpecLabelPlacer()([...laid, ...cover]);
+      return (specs.find((s) => s.id === `${edgeIdOf(edge)}/label`)!.data?.diagram as { label: unknown }).label;
+    };
+    expect(labelUnderCover({ at: 0.3, offset: 12 })).toHaveProperty('placed');
+    expect(labelUnderCover({ at: 0.3, offset: 12, dodge: false })).toEqual({ at: 0.3, offset: 12, dodge: false });
   });
 
   it('takes a layout by name, or a function given barycenter under partial layoutOptions', () => {

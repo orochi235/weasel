@@ -21,6 +21,14 @@ export interface MeasurePathOptions {
   flattenTolerance?: number;
 }
 
+/** The station on a path nearest a point. */
+export interface PathNearestStation extends PathStation {
+  /** Arc length at `point`, on the scale {@link PathMeasure.at} reads. */
+  s: number;
+  /** Distance from the queried point to `point`. */
+  dist: number;
+}
+
 /** A measured path: its length, and the station at any distance along it. */
 export interface PathMeasure {
   /** Total arc length, every subpath counted in order. */
@@ -36,6 +44,11 @@ export interface PathMeasure {
    * one vertex to the next, so geometry bent along it turns without facets.
    */
   at(s: number, smooth?: boolean): PathStation;
+  /**
+   * The inverse of `at`: the station nearest `p`. On a tie the earliest
+   * segment wins. The tangent is the heading of the segment holding it.
+   */
+  nearest(p: Point): PathNearestStation;
 }
 
 interface Segment {
@@ -92,7 +105,17 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
   const origin = first;
   const closed = contours === 1 && lastClosed;
   if (segments.length === 0) {
-    return { length: 0, closed, at: () => ({ point: { ...origin }, tangent: { x: 1, y: 0 } }) };
+    return {
+      length: 0,
+      closed,
+      at: () => ({ point: { ...origin }, tangent: { x: 1, y: 0 } }),
+      nearest: (p) => ({
+        s: 0,
+        dist: Math.hypot(p.x - origin.x, p.y - origin.y),
+        point: { ...origin },
+        tangent: { x: 1, y: 0 },
+      }),
+    };
   }
 
   return {
@@ -108,6 +131,26 @@ export function measurePath(path: Path, opts: MeasurePathOptions = {}): PathMeas
       const y = seg.t0y + (seg.t1y - seg.t0y) * u;
       const l = Math.hypot(x, y);
       return { point, tangent: l === 0 ? { x: seg.tx, y: seg.ty } : { x: x / l, y: y / l } };
+    },
+    nearest(p) {
+      let best = segments[0]!;
+      let bestU = 0;
+      let bestDist = Infinity;
+      for (const seg of segments) {
+        const u = Math.min(Math.max(((p.x - seg.ax) * seg.tx + (p.y - seg.ay) * seg.ty) / seg.len, 0), 1);
+        const d = Math.hypot(p.x - (seg.ax + (seg.bx - seg.ax) * u), p.y - (seg.ay + (seg.by - seg.ay) * u));
+        if (d < bestDist) {
+          best = seg;
+          bestU = u;
+          bestDist = d;
+        }
+      }
+      return {
+        s: best.start + best.len * bestU,
+        dist: bestDist,
+        point: { x: best.ax + (best.bx - best.ax) * bestU, y: best.ay + (best.by - best.ay) * bestU },
+        tangent: { x: best.tx, y: best.ty },
+      };
     },
   };
 }

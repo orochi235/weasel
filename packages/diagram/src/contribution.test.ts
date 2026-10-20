@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramWaypoints } from './contribution';
+import { describe, it, expect, vi } from 'vitest';
+import { createScene, type ActionDeps } from '@weasel-js/core';
+import {
+  CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID, createDiagramContribution, diagramLabelDrag, diagramWaypoints,
+} from './contribution';
 import { SET_HOPS_ACTION_ID } from './hops/hopsAction';
 import { PORT_AFFORDANCE_KIND } from './portAffordance';
 import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
@@ -81,5 +84,20 @@ describe('diagramWaypoints', () => {
 
   it('hands back the layer the handles are composed into', () => {
     expect(bundle().layer.id).toBe(WAYPOINT_LAYER_ID);
+  });
+});
+
+describe('diagramLabelDrag', () => {
+  it("applies a click on a label to its edge's selection with the click's modifiers", () => {
+    const { contribution } = diagramLabelDrag({ scene: createScene({ systemLayers: [{ id: 'main' }] }), selected: () => [] });
+    const click = contribution.bindings!.find((b) => b.actionId === SELECT_LABEL_EDGE_ACTION_ID)!;
+    expect((click.spec as { mods?: unknown }).mods).toMatchObject({ shift: 'optional', meta: 'optional' });
+    const action = contribution.actions!.find((a) => a.id === SELECT_LABEL_EDGE_ACTION_ID)!;
+    if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    const applyClick = vi.fn();
+    const mods = { alt: false, shift: true, meta: false, ctrl: false };
+    const payload = { targetId: 'ab/label', labelId: 'ab/label', edgeId: 'ab' };
+    action.invoker.run({ selection: { applyClick } } as unknown as ActionDeps, { affordance: { payload }, mods });
+    expect(applyClick).toHaveBeenCalledWith('ab', mods);
   });
 });

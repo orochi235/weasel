@@ -5,9 +5,9 @@
  */
 import { pointAlongPath, type Path, type Vec2 } from '@weasel-js/core/math';
 import {
-  PATH_C, PATH_L, PATH_Q, forEachSegment, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
+  PATH_C, PATH_L, PATH_Q, forEachSegment, measurePath, nearestOnCubic, nearestOnLine, nearestOnQuadratic, type CurveNearest,
 } from '@weasel-js/geom';
-import type { DiagramLabel } from '../labelTrait';
+import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import { subpathOf } from '../subpaths';
 
 const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
@@ -63,11 +63,59 @@ export function labelCenter(whole: Path, label: DiagramLabel, size: { width: num
     ? nearestStation(path, at.at.near) ?? pointAlongPath(path, 0.5)
     : pointAlongPath(path, typeof at.at === 'number' ? at.at : NAMED[at.at] ?? 0.5);
   if (station === null) return null;
-  const nx = station.tangent.y;
-  const ny = -station.tangent.x;
-  // Half the label's depth along the normal, so its near side, not its center, sits `offset` off the line.
-  const offset = at.offset ?? 0;
-  const reach = offset + Math.sign(offset) * (Math.abs(nx) * size.width + Math.abs(ny) * size.height) / 2;
-  // Left of travel: with y down, that is above an edge running rightward.
-  return { x: station.point.x + nx * reach, y: station.point.y + ny * reach };
+  return besideStation(station.point, station.tangent, at.offset ?? 0, size);
+}
+
+/** Half the depth of a label `size` big along the normal to `tangent`. */
+function halfDepth(tangent: Vec2, size: { width: number; height: number }): number {
+  return (Math.abs(tangent.y) * size.width + Math.abs(tangent.x) * size.height) / 2;
+}
+
+/** The center of a label `size` big whose near side sits `offset` left of
+ *  travel from `point`; with y down, that is above an edge running rightward. */
+function besideStation(point: Vec2, tangent: Vec2, offset: number, size: { width: number; height: number }): Vec2 {
+  const reach = offset + Math.sign(offset) * halfDepth(tangent, size);
+  return { x: point.x + tangent.y * reach, y: point.y - tangent.x * reach };
+}
+
+/** The inverse of `besideStation`: the offset a label centered at `center` reads at. */
+function offsetFrom(point: Vec2, tangent: Vec2, center: Vec2, size: { width: number; height: number }): number {
+  const d = (center.x - point.x) * tangent.y - (center.y - point.y) * tangent.x;
+  const offset = Math.sign(d) * Math.max(Math.abs(d) - halfDepth(tangent, size), 0);
+  return offset === 0 ? 0 : offset;
+}
+
+/** A route fraction small enough to move no label, large enough to pick a side of a vertex. */
+const NUDGE = 1e-9;
+
+/** The inverse of `labelCenter`: the route fraction and offset a label `size`
+ *  big stands at when its center is at `center`, measured on the first
+ *  subpath. `null` for a path with no points. */
+export function labelSpotAt(whole: Path, center: Vec2, size: { width: number; height: number }): LabelSpot | null {
+  const measure = measurePath(subpathOf(whole, 0) ?? whole);
+  if (measure === null) return null;
+  const station = measure.nearest(center);
+  if (measure.length === 0) return { at: 0.5, offset: offsetFrom(station.point, station.tangent, center, size) };
+  const at = station.s / measure.length;
+  const step = NUDGE * measure.length;
+  const before = measure.at(station.s - step).tangent;
+  const after = measure.at(station.s + step).tangent;
+  if (before.x === after.x && before.y === after.y) {
+    return { at, offset: offsetFrom(station.point, station.tangent, center, size) };
+  }
+  // At a vertex each leg reads the offset along its own normal. Keep the leg whose reading lands nearer
+  // `center`, and step `at` onto that leg when `labelCenter` would read it on the other.
+  const reads = measure.at(at * measure.length).tangent;
+  let best: LabelSpot = { at, offset: 0 };
+  let bestDist = Infinity;
+  for (const [tangent, side] of [[before, -1], [after, 1]] as const) {
+    const offset = offsetFrom(station.point, tangent, center, size);
+    const back = besideStation(station.point, tangent, offset, size);
+    const dist = Math.hypot(back.x - center.x, back.y - center.y);
+    if (dist >= bestDist) continue;
+    const onLeg = reads.x === tangent.x && reads.y === tangent.y;
+    best = { at: onLeg ? at : at + side * NUDGE, offset };
+    bestDist = dist;
+  }
+  return best;
 }

@@ -1308,15 +1308,20 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Fourth arc (drafted, unapproved, unbuilt).** PDF export, an audio pipeline on a patchable
-  `@weasel-js/audio` graph, pages in `DiagramData`, dragging an edge label, and groups under the
+  `@weasel-js/audio` graph, pages in `DiagramData`, and groups under the
   `rack` and `lanes` looks. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`
   (2026-10-20).
+- **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
+  (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
+  rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
+  Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
+  Left open by label drag (2026-10-20).
 - **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
   takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
   Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
   groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
-  each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  `containers.browser.test.tsx`, `labelDrag.browser.test.tsx`, `pages/pages.browser.test.tsx`, and
+  `pages/offPage.browser.test.tsx` each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
   containers (2026-10-19) so parallel arc pieces editing those files would not conflict.
