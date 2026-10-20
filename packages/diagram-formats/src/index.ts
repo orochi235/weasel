@@ -4,6 +4,6 @@
  *
  * @packageDocumentation
  */
-export { exportPageSvg, pageBackground, type ExportPageSvgOptions } from './pageSvg';
+export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';
 export { exportPagePng, type ExportPagePngOptions } from './pagePng';
 export { pageSvgNodes, type PageExportScene, type PageRect } from './pageNodes';
