@@ -35,7 +35,7 @@ function dashOf(style: CellStyle): number[] | undefined {
   return pattern.length > 0 ? pattern : [3, 3];
 }
 
-const defined = <T extends object>(o: T): Partial<T> | undefined => {
+const defined = <T extends object>(o: { [K in keyof T]?: T[K] | undefined }): Partial<T> | undefined => {
   const out = Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
   return Object.keys(out).length > 0 ? out : undefined;
 };
@@ -93,7 +93,7 @@ export function edgeColorsOf(style: CellStyle, warn: Warn): Partial<EdgeStyle> |
     width: styleNumber(style, 'strokeWidth'), dash: dashOf(style),
     markerStart: start === null ? undefined : start,
     markerEnd: end === 'arrow' ? undefined : end,
-  } as EdgeStyle);
+  });
 }
 
 /** The compass port nearest an exit or entry point given as fractions of the box, or `undefined` for none. */

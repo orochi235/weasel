@@ -1,6 +1,7 @@
 /** Draw-style XML as a {@link DiagramFormat}. */
 import type { DiagramFormat } from '../document';
 import { readDrawXml } from './read';
+import { writeDrawXml } from './write';
 
 /** The root element, past any XML declaration, doctype, comments, and processing instructions. */
 const ROOT = /^\s*(?:<\?[^]*?\?>\s*|<!--[^]*?-->\s*|<!DOCTYPE[^>]*>\s*)*<(mxfile|mxGraphModel)[\s/>]/;
@@ -16,4 +17,5 @@ export const DRAW_XML: DiagramFormat = {
   extensions: ['.xml'],
   detect: (text) => ROOT.test(text),
   read: readDrawXml,
+  write: writeDrawXml,
 };
