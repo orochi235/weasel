@@ -41,7 +41,7 @@ Merged:
   to removal (a browser test mounts a whole `Lab`).
 - The bone and weight tools moved out of core into a new `@weasel-js/rig` (breaking for core's
   barrel; the changeset says so). It has never been published: the next release publishes it for
-  the first time.
+  the first time. A checkout needs `npm ci` before a dev server there resolves `@weasel-js/rig`.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
