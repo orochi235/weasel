@@ -1,10 +1,12 @@
 import { fillsOpenSubpaths, type GlMat3, mat3, type Path } from '@weasel-js/geom';
-import { isSolidPaint, parseColor, resolveScreenLength } from '@weasel-js/paint';
+import { type CommandPaint, isGradientPaint, isSolidPaint, resolveScreenLength } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
+import { colorFor } from './color';
 import type { ContentStream } from './content';
 import type { PdfObjects } from './objects';
 import { pathOps } from './pathOps';
 import type { PageResources } from './resources';
+import { paintShading } from './shading';
 import type { PdfSkip, WritePdfOptions } from './writePdf';
 
 export interface DrawState {
@@ -22,13 +24,6 @@ export interface PageCtx {
   view: GlMat3 | undefined;
 }
 
-type Rgba = [number, number, number, number];
-
-/** Every color the writer emits comes through here, so a color matrix has one place to apply. */
-function colorFor(color: string, _state: DrawState): Rgba {
-  return parseColor(color);
-}
-
 function skip(ctx: PageCtx, detail: string): void {
   ctx.skipped.push({ kind: 'command', detail });
 }
@@ -37,20 +32,39 @@ function setAlpha(ctx: PageCtx, fill: number, stroke: number): void {
   ctx.out.op('gs', `/${ctx.resources.extGState(fill, stroke)}`);
 }
 
+/** Writes the fill's path and answers whether it fills even-odd. */
+function fillPathOps(out: ContentStream, path: Path): boolean {
+  const closeOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
+  pathOps(out, path, closeOpen ? 'all' : 'closed');
+  return path.kind === 'polygon' && path.fillRule === 'evenodd';
+}
+
+function writeShadedFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, paint: CommandPaint): void {
+  const sh = paintShading(ctx, paint, state, cmd.path);
+  if (!sh) return;
+  const { out } = ctx;
+  out.op('q');
+  out.op(fillPathOps(out, cmd.path) ? 'W*' : 'W');
+  out.op('n');
+  if (sh.alpha < 1) setAlpha(ctx, sh.alpha, sh.alpha);
+  if (sh.matrix) out.op('cm', sh.matrix[0], sh.matrix[1], sh.matrix[3], sh.matrix[4], sh.matrix[6], sh.matrix[7]);
+  if (sh.softMask) out.op('gs', `/${sh.softMask}`);
+  out.op('sh', `/${sh.shading}`);
+  out.op('Q');
+}
+
 function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
   const paint = cmd.fill?.paint;
   if (!paint) return;
-  if (!isSolidPaint(paint)) return skip(ctx, 'gradient fill not yet supported');
+  if (isGradientPaint(paint)) return writeShadedFill(ctx, cmd, state, paint);
+  if (!isSolidPaint(paint)) return skip(ctx, 'pattern fill not yet supported');
   const [r, g, b, a] = colorFor(paint.color, state);
   const alpha = a * (paint.opacity ?? 1) * state.alpha;
   const { out } = ctx;
   out.op('q');
   setAlpha(ctx, alpha, alpha);
   out.op('rg', r, g, b);
-  const path = cmd.path;
-  const closeOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
-  pathOps(out, path, closeOpen ? 'all' : 'closed');
-  out.op(path.kind === 'polygon' && path.fillRule === 'evenodd' ? 'f*' : 'f');
+  out.op(fillPathOps(out, cmd.path) ? 'f*' : 'f');
   out.op('Q');
 }
 

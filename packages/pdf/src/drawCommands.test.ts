@@ -106,17 +106,11 @@ describe('writeCommands', () => {
     expect(content).toContain('0 0 10 20 re\nS\n');
   });
 
-  it('skips a gradient fill and kinds not yet written', async () => {
+  it('skips a pattern fill and kinds not yet written', async () => {
     const { skipped } = await render([
-      {
-        kind: 'path',
-        path: rect,
-        fill: {
-          paint: { kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, stops: [] },
-        },
-      },
+      { kind: 'path', path: rect, fill: { paint: { kind: 'texture', texture: {} as never } } },
       { kind: 'text' } as never,
     ]);
-    expect(skipped.map((k) => k.detail)).toEqual(['gradient fill not yet supported', 'text not yet supported']);
+    expect(skipped.map((k) => k.detail)).toEqual(['pattern fill not yet supported', 'text not yet supported']);
   });
 });
