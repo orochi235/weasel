@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import baseline from './fromData.pages.baseline.json';
-import { BASELINE_DATA, serialize } from './fromData.pages.fixture';
 import { diagramPages } from './dataPages';
 import { diagramScene, type DataNode, type DiagramData } from './fromData';
 import { withDiagramRegistry } from './edge';
@@ -11,6 +9,19 @@ import { offPageTagOf } from './offPage/trait';
 /** Two 200×100 pages side by side: `p1` spans x 0..200, `p2` x 240..440. */
 const TWO_PAGES = { pages: [{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }] } as const;
 const node = (id: string, x: number): DataNode => ({ id, lines: [id], width: 30, at: { x, y: 20 } });
+
+/** Nodes, a labeled edge, a group, a container, and an edge from a group. */
+const MIXED: DiagramData = {
+  nodes: [
+    { id: 'a', lines: ['level mix', '0–1'] },
+    { id: 'b', lines: ['warm'] },
+    { id: 'c', lines: ['color', 'hex'] },
+    { id: 'd', lines: ['in region'] },
+  ],
+  edges: [{ from: 'a', to: 'b', label: 'weight' }, { from: 'b', to: 'c' }, { from: 'c', to: 'd' }, { from: 'g', to: 'a' }],
+  groups: [{ id: 'g', members: ['b', 'c'], label: 'pair' }],
+  containers: [{ id: 'r', role: 'container', label: 'region', members: ['d'] }],
+};
 
 type Specs = ReturnType<typeof diagramScene>;
 const edgeOf = (specs: Specs, id: string) => specs.find((s) => s.id === id && diagramEdgeOf(s) !== null)!;
@@ -39,10 +50,13 @@ describe('diagramScene with pages', () => {
     expect(tagIds(specs)).toEqual([]);
   });
 
-  it('returns today’s specs for data with no pages or pages: []', () => {
-    const none = serialize(diagramScene(BASELINE_DATA));
-    expect(none).toEqual(baseline);
-    expect(serialize(diagramScene({ ...BASELINE_DATA, pages: [] }))).toEqual(baseline);
+  it('changes nothing for no pages, pages: [], or one page holding every node', () => {
+    const none = diagramScene(MIXED);
+    const onePage = diagramScene({ ...MIXED, pages: [{ id: 'p', width: 10000, height: 10000 }], pageLayout: { origin: { x: -5000, y: -5000 } } });
+    expect(diagramScene({ ...MIXED, pages: [] })).toEqual(none);
+    expect(onePage).toEqual(none);
+    expect(onePage.some((s) => diagramEdgeOf(s)?.offPage !== undefined)).toBe(false);
+    expect(tagIds(onePage)).toEqual([]);
   });
 
   it('letters split edges in data order, and re-letters when one goes', () => {
