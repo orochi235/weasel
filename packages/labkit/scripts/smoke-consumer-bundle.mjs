@@ -57,8 +57,9 @@ try {
 // --- Check 2: dist imports every declared @weasel-js package and no other ---
 // Matches `from '@weasel-js/…'`, `require('@weasel-js/…')`, `import('@weasel-js/…')`.
 const LEAK_RE = /(?:from|require\(|import\()\s*['"](@weasel-js\/[^'"]+)['"]/;
-// Declared and imported for its types alone, so no JS specifier is owed.
-const TYPES_ONLY = new Set(['@weasel-js/animator']);
+// Declared and imported for its types alone, so no JS specifier is owed. icons is one because
+// weaselIcons' library mode rewrites every icon() call to a literal, leaving icons.gen unimported.
+const TYPES_ONLY = new Set(['@weasel-js/animator', '@weasel-js/icons']);
 async function walk(dir) {
   const out = [];
   for (const ent of await readdir(dir, { withFileTypes: true })) {

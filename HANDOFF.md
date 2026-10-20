@@ -53,6 +53,9 @@ Merged:
   options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
 - Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
   session takes its key from its name.
+- Both consumer smoke tests CI runs pass again (both failed on `main`; 45 packages, rig included,
+  run on keiei). Filed as a P2: the fleet gate skips every CI step after the build, the smokes
+  among them, so nothing checks them before a merge.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

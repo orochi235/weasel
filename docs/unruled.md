@@ -532,6 +532,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Build
 
+- 2026-10-20 (overnight pass): labkit keeps `@weasel-js/icons` as a types-only dependency (the
+  icon plugin leaves its JS importing nothing from it), and its smoke lists it so. devtools does
+  not declare `@weasel-js/renderer`: the importing helper never ships. The root smoke's own
+  declaration audit is gone; `check:imports` is the one check, and counts a `testing/` module as
+  shipped when the manifest's `exports` names it.
 - 2026-10-20 (overnight pass): `@weasel-js/icons-plugin` walks oxc-parser's tree itself from the
   public `visitorKeys` (`src/walk.ts`) instead of `Visitor`, whose `require()` of an ES module fails
   under vitest's vm pool on Node 22 and turned CI's Node 22 leg red from 2026-10-19.
