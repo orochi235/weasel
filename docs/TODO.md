@@ -1327,8 +1327,6 @@ only story runner in the repo.
   world-space. With one, the handler becomes insert-then-move. Until then: inside an already-open
   batch the probe would not revert, which no caller does today because handlers run from a microtask; and
   `session.end()` is not in a `finally`.
-- **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
-  (`packages/guides/src/sources/targets.ts`).
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
