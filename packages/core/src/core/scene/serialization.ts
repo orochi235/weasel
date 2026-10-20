@@ -5,6 +5,7 @@
 import {
   NODE_FN_FIELDS, fnKeysOf, type FnBearingNode, type NodeFnField,
 } from './nodeFnFields';
+import type { SerializedDoc } from './docValues';
 import { treePreorder } from './treeOrder';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SceneRegistry, SerializedLayer, SerializedNode, SerializedScene,
@@ -43,11 +44,13 @@ export function layerFromSerialized<TLayer extends string>(
     : { ...base, kind: 'system' };
 }
 
-/** The snapshot of `state`: layers in order, nodes in tree preorder. Throws
+/** The snapshot of `state`: layers in order, nodes in tree preorder, and the
+ *  document values when there are any. Throws
  *  when a node carries a function the registry has no key for. */
 export function serializeScene<TData, TLayer extends string, TPose>(
   state: SerializableState<TData, TLayer, TPose>,
   fnFields: readonly NodeFnField[],
+  doc?: SerializedDoc,
 ): SerializedScene<TData, TLayer, TPose> {
   const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
   for (const n of treePreorder(state.roots, state.nodes)) {
@@ -89,7 +92,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     }
     return layer;
   });
-  return { version: 1, systemLayers, nodes };
+  return { version: 1, systemLayers, nodes, ...(doc ? { doc } : {}) };
 }
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
