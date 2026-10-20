@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createTransformOp, derivedDepOf, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, createTransformOp, derivedDepOf, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
+import { commitRouteToScene } from '../waypointAction';
+import { pinSegment } from '../waypoints';
 import { installAvoidRouting } from './install';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;
@@ -81,6 +83,20 @@ describe('avoid routing in a scene', () => {
     const points = drawn(scene);
     expect(points.slice(1, -1)).not.toEqual(route);
     expect(points.every((p, i) => i === 0 || p.x === points[i - 1]!.x || p.y === points[i - 1]!.y)).toBe(true);
+  });
+
+  it('routes the rest around a pinned segment, in the pin’s own entry', () => {
+    const { scene } = load();
+    scene.add(box('wall', 200, -100, 60, 260) as never);
+    const before = drawn(scene);
+    const run = before.findIndex((p, i) => i > 0 && p.y === before[i - 1]!.y && p.y < 0);
+    const pinned = pinSegment(before, [before[0]!, before[before.length - 1]!], run - 1, -40);
+    const depth = scene.historyEntries().length;
+    commitRouteToScene({ edgeId: 'ab', waypoints: pinned }, { deps: { scene } } as unknown as InvocationCtx);
+    expect(scene.historyEntries().length).toBe(depth + 1);
+    const after = drawn(scene);
+    for (const p of pinned) expect(after).toContainEqual(p);
+    expect(routeOf(scene)).toEqual(after.slice(1, -1));
   });
 
   it('previews a drag frame without writing the scene', () => {

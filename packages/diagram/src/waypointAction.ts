@@ -12,7 +12,8 @@ import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
 import type { ParticipantSource } from './portAffordance';
 import { portTarget, snapPoint, stopTarget } from './routeSnap';
 import { routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
-import { dragSegment, dragVertex, insertWaypoint, type RouteHandle } from './waypoints';
+import { avoid } from './edge';
+import { dragSegment, dragVertex, insertWaypoint, pinSegment, type RouteHandle } from './waypoints';
 
 /** The action that drags a route handle. */
 export const ROUTE_EDIT_ACTION_ID = 'diagram.editRoute';
@@ -92,7 +93,8 @@ function frameAt(p: RoutePress, current: Vec2): RouteFrame {
     const others = drawn.filter((_, i) => i !== handle.index && i !== handle.index + 1).map(stopTarget);
     const mid = { x: handle.at.x + (across === 'x' ? d.x : 0), y: handle.at.y + (across === 'y' ? d.y : 0) };
     const snapped = snapPoint(mid, others, p.tolerance, { x: across === 'x', y: across === 'y' });
-    next = dragSegment(drawn, handle.index, snapped.point[across] - handle.at[across]);
+    const offset = snapped.point[across] - handle.at[across];
+    next = route.router === avoid ? pinSegment(drawn, stops, handle.index, offset) : dragSegment(drawn, handle.index, offset);
     guides = snapped.guides;
   } else {
     const at = handle.kind === 'vertex' ? handle.index + 1 : handle.leg + 1;

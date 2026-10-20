@@ -9,7 +9,7 @@
  * Each edit answers the edge's new waypoints, never the whole route.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { orthogonal, type Router } from './edge';
+import { avoid, orthogonal, type Router } from './edge';
 import { simplifyStops } from './polyline';
 
 export { simplifyStops };
@@ -66,10 +66,10 @@ function middleOf(drawn: readonly Vec2[], a: number, b: number): Vec2 {
   return drawn[a]!;
 }
 
-/** The handles an edge shows: a bar per segment under `orthogonal`, else a
- *  dot per waypoint and a hollow dot per leg. */
+/** The handles an edge shows: a bar per segment under `orthogonal` and
+ *  `avoid`, else a dot per waypoint and a hollow dot per leg. */
 export function routeHandles(drawn: readonly Vec2[], stops: readonly Vec2[], router: Router): RouteHandle[] {
-  if (router === orthogonal) {
+  if (router === orthogonal || router === avoid) {
     const out: RouteHandle[] = [];
     for (let i = 0; i + 1 < drawn.length; i++) {
       const a = drawn[i]!;
@@ -148,6 +148,37 @@ export function dragSegment(drawn: readonly Vec2[], index: number, offset: numbe
     ...drawn.slice(index + 2),
   ];
   return interior(simplifyStops(route));
+}
+
+/**
+ * The waypoints of an `avoid` route with segment `index` of `drawn` slid
+ * `offset` across its axis and pinned there: its two ends join the author's
+ * waypoints, in route order, and the router keeps the rest. A waypoint at one
+ * of its ends moves with it, and a segment meeting a port jogs off it so the
+ * port end stays square.
+ */
+export function pinSegment(drawn: readonly Vec2[], stops: readonly Vec2[], index: number, offset: number): Vec2[] {
+  const a = drawn[index]!;
+  const b = drawn[index + 1]!;
+  const axis = segmentAxis(a, b);
+  const waypoints = interior(stops);
+  if (axis === null) return waypoints;
+  const jog = Math.min(JOG, Math.hypot(b.x - a.x, b.y - a.y) / 2);
+  const start = index === 0 ? toward(a, b, jog) : a;
+  const end = index === drawn.length - 2 ? toward(b, a, jog) : b;
+  const at = waypoints.map((w) => drawn.findIndex((p) => same(p, w)));
+  const before = waypoints.filter((w, k) => at[k]! >= 0 && at[k]! <= index && !same(w, a));
+  const after = waypoints.filter((w, k) => (at[k]! < 0 || at[k]! > index) && !same(w, b));
+  return [...before, shifted(start, axis, offset), shifted(end, axis, offset), ...after];
+}
+
+/** The waypoints of an `avoid` route without those at either end of segment
+ *  `index`, which hands the segment back to the router; null when neither end is one. */
+export function unpinSegment(drawn: readonly Vec2[], stops: readonly Vec2[], index: number): Vec2[] | null {
+  const ends = [drawn[index]!, drawn[index + 1]!];
+  const waypoints = interior(stops);
+  const kept = waypoints.filter((w) => !ends.some((e) => same(e, w)));
+  return kept.length === waypoints.length ? null : kept;
 }
 
 /**
