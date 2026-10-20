@@ -132,6 +132,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-18: kernel3d's `translate` puts its plane at `up · position`, and its insert builds the
   footprint from the two drag ends cast onto the ground.
 - 2026-10-18: The site demo `point-snap` is renamed `resize-snap`; links to the old id break.
+- 2026-10-19 (pass 7): `resolveSnap`'s `members` is the smallest set that pins the move: a member
+  the others already imply (a line taken before a point on it) is dropped, and so cannot decide a
+  tie on its order. It still shows in `satisfied`.
 
 ## Scene, move, and history
 
@@ -208,6 +211,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
   canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
   `createViewportLayer` take an optional `clip`.
+- 2026-10-19 (pass 7): `renderSceneToPixels` leaves annotation layers out unless passed
+  `annotations: true`, as the SVG export does; `renderDebugSnapshot` defaults it to `true`, since it
+  reproduces the canvas.
 
 ## Text
 

@@ -160,9 +160,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
-  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
-  is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
   Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
