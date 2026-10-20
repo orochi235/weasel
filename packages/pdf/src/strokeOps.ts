@@ -44,11 +44,11 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
  */
 export async function writeStroke(ctx: PageCtx, path: Path, rawStroke: CommandStroke, state: DrawState): Promise<void> {
   if (!rawStroke.paint) return;
-  const { cmd } = resolveStrokeLengths(state.transform, {
-    kind: 'path',
-    path,
-    stroke: { ...rawStroke, paint: rawStroke.paint as CommandPaint },
-  });
+  const { cmd } = resolveStrokeLengths(
+    state.transform,
+    { kind: 'path', path, stroke: { ...rawStroke, paint: rawStroke.paint as CommandPaint } },
+    { quantize: false },
+  );
   const stroke = cmd.stroke;
   const width = typeof stroke.width === 'number' ? stroke.width : 1;
   if (!(width > 0)) return;

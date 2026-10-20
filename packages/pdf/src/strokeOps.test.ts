@@ -76,9 +76,8 @@ describe('writeStroke', () => {
         ],
       },
     ]);
-    // The renderer snaps a { px } scale to a grid, so the width is 2.6667 only within its tolerance.
-    expect(Math.abs(Number(/(\S+) w\n/.exec(c)?.[1]) - 2.6667)).toBeLessThan(0.2);
-    expect(Math.abs(Number(/\[(\S+) \S+\] 0 d\n/.exec(c)?.[1]) - 4)).toBeLessThan(0.3);
+    expect(c).toContain('2.6667 w\n');
+    expect(c).toContain('[4 4] 0 d\n');
   });
 
   it('fills the outline of a stroke PDF cannot draw', async () => {
@@ -114,11 +113,7 @@ describe('writeStroke', () => {
       transform: Float64Array.from([0.75, 0, 0, 0, 0.75, 0, 0, 0, 1]),
       children: [{ kind: 'path', path: line, stroke: { paint: ink, width: 2, markerEnd: { key: 'arrow', size } } }],
     });
-    const nums = (c: string) => c.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-    const px = nums(await content([inGroup({ px: 12 })]));
-    const world = nums(await content([inGroup(16)]));
-    expect(px).toHaveLength(world.length);
-    px.forEach((n, i) => expect(Math.abs(n - (world[i] as number))).toBeLessThan(0.25));
+    expect(await content([inGroup({ px: 12 })])).toBe(await content([inGroup(16)]));
   });
 
   it('draws a gradient stroke as a shaded outline', async () => {
