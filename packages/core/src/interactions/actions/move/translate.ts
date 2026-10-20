@@ -1,45 +1,25 @@
-import type { Affine } from '@weasel-js/geom';
-import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import { geometryDataOp } from '../geometryProjection';
+import { translateNodeOps } from '../moveNodes';
 import { localDelta } from './delta';
 import type { MoveSession } from './session';
 
 /** The default translate commit: one transform op per id, plus the data-held
  *  geometry op when the `geometryProjection` seam is wired. */
 export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta: { dx: number; dy: number }): Op[] {
-  const ops: Op[] = [];
-  for (const id of ids) {
-    if (!session.startPoses.has(id) || session.carried.has(id)) continue;
-    const node = session.scene.get(id);
-    if (!node) continue;
-    const l = localDelta(session, id, delta.dx, delta.dy);
-    const c = session.caught.get(id);
-    if (c) { l.dx += c.dx; l.dy += c.dy; }
-    const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
-    // The authored pose, not the captured one: a derived node's captured pose
-    // is its derivation, and writing that back would lose the placeholder undo
-    // restores.
-    const authored = node.pose;
-    ops.push(createTransformOp<unknown>({
-      id: id as string,
-      from: authored,
-      to: translatePoseViaDescriptor(authored, l.dx, l.dy, session.descriptorOf(id)),
-      label: session.lifecycle.label,
-    }));
-    if (session.geometryProjection) {
-      const dataOp = geometryDataOp(
-        session.geometryProjection,
-        { id: id as string, data: node.data, pose: authored },
-        m,
-        session.lifecycle.label,
-      );
-      if (dataOp) ops.push(dataOp);
-    }
-  }
-  return ops;
+  return translateNodeOps(
+    session.scene,
+    ids,
+    (id) => {
+      if (!session.startPoses.has(id) || session.carried.has(id)) return null;
+      const l = localDelta(session, id, delta.dx, delta.dy);
+      const c = session.caught.get(id);
+      return c ? { dx: l.dx + c.dx, dy: l.dy + c.dy } : l;
+    },
+    session.descriptorOf,
+    session.geometryProjection,
+    session.lifecycle.label,
+  );
 }
 
 /** The default translate commit for the dragged roots among `roots` and the

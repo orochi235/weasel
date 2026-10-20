@@ -145,6 +145,8 @@ export function ToolPalette(props: ToolPaletteProps) {
   const roving = useRovingTabIndex({
     itemSelector: `.${s.paletteBtn}`,
     tabStopIndex: activeIndex >= 0 ? activeIndex : undefined,
+    columns,
+    groupSelector: '[role="group"]',
   });
 
   return (

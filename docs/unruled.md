@@ -146,6 +146,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): `moveNodes(deps, ids, delta, label)` and `moveNodesOps` in core
+  move ids the way a drag commits them, and the move action, nudge, Transform Again, and the
+  measure tool's Move By share its op builder. The delta is in gesture coordinates and the
+  `poseDescriptor` dep maps it, so it is not 2D-only. A zero delta commits nothing (nudge used to
+  write identity ops). `ingest` and paste now declare `poseDescriptor`, `geometryProjection`, and
+  `transformFollowers`. A dropped stencil's undo entry reads "Drop".
 - 2026-10-11: A node with `derivePose` and a `dependsOn` list hands a drag to its dependencies,
   engine-wide. A `momentum` coast is pose overrides until it rests (`MoveAdapter` gained
   `previewPoses`), and an undo mid-coast stops it only if it moves that node. `Scene` gained a
@@ -379,6 +385,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): `useRovingTabIndex` takes `columns` and `groupSelector`, and
+  `ToolPalette`'s `columns` uses them, each `[role="group"]` starting a row. Left and Right step in
+  reading order and wrap; Up and Down stop at the first and last rows (APG grid) and leave the key
+  to the page; moving into a short row lands on its last item; a disabled target makes Up and Down
+  skip that row; Home and End stay whole-set (toolbar, not APG grid); `orientation` is ignored when
+  `columns` is set. The grid is read from DOM order, not measured layout. `rovingTarget` and
+  `rovingGridTarget` are now exported.
 - 2026-10-11: `label` and `separator` are `PrefKind`s in `@weasel-js/prefs` (`cce05ca5f`), which
   reverses an earlier call that a label was a leaf only the UI knew. `applyTheme` returns a
   release. `isPlainObject` rejects class instances in theme, prefs, labkit, and forge.

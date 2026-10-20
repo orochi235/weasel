@@ -250,10 +250,10 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
-          // One check at a time beside a full run's jsdom projects, where several at once slowed labkit's
-          // storyArgs.test.tsx from 4 s past its timeout and running it later lengthened the run. A branch
-          // run has few tests for it to crowd, and the gate is then its longest part.
-          maxConcurrency: related ? 3 : 1,
+          // The browser project starts only once this group ends, so a serial gate held it back by a
+          // minute. Uncached, lint and check:needs beside typecheck slowed labkit's storyArgs.test.tsx
+          // past its timeout; cached, typecheck is the only heavy check left.
+          maxConcurrency: 3,
           include: ['scripts/**/*.gate.ts'],
         },
       },
