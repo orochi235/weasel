@@ -1,24 +1,27 @@
 /**
- * What an in-flight gesture is proposing, resolved against the committed scene.
+ * What an in-flight gesture is proposing, resolved against the scene.
  *
- * An ongoing action publishes interim poses on its handle rather than writing
- * them to the scene, and `<SceneCanvas>`'s ghost layer used to be the only
- * thing that knew how to read them: which ids are in flight, which of those are
- * roots, whose preview wins when two sources name the same id, and which are
- * merely displaced rather than dragged. None of that is about drawing, and a
- * consumer with its own renderer needs all of it.
+ * An ongoing action names the ids it previews on its handle. A transform —
+ * move, resize, rotate — publishes their poses to the scene's overrides, and
+ * other actions answer `previewPose` on the handle. Resolving them means
+ * knowing which ids are in flight, which of those are roots, whose preview
+ * wins when two sources name the same id, and which are merely displaced
+ * rather than dragged. None of that is about drawing, and a consumer with its
+ * own renderer needs all of it.
  */
 
 import type { GesturePreviewSource } from '../../canvas/gestureBounds';
 import type { Node, NodeId, Scene } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
+import { effectivePose } from '../../core/scene/effectivePose';
 
 /** One node an in-flight gesture is previewing, as {@link resolvePreviews} returns it. */
 export interface PreviewNode<TData, TLayer extends string, TPose> {
   id: NodeId;
-  /** The node as committed — the gesture has not touched the scene. */
+  /** The node as committed. */
   node: Node<TData, TLayer, TPose>;
-  /** The interim pose, or the committed one when only data is in flight. */
+  /** The pose a source previews, else the node's effective pose — where the
+   *  scene's overrides put it mid-transform. */
   pose: TPose;
   /** The interim data, or the committed one when only the pose is in flight. */
   data: TData;
@@ -50,7 +53,7 @@ function firstNonNull<T>(
  * which is what lets a caller draw a container and its contents as one thing.
  *
  * An id with no node is skipped: an insert previews before the node it will
- * create exists. So is an id no source has a pose or data for.
+ * create exists.
  */
 export function resolvePreviews<TData, TLayer extends string, TPose>(
   sources: Iterable<GesturePreviewSource>,
@@ -77,7 +80,6 @@ export function resolvePreviews<TData, TLayer extends string, TPose>(
     if (!node) return null;
     const pose = firstNonNull<TPose>(list, id, (s, i) => s.previewPose?.(i));
     const data = firstNonNull<TData>(list, id, (s, i) => s.previewData?.(i));
-    if (pose == null && data == null) return null;
 
     const children: PreviewNode<TData, TLayer, TPose>[] = [];
     for (const childId of scene.childrenOf(asNodeId(id))) {
@@ -89,7 +91,7 @@ export function resolvePreviews<TData, TLayer extends string, TPose>(
     return {
       id: asNodeId(id),
       node,
-      pose: pose ?? node.pose,
+      pose: pose ?? effectivePose(scene, node),
       data: data ?? node.data,
       opaque: opaque.has(id),
       children,

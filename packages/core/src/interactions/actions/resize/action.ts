@@ -1,7 +1,7 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { transformPreviewFields } from '../transformFinish';
+import { transformPreview } from '../transformFinish';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { commitResize } from './commit';
@@ -51,6 +51,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
         const { session, readers } = begun;
         const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
         const hold = session.scene.overrides.hold();
+        const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
         let frame: ResizeFrame = { previews: new Map() };
         session.lifecycle.start(session.writeIds as readonly string[]);
         return {
@@ -58,7 +59,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
           onMove(moveCtx: InvocationCtx): void {
             if (!moveCtx.drag) return;
             frame = nextFrame(session, readers, moveCtx);
-            hold.set(frame.previews);
+            hold.set(preview.poses());
           },
           onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             let committed = false;
@@ -78,7 +79,8 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
               closeGesture({ hold, previews: frame.previews, behaviors: session.constraints, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
             }
           },
-          ...transformPreviewFields(ctx.deps, () => frame.previews),
+          previewIds: preview.previewIds,
+          previewData: preview.previewData,
         };
       },
     },

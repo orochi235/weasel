@@ -484,7 +484,7 @@ interface OngoingHandle {
   onMove?(ctx): void;
   onEnd?(ctx, reason: 'commit' | 'cancel'): void;
   previewIds?(): Iterable<string> | null;   // displaced nodes → preview-ghost layer
-  previewPose?(id): unknown | null;
+  previewPose?(id): unknown | null;         // absent: the node's effective pose
   previewData?(id): unknown | null;         // for data-space edits (anchor drag)
   previewHidesSource?: boolean;             // false for clone: original stays put
   overlay?(): OngoingOverlay | null;        // non-ghost chrome (marquee rect, lasso polyline)
@@ -492,7 +492,10 @@ interface OngoingHandle {
 ```
 
 `previewIds` / `previewPose` / `previewData` feed `usePreviewGhostLayer`, which
-assembles a synthetic node per id and draws it through the scene slot.
+assembles a synthetic node per id and draws it through the scene slot. A
+transform — move, resize, rotate — publishes its poses to the scene's pose
+overrides rather than on the handle, so its ghost and its selection chrome read
+them through `effectivePose` like every other reader.
 `overlay()` feeds `useDispatcherOverlayLayer` for gestures that displace
 nothing but still need feedback. Sources compose first-non-null per axis.
 `getActiveAction().kind` is how chrome-visibility rules ask what's in flight.

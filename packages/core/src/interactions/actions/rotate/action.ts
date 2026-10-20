@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { transformPreviewFields } from '../transformFinish';
+import { transformPreview } from '../transformFinish';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { rotateCursorAt } from 'affordances/rotateCursor';
@@ -38,6 +38,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
+      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       let frame: RotateFrame = { delta: 0, previews: new Map() };
       let pointer = ctx.world;
       session.lifecycle.start(session.gestureCtx.draggedIds);
@@ -50,7 +51,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         onMove(moveCtx: InvocationCtx): void {
           pointer = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
-          hold.set(frame.previews);
+          hold.set(preview.poses());
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
@@ -67,7 +68,8 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        ...transformPreviewFields(ctx.deps, () => frame.previews),
+        previewIds: preview.previewIds,
+        previewData: preview.previewData,
       };
     },
   },

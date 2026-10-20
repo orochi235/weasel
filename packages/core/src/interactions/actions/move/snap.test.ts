@@ -1,4 +1,5 @@
 /** A move snapping through the `snap` dep's session. */
+import { heldPose } from '../testUtils';
 import { describe, expect, it } from 'vitest';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { pathFromD } from '@weasel-js/geom';
@@ -131,10 +132,10 @@ describe('a move snapping through the snap session', () => {
     const r = rig([alignX(52)], rect(3, 3));
     const h = r.press({ x: 5, y: 5 });
     h.onMove!(r.at({ x: 52, y: 9 }, { ctrl: true }));
-    near(h.previewPose!(r.ids[0]) as Point, { x: 50, y: 7 });
+    near(heldPose(r.scene, r.ids[0]) as Point, { x: 50, y: 7 });
     expect(r.store.get()).toEqual([]);
     h.onMove!(r.at({ x: 52, y: 9 }));
-    near(h.previewPose!(r.ids[0]) as Point, { x: 52, y: 7 });
+    near(heldPose(r.scene, r.ids[0]) as Point, { x: 52, y: 7 });
     expect(r.store.get()).not.toEqual([]);
     h.onEnd!(r.at({ x: 52, y: 9 }), 'commit');
     expect(r.store.get()).toEqual([]);

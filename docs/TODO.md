@@ -466,17 +466,6 @@ Priority tags:
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
 
-### Derived geometry follow-ups
-
-- **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
-  frame to the scene's pose overrides *and* keep their own `previews` map behind `previewIds` /
-  `previewPose`. The overrides are what the scene reads (derived geometry, picking); the map is
-  what the ghost layer and the selection-chrome bounds read. Collapsing them means teaching those
-  two readers to resolve through `effectivePose`, after which the map is redundant for pose. It
-  cannot go entirely: `previewData`, a path-anchor drag's in-flight `data`, has no override
-  equivalent, and `PoseOverride` is `{ pose?, alpha? }`. Decide whether overrides grow a `data`
-  field or the two channels stay split by what they carry rather than by who writes them.
-
 ### `useScene` follow-ups
 
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns

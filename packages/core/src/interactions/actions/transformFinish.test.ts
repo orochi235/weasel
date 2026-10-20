@@ -81,13 +81,27 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
   });
 
   it('previews the nodes the dep says change with each frame of a move', () => {
-    const { a, b, deps } = fixture('follow');
+    const { scene, a, b, deps } = fixture('follow');
     drag(deps, (handle) => {
       expect([...handle.previewIds!()!]).toEqual([a, b]);
-      expect(handle.previewPose!(a)).toEqual(box(100, 0));
-      expect(handle.previewPose!(b)).toEqual(box(50, 50));
+      expect(handle.previewPose).toBeUndefined();
+      expect(scene.overrides.read(a)?.pose).toEqual(box(100, 0));
+      expect(scene.overrides.read(b)?.pose).toEqual(box(50, 50));
       expect(handle.previewData!(b)).toEqual({ followed: 'preview' });
       expect(handle.previewData!(a)).toBeNull();
+    });
+  });
+
+  it('pins no override on a node a follower previews at its own pose, so a derived one keeps deriving', () => {
+    const { scene, a, b, deps } = fixture('follow');
+    const keep: TransformFollower = {
+      finish: (ops) => [...ops],
+      preview: (frame) => (frame.has(a) ? [{ id: b, pose: scene.get(b)!.pose, data: { kept: true } }] : []),
+    };
+    drag({ ...deps, transformFollowers: [keep] } as unknown as ActionDeps, (handle) => {
+      expect([...handle.previewIds!()!]).toEqual([a, b]);
+      expect(scene.overrides.read(b)).toBeUndefined();
+      expect(handle.previewData!(b)).toEqual({ kept: true });
     });
   });
 
@@ -102,7 +116,7 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const both = { ...deps, transformFollowers: [first, second] } as unknown as ActionDeps;
     drag(both, (handle) => {
       expect([...handle.previewIds!()!]).toEqual([a, b, c]);
-      expect(handle.previewPose!(c)).toEqual(box(90, 90));
+      expect(scene.overrides.read(c)?.pose).toEqual(box(90, 90));
     });
     expect(scene.get(b)!.data).toEqual({ followed: 'Move' });
     expect(scene.get(c)!.data).toEqual({ after: 2, label: 'Move' });

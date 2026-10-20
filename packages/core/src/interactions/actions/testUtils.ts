@@ -1,3 +1,4 @@
+import type { NodeId, PoseOverrides } from 'core/scene/types';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { MoveEnd } from '../gestures/types';
 import type { EditAnchorsDep } from './depSchema';
@@ -75,4 +76,10 @@ export function makeEditAnchorsDep(over: Partial<EditAnchorsDep> = {}): EditAnch
     base,
     Object.getOwnPropertyDescriptors(over),
   ) as EditAnchorsDep;
+}
+
+/** The pose a transform drag publishes for `id` to the scene's overrides, or
+ *  null: where the drag shows it, since its handle carries no pose. */
+export function heldPose(scene: unknown, id: string): unknown {
+  return (scene as { overrides: PoseOverrides<unknown> }).overrides.read(id as NodeId)?.pose ?? null;
 }

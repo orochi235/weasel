@@ -1,5 +1,6 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
 import { commitOps } from './defaultCommitAdapter';
 
 /** Finishes a whole-node transform's batch: the batch with the ops for the
@@ -87,41 +88,66 @@ function previewFollowers(followers: readonly TransformFollower[], frame: Readon
   return [...out.values()];
 }
 
-/** The preview half of a whole-node transform drag: its own previews, and the other nodes each frame changes with them. */
-export interface TransformPreviewFields {
+/** The preview half of a whole-node transform drag: its own previews, and
+ *  the other nodes each frame changes with them. */
+export interface TransformPreview {
+  /** What the drag publishes to the scene's pose overrides: the frame's own
+   *  poses, and each follower's pose that is not the node's own. A follower
+   *  answering a node's own pose pins nothing, so a derived node keeps
+   *  deriving. */
+  poses(): ReadonlyMap<NodeId, unknown>;
+  /** The handle's `previewIds`: the frame's ids, then the followers'. */
   previewIds(): Iterable<string>;
-  previewPose(id: string): unknown | null;
+  /** The handle's `previewData`: what the followers preview for `id`. */
   previewData(id: string): unknown | null;
 }
 
 /**
- * A transform drag's preview fields over `previews`, its frame's stored poses
- * by id, with the nodes `deps.transformFollowers` say change with each frame
- * added: they follow the drag as the commit will leave them. Each frame is
- * read once, keyed on the map.
+ * A transform drag's preview over `previews`, its frame's stored poses by id,
+ * with the nodes `deps.transformFollowers` say change with each frame added:
+ * they follow the drag as the commit will leave them. Pose goes to the
+ * scene's overrides through {@link TransformPreview.poses}, never on the
+ * handle; readers resolve it with `effectivePose`. Each frame is read once,
+ * keyed on the map.
  */
-export function transformPreviewFields(
+export function transformPreview(
   deps: ActionDeps | undefined,
-  previews: () => ReadonlyMap<string, unknown>,
-): TransformPreviewFields {
+  scene: { get(id: NodeId): { pose: unknown } | undefined },
+  previews: () => ReadonlyMap<NodeId, unknown>,
+): TransformPreview {
   const followers = deps?.transformFollowers ?? [];
-  let seen: ReadonlyMap<string, unknown> | null = null;
+  let seen: ReadonlyMap<NodeId, unknown> | null = null;
   let others = new Map<string, TransformPreviewNode>();
-  const linked = () => {
+  let posed: ReadonlyMap<NodeId, unknown> = new Map();
+  const read = () => {
     const now = previews();
     if (now !== seen) {
       seen = now;
-      others = followers.length === 0 ? new Map() : new Map(previewFollowers(followers, now).map((o) => [o.id, o]));
+      others = followers.length === 0 || now.size === 0
+        ? new Map()
+        : new Map(previewFollowers(followers, now as ReadonlyMap<string, unknown>).map((o) => [o.id, o]));
+      let moved: Map<NodeId, unknown> | null = null;
+      for (const [id, node] of others) {
+        const nid = id as NodeId;
+        if (now.has(nid) || node.pose === scene.get(nid)?.pose) continue;
+        moved ??= new Map(now);
+        moved.set(nid, node.pose);
+      }
+      posed = moved ?? now;
     }
     return others;
   };
   return {
-    previewIds: () => {
-      const own = previews();
-      const more = linked();
-      return more.size === 0 ? own.keys() : [...own.keys(), ...[...more.keys()].filter((id) => !own.has(id))];
+    poses: () => {
+      read();
+      return posed;
     },
-    previewPose: (id) => previews().get(id) ?? linked().get(id)?.pose ?? null,
-    previewData: (id) => linked().get(id)?.data ?? null,
+    previewIds: () => {
+      const more = read();
+      const own = previews();
+      // The close empties the frame in place, so the memo still holds its followers.
+      return more.size === 0 || own.size === 0 ? own.keys() : [...own.keys(), ...[...more.keys()].filter((id) => !own.has(id as NodeId))];
+    },
+    previewData: (id) => read().get(id)?.data ?? null,
   };
 }

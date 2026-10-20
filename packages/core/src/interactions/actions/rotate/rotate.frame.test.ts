@@ -2,7 +2,8 @@
  * Rotate against a scene whose container pose is a frame. See
  * `alignDistribute.frame.test.ts` for why the fixture is needed at all.
  */
-import { describe, it, expect } from 'vitest';
+import { heldPose } from '../testUtils';
+import { describe, it } from 'vitest';
 import { rotateAction } from './action';
 import {
   makeFrameFixture,
@@ -78,9 +79,8 @@ describe('rotateAction under a container frame', () => {
     const handle = invoker.start(ctxAt(scene, 145, 40), undefined);
     handle.onMove!(ctxAt(scene, 45, 140));
     // An override stands in for the stored pose, so it has to be local.
-    expect(scene.overrides.get(upright)?.pose).toEqual(handle.previewPose!(upright));
     expectSamePose(
-      handle.previewPose!(upright) as RectPose,
+      heldPose(scene, upright) as RectPose,
       { x: 60, y: 30, width: 20, height: 10, rotation: Math.PI / 2 },
     );
     handle.onEnd!(ctxAt(scene, 45, 140), 'cancel');

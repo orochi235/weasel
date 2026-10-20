@@ -64,7 +64,7 @@ function run(
   const handle = inv.start(base, undefined);
   handle.onMove?.(moved);
   const marks = store.get();
-  const preview = handle.previewPose!(a as string) as Pose;
+  const preview = scene.overrides.read(a)?.pose as Pose;
   handle.onEnd?.(moved, 'cancel');
   return { preview, lines: marks.filter((m) => m.kind === 'line') };
 }
