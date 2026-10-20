@@ -8,7 +8,7 @@ import type { PdfFontSource } from './fonts/fontSource';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
 
-type Rect = { x: number; y: number; width: number; height: number };
+export type Rect = { x: number; y: number; width: number; height: number };
 
 export interface PdfPage {
   width: number;
@@ -72,6 +72,7 @@ export async function writePdfWith(
       fonts,
       skipped,
       view: page.view,
+      width: page.width,
       height: page.height,
     };
     // Page units are points, origin top left, y down.

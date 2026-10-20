@@ -10,7 +10,7 @@ import { foldPixels } from './color';
 import type { DrawState, PageCtx } from './drawCommands';
 import { name, type PdfDict, type PdfRef } from './objects';
 import { paintToFrame } from './shading';
-import type { RasterPixels } from './writePdf';
+import type { RasterPixels, Rect } from './writePdf';
 
 /** A texture paint as a draw command carries it, its units already resolved. */
 export type TextureFill = Extract<CommandPaint, { kind: 'texture' }>;
@@ -78,7 +78,14 @@ export function imageXObject(
     ctx.skipped.push({ kind: 'command', detail: 'image could not be read' });
     return null;
   }
-  const rgba = foldPixels(raw.data, state);
+  const ref = pixelsXObject(ctx, { ...raw, data: foldPixels(raw.data, state) }, interpolate);
+  cache.set(key, ref);
+  return ref;
+}
+
+/** Straight top-down RGBA as an image XObject, with its alpha as an SMask when any pixel is translucent. */
+function pixelsXObject(ctx: PageCtx, raw: RasterPixels, interpolate: boolean): PdfRef {
+  const rgba = raw.data;
   const n = raw.width * raw.height;
   const rgb = new Uint8Array(n * 3);
   const alpha = new Uint8Array(n);
@@ -98,9 +105,18 @@ export function imageXObject(
     Interpolate: interpolate,
   });
   const mask = translucent ? imageObject(ctx, dims('DeviceGray'), alpha) : undefined;
-  const ref = imageObject(ctx, { ...dims('DeviceRGB'), SMask: mask }, rgb);
-  cache.set(key, ref);
-  return ref;
+  return imageObject(ctx, { ...dims('DeviceRGB'), SMask: mask }, rgb);
+}
+
+/** Draws rasterized pixels over `rect`, given in the page's y-down frame. */
+export function writeRaster(ctx: PageCtx, raw: RasterPixels, rect: Rect, opacity: number): void {
+  place(ctx, pixelsXObject(ctx, raw, true), raw.width, raw.height, {
+    x: rect.x,
+    y: rect.y,
+    w: rect.width,
+    h: rect.height,
+    opacity,
+  });
 }
 
 interface Place {

@@ -29,6 +29,7 @@ export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
+export { contentBounds, type DeviceRect } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from '@weasel-js/stroke';
 export {

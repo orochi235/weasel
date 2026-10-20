@@ -4,6 +4,7 @@ export type {
   PdfResult,
   PdfSkip,
   RasterPixels,
+  Rect,
   WritePdfOptions,
 } from './writePdf';
 export { writePdf } from './writePdf';

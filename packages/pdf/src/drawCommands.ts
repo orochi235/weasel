@@ -1,9 +1,10 @@
-import { fillsOpenSubpaths, type GlMat3, mat3, type Path } from '@weasel-js/geom';
+import { fillsOpenSubpaths, type GlMat3, type Path } from '@weasel-js/geom';
 import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { colorFor } from './color';
 import type { ContentStream } from './content';
 import type { DocumentFonts } from './fonts/embedFont';
+import { writeGroup, writeShader } from './groupOps';
 import { type TextureFill, texturePattern, writeImage } from './images';
 import type { PdfObjects } from './objects';
 import { pathOps } from './pathOps';
@@ -27,6 +28,8 @@ export interface PageCtx {
   fonts: DocumentFonts;
   skipped: PdfSkip[];
   view: GlMat3 | undefined;
+  /** The page's width in points. */
+  width: number;
   /** The page's height in points, which a pattern's matrix needs to undo the page flip. */
   height: number;
 }
@@ -94,38 +97,12 @@ async function writePath(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): 
   if (cmd.stroke) await writeStroke(ctx, cmd.path, cmd.stroke, state);
 }
 
-async function writeGroup(
-  ctx: PageCtx,
-  cmd: Extract<DrawCommand, { kind: 'group' }>,
-  state: DrawState,
-): Promise<void> {
-  if (cmd.effects?.length) skip(ctx, 'group effects not yet supported');
-  if (cmd.isolate) skip(ctx, 'group isolate not yet supported');
-  if (cmd.composite) skip(ctx, 'group composite not yet supported');
-  if (cmd.colorMatrix) skip(ctx, 'group colorMatrix not yet supported');
-  const { out } = ctx;
-  const m = cmd.transform;
-  out.op('q');
-  if (m) out.op('cm', m[0], m[1], m[3], m[4], m[6], m[7]);
-  if (cmd.clip) {
-    pathOps(out, cmd.clip, 'all');
-    out.op(cmd.clip.kind === 'polygon' && cmd.clip.fillRule === 'evenodd' ? 'W*' : 'W');
-    out.op('n');
-  }
-  await writeCommands(ctx, cmd.children, {
-    transform: m ? mat3.multiply(Float64Array.from(state.transform), m) : state.transform,
-    alpha: state.alpha * (cmd.alpha ?? 1),
-    colorMatrix: state.colorMatrix,
-  });
-  out.op('Q');
-}
-
 export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], state: DrawState): Promise<void> {
   for (const cmd of cmds) {
     if (cmd.kind === 'path') await writePath(ctx, cmd, state);
     else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
     else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
     else if (cmd.kind === 'text') await writeText(ctx, cmd, state);
-    else skip(ctx, `${cmd.kind} not yet supported`);
+    else await writeShader(ctx, cmd, state);
   }
 }

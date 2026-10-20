@@ -106,11 +106,10 @@ describe('writeCommands', () => {
     expect(content).toContain('0 0 10 20 re\nS\n');
   });
 
-  it('skips an unregistered texture and kinds not yet written', async () => {
+  it('skips an unregistered texture', async () => {
     const { skipped } = await render([
       { kind: 'path', path: rect, fill: { paint: { kind: 'texture', texture: { id: 'tex_none' } } } },
-      { kind: 'shader' } as never,
     ]);
-    expect(skipped.map((k) => k.detail)).toEqual(['texture tex_none cannot be drawn', 'shader not yet supported']);
+    expect(skipped.map((k) => k.detail)).toEqual(['texture tex_none cannot be drawn']);
   });
 });
