@@ -546,10 +546,11 @@ that sets React state and then asks for a redraw can paint the tile where it *wa
 any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
 
 **A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
-`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports
-(draw, chart, theme-editor and the site; not forge), re-bundling on a saved package file in a few
-seconds. A stack trace then points into `node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves
-the packages file by file again, with HMR.
+`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
+re-bundling on a saved package file in a few seconds. forge keeps ui, labkit, forge, diagram,
+devtools and diagram-elk as source, since its stories import their neighbors by relative path, and
+edits there still hot-update. A stack trace into a bundled package points at
+`node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
 
 **A perf loop driven by hover events measures vsync.** A hover that changes no state does
 not dirty the surface, so the loop reports zero uploads as though the caches had absorbed
