@@ -70,17 +70,17 @@ describe('audio graph in a real engine', () => {
   });
 
   it('the first start fades in rather than stepping', async () => {
-    const play = (insertFadeMs?: number) => renderGraph(0.2, (g, e) => {
+    // Connected well before start(), so the edge's own fade-in is over and only the output's hides the step.
+    const play = (insertFadeMs?: number) => renderGraph(0.3, (g, e) => {
       g.add('osc', createOscillatorNode(e.context, { wave: 'square', frequency: OFF_ZERO }));
       g.connect('osc', { output: true });
-      g.start();
-    }, undefined, insertFadeMs === undefined ? {} : { insertFadeMs });
+    }, { at: 0.1, run: (g) => g.start() }, insertFadeMs === undefined ? {} : { insertFadeMs });
     const faded = await play();
     const cut = await play(0);
-    const peak = maxAbs(faded, ms(100), ms(200));
-    expect(maxStep(faded, 0, ms(1))).toBeLessThan(peak / 3);
+    const peak = maxAbs(faded, ms(200), ms(300));
+    expect(maxStep(faded, ms(100), ms(101))).toBeLessThan(peak / 3);
     // The same measure on an unfaded start, which must see the step.
-    expect(maxStep(cut, 0, ms(1))).toBeGreaterThan(peak / 3);
+    expect(maxStep(cut, ms(100), ms(101))).toBeGreaterThan(peak / 3);
   });
 
   it("patching a running graph doesn't reset a delay's tail", async () => {

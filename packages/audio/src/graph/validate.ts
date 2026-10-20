@@ -1,4 +1,5 @@
 import { closesCycle, duplicateNode, noNode, noParam, noPort, owns } from './errors';
+import { reaches } from './edges';
 import type { GraphNodeDef, GraphPatch, GraphTarget } from './types';
 
 /** What a caller can see of a live node: its port names and its params. */
@@ -39,18 +40,6 @@ export function validatePatches(view: GraphView, patches: readonly GraphPatch[])
     if (!n) throw noNode(id);
     return n;
   };
-  const reaches = (start: string, goal: string): boolean => {
-    const seen = new Set<string>();
-    const stack = [start];
-    while (stack.length > 0) {
-      const id = stack.pop()!;
-      if (id === goal) return true;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      for (const e of edges) if (e.from === id && e.to !== null) stack.push(e.to);
-    }
-    return false;
-  };
   const same = (e: ViewEdge, from: string, to: GraphTarget): boolean =>
     e.from === from && e.to === toId(to) && e.port === toPort(to);
 
@@ -75,7 +64,7 @@ export function validatePatches(view: GraphView, patches: readonly GraphPatch[])
         const to = toId(p.to);
         if (to !== null && !live(to).ports.has(toPort(p.to))) throw noPort(to, toPort(p.to));
         if (edges.some((e) => same(e, p.from, p.to))) break;
-        if (to !== null && reaches(to, p.from)) throw closesCycle(p.from, to);
+        if (to !== null && reaches(edges, to, p.from)) throw closesCycle(p.from, to);
         edges.push({ from: p.from, to, port: toPort(p.to) });
         break;
       }

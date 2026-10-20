@@ -34,20 +34,20 @@ export const logical = (e: Edge): boolean => e.state !== 'closing';
 export const wired = (e: Edge): boolean => e.state !== 'deferred';
 
 /** Whether `goal` is downstream of `start` along the edges `admit` accepts. */
-export function reaches(
-  edges: readonly Edge[],
-  start: NodeWrapper,
-  goal: NodeWrapper,
-  admit: (e: Edge) => boolean,
+export function reaches<N, E extends { readonly from: N; readonly to: N | null }>(
+  edges: readonly E[],
+  start: N,
+  goal: N,
+  admit: (e: E) => boolean = () => true,
 ): boolean {
-  const seen = new Set<NodeWrapper>();
+  const seen = new Set<N>();
   const stack = [start];
   while (stack.length > 0) {
-    const w = stack.pop()!;
-    if (w === goal) return true;
-    if (seen.has(w)) continue;
-    seen.add(w);
-    for (const e of edges) if (admit(e) && e.from === w && e.to) stack.push(e.to);
+    const n = stack.pop()!;
+    if (n === goal) return true;
+    if (seen.has(n)) continue;
+    seen.add(n);
+    for (const e of edges) if (admit(e) && e.from === n && e.to !== null) stack.push(e.to);
   }
   return false;
 }
