@@ -8,7 +8,8 @@ export const pruneOlderThan = (dir, cutoff) => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) removed += pruneOlderThan(path, cutoff);
-    else if (statSync(path).mtimeMs < cutoff) {
+    // Two vitest processes prune at once under scripts/vitest-overlap.mjs, so a file can go mid-walk.
+    else if ((statSync(path, { throwIfNoEntry: false })?.mtimeMs ?? Infinity) < cutoff) {
       rmSync(path, { force: true });
       removed++;
     }
