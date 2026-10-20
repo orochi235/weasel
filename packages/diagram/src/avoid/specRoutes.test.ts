@@ -1,4 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { AvoidInput } from './types';
+
+const seen: AvoidInput[] = [];
+vi.mock('./router', async (original) => {
+  const mod = await original<typeof import('./router')>();
+  return {
+    ...mod,
+    createAvoidRouter: (...args: Parameters<typeof mod.createAvoidRouter>) => {
+      const router = mod.createAvoidRouter(...args);
+      return { ...router, update: (input: AvoidInput, opts?: Parameters<typeof router.update>[1]) => { seen.push(input); return router.update(input, opts); } };
+    },
+  };
+});
+
 import type { DiagramEdge } from '../edgeTrait';
 import { diagramScene, edgeIdOf, type DiagramData, type DiagramSpec } from '../fromData';
 import { createSpecRouter } from './specRoutes';
@@ -20,6 +34,24 @@ const edgeOf = (specs: readonly DiagramSpec[], id: string) =>
   (specs.find((s) => s.id === id)!.data as { diagram: DiagramEdge }).diagram;
 
 describe('createSpecRouter', () => {
+  it('leaves a split edge out of the avoid pass', () => {
+    seen.length = 0;
+    const data: DiagramData = {
+      ...DATA,
+      pages: [{ id: 'p1', width: 300, height: 500 }, { id: 'p2', width: 300, height: 500 }],
+      pageLayout: { gap: 40 },
+      nodes: [...DATA.nodes.filter((n) => n.id !== 'c' && n.id !== 'd'), { id: 'c', lines: ['c'], at: { x: 0, y: 400 }, width: 100 }, { id: 'd', lines: ['d'], at: { x: 150, y: 400 }, width: 100 }],
+    };
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    expect(edgeOf(specs, AB).offPage).toBeDefined();
+    expect(edgeOf(specs, AB).route).toBeUndefined();
+    expect(edgeOf(specs, AB).router).not.toBe('avoid');
+    const ids = seen.flatMap((i) => i.edges.map((e) => e.id));
+    expect(ids).not.toContain(AB);
+    expect(ids).toContain(CD);
+    expect(seen.flatMap((i) => i.obstacles.map((o) => o.id)).filter((id) => id.includes('offpage'))).toEqual([]);
+  });
+
   it('routes every edge spec around the shapes', () => {
     const specs = createSpecRouter()(diagramScene(DATA, { layout: 'none' }));
     expect(edgeOf(specs, AB).router).toBe('avoid');
