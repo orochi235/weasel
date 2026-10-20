@@ -1,8 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup } from '@testing-library/react';
-import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { EVERY_KIND, mismatches, notAt, rowTexts } from '@weasel-js/ui/testing/paramsText';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import type { ResolvedConfig } from '../config/types';
 import { ControlPanel } from './ControlPanel';
@@ -18,7 +18,13 @@ beforeAll(() => {
   document.head.append(style);
 });
 
-const schema: ResolvedConfig = { group: EVERY_KIND, sections: [], showIf: new Map(), renderers: {}, dialogs: {} };
+const schema: ResolvedConfig = {
+  group: EVERY_KIND,
+  sections: [],
+  showIf: new Map(),
+  renderers: {},
+  dialogs: {},
+};
 
 describe.each(['pairs', 'one-up'] as const)('ControlPanel, pack %s', (pack) => {
   const draw = (className: string) =>
