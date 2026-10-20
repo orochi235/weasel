@@ -1,4 +1,10 @@
-import { isBuiltinPref, prefLeafValue, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
+import {
+  isBuiltinPref,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefSection,
+  prefLeafValue,
+} from '@weasel-js/prefs';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
 import { valueAtPath } from '../config/path';
