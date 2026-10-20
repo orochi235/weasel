@@ -1,4 +1,5 @@
 import type { FeaturePreset, SnapSource, SurfaceContribution } from '@weasel-js/core';
+import type { TargetFilter } from '../sources/targets';
 import { alignmentSnapSource } from '../sources/alignment';
 import { spacingSnapSource } from '../sources/spacing';
 import { distanceReadout, type DistanceReadoutOptions } from './distanceReadout';
@@ -15,6 +16,8 @@ export interface SpacingHintsOptions {
   align?: boolean;
   /** Snap distance in screen px. Default the canvas's reach. */
   tolerance?: number;
+  /** Which nodes the snap sources take as siblings to line up or space against. */
+  filter?: TargetFilter;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
    *  on, with the preset's `color`. */
   readout?: false | Omit<DistanceReadoutOptions, 'color'>;
@@ -31,7 +34,11 @@ export interface SpacingHintsOptions {
 export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): FeaturePreset {
   const id = opts.id ?? 'spacingHints';
   const color = opts.color === undefined ? {} : { color: opts.color };
-  const own = { ...color, ...(opts.tolerance === undefined ? {} : { reachPx: opts.tolerance }) };
+  const own = {
+    ...color,
+    ...(opts.filter === undefined ? {} : { filter: opts.filter }),
+    ...(opts.tolerance === undefined ? {} : { reachPx: opts.tolerance }),
+  };
   const snapSources: SnapSource[] = [
     ...((opts.spacing ?? true) ? [spacingSnapSource(own)] : []),
     ...((opts.align ?? false) ? [alignmentSnapSource(own)] : []),
