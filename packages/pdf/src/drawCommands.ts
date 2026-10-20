@@ -3,6 +3,7 @@ import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/pai
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { colorFor } from './color';
 import type { ContentStream } from './content';
+import type { DocumentFonts } from './fonts/embedFont';
 import { type TextureFill, texturePattern, writeImage } from './images';
 import type { PdfObjects } from './objects';
 import { pathOps } from './pathOps';
@@ -22,6 +23,7 @@ export interface PageCtx {
   resources: PageResources;
   out: ContentStream;
   opts: WritePdfOptions;
+  fonts: DocumentFonts;
   skipped: PdfSkip[];
   view: GlMat3 | undefined;
   /** The page's height in points, which a pattern's matrix needs to undo the page flip. */

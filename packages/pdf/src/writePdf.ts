@@ -3,6 +3,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { ContentStream } from './content';
 import { deflate as zlibDeflate } from './deflate';
 import { type PageCtx, writeCommands } from './drawCommands';
+import { DocumentFonts } from './fonts/embedFont';
 import type { PdfFontSource } from './fonts/fontSource';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
@@ -58,6 +59,7 @@ export async function writePdfWith(
   const info = objects.alloc();
   const skipped: PdfSkip[] = [];
   const kids: PdfRef[] = [];
+  const fonts = new DocumentFonts(objects, opts.fonts);
 
   for (const page of pages) {
     const pageRef = objects.alloc();
@@ -67,6 +69,7 @@ export async function writePdfWith(
       resources: new PageResources(),
       out: new ContentStream(),
       opts,
+      fonts,
       skipped,
       view: page.view,
       height: page.height,
@@ -89,6 +92,7 @@ export async function writePdfWith(
   objects.set(catalog, { Type: name('Catalog'), Pages: tree });
   objects.set(tree, { Type: name('Pages'), Kids: kids, Count: kids.length });
   objects.set(info, { Producer: text('weasel'), Title: opts.title === undefined ? undefined : text(opts.title) });
+  await fonts.finish();
   await objects.settle(opts.compress !== false, deflate);
   return { bytes: objects.serialize(catalog, info), skipped };
 }
