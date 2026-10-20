@@ -58,9 +58,9 @@ export function commitLabelToScene(edit: LabelEdit, ctx: InvocationCtx): void {
   const node = scene?.get(edit.labelId as never);
   if (scene === undefined || node === undefined || diagramLabelOf(node) === null) return;
   const placement = edit.placement ?? LABEL_PLACEMENT;
-  const write = () => { scene.update(node.id, { data: placedData(node.data, placement) as never }); };
-  // Locking stops a drag, not the menu's reset.
-  scene.batch(edit.placement === null ? 'Reset label' : 'Move label', () => (edit.placement === null ? scene.unlocked(write) : write()));
+  scene.batch(edit.placement === null ? 'Reset label' : 'Move label', () => {
+    scene.update(node.id, { data: placedData(node.data, placement) as never });
+  });
 }
 
 /** What a label drag captured at its press, read-only after. */

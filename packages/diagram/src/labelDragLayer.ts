@@ -49,6 +49,10 @@ export interface DraggableLabel {
   path: Path;
 }
 
+/** Whether an edit may touch a label: neither it nor its edge is locked, and it is not hidden. */
+export const labelEditable = (scene: Scene<unknown, string, unknown>, labelId: NodeId, edgeId: NodeId): boolean =>
+  !scene.isLocked(labelId) && !scene.isLocked(edgeId) && !scene.isHidden(labelId);
+
 /** Every label in `scene` a drag can move, in render order: one carrying the
  *  label trait, on exactly one edge that derives a path, and neither it nor
  *  that edge locked or hidden. */
@@ -58,7 +62,7 @@ export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterab
     const deps = node.dependsOn;
     if (!Array.isArray(deps) || deps.length !== 1) continue;
     const edgeId = deps[0] as NodeId;
-    if (scene.isLocked(node.id) || scene.isLocked(edgeId) || scene.isHidden(node.id)) continue;
+    if (!labelEditable(scene, node.id, edgeId)) continue;
     const path = documentDepOf(scene as never, edgeId)?.path ?? null;
     if (path === null) continue;
     const box = AUTO_POSE_DESCRIPTOR.getBounds(documentPose(scene as never, node as never));

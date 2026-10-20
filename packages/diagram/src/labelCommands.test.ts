@@ -60,13 +60,27 @@ describe('createResetLabelAction', () => {
     expect(labelOf(scene, 'bc').dodge).toBe(false);
   });
 
-  it('resets a locked label', () => {
+  it('is disabled for a locked dragged label and for one on a locked edge', () => {
     const scene = load();
     drag(scene, 'ab');
+    const enabled = () => createResetLabelAction({ selected: () => ['ab'] }).enabled!(depsOf(scene));
     scene.setLocked('ab/label' as never, true);
-    expect(createResetLabelAction({ selected: () => ['ab'] }).enabled!(depsOf(scene))).toBe(true);
-    run(scene, ['ab']);
-    expect(labelOf(scene, 'ab')).toEqual(LABEL_PLACEMENT);
+    expect(enabled()).toBe(ActionDisabledReason.NotApplicable);
+    scene.setLocked('ab/label' as never, false);
+    scene.setLocked('ab' as never, true);
+    expect(enabled()).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('resets only the unlocked label, in one history entry', () => {
+    const scene = load();
+    drag(scene, 'ab');
+    drag(scene, 'bc');
+    scene.setLocked('ab/label' as never, true);
+    const depth = scene.historyEntries().length;
+    run(scene, ['ab', 'bc']);
+    expect(labelOf(scene, 'ab').dodge).toBe(false);
+    expect(labelOf(scene, 'bc')).toEqual(LABEL_PLACEMENT);
+    expect(scene.historyEntries().length).toBe(depth + 1);
   });
 
   it('is disabled with no edge selected, and for an edge whose label was never dragged', () => {
