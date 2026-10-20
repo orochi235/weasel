@@ -11,6 +11,7 @@ import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 
@@ -33,7 +34,7 @@ export default defineConfig({
     localWake(),
     watchProbe(),
   ],
-  server: { port: ports.themeEditor, strictPort: true, host: '::' },
+  server: { port: ports.themeEditor, strictPort: true, ...LAN_SERVER },
   define: weaselDefines(repoRoot),
   build: { outDir: resolve(repoRoot, 'dist-theme-editor'), emptyOutDir: true },
 });

@@ -15,6 +15,7 @@ import { devSourcemaps } from './scripts/vite-sourcemaps.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from './scripts/vite-lan.ts';
 
 /**
  * Dev-only middleware: serve the per-package reference `npm run build:api`
@@ -86,7 +87,7 @@ export default defineConfig({
   server: {
     port: ports.site,
     strictPort: true,
-    host: '::',
+    ...LAN_SERVER,
     proxy: {
       '/weasel/draw': {
         target: `http://localhost:${ports.draw}`,
