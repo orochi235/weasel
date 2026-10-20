@@ -1,7 +1,7 @@
 /** The reorders an editor installs under a look that places stages itself:
  *  a main-line stage dragged along the line, and a lane dragged by its header. */
 import type { Contribution } from '@weasel-js/core';
-import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../slotReorder';
+import { slotReorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../slotReorder';
 import { moveInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';
@@ -53,7 +53,7 @@ export function laneMove(doc: EffectDoc, order: LookOrder, move: ReorderMove): E
 /** Both reorders, each reading `now()` when it is pressed and released. */
 export function editorReorders(now: () => ReorderSource): Contribution[] {
   return [
-    reorderContribution({
+    slotReorderContribution({
       label: 'Reorder',
       slots: () => slotsOf(now().order, now().boxOf),
       canDrop: (move) => {
@@ -66,7 +66,7 @@ export function editorReorders(now: () => ReorderSource): Contribution[] {
         if (next !== null) onChange(next, 'Reorder');
       },
     }),
-    reorderContribution({
+    slotReorderContribution({
       id: REORDER_LANES_ACTION_ID,
       label: 'Reorder lanes',
       slots: () => slotsOf(now().laneOrder, now().boxOf),

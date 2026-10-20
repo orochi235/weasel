@@ -111,7 +111,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       device: deviceProfile,
     },
     rules: { enabled, selectable, rotateOff, chromeVisibility: props.chromeVisibility },
-    hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef },
+    hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef, ...(props.onHover ? { onChange: props.onHover } : {}) },
     selection: selection.current as readonly NodeId[], viewRef, dispatcher,
   });
 

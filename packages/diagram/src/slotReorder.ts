@@ -18,7 +18,7 @@ import {
 } from '@weasel-js/core';
 
 /** The action that drags an item of a sequence to another place in it. */
-export const REORDER_ACTION_ID = 'diagram.reorder';
+export const SLOT_REORDER_ACTION_ID = 'diagram.slotReorder';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -53,9 +53,9 @@ export interface ReorderMove {
   to: number;
 }
 
-/** Options for {@link createReorderAction}. */
+/** Options for {@link createSlotReorderAction}. */
 export interface ReorderOptions {
-  /** Default {@link REORDER_ACTION_ID}. */
+  /** Default {@link SLOT_REORDER_ACTION_ID}. */
   id?: string;
   /** Default 'Reorder'. */
   label?: string;
@@ -119,11 +119,11 @@ function gapAt(held: Held, at: Vec2): ReorderGap | null {
   return best === null || best.index === held.from || best.index === held.from + 1 ? null : best;
 }
 
-/** The `diagram.reorder` action: an ongoing drag carrying one item of a sequence. */
-export function createReorderAction(opts: ReorderOptions): Action {
+/** The `diagram.slotReorder` action: an ongoing drag carrying one item of a sequence. */
+export function createSlotReorderAction(opts: ReorderOptions): Action {
   const { canDrop = () => true } = opts;
   return {
-    id: opts.id ?? REORDER_ACTION_ID,
+    id: opts.id ?? SLOT_REORDER_ACTION_ID,
     label: opts.label ?? 'Reorder',
     group: 'diagram',
     requires: ['scene'],
@@ -184,17 +184,17 @@ export function createReorderAction(opts: ReorderOptions): Action {
 const ANYWHERE = bodyPredicate(() => true);
 
 /** The binding that starts a reorder: a drag pressed on an item's grip. */
-export function reorderBinding(actionId: string = REORDER_ACTION_ID): GestureBinding {
+export function slotReorderBinding(actionId: string = SLOT_REORDER_ACTION_ID): GestureBinding {
   return { spec: { kind: 'drag', target: { kindOf: ANYWHERE } }, actionId };
 }
 
 /** The reorder action and its binding, to pass as `ambient`. */
-export function reorderContribution(opts: ReorderOptions): Contribution {
-  const actionId = opts.id ?? REORDER_ACTION_ID;
+export function slotReorderContribution(opts: ReorderOptions): Contribution {
+  const actionId = opts.id ?? SLOT_REORDER_ACTION_ID;
   return {
     id: `weasel-diagram-reorder:${actionId}`,
     eligibility: { always: true },
-    actions: [createReorderAction({ ...opts, id: actionId })],
-    bindings: [reorderBinding(actionId)],
+    actions: [createSlotReorderAction({ ...opts, id: actionId })],
+    bindings: [slotReorderBinding(actionId)],
   };
 }

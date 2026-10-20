@@ -32,4 +32,7 @@ export interface SceneCanvasPointerProps {
    *  behavior, so a pick it made is already in the selection, and fires
    *  again on a node that was already picked. */
   onClick?: (hit: SceneCanvasHit | null) => void;
+  /** Called when the topmost pickable node under the pointer changes, with
+   *  its id, and with `null` once there is none or the pointer leaves. */
+  onHover?: (id: string | null) => void;
 }

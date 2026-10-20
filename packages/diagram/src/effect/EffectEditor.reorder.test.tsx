@@ -13,7 +13,7 @@ vi.mock('../DiagramView', () => ({
   },
 }));
 
-import { REORDER_ACTION_ID } from '../slotReorder';
+import { SLOT_REORDER_ACTION_ID } from '../slotReorder';
 import { EffectEditor, type EffectEditorApi } from './EffectEditor';
 import { REORDER_LANES_ACTION_ID } from './editorReorder';
 import { mainChain } from './mainChain';
@@ -81,7 +81,7 @@ describe('EffectEditor under rack and lanes', () => {
     const onChange = vi.fn();
     render(<EffectEditor doc={DOC} onChange={onChange} look="rack" width={600} height={400} />);
     const b = boxOf('b');
-    drag(actionOf(REORDER_ACTION_ID), center(boxOf('a')), { x: b.x + b.width + 30, y: b.y });
+    drag(actionOf(SLOT_REORDER_ACTION_ID), center(boxOf('a')), { x: b.x + b.width + 30, y: b.y });
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next, label] = onChange.mock.calls[0]!;
     expect(label).toBe('Reorder');
@@ -92,7 +92,7 @@ describe('EffectEditor under rack and lanes', () => {
     const onChange = vi.fn();
     render(<EffectEditor doc={DOC} onChange={onChange} look="rack" width={600} height={400} />);
     const src = boxOf('src');
-    drag(actionOf(REORDER_ACTION_ID), center(boxOf('b')), { x: src.x - 30, y: src.y });
+    drag(actionOf(SLOT_REORDER_ACTION_ID), center(boxOf('b')), { x: src.x - 30, y: src.y });
     expect(onChange).not.toHaveBeenCalled();
   });
 

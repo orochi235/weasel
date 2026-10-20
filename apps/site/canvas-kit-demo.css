@@ -329,6 +329,17 @@ a:hover { text-decoration: underline; }
   cursor: crosshair;
 }
 
+/* DOM a diagram holds against a node (DiagramOverlaysDemo). */
+.ckd-overlay-card {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 4px;
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
+}
+
 .ckd-hint {
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);

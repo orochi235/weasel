@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
-import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './slotReorder';
+import { createSlotReorderAction, slotReorderContribution, sequenceSlots, SLOT_REORDER_ACTION_ID, type ReorderOptions } from './slotReorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
 
@@ -24,7 +24,7 @@ function ctx(x: number, y: number, start = { x: 20, y: 20 }): InvocationCtx {
 
 function open(opts: Partial<ReorderOptions> = {}, start = { x: 20, y: 20 }): { handle: OngoingHandle; commit: ReturnType<typeof vi.fn> } {
   const commit = vi.fn();
-  const action = createReorderAction({ slots: () => SLOTS, commit, ...opts });
+  const action = createSlotReorderAction({ slots: () => SLOTS, commit, ...opts });
   if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
   return { handle: action.invoker.start(ctx(start.x, start.y, start)), commit };
 }
@@ -45,9 +45,9 @@ describe('sequenceSlots', () => {
   });
 });
 
-describe('createReorderAction', () => {
+describe('createSlotReorderAction', () => {
   it('takes a press only on an item’s grip', () => {
-    const action = createReorderAction({
+    const action = createSlotReorderAction({
       slots: () => ({ ...SLOTS, items: SLOTS.items.map((i) => ({ ...i, grip: box(i.bounds.x, i.bounds.y, 20, 20) })) }),
       commit: () => {},
     });
@@ -105,8 +105,8 @@ describe('createReorderAction', () => {
   });
 
   it('packs into a contribution binding a drag to the action', () => {
-    const c = reorderContribution({ slots: () => SLOTS, commit: () => {} });
-    expect(c.actions!.map((a) => a.id)).toEqual([REORDER_ACTION_ID]);
-    expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: REORDER_ACTION_ID })]);
+    const c = slotReorderContribution({ slots: () => SLOTS, commit: () => {} });
+    expect(c.actions!.map((a) => a.id)).toEqual([SLOT_REORDER_ACTION_ID]);
+    expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: SLOT_REORDER_ACTION_ID })]);
   });
 });
