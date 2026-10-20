@@ -4,7 +4,7 @@ import {
   editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
   symmetryGroupSpec,
 } from './group';
-import { keepContentsPut } from './frames';
+import { keepContentsPut, reachFrom } from './frames';
 import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
 import { SYMMETRY_HANDLE_KIND, symmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
@@ -118,7 +118,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     current() {
       const id = ctrl.active();
       const g = readGroup(scene, id);
-      return g === null || id === null ? null : { group: id, ...g };
+      return g === null || id === null ? null : { group: id, ...g, reach: reachFrom(scene, id, g.center) };
     },
     subscribe: ctrl.subscribe,
   }, opts.guide);

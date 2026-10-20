@@ -470,8 +470,6 @@ Priority tags:
 - **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
-- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
-  the lab's petal is, and can cover a path-edit handle there.
 
 ### Derived geometry follow-ups
 
@@ -486,11 +484,6 @@ Priority tags:
 
 ### `useScene` follow-ups
 
-- **(P3) A scene and its canvas each say how a pose is measured.** A container's layout
-  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame`, and everything a canvas
-  does by its `poseDescriptor` prop, so a scene whose poses are not rects states it twice. The
-  scene owns composition (`useScene({ composition })`); the descriptor could move there the same
-  way, with the layout frame read from it.
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
   composition: a child's pose is relative to its container's frame, and moving a container writes
   one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
