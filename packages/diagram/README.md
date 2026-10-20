@@ -125,8 +125,11 @@ A selected edge shows handles along its route as well as at its ends.
 | `straight`, `bezier` | a dot on each waypoint; a smaller hollow dot in the middle of each leg | a dot moves its waypoint; a hollow dot inserts one there | a dot removes its waypoint |
 | `orthogonal` | a bar in the middle of each segment | slides the segment across its axis; a segment touching a port gets a jog, so the port end stays square | straightens a jog away, when a neighbor touching no port can slide into line |
 
-A dragged handle snaps into line with the stops beside it and with a port's
-axis within 6 screen pixels, and a guide shows the alignment. Escape cancels.
+A dragged handle snaps through the canvas's snap session: into line with the
+stops beside it and with a port's axis within 6 screen pixels (`snapPx`), and to
+whatever else the canvas snaps to, such as a grid, with the readout drawing each
+alignment. Ctrl suspends snapping, Shift holds a dragged bend to the axes and
+diagonals, and a segment always slides across its own axis. Escape cancels.
 A double-click that would remove nothing falls through, to label editing say.
 
 `DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and

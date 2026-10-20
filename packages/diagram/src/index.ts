@@ -74,8 +74,6 @@ export {
   dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, routeHandles, segmentAxis, simplifyStops,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
-export { portTarget, snapPoint, stopTarget } from './routeSnap';
-export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
 export {
   EDGE_END_AFFORDANCE_KIND,
