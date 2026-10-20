@@ -1,6 +1,6 @@
 /**
- * `selectTool={{ rotate: false }}` — rotation off on a canvas whose presets
- * would otherwise turn it on.
+ * `selectTool={{ rotate: false }}` — the select tool binds no rotate and its
+ * handle is hidden; the rotate action stays registered for anything else.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
@@ -30,7 +30,12 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-interface Seen { actionIds: string[]; labels: Record<string, string>; selection: SelectionApi | null }
+interface Seen {
+  actionIds: string[];
+  labels: Record<string, string>;
+  invokers: Record<string, boolean>;
+  selection: SelectionApi | null;
+}
 
 function Probe({ into }: { into: Seen }) {
   const reg = useActionsRegistry();
@@ -38,6 +43,7 @@ function Probe({ into }: { into: Seen }) {
   useEffect(() => {
     into.actionIds = reg ? reg.list().map((a) => a.id) : [];
     into.labels = Object.fromEntries((reg?.list() ?? []).map((a) => [a.id, a.label]));
+    into.invokers = Object.fromEntries((reg?.list() ?? []).map((a) => [a.id, a.invoker !== undefined]));
     into.selection = (deps.get('selection') as SelectionApi | undefined) ?? null;
   });
   return null;
@@ -52,7 +58,7 @@ function mount(props: { features?: readonly Feature[] } & Record<string, unknown
       pose: { x: 0, y: 0, width: 50, height: 50, rotation: 0 } as P,
     });
   });
-  const seen: Seen = { actionIds: [], labels: {}, selection: null };
+  const seen: Seen = { actionIds: [], labels: {}, invokers: {}, selection: null };
   const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
   const result = render(
     <SceneCanvas scene={scene} width={200} height={200} helpersRef={helpersRef} {...props}>
@@ -88,11 +94,11 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
     expect(pose().rotation).not.toBe(0);
   });
 
-  it('leaves the rotate action out, hides its handle, and does not rotate on a drag there', () => {
+  it('hides the handle and does not rotate on a drag there, with the rotate action still registered', () => {
     const { id, seen, canvas, isVisible, pose } = mount({
       features: ['pick', 'transform'], selectTool: { rotate: false },
     });
-    expect(seen.actionIds).not.toContain('rotate');
+    expect(seen.actionIds).toContain('rotate');
     expect(seen.actionIds).toContain('resize');
     expect(isVisible('selection.rotation-handle')).toBe(false);
     expect(isVisible('selection.resize-handles')).toBe(true);
@@ -107,9 +113,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
     expect(pose().width).toBe(70);
   });
 
-  // The rotate preset's binding stays installed with its action muted, so a
-  // drag that reaches the handle resolves `rotate` and finds nothing there.
-  it('does not rotate from a handle a consumer rule puts back, and the dispatcher says the binding has no action', () => {
+  it('binds nothing to a handle a consumer rule puts back, so a drag there neither rotates nor warns', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { id, seen, canvas, isVisible, pose } = mount({
       features: ['pick', 'transform'], selectTool: { rotate: false },
@@ -119,27 +123,32 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
     drag(canvas, ON_ROTATE_HANDLE, OFF);
     expect(pose().rotation).toBe(0);
     expect(seen.selection!.get()).toEqual([id]);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('actionId "rotate" which has no registered action'));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('"rotate"'));
     warn.mockRestore();
   });
 
-  it('keeps the rotate action out when a tool binds it', () => {
+  it('lets another tool that binds rotate turn the selection from the handle', () => {
     const spinner = {
       id: 'spinner', eligibility: {},
       bindings: [{ spec: { kind: 'drag', target: { kindOf: isRotateHandle } }, actionId: 'rotate' }],
     };
-    const control = mount({ features: ['pick'], tools: { spinner } });
-    expect(control.seen.actionIds).toContain('rotate');
-    const { seen } = mount({ features: ['pick'], tools: { spinner }, selectTool: { rotate: false } });
-    expect(seen.actionIds).not.toContain('rotate');
+    const { seen, canvas, pose } = mount({
+      features: ['pick', 'transform'], selectTool: { rotate: false },
+      tools: { spinner }, initialActiveTool: 'spinner',
+      chromeVisibility: { 'selection.rotation-handle': always },
+    });
+    expect(seen.actionIds).toContain('rotate');
+    drag(canvas, ON_ROTATE_HANDLE, OFF);
+    expect(pose().rotation).not.toBe(0);
   });
 
-  it("lets a consumer's own `actions.rotate` win: the action stays, relabeled, and its handle stays hidden", () => {
+  it("merges a consumer's partial `actions.rotate` onto the default, and keeps the handle hidden", () => {
     const { seen, isVisible } = mount({
       features: ['pick', 'transform'], selectTool: { rotate: false },
       actions: { rotate: { label: 'Spin' } },
     });
     expect(seen.labels.rotate).toBe('Spin');
+    expect(seen.invokers.rotate).toBe(true);
     expect(isVisible('selection.rotation-handle')).toBe(false);
   });
 });

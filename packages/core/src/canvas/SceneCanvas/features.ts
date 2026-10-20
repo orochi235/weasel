@@ -139,11 +139,15 @@ export interface EnabledPresets {
  * preset once, and every one placed ahead of the presets it `refines`. Ties
  * keep the order given. Where names resolve, a `viewport` config turns on the
  * `view` preset, since that prop only configures what `view` turns on.
+ *
+ * `selectRotates: false` is `selectTool.rotate === false`: every preset keeps
+ * its actions, but loses its ambient `rotate` bindings and the rotation handle
+ * from its chrome, which hides the handle unless a consumer rule shows it.
  */
 export function resolveFeatures(
   features: readonly FeatureEntry[] | undefined,
   named: NamedPresets | null,
-  opts: { viewport?: boolean } = {},
+  opts: { viewport?: boolean; selectRotates?: boolean } = {},
 ): EnabledPresets {
   const listed: FeaturePreset[] = [];
   const byId = new Map<string, FeaturePreset>();
@@ -172,11 +176,30 @@ export function resolveFeatures(
     ordered.push(p);
   };
   for (const p of listed) place(p);
+  const presets = opts.selectRotates === false ? ordered.map(withoutSelectRotate) : ordered;
   return {
-    presets: ordered,
-    pathEdit: ordered.flatMap((p) => p.pathEdit ?? []),
-    snapSources: ordered.flatMap((p) => p.snapSources ?? []),
+    presets,
+    pathEdit: presets.flatMap((p) => p.pathEdit ?? []),
+    snapSources: presets.flatMap((p) => p.snapSources ?? []),
     has: (id) => byId.has(id),
+  };
+}
+
+const ROTATION_HANDLE: ChromeId = 'selection.rotation-handle';
+
+/** `p` without its ambient `rotate` bindings or the rotation handle. */
+function withoutSelectRotate(p: FeaturePreset): FeaturePreset {
+  const { ambient, chrome } = p;
+  if (!ambient && !chrome?.includes(ROTATION_HANDLE)) return p;
+  return {
+    ...p,
+    ...(ambient ? {
+      ambient: (o: FeatureBindingOptions): Contribution => {
+        const c = ambient(o);
+        return c.bindings ? { ...c, bindings: c.bindings.filter((b) => b.actionId !== 'rotate') } : c;
+      },
+    } : {}),
+    ...(chrome ? { chrome: chrome.filter((id) => id !== ROTATION_HANDLE) } : {}),
   };
 }
 

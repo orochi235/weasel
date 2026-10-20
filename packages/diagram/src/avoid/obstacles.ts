@@ -5,7 +5,7 @@
  * inflated edge.
  */
 import { SpatialHash } from './hash';
-import { blocks, inflate, type AvoidObstacle, type Box } from './types';
+import { blocks, inflate, type AvoidObstacle, type BlockedEdge, type Box } from './types';
 
 /** An obstacle grown by the clearance. */
 export interface Inflated {
@@ -15,17 +15,18 @@ export interface Inflated {
 
 const EPS = 1e-7;
 
-/** Every obstacle, inflated, filed in a spatial hash. */
+/** Every obstacle, inflated, filed in a spatial hash: a label by
+ *  `labelClearance`, anything else by `clearance`. */
 export class ObstacleIndex {
   private readonly byId = new Map<string, Inflated>();
   private readonly hash = new SpatialHash<Inflated>();
 
-  constructor(obstacles: readonly AvoidObstacle[], private readonly clearance: number) {
+  constructor(obstacles: readonly AvoidObstacle[], private readonly clearance: number, private readonly labelClearance = clearance) {
     for (const obstacle of obstacles) this.file(obstacle);
   }
 
   private file(obstacle: AvoidObstacle): void {
-    const item = { obstacle, box: inflate(obstacle.box, this.clearance) };
+    const item = { obstacle, box: inflate(obstacle.box, obstacle.kind === 'label' ? this.labelClearance : this.clearance) };
     this.byId.set(obstacle.id, item);
     this.hash.insert(item, item.box);
   }
@@ -47,9 +48,17 @@ export class ObstacleIndex {
     return this.hash.query(box, out);
   }
 
-  /** A view of the index for one connector between shapes `from` and `to`. */
-  forEdge(from: string, to: string): EdgeObstacles {
-    return new EdgeObstacles(this, from, to);
+  /** Remove obstacle `id`, if it is filed. */
+  delete(id: string): void {
+    const old = this.byId.get(id);
+    if (old === undefined) return;
+    this.hash.remove(old, old.box);
+    this.byId.delete(id);
+  }
+
+  /** A view of the index for connector `edge`. */
+  forEdge(edge: BlockedEdge): EdgeObstacles {
+    return new EdgeObstacles(this, edge);
   }
 }
 
@@ -57,13 +66,13 @@ export class ObstacleIndex {
 export class EdgeObstacles {
   private readonly scratch: Inflated[] = [];
 
-  constructor(private readonly index: ObstacleIndex, private readonly from: string, private readonly to: string) {}
+  constructor(private readonly index: ObstacleIndex, private readonly edge: BlockedEdge) {}
 
   /** The inflated boxes blocking this connector that touch `box`. */
   near(box: Box): Box[] {
     this.scratch.length = 0;
     const out: Box[] = [];
-    for (const o of this.index.near(box, this.scratch)) if (blocks(o.obstacle, this.from, this.to)) out.push(o.box);
+    for (const o of this.index.near(box, this.scratch)) if (blocks(o.obstacle, this.edge)) out.push(o.box);
     return out;
   }
 
@@ -72,7 +81,7 @@ export class EdgeObstacles {
     this.scratch.length = 0;
     for (const o of this.index.near({ x, y, width: 0, height: 0 }, this.scratch)) {
       const b = o.box;
-      if (x > b.x + EPS && x < b.x + b.width - EPS && y > b.y + EPS && y < b.y + b.height - EPS && blocks(o.obstacle, this.from, this.to)) return true;
+      if (x > b.x + EPS && x < b.x + b.width - EPS && y > b.y + EPS && y < b.y + b.height - EPS && blocks(o.obstacle, this.edge)) return true;
     }
     return false;
   }
@@ -88,7 +97,7 @@ export class EdgeObstacles {
     for (const o of this.index.near({ x: lx, y: ly, width: hx - lx, height: hy - ly }, this.scratch)) {
       const b = o.box;
       if (hx > b.x + EPS && lx < b.x + b.width - EPS && hy > b.y + EPS && ly < b.y + b.height - EPS
-        && blocks(o.obstacle, this.from, this.to)) return true;
+        && blocks(o.obstacle, this.edge)) return true;
     }
     return false;
   }

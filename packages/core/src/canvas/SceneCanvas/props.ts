@@ -176,8 +176,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
-      /** Rotation options, or `false` to disable rotation entirely — drops the
-       *  `rotate` action AND hides the selection rotation-handle chrome. */
+      /** Rotation options, or `false` to hide the rotation handle and bind it to
+       *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
       rotate?: UseRotateOptions<TPose> | false;
       handleHitRadius?: number;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives

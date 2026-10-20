@@ -31,6 +31,7 @@
       "@weasel-js/d3",
       "@weasel-js/diagram",
       "@weasel-js/diagram-elk",
+      "@weasel-js/diagram-formats",
       "@weasel-js/guides",
       "@weasel-js/theme",
       "@weasel-js/ui",

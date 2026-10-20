@@ -20,6 +20,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import ts from 'typescript';
+import { contentHashes, readCached, writeCached } from './lib/input-cache.mjs';
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEVICES = ['webgl2', 'webaudio'];
@@ -43,12 +44,21 @@ const rootPaths = () =>
   ts.parseConfigFileTextToJson('tsconfig.json', readFileSync(join(repoRoot, 'tsconfig.json'), 'utf8')).config
     .compilerOptions.paths;
 
-/** Typechecks one entry, named by its import specifier, without the DOM. */
-async function probe(spec, paths) {
+// What a probe reads besides the repo files its program lists: the lockfile stands for node_modules.
+const PROBE_INPUTS = ['tsconfig.json', 'package-lock.json', 'scripts/package-traits.mjs'].map((p) => join(repoRoot, p));
+
+/**
+ * Typechecks one entry, named by its import specifier, without the DOM. The result is kept beside
+ * its config and reused while every file the program read is unchanged.
+ */
+async function probe(spec, paths, hashOf) {
   const entry = paths[spec]?.[0];
   if (!entry) throw new Error(`no paths entry for ${spec} in tsconfig.json`);
   const up = (p) => join('../../..', p);
   const config = join(cache, `${spec.replace(/^@weasel-js\//, '').replaceAll('/', '--')}.json`);
+  const stored = config.replace(/\.json$/, '.result');
+  const cached = readCached(stored, hashOf);
+  if (cached) return cached;
   writeFileSync(
     config,
     JSON.stringify({
@@ -85,10 +95,13 @@ async function probe(spec, paths) {
   if (lines.some((l) => l.endsWith('/lib.dom.d.ts'))) {
     throw new Error(`${spec}: lib.dom.d.ts was pulled in by a \`/// <reference lib="dom" />\` in some dependency's types; stub that module in package-traits.mjs`);
   }
-  return {
+  const result = {
     react: lines.some((l) => l.includes('/node_modules/@types/react/') || (l.endsWith('.tsx') && !l.includes('/node_modules/'))),
     dom: lines.some((l) => /error TS/.test(l)),
   };
+  const read = lines.filter((l) => l.startsWith('/') && !l.includes('/node_modules/'));
+  writeCached(stored, [...read, ...PROBE_INPUTS], result, hashOf);
+  return result;
 }
 
 /**
@@ -102,13 +115,14 @@ export async function probeEntries(specs, { onProbe } = {}) {
   // inside itself is not ours to measure, so the probe sees it untyped.
   writeFileSync(join(cache, 'opentype-stub.d.ts'), 'declare const opentype: any;\nexport = opentype;\n');
   const paths = rootPaths();
+  const hashOf = contentHashes();
   const probes = new Map();
   const queue = [...specs];
   await Promise.all(
     Array.from({ length: Math.max(1, Math.min(cpus().length - 1, 6)) }, async () => {
       while (queue.length) {
         const spec = queue.shift();
-        probes.set(spec, await probe(spec, paths));
+        probes.set(spec, await probe(spec, paths, hashOf));
         onProbe?.(probes.size, specs.length, spec);
       }
     }),

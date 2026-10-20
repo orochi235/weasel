@@ -31,6 +31,8 @@ export interface Entry {
    *  redo. Written on the way past, so it reflects where the user actually
    *  was rather than where the entry's ops left them. */
   selectionAfter?: readonly string[];
+  /** The key a `recordEntry` gave it, which a later one with the same key folds into. */
+  coalesceKey?: string;
 }
 
 /** Wire form of a single op inside a serialized history. The pair

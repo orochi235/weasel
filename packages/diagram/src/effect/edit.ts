@@ -1,7 +1,8 @@
 import type { Vec2 } from '@weasel-js/core/math';
+import { pruneGroups } from './groupEdit';
 import { pruneLookRoutes } from './lookRoutes';
 import { formatParam } from './stageTypes';
-import type { EffectDoc, EffectGroup, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
+import type { EffectDoc, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
 
 type Ref = { stage: string; port: string };
 
@@ -33,33 +34,26 @@ export function addStage(doc: EffectDoc, stage: EffectStage, at?: Vec2): EffectD
   return at ? { ...next, places: { ...doc.places, [stage.id]: { x: at.x, y: at.y } } } : next;
 }
 
-/** Groups without the `gone` members, and without any group that leaves empty. */
-function pruneGroups(groups: readonly EffectGroup[], gone: Set<string>): EffectGroup[] {
-  let left = groups;
-  for (;;) {
-    const kept = left.map((g) => ({ ...g, members: g.members.filter((m) => !gone.has(m)) }));
-    const empty = kept.filter((g) => g.members.length === 0);
-    if (empty.length === 0) return kept;
-    for (const g of empty) gone.add(g.id);
-    left = kept.filter((g) => g.members.length > 0);
-  }
-}
-
 /** Drops the stages with their wires, places, routes and group memberships,
- *  and any group that leaves empty. */
+ *  and any group that leaves empty, with its box. */
 export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
   const { groups } = doc.pipeline;
   const wires = doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage));
+  const kept = groups ? pruneGroups(groups, gone) : undefined;
+  const left = new Set(kept?.map((g) => g.id));
+  const boxes = doc.groupBoxes === undefined ? undefined : Object.entries(doc.groupBoxes).filter(([id]) => left.has(id));
+  const { groupBoxes: _was, ...rest } = doc;
   return pruneRoutes({
-    ...doc,
+    ...rest,
     pipeline: {
       ...doc.pipeline,
       stages: doc.pipeline.stages.filter((s) => !gone.has(s.id)),
       wires,
-      ...(groups ? { groups: pruneGroups(groups, new Set(gone)) } : {}),
+      ...(kept ? { groups: kept } : {}),
     },
     places: Object.fromEntries(Object.entries(doc.places).filter(([id]) => !gone.has(id))),
+    ...(boxes !== undefined && boxes.length > 0 ? { groupBoxes: Object.fromEntries(boxes) } : {}),
   });
 }
 
