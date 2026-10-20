@@ -23,15 +23,13 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 1 | Edit-pass composition | core, diagram | — | 1 |
-| 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
 | 10 | Theme builder | core, diagram, app | — | 1 |
 | 11 | Running a pipeline | diagram, app | — | 1 |
-| 3 | Off-page reference markers | diagram, app | 1 | 2 |
-| 4 | Edge labels as obstacles, and labels that dodge | diagram, app | 1 | 2 |
-| 5 | Line jumps | diagram, app | 1 | 2 |
+| 3 | Off-page reference markers | diagram, app | — | 2 |
+| 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
+| 5 | Line jumps | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
-| 7 | Containers and swimlanes in `DiagramData` | diagram | 2 | 2 |
+| 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
@@ -45,10 +43,10 @@ Shared files, and who makes room in them first:
 
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
-| `packages/diagram/src/edge.ts` | 351 | 3, 5 | piece 1: the four routers move to `routers.ts` |
+| `packages/diagram/src/edge.ts` | 218 | 3, 5 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` and its helpers are in `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 5, 7 | none needed; each adds props |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
+| `packages/diagram/src/diagramViewProps.ts` | 185 | 4, 5, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -57,79 +55,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-## 1. Edit-pass composition
-
-### What the user sees
-
-Nothing new. This lets the diagram's edit passes (off-page markers, routing, label placement, line
-jumps) run in a fixed order, each seeing what the ones before it wrote.
-
-### Engine surface
-
-`packages/core/src/core/scene/editPass.ts` and `recorder.ts`:
-
-- `scene.addEditPass(pass, { order?: number })`. Passes run by ascending `order` (default 0), ties
-  in the order they were added.
-- `SceneEditSummary.docChanged: ReadonlySet<string>`, the document-value keys the edit set
-  (`kit:setDoc` is noted like the node ops).
-- A pass hears the edit's own changes plus every write the passes before it made in this run.
-  `run()` keeps the summary open while passes run, so `note` adds each pass's ops to it; a pass is
-  handed a snapshot taken when its turn comes. A pass still never runs twice for one edit, and
-  undo, redo, and replays still run none.
-
-`packages/diagram/src/passOrder.ts`: `DIAGRAM_PASS_ORDER = { offPage: 100, avoid: 200, labels: 300,
-hops: 400 }`. `installAvoidRouting` (`avoid/install.ts`) adds its pass at `avoid`.
-
-`packages/diagram/src/edge.ts` is split in the same change: `straight`, `orthogonal`, `bezier`,
-`avoid`, and `ROUTERS` move to `routers.ts`, re-exported, so pieces 3 and 5, which both add a step
-after the router, start from room.
-
-**Decision (2026-10-20).** Order is a number, not "before X": diagram's passes are installed by
-separate hooks mounted in any order, and a number needs no pass to know the others' names.
-
-### Save, load, undo
-
-Unchanged: pass writes join the edit's own history entry.
-
-### Tests
-
-- `editPass.test.ts`: order by number, ties by add order; a later pass sees an earlier pass's
-  `setData` in `dataChanged`; a `doc.set` reaches `docChanged`; still no re-trigger; undo runs none.
-- `avoid.scene.test.ts` still passes untouched.
-
-## 2. Resize reporting in `DiagramView`
-
-### What the user sees
-
-In a `DiagramView` with `onResize` set, a selected node shows resize handles. Dragging one resizes
-the box live; releasing reports the new box and changes nothing until the data follows.
-
-### Engine surface (`packages/diagram/src/`)
-
-- `diagramViewProps.ts`: `onResize?: (resizes: readonly NodeResize[]) => void`.
-- `sceneSync.ts`: `NodeResize { id: string; x: number; y: number; width: number; height: number }`.
-  `Standing` keeps each node's size beside its place; `changes` reports a node whose size changed
-  as a resize, not a move.
-- `DiagramView.tsx`: with `onResize`, `features` gains `'resize'` and the select tool takes
-  `resize: { resizable: diagramResizable(scene) }` (`resizable.ts`), which already refuses edges,
-  labels, and lanes; it also refuses group boxes, which derive their size.
-
-The host stores `width` and `height` on the `DataNode` (with `at` and `pinned`). Those are minimums
-already, so a box dragged smaller than its rows grows back to them, the rule scene bodies follow.
-
-**Decision (2026-10-20).** `EffectEditor` sets no `onResize`: every look sizes a stage from its
-rows, so a stored stage size would contradict the look.
-
-### Save, load, undo
-
-The host's data holds the size; undo is the host's, one entry per reported resize. Under
-`router="avoid"` the next specs reroute what the new box disturbs, as for a move.
-
-### Tests
-
-- `sceneSync.test.ts`: a size change is a resize, a place change a move, a layout run neither.
-- `DiagramView.resize.test.tsx`: handles only with `onResize`; nothing changes until specs follow.
-- `DiagramView.resize.browser.test.tsx`: a real handle drag reports one resize on release.
 
 ## 3. Off-page reference markers
 
@@ -422,7 +347,10 @@ interface DataLane { id: string; label?: string; size?: number; members?: readon
     (resized, reordered, or added: a new lane id is minted by the view) | `{ kind: 'release'; id }`
     | `{ kind: 'title'; id }` (double-click on a header; the host edits the label, as with
     `onEditLabel`).
-- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`.
+- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`. A
+  region's handle resize is not among them: `DiagramView` reports handle resizes from the resize
+  action's swapped commit (`reportResizeAction` in `diagramEditing.ts`) and writes nothing, since
+  `reconcileSpecs` diffs spec against spec and could never put back a size the data clamped.
 - `diagramEditing.ts` installs, when `onEditContainer` is set, `diagramContainers` with its lane
   commits swapped for reports, `diagramCanDropInto` as the `canDropInto` dep, and the lane layer.
   `DeleteReport.nodes` includes a deleted region's members, as a chart-mode delete takes them.
@@ -603,7 +531,7 @@ the session.
 
 A run draws under every look. A stage reorder, a rewire, or a param edit is a new doc, which the
 runner takes with `setPipeline`, so the next run or played frame follows it. `paintRun` edits data
-only, so a running chart never lays out again, and groups (piece 9) and look routes (`EffectDoc.lookRoutes`) are
+only, so a running chart never lays out again, and groups (piece 9) and look routes (piece 8) are
 untouched by it.
 
 ### Tests
