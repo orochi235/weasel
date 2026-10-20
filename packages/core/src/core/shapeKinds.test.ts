@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   KIT_SHAPE_KINDS,
+  kitShapeKindsOf,
   SHAPE_KINDS,
   shapeKindInfo,
   shapeKindsWhere,
@@ -35,9 +36,14 @@ describe('shape-kind table', () => {
   });
 
   it('answers per-kind questions through one accessor', () => {
-    expect(shapeKindInfo('rect')).toEqual({ tool: true, insertPreview: true });
+    expect(shapeKindInfo('rect')).toEqual({ tool: true, insertPreview: true, family: 'shape' });
     expect(shapeKindInfo('image')?.tool).toBe(false);
     expect(shapeKindInfo('lasso')?.insertPreview).toBe(false);
     expect(shapeKindInfo('sticky-note')).toBeUndefined();
+  });
+
+  it('lists each family\'s tool kinds in table order', () => {
+    expect(kitShapeKindsOf('draw')).toEqual(['pen', 'pencil']);
+    expect(kitShapeKindsOf('type')).toEqual(['text', 'sticky']);
   });
 });
