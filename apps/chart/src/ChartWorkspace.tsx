@@ -12,7 +12,7 @@ import {
   CHART_LAYERS, CHART_PAGE, CHART_PAGE_COLOR, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
-import { StencilPanel } from './StencilPanel';
+import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
 import './workspace.css';
@@ -24,7 +24,7 @@ const SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY };
 const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** The palette's tools: select, hand and the connector; the stencils have the Shapes panel. */
-const isPaletteTool = (tool: Tool): boolean => !tool.id.startsWith('stencil:');
+const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
@@ -61,7 +61,7 @@ export function ChartWorkspace(): ReactElement {
     <div className="wc-body">
       <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes and tools">
         {tools && <ToolPalette tools={tools} include={isPaletteTool} orientation="horizontal" />}
-        <StencilPanel active={tools?.active ?? null} setActive={(id) => tools?.setActive(id)} />
+        {tools && <StencilPanel tools={tools} />}
       </Sidebar>
       <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
         {dims.width > 0 && dims.height > 0 && (

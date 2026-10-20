@@ -52,7 +52,7 @@ describe('App', () => {
     expect(screen.getByText('Select a stage to edit its params.')).toBeTruthy();
     choose('Mode', 'Chart');
     expect(screen.queryByRole('grid', { name: 'Stages' })).toBeNull();
-    expect(screen.getByRole('listbox', { name: 'Shapes' })).toBeTruthy();
+    expect(screen.getByRole('toolbar', { name: 'Shapes' })).toBeTruthy();
   });
 
   it("keeps pipeline mode's undo history through a visit to chart mode", () => {
