@@ -14,7 +14,7 @@ import {
   type Scene,
   type SceneEditSummary,
 } from '@weasel-js/core';
-import type { Path, Vec2 } from '@weasel-js/core/math';
+import { PATH_M, type Path, type Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { diagramContainerOf } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
@@ -53,12 +53,16 @@ interface Reading {
   labels: (PlaceLabel & { node: SceneNode })[];
 }
 
-/** The points of a polyline path. */
-function pointsOf(path: Path | null): Vec2[] {
+/** The points of each run of a polyline path: one for a whole connector, a
+ *  stub at each end for one split across pages. */
+function runsOf(path: Path | null): Vec2[][] {
   if (path === null || path.kind !== 'polygon') return [];
-  const out: Vec2[] = [];
-  for (let i = 0; i + 1 < path.coords.length; i += 2) out.push({ x: path.coords[i]!, y: path.coords[i + 1]! });
-  return out;
+  const runs: Vec2[][] = [];
+  for (let i = 0; i < path.commands.length; i++) {
+    if (path.commands[i] === PATH_M || runs.length === 0) runs.push([]);
+    runs[runs.length - 1]!.push({ x: path.coords[2 * i]!, y: path.coords[2 * i + 1]! });
+  }
+  return runs.filter((r) => r.length >= 2);
 }
 
 function read(
@@ -69,8 +73,8 @@ function read(
     const ends = Array.isArray(node.dependsOn) ? node.dependsOn as readonly string[] : [];
     if (diagramEdgeOf(node) !== null) {
       const path = documentDepOf(sc, node.id as NodeId)?.path ?? null;
-      const points = pointsOf(path);
-      if (path !== null && points.length >= 2) out.routes.set(node.id, { id: node.id, points, path, ends });
+      const [points, ...more] = runsOf(path);
+      if (path !== null && points !== undefined) out.routes.set(node.id, { id: node.id, points, more, path, ends });
       continue;
     }
     const placement = diagramLabelOf(node);
@@ -102,9 +106,11 @@ function routeMeets(points: readonly Vec2[], box: Bounds): boolean {
 /** What the last pass saw, so an edit that moves something away from a
  *  label still finds that label. Undo runs no pass, so this may be stale,
  *  which only moves more labels than it must. */
+const runsIn = (r: PlaceRoute): (readonly Vec2[])[] => [r.points, ...(r.more ?? [])];
+
 interface Seen {
   shapes: Map<string, Bounds>;
-  routes: Map<string, readonly Vec2[]>;
+  routes: Map<string, readonly (readonly Vec2[])[]>;
 }
 
 /** The boxes and routes `summary`'s edit changed, as they were and as they are. */
@@ -115,9 +121,8 @@ function changesOf(scene: Reading, summary: SceneEditSummary, seen: Seen) {
   for (const r of scene.routes.values()) {
     if (!touched(r.id) && !r.ends.some((e) => touched(e) || summary.removed.has(e as NodeId))) continue;
     edges.add(r.id);
-    routes.push(r.points);
-    const was = seen.routes.get(r.id);
-    if (was !== undefined) routes.push(was);
+    routes.push(...runsIn(r));
+    routes.push(...seen.routes.get(r.id) ?? []);
   }
   const shapes: Bounds[] = [];
   for (const s of scene.shapes) {
@@ -129,8 +134,7 @@ function changesOf(scene: Reading, summary: SceneEditSummary, seen: Seen) {
   for (const id of summary.removed) {
     const shape = seen.shapes.get(id);
     if (shape !== undefined) shapes.push(shape);
-    const route = seen.routes.get(id);
-    if (route !== undefined) routes.push(route);
+    routes.push(...seen.routes.get(id) ?? []);
   }
   return { touched, edges, routes, shapes };
 }
@@ -194,7 +198,7 @@ function placementOps<TPose>(
   const reading = read(sc, geometry, opts.read, fit.sizes);
   const moving = movingOf(reading, summary, seen, opts.gap ?? 2);
   seen.shapes = new Map(reading.shapes.map((s) => [s.id, s.box]));
-  seen.routes = new Map([...reading.routes.values()].map((r) => [r.id, r.points]));
+  seen.routes = new Map([...reading.routes.values()].map((r) => [r.id, runsIn(r)]));
   if (moving.size === 0) return fit.ops;
   const labels = reading.labels.map((l) => ({ ...l, moving: moving.has(l.id) }));
   const placed = placeLabels({ shapes: reading.shapes, routes: [...reading.routes.values()], labels }, opts);
@@ -225,7 +229,7 @@ export function installLabelPlacement<TPose>(
   const first = read(sc, (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>, opts.read);
   const seen: Seen = {
     shapes: new Map(first.shapes.map((s) => [s.id, s.box])),
-    routes: new Map([...first.routes.values()].map((r) => [r.id, r.points])),
+    routes: new Map([...first.routes.values()].map((r) => [r.id, runsIn(r)])),
   };
   const dispose = scene.addEditPass((summary) => {
     if (!any(summary)) return null;

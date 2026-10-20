@@ -15,6 +15,9 @@ import { labelCenter } from './station';
 export interface PlaceRoute {
   id: string;
   points: readonly Vec2[];
+  /** Further runs it draws, apart from `points`: the far stub of a connector
+   *  split across pages. Other labels keep off them; its own stands on `points`. */
+  more?: readonly (readonly Vec2[])[];
 }
 
 /** A label to place, or to steer the others off. */
@@ -182,6 +185,15 @@ function settle(label: PlaceLabel, route: Route, field: Field, tries: number, sp
   return best;
 }
 
+/** File each segment of `run`, connector `edge`'s, for `costOf` to count. */
+function fileSegments(field: Field, edge: string, run: readonly Vec2[]): void {
+  for (let i = 0; i + 1 < run.length; i++) {
+    const a = run[i]!;
+    const b = run[i + 1]!;
+    field.segments.insert({ edge, a, b }, { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) });
+  }
+}
+
 /**
  * Where each moving label settles. Each tries its preferred station, then
  * the stations either side of it along its route and across the line, and
@@ -196,16 +208,11 @@ export function placeLabels(input: PlaceLabelsInput, opts: PlaceLabelsOptions = 
   const field: Field = { shapes: new SpatialHash(), labels: new SpatialHash(), segments: new SpatialHash(), gap: opts.gap ?? 2 };
   for (const { box } of input.shapes) field.shapes.insert(box, box);
   const routes = new Map<string, Route>();
-  for (const { id, points } of input.routes) {
+  for (const { id, points, more = [] } of input.routes) {
+    for (const run of [points, ...more]) fileSegments(field, id, run);
     if (points.length < 2) continue;
     let length = 0;
-    for (let i = 0; i + 1 < points.length; i++) {
-      const a = points[i]!;
-      const b = points[i + 1]!;
-      length += Math.hypot(b.x - a.x, b.y - a.y);
-      const seg = { edge: id, a, b };
-      field.segments.insert(seg, { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) });
-    }
+    for (let i = 0; i + 1 < points.length; i++) length += Math.hypot(points[i + 1]!.x - points[i]!.x, points[i + 1]!.y - points[i]!.y);
     routes.set(id, { path: polylineFromPoints(points as Vec2[]), points, length });
   }
   const moving: PlaceLabel[] = [];
