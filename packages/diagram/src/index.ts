@@ -88,6 +88,7 @@ export type {
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
 export { installAvoidRouting, routeDataOps } from './avoid/install';
+export { DIAGRAM_PASS_ORDER } from './passOrder';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
 export { createSpecRouter } from './avoid/specRoutes';
@@ -264,8 +265,8 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, ReorderChange,
-  RouteChange,
+  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
+  ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

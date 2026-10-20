@@ -150,6 +150,17 @@ describe('App', () => {
     expect(held).toEqual(['Lanes']);
   });
 
+  it('gives pipeline mode Format › Connector › Reset route', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Format' })); });
+    const connector = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+      .find((el) => el.textContent?.startsWith('Connector'))!;
+    act(() => { fireEvent.click(connector); });
+    const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Reset route']);
+  });
+
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {
     mount();
     choose('Mode', 'Pipeline');

@@ -180,7 +180,9 @@ each edit disturbed — a move, an insert onto a route, a delete, a paste, a
 panel edit — in that edit's own undo entry, and while a shape is dragged it
 reroutes the connectors near it each frame. Installing it reroutes nothing.
 `installAvoidRouting(scene)` does the same for a host without React, and hands
-back the drag's transform follower.
+back the drag's transform follower. Its scene edit pass runs at
+`DIAGRAM_PASS_ORDER.avoid`; a pass of your own that should see the routes it
+wrote takes a higher `order`.
 
 ```tsx
 function Routing({ scene }) {
@@ -575,6 +577,21 @@ shape (`{ moves, routes }`): every node not pinned, and every edge whose route
 or ports layout wrote. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
+`onResize` gives a selected node resize handles (`diagramResizable`, so none on
+an edge, an edge label, a lane, or a group's box). The box resizes live under
+the drag; on release the view reports `{ id, x, y, width, height }` for each
+resized node and draws the new box only once the specs do. Store it as the
+node's `width`, `height`, and `at`, with `pinned: true`. The size is a minimum,
+so a box dragged smaller than its rows grows back to them. Core's
+`createResizeAction({ commit })` is what reports: it hands the release poses to
+`commit` in place of writing them.
+
+```tsx
+<DiagramView
+  specs={specs}
+  onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
+/>
+```
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
@@ -923,6 +940,18 @@ does not move freely. Instead a stage on the main line drags along it: an
 insertion bar marks the gap it would land in, drawn in the problem color where
 the wiring cannot take it, and releasing it there reports `'Reorder'`. Under
 lanes, dragging a lane's label up or down reports `'Reorder lanes'`.
+
+A selected wire's route handles work under every look, and report
+`'Edit route'`. Under rack and lanes the route goes in `EffectDoc.lookRoutes`,
+by look and then by wire, with the points of the wire's two ports as they were
+drawn (`setLookRoute(doc, look, wire, waypoints, ends)`). These looks move
+stages on every reorder or added stage, so a route is drawn only while both
+ports are still at those points; once one moves, the look routes the wire
+again. Reset route, or `setLookRoute` with no waypoints, gives the wire back to
+the look. `applyLookRoutes(specs, doc, look, built)` draws the routes that
+hold over a look's specs, and `wireEnds(specs, edge)` reads a drawn wire's
+port points. A reorder drops the routes of the wires it rewires or removes,
+and removing a wire or a stage drops that wire's routes.
 
 ```tsx
 <EffectEditor doc={doc} onChange={commit} look="rack" />

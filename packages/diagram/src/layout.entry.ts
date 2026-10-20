@@ -9,7 +9,7 @@
  * scene and is therefore absent here; a caller with its own nodes and edges
  * implements `Graph` over whatever it already has.
  *
- * Also absent on purpose: the routers, which live in `edge` where this package
+ * Also absent on purpose: the routers, which `edge` runs where this package
  * meets the scene registry, and anything that reads or writes a node's trait.
  * The obstacle-avoiding router's search is here; its scene wiring is not.
  *
