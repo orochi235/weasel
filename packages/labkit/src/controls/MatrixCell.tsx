@@ -1,5 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import { isBuiltinPref, prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, prefLeafValue } from '@weasel-js/prefs';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
