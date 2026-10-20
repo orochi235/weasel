@@ -14,6 +14,7 @@ import {
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import { createSpecRouter } from './avoid/specRoutes';
+import { createSpecHops } from './hops/specHops';
 import { createSpecLabelPlacer } from './labels/specLabels';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
@@ -67,7 +68,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
+  specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onReorder,
   connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
@@ -80,7 +81,8 @@ function Inner({
     const out = avoid === null ? given : avoid(given);
     return placer === null ? out : placer(out);
   }, [avoid, placer, given]);
-  const specs = useMemo(() => (edgesPick ? withPickableEdges(routed) : routed), [edgesPick, routed]);
+  const hopped = useMemo(() => (hops === undefined ? routed : createSpecHops(hops)(routed)), [hops, routed]);
+  const specs = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
     return () => disposers.forEach((dispose) => dispose());

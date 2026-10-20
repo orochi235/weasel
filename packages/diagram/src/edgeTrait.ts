@@ -4,6 +4,7 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { EdgeHop } from './hops/types';
 import type { OffPageSplit } from './offPage/trait';
 import type { StyleField } from './theme/styleField';
 
@@ -42,6 +43,9 @@ export interface DiagramEdge {
    *  computed, kept so the edge draws without rerouting. The router owns it,
    *  and while it is here each end aims at its nearest bend. */
   route?: readonly Vec2[];
+  /** Where it bows over the connectors drawn before it, as the line-jump
+   *  pass last computed. Literal, so any reader draws them. */
+  hops?: readonly EdgeHop[];
   /** Set while its ends sit on different pages, when it draws as two stubs
    *  ending at off-page tags. The off-page pass owns it (`installOffPageMarkers`). */
   offPage?: OffPageSplit;

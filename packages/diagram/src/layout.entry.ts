@@ -49,6 +49,9 @@ export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
   AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
+export { edgeHops } from './hops/crossings';
+export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';
+export type { EdgeHop, HopsDocValue } from './hops/types';
 export { placeLabels } from './labels/place';
 export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
 export { labelCenter } from './labels/station';

@@ -19,7 +19,8 @@ import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
 import {
-  AvoidRoutingPublisher, ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher,
+  AvoidRoutingPublisher, ContainerDropPublisher, HopsPublisher, StencilInsertPublisher, useChartDiagram,
+  WaypointFollowerPublisher,
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
 import './workspace.css';
@@ -117,6 +118,7 @@ export function ChartWorkspace(): ReactElement {
               <StencilInsertPublisher theme={theme} />
               <WaypointFollowerPublisher scene={scene} />
               <AvoidRoutingPublisher scene={scene} />
+              <HopsPublisher scene={scene} />
               <ContainerDropPublisher scene={scene} />
               <TextEditDepPublisher edit={textEdit} />
             </SceneCanvas>

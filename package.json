@@ -99,6 +99,7 @@
     "perf:bench": "node tests/perf/bench.mjs",
     "bench:avoid": "tsx packages/diagram/src/avoid/avoid.bench.ts",
     "bench:labels": "tsx packages/diagram/src/labels/labels.bench.ts",
+    "bench:hops": "vitest run --config tests/perf/vitest.scene-bench.config.ts --reporter=default packages/diagram/src/hops/hops.bench.ts",
     "perf:bench:baseline": "vitest bench --run --config tests/perf/vitest.bench.config.ts --reporter=default --reporter=json --outputFile.json=tests/perf/bench/baseline.json && node tests/perf/bench-report.mjs",
     "perf:compare": "node tests/perf/compare.mjs",
     "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/ packages apps",
