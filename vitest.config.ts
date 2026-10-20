@@ -276,6 +276,9 @@ export default defineConfig({
           // The default second is not enough on a fleet node running eight other projects: a smooth
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
           expect: { poll: { timeout: 5000 } },
+          // Browser mode's default is 15 s. A chart test drawing its shapes through the canvas takes 3.5 s
+          // alone, passed at up to 14 s in full fleet runs, and was cut off at 15 s in the busiest ones.
+          testTimeout: 45_000,
           setupFiles: [BROWSER_SETUP],
           // After every other project in one process: a browser test's clicks and screenshots stall
           // when the node's cores are taken, and time out. `npm test` and the fleet run it beside
