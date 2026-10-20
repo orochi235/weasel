@@ -7,7 +7,7 @@ import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
 import { DragIndex } from './dragIndex';
 import { labelObstacle, labelObstacles } from './labels';
-import { routeEdge } from './edgeRoute';
+import { routeEdge, type EdgeRouteContext } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
 import { ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
@@ -140,18 +140,8 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       crossings.add(e.id, routeOf(e));
       clean.add(e.id, rawOf(e));
     }
-    const fresh = new Map<string, Vec2[] | null>();
-    for (const edge of dirty) {
-      const full = routeEdge(edge, { index, options: opts, limit, crossings });
-      fresh.set(edge.id, full);
-      if (full !== null) crossings.add(edge.id, full);
-      keys.set(edge.id, stopsKey(edge));
-      if (edge.label !== undefined) {
-        const label = labelObstacle(edge, full ?? fullRoute(edge));
-        if (label === null) index.delete(edge.label.id);
-        else index.replace(label);
-      }
-    }
+    const fresh = routeDirty(dirty, { index, options: opts, limit, crossings });
+    for (const edge of dirty) keys.set(edge.id, stopsKey(edge));
     const byId = new Map(input.edges.map((e) => [e.id, e]));
     const bundle = bundleOf(fresh, input.edges, clean, rawOf);
     const nudged = nudge(bundle, opts.spacing, index);
@@ -190,6 +180,22 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       return commit(input, dirty, obstacles);
     },
   };
+}
+
+/** Route each of `dirty` in turn, each counting crossings of the routes
+ *  before it and routing around the labels as they now stand. */
+function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { crossings: SegmentIndex }): Map<string, Vec2[] | null> {
+  const fresh = new Map<string, Vec2[] | null>();
+  for (const edge of dirty) {
+    const full = routeEdge(edge, ctx);
+    fresh.set(edge.id, full);
+    if (full !== null) ctx.crossings.add(edge.id, full);
+    if (edge.label === undefined) continue;
+    const label = labelObstacle(edge, full ?? fullRoute(edge));
+    if (label === null) ctx.index.delete(edge.label.id);
+    else ctx.index.replace(label);
+  }
+  return fresh;
 }
 
 /** The routes to nudge: each one just made, and each clean one whose
