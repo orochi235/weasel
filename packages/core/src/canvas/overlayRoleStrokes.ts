@@ -9,4 +9,8 @@ export const OVERLAY_ROLE_STROKES: Readonly<Record<string, CommandStroke & { pai
   falloff: { paint: { color: 'rgba(52, 120, 246, 0.28)' }, width: 10, cap: 'round', join: 'round' },
   measure: { paint: { color: '#1f8fff' }, width: 1 },
   lock: { paint: { color: '#d9480f' }, width: 1.5 },
+  /** Where a dragged item would land. */
+  insert: { paint: { color: '#1f8fff' }, width: 3, cap: 'round' },
+  /** Where a dragged item is over but cannot land. */
+  refused: { paint: { color: '#ff5d5d' }, width: 3, cap: 'round' },
 };

@@ -179,6 +179,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       ...sceneStyles(kept, edges),
     },
     color,
+    order: { axis: 'x', items: chain.map((id) => ({ id })) },
     exits: new Map(wires.flatMap((wire, i) => (wire.exit === undefined ? [] : [[edgeIdOf(edges[i]!.edge), wire.exit]]))),
   };
 };
