@@ -111,14 +111,18 @@ export {
   balanceCommands, createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle,
 } from './balance/balanceMarks';
 export {
-  CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, selectedConstraintOf, setConstraints,
+  CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
 export {
-  constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
+  brokenConstraintLink, brokenConstraintLinks, constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf,
+  type BrokenConstraintLink, type ConstraintLinkData, type ConstraintLinkNodeOptions,
 } from './constraints/constraintLinks';
 export {
   linkAnchorAction, linkConstraint, linkTargetAt, type LinkAnchorParams, type LinkTarget,
 } from './constraints/linkAnchor';
+export {
+  CONSTRAINT_LINK_MARKS_ID, constraintLinkMarks, createConstraintLinkMarks,
+} from './constraints/constraintLinkMarks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
   CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
