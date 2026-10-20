@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { entersBox, rectShape } from './avoidFixture';
 import { nudge, type NudgeRoute } from './nudge';
 import { ObstacleIndex } from './obstacles';
+import type { AvoidObstacle } from './types';
 
 const route = (...points: [number, number][]): NudgeRoute => ({ points: points.map(([x, y]) => ({ x, y })), waypoints: [] });
 
@@ -64,6 +65,19 @@ describe('nudge', () => {
       points.slice(1).forEach((p, i) => expect(entersBox(points[i]!, p, roof.box)).toBe(false));
     }
     expect(out.get('r1')![1]!.y - out.get('r2')![1]!.y).toBe(8);
+  });
+
+  it('spreads a bundle past its own connectors’ labels, but not into another’s', () => {
+    const labelOf = (edge: string): AvoidObstacle =>
+      ({ id: `${edge}/label`, kind: 'label', edge, box: { x: 150, y: 103, width: 40, height: 14 } });
+    const routes = () => new Map([
+      ['r1', route([50, 0], [50, 100], [300, 100], [300, 200])],
+      ['r2', route([100, 0], [100, 100], [350, 100], [350, 200])],
+    ]);
+    const own = nudge(routes(), 8, new ObstacleIndex([labelOf('r1')], 10, 4));
+    expect(own.get('r1')![1]!.y).toBe(104);
+    const other = nudge(routes(), 8, new ObstacleIndex([labelOf('r9')], 10, 4));
+    expect(other.get('r1')![1]!.y).toBeLessThanOrEqual(102);
   });
 
   it('leaves a run meeting a port, or a waypoint, where it is', () => {

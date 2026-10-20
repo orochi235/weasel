@@ -47,8 +47,12 @@ export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './g
 export { chain } from './chain';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
-  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
+export { placeLabels } from './labels/place';
+export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
+export { labelCenter } from './labels/station';
+export type { DiagramLabel, LabelSpot } from './labelTrait';
 export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,

@@ -6,7 +6,8 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
 import { DragIndex } from './dragIndex';
-import { routeEdge } from './edgeRoute';
+import { labelObstacle, labelObstacles } from './labels';
+import { routeEdge, type EdgeRouteContext } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
 import { ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
@@ -126,9 +127,10 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     return out;
   }
 
-  function commit(input: AvoidInput, dirty: AvoidEdge[]): AvoidRoutes {
+  /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
+  function commit(input: AvoidInput, dirty: AvoidEdge[], obstacles: readonly AvoidObstacle[]): AvoidRoutes {
     previews.clear();
-    const index = new ObstacleIndex(input.obstacles, opts.clearance);
+    const index = new ObstacleIndex(obstacles, opts.clearance, opts.labelClearance);
     const limit = limitOf(input, opts.margin);
     const dirtyIds = new Set(dirty.map((e) => e.id));
     const crossings = new SegmentIndex();
@@ -138,13 +140,8 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       crossings.add(e.id, routeOf(e));
       clean.add(e.id, rawOf(e));
     }
-    const fresh = new Map<string, Vec2[] | null>();
-    for (const edge of dirty) {
-      const full = routeEdge(edge, { index, options: opts, limit, crossings });
-      fresh.set(edge.id, full);
-      if (full !== null) crossings.add(edge.id, full);
-      keys.set(edge.id, stopsKey(edge));
-    }
+    const fresh = routeDirty(dirty, { index, options: opts, limit, crossings });
+    for (const edge of dirty) keys.set(edge.id, stopsKey(edge));
     const byId = new Map(input.edges.map((e) => [e.id, e]));
     const bundle = bundleOf(fresh, input.edges, clean, rawOf);
     const nudged = nudge(bundle, opts.spacing, index);
@@ -156,29 +153,49 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       shown.set(id, full);
       if (was === null || !samePoints(was, full)) out.set(id, full.slice(1, -1));
     }
-    indexForDrag({ obstacles: input.obstacles, edges: input.edges.map((e) => withRoute(e, out)) });
+    const edges = input.edges.map((e) => withRoute(e, out));
+    const settled = [...input.obstacles, ...labelObstacles(edges, routeOf)];
+    committed = new Map(settled.map((o) => [o.id, o]));
+    indexForDrag({ obstacles: settled, edges });
     return out;
   }
 
   return {
     seed(input) {
-      committed = new Map(input.obstacles.map((o) => [o.id, o]));
+      const obstacles = [...input.obstacles, ...labelObstacles(input.edges, fullRoute)];
+      committed = new Map(obstacles.map((o) => [o.id, o]));
       keys.clear();
       raw.clear();
       shown.clear();
       for (const e of input.edges) keys.set(e.id, stopsKey(e));
       previews.clear();
-      indexForDrag(input);
+      indexForDrag({ obstacles, edges: input.edges });
     },
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
-      const changed = changedObstacles(committed, input.obstacles);
+      const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
+      const changed = changedObstacles(committed, obstacles);
       const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, routeOf);
-      committed = new Map(input.obstacles.map((o) => [o.id, o]));
       forget(input);
-      return commit(input, dirty);
+      return commit(input, dirty, obstacles);
     },
   };
+}
+
+/** Route each of `dirty` in turn, each counting crossings of the routes
+ *  before it and routing around the labels as they now stand. */
+function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { crossings: SegmentIndex }): Map<string, Vec2[] | null> {
+  const fresh = new Map<string, Vec2[] | null>();
+  for (const edge of dirty) {
+    const full = routeEdge(edge, ctx);
+    fresh.set(edge.id, full);
+    if (full !== null) ctx.crossings.add(edge.id, full);
+    if (edge.label === undefined) continue;
+    const label = labelObstacle(edge, full ?? fullRoute(edge));
+    if (label === null) ctx.index.delete(edge.label.id);
+    else ctx.index.replace(label);
+  }
+  return fresh;
 }
 
 /** The routes to nudge: each one just made, and each clean one whose

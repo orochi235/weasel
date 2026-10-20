@@ -83,7 +83,7 @@ export type { RouteHandle } from './waypoints';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
-  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
@@ -146,10 +146,16 @@ export type {
 } from './graph';
 export { EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
-export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
-export type { DiagramLabel } from './labelTrait';
+export type { DiagramLabel, LabelSpot } from './labelTrait';
+export { placeLabels } from './labels/place';
+export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
+export { installLabelPlacement } from './labels/install';
+export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
+export { useLabelPlacement } from './labels/useLabelPlacement';
+export { createSpecLabelPlacer } from './labels/specLabels';
 export { nextOffPageRef, offPageSplits } from './offPage/split';
 export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
 export {

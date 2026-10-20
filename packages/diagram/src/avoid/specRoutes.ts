@@ -7,14 +7,28 @@ import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { DiagramSpec } from '../fromData';
+import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';
 import type { Port } from '../types';
 import { createAvoidRouter } from './router';
-import type { AvoidEdge, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
+import type { AvoidEdge, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
 
 const facing = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
+
+/** Each edge's label spec, by the edge it labels. */
+function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel> {
+  const out = new Map<string, AvoidLabel>();
+  for (const spec of specs) {
+    const label = diagramLabelOf(spec);
+    const owner = Array.isArray(spec.dependsOn) ? spec.dependsOn[0] as string | undefined : undefined;
+    if (label === null || owner === undefined || out.has(owner)) continue;
+    const { width, height } = spec.pose as RectPose;
+    out.set(owner, { id: spec.id as string, placement: label, size: { width, height } });
+  }
+  return out;
+}
 
 /**
  * A function from specs to the same specs with each edge on `avoid` and
@@ -26,6 +40,7 @@ export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly D
   let held = new Map<string, Vec2[] | null>();
   return (specs) => {
     const byId = new Map(specs.map((s) => [s.id as string, s]));
+    const labels = labelsOf(specs);
     const obstacles: AvoidObstacle[] = [];
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
@@ -49,6 +64,7 @@ export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly D
         to: { node: b.id as string, ports: portsAt(b, edge.to.port) },
         ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
         ...(route != null ? { route } : {}),
+        ...(labels.has(spec.id as string) ? { label: labels.get(spec.id as string)! } : {}),
       });
     }
     if (edges.length === 0) return [...specs];

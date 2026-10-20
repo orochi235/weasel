@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, createTransformOp, derivedDepOf, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, createTransformOp, derivedDepOf, documentPose, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
+import { edgeLabelSpec } from '../edgeLabel';
 import type { DiagramEdge } from '../edgeTrait';
 import { commitRouteToScene } from '../waypointAction';
 import { pinSegment } from '../waypoints';
+import { entersBox } from './avoidFixture';
 import { installAvoidRouting } from './install';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;
@@ -107,6 +109,23 @@ describe('avoid routing in a scene', () => {
     expect(preview.map((p) => p.id)).toEqual(['ab']);
     const shown = (preview[0]!.data as { diagram: DiagramEdge }).diagram.route!;
     expect(shown.length).toBeGreaterThan(0);
+    expect(routeOf(scene)).toEqual([]);
+  });
+
+  it('reroutes around another connector’s label once it is added, in the add’s own entry', () => {
+    const { scene } = load({ route: [] });
+    scene.add(box('up', 150, -200) as never);
+    scene.add(box('down', 150, 200) as never);
+    scene.add(connector('cross', 'up', 'down', { route: [], from: { port: 's' }, to: { port: 'n' } }) as never);
+    expect(routeOf(scene)).toEqual([]);
+    const depth = scene.historyEntries().length;
+    scene.add(edgeLabelSpec('cross', 'a long note', { layer: 'main' }) as never);
+    expect(scene.historyEntries().length).toBe(depth + 1);
+    const label = documentPose(scene, scene.get('cross/label' as never)!);
+    const points = drawn(scene);
+    expect(points.length).toBeGreaterThan(2);
+    points.slice(1).forEach((p, i) => expect(entersBox(points[i]!, p, label)).toBe(false));
+    scene.undo();
     expect(routeOf(scene)).toEqual([]);
   });
 });
