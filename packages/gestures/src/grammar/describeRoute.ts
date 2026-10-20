@@ -151,8 +151,13 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       return userDoes(required, `clicks${target}`);
     case 'pointerDown':
       return userDoes(required, `presses${target}`);
-    case 'hover':
-      return userDoes(required, arg === 'leave' ? `moves the pointer ${leftClause(parsed.target)}` : `moves the pointer${target}`);
+    case 'hover': {
+      const held = parsed.held === 'required' ? ' with a button held'
+        : parsed.held === 'optional' ? ' whether or not a button is held'
+        : '';
+      const where = arg === 'leave' ? ` ${leftClause(parsed.target)}` : target;
+      return userDoes(required, `moves the pointer${where}${held}`);
+    }
     case 'dblTap':
       return userDoes(required, `double-taps${target}`);
     case 'drag':

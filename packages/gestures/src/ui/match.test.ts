@@ -833,5 +833,23 @@ describe('HoverSpec', () => {
     expect(matchSpec(at('empty', { from: { bodyTarget: 'empty' } }), leave, false)).toBe(false);
     expect(matchSpec(at('unselected-body', { off: true, from: onBody }), leave, false)).toBe(true);
   });
+
+  it('stands down for a held pointer\'s move unless held is optional or required', () => {
+    expect(matchSpec(at('empty', { held: true }), { kind: 'hover' }, false)).toBe(false);
+    expect(matchSpec(at('empty', { held: true }), { kind: 'hover', held: 'optional' }, false)).toBe(true);
+    expect(matchSpec(at('empty'), { kind: 'hover', held: 'optional' }, false)).toBe(true);
+    expect(matchSpec(at('empty', { held: true }), { kind: 'hover', held: true }, false)).toBe(true);
+    expect(matchSpec(at('empty'), { kind: 'hover', held: true }, false)).toBe(false);
+  });
+
+  it('applies held to a leave across targets, but not to leaving the surface', () => {
+    const onBody = { bodyTarget: 'unselected-body' } as const;
+    const leave = { kind: 'hover', motion: 'leave', target: 'unselected-body' } as const;
+    expect(matchSpec(at('empty', { held: true, from: onBody }), leave, false)).toBe(false);
+    expect(matchSpec(at('empty', { held: true, from: onBody }), { ...leave, held: 'optional' }, false)).toBe(true);
+    const offSurface = at('empty', { off: true, from: { bodyTarget: 'empty' } });
+    expect(matchSpec(offSurface, { kind: 'hover', motion: 'leave' }, false)).toBe(true);
+    expect(matchSpec(offSurface, { kind: 'hover', motion: 'leave', held: true }, false)).toBe(true);
+  });
 });
 

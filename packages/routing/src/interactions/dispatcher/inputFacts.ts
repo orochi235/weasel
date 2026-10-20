@@ -104,6 +104,7 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         mods: modifiersOf(event),
+        held: event.held === true,
         ...resolved,
       };
     case 'carry':

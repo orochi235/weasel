@@ -207,6 +207,28 @@ describe('parseRoute v3', () => {
   });
 });
 
+describe('parseRoute — a held pointer on hover', () => {
+  it('reads ?held and +held as whether a button may or must be held', () => {
+    expect(parseRoute('[*] hover ?held')).toEqual({
+      phases: [self('*')], gesture: 'hover', arg: 'move', target: '*', modifiers: {}, held: 'optional',
+    } satisfies ParsedRoute);
+    expect(parseRoute('[*] hover(leave) +held ?alt')).toMatchObject({
+      arg: 'leave', held: 'required', modifiers: { alt: 'optional' },
+    });
+  });
+
+  it('rejects held on any gesture but hover, and twice', () => {
+    expect(() => parseRoute('[*] drag ?held')).toThrow(/held/);
+    expect(() => parseRoute('[*] hover ?held +held')).toThrow(/duplicate/);
+  });
+
+  it('formats held after the modifiers, and round-trips', () => {
+    const r = parseRoute('[*] hover => empty ?shift ?held');
+    expect(formatRoute(r)).toBe('[*] hover => empty ?shift ?held');
+    expect(parseRoute(formatRoute(r))).toEqual(r);
+  });
+});
+
 describe('formatRoute v3 (canonical form)', () => {
   it('emits one space after "]"', () => {
     expect(formatRoute({

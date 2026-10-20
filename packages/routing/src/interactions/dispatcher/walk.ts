@@ -52,6 +52,12 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
   return result;
 }
 
+/** Whether any live binding's spec passes `test`. Asks no `enabled`, and needs
+ *  no event, so nothing is hit-tested to answer it. */
+export function anyBinding(ctx: DispatcherContext, test: (spec: GestureBinding['spec']) => boolean): boolean {
+  return assembleScopedBindings(ctx).some((sb) => test(sb.binding.spec));
+}
+
 function buildActionMap(registry: ActionSource): Map<string, Action> {
   const map = new Map<string, Action>();
   for (const action of registry.list()) {

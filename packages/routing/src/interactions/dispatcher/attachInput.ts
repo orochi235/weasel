@@ -33,6 +33,8 @@ export interface InputSources
 export interface InputChannels {
   keyboard: boolean | 'first';
   pointer: boolean;
+  /** Hovers alone. Read only with `pointer` off, which carries them itself. */
+  hover: boolean;
   wheel: boolean;
   pinch: boolean;
   contextMenu: boolean;
@@ -108,6 +110,14 @@ export function attachInput(
     listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
     listeners.on(canvas, 'pointermove', pointer.onHoverMove);
     listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
+  } else if (channels.hover) {
+    listeners.on(window, 'keydown', hover.onKey);
+    listeners.on(window, 'keyup', hover.onKey);
+    listeners.on(canvas, 'pointerleave', hover.onLeave);
+    listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
+      core.routeAt(null, e.clientX, e.clientY);
+      hover.moved(e);
+    });
   }
   if (channels.wheel) {
     listeners.on(canvas, 'wheel', wheelInput(core, pinch.live), { passive: false, capture: true });

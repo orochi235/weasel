@@ -70,6 +70,11 @@ export interface DispatcherChannels {
   /** `pointerdown`, hover `pointermove`, `pointerleave` — press, drag, click,
    *  long-press, multi-touch and the hover-cursor pump. */
   pointer?: boolean;
+  /** `hover` gestures and the hover-cursor pump without the rest of
+   *  `pointer`: no press opens a gesture or captures the pointer, so the
+   *  element's own clicks and drags are left alone. Omitted, it follows
+   *  `pointer`, which carries hovers whenever it is on. */
+  hover?: boolean;
   /** `wheel`. */
   wheel?: boolean;
   /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's
