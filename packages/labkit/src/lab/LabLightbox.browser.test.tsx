@@ -65,7 +65,10 @@ function Solid() {
 /** The under buffer's own pixel at a viewport point, read back from GL. */
 function underPixelAt(x: number, y: number): [number, number, number] {
   const canvas = document.querySelector('.lk-lab__layer--under canvas') as HTMLCanvasElement;
-  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext;
+  const gl = canvas.getContext('webgl2', {
+    preserveDrawingBuffer: true,
+    stencil: true,
+  }) as WebGL2RenderingContext;
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
   const out = new Uint8Array(4);
