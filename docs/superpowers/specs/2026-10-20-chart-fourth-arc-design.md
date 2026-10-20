@@ -1,10 +1,10 @@
 # weaselchart fourth arc — design
 
-**Draft, unbuilt, and not yet approved (2026-10-20).** The decisions below were taken in conversation. The
-piece-by-piece design was presented, and Mike hasn't approved it yet. Get that approval before
-planning.
+**Approved and unbuilt (2026-10-20).** The decisions below were taken in conversation, and the
+Pieces table was approved as it stands (2026-10-20). Each piece has its own plan under
+`docs/superpowers/plans/2026-10-20-chart-arc4-*.md`.
 
-For whoever plans and builds the fourth arc of `apps/chart`. It covers five independent pieces and
+For whoever plans and builds the fourth arc of `apps/chart`. It covers six independent pieces and
 says what each one starts from.
 
 ## Decisions (2026-10-20)

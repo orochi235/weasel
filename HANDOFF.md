@@ -4,16 +4,18 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## weaselchart fourth arc: designing (2026-10-20)
+## weaselchart fourth arc: planned, unbuilt (2026-10-20)
 
-The design is drafted in `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`. It covers
-PDF export, a patchable audio graph and a live audio runner, pages in `DiagramData`, dragging an edge
-label, and groups under `rack` and `lanes`. The four rulings Mike made are in its "Decisions"
-section. The piece-by-piece table was shown to him, and he hasn't approved it yet.
+The spec (`docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`) was approved
+(2026-10-20). Each piece has a plan in `docs/superpowers/plans/2026-10-20-chart-arc4-*.md`; none
+is reviewed or built yet. Each plan lists the calls it made where the spec was silent, under its
+gaps or "Decisions made while planning" — those need review before building.
 
-Next: get his approval or changes on that table, edit the spec to match, then write the plan
-(writing-plans) and build it in the two waves the spec gives. Work runs from `main`, with no
-worktree yet.
+Next: review the plans, then build in the spec's two waves, one worktree per piece. The runner
+plan depends on the graph plan's `AudioGraph` API, and `impulseResponse` lives in
+`@weasel-js/audio`. Every piece edits the same fourth-arc line in `docs/TODO.md`, so expect
+conflicts there when merging. `@weasel-js/pdf` needs its first npm publish and trusted-publisher
+setup done by hand before it can release.
 
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
