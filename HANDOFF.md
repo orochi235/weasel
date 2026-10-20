@@ -49,6 +49,8 @@ Merged:
   browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
 - `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
   (a real-mouse browser test drags over a lens).
+- Grid snapping and node length fields read a container's unit scope (no app passes the new
+  options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

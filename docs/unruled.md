@@ -163,6 +163,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
+  scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
+  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
+  the grid's origin stays in world space. Only box position, size and text padding are lengths.
+  The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
 - 2026-10-20 (overnight pass): A transform preview carries pose once, in the scene's overrides:
   `move`, `resize`, and `rotate` handles drop `previewPose` (read `effectivePose(scene, node)`), the
   ghost resolves through `effectivePose`, and selection chrome boxes an in-flight id at its effective
