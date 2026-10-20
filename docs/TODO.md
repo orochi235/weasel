@@ -1330,11 +1330,6 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Second arc.** Themes. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
-- **(P3) An avoid drag frame's fixed cost sits outside its 4 ms cap.** `npm run bench:avoid` on the
-  fleet (2026-10-20, keiei): a drag frame took a median 1.8 ms and at worst 5.1 ms, measured
-  without the cap. The cap in `router.ts`'s `preview` stops rerouting, but each frame first finds
-  the dirty set over every connector and builds the obstacle index whole, which a long frame's cost
-  includes. Commits (median 6.9 ms) and full routes (136 ms) are inside their budgets.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
