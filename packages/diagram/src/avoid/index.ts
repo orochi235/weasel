@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 export { AVOID_DEFAULTS } from './types';
-export type { AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
+export type { AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
 export { createAvoidRouter } from './router';
 export type { AvoidRouter, AvoidRoutes, AvoidUpdateOptions } from './router';
 export { routeHolds } from './holds';

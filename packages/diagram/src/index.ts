@@ -85,7 +85,7 @@ export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
-  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
@@ -150,7 +150,7 @@ export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
-export type { DiagramLabel } from './labelTrait';
+export type { DiagramLabel, LabelSpot } from './labelTrait';
 export { diagramResizable } from './resizable';
 export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
 export type { GroupInset } from './cluster';

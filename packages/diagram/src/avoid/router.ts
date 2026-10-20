@@ -6,6 +6,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
 import { DragIndex } from './dragIndex';
+import { labelObstacle, labelObstacles } from './labels';
 import { routeEdge } from './edgeRoute';
 import { nudge, type NudgeRoute } from './nudge';
 import { ObstacleIndex } from './obstacles';
@@ -126,9 +127,10 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     return out;
   }
 
-  function commit(input: AvoidInput, dirty: AvoidEdge[]): AvoidRoutes {
+  /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
+  function commit(input: AvoidInput, dirty: AvoidEdge[], obstacles: readonly AvoidObstacle[]): AvoidRoutes {
     previews.clear();
-    const index = new ObstacleIndex(input.obstacles, opts.clearance);
+    const index = new ObstacleIndex(obstacles, opts.clearance, opts.labelClearance);
     const limit = limitOf(input, opts.margin);
     const dirtyIds = new Set(dirty.map((e) => e.id));
     const crossings = new SegmentIndex();
@@ -144,6 +146,11 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       fresh.set(edge.id, full);
       if (full !== null) crossings.add(edge.id, full);
       keys.set(edge.id, stopsKey(edge));
+      if (edge.label !== undefined) {
+        const label = labelObstacle(edge, full ?? fullRoute(edge));
+        if (label === null) index.delete(edge.label.id);
+        else index.replace(label);
+      }
     }
     const byId = new Map(input.edges.map((e) => [e.id, e]));
     const bundle = bundleOf(fresh, input.edges, clean, rawOf);
@@ -156,27 +163,31 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       shown.set(id, full);
       if (was === null || !samePoints(was, full)) out.set(id, full.slice(1, -1));
     }
-    indexForDrag({ obstacles: input.obstacles, edges: input.edges.map((e) => withRoute(e, out)) });
+    const edges = input.edges.map((e) => withRoute(e, out));
+    const settled = [...input.obstacles, ...labelObstacles(edges, routeOf)];
+    committed = new Map(settled.map((o) => [o.id, o]));
+    indexForDrag({ obstacles: settled, edges });
     return out;
   }
 
   return {
     seed(input) {
-      committed = new Map(input.obstacles.map((o) => [o.id, o]));
+      const obstacles = [...input.obstacles, ...labelObstacles(input.edges, fullRoute)];
+      committed = new Map(obstacles.map((o) => [o.id, o]));
       keys.clear();
       raw.clear();
       shown.clear();
       for (const e of input.edges) keys.set(e.id, stopsKey(e));
       previews.clear();
-      indexForDrag(input);
+      indexForDrag({ obstacles, edges: input.edges });
     },
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
-      const changed = changedObstacles(committed, input.obstacles);
+      const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
+      const changed = changedObstacles(committed, obstacles);
       const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, routeOf);
-      committed = new Map(input.obstacles.map((o) => [o.id, o]));
       forget(input);
-      return commit(input, dirty);
+      return commit(input, dirty, obstacles);
     },
   };
 }

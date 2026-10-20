@@ -5,7 +5,7 @@ import {
 import { routeEdge } from './edgeRoute';
 import { interestingPoints, searchWindow } from './grid';
 import { MinHeap } from './heap';
-import type { EdgeObstacles } from './obstacles';
+import { ObstacleIndex, type EdgeObstacles } from './obstacles';
 import { searchLeg, type LegSource, type LegTarget } from './search';
 import { DX, DY, dirOf, type Dir } from './turns';
 import { blocks, inflate, type AvoidObstacle, type Box } from './types';
@@ -85,6 +85,21 @@ describe('routeEdge', () => {
     expect(routeEdge(edgeBetween('e', a, boxed), routeContext([a, boxed, ...walls]))).toBeNull();
   });
 
+  it('goes around another connector’s label, keeping the label clearance', () => {
+    const label: AvoidObstacle = { id: 'other/label', kind: 'label', edge: 'other', box: { x: 230, y: 20, width: 40, height: 20 } };
+    const ctx = { ...routeContext([a, b]), index: new ObstacleIndex([a, b, label], 10, 4) };
+    const route = routeEdge(edgeBetween('e', a, b, 'e', 'w'), ctx)!;
+    expect(route.length).toBeGreaterThan(2);
+    const grown = inflate(label.box, 4);
+    route.slice(1).forEach((p, i) => expect(entersBox(route[i]!, p, grown)).toBe(false));
+  });
+
+  it('runs straight through its own label', () => {
+    const label: AvoidObstacle = { id: 'e/label', kind: 'label', edge: 'e', box: { x: 230, y: 20, width: 40, height: 20 } };
+    const ctx = { ...routeContext([a, b]), index: new ObstacleIndex([a, b, label], 10, 4) };
+    expect(routeEdge(edgeBetween('e', a, b, 'e', 'w'), ctx)).toEqual([{ x: 100, y: 30 }, { x: 400, y: 30 }]);
+  });
+
   it('never runs a segment through an obstacle it should avoid, over random layouts', () => {
     for (let seed = 1; seed <= 12; seed++) {
       const rand = seeded(seed);
@@ -95,7 +110,7 @@ describe('routeEdge', () => {
         expect(route, `seed ${seed} ${edge.id}`).not.toBeNull();
         expect(isOrthogonal(route!)).toBe(true);
         for (const shape of shapes) {
-          if (!blocks(shape, edge.from.node, edge.to.node)) continue;
+          if (!blocks(shape, edge)) continue;
           const grown = inflate(shape.box, 10);
           route!.slice(1).forEach((p, i) => {
             expect(entersBox(route![i]!, p, shape.box), `seed ${seed} ${edge.id} through ${shape.id}`).toBe(false);
@@ -161,7 +176,7 @@ describe('the sparse visibility graph', () => {
       const shapes = randomShapes(rand, 9, 140);
       const { index } = routeContext(shapes);
       for (const edge of randomEdges(rand, shapes, 6)) {
-        const obstacles = index.forEdge(edge.from.node, edge.to.node);
+        const obstacles = index.forEdge(edge);
         const sources = edge.from.ports.map((p) => ({ point: exit(p), heading: dirOf(p.normal) }));
         const targets = edge.to.ports.map((p) => ({ point: exit(p), arrive: dirOf({ x: -p.normal.x, y: -p.normal.y }) }));
         const window = searchWindow([...sources.map((s) => s.point), ...targets.map((t) => t.point)], 400);

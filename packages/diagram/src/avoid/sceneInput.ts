@@ -1,7 +1,7 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
  * pool, group box, and header as an obstacle, and every `avoid` connector with
- * the ports each end may use.
+ * the ports each end may use and its label.
  */
 import {
   AUTO_POSE_DESCRIPTOR,
@@ -13,10 +13,11 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramGroupOf } from '../group';
+import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf, type PortsOptions } from '../ports';
 import { diagramNodeOf } from '../trait';
 import type { Port } from '../types';
-import type { AvoidEdge, AvoidInput, AvoidObstacle, AvoidPort } from './types';
+import type { AvoidEdge, AvoidInput, AvoidLabel, AvoidObstacle, AvoidPort } from './types';
 
 /** How a scene is read for routing. */
 export interface AvoidSceneOptions<TPose> extends PortsOptions<TPose> {
@@ -70,10 +71,18 @@ export function avoidSceneInput<TPose>(
 
   const obstacles: AvoidObstacle[] = [];
   const edgeNodes: SceneNode[] = [];
+  const labels = new Map<string, AvoidLabel>();
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
     if (edge !== null) {
       if (edge.router === key) edgeNodes.push(node);
+      continue;
+    }
+    const label = diagramLabelOf(node);
+    if (label !== null) {
+      const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
+      const { width, height } = geometry.getBounds(node.pose as TPose);
+      if (owner !== undefined && !labels.has(owner)) labels.set(owner, { id: node.id, placement: label, size: { width, height } });
       continue;
     }
     const container = diagramContainerOf(node);
@@ -109,6 +118,7 @@ export function avoidSceneInput<TPose>(
       to: { node: b.id, ports: to },
       ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints as Vec2[] } : {}),
       ...(edge.route !== undefined ? { route: edge.route } : {}),
+      ...(labels.has(node.id) ? { label: labels.get(node.id)! } : {}),
     });
   }
   return { obstacles, edges };

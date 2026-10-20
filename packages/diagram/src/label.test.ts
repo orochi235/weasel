@@ -38,6 +38,11 @@ describe('diagramLabelOf', () => {
 });
 
 describe('labelDerivePose', () => {
+  it('stands at the station placement chose, ahead of the author’s', () => {
+    const pose = poseOf({ at: 'start', offset: 0, placed: { at: 0.5, offset: 0 } }, edgeDep(line));
+    expect(pose).toEqual(box(40, -4));
+  });
+
   it('centers the label on the middle of the route', () => {
     // Halfway along 200 units of elbow is the corner.
     expect(poseOf({ at: 'mid' }, edgeDep(elbow))).toEqual(box(90, -4));
