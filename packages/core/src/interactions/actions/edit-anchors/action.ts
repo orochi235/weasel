@@ -61,7 +61,7 @@ import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { HANDLE_LOCK_ROLES, lockHandle, locksInForce, type HandlePress } from './handleDrag';
 import { locksOf, type EditAnchorsParams } from './params';
-import { pathEditPreview } from './preview';
+import { finishPathEditFrame, pathEditPreview } from './preview';
 import {
   claimWheel, dragWeights, endExtensionDrags, extensionOverlays, placeHandle, startExtensionDrags, translateWeighted,
 } from './extensionDrags';
@@ -181,7 +181,7 @@ const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
 function track(scratch: EditAnchorsScratch, next: ReturnType<typeof editAnchorSetTracked>): void {
   if (!next) return;
   const { dep, id } = scratch;
-  const done = dep.finishEdit ? dep.finishEdit(id, next.path, next.origins) : { path: next.path, others: [] };
+  const done = finishPathEditFrame(dep, id, next.path, next.origins);
   if (!done) return;
   scratch.currentPose = done.path as PolygonPath;
   scratch.others = done.others as EditAnchorsScratch['others'];
@@ -311,7 +311,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
 
       let active = false;
       const preview = pathEditPreview(
-        dep, editingId, () => (active ? scratch.currentPose : null), () => (active ? scratch.others : []),
+        dep, editingId, () => (active ? { path: scratch.currentPose } : null), () => (active ? scratch.others : []),
       );
       if (!preview) return {};
 

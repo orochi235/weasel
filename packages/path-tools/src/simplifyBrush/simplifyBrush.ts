@@ -93,7 +93,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
         current = editAnchorSetTracked(origin, (set) => simplifyAnchorsAt(set, gathered, tolerance()));
       };
 
-      const preview = pathEditPreview(dep, id, () => current?.path ?? null);
+      const preview = pathEditPreview(dep, id, () => current);
       if (!preview) return {};
       sweepTo(ctx.world);
 

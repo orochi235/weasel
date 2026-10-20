@@ -5,7 +5,7 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  createScene, createTransformOp, defaultCommitAdapter, deleteAnchorsAction, editAnchorsAction, findNodeShape,
+  createScene, createTransformOp, defaultCommitAdapter, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
 } from '@weasel-js/core';
 import {
@@ -97,7 +97,20 @@ function setup() {
     const ops = dep().transformOps!([createTransformOp({ id, from, to, label: 'Move' })], 'Move');
     if (ops) adapter.applyOps(ops, 'Move');
   };
-  return { scene, square, triangle, link, drag, points, select, run, move };
+  /** Bend `id`'s segment under `(x, y)` by `(dx, dy)` and release; answers each node's preview. */
+  const bend = (id: NodeId, x: number, y: number, dx: number, dy: number) => {
+    editing = id;
+    rerender();
+    const at = (px: number, py: number): InvocationCtx => ({ ...ctx(px, py, 0), drag: undefined });
+    const bendSegment = pathsPreset.actions!.find((a) => a.id === 'bendSegment')!;
+    const handle = (bendSegment.invoker as OngoingInvoker).start(at(x, y), undefined);
+    handle.onMove!(at(x + dx, y + dy));
+    const ids = [...(handle.previewIds!() ?? [])];
+    const previews = new Map(ids.map((pid) => [pid, pathAnchorPoints(handle.previewPose!(pid) as PolygonPath)]));
+    handle.onEnd!(at(x + dx, y + dy), 'commit');
+    return previews;
+  };
+  return { scene, square, triangle, link, drag, points, select, run, move, bend };
 }
 
 describe('constraint links', () => {
@@ -168,5 +181,12 @@ describe('constraint links', () => {
     expect(t.points(t.triangle)[0]).toEqual({ x: 40, y: 0 });
     expect(constraintLinkConflictsOf(t.scene, t.square)).toEqual([t.link]);
     expect(constraintLinkConflictsOf(t.scene, t.triangle)).toEqual([t.link]);
+  });
+  it('previews the linked nodes through a drag that only previews until it commits', () => {
+    const t = setup();
+    const previews = t.bend(t.square, 70, 0, 0, 30);
+    expect([...previews.keys()].sort()).toEqual([t.square, t.triangle].sort());
+    expect(previews.get(t.triangle)).toEqual(t.points(t.triangle));
+    expect(t.points(t.triangle)[0].y).toBeGreaterThan(1);
   });
 });

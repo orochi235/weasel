@@ -86,7 +86,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
       const press = { x: ctx.world.x, y: ctx.world.y };
       const pressFactor = balanceFactorToward(origin, sub, segIdx, press);
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current?.path ?? null);
+      const preview = pathEditPreview(dep, id, () => current);
       if (!preview) return {};
 
       return {

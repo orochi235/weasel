@@ -237,7 +237,9 @@ export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interac
 export { joinSelectedAnchors, type AnchorEdit } from '../interactions/actions/defaults/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
-export { pathEditPreview, type PathEditPreview, type PathStorageKind } from '../interactions/actions/edit-anchors/preview';
+export {
+  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
+} from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
