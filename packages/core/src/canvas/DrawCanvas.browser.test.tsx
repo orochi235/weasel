@@ -29,7 +29,7 @@ function mount(props: DrawCanvasProps): HTMLCanvasElement {
 
 /** RGBA at a device pixel, counted from the top-left. */
 function pixel(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const out = new Uint8Array(4);
   gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
   return Array.from(out);
@@ -66,7 +66,7 @@ describe('<DrawCanvas> in a real browser', () => {
     const canvas = mount({
       width: 20, height: 10, dpr: 1, draw: [red], background: { kind: 'solid', color: '#ffffff' },
     });
-    const ext = canvas.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
+    const ext = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!.getExtension('WEBGL_lose_context')!;
     const event = (name: string) => new Promise<void>((r) => canvas.addEventListener(name, () => r(), { once: true }));
     const lost = event('webglcontextlost');
     ext.loseContext();

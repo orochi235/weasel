@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 function read(canvas: HTMLCanvasElement) {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const px = new Uint8Array(canvas.width * canvas.height * 4);
   gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);

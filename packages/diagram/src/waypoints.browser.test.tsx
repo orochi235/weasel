@@ -62,7 +62,7 @@ function pointer(canvas: HTMLCanvasElement, type: string, x: number, y: number):
 
 /** Whether any pixel within a pixel of a CSS point is lit on the black ground. */
 function inked(canvas: HTMLCanvasElement, x: number, y: number): boolean {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const side = Math.ceil(3 * dpr);
   const out = new Uint8Array(side * side * 4);
