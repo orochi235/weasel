@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FakeGain, FakeNode } from '../testing/fakeAudioContext';
 import { edgeCount, FADE, harness, testNode, type TestNode } from '../testing/graphHarness';
 import { allPaths } from '../testing/graphWalk';
+import { disposeNow } from './createAudioGraph';
 
 /** The fader a def's output feeds: the first gain on its way to `to`. */
 const outFaderOf = (n: TestNode, to: FakeNode): FakeGain => allPaths(n.output, to)[0][1] as FakeGain;
@@ -184,7 +185,7 @@ describe('replace', () => {
     expect(next.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('dispose mid-crossfade stops and disposes the outgoing def', () => {
+  it('teardown mid-crossfade stops and disposes the outgoing def', () => {
     const { ctx, graph, timers } = harness();
     const old = testNode(ctx, [], true);
     graph.add('src', old.def);
@@ -192,7 +193,7 @@ describe('replace', () => {
     graph.start();
     const next = testNode(ctx, [], true);
     graph.replace('src', next.def);
-    graph.dispose();
+    disposeNow(graph);
     expect(timers.size).toBe(0);
     expect(old.stop).toHaveBeenCalledTimes(1);
     expect(old.dispose).toHaveBeenCalledTimes(1);
