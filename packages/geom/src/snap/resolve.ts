@@ -177,7 +177,8 @@ function compareCombos<M>(a: Combo<M>, b: Combo<M>): number {
 }
 
 /** `parent` plus `l`, or null when `l` adds no constraint or breaks a member's reach or span. */
-function extend<M>(parent: Combo<M>, l: Live<M>, hDim: number, delta0: Vec, m: Measure): Combo<M> | null {
+function extend<M>(parent: Combo<M>, l: Live<M>, input: Flat, delta0: Vec, m: Measure): Combo<M> | null {
+  const hDim = flatDim(input);
   const flat = intersectFlats(parent.flat, l.within, m.eps);
   if (!flat) return null;
   const dim = flatDim(flat);
@@ -185,20 +186,47 @@ function extend<M>(parent: Combo<M>, l: Live<M>, hDim: number, delta0: Vec, m: M
   const delta = closestOnFlat(flat, delta0);
   if (!isFiniteVec(delta)) return null;
   const members = [...parent.members, l];
+  for (const mem of members) if (meets(m, mem.c, mem.probe, delta) === null) return null;
+  const targetFlat = l.c.tier === 'target'
+    ? intersectFlats(parent.targetFlat, l.within, m.eps) ?? flat
+    : parent.targetFlat;
+  const kept = prune(members, input, dim, flatDim(targetFlat), m.eps);
   let px = 0;
-  for (const mem of members) {
+  for (const mem of kept) {
     const p = meets(m, mem.c, mem.probe, delta);
     if (p === null) return null;
     px = Math.max(px, p);
   }
-  const targetFlat = l.c.tier === 'target'
-    ? intersectFlats(parent.targetFlat, l.within, m.eps) ?? flat
-    : parent.targetFlat;
   return {
-    members, flat, dim, targetFlat, delta, px,
+    members: kept, flat, dim, targetFlat, delta, px,
     codim: hDim - dim,
     targetCodim: hDim - flatDim(targetFlat),
   };
+}
+
+/** The flat `members` pin inside `input`, and the one their target-tier members pin. */
+function flatsOf<M>(members: readonly Live<M>[], input: Flat, eps: number): { dim: number; targetDim: number } | null {
+  let flat: Flat | null = input;
+  let target: Flat = input;
+  for (const mem of members) {
+    flat = intersectFlats(flat, mem.within, eps);
+    if (!flat) return null;
+    if (mem.c.tier === 'target') target = intersectFlats(target, mem.within, eps) ?? flat;
+  }
+  return { dim: flatDim(flat), targetDim: flatDim(target) };
+}
+
+/** `members` less every one the rest already imply, oldest first, so a
+ *  redundant member neither shows in `members` nor decides a tie on order. */
+function prune<M>(members: Live<M>[], input: Flat, dim: number, targetDim: number, eps: number): Live<M>[] {
+  let kept = members;
+  for (let i = 0; i < kept.length && kept.length > 1;) {
+    const rest = kept.filter((_, j) => j !== i);
+    const f = flatsOf(rest, input, eps);
+    if (f && f.dim === dim && f.targetDim === targetDim) kept = rest;
+    else i++;
+  }
+  return kept;
 }
 
 /** The best combination; when any can include a required candidate, the best of those. */
@@ -212,7 +240,7 @@ function search<M>(candidates: Live<M>[], root: Combo<M>, delta0: Vec, m: Measur
   };
   const visit = (start: number, parent: Combo<M>) => {
     for (let i = start; i < candidates.length; i++) {
-      const next = extend(parent, candidates[i], root.dim, delta0, m);
+      const next = extend(parent, candidates[i], root.flat, delta0, m);
       if (!next) continue;
       consider(next);
       if (next.dim > 0) visit(i + 1, next);

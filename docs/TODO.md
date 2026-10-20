@@ -308,12 +308,6 @@ Priority tags:
   answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
   the box at the press rather than where it lands. Open question: should spacing on a turned box
   measure its extent, its own frame, or stay off?
-- **(P3) `resolveSnap` can report a member the others imply** (2026-10-18). `extend`
-  (`packages/geom/src/snap/resolve.ts`) adds a candidate whenever it narrows the solution, so a line
-  taken before a point on it leaves both in `members`. The move and `satisfied` are right. Open
-  question: prune members the final flat already implies, or document `members` as the path the
-  search took? Ties between combinations compare their members' orders, so by reading the code (not
-  observed) a redundant line could decide one.
 - **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
