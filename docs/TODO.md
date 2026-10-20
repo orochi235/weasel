@@ -1362,9 +1362,16 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Fourth arc (approved, partly built).** Left to build: the live audio runner that drives
-  the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built). Design:
-  `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
+- **(P3) Two wires can't meet at one audio input in pipeline mode.** `livePlan` sums every wire
+  into an input, but the editor lets a wire join only a free input
+  (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
+  Decision needed: whether audio inputs accept several wires, as a port-level flag, or Mix stays
+  the way to combine (2026-10-20).
+- **(P3) `useLiveAudioRunner` loops on a `nodes` built in render.** It remakes its runner when
+  `engine`, `bus` or `nodes` change (`packages/diagram/src/effect/audio/useLiveAudioRunner.ts`), so
+  `nodes={{ ...audioStageNodes, mine }}` written inline re-renders forever, and its JSDoc doesn't say
+  to pass a stable one. Read `nodes` through `latest` at creation, as `pipeline` and `sources` are, or
+  document it (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).

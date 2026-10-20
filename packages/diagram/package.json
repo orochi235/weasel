@@ -21,6 +21,10 @@
       "import": "./dist/effect.js",
       "types": "./dist/effect.d.ts"
     },
+    "./effect-audio": {
+      "import": "./dist/effect-audio.js",
+      "types": "./dist/effect-audio.d.ts"
+    },
     "./icons": {
       "import": "./dist/icons.table.js",
       "types": "./dist/icons.table.d.ts"
@@ -30,11 +34,17 @@
   "peerDependencies": {
     "react": ">=18",
     "@weasel-js/animator": "1.11.0",
+    "@weasel-js/audio": "1.11.0",
     "@weasel-js/core": "1.11.0",
     "@weasel-js/font": "1.11.0",
     "@weasel-js/geom": "1.11.0",
     "@weasel-js/react": "1.11.0",
     "@weasel-js/simulation": "1.11.0"
+  },
+  "peerDependenciesMeta": {
+    "@weasel-js/audio": {
+      "optional": true
+    }
   },
   "weaselIcons": {
     "table": "./dist/icons.table.json"

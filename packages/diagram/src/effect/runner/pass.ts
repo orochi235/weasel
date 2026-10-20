@@ -1,6 +1,7 @@
 import { PREVIEW_SIZE, shownPorts, uniqueStages } from '../draw';
 import type { EffectPipeline, EffectRun, EffectStage, EffectStageRun } from '../types';
 import { runOrder } from './order';
+import { paramValues } from './params';
 import type { EffectEvaluator, EffectEvaluators, EffectValueKinds } from './types';
 
 /** Options for `runPipeline` and `createEffectRunner`. */
@@ -80,7 +81,7 @@ export function createPass(pipeline: EffectPipeline, opts: RunPipelineOptions): 
   const evaluate = async (stage: EffectStage, inputs: Record<string, unknown>) => {
     if (stage.bypassed === true) return record(stage, inputs, passThrough(stage, inputs), {});
     const evaluator: EffectEvaluator | undefined = stage.type === undefined ? undefined : opts.evaluators[stage.type];
-    const params = Object.fromEntries((stage.params ?? []).map((p) => [p.id ?? p.label, p.control?.value ?? p.value]));
+    const params = paramValues(stage);
     const start = performance.now();
     try {
       if (evaluator === undefined) throw new Error(`no evaluator for type "${stage.type ?? ''}"`);

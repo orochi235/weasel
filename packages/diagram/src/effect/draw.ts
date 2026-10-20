@@ -168,6 +168,9 @@ export const previewRowId = (port: string): string => `preview:${port}`;
 /** `RunRowOptions.previewSize`'s default: a 48-unit square. */
 export const PREVIEW_SIZE = 48;
 
+/** Device pixels per preview unit, so a preview stays sharp on a 2× display. */
+export const PREVIEW_DENSITY = 2;
+
 /** The rows a look keeps on each stage for what an `EffectRun` shows there.
  *  Kept from the start, so a run fills them in without the chart laying out
  *  again. A decision's symbol keeps neither. */

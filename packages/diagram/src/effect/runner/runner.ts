@@ -1,5 +1,6 @@
 import type { EffectPipeline, EffectRun } from '../types';
 import { createPass, type EffectPass, type RunPipelineOptions } from './pass';
+import { closeBitmaps, previewsOf } from './previews';
 import { runPipeline } from './runPipeline';
 
 /** What `createEffectRunner` is made with. */
@@ -83,7 +84,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
   const wholeRun = (time: number) => async (signal: AbortSignal) => {
     dropStepping();
     const run = await runPipeline(pipeline, passOptions(time));
-    if (signal.aborted) close(previewsOf(run));
+    if (signal.aborted) closeBitmaps(previewsOf(run));
     else publish(run);
   };
 
@@ -134,7 +135,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
       const at = run === undefined ? published.length : published.indexOf(run);
       if (at <= 0) return;
       const keep = new Set(run === undefined ? [] : previewsOf(run));
-      close(published.slice(0, at).flatMap(previewsOf).filter((b) => !keep.has(b)));
+      closeBitmaps(published.slice(0, at).flatMap(previewsOf).filter((b) => !keep.has(b)));
       published = published.slice(at);
     },
     subscribe(listener) {
@@ -143,16 +144,8 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     },
     dispose() {
       this.reset();
-      close(published.flatMap(previewsOf));
+      closeBitmaps(published.flatMap(previewsOf));
       published = [];
     },
   };
-}
-
-function previewsOf(run: EffectRun): ImageBitmap[] {
-  return Object.values(run.stages).flatMap((s) => Object.values(s.previews ?? {}));
-}
-
-function close(bitmaps: readonly ImageBitmap[]): void {
-  for (const b of new Set(bitmaps)) b.close();
 }
