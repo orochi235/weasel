@@ -32,7 +32,6 @@
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  overflow: auto;
   contain: paint;
   /* A story's stand-in for its frame's viewport: `100cqb` is the trial's height where `100vh` would be the window's. */
   container-type: size;
@@ -46,18 +45,22 @@
   pointer-events: none;
 }
 
-.fg-story[data-fg-layout='centered'] {
+/* The story's own box. Scrolling here rather than on the host leaves the host still, for overlays to cover. */
+.fg-story__scroll {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.fg-story[data-fg-layout='centered'] > .fg-story__scroll {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.fg-story[data-fg-layout='padded'] {
+.fg-story[data-fg-layout='padded'] > .fg-story__scroll {
   padding: var(--wzl-space-8);
-}
-
-.fg-story[data-fg-layout='fullscreen'] {
-  padding: 0;
 }
 
 .fg-story--loading {

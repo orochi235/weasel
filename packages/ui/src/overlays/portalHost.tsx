@@ -1,16 +1,27 @@
-import { createContext, useCallback, useContext, useState, type ReactElement, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactElement, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria';
 import { nearestPortalHost } from '@weasel-js/gestures';
 
 export { nearestPortalHost };
 
+interface Assigned {
+  container: Element | null;
+  contained: boolean;
+}
+
 /** `undefined` distinguishes "no provider" from a provider saying `null`. */
-const OverlayPortalContext = createContext<Element | null | undefined>(undefined);
+const OverlayPortalContext = createContext<Assigned | undefined>(undefined);
 
 /** Props for {@link OverlayPortalProvider}. */
 export interface OverlayPortalProviderProps {
   /** Where overlays in this subtree portal. `null` means `document.body`. */
   container: Element | null;
+  /**
+   * The container stands in for the viewport: a modal below dims, traps focus in, and makes inert only what the
+   * container holds, and leaves the page's scrolling alone. For a box that shows one piece of a larger page, as a
+   * workshop shows a story. The container must be positioned and must not scroll, or the modal rides its content.
+   */
+  contained?: boolean;
   children: ReactNode;
 }
 
@@ -19,10 +30,9 @@ export interface OverlayPortalProviderProps {
  * overriding the nearest-themed-ancestor default. An individual overlay's
  * own `portalContainer` prop still wins.
  */
-export function OverlayPortalProvider({ container, children }: OverlayPortalProviderProps) {
-  return (
-    <OverlayPortalContext.Provider value={container}>{children}</OverlayPortalContext.Provider>
-  );
+export function OverlayPortalProvider({ container, contained = false, children }: OverlayPortalProviderProps) {
+  const value = useMemo(() => ({ container, contained }), [container, contained]);
+  return <OverlayPortalContext.Provider value={value}>{children}</OverlayPortalContext.Provider>;
 }
 
 /**
@@ -32,7 +42,14 @@ export function OverlayPortalProvider({ container, children }: OverlayPortalProv
  */
 export function useAssignedPortalContainer(explicit?: Element | null): Element | null | undefined {
   const fromProvider = useContext(OverlayPortalContext);
-  return explicit !== undefined ? explicit : fromProvider;
+  return explicit !== undefined ? explicit : fromProvider?.container;
+}
+
+/** The container a modal treats as its viewport: the nearest provider's, when it is `contained` and no
+ *  `portalContainer` of the overlay's own overrides it; otherwise null. */
+export function useContainedRoot(explicit?: Element | null): Element | null {
+  const fromProvider = useContext(OverlayPortalContext);
+  return explicit === undefined && fromProvider?.contained ? fromProvider.container : null;
 }
 
 /** The `portalContainer` prop every weasel overlay accepts. */
