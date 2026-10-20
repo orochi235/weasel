@@ -16,10 +16,15 @@ export const LANE_HEADER_SIZE = 28;
 export const laneHeader = (axis: 'x' | 'y'): ContainerHeader =>
   ({ side: axis === 'y' ? 'left' : 'top', size: LANE_HEADER_SIZE });
 
+/** A titled container's layout key: free placement in the body below its header. */
 export const DIAGRAM_CONTAINER_LAYOUT = 'diagram:container';
+/** A pool's layout key when its lanes stack as rows, top to bottom. */
 export const DIAGRAM_POOL_ROWS_LAYOUT = 'diagram:pool-rows';
+/** A pool's layout key when its lanes stack as columns, left to right. */
 export const DIAGRAM_POOL_COLUMNS_LAYOUT = 'diagram:pool-columns';
+/** The layout key of a lane in a pool of rows: free placement beside its left header. */
 export const DIAGRAM_LANE_ROWS_LAYOUT = 'diagram:lane-rows';
+/** The layout key of a lane in a pool of columns: free placement below its top header. */
 export const DIAGRAM_LANE_COLUMNS_LAYOUT = 'diagram:lane-columns';
 
 /** Every container layout this package registers, by key. */
