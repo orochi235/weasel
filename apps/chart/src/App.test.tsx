@@ -5,6 +5,7 @@ import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
 import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
+import { chartPrefs } from './prefs';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -15,6 +16,8 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
+  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
+  chartPrefs().reset();
   localStorage.clear();
 });
 
@@ -77,7 +80,6 @@ describe('App', () => {
 
   it('gives pipeline mode View › Look, and keeps the look picked through a visit to chart mode', () => {
     mount();
-    expect(screen.queryByRole('menuitem', { name: 'View' })).toBeNull();
     choose('Mode', 'Pipeline');
     const looks = () => {
       act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
@@ -94,6 +96,33 @@ describe('App', () => {
     choose('Mode', 'Chart');
     choose('Mode', 'Pipeline');
     expect(held(looks())).toEqual(['Rack']);
+  });
+
+  it('opens Preferences from View in chart mode', () => {
+    mount();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    choose('View', 'Preferences');
+    expect(within(screen.getByRole('dialog')).getByText('Show grid')).toBeTruthy();
+  });
+
+  it('opens Preferences from View in pipeline mode', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    choose('View', 'Preferences');
+    expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('keeps the pipeline look across a remount', async () => {
+    const first = mount();
+    choose('Mode', 'Pipeline');
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+    const rows = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Look'))!); });
+    act(() => { fireEvent.click(rows().find((el) => el.textContent?.startsWith('Lanes'))!); });
+    first.unmount();
+    await chartPrefs().flush();
+    expect(chartPrefs().get('pipeline.look')).toBe('lanes');
+    expect(localStorage.getItem('weaselchart.prefs/pipeline.look')).toContain('lanes');
   });
 
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {
