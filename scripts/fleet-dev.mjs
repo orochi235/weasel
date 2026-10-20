@@ -61,13 +61,19 @@ const base = git('merge-base', 'HEAD', 'origin/main');
 const install = 'cmp -s package-lock.json node_modules/.fleet-dev-lock || (npm ci --no-audit --no-fund && cp package-lock.json node_modules/.fleet-dev-lock)';
 say(`installing into ${tree} on ${pinned ?? 'the node onto picks'}`);
 const started = Date.now();
-const ran = onto(['do', '--ref', base, '--in', tree, '--kind', 'build', '--icon', 'hammer', '--task', `${tree}-install`,
-  '--about', 'Installs dependencies in the scratch tree fleet-dev serves dev servers from.',
-  ...(pinned ? ['--node', pinned] : []), '--', 'sh', '-c', install]);
-process.stdout.write(ran.stdout);
-process.stderr.write(ran.stderr);
+// Streamed rather than captured: an install runs for minutes, and onto names the node it picked as it goes.
+const ran = await new Promise((done) => {
+  const child = spawn('onto', ['do', '--ref', base, '--in', tree, '--kind', 'build', '--icon', 'hammer', '--task', `${tree}-install`,
+    '--about', 'Installs dependencies in the scratch tree fleet-dev serves dev servers from.',
+    ...(pinned ? ['--node', pinned] : []), '--', 'sh', '-c', install], { cwd: ROOT, stdio: ['inherit', 'pipe', 'pipe'] });
+  let text = '';
+  for (const [from, to] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
+    from.on('data', (chunk) => { text += chunk; to.write(chunk); });
+  }
+  child.on('close', (status) => done({ status, text }));
+});
 if (ran.status !== 0) process.exit(ran.status ?? 1);
-const node = pinned ?? (ran.stdout + ran.stderr).match(/^(\S+)\s+chosen:/m)?.[1];
+const node = pinned ?? ran.text.match(/^(\S+)\s+chosen:/m)?.[1];
 if (!node) throw new Error('fleet-dev: could not tell which node onto picked; pass --node');
 say(`installed on ${node} in ${Math.round((Date.now() - started) / 1000)}s`);
 
