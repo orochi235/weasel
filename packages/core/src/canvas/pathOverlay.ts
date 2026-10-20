@@ -2,18 +2,22 @@
  * Paths that are no node, drawn over the scene: a region a tool would take,
  * the result an operation would make before it is applied.
  */
-import type { Path } from '@weasel-js/geom';
+import { boundsOfPath, type Path } from '@weasel-js/geom';
 import type { CommandPaint } from '@weasel-js/paint';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { commandFill, commandStroke, type DrawCommand } from '@weasel-js/renderer';
 import type { OverlayRole } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
 import type { RenderLayer } from 'core/layers/render';
+import type { PathPaint } from './nodeShapes/nodePaint';
 
 /** One path to draw, in world coordinates, and what it is. */
 export interface TransientPath {
   path: Path;
   /** Omitted reads as `'chrome'`. */
   role?: OverlayRole;
+  /** Paint the path wears, drawn in place of the role's fill and under the
+   *  role's outline: a result shown as it will look once made. */
+  paint?: PathPaint;
 }
 
 /** How one role reads. The stroke is one screen pixel wide at any zoom. */
@@ -73,14 +77,17 @@ export function createPathOverlay({ id, label = 'Transient paths', roles }: Path
       space: 'world',
       subscribe: changed.subscribe,
       draw: () =>
-        current.map(({ path, role = 'chrome' }): DrawCommand => {
+        current.flatMap(({ path, role = 'chrome', paint }): DrawCommand[] => {
           const style = styles[role] ?? styles['chrome']!;
-          return {
-            kind: 'path',
-            path,
-            ...(style.fill ? { fill: { paint: style.fill } } : {}),
-            ...(style.stroke ? { stroke: { paint: style.stroke, width: { px: 1 } } } : {}),
-          };
+          const outline = style.stroke ? { stroke: { paint: style.stroke, width: { px: 1 } } } : {};
+          if (!paint) return [{ kind: 'path', path, ...(style.fill ? { fill: { paint: style.fill } } : {}), ...outline }];
+          const box = boundsOfPath(path);
+          const fill = paint.fill && commandFill(paint.fill, box);
+          const stroke = paint.stroke && commandStroke(paint.stroke, box);
+          return [
+            { kind: 'path', path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) },
+            ...(style.stroke ? [{ kind: 'path', path, ...outline } as DrawCommand] : []),
+          ];
         }),
     },
   };
