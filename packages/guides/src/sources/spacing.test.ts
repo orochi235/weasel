@@ -100,5 +100,15 @@ describe('spacingSnapSource', () => {
     // and the 20 between A and B puts it at 80.
     expectNear(d.at({ x: 82, y: 125 }).point, { x: 80, y: 125 });
   });
+
+  it('filter keeps a rejected sibling from offering gaps', () => {
+    const { scene, ids } = sceneOf([
+      BOX, { ...ROW[0], data: { skip: true } }, { ...ROW[1], data: { skip: true } },
+    ]);
+    const run = (filter?: (n: { data: unknown }) => boolean) =>
+      moveBy({ sources: [spacingSnapSource({ ...(filter ? { filter } : {}) })], scene, ids: [ids[0]] }).by(-18, 0);
+    expectNear(run().point, { x: -20, y: 0 });
+    expect(run((n) => !(n.data as { skip?: boolean }).skip)).toMatchObject({ point: { x: -18, y: 0 }, marks: [] });
+  });
 });
 

@@ -80,8 +80,6 @@ export {
   simplifyStops, unpinSegment,
 } from './waypoints';
 export type { RouteHandle } from './waypoints';
-export { portTarget, snapPoint, stopTarget } from './routeSnap';
-export type { SnapTarget, Snapped } from './routeSnap';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
@@ -285,8 +283,8 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, ReorderChange,
-  RouteChange,
+  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, NodeResize, ReconnectChange,
+  ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';

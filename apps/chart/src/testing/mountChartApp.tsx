@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import { App } from '../App';
+import { chartPrefs } from '../prefs';
 import { withIcons as WithIcons } from '../testIcons';
 
 let root: Root | null = null;
@@ -36,6 +37,8 @@ export async function mountChartApp(): Promise<{ host: HTMLElement; canvas: HTML
 export function unmountChartApp(): void {
   root?.unmount();
   mountPoint?.remove();
+  // The store caches what it read, so clearing storage alone would leak prefs into the next test.
+  chartPrefs().reset();
   root = null;
   mountPoint = null;
 }

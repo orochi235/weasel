@@ -126,8 +126,14 @@ A selected edge shows handles along its route as well as at its ends.
 | `orthogonal` | a bar in the middle of each segment | slides the segment across its axis; a segment touching a port gets a jog, so the port end stays square | straightens a jog away, when a neighbor touching no port can slide into line |
 | `avoid` | a bar in the middle of each segment | slides the segment and pins only it: its two ends become waypoints, and the router keeps the rest | unpins it, dropping the waypoints at its ends |
 
-A dragged handle snaps into line with the stops beside it and with a port's
-axis within 6 screen pixels, and a guide shows the alignment. Escape cancels.
+A dragged handle snaps through the canvas's snap session: into line with the
+stops beside it and with a port's axis within 6 screen pixels (`snapPx`), and to
+whatever else the canvas snaps to, such as a grid, with the readout drawing each
+alignment. It leaves out the canvas's `'path-snap'` default, so a bend never
+catches a shape's corner anchors, and the edge being edited offers nothing to
+itself. A neighbor or port within reach claims its axis, and a grid fills the
+other. Ctrl suspends snapping, Shift holds a dragged bend to the axes and
+diagonals, and a segment always slides across its own axis. Escape cancels.
 A double-click that would remove nothing falls through, to label editing say.
 
 `DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and
@@ -614,6 +620,21 @@ shape (`{ moves, routes }`): every node not pinned, and every edge whose route
 or ports layout wrote. Store them the same way and the next `diagramScene`
 leaves those nodes where they stand and lays out only the new ones, which keeps
 a diagram still while its data is edited.
+`onResize` gives a selected node resize handles (`diagramResizable`, so none on
+an edge, an edge label, a lane, or a group's box). The box resizes live under
+the drag; on release the view reports `{ id, x, y, width, height }` for each
+resized node and draws the new box only once the specs do. Store it as the
+node's `width`, `height`, and `at`, with `pinned: true`. The size is a minimum,
+so a box dragged smaller than its rows grows back to them. Core's
+`createResizeAction({ commit })` is what reports: it hands the release poses to
+`commit` in place of writing them.
+
+```tsx
+<DiagramView
+  specs={specs}
+  onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
+/>
+```
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
@@ -743,7 +764,9 @@ about. A `switch` symbol is drawn thrown to its first exit, and a run whose
 `taken` is the second throws it there. `EffectChart` fades the port dots of a
 stage the run never reached as well; `paintRun` alone cannot, since the port
 layer draws them outside the scene. A decision a look does not draw has nowhere
-to show its cost.
+to show its cost. A stage whose entry has an `error` shows it where its cost
+would go, in the problem color, and a run's `at` names a stage to outline,
+as a run taken a step at a time does.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`
@@ -963,6 +986,18 @@ insertion bar marks the gap it would land in, drawn in the problem color where
 the wiring cannot take it, and releasing it there reports `'Reorder'`. Under
 lanes, dragging a lane's label up or down reports `'Reorder lanes'`.
 
+A selected wire's route handles work under every look, and report
+`'Edit route'`. Under rack and lanes the route goes in `EffectDoc.lookRoutes`,
+by look and then by wire, with the points of the wire's two ports as they were
+drawn (`setLookRoute(doc, look, wire, waypoints, ends)`). These looks move
+stages on every reorder or added stage, so a route is drawn only while both
+ports are still at those points; once one moves, the look routes the wire
+again. Reset route, or `setLookRoute` with no waypoints, gives the wire back to
+the look. `applyLookRoutes(specs, doc, look, built)` draws the routes that
+hold over a look's specs, and `wireEnds(specs, edge)` reads a drawn wire's
+port points. A reorder drops the routes of the wires it rewires or removes,
+and removing a wire or a stage drops that wire's routes.
+
 ```tsx
 <EffectEditor doc={doc} onChange={commit} look="rack" />
 ```
@@ -985,6 +1020,66 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
 group's members. `reorderContribution` packs the action and its binding to pass
 as `ambient`.
+
+`EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
+
+#### Running a pipeline
+
+A run can be made as well as drawn. An `EffectEvaluator` evaluates one stage:
+it is handed `{ stage, inputs, params, sources, time, signal }` and returns
+`{ outputs, taken? }`, sync or async, with a value per output by port id. An
+`EffectValueKind` says how a run shows (`show`), previews (`preview`), and frees
+(`dispose`) the values of one value type. Both are keyed: evaluators by stage
+`type`, kinds by value type.
+
+```tsx
+import {
+  IMAGE_STAGE_TYPES, imageEvaluators, imageValueKinds, testCard, runPipeline, useEffectRunner,
+} from '@weasel-js/diagram/effect';
+
+const once = await runPipeline(pipeline, {
+  evaluators: imageEvaluators, kinds: imageValueKinds, sources: { image: testCard(256) }, time: 0,
+});
+
+// In a component: Run, Step, and Play, with the run to draw.
+const { run, playing, runner } = useEffectRunner({ pipeline, evaluators: imageEvaluators, kinds: imageValueKinds, sources });
+<EffectEditor doc={doc} onChange={commit} run={run} options={{ showValues: true, showPreviews: true }} />;
+runner.step();
+```
+
+`runPipeline` evaluates the stages in `runOrder(pipeline)`: topologically over
+data and control wires alike, stable by stage order, leaving out the stages on a
+cycle, which never run. A stage with inputs none of which a value reaches is
+skipped, so a decision's untaken branch stays faded. A bypassed stage passes its
+first input of each output's type through. An evaluator that throws sets the
+stage's `error`, and what it feeds is left unreached. Each stage's `cost` is the
+time its evaluator took. Every value the run made is disposed before it
+resolves, but never a source; the previews in the run are yours to close.
+`createPass` takes the same run a stage at a time. A stage with no outputs, such
+as a sink, shows and previews what reached its inputs instead, so the end of a
+pipeline shows the finished result; `shownPorts(stage)` says which ports a look
+keeps value rows and preview slots for.
+
+`createEffectRunner` keeps one pipeline running: `run()`, `step()` (the next
+stage, as the run's `at`, and back to the first after the last), `play()`,
+`pause()`, `reset()`, and `setPipeline`, `setSources`, and `setOptions` for the
+next run to follow. While playing, `advance(seconds)` moves its clock on and
+starts a run unless one is still going. It owns the previews of its runs:
+`drawn(run)` says a run is on screen, and closes the previews of every older run
+it does not show. `useEffectRunner` makes one for the life of a component,
+advances it from `useVisibleRaf` while playing, so time spent hidden is not
+counted, and calls `drawn` after each render.
+
+`IMAGE_STAGE_TYPES` is a palette of image stages (Source, Blur, Composite, Mask,
+Oscillator, Decision, and Out), and `imageEvaluators` runs them on
+`OffscreenCanvas` 2D, an image or mask being an `ImageBitmap`. A source puts out
+`sources.image`; blur uses the canvas `filter`; composite blends by
+`globalCompositeOperation`; mask keeps what lies under the mask's opaque
+pixels; an oscillator puts out `sin(2π·rate·t)`; and a decision chooses by its
+`split`, or else its first output while the tested number is above 0. A stage
+missing an input it needs fails, naming it. `imageValueKinds` shows an image by
+its size and a number to three places. `testCard(size)` draws an image to start
+from.
 
 ## Design notes
 

@@ -4,7 +4,7 @@ import { deriveAlignmentGuides } from '../guides/alignment/derive';
 import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
 import { axisLine, landedShift } from './lines';
-import { cachedPerScene } from './targets';
+import { cachedPerScene, type TargetFilter } from './targets';
 
 type Point = { x: number; y: number };
 type Axis = 'x' | 'y';
@@ -16,6 +16,8 @@ export interface AlignmentSnapSourceOptions {
   /** The lines to align to, in place of the edges and centers of the
    *  subject's siblings (of the scene's top-level nodes, for a point gesture). */
   getCandidates?: () => readonly Guide[];
+  /** Which nodes offer lines. Narrows the default siblings; not `getCandidates`. */
+  filter?: TargetFilter;
   /** The color of the lines it marks. Default: the readout layer's. */
   color?: string;
   /** Overrides the canvas's reach for these targets, in screen px. */
@@ -63,7 +65,7 @@ function lineMark(g: Guide, extent: [number, number], color: string | undefined)
  */
 export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): SnapSource {
   const page = () => (typeof opts.page === 'function' ? opts.page() : opts.page) ?? undefined;
-  const fromScene = cachedPerScene((boxes) => indexLines(deriveAlignmentGuides(boxes)));
+  const fromScene = cachedPerScene((boxes) => indexLines(deriveAlignmentGuides(boxes)), opts.filter);
   const linesFor = (q: SnapCollect): LineIndex[] => {
     const pageBox = page();
     const own = opts.getCandidates ? indexLines(opts.getCandidates()) : fromScene(q);
