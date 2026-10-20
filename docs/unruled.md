@@ -261,6 +261,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
   last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
   weights, not cotangent ones, so each system stays the one already factored.
+- 2026-10-19: Constraint links on whole-node transforms. The transformed nodes are held as
+  transformed and every node a link reaches gives way, its own constraints kept; their own
+  constraints are carried unsolved, as before, and so is a link whose nodes all moved. A link that
+  cannot hold does not stop the transform: it commits alone and `constraintLinkConflictsOf`
+  reports the link. Core's hook is `PathEditExtension.finishTransform`, reached through the
+  `editAnchors` dep's `transformOps`, so only a canvas with that dep finishes transforms.
+- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Lengthen,
+  Balance, Simplify brush, spiro insert) shows nothing for a frame its constraints cannot hold,
+  since that frame commits nothing; the anchor drag still holds its last good frame.
+- 2026-10-19: A constraint link is made by Alt-dragging an anchor in path edit (`linkAnchor`): it
+  reads where the anchor was released, nearest anchor within 6 screen px first, then a segment,
+  rather than asking the snap for what it held to, and puts the anchor exactly there. The link
+  goes on the scene's first annotation layer, else on the edited node's.
 
 ## Animation
 
