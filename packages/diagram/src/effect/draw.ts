@@ -28,7 +28,7 @@ export interface EffectLookResult {
 }
 
 /** A sequence a look draws: the scene node ids of its items in order along
- *  `axis`. `slotReorder`'s `sequenceSlots` turns it into slots once the items
+ *  `axis`. `reorder`'s `sequenceSlots` turns it into slots once the items
  *  have drawn boxes. */
 export interface LookOrder {
   axis: 'x' | 'y';

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
-import { createSlotReorderAction, slotReorderContribution, sequenceSlots, SLOT_REORDER_ACTION_ID, type ReorderOptions } from './slotReorder';
+import { createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
+import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
 
@@ -24,7 +24,7 @@ function ctx(x: number, y: number, start = { x: 20, y: 20 }): InvocationCtx {
 
 function open(opts: Partial<ReorderOptions> = {}, start = { x: 20, y: 20 }): { handle: OngoingHandle; commit: ReturnType<typeof vi.fn> } {
   const commit = vi.fn();
-  const action = createSlotReorderAction({ slots: () => SLOTS, commit, ...opts });
+  const action = createReorderAction({ slots: () => SLOTS, commit, ...opts });
   if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
   return { handle: action.invoker.start(ctx(start.x, start.y, start)), commit };
 }
@@ -45,9 +45,9 @@ describe('sequenceSlots', () => {
   });
 });
 
-describe('createSlotReorderAction', () => {
+describe('createReorderAction with the insertion bar', () => {
   it('takes a press only on an item’s grip', () => {
-    const action = createSlotReorderAction({
+    const action = createReorderAction({
       slots: () => ({ ...SLOTS, items: SLOTS.items.map((i) => ({ ...i, grip: box(i.bounds.x, i.bounds.y, 20, 20) })) }),
       commit: () => {},
     });
@@ -61,7 +61,7 @@ describe('createSlotReorderAction', () => {
     handle.onMove!(ctx(250, 20));
     handle.onEnd!(ctx(250, 20), 'commit');
     expect(commit).toHaveBeenCalledTimes(1);
-    expect(commit.mock.calls[0]![0]).toEqual({ id: 'a', from: 0, to: 2 });
+    expect(commit.mock.calls[0]![0]).toEqual({ id: 'a', from: 0, to: 2, order: ['b', 'a', 'c'] });
   });
 
   it('carries the item along the axis only, as a preview', () => {
@@ -105,8 +105,76 @@ describe('createSlotReorderAction', () => {
   });
 
   it('packs into a contribution binding a drag to the action', () => {
-    const c = slotReorderContribution({ slots: () => SLOTS, commit: () => {} });
-    expect(c.actions!.map((a) => a.id)).toEqual([SLOT_REORDER_ACTION_ID]);
-    expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: SLOT_REORDER_ACTION_ID })]);
+    const c = reorderContribution({ slots: () => SLOTS, commit: () => {} });
+    expect(c.actions!.map((a) => a.id)).toEqual([REORDER_ACTION_ID]);
+    expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: REORDER_ACTION_ID })]);
+  });
+});
+
+describe('createReorderAction sliding the others', () => {
+  /** Three boxes down a column: a at 0 (40 tall), b at 50 (20), c at 80 (40). `a.title` travels with a. */
+  function column() {
+    const scene = createScene<unknown, 'main', ReturnType<typeof box>>({ systemLayers: [{ id: 'main' }] });
+    const spans = { a: [0, 40], b: [50, 20], c: [80, 40] } as const;
+    for (const [id, [y, h]] of Object.entries(spans)) scene.add({ id: id as never, kind: 'leaf', layer: 'main', pose: box(0, y, 100, h), data: {} });
+    scene.add({ id: 'a.title' as never, kind: 'leaf', layer: 'main', pose: box(10, 5, 50, 10), data: {} });
+    const slots = sequenceSlots('y', Object.entries(spans).map(([id, [y, h]]) => ({
+      id, bounds: box(0, y, 100, h), ...(id === 'a' ? { carries: ['a', 'a.title'] } : {}),
+    })));
+    return { scene, slots };
+  }
+
+  function press(id: 'a' | 'c', commit = vi.fn()) {
+    const { scene, slots } = column();
+    const start = { x: 50, y: id === 'a' ? 20 : 100 };
+    const at = (dy: number) => ({ ...ctx(start.x, start.y + dy, start), deps: { scene } }) as InvocationCtx;
+    const action = createReorderAction({ slots: () => slots, show: 'slide', commit });
+    if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const handle = action.invoker.start(at(0));
+    const ys = () => Object.fromEntries(['a', 'b', 'c', 'a.title'].map((n) => [n, scene.overrides.read(n as never)?.pose?.y]));
+    return { scene, handle, at, ys, commit };
+  }
+
+  it('moves an item past each middle it crosses, the others sliding into their places', () => {
+    const down = press('a');
+    down.handle.onMove!(down.at(30));
+    expect(down.ys()).toEqual({ a: 30, b: 50, c: 80, 'a.title': 35 });
+    down.handle.onMove!(down.at(45));
+    expect(down.ys()).toEqual({ a: 45, b: 0, c: 80, 'a.title': 50 });
+
+    const up = press('c');
+    up.handle.onMove!(up.at(-80));
+    expect(up.ys()).toMatchObject({ a: 50, b: 100, c: 0 });
+  });
+
+  it('draws no insertion bar and previews nothing of its own', () => {
+    const { handle, at } = press('a');
+    handle.onMove!(at(45));
+    expect(overlaysOf(handle)).toEqual([]);
+    expect(handle.previewIds?.() ?? null).toBeNull();
+  });
+
+  it('commits the new order and holds the slid places until the scene changes', () => {
+    const { scene, handle, at, commit } = press('a');
+    handle.onMove!(at(45));
+    handle.onEnd!(at(45), 'commit');
+    expect(commit.mock.calls[0]![0]).toEqual({ id: 'a', from: 0, to: 2, order: ['b', 'a', 'c'] });
+    expect(scene.overrides.read('b' as never)?.pose?.y).toBe(0);
+    scene.add({ id: 'd' as never, kind: 'leaf', layer: 'main', pose: box(0, 0), data: {} });
+    expect(scene.overrides.has('b' as never)).toBe(false);
+  });
+
+  it('lets every place go at once on a cancel or a drop where it was', () => {
+    const canceled = press('a');
+    canceled.handle.onMove!(canceled.at(45));
+    canceled.handle.onEnd!(canceled.at(45), 'cancel');
+    expect(canceled.scene.overrides.has('b' as never)).toBe(false);
+    expect(canceled.commit).not.toHaveBeenCalled();
+
+    const still = press('a');
+    still.handle.onMove!(still.at(10));
+    still.handle.onEnd!(still.at(10), 'commit');
+    expect(still.scene.overrides.has('a' as never)).toBe(false);
+    expect(still.commit).not.toHaveBeenCalled();
   });
 });

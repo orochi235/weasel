@@ -5,7 +5,7 @@ import { viewToTransform, type RectPose } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { fitDiagram } from '../DiagramView';
 import { diagramScene } from '../fromData';
-import { sequenceSlots } from '../slotReorder';
+import { sequenceSlots } from '../reorder';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { EffectEditor } from './EffectEditor';
 import { editorScene } from './editorMapping';

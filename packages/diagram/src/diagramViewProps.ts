@@ -6,7 +6,7 @@ import type { DataEdge, DiagramSpec } from './fromData';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
-import type { ReorderChange } from './reorder';
+import type { ReorderChange } from './groupReorder';
 import type { EdgeRoute, NodeMove } from './sceneSync';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */

@@ -1,183 +1,243 @@
 /**
- * Reorder — dragging a member of a group marked `reorder` along that axis,
- * among its siblings, or stepping the selected one with Alt and an arrow key.
- *
- * Nothing is written: the drag shows the member under the pointer and its
- * siblings in the slots they would take, and the release reports the new
- * order. The host writes it to its data, and layout keeps it.
+ * Reorder: dragging one item of a drawn sequence — boxes in a row, rows in a
+ * column, the members of a group — to another place in it. The item follows
+ * the pointer along the sequence's axis and lands in the gap nearest its
+ * middle. A `'bar'` drag marks that gap with an insertion bar; a `'slide'`
+ * drag slides the other items into the places they would take. Either way
+ * the release hands the move to a commit, and nothing is written to the scene.
  */
 import {
   ActionDisabledReason,
   bodyPredicate,
-  effectivePose,
   type Action,
   type ActionDeps,
   type Contribution,
   type GestureBinding,
   type InvocationCtx,
-  type NodeId,
   type OngoingHandle,
-  type RectPose,
-  type Scene,
+  type OngoingOverlay,
+  type TargetPredicate,
+  type Vec2,
 } from '@weasel-js/core';
-import { worldRectOf } from './overlays';
-import type { DiagramSceneData } from './fromData';
-import { carriedWith, orderWith, packed, reorderTargetOf, type ReorderTarget, type Span } from './reorderModel';
+import { slideOthers, type Box } from './reorderSlide';
 
-/** The drag that carries a member. */
+/** The action that drags an item of a sequence to another place in it. */
 export const REORDER_ACTION_ID = 'diagram.reorder';
-/** Alt and an arrow key: the selected member one place along. */
-export const STEP_REORDER_ACTION_ID = 'diagram.stepReorder';
 
-/** A reorderable group's members in their new order. */
-export interface ReorderChange {
-  group: string;
+/** One item of a sequence, in world units. */
+export interface ReorderItem {
+  /** The scene node drawn for it. */
+  id: string;
+  bounds: Box;
+  /** Where a press picks it up. Default `bounds`. */
+  grip?: Box;
+  /** The scene nodes that move with it. Default `[id]`. */
+  carries?: readonly string[];
+}
+
+/** A place an item can land: before `items[index]`, or after the last at `items.length`. */
+export interface ReorderGap {
+  index: number;
+  /** The insertion bar's two ends. */
+  a: Vec2;
+  b: Vec2;
+}
+
+/** A drawn sequence: its items in order along `axis`, and the gaps between them. */
+export interface ReorderSlots {
+  axis: 'x' | 'y';
+  items: readonly ReorderItem[];
+  gaps: readonly ReorderGap[];
+}
+
+/** The item at index `from` dropped in gap `to`, and every item's id in the order that leaves. */
+export interface ReorderMove {
+  id: string;
+  from: number;
+  to: number;
   order: readonly string[];
 }
 
-type DiagramScene = Scene<DiagramSceneData, 'main', RectPose>;
-
-const sceneOf = (deps: ActionDeps | undefined) => deps?.scene as DiagramScene | undefined;
-
-function targetAt(deps: ActionDeps | undefined, id: string | null | undefined): ReorderTarget | null {
-  const scene = sceneOf(deps);
-  if (scene === undefined || id == null) return null;
-  return reorderTargetOf(scene as never, id, (m) => worldRectOf(scene, m));
+/** Options for {@link createReorderAction}. */
+export interface ReorderOptions {
+  /** Default {@link REORDER_ACTION_ID}. */
+  id?: string;
+  /** Default 'Reorder'. */
+  label?: string;
+  /** The sequence a press at `at` picks from, as drawn now, or `null` when there is none. */
+  slots: (deps: ActionDeps, at: Vec2) => ReorderSlots | null;
+  /** Deps `slots` reads beyond `scene`. */
+  requires?: Action['requires'];
+  /**
+   * `'bar'` (default) carries the item alone and draws an insertion bar at its
+   * gap. `'slide'` carries everything each item `carries` as pose overrides,
+   * so what derives from them follows, and slides the others into place; the
+   * overrides stay after a commit until the scene next changes.
+   */
+  show?: 'bar' | 'slide';
+  /** Whether a drop may land. The bar draws refused, or nothing slides, where not. Default: every drop. */
+  canDrop?: (move: ReorderMove) => boolean;
+  /** Called once, on release over a gap that is not the item's own and that `canDrop` allows. */
+  commit: (move: ReorderMove, ctx: InvocationCtx) => void;
 }
 
-function spansOf(scene: DiagramScene, target: ReorderTarget): Map<string, Span> {
-  const out = new Map<string, Span>();
-  for (const m of target.members) {
-    const box = worldRectOf(scene, m) ?? { x: 0, y: 0, width: 0, height: 0 };
-    out.set(m, target.axis === 'x' ? { start: box.x, size: box.width } : { start: box.y, size: box.height });
-  }
-  return out;
+const END_GAP = 24;
+
+const inside = (p: Vec2, b: Box) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
+
+/**
+ * The slots of items laid out in order along `axis`: a gap halfway between
+ * each pair, its bar spanning both across the axis, and one beyond each end,
+ * as far out as the nearest interior gap's half, or `END_GAP / 2` with none.
+ */
+export function sequenceSlots(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
+  const [along, across, size, depth] = axis === 'x' ? ['x', 'y', 'width', 'height'] as const : ['y', 'x', 'height', 'width'] as const;
+  const lo = (b: Box) => b[along];
+  const hi = (b: Box) => b[along] + b[size];
+  const bar = (at: number, boxes: readonly Box[]): Pick<ReorderGap, 'a' | 'b'> => {
+    const from = Math.min(...boxes.map((b) => b[across]));
+    const to = Math.max(...boxes.map((b) => b[across] + b[depth]));
+    const point = (c: number) => (axis === 'x' ? { x: at, y: c } : { x: c, y: at });
+    return { a: point(from), b: point(to) };
+  };
+  const boxes = items.map((i) => i.bounds);
+  const halves = boxes.slice(1).map((b, k) => (lo(b) - hi(boxes[k]!)) / 2);
+  const gaps: ReorderGap[] = [];
+  if (boxes.length === 0) return { axis, items, gaps };
+  gaps.push({ index: 0, ...bar(lo(boxes[0]!) - (halves[0] ?? END_GAP / 2), [boxes[0]!]) });
+  for (let k = 1; k < boxes.length; k++) gaps.push({ index: k, ...bar(hi(boxes[k - 1]!) + halves[k - 1]!, [boxes[k - 1]!, boxes[k]!]) });
+  const last = boxes[boxes.length - 1]!;
+  gaps.push({ index: boxes.length, ...bar(hi(last) + (halves[halves.length - 1] ?? END_GAP / 2), [last]) });
+  return { axis, items, gaps };
 }
 
-const RELEASE_MS = 500;
+/** What a drag holds once it has picked an item. */
+interface Held {
+  slots: ReorderSlots;
+  from: number;
+  item: ReorderItem;
+}
 
-const sameOrder = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
+function pickAt(slots: ReorderSlots | null, at: Vec2): { from: number; item: ReorderItem } | null {
+  const from = slots?.items.findIndex((i) => inside(at, i.grip ?? i.bounds)) ?? -1;
+  return from < 0 ? null : { from, item: slots!.items[from]! };
+}
 
-const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
+/** The gap nearest the carried item's middle, moved `by` along the axis, or
+ *  `null` for one beside the item, where a drop changes nothing. */
+function gapAt(held: Held, by: number): ReorderGap | null {
+  const { axis, gaps } = held.slots;
+  const size = axis === 'x' ? 'width' : 'height';
+  const mid = held.item.bounds[axis] + held.item.bounds[size] / 2 + by;
+  let best: ReorderGap | null = null;
+  for (const g of gaps) if (best === null || Math.abs(g.a[axis] - mid) < Math.abs(best.a[axis] - mid)) best = g;
+  return best === null || best.index === held.from || best.index === held.from + 1 ? null : best;
+}
 
-/** The drag action: the carried member under the pointer and its siblings
- *  in their slots, published as pose overrides so boxes, titles and edges all
- *  follow, then one report. */
-export function createReorderAction(report: (change: ReorderChange) => void): Action {
+function moveOf(held: Held, gap: ReorderGap): ReorderMove {
+  const order = held.slots.items.map((i) => i.id);
+  order.splice(held.from, 1);
+  order.splice(gap.index > held.from ? gap.index - 1 : gap.index, 0, held.item.id);
+  return { id: held.item.id, from: held.from, to: gap.index, order };
+}
+
+/** The `diagram.reorder` action: an ongoing drag carrying one item of a sequence. */
+export function createReorderAction(opts: ReorderOptions): Action {
+  const { canDrop = () => true, show = 'bar' } = opts;
   return {
-    id: REORDER_ACTION_ID,
-    label: 'Reorder',
+    id: opts.id ?? REORDER_ACTION_ID,
+    label: opts.label ?? 'Reorder',
     group: 'diagram',
-    requires: ['scene', 'nodeAtPoint'],
+    requires: ['scene', ...(opts.requires ?? [])],
+    cursor: 'grab',
+    activeCursor: 'grabbing',
+    enabled: (deps, at) => (deps === undefined || at === undefined || pickAt(opts.slots(deps, at), at) !== null
+      ? true
+      : ActionDisabledReason.NotApplicable),
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
-        const scene = sceneOf(ctx.deps);
-        const target = targetAt(ctx.deps, ctx.deps.nodeAtPoint?.(ctx.world));
-        if (scene === undefined || target === null) return {};
-        const { axis, member, members } = target;
-        const spans = spansOf(scene, target);
-        const along = (p: { x: number; y: number }) => (axis === 'x' ? p.x : p.y);
-        const from = along(ctx.world);
-        // The nodes each member carries that hold poses of their own; group
-        // boxes, titles and wire labels derive theirs and follow.
-        const carried = members.map((m) => ({
-          m,
-          nodes: [...carriedWith(scene as never, m)].flatMap((id) => {
-            const node = scene.get(id as NodeId);
-            return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) }];
-          }),
-        }));
-        const hold = scene.overrides.hold();
-        let order = [...members];
-        const publish = (by: number) => {
-          const starts = packed(members, spans, order);
-          hold.set(carried.flatMap(({ m, nodes }) => {
-            const d = m === member ? by : starts.get(m)! - spans.get(m)!.start;
-            return nodes.map(({ id, pose }) => [id, axis === 'x' ? { ...pose, x: pose.x + d } : { ...pose, y: pose.y + d }] as const);
-          }));
+        const start = { x: (ctx.drag?.start ?? ctx.world).x, y: (ctx.drag?.start ?? ctx.world).y };
+        const slots = opts.slots(ctx.deps, start);
+        const picked = pickAt(slots, start);
+        if (slots === null || picked === null) return {};
+        const held: Held = { slots, ...picked };
+        const { axis } = slots;
+        let by = ctx.world[axis] - start[axis];
+        let open = true;
+        // The overlay is read every frame; ask about each gap once a drag.
+        const verdicts = new Map<number, ReorderMove | null>();
+        const landing = (gap: ReorderGap | null): ReorderMove | null => {
+          if (gap === null) return null;
+          if (!verdicts.has(gap.index)) {
+            const move = moveOf(held, gap);
+            verdicts.set(gap.index, canDrop(move) ? move : null);
+          }
+          return verdicts.get(gap.index)!;
         };
+        const finish = (endCtx: InvocationCtx, reason: 'commit' | 'cancel'): ReorderMove | null => {
+          open = false;
+          by = endCtx.world[axis] - start[axis];
+          const move = reason === 'commit' ? landing(gapAt(held, by)) : null;
+          if (move !== null) opts.commit(move, { ...endCtx, deps: ctx.deps });
+          return move;
+        };
+
+        if (show === 'slide') {
+          const slide = ctx.deps.scene === undefined ? null : slideOthers(ctx.deps.scene, held.slots, held.item.id);
+          return {
+            kind: 'diagram-reorder',
+            onMove(moveCtx: InvocationCtx): void {
+              by = moveCtx.world[axis] - start[axis];
+              slide?.show(landing(gapAt(held, by))?.order ?? null, by);
+            },
+            onEnd(endCtx, reason): void {
+              const move = finish(endCtx, reason);
+              if (move === null) slide?.drop();
+              else slide?.keep();
+            },
+          };
+        }
+
+        const pose = ctx.deps.scene?.get(held.item.id as never)?.pose as Box | undefined;
         return {
           kind: 'diagram-reorder',
-          onMove(moveCtx) {
-            const by = along(moveCtx.world) - from;
-            order = orderWith(members, spans, member, by);
-            publish(by);
+          onMove(moveCtx: InvocationCtx): void {
+            by = moveCtx.world[axis] - start[axis];
           },
-          onEnd(_endCtx, reason) {
-            if (reason !== 'commit' || sameOrder(order, members)) {
-              hold.drop();
-              return;
-            }
-            // Held until the host's new specs land, so the rows do not jump
-            // back for the frames in between; a host that keeps the old order
-            // gets it back shortly after.
-            const release = () => {
-              stop();
-              clearTimeout(timer);
-              hold.drop();
-            };
-            const stop = scene.subscribe(release);
-            const timer = setTimeout(release, RELEASE_MS);
-            report({ group: target.group, order });
+          previewIds: () => (open && pose !== undefined ? [held.item.id] : null),
+          previewPose: (id) => (id !== held.item.id || pose === undefined ? null : { ...pose, [axis]: pose[axis] + by }),
+          previewOpaqueIds: () => [held.item.id],
+          overlay(): OngoingOverlay | null {
+            const gap = open ? gapAt(held, by) : null;
+            if (gap === null) return null;
+            return { kind: 'polyline', points: [gap.a, gap.b], role: landing(gap) !== null ? 'insert' : 'refused' };
+          },
+          onEnd(endCtx, reason): void {
+            finish(endCtx, reason);
           },
         };
       },
     },
-    enabled: (deps, at) =>
-      at !== undefined && targetAt(deps, deps?.nodeAtPoint?.(at)) !== null ? true : ActionDisabledReason.NotApplicable,
   };
 }
 
-const STEPS: readonly { key: string; axis: 'x' | 'y'; step: -1 | 1 }[] = [
-  { key: 'ArrowUp', axis: 'y', step: -1 },
-  { key: 'ArrowDown', axis: 'y', step: 1 },
-  { key: 'ArrowLeft', axis: 'x', step: -1 },
-  { key: 'ArrowRight', axis: 'x', step: 1 },
-];
+// Matches every press, as a bare drag does, but ranks a step above one, so it
+// is asked before an ambient pan; the action declines off an item's grip.
+const ANYWHERE = bodyPredicate(() => true);
 
-/** Steps the selected node's member one place toward the start (`-1`) or the end (`1`). */
-export function createStepReorderAction(report: (change: ReorderChange) => void): Action {
-  const selectedTarget = (deps: ActionDeps | undefined) => targetAt(deps, deps?.selection?.get()[0]);
-  return {
-    id: STEP_REORDER_ACTION_ID,
-    label: 'Move along',
-    group: 'diagram',
-    defaultBinding: STEPS.map(({ key, axis, step }) => ({
-      spec: { kind: 'key' as const, key, mods: { alt: true } },
-      opts: { params: { axis, step } },
-    })),
-    requires: ['scene', 'selection'],
-    invoker: {
-      timing: 'immediate',
-      run(deps, params) {
-        const target = selectedTarget(deps);
-        if (target === null || params?.axis !== target.axis) return;
-        const { members, member } = target;
-        const at = members.indexOf(member);
-        const to = at + (params.step === -1 ? -1 : 1);
-        if (to < 0 || to >= members.length) return;
-        const order = [...members];
-        order.splice(at, 1);
-        order.splice(to, 0, member);
-        report({ group: target.group, order });
-      },
-    },
-    enabled: (deps) => (selectedTarget(deps) !== null ? true : ActionDisabledReason.NotApplicable),
-  };
+/** The binding that starts a reorder: a drag pressed on `on`, by default anywhere; the action declines off an item's grip. */
+export function reorderBinding(actionId: string = REORDER_ACTION_ID, on: TargetPredicate = ANYWHERE): GestureBinding {
+  return { spec: { kind: 'drag', target: { kindOf: on } }, actionId };
 }
 
-/** A drag on a node's body carries its member. Alt and an arrow is the step action's own default binding. */
-export function reorderBindings(): GestureBinding[] {
-  return [{ spec: { kind: 'drag', target: { kindOf: onBody } }, actionId: REORDER_ACTION_ID }];
-}
-
-/** Everything `DiagramView` installs for `onReorder`. */
-export function reorderContribution(report: (change: ReorderChange) => void): Contribution {
+/** The reorder action and its binding, to pass as `ambient`. */
+export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicate }): Contribution {
+  const actionId = opts.id ?? REORDER_ACTION_ID;
   return {
-    id: 'weasel-diagram-reorder',
+    id: `weasel-diagram-reorder:${actionId}`,
     eligibility: { always: true },
-    actions: [createReorderAction(report), createStepReorderAction(report)],
-    bindings: reorderBindings(),
+    actions: [createReorderAction({ ...opts, id: actionId })],
+    bindings: [reorderBinding(actionId, opts.on)],
   };
 }
