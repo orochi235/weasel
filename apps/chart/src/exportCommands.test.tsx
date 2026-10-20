@@ -9,15 +9,20 @@ import { withIcons } from './testIcons';
 const saved = vi.hoisted(() => [] as { blob: Blob; name: string }[]);
 const png = vi.hoisted(() => vi.fn(async (_scene: unknown, _page: unknown, opts: { scale: number }) =>
   new Blob([`png@${opts.scale}`], { type: 'image/png' })));
+const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unknown[]) =>
+  ({ blob: new Blob(['%PDF'], { type: 'application/pdf' }), skipped: [] as { kind: string; detail: string }[] })));
+const warned = vi.hoisted(() => vi.fn());
 
 vi.mock('@editor/index', async (actual) => ({
   ...(await actual<typeof import('@editor/index')>()),
   downloadBlob: (blob: Blob, name: string) => { saved.push({ blob, name }); },
+  reportFileWarnings: warned,
 }));
 // jsdom has no WebGL2 to draw a PNG with; the SVG export runs for real.
 vi.mock('@weasel-js/diagram-formats', async (actual) => ({
   ...(await actual<typeof import('@weasel-js/diagram-formats')>()),
   exportPagePng: png,
+  exportPagesPdf: pdf,
 }));
 
 beforeAll(() => {
@@ -31,6 +36,8 @@ afterEach(() => {
   cleanup();
   saved.length = 0;
   png.mockClear();
+  pdf.mockClear();
+  warned.mockClear();
   chartPrefs().reset();
   localStorage.clear();
 });
@@ -61,5 +68,19 @@ describe('File › Export', () => {
     expect(saved[0]!.blob.type).toBe('image/png');
     expect(png.mock.calls[0]![1]).toMatchObject({ id: 'page-1', x: 0, y: 0 });
     expect(png.mock.calls[0]![2]).toMatchObject({ scale: 2 });
+  });
+
+  it('downloads every page as one PDF', async () => {
+    exportAs('Pages as PDF');
+    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    expect(saved[0]!.name).toBe('chart.pdf');
+    expect(pdf.mock.calls[0]![1]).toHaveLength(1);
+    expect(pdf.mock.calls[0]![1][0]).toMatchObject({ id: 'page-1' });
+  });
+
+  it('reports what the PDF could not carry', async () => {
+    pdf.mockResolvedValueOnce({ blob: new Blob(['%PDF']), skipped: [{ kind: 'glyph', detail: 'glyph U+1F600' }] });
+    exportAs('Pages as PDF');
+    await vi.waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
   });
 });
