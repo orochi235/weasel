@@ -27,7 +27,7 @@ export interface AnalyserTap {
 /** Attach a new `AnalyserNode` to `source`. The tap only listens, adding no
  *  path to the destination; `dispose()` detaches it. */
 export function createAnalyserTap(
-  ctx: AudioContext,
+  ctx: BaseAudioContext,
   source: AudioNode,
   opts: AnalyserTapOptions = {},
 ): AnalyserTap {

@@ -32,12 +32,13 @@ export interface AudioGraphOptions extends Partial<Timers> {
 }
 
 export interface AudioGraph {
-  add(id: string, def: GraphNodeDef): void;
-  remove(id: string): void;
-  replace(id: string, def: GraphNodeDef): void;
-  connect(from: string, to: GraphTarget): void;
-  disconnect(from: string, to: GraphTarget): void;
-  set(id: string, param: string, value: number, rampMs?: number): void;
+  add(id: string, def: GraphNodeDef): void; // throws on a live duplicate id
+  remove(id: string): void; // no-op on an unknown id
+  replace(id: string, def: GraphNodeDef): void; // keeps connections and taps; throws on unknown id
+  connect(from: string, to: GraphTarget): void; // idempotent; throws on unknown id/port or a cycle
+  disconnect(from: string, to: GraphTarget): void; // no-op when not connected
+  set(id: string, param: string, value: number, rampMs?: number): void; // throws on unknown id/param
+  /** Applies in order; each patch calls the method of the same name. */
   apply(patches: readonly GraphPatch[]): void;
   /** Start every source now, and every source added later, until `stop`. */
   start(): void;
