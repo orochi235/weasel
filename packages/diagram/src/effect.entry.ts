@@ -56,13 +56,34 @@ export {
 } from './effect/edit';
 export { formatParam, stageFromType } from './effect/stageTypes';
 export type { EffectStageType } from './effect/stageTypes';
+export { imageEvaluators } from './effect/image/evaluators';
+export { IMAGE_STAGE_TYPES } from './effect/image/stageTypes';
+export { testCard } from './effect/image/testCard';
+export { imageValueKinds } from './effect/image/valueKinds';
 export { EFFECT_LOOKS } from './effect/looks';
 export { mainChain } from './effect/mainChain';
 export { nodeGraph } from './effect/nodeGraph';
 export type { NodeGraphOptions } from './effect/nodeGraph';
 export { rack } from './effect/rack';
 export type { RackOptions } from './effect/rack';
-export { costText, paintRun } from './effect/run';
+export { AT_COLOR, costText, paintRun } from './effect/run';
+export { runOrder } from './effect/runner/order';
+export type { RunOrder } from './effect/runner/order';
+export { createPass } from './effect/runner/pass';
+export type { EffectPass, RunPipelineOptions } from './effect/runner/pass';
+export { runPipeline } from './effect/runner/runPipeline';
+export { createEffectRunner } from './effect/runner/runner';
+export type { EffectRunner, EffectRunnerOptions, EffectRunnerState } from './effect/runner/runner';
+export type {
+  EffectEvalContext,
+  EffectEvalResult,
+  EffectEvaluator,
+  EffectEvaluators,
+  EffectValueKind,
+  EffectValueKinds,
+} from './effect/runner/types';
+export { useEffectRunner } from './effect/runner/useEffectRunner';
+export type { EffectRunnerHandle, UseEffectRunnerOptions } from './effect/runner/useEffectRunner';
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
 export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './effect/symbols';
 export type {

@@ -67,6 +67,8 @@ export interface EffectGroup {
  *  put. A stage the run has no entry for is one it never reached. */
 export interface EffectRun {
   stages: Readonly<Record<string, EffectStageRun>>;
+  /** The stage a run taken a step at a time is on, drawn outlined. */
+  at?: string;
 }
 
 /** What one stage did in a run. */
@@ -82,6 +84,9 @@ export interface EffectStageRun {
    *  because its pixels cannot change: hand back the same one and nothing is
    *  uploaded again; draw new pixels into a new one. */
   previews?: Readonly<Record<string, ImageBitmap>>;
+  /** Why the stage failed, written where its cost goes. What it feeds is
+   *  left unreached. */
+  error?: string;
 }
 
 /** What a value type means, as `EffectPipeline.types` records it. */

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
-import { releaseImageSource } from '@weasel-js/core/renderer';
 import { DiagramView, type DiagramViewProps } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { checkPipeline, type EffectProblem } from './check';
 import type { EffectLook } from './draw';
 import { nodeGraph } from './nodeGraph';
+import { useReleaseReplaced } from './releaseReplaced';
 import { DIM, paintRun, unreachedStages } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
@@ -86,22 +86,6 @@ function useSameContent<T>(value: T): T {
   if (content !== null && content === kept.content) return kept.value;
   setKept({ value, content });
   return value;
-}
-
-/** Free the texture of each preview a new run no longer shows, and of every
- *  one on unmount, rather than leave it until the bitmap is collected. Runs
- *  after `DiagramView` has reconciled the run that replaced it. */
-function useReleaseReplaced(run: EffectRun | undefined): void {
-  const shown = useRef(new Set<ImageBitmap>());
-  useEffect(() => {
-    const now = new Set(Object.values(run?.stages ?? {}).flatMap((s) => Object.values(s.previews ?? {})));
-    for (const old of shown.current) if (!now.has(old)) releaseImageSource(old);
-    shown.current = now;
-  }, [run]);
-  useEffect(() => () => {
-    for (const old of shown.current) releaseImageSource(old);
-    shown.current = new Set();
-  }, []);
 }
 
 /** A chart of an effects pipeline: pan, zoom, and pick a stage. Text paints

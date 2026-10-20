@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene, type DiagramSpec } from '../fromData';
-import { NO_VALUE } from './draw';
+import { NO_VALUE, PROBLEM_COLOR } from './draw';
 import { nodeGraph } from './nodeGraph';
 import { rack } from './rack';
-import { costText, paintRun } from './run';
+import { AT_COLOR, costText, paintRun } from './run';
 import type { EffectPipeline, EffectRun } from './types';
 
 /** `src` into a decision that sends the signal to `soft` or `hard`. */
@@ -196,6 +196,24 @@ describe('paintRun on awkward pipelines', () => {
 describe('costText', () => {
   it('gives three figures, and whole milliseconds from 100 up', () => {
     expect([costText(0.4213), costText(12.345), costText(1234.5)]).toEqual(['0.421 ms', '12.3 ms', '1235 ms']);
+  });
+});
+
+describe('paintRun over a run taken a step at a time, or one that failed', () => {
+  it('outlines the stage the run is `at`, and no other', () => {
+    const specs = built();
+    const painted = paintRun(PIPELINE, specs, { ...RUN, at: 'soft' });
+    const stroke = (id: string) => (byId(painted, id).data as { stroke: { paint: { color: string }; width: number } }).stroke;
+    expect(stroke('soft').paint.color).toBe(AT_COLOR);
+    expect(stroke('soft').width).toBeGreaterThan((byId(specs, 'soft').data as { stroke: { width: number } }).stroke.width);
+    expect(stroke('src')).toEqual((byId(specs, 'src').data as { stroke: unknown }).stroke);
+  });
+
+  it('writes a failed stage\'s error where its cost goes, in the problem color', () => {
+    const painted = paintRun(PIPELINE, built(), { stages: { ...RUN.stages, soft: { cost: 2, error: 'no mask' } } });
+    const note = byId(painted, 'soft/cost').data as { text: string; fill: { paint: { color: string } } };
+    expect(note.text).toBe('no mask');
+    expect(note.fill.paint.color).toBe(PROBLEM_COLOR);
   });
 });
 
