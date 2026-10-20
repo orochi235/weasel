@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { prefObjectBase, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { resolveIcon } from '../../icons/resolveIcon';
-import { absentValue, MIXED, sharedValue } from './model';
+import { MIXED, nodeLeafValue, sharedValue } from './model';
 import type { LeafCell } from './cells';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 import { renderBuiltin } from './renderLeaf';
@@ -35,8 +35,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
   // every field of them hides that.
   // A field the object omits reads as the child says absence does. One of an object the node does not hold
   // has nothing behind it, whatever the child says.
-  const absent = absentValue(child);
-  const fieldOf = (o: Record<string, unknown> | undefined): unknown => (o === undefined || o[key] !== undefined ? o?.[key] : absent);
+  const fieldOf = (o: Record<string, unknown> | undefined): unknown => (o === undefined ? undefined : nodeLeafValue(child, o[key]));
   const each = eachObject.map(fieldOf);
   const shared = ctx.mixed ? sharedValue(each) : fieldOf(held);
   const field = shared === MIXED ? { value: undefined, mixed: true } : { value: shared, mixed: false };

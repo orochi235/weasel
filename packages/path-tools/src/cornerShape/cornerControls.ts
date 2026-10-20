@@ -52,9 +52,9 @@ export const CORNER_CONTROLS: PrefGroup = {
 
 /** What the controls show for a selection. */
 export interface CornerControlsState {
-  /** `shape` is null where no keyword applies, so a form does not fall back
-   *  to the leaf's default. */
-  values: { count: number; shape: CornerKeyword | null; k?: number; radius?: number };
+  /** `shape` is `'none'` where no keyword applies, which the leaf's encoding
+   *  reads as no option: a value held, so a form does not show the default. */
+  values: { count: number; shape: CornerKeyword | 'none'; k?: number; radius?: number };
   /** The fields whose selected corners disagree. */
   mixed: ReadonlySet<string>;
 }
@@ -72,7 +72,7 @@ function agreed<T>(values: readonly (T | typeof SHARP)[]): { value?: T; mixed: b
 /** The controls for the corners of `path` among `selected` anchors. A sharp
  *  corner shows no shape and no parameter. */
 export function cornerControlsState(path: PolygonPath | null, selected: ReadonlySet<number>): CornerControlsState {
-  if (!path) return { values: { count: 0, shape: null }, mixed: new Set() };
+  if (!path) return { values: { count: 0, shape: 'none' }, mixed: new Set() };
   const specs = cornerFrames(path).filter((f) => selected.has(f.index)).map((f) => cornerSpecAt(path, f.index));
   const cut = specs.map((c) => (c && c.radius > 0 ? c : SHARP));
   const shape = agreed(cut.map((c) => (c === SHARP ? SHARP : keywordOf(c.shape))));
@@ -85,7 +85,7 @@ export function cornerControlsState(path: PolygonPath | null, selected: Readonly
   return {
     values: {
       count: specs.length,
-      shape: shape.value ?? null,
+      shape: shape.value ?? 'none',
       ...(k.value !== undefined ? { k: k.value } : {}),
       ...(radius.value !== undefined ? { radius: radius.value } : {}),
     },

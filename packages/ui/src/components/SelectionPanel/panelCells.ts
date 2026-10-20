@@ -3,12 +3,12 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import type { PrefAliasTargets } from '@weasel-js/prefs';
+import type { PrefAliasTargets, PrefLeaf } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
-import { MIXED, absentValue, aggregateValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
+import { MIXED, aggregateLeaf, aggregateValue, nodeLeafValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
 import { leafAcross } from './nodeBounds';
 import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 import { renderBuiltin } from './renderLeaf';
@@ -22,8 +22,8 @@ export interface PanelCellScope {
   draft: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
   selectionKey: string;
   fields: readonly PrefFieldChoice[];
-  /** What a node holding nothing at `path` reads as there. */
-  absentAt: (path: string) => unknown;
+  /** The leaf the panel draws at `path`, which says what a node holding nothing there reads as. */
+  leafAt: (path: string) => PrefLeaf | undefined;
   disabled: ReadonlySet<string>;
   hidden: ReadonlySet<string>;
   entryAt?: EntryAt;
@@ -34,12 +34,11 @@ export interface PanelCellScope {
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
-  const { nodes, commit, draft, selectionKey, fields, absentAt, disabled, hidden } = scope;
+  const { nodes, commit, draft, selectionKey, fields, leafAt, disabled, hidden } = scope;
   const { path, leaf } = panelLeaf;
-  const absent = absentValue(leaf);
   const inside = panelLeaf.own === undefined ? undefined : scope.targets;
   const entryAt = inside?.entryAt ?? scope.entryAt;
-  const aggregated = aggregateValue(nodes, path, absent);
+  const aggregated = aggregateLeaf(nodes, path, leaf);
   const mixed = aggregated === MIXED;
   return {
     path,
@@ -47,15 +46,13 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     value: mixed ? undefined : aggregated,
     mixed,
     unset: !mixed && aggregated === undefined,
-    each: nodes.map((n) => {
-      const held = nodeValueAt(n, path);
-      return held === undefined ? absent : held;
-    }),
+    each: nodes.map((n) => nodeLeafValue(leaf, nodeValueAt(n, path))),
     setValue: (v) => commit(panelLeaf, () => v),
     update: (fn) => commit(panelLeaf, fn),
     drafts: { setValue: (v) => draft(panelLeaf, () => v), update: (fn) => draft(panelLeaf, fn) },
     valueAt: (p) => {
-      const at = aggregateValue(nodes, p, absentAt(p));
+      const held = leafAt(p);
+      const at = held ? aggregateLeaf(nodes, p, held) : aggregateValue(nodes, p);
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
     },
     selectionKey,

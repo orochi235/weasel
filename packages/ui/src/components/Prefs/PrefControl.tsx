@@ -1,4 +1,4 @@
-import type { PrefLeaf } from '@weasel-js/prefs';
+import { prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
 import type { EntryAt } from './entry';
 import { renderPrefControl, type PrefRenderer } from './PrefsRow';
 import { useParamsPolicy } from './useParamsPolicy';
@@ -40,7 +40,7 @@ export function PrefControl({ pref, path = '', value, values, onChange, renderer
     {
       path,
       pref,
-      value: value !== undefined ? value : pref.default,
+      value: prefLeafValue(pref, value),
       values,
       setValue: onChange,
       auto: false,

@@ -722,16 +722,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
-  control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
-  `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
-  absent is the default in the form (`prefRenderContext`, `Prefs/PrefsRow.tsx`), unset in the
-  panel, and `?? default` in labkit (`controls/rows.tsx`, `panelRows.tsx`, `MatrixCell.tsx`,
-  `MatrixEditor.tsx`), where `null` also reads as absent. Two rows of the table are labkit's alone
-  and were carried over undecided: `enumAsAsked: false` (`radio` draws as segments, `menu` as a
-  select) and `openSlider: false` (a slider needs both bounds). Outside the table:
-  `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
-  always lists an enum as radios.
+- **(P3) Two control choices are labkit's alone, and two controls draw an enum their own way.**
+  Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
+  of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
+  segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
+  table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
+  `MatrixEditor` always lists an enum as radios. The value a leaf shows is one function
+  (`prefLeafValue`, 2026-10-20), which `Bar` and `MenuBar` do not call: a path their `values` lack
+  draws unset, where a params surface draws the default.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
