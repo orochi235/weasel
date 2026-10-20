@@ -34,6 +34,8 @@
   height: 100%;
   overflow: auto;
   contain: paint;
+  /* A story's stand-in for its frame's viewport: `100cqb` is the trial's height where `100vh` would be the window's. */
+  container-type: size;
   background: var(--wzl-surface);
   color: var(--wzl-fg);
   transition: opacity var(--wzl-motion-fast) var(--wzl-ease-out-cubic);

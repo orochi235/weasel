@@ -174,7 +174,7 @@ export const Overview: Story = {
         backgroundColor: 'var(--wzl-surface)',
         backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
-        minHeight: '100vh',
+        minHeight: '100cqb',
       }}
     >
       <h1 style={{ font: '300 2.6rem/1 var(--wzl-font-display)', color: 'var(--wzl-fg)' }}>
@@ -212,7 +212,7 @@ export const Palette: Story = {
         backgroundColor: 'var(--wzl-surface)',
         backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
-        minHeight: '100vh',
+        minHeight: '100cqb',
       }}
     >
       <div className="lk-theme-doc__grid">

@@ -7,6 +7,7 @@ import s from './AssetEditor.stories.module.css';
 
 const meta: Meta<typeof AssetEditor> = {
   title: 'Primitives/AssetEditor',
+  parameters: { layout: 'fullscreen' },
   component: AssetEditor,
 };
 export default meta;

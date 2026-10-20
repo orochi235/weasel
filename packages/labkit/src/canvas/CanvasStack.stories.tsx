@@ -35,7 +35,7 @@ function Harness({
 }: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
   const [view, setView] = useState({ zoom: 1, pan: { x: 50, y: 50 } });
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: '100cqi', height: '100cqb' }}>
       <CanvasStack {...args} layers={layers} view={view} onViewChange={setView}>
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
           <ScaleIndicator />
