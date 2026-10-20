@@ -1,10 +1,13 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
 import { DiagramView, type DiagramViewApi } from '../DiagramView';
 import { diagramScene } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, ensureWireIds, nextStageId } from './edit';
-import { editHandlers, pinShown, stageBoxes, type Box } from './editorHandlers';
+import { editHandlers, pinShown, stageBoxes } from './editorHandlers';
+import { isPart, useEditorPicks } from './editorPicks';
+import { groupStages, nextGroupId, ungroup } from './groupEdit';
+import { useGroupTitle } from './groupTitle';
 import { editorScene, type EditorLookOptions } from './editorMapping';
 import { applyLookRoutes } from './lookRoutes';
 import { editorReorders } from './editorReorder';
@@ -15,7 +18,7 @@ import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
-import type { EffectDoc, EffectRun } from './types';
+import type { EffectBox, EffectDoc, EffectRun } from './types';
 
 /** Which look `EffectEditor` draws in, and that look's options. Keep the
  *  options object's identity steady between renders. */
@@ -34,7 +37,7 @@ export interface EffectEditorBaseProps {
   doc: EffectDoc;
   /** Hears each edit as the doc it makes, and a name for it fit for an undo
    *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Edit route', 'Add stage',
-   *  'Reorder' or 'Reorder lanes'. */
+   *  'Reorder', 'Reorder lanes', 'Resize group', 'Group', 'Ungroup' or 'Rename group'. */
   onChange: (next: EffectDoc, label: string) => void;
   /** One run of the pipeline, drawn over it as `EffectChart` draws its
    *  `run`, with the stage it is `at` outlined. */
@@ -43,6 +46,10 @@ export interface EffectEditorBaseProps {
   selected?: string | null;
   /** Hears each pick: a stage's id, or `null` for anything else, a wire included. */
   onSelect?: (stage: string | null) => void;
+  /** A group id, or null for none: drawn picked while no stage is. */
+  selectedGroup?: string | null;
+  /** Hears each pick: a group's id, or `null` for anything else. */
+  onSelectGroup?: (group: string | null) => void;
   /** CSS pixels. Omit both to fill the parent. */
   width?: number;
   height?: number;
@@ -58,11 +65,23 @@ export interface EffectEditorApi {
    *  shows, so nothing moves under it; the other looks place it themselves.
    *  Returns the new stage's id. */
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
+  /** Groups stages and groups, as `groupStages` does, and reports it as 'Group'.
+   *  Under `nodeGraph` it first pins every stage where it shows, as a drag
+   *  does. Returns the new group's id, or `null` for no ids. */
+  group(ids: readonly string[]): string | null;
+  /** Dissolves a group, as `ungroup` does, and reports it as 'Ungroup'. */
+  ungroup(id: string): void;
+  /** Opens the field a group's title is renamed in, over its title, under
+   *  `nodeGraph`; a double-click on the title does the same. Renaming
+   *  reports 'Rename group'. */
+  renameGroup(id: string): void;
 }
 
 /** The pipeline-mode editor: a look's drawing of an effect pipeline, whose
  *  ports wire output to input, and whose wires and stages reconnect and
- *  delete. Under `nodeGraph` stages drag freely; under `rack` and `lanes` a
+ *  delete. Under `nodeGraph` stages drag freely, and each group is a titled
+ *  box: drag a stage into or out of it, drag the box to carry what it holds,
+ *  resize it, or double-click its title to rename it; under `rack` and `lanes` a
  *  stage on the main line drags along it to another place, rewiring the
  *  pipeline, and under `lanes` a lane drags by its header. A selected
  *  wire's route drags under every look: into `routes` under `nodeGraph`, and
@@ -70,26 +89,25 @@ export interface EffectEditorApi {
  *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
-  { doc, onChange, run, selected, onSelect, look = 'nodeGraph', options, width, height, background, className },
+  { doc, onChange, run, selected, onSelect, selectedGroup, onSelectGroup, look = 'nodeGraph', options, width, height, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
   const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
-    // A group box picked would stay lit while `onSelect` says none; DiagramView makes edges pickable again.
-    .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built, doc, look]);
+    // Only stages and groups pick, so a lane or a row is never lit while `onSelect` says none; DiagramView makes edges pickable again.
+    .map((s) => (s.pickable === false || isPart(built, s.id as string) ? s : { ...s, pickable: false })), [built, doc, look]);
   const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
   useReleaseReplaced(run);
   const portOptions = useRunPortOptions(built.color, doc.pipeline, run);
 
-  // The wire picked on the canvas, kept so a controlled `selected` of null does not clear it.
-  const [edge, setEdge] = useState<string | null>(null);
-  const pickedWire = edge === null ? undefined : built.wireOf(edge);
+  const picks = useEditorPicks(built, { selected, selectedGroup, onSelect, onSelectGroup });
   const now = useLatest({ doc, built, specs, look, options, onChange });
   const view = useRef<DiagramViewApi | null>(null);
-  const handlers = useMemo(() => editHandlers(() => now.current, () => setEdge(null)), [now]);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const handlers = useMemo(() => editHandlers(() => now.current, picks.unpick, setRenaming), [now, picks.unpick]);
   const reorders = useMemo(() => editorReorders(() => {
     const { doc: d, built: b, specs: shown, onChange: report } = now.current;
-    const boxes = new Map(shown.map((s) => [s.id as string, s.pose as Box]));
+    const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
     return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
   }), [now]);
 
@@ -113,17 +131,21 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       }
       return stage.id;
     },
+    group: (ids) => {
+      const { doc: d, specs: shown, look: l, onChange: report } = now.current;
+      if (ids.length === 0) return null;
+      const base = l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d;
+      report(groupStages(base, ids), 'Group');
+      return nextGroupId(d.pipeline);
+    },
+    ungroup: (id) => {
+      const { doc: d, onChange: report } = now.current;
+      if (d.pipeline.groups?.some((g) => g.id === id)) report(ungroup(d, id), 'Ungroup');
+    },
+    renameGroup: (id) => setRenaming(id),
   }), [now]);
 
-  const onSelectRef = useLatest(onSelect);
-  const pick = useCallback((id: string | null) => {
-    const { built: b } = now.current;
-    const stage = id === null ? undefined : b.stageOf(id);
-    setEdge(id !== null && stage === undefined && b.wireOf(id) !== undefined ? id : null);
-    onSelectRef.current?.(stage ?? null);
-  }, [now, onSelectRef]);
-
-  const shown = selected === undefined ? undefined : selected ?? (pickedWire === undefined ? null : edge);
+  const title = useGroupTitle(doc, look, renaming, setRenaming, onChange);
   // Keyed by look so each look opens fitted: DiagramView keeps its view across new specs.
   return (
     <DiagramView
@@ -142,8 +164,10 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onEditRoute={handlers.onEditRoute}
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient: reorders })}
-      onSelect={pick}
-      {...(shown !== undefined ? { selected: shown } : {})}
+      {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
+      onSelect={picks.pick}
+      {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
+      {...(title !== null ? { overlays: title } : {})}
       {...(background !== undefined ? { background } : {})}
       {...(className !== undefined ? { className } : {})}
     />

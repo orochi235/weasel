@@ -262,9 +262,8 @@ in `recorded/hud-vs-dom-census-2026-10-17/`.
 pool out; `HVD_CENSUS=1` reports every thread in every process, and the self time of the
 pool's events by name. With the readout changing every frame, the HUD keeps the pool 1.9–5.7
 ms a frame busy against the DOM's 0.6–1.6, and 78–88% of the HUD's is V8's background garbage
-collection (`V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL`, `V8.GC_MC_BACKGROUND_MARKING`).
-That the HUD's text path allocates that garbage is inferred; no allocation profile has been
-taken. All
+collection (`V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL`, `V8.GC_MC_BACKGROUND_MARKING`);
+"What the HUD allocates" below names the garbage. All
 threads plus the pool, ms a frame, median [min–max] of 4 samples:
 
 | Node | Camera | Glyphs | HUD | DOM |
@@ -290,6 +289,46 @@ node; Chromium 153.0.8010.12. Census figures are not comparable with the tables 
 since it traces more categories. The result files are in
 `recorded/hud-vs-dom-pool-2026-10-19/`.
 
+### What the HUD allocates
+
+`HVD_ALLOC=1` takes a V8 sampling heap profile of one more window per measurement, short-lived
+objects included, and prints bytes a frame by function. With a 5,000-glyph readout changing
+every frame the HUD allocated 9.7 MB a frame against the DOM's 0.11, nearly all of it under
+the renderer's `drawText`, re-laying out every label whose text changed:
+
+| Function, self bytes (first fixed-camera sample of each run below) | KB a frame, before | after |
+|---|---:|---:|
+| `groupFor`, a group key string per glyph | 2,033 | 283 |
+| `measureRuns`, two entry objects and a closure per code point | 1,323 | 549 |
+| `placeLine`, the cells and placed glyphs a layout returns | 1,019 | 1,005 |
+| `paintRuns`, a quad per glyph | 877 | 896 |
+| `drawTextGroup`, 15 numbers boxed per `pushGlyph` call | 832 | 183 |
+| `lineDecorations`, a paint key per glyph of undecorated text | 581 | 0 |
+
+The cuts: `paintRuns` joins a glyph to the previous glyph's group when nothing its key reads
+has changed, `lineDecorations` reads a run's decoration flags before its paint,
+`measureRuns` fills one entry in place, and `pushGlyph` takes the quad and color as objects,
+since every fractional number passed to a call V8 does not inline is a heap allocation.
+What is left is mostly the layout's own output, whose every numeric field is a boxed number.
+
+All threads plus the pool, ms a frame, median [min–max] of 4 samples, with the allocation
+profile's KB a frame:
+
+| Camera | Glyphs | HUD before | HUD after | DOM |
+|---|---:|---:|---:|---:|
+| fixed  | 2,500 |  7.50 [5.45– 8.71], 4,883 | 5.79 [5.10–6.71], 3,022 | 4.56 [4.46–4.61],  82 |
+| fixed  | 5,000 | 11.28 [9.86–13.06], 9,684 | 8.41 [7.24–9.81], 5,984 | 6.12 [5.29–7.01], 115 |
+| moving | 2,500 |  7.90 [7.43– 8.70], 4,917 | 5.86 [5.20–6.18], 3,066 | 4.86 [4.80–4.99], 114 |
+| moving | 5,000 | 11.48 [10.05–12.49], 9,764 | 8.49 [7.24–9.79], 6,056 | 7.25 [6.91–7.49], 180 |
+
+The pool's GC at 5,000 glyphs on a fixed camera fell from 3.68 ms a frame to 2.61, and the
+HUD's main thread from 5.68 to 3.93. The DOM is still the cheaper overlay: the ranges stay
+apart in every cell but the 5,000-glyph moving one. Measured on msb-uai (Apple M3 Max) on
+2026-10-20, one run of each tree with no other onto job on the node (1-minute load 3.7 and
+3.6 at the start); before is the after tree with the four cuts reverted, and the DOM column
+is the after run. The result files, which name onto's base `b68b7a4e4`, are in
+`recorded/hud-vs-dom-alloc-2026-10-20/`.
+
 ### Widget command caching
 
 `attachHud` reuses a widget's commands until something it draws from changes.
@@ -303,7 +342,7 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 `HVD_GLYPHS`, `HVD_UPDATES`, `HVD_CAMERAS`, and `HVD_APPROACHES` each narrow it.
 `HVD_CENSUS=1` adds the census of every thread, the renderer worker pool's self time by event, and the frame pipeline's async
 stages; it traces more categories, so its busy figures are not comparable with a
-run without it.
+run without it. `HVD_ALLOC=1` adds the allocation profile above.
 
 ## Timing a frame
 

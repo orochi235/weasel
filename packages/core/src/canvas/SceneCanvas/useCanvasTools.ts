@@ -41,12 +41,13 @@ export function useEnabledFeatures(
   features: readonly FeatureEntry[] | undefined,
   named: NamedPresets | null,
   hasViewport: boolean,
+  selectRotates: boolean,
 ): EnabledPresets {
   const featuresKey = (features ?? []).map(entryKey).join('|');
   return useMemo(
-    () => resolveFeatures(features, named, { viewport: hasViewport }),
+    () => resolveFeatures(features, named, { viewport: hasViewport, selectRotates }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [featuresKey, named, hasViewport],
+    [featuresKey, named, hasViewport, selectRotates],
   );
 }
 

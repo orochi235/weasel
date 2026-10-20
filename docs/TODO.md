@@ -1081,13 +1081,14 @@ only story runner in the repo.
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **With the readout changing every frame the DOM is the cheaper overlay** once the renderer's
-    worker pool is counted: at 5,000 glyphs 10.5–12.8 ms a frame of all threads against 6.0–8.5,
-    ranges apart from 2,500 glyphs up under every camera, on msb-uai and keiei (one census run
-    each, 2026-10-19; README, "Frame rate"). 78–88% of the HUD's pool time is V8's background
-    GC. What allocates it is not known: a heap allocation profile of the every-frame path
-    (`attachHud` relayout, the renderer's text layout and command building) would say, and
-    cutting it is the fix if the profile names something.
+  - **With the readout changing every frame the DOM is still the cheaper overlay** once the
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
+    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
+    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
+    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
+    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
+    entries — one object per glyph with every number in it boxed. Cutting that means a layout
+    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1316,10 +1317,6 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `selectTool.rotate === false` is decided in three places that do not agree.** Making them
-  one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
-  lists them. Left open by the preset table and the rule context.
-
 - **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
   routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
   summary prints the label, so making them one needs a decision on what it should say. Left open by
@@ -1329,9 +1326,23 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P2) `hops.browser.test.tsx` ("bows the upper connector over the crossing") fails in full fleet
+  runs: the chart canvas never paints.** Twice on 2026-10-20 (a run of `main` at `b3431621f` and a
+  branch run at `cefc52e68`), both on teitou in the full `browser` project; three runs of the file
+  alone passed. The failure screenshot shows the app's chrome and an empty workspace with not even
+  the page drawn, so polling the pixels (`5ceb31061`) cannot help; the canvas painted nothing for over
+  a second. Unchecked candidates: the WebGL context lost or never made under six tabs, or the seed
+  in `localStorage` (one origin, shared by every tab) cleared by another chart test's `afterEach`
+  before the app read it, though an empty scene would still draw the page.
+
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
+- **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
+  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
+  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
+  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
+  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
   each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
