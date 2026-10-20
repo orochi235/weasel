@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { CONNECT_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramWaypoints } from './contribution';
 import { PORT_AFFORDANCE_KIND } from './portAffordance';
-import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID, ROUTE_EDIT_ACTION_ID } from './waypointAction';
+import { REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID } from './routeCommands';
+import { ROUTE_EDIT_ACTION_ID } from './waypointAction';
 import { WAYPOINT_AFFORDANCE_KIND, WAYPOINT_LAYER_ID } from './waypointLayer';
 
 interface Rect { x: number; y: number; width: number; height: number }

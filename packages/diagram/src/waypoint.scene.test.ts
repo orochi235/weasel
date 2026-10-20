@@ -12,7 +12,8 @@ import { planOf } from './layout';
 import { applyLayout } from './layoutAction';
 import { sceneParticipants } from './portLayer';
 import { routesOf } from './routeWrites';
-import { commitRouteToScene, createResetRouteAction } from './waypointAction';
+import { createResetRouteAction } from './routeCommands';
+import { commitRouteToScene } from './waypointAction';
 import { waypointFollower } from './waypointFollower';
 
 const edgeOf = (scene: { get(id: never): { data: unknown } | undefined }, id: string) =>

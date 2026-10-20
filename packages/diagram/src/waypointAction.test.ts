@@ -3,7 +3,8 @@ import { overlaysOf, type ImmediateInvoker, type InvocationCtx } from '@weasel-j
 import type { Vec2 } from '@weasel-js/core/math';
 import type { GraphNodeLike } from './graph';
 import { WAYPOINT_AFFORDANCE_KIND } from './waypointLayer';
-import { createRemoveWaypointAction, createRouteEditAction, type RouteEdit, type RouteEditOptions } from './waypointAction';
+import { createRemoveWaypointAction } from './routeCommands';
+import { createRouteEditAction, type RouteEdit, type RouteEditOptions } from './waypointAction';
 import type { RouteHandle } from './waypoints';
 
 interface Rect { x: number; y: number; width: number; height: number }
@@ -144,5 +145,14 @@ describe('createRemoveWaypointAction', () => {
     run({ commit }, 'ab', { kind: 'insert', leg: 0, at: { x: 200, y: 20 } });
     run({ commit }, 'ac', { kind: 'segment', index: 1, axis: 'y', at: { x: 200, y: 120 } });
     expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('declines where it would remove nothing, so the double-click reaches what is under the handle', () => {
+    const enabledAt = (edgeId: string, x: number, y: number, waypoints: Vec2[] = []) =>
+      createRemoveWaypointAction<Rect>({ participants: participants(waypoints), selected: () => [edgeId] }).enabled!({} as never, { x, y });
+    expect(enabledAt('ab', 203, 98, [{ x: 200, y: 100 }])).toBe(true);
+    expect(enabledAt('ab', 200, 20)).not.toBe(true);
+    expect(enabledAt('ac', 200, 120)).not.toBe(true);
+    expect(enabledAt('ab', 230, 100, [{ x: 200, y: 100 }])).not.toBe(true);
   });
 });

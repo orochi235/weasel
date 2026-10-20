@@ -22,14 +22,8 @@ import {
 } from './connect';
 import { portLayer } from './portLayer';
 import type { PortAffordanceOptions } from './portAffordance';
-import {
-  ROUTE_EDIT_ACTION_ID,
-  REMOVE_WAYPOINT_ACTION_ID,
-  createRemoveWaypointAction,
-  createResetRouteAction,
-  createRouteEditAction,
-  type RouteEditOptions,
-} from './waypointAction';
+import { REMOVE_WAYPOINT_ACTION_ID, createRemoveWaypointAction, createResetRouteAction } from './routeCommands';
+import { ROUTE_EDIT_ACTION_ID, createRouteEditAction, type RouteEditOptions } from './waypointAction';
 import {
   WAYPOINT_AFFORDANCE_KIND,
   WAYPOINT_LAYER_ID,
@@ -89,7 +83,7 @@ export function diagramWaypoints<TPose>(
   opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
 ): { layer: RenderLayer<unknown>; contribution: Contribution } {
   const actionId = opts.id ?? ROUTE_EDIT_ACTION_ID;
-  const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}`;
+  const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}` as const;
   return {
     // `opts.id` names the drag action; the layer keeps its own id.
     layer: waypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID }),

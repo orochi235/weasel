@@ -78,7 +78,8 @@ export interface WaypointAffordanceOptions<TPose> extends EdgeEndOptions<TPose> 
   cursor?: CursorSpec;
 }
 
-const DEFAULT_HIT_PX = 7;
+/** A route handle's default screen-pixel hit radius. */
+export const WAYPOINT_HIT_PX = 7;
 const DEFAULT_SIZE_PX = 8;
 const DEFAULT_FILL: CommandFill = { paint: { kind: 'solid', color: '#ffffff' } };
 const DEFAULT_STROKE: CommandStroke = { paint: { kind: 'solid', color: '#3b6fd4' }, width: 1.5 };
@@ -108,7 +109,7 @@ export function createWaypointAffordance<TPose>(
   selected: () => readonly string[],
   opts: WaypointAffordanceOptions<TPose> = {},
 ): Affordance {
-  const { id = WAYPOINT_LAYER_ID, hitRadiusPx = DEFAULT_HIT_PX, sizePx = DEFAULT_SIZE_PX } = opts;
+  const { id = WAYPOINT_LAYER_ID, hitRadiusPx = WAYPOINT_HIT_PX, sizePx = DEFAULT_SIZE_PX } = opts;
   const endsOf = createEdgeEnds(participants, opts);
   const fill = opts.fill ?? DEFAULT_FILL;
   const stroke = opts.stroke ?? DEFAULT_STROKE;

@@ -57,6 +57,7 @@ export { GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramPorts, diagr
 export type { DiagramContributionOptions } from './contribution';
 export {
   WAYPOINT_AFFORDANCE_KIND,
+  WAYPOINT_HIT_PX,
   WAYPOINT_LAYER_ID,
   createWaypointAffordance,
   routeStateOf,
@@ -64,16 +65,10 @@ export {
   waypointScratchOf,
 } from './waypointLayer';
 export type { EdgeRouteState, WaypointAffordanceOptions, WaypointScratch } from './waypointLayer';
+export { ROUTE_EDIT_ACTION_ID, commitRouteToScene, createRouteEditAction, routedData } from './waypointAction';
 export {
-  REMOVE_WAYPOINT_ACTION_ID,
-  RESET_ROUTE_ACTION_ID,
-  ROUTE_EDIT_ACTION_ID,
-  commitRouteToScene,
-  createRemoveWaypointAction,
-  createResetRouteAction,
-  createRouteEditAction,
-  routedData,
-} from './waypointAction';
+  REMOVE_WAYPOINT_ACTION_ID, RESET_ROUTE_ACTION_ID, createRemoveWaypointAction, createResetRouteAction,
+} from './routeCommands';
 export type { RouteEdit, RouteEditOptions } from './waypointAction';
 export {
   dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, routeHandles, segmentAxis, simplifyStops,

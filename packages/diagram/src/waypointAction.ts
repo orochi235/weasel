@@ -1,28 +1,21 @@
 /**
- * Route editing — dragging a selected edge's waypoints and segments, and
- * double-clicking one away.
+ * Route editing — dragging a selected edge's waypoints and segments.
  *
- * The route handles (`waypointLayer`) claim the press; these actions reshape
+ * The route handles (`waypointLayer`) claim the press; this action reshapes
  * the route. The drag previews the edge's own data with the new waypoints,
  * so its `derivePath` draws the preview exactly as the commit will.
  */
-import { ActionDisabledReason, type Action, type InvocationCtx, type OngoingHandle, type OngoingOverlay } from '@weasel-js/core';
+import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { createEdgeEnds, type EdgeEndOptions } from './edgeEndLayer';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
 import type { ParticipantSource } from './portAffordance';
 import { portTarget, snapPoint, stopTarget } from './routeSnap';
 import { routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
-import {
-  dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, type RouteHandle,
-} from './waypoints';
+import { dragSegment, dragVertex, insertWaypoint, type RouteHandle } from './waypoints';
 
 /** The action that drags a route handle. */
 export const ROUTE_EDIT_ACTION_ID = 'diagram.editRoute';
-/** The action that removes a waypoint, or straightens a segment, on a double-click of its handle. */
-export const REMOVE_WAYPOINT_ACTION_ID = 'diagram.removeWaypoint';
-/** The command that clears the selected edges' waypoints. */
-export const RESET_ROUTE_ACTION_ID = 'diagram.resetRoute';
 
 /** An edge's route edited: its waypoints as they now stand. */
 export interface RouteEdit {
@@ -30,13 +23,15 @@ export interface RouteEdit {
   waypoints: readonly Vec2[];
 }
 
-/** Options for {@link createRouteEditAction} and {@link createRemoveWaypointAction}. */
+/** Options for the route-editing actions: the drag, the double-click that removes, and Reset route. */
 export interface RouteEditOptions<TPose> extends EdgeEndOptions<TPose> {
   participants: ParticipantSource<TPose>;
   /** The selected edge ids, whose routes show handles. */
   selected: () => readonly string[];
   /** Screen pixels within which a dragged handle lines up with a neighbor. Default 6. */
   snapPx?: number;
+  /** Screen-pixel reach of a handle, as the handle layer's `hitRadiusPx`. Default 7. */
+  hitRadiusPx?: number;
   /** Defaults to {@link commitRouteToScene} against `deps.scene`. */
   commit?: (edit: RouteEdit, ctx: InvocationCtx) => void;
   id?: string;
@@ -160,71 +155,6 @@ export function createRouteEditAction<TPose>(opts: RouteEditOptions<TPose>): Act
             if (waypoints !== null) commit({ edgeId: p.edgeId, waypoints }, { ...endCtx, deps: p.deps });
           },
         };
-      },
-    },
-    enabled: () => true as const,
-  };
-}
-
-/** The selected edges that have waypoints of their own. */
-function routedEdges<TPose>(opts: RouteEditOptions<TPose>): string[] {
-  const ids = new Set(opts.selected());
-  if (ids.size === 0) return [];
-  const out: string[] = [];
-  for (const { node } of opts.participants()) {
-    if (ids.has(node.id) && (diagramEdgeOf(node)?.waypoints ?? []).length > 0) out.push(node.id);
-  }
-  return out;
-}
-
-/** The `diagram.resetRoute` command: clears the selected edges' waypoints,
- *  in one history entry when they commit to the scene. */
-export function createResetRouteAction<TPose>(opts: RouteEditOptions<TPose>): Action {
-  const { commit = commitRouteToScene } = opts;
-  return {
-    id: RESET_ROUTE_ACTION_ID,
-    label: 'Reset route',
-    group: 'diagram',
-    requires: ['scene'],
-    invoker: {
-      timing: 'immediate',
-      run(deps) {
-        const edges = routedEdges(opts);
-        const ctx = { world: { x: 0, y: 0 }, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
-        const all = () => { for (const edgeId of edges) commit({ edgeId, waypoints: [] }, ctx); };
-        if (deps.scene === undefined) all();
-        else deps.scene.batch('Reset route', all);
-      },
-    },
-    enabled: () => (routedEdges(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
-  };
-}
-
-/** The `diagram.removeWaypoint` action: a double-click on a waypoint's dot
- *  removes it, and on a segment's bar straightens that jog away. */
-export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>): Action {
-  const { commit = commitRouteToScene } = opts;
-  const endsOf = createEdgeEnds(opts.participants, opts);
-  return {
-    id: REMOVE_WAYPOINT_ACTION_ID,
-    label: 'Remove waypoint',
-    group: 'diagram',
-    requires: ['scene'],
-    invoker: {
-      timing: 'immediate',
-      run(deps, params) {
-        const pressed = waypointScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
-        const ends = pressed === null ? null : endsOf(pressed.edgeId);
-        if (pressed === null || ends === null) return;
-        const { stops, drawn } = routeStateOf(ends as never, opts.routers);
-        const { handle } = pressed;
-        const waypoints = handle.kind === 'vertex' ? removeWaypoint(stops, handle.index)
-          : handle.kind === 'segment' ? removeSegment(drawn, handle.index)
-            : null;
-        if (waypoints === null) return;
-        const world = { x: Number(params?.worldX), y: Number(params?.worldY) };
-        const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
-        commit({ edgeId: pressed.edgeId, waypoints }, ctx);
       },
     },
     enabled: () => true as const,
