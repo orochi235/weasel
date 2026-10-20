@@ -149,37 +149,80 @@ export function lineGaps(
   if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return gaps;
 
   const columnOf = (id: string) => index.get(id) ?? index.get(hanging.owner.get(id)!)!;
-  const children = new Map<string, GraphGroup[]>();
-  for (const g of groups) if (g.parent !== undefined) children.set(g.parent, [...(children.get(g.parent) ?? []), g]);
-  /** The box's low and high rank edges with the gaps as they stand. */
-  const boxOf = (g: GraphGroup): { lo: number; hi: number } => {
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const id of g.members) {
-      const slot = packed.get(id);
-      const node = graph.node(id);
+  const children = new Map<string, string[]>();
+  for (const g of groups) if (g.parent !== undefined) children.set(g.parent, [...(children.get(g.parent) ?? []), g.id]);
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  const span = (id: string, now: readonly number[]) => {
+    let [lo, hi] = [Infinity, -Infinity];
+    for (const m of byId.get(id)!.members) {
+      const slot = packed.get(m);
+      const node = graph.node(m);
       if (slot === undefined || node === undefined) continue;
-      const from = slot.rank + gaps.slice(0, columnOf(id)).reduce((s, gap) => s + gap, 0);
-      lo = Math.min(lo, from);
-      hi = Math.max(hi, from + extent(node.bounds, axes.rank));
+      const from = slot.rank + now.slice(0, columnOf(m)).reduce((s, gap) => s + gap, 0);
+      [lo, hi] = [Math.min(lo, from), Math.max(hi, from + extent(node.bounds, axes.rank))];
     }
-    const inset = rankInset(g.inset, axes);
-    [lo, hi] = [lo - inset.lo, hi + inset.hi];
-    for (const child of children.get(g.id) ?? []) {
-      const box = boxOf(child);
-      [lo, hi] = [Math.min(lo, box.lo - inset.lo), Math.max(hi, box.hi + inset.hi)];
+    return { lo, hi };
+  };
+  widenForMinWidth(deepestFirst(groups).map((g) => {
+    const cols = g.members.filter((id) => packed.has(id)).map(columnOf);
+    return {
+      id: g.id,
+      ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
+      inset: rankInset(g.inset, axes),
+      children: children.get(g.id) ?? [],
+      before: cols.length === 0 ? -1 : Math.min(...cols) - 1,
+      after: cols.length === 0 ? -1 : Math.max(...cols),
+    };
+  }), gaps, span);
+  return gaps;
+}
+
+/** A group as {@link widenForMinWidth} reads it. */
+export interface MinWidthGroup {
+  id: string;
+  minWidth?: number;
+  /** Its box's inset before and after along the rank. */
+  inset: { lo: number; hi: number };
+  /** The groups nested directly in it. */
+  children: readonly string[];
+  /** The index in the gaps of the gap before its first member and after its
+   *  last; one out of range has no gap to widen. */
+  before: number;
+  after: number;
+}
+
+/**
+ * Widen `gaps` in place so each group's box reaches its `minWidth`, half the
+ * shortfall either side, with the box drawn as `boxAround` draws it: what its
+ * members span, its children's boxes, grown by its inset, then widened evenly.
+ * `groups` runs deepest first, so a box sees its children already widened.
+ * `span` is where a group's members start and end along the rank at the gaps
+ * as they stand; `lo > hi` for a group with none placed.
+ */
+export function widenForMinWidth(
+  groups: readonly MinWidthGroup[],
+  gaps: number[],
+  span: (id: string, gaps: readonly number[]) => { lo: number; hi: number },
+): void {
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  const boxOf = (g: MinWidthGroup, minWidth: number): { lo: number; hi: number } => {
+    let { lo, hi } = span(g.id, gaps);
+    [lo, hi] = [lo - g.inset.lo, hi + g.inset.hi];
+    for (const id of g.children) {
+      const child = byId.get(id);
+      if (child === undefined) continue;
+      const box = boxOf(child, child.minWidth ?? 0);
+      [lo, hi] = [Math.min(lo, box.lo - g.inset.lo), Math.max(hi, box.hi + g.inset.hi)];
     }
-    const grow = Math.max(0, (g.minWidth ?? 0) - (hi - lo)) / 2;
+    const grow = Math.max(0, minWidth - (hi - lo)) / 2;
     return { lo: lo - grow, hi: hi + grow };
   };
-  for (const g of deepestFirst(groups)) {
-    const cols = g.members.filter((id) => packed.has(id)).map(columnOf);
-    if (cols.length === 0 || g.minWidth === undefined) continue;
-    const box = boxOf({ ...g, minWidth: 0 });
+  for (const g of groups) {
+    if (g.minWidth === undefined) continue;
+    const box = boxOf(g, 0);
+    if (!(box.lo <= box.hi)) continue;
     const half = Math.max(0, g.minWidth - (box.hi - box.lo)) / 2;
-    const [first, last] = [Math.min(...cols), Math.max(...cols)];
-    if (first > 0) gaps[first - 1]! += half;
-    if (last < gaps.length) gaps[last]! += half;
+    if (g.before >= 0 && g.before < gaps.length) gaps[g.before]! += half;
+    if (g.after >= 0 && g.after < gaps.length) gaps[g.after]! += half;
   }
-  return gaps;
 }

@@ -3,6 +3,7 @@
  * room between columns, with each group's members holding a run of columns
  * no other stage stands in, so the box drawn around them covers nothing else.
  */
+import { widenForMinWidth } from '../chainGroups';
 import { DEFAULT_GROUP_INSET, insetOf, rankGaps } from '../cluster';
 import type { GraphGroup } from '../graph';
 import { nestGroups } from '../groupTree';
@@ -120,34 +121,35 @@ export function columnLefts(
 ): { lefts: number[]; end: number } {
   const count = widths.length;
   const room = blockRoom(widths.length, column, blocks, gap);
-  const leftsNow = () => {
+  const leftsNow = (now: readonly number[]) => {
     let x = start;
     return Array.from(widths, (wd, c) => {
-      x += room[c]!;
+      x += now[c]!;
       const at = x;
       x += wd ?? 0;
       return at;
     });
   };
-  const members = (b: LaneBlock) => [...column].filter(([, c]) => c >= b.first && c <= b.last);
-  const boxOf = (b: LaneBlock, lefts: readonly number[]): { lo: number; hi: number } => {
+  const byId = new Map(blocks.map((b) => [b.group, b]));
+  const span = (group: string, now: readonly number[]) => {
+    const b = byId.get(group)!;
+    const lefts = leftsNow(now);
     let [lo, hi] = [Infinity, -Infinity];
-    for (const [id, c] of members(b)) [lo, hi] = [Math.min(lo, lefts[c]! + extent(id).lo), Math.max(hi, lefts[c]! + extent(id).hi)];
-    [lo, hi] = [lo - DEFAULT_GROUP_INSET, hi + DEFAULT_GROUP_INSET];
-    for (const child of blocks.filter((k) => k.depth === b.depth + 1 && k.first >= b.first && k.last <= b.last)) {
-      const box = boxOf(child, lefts);
-      [lo, hi] = [Math.min(lo, box.lo - DEFAULT_GROUP_INSET), Math.max(hi, box.hi + DEFAULT_GROUP_INSET)];
+    for (const [id, c] of column) {
+      if (c >= b.first && c <= b.last) [lo, hi] = [Math.min(lo, lefts[c]! + extent(id).lo), Math.max(hi, lefts[c]! + extent(id).hi)];
     }
-    const grow = Math.max(0, b.minWidth - (hi - lo)) / 2;
-    return { lo: lo - grow, hi: hi + grow };
+    return { lo, hi };
   };
-  for (const b of [...blocks].sort((p, q) => q.depth - p.depth)) {
-    const box = boxOf({ ...b, minWidth: 0 }, leftsNow());
-    const half = Math.max(0, b.minWidth - (box.hi - box.lo)) / 2;
-    room[b.first]! += half;
-    room[b.last + 1]! += half;
-  }
-  const lefts = leftsNow();
+  const inset = { lo: DEFAULT_GROUP_INSET, hi: DEFAULT_GROUP_INSET };
+  widenForMinWidth([...blocks].sort((p, q) => q.depth - p.depth).map((b) => ({
+    id: b.group,
+    minWidth: b.minWidth,
+    inset,
+    children: blocks.filter((k) => k.depth === b.depth + 1 && k.first >= b.first && k.last <= b.last).map((k) => k.group),
+    before: b.first,
+    after: b.last + 1,
+  })), room, span);
+  const lefts = leftsNow(room);
   return { lefts, end: count === 0 ? start : lefts[count - 1]! + (widths[count - 1] ?? 0) + room[count]! };
 }
 
