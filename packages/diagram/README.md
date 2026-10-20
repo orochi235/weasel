@@ -308,6 +308,13 @@ start stub ends in the connector's end marker, so it reads as leaving the page.
 A shape in the gap between pages belongs to none, and its connectors stay
 whole.
 
+A data-backed diagram takes the same pages as `DiagramData.pages` (core's
+`Page`s), placed by `layoutPages` with `pageLayout`; `diagramPages(data)` gives
+them in world space. `diagramScene` splits each connector between pages and
+adds its two tags, lettered in the order the data lists the edges. An edge to a
+group or a container splits by that box's page, not a member's.
+`dataOffPage(edges, pages, boxOf, look)` is the same step over plain boxes.
+
 `useOffPageMarkers(scene)` splits and joins connectors as edits move their
 ends or change the pages, in that edit's own undo entry; installing it
 recomputes nothing. `installOffPageMarkers(scene)` does the same without React.

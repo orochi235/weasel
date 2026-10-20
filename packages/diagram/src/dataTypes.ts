@@ -1,7 +1,7 @@
 /**
  * The plain data `diagramScene` reads, and the options and styles it takes.
  */
-import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
+import type { AddNodeSpec, MarkerRef, Page, PageLayoutOptions, RectPose, Stroke } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { BodySpec, MeasureRowText, Row } from './body';
 import type { DiagramEdge } from './edgeTrait';
@@ -118,6 +118,12 @@ export interface DiagramData {
   /** Containers and pools: regions drawn as scene containers that hold their
    *  members, which a `DiagramView` drags shapes into and out of. */
   containers?: readonly DataContainer[];
+  /** The sheets the diagram is drawn on, in world space as `layoutPages` places them; a node
+   *  belongs to the page its box overlaps most (`pageOfBounds`). A connector whose ends belong
+   *  to different pages is split into two stubs, each with an off-page tag. */
+  pages?: readonly Page[];
+  /** How `pages` are laid out in world space. */
+  pageLayout?: PageLayoutOptions;
 }
 
 /**

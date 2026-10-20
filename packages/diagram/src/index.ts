@@ -177,6 +177,7 @@ export { installLabelPlacement } from './labels/install';
 export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
 export { useLabelPlacement } from './labels/useLabelPlacement';
 export { createSpecLabelPlacer } from './labels/specLabels';
+export { dataOffPage, diagramPages } from './dataPages';
 export { nextOffPageRef, offPageSplits } from './offPage/split';
 export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
 export {

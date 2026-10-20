@@ -12,6 +12,7 @@ import type { LayeredRoute } from './route';
 import { dataEdgeStyle } from './dataStyles';
 import { EDGE_STROKE_WIDTH } from './dataTypes';
 import type { DiagramTheme } from './theme/types';
+import type { OffPageSplit } from './offPage/trait';
 
 export interface EdgeSpecContext {
   idOf: (edge: DataEdge) => string;
@@ -25,6 +26,8 @@ export interface EdgeSpecContext {
   /** Ports and waypoints by edge id, overriding the edge's own (from `layeredRoutes`). */
   routes?: ReadonlyMap<string, LayeredRoute> | null;
   opts: Pick<DiagramSceneOptions, 'edgeStyle' | 'router' | 'labelPlacement'>;
+  /** The off-page split of each edge, by id, that crosses between pages. */
+  splits?: ReadonlyMap<string, OffPageSplit>;
 }
 
 /** Where a label sits: beside the room layout left it, at the edge's own
@@ -82,6 +85,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const style = own !== undefined ? withColors(own, e.colors) : dataEdgeStyle(e, ctx.theme);
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
+    const split = ctx.splits?.get(id);
     specs.push({
       id: id as never,
       kind: 'leaf',
@@ -97,6 +101,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           ...(laidOut ? { laidOut: waypoints } : {}),
           ...(e.style !== undefined ? { style: e.style } : {}),
           ...ownEdgeStyle(e.colors),
+          ...(split !== undefined ? { offPage: split } : {}),
         },
         stroke: {
           paint: { color: style.stroke },
