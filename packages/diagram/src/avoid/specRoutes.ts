@@ -5,6 +5,7 @@
  */
 import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { diagramContainerOf, headerBox } from '../containers/trait';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { DiagramSpec } from '../fromData';
 import { diagramLabelOf } from '../labelTrait';
@@ -12,10 +13,43 @@ import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';
 import type { Port } from '../types';
 import { createAvoidRouter } from './router';
+import { headerIdOf } from './sceneInput';
 import type { AvoidEdge, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
 
 const facing = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
+
+/** The obstacles specs make, as `avoidSceneInput` reads a scene: a shape's box; a
+ *  container's or pool's box as a region holding what is inside it, and its header;
+ *  a lane's header alone. A derived box, a group's, is none. */
+function obstaclesOf(specs: readonly DiagramSpec[]): AvoidObstacle[] {
+  const children = new Map<string, string[]>();
+  for (const s of specs) {
+    if (s.parent == null) continue;
+    children.set(s.parent as string, [...(children.get(s.parent as string) ?? []), s.id as string]);
+  }
+  const inside = (id: string, into: Set<string>): Set<string> => {
+    for (const child of children.get(id) ?? []) {
+      into.add(child);
+      inside(child, into);
+    }
+    return into;
+  };
+  const out: AvoidObstacle[] = [];
+  for (const spec of specs) {
+    const node = { id: spec.id as string, kind: spec.kind, data: spec.data };
+    if (spec.derivePose !== undefined || diagramEdgeOf(spec) !== null) continue;
+    const region = diagramContainerOf(spec);
+    if (diagramNodeOf(node) === null && region?.role !== 'lane') continue;
+    const header = region === null ? null : headerBox(spec.pose, region.header);
+    if (header !== null) out.push({ id: headerIdOf(node.id), kind: 'shape', box: header });
+    if (region?.role === 'lane') continue;
+    out.push(region === null
+      ? { id: node.id, kind: 'shape', box: spec.pose }
+      : { id: node.id, kind: 'region', box: spec.pose, members: inside(node.id, new Set()) });
+  }
+  return out;
+}
 
 /** Each edge's label spec, by the edge it labels. */
 function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel> {
@@ -41,15 +75,11 @@ export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly D
   return (specs) => {
     const byId = new Map(specs.map((s) => [s.id as string, s]));
     const labels = labelsOf(specs);
-    const obstacles: AvoidObstacle[] = [];
+    const obstacles = obstaclesOf(specs);
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
-      const node = { id: spec.id as string, kind: spec.kind, data: spec.data };
       const edge = diagramEdgeOf(spec);
-      if (edge === null) {
-        if (spec.derivePose === undefined && diagramNodeOf(node) !== null) obstacles.push({ id: node.id, kind: 'shape', box: spec.pose });
-        continue;
-      }
+      if (edge === null) continue;
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
       const [a, b] = ends;
       if (a === undefined || b === undefined || a === b) continue;
