@@ -7,7 +7,7 @@ traps from finished arcs are `docs/retained.md`.
 ## Overnight pass, 2026-10-20 (status at 06:50)
 
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
-"overnight pass"; each line there names how to read it back. Nothing is pushed.
+"overnight pass". Nothing is pushed.
 
 **`main` is green at `149218ffd`** (full fleet run on teitou: 27922 passed, 0 failed). Twenty-six
 merges from this pass; the TODO entries it retired are in `git log`.
