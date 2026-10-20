@@ -51,6 +51,8 @@ Merged:
   (a real-mouse browser test drags over a lens).
 - Grid snapping and node length fields read a container's unit scope (no app passes the new
   options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
+- Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
+  session takes its key from its name.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

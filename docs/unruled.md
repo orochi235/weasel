@@ -430,6 +430,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): In `PrefSchemaEditor`, only a node added in this session takes its
+  key from its name; a baseline pref keeps its key when renamed, and Changes and `onSubmit` carry the
+  name change alone. The Key field stays the way to change a key deliberately.
 - 2026-10-20 (overnight pass): `useLeafAction`'s `reason` is renamed `disabledReason`, the prop
   `BarActionButton` reads, so a bar button and a panel row explain themselves the same way. A bar
   button disabled with a reason (ActionBar, BarAction, the loupe) is now focusable and
