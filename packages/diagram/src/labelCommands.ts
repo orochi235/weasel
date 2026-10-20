@@ -1,10 +1,9 @@
 /**
  * The label edit that is not a drag: the Reset label command.
  */
-import { ActionDisabledReason, type Action, type InvocationCtx, type NodeId, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason, type Action, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { commitLabelToScene, type LabelEdit } from './labelDragAction';
-import { labelEditable } from './labelDragLayer';
-import { diagramLabelOf } from './labelTrait';
+import { editableLabels } from './labelDragLayer';
 
 /** The command that puts the selected edges' dragged labels back where placement puts them. */
 export const RESET_LABEL_ACTION_ID = 'diagram.resetLabel';
@@ -13,13 +12,10 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 
 /** The labels on `selected` edges that a drag has pinned (`dodge: false`) and an edit may touch. */
 function draggedLabels(scene: Scene<unknown, string, unknown> | undefined, selected: readonly string[]): LabelEdit[] {
-  const ids = new Set(selected);
+  if (scene === undefined || selected.length === 0) return [];
   const out: LabelEdit[] = [];
-  if (scene === undefined || ids.size === 0) return out;
-  for (const node of scene.renderOrderNodes()) {
-    const deps = node.dependsOn;
-    if (!Array.isArray(deps) || deps.length !== 1 || !ids.has(deps[0] as string)) continue;
-    if (diagramLabelOf(node)?.dodge === false && labelEditable(scene, node.id, deps[0] as NodeId)) out.push({ labelId: node.id, edgeId: deps[0] as string, placement: null });
+  for (const { labelId, edgeId, label } of editableLabels(scene, new Set(selected))) {
+    if (label.dodge === false) out.push({ labelId, edgeId, placement: null });
   }
   return out;
 }

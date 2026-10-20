@@ -18,7 +18,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
-import { diagramLabelOf } from './labelTrait';
+import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
 
 /** The layer id the label regions are composed into. */
@@ -53,20 +53,37 @@ export interface DraggableLabel {
 export const labelEditable = (scene: Scene<unknown, string, unknown>, labelId: NodeId, edgeId: NodeId): boolean =>
   !scene.isLocked(labelId) && !scene.isLocked(edgeId) && !scene.isHidden(labelId);
 
-/** Every label in `scene` a drag can move, in render order: one carrying the
- *  label trait, on exactly one edge that derives a path, and neither it nor
- *  that edge locked or hidden. */
-export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterable<DraggableLabel> {
+/** A label an edit may touch, and the one edge it stands on. */
+export interface EditableLabel {
+  labelId: NodeId;
+  edgeId: NodeId;
+  label: DiagramLabel;
+}
+
+/** Every label in `scene` an edit may touch, in render order: one carrying the
+ *  label trait, on exactly one edge, that `labelEditable` passes. With `edges`,
+ *  only the labels on those edges. */
+export function* editableLabels(
+  scene: Scene<unknown, string, unknown>, edges?: ReadonlySet<string>,
+): Iterable<EditableLabel> {
   for (const node of scene.renderOrderNodes()) {
-    if (diagramLabelOf(node) === null) continue;
+    const label = diagramLabelOf(node);
+    if (label === null) continue;
     const deps = node.dependsOn;
     if (!Array.isArray(deps) || deps.length !== 1) continue;
     const edgeId = deps[0] as NodeId;
-    if (!labelEditable(scene, node.id, edgeId)) continue;
+    if (edges !== undefined && !edges.has(edgeId)) continue;
+    if (labelEditable(scene, node.id, edgeId)) yield { labelId: node.id, edgeId, label };
+  }
+}
+
+/** Every editable label in `scene` whose edge derives a path, in render order. */
+export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterable<DraggableLabel> {
+  for (const { labelId, edgeId } of editableLabels(scene)) {
     const path = documentDepOf(scene as never, edgeId)?.path ?? null;
     if (path === null) continue;
-    const box = AUTO_POSE_DESCRIPTOR.getBounds(documentPose(scene as never, node as never));
-    yield { labelId: node.id, edgeId, box, path };
+    const box = AUTO_POSE_DESCRIPTOR.getBounds(documentPose(scene as never, scene.get(labelId) as never));
+    yield { labelId, edgeId, box, path };
   }
 }
 
