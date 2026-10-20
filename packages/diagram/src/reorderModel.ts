@@ -11,6 +11,8 @@ import { diagramLabelOf } from './labelTrait';
 export interface ReorderScene {
   get(id: string): { id: string; data: unknown; dependsOn?: unknown } | undefined;
   renderOrderNodes(): Iterable<{ id: string; data: unknown; dependsOn?: unknown }>;
+  /** A container's children, which a reorder carries with it. Absent, every node is a leaf. */
+  childrenOf?(id: string): readonly string[];
 }
 
 /** A group whose members are carried along one axis, and the member a press picked up. */
@@ -71,7 +73,8 @@ export function reorderTargetOf(
 }
 
 /** `member` and everything drawn with it: a group's members and the labels it
- *  takes in, all the way down, and every node anchored to any of those. */
+ *  takes in, all the way down, every container's children, and every node
+ *  anchored to any of those. */
 export function carriedWith(scene: ReorderScene, member: string): Set<string> {
   const out = new Set<string>();
   const visit = (id: string) => {
@@ -79,6 +82,7 @@ export function carriedWith(scene: ReorderScene, member: string): Set<string> {
     out.add(id);
     const node = scene.get(id);
     if (node !== undefined && diagramGroupOf(node) !== null) depsOf(node).forEach(visit);
+    scene.childrenOf?.(id).forEach(visit);
   };
   visit(member);
   for (const node of scene.renderOrderNodes()) {

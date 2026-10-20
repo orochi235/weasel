@@ -19,8 +19,14 @@ const yOf = (specs: readonly DiagramSpec[], id: string) => specs.find((s) => s.i
 
 const sceneOf = (specs: readonly DiagramSpec[]): ReorderScene => {
   const byId = new Map(specs.map((s) => [s.id as string, { ...s, id: s.id as string }]));
-  return { get: (id) => byId.get(id), renderOrderNodes: () => byId.values() };
+  return {
+    get: (id) => byId.get(id),
+    renderOrderNodes: () => byId.values(),
+    childrenOf: (id) => specs.filter((s) => (s as { parent?: string }).parent === id).map((s) => s.id as string),
+  };
 };
+const rowsOf = (specs: readonly DiagramSpec[], id: string) =>
+  specs.filter((s) => (s as { parent?: string }).parent === id).map((s) => s.id as string);
 const boxOf = (specs: readonly DiagramSpec[]) => (id: string) => specs.find((s) => s.id === id)?.pose ?? null;
 
 describe('a reorderable group under layered layout', () => {
@@ -52,7 +58,13 @@ describe('reorderTargetOf', () => {
   });
 
   it('carries a row with its nodes and its title', () => {
-    expect([...carriedWith(scene, 'b')].sort()).toEqual(['b', 'b.patch', 'b.pool', 'b/label']);
+    const carried = carriedWith(scene, 'b');
+    expect(['b', 'b.patch', 'b.pool', 'b/label'].every((id) => carried.has(id))).toBe(true);
+    expect([...carried].filter((id) => !id.startsWith('b'))).toEqual([]);
+    // The text rows of each box are its children, and travel with it.
+    const rows = rowsOf(specs, 'b.patch');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((id) => carried.has(id))).toBe(true);
   });
 });
 

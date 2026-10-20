@@ -15,6 +15,7 @@ import {
   type Contribution,
   type GestureBinding,
   type InvocationCtx,
+  type NodeId,
   type OngoingHandle,
   type RectPose,
   type Scene,
@@ -53,11 +54,15 @@ function spansOf(scene: DiagramScene, target: ReorderTarget): Map<string, Span> 
   return out;
 }
 
+const RELEASE_MS = 500;
+
 const sameOrder = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
 
-/** The drag action: a ghost of the carried member and its siblings in their slots, then one report. */
+/** The drag action: the carried member under the pointer and its siblings
+ *  in their slots, published as pose overrides so boxes, titles and edges all
+ *  follow, then one report. */
 export function createReorderAction(report: (change: ReorderChange) => void): Action {
   return {
     id: REORDER_ACTION_ID,
@@ -74,33 +79,47 @@ export function createReorderAction(report: (change: ReorderChange) => void): Ac
         const spans = spansOf(scene, target);
         const along = (p: { x: number; y: number }) => (axis === 'x' ? p.x : p.y);
         const from = along(ctx.world);
-        let by = 0;
+        // The nodes each member carries that hold poses of their own; group
+        // boxes, titles and wire labels derive theirs and follow.
+        const carried = members.map((m) => ({
+          m,
+          nodes: [...carriedWith(scene as never, m)].flatMap((id) => {
+            const node = scene.get(id as NodeId);
+            return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) }];
+          }),
+        }));
+        const hold = scene.overrides.hold();
         let order = [...members];
-        // Every node a member carries, keyed to the member, for the ghost to move.
-        const owner = new Map<string, string>();
-        for (const m of members) for (const id of carriedWith(scene as never, m)) owner.set(id, m);
-        const shift = (m: string): number => {
-          if (m === member) return by;
-          return (packed(members, spans, order).get(m) ?? spans.get(m)!.start) - spans.get(m)!.start;
+        const publish = (by: number) => {
+          const starts = packed(members, spans, order);
+          hold.set(carried.flatMap(({ m, nodes }) => {
+            const d = m === member ? by : starts.get(m)! - spans.get(m)!.start;
+            return nodes.map(({ id, pose }) => [id, axis === 'x' ? { ...pose, x: pose.x + d } : { ...pose, y: pose.y + d }] as const);
+          }));
         };
         return {
           kind: 'diagram-reorder',
           onMove(moveCtx) {
-            by = along(moveCtx.world) - from;
+            const by = along(moveCtx.world) - from;
             order = orderWith(members, spans, member, by);
-          },
-          previewIds: () => [...owner.keys()].filter((id) => shift(owner.get(id)!) !== 0),
-          previewOpaqueIds: () => [...owner.keys()].filter((id) => owner.get(id) !== member),
-          previewPose(id) {
-            const node = scene.get(id as never);
-            const m = owner.get(id);
-            if (node === undefined || m === undefined) return null;
-            const pose = effectivePose(scene, node);
-            const d = shift(m);
-            return axis === 'x' ? { ...pose, x: pose.x + d } : { ...pose, y: pose.y + d };
+            publish(by);
           },
           onEnd(_endCtx, reason) {
-            if (reason === 'commit' && !sameOrder(order, members)) report({ group: target.group, order });
+            if (reason !== 'commit' || sameOrder(order, members)) {
+              hold.drop();
+              return;
+            }
+            // Held until the host's new specs land, so the rows do not jump
+            // back for the frames in between; a host that keeps the old order
+            // gets it back shortly after.
+            const release = () => {
+              stop();
+              clearTimeout(timer);
+              hold.drop();
+            };
+            const stop = scene.subscribe(release);
+            const timer = setTimeout(release, RELEASE_MS);
+            report({ group: target.group, order });
           },
         };
       },
