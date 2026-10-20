@@ -59,8 +59,9 @@ Merged:
   among them, so nothing checks them before a merge.
 - The diagram containers double-click test that failed only in full runs: its helper waited a
   frame between clicks, and under load the gap passed the 600 ms double-click window (reproduced
-  with a 650 ms stall). Filed from it: the window is timed when a click is handled, not when it
-  happened (P3, "Tools & gestures").
+  with a 650 ms stall). The engine half, also merged: the window is measured from each event's own
+  time, so a long task between a user's two clicks no longer drops a double-click (a real-Chromium
+  test stalls the page between them).
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

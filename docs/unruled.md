@@ -11,6 +11,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
+  multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
+  falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
+  `Date.now()`). Long-press, pan inertia and the stylus readout cap stay on handling time.
 - 2026-10-20 (overnight pass): `HoverSpec.held` (`true | 'optional'`, the values `mods` takes;
   `hover ?held` / `hover +held` in a route) keeps reporting a held pointer's moves as hovers marked
   `held`, without claiming them. Leaving the surface is a leave pressed or not; a target-to-target
