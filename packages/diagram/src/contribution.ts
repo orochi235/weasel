@@ -22,6 +22,20 @@ import {
 } from './connect';
 import { portLayer } from './portLayer';
 import type { PortAffordanceOptions } from './portAffordance';
+import {
+  ROUTE_EDIT_ACTION_ID,
+  REMOVE_WAYPOINT_ACTION_ID,
+  createRemoveWaypointAction,
+  createResetRouteAction,
+  createRouteEditAction,
+  type RouteEditOptions,
+} from './waypointAction';
+import {
+  WAYPOINT_AFFORDANCE_KIND,
+  WAYPOINT_LAYER_ID,
+  waypointLayer,
+  type WaypointAffordanceOptions,
+} from './waypointLayer';
 
 export { CONNECT_ACTION_ID };
 
@@ -57,5 +71,42 @@ export function diagramPorts<TPose>(opts: DiagramContributionOptions<TPose>): {
   return {
     layer: portLayer(opts.participants, opts),
     contribution: createDiagramContribution(opts),
+  };
+}
+
+/** The action id that absorbs the rest of a press on a route handle. */
+export const GRAB_WAYPOINT_ACTION_ID = 'diagram.grabWaypoint';
+
+/**
+ * Both halves of route editing: the handle layer to `registerLayer` — after
+ * the port layer and before the edge-end layer, so an end handle wins over a
+ * route handle beside it — and the contribution to pass as `ambient`, which
+ * carries the drag, the double-click that removes, and the
+ * `diagram.resetRoute` command. Like `diagramPorts`, one without the other
+ * fails quietly.
+ */
+export function diagramWaypoints<TPose>(
+  opts: RouteEditOptions<TPose> & Omit<WaypointAffordanceOptions<TPose>, 'id'>,
+): { layer: RenderLayer<unknown>; contribution: Contribution } {
+  const actionId = opts.id ?? ROUTE_EDIT_ACTION_ID;
+  const target = `affordance:${WAYPOINT_AFFORDANCE_KIND}`;
+  return {
+    // `opts.id` names the drag action; the layer keeps its own id.
+    layer: waypointLayer(opts.participants, opts.selected, { ...opts, id: WAYPOINT_LAYER_ID }),
+    contribution: {
+      id: 'weasel-diagram-waypoints',
+      eligibility: { claimed: true },
+      actions: [
+        createRouteEditAction({ ...opts, id: actionId }),
+        createRemoveWaypointAction(opts),
+        createResetRouteAction(opts),
+        grabPortAction(GRAB_WAYPOINT_ACTION_ID),
+      ],
+      bindings: [
+        { spec: { kind: 'drag', target }, actionId },
+        { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID },
+        ...grabPortBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
+      ],
+    },
   };
 }

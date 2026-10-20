@@ -53,8 +53,35 @@ export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './st
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export type { StencilInsertOptions } from './stencilTool';
-export { createDiagramContribution, diagramPorts } from './contribution';
+export { GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramPorts, diagramWaypoints } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
+export {
+  WAYPOINT_AFFORDANCE_KIND,
+  WAYPOINT_LAYER_ID,
+  createWaypointAffordance,
+  routeStateOf,
+  waypointLayer,
+  waypointScratchOf,
+} from './waypointLayer';
+export type { EdgeRouteState, WaypointAffordanceOptions, WaypointScratch } from './waypointLayer';
+export {
+  REMOVE_WAYPOINT_ACTION_ID,
+  RESET_ROUTE_ACTION_ID,
+  ROUTE_EDIT_ACTION_ID,
+  commitRouteToScene,
+  createRemoveWaypointAction,
+  createResetRouteAction,
+  createRouteEditAction,
+  routedData,
+} from './waypointAction';
+export type { RouteEdit, RouteEditOptions } from './waypointAction';
+export {
+  dragSegment, dragVertex, insertWaypoint, removeSegment, removeWaypoint, routeHandles, segmentAxis, simplifyStops,
+} from './waypoints';
+export type { RouteHandle } from './waypoints';
+export { portTarget, snapPoint, stopTarget } from './routeSnap';
+export type { SnapTarget, Snapped } from './routeSnap';
+export { waypointFollower } from './waypointFollower';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
@@ -78,12 +105,13 @@ export {
   ROUTERS,
   bezier,
   edgeDerivePath,
+  edgeRouter,
   orthogonal,
   resolveEnd,
   straight,
   withDiagramRegistry,
 } from './edge';
-export type { EdgeRouteOptions, RouteRequest, Router } from './edge';
+export type { EdgeRoute, EdgeRouteOptions, RouteRequest, Router } from './edge';
 export { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute } from './edgeTrait';
 export type { DiagramEdge, EdgeEnd } from './edgeTrait';
 export { selfLoop } from './selfLoop';
