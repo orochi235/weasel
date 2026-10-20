@@ -1272,13 +1272,17 @@ from.
 `@weasel-js/audio` graph, which is an optional peer dependency: install it to
 use this subpath. It exports `AUDIO_STAGE_TYPES` (the palette),
 `audioStageNodes` (the graph node each stage builds), `createLiveAudioRunner`
-and the `useLiveAudioRunner` hook, `livePlan` and `diffPlans` (the pipeline
-turned into graph patches), and `drawScope` and `drawSpectrum` for the stages'
-`out` previews.
+with the `useLiveAudioRunner` hook (or `useFollowAudioRunner`, for a runner
+the caller makes and owns), `livePlan` and `diffPlans` (the pipeline turned
+into graph patches), and `drawScope` and `drawSpectrum` for the stages' `out`
+previews.
 
 ```ts
+import { createAudioEngine } from '@weasel-js/audio';
 import { createLiveAudioRunner } from '@weasel-js/diagram/effect-audio';
 
+const engine = createAudioEngine();
+// pipeline: an EffectPipeline, such as the `pipeline` of an EffectEditor's doc
 const runner = createLiveAudioRunner({ engine, pipeline });
 await runner.play();
 runner.setPipeline(edited); // patches the playing graph; a delay keeps its tail

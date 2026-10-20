@@ -1321,6 +1321,11 @@ only story runner in the repo.
 
 - **(P3) Fourth arc (approved, partly built).** Left to build: PDF export and pages in
   `DiagramData`. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
+- **(P3) Two wires can't meet at one audio input in pipeline mode.** `livePlan` sums every wire
+  into an input, but the editor lets a wire join only a free input
+  (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
+  Decision needed: whether audio inputs accept several wires, as a port-level flag, or Mix stays
+  the way to combine (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
