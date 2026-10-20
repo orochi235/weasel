@@ -53,6 +53,30 @@ describe('editorScene', () => {
     expect(stageOf('g')).toBeUndefined();
   });
 
+  it('draws rack with no stage pinned, a place being node-graph’s own', () => {
+    const drawn = editorScene(doc, 'rack');
+    expect(drawn.scene.layout).toBe('chain');
+    expect(drawn.data.nodes.every((n) => n.pinned === undefined)).toBe(true);
+    expect(drawn.order?.items.map((i) => i.id)).toEqual(['src', 'blur', 'pick']);
+  });
+
+  it('maps each wire rack draws back to its wire by its ends', () => {
+    const { data, wireOf } = editorScene(doc, 'rack');
+    expect(data.edges.map((e) => wireOf(edgeIdOf(e)))).toEqual(ensureWireIds(doc).pipeline.wires.map((w) => w.id));
+  });
+
+  it('hands lanes the doc’s lane order over the options’ own', () => {
+    const typed: EffectDoc = {
+      ...doc,
+      pipeline: { ...doc.pipeline, stages: [...doc.pipeline.stages, { id: 'n', title: 'N', outputs: [{ id: 'v', type: 'number' }] }] },
+    };
+    const lanesOf = (d: EffectDoc, lanes?: readonly string[]) =>
+      editorScene(d, 'lanes', lanes === undefined ? undefined : { lanes }).laneOrder?.items.map((i) => i.id);
+    expect(lanesOf(typed)).toEqual(['~lane:image', '~lane:number']);
+    expect(lanesOf(typed, ['number'])).toEqual(['~lane:number', '~lane:image']);
+    expect(lanesOf({ ...typed, laneOrder: ['image', 'number'] }, ['number'])).toEqual(['~lane:image', '~lane:number']);
+  });
+
   it('gives a decision the ports of its stage, by the same ids', () => {
     const { data } = editorScene(doc);
     const pick = data.nodes.find((n) => n.id === 'pick')!;

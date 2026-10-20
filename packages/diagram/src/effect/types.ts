@@ -115,4 +115,6 @@ export type EffectPlaces = Readonly<Record<string, Vec2>>;
 export interface EffectDoc {
   pipeline: EffectPipeline;
   places: EffectPlaces;
+  /** The value types whose lanes the `lanes` look draws first, top down. */
+  laneOrder?: readonly string[];
 }

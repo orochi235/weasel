@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { overlaysOf, type InvocationCtx, type OngoingHandle } from '@weasel-js/core';
+import { overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
 import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './slotReorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
@@ -11,7 +11,7 @@ const SLOTS = sequenceSlots('x', [
   { id: 'c', bounds: box(280, 10, 100, 60) },
 ]);
 
-const scene = { get: (id: string) => ({ id, pose: SLOTS.items.find((i) => i.id === id)?.bounds }) };
+const scene = { get: (id: string) => ({ id, pose: SLOTS.items.find((i) => i.id === id)?.bounds }) } as unknown as Scene<unknown, string, unknown>;
 
 function ctx(x: number, y: number, start = { x: 20, y: 20 }): InvocationCtx {
   return {
@@ -79,6 +79,15 @@ describe('createReorderAction', () => {
     expect(overlaysOf(handle)).toEqual([{ kind: 'polyline', points: [{ x: 400, y: 10 }, { x: 400, y: 70 }], role: 'refused' }]);
   });
 
+  it('asks canDrop about a gap once a drag, however often the bar is drawn', () => {
+    const canDrop = vi.fn(() => true);
+    const { handle } = open({ canDrop });
+    handle.onMove!(ctx(250, 20));
+    for (let i = 0; i < 3; i++) overlaysOf(handle);
+    handle.onEnd!(ctx(250, 20), 'commit');
+    expect(canDrop).toHaveBeenCalledTimes(1);
+  });
+
   it('does nothing on a refused drop, a drop where it was, or a cancel', () => {
     const refused = open({ canDrop: () => false });
     refused.handle.onEnd!(ctx(250, 20), 'commit');
@@ -98,6 +107,6 @@ describe('createReorderAction', () => {
   it('packs into a contribution binding a drag to the action', () => {
     const c = reorderContribution({ slots: () => SLOTS, commit: () => {} });
     expect(c.actions!.map((a) => a.id)).toEqual([REORDER_ACTION_ID]);
-    expect(c.bindings).toEqual([expect.objectContaining({ spec: { kind: 'drag' }, actionId: REORDER_ACTION_ID })]);
+    expect(c.bindings).toEqual([expect.objectContaining({ spec: expect.objectContaining({ kind: 'drag' }), actionId: REORDER_ACTION_ID })]);
   });
 });

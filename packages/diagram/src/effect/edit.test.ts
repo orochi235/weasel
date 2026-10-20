@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { checkPipeline } from './check';
 import {
   addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, nextWireId,
-  reconnectWire, removeStages, removeWires, setParam,
+  reconnectWire, removeStages, removeWires, setLaneOrder, setParam,
 } from './edit';
 import { nodeGraph } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
@@ -27,6 +27,13 @@ const built = (): EffectDoc => {
 };
 
 describe('edit', () => {
+  it('setLaneOrder stores the lane order, and other edits keep it', () => {
+    const d = setLaneOrder(built(), ['number', 'image']);
+    expect(d.laneOrder).toEqual(['number', 'image']);
+    expect(removeStages(d, ['b']).laneOrder).toEqual(['number', 'image']);
+    expect(addWire(d, { from: ref('a', 'out'), to: ref('c', 'image') }).laneOrder).toEqual(['number', 'image']);
+  });
+
   it('removeStages drops wires, places and group memberships without mutating', () => {
     const d = built();
     const g = { ...d, pipeline: { ...d.pipeline, groups: [{ id: 'g', members: ['b', 'c'] }] } };

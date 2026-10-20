@@ -6,6 +6,7 @@
  */
 import {
   ActionDisabledReason,
+  bodyPredicate,
   type Action,
   type ActionDeps,
   type Contribution,
@@ -143,6 +144,12 @@ export function createReorderAction(opts: ReorderOptions): Action {
         let current: Vec2 = { x: ctx.world.x, y: ctx.world.y };
         let open = true;
         const moveTo = (gap: ReorderGap): ReorderMove => ({ id: held.item.id, from: held.from, to: gap.index });
+        // The overlay is read every frame; ask about each gap once a drag.
+        const verdicts = new Map<number, boolean>();
+        const allowed = (gap: ReorderGap) => {
+          if (!verdicts.has(gap.index)) verdicts.set(gap.index, canDrop(moveTo(gap)));
+          return verdicts.get(gap.index)!;
+        };
         const { axis } = slots;
         return {
           kind: 'diagram-reorder',
@@ -157,13 +164,13 @@ export function createReorderAction(opts: ReorderOptions): Action {
           overlay(): OngoingOverlay | null {
             const gap = open ? gapAt(held, current) : null;
             if (gap === null) return null;
-            return { kind: 'polyline', points: [gap.a, gap.b], role: canDrop(moveTo(gap)) ? 'insert' : 'refused' };
+            return { kind: 'polyline', points: [gap.a, gap.b], role: allowed(gap) ? 'insert' : 'refused' };
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             open = false;
             if (reason === 'cancel') return;
             const gap = gapAt(held, { x: endCtx.world.x, y: endCtx.world.y });
-            if (gap === null || !canDrop(moveTo(gap))) return;
+            if (gap === null || !allowed(gap)) return;
             opts.commit(moveTo(gap), { ...endCtx, deps: ctx.deps });
           },
         };
@@ -172,9 +179,13 @@ export function createReorderAction(opts: ReorderOptions): Action {
   };
 }
 
-/** The binding that starts a reorder: any drag, which the action declines off an item's grip. */
+// Matches every press, as a bare drag does, but ranks a step above one, so it
+// is asked before an ambient pan; the action declines off an item's grip.
+const ANYWHERE = bodyPredicate(() => true);
+
+/** The binding that starts a reorder: a drag pressed on an item's grip. */
 export function reorderBinding(actionId: string = REORDER_ACTION_ID): GestureBinding {
-  return { spec: { kind: 'drag' }, actionId, yields: true };
+  return { spec: { kind: 'drag', target: { kindOf: ANYWHERE } }, actionId };
 }
 
 /** The reorder action and its binding, to pass as `ambient`. */

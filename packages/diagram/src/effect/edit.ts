@@ -50,6 +50,7 @@ export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc 
   const gone = new Set(ids);
   const { groups } = doc.pipeline;
   return {
+    ...doc,
     pipeline: {
       ...doc.pipeline,
       stages: doc.pipeline.stages.filter((s) => !gone.has(s.id)),
@@ -97,6 +98,11 @@ export function moveStages(doc: EffectDoc, moves: readonly { id: string; x: numb
   const places = { ...doc.places };
   for (const m of moves) places[m.id] = { x: m.x, y: m.y };
   return { ...doc, places };
+}
+
+/** Sets the value types whose lanes `lanes` draws first, top down. */
+export function setLaneOrder(doc: EffectDoc, order: readonly string[]): EffectDoc {
+  return { ...doc, laneOrder: [...order] };
 }
 
 /** Mints ids for id-less wires; returns `doc` itself when none lacks one. */

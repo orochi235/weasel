@@ -72,6 +72,8 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './slotReorder';
+export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './slotReorder';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
