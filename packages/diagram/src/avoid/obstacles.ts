@@ -44,7 +44,10 @@ export class EdgeObstacles {
 
   /** The inflated boxes blocking this connector that touch `box`. */
   near(box: Box): Box[] {
-    return this.index.near(box).filter((o) => blocks(o.obstacle, this.from, this.to)).map((o) => o.box);
+    this.scratch.length = 0;
+    const out: Box[] = [];
+    for (const o of this.index.near(box, this.scratch)) if (blocks(o.obstacle, this.from, this.to)) out.push(o.box);
+    return out;
   }
 
   /** Whether `(x, y)` lies strictly inside a blocking obstacle. */

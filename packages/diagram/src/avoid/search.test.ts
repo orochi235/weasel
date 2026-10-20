@@ -3,7 +3,12 @@ import {
   bendsOf, edgeBetween, entersBox, isOrthogonal, randomEdges, randomShapes, rectShape, routeContext, seeded,
 } from './avoidFixture';
 import { routeEdge } from './edgeRoute';
-import { blocks, inflate, type AvoidObstacle } from './types';
+import { interestingPoints, searchWindow } from './grid';
+import { MinHeap } from './heap';
+import type { EdgeObstacles } from './obstacles';
+import { searchLeg, type LegSource, type LegTarget } from './search';
+import { DX, DY, dirOf, type Dir } from './turns';
+import { blocks, inflate, type AvoidObstacle, type Box } from './types';
 
 const a = rectShape('a', 0, 0);
 const b = rectShape('b', 400, 0);
@@ -100,5 +105,74 @@ describe('routeEdge', () => {
         }
       }
     }
+  });
+});
+
+/**
+ * The reference the sparse graph is held to: the same A* costs over every
+ * crossing of every line through the window's interesting points, with each
+ * step's blockage asked of the obstacles directly. Slow, and only here.
+ */
+function denseCost(sources: readonly LegSource[], targets: readonly LegTarget[], obstacles: EdgeObstacles, window: Box, bend: number): number | null {
+  const ends = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
+  const points = interestingPoints(window, obstacles.near(window), ends);
+  const xs = [...new Set(points.map((p) => p.x))].sort((a, b) => a - b);
+  const ys = [...new Set(points.map((p) => p.y))].sort((a, b) => a - b);
+  const id = (p: { x: number; y: number }) => xs.indexOf(p.x) * ys.length + ys.indexOf(p.y);
+  const g = new Map<number, number>();
+  const heap = new MinHeap();
+  for (const s of sources) {
+    if (obstacles.inside(s.point.x, s.point.y)) continue;
+    const st = id(s.point) * 4 + s.heading;
+    g.set(st, 0);
+    heap.push(st, 0, 0);
+  }
+  const done = new Set<number>();
+  while (heap.size > 0) {
+    const st = heap.pop()!;
+    if (done.has(st)) continue;
+    done.add(st);
+    const v = st >> 2;
+    const d = (st & 3) as Dir;
+    const [i, j] = [Math.floor(v / ys.length), v % ys.length];
+    if (targets.some((t) => id(t.point) === v && (t.arrive === null || t.arrive === d))) return g.get(st)!;
+    for (let nd = 0 as Dir; nd < 4; nd = (nd + 1) as Dir) {
+      if (nd === ((d + 2) & 3)) continue;
+      const [ni, nj] = [i + DX[nd], j + DY[nd]];
+      if (ni < 0 || nj < 0 || ni >= xs.length || nj >= ys.length) continue;
+      if (obstacles.crosses(xs[i]!, ys[j]!, xs[ni]!, ys[nj]!)) continue;
+      const cost = g.get(st)! + Math.abs(xs[ni]! - xs[i]!) + Math.abs(ys[nj]! - ys[j]!) + (nd === d ? 0 : bend);
+      const to = (ni * ys.length + nj) * 4 + nd;
+      if (cost >= (g.get(to) ?? Infinity)) continue;
+      g.set(to, cost);
+      heap.push(to, cost, 0);
+    }
+  }
+  return null;
+}
+
+describe('the sparse visibility graph', () => {
+  it('finds the same cost as a search over every line crossing, on small random layouts', () => {
+    const exit = (p: { point: { x: number; y: number }; normal: { x: number; y: number } }) =>
+      ({ x: p.point.x + p.normal.x * 11, y: p.point.y + p.normal.y * 11 });
+    let compared = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const rand = seeded(seed);
+      const shapes = randomShapes(rand, 9, 140);
+      const { index } = routeContext(shapes);
+      for (const edge of randomEdges(rand, shapes, 6)) {
+        const obstacles = index.forEdge(edge.from.node, edge.to.node);
+        const sources = edge.from.ports.map((p) => ({ point: exit(p), heading: dirOf(p.normal) }));
+        const targets = edge.to.ports.map((p) => ({ point: exit(p), arrive: dirOf({ x: -p.normal.x, y: -p.normal.y }) }));
+        const window = searchWindow([...sources.map((s) => s.point), ...targets.map((t) => t.point)], 400);
+        const dense = denseCost(sources, targets, obstacles, window, 40);
+        const leg = searchLeg(sources, targets, { edge: edge.id, obstacles, window, bendPenalty: 40 });
+        const sparse = leg === null || leg === 'enclosed' ? null : leg.cost;
+        if (dense === null) expect(sparse, `seed ${seed} ${edge.id}`).toBeNull();
+        else expect(sparse, `seed ${seed} ${edge.id}`).toBeCloseTo(dense, 6);
+        compared++;
+      }
+    }
+    expect(compared).toBe(120);
   });
 });

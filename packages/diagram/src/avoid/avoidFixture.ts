@@ -63,6 +63,24 @@ export function randomEdges(rand: () => number, shapes: readonly AvoidObstacle[]
   return out;
 }
 
+/** `count` connectors, each between a shape and one within two places of it
+ *  on the grid `randomShapes` lays them on, never wrapping round a row. */
+export function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], count: number): AvoidEdge[] {
+  const cols = Math.ceil(Math.sqrt(shapes.length));
+  const rows = Math.ceil(shapes.length / cols);
+  const clamp = (v: number, hi: number) => Math.max(0, Math.min(hi, v));
+  const out: AvoidEdge[] = [];
+  for (let k = 0; k < count; k++) {
+    const i = Math.floor(rand() * shapes.length);
+    const col = clamp((i % cols) + Math.floor(rand() * 5) - 2, cols - 1);
+    const row = clamp(Math.floor(i / cols) + Math.floor(rand() * 5) - 2, rows - 1);
+    let j = row * cols + col;
+    if (j === i || j >= shapes.length) j = i % cols === 0 ? i + 1 : i - 1;
+    out.push(edgeBetween(`e${k}`, shapes[i]!, shapes[j]!));
+  }
+  return out;
+}
+
 /** The context `routeEdge` reads for `obstacles`, with the defaults. */
 export function routeContext(obstacles: readonly AvoidObstacle[]) {
   const index = new ObstacleIndex(obstacles, AVOID_DEFAULTS.clearance);

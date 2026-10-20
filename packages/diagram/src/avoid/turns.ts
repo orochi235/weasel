@@ -17,13 +17,9 @@ export function dirOf(v: Vec2): Dir {
   return v.y >= 0 ? 1 : 3;
 }
 
-/** `(x, y)` turned a quarter so heading `k` becomes east. */
-function rotate(x: number, y: number, k: number): [number, number] {
-  let rx = x;
-  let ry = y;
-  for (let i = 0; i < k; i++) [rx, ry] = [ry, -rx];
-  return [rx, ry];
-}
+/** `(x, y)` turned a quarter `k` times, so heading `k` becomes east: its x, then its y. */
+const turnedX = (x: number, y: number, k: number): number => (k === 0 ? x : k === 1 ? y : k === 2 ? -x : -y);
+const turnedY = (x: number, y: number, k: number): number => (k === 0 ? y : k === 1 ? -x : k === 2 ? -y : x);
 
 const EPS = 1e-7;
 const sign = (v: number) => (v > EPS ? 1 : v < -EPS ? -1 : 0);
@@ -33,16 +29,16 @@ const sign = (v: number) => (v > EPS ? 1 : v < -EPS ? -1 : 0);
  * when given. A turn at `p` itself counts; reversing is two turns.
  */
 export function minTurns(p: Vec2, h: Dir, t: Vec2, arrive: Dir | null): number {
+  const dx = p.x - t.x;
+  const dy = p.y - t.y;
   if (arrive === null) {
-    const [px, py] = rotate(p.x - t.x, p.y - t.y, h);
-    const sx = sign(px);
-    if (sign(py) === 0) return sx <= 0 ? 0 : 3;
+    const sx = sign(turnedX(dx, dy, h));
+    if (sign(turnedY(dx, dy, h)) === 0) return sx <= 0 ? 0 : 3;
     return sx <= 0 ? 1 : 2;
   }
-  const [px, py] = rotate(p.x - t.x, p.y - t.y, arrive);
   const heading = (h - arrive + 4) % 4;
-  const sx = sign(px);
-  const sy = sign(py);
+  const sx = sign(turnedX(dx, dy, arrive));
+  const sy = sign(turnedY(dx, dy, arrive));
   switch (heading) {
     case 0:
       if (sy === 0) return sx <= 0 ? 0 : 4;

@@ -3,26 +3,11 @@
  * `onto do --kind bench -in weasel -- npm run bench:avoid`. Prints each case
  * as it finishes.
  */
-import { edgeBetween, randomShapes, seeded } from './avoidFixture';
+import { edgeBetween, nearEdges, randomShapes, seeded } from './avoidFixture';
 import { createAvoidRouter, type AvoidRoutes } from './router';
-import type { AvoidEdge, AvoidInput, AvoidObstacle } from './types';
+import type { AvoidInput, AvoidObstacle } from './types';
 
 const PITCH = 180;
-
-/** `count` connectors, each between a shape and one of its near neighbors on the grid. */
-function nearEdges(rand: () => number, shapes: readonly AvoidObstacle[], count: number): AvoidEdge[] {
-  const cols = Math.ceil(Math.sqrt(shapes.length));
-  const out: AvoidEdge[] = [];
-  for (let k = 0; k < count; k++) {
-    const i = Math.floor(rand() * shapes.length);
-    const di = Math.floor(rand() * 5) - 2;
-    const dj = Math.floor(rand() * 5) - 2;
-    let j = i + di + dj * cols;
-    if (j === i || j < 0 || j >= shapes.length) j = (i + 1) % shapes.length;
-    out.push(edgeBetween(`e${k}`, shapes[i]!, shapes[j]!));
-  }
-  return out;
-}
 
 /** `input` with each edge holding the route `routes` gave it. */
 function stored(input: AvoidInput, routes: AvoidRoutes): AvoidInput {

@@ -1,16 +1,11 @@
 /**
- * The candidate lines a search runs along: every inflated obstacle's edges,
- * every stop's own lines, and the middle of each channel between two facing
- * obstacles — only those inside the search window.
+ * Where a search may turn: the interesting points of its window — every
+ * inflated obstacle's corners, the leg's own ends and stops, and the middle of
+ * each channel between two facing obstacles. Lines cast from these points are
+ * what `visibility.ts` builds the sparse graph from.
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import type { Box } from './types';
-
-/** The sorted, distinct x and y lines of one search. */
-export interface GridLines {
-  xs: number[];
-  ys: number[];
-}
 
 const EPS = 1e-7;
 
@@ -34,53 +29,59 @@ export const within = (inner: Box, outer: Box): boolean =>
   inner.x >= outer.x && inner.y >= outer.y
   && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;
 
-/** `values` sorted, with repeats closer than `EPS` dropped. */
-function distinct(values: number[]): number[] {
-  values.sort((a, b) => a - b);
-  const out: number[] = [];
-  for (const v of values) if (out.length === 0 || v - out[out.length - 1]! > EPS) out.push(v);
-  return out;
+/** Whether `p` lies inside `box` or on its edge. */
+const holds = (box: Box, p: Vec2): boolean =>
+  p.x >= box.x - EPS && p.x <= box.x + box.width + EPS && p.y >= box.y - EPS && p.y <= box.y + box.height + EPS;
+
+/** The first index of `sorted`, ordered by `key`, whose key is past `v`. */
+function firstPast(sorted: readonly Box[], v: number, key: (b: Box) => number): number {
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (key(sorted[mid]!) <= v) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
 }
 
-/** The midlines of the channels along one axis: between each box and the
- *  nearest one past it that faces it across that axis, when they do not touch. */
-function midlines(boxes: readonly Box[], axis: 'x' | 'y'): number[] {
+/** The middle of each channel along one axis: between each box and the
+ *  nearest one past it that faces it across that axis, at the middle of the
+ *  stretch they face each other over. */
+function channelMiddles(boxes: readonly Box[], axis: 'x' | 'y'): Vec2[] {
   const lo = (b: Box) => (axis === 'x' ? b.x : b.y);
   const size = (b: Box) => (axis === 'x' ? b.width : b.height);
   const crossLo = (b: Box) => (axis === 'x' ? b.y : b.x);
-  const crossSize = (b: Box) => (axis === 'x' ? b.height : b.width);
-  const out: number[] = [];
-  for (const a of boxes) {
+  const crossHi = (b: Box) => (axis === 'x' ? b.y + b.height : b.x + b.width);
+  const sorted = [...boxes].sort((a, b) => lo(a) - lo(b));
+  const out: Vec2[] = [];
+  for (const a of sorted) {
     const end = lo(a) + size(a);
-    let nearest = Infinity;
-    for (const b of boxes) {
-      if (b === a || lo(b) <= end) continue;
-      const facing = crossLo(a) < crossLo(b) + crossSize(b) && crossLo(b) < crossLo(a) + crossSize(a);
-      if (facing && lo(b) < nearest) nearest = lo(b);
+    let k = firstPast(sorted, end, lo);
+    let nearest: Box | null = null;
+    for (; k < sorted.length && nearest === null; k++) {
+      const b = sorted[k]!;
+      if (crossLo(a) < crossHi(b) && crossLo(b) < crossHi(a)) nearest = b;
     }
-    if (nearest !== Infinity) out.push((end + nearest) / 2);
+    if (nearest === null) continue;
+    const along = (end + lo(nearest)) / 2;
+    const across = (Math.max(crossLo(a), crossLo(nearest)) + Math.min(crossHi(a), crossHi(nearest))) / 2;
+    out.push(axis === 'x' ? { x: along, y: across } : { x: across, y: along });
   }
   return out;
 }
 
-/** The lines inside `window` for a search among `boxes`, the inflated
- *  obstacles near it, through `points`: its ends and stops. */
-export function gridLines(window: Box, boxes: readonly Box[], points: readonly Vec2[]): GridLines {
-  const xs: number[] = [];
-  const ys: number[] = [];
+/** The interesting points inside `window` for a search among `boxes`, the
+ *  inflated obstacles near it, whose own ends and stops are `ends`. The ends
+ *  are always kept. */
+export function interestingPoints(window: Box, boxes: readonly Box[], ends: readonly Vec2[]): Vec2[] {
+  const out: Vec2[] = [...ends];
   for (const b of boxes) {
-    xs.push(b.x, b.x + b.width);
-    ys.push(b.y, b.y + b.height);
+    for (const p of [
+      { x: b.x, y: b.y }, { x: b.x + b.width, y: b.y },
+      { x: b.x, y: b.y + b.height }, { x: b.x + b.width, y: b.y + b.height },
+    ]) if (holds(window, p)) out.push(p);
   }
-  xs.push(...midlines(boxes, 'x'));
-  ys.push(...midlines(boxes, 'y'));
-  const inX = (v: number) => v >= window.x - EPS && v <= window.x + window.width + EPS;
-  const inY = (v: number) => v >= window.y - EPS && v <= window.y + window.height + EPS;
-  const keptX = xs.filter(inX);
-  const keptY = ys.filter(inY);
-  for (const p of points) {
-    keptX.push(p.x);
-    keptY.push(p.y);
-  }
-  return { xs: distinct(keptX), ys: distinct(keptY) };
+  for (const p of [...channelMiddles(boxes, 'x'), ...channelMiddles(boxes, 'y')]) if (holds(window, p)) out.push(p);
+  return out;
 }

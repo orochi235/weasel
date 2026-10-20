@@ -6,7 +6,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { simplifyStops } from '../polyline';
 import { searchWindow, within } from './grid';
 import type { ObstacleIndex } from './obstacles';
-import { searchLeg, type LegSource, type LegTarget } from './search';
+import { ENCLOSED, searchLeg, type LegResult, type LegSource, type LegTarget } from './search';
 import type { SegmentIndex } from './segments';
 import { dirOf, type Dir } from './turns';
 import type { AvoidEdge, AvoidPort, Box, ResolvedAvoidOptions } from './types';
@@ -57,14 +57,14 @@ export function routeEdge(edge: AvoidEdge, ctx: EdgeRouteContext): Vec2[] | null
       : [{ point: waypoints[k]!, arrive: null }];
     const points = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
     let grow = margin;
-    let found = null;
+    let found: LegResult | typeof ENCLOSED | null = null;
     for (;;) {
       const window = searchWindow(points, grow);
       found = searchLeg(sources, targets, { edge: edge.id, obstacles, window, bendPenalty, crossings });
       if (found !== null || within(ctx.limit, window)) break;
       grow *= 2;
     }
-    if (found === null) return null;
+    if (found === null || found === ENCLOSED) return null;
     if (k === 0) fromPort = fromPorts[found.source]!;
     if (k === waypoints.length) toPort = toPorts[found.target]!;
     heading = found.arrive;

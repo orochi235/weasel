@@ -64,7 +64,8 @@ export interface AvoidOptions {
   crossPenalty?: number;
   /** Distance between parallel runs after nudging. Default 8. */
   spacing?: number;
-  /** How far past a leg's stops the search first looks. Default 400. */
+  /** How far past a leg's stops the search first looks; it doubles while no
+   *  path fits. Default 100. */
   margin?: number;
 }
 
@@ -77,7 +78,7 @@ export const AVOID_DEFAULTS: ResolvedAvoidOptions = Object.freeze({
   bendPenalty: 40,
   crossPenalty: 20,
   spacing: 8,
-  margin: 400,
+  margin: 100,
 });
 
 /** `box` grown by `by` on every side. */
