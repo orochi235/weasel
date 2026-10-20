@@ -11,8 +11,24 @@ import {
   prefIsCompound,
 } from '@weasel-js/prefs';
 import { ListEditor } from '@weasel-js/ui/components/ListEditor';
-import { entriesDisabled, entryDisabledAt, PrefActionButton, PrefActionRows, PrefControl, PrefWords, prefDrawsActionRow, prefDrawsNoControl, prefListIsText, prefListTexts, withRowControl } from '@weasel-js/ui/components/Prefs';
-import { PropertyField, PropertyRow, type PropertyRowLayout } from '@weasel-js/ui/components/Properties';
+import {
+  entriesDisabled,
+  entryDisabledAt,
+  PrefActionButton,
+  PrefActionRows,
+  PrefControl,
+  PrefWords,
+  prefDrawsActionRow,
+  prefDrawsNoControl,
+  prefListIsText,
+  prefListTexts,
+  withRowControl,
+} from '@weasel-js/ui/components/Prefs';
+import {
+  PropertyField,
+  PropertyRow,
+  type PropertyRowLayout,
+} from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';

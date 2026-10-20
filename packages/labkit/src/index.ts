@@ -18,22 +18,64 @@ export {
 // The playback glyphs ride along for the same reason: chrome that labels a control with
 // one should not need `@weasel-js/ui` in its manifest to draw a play button.
 export type { ButtonProps, ButtonSize, ButtonVariant } from '@weasel-js/ui/components/Button';
-export type { DetailListLayout, DetailListProps, DetailListValues, DetailRowProps, DetailRowStatus } from '@weasel-js/ui/components/DetailList';
-export type { IconProps } from '@weasel-js/ui/components/Icon';
-export type { InputProps } from '@weasel-js/ui/components/Input';
-export type { JogProps } from '@weasel-js/ui/components/Jog';
-export type { CurveFieldProps, CurveMark, PropertyControlProps, PropertyFieldProps, PropertyGroupProps, PropertyListPack, PropertyListProps, PropertyOption, PropertyPanelProps, PropertyRowLayout, PropertyRowProps, PropertyRowVariant, PropertySpanProps, SubpanelProps } from '@weasel-js/ui/components/Properties';
-export type { SelectProps } from '@weasel-js/ui/components/Select';
-export type { ToggleBarItem, ToggleBarProps, ToggleBarSize, ToggleBarVariant } from '@weasel-js/ui/components/ToggleBar';
-export type { TokenCategory, TokenEntry, TokenPanelProps, TokenScale, TokenScaleRule } from '@weasel-js/ui/components/TokenPanel';
 export { Button } from '@weasel-js/ui/components/Button';
+export type {
+  DetailListLayout,
+  DetailListProps,
+  DetailListValues,
+  DetailRowProps,
+  DetailRowStatus,
+} from '@weasel-js/ui/components/DetailList';
 export { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+export type { IconProps } from '@weasel-js/ui/components/Icon';
 export { Icon } from '@weasel-js/ui/components/Icon';
+export type { InputProps } from '@weasel-js/ui/components/Input';
 export { Input } from '@weasel-js/ui/components/Input';
+export type { JogProps } from '@weasel-js/ui/components/Jog';
 export { Jog } from '@weasel-js/ui/components/Jog';
-export { CurveField, PropertyControl, PropertyField, PropertyGroup, PropertyList, PropertyPanel, PropertyRow, PropertySpan, Subpanel } from '@weasel-js/ui/components/Properties';
+export type {
+  CurveFieldProps,
+  CurveMark,
+  PropertyControlProps,
+  PropertyFieldProps,
+  PropertyGroupProps,
+  PropertyListPack,
+  PropertyListProps,
+  PropertyOption,
+  PropertyPanelProps,
+  PropertyRowLayout,
+  PropertyRowProps,
+  PropertyRowVariant,
+  PropertySpanProps,
+  SubpanelProps,
+} from '@weasel-js/ui/components/Properties';
+export {
+  CurveField,
+  PropertyControl,
+  PropertyField,
+  PropertyGroup,
+  PropertyList,
+  PropertyPanel,
+  PropertyRow,
+  PropertySpan,
+  Subpanel,
+} from '@weasel-js/ui/components/Properties';
+export type { SelectProps } from '@weasel-js/ui/components/Select';
 export { Select } from '@weasel-js/ui/components/Select';
+export type {
+  ToggleBarItem,
+  ToggleBarProps,
+  ToggleBarSize,
+  ToggleBarVariant,
+} from '@weasel-js/ui/components/ToggleBar';
 export { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+export type {
+  TokenCategory,
+  TokenEntry,
+  TokenPanelProps,
+  TokenScale,
+  TokenScaleRule,
+} from '@weasel-js/ui/components/TokenPanel';
 export { inferTokenType, refitScale, TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 export type {
   Annotation,

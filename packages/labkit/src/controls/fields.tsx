@@ -5,7 +5,13 @@ import {
   type PrefNumber,
   prefNumberAt,
 } from '@weasel-js/prefs';
-import { PARAMS_SETTLES, type PrefFieldChoice, prefFieldProps, useParamsPolicy, withDrafts } from '@weasel-js/ui/components/Prefs';
+import {
+  PARAMS_SETTLES,
+  type PrefFieldChoice,
+  prefFieldProps,
+  useParamsPolicy,
+  withDrafts,
+} from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { hasConfigPath, valueAtPath } from '../config/path';

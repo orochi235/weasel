@@ -7,7 +7,15 @@ import {
   prefTabRuns,
 } from '@weasel-js/prefs';
 import { GroupTabs, type PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
-import { type CollapseProps, type PropertyAlign, type PropertyDensity, PropertyGroup, PropertyList, type PropertyListPack, Subpanel } from '@weasel-js/ui/components/Properties';
+import {
+  type CollapseProps,
+  type PropertyAlign,
+  type PropertyDensity,
+  PropertyGroup,
+  PropertyList,
+  type PropertyListPack,
+  Subpanel,
+} from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';

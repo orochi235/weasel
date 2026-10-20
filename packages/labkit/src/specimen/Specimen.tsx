@@ -28,7 +28,12 @@ import { Plot2D } from '@weasel-js/ui/components/Plot2D';
 import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
 import { Powerline } from '@weasel-js/ui/components/Powerline';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { PropertyField, PropertyGroup, PropertyList, PropertyPanel } from '@weasel-js/ui/components/Properties';
+import {
+  PropertyField,
+  PropertyGroup,
+  PropertyList,
+  PropertyPanel,
+} from '@weasel-js/ui/components/Properties';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
@@ -36,7 +41,11 @@ import { Select } from '@weasel-js/ui/components/Select';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
-import { StatusBarItem, StatusBarSpacer, StatusBar as UiStatusBar } from '@weasel-js/ui/components/StatusBar';
+import {
+  StatusBarItem,
+  StatusBarSpacer,
+  StatusBar as UiStatusBar,
+} from '@weasel-js/ui/components/StatusBar';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { Timeline } from '@weasel-js/ui/components/Timeline';

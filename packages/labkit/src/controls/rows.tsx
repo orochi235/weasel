@@ -1,5 +1,10 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { type PropertyControlProps, PropertyField, PropertyRow, type PropertyRowLayout } from '@weasel-js/ui/components/Properties';
+import {
+  type PropertyControlProps,
+  PropertyField,
+  PropertyRow,
+  type PropertyRowLayout,
+} from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
 import { BareControl, leafValueAt, useDebouncedText, useTextWaitMs } from './fields';
