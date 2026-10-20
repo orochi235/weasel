@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEMES } from './themes';
 import { AB, BC, themedScene } from './themeFixture';
+import { offPageTagLook, offPageTagSpec } from '../offPage/tag';
+import { themeLabelStyle } from './resolve';
 
 const blueprint = DIAGRAM_THEMES.blueprint!;
 type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string } }; style?: { fontFamily: string; fontSize: number } };
@@ -42,6 +44,18 @@ describe('themeWrites', () => {
     expect(writes.get(AB)!.stroke!.paint.color).toBe(blueprint.edge.stroke);
     expect(writes.get(BC)!.stroke!.paint.color).toBe(blueprint.edge.stroke);
     expect(writes.get(`${AB}/label`)!.fill!.paint.color).toBe(blueprint.label.fill);
+  });
+
+  it('colors an off-page tag\'s text as a label and its box as the page, in the label face', () => {
+    const scene = themedScene();
+    const night = DIAGRAM_THEMES.night!;
+    scene.add(offPageTagSpec(AB, 'from', 'Page 2 · A', { ...offPageTagLook(night), layer: 'main' }) as never);
+    const tag = (themeWrites(scene as unknown as ThemedScene, blueprint) as Map<string, Painted & { background?: { paint: { color: string } } }>)
+      .get(`${AB}/offpage-from`)!;
+    expect(tag.fill!.paint.color).toBe(blueprint.label.fill);
+    expect(tag.background!.paint.color).toBe(blueprint.page);
+    expect(tag.style!.fontFamily).toBe(themeLabelStyle(blueprint).fontFamily);
+    expect(themeWrites(scene as unknown as ThemedScene, blueprint, new Set(['a'])).has(`${AB}/offpage-from`)).toBe(false);
   });
 
   it('recolors a group box as a container, and its title in the container text color', () => {

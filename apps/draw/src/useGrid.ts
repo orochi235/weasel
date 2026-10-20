@@ -1,6 +1,4 @@
-import { contrastLineColor } from '@weasel-js/core';
-import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
-import { useMemo } from 'react';
+import { usePageGrid } from '@editor/index';
 import type { AppCommands } from './appCommands';
 import { usePref } from './prefs';
 
@@ -15,17 +13,9 @@ export function useGrid(page: { width: number; height: number }, backgroundColor
   const [snapToGrid, setSnapToGrid] = usePref('view.snapToGrid');
   const [spacing] = usePref('view.gridDensity');
 
-  const layer = useMemo(() => createGridLayer({
-    spacing,
-    bounds: () => ({ x: 0, y: 0, width: page.width, height: page.height }),
-    accentEvery: 5,
-    style: {
-      line:   { paint: { kind: 'solid', color: contrastLineColor(backgroundColor, 0.06) }, width: 1 },
-      accent: { paint: { kind: 'solid', color: contrastLineColor(backgroundColor, 0.14) }, width: 1 },
-    },
-  }), [spacing, page.width, page.height, backgroundColor]);
-
-  const source = useMemo(() => gridSnapSource({ spacing }), [spacing]);
+  const { layer, source } = usePageGrid({
+    page, spacing, background: backgroundColor, accentEvery: 5, visible: gridVisible, snap: snapToGrid,
+  });
 
   const commands: Pick<AppCommands, 'gridVisible' | 'toggleGrid' | 'snapToGrid' | 'toggleSnap'> = {
     gridVisible,
@@ -36,7 +26,7 @@ export function useGrid(page: { width: number; height: number }, backgroundColor
 
   return {
     commands,
-    layer: gridVisible ? layer : undefined,
-    snapSource: snapToGrid ? source : undefined,
+    layer,
+    snapSource: source,
   };
 }

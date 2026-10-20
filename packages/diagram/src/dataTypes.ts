@@ -9,6 +9,7 @@ import type { DiagramAnchor } from './group';
 import type { DiagramLabel } from './labelTrait';
 import type { LayoutFn, LayoutOptions, LayoutPorts } from './layout';
 import type { DataMark, DiagramMark } from './marks';
+import type { OffPageTag } from './offPage/trait';
 import type { Outline } from './outline';
 import type { DiagramTextStyle } from './rowStyle';
 import type { DiagramTheme } from './theme/types';
@@ -189,7 +190,7 @@ export interface EdgeStyle {
 export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal' | 'avoid';
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark } | { offPageTag: OffPageTag };
   fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
@@ -197,6 +198,9 @@ export interface DiagramSceneData {
   verticalAlign?: 'top' | 'center' | 'bottom';
   /** What a slot is filled with: an image the kit's image painter draws. */
   image?: { src: string; opacity?: number };
+  /** An off-page tag's box, behind its text, and the room between them. */
+  background?: { paint: { color: string } };
+  padding?: number;
 }
 
 /** A scene node spec, as `diagramScene` returns them. */

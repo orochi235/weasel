@@ -10,6 +10,7 @@ export interface ChartMenuContributions {
   format?: MenuRuns;
   arrange?: MenuRuns;
   page?: MenuRuns;
+  run?: MenuRuns;
   mode?: MenuRuns;
 }
 
@@ -29,6 +30,7 @@ export function chartMenuBar(contributions: ChartMenuContributions = {}): PrefGr
     ...(contributions.format ? { format: menu('Format', 'o', contributions.format) } : {}),
     ...(contributions.arrange ? { arrange: menu('Arrange', 'a', contributions.arrange) } : {}),
     ...(contributions.page ? { page: menu('Page', 'p', contributions.page) } : {}),
+    ...(contributions.run ? { run: menu('Run', 'r', contributions.run) } : {}),
     mode: menu('Mode', 'm', contributions.mode ?? {}),
   }, { as: 'bar' });
 }

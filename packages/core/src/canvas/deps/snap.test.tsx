@@ -66,4 +66,36 @@ describe('the snap dep', () => {
     snap.begin({ gesture: 'move', ids: [box], press: { x: 12, y: 22 } }).at({ x: 12, y: 22 }, FREE);
     expect(seen).toEqual([{ x: 15, y: 25 }]);
   });
+
+  /** Vertical lines every `step` from x = 0, at `tier`. */
+  const xLines = (id: string, xs: (x: number) => number, tier?: 'fallback'): SnapSource => ({
+    id, roles: ['pointer'], ...(tier ? { tier } : {}),
+    *collect(q) { for (const p of q.probes) yield { probe: p.id, locus: { at: { x: xs(p.at.x), y: p.at.y }, dirs: [{ x: 0, y: 1 }] } }; },
+  });
+
+  it('a gesture source is asked alongside the canvas sources', () => {
+    const grid = xLines('grid', (x) => Math.round(x / 100) * 100, 'fallback');
+    const snap = snapDepOf({ sources: [grid] });
+    const press = { x: 0, y: 0 };
+    expect(snap.begin({ gesture: 'point', press }).at({ x: 102, y: 40 }, FREE).point).toEqual({ x: 100, y: 40 });
+    const s = snap.begin({ gesture: 'point', press, sources: [xLines('gesture', () => 103)] });
+    expect(s.at({ x: 102, y: 40 }, FREE).point).toEqual({ x: 103, y: 40 });
+  });
+
+  it('omit drops a canvas source for that gesture only', () => {
+    const snap = snapDepOf({ sources: [] });
+    const near = { x: 11, y: 21 };
+    expect(snap.begin({ gesture: 'point', press: { x: 0, y: 0 }, omit: ['path-snap'] }).at(near, FREE).held).toBe(false);
+    expect(snap.begin({ gesture: 'point', press: { x: 0, y: 0 } }).at(near, FREE)).toMatchObject({ point: { x: 10, y: 20 }, held: true });
+  });
+
+  it('a gesture source sharing an asked id throws', () => {
+    const snap = snapDepOf({ sources: [pointAt({ x: 50, y: 50 })] });
+    expect(() => snap.begin({ gesture: 'point', press: { x: 0, y: 0 }, sources: [pointAt({ x: 50, y: 50 })] }))
+      .toThrow(/share the id 'at:50,50'/);
+    expect(() => snap.begin({ gesture: 'point', press: { x: 0, y: 0 }, sources: [{ ...pointAt({ x: 1, y: 1 }), id: 'path-snap' }] }))
+      .toThrow(/share the id 'path-snap'/);
+    expect(() => snap.begin({ gesture: 'point', press: { x: 0, y: 0 }, omit: ['path-snap'], sources: [{ ...pointAt({ x: 1, y: 1 }), id: 'path-snap' }] }))
+      .not.toThrow();
+  });
 });

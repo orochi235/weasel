@@ -1,7 +1,7 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
- * pool, group box, and header as an obstacle, and every `avoid` connector with
- * the ports each end may use.
+ * pool, group box, and header as an obstacle, and every `avoid` connector not
+ * split across pages, with the ports each end may use.
  */
 import {
   AUTO_POSE_DESCRIPTOR,
@@ -73,7 +73,7 @@ export function avoidSceneInput<TPose>(
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
     if (edge !== null) {
-      if (edge.router === key) edgeNodes.push(node);
+      if (edge.router === key && edge.offPage === undefined) edgeNodes.push(node);
       continue;
     }
     const container = diagramContainerOf(node);
