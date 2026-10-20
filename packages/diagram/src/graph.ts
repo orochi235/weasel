@@ -60,6 +60,9 @@ export interface GraphGroup {
   minWidth?: number;
   /** The group this one is directly inside. */
   parent?: string;
+  /** Its direct members, nodes and groups, in the order a layered layout
+   *  keeps them across every rank: set for a group that reorders. */
+  ordered?: readonly string[];
 }
 
 /** One connection. `id` is the edge node's own id, so a caller can go back to
@@ -141,7 +144,7 @@ export function buildGraph<TPose>(
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
-  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number }[] = [];
+  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number; reorders?: boolean }[] = [];
   const routed = new Set<string>();
   const rooms = new Map<string, EdgeLabelRoom>();
 
@@ -181,6 +184,7 @@ export function buildGraph<TPose>(
         members: Array.isArray(deps) ? deps : [],
         inset: insetOf(trait.group.inset),
         ...(trait.group.minWidth !== undefined ? { minWidth: trait.group.minWidth } : {}),
+        ...(trait.group.reorder !== undefined ? { reorders: true } : {}),
       });
       continue;
     }
@@ -208,6 +212,7 @@ export function buildGraph<TPose>(
       inset: declared.get(g.id)!.inset,
       ...(declared.get(g.id)!.minWidth !== undefined ? { minWidth: declared.get(g.id)!.minWidth } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
+      ...(declared.get(g.id)!.reorders === true ? { ordered: g.direct } : {}),
     };
   });
   const known = (id: string) => byId.has(id) || live.some((g) => g.id === id);

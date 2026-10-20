@@ -109,6 +109,7 @@ function chainsOf(groups: readonly GraphGroup[]): (group: string | undefined) =>
 }
 
 interface Block {
+  group?: string;
   items: (GraphNode | Block)[];
   sub: Map<string, Block>;
   sum: number;
@@ -116,16 +117,25 @@ interface Block {
   first: number;
 }
 
-const newBlock = (first: number): Block => ({ items: [], sub: new Map(), sum: 0, count: 0, first });
+const newBlock = (first: number, group?: string): Block => ({
+  ...(group !== undefined ? { group } : {}), items: [], sub: new Map(), sum: 0, count: 0, first,
+});
+
+/** Each ordered group's direct members by their place in its order. */
+function placesOf(groups: readonly GraphGroup[]): Map<string, Map<string, number>> {
+  return new Map(groups.filter((g) => g.ordered !== undefined).map((g) => [g.id, new Map(g.ordered!.map((m, i) => [m, i]))]));
+}
 
 /**
  * One rank sorted by `key`, with each group sorted as one block keyed by the
- * mean of its members' keys, recursively. Ties keep the current order.
+ * mean of its members' keys, recursively. Ties keep the current order. Inside
+ * an ordered group, its members keep the group's order instead.
  */
 function sortRank(
   row: readonly GraphNode[],
   key: (n: GraphNode, i: number) => number,
   chainOf: (group: string | undefined) => readonly string[],
+  places: ReadonlyMap<string, ReadonlyMap<string, number>> = new Map(),
 ): GraphNode[] {
   const root = newBlock(0);
   const keyOf = new Map<GraphNode | Block, number>();
@@ -136,7 +146,7 @@ function sortRank(
     for (const g of chainOf(n.group)) {
       let next = at.sub.get(g);
       if (next === undefined) {
-        next = newBlock(i);
+        next = newBlock(i, g);
         at.sub.set(g, next);
         at.items.push(next);
       }
@@ -150,7 +160,12 @@ function sortRank(
   });
   const out: GraphNode[] = [];
   const flatten = (block: Block) => {
+    const place = block.group === undefined ? undefined : places.get(block.group);
     const items = block.items.map((item) => {
+      if (place !== undefined) {
+        const k = place.get('id' in item ? item.id : item.group!) ?? Infinity;
+        return { item, k, first: 'id' in item ? firstOf.get(item)! : item.first };
+      }
       if ('id' in item) return { item, k: keyOf.get(item)!, first: firstOf.get(item)! };
       return { item, k: item.sum / item.count, first: item.first };
     });
@@ -187,6 +202,7 @@ interface Work {
   downs: Map<string, Near[]>;
   sides: Sides;
   chainOf: (group: string | undefined) => readonly string[];
+  places: ReadonlyMap<string, ReadonlyMap<string, number>>;
 }
 
 function reindex(work: Work, r: number): void {
@@ -202,7 +218,7 @@ function reorder(work: Work, r: number, side: Map<string, Near[]>): void {
     // Less a half, so a port at its node's middle keys at the node's index.
     return near.reduce((s, m) => s + landing(m, n.id, work) - 0.5, 0) / near.length;
   };
-  work.rows[r] = sortRank(work.rows[r]!, key, work.chainOf);
+  work.rows[r] = sortRank(work.rows[r]!, key, work.chainOf, work.places);
   reindex(work, r);
 }
 
@@ -230,7 +246,7 @@ function transpose(work: Work): void {
       for (let i = 0; i + 1 < row.length; i++) {
         const u = row[i]!;
         const v = row[i + 1]!;
-        if (u.group !== v.group) continue;
+        if (u.group !== v.group || (u.group !== undefined && work.places.has(u.group))) continue;
         const now = cost(u.id, v.id);
         pos.set(v.id, i);
         pos.set(u.id, i + 1);
@@ -260,6 +276,7 @@ export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions =
   const patience = opts.patience ?? 4;
   const maxSweeps = opts.maxSweeps ?? 24;
   const chainOf = chainsOf(opts.groups ?? []);
+  const places = placesOf(opts.groups ?? []);
   const byRank = hopsByRank(rows, hops);
   const ups = new Map<string, Near[]>();
   const downs = new Map<string, Near[]>();
@@ -269,9 +286,9 @@ export function orderRows(rows: Rows, hops: readonly Hop[], opts: OrderOptions =
       (ups.get(p.to) ?? ups.set(p.to, []).get(p.to)!).push({ id: p.from, frac: p.fromAt, places: p.fromPlaces, side: 'down' });
     }
   }
-  const seeded = rows.map((row) => sortRank(row, (_, i) => i, chainOf));
+  const seeded = rows.map((row) => sortRank(row, (_, i) => i, chainOf, places));
   const sides = sidesOf(hops);
-  const work: Work = { rows: seeded, pos: positions(seeded), ups, downs, sides, chainOf };
+  const work: Work = { rows: seeded, pos: positions(seeded), ups, downs, sides, chainOf, places };
 
   let best = seeded.map((row) => [...row]);
   let fewest = total(work.rows, byRank, work.pos, sides);

@@ -29,6 +29,7 @@
     "@weasel-js/core": "1.11.0",
     "@weasel-js/font": "1.11.0",
     "@weasel-js/geom": "1.11.0",
+    "@weasel-js/react": "1.11.0",
     "@weasel-js/simulation": "1.11.0"
   },
   "dependencies": {

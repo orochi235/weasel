@@ -5,7 +5,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { SURFACE_RULE, SurfaceCanvas, __resetSurfaceRule, adoptSurfaceRule } from './SurfaceCanvas';
+import { __resetAdoptedCss } from '@weasel-js/react';
+import { SURFACE_RULE, SurfaceCanvas, adoptSurfaceRule } from './SurfaceCanvas';
 
 type StyleRoot = Document | ShadowRoot;
 
@@ -21,7 +22,7 @@ const holdsRule = (root: StyleRoot): number =>
   rulesIn(root).filter((text) => text.includes('[data-wzl-surface]')).length;
 
 beforeEach(() => {
-  __resetSurfaceRule();
+  __resetAdoptedCss();
   document.adoptedStyleSheets = [];
   document.head.querySelectorAll('style').forEach((el) => el.remove());
 });
