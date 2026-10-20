@@ -145,6 +145,9 @@ export type {
   BaseFeature, CompositeFeature, FeatureBindingOptions, FeatureEntry, FeaturePreset,
 } from '../canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
+export {
+  BUILTIN_TOOLS, SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS, RIG_TOOLS,
+} from '../canvas/SceneCanvas';
 export { COMPOSITE_FEATURES, FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from '../canvas/SceneCanvas/namedPresets';
 export { viewPreset } from '../canvas/SceneCanvas/presets/view';
 export { selectPreset } from '../canvas/SceneCanvas/presets/select';

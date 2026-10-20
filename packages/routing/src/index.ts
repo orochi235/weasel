@@ -187,6 +187,8 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
+export type { ToolSet, ToolEntry } from './tools/toolSet';
 export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────

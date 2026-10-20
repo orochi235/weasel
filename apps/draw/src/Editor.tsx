@@ -5,9 +5,11 @@ import {
   type SelectionApi,
   type Tool,
   type ToolsApi,
+  toolSetHas,
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
+import { RESHAPE_TOOLS } from '@weasel-js/path-tools';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
@@ -35,11 +37,10 @@ import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
 import { useMachineFontOutlines } from './useMachineFontOutlines';
 import { useRightSidebarWidth } from './useRightSidebarWidth';
-import { isPathTool } from './usePathToolsTools';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
-const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
+const isCoreTool = (tool: Tool): boolean => !toolSetHas(RESHAPE_TOOLS, tool.id);
 /** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
 const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
 const CORE_TOOL_STACKS = [['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil']];
@@ -133,7 +134,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                 {tools && (
                   <ToolPalette
                     tools={tools}
-                    include={isPathTool}
+                    include={RESHAPE_TOOLS}
                     ariaLabel={FIXED_CHROME.pathTools.label}
                     groupOrder={PATH_TOOL_GROUPS}
                     stacks={PATH_TOOL_STACKS}

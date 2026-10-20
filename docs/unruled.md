@@ -11,6 +11,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
+  "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
+  and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
+  and a shape kind's `family` decides which set names it. draw's `usePathToolsTools` moved into
+  path-tools and now also builds spiro and the shape builder.
+
 - 2026-10-11: `useHoverTracking`, `useLassoTool`, `usePenTool`, and `TargetPredicate` changed
   signature; `ContributionsApi.scopedBindings()` is gone; a mode-barred tool stops drawing its
   overlay.
