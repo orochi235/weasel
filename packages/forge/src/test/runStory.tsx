@@ -2,7 +2,6 @@ import { withValueAtPath } from '@weasel-js/labkit/config';
 import { type RefObject, useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { FrameSetup } from '../frame/FrameController';
-import type { Viewport } from '../protocol/messages';
 import { StoryTrial } from '../shell/StoryTrial';
 import { loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
@@ -48,14 +47,10 @@ function TestTrial({ story, setup, hostRef, onConfig, onRendered, onError }: Tes
 export interface RunStoryOptions {
   /** The frame config (`frameConfig`). */
   setup?: FrameSetup;
-  /** Resizes the page, for a story that names a viewport. Without it, stories run at whatever size the page is. */
-  viewport?: (width: number, height: number) => Promise<void>;
 }
 
 /** Stops the story a timed-out test left mounted. */
 let leftover: (() => unknown) | null = null;
-/** The page's size before any story resized it; a story with no viewport runs at this size. */
-let pageSize: Viewport | null = null;
 
 /**
  * Renders one story in the test page the way the workshop does — defaults, no state, no globals — then plays it.
@@ -67,7 +62,7 @@ export async function runStory(
   file: string,
   /** The file's index entry title. */
   title: string,
-  { setup = {}, viewport }: RunStoryOptions = {},
+  { setup = {} }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
   let story: LoadedStory | undefined;
@@ -78,13 +73,12 @@ export async function runStory(
   }
   if (!story) throw new Error(`load fault: ${file} has no story export "${exportName}"`);
 
-  pageSize ??= { width: window.innerWidth, height: window.innerHeight };
-  const size = story.viewport ?? pageSize;
-  if (viewport && (window.innerWidth !== size.width || window.innerHeight !== size.height)) {
-    await viewport(size.width, size.height);
-  }
-
   const container = document.createElement('div');
+  // The workshop gives a story's viewport to its stage, a box of that size, not to the window.
+  if (story.viewport) {
+    container.style.width = `${story.viewport.width}px`;
+    container.style.height = `${story.viewport.height}px`;
+  }
   document.body.append(container);
   let root: Root | undefined;
   /** Returns what unmounting threw, having released everything else regardless. */
