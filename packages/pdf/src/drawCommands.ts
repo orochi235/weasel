@@ -1,5 +1,5 @@
 import { fillsOpenSubpaths, type GlMat3, mat3, type Path } from '@weasel-js/geom';
-import { type CommandPaint, isGradientPaint, isSolidPaint, resolveScreenLength } from '@weasel-js/paint';
+import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { colorFor } from './color';
 import type { ContentStream } from './content';
@@ -7,6 +7,7 @@ import type { PdfObjects } from './objects';
 import { pathOps } from './pathOps';
 import type { PageResources } from './resources';
 import { paintShading } from './shading';
+import { writeStroke } from './strokeOps';
 import type { PdfSkip, WritePdfOptions } from './writePdf';
 
 export interface DrawState {
@@ -68,28 +69,9 @@ function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
   out.op('Q');
 }
 
-/** A plain native stroke; dashes, joins, caps and alignment are not written yet. */
-function writeStrokePlain(ctx: PageCtx, path: Path, cmd: PathDrawCommand, state: DrawState): void {
-  const stroke = cmd.stroke;
-  const paint = stroke?.paint;
-  if (!stroke || !paint) return;
-  if (!isSolidPaint(paint)) return skip(ctx, 'gradient stroke not yet supported');
-  const [r, g, b, a] = colorFor(paint.color, state);
-  const alpha = a * (paint.opacity ?? 1) * state.alpha;
-  const { out } = ctx;
-  out.op('q');
-  setAlpha(ctx, alpha, alpha);
-  out.op('RG', r, g, b);
-  out.op('w', resolveScreenLength(stroke.width ?? 1, mat3.meanScaleOf(state.transform)));
-  pathOps(out, path, 'all');
-  out.op('S');
-  out.op('Q');
-}
-
-function writePath(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
-  if (cmd.vertexColors) skip(ctx, 'vertexColors not yet supported');
+async function writePath(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): Promise<void> {
   writeFill(ctx, cmd, state);
-  writeStrokePlain(ctx, cmd.path, cmd, state);
+  if (cmd.stroke) await writeStroke(ctx, cmd.path, cmd.stroke, state);
 }
 
 async function writeGroup(
@@ -120,7 +102,7 @@ async function writeGroup(
 
 export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], state: DrawState): Promise<void> {
   for (const cmd of cmds) {
-    if (cmd.kind === 'path') writePath(ctx, cmd, state);
+    if (cmd.kind === 'path') await writePath(ctx, cmd, state);
     else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
     else skip(ctx, `${cmd.kind} not yet supported`);
   }

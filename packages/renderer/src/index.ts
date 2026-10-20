@@ -73,6 +73,7 @@ export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';
 export type { ShaderProgram, ShaderStage, UniformArray } from './shaders/ShaderProgram';
 export { strokeReachAt, boundsMissRect } from './cullDrawCommands';
+export { markerDrawCommands } from './markerCommands';
 export { resolveStrokeLengths, type ResolvedStrokeCommand, type StrokedPathCommand } from './strokeLengths';
 export {
   registerPaintDrawKind,
