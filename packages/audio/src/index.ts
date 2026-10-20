@@ -51,7 +51,8 @@ export type {
 export { impulseResponse, type ImpulseResponseOptions } from './impulse';
 export { createAudioGraph } from './graph/createAudioGraph';
 export {
-  createFileSourceNode, createNoiseNode, createOscillatorNode, type OscillatorWave,
+  createFileSourceNode, createNoiseNode, createOscillatorNode, type FileSourceNodeOptions,
+  type NoiseNodeOptions, type OscillatorNodeOptions, type OscillatorWave,
 } from './graph/sources';
 export {
   compressorNode, createGainNode, createMixNode, createPanNode, delayNode, filterNode, insertNode,

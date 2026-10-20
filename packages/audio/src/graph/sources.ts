@@ -1,5 +1,5 @@
 import { periodicWave } from '../periodicWave';
-import { writeParam } from '../param';
+import { initParam, writeParam } from '../param';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
 import type { GraphNodeDef } from './types';
@@ -15,10 +15,17 @@ function sourceShell<N extends Scheduled>(ctx: BaseAudioContext, make: () => N) 
   return {
     output,
     live: (): N | null => live,
-    begin(when: number, setup: (node: N) => void, offset?: number): N {
+    /** `onEnd` runs if the node ends while it is still the live one: it played out. */
+    begin(when: number, setup: (node: N) => void, offset?: number, onEnd?: () => void): N {
       const node = make();
       setup(node);
       node.connect(output);
+      node.onended = () => {
+        if (live !== node) return;
+        live = null;
+        node.disconnect();
+        onEnd?.();
+      };
       if (offset === undefined) node.start(when);
       else (node as AudioBufferSourceNode).start(when, offset);
       live = node;
@@ -43,14 +50,14 @@ function sourceShell<N extends Scheduled>(ctx: BaseAudioContext, make: () => N) 
   };
 }
 
-export interface FileSourceOptions {
+export interface FileSourceNodeOptions {
   buffer: AudioBuffer;
   /** Default true. */
   loop?: boolean;
 }
 
 /** Plays a buffer, picking up where `stop` left it. Params: `rate`, `level`. */
-export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceOptions): GraphNodeDef {
+export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceNodeOptions): GraphNodeDef {
   const { buffer } = opts;
   const loop = opts.loop ?? true;
   let rate = 1;
@@ -84,8 +91,10 @@ export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceOpti
       shell.begin(when, (s) => {
         s.buffer = buffer;
         s.loop = loop;
-        writeParam(ctx, s.playbackRate, rate, 0);
-      }, offset);
+        initParam(ctx, s.playbackRate, rate);
+      }, offset, () => {
+        offset = 0;
+      });
     },
     stop(when) {
       if (!shell.live()) return;
@@ -96,7 +105,7 @@ export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceOpti
   };
 }
 
-export interface OscillatorOptions {
+export interface OscillatorNodeOptions {
   /** Default 'sine'. An array is the amplitude of each whole-number partial. */
   wave?: OscillatorWave;
   /** Hz. Default 440. */
@@ -104,7 +113,7 @@ export interface OscillatorOptions {
 }
 
 /** A tone. Params: `frequency`, `detune`, `level`. */
-export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorOptions): GraphNodeDef {
+export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNodeOptions): GraphNodeDef {
   const wave = opts.wave ?? 'sine';
   let frequency = opts.frequency ?? 440;
   let detune = 0;
@@ -131,8 +140,8 @@ export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorOpti
       shell.begin(when, (osc) => {
         if (typeof wave === 'string') osc.type = wave;
         else osc.setPeriodicWave(periodicWave(ctx, wave));
-        writeParam(ctx, osc.frequency, frequency, 0);
-        writeParam(ctx, osc.detune, detune, 0);
+        initParam(ctx, osc.frequency, frequency);
+        initParam(ctx, osc.detune, detune);
       });
     },
     stop: shell.end,
@@ -140,12 +149,12 @@ export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorOpti
   };
 }
 
-export interface NoiseOptions {
+export interface NoiseNodeOptions {
   color: NoiseColor;
 }
 
 /** A loop of the shared noise buffer for its color. Param: `level`. */
-export function createNoiseNode(ctx: BaseAudioContext, opts: NoiseOptions): GraphNodeDef {
+export function createNoiseNode(ctx: BaseAudioContext, opts: NoiseNodeOptions): GraphNodeDef {
   const shell = sourceShell(ctx, () => ctx.createBufferSource());
   return {
     inputs: {},

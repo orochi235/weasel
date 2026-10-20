@@ -37,6 +37,32 @@ describe('file source', () => {
     expect(ctx._sources[1].offsets[0]).toBeCloseTo(0.5);
   });
 
+  it('rewinds a non-looping file that played to its end', () => {
+    const ctx = setup();
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never, loop: false });
+    node.start!(0);
+    ctx._advance(1500);
+    expect(ctx._sources[0].ended).toBe(true);
+    node.stop!(ctx.currentTime);
+    node.start!(ctx.currentTime);
+    expect(ctx._sources).toHaveLength(2);
+    expect(ctx._sources[1].offsets[0]).toBe(0);
+  });
+
+  it('a stopped node ending late does not rewind the one after it', () => {
+    const ctx = setup();
+    const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 200, 100) as never, loop: false });
+    node.start!(0);
+    ctx._advance(500);
+    node.stop!(ctx.currentTime);
+    node.start!(ctx.currentTime);
+    ctx._advance(100);
+    expect(ctx._sources[0].ended).toBe(true);
+    node.stop!(ctx.currentTime);
+    node.start!(ctx.currentTime);
+    expect(ctx._sources[2].offsets[0]).toBeCloseTo(0.6);
+  });
+
   it('retunes the playing source with rate, and the next start uses it', () => {
     const ctx = setup();
     const node = createFileSourceNode(ctx as never, { buffer: ctx.createBuffer(1, 100, 100) as never });

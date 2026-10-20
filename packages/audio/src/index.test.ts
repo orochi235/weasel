@@ -88,5 +88,8 @@ describe('@weasel-js/audio public surface', () => {
     const patch: audio.GraphPatch = { kind: 'connect', from: 'a', to: { output: true } };
     const wave: audio.OscillatorWave = 'square';
     expect([patch.kind, wave]).toEqual(['connect', 'square']);
+    const options: [audio.FileSourceNodeOptions['loop'], audio.OscillatorNodeOptions, audio.NoiseNodeOptions] =
+      [false, { wave }, { color: 'pink' }];
+    expect(options).toHaveLength(3);
   });
 });
