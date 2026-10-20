@@ -36,6 +36,11 @@ describe('a clearable number', () => {
     expect(input).toHaveAttribute('placeholder', 'auto');
   });
 
+  it('draws one the config does not hold as cleared, not at its default', () => {
+    mount(resolveConfigSchema(f.schema({ gap: f.number(4).clearable() })), {});
+    expect(screen.getByRole('spinbutton', { name: 'Gap' })).toHaveValue('');
+  });
+
   it('starts unset when it is given no default', () => {
     const config = f.schema({ gap: f.number() });
     expectTypeOf(config.defaults().gap).toEqualTypeOf<number | undefined>();
@@ -78,5 +83,12 @@ describe('a number bounded on one side', () => {
     fireEvent.change(input, { target: { value: '30' } });
     fireEvent.blur(input);
     expect(setConfig.mock.calls).toEqual([['gap', 10]]);
+  });
+});
+
+describe('a value held as null', () => {
+  it('draws as its default, as a value the config does not hold does', () => {
+    mount(resolveConfigSchema(f.schema({ gap: f.number(4) })), { gap: null });
+    expect(screen.getByRole('spinbutton', { name: 'Gap' })).toHaveValue('4');
   });
 });
