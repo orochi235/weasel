@@ -385,6 +385,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): `useLeafAction`'s `reason` is renamed `disabledReason`, the prop
+  `BarActionButton` reads, so a bar button and a panel row explain themselves the same way. A bar
+  button disabled with a reason (ActionBar, BarAction, the loupe) is now focusable and
+  `aria-disabled` rather than natively `disabled`; pressing it still does nothing.
 - 2026-10-20 (overnight pass): `useRovingTabIndex` takes `columns` and `groupSelector`, and
   `ToolPalette`'s `columns` uses them, each `[role="group"]` starting a row. Left and Right step in
   reading order and wrap; Up and Down stop at the first and last rows (APG grid) and leave the key

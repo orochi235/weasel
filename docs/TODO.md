@@ -561,12 +561,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) `useRovingTabIndex` does not mirror Left and Right under right-to-left.** Neither its linear
   mode nor the grid mode added 2026-10-20 reads the direction, so in an RTL layout Left steps forward.
 
-- **(P2) A bar's action button never says why it is disabled.** `BarActionOne`
-  (`packages/ui/src/components/Bar/BarAction.tsx`) spreads `useLeafAction`'s `reason` into
-  `BarActionButton`, which reads `disabledReason`, so a disabled bar button gets no tooltip and is
-  not focusable; `PrefActionOne` maps it and a panel's row does say why. In draw, Warp Settings
-  greyed out with nothing warped selected is the visible case.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
@@ -1335,8 +1329,6 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
-  (`packages/guides/src/sources/targets.ts`).
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
