@@ -198,6 +198,8 @@ export interface DiagramSceneData {
   verticalAlign?: 'top' | 'center' | 'bottom';
   /** What a slot is filled with: an image the kit's image painter draws. */
   image?: { src: string; opacity?: number };
+  /** A body's text row: its place among the body's rows (see `DiagramNode.body`). */
+  bodyRow?: number;
   /** An off-page tag's box, behind its text, and the room between them. */
   background?: { paint: { color: string } };
   padding?: number;

@@ -110,6 +110,20 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     expect(scene.get(c)!.data).toEqual({});
   });
 
+  it('hands each follower the data the ones before it previewed', () => {
+    const { b, deps } = fixture('follow');
+    const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;
+    const heard: unknown[] = [];
+    const second: TransformFollower = {
+      finish: (ops) => [...ops],
+      preview: (_frame, data) => { heard.push(data.get(b)); return []; },
+    };
+    drag({ ...deps, transformFollowers: [first, second] } as unknown as ActionDeps, (handle) => {
+      handle.previewIds!();
+    });
+    expect(heard.at(-1)).toEqual({ followed: 'preview' });
+  });
+
   it('commits nothing when any follower refuses', () => {
     const { scene, a, deps } = fixture('follow');
     const first = (deps as unknown as { transformFollowers: TransformFollower[] }).transformFollowers[0]!;

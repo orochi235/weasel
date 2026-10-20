@@ -11,6 +11,7 @@ import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { placeContainers, containerSpecs } from './dataContainerPlace';
 import { containerLayoutNodes, resolveContainers, type ContainerLayout } from './dataContainers';
 import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
+import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -92,14 +93,16 @@ function nodeSpecs(
     layer: 'main',
     measure: look.measure,
     body: (trait) => ({
-      diagram: { ...trait, ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}) },
+      diagram: {
+        ...trait, ...bodyLayoutOf(body, trait), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+      },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
         ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
-        : text === '' ? null : textData(text, at.row),
+        : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index },
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);

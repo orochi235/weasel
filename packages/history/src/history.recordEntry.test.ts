@@ -50,4 +50,25 @@ describe('History.recordEntry', () => {
     h.redo();
     expect(adapter.values).toEqual([7]);
   });
+  it('folds an entry recorded under the key of the one on top, until a seal', () => {
+    const adapter = makeArrayAdapter();
+    const h = createHistory(adapter);
+    for (const v of [1, 2, 3]) {
+      const op = pushOp(v);
+      op.apply(adapter);
+      h.recordEntry([op], 'drag', { coalesceKey: 'k' });
+    }
+    expect(h.entries().undo).toHaveLength(1);
+    expect(h.entries().undo[0]!.pushes).toBe(3);
+    h.seal();
+    const op = pushOp(4);
+    op.apply(adapter);
+    h.recordEntry([op], 'drag', { coalesceKey: 'k' });
+    expect(h.entries().undo).toHaveLength(2);
+    h.undo();
+    h.undo();
+    expect(adapter.values).toEqual([]);
+    h.redo();
+    expect(adapter.values).toEqual([1, 2, 3]);
+  });
 });

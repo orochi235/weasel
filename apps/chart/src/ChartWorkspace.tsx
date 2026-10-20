@@ -8,6 +8,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
+import { useExportCommands } from './exportCommands';
 import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
@@ -18,8 +19,10 @@ import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
+import { ThemePanel } from './theme/ThemePanel';
 import {
-  AvoidRoutingPublisher, ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher,
+  AvoidRoutingPublisher, ContainerDropPublisher, HopsPublisher, StencilInsertPublisher, useChartDiagram,
+  WaypointFollowerPublisher,
 } from './useChartDiagram';
 import { useChartSnap } from './useChartSnap';
 import './workspace.css';
@@ -63,6 +66,7 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const [view, setView] = useState<View>(NO_VIEW);
   const pages = useChartPages(scene, view, dims, setView);
+  useExportCommands(scene, pages);
   const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
   const paperLayer = usePaperLayer(pages.placed, theme.page);
   const { gridLayer, snap, features } = useChartSnap(useGridPage(pages), theme.page);
@@ -71,6 +75,7 @@ export function ChartWorkspace(): ReactElement {
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
   }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
   const editingId = textEdit.editingId;
@@ -117,6 +122,7 @@ export function ChartWorkspace(): ReactElement {
               <StencilInsertPublisher theme={theme} />
               <WaypointFollowerPublisher scene={scene} />
               <AvoidRoutingPublisher scene={scene} />
+              <HopsPublisher scene={scene} />
               <ContainerDropPublisher scene={scene} />
               <TextEditDepPublisher edit={textEdit} />
             </SceneCanvas>
@@ -126,8 +132,9 @@ export function ChartWorkspace(): ReactElement {
       </div>
       <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
         <StylePanel scene={scene} selected={selection.current} theme={theme} />
+        {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
       </Sidebar>
-      <ThemeCommands scene={scene} />
+      <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
     </div>
   );
 }

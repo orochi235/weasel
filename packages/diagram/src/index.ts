@@ -83,7 +83,7 @@ export type { RouteHandle } from './waypoints';
 export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
-  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
@@ -92,6 +92,17 @@ export { DIAGRAM_PASS_ORDER } from './passOrder';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
 export { createSpecRouter } from './avoid/specRoutes';
+export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';
+export type { EdgeHop, HopsDocValue } from './hops/types';
+export { edgeHops } from './hops/crossings';
+export { withHops } from './hops/draw';
+export { installHops } from './hops/install';
+export type { Hops, HopsOptions } from './hops/install';
+export { hopFollower } from './hops/follower';
+export { useHops } from './hops/useHops';
+export { SET_HOPS_ACTION_ID, createSetHopsAction } from './hops/hopsAction';
+export type { SetHopsOptions } from './hops/hopsAction';
+export { createSpecHops } from './hops/specHops';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
@@ -146,10 +157,16 @@ export type {
 } from './graph';
 export { EDIT_EDGE_LABEL_ACTION_ID, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, labelSize } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
-export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelDerivePose } from './label';
+export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
 export { diagramLabelOf } from './labelTrait';
-export type { DiagramLabel } from './labelTrait';
+export type { DiagramLabel, LabelSpot } from './labelTrait';
+export { placeLabels } from './labels/place';
+export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
+export { installLabelPlacement } from './labels/install';
+export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
+export { useLabelPlacement } from './labels/useLabelPlacement';
+export { createSpecLabelPlacer } from './labels/specLabels';
 export { nextOffPageRef, offPageSplits } from './offPage/split';
 export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
 export {
@@ -291,7 +308,7 @@ export type {
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';
 export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
-export type { DiagramFont, DiagramRole, DiagramTheme, StyleField } from './theme/types';
+export type { DiagramFont, DiagramRole, DiagramTheme, FontField, StyleField } from './theme/types';
 export { DIAGRAM_THEMES } from './theme/themes';
 export { diagramThemeFromTokens } from './theme/fromTokens';
 export {
@@ -300,5 +317,14 @@ export {
 } from './theme/resolve';
 export { themeWrites } from './theme/themeWrites';
 export type { ThemedNode, ThemedScene } from './theme/themeWrites';
-export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './theme/applyTheme';
-export type { DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
+export { rendererMeasure } from './rendererMeasure';
+export { relayoutBodies } from './bodyRelayout';
+export type { RelayoutScene } from './bodyRelayout';
+export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramFontSize, setDiagramStyle } from './theme/applyTheme';
+export type { ApplyDiagramThemeOptions, DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';
+export {
+  addThemeRole, editableTheme, forkTheme, isShippedTheme, removeThemeRole, renameThemeRole, setThemeValue, themeRoles,
+  themeValue,
+} from './theme/themeEdit';
+export type { ThemePath } from './theme/themeEdit';
+export { DIAGRAM_THEME_EXTENSION, parseDiagramTheme, themeToJson } from './theme/themeFile';

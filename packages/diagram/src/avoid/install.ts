@@ -7,7 +7,6 @@
 import {
   AUTO_POSE_DESCRIPTOR,
   createSetDataOp,
-  documentPose,
   type Op,
   type PoseDescriptor,
   type Scene,
@@ -72,20 +71,14 @@ function offsetOf(geometry: PoseDescriptor<unknown>, before: unknown, after: unk
   return { x: b.x - a.x, y: b.y - a.y };
 }
 
-/** `input` with the waypoints of each edge whose two ends `frame` moves by one
- *  offset carried along, as `waypointFollower` carries them. */
-function carried(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>, input: AvoidInput): AvoidInput {
-  const offset = (id: string): Vec2 | null => {
-    const node = sc.get(id as never);
-    const to = frame.get(id);
-    return node === undefined || to === undefined ? null : offsetOf(geometry, documentPose(sc, node as never), to);
-  };
+/** `input` with each edge's waypoints where `data`, what the followers before
+ *  this one previewed, has them: `waypointFollower`'s carrying, read rather
+ *  than worked out again. */
+function carried(data: ReadonlyMap<string, unknown>, input: AvoidInput): AvoidInput {
   const edges = input.edges.map((e) => {
-    if (e.waypoints === undefined) return e;
-    const d = offset(e.from.node);
-    const f = offset(e.to.node);
-    if (d === null || f === null || d.x !== f.x || d.y !== f.y) return e;
-    return { ...e, waypoints: e.waypoints.map((p) => ({ x: p.x + d.x, y: p.y + d.y })) };
+    const shown = data.get(e.id);
+    const waypoints = shown === undefined ? undefined : diagramEdgeOf({ data: shown })?.waypoints;
+    return waypoints === undefined ? e : { ...e, waypoints };
   });
   return { obstacles: input.obstacles, edges };
 }
@@ -107,20 +100,18 @@ function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: Avoi
     return true;
   };
   return {
-    preview(frame) {
+    preview(frame, data) {
       if (frame.size === 0) return [];
       if (still(frame)) return last!.out;
-      const input = carried(sc, geometry, frame, avoidSceneInput(scene, opts, (id) => frame.get(id) as TPose | undefined));
+      const input = carried(data, avoidSceneInput(scene, opts, (id) => frame.get(id) as TPose | undefined));
       const routes = router.update(input, { preview: true, budgetMs: opts.frameBudgetMs ?? 4 });
-      const waypoints = new Map(input.edges.map((e) => [e.id, e.waypoints]));
       const out: TransformPreviewNode[] = [];
       for (const [id, route] of routes) {
         const node = sc.get(id as never);
-        const edge = node === undefined ? null : diagramEdgeOf(node);
+        const shown = data.get(id) ?? node?.data;
+        const edge = node === undefined ? null : diagramEdgeOf({ data: shown });
         if (node === undefined || edge === null) continue;
-        const moved = waypoints.get(id);
-        const trait = moved === undefined ? edge : { ...edge, waypoints: moved };
-        out.push({ id, pose: node.pose, data: withRoute(node.data, trait, route) });
+        out.push({ id, pose: node.pose, data: withRoute(shown, edge, route) });
       }
       last = { frame, out };
       return out;

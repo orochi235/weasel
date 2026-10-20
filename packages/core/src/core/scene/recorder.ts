@@ -3,7 +3,7 @@
  * into the batch it runs in, or left to the engine or the untracked run that
  * is driving it.
  */
-import type { History } from '@weasel-js/history';
+import type { History, RecordEntryOptions } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import type { AppliedLog } from './appliedLog';
 import type { ArrivalWindow } from './arrivalWindow';
@@ -33,6 +33,13 @@ export interface RecorderEnv {
   labeled<T>(label: string, via: 'call', fn: () => T): T;
 }
 
+/** Options for `scene.batch`. */
+export interface SceneBatchOptions {
+  /** Fold this batch's entry into the one before it when that one carries the same key and
+   *  nothing came between: one undo entry for a run of batches, such as a color dragged. */
+  coalesceKey?: string;
+}
+
 export interface Recorder {
   /** Apply a registered op as part of whatever edit is running. */
   record(kind: string, payload: unknown, label: string): void;
@@ -40,7 +47,7 @@ export interface Recorder {
    *  container, called bare, runs as a batch of its own: that is what puts
    *  the arrangement it triggers in the same undo step. */
   edit<T>(label: string, touchesLayout: boolean, fn: () => T): T;
-  batch<T>(label: string, fn: () => T): T;
+  batch<T>(label: string, fn: () => T, options?: SceneBatchOptions): T;
   untracked<T>(fn: () => T): T;
   /** Whether an edit made now would join an open `batch`'s entry. */
   joins(): boolean;
@@ -71,7 +78,7 @@ function unwind(outer: readonly Op[]): void {
 export function createRecorder(env: RecorderEnv): Recorder {
   const { notifier, mode, engine, log, arrivals, passes } = env;
   /** The outermost open batch, while it is recording. */
-  let collecting: { label: string; ops: Op[]; outer: Op[]; selectionBefore: readonly NodeId[] } | null = null;
+  let collecting: { label: string; ops: Op[]; outer: Op[]; entry: RecordEntryOptions } | null = null;
   /** The kit ops applied since the innermost `capturing` opened. */
   let captured: Op[] | null = null;
 
@@ -83,11 +90,11 @@ export function createRecorder(env: RecorderEnv): Recorder {
     return result;
   }
 
-  function batch<T>(label: string, fn: () => T): T {
+  function batch<T>(label: string, fn: () => T, options: SceneBatchOptions = {}): T {
     const outermost = !mode.open();
     // Captured at open, not at recordEntry: by the time the batch closes
     // the selection has already moved to wherever the batch put it.
-    if (outermost) collecting = { label, ops: [], outer: [], selectionBefore: env.selection() };
+    if (outermost) collecting = { label, ops: [], outer: [], entry: { selectionBefore: env.selection(), ...options } };
     const ownsArrivals = outermost && arrivals.open(true);
     const ownsPasses = outermost && passes.open();
     return env.labeled(label, 'call', () => notifier.deferred(() => mode.during('batch', () => {
@@ -114,7 +121,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
       // The ops were applied as they were issued, so the entry is pushed
       // without re-applying.
       if (finished.ops.length > 0) {
-        engine.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
+        engine.recordEntry(finished.ops, finished.label, finished.entry);
       }
     }));
   }

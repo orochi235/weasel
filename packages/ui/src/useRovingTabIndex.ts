@@ -18,8 +18,14 @@ export type UseRovingTabIndexOptions = {
    *  a nested roving container are its own, not this one's. Defaults to
    *  `'button, [role="button"]'`. */
   itemSelector?: string;
-  /** Defaults to `'both'`. */
+  /** Defaults to `'both'`. Ignored when `columns` is set. */
   orientation?: RovingOrientation;
+  /** Lays the items out as a grid this many across: Left and Right step through them in reading
+   *  order, and Up and Down move a row, keeping the column. See {@link rovingGridTarget}. */
+  columns?: number;
+  /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
+   *  groups are each a grid. Items under none of them count as one group. */
+  groupSelector?: string;
   /** The item that holds the tab stop while focus is outside the container —
    *  a radiogroup-style bar passes its selected index so Tab lands on the
    *  current value. Omitted, the stop stays on whichever item last had focus,
@@ -76,6 +82,43 @@ export function rovingTarget(
   return null;
 }
 
+/** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
+ *  order, or null if it does not move it. Left, Right, Home and End behave as {@link rovingTarget}
+ *  with `'horizontal'`. Up and Down keep the column, landing on the last item of a row too short
+ *  to have it, pass over rows where that item is disabled, and stop at the first and last rows. */
+export function rovingGridTarget(
+  current: number,
+  key: string,
+  enabled: readonly boolean[],
+  rows: readonly (readonly number[])[],
+): number | null {
+  const step = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
+  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal');
+  const r = rows.findIndex((row) => row.includes(current));
+  if (r < 0) return null;
+  const column = rows[r].indexOf(current);
+  for (let rr = r + step; rr >= 0 && rr < rows.length; rr += step) {
+    const row = rows[rr];
+    const i = row[Math.min(column, row.length - 1)];
+    if (i !== undefined && enabled[i]) return i;
+  }
+  return null;
+}
+
+/** `items` split into rows `columns` long, a new row starting wherever the group changes. */
+function gridRows(items: readonly HTMLElement[], columns: number, groupSelector?: string): number[][] {
+  const rows: number[][] = [];
+  let group: Element | null | undefined;
+  for (const [i, el] of items.entries()) {
+    const g = groupSelector ? el.closest(groupSelector) : null;
+    const row = rows[rows.length - 1];
+    if (!row || g !== group || row.length >= columns) rows.push([i]);
+    else row.push(i);
+    group = g;
+  }
+  return rows;
+}
+
 /**
  * The APG roving-tabindex contract for a container of items: exactly one item
  * is in the tab order, and the arrow keys move focus among the rest, skipping
@@ -99,7 +142,7 @@ export function rovingTarget(
 export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   options: UseRovingTabIndexOptions = {},
 ): RovingTabIndex<T> {
-  const { itemSelector = DEFAULT_ITEMS, orientation = 'both' } = options;
+  const { itemSelector = DEFAULT_ITEMS, orientation = 'both', columns, groupSelector } = options;
   const rootRef = useRef<T | null>(null);
   const last = useRef<HTMLElement | null>(null);
   const latest = useRef(options);
@@ -186,7 +229,10 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         onActivate(current);
         return;
       }
-      const next = rovingTarget(current, e.key, found.map(isEnabled), orientation);
+      const enabled = found.map(isEnabled);
+      const next = columns
+        ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector))
+        : rovingTarget(current, e.key, enabled, orientation);
       if (next === null || next === current) return;
       e.preventDefault();
       onNavigate?.(next);
@@ -195,7 +241,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       el.focus();
       place(el);
     },
-    [items, orientation, place],
+    [items, orientation, columns, groupSelector, place],
   );
 
   return { rootRef, onKeyDown };

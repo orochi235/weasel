@@ -70,4 +70,20 @@ describe('createSpecRouter', () => {
     const specs = diagramScene({ nodes: DATA.nodes, edges: [] }, { layout: 'none' });
     expect(createSpecRouter()(specs)).toEqual(specs);
   });
+
+  it('routes an edge around another edge’s label', () => {
+    const data: DiagramData = {
+      nodes: [
+        { id: 'a', lines: ['a'], at: { x: 0, y: 0 }, width: 100, height: 60 },
+        { id: 'b', lines: ['b'], at: { x: 400, y: 0 }, width: 100, height: 60 },
+        { id: 'up', lines: ['up'], at: { x: 150, y: -200 }, width: 100, height: 60 },
+        { id: 'down', lines: ['down'], at: { x: 150, y: 200 }, width: 100, height: 60 },
+      ],
+      edges: [{ from: 'a', to: 'b' }, { from: 'up', to: 'down', label: 'a long note' }],
+    };
+    const bare = createSpecRouter()(diagramScene({ ...data, edges: [data.edges[0]!, { from: 'up', to: 'down' }] }, { layout: 'none' }));
+    expect(edgeOf(bare, AB).route).toEqual([]);
+    const specs = createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    expect(edgeOf(specs, AB).route!.length).toBeGreaterThan(0);
+  });
 });

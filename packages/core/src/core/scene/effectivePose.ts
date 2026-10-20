@@ -155,6 +155,13 @@ export function derivedDepOf<TPose>(
   return reader === undefined ? depIn(source, id, 'effective') : depsAsRead(source, reader, 'effective')(id);
 }
 
+/** `id` as {@link derivedDepOf} answers it, but at the pose and path the
+ *  document holds: no override anywhere down its dependencies counts. For a
+ *  reader that must not see an in-flight gesture, such as an edit pass. */
+export function documentDepOf<TPose>(source: PoseSource<TPose>, id: NodeId): DerivedDep<TPose> | undefined {
+  return depIn(source, id, 'document');
+}
+
 /** `(id) => that dependency as `reader`'s derivation is handed it`: its pose
  *  in `reader`'s frame where the scene composes frames. A `'children'`
  *  dependent shares its children's frame, so it reads them as they are. */
