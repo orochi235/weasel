@@ -246,6 +246,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): The lint rule against a bare `getContext('webgl2')` also refuses an
+  attributes object with no `stencil: true` and no spread, so `{ ...CANVAS_CONTEXT_ATTRIBUTES, x }`
+  passes. labkit's 3D example and its loupe test open shared buffers with those attributes; whoever
+  paints a shared buffer first sets its attributes for every tenant.
 - 2026-10-20 (overnight pass): `CANVAS_CONTEXT_ATTRIBUTES` is public core API, the one place the
   renderer's WebGL2 context settings are written, since a consumer sharing a buffer with the renderer
   needs them. Test pixel reads go through `@weasel-js/core/testing/canvasPixels` (`canvasGl`,

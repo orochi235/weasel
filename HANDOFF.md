@@ -71,7 +71,9 @@ Merged:
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare
   `getContext('webgl2')` now asks for the renderer's settings, and CLAUDE.md's trap says so. Filed:
   one shared reader (`@weasel-js/core/testing/canvasPixels`), the settings in one public constant
-  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call, all merged.
+  (`CANVAS_CONTEXT_ATTRIBUTES`), and a lint rule against the bare call or one without a stencil,
+  all merged. LabLightbox's test and labkit's 3D example were opening their shared buffer first
+  without a stencil (measured), and now do not.
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
 
