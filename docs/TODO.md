@@ -849,12 +849,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) `Prefs.stories.tsx` › Rail Filterable times out on the fleet and passes here.** Three
-  fleet runs on 2026-10-20 (after `66cd6d6e5`, and on two branches) failed it on the 15 s timeout
-  in the `forge-stories` project; locally the same file renders it in 34 ms, so it hangs rather
-  than runs slow. The story has no play function, so the wait is in rendering or settling. Find
-  what it waits on there (fonts, a frame, a pending promise) with the fleet log's trace.
-
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
