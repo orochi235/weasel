@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { FakeGain, FakeNode } from '../testing/fakeAudioContext';
 import { edgeCount, FADE, harness, testNode } from '../testing/graphHarness';
 import { allPaths, reachesCycle } from '../testing/graphWalk';
+import { disposeNow } from './createAudioGraph';
 
 describe('createAudioGraph wiring', () => {
   it('wires a node to the output through a fader that opens', () => {
@@ -390,7 +391,7 @@ describe('createAudioGraph lifetime', () => {
     expect(analyser.connectedFrom).toHaveLength(0);
   });
 
-  it('dispose cancels fades and tears everything down', async () => {
+  it('disposeNow cancels fades and tears everything down', async () => {
     const { ctx, graph, dest, timers } = harness();
     const a = testNode(ctx, [], true);
     const b = testNode(ctx);
@@ -404,13 +405,72 @@ describe('createAudioGraph lifetime', () => {
     graph.remove('a');
     expect(timers.size).toBeGreaterThan(0);
     const settled = graph.settled();
-    graph.dispose();
+    disposeNow(graph);
     expect(timers.size).toBe(0);
     expect(a.dispose).toHaveBeenCalledTimes(1);
     expect(b.dispose).toHaveBeenCalledTimes(1);
     expect(a.stop).toHaveBeenCalledTimes(1);
     expect(dest.connectedFrom).toHaveLength(0);
     await expect(settled).resolves.toBeUndefined();
+    expect(() => graph.start()).toThrow('@weasel-js/audio: graph is disposed');
+  });
+
+  it('dispose while sounding fades the output out, then tears down', async () => {
+    const { ctx, graph, dest, timers, settle } = harness();
+    const a = testNode(ctx, [], true);
+    graph.add('a', a.def);
+    graph.connect('a', { output: true });
+    graph.start();
+    settle();
+    const out = dest.connectedFrom[0] as FakeGain;
+    const now = ctx.currentTime;
+    graph.dispose();
+    expect(out.gain.ramps.at(-1)).toEqual({ value: 0, at: now + FADE / 1000 });
+    expect(() => graph.add('b', testNode(ctx).def)).toThrow('@weasel-js/audio: graph is disposed');
+    expect(() => graph.dispose()).not.toThrow();
+    expect(a.stop).not.toHaveBeenCalled();
+    expect(a.dispose).not.toHaveBeenCalled();
+    let done = false;
+    void graph.settled().then(() => { done = true; });
+    await tick();
+    expect(done).toBe(false);
+    settle();
+    expect(timers.size).toBe(0);
+    expect(a.stop).toHaveBeenCalledTimes(1);
+    expect(a.dispose).toHaveBeenCalledTimes(1);
+    expect(dest.connectedFrom).toHaveLength(0);
+    await tick();
+    expect(done).toBe(true);
+  });
+
+  it('dispose tears down at once on a suspended context', () => {
+    const { ctx, graph, dest, timers } = harness({ running: false });
+    const a = testNode(ctx, [], true);
+    graph.add('a', a.def);
+    graph.connect('a', { output: true });
+    graph.start();
+    graph.dispose();
+    expect(timers.size).toBe(0);
+    expect(a.stop).toHaveBeenCalledTimes(1);
+    expect(a.dispose).toHaveBeenCalledTimes(1);
+    expect(dest.connectedFrom).toHaveLength(0);
+  });
+
+  it('dispose tears down at once when nothing is sounding, canceling edit fades', () => {
+    const { ctx, graph, dest, timers } = harness();
+    const a = testNode(ctx);
+    const b = testNode(ctx);
+    graph.add('a', a.def);
+    graph.add('b', b.def);
+    graph.connect('a', { node: 'b', port: 'in' });
+    graph.connect('b', { output: true });
+    graph.disconnect('a', { node: 'b', port: 'in' });
+    expect(timers.size).toBeGreaterThan(0);
+    graph.dispose();
+    expect(timers.size).toBe(0);
+    expect(a.dispose).toHaveBeenCalledTimes(1);
+    expect(b.dispose).toHaveBeenCalledTimes(1);
+    expect(dest.connectedFrom).toHaveLength(0);
   });
 });
 

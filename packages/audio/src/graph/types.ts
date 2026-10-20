@@ -53,6 +53,8 @@ export interface AudioGraph {
   tap(id: string, opts?: AnalyserTapOptions): AnalyserTap;
   /** Resolves once no fade is in flight. */
   settled(): Promise<void>;
-  /** Cancels fades, stops sources, disposes every def and tap, disconnects from the destination. */
+  /** Cancels fades, stops sources, disposes every def and tap, disconnects from the destination.
+   *  While it may be sounding on a running context, it first fades the output out over `fadeMs`;
+   *  every mutator throws from the call on. */
   dispose(): void;
 }

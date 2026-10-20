@@ -10,6 +10,13 @@ import { startWrapper } from './wrapper';
 
 export type { NodeWrapper } from './wrapper';
 
+const teardowns = new WeakMap<AudioGraph, () => void>();
+
+/** Internal: tear `graph` down now, with no fade, as `dispose` would on a silent graph. */
+export function disposeNow(graph: AudioGraph): void {
+  teardowns.get(graph)?.();
+}
+
 /**
  * A patchable graph of node defs feeding `destination`. Every structural edit
  * fades: a connection opens through its own gain and closes through it before
@@ -33,8 +40,9 @@ export function createAudioGraph(
 
   let waiters: (() => void)[] = [];
   let disposed = false;
+  let torn = false;
   const onSettle = (): void => {
-    if (!disposed && (edits.busy() || transport.busy())) return;
+    if (!torn && (edits.busy() || transport.busy())) return;
     const done = waiters;
     waiters = [];
     for (const w of done) w();
@@ -102,11 +110,19 @@ export function createAudioGraph(
     dispose() {
       if (disposed) return;
       disposed = true;
-      transport.dispose();
-      edits.dispose();
-      output.disconnect();
-      onSettle();
+      if (ctx.state === 'running' && transport.audible()) transport.fadeOut(teardown);
+      else teardown();
     },
   };
+  const teardown = (): void => {
+    if (torn) return;
+    disposed = true;
+    torn = true;
+    transport.dispose();
+    edits.dispose();
+    output.disconnect();
+    onSettle();
+  };
+  teardowns.set(graph, teardown);
   return graph;
 }

@@ -1,7 +1,7 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from './analyser';
 import { defaultTimers, type Timers } from './audioTime';
 import { createBusGraph, type BusHandle } from './buses';
-import { createAudioGraph } from './graph/createAudioGraph';
+import { createAudioGraph, disposeNow } from './graph/createAudioGraph';
 import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
 import { createResumeWatch } from './resumeWatch';
@@ -146,7 +146,7 @@ function engineSynth(ctx: BaseAudioContext, opts: AudioEngineOptions, busInput: 
   };
 }
 
-/** The graphs `engine.graph` has made and not seen disposed. */
+/** The graphs `engine.graph` has made and not seen torn down. */
 function patchGraphs(ctx: BaseAudioContext, busInput: (bus: string) => AudioNode, opts: AudioGraphOptions) {
   const live = new Set<AudioGraph>();
   return {
@@ -156,13 +156,14 @@ function patchGraphs(ctx: BaseAudioContext, busInput: (bus: string) => AudioNode
       return {
         ...g,
         dispose() {
-          live.delete(g);
           g.dispose();
+          void g.settled().then(() => live.delete(g));
         },
       };
     },
+    /** Tear every graph down now: the engine is closing, so nothing fades. */
     dispose() {
-      for (const g of live) g.dispose();
+      for (const g of live) disposeNow(g);
       live.clear();
     },
   };
@@ -285,7 +286,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         },
       };
     },
-    graph: (bus) => patches.create(bus ?? busNames[0]),
+    graph(bus) {
+      if (disposed) throw new Error('@weasel-js/audio: engine is disposed');
+      return patches.create(bus ?? busNames[0]);
+    },
     setListener(p, o) {
       listener = p;
       if (o) spatialOpts = o;

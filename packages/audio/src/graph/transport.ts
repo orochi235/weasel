@@ -57,6 +57,13 @@ export function createTransport(deps: TransportDeps) {
         for (const w of deps.all()) stopWrapper(w, ctx.currentTime);
       });
     },
+    /** Playing, or an output fade is still in flight: the output may not be silent. */
+    audible: () => playing || cancel !== null,
+    /** Fade the output to silence, then run `then` instead of stopping the sources. */
+    fadeOut(then: () => void): void {
+      playing = false;
+      fadeOutput(0, then);
+    },
     /** Cancel the fade in flight and forget playing; the caller stops the sources. */
     dispose(): void {
       cancel?.();

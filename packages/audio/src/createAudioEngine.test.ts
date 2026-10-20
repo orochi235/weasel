@@ -445,4 +445,36 @@ describe('createAudioEngine', () => {
     engine.dispose();
     expect(src.dispose).toHaveBeenCalledTimes(1);
   });
+
+  it('dispose tears playing graphs down at once, a fading one included', async () => {
+    const timers = new Map<number, () => void>();
+    let next = 0;
+    const { ctx, engine } = engineHarness({
+      setTimer: (cb: () => void) => { next += 1; timers.set(next, cb); return next; },
+      clearTimer: (h: unknown) => { timers.delete(h as number); },
+    });
+    await engine.unlock();
+    const sources = [testNode(ctx, [], true), testNode(ctx, [], true)];
+    const graphs = sources.map((src) => {
+      const g = engine.graph();
+      g.add('src', src.def);
+      g.connect('src', { output: true });
+      g.start();
+      return g;
+    });
+    graphs[1].dispose();
+    expect(sources[1].dispose).not.toHaveBeenCalled();
+    engine.dispose();
+    expect(timers.size).toBe(0);
+    for (const src of sources) {
+      expect(src.stop).toHaveBeenCalledTimes(1);
+      expect(src.dispose).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('graph() throws once the engine is disposed', () => {
+    const { engine } = engineHarness();
+    engine.dispose();
+    expect(() => engine.graph()).toThrow('@weasel-js/audio: engine is disposed');
+  });
 });
