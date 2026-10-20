@@ -35,10 +35,10 @@ export const sampleLoad = async (ms = 1000) => {
 };
 
 /**
- * What a node needs free to run the browser project beside the rest: its six tabs and as many again
- * for jsdom. On studio's ten cores the overlap failed 11 chart tests on timeouts that one process passed.
+ * What a node needs free to run the browser project beside the rest. With 13 idle on msb-uai the overlap
+ * failed three chart drag tests on timeouts that one process passes; teitou, with 16, passed every run.
  */
-export const LIMITS = { idleCores: 12, gpu: 30 };
+export const LIMITS = { idleCores: 15, gpu: 30 };
 
 /** Whether `load` leaves room to run the browser project beside the rest, and the reading that decided it. */
 export const roomToOverlap = ({ cores, busy, gpu }, limits = LIMITS) => {
