@@ -23,10 +23,8 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
-| 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
-| 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
-| 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
+| 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
+| 12 | Interchange document model | `diagram-formats`, diagram, app | 6 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
 | 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
 
@@ -39,9 +37,8 @@ Shared files, and who makes room in them first:
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
-| `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
+| `packages/diagram/src/fromData.ts` | 264 | 12 | done: the data types are in `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 185 | 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -50,126 +47,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 6. Exporting one page
-
-### What the user sees
-
-File › Export › Page as SVG… and Page as PNG (1×, 2×, 4×) download the page the view shows (the
-first page when the view is between pages), cut to the page's edges, on the page color. A
-cross-page connector shows as its stub and tag (piece 3).
-
-### Engine surface: new package `@weasel-js/diagram-formats` (`packages/diagram-formats/`)
-
-It owns converting diagrams to and from files: an obviously well-defined functional area, and it
-depends on `@weasel-js/svg`, which `@weasel-js/diagram` does not. Peer dependencies: core, diagram,
-svg. It joins the changesets `fixed` group, is laid out like `packages/diagram-elk`, and needs its
-first npm publish seeded by hand.
-
-- `pageSvg.ts`: `exportPageSvg(scene, page, opts?) → Promise<string>`. It walks the nodes whose box
-  meets the page through `@weasel-js/svg`'s `svgNodesFromKit` (`fromKit.ts`), with a diagram leaf
-  lowering: outlines through `outline.ts`'s path for the box, edges from `derivedDepOf(scene, id)
-  .path` with their stroke and markers, marks from their unit-square paths and text points. Any
-  other leaf goes to `svgLeafFromKit`. `viewBox` is the page rect; a background rect in the theme's
-  `page` color comes first.
-- `pagePng.ts`: `exportPagePng(scene, page, { scale, background? }) → Promise<Blob>` through core's
-  `renderSceneToPixels`, put into an `OffscreenCanvas` and encoded with `convertToBlob`. The caller
-  has registered the diagram painters (`registerDiagramShape`, `registerMarkShape`) and fonts, as
-  it must to draw at all.
-
-**Decision (2026-10-20).** A page export is the scene clipped to the page rect: pages sit apart in
-one world, and once cross-page connectors draw as stubs, nothing on one page reaches another.
-
-App: `apps/chart/src/exportCommands.ts` registers the commands with `useChartPages`' `current` and
-`downloadBlob` (`apps/shared/editor/src/fileIO.ts`).
-
-An export reads the scene and writes nothing, so it has no history entry. Hops (`diagram.hops`), placed
-labels (`diagram.label.placed`), and stored routes are in the scene, so the export draws them as the canvas does.
-
-### Tests
-
-- `pageSvg.test.ts`: viewBox is the page; a shape on page 2 is absent from page 1; an edge is one
-  path with its markers; rows are text; tags appear.
-- `pagePng.browser.test.ts`: page color at a corner, a shape's fill at its center, size is page × scale.
-- Chart test: the export commands hand `downloadBlob` an SVG and a PNG named for the page.
-
-## 7. Containers and swimlanes in `DiagramData`
-
-### What the user sees
-
-A data-backed `DiagramView` draws containers and pools from data and edits them the way chart mode
-does: drag a shape into a container or lane, drag a container to carry its members, resize it,
-drag a lane boundary, drag a lane header to reorder, click the add-lane button, double-click a
-header to rename. Each reports and changes nothing until the data follows.
-
-### The model
-
-```ts
-interface DataContainer {
-  id: string;                              // shares the node id namespace
-  role: 'container' | 'pool';
-  label?: string;
-  members?: readonly string[];             // container: node and container ids
-  lanes?: readonly DataLane[];             // pool only
-  axis?: 'x' | 'y';                        // pool: as containerShape reads it; default 'y'
-  box?: { x: number; y: number; width: number; height: number };
-  style?: string;                          // theme role
-}
-interface DataLane { id: string; label?: string; size?: number; members?: readonly string[] }
-```
-
-`DiagramData.containers?: readonly DataContainer[]`.
-
-**Decisions (2026-10-20).**
-- A container with a `box` is laid out as one node of that size; its members are not laid out,
-  ride along with it, and a member with no `at` is seeded inside its body in rows. A container
-  with no `box` is laid out as a group (`cluster.ts`), and its box fits its members after layout.
-  One field says whether the author has shaped it.
-- A pool always has a box, `600 × 120` per lane when none is given: lanes are bands across the
-  pool, which no shipped layout can keep members inside, and laying the pool out as one block is
-  what does.
-- An edge with an end inside a region ranks against the outermost region holding it, as an edge
-  naming a group meets its box.
-
-### Engine surface (`packages/diagram/src/`)
-
-- `fromData.ts`'s data types move to `dataTypes.ts` first (re-exported) to make room.
-- `containers/regionSpecs.ts`: `regionSpecs` and `firstLanes`, moved out of `containerStencils.ts`
-  and exported, so stencils and data build regions one way.
-- `dataContainers.ts`, beside `dataGroups.ts`: `containerLayoutNodes(data)` (what layout sees) and
-  `containerSpecs(data, placed, opts)`, region specs before member specs (parents first, as
-  `createScene` requires), each member given its region as `parent`.
-- `diagramViewProps.ts`:
-  - `NodeMove.parent?: string | null`, present when a drop changed the region a node is in (`null`
-    for the top level); the host moves the id between `members` lists.
-  - `onEditContainer?: (edit: ContainerEdit) => void`, where `ContainerEdit` is
-    `{ kind: 'box'; id; box }` (moved or resized) | `{ kind: 'lanes'; pool; lanes: { id; size }[] }`
-    (resized, reordered, or added: a new lane id is minted by the view) | `{ kind: 'release'; id }`
-    | `{ kind: 'title'; id }` (double-click on a header; the host edits the label, as with
-    `onEditLabel`).
-- `sceneSync.ts` reads parents, region boxes, and lane order and lane sizes into `Standing`. A
-  region's handle resize is not among them: `DiagramView` reports handle resizes from the resize
-  action's swapped commit (`reportResizeAction` in `diagramEditing.ts`) and writes nothing, since
-  `reconcileSpecs` diffs spec against spec and could never put back a size the data clamped.
-- `diagramEditing.ts` installs, when `onEditContainer` is set, `diagramContainers` with its lane
-  commits swapped for reports, `diagramCanDropInto` as the `canDropInto` dep, and the lane layer.
-  `DeleteReport.nodes` includes a deleted region's members, as a chart-mode delete takes them.
-- `specRoutes.ts`: regions and headers become obstacles, matching `avoid/sceneInput.ts`.
-- `DiagramSceneOptions.theme` colors regions from `container` and `lane`.
-
-### Save, load, undo
-
-The host's data holds it all. Members' `at` stay absolute world points, as every `at` is.
-
-### Tests
-
-- `dataContainers.test.ts`: parents, boxed and fitted boxes, pool lanes stacked, members seeded.
-- `fromData.containers.test.ts`: a boxed region lays out as one node; an edge into a member ranks
-  against its region.
-- `sceneSync.test.ts`: parent change and box edit reported; a reconcile reports nothing.
-- `DiagramView.containers.browser.test.tsx`: drag into a container and a lane, resize a boundary,
-  reorder by header, add a lane: each reports once.
-- `specRoutes.test.ts`: a route avoids a region neither end is in.
 
 ## 9. Pipeline groups as editable containers
 
@@ -189,7 +66,7 @@ holds in every look.
 
 - `EffectDoc.groupBoxes?: Readonly<Record<groupId, Box>>`, a sidecar like `places`.
 - `editorMapping.ts`: under `nodeGraph`, each `EffectGroup` maps to a `DataContainer` with
-  `box: doc.groupBoxes?.[id]` (fitting its members while unset, piece 7); other looks keep mapping
+  `box: doc.groupBoxes?.[id]` (fitting its members while unset); other looks keep mapping
   it to a `DataGroup`.
 - `groupEdit.ts`: `groupStages(doc, ids, label?)` (nested inside the group all of them share, if
   any), `ungroup(doc, id)` (members go to its parent group), `renameGroup`, `moveToGroup(doc, ids,
