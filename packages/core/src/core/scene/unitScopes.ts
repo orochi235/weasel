@@ -1,4 +1,5 @@
 import { scopesOf, type UnitScope } from '@weasel-js/quantity';
+import { deepEqual } from '@weasel-js/registry';
 import type { NodeId } from './types';
 
 /** What reading scopes needs of a scene. A `Scene` satisfies it. */
@@ -23,4 +24,22 @@ export function sceneUnitScopes(
     scopeOf: (at) => scene.get(at)?.units,
     ...(opts.inclusive ? { inclusive: true } : {}),
   });
+}
+
+/**
+ * The unit scopes every node of `ids` sits in, outermost first: the run of
+ * their chains that agree, where two containers declaring equal scopes
+ * agree. What a reader showing or snapping several nodes as one reads them
+ * in; the root alone for no nodes.
+ */
+export function sceneSharedUnitScopes(scene: ScopedScene, ids: readonly NodeId[], root: UnitScope): UnitScope[] {
+  if (ids.length === 0) return [root];
+  let shared = sceneUnitScopes(scene, ids[0]!, root);
+  for (const id of ids.slice(1)) {
+    const chain = sceneUnitScopes(scene, id, root);
+    let n = 0;
+    while (n < shared.length && n < chain.length && deepEqual(shared[n], chain[n])) n++;
+    shared = shared.slice(0, n);
+  }
+  return shared;
 }
