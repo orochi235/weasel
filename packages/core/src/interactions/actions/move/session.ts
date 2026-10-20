@@ -6,7 +6,7 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
-import type { LayoutDep, NodeAtPointDep } from '../depSchema';
+import type { CanDropIntoDep, LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
@@ -93,7 +93,7 @@ export interface MoveGesture {
 }
 
 function admitsOf(
-  canDropInto: ((parent: string, ids: readonly string[]) => boolean) | undefined,
+  canDropInto: CanDropIntoDep | undefined,
   ids: readonly NodeId[],
 ): (parent: NodeId) => boolean {
   if (canDropInto === undefined) return () => true;
