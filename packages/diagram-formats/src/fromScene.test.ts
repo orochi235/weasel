@@ -122,4 +122,42 @@ describe('documentFromScene', () => {
       expect(JSON.stringify(edge)).not.toContain('offPage');
     });
   });
+
+  describe('where the scene splits a connector', () => {
+    it('reads a group at its derived box, not its stale stored pose', () => {
+      const scene = docScene({
+        ...DOC_DATA,
+        nodes: [
+          ...DOC_DATA.nodes,
+          { id: 'e', lines: ['E'], at: { x: 1500, y: 400 }, width: 64 },
+          { id: 'f', lines: ['F'], at: { x: 1500, y: 500 }, width: 64 },
+        ],
+        groups: [{ id: 'G', members: ['e', 'f'] }],
+        edges: [...DOC_DATA.edges, { id: 'Gb', from: 'G', to: 'b', router: 'orthogonal', waypoints: [{ x: 500, y: 600 }] }],
+      });
+      scene.setPose('e' as never, { x: 100, y: 400, width: 64, height: 32 });
+      scene.setPose('f' as never, { x: 100, y: 500, width: 64, height: 32 });
+      expect(scene.get('G' as never)!.pose).toMatchObject({ x: expect.any(Number) });
+      expect((scene.get('G' as never)!.pose as { x: number }).x).toBeGreaterThan(1000);
+      expect(pageOf(scene, 'p1').data.groups?.map((g) => g.id)).toEqual(['G']);
+      expect(pageOf(scene, 'p1').data.edges.find((e) => e.id === 'Gb')?.waypoints).toBeDefined();
+      expect(documentFromScene(scene).crossPageEdges?.map((e) => e.id)).not.toContain('Gb');
+    });
+
+    it('keeps a split connector in crossPageEdges even when both ends export to one page', () => {
+      const scene = docScene({
+        ...DOC_DATA,
+        nodes: [...DOC_DATA.nodes, { id: 'q', lines: ['Q'], at: { x: 1050, y: 320 }, width: 64 }],
+        edges: [...DOC_DATA.edges, { id: 'qa', from: 'q', to: 'a' }],
+        containers: [
+          ...DOC_DATA.containers!,
+          { id: 'K2', role: 'container', label: 'Wide', members: ['q'], box: { x: 700, y: 300, width: 450, height: 140 } },
+        ],
+      });
+      const doc = documentFromScene(scene);
+      expect(pageOf(scene, 'p1').data.nodes.map((n) => n.id)).toContain('q');
+      expect(doc.crossPageEdges?.map((e) => e.id)).toContain('qa');
+      expect(pageOf(scene, 'p1').data.edges.map((e) => e.id)).not.toContain('qa');
+    });
+  });
 });

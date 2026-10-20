@@ -24,7 +24,7 @@ export interface DocumentPage {
 export interface DiagramDocument {
   pages: readonly DocumentPage[];
   /**
-   * Edges whose ends sit on different pages: their ends, ports, router,
+   * Edges the scene splits off-page, and edges whose ends export to different pages: their ends, ports, router,
    * label, and colors. One the scene splits off-page carries no waypoints,
    * since it draws as two stubs ending at off-page tags; one it keeps whole
    * (an end in the gap between pages) keeps them, in world coordinates.
