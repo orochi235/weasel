@@ -39,6 +39,7 @@ interface DriveOpts {
   gesture?: SnapGesture;
   press?: Point;
   ids?: readonly string[];
+  parent?: string;
   handle?: ResizeAnchor;
   /** Default: an empty scene. */
   scene?: AnyScene;
@@ -59,6 +60,7 @@ export function drive(opts: DriveOpts) {
     gesture: opts.gesture ?? 'point',
     press: opts.press ?? { x: 0, y: 0 },
     ...(opts.ids ? { ids: opts.ids } : {}),
+    ...(opts.parent ? { parent: opts.parent } : {}),
     ...(opts.handle ? { handle: opts.handle } : {}),
     ...(opts.reachPx !== undefined ? { reachPx: opts.reachPx } : {}),
     ...(opts.plane ? { plane: opts.plane } : {}),

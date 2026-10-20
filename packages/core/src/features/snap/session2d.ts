@@ -92,7 +92,7 @@ function outcome(press: Point, delta: readonly number[], held: boolean, marks: r
 }
 
 /** What a source is told that holds from press to release. */
-type FixedCollect = Pick<SnapCollect, 'gesture' | 'ids' | 'exclude' | 'drawnBox' | 'origin' | 'also' | 'scene'>;
+type FixedCollect = Pick<SnapCollect, 'gesture' | 'ids' | 'parent' | 'exclude' | 'drawnBox' | 'origin' | 'also' | 'scene'>;
 
 /** What changes from one frame to the next. */
 interface Frame {
@@ -106,6 +106,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
   return {
     gesture: req.gesture,
     ...(req.ids ? { ids: req.ids } : {}),
+    ...(req.parent !== undefined ? { parent: req.parent } : {}),
     exclude: inputs.exclude ?? req.ids ?? [],
     ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
     ...(req.origin ? { origin: req.origin } : {}),

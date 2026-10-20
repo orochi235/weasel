@@ -318,4 +318,14 @@ describe('createSnap: a 3D insert', () => {
     expect(ground.x).toBeCloseTo(0.8, 6);
     expect(ground.z).toBeCloseTo(0.8, 6);
   });
+
+  it('tells its sources the container an insert lands in', () => {
+    const { world } = worldOf([]);
+    const told: Array<string | undefined> = [];
+    const spy: SnapSource<Vec3> = { id: 'spy', roles: ['pointer'], *collect(q) { told.push(q.parent); } };
+    const snap = createSnap(world, { sources: [spy] });
+    const press = projectPoint({ x: 0, y: 0, z: 0 }, world.viewport())!;
+    snap.begin({ gesture: 'point', press, parent: 'g' }).at(press, FREE);
+    expect(told).toEqual(['g']);
+  });
 });
