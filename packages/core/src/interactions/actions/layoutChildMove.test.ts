@@ -6,10 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { LayoutStrategy } from '../../layout/types';
-import { alignRightAction } from '../../interactions/actions/align/action';
-import { nudgeRightAction } from '../../interactions/actions/defaults/nudge';
-import { createScene } from './scene';
-import { asNodeId, type RectPose } from './types';
+import { alignRightAction } from './align/action';
+import { nudgeRightAction } from './defaults/nudge';
+import { createScene } from '../../core/scene/scene';
+import { asNodeId, type RectPose } from '../../core/scene/types';
 
 /** Stacks its children top to bottom in child order, at the container's left edge. */
 const stack: LayoutStrategy<RectPose> = {
