@@ -57,7 +57,7 @@ class DotReader {
         this.dropUnread(scope.kind, pairs.map((a) => a.key));
         for (const a of pairs) scope.graph.set(a.key, a.value);
       } else if (s.kind === 'attr') {
-        this.dropUnread(s.target, s.attrs.map((a) => a.key));
+        this.dropUnread(s.target as 'node' | 'edge', s.attrs.map((a) => a.key));
         for (const a of s.attrs) scope[s.target].set(a.key, a.value);
       } else if (s.kind === 'node') {
         this.touch(s.node, scope, named);
@@ -80,7 +80,7 @@ class DotReader {
   }
 
   end(end: DotNodeRef | DotSubgraph, scope: Scope): DotNodeRef[] {
-    if (end.kind !== 'subgraph') {
+    if (!('stmts' in end)) {
       this.touch(end, scope, new Set());
       return [end];
     }

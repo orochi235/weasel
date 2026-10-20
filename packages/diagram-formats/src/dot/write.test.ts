@@ -104,7 +104,7 @@ describe('writing DOT', () => {
 
   it('warns for groups, drawn outlines, ports DOT has no name for, and connectors to containers', () => {
     const data: DiagramData = {
-      nodes: [{ id: 'a', ports: [{ id: 'out', at: { x: 1, y: 0.5 } }] }, { id: 'b', outline: { commands: [] } as never }],
+      nodes: [{ id: 'a', ports: [{ id: 'out', at: { u: 1, v: 0.5 } }] }, { id: 'b', outline: { commands: [] } as never }],
       edges: [{ from: 'a', to: 'b', fromPort: 'out' }, { from: 'a', to: 'k' }],
       groups: [{ id: 'g', members: ['a'] }],
       containers: [{ id: 'k', role: 'container', members: ['b'] }],

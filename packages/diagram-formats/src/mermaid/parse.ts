@@ -90,6 +90,22 @@ export function headerWord(text: string): { word: string; text: string; line: nu
 
 const SUBGRAPH =/^(?:"([^"]*)"|([^\s[]+)\s*(?:\[\s*(?:"([^"]*)"|([^\]]*))\s*\])?|(.+))$/;
 
+/** A keyword statement other than `subgraph`, from the rest of its line. */
+function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
+  if (keyword === 'direction') return { kind: 'direction', value: rest.toUpperCase(), line };
+  const [first = '', ...more] = rest.split(/\s+/);
+  const remainder = rest.slice(first.length).trim();
+  if (keyword === 'classDef') return { kind: 'classDef', names: first.split(','), props: propsOf(remainder), line };
+  if (keyword === 'class') return { kind: 'class', ids: first.split(','), className: more.join(' '), line };
+  if (keyword === 'style') return { kind: 'style', id: first, props: propsOf(remainder), line };
+  if (keyword === 'linkStyle') {
+    const indexes = first === 'default' ? 'default' : first.split(',').map(Number);
+    if (indexes !== 'default' && indexes.some(Number.isNaN)) throw lineError('Mermaid', line, `"${first}" is not a list of link numbers`);
+    return { kind: 'linkStyle', indexes, props: propsOf(remainder), line };
+  }
+  return { kind: 'other', keyword, line };
+}
+
 /** Parses a Mermaid flowchart. Throws, naming the line, on text that is not one. */
 export function parseMermaid(text: string): MermaidFlowchart {
   const header = headerWord(text);
@@ -153,18 +169,7 @@ export function parseMermaid(text: string): MermaidFlowchart {
       const titleText = m[1] ?? m[3] ?? m[4]?.trim() ?? m[5];
       return { kind: 'subgraph', id, ...(titleText !== undefined ? { title: titleText } : {}), stmts: block(line), line };
     }
-    if (keyword === 'direction') return { kind: 'direction', value: rest.toUpperCase(), line };
-    const [first = '', ...more] = rest.split(/\s+/);
-    const remainder = rest.slice(first.length).trim();
-    if (keyword === 'classDef') return { kind: 'classDef', names: first.split(','), props: propsOf(remainder), line };
-    if (keyword === 'class') return { kind: 'class', ids: first.split(','), className: more.join(' '), line };
-    if (keyword === 'style') return { kind: 'style', id: first, props: propsOf(remainder), line };
-    if (keyword === 'linkStyle') {
-      const indexes = first === 'default' ? 'default' : first.split(',').map(Number);
-      if (indexes !== 'default' && indexes.some(Number.isNaN)) throw lineError('Mermaid', line, `"${first}" is not a list of link numbers`);
-      return { kind: 'linkStyle', indexes, props: propsOf(remainder), line };
-    }
-    return { kind: 'other', keyword, line };
+    return statementOf(keyword, rest, line);
   }
 
   function nodeRef(): MermaidNodeRef {

@@ -54,121 +54,161 @@ function jsonString(quoted: string): string {
 }
 const strokeOf = (body: string) => (body.startsWith('~') ? 'invisible' : body.startsWith('=') ? 'thick' : body.includes('.') ? 'dotted' : 'normal');
 
-/** Splits a Mermaid flowchart into tokens. Throws, naming the line, on text it cannot read. */
-export function lexMermaid(source: string): MermaidLex {
-  const text = source.replace(/\r\n?/g, '\n');
-  const tokens: MermaidToken[] = [];
-  let i = 0;
-  let line = 1;
-  let title: string | undefined;
-  let directives = 0;
-  const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(text);
-  if (front !== null) {
+
+class MermaidLexer {
+  readonly tokens: MermaidToken[] = [];
+  readonly text: string;
+  i = 0;
+  line = 1;
+  title: string | undefined;
+  directives = 0;
+
+  constructor(source: string) {
+    this.text = source.replace(/\r\n?/g, '\n');
+  }
+
+  push(t: MermaidToken): void {
+    const last = this.tokens[this.tokens.length - 1];
+    if (t.kind === 'sep' && (last === undefined || last.kind === 'sep')) return;
+    this.tokens.push(t);
+  }
+
+  atStart(): boolean {
+    const last = this.tokens[this.tokens.length - 1];
+    return last === undefined || last.kind === 'sep';
+  }
+
+  sticky(re: RegExp): RegExpExecArray | null {
+    re.lastIndex = this.i;
+    return re.exec(this.text);
+  }
+
+  lineEnd(): number {
+    const end = this.text.indexOf('\n', this.i);
+    return end < 0 ? this.text.length : end;
+  }
+
+  frontMatter(): void {
+    const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(this.text);
+    if (front === null) return;
     const t = /^title:[ \t]*(.*)$/m.exec(front[1]!)?.[1]?.trim();
-    if (t !== undefined) title = /^".*"$/.test(t) ? jsonString(t) : /^'.*'$/.test(t) ? t.slice(1, -1).replace(/''/g, "'") : t;
-    i = front[0].length;
-    line += front[0].split('\n').length - (front[0].endsWith('\n') ? 1 : 0);
+    if (t !== undefined) this.title = /^".*"$/.test(t) ? jsonString(t) : /^'.*'$/.test(t) ? t.slice(1, -1).replace(/''/g, "'") : t;
+    this.i = front[0].length;
+    this.line += front[0].split('\n').length - (front[0].endsWith('\n') ? 1 : 0);
   }
-  const push = (t: MermaidToken) => {
-    if (t.kind === 'sep' && (tokens.length === 0 || tokens[tokens.length - 1]!.kind === 'sep')) return;
-    tokens.push(t);
-  };
-  const atStart = () => tokens.length === 0 || tokens[tokens.length - 1]!.kind === 'sep';
-  const sticky = (re: RegExp) => {
-    re.lastIndex = i;
-    return re.exec(text);
-  };
 
-  while (i < text.length) {
-    const c = text[i]!;
-    if (c === '\n' || c === ';') { push({ kind: 'sep', line }); if (c === '\n') line++; i++; continue; }
-    if (c === ' ' || c === '\t') { i++; continue; }
-    if (text.startsWith('%%{', i)) {
-      const end = text.indexOf('}%%', i);
-      const stop = end < 0 ? text.length : end + 3;
-      for (let k = i; k < stop; k++) if (text[k] === '\n') line++;
-      i = stop;
-      directives++;
-      continue;
+  run(): MermaidLex {
+    this.frontMatter();
+    const { text } = this;
+    while (this.i < text.length) {
+      const c = text[this.i]!;
+      if (c === '\n' || c === ';') {
+        this.push({ kind: 'sep', line: this.line });
+        if (c === '\n') this.line++;
+        this.i++;
+      } else if (c === ' ' || c === '\t') {
+        this.i++;
+      } else if (text.startsWith('%%{', this.i)) {
+        this.directive();
+      } else if (text.startsWith('%%', this.i)) {
+        this.i = this.lineEnd();
+      } else if (!this.mark(c) && !this.link()) {
+        this.word(c);
+      }
     }
-    if (text.startsWith('%%', i)) { i = lineEnd(); continue; }
-    if (c === '&') { push({ kind: 'amp', value: '&', line }); i++; continue; }
-    if (text.startsWith(':::', i)) {
-      i += 3;
-      const m = sticky(WORD);
+    return { tokens: this.tokens, ...(this.title !== undefined ? { title: this.title } : {}), directives: this.directives };
+  }
+
+  directive(): void {
+    const end = this.text.indexOf('}%%', this.i);
+    const stop = end < 0 ? this.text.length : end + 3;
+    for (let k = this.i; k < stop; k++) if (this.text[k] === '\n') this.line++;
+    this.i = stop;
+    this.directives++;
+  }
+
+  /** `&`, `:::class`, `@{ … }`, or `|text|`: whether one was read. */
+  mark(c: string): boolean {
+    const { text, line } = this;
+    if (c === '&') {
+      this.push({ kind: 'amp', value: '&', line });
+      this.i++;
+    } else if (text.startsWith(':::', this.i)) {
+      this.i += 3;
+      const m = this.sticky(WORD);
       if (m === null) throw fail(line, 'a class name must follow ":::"');
-      i += m[0].length;
-      push({ kind: 'class', value: m[0], line });
-      continue;
-    }
-    if (text.startsWith('@{', i)) {
-      const end = text.indexOf('}', i);
+      this.i += m[0].length;
+      this.push({ kind: 'class', value: m[0], line });
+    } else if (text.startsWith('@{', this.i)) {
+      const end = text.indexOf('}', this.i);
       if (end < 0) throw fail(line, 'node metadata is never closed');
-      push({ kind: 'meta', value: text.slice(i + 2, end), line });
-      i = end + 1;
-      continue;
+      this.push({ kind: 'meta', value: text.slice(this.i + 2, end), line });
+      this.i = end + 1;
+    } else if (c === '|') {
+      this.push({ kind: 'pipe', value: this.delimited('|', '|'), line });
+    } else {
+      return false;
     }
-    if (c === '|') { push({ kind: 'pipe', value: delimited('|', '|'), line }); continue; }
-    if (link()) continue;
-    const word = sticky(WORD);
-    if (word === null) throw fail(line, `cannot read "${c}"`);
-    const start = atStart();
-    i += word[0].length;
-    push({ kind: 'word', value: word[0], line });
-    if (start && REST_KEYWORDS.has(word[0]) && /^(?:[ \t:]|$|\n)/.test(text.slice(i, i + 1))) {
-      const stop = Math.min(lineEnd(), text.indexOf(';', i) < 0 ? text.length : text.indexOf(';', i));
-      const rest = text.slice(i, stop).replace(/^[ \t]*:?/, '').trim();
-      if (rest !== '') push({ kind: 'rest', value: rest, line });
-      i = stop;
-      continue;
-    }
-    shape();
+    return true;
   }
-  return { tokens, ...(title !== undefined ? { title } : {}), directives };
 
-  function lineEnd(): number {
-    const end = text.indexOf('\n', i);
-    return end < 0 ? text.length : end;
+  word(c: string): void {
+    const word = this.sticky(WORD);
+    if (word === null) throw fail(this.line, `cannot read "${c}"`);
+    const start = this.atStart();
+    this.i += word[0].length;
+    this.push({ kind: 'word', value: word[0], line: this.line });
+    if (start && REST_KEYWORDS.has(word[0]) && /^(?:[ \t:]|$|\n)/.test(this.text.slice(this.i, this.i + 1))) {
+      const semi = this.text.indexOf(';', this.i);
+      const stop = Math.min(this.lineEnd(), semi < 0 ? this.text.length : semi);
+      const rest = this.text.slice(this.i, stop).replace(/^[ \t]*:?/, '').trim();
+      if (rest !== '') this.push({ kind: 'rest', value: rest, line: this.line });
+      this.i = stop;
+      return;
+    }
+    this.shape();
   }
 
   /** Text up to `close`, or a quoted string then `close`. */
-  function delimited(open: string, close: string): string {
-    i += open.length;
-    while (text[i] === ' ') i++;
+  delimited(open: string, close: string): string {
+    const { text, line } = this;
+    this.i += open.length;
+    while (text[this.i] === ' ') this.i++;
     let out: string;
-    if (text[i] === '"') {
-      const end = text.indexOf('"', i + 1);
-      if (end < 0 || text.slice(i, end).includes('\n')) throw fail(line, 'a quoted string is never closed');
-      out = text.slice(i + 1, end);
-      i = end + 1;
-      while (text[i] === ' ') i++;
-      if (!text.startsWith(close, i)) throw fail(line, `expected "${close}" after a quoted string`);
+    if (text[this.i] === '"') {
+      const end = text.indexOf('"', this.i + 1);
+      if (end < 0 || text.slice(this.i, end).includes('\n')) throw fail(line, 'a quoted string is never closed');
+      out = text.slice(this.i + 1, end);
+      this.i = end + 1;
+      while (text[this.i] === ' ') this.i++;
+      if (!text.startsWith(close, this.i)) throw fail(line, `expected "${close}" after a quoted string`);
     } else {
-      const end = text.indexOf(close, i);
-      if (end < 0 || text.slice(i, end).includes('\n')) throw fail(line, `text opened with "${open}" is never closed`);
-      out = text.slice(i, end).trim();
-      i = end;
+      const end = text.indexOf(close, this.i);
+      if (end < 0 || text.slice(this.i, end).includes('\n')) throw fail(line, `text opened with "${open}" is never closed`);
+      out = text.slice(this.i, end).trim();
+      this.i = end;
     }
-    i += close.length;
+    this.i += close.length;
     return out;
   }
 
-  function shape(): void {
+  shape(): void {
     for (const [open, closers] of SHAPES) {
-      if (!text.startsWith(open, i)) continue;
-      const from = i + open.length;
+      if (!this.text.startsWith(open, this.i)) continue;
+      const from = this.i + open.length;
       const found = closers
-        .map(([close, kind]) => ({ close, kind, at: closeAt(from, close) }))
+        .map(([close, kind]) => ({ close, kind, at: this.closeAt(from, close) }))
         .filter((f) => f.at >= 0)
         .sort((a, b) => a.at - b.at)[0];
-      if (found === undefined) throw fail(line, `a shape opened with "${open}" is never closed`);
-      push({ kind: 'shape', shape: found.kind, text: delimited(open, found.close), line });
+      if (found === undefined) throw fail(this.line, `a shape opened with "${open}" is never closed`);
+      this.push({ kind: 'shape', shape: found.kind, text: this.delimited(open, found.close), line: this.line });
       return;
     }
   }
 
   /** Where `close` ends text starting at `from`, past a quoted string; -1 when not on this line. */
-  function closeAt(from: number, close: string): number {
+  closeAt(from: number, close: string): number {
+    const { text } = this;
     let k = from;
     while (text[k] === ' ') k++;
     if (text[k] === '"') {
@@ -180,35 +220,44 @@ export function lexMermaid(source: string): MermaidLex {
     return at < 0 || (eol >= 0 && at > eol) ? -1 : at;
   }
 
-  function link(): boolean {
-    const m = sticky(LINK);
+  link(): boolean {
+    const m = this.sticky(LINK);
     if (m === null) return false;
     const [whole, lead, body, tail] = m as unknown as [string, LinkHead | undefined, string, LinkHead | undefined];
     if ((lead === 'o' || lead === 'x') && tail !== lead) return false;
     const stroke = strokeOf(body);
-    const opens = tail === undefined && (body === '--' || body === '==' || /^-\.+$/.test(body)) && /\s/.test(text[i + whole.length] ?? '');
-    i += whole.length;
+    const opens = tail === undefined && (body === '--' || body === '==' || /^-\.+$/.test(body))
+      && /\s/.test(this.text[this.i + whole.length] ?? '');
+    this.i += whole.length;
     if (!opens) {
-      push({ kind: 'link', stroke, ...(lead ? { start: lead } : {}), ...(tail ? { end: tail } : {}), line });
+      this.push({ kind: 'link', stroke, ...(lead ? { start: lead } : {}), ...(tail ? { end: tail } : {}), line: this.line });
       return true;
     }
+    const { label, end } = this.linkText(body);
+    this.push({ kind: 'link', stroke, ...(lead ? { start: lead } : {}), ...(end ? { end } : {}), text: label, line: this.line });
+    return true;
+  }
+
+  /** The text of a link opened with `body` and a space, and the head its closing arrow ends in. */
+  linkText(body: string): { label: string; end: LinkHead | undefined } {
+    const { text } = this;
     const closer = CLOSERS[body.includes('.') ? '.' : body[0]!]!;
-    let k = i;
+    let k = this.i;
     for (; k < text.length && text[k] !== '\n'; k++) {
       closer.lastIndex = k;
       if (closer.test(text) && /\s/.test(text[k] ?? '')) break;
     }
-    if (k >= text.length || text[k] === '\n') throw fail(line, `a link's text after "${body}" is never closed`);
-    const label = text.slice(i, k).trim();
+    if (k >= text.length || text[k] === '\n') throw fail(this.line, `a link's text after "${body}" is never closed`);
+    const label = text.slice(this.i, k).trim();
     closer.lastIndex = k;
     const close = closer.exec(text)!;
-    i = k + close[0].length;
+    this.i = k + close[0].length;
     const head = close[1]!.slice(-1);
-    const end = '>ox'.includes(head) ? head as LinkHead : undefined;
-    push({
-      kind: 'link', stroke, ...(lead ? { start: lead } : {}), ...(end ? { end } : {}),
-      text: /^".*"$/.test(label) ? label.slice(1, -1) : label, line,
-    });
-    return true;
+    return { label: /^".*"$/.test(label) ? label.slice(1, -1) : label, end: '>ox'.includes(head) ? head as LinkHead : undefined };
   }
+}
+
+/** Splits a Mermaid flowchart into tokens. Throws, naming the line, on text it cannot read. */
+export function lexMermaid(source: string): MermaidLex {
+  return new MermaidLexer(source).run();
 }

@@ -147,7 +147,7 @@ export function parseDot(text: string): DotGraph {
     }
     const first = keyword(t, 'subgraph') || is('{') ? subgraph() : nodeRef();
     if (peek()?.kind !== 'edgeop') {
-      if (first.kind === 'subgraph') return first;
+      if ('stmts' in first) return first;
       return { kind: 'node', node: first, attrs: attrList(), line };
     }
     const ends: (DotNodeRef | DotSubgraph)[] = [first];
