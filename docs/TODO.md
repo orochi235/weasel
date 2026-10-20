@@ -341,10 +341,6 @@ Priority tags:
   takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
   (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
   cut it.
-- **(P2) A constraint link does not preview through a whole-node drag, and a broken one is drawn
-  nowhere.** Move, resize and rotate finish links at commit (`PathEditExtension.finishTransform`),
-  so a linked node jumps on release rather than following the drag. `constraintLinkConflictsOf`
-  reports a link a transform broke, but no mark shows it.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 

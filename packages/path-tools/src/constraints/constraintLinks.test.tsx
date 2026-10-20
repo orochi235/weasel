@@ -5,7 +5,7 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  createScene, createTransformOp, defaultCommitAdapter, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
+  createScene, createTransformOp, defaultCommitAdapter, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
 } from '@weasel-js/core';
 import {
@@ -126,11 +126,26 @@ function setup() {
     handle.onMove!(alt(p.x + dx, p.y + dy));
     handle.onEnd!(alt(p.x + dx, p.y + dy), 'commit');
   };
+  /** Drag node `id` whole by `(dx, dy)` with the move action and release; answers each node's preview mid-drag. */
+  const moveDrag = (id: NodeId, dx: number, dy: number) => {
+    const moveDeps = { ...deps(), selection: { get: () => [id], adapterMethods: undefined } } as unknown as ActionDeps;
+    const at = (moving: boolean): InvocationCtx => ({
+      world: moving ? { x: 50 + dx, y: 50 + dy } : { x: 50, y: 50 }, screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: moveDeps,
+      drag: moving ? { start: { x: 50, y: 50 }, current: { x: 50 + dx, y: 50 + dy }, delta: { x: dx, y: dy } } : undefined,
+    }) as unknown as InvocationCtx;
+    const handle = (moveAction.invoker as OngoingInvoker).start(at(false), undefined);
+    handle.onMove!(at(true));
+    const ids = [...(handle.previewIds!() ?? [])];
+    const previews = new Map(ids.map((pid) => [pid, pathAnchorPoints(handle.previewPose!(pid) as PolygonPath)]));
+    handle.onEnd!(at(true), 'commit');
+    return previews;
+  };
   const links = () => [...scene.renderOrderNodes()].flatMap((n) => {
     const c = constraintLinkOf(n.data);
     return c && n.id !== link ? [{ id: n.id, nodes: n.dependsOn, constraint: c }] : [];
   });
-  return { scene, square, triangle, link, drag, points, select, run, move, bend, linkDrag, links };
+  return { scene, square, triangle, link, drag, points, select, run, move, bend, linkDrag, links, moveDrag };
 }
 
 describe('constraint links', () => {
@@ -233,5 +248,13 @@ describe('constraint links', () => {
     t.linkDrag(t.triangle, 1, 0, -20);
     expect(t.points(t.triangle)[1]).toEqual({ x: 40, y: -70 });
     expect(t.links()).toHaveLength(1);
+  });
+
+  it('previews a linked node following a move drag, as the move commits it', () => {
+    const t = setup();
+    const previews = t.moveDrag(t.square, 0, 30);
+    expect([...previews.keys()].sort()).toEqual([t.square, t.triangle].sort());
+    expect(previews.get(t.triangle)![0].y).toBeCloseTo(30, 3);
+    expect(previews.get(t.triangle)).toEqual(t.points(t.triangle));
   });
 });

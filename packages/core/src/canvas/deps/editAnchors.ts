@@ -22,7 +22,9 @@ import { anchorDataPatch } from 'features/paths/anchorData';
 import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'features/paths/editablePath';
 import { representationOf } from 'features/paths/pathRepresentation';
 import type { PathEditExtension } from 'features/paths/pathEditExtension';
-import { finishCtx, finishEdit, otherOps, reshapeOps, transformOps, type EditableNode } from './pathEditCommits';
+import {
+  finishCtx, finishEdit, otherOps, reshapeOps, transformOps, transformPreview, type EditableNode,
+} from './pathEditCommits';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
 import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -141,7 +143,7 @@ function pathAccess(
 ): Pick<
   EditAnchorsDep,
   | 'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit'
-  | 'transformOps' | 'store'
+  | 'transformOps' | 'transformPreview' | 'store'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = sc.get(id as NodeId) as EditableNode | undefined;
@@ -188,6 +190,7 @@ function pathAccess(
       return { path: done.path, others };
     },
     transformOps: (ops, label) => transformOps(sc, extensions, ops, label),
+    transformPreview: (poses) => transformPreview(sc, extensions, poses),
     store(id, worldPath, label, data) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
       const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null, extensions) : [];

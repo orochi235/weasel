@@ -34,3 +34,42 @@ export function transformApplyOps(deps: ActionDeps): ((ops: Op[], label: string)
   if (!transformFinisher(deps)) return deps.applyOps;
   return (ops, label) => { commitTransformOps(deps, ops, label); };
 }
+
+/** The preview half of a whole-node transform drag: its own previews, and the other nodes each frame changes with them. */
+export interface TransformPreviewFields {
+  previewIds(): Iterable<string>;
+  previewPose(id: string): unknown | null;
+  previewData(id: string): unknown | null;
+}
+
+/**
+ * A transform drag's preview fields over `previews`, its frame's stored poses
+ * by id, with the nodes the `editAnchors` dep's `transformPreview` says
+ * change with each frame added: the linked nodes follow the drag as the
+ * commit will leave them. Each frame is read once, keyed on the map.
+ */
+export function transformPreviewFields(
+  deps: ActionDeps | undefined,
+  previews: () => ReadonlyMap<string, unknown>,
+): TransformPreviewFields {
+  const dep = deps?.editAnchors;
+  let seen: ReadonlyMap<string, unknown> | null = null;
+  let others = new Map<string, { pose: unknown; data?: unknown }>();
+  const linked = () => {
+    const now = previews();
+    if (now !== seen) {
+      seen = now;
+      others = new Map((dep?.transformPreview?.(now) ?? []).map((o) => [o.id, o]));
+    }
+    return others;
+  };
+  return {
+    previewIds: () => {
+      const own = previews();
+      const more = linked();
+      return more.size === 0 ? own.keys() : [...own.keys(), ...more.keys()];
+    },
+    previewPose: (id) => previews().get(id) ?? linked().get(id)?.pose ?? null,
+    previewData: (id) => linked().get(id)?.data ?? null,
+  };
+}

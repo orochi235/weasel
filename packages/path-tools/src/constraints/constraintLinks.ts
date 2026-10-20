@@ -17,6 +17,7 @@ import {
   constrainPathsEdit,
   pathAnchorPoints,
   unsatisfiedConstraints,
+  type ConstraintPoint,
   type PathConstraint,
   type PathLink,
   type PathsEditItem,
@@ -205,16 +206,42 @@ export function finishLinkedTransform(ctx: PathTransformFinishCtx): PathEditOthe
   return done.items.flatMap((item, k) => (moved.has(nodes[k]) || item.path === items[k].after ? [] : [{ id: nodes[k], path: item.path }]));
 }
 
+/** A link that does not hold in the committed paths of the nodes it ties. */
+export interface BrokenConstraintLink {
+  /** The link node. */
+  id: string;
+  /** The nodes it ties, in the order its anchors number them. */
+  nodes: readonly string[];
+  constraint: PathConstraint;
+  /** Their anchors one after another, in world space, as its constraint numbers them; null when one of them has no path. */
+  points: ConstraintPoint[] | null;
+}
+
+type LinkScene = Pick<Scene<unknown, string, unknown>, 'get'>;
+
+/** Link node `id` when its constraint does not hold, else null — null too when `id` is no link. */
+export function brokenConstraintLink(scene: LinkScene, id: string): BrokenConstraintLink | null {
+  const link = linkAt({ node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] }, id);
+  if (!link) return null;
+  const paths = link.nodes.map((n) => resolveEditablePathOf(scene.get(n as NodeId)));
+  const points = paths.every((p) => p) ? paths.flatMap((p) => pathAnchorPoints(p!)) : null;
+  if (points && unsatisfiedConstraints(points, [link.constraint]).length === 0) return null;
+  return { ...link, points };
+}
+
+/** Every link in `scene` whose constraint does not hold. */
+export function brokenConstraintLinks(scene: LinkScene & Pick<Scene<unknown, string, unknown>, 'renderOrderNodes'>): BrokenConstraintLink[] {
+  return [...scene.renderOrderNodes()].flatMap((n) => {
+    const broken = constraintLinkOf(n.data) ? brokenConstraintLink(scene, n.id) : null;
+    return broken ? [broken] : [];
+  });
+}
+
 /** The ids of the link nodes tying `id` whose constraint does not hold in the nodes' committed paths. */
 export function constraintLinkConflictsOf(scene: Pick<Scene<unknown, string, unknown>, 'get' | 'removalClosure'>, id: string): string[] {
   if (!scene.get(id as NodeId)) return [];
-  const reader: LinkReader = { node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] };
   return scene.removalClosure([id as NodeId]).flatMap((lid) => {
-    const link = lid === id ? null : linkAt(reader, lid);
-    if (!link?.nodes.includes(id)) return [];
-    const paths = link.nodes.map((n) => resolveEditablePathOf(scene.get(n as NodeId)));
-    if (paths.some((p) => !p)) return [link.id];
-    const points = paths.flatMap((p) => pathAnchorPoints(p!));
-    return unsatisfiedConstraints(points, [link.constraint]).length > 0 ? [link.id] : [];
+    const broken = lid === id ? null : brokenConstraintLink(scene, lid);
+    return broken?.nodes.includes(id) ? [broken.id] : [];
   });
 }
