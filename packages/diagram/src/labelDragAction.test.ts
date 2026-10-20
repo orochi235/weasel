@@ -69,6 +69,24 @@ describe('createLabelDragAction', () => {
     expect(labelOf(scene)).not.toHaveProperty('placed');
   });
 
+  it('keeps the grab offset when pressed off center, across the line too', () => {
+    const scene = load();
+    const center = centerOf(boxOf(scene, LABEL));
+    const press = { x: center.x + 10, y: center.y + 3 };
+    const { handle, ctxAt } = drag(scene, press);
+    const followsPointer = (d: Vec2) => {
+      handle.onMove!(ctxAt({ x: press.x + d.x, y: press.y + d.y }));
+      const at = centerOf(handle.previewPose!(LABEL) as Rect);
+      expect(at.x).toBeCloseTo(center.x + d.x);
+      expect(at.y).toBeCloseTo(center.y + d.y);
+      return (handle.previewData!(LABEL) as { diagram: { label: DiagramLabel } }).diagram.label.offset!;
+    };
+    const above = followsPointer({ x: 5, y: -20 });
+    const below = followsPointer({ x: 5, y: 40 });
+    expect(Math.sign(above)).toBe(1);
+    expect(Math.sign(below)).toBe(-1);
+  });
+
   it('is one history entry, undone in one', () => {
     const scene = load();
     const before = labelOf(scene);
@@ -98,11 +116,13 @@ describe('createLabelDragAction', () => {
   it('commits nothing when canceled', () => {
     const scene = load();
     const before = labelOf(scene);
+    const depth = scene.historyEntries().length;
     const press = centerOf(boxOf(scene, LABEL));
     const { handle, ctxAt } = drag(scene, press);
     handle.onMove!(ctxAt({ x: press.x, y: press.y + 40 }));
     handle.onEnd!(ctxAt({ x: press.x, y: press.y + 40 }), 'cancel');
     expect(labelOf(scene)).toEqual(before);
+    expect(scene.historyEntries().length).toBe(depth);
   });
 
   it('keeps its fraction when the edge is rerouted', () => {

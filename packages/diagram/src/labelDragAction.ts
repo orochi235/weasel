@@ -140,7 +140,7 @@ export function createLabelDragAction(opts: LabelDragOptions = {}): Action {
           },
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             open = false;
-            const final = reason === 'commit' && spot !== null ? spotAt(p, endCtx) : null;
+            const final = reason === 'commit' && spot !== null ? spotAt(p, endCtx) ?? spot : null;
             if (final !== null) {
               commit({ labelId: p.labelId, edgeId: p.edgeId, placement: placementAt(final) }, { ...endCtx, deps: p.deps });
             }
