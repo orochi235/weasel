@@ -6,3 +6,7 @@
 .group.horizontal {
   flex-direction: row;
 }
+.group.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--wzl-tool-columns), minmax(0, 1fr));
+}
