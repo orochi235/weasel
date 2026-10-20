@@ -1,9 +1,11 @@
 /**
- * The lane actions: dragging the boundary after a lane resizes it, and the
- * add-lane button adds one at the end of the stack. Each keeps its gesture
- * and takes a swappable commit; the default writes the scene.
+ * The container actions: dragging the boundary after a lane resizes it, the
+ * add-lane button adds one at the end of the stack, and Release members
+ * removes a container and keeps what it holds. The two lane gestures take a
+ * swappable commit; the default writes the scene.
  */
 import {
+  ActionDisabledReason,
   carriedDescendants,
   sceneCarrySource,
   type Action,
@@ -17,7 +19,7 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
-import { addLane } from './containerStencils';
+import { addLane, releaseMembers } from './containerStencils';
 import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
 import { diagramContainerOf, titleIdOf, titlePose } from './trait';
@@ -26,6 +28,8 @@ import { diagramContainerOf, titleIdOf, titlePose } from './trait';
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
 /** The action the add-lane button runs. */
 export const ADD_LANE_ACTION_ID = 'diagram.addLane';
+/** The command that removes the selected containers and keeps their members. */
+export const RELEASE_MEMBERS_ACTION_ID = 'diagram.releaseMembers';
 const GRAB_LANE_ACTION_ID = 'diagram.grabLane';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -84,9 +88,11 @@ export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number,
   return out;
 }
 
-/** Options for the lane actions. */
+/** Options for the container actions. */
 export interface LaneActionOptions extends LaneLayerOptions {
   scene: AnyScene;
+  /** The selected ids, which Release members reads. */
+  selected?: () => readonly string[];
   /** Defaults to {@link commitLaneResizeToScene}. */
   commitResize?: (resize: LaneResize, ctx: InvocationCtx) => void;
   /** Defaults to `addLane` on `deps.scene`, at the end of the stack. */
@@ -161,19 +167,51 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
   };
 }
 
+/** The selected containers, pools, and lanes. */
+const selectedContainers = (opts: LaneActionOptions): string[] =>
+  (opts.selected?.() ?? []).filter((id) => {
+    const node = opts.scene.get(id as NodeId);
+    return node !== undefined && diagramContainerOf(node) !== null;
+  });
+
+/** The `diagram.releaseMembers` command: removes each selected container and
+ *  keeps what it holds, in one history entry. */
+export function createReleaseMembersAction(opts: LaneActionOptions): Action {
+  return {
+    id: RELEASE_MEMBERS_ACTION_ID,
+    label: 'Release members',
+    group: 'diagram',
+    requires: ['scene'],
+    invoker: {
+      timing: 'immediate',
+      run() {
+        const ids = selectedContainers(opts);
+        if (ids.length === 0) return;
+        opts.scene.batch('Release members', () => {
+          for (const id of ids) releaseMembers(opts.scene, id);
+        });
+      },
+    },
+    enabled: () => (selectedContainers(opts).length > 0 ? true : ActionDisabledReason.NotApplicable),
+  };
+}
+
 /**
- * Both halves of lane editing: the layer to `registerLayer`, and the
- * contribution to pass as `ambient`, which carries the boundary drag and the
- * add-lane click. Like `diagramPorts`, one without the other fails quietly.
+ * Both halves of container editing: the lane layer to `registerLayer`, and
+ * the contribution to pass as `ambient`, which carries the lane boundary
+ * drag, the add-lane click, and the `diagram.releaseMembers` command. Like
+ * `diagramPorts`, one without the other fails quietly.
  */
-export function diagramLanes(opts: LaneActionOptions): { layer: RenderLayer<unknown>; contribution: Contribution } {
+export function diagramContainers(opts: LaneActionOptions): { layer: RenderLayer<unknown>; contribution: Contribution } {
   const target = `affordance:${LANE_AFFORDANCE_KIND}` as const;
   return {
     layer: laneLayer(opts.scene, opts),
     contribution: {
-      id: 'weasel-diagram-lanes',
+      id: 'weasel-diagram-containers',
       eligibility: { claimed: true },
-      actions: [createLaneResizeAction(opts), createAddLaneAction(opts), grabPortAction(GRAB_LANE_ACTION_ID)],
+      actions: [
+        createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
+      ],
       bindings: [
         { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID },
         { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID },

@@ -6,7 +6,7 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { withDiagramRegistry } from '../edge';
 import { CONTAINER_STENCILS, containerBuild, lanesOf } from './containerStencils';
-import { createAddLaneAction, createLaneResizeAction } from './laneActions';
+import { createAddLaneAction, createLaneResizeAction, createReleaseMembersAction } from './containerActions';
 import { createLaneAffordance, type LaneScratch } from './laneBoundaryLayer';
 
 function pool() {
@@ -63,6 +63,21 @@ describe('the lane resize action', () => {
     resize(h, { x: 200, y: -500 });
     expect(pose(h.scene, h.first)).toMatchObject({ height: 40 });
     expect(pose(h.scene, h.second)).toMatchObject({ y: 40 });
+  });
+});
+
+describe('the release members command', () => {
+  it('is enabled for a selected container and releases it in one entry', () => {
+    const h = pool();
+    const nothing = createReleaseMembersAction({ scene: h.scene as never, selected: () => ['m'] });
+    expect(nothing.enabled!({} as never)).not.toBe(true);
+    const action = createReleaseMembersAction({ scene: h.scene as never, selected: () => [h.poolId] });
+    expect(action.enabled!({} as never)).toBe(true);
+    const entries = h.scene.historyIndex();
+    (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, undefined);
+    expect(h.scene.get(h.poolId as NodeId)).toBeUndefined();
+    expect(h.scene.get('m' as NodeId)!.parent).toBeNull();
+    expect(h.scene.historyIndex()).toBe(entries + 1);
   });
 });
 
