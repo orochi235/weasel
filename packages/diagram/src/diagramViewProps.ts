@@ -6,6 +6,7 @@ import type { DataEdge, DiagramSpec } from './fromData';
 import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
+import type { ReorderChange } from './reorder';
 import type { EdgeRoute, NodeMove } from './sceneSync';
 
 /** One end of a data edge moved onto node `node`, at `port` or on its body. */
@@ -72,6 +73,11 @@ export interface DiagramViewProps {
    *  selected data nodes (a selected group, not its members) and every edge
    *  selected or ending on one of them, and removes nothing. */
   onDelete?: (removed: DeleteReport) => void;
+  /** Set to let a member of a group marked `reorder` be dragged along that
+   *  axis among its siblings, or the selected one stepped with Alt and an
+   *  arrow key. Reports the members' new order and moves nothing: write it to
+   *  the group's `members`, which layered layout keeps. */
+  onReorder?: (change: ReorderChange) => void;
   /** Set to report a double-click on an edge, for its label to be edited. */
   onEditLabel?: (edge: string) => void;
   /** Whether a connect or a reconnect may end on a shape's body, away from

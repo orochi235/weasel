@@ -28,6 +28,7 @@ import { registerDiagramShape } from './shape';
 export type { EdgeRoute, NodeMove } from './sceneSync';
 export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange } from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
+export type { ReorderChange } from './reorder';
 
 /** The view's box holds the canvas and the overlays placed over it, and is as
  *  big as the canvas: its parent's box on an axis the canvas fills. */
@@ -60,7 +61,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onDelete, onEditLabel, connectBodies,
+  specs: given, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onDelete, onEditLabel, onReorder, connectBodies,
   pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
@@ -145,7 +146,7 @@ function Inner({
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
     source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
-    onConnect, onReconnect, onDelete, onEditLabel, connectBodies, canConnect, portOptions, ambient: extraAmbient,
+    onConnect, onReconnect, onDelete, onEditLabel, onReorder, connectBodies, canConnect, portOptions, ambient: extraAmbient,
   });
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -153,7 +154,7 @@ function Inner({
     const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
     return () => disposers.forEach((dispose) => dispose());
   }, [editing.layers]);
-  const edits = onMove !== undefined || onConnect !== undefined || edgesPick;
+  const edits = onMove !== undefined || onConnect !== undefined || onReorder !== undefined || edgesPick;
 
   useRefit(canvasRef, fit);
   const shown = overlays ?? NO_OVERLAYS;
