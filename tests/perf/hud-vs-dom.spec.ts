@@ -103,6 +103,8 @@ interface Breakdown {
 interface Census {
   threads: Record<string, { busy: number; cpu: number | null; count: number }>;
   stages: Record<string, { mean: number; perFrame: number }>;
+  /** The renderer's worker pool, self time by event name. */
+  pool: Record<string, number>;
 }
 interface Sample extends Cell {
   pass: number;
@@ -129,6 +131,7 @@ function analyze(buf: Buffer, frames: number): Breakdown & { found: string[]; ce
 
   let main = 0; let compositor = 0; let raster = 0; let gpuProcess = 0;
   let mainEvents: TraceEvent[] = [];
+  const poolUs = new Map<string, number>();
   const found: string[] = [];
   for (const [k, list] of trace.byThread) {
     const pid = Number(k.split(':')[0]);
@@ -138,6 +141,9 @@ function analyze(buf: Buffer, frames: number): Breakdown & { found: string[]; ce
       if (tname === 'CrRendererMain') { main = busy(list, t0, t1); mainEvents = list; found.push('main'); }
       else if (tname === 'Compositor') { compositor += busy(list, t0, t1); found.push('compositor'); }
       else if (tname.startsWith('CompositorTileWorker')) { raster += busy(list, t0, t1); found.push('raster'); }
+      else if (CENSUS && tname.startsWith('ThreadPoolForegroundWorker')) {
+        for (const [name, us] of selfTimes(list, t0, t1)) poolUs.set(name, (poolUs.get(name) ?? 0) + us);
+      }
     } else if (/gpu/i.test(pname)) {
       gpuProcess += busy(list, t0, t1);
       found.push('gpu');
@@ -153,7 +159,8 @@ function analyze(buf: Buffer, frames: number): Breakdown & { found: string[]; ce
     else otherMain += us;
   }
   const ms = (us: number) => us / 1000 / frames;
-  const census: Census = { threads: {}, stages: {} };
+  const census: Census = { threads: {}, stages: {}, pool: {} };
+  for (const [name, us] of poolUs) census.pool[name] = ms(us);
   for (const r of threadCensus(trace, t0, t1)) {
     census.threads[`${r.process}/${r.thread}`] = { busy: ms(r.busyUs), cpu: r.cpuUs === null ? null : ms(r.cpuUs), count: r.count };
   }
@@ -436,6 +443,9 @@ function printCensus(c: Census, intervalMs: number): void {
   const stages = Object.entries(c.stages).sort((a, b) => b[1].mean - a[1].mean).slice(0, 10);
   if (stages.length) console.log('         async stages, mean ms a span (spans a frame):');
   for (const [k, st] of stages) console.log(`           ${fmt(st.mean)} (${fmt(st.perFrame, 5)})  ${k}`);
+  const pool = Object.entries(c.pool).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (pool.length) console.log('         renderer worker pool, ms/frame self time:');
+  for (const [k, ms] of pool) console.log(`           ${fmt(ms)}  ${k}`);
 }
 
 function censusMetrics(cs: Census[], stat: string): Record<string, ReturnType<typeof metric>> {
@@ -444,6 +454,10 @@ function censusMetrics(cs: Census[], stat: string): Record<string, ReturnType<ty
   for (const k of keys((c) => c.threads)) {
     const xs = cs.map((c) => +(c.threads[k]?.busy ?? 0).toFixed(4));
     out[`thread ${k}`] = metric(med(xs), 'ms', `${stat}, busy per frame`, xs);
+  }
+  for (const k of keys((c) => c.pool)) {
+    const xs = cs.map((c) => +(c.pool[k] ?? 0).toFixed(4));
+    out[`pool ${k}`] = metric(med(xs), 'ms', `${stat}, renderer worker pool self time per frame`, xs);
   }
   for (const k of keys((c) => c.stages)) {
     const xs = cs.filter((c) => c.stages[k]).map((c) => +c.stages[k].mean.toFixed(4));

@@ -23,6 +23,7 @@ import type { DiagramSpec } from './fromData';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
+import { groupReorderContribution } from './groupReorder';
 import { dataKeyReader } from './trait';
 import type { DeleteReport, DiagramViewProps, ReconnectChange } from './diagramViewProps';
 
@@ -76,7 +77,8 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 
 type EditingProps = Pick<
   DiagramViewProps,
-  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'connectBodies' | 'canConnect' | 'portOptions' | 'ambient'
+  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'connectBodies' | 'canConnect'
+  | 'portOptions' | 'ambient'
 >;
 
 export interface DiagramEditing {
@@ -95,6 +97,7 @@ export function useDiagramEditing(
   const routes = props.onEditRoute !== undefined;
   const labels = props.onEditLabel !== undefined;
   const deletes = props.onDelete !== undefined;
+  const reorders = props.onReorder !== undefined;
 
   const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
@@ -142,6 +145,10 @@ export function useDiagramEditing(
         bindings: [editEdgeLabelBinding()],
       }
     : null, [labels, report]);
+  const reorder = useMemo(
+    () => (reorders ? groupReorderContribution((change) => report.current.onReorder?.(change)) : null),
+    [reorders, report],
+  );
   const actions = useMemo(
     () => (deletes ? { ...NO_MARQUEE, delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : NO_MARQUEE),
     [deletes, report],
@@ -156,8 +163,8 @@ export function useDiagramEditing(
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, route?.contribution, ends?.contribution, label].filter((c): c is Contribution => c != null),
+    ...[ports?.contribution, route?.contribution, ends?.contribution, label, reorder].filter((c): c is Contribution => c != null),
     ...(extra ?? []),
-  ], [ports, route, ends, label, extra]);
+  ], [ports, route, ends, label, reorder, extra]);
   return { layers, ambient, actions };
 }

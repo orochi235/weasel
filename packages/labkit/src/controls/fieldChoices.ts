@@ -1,5 +1,5 @@
 import type { PrefGroup } from '@weasel-js/prefs';
-import { type PrefFieldChoice, prefFieldChoices } from '@weasel-js/ui';
+import { type PrefFieldChoice, prefFieldChoices } from '@weasel-js/ui/components/Prefs';
 import { createContext, useContext, useMemo } from 'react';
 
 /** The fields of the config a panel draws, which a `field` leaf names one of. */

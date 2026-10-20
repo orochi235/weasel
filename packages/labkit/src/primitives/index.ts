@@ -1,5 +1,5 @@
-export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui';
-export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui';
+export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui/components/StatusBar';
+export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 export type { FloatingPanelProps } from './FloatingPanel';
 export { FloatingPanel } from './FloatingPanel';
 export { FpsMeter } from './FpsMeter';

@@ -1,4 +1,4 @@
-// One config, three builds, picked by `--mode`: `pages` (the devtools and panel pages), and
+// One config, three builds, picked by `--mode`: `pages` (the devtools, panel, and popup pages), and
 // `content` and `background`, which must each be one classic script with nothing loaded later.
 // `scripts/build.ts` runs all three, then writes each browser's manifest.
 import { defineConfig, type UserConfig } from 'vite';
@@ -31,7 +31,7 @@ export default defineConfig(({ mode }): UserConfig => {
       build: {
         outDir: OUT,
         emptyOutDir: true,
-        rolldownOptions: { input: { devtools: resolve(here, 'devtools.html'), panel: resolve(here, 'panel.html') } },
+        rolldownOptions: { input: { devtools: resolve(here, 'devtools.html'), panel: resolve(here, 'panel.html'), popup: resolve(here, 'popup.html') } },
       },
     };
   }

@@ -18,7 +18,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { AnchorFields } from '@weasel-js/ui';
+import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';

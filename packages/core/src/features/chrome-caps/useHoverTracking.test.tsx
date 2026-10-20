@@ -21,6 +21,7 @@ function fireLeave(el: Element): void {
 function renderHoverHook(opts: {
   getNodeAtPoint: (x: number, y: number) => { id: ReturnType<typeof asNodeId> } | null;
   clientToWorld?: (cx: number, cy: number) => { x: number; y: number };
+  onChange?: (id: ReturnType<typeof asNodeId> | null) => void;
 }) {
   const canvas = document.createElement('canvas');
   document.body.appendChild(canvas);
@@ -31,6 +32,7 @@ function renderHoverHook(opts: {
         const w = toWorld(cx, cy);
         return opts.getNodeAtPoint(w.x, w.y);
       },
+      ...(opts.onChange ? { onChange: opts.onChange } : {}),
     });
   });
   // After the hook's own effects have run: an element that arrives late must
@@ -40,6 +42,24 @@ function renderHoverHook(opts: {
 }
 
 describe('useHoverTracking', () => {
+  it('reports each change of hovered id once, and null on leave', () => {
+    const seen: (string | null)[] = [];
+    const { canvas, cleanup } = renderHoverHook({
+      getNodeAtPoint: (x) => (x < 10 ? null : { id: asNodeId(x < 20 ? 'a' : 'b') }),
+      onChange: (id) => seen.push(id),
+    });
+    act(() => {
+      fireMove(canvas, 12, 0);
+      fireMove(canvas, 14, 0);
+      fireMove(canvas, 25, 0);
+      fireMove(canvas, 5, 0);
+      fireMove(canvas, 12, 0);
+      fireLeave(canvas);
+    });
+    expect(seen).toEqual(['a', 'b', null, 'a', null]);
+    cleanup();
+  });
+
   it('returns null before any pointer event', () => {
     const { getHover, cleanup } = renderHoverHook({ getNodeAtPoint: () => null });
     expect(getHover()).toBeNull();

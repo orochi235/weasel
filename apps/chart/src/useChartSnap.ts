@@ -1,9 +1,8 @@
 import type { FeatureEntry, RenderLayer, SceneCanvasSnap, SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
-import { usePageGrid } from '@editor/index';
+import { usePageGrid, type PageSize } from '@editor/index';
 import { useMemo } from 'react';
-import { CHART_PAGE, CHART_PAGE_COLOR } from './chartDocument';
 import { useChartPref } from './prefs';
 
 /** A heavier line every inch at the default 12 per line. */
@@ -19,8 +18,9 @@ export interface ChartSnap {
   features: readonly FeatureEntry[];
 }
 
-/** Chart mode's grid and snapping, from the View preferences. Each value keeps its identity until its prefs change. */
-export function useChartSnap(): ChartSnap {
+/** Chart mode's grid and snapping over `page`, from the View preferences, with line colors read against
+ *  `background`. Each value keeps its identity until its inputs change. */
+export function useChartSnap(page: PageSize & { x: number; y: number }, background: string): ChartSnap {
   const [visible] = useChartPref('view.gridVisible');
   const [spacing] = useChartPref('view.gridSpacing');
   const [snapToGrid] = useChartPref('view.snapToGrid');
@@ -28,7 +28,7 @@ export function useChartSnap(): ChartSnap {
   const [spacingSnap] = useChartPref('view.spacingSnap');
 
   const grid = usePageGrid({
-    page: CHART_PAGE, spacing, background: CHART_PAGE_COLOR, accentEvery: ACCENT_EVERY, visible, snap: snapToGrid,
+    page, spacing, background, accentEvery: ACCENT_EVERY, visible, snap: snapToGrid,
   });
   const source = grid.source;
   const snap = useMemo<SceneCanvasSnap>(() => ({ sources: source ? [source] : [] }), [source]);

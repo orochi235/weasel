@@ -12,7 +12,6 @@ import { FORM } from './form.mjs';
 import { REPO } from './repo.mjs';
 import { ARCS } from './arcs.mjs';
 import { CURVES } from './curves.mjs';
-import { SHAPES } from './shapes.mjs';
 import { SOLIDS } from './solids.mjs';
 import { TEXT } from './text.mjs';
 import { STATUSES } from './status.mjs';
@@ -50,6 +49,5 @@ export const groups = [
   [markGroup, MARKS],
   ['Arc profiles', ARCS],
   ['Curves', CURVES],
-  ['Shapes', SHAPES],
   ['Platonic solids', SOLIDS],
 ];

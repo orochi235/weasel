@@ -1,0 +1,9 @@
+.wc-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--wc-swatch-fill);
+  border: 2px solid var(--wc-swatch-stroke);
+  box-sizing: border-box;
+}

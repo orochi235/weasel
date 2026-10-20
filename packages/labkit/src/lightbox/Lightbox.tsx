@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import {
   type MouseEvent,
   type ReactNode,

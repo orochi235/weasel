@@ -10,13 +10,15 @@ afterEach(() => {
   localStorage.clear();
 });
 
+const PAGE = { x: 0, y: 0, width: 1056, height: 816 };
+
 const presetOf = (features: readonly FeatureEntry[]) =>
   features.find((f): f is FeaturePreset => typeof f === 'object' && f !== null);
 const sourceIds = (preset: FeaturePreset | undefined) => (preset?.snapSources ?? []).map((s) => s.id).sort();
 
 describe('useChartSnap', () => {
   it('starts with no grid, no grid snap, and alignment and spacing snaps on', () => {
-    const { result } = renderHook(() => useChartSnap());
+    const { result } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     expect(result.current.gridLayer).toBeUndefined();
     expect(result.current.snap.sources ?? []).toEqual([]);
     expect(result.current.features[0]).toBe('draw');
@@ -24,7 +26,7 @@ describe('useChartSnap', () => {
   });
 
   it('draws the grid and snaps to it while their prefs are on', () => {
-    const { result } = renderHook(() => useChartSnap());
+    const { result } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     act(() => { chartPrefs().set('view.gridVisible', true); });
     expect(result.current.gridLayer).toBeDefined();
     expect(result.current.snap.sources ?? []).toEqual([]);
@@ -33,7 +35,7 @@ describe('useChartSnap', () => {
   });
 
   it('keeps alignment without spacing and its readout, and drops the preset with both off', () => {
-    const { result } = renderHook(() => useChartSnap());
+    const { result } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     act(() => { chartPrefs().set('view.spacingSnap', false); });
     expect(sourceIds(presetOf(result.current.features))).toEqual(['alignment']);
     expect(presetOf(result.current.features)?.contributions ?? []).toEqual([]);
@@ -46,7 +48,7 @@ describe('useChartSnap', () => {
       chartPrefs().set('view.gridVisible', true);
       chartPrefs().set('view.snapToGrid', true);
     });
-    const { result, rerender } = renderHook(() => useChartSnap());
+    const { result, rerender } = renderHook(() => useChartSnap(PAGE, '#ffffff'));
     const first = result.current;
     rerender();
     expect(result.current.gridLayer).toBe(first.gridLayer);

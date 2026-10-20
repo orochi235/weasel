@@ -200,4 +200,29 @@ describe('resolveSnap', () => {
     expect(r.members).toHaveLength(1);
     expect(new Set(r.satisfied)).toEqual(new Set(lines));
   });
+  it('leaves out a member the others already imply', () => {
+    const line = cand(hline(3));
+    const pt = cand(point(2, 3));
+    const r = resolveSnap(problem({ delta0: [1, 1], candidates: [line, pt] }));
+    expectVecClose(r.delta, [2, 3]);
+    expect(r.members).toEqual([pt]);
+    expect(new Set(r.satisfied)).toEqual(new Set([line, pt]));
+  });
+
+  it('a redundant line does not decide a tie between points', () => {
+    const line = cand(hline(3), { order: 0 });
+    const near = cand(point(3, 0), { order: 1 });
+    const onLine = cand(point(0, 3), { order: 2 });
+    const r = resolveSnap(problem({ candidates: [line, near, onLine] }));
+    expectVecClose(r.delta, [3, 0]);
+    expect(r.members).toEqual([near]);
+  });
+
+  it('keeps a target member a fallback would otherwise make look redundant', () => {
+    const target = cand(vline(2));
+    const grid = cand(point(2, 1), { tier: 'fallback', reachPx: Infinity });
+    const r = resolveSnap(problem({ delta0: [1.5, 0.5], candidates: [target, grid] }));
+    expectVecClose(r.delta, [2, 1]);
+    expect(new Set(r.members)).toEqual(new Set([target, grid]));
+  });
 });

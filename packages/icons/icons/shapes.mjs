@@ -14,7 +14,7 @@ import {
   P,
   transform,
   underFill,
-} from '../../icons/scripts/lib/plot.mjs';
+} from '../scripts/lib/plot.mjs';
 
 const R = BOX / 2;
 const C = CENTER;
@@ -112,6 +112,13 @@ const RAW = {
     [1.14, 0],
     [1.4, 1],
     [0, 1],
+  ]),
+  // On its side, narrow end west: a flowchart's manual operation.
+  'trapezoid-side': fit([
+    [0, 0.25],
+    [1.6, 0],
+    [1.6, 1],
+    [0, 0.75],
   ]),
   kite: fit([
     [0.5, 0],
@@ -244,6 +251,7 @@ const MITER = new Set([
   'diamond',
   'parallelogram',
   'trapezoid',
+  'trapezoid-side',
   'kite',
   'pentagon',
   'hexagon',
@@ -283,7 +291,7 @@ export const SHAPES = Object.fromEntries(
         ? d
         : underFill(d, b.y1 * k + oy, HALF_STROKE);
     return [
-      `shape-${key}`,
+      key,
       {
         d,
         fill,

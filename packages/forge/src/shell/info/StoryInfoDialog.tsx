@@ -1,6 +1,6 @@
 import { breadcrumb } from '../breadcrumb';
 import { useLabContext } from '@weasel-js/labkit';
-import { Dialog } from '@weasel-js/ui';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { useContext } from 'react';
 import { LibrariesContext } from '../../story/library';
 import type { IndexEntry } from '../../story/types';

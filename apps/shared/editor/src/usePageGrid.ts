@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 import type { PageSize } from './paperLayer';
 
 export interface PageGridOptions {
-  page: PageSize;
+  /** The page the grid covers; its lines start at the page's corner, default world `(0, 0)`. */
+  page: PageSize & { x?: number; y?: number };
   spacing: number;
   /** The page's fill; line colors are derived from it for contrast. */
   background: string;
@@ -20,18 +21,20 @@ export interface PageGridOptions {
  */
 export function usePageGrid(opts: PageGridOptions): { layer: RenderLayer<unknown> | undefined; source: SnapSource | undefined } {
   const { page, spacing, background, accentEvery, visible, snap } = opts;
+  const x = page.x ?? 0;
+  const y = page.y ?? 0;
 
   const layer = useMemo(() => createGridLayer({
     spacing,
-    bounds: () => ({ x: 0, y: 0, width: page.width, height: page.height }),
+    bounds: () => ({ x, y, width: page.width, height: page.height }),
     accentEvery,
     style: {
       line:   { paint: { kind: 'solid', color: contrastLineColor(background, 0.06) }, width: 1 },
       accent: { paint: { kind: 'solid', color: contrastLineColor(background, 0.14) }, width: 1 },
     },
-  }), [spacing, page.width, page.height, background, accentEvery]);
+  }), [spacing, x, y, page.width, page.height, background, accentEvery]);
 
-  const source = useMemo(() => gridSnapSource({ spacing }), [spacing]);
+  const source = useMemo(() => gridSnapSource({ spacing, origin: { x, y } }), [spacing, x, y]);
 
   return { layer: visible ? layer : undefined, source: snap ? source : undefined };
 }

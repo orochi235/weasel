@@ -1,11 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  LayeredCurveEditor,
-  createFunctionLayer,
-  type ControlPoint,
-  type CurveLayer,
-  type FunctionLayerState,
-} from '@weasel-js/ui';
+import { LayeredCurveEditor, createFunctionLayer, type ControlPoint, type CurveLayer, type FunctionLayerState } from '@weasel-js/ui/components/CurveEditor';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function

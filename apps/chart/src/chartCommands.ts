@@ -1,18 +1,20 @@
 import { useCommand } from '@weasel-js/core';
-import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { RELEASE_MEMBERS_ACTION_ID, RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
-import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
+import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
 import { run, type ChartMenuContributions } from './menuBar';
+import { PAGE_MENU } from './pages/pageCommands';
 import { useChartPref } from './prefs';
+import { THEME_MENU } from './theme/themeCommands';
 
 export const CHART_ACTIONS = {
   new: 'chart.new', open: 'chart.open', save: 'chart.save', preferences: 'chart.preferences',
   grid: 'chart.view.grid', snapToGrid: 'chart.view.snapToGrid',
 } as const;
 
-/** Chart mode's File, Edit, View and Format menus. Undo, Redo and Delete are the kit's own actions; Reset route is the diagram package's. */
+/** Chart mode's File, Edit, View, Format, Arrange, and Page menus. Undo, Redo and Delete are the kit's own actions; Reset route and Release members are the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -27,8 +29,13 @@ export const CHART_MENUS: ChartMenuContributions = {
     prefs: run({ preferences: CHART_ACTIONS.preferences }),
   },
   format: {
+    theme: THEME_MENU,
     connector: pref.group('', { connector: pref.group('Connector', { resetRoute: pref.action(RESET_ROUTE_ACTION_ID) }, { as: 'menu' }) }),
   },
+  arrange: {
+    containers: run({ releaseMembers: RELEASE_MEMBERS_ACTION_ID }),
+  },
+  page: PAGE_MENU,
 };
 
 async function openChart(scene: ChartScene): Promise<void> {
@@ -39,7 +46,7 @@ async function openChart(scene: ChartScene): Promise<void> {
 
 /** Registers New, Open and Save, and View's Show grid and Snap to grid, on the nearest `<ActionsProvider>`. */
 export function useChartCommands(scene: ChartScene): void {
-  useCommand(CHART_ACTIONS.new, 'New', () => replaceChart(scene, [], 'New chart'));
+  useCommand(CHART_ACTIONS.new, 'New', () => replaceChart(scene, emptyChart(), 'New chart'));
   useCommand(CHART_ACTIONS.open, 'Open…', () => {
     openChart(scene).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
   });

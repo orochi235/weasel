@@ -27,24 +27,34 @@ export interface SymmetryGuideStyle {
   handleRadiusPx?: number;
   /** How far from a handle a press still takes it. */
   hitRadiusPx?: number;
-  /** How far from the center the angle knob sits. */
+  /** How far from the center the angle knob sits, at least: it moves further
+   *  out when the group's contents reach past it. */
   knobDistancePx?: number;
 }
 
-/** What the guide draws: the active group's spec and center, or null for none. */
+/** What the guide draws: the active group's spec and center, or null for none.
+ *  `reach` is the world distance from the center to the farthest point of the
+ *  group's contents; the angle knob sits past it so it never covers a shape. */
 export interface SymmetryGuideSource {
-  current(): { group: string; spec: SymmetrySpec; center: Point } | null;
+  current(): { group: string; spec: SymmetrySpec; center: Point; reach?: number } | null;
   subscribe(listener: () => void): () => void;
 }
 
 const CURSORS: Record<SymmetryHandle, string> = { center: 'move', angle: 'grab', step: 'grab' };
 
-/** Each handle the guide shows for `spec`, in screen pixels, topmost first. */
+/**
+ * Each handle the guide shows for `spec`, in screen pixels, topmost first.
+ * The angle knob sits `knobPx` out, or further when the contents' `reach`
+ * (world) puts it on a shape: then it is that far out on screen plus twice
+ * `clearPx`, so its hit circle of that radius clears them with as much again.
+ */
 export function guideHandles(
   spec: SymmetrySpec,
   center: Point,
   view: View,
   knobPx: number,
+  reach = 0,
+  clearPx = 0,
 ): Array<{ handle: SymmetryHandle; at: Point }> {
   const t = viewToTransform(view);
   const [cx, cy] = worldToScreen(center.x, center.y, t);
@@ -56,7 +66,9 @@ export function guideHandles(
     out.push({ handle: 'step', at: { x: sx, y: sy } });
   } else if (hasAxis(spec)) {
     const d = screenDir(spec.angle, view);
-    out.push({ handle: 'angle', at: { x: cx + d.x * knobPx, y: cy + d.y * knobPx } });
+    const reachPx = reach * Math.hypot(Math.cos(spec.angle) * view.scale.x, Math.sin(spec.angle) * view.scale.y);
+    const dist = reach > 0 ? Math.max(knobPx, reachPx + 2 * clearPx) : knobPx;
+    out.push({ handle: 'angle', at: { x: cx + d.x * dist, y: cy + d.y * dist } });
   }
   out.push({ handle: 'center', at: { x: cx, y: cy } });
   return out;
@@ -110,7 +122,7 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
     draw(_data, view, dims): DrawCommand[] {
       const g = source.current();
       if (!g) return [];
-      const { spec, center } = g;
+      const { spec, center, reach: contentReach = 0 } = g;
       const t = viewToTransform(view);
       const [cx, cy] = worldToScreen(center.x, center.y, t);
       const reach = Math.hypot(dims.width, dims.height) * 2;
@@ -135,7 +147,7 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
           out.push({ kind: 'path', path: dot({ x, y }, 2.5), fill: { paint: { kind: 'solid', color: faint } } });
         }
       }
-      for (const h of guideHandles(spec, center, view, knob)) {
+      for (const h of guideHandles(spec, center, view, knob, contentReach, hitR)) {
         if (h.handle === 'angle') out.push(line({ x: cx, y: cy }, h.at, color));
         out.push({
           kind: 'path',
@@ -150,7 +162,7 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
       const g = source.current();
       if (!g) return null;
       const [px, py] = worldToScreen(worldX, worldY, viewToTransform(view));
-      for (const h of guideHandles(g.spec, g.center, view, knob)) {
+      for (const h of guideHandles(g.spec, g.center, view, knob, g.reach ?? 0, hitR)) {
         if (Math.hypot(px - h.at.x, py - h.at.y) > hitR) continue;
         const press: SymmetryHandlePress = { handle: h.handle, group: g.group };
         return { strength: 'exclusive', cursor: CURSORS[h.handle], initialScratch: press };

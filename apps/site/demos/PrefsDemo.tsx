@@ -1,7 +1,8 @@
 import { prefLeaves, prefValueAtPath, type PrefGroup } from '@weasel-js/prefs';
 import { usePref, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter } from '@weasel-js/storage';
-import { Button, PrefsForm } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import s from './PrefsDemo.module.css';
 
 const GRID_ON = { path: 'grid.visible' };

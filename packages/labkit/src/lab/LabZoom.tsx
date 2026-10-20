@@ -8,7 +8,7 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type { CameraView } from '../canvas/CameraInput';

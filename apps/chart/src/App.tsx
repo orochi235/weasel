@@ -1,4 +1,5 @@
 import { useCommand } from '@weasel-js/core';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo, useState, type ReactElement } from 'react';
 import './app.css';
@@ -32,6 +33,7 @@ export function App(): ReactElement {
       <MenuBar schema={menuBar} className="wc-menubar" />
       {mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace pipeline={pipeline} look={look} setLook={setLook} />}
       <PreferencesDialog open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      <ContextMenuHost />
     </div>
   );
 }

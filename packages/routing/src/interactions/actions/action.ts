@@ -8,9 +8,17 @@ import type { ModifierRoles } from './modifierRoles';
 import type { IconRef } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
+import type { ActionSettings } from './actionSettings';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
+
+/** What content being routed brings to `Action.enabled`: a drop's or a
+ *  paste's items, or a carry's payload with no items. */
+export interface Carried {
+  items: readonly IngestItem[];
+  carry?: { type: string; value: unknown };
+}
 
 /**
  * Closed enum of reasons an action might report itself as disabled. The
@@ -56,6 +64,11 @@ export interface ActionPresentation {
    *  triggers the action with that variant's `params`. Omitted = the action
    *  is one entry. See `actionItems`. */
   variants?: readonly ActionVariant[];
+  /** A form of the settings the action changes on the selection. A surface
+   *  draws the action as that form instead of a bare trigger, and each change
+   *  triggers it with the params `settings.params` makes. Not combined with
+   *  `variants`. */
+  settings?: ActionSettings;
 }
 
 /**
@@ -123,16 +136,17 @@ export interface ActionDispatch extends BindingSource {
    * question it was shown enabled for. Palettes and keystrokes pass no
    * point; treat absent as "anywhere".
    *
-   * `carried` is what a drop or a paste being routed brings: its items. For
-   * a drag still in flight they hold a MIME and nothing else, since a
-   * browser withholds contents until the drop. An action that takes only
-   * some content refuses the rest here, so a drag it would not take is not
-   * accepted and a paste it would not take stays the page's.
+   * `carried` is what a drop, a paste or a carry being routed brings. For
+   * an OS drag still in flight its items hold a MIME and nothing else, since
+   * a browser withholds contents until the drop. A carry has no items and
+   * hands over its payload whole. An action that takes only some content
+   * refuses the rest here, so a drag it would not take is not accepted and a
+   * paste it would not take stays the page's.
    */
   enabled?: (
     deps?: ActionDeps,
     at?: { x: number; y: number },
-    carried?: { items: readonly IngestItem[] },
+    carried?: Carried,
   ) => true | ActionDisabledReason;
   /**
    * Whether the action reads as held down right now: bold on the selected

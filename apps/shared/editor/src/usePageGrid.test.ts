@@ -29,4 +29,12 @@ describe('usePageGrid', () => {
     expect(result.current.layer).not.toBe(first.layer);
     expect(result.current.source).not.toBe(first.source);
   });
+
+  it('starts its snap lines at the page corner', () => {
+    const { result } = renderHook(() => usePageGrid({ ...base, page: { x: 3, y: 7, width: 100, height: 80 }, visible: true, snap: true }));
+    const query = { gesture: 'point', probes: [{ id: 'pointer', at: { x: 4, y: 8 }, role: 'pointer' }], delta0: { x: 0, y: 0 } };
+    const at = [...result.current.source!.collect(query as never)].map((t) => t.locus.at);
+    expect(at).toContainEqual({ x: 3, y: 8 });
+    expect(at).toContainEqual({ x: 4, y: 7 });
+  });
 });

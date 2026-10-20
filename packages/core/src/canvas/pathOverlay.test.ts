@@ -40,4 +40,14 @@ describe('createPathOverlay', () => {
     expect(heard).toHaveBeenCalledTimes(2);
     expect(ov.get()).toEqual([{ path: box }]);
   });
+  it('draws a path that carries a paint in that paint, under its role\'s outline', () => {
+    const ov = createPathOverlay({ id: 'probe' });
+    const stroke = { paint: { color: '#00f' }, width: 4 };
+    ov.set([{ path: box, role: 'remove', paint: { fill: { paint: { color: '#0f0' } }, stroke } }]);
+    const [painted, outline, ...rest] = ov.layer.draw(null, view, dims) as PathDrawCommand[];
+    expect(rest).toEqual([]);
+    expect(painted).toMatchObject({ kind: 'path', path: box, fill: { paint: { color: '#0f0' } }, stroke });
+    expect(outline).toMatchObject({ kind: 'path', path: box, stroke: { paint: PATH_OVERLAY_ROLES['remove']!.stroke, width: { px: 1 } } });
+    expect(outline!.fill).toBeUndefined();
+  });
 });

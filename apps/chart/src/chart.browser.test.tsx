@@ -4,13 +4,16 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { DIAGRAM_THEMES, themeEdgeStroke } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
-import { stencilDragText } from './stencilDrop';
+import { STENCIL_MIME } from './stencilDrop';
+import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
+
+const paper = DIAGRAM_THEMES.paper!;
 
 registerCanvasFont('sans-serif');
 
@@ -40,16 +43,6 @@ const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
   return d !== undefined && 'from' in d;
 });
-
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding. */
-function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
-  const box = host.getBoundingClientRect();
-  const scale = Math.min((box.width - 48) / CHART_PAGE.width, (box.height - 48) / CHART_PAGE.height);
-  return {
-    x: box.left + box.width / 2 + (x - CHART_PAGE.width / 2) * scale,
-    y: box.top + box.height / 2 + (y - CHART_PAGE.height / 2) * scale,
-  };
-}
 
 function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
   el.dispatchEvent(new PointerEvent(type, {
@@ -85,12 +78,12 @@ const key = (k: string): void => {
   window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
 };
 
-const useTool = (name: string) => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: new RegExp(`^${name}`) }));
+const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
 const editor = (): HTMLElement | null => document.querySelector('.wc-host [contenteditable="true"]');
 
 /** Two Process bodies, 120 by 60: one from world (100, 100), one from (500, 100). */
 async function twoBodies(host: HTMLElement, canvas: HTMLCanvasElement): Promise<string[]> {
-  await userEvent.click(page.getByRole('option', { name: 'Process' }));
+  await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
   await drag(canvas, at(host, 100, 100), at(host, 220, 160));
   await expect.poll(() => bodies().length).toBe(1);
   await drag(canvas, at(host, 500, 100), at(host, 620, 160));
@@ -107,9 +100,9 @@ describe('WeaselChart chart mode', () => {
     await drag(canvas, at(host, 150, 140), at(host, 560, 140));
     await expect.poll(() => edges().length).toBe(1);
     expect(edges()[0]!.data.diagram).toMatchObject({ from: {}, to: {} });
-    // Ink for a white page, not the kit's dark-ground defaults.
-    expect(edges()[0]!.data.stroke).toEqual(CHART_EDGE_STROKE);
-    expect(bodies()[0]!.data.fill).toEqual({ paint: { color: CHART_NODE_STYLE.fill } });
+    // The paper theme's ink for a white page, not the kit's dark-ground defaults.
+    expect(edges()[0]!.data.stroke).toEqual(themeEdgeStroke(paper));
+    expect(bodies()[0]!.data.fill).toEqual({ paint: { color: paper.roles.default!.fill } });
 
     await useTool('Select');
     click(canvas, at(host, 130, 115));
@@ -181,7 +174,7 @@ describe('WeaselChart chart mode', () => {
     editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await expect.poll(editor).toBeNull();
     await expect.poll(() => saved().find((n) => n.id === `${edgeId}/label`)?.data.text).toBe('yes');
-    expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: CHART_LABEL_FILL } });
+    expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: paper.label.fill } });
   });
 
   it("types into a body's label and paints its text", async () => {
@@ -203,7 +196,7 @@ describe('WeaselChart chart mode', () => {
   it('drops a stencil dragged from the Shapes panel centered on the drop point', async () => {
     const { host, canvas } = await mountApp();
     const dt = new DataTransfer();
-    dt.setData('text/plain', stencilDragText('decision'));
+    dt.setData(STENCIL_MIME, 'decision');
     const p = at(host, 400, 300);
     for (const type of ['dragenter', 'dragover', 'drop']) {
       canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
@@ -220,7 +213,7 @@ describe('WeaselChart chart mode', () => {
     chartPrefs().set('view.alignmentSnap', false);
     chartPrefs().set('view.spacingSnap', false);
     const { host, canvas } = await mountApp();
-    await userEvent.click(page.getByRole('option', { name: 'Process' }));
+    await userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name: 'Process' }));
     await drag(canvas, at(host, 100, 100), at(host, 220, 160));
     await expect.poll(() => bodies().length).toBe(1);
     const id = bodies()[0]!.id;
@@ -240,7 +233,7 @@ describe('WeaselChart chart mode', () => {
     chartPrefs().set('view.snapToGrid', true);
     const { host, canvas } = await mountApp();
     const dt = new DataTransfer();
-    dt.setData('text/plain', stencilDragText('decision'));
+    dt.setData(STENCIL_MIME, 'decision');
     // A Decision is 120 by 80, so its origin would sit at (340, 260): the grid's (336, 264).
     const p = at(host, 400, 300);
     for (const type of ['dragenter', 'dragover', 'drop']) {
@@ -256,7 +249,7 @@ describe('WeaselChart chart mode', () => {
     const { host, canvas } = await mountApp();
     const drop = (stencil: string, x: number, y: number) => {
       const dt = new DataTransfer();
-      dt.setData('text/plain', stencilDragText(stencil));
+      dt.setData(STENCIL_MIME, stencil);
       const p = at(host, x, y);
       for (const type of ['dragenter', 'dragover', 'drop']) {
         canvas.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: p.x, clientY: p.y }));
@@ -282,7 +275,7 @@ describe('WeaselChart chart mode', () => {
     const { host, canvas } = await mountApp();
     const inkOnPage = () => offWhitePixels(canvas, at(host, 300, 300), at(host, 700, 600));
     // A strip of workspace just left of the page, inside the fit's 24px of padding.
-    const workspace = () => readRect(canvas, at(host, -15, 300), at(host, -3, 600));
+    const workspace = () => readClientPixels(canvas, at(host, -15, 300), at(host, -3, 600));
     expect(inkOnPage()).toBe(0);
     const bare = workspace();
     await userEvent.click(page.getByRole('menuitem', { name: 'View' }));
@@ -307,24 +300,8 @@ function countPixels(
   canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number },
   test: (r: number, g: number, bl: number) => boolean,
 ): number {
-  const px = readRect(canvas, a, b);
+  const px = readClientPixels(canvas, a, b);
   let n = 0;
   for (let i = 0; i < px.length; i += 4) if (test(px[i]!, px[i + 1]!, px[i + 2]!)) n++;
   return n;
-}
-
-/** The RGBA bytes of the canvas inside a client rect. */
-function readRect(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): Uint8Array {
-  const gl = canvas.getContext('webgl2')!;
-  const box = canvas.getBoundingClientRect();
-  const dpr = canvas.width / box.width;
-  const x0 = Math.round((a.x - box.left) * dpr);
-  const x1 = Math.round((b.x - box.left) * dpr);
-  const y0 = Math.round((a.y - box.top) * dpr);
-  const y1 = Math.round((b.y - box.top) * dpr);
-  const w = x1 - x0;
-  const h = y1 - y0;
-  const px = new Uint8Array(w * h * 4);
-  gl.readPixels(x0, canvas.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
-  return px;
 }

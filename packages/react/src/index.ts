@@ -1,4 +1,6 @@
 export { assignRef } from './assignRef';
+export { __resetAdoptedCss, adoptCss, adoptCssOnce, styleRootOf } from './adoptCss';
+export type { AdoptedCss, StyleRoot } from './adoptCss';
 export { isDev } from '@weasel-js/registry';
 export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';

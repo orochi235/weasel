@@ -13,7 +13,7 @@ vi.mock('../DiagramView', () => ({
   },
 }));
 
-import { REORDER_ACTION_ID } from '../slotReorder';
+import { REORDER_ACTION_ID } from '../reorder';
 import { EffectEditor, type EffectEditorApi } from './EffectEditor';
 import { REORDER_LANES_ACTION_ID } from './editorReorder';
 import { mainChain } from './mainChain';

@@ -9,6 +9,8 @@ import type { AddNodeSpec, RectPose, RegisteredOp, SceneRegistry } from './types
 export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
+  /** The document values the scene starts with, outside history. See `Scene.doc`. */
+  doc?: Readonly<Record<string, unknown>>;
   ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   historyLimit?: number;
   /** Window (ms) within which consecutive same-shaped mutations merge into

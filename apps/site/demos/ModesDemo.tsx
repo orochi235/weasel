@@ -20,7 +20,7 @@ import {
 } from '@weasel-js/modes';
 import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
 

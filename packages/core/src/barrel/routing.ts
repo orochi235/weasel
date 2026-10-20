@@ -13,7 +13,7 @@ export { contextMenuAction, openContextMenu } from '../interactions/actions/defa
 
 // --- Action types -----------------------------------------------------------
 export { ActionDisabledReason } from '@weasel-js/routing';
-export type { ActionDisabledReasonValue, ActionVariant } from '@weasel-js/routing';
+export type { ActionDisabledReasonValue, ActionVariant, Carried } from '@weasel-js/routing';
 
 // --- Actions registry -----------------------------------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
@@ -24,7 +24,8 @@ export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, OpenMenu
 export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor } from '@weasel-js/routing';
-export type { Action, ActionDispatch, ActionPresentation } from '@weasel-js/routing';
+export type { Action, ActionDispatch, ActionPresentation, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
+export { actionSettingsParams, readActionSettings } from '@weasel-js/routing';
 export { actionBindings, actionItems, actionItemTitle, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
 export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
@@ -132,6 +133,7 @@ export type {
   InsertExtras,
   LassoSelectDep,
   LayoutDep,
+  CanDropIntoDep,
   NodeAtPointDep,
   ResizePolicy,
   SvgIngestOptions,

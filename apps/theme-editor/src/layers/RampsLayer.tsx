@@ -9,7 +9,9 @@ import {
   type Lookup,
   type RampDef,
 } from '@weasel-js/theme/engine';
-import { Button, Dialog, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnchorList } from '../AnchorList';
 import { PinIcon } from '../PinIcon';

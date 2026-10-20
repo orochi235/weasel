@@ -28,16 +28,9 @@ export function demoTimestamps(opts: { root?: string } = {}): PluginOption {
     },
     load(id) {
       if (id !== RESOLVED_ID) return null;
-      const out: Record<string, { created: string; lastModified: string }> = {};
-      if (!existsSync(demosDir)) {
-        return `export default ${JSON.stringify(out)};`;
-      }
-      for (const file of walkFiles(demosDir)) {
-        const rel = relative(root, file).replace(/\\/g, '/');
-        const ts = readGitTimestamps(rel, root);
-        if (ts) out[rel] = ts;
-      }
-      return `export default ${JSON.stringify(out, null, 2)};`;
+      if (!existsSync(demosDir)) return 'export default {};';
+      const files = walkFiles(demosDir).map((file) => relative(root, file).replace(/\\/g, '/'));
+      return `export default ${JSON.stringify(timestampsFromLog(readDemoLog(root), files), null, 2)};`;
     },
     configureServer(server) {
       // Invalidate the virtual module when any demo file changes so dev
@@ -61,23 +54,58 @@ function walkFiles(dir: string): string[] {
   return out;
 }
 
-function readGitTimestamps(
-  relPath: string,
-  cwd: string,
-): { created: string; lastModified: string } | null {
+/**
+ * One pass over the demos' history, newest commit first. A `git log --follow` per file took 2.5 s
+ * each, and the site's 277 demo files made that the cost of every test run and dev start.
+ * `demo/` is where the demos lived before `apps/site/`, so renames out of it are followed.
+ */
+function readDemoLog(cwd: string): string {
   try {
-    const lastModified = run(`git log -1 --format=%aI -- "${relPath}"`, cwd);
-    if (!lastModified) return null;
-    // First add-commit. `--diff-filter=A` returns rename-skipping creation;
-    // `--follow` survives renames at the cost of one extra pass.
-    const addedLog = run(`git log --diff-filter=A --follow --format=%aI -- "${relPath}"`, cwd);
-    const created = addedLog.split('\n').filter(Boolean).pop() ?? lastModified;
-    return { created, lastModified };
+    // `--cc` lists a merge that changed a file itself, as `git log -- <file>` counts it.
+    return execSync('git log -M --cc --name-status --format=%x00%aI -- apps/site/demos demo', {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 1 << 28,
+    });
   } catch {
-    return null;
+    return '';
   }
 }
 
-function run(cmd: string, cwd: string): string {
-  return execSync(cmd, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+/**
+ * Each of `files`, dated from `log` (`git log --name-status --format=%x00%aI`, newest first):
+ * `lastModified` by the newest commit naming it, `created` by the oldest add of it or of a name it
+ * was renamed from. A file no commit names is left out.
+ */
+export function timestampsFromLog(
+  log: string,
+  files: string[],
+): Record<string, { created: string; lastModified: string }> {
+  const lastModified = new Map<string, string>();
+  const created = new Map<string, string>();
+  // The name each file had at the commit being read, keyed by that name.
+  const followed = new Map(files.map((file) => [file, file]));
+  for (const commit of log.split('\0').slice(1)) {
+    const [date, ...lines] = commit.split('\n');
+    for (const line of lines) {
+      const [status, path, renamedTo] = line.split('\t');
+      if (!status) continue;
+      const name = status.startsWith('R') ? renamedTo : path;
+      const file = followed.get(name);
+      if (file === undefined) continue;
+      if (name === file && !lastModified.has(file)) lastModified.set(file, date);
+      if (status === 'A') created.set(file, date);
+      if (status.startsWith('R')) {
+        followed.delete(name);
+        followed.set(path, file);
+      }
+    }
+  }
+  const out: Record<string, { created: string; lastModified: string }> = {};
+  for (const file of files) {
+    const last = lastModified.get(file);
+    if (last) out[file] = { created: created.get(file) ?? last, lastModified: last };
+  }
+  return out;
 }

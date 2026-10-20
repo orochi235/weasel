@@ -25,6 +25,7 @@ import {
 } from '@weasel-js/core';
 import { portCurvePoints } from '@weasel-js/geom';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
+import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
@@ -318,6 +319,10 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
       [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
+    },
+    layout: {
+      ...(CONTAINER_LAYOUTS as unknown as NonNullable<SceneRegistry<TPose, TData, TLayer>['layout']>),
+      ...registry.layout,
     },
   };
 }

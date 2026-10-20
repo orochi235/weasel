@@ -11,7 +11,7 @@ import type {
   PrefPair,
 } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
-import type { PrefRenderer } from '@weasel-js/ui';
+import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
 import type { ReactNode } from 'react';
 
 /**

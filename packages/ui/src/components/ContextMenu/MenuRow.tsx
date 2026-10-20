@@ -4,14 +4,14 @@ import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { AccessLabel } from './AccessLabel';
-import { MenuColorValue, MenuNumberValue } from './MenuValue';
+import { MenuColorValue, MenuNumberValue, MenuTextValue } from './MenuValue';
 import s from './ContextMenu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
- *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. A number row holds a
- *  field, which takes focus only when pressed or on Enter. */
+ *  the highlighted row with `aria-activedescendant`. An item with an `href` is an `a`. A number or text row
+ *  holds a field, which takes focus only when pressed or on Enter. */
 export function MenuRow(props: {
   entry: MenuEntry; id: string; highlighted: boolean; expanded: boolean;
   controller: MenuController;
@@ -57,6 +57,7 @@ export function MenuRow(props: {
       {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
       {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'color' && <MenuColorValue entry={e} />}
+      {e.kind === 'text' && <MenuTextValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'submenu' && <Caret className={s.caret} />}
     </>
   );

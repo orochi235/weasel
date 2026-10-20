@@ -53,6 +53,7 @@ export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './st
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
 export type { StencilInsertOptions } from './stencilTool';
+export * from './containers';
 export { GRAB_WAYPOINT_ACTION_ID, createDiagramContribution, diagramPorts, diagramWaypoints } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {
@@ -92,8 +93,11 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './slotReorder';
-export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './slotReorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, sequenceSlots } from './reorder';
+export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
+export {
+  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, groupReorderSlots,
+} from './groupReorder';
 export {
   DIAGRAM_EDGE,
   EDGE_DERIVE_PATH,
@@ -244,7 +248,20 @@ export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './tra
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type {
-  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, RouteChange,
+  DeleteReport, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, NodeMove, ReconnectChange, ReorderChange,
+  RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
 export { useMirroredSelection } from './mirrorSelection';
+export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
+export type { DiagramFont, DiagramRole, DiagramTheme, StyleField } from './theme/types';
+export { DIAGRAM_THEMES } from './theme/themes';
+export { diagramThemeFromTokens } from './theme/fromTokens';
+export {
+  diagramThemeFrom, diagramThemeOf, roleEdgeStyle, roleStyle, themeDocValue, themeEdgeStroke, themeFont, themeLabelFont,
+  themeLabelStyle,
+} from './theme/resolve';
+export { themeWrites } from './theme/themeWrites';
+export type { ThemedNode, ThemedScene } from './theme/themeWrites';
+export { applyDiagramTheme, diagramStyleOf, setDiagramColor, setDiagramStyle } from './theme/applyTheme';
+export type { DiagramStyleEditOptions, DiagramStyleState } from './theme/applyTheme';

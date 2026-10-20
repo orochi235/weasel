@@ -24,6 +24,8 @@ export {
 } from 'core/scene/composePose';
 export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
 export { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+export { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
+export type { CarrySource } from 'core/scene/carryDescendants';
 export { nestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
@@ -113,6 +115,7 @@ export type {
   UserLayerRecord,
   UseSceneOptions,
 } from '../core/scene';
+export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {

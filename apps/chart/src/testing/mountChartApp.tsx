@@ -1,11 +1,10 @@
 import { expect } from 'vitest';
 import { createRoot, type Root } from 'react-dom/client';
 import { ActionsProvider, DepRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
-import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from '../App';
 import { chartPrefs } from '../prefs';
+import { withIcons as WithIcons } from '../testIcons';
 
-const WithIcons = iconsWrapper();
 let root: Root | null = null;
 let mountPoint: HTMLDivElement | null = null;
 

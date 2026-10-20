@@ -129,7 +129,7 @@ function CanvasInner<TPose>(
   const paintInputsRef = useLatest({
     layers: layersWithDebug, width, height, debugSink, frameStats,
     dpr: props.dpr, layerGroups: props.layerGroups, shaders: props.shaders,
-    flattenTolerance: props.flattenTolerance, retain: props.retain,
+    flattenTolerance: props.flattenTolerance, retain: props.retain, imageMinification: props.imageMinification,
   });
   useInsertionEffect(() => {
     adoptControlled();

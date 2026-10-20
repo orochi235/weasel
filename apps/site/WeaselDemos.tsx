@@ -36,7 +36,10 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-import { ColorModeControl, CommandPalette, InlineMarkdown, Switch } from '@weasel-js/ui';
+import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { SiteColorModeContext, useSiteColorMode } from './colorMode';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';

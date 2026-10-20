@@ -1,6 +1,6 @@
 import { serializeTokenValue, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
-import { inferTokenType, type TokenEntry } from '@weasel-js/ui';
+import { inferTokenType, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
 import { ownTokenNames, pinApplies, type LayerId } from './model';
 
 /** A seed is a number or a string, or varies by axis — which only JSON shows. */

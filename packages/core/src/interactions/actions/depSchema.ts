@@ -191,20 +191,8 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
   expandIds: (ids: string[]) => string[];
 }
 
-/**
- * Layout-strategy lookup by container id, consumed by `moveAction` to run
- * the drag-time reflow pass. Sourced by `<SceneCanvas>` from the layout each
- * container declares on its scene node. `getLayout` returns null for a
- * container that declares none, so the reflow pass is a no-op then.
- */
-export interface LayoutDep {
-  getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
-  /** Which container wins when several contain the drop point. Default
-   *  `'innermost'`. */
-  dropTarget?: import('../../layout/types').LayoutDropTargetMode;
-  /** Carries displaced siblings to their slots over time. Absent, they snap. */
-  reflow?: import('../../layout/types').ReflowTransition<unknown> | null;
-}
+import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
+export type { LayoutDep, CanDropIntoDep };
 
 import type { TextEditDep, ClipboardDep, SliceDep } from './editDeps';
 export type { TextEditDep, ClipboardDep, SliceDep };
@@ -336,6 +324,8 @@ declare module '@weasel-js/routing' {
      * Optional: absent (or all-null) → `moveAction` skips reflow.
      */
     layout?: LayoutDep;
+    /** Which containers a move may drop into; see {@link CanDropIntoDep}. */
+    canDropInto?: CanDropIntoDep;
     /**
      * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
      * `useSliceDepSource`; a consumer overrides it with `useSliceDep`.

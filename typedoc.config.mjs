@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { sourceLinkOptions } from './typedoc/sourceLinks.mjs';
 
 const PACKAGES = join(import.meta.dirname, 'packages');
 
@@ -40,5 +41,6 @@ export default {
     skipErrorChecking: true,
     // Source paths from the repository root, where a reader can find them; TypeDoc's default is each package's common directory.
     displayBasePath: import.meta.dirname,
+    ...sourceLinkOptions(import.meta.dirname),
   },
 };

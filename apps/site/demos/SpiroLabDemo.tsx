@@ -12,7 +12,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';

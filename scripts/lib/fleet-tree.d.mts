@@ -2,6 +2,8 @@
 export interface TreeMarker {
   commit: string;
   files: Record<string, string | null>;
+  /** Limit the suite to what `files` reaches, rather than run all of it. */
+  select?: boolean;
 }
 export interface TreeCheck {
   armed: boolean;
@@ -16,3 +18,8 @@ export function changedFiles(rawDiff: string): Record<string, string | null>;
 export function armTree(tree: string, marker: TreeMarker): void;
 export function checkTree(root: string, env: Record<string, string | undefined>): TreeCheck;
 export function treeReport(check: TreeCheck): { ok: boolean; text: string };
+export function selection(
+  root: string,
+  env: Record<string, string | undefined>,
+  opts: { always: string[]; triggers: string[] },
+): string[] | undefined;

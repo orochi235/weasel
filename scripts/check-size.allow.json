@@ -165,7 +165,7 @@
     "longestFunction": 149
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 884,
+    "lines": 873,
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
@@ -188,7 +188,7 @@
     "lines": 439
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 634
+    "lines": 626
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 608

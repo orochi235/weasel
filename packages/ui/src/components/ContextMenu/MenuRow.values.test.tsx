@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MenuEntry, MenuNumberEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { percent } from '@weasel-js/quantity';
 import { OpenPanels } from './ContextMenuHost';
 
@@ -107,5 +107,74 @@ describe('a color row in a DOM menu', () => {
     expect(row.querySelector('[aria-hidden="true"][style]')?.getAttribute('style')).toContain('#336699');
     fireEvent.click(row);
     expect(close).not.toHaveBeenCalled();
+  });
+});
+
+describe('a text row in a DOM menu', () => {
+  function openText(extra: Partial<MenuTextEntry> = {}) {
+    const set = vi.fn();
+    const close = vi.fn();
+    const entries: MenuEntry[] = [
+      { kind: 'item', key: 'cut', label: 'Cut', run: () => {} },
+      { kind: 'text', key: 'name', label: 'Name', value: 'Layer 1', set, ...extra },
+    ];
+    render(<OpenPanels open={{ seq: 1, entries, client: { x: 0, y: 0 }, source: 'keyboard' }} close={close} />);
+    return { set, close, menu: screen.getByRole('menu') };
+  }
+  const box = () => screen.getByRole('textbox', { name: 'Name' });
+
+  it('is a menu item holding a text field named for it, showing its value', () => {
+    openText();
+    expect(screen.getByRole('menuitem', { name: /Name/ })).toContainElement(box());
+    expect(box()).toHaveValue('Layer 1');
+  });
+
+  it('commits what is typed on Enter, gives focus back, and stays open', () => {
+    const { set, close, menu } = openText();
+    act(() => { box().focus(); });
+    act(() => { fireEvent.change(box(), { target: { value: 'Layer 2' } }); });
+    expect(set).not.toHaveBeenCalled();
+    key(box(), 'Enter');
+    expect(set).toHaveBeenCalledExactlyOnceWith('Layer 2');
+    expect(document.activeElement).toBe(menu);
+    expect(box()).toHaveValue('Layer 2');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('commits on blur', () => {
+    const { set } = openText();
+    act(() => {
+      fireEvent.change(box(), { target: { value: 'Layer 3' } });
+      fireEvent.blur(box());
+    });
+    expect(set).toHaveBeenCalledWith('Layer 3');
+  });
+
+  it('puts the value back on Escape, writing nothing, and the menu stays open', () => {
+    const { set, close, menu } = openText();
+    act(() => { box().focus(); });
+    act(() => { fireEvent.change(box(), { target: { value: 'oops' } }); });
+    key(box(), 'Escape');
+    expect(set).not.toHaveBeenCalled();
+    expect(box()).toHaveValue('Layer 1');
+    expect(document.activeElement).toBe(menu);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('takes focus on Enter while highlighted, and typing into it is not typeahead', () => {
+    const { menu } = openText();
+    key(menu, 'ArrowDown');
+    const row = screen.getByRole('menuitem', { name: /Name/ });
+    expect(menu.getAttribute('aria-activedescendant')).toBe(row.id);
+    key(menu, 'Enter');
+    expect(document.activeElement).toBe(box());
+    key(box(), 'c');
+    expect(menu.getAttribute('aria-activedescendant')).toBe(row.id);
+  });
+
+  it('cannot be edited while disabled', () => {
+    openText({ disabled: true });
+    expect(screen.getByRole('menuitem', { name: /Name/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(box()).toBeDisabled();
   });
 });

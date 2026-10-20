@@ -1,7 +1,7 @@
 /** The reorders an editor installs under a look that places stages itself:
  *  a main-line stage dragged along the line, and a lane dragged by its header. */
 import type { Contribution } from '@weasel-js/core';
-import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../slotReorder';
+import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain } from './chainEdit';
 import type { LookOrder } from './draw';
 import { ensureWireIds, setLaneOrder } from './edit';

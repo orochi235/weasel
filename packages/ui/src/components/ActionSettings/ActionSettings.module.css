@@ -1,0 +1,14 @@
+.trigger {
+  display: inline-flex;
+  flex: none;
+}
+
+.body {
+  inline-size: 280px;
+}
+
+.title {
+  margin: 0 0 var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+}

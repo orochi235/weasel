@@ -21,7 +21,8 @@ import {
   type Display,
   type Tagged,
 } from '@weasel-js/quantity';
-import { BandEditor, UnitField, type Band } from '@weasel-js/ui';
+import { BandEditor, type Band } from '@weasel-js/ui/components/BandEditor';
+import { UnitField } from '@weasel-js/ui/components/NumberField';
 import s from './QuantityDemo.module.css';
 
 const KINDS: [string, Display][] = [

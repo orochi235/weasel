@@ -10,7 +10,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';

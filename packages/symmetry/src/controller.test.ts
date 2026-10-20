@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  asNodeId, createScene, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type SceneRegistry,
+  asNodeId, createScene, RECT_POSE_COMPOSITION, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
+  type SceneRegistry,
 } from '@weasel-js/core';
 import { rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
@@ -193,5 +194,33 @@ describe('in a scene that composes frames', () => {
     expect(kept).toBe(leaf);
     expect(scene.get(kept)!.pose).toMatchObject({ x: 120, y: 10 });
     expect(scene.get(copy)!.pose).toMatchObject({ x: 70, y: 10 });
+  });
+});
+
+describe('the guide\'s angle knob', () => {
+  const guideOf = (sym: ReturnType<typeof setup>['sym']) => {
+    let layer: RenderLayer<unknown> | null = null;
+    sym.contribution.attach!({ registerLayer: (l: RenderLayer<unknown>) => { layer = l; return () => {}; }, requestRedraw: () => {} } as never, undefined as never);
+    return layer! as RenderLayer<unknown>;
+  };
+  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  const DIMS = { width: 400, height: 400 };
+
+  it('sits past the farthest of the group\'s contents along the axis, clear of every shape', () => {
+    const { scene, sym, group } = setup();
+    scene.add({
+      kind: 'leaf', layer: 'main', parent: group, id: asNodeId('petal'),
+      pose: { x: 100, y: 60, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) },
+    });
+    const guide = guideOf(sym);
+    // The petal's far corner is hypot(10, 70) from the center at (100, 0).
+    const reach = Math.hypot(10, 70);
+    expect(guide.hitTest!(100, 64, undefined, VIEW, DIMS)).toBeNull();
+    expect(guide.hitTest!(100, reach + 18, undefined, VIEW, DIMS)?.initialScratch).toEqual({ handle: 'angle', group });
+  });
+
+  it('keeps its set distance while the contents are nearer than that', () => {
+    const { sym, group } = setup();
+    expect(guideOf(sym).hitTest!(100, 64, undefined, VIEW, DIMS)?.initialScratch).toEqual({ handle: 'angle', group });
   });
 });

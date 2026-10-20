@@ -2,10 +2,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
-import { iconsWrapper } from '@weasel-js/ui/testing/withIcons';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
 import { chartPrefs } from './prefs';
+import { withIcons } from './testIcons';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -27,7 +27,7 @@ const mount = () => render(
       <App />
     </ActionsProvider>
   </DepRegistryProvider>,
-  { wrapper: iconsWrapper() },
+  { wrapper: withIcons },
 );
 
 /** Opens a menu-bar menu and clicks the row whose label starts with `row`. */
@@ -55,19 +55,19 @@ describe('App', () => {
     expect(screen.getByText('Select a stage to edit its params.')).toBeTruthy();
     choose('Mode', 'Chart');
     expect(screen.queryByRole('grid', { name: 'Stages' })).toBeNull();
-    expect(screen.getByRole('listbox', { name: 'Shapes' })).toBeTruthy();
+    expect(screen.getByRole('toolbar', { name: 'Shapes' })).toBeTruthy();
   });
 
-  it("keeps pipeline mode's undo history through a visit to chart mode", () => {
+  it("keeps pipeline mode's undo history through a visit to chart mode", async () => {
     mount();
     choose('Mode', 'Pipeline');
     act(() => { fireEvent.click(screen.getByRole('row', { name: 'Blur' })); });
-    const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as { pipeline: { stages: unknown[] } }).pipeline.stages;
-    expect(stages()).toHaveLength(1);
+    const stages = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY) ?? '{"pipeline":{"stages":[]}}') as { pipeline: { stages: unknown[] } }).pipeline.stages;
+    await vi.waitFor(() => expect(stages()).toHaveLength(1));
     choose('Mode', 'Chart');
     choose('Mode', 'Pipeline');
     choose('Edit', 'Undo');
-    expect(stages()).toHaveLength(0);
+    await vi.waitFor(() => expect(stages()).toHaveLength(0));
   });
 
   it('gives pipeline mode a File menu of its own', () => {
@@ -157,5 +157,53 @@ describe('App', () => {
     const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
     // A row's second child is its label; the shortcut follows it.
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Undo', 'Redo', 'Delete']);
+  });
+
+  it('gives chart mode a Page menu that adds and deletes pages, and pipeline mode none', () => {
+    mount();
+    const tabs = () => screen.getAllByRole('tab').map((t) => t.textContent);
+    expect(tabs()).toEqual(['Page 1']);
+    choose('Page', 'Add Page');
+    expect(tabs()).toEqual(['Page 1', 'Page 2']);
+    choose('Page', 'Delete Page');
+    expect(tabs()).toHaveLength(1);
+    choose('Edit', 'Undo');
+    expect(tabs()).toHaveLength(2);
+    choose('Mode', 'Pipeline');
+    expect(within(screen.getByRole('menubar')).queryByRole('menuitem', { name: 'Page' })).toBeNull();
+  });
+
+  it('picks a theme from Format › Theme, holding the one in use, and undoes it in one step', () => {
+    mount();
+    const themes = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Format' })); });
+      const theme = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Theme'))!;
+      act(() => { fireEvent.click(theme); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const held = (rows: HTMLElement[]) => rows.filter((r) => r.getAttribute('aria-checked') === 'true').map((r) => r.children[1]!.textContent);
+    const rows = themes();
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Paper', 'Night', 'Blueprint', 'Pastel', 'Mono']);
+    expect(held(rows)).toEqual(['Paper']);
+    act(() => { fireEvent.click(rows[1]!); });
+    expect(held(themes())).toEqual(['Night']);
+    act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+    choose('Edit', 'Undo');
+    expect(held(themes())).toEqual(['Paper']);
+  });
+
+  it('gives chart mode a Format sidebar with the Style panel', () => {
+    mount();
+    const format = screen.getByRole('complementary', { name: 'Format' });
+    expect(within(format).getByText('Select shapes or connectors to style them.')).toBeTruthy();
+  });
+
+  it('opens Page Setup on a page from the Page menu', () => {
+    mount();
+    choose('Page', 'Page Setup');
+    expect(screen.getByRole('dialog', { name: /Page Setup: Page 1/ })).toBeTruthy();
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

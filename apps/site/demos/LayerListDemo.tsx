@@ -1,5 +1,5 @@
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
-import { LayerList, useSceneLayerList } from '@weasel-js/ui';
+import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';

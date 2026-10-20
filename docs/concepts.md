@@ -513,6 +513,21 @@ See [extending.md](./extending.md) for custom-layer details.
 
 Returned command trees must be treated as immutable: a cached tree is handed to the renderer again on later frames, so mutating one you previously returned corrupts the cache silently rather than erroring. World-space layers are protected against a stale `view` — `drawLayers` computes the `viewToMat3(view)` group wrap fresh outside the cache — but screen-space (`space: 'screen'`) layers are not; if `draw` reads `view` or `dims`, include them in `deps`. And an `id` must name the same logical layer across frames, since the cache is keyed on it.
 
+## Page
+
+A document's pages are rects in one world space over one scene, so one view, one history, and one selection serve
+all of them (`packages/core/src/core/pages/`). `layoutPages` places a page list in order, `pageOfBounds` says which
+page an object is on (the one it overlaps most; one in the gaps is on none), `pageInView` which one a view mostly
+shows, `pagesLayer` paints the sheets, and `fitViewToPage` frames one.
+
+The page list itself is a document value under `core:pages` (see
+[scene-serialization.md](./scene-serialization.md#document-values)), a `PagesDoc` of pages and their layout options,
+read with `pagesOf` and `placedPagesOf`. `setPages` replaces it and moves each page's root nodes by however far
+their page moved, in one undo entry, so what is on a page stays put on that page; a node that derives from others
+follows them instead. `addPage`, `removePage` (which deletes what is on the page, and what derives from that),
+`movePage`, `resizePage`, and `renamePage` are built on it. `PageTabs` in `@weasel-js/ui` is a strip of tabs over
+any page list; weaselchart uses all of it.
+
 ## Affordance
 
 A reusable factory primitive that produces a `{ render, hitTest? }` triple. Tools that own chrome (selection handles, rotation handle, anchor dots) compose affordances rather than reimplementing the render + hit-test logic inline. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).

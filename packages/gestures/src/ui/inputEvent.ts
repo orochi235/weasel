@@ -332,6 +332,10 @@ export interface CarryEvent extends EventModifiers {
   y: number;
   clientX: number;
   clientY: number;
+  /** What is under the carry, classified as a press there would be. */
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /** External content pasted from the system clipboard. Carries no point. */
