@@ -25,7 +25,6 @@ merged.
 |---|---|---|---|---|
 | 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app tests | — | 4 |
-| 14 | Draw-style XML | `diagram-formats`, svg, app tests | — | 4 |
 
 Pieces are numbered by topic; build them by wave. Piece 6 needs nothing from piece 3 to compile,
 so it is built alongside it, but a page export is only right once cross-page connectors stop
@@ -140,50 +139,6 @@ writes nothing to the scene.
 - Parser tests over fixtures in `__fixtures__/`; read tests per row of the table; write then read
   gives the same topology, labels, shapes, and containers; warnings for each unsupported construct.
 - Chart test: import a `.mmd`, the canvas holds the laid-out nodes.
-
-## 14. Draw-style XML
-
-The one format in scope that carries geometry: a `<diagram>` per page holding a graph model of
-cell elements, each with a `key=value;` style string and a geometry element, plain or
-compressed. A chart round-trips through it laid out, with pages, colors, waypoints, containers,
-and swimlanes.
-
-### Mappings
-
-| Diagram | Style and structure |
-|---|---|
-| outline | `shape=rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is stadium; other shapes are rect, with a warning |
-| colors, font | `fillColor`, `strokeColor`, `fontColor`, `fontSize`, `fontFamily` |
-| text | `value`; with `html=1`, tags stripped and `<br>` kept as a line break |
-| router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, none straight; `avoid` exports as orthogonal with its `routed` points |
-| waypoints | the edge geometry's points array |
-| ports | `exitX`/`exitY`, `entryX`/`entryY` to the nearest compass port |
-| container, pool, lane | `container=1`; `swimlane` with `horizontal` for pools and lanes |
-| page | one `<diagram name=…>` each |
-
-### Engine surface (`packages/diagram-formats/src/drawXml/`)
-
-`read.ts` parses with `DOMParser`, the environment `@weasel-js/svg`'s `parseSvg` already needs;
-compressed content is base64, raw deflate (`DecompressionStream('deflate-raw')`), then URI-decoded,
-so its `read` answers a promise. `write.ts` writes uncompressed, escaping with `escapeAttr` and
-`escapeText` from `@weasel-js/svg`'s `xmlEscape.ts`, exported from its barrel in this piece.
-`style.ts` parses and writes style strings. The extension is `.xml`, and a file is recognized by
-its root element rather than its extension. It writes every page; an import is one undo entry.
-
-**Decisions (2026-10-20).**
-- In scope: draw-style XML, Mermaid, DOT, SVG export, and PNG export. Packaged office-suite drawing
-  formats are out: they are zip archives of many XML parts built on a master-shape system the scene
-  has no equivalent for. SVG import is out: an SVG carries drawn paths, not shapes and connectors,
-  so a connector would arrive as a path that follows nothing.
-- PDF waits for the fourth arc: a faithful PDF needs font subsetting and embedding, a writer the
-  repo does not have and which, needing nothing from weasel, is a package of its own.
-
-### Tests
-
-- `style.test.ts`; `read.test.ts` over plain and compressed fixtures, a row of the table each;
-  `roundTrip.test.ts`: a chart with pages, a pool, waypoints, and colors exports and reads back
-  equal; warnings for unknown shapes.
-- Chart browser test: import a fixture, see two page tabs and a pool.
 
 ## Fourth arc (not designed)
 

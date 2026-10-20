@@ -617,7 +617,8 @@ A node, an edge, a container, or a lane can carry `colors` of its own: a node's 
 and `text`, an edge's `stroke`, `label`, `width`, `dash`, and markers. `diagramScene` draws them
 over the theme and lists the colors in the trait's `ownStyle`, so a later theme change leaves
 them, as it leaves a color set by hand. `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle`
-give the style an item is drawn in, for a writer that needs it without drawing. `layer` puts every
+give the style an item is drawn in, for a writer that needs it without drawing; where a style gives
+no width, `NODE_STROKE_WIDTH`, `LANE_STROKE_WIDTH`, and `EDGE_STROKE_WIDTH` are what is drawn. `layer` puts every
 spec on a layer other than `'main'`.
 
 `outline` is `'rect'`, `'diamond'`, `'stadium'`, `'parallelogram'`,
