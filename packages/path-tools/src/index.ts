@@ -150,3 +150,5 @@ export {
 
 // Carries path-tools' IconName augmentation into the published declarations.
 export type { PathToolsIconName } from './icons.gen';
+
+export { WARP_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools, type PathToolId } from './toolSets';

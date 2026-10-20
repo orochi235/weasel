@@ -1,4 +1,6 @@
 export { defineTool } from './overlayBinding';
+export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from '@weasel-js/routing';
+export type { ToolSet, ToolEntry } from '@weasel-js/routing';
 export type { ToolDef } from './overlayBinding';
 export { useTools } from './overlayBinding';
 export type { UseToolsOptions, ToolsApi } from './overlayBinding';

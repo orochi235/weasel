@@ -5,6 +5,8 @@ import { CORE_NAMED_PRESETS } from './namedPresets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
+import { toolIdsOf, withoutTools } from '@weasel-js/routing';
+import { BUILTIN_TOOLS, RIG_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -34,6 +36,24 @@ describe('resolveToolRegistry', () => {
       builtins, enabled: NONE, patch: Object.fromEntries(KIT_SHAPE_KINDS.map((id) => [id, true as const])),
     });
     expect(Object.keys(registry)).toEqual([...KIT_SHAPE_KINDS]);
+  });
+
+  it('mounts the tools a set names, and a set less some of them', () => {
+    const shapes = resolveToolRegistry({ builtins, defaultTools: [SHAPE_TOOLS, 'hand'], enabled: NONE, patch: null });
+    expect(Object.keys(shapes)).toEqual(['hand', 'rect', 'ellipse', 'line', 'polygon', 'star']);
+    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, RIG_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
+    expect(Object.keys(cut)).not.toContain('bone');
+    expect(Object.keys(cut)).not.toContain('sticky');
+    expect(Object.keys(cut)).toContain('pen');
+  });
+
+  it('derives the built-in ids from the built-in set', () => {
+    expect(toolIdsOf([BUILTIN_TOOLS])).toEqual([...BUILTIN_TOOL_IDS]);
+  });
+
+  it("mounts the tools a preset names by set", () => {
+    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }], CORE_NAMED_PRESETS);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['text', 'sticky']);
   });
 
   it('mounts nothing when nothing is asked for', () => {

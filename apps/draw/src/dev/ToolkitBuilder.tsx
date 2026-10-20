@@ -5,7 +5,7 @@
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
 import { asNodeId, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
-import { pathTools } from '@weasel-js/path-tools';
+import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { type ReactElement, useEffect, useState } from 'react';
@@ -17,7 +17,6 @@ import { DispatchTraceWidget } from './toolkit/DispatchTraceWidget';
 import { ResolutionWidget } from './toolkit/ResolutionWidget';
 import { RoutesWidget } from './toolkit/RoutesWidget';
 import { ToolsWidget } from './toolkit/ToolsWidget';
-import { usePathToolsTools } from '../usePathToolsTools';
 import { useLiveActions, useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 

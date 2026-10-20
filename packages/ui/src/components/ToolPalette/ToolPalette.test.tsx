@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
 import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
@@ -46,6 +46,13 @@ describe('ToolPalette', () => {
     renderWithIcons(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} ariaLabel="Path tools" />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('toolbar', { name: 'Path tools' })).toBeTruthy();
+  });
+
+  it('shows only the tools a set names', () => {
+    const tools = fakeTools([fakeTool('select'), fakeTool('trim', undefined, 'Trim'), fakeTool('extend', undefined, 'Extend')]);
+    renderWithIcons(<ToolPalette tools={tools} include={toolSet('stroke', ['trim', toolSet('more', ['extend'])])} />);
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.queryByText('Trim')).toBeTruthy();
   });
 
   it('shows the tool label from presentation', () => {

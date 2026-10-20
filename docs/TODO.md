@@ -20,24 +20,12 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) Tools have no consistent home, and no way to compose a set of them.** Where a tool lives
-  depends on when it was written:
-  - Core's `tools/builtin/` holds the select, hand, and shape tools, and also bone, weight, slice,
-    eyedropper, measure, and image.
-  - `@weasel-js/path-tools` holds the path-editing family: warp, trim, spiro, smudge, the shape
-    builder, girth, and extend. Some of these are tools and some are path-edit presets.
-  - `@weasel-js/diagram` and `@weasel-js/kernel3d` bring tools of their own (connector,
-    stencils, orbit), and so does `apps/draw` (opacity scrub).
-
-  Choosing a set is a hand-picked id list: `BUILTIN_TOOL_IDS` plus `defaultTools`, presets that
-  each add their own tools, and `tools={{ … }}` patches. draw mounts every built-in id except
-  bone, weight, and sticky. As more tools land, each consumer has to make that cut again, and every new
-  built-in id silently joins whatever list includes "all of them".
-  Needs:
-  - a durable rule for which package a tool lives in, which also answers moving finished tools
-    out of core so they stop sharing its test surface;
-  - a composition unit above single ids (families or sets a consumer opts into whole, with
-    exclusions) that presets, `defaultTools`, and the palette all read.
+- **(P3) The rig tools could leave core with their actions.** Under the tool-home rule in
+  CLAUDE.md ("What gets its own package"), a tool moves only with its action family. Bone and
+  weight, with the rig actions and the animator skinning they drive, are the one core family that
+  reads as a functional area of its own; the rest bind core's own actions and stay. Moving them
+  means a `rig` package, `RIG_TOOLS` and `BuiltinToolId` losing two ids, and `useBuiltinRigTools`
+  leaving `<SceneCanvas>`'s built-ins.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory

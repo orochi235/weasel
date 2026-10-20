@@ -16,6 +16,9 @@ export interface ShapeKindDescriptor {
    *  dispatcher overlay layer knows how to draw it. Kinds without one still
    *  commit; they just have no live drag preview. */
   readonly insertPreview: boolean;
+  /** The tool family a kind with a tool belongs to: which built-in tool set
+   *  names it, and so which palette group it sits in. */
+  readonly family?: 'shape' | 'draw' | 'select' | 'type';
   /** A node of this kind is a text node: an insert drops into its caret, and
    *  its properties carry the text groups. Absent, it is not. */
   readonly text?: boolean;
@@ -27,16 +30,16 @@ export interface ShapeKindDescriptor {
  * `defaultNodeProperties` / `BUILTIN_TOOL_IDS`.
  */
 export const SHAPE_KINDS = {
-  rect: { tool: true, insertPreview: true },
-  ellipse: { tool: true, insertPreview: true },
-  line: { tool: true, insertPreview: true },
-  polygon: { tool: true, insertPreview: true },
-  star: { tool: true, insertPreview: true },
-  pen: { tool: true, insertPreview: false },
-  pencil: { tool: true, insertPreview: true },
-  lasso: { tool: true, insertPreview: false },
-  text: { tool: true, insertPreview: true, text: true },
-  sticky: { tool: true, insertPreview: true, text: true },
+  rect: { tool: true, insertPreview: true, family: 'shape' },
+  ellipse: { tool: true, insertPreview: true, family: 'shape' },
+  line: { tool: true, insertPreview: true, family: 'shape' },
+  polygon: { tool: true, insertPreview: true, family: 'shape' },
+  star: { tool: true, insertPreview: true, family: 'shape' },
+  pen: { tool: true, insertPreview: false, family: 'draw' },
+  pencil: { tool: true, insertPreview: true, family: 'draw' },
+  lasso: { tool: true, insertPreview: false, family: 'select' },
+  text: { tool: true, insertPreview: true, text: true, family: 'type' },
+  sticky: { tool: true, insertPreview: true, text: true, family: 'type' },
   image: { tool: false, insertPreview: true },
 } as const satisfies Record<string, ShapeKindDescriptor>;
 
@@ -72,3 +75,8 @@ export function shapeKindInfo(kind: string): ShapeKindDescriptor | undefined {
 /** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`. */
 export const KIT_SHAPE_KINDS: readonly BuiltinShapeToolId[] =
   shapeKindsWhere(SHAPE_KINDS, 'tool') as BuiltinShapeToolId[];
+
+/** The shape-tool ids of one family, in declaration order. */
+export function kitShapeKindsOf(family: NonNullable<ShapeKindDescriptor['family']>): BuiltinShapeToolId[] {
+  return KIT_SHAPE_KINDS.filter((k) => (SHAPE_KINDS as Record<string, ShapeKindDescriptor>)[k]!.family === family);
+}
