@@ -250,7 +250,8 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
-          maxConcurrency: 8,
+          // Enough for typecheck, lint, and check:needs to overlap; more starves the browser tests beside them.
+          maxConcurrency: 3,
           include: ['scripts/**/*.gate.ts'],
         },
       },
