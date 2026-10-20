@@ -461,12 +461,21 @@ such as a look's value types. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprin
 
 A theme writes literal colors into the scene, so whatever draws or exports the scene needs no
 theme. A shape or connector names its role in its trait's `style`, and lists the colors its
-author set by hand in `ownStyle`; a theme leaves those.
+author set by hand in `ownStyle`; a theme leaves those. A theme whose font size differs from the
+one the scene was in moves every text by the step between them, keeping a title or label's offset
+from the body size, except text whose owner lists `'size'` in `ownFont`. A body whose text changes
+size is laid out again in the same undo entry: it grows to what its rows need, never shrinks, and a
+body the author made larger keeps its size. A body built from text rows alone records how it
+stacks them (`DiagramNode.body`, each row's text node carrying `bodyRow`), which is what
+`relayoutBodies(scene, ids, measure)` reads back. `rendererMeasure` measures a row as the kit's
+text renderer lays it out, from the registered font, for a host whose bodies should hold their
+text exactly.
 
 ```ts
 applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`
 setDiagramStyle(scene, selection.get(), 'warning');          // name a role, and recolor in it
 setDiagramColor(scene, selection.get(), 'fill', '#ffcc00');  // by hand: survives the next theme
+setDiagramFontSize(scene, selection.get(), 16);              // by hand, recorded in `ownFont`
 const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's theme, or a fallback
 ```
 
@@ -476,6 +485,24 @@ New shapes and connectors take the theme from whatever inserts them: pass `roleS
 `edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
+
+A theme is edited as a value: each edit returns a new theme, so a shipped one is never changed.
+`editableTheme(theme)` is where an editor starts: a shipped theme forked as "<name> (edited)", a
+custom one as it is. A custom theme lives in the document's `diagram:theme` value and travels
+between documents as a `.weasel-theme.json` file.
+
+```ts
+let theme = editableTheme(diagramThemeOf(scene));
+theme = setThemeValue(theme, ['roles', 'accent', 'fill'], '#ff8800');  // also edge, lane, page, font, series…
+theme = addThemeRole(theme, 'Critical').theme;                         // in the default role's colors
+theme = removeThemeRole(theme, 'muted');                               // its shapes fall to the default role
+applyDiagramTheme(scene, theme, 'Edit theme', { coalesceKey: 'theme:roles.accent.fill' });
+const file = themeToJson(theme);                                       // and back: parseDiagramTheme(file)
+```
+
+Applies made under one `coalesceKey` with nothing between fold into one undo entry, so a color
+dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTheme` answers
+`{ theme }` or `{ errors }`, each error naming the bad value by its path.
 
 ### Laying it out
 

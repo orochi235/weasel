@@ -184,6 +184,10 @@ export interface RecordEntryOptions {
    *  the engine cannot sample it — a caller that wants undo to restore the
    *  selection captures it when the batch opens and passes it here. */
   selectionBefore?: readonly string[];
+  /** Fold these ops into the entry on top when it was recorded under the same key and nothing has
+   *  happened since: no other push, step, or `seal`. Undo then returns to the state before the
+   *  first of them. Unlike an op's own key this needs no coalesce window; `seal` ends the run. */
+  coalesceKey?: string;
 }
 
 /** Options for `createHistory`. */

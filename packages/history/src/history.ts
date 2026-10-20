@@ -1,12 +1,13 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
+import { createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
 import type {
-  CreateHistoryOptions, History, HistoryBranch, HistoryEntry, HistoryStep, RecordEntryOptions,
+  CreateHistoryOptions, History, HistoryBranch, HistoryStep, RecordEntryOptions,
 } from './historyTypes';
 
 export { touchedIdsFromOps } from './serialized';
@@ -34,36 +35,6 @@ export function _journalAccessInternal(history: History): JournalAccess {
 
 /** Silent default — keeps every call site unconditional. */
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
-
-/** Whether both lists are non-empty, every op is keyed, and the keys match as multisets. */
-function sameCoalesceKeys(top: readonly Op[], incoming: readonly Op[]): boolean {
-  if (top.length === 0 || incoming.length === 0 || top.length !== incoming.length) return false;
-  const counts = new Map<string, number>();
-  for (const op of top) {
-    const k = op.coalesceKey;
-    if (k === undefined) return false;
-    counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  for (const op of incoming) {
-    const k = op.coalesceKey;
-    const c = k === undefined ? 0 : counts.get(k) ?? 0;
-    if (!c) return false;
-    counts.set(k!, c - 1);
-  }
-  return true;
-}
-
-function entryView(e: Entry): HistoryEntry {
-  return {
-    id: e.id, label: e.label, timestamp: e.timestamp, pushes: e.pushes, touchedIds: e.touchedIds,
-    ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
-    ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
-  };
-}
-
-function stepOf(kind: HistoryStep['kind'], entries: readonly Entry[] = []): HistoryStep {
-  return { kind, entries: entries.map((e) => ({ id: e.id, label: e.label, ops: e.forwardOps })) };
-}
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
@@ -164,46 +135,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     }
   }
 
-  /** Apply `ops` best-effort while unwinding a failed step: the throw being
-   *  unwound is the one the caller sees, so a second one is only logged. */
-  function applyUnwinding(ops: Op[]): void {
-    for (const op of ops) {
-      try {
-        op.apply(adapter);
-      } catch (err) {
-        logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${String(err)}`);
-      }
-    }
-  }
-
-  /** Apply every op or none: when one throws, the ops that ran before it are
-   *  inverted, newest first, then `settle` is applied, and the throw
-   *  propagates. Returns true iff at least one op did NOT explicitly return
-   *  `false` / `'noop'` — `pushOrCoalesce` skips the entry when every op in
-   *  the batch was a silent no-op (e.g. reorder where the order already
-   *  matched). Ops returning `undefined`/`void` count as "mutated".
-   *
-   *  `settle` is for a coalesced entry, whose two halves are not each
-   *  other's inverse: inverting what ran lands on the other half's far side,
-   *  and re-applying that half is what returns to where the step began. */
-  function applyAllOrNothing(ops: Op[], settle?: () => Op[], idle?: Set<Op>): boolean {
-    let anyMutated = false;
-    let done = 0;
-    try {
-      for (; done < ops.length; done++) {
-        const r = ops[done]!.apply(adapter);
-        if (r !== false && r !== 'noop') anyMutated = true;
-        else idle?.add(ops[done]!);
-      }
-    } catch (err) {
-      if (done > 0) {
-        applyUnwinding(ops.slice(0, done).reverse().map((op) => op.invert()));
-        if (settle) applyUnwinding(settle());
-      }
-      throw err;
-    }
-    return anyMutated;
-  }
+  const applyAllOrNothing = createApplier(adapter, logger);
 
   function invertEntry(entry: Entry): Op[] {
     return [...entry.baseOps].reverse().map((op) => op.invert());
@@ -261,7 +193,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
     const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs;
-    if (!(windowMs > 0) || version !== coalesceAnchorVersion || now() - top.timestamp > windowMs) return false;
+    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || now() - top.timestamp > windowMs) return false;
     return sameCoalesceKeys(top.forwardOps, incoming);
   }
 
@@ -320,18 +252,31 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     coalesceAnchorVersion = version;
   }
 
+  function fold(top: Entry, ops: Op[]): void {
+    foldEntry(top, ops, now());
+    bump({ kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] });
+    coalesceAnchorVersion = version;
+  }
+
   function record(forwardOps: Op[], baseOps: Op[], label: string, options: RecordEntryOptions = {}): void {
     if (forwardOps.length === 0) return;
+    const key = options.coalesceKey;
+    const top = undoStack[undoStack.length - 1];
+    if (key !== undefined && top?.coalesceKey === key && version === coalesceAnchorVersion && forwardOps === baseOps) {
+      return fold(top, forwardOps);
+    }
     const at = forkPoint();
     const entry: Entry = {
       id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
       touchedIds: touchedIdsFromOps(forwardOps),
       ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
+      ...(key !== undefined ? { coalesceKey: key } : {}),
     };
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
     bump(stepOf('push', [entry]));
+    if (key !== undefined) coalesceAnchorVersion = version;
   }
 
   const history: History = {

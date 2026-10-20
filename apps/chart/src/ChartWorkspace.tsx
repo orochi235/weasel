@@ -18,6 +18,7 @@ import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
 import { StylePanel } from './theme/StylePanel';
 import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
+import { ThemePanel } from './theme/ThemePanel';
 import {
   AvoidRoutingPublisher, ContainerDropPublisher, HopsPublisher, StencilInsertPublisher, useChartDiagram,
   WaypointFollowerPublisher,
@@ -72,6 +73,7 @@ export function ChartWorkspace(): ReactElement {
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
   }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
   const editingId = textEdit.editingId;
@@ -128,8 +130,9 @@ export function ChartWorkspace(): ReactElement {
       </div>
       <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
         <StylePanel scene={scene} selected={selection.current} theme={theme} />
+        {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
       </Sidebar>
-      <ThemeCommands scene={scene} />
+      <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
     </div>
   );
 }
