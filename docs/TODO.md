@@ -140,8 +140,9 @@ Priority tags:
 ## Paths & booleans
 
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
-  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
-  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
+  holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that
+  holds a `<tspan>` are not applied; each warns
   (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
   glyphs run together: turning a position into a letter spacing or a space needs the advance of
   the glyphs before it, which a parse with no face loaded cannot measure.
@@ -150,9 +151,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
-  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
-  is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
   Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
@@ -298,12 +296,6 @@ Priority tags:
   answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
   the box at the press rather than where it lands. Open question: should spacing on a turned box
   measure its extent, its own frame, or stay off?
-- **(P3) `resolveSnap` can report a member the others imply** (2026-10-18). `extend`
-  (`packages/geom/src/snap/resolve.ts`) adds a candidate whenever it narrows the solution, so a line
-  taken before a point on it leaves both in `members`. The move and `satisfied` are right. Open
-  question: prune members the final flat already implies, or document `members` as the path the
-  search took? Ties between combinations compare their members' orders, so by reading the code (not
-  observed) a redundant line could decide one.
 - **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
   (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
   `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
@@ -322,15 +314,18 @@ Priority tags:
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
 - **(P3) A puppet warp's bends add anchors.** The puppet map (`packages/geom/src/warp/puppet.ts`)
   is piecewise affine over its mesh, so `warpPath` gains anchors where an edge crosses triangles
-  that turned differently. Folds were part of it and are gone: refitting a 4-anchor disc squashed
-  by three pins went from 12 anchors to 5, but a 4-anchor bar pushed into an S still refits with 18
-  (19 before). A smooth interpolation of the solved vertices would refit with fewer.
+  that turned differently. Measured on the fleet (2026-10-19) at the default 0.5 tolerance with
+  `foldCases.ts`: the squashed 4-anchor disc refits with 5 anchors and the bar pushed into an S
+  with 21. Blending each vertex's area-weighted Jacobian across its triangles (a C0 quadratic map)
+  did worse, 6 and 23; a map smooth across the edges is what would refit with fewer.
 - **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
-  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` takes 30 to
-  60 rounds on a ~500-vertex mesh, about 4 to 5 ms a solve on the fleet, where an unfolded solve
-  takes under 1 ms. Each round is dominated by the profile Cholesky back-solves
-  (`profileCholesky.ts`); an ordering with less fill, or fewer rounds from a better step, would
-  cut it.
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` runs many
+  rounds: measured on the fleet (2026-10-19), the disc squash takes 28 rounds and 5.3 ms a solve
+  on a 547-vertex mesh, the bar S 51 rounds and 6.8 ms on 517. The back-solves are not the bulk of
+  a round: each of its two takes 15 to 33 µs, and a George–Liu starting vertex for the
+  Cuthill–McKee order (`profileCholesky.ts`) left them unchanged. The rest is the per-triangle
+  passes (gradient, flip bound, energy per line-search step, least area); fewer rounds from a
+  better step is the larger lever.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
@@ -338,7 +333,7 @@ Priority tags:
 
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.
+- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make, each in the paint it would wear (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas; nor does the keymap have a hold-to-preview form (press shows, release fires, Escape cancels) for any action.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and

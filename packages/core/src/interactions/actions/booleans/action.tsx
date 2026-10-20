@@ -78,7 +78,10 @@ function makePathfinderAction(op: BooleanOp): Action {
       if (!adapter || !paths) return;
       const result = previewBooleanOp(adapter, op, opOptions(deps));
       if (result.kind !== 'pieces') return;
-      return paths.show(result.pieces.map((piece) => ({ path: piece.path })));
+      return paths.show(result.pieces.map((piece) => {
+        const paint = piece.paint ?? adapter.getPaint?.(piece.sourceId);
+        return paint ? { path: piece.path, paint } : { path: piece.path };
+      }));
     },
     enabled: (deps) => {
       const selection = deps?.selection;
