@@ -70,7 +70,7 @@ export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewp
 export { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
-export { fitViewToPage } from '../core/pages/fitViewToPage';
+export { fitViewToPage, pageInView } from '../core/pages/fitViewToPage';
 export {
   PAGES_DOC_KEY, addPage, movePage, nextPageId, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage,
   setPages,

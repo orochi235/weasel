@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds, type Page } from './pages';
 import { pagesLayer } from './pagesLayer';
-import { fitViewToPage } from './fitViewToPage';
+import { fitViewToPage, pageInView } from './fitViewToPage';
 
 const A: Page = { id: 'a', width: 100, height: 200 };
 const B: Page = { id: 'b', name: 'Back', width: 300, height: 100 };
@@ -116,5 +116,17 @@ describe('fitViewToPage', () => {
     const view = fitViewToPage(b!, { width: 300, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 0 });
     expect(view.scale).toEqual({ x: 1, y: 1 });
     expect([view.x, view.y]).toEqual([110, 0]);
+  });
+});
+
+describe('pageInView', () => {
+  const pages = layoutPages([A, B], { gap: 10 });
+  it('answers the page the view shows most of', () => {
+    expect(pageInView(pages, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })?.id).toBe('a');
+    expect(pageInView(pages, { x: 60, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 })?.id).toBe('b');
+  });
+
+  it('answers null when the view shows no page', () => {
+    expect(pageInView(pages, { x: -500, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })).toBeNull();
   });
 });
