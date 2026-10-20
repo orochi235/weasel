@@ -16,7 +16,7 @@ import type {
   SnapSource,
 } from '@weasel-js/core';
 import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core';
-import type { KitSettingsStore } from '@weasel-js/react';
+import { isDev, type KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
   add,
@@ -155,8 +155,20 @@ export interface Snap3dOptions {
   store?: SnapOutcomeStore<Vec3>;
 }
 
+let warnedGestureSources = false;
+
+function warnGestureSources(): void {
+  if (warnedGestureSources || !isDev()) return;
+  warnedGestureSources = true;
+  console.warn(
+    '[kernel3d] a gesture passed snap `sources`, which are 2D and are not asked in a 3D host. ' +
+    'List 3D sources in createSnap({ sources }).',
+  );
+}
+
 /**
- * The `snap` dep over a 3D world. A move snaps its subject's world box on the
+ * The `snap` dep over a 3D world. A gesture's `omit` is honored; its 2D
+ * `sources` are not asked. A move snaps its subject's world box on the
  * plane it already moves on; an insert snaps the pointer on the ground. Both
  * answer in screen points, which `translate` and `createInsert` cast back
  * onto the same plane, landing exactly where the snap put them.
@@ -165,13 +177,18 @@ export function createSnap<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
 ): SnapDep {
   const store = opts.store ?? createSnapOutcomeStore<Vec3>();
-  const sources = opts.sources ?? [];
-  assertSnapSourceIds(sources);
+  const listed = opts.sources ?? [];
+  assertSnapSourceIds(listed);
   return {
-    begin: (req) => createSession3d({
-      req, world, sources, store,
-      reachPx: opts.reachPx ?? opts.kitSettings?.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
-    }),
+    begin: (req) => {
+      if (req.sources?.length) warnGestureSources();
+      const omit = new Set(req.omit);
+      const sources = listed.filter((s) => !omit.has(s.id));
+      return createSession3d({
+        req, world, sources, store,
+        reachPx: opts.reachPx ?? opts.kitSettings?.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
+      });
+    },
   };
 }
 
