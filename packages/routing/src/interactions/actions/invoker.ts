@@ -272,8 +272,11 @@ export interface OngoingHandle {
    *
    * `previewIds()` enumerates the displaced node ids; `previewPose(id)`
    * returns the interim pose for one of them (shape opaque — the canvas
-   * casts to its `TPose` parameter). Returning `null`, or omitting the
-   * method, means "no preview this gesture".
+   * casts to its `TPose` parameter). `previewIds` returning `null`, or
+   * omitted, means "no preview this gesture". An id with no `previewPose`
+   * is shown at its effective pose: an action that publishes its poses to
+   * the scene's pose overrides, as move, resize and rotate do, leaves
+   * `previewPose` out rather than answering the same pose twice.
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;

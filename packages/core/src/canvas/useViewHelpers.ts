@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
+import { useInFlightBounds } from './useInFlightBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
@@ -218,18 +219,8 @@ export function useViewHelpers<TPose>(
 
   const multiActive = selection.length > 1;
 
-  const previewPoseExtraRef = useLatest(previewPoseExtra);
-
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
-
-  const previewPoseOf = useCallback((id: string): TPose | null => {
-    const p = previewPoseExtraRef.current?.(id);
-    return p != null ? (p as TPose) : null;
-  }, [previewPoseExtraRef]);
-  const previewBoundsOf = useCallback((id: string): Bounds | null => {
-    const p = previewPoseOf(id);
-    return p != null ? boxOf(id, p) : null;
-  }, [previewPoseOf, boxOf]);
+  const { previewPoseOf, previewBoundsOf } = useInFlightBounds({ gestureSource, previewPoseExtra, boxOf, committedPoseOf });
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can

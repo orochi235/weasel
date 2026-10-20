@@ -9,6 +9,7 @@ import { createSnapOutcomeStore } from 'features/snap/outcomeStore';
 import { sceneSession2d } from 'features/snap/sceneSession2d';
 import type { SnapSource } from 'features/snap/types';
 import { rotatePoint } from '../rotate/geometry';
+import { heldPose } from '../testUtils';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { resizeAction } from './action';
@@ -84,7 +85,7 @@ function rig(sources: readonly SnapSource[], poses: readonly Pose[], extra: Reco
     anchor = a;
     return (resizeAction.invoker as OngoingInvoker).start(at(p), undefined);
   };
-  const preview = (h: OngoingHandle) => h.previewPose!(ids[0]) as Pose;
+  const preview = () => heldPose(scene, ids[0]) as Pose;
   const pose = () => scene.get(asNodeId(ids[0]) as NodeId)!.pose as Pose;
   return { scene, ids, store, at, press, preview, pose };
 }
@@ -109,7 +110,7 @@ describe('a resize snapping through the snap session', () => {
     const h = r.press({ x: 100, y: 50 });
     // The diagonal runs (2, 1); x = 150 meets it at (150, 75).
     h.onMove!(r.at({ x: 147, y: 70 }, { shift: true }));
-    near(r.preview(h), { x: 0, y: 0, width: 150, height: 75 });
+    near(r.preview(), { x: 0, y: 0, width: 150, height: 75 });
     h.onEnd!(r.at({ x: 147, y: 70 }, { shift: true }), 'commit');
   });
 
@@ -117,7 +118,7 @@ describe('a resize snapping through the snap session', () => {
     const r = rig([grid10], [BOX]);
     const h = r.press({ x: 100, y: 50 });
     h.onMove!(r.at({ x: 123, y: 58 }));
-    near(r.preview(h), { x: 0, y: 0, width: 120, height: 60 });
+    near(r.preview(), { x: 0, y: 0, width: 120, height: 60 });
     h.onEnd!(r.at({ x: 123, y: 58 }), 'commit');
   });
 
@@ -129,7 +130,7 @@ describe('a resize snapping through the snap session', () => {
     const h = r.press({ x: 30, y: 70 });
     // The corner reaches (32, 75), 3 from the sibling's right edge at 35.
     h.onMove!(r.at({ x: 32, y: 75 }));
-    const p = r.preview(h);
+    const p = r.preview();
     const corner = (lx: number, ly: number) => rotatePoint(lx, ly, p.x + p.width / 2, p.y + p.height / 2, p.rotation!);
     const dragged = corner(p.x + p.width, p.y + p.height);
     const fixed = corner(p.x, p.y);
@@ -152,7 +153,7 @@ describe('a resize snapping through the snap session', () => {
       const h = r.press({ x: 30, y: 70 });
       // Local delta (20, 10) is world (-10, 20); local y leads (10/40 over 20/100).
       h.onMove!(r.at({ x: 20, y: 90 }, { shift: true }));
-      const p = r.preview(h);
+      const p = r.preview();
       expect(p.width / p.height).toBeCloseTo(2.5, 9);
       expect(p.height).toBeCloseTo(50, 9);
       expect(has(p, { x: 70, y: -30 })).toBe(true);
@@ -165,7 +166,7 @@ describe('a resize snapping through the snap session', () => {
       const h = r.press({ x: 30, y: 70 });
       // Local delta (-130, -40) is world (40, -130); local x leads, past the pin.
       h.onMove!(r.at({ x: 70, y: -60 }, { shift: true }));
-      const p = r.preview(h);
+      const p = r.preview();
       expect(Math.abs(p.width / p.height)).toBeCloseTo(2.5, 9);
       expect(Math.abs(p.width)).toBeCloseTo(30, 9);
       expect(has(p, { x: 70, y: -30 })).toBe(true);
@@ -180,10 +181,10 @@ describe('a resize snapping through the snap session', () => {
     const r = rig([guide('x', 140), guide('y', 30)], [BOX]);
     const h = r.press({ x: 100, y: 25 }, EAST);
     h.onMove!(r.at({ x: 137, y: 28 }));
-    near(r.preview(h), { x: 0, y: 0, width: 140, height: 50 });
+    near(r.preview(), { x: 0, y: 0, width: 140, height: 50 });
     expect(r.store.get()).toEqual([guideMark('x', 140)]);
     h.onMove!(r.at({ x: 137, y: 28 }, { shift: true }));
-    expect(r.preview(h).width).toBeCloseTo(140, 9);
+    expect(r.preview().width).toBeCloseTo(140, 9);
     expect(r.store.get()).toEqual([guideMark('x', 140)]);
     h.onEnd!(r.at({ x: 137, y: 28 }), 'cancel');
   });
@@ -192,7 +193,7 @@ describe('a resize snapping through the snap session', () => {
     const r = rig([], [{ x: 0, y: 0, width: 1000, height: 10 }]);
     const h = r.press({ x: 1000, y: 10 });
     h.onMove!(r.at({ x: 1000, y: 110 }, { shift: true }));
-    near(r.preview(h), { x: 0, y: 0, width: 11000, height: 110 });
+    near(r.preview(), { x: 0, y: 0, width: 11000, height: 110 });
     h.onEnd!(r.at({ x: 1000, y: 110 }), 'cancel');
   });
 
@@ -200,10 +201,10 @@ describe('a resize snapping through the snap session', () => {
     const r = rig([siblingEdges], [BOX, { x: 140, y: 200, width: 10, height: 10 }]);
     const h = r.press({ x: 100, y: 25 }, EAST);
     h.onMove!(r.at({ x: 137, y: 25 }, { ctrl: true }));
-    near(r.preview(h), { x: 0, y: 0, width: 137, height: 50 });
+    near(r.preview(), { x: 0, y: 0, width: 137, height: 50 });
     expect(r.store.get()).toEqual([]);
     h.onMove!(r.at({ x: 137, y: 25 }));
-    near(r.preview(h), { x: 0, y: 0, width: 140, height: 50 });
+    near(r.preview(), { x: 0, y: 0, width: 140, height: 50 });
     expect(r.store.get()).not.toEqual([]);
     h.onEnd!(r.at({ x: 137, y: 25 }), 'cancel');
     expect(r.store.get()).toEqual([]);
