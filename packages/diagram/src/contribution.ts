@@ -129,6 +129,9 @@ export const GRAB_LABEL_ACTION_ID = 'diagram.grabLabel';
 /** The action id that selects a clicked label's edge. */
 export const SELECT_LABEL_EDGE_ACTION_ID = 'diagram.selectLabelEdge';
 
+const NO_MODIFIERS = { shift: false, meta: false, ctrl: false };
+const ANY_MODIFIERS = { shift: 'optional', meta: 'optional', ctrl: 'optional', alt: 'optional' } as const;
+
 function selectLabelEdgeAction(): Action {
   return {
     id: SELECT_LABEL_EDGE_ACTION_ID,
@@ -138,8 +141,9 @@ function selectLabelEdgeAction(): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const pressed = labelScratchOf((params as { affordance?: { payload?: unknown } } | undefined)?.affordance);
-        if (pressed !== null) deps.selection?.set([pressed.edgeId as NodeId]);
+        const p = params as { affordance?: { payload?: unknown }; mods?: { shift: boolean; meta: boolean; ctrl: boolean } } | undefined;
+        const pressed = labelScratchOf(p?.affordance);
+        if (pressed !== null) deps.selection?.applyClick(pressed.edgeId as NodeId, p?.mods ?? NO_MODIFIERS);
       },
     },
     enabled: (deps) => (deps?.selection !== undefined ? true : ActionDisabledReason.NotApplicable),
@@ -174,7 +178,7 @@ export function diagramLabelDrag(
       bindings: [
         { spec: { kind: 'drag', target }, actionId },
         { spec: { kind: 'pointerDown', target }, actionId: GRAB_LABEL_ACTION_ID },
-        { spec: { kind: 'click', target }, actionId: SELECT_LABEL_EDGE_ACTION_ID },
+        { spec: { kind: 'click', target, mods: ANY_MODIFIERS }, actionId: SELECT_LABEL_EDGE_ACTION_ID },
         { spec: { kind: 'doubleClick', target }, actionId: EDIT_EDGE_LABEL_ACTION_ID },
       ],
     },
