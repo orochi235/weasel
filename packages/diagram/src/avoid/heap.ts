@@ -15,9 +15,15 @@ export class MinHeap {
   }
 
   private swap(a: number, b: number): void {
-    [this.ids[a], this.ids[b]] = [this.ids[b]!, this.ids[a]!];
-    [this.keys[a], this.keys[b]] = [this.keys[b]!, this.keys[a]!];
-    [this.ties[a], this.ties[b]] = [this.ties[b]!, this.ties[a]!];
+    const id = this.ids[a]!;
+    this.ids[a] = this.ids[b]!;
+    this.ids[b] = id;
+    const key = this.keys[a]!;
+    this.keys[a] = this.keys[b]!;
+    this.keys[b] = key;
+    const tie = this.ties[a]!;
+    this.ties[a] = this.ties[b]!;
+    this.ties[b] = tie;
   }
 
   push(id: number, key: number, tie: number): void {

@@ -7,8 +7,15 @@ import type { Box } from './types';
 /** The cell size the router's hashes use, in world units. */
 export const CELL = 128;
 
+/** An item as filed: `seen` marks the query that last returned it. */
+interface Filed<T> {
+  item: T;
+  seen: number;
+}
+
 export class SpatialHash<T> {
-  private readonly cells = new Map<number, T[]>();
+  private readonly cells = new Map<number, Filed<T>[]>();
+  private query_ = 0;
 
   constructor(private readonly cell = CELL) {}
 
@@ -23,13 +30,14 @@ export class SpatialHash<T> {
   }
 
   insert(item: T, box: Box): void {
+    const filed: Filed<T> = { item, seen: 0 };
     const [i0, j0, i1, j1] = this.range(box);
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const k = SpatialHash.key(i, j);
         const list = this.cells.get(k);
-        if (list === undefined) this.cells.set(k, [item]);
-        else list.push(item);
+        if (list === undefined) this.cells.set(k, [filed]);
+        else list.push(filed);
       }
     }
   }
@@ -37,18 +45,15 @@ export class SpatialHash<T> {
   /** Every item filed in a cell `box` touches, each once. */
   query(box: Box, out: T[] = []): T[] {
     const [i0, j0, i1, j1] = this.range(box);
-    const single = i0 === i1 && j0 === j1;
-    const seen = single ? null : new Set<T>();
+    const stamp = ++this.query_;
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const list = this.cells.get(SpatialHash.key(i, j));
         if (list === undefined) continue;
-        for (const item of list) {
-          if (seen !== null) {
-            if (seen.has(item)) continue;
-            seen.add(item);
-          }
-          out.push(item);
+        for (const filed of list) {
+          if (filed.seen === stamp) continue;
+          filed.seen = stamp;
+          out.push(filed.item);
         }
       }
     }

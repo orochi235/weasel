@@ -95,6 +95,21 @@ export function searchLeg(sources: readonly LegSource[], targets: readonly LegTa
     heap.push(state, h(state >> 2, s.heading), 0);
   });
 
+  // A step's cost does not depend on the heading it is taken from.
+  const steps = new Map<number, number>();
+  const stepCost = (key: number, i: number, j: number, ni: number, nj: number): number => {
+    let cost = steps.get(key);
+    if (cost !== undefined) return cost;
+    const x0 = xs[i]!;
+    const y0 = ys[j]!;
+    const x1 = xs[ni]!;
+    const y1 = ys[nj]!;
+    cost = obstacles.crosses(x0, y0, x1, y1) ? Infinity : Math.abs(x1 - x0) + Math.abs(y1 - y0)
+      + (ctx.crossings ? ctx.crossings.penalty * ctx.crossings.index.crossings(ctx.edge, x0, y0, x1, y1) : 0);
+    steps.set(key, cost);
+    return cost;
+  };
+
   const settled = new Set<number>();
   while (heap.size > 0 && settled.size < MAX_SETTLED) {
     const state = heap.pop()!;
@@ -113,13 +128,9 @@ export function searchLeg(sources: readonly LegSource[], targets: readonly LegTa
       const ni = i + DX[nd];
       const nj = j + DY[nd];
       if (ni < 0 || nj < 0 || ni >= xs.length || nj >= ny) continue;
-      const x0 = xs[i]!;
-      const y0 = ys[j]!;
-      const x1 = xs[ni]!;
-      const y1 = ys[nj]!;
-      if (obstacles.crosses(x0, y0, x1, y1)) continue;
-      let cost = base + Math.abs(x1 - x0) + Math.abs(y1 - y0) + (nd === d ? 0 : bendPenalty);
-      if (ctx.crossings) cost += ctx.crossings.penalty * ctx.crossings.index.crossings(ctx.edge, x0, y0, x1, y1);
+      const step = stepCost(v * 4 + nd, i, j, ni, nj);
+      if (step === Infinity) continue;
+      const cost = base + step + (nd === d ? 0 : bendPenalty);
       const next = (ni * ny + nj) * 4 + nd;
       if (cost >= (g.get(next) ?? Infinity)) continue;
       g.set(next, cost);
