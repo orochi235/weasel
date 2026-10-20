@@ -1,17 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { FLOWCHART_STENCILS } from '@weasel-js/diagram';
+import { CONTAINER_STENCILS, FLOWCHART_STENCILS } from '@weasel-js/diagram';
 import { StencilPanel } from './StencilPanel';
 import { stencilIdOfDragText } from './stencilDrop';
 
 afterEach(cleanup);
 
 describe('StencilPanel', () => {
-  it('lists every flowchart stencil under "Shapes"', () => {
+  it('lists every flowchart stencil, then the containers, under "Shapes"', () => {
     render(<StencilPanel active={null} setActive={() => {}} />);
     expect(screen.getByText('Shapes')).toBeTruthy();
     const rows = screen.getAllByRole('option');
-    expect(rows.map((r) => r.textContent)).toEqual(FLOWCHART_STENCILS.map((s) => s.label));
+    expect(rows.map((r) => r.textContent)).toEqual([...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => s.label));
+    expect(rows.slice(-3).map((r) => r.textContent)).toEqual(['Container', 'Pool (rows)', 'Pool (columns)']);
   });
 
   it("activates a row's stencil tool", () => {

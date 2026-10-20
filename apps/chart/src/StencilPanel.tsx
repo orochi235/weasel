@@ -1,4 +1,4 @@
-import { FLOWCHART_STENCILS, stencilKind } from '@weasel-js/diagram';
+import { CONTAINER_STENCILS, FLOWCHART_STENCILS, stencilKind } from '@weasel-js/diagram';
 import { ItemList, type ItemListRow } from '@weasel-js/ui/components/ItemList';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import type { DragEvent, ReactElement } from 'react';
@@ -15,9 +15,9 @@ const onDragStart = (id: string) => (e: DragEvent<HTMLDivElement>): void => {
   e.dataTransfer.effectAllowed = 'copy';
 };
 
-/** The shapes palette: a row picks that stencil's tool, and dragging a row onto the canvas drops one. */
+/** The shapes palette, flowchart stencils then containers: a row picks that stencil's tool, and dragging a row onto the canvas drops one. */
 export function StencilPanel({ active, setActive }: StencilPanelProps): ReactElement {
-  const rows: ItemListRow[] = FLOWCHART_STENCILS.map((s) => ({
+  const rows: ItemListRow[] = [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => ({
     id: s.id,
     label: s.label,
     selected: active === stencilKind(s.id),

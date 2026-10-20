@@ -14,7 +14,7 @@ import {
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
-import { StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
+import { ContainerDropPublisher, StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
 import './workspace.css';
 
 const FEATURES = ['draw'] as const;
@@ -87,6 +87,7 @@ export function ChartWorkspace(): ReactElement {
           >
             <StencilInsertPublisher />
             <WaypointFollowerPublisher scene={scene} />
+            <ContainerDropPublisher scene={scene} />
             <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
         )}
