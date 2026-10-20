@@ -699,6 +699,33 @@ with. `setParam`, `addWire`, `removeStages` and the rest of the edit model are
 plain functions from one `EffectDoc` to the next, and `canWire` asks an
 `EffectPipeline` whether two ports may be wired, for driving the edits yourself.
 
+`look` picks the drawing: `'nodeGraph'` (default), `'rack'`, or `'lanes'`, with
+that look's `options`. Connecting, reconnecting, and deleting work the same in
+all three. Rack and lanes place every stage themselves, so under them a stage
+does not move freely. Instead a stage on the main line drags along it: an
+insertion bar marks the gap it would land in, drawn in the problem color where
+the wiring cannot take it, and releasing it there reports `'Reorder'`. Under
+lanes, dragging a lane's label up or down reports `'Reorder lanes'`.
+
+```tsx
+<EffectEditor doc={doc} onChange={commit} look="rack" />
+```
+
+The order is the wiring, so a reorder rewires the pipeline:
+`moveInChain(doc, stage, to)` takes the stage's main input and output wires
+off, wires its old neighbors to each other, and wires it into gap `to` of
+`mainChain`. Side wires, control wires, and params stay with it. It returns
+`null` where a new wire would join unlike types. Lane order is
+`EffectDoc.laneOrder`, which `setLaneOrder` writes and the editor hands to
+`lanes` over `options.lanes`. Rack's `chain` option is not offered here, since a
+given chain could disagree with the wiring.
+
+The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
+carries one item of any drawn sequence along its axis and draws the insertion
+bar. Give it `slots`, the items and gaps that `sequenceSlots(axis, items)` builds
+from their boxes, and a `commit` that hears `{ id, from, to }`.
+`reorderContribution` packs the action and its binding to pass as `ambient`.
+
 ## Design notes
 
 Decisions the code cannot explain on its own.
