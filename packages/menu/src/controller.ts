@@ -1,5 +1,6 @@
 import { createNumberValues } from './numberValues';
-import { entriesAt, isRow, type MenuEntry, type MenuNumberEntry } from './entries';
+import { createTextValues } from './textValues';
+import { entriesAt, isRow, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
@@ -57,6 +58,10 @@ export interface MenuController {
   setNumber(e: MenuNumberEntry, value: number): void;
   /** Move a number row by a spin-button key: an arrow, Page Up or Down, Home or End. False for any other key. */
   spin(e: MenuNumberEntry, key: string): boolean;
+  /** What a text row holds now: the last value set while the menu is open, else the one it opened with. */
+  textValue(e: MenuTextEntry): string | undefined;
+  /** Write a text row. The menu stays open; subscribers hear it. */
+  setText(e: MenuTextEntry, value: string): void;
   subscribe(fn: () => void): () => void;
   dispose(): void;
 }
@@ -92,7 +97,6 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     const e = entryAt(level, index);
     return e !== undefined && isRow(e);
   };
-
   const finish = () => { closed = true; cancel(); onClose(); };
   const choose = (level: number, index: number) => {
     const e = entryAt(level, index);
@@ -171,6 +175,7 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     },
     setPanel(level, rect) { panels.set(level, rect); },
     ...numbers,
+    ...createTextValues(notify, () => closed),
     subscribe(fn) {
       listeners.add(fn);
       return () => { listeners.delete(fn); };

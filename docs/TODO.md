@@ -588,12 +588,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   open its own menu on Alt+F; check there before relying on it.**
 
 - **(P3) A schema drawn as a menu still drops or flattens some leaves.** `leafRows` in
-  `packages/routing/src/menus/resolveMenu.ts` now draws a number as a row edited in place and a
-  color and a string as read-only rows. What is left:
+  `packages/routing/src/menus/resolveMenu.ts` draws a number and a string as rows edited in place
+  and a color as a read-only row. What is left:
   - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
     picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
-  - A string shows as `Name: value`, read-only. The DOM menu could hold a text field the way it
-    holds a number one; the HUD menu has no text entry at all.
+  - The HUD menu draws a text row read-only (`textCommands` in `hud/src/menu/valueRows.ts`): it has
+    no text entry. The DOM menu's text field (`MenuTextValue`) is tested in jsdom and has not been
+    looked at in a browser.
   - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**

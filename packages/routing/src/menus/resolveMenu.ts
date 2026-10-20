@@ -162,10 +162,21 @@ function colorRows(ctx: Ctx, leaf: PrefColor, key: string, path: string, off: bo
   return [{ kind: 'color', key, label: leaf.name, ...withAccess(leaf.access), ...(off ? { disabled: true } : {}), value: textAt(ctx, path) }];
 }
 
-/** A string row reads as its name and value, read-only, as an enum readout does. */
-function stringRows(ctx: Ctx, leaf: PrefString, key: string, path: string): MenuEntry[] {
-  if (!ctx.src.values) return [];
-  return [{ kind: 'item', key, label: `${leaf.name}: ${textAt(ctx, path) ?? '—'}`, ...withAccess(leaf.access), disabled: true, run: noop }];
+/** A string row is edited in place; a readout, or one nothing writes, reads as its name and value, as an enum readout does. */
+function stringRows(ctx: Ctx, leaf: PrefString, key: string, path: string, off: boolean): MenuEntry[] {
+  const { values, onChange } = ctx.src;
+  if (!values) return [];
+  if (leaf.readout || !onChange) {
+    return [{ kind: 'item', key, label: `${leaf.name}: ${textAt(ctx, path) ?? '—'}`, ...withAccess(leaf.access), disabled: true, run: noop }];
+  }
+  const stored = values(path);
+  return [{
+    kind: 'text', key, label: leaf.name, ...withAccess(leaf.access),
+    ...(leaf.icon ? { icon: leaf.icon } : {}),
+    ...(off ? { disabled: true } : {}),
+    value: typeof stored === 'string' ? stored : undefined,
+    set: (text) => onChange(path, text),
+  }];
 }
 
 /** `key` names the row; `path` is where its value lives, which differs from
@@ -183,7 +194,7 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
     case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
     case 'number': return numberRows(ctx, leaf as PrefNumber, key, path, off);
     case 'color': return colorRows(ctx, leaf as PrefColor, key, path, off);
-    case 'string': return stringRows(ctx, leaf as PrefString, key, path);
+    case 'string': return stringRows(ctx, leaf as PrefString, key, path, off);
     case 'separator': return [sep(key)];
     case 'label':
       return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
@@ -231,8 +242,9 @@ function tidy(entries: MenuEntry[]): MenuEntry[] {
  * Draw a prefs schema as menu entries. Action leaves become items from the
  * registry (one per variant for a parametric action), an `actions` leaf one
  * item per action in its group, a boolean a checked item, an enum radio
- * rows, and a number a row edited in place (all through `src.values`/`src.onChange`);
- * a color shows as a swatch and a string as a disabled row, both read-only. A group drawn `as` a
+ * rows, and a number and a string a row edited in place (all through `src.values`/`src.onChange`);
+ * a color shows as a swatch, read-only, and so does a string as a disabled row when it is a readout
+ * or nothing writes it. A group drawn `as` a
  * `menu`, `page`, `tab`, or `panel` is a submenu, and any other group's rows
  * sit inline between separators. Paint, field, compound, and app-defined leaves are left out.
  * `at` is the world point the menu was opened at and reaches `enabled` and
