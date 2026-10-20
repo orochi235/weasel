@@ -558,12 +558,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) A bar's action button never says why it is disabled.** `BarActionOne`
-  (`packages/ui/src/components/Bar/BarAction.tsx`) spreads `useLeafAction`'s `reason` into
-  `BarActionButton`, which reads `disabledReason`, so a disabled bar button gets no tooltip and is
-  not focusable; `PrefActionOne` maps it and a panel's row does say why. In draw, Warp Settings
-  greyed out with nothing warped selected is the visible case.
-
 - **(P3) A `ToolPalette` with `columns` steps its arrow keys through the buttons in order.** Up
   and Down should move a row, the way a grid does; `useRovingTabIndex` has no grid mode, so all
   four arrows step one button. weaselchart's Shapes panel is the palette that has one.
