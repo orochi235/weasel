@@ -17,7 +17,7 @@ import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
 import { A11Y_SECTION } from './a11y/A11yPanel';
-import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
+import { CssVarsChrome } from './cssVars/cssVarsChrome';
 import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
@@ -90,6 +90,24 @@ function useDocumentTitle(title: string) {
   }, [title]);
 }
 
+/** What the workshop shows when the index is empty, naming the globs it was built from. */
+function NoStories({ stories }: { stories: readonly string[] }) {
+  return (
+    <div className="fg-empty">
+      <p className="fg-empty__title">No stories found</p>
+      {stories.length > 0 ? (
+        <ul className="fg-empty__globs" aria-label="Story globs">
+          {stories.map((glob) => (
+            <li key={glob}>
+              <code>{glob}</code>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
 export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
@@ -138,10 +156,12 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     [],
   );
   const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);
+  const showsCssVars = config?.cssVars !== false;
+  const [cssVarsChrome, setCssVarsChrome] = useState<readonly LabContribution[]>([]);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
-      ...(config?.cssVars === false ? [] : [CSS_VARS_SECTION]),
+      ...(showsCssVars ? cssVarsChrome : []),
       A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
@@ -149,26 +169,11 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
       { id: 'fg-info', region: 'header', group: 'story', item: infoCommand },
       ...(config?.labChrome ?? []),
     ],
-    [index, infoCommand, declarations, config?.cssVars, config?.labChrome],
+    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome],
   );
   const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
-  if (!first) {
-    return (
-      <div className="fg-empty">
-        <p className="fg-empty__title">No stories found</p>
-        {stories.length > 0 ? (
-          <ul className="fg-empty__globs" aria-label="Story globs">
-            {stories.map((glob) => (
-              <li key={glob}>
-                <code>{glob}</code>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-    );
-  }
+  if (!first) return <NoStories stories={stories} />;
   return (
     <LibrariesContext.Provider value={libraries}>
     <StoryGlobalsContext.Provider value={labValues}>
@@ -202,6 +207,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 />
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />
                 <GlobalsMenus declarations={declarations} onMenus={setMenus} />
+                {showsCssVars ? <CssVarsChrome onChrome={setCssVarsChrome} /> : null}
               </Lab>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>

@@ -70,7 +70,15 @@ async function openTrial(name: string) {
   const link = connectFrame(iframe as HTMLIFrameElement);
   link.frame.send(ready);
   await flush();
+  await showVars();
   return { ...link, iframe: iframe as HTMLIFrameElement };
+}
+
+/** Presses the header toggle the panel is hidden behind, unless the lab remembers it pressed. */
+async function showVars() {
+  const toggle = await screen.findByRole('button', { name: 'CSS Vars panel' });
+  if (toggle.getAttribute('aria-pressed') !== 'true') fireEvent.click(toggle);
+  await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
 }
 
 function row(scope: ReturnType<typeof vars>, name: string) {

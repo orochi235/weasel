@@ -273,14 +273,33 @@ describe('Workshop', () => {
     expect(document.title).toBe('astv parts');
   });
 
-  it('offers the CSS Vars panel unless the config turns it off', async () => {
+  it('hides the CSS Vars panel until its header toggle is pressed, and remembers the choice', async () => {
     location.hash = '#/x--a';
-    const { unmount } = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const storage = createMemoryAdapter();
+    const first = renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
     await screen.findByRole('region', { name: /^Trial / });
-    expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument();
-    unmount();
+    const toggle = await screen.findByRole('button', { name: 'CSS Vars panel' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('region', { name: 'CSS Vars' })).toBeNull();
+
+    fireEvent.click(toggle);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'CSS Vars panel' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(JSON.stringify(storage.listSync?.(''))).toContain('fg-css-vars-shown'), { timeout: 5000 });
+    first.unmount();
+
+    history.replaceState(null, '', '/');
+    location.hash = '#/x--a';
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'CSS Vars panel' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('offers neither the CSS Vars panel nor its toggle when the config turns it off', async () => {
+    location.hash = '#/x--a';
     renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={{ cssVars: false }} storage={createMemoryAdapter()} />);
     await screen.findByRole('region', { name: /^Trial / });
     expect(screen.queryByRole('region', { name: 'CSS Vars' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'CSS Vars panel' })).toBeNull();
   });
 });

@@ -12,7 +12,7 @@ export interface ShellConfig {
    *  it from this module's source, so write it as a string or a `const` of this file; a computed one titles the
    *  page only once the workshop has loaded. */
   title?: string;
-  /** Whether the lab offers the CSS Vars panel. Default true. */
+  /** Whether the lab offers the CSS Vars panel and its header toggle. Default true; the panel starts hidden. */
   cssVars?: boolean;
   labChrome?: readonly LabContribution[];
   controls?: Record<string, ControlRenderer>;
