@@ -1057,6 +1057,12 @@ only story runner in the repo.
   matches; the same commits passed on the next run. A mid-run sync is inferred, not observed. A
   check at the end of the run, comparing the tree's stamp with the one it started on, would turn
   this into a void run rather than 241 failures.
+- **(P3) `AssetsPage`'s first test times out in full fleet runs.** "opens on WeaselDraw
+  preferences, and opens a node property schema picked from the list"
+  (`apps/draw/src/dev/AssetsPage.test.tsx`) hit its 5000ms timeout in the full runs of `a64fe9501`,
+  `72fe486f7` and `69662b198` on studio, and passed in `befd71b6c`'s (2026-10-20). Three in four
+  stops being load noise; it likely needs more than 5 s on a busy node, or waits on something slow.
+
 - **(P3) A chart browser test times out under load.** "moves an edge label off a shape dropped on
   it, on release" (`apps/chart/src/chart.browser.test.tsx`) hit its 15 s timeout in the full run of
   `a64fe9501` on studio and passed on the identical tree before and after (2026-10-20). Label drag
