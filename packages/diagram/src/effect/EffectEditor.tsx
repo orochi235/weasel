@@ -94,7 +94,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
   const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
-    // A group box picked would stay lit while `onSelect` says none; DiagramView makes edges pickable again.
+    // Only stages and groups pick, so a lane or a row is never lit while `onSelect` says none; DiagramView makes edges pickable again.
     .map((s) => (s.pickable === false || isPart(built, s.id as string) ? s : { ...s, pickable: false })), [built, doc, look]);
   const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
   useReleaseReplaced(run);
