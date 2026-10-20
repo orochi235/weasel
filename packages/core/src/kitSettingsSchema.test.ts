@@ -11,8 +11,6 @@ import { ANCHOR_CLICK_PX } from 'interactions/actions/defaults/anchorEditing';
 import {
   ANCHOR_RADIUS_PX, CLOSE_HINT_RADIUS_PX, HANDLE_DOT_RADIUS_PX, PEN_CLOSE_HIT_PX,
 } from 'features/paths/penPreviewLayer';
-import { JOINT_RADIUS_PX } from 'tools/builtin/bone/boneOverlay';
-import { POINT_RADIUS_PX } from 'tools/builtin/weight/weightOverlay';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 import { DEFAULT_SNAP_PX } from 'features/snap/session2d';
 import { coreKitSettingsSchema } from './kitSettingsSchema';
@@ -37,8 +35,6 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     penHandleDotRadiusPx: HANDLE_DOT_RADIUS_PX,
     penCloseHintRadiusPx: CLOSE_HINT_RADIUS_PX,
     penCloseHitPx: PEN_CLOSE_HIT_PX,
-    boneJointRadiusPx: JOINT_RADIUS_PX,
-    weightPointRadiusPx: POINT_RADIUS_PX,
     sliceVertexRadiusPx: VERTEX_RADIUS_PX,
     sliceCloseHitPx: SLICE_CLOSE_HIT_PX,
   },

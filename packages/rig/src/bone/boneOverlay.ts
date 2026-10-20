@@ -1,8 +1,8 @@
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { RenderLayer } from 'core/layers/render';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
+import type { RenderLayer } from '@weasel-js/core';
+import { viewToTransform } from '@weasel-js/core';
+import { worldToScreen } from '@weasel-js/core';
 import { jointPositions } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
 

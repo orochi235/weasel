@@ -34,13 +34,6 @@ export {
   useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS,
   type UseStickyToolOptions, type StickyStyle,
 } from './sticky';
-export {
-  useBoneTool, createRigEditState, createBoneOverlay, placedRig,
-  type UseBoneToolOptions, type RigEditState, type PlacedRig,
-} from './bone';
-export {
-  useWeightTool, createWeightOverlay, weighedPaths, type UseWeightToolOptions, type WeighedPath, type WeightEnv,
-} from './weight';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.

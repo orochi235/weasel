@@ -1,8 +1,8 @@
 import { ellipsePath } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
-import type { RenderLayer } from 'core/layers/render';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
+import type { RenderLayer } from '@weasel-js/core';
+import { viewToTransform } from '@weasel-js/core';
+import { worldToScreen } from '@weasel-js/core';
 import type { WeighedPath } from './weightActions';
 
 export const POINT_RADIUS_PX = 3.5;

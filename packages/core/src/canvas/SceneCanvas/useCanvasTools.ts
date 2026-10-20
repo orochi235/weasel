@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { Action, SelectionApi } from '@weasel-js/routing';
-import type { Scene } from 'core/scene/types';
+import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../features/longPress/longPressFeedback';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
 import {
@@ -59,9 +58,6 @@ export function useEnabledFeatures(
 export function useCanvasTools(args: {
   /** The canvas's select tool, which is built from its scene and pickers. */
   select: Tool;
-  /** The canvas's scene and selection, which the rig tools edit and read. */
-  scene: Scene<unknown, string, unknown>;
-  selection: SelectionApi;
   enabled: EnabledPresets;
   tools: Props['tools'];
   defaultTools: Props['defaultTools'];
@@ -84,12 +80,8 @@ export function useCanvasTools(args: {
   const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, ambient, initialActiveTool, modes, onToolsCreated } = args;
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
-  const selectionRef = useLatest(args.selection);
-  const selected = useCallback(() => selectionRef.current.get(), [selectionRef]);
   const registry = useBuiltinTools({
     select,
-    scene: args.scene,
-    selection: selected,
     enabled,
     defaultTools,
     patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,

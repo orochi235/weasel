@@ -20,13 +20,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) The rig tools could leave core with their actions.** Under the tool-home rule in
-  CLAUDE.md ("What gets its own package"), a tool moves only with its action family. Bone and
-  weight, with the rig actions and the animator skinning they drive, are the one core family that
-  reads as a functional area of its own; the rest bind core's own actions and stay. Moving them
-  means a `rig` package, `RIG_TOOLS` and `BuiltinToolId` losing two ids, and `useBuiltinRigTools`
-  leaving `<SceneCanvas>`'s built-ins.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.

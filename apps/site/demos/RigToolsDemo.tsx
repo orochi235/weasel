@@ -3,7 +3,6 @@ import { autoSkin } from '@weasel-js/animator';
 import type { Skeleton, Skin } from '@weasel-js/animator';
 import {
   asNodeId,
-  createRigEditState,
   dataRestPath,
   placeSkeleton,
   polygonFromPoints,
@@ -13,6 +12,7 @@ import {
   useScene,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
+import { createRigEditState, useRigTools } from '@weasel-js/rig';
 import num from '@weasel-js/theme/numeric.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -62,7 +62,7 @@ export function RigToolsDemo() {
   const state = useMemo(() => createRigEditState(), []);
   // The tools edit the one arm whatever is selected, and share their joint and the
   // stroke being painted with `useRigNode`, which shows the stroke as it goes.
-  const toolOptions = useMemo(() => ({ rig: { rig: () => RIG, state } }), [state]);
+  const tools = useRigTools({ scene, rig: () => RIG, state });
 
   const rig = useRigNode({ scene, node: RIG, painting: state });
   useEffect(() => {
@@ -94,8 +94,7 @@ export function RigToolsDemo() {
           className="ckd-canvas"
           scene={scene}
           features={['pick', 'paths']}
-          defaultTools={['bone', 'weight']}
-          toolOptions={toolOptions}
+          tools={tools}
           claimKeys
         />
       </DemoStage>

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import type { RenderLayer } from 'core/layers/render';
-import { createScene } from 'core/scene/scene';
-import type { NodeId, RectPose } from 'core/scene/types';
+import type { RenderLayer } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core';
+import type { NodeId, RectPose } from '@weasel-js/core';
 import { jointPositions } from '@weasel-js/animator';
-import { placeSkeleton } from '../../../animation/rig/rigNode';
+import { placeSkeleton } from '@weasel-js/core';
 import type { Skin } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
 import { createRigEditState } from './rigEditState';
