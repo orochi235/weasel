@@ -4,18 +4,20 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## weaselchart fourth arc: planned, unbuilt (2026-10-20)
+## weaselchart fourth arc: building (2026-10-20)
 
-The spec (`docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`) was approved
-(2026-10-20). Each piece has a plan in `docs/superpowers/plans/2026-10-20-chart-arc4-*.md`; none
-is reviewed or built yet. Each plan lists the calls it made where the spec was silent, under its
-gaps or "Decisions made while planning" — those need review before building.
+Spec: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`; its Pieces table marks what is
+built. Label drag, the group layouts and the patchable audio graph are merged. PDF (wave 1) and the
+live audio runner and pages in `DiagramData` (wave 2) are each being built by a controller agent in
+its own `.claude/worktrees/agent-*` worktree from that piece's plan in `docs/superpowers/plans/`;
+each controller deletes its plan when it finishes. Merge each branch to `main` once its fleet run
+is green; `docs/TODO.md`'s fourth-arc line and the spec's Pieces rows conflict on every merge.
 
-Next: review the plans, then build in the spec's two waves, one worktree per piece. The runner
-plan depends on the graph plan's `AudioGraph` API, and `impulseResponse` lives in
-`@weasel-js/audio`. Every piece edits the same fourth-arc line in `docs/TODO.md`, so expect
-conflicts there when merging. `@weasel-js/pdf` needs its first npm publish and trusted-publisher
-setup done by hand before it can release.
+Open on `main`: no full fleet run has passed with the merges in. The run on `a64fe9501` failed one
+chart browser test by timeout ("moves an edge label off a shape dropped on it, on release") plus
+an unrelated draw timeout; the run on `72fe486f7` was void (every browser suite failed to import
+`vitest.browser.setup.ts`, probably the shared node tree changing mid-run). If the chart test fails
+again, investigate it before the next merge.
 
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
