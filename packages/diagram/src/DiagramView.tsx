@@ -10,6 +10,7 @@ import {
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
+import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
@@ -18,6 +19,7 @@ import { diagramGroupOf } from './group';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
 import { useLiveLayout } from './live';
 import { useMirroredSelection } from './mirrorSelection';
+import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
 import { useSceneSync } from './sceneSync';
@@ -25,6 +27,20 @@ import { registerDiagramShape } from './shape';
 
 export type { EdgeRoute, NodeMove } from './sceneSync';
 export type { DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, ReconnectChange } from './diagramViewProps';
+export type { DiagramOverlay } from './overlays';
+
+/** The view's box holds the canvas and the overlays placed over it, and is as
+ *  big as the canvas: its parent's box on an axis the canvas fills. */
+const VIEW_RULE = ':where([data-wzl-diagram]) { position: relative; width: fit-content; }'
+  + ' :where([data-wzl-diagram~="fill-x"]) { width: 100%; }'
+  + ' :where([data-wzl-diagram~="fill-y"]) { height: 100%; }'
+  + ' :where([data-wzl-diagram]) > canvas { display: block; }'
+  + ' :where([data-wzl-diagram-overlay]) { position: absolute; left: 0; top: 0; }'
+  + ' :where([data-wzl-diagram-overlay][hidden]) { display: none; }';
+
+const adoptViewRule = (el: HTMLElement | null) => {
+  if (el !== null) adoptCssOnce(el, VIEW_RULE);
+};
 
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const sameView = (a: View, b: View) =>
@@ -44,11 +60,12 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, width, height, selected, onSelect, onMove, onConnect, onReconnect, onDelete, onEditLabel, connectBodies,
+  specs: given, width, height, selected, onSelect, onHover, onMove, onConnect, onReconnect, onDelete, onEditLabel, connectBodies,
+  pickEdges, overlays,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = onReconnect !== undefined || onDelete !== undefined || onEditLabel !== undefined;
+  const edgesPick = pickEdges ?? (onReconnect !== undefined || onDelete !== undefined || onEditLabel !== undefined);
   const specs = useMemo(() => (edgesPick ? withPickableEdges(given) : given), [edgesPick, given]);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
@@ -114,7 +131,16 @@ function Inner({
       const [x1, y1] = canvas.clientToWorld(r.right, r.bottom);
       return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
     },
-  }), [live]);
+    rectOf: (id) => {
+      const canvas = canvasRef.current;
+      const world = worldRectOf(scene, id);
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || world === null || r === undefined) return null;
+      const rect = screenRectOf(world, canvas.getView());
+      return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
+    },
+    subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
+  }), [live, scene]);
 
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
@@ -130,27 +156,38 @@ function Inner({
   const edits = onMove !== undefined || onConnect !== undefined || edgesPick;
 
   useRefit(canvasRef, fit);
+  const shown = overlays ?? NO_OVERLAYS;
+  const overlayRef = useOverlayPlacement(canvasRef, scene, shown);
+  const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <SceneCanvas
-      ref={canvasRef}
-      scene={scene}
-      selection={selection}
-      features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
-      enableKeybindings={enableKeybindings ?? edits}
-      ambient={editing.ambient}
-      actions={editing.actions}
-      onClick={onClick}
-      width={width}
-      height={height}
-      {...(fills ? { onResize: setMeasured } : {})}
-      className={className}
-      {...(defaultView ? { defaultView } : {})}
-      {...(view ? { view } : {})}
-      {...(onViewChange ? { onViewChange } : {})}
-      {...(background ? { backgroundFill: background } : {})}
-    />
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
+      <SceneCanvas
+        ref={canvasRef}
+        scene={scene}
+        selection={selection}
+        features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
+        enableKeybindings={enableKeybindings ?? edits}
+        ambient={editing.ambient}
+        actions={editing.actions}
+        onClick={onClick}
+        {...(onHover ? { onHover } : {})}
+        width={width}
+        height={height}
+        {...(fills ? { onResize: setMeasured } : {})}
+        {...(defaultView ? { defaultView } : {})}
+        {...(view ? { view } : {})}
+        {...(onViewChange ? { onViewChange } : {})}
+        {...(background ? { backgroundFill: background } : {})}
+      />
+      {shown.map((o) => {
+        const key = o.key ?? o.target;
+        return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
+      })}
+    </div>
   );
 }
+
+const NO_OVERLAYS: readonly never[] = [];
 
 /** Apply each new fit while the view is still the last one applied. */
 function useRefit(canvasRef: RefObject<SceneCanvasApi | null>, fit: View | undefined): void {
