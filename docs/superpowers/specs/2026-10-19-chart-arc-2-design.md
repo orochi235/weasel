@@ -1,6 +1,6 @@
 # weaselchart (`apps/chart`), second arc — design
 
-**Pieces 2 to 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`).
+**Pieces 2, 3, 4, and 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`). Piece 5, containers and swimlanes, landed with core's `canDropInto` dep and `carriedDescendants`; the diagram README's "Containers and pools" says what it does.
 
 For whoever builds each piece of the second arc. It says what the user does and sees in
 weaselchart, which engine surface each piece adds and where, how it saves and undoes, and which
@@ -23,8 +23,7 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 | 2 | Stage reorder under `rack` and `lanes` | — | — |
 | 3 | Multiple pages | scene document values | — |
 | 4 | Themes | — | 3 (document values) |
-| 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | — |
-| 6 | Obstacle-avoiding routing | scene edit passes | 5 |
+| 6 | Obstacle-avoiding routing | scene edit passes | 5 (landed) |
 
 The suggested order holds. Stage reorder sits second although it shares nothing with the others,
 because it closes out pipeline mode's first-arc gap while the scene foundations are still in review.
@@ -211,85 +210,6 @@ entry; setting a role is one entry.
   today's colors exactly.
 - Chart browser test: switch theme, read the page fill and a shape fill back from the canvas
   pixels, undo.
-
-## 5. Containers and swimlanes
-
-### What the user sees
-
-The Shapes panel gains Container, Pool (rows), and Pool (columns).
-
-- **Container**: a titled box. Dragging a shape into it lights the container and makes the shape
-  its member on release; dragging the container moves its members and their connectors; dragging a
-  member out releases it; resizing the container leaves members where they are. Deleting a
-  container deletes its members (it is structural, like a Cmd+G group); Arrange › Release members
-  removes the box and keeps them.
-- **Pool**: a header and a stack of lanes. A new pool has two. "Add lane" at the end of the stack
-  adds one; dragging a lane's header reorders lanes; dragging the boundary after a lane resizes it;
-  double-clicking a header renames it. Shapes dropped in a lane become its members.
-
-A click selects the innermost shape under the pointer; a click on a container's header or empty
-interior selects the container.
-
-### Engine surface (`packages/diagram/src/containers/`)
-
-- `trait.ts`: `DiagramContainer { role: 'container' | 'pool' | 'lane'; header?: { side: 'top' |
-  'left'; size: number } }` under `data.diagram.container`, read with `diagramContainerOf`. A
-  container is a core `ContainerNode`; its title is a text child in the header, as a body's rows
-  are.
-- `containerLayout.ts`: `diagramContainerLayout()`, a free-placement `LayoutStrategy` whose
-  `dropRegion` is the body below the header, whose `acceptsDrop` admits participants and refuses
-  lanes and pools, and whose `releaseDrop` is `null`. Registered as `diagram:container` through
-  `withDiagramRegistry` (`edge.ts`), so it round-trips by key.
-- `laneStack.ts`: `laneStackLayout({ axis })`, registered as `diagram:pool-rows` and
-  `diagram:pool-columns`. Lanes stack along the axis after the header and stretch across it;
-  `getDropTargets` offers the gaps between lanes to a dragged lane; it accepts only lanes. **A
-  pool's size along the stack is the sum of its lanes; its cross size is the author's
-  (2026-10-19).**
-- `laneBoundaryLayer.ts` and `LANE_RESIZE_ACTION_ID = 'diagram.resizeLane'`, an affordance and
-  action in the edge-end pattern, with a swappable commit.
-- `containerStencils.ts`: `CONTAINER_STENCILS` and `containerBuild(stencil, bounds, style)`,
-  inserted through the same `insert` dep path as `stencil.ts`; `addLane(scene, pool, index?)` and
-  `releaseMembers(scene, id)`.
-- **`diagramCanDropInto(scene)`**: admits containers and lanes (and a pool for a lane), and refuses
-  stencil bodies, edges, and labels.
-
-**Core foundations.**
-- A **drop filter**: an optional `canDropInto(parent, ids)` dep in
-  `packages/core/src/interactions/actions/depSchema.ts`, consulted by `resolveDropTarget`
-  (`move/commit/reparent.ts`) and the layout drop pass (`move/layout/dropPass.ts`). Today any
-  container under the pointer takes a `reparentOnDrop` drop, which would put a shape inside a
-  stencil body's rows.
-- **Layout passes carry descendants.** Under absolute poses a layout writing a child container's
-  pose leaves that child's own children behind, so a restacked lane would lose its members.
-  `layoutPass.ts` translates each laid-out container's descendants by its delta, reusing
-  `landedDescendants.ts`, which already does this for drags. `setPages` (piece 3) uses the same
-  helper.
-- Container resize must leave members put. If core's resize remaps a container's descendants (not
-  yet checked), the fix is a `carriesChildren(id)` option beside `resizable` in
-  `resize/options.ts`, and `diagramResizable` answers it.
-
-**Decisions (2026-10-19).**
-- Connectors stay at the scene root, drawn above every container, whatever their ends are inside:
-  their geometry derives from their ends, and a root edge never needs reparenting.
-- Lanes take no connectors: a lane is a region, not a thing in the process. Containers and pools do.
-- Data-backed containers (`DiagramData`) are third-arc work, because `DiagramView` has no resize
-  reporting yet and containers need it first.
-
-### Save, load, undo
-
-Containers are scene nodes with layout registry keys and save through `toJSON`. A drop into or out
-of a container is part of its move's history entry; add lane, resize lane, reorder lanes, and
-release members are one entry each.
-
-### Tests
-
-- `containerLayout.test.ts`, `laneStack.test.ts`: drop regions, acceptance, stacking, gaps.
-- `containers.scene.test.ts`: drop in and out reparents in one entry; moving a container moves
-  members and translates their connectors' waypoints (`waypointFollower`); resize leaves members;
-  delete takes members, release keeps them; a restack moves later lanes' members.
-- Core: `reparent.test.ts` and `dropPass` tests for `canDropInto`; `layoutPass` descendant carry.
-- `containers.browser.test.tsx`: a real drag into a container and into a lane, lane header reorder,
-  boundary resize. Chart browser test: build a pool, add shapes, save and reload.
 
 ## 6. Obstacle-avoiding routing
 
