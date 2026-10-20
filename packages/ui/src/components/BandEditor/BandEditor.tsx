@@ -22,7 +22,7 @@ import { bandName, retagBands, untag } from './retag';
 import { pct } from './track';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
-import { Ruler } from './Ruler';
+import { Ruler, rulerDisplay, type BandTick } from './Ruler';
 import { SeamHandle } from './SeamHandle';
 import {
   bandBounds,
@@ -37,7 +37,7 @@ import {
   type RangeEdge,
 } from './bands';
 
-export type { Band, BandScale, RangeEdge };
+export type { Band, BandScale, RangeEdge, BandTick };
 
 /** Props for {@link BandEditor}. */
 export interface BandEditorProps<T, F extends Quantity = number> {
@@ -64,8 +64,11 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   limits?: readonly [number, number];
   /** Default `'log'`. */
   scale?: 'linear' | 'log' | BandScale;
-  /** A tick with no `label` of its own is labeled through `display`, when given. */
-  ticks?: { at: number; label?: ReactNode }[];
+  /**
+   * A tick with no `label` of its own is labeled through `display`, when given. Where labels
+   * would crowd, some give way and leave their notch unlabeled; see {@link BandTick.level}.
+   */
+  ticks?: BandTick[];
   /**
    * How a seam's value shows and is spoken — `fraction()` makes a seam at
    * 1/12 announce `1 over 12` rather than `0.08333333333333333`. A tagged
@@ -328,8 +331,8 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
         display={props.display}
         ends={
           props.onRangeChange && [
-            { edge: 'min', at: lo, label: <QuantityText value={shown[0]?.from ?? lo} display={display} mute /> },
-            { edge: 'max', at: hi, label: <QuantityText value={hi} display={display} mute /> },
+            { edge: 'min', at: lo, label: <QuantityText value={shown[0]?.from ?? lo} display={rulerDisplay(display)} mute /> },
+            { edge: 'max', at: hi, label: <QuantityText value={hi} display={rulerDisplay(display)} mute /> },
           ]
         }
         toUnit={toUnit}

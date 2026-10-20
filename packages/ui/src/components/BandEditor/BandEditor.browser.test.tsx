@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { decimal } from '@weasel-js/quantity';
+import { decimal, fraction } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
 
 afterEach(cleanup);
@@ -28,12 +28,25 @@ function editor(props: { min?: number; rescalable?: boolean }) {
 
 function shownTicks(container: HTMLElement): string[] {
   return [...container.querySelectorAll<HTMLElement>('[data-tick-at]')]
-    .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+    .filter((el) => getComputedStyle(el.firstElementChild!).visibility !== 'hidden')
     .map((el) => el.dataset.tickAt!);
 }
 
+/** Every label a reader can see, ends included, left to right. */
+function shownLabels(container: HTMLElement): DOMRect[] {
+  return [...container.querySelectorAll<HTMLElement>('[data-tick-at] > *, [data-range-end] > *')]
+    .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+    .map((el) => el.getBoundingClientRect())
+    .sort((a, b) => a.left - b.left);
+}
+
+/** An end's label as a copy reads it: a stacked fraction's MathML digits are not part of that. */
 function endLabels(container: HTMLElement): string[] {
-  return [...container.querySelectorAll<HTMLElement>('[data-range-end]')].map((el) => el.textContent ?? '');
+  return [...container.querySelectorAll<HTMLElement>('[data-range-end]')].map((el) => {
+    const copy = el.cloneNode(true) as HTMLElement;
+    for (const math of copy.querySelectorAll('math')) math.remove();
+    return copy.textContent ?? '';
+  });
 }
 
 describe('BandEditor range-end ticks', () => {
@@ -66,6 +79,61 @@ describe('BandEditor range-end ticks', () => {
     const { container } = render(editor({ rescalable: false }));
     expect(endLabels(container)).toEqual([]);
     expect(shownTicks(container)).toEqual(['1', '50', '99']);
+  });
+});
+
+describe('BandEditor tick labels', () => {
+  const FRACTIONS = [1 / 45, 1 / 30, 1 / 24, 1 / 18, 1 / 12, 1 / 6, 1 / 3].map((at) => ({ at }));
+
+  function crowded(width: number, scale: 'linear' | 'log') {
+    return (
+      <div style={{ width }}>
+        <BandEditor
+          value={[{ from: 1 / 64, data: 'a' }]}
+          min={1 / 64}
+          max={1 / 2}
+          scale={scale}
+          ticks={FRACTIONS}
+          display={fraction()}
+          onChange={() => {}}
+          onRangeChange={() => {}}
+        />
+      </div>
+    );
+  }
+
+  for (const [width, scale] of [[260, 'log'], [260, 'linear'], [600, 'linear']] as const) {
+    test(`keeps every shown label clear of its neighbors at ${width}px on a ${scale} scale`, () => {
+      const { container } = render(crowded(width, scale));
+      const labels = shownLabels(container);
+      for (let i = 1; i < labels.length; i++) expect(labels[i]!.left - labels[i - 1]!.right).toBeGreaterThanOrEqual(4);
+      expect(endLabels(container)).toEqual(['1/64', '1/2']);
+      for (const end of container.querySelectorAll('[data-range-end] > *')) {
+        expect(getComputedStyle(end).visibility).not.toBe('hidden');
+      }
+    });
+  }
+
+  test('keeps drawing the notch of a tick whose label gives way', () => {
+    const { container } = render(crowded(260, 'linear'));
+    const ticks = [...container.querySelectorAll<HTMLElement>('[data-tick-at]')];
+    expect(shownTicks(container).length).toBeLessThan(ticks.length);
+    for (const tick of ticks) expect(getComputedStyle(tick).visibility).not.toBe('hidden');
+  });
+
+  test('keeps the rounder of two colliding fractions', () => {
+    const { container } = render(crowded(260, 'linear'));
+    const shown = shownTicks(container).map(Number);
+    expect(shown).toContain(1 / 3);
+    expect(shown).toContain(1 / 6);
+  });
+
+  test('draws a fraction stacked, inside the ruler', () => {
+    const { container } = render(crowded(600, 'log'));
+    const label = container.querySelector<HTMLElement>(`[data-tick-at="${1 / 45}"] > *`)!;
+    expect(label.querySelector('mfrac')).not.toBeNull();
+    const ruler = container.querySelector('[data-band-ruler]')!.getBoundingClientRect();
+    expect(label.getBoundingClientRect().top).toBeGreaterThanOrEqual(ruler.top);
   });
 });
 

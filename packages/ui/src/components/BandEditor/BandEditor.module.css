@@ -45,8 +45,13 @@
   white-space: nowrap;
 }
 
-/* A tick that would collide with a range end's label gives way to it. */
-.tick[data-occluded] {
+/* Taller where a label stacks, so a fraction's numerator stays inside the strip. */
+.ruler:has(mfrac) {
+  height: var(--be-ruler-height, 28px);
+}
+
+/* A label that would crowd a neighbor that outranks it gives way; its notch stays. */
+.tickLabel[data-crowded] {
   visibility: hidden;
 }
 
