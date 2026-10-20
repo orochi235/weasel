@@ -3,14 +3,10 @@
  * nothing of scenes, so a host with its own nodes routes with it directly.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { Bounds } from '../outline';
 
 /** An axis-aligned box in world units. */
-export interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export type Box = Bounds;
 
 /** A place a connector's end may leave or arrive: a port's point and the
  *  unit direction it faces away from its shape. */

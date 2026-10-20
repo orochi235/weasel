@@ -11,6 +11,7 @@
  *
  * Also absent on purpose: the routers, which live in `edge` where this package
  * meets the scene registry, and anything that reads or writes a node's trait.
+ * The obstacle-avoiding router's search is here; its scene wiring is not.
  *
  * @packageDocumentation
  */
@@ -44,6 +45,10 @@ export type { ForceBody, ForceOptions, ForceRelaxation } from './force';
 export { force, forceRelaxation } from './force';
 export type { EdgeLabelRoom, Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 export { chain } from './chain';
+export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
+export type {
+  AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+} from './avoid';
 export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,
