@@ -1325,6 +1325,15 @@ only story runner in the repo.
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
+- **(P2) `hops.browser.test.tsx` ("bows the upper connector over the crossing") fails in full fleet
+  runs: the chart canvas never paints.** Twice on 2026-10-20 (a run of `main` at `b3431621f` and a
+  branch run at `cefc52e68`), both on teitou in the full `browser` project; three runs of the file
+  alone passed. The failure screenshot shows the app's chrome and an empty workspace with not even
+  the page drawn, so polling the pixels (`5ceb31061`) cannot help; the canvas painted nothing for over
+  a second. Unchecked candidates: the WebGL context lost or never made under six tabs, or the seed
+  in `localStorage` (one origin, shared by every tab) cleared by another chart test's `afterEach`
+  before the app read it, though an empty scene would still draw the page.
+
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
