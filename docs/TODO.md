@@ -1337,6 +1337,11 @@ only story runner in the repo.
 - **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
+- **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
+  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
+  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
+  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
+  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
   each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

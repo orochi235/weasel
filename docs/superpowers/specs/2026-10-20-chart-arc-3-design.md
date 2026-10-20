@@ -23,7 +23,6 @@ merged.
 
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
-| 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
 | 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
@@ -38,7 +37,7 @@ Shared files, and who makes room in them first:
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 264 | 12 | done: the data types are in `dataTypes.ts`, re-exported |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 181 | 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -47,50 +46,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 9. Pipeline groups as editable containers
-
-### What the user sees
-
-Under Node graph, a pipeline group is a titled box like a chart container: drag a stage in or out
-to change membership, drag the box to carry its stages, resize it, double-click its title to
-rename. Arrange › Group (⌘G) groups the selected stages; Arrange › Ungroup (⇧⌘G) dissolves the
-picked group. Under Rack and Lanes, groups draw as today, and Group, Ungroup, and renaming in the
-Params sidebar work; dragging membership does not.
-
-**Decision (2026-10-20).** Groups become data containers only under `nodeGraph`: rack and lanes
-place every stage, so an authored box would contradict the look, while a box fitting its members
-holds in every look.
-
-### Engine surface (`packages/diagram/src/effect/`)
-
-- `EffectDoc.groupBoxes?: Readonly<Record<groupId, Box>>`, a sidecar like `places`.
-- `editorMapping.ts`: under `nodeGraph`, each `EffectGroup` maps to a `DataContainer` with
-  `box: doc.groupBoxes?.[id]` (fitting its members while unset); other looks keep mapping
-  it to a `DataGroup`.
-- `groupEdit.ts`: `groupStages(doc, ids, label?)` (nested inside the group all of them share, if
-  any), `ungroup(doc, id)` (members go to its parent group), `renameGroup`, `moveToGroup(doc, ids,
-  group | null)`, `setGroupBox(doc, id, box | null)`, and `moveGroup(doc, id, offset)`, which moves
-  member places, the box, and inner wires' `routes` together; `removeStages` prunes `groupBoxes`.
-- `EffectEditor`: `selectedGroup` and `onSelectGroup` beside the stage pick; `onMove` with
-  `parent` and `onEditContainer` map to the edits above. Labels: "Move", "Resize group", "Group",
-  "Ungroup", "Rename group".
-- App: `apps/chart/src/pipeline/pipelineCommands.ts` gains the Arrange items; `ParamPanel.tsx`
-  shows a picked group's name field.
-
-### Save, load, undo
-
-Membership saves in `EffectPipeline.groups`, as now, and boxes in `groupBoxes`; older files load
-with every group fitting its members. Each edit is one `onChange`, one entry in the pipeline history.
-A dragged group is one `moveGroup` (below): its stages, its box, and the routes of wires with both
-ends inside move by one offset, the rule `waypointFollower` keeps in chart mode.
-
-### Tests
-
-- `groupEdit.test.ts`: nesting, ungroup to parent, pruning.
-- `editorMapping.test.ts`: a container under `nodeGraph`, a group under the others.
-- `EffectEditor.groups.browser.test.tsx`: drag a stage into a group box; resize it; undo through
-  the app's pipeline history (`usePipelineDoc.ts`).
 
 ## 12. Interchange document model
 
