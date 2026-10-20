@@ -13,9 +13,7 @@ export const DIAGRAM_ROLES = [
 /** The id of one of {@link DIAGRAM_ROLES}. A theme may style roles of its own besides. */
 export type DiagramRole = (typeof DIAGRAM_ROLES)[number]['id'];
 
-/** A color on a shape or connector that the author can set by hand, and a theme then leaves alone.
- *  On a connector, `text` is its label's color. */
-export type StyleField = 'fill' | 'stroke' | 'text';
+export type { StyleField } from './styleField';
 
 /** The face a theme sets diagram text in. A text row keeps its own size. */
 export interface DiagramFont {

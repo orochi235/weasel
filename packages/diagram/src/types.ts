@@ -1,7 +1,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import type { GroupInset } from './cluster';
 import type { Outline } from './outline';
-import type { StyleField } from './theme/types';
+import type { StyleField } from './theme/styleField';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:

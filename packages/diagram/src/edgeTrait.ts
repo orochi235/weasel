@@ -4,7 +4,7 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import type { StyleField } from './theme/types';
+import type { StyleField } from './theme/styleField';
 
 /** Where an edge attaches at one end. */
 export interface EdgeEnd {
