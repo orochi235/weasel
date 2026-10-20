@@ -1,0 +1,83 @@
+.strip {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  background: var(--wzl-surface);
+  border-top: 1px solid var(--wzl-border);
+  font-family: var(--wzl-font-ui);
+}
+
+.tabs {
+  min-width: 0;
+}
+
+/* The strip sits under what it switches, so its tabs hang from the top edge: the rules below
+   restate `Tabs`' bottom-edge ones, and carry the strip's class to outrank them. */
+.strip .list {
+  border-bottom: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.strip .tab {
+  flex-shrink: 0;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.strip .tab[data-selected]::after {
+  top: -1px;
+  bottom: auto;
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+/* Where the drop would land: a line on the edge of the tab it would land against. */
+.strip .dropBefore {
+  box-shadow: inset 2px 0 0 var(--wzl-accent);
+}
+
+.strip .dropAfter {
+  box-shadow: inset -2px 0 0 var(--wzl-accent);
+}
+
+.rename {
+  width: 12ch;
+  padding: 0 var(--wzl-space-1);
+  font: inherit;
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-focus-ring);
+  border-radius: var(--wzl-radius-sm);
+  outline: none;
+}
+
+.add {
+  flex-shrink: 0;
+  padding: 0 var(--wzl-space-3);
+  font: inherit;
+  font-size: var(--wzl-font-size-md);
+  color: var(--wzl-fg-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.add:hover {
+  color: var(--wzl-fg);
+}
+
+.add:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+.ghost {
+  display: block;
+  padding: var(--wzl-space-2) var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
+}

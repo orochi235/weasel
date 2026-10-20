@@ -5,7 +5,7 @@ import {
 import { diagramResizable, dropEmptyEdgeLabel } from '@weasel-js/diagram';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
-import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence } from '@editor/index';
+import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence, useSinglePage } from '@editor/index';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import {
@@ -42,7 +42,7 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const [view, setView] = useState<View>(NO_VIEW);
   const recenter = usePageFit(dims, 'chart', CHART_PAGE, setView);
-  const paperLayer = usePaperLayer(CHART_PAGE, CHART_PAGE_COLOR);
+  const paperLayer = usePaperLayer(useSinglePage(CHART_PAGE), CHART_PAGE_COLOR);
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });

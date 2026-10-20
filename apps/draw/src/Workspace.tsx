@@ -32,7 +32,7 @@ import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { TextEditDepPublisher, usePageFit, usePaperLayer } from '@editor/index';
+import { TextEditDepPublisher, usePageFit, usePaperLayer, useSinglePage } from '@editor/index';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
@@ -87,7 +87,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const hostDims = useCanvasSize(hostRef);
   const recenter = usePageFit(hostDims, props.paperSize, page, onViewChange);
 
-  const paperLayer = usePaperLayer(page, backgroundColor);
+  const paperLayer = usePaperLayer(useSinglePage(page), backgroundColor);
   const grid = useGrid(page, backgroundColor);
   const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
