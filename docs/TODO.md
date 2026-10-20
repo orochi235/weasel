@@ -1005,6 +1005,22 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
+  Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
+  `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
+  `Unexpected token 'export'` under vitest's vm pools on Node 22 from 2026-10-19 until the plugin
+  stopped using oxc-parser's `Visitor` (2026-10-20). A Node 22 pass can be run by hand —
+  `onto do --kind test -- npx -y -p node@22 node node_modules/.bin/vitest run …` — but nothing
+  runs one. The `browser` project has the same gap for Linux: CI run 39349499006 (2026-10-20, at
+  `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
+  `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
+  and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
+  `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
+  whether they still fail is unknown. Two fixes, not exclusive: a Node 22 leg in `test:fleet` or
+  the gate, and a Linux node (or container) for the `browser` project.
+  `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
+  needs `>=22.12.0`.
+
 - **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit
   in diagram, core, labkit, chart and the site demos, each opening the context itself. A reader that opens it before the app's first paint must ask for the renderer's
   attributes (`{ preserveDrawingBuffer: true, stencil: true }`), or the renderer refuses the canvas;
