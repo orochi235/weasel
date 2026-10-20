@@ -176,9 +176,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
-      /** Rotation options, or `false`: the selection's rotation handle is
-       *  then hidden and bound to nothing. The `rotate` action stays
-       *  registered, for a tool that binds it and for `actions.rotate`. */
+      /** Rotation options, or `false` to hide the rotation handle and bind it to
+       *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
       rotate?: UseRotateOptions<TPose> | false;
       handleHitRadius?: number;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
