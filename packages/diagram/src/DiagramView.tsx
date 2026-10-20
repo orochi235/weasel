@@ -24,6 +24,7 @@ import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
 import { useLiveLayout, type LiveLayout } from './live';
+import { usePagesView } from './usePagesView';
 import { useMirroredSelection } from './mirrorSelection';
 import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -72,9 +73,9 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 function Inner({
   specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onReorder, onEditContainer, connectBodies,
-  pickEdges, overlays,
+  pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
-  minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
+  minScale, maxScale, anchor, fitPadding, background, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
@@ -112,11 +113,12 @@ function Inner({
   // A filling canvas is 0 × 0 until measured, and no box to fit into.
   const unsized = boxWidth === 0 || boxHeight === 0;
   const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
+  const { layers, box: pagesBox } = usePagesView(pages);
   const defaultView = useMemo(
-    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts),
+    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox),
     // A later `specs` keeps the view it has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding],
+    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding, pagesBox],
   );
   // A settled run's fit holds until the box or a fit option changes.
   const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
@@ -125,7 +127,7 @@ function Inner({
     liveOpts?.onSettle?.(moved);
     if (controlled || moved === 0) return;
     const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
-    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts), over: defaultView });
+    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox), over: defaultView });
   });
   const live = useLiveLayout<RectPose>({
     ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
@@ -148,16 +150,14 @@ function Inner({
     const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
     return () => disposers.forEach((dispose) => dispose());
   }, [editing.layers]);
-  const regionEdits = onEditContainer !== undefined;
-  const moves = onMove !== undefined || regionEdits;
-  const resizes = onResize !== undefined || regionEdits;
+  const moves = onMove !== undefined || onEditContainer !== undefined;
+  const resizes = onResize !== undefined || onEditContainer !== undefined;
   const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick;
   const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   useRefit(canvasRef, fit);
-  const shown = overlays ?? NO_OVERLAYS;
-  const overlayRef = useOverlayPlacement(canvasRef, scene, shown);
+  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
     <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
@@ -179,10 +179,11 @@ function Inner({
         {...(view ? { view } : {})}
         {...(onViewChange ? { onViewChange } : {})}
         {...(background ? { backgroundFill: background } : {})}
+        {...(layers ? { layers } : {})}
       >
         <DropRules scene={scene} />
       </SceneCanvas>
-      {shown.map((o) => {
+      {overlays.map((o) => {
         const key = o.key ?? o.target;
         return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
       })}
@@ -257,14 +258,16 @@ export interface DiagramFit {
 }
 
 /** The view `DiagramView` opens on: every node box and group box in view, never above
- *  `maxScale` (default 1) and never below `minScale`. Takes specs, or a scene's
+ *  `maxScale` (default 1) and never below `minScale`. `extra` is further bounds to take in, such as the pages'. Takes specs, or a scene's
  *  nodes at the poses they are drawn at. */
 export function fitDiagram(
   specs: readonly { kind: string; pose: unknown; data: unknown }[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
+  extra?: { x: number; y: number; width: number; height: number },
 ): View | undefined {
   const boxes = specs.filter((s) => s.kind === 'container' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+  if (extra !== undefined) boxes.push({ ...extra } as RectPose);
   if (boxes.length === 0) return undefined;
   const x = Math.min(...boxes.map((b) => b.x));
   const y = Math.min(...boxes.map((b) => b.y));

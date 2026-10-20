@@ -13,11 +13,14 @@ import {
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
+import { makeChoose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
+
+const choose = makeChoose((el) => userEvent.click(el));
 
 beforeEach(async () => {
   await page.viewport(1280, 800);
@@ -39,13 +42,6 @@ function stages(): string[] {
 function chain(): string[] {
   const raw = localStorage.getItem(PIPELINE_STORAGE_KEY);
   return raw ? mainChain((JSON.parse(raw) as EffectDoc).pipeline) : [];
-}
-
-async function choose(menu: string, row: RegExp): Promise<void> {
-  await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: menu }));
-  const item = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')]
-    .find((el) => row.test(el.textContent ?? ''));
-  await userEvent.click(item!);
 }
 
 describe('WeaselChart pipeline mode', () => {

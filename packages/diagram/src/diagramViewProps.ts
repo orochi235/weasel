@@ -1,4 +1,4 @@
-import type { Contribution, Paint, RectPose, View } from '@weasel-js/core';
+import type { Contribution, Paint, PlacedPage, RectPose, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
 import type { DiagramContributionOptions } from './contribution';
@@ -178,6 +178,9 @@ export interface DiagramViewProps {
   fitPadding?: number;
   /** What the canvas paints behind the diagram. Unset, it is transparent. */
   background?: Paint;
+  /** Sheets painted under the diagram, one filled rect per page; `diagramPages(data)`
+   *  places them. The default fit takes in every page. */
+  pages?: { placed: readonly PlacedPage[]; fill: string };
   /** The view, controlled. Set it and the fit is skipped; pair it
    *  with `onViewChange` or panning does nothing. */
   view?: View;

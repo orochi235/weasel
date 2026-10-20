@@ -7,13 +7,15 @@ traps from finished arcs are `docs/retained.md`.
 ## weaselchart fourth arc: building (2026-10-20)
 
 Spec: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`; its Pieces table marks what is
-built. Label drag, the group layouts and the patchable audio graph are merged. PDF (wave 1) and the
-live audio runner and pages in `DiagramData` (wave 2) are each being built by a controller agent in
-its own `.claude/worktrees/agent-*` worktree from that piece's plan in `docs/superpowers/plans/`;
+built. Label drag, the group layouts, the patchable audio graph and pages in `DiagramData` are
+merged. PDF (wave 1) and the live audio runner (wave 2) are each being built by a controller agent
+in its own `.claude/worktrees/agent-*` worktree from that piece's plan in `docs/superpowers/plans/`;
 each controller deletes its plan when it finishes. Merge each branch to `main` once its fleet run
 is green; `docs/TODO.md`'s fourth-arc line and the spec's Pieces rows conflict on every merge.
 
 `main` passed a full fleet run at `befd71b6c` with the first three pieces merged (2026-10-20).
+
+Pages in `DiagramData` are built (2026-10-20).
 
 ## Overnight pass, 2026-10-20 (status at 07:20)
 

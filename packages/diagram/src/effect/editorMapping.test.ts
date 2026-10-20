@@ -114,4 +114,12 @@ describe('editorScene', () => {
       expect(groupOf('g')).toBe('g');
     }
   });
+
+  it('carries the doc’s pages under nodeGraph only', () => {
+    const pages = [{ id: 'p1', width: 400, height: 300 }];
+    const paged = { ...doc, pages };
+    expect(editorScene(paged).data.pages).toEqual(pages);
+    expect(editorScene(paged, 'rack').data.pages).toBeUndefined();
+    expect(editorScene(paged, 'lanes').data.pages).toBeUndefined();
+  });
 });

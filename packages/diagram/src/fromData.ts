@@ -16,6 +16,7 @@ import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type Meas
 import { edgeIdOf } from './edgeId';
 import { ownNodeStyle, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
+import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
   NODE, NODE_STROKE_WIDTH,
@@ -33,7 +34,8 @@ import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPlan } from './layout';
 import { markSpecs } from './marks';
 import { authoredOver } from './route';
-import { themeFont, themeLabelFont } from './theme/resolve';
+import { diagramThemeFrom, themeFont, themeLabelFont } from './theme/resolve';
+import { offPageTagLook } from './offPage/tag';
 import { tree } from './tree';
 import type { Vec2 } from '@weasel-js/core/math';
 
@@ -213,7 +215,9 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     specs.push(...(parent === undefined ? built : built.map((s) => (s.id === n.id ? { ...s, parent: parent as never } : s))));
     if (n.marks) specs.push(...markSpecs(n.id, n.marks, at, { style, textStyle: styleOf, measure }));
   }
-  specs.push(...edgeSpecs(edges, edgeCtx));
+  const pages = scenePageSplits(data, placedAt, specs, edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })),
+    () => ({ ...offPageTagLook(theme ?? diagramThemeFrom(undefined)), measure }));
+  specs.push(...edgeSpecs(edges, pages === null ? edgeCtx : { ...edgeCtx, splits: pages.splits }), ...(pages?.tags ?? []));
   return specs;
 }
 

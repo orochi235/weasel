@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adjacentPage, layoutPages, pageAt, pageName, pageOfBounds, pagesBounds, type Page } from './pages';
+import { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds, type Page } from './pages';
 import { pagesLayer } from './pagesLayer';
 import { fitViewToPage, pageInView } from './fitViewToPage';
 
@@ -135,5 +135,22 @@ describe('pageName', () => {
   it('is the page’s own name, else "Page" and its place', () => {
     expect(pageName({ name: 'Intro' }, 3)).toBe('Intro');
     expect(pageName({}, 1)).toBe('Page 2');
+  });
+});
+
+describe('pageHolding', () => {
+  const PAGES = layoutPages([{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }]);
+  it('is the page a box is on, when it is on one', () => {
+    expect(pageHolding(PAGES, { x: 20, y: 20, width: 40, height: 30 })?.id).toBe('p1');
+  });
+  it('puts a box in the gap on the nearer page', () => {
+    expect(pageHolding(PAGES, { x: 230, y: 20, width: 5, height: 30 })?.id).toBe('p2');
+    expect(pageHolding(PAGES, { x: 203, y: 20, width: 5, height: 30 })?.id).toBe('p1');
+  });
+  it('takes the earlier page when a gap box is equally near both', () => {
+    expect(pageHolding(PAGES, { x: 215, y: 20, width: 10, height: 30 })?.id).toBe('p1');
+  });
+  it('is null with no pages', () => {
+    expect(pageHolding([], { x: 0, y: 0, width: 1, height: 1 })).toBeNull();
   });
 });

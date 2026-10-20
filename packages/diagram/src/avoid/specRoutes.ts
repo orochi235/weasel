@@ -79,7 +79,7 @@ export function createSpecRouter(options: AvoidOptions = {}): (specs: readonly D
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
       const edge = diagramEdgeOf(spec);
-      if (edge === null) continue;
+      if (edge === null || edge.offPage !== undefined) continue;
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
       const [a, b] = ends;
       if (a === undefined || b === undefined || a === b) continue;

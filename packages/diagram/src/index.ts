@@ -177,15 +177,17 @@ export { installLabelPlacement } from './labels/install';
 export type { LabelPlacement, LabelPlacementOptions } from './labels/install';
 export { useLabelPlacement } from './labels/useLabelPlacement';
 export { createSpecLabelPlacer } from './labels/specLabels';
+export { dataOffPage, diagramPages } from './dataPages';
 export { nextOffPageRef, offPageSplits } from './offPage/split';
 export type { OffPageEdgeInput, OffPageSplitInput } from './offPage/split';
 export {
   DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE, OFF_PAGE_TAG_PADDING, offPageTagData, offPageTagDerivePose, offPageTagLook,
-  offPageTagSize, offPageTagSpec, offPageTagText,
+  offPageFarText, offPageTagSize, offPageTagSpec, offPageTagSpecs, offPageTagText,
 } from './offPage/tag';
 export type { OffPageTagLook } from './offPage/tag';
 export { offPageTagId, offPageTagOf } from './offPage/trait';
 export type { OffPageSplit, OffPageTag } from './offPage/trait';
+export { documentBoundsOf } from './offPage/endBox';
 export { installOffPageMarkers, offPageOps } from './offPage/install';
 export type { OffPageMarkerOptions } from './offPage/install';
 export { useOffPageMarkers } from './offPage/useOffPageMarkers';

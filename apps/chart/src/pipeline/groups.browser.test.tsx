@@ -10,10 +10,13 @@ import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from 
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
+import { makeChoose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 
 registerCanvasFont('sans-serif');
+
+const choose = makeChoose((el) => userEvent.click(el));
 
 const img = (id: string) => ({ id, title: id, inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
 const DOC: EffectDoc = {
@@ -35,13 +38,6 @@ afterEach(() => {
 
 /** The groups the pipeline doc last saved. */
 const groups = (): readonly EffectGroup[] => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as EffectDoc).pipeline.groups ?? [];
-
-async function choose(menu: string, row: RegExp): Promise<void> {
-  await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: menu }));
-  const item = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')]
-    .find((el) => row.test(el.textContent ?? ''));
-  await userEvent.click(item!);
-}
 
 /** The canvas, and where a world point is on it in client pixels, in the view the editor opens on. */
 async function openCanvas() {

@@ -1,7 +1,9 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
 import { DiagramView, type DiagramViewApi } from '../DiagramView';
+import { diagramPages } from '../dataPages';
 import { diagramScene } from '../fromData';
+import { LOOK_THEME } from './draw';
 import { EFFECT_MIN_SCALE } from './EffectChart';
 import { addStage, ensureWireIds, nextStageId } from './edit';
 import { editHandlers, pinShown, stageBoxes } from './editorHandlers';
@@ -151,6 +153,11 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   }), [now]);
 
   const title = useGroupTitle(doc, look, renaming, setRenaming, onChange);
+  const fill = (look === 'nodeGraph' ? options?.theme ?? LOOK_THEME : LOOK_THEME).page;
+  // Keyed on the pages themselves: a drag rebuilds `built.data`, and a new array would rebuild the pages layer.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const placed = useMemo(() => diagramPages(built.data), [built.data.pages, built.data.pageLayout]);
+  const pages = useMemo(() => (placed.length > 0 ? { placed, fill } : undefined), [placed, fill]);
   // Keyed by look so each look opens fitted: DiagramView keeps its view across new specs.
   return (
     <DiagramView
@@ -172,6 +179,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
       onSelect={picks.pick}
       {...(picks.shown !== undefined ? { selected: picks.shown } : {})}
+      {...(pages !== undefined ? { pages } : {})}
       {...(title !== null ? { overlays: title } : {})}
       {...(background !== undefined ? { background } : {})}
       {...(className !== undefined ? { className } : {})}

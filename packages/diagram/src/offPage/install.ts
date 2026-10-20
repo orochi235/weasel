@@ -5,14 +5,11 @@
  * edit that caused it.
  */
 import {
-  AUTO_POSE_DESCRIPTOR,
   PAGES_DOC_KEY,
   createDeleteOp,
   createInsertOp,
   createSetDataOp,
   createTransformOp,
-  documentPose,
-  pageName,
   placedPagesOf,
   type Op,
   type PlacedPage,
@@ -24,8 +21,9 @@ import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
+import { documentBoundsOf } from './endBox';
 import { offPageSplits, type OffPageEdgeInput } from './split';
-import { offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, offPageTagText, type OffPageTagLook } from './tag';
+import { offPageFarText, offPageTagData, offPageTagLook, offPageTagSize, offPageTagSpec, type OffPageTagLook } from './tag';
 import { offPageTagId, type OffPageSplit } from './trait';
 
 /** Options for {@link installOffPageMarkers} and `useOffPageMarkers`. */
@@ -80,9 +78,7 @@ function tagOps(scene: AnyScene, edge: SceneNode, split: OffPageSplit | null, pa
       if (tag !== undefined) ops.push(createDeleteOp({ node: tag as never, label: 'Off-page' }));
       continue;
     }
-    const far = end === 'from' ? split.to : split.from;
-    const index = pages.findIndex((p) => p.id === far);
-    const text = offPageTagText(index < 0 ? far : pageName(pages[index]!, index), split.ref);
+    const text = offPageFarText(pages, split, end);
     if (tag === undefined) {
       const spec = offPageTagSpec(edge.id, end, text, { ...lookOf(), layer: edge.layer });
       ops.push(createInsertOp({ node: { ...spec, parent: null } as never, label: 'Off-page' }));
@@ -116,13 +112,13 @@ export function offPageOps<TPose>(
   opts: OffPageMarkerOptions<TPose> = {},
 ): Op[] {
   const sc = scene as unknown as AnyScene;
-  const geometry = (opts.geometry ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
+  const geometry = opts.geometry as PoseDescriptor<unknown> | undefined;
   const look = opts.look ?? (() => offPageTagLook(diagramThemeOf(sc, opts.theme)));
   const wanted = edges === 'all' ? null : new Set(edges);
   const pages = placedPagesOf(sc);
   const boxOf = (id: string) => {
     const node = sc.get(id as never);
-    return node === undefined ? null : geometry.getBounds(documentPose(sc, node as never));
+    return node === undefined ? null : documentBoundsOf(scene, node, geometry);
   };
   const inputs: (OffPageEdgeInput & { node: SceneNode; trait: DiagramEdge })[] = [];
   const used: string[] = [];

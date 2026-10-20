@@ -1060,7 +1060,8 @@ only story runner in the repo.
 - **(P3) A chart browser test times out under load.** "moves an edge label off a shape dropped on
   it, on release" (`apps/chart/src/chart.browser.test.tsx`) hit its 15 s timeout in the full run of
   `a64fe9501` on studio and passed on the identical tree before and after (2026-10-20). Label drag
-  had just added a label hit layer to the press path in that same app.
+  had just added a label hit layer to the press path in that same app. `b2fdbdc5b` (another
+  session) made the test poll for the label's pixels; retire this if it doesn't time out again.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -1345,8 +1346,7 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Fourth arc (approved, partly built).** Left to build: PDF export, the live audio runner
-  that drives the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built), and pages in
-  `DiagramData`. Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
+  that drives the patchable `@weasel-js/audio` graph (`engine.graph(bus)`, built). Design: `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md` (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
