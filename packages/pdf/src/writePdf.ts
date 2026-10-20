@@ -1,9 +1,11 @@
-import type { GlMat3 } from '@weasel-js/geom';
+import { type GlMat3, mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { ContentStream } from './content';
 import { deflate } from './deflate';
+import { type PageCtx, writeCommands } from './drawCommands';
 import type { PdfFontSource } from './fonts/fontSource';
-import { num } from './num';
 import { name, PdfObjects, type PdfRef, text } from './objects';
+import { PageResources } from './resources';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
@@ -40,13 +42,6 @@ export interface PdfResult {
   skipped: readonly PdfSkip[];
 }
 
-/** Page units are points, origin top left, y down. */
-function pageContent(page: PdfPage): string {
-  const head = `1 0 0 -1 0 ${num(page.height)} cm\n`;
-  // Task 3 replaces this with writeCommands(ctx, page.commands, state).
-  return head;
-}
-
 export async function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions): Promise<PdfResult> {
   const objects = new PdfObjects();
   const catalog = objects.alloc();
@@ -58,7 +53,18 @@ export async function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions)
   for (const page of pages) {
     const pageRef = objects.alloc();
     const contentRef = objects.alloc();
-    const raw = Uint8Array.from(pageContent(page), (c) => c.charCodeAt(0));
+    const ctx: PageCtx = {
+      objects,
+      resources: new PageResources(),
+      out: new ContentStream(),
+      opts,
+      skipped,
+      view: page.view,
+    };
+    // Page units are points, origin top left, y down.
+    ctx.out.op('cm', 1, 0, 0, -1, 0, page.height);
+    await writeCommands(ctx, page.commands, { transform: mat3.identity(), alpha: 1, colorMatrix: null });
+    const raw = ctx.out.bytes();
     if (opts.compress === false) objects.stream(contentRef, {}, raw);
     else objects.stream(contentRef, { Filter: name('FlateDecode') }, await deflate(raw));
     objects.set(pageRef, {
@@ -66,7 +72,7 @@ export async function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions)
       Parent: tree,
       MediaBox: [0, 0, page.width, page.height],
       Contents: contentRef,
-      Resources: {},
+      Resources: ctx.resources.dict(),
     });
     kids.push(pageRef);
   }

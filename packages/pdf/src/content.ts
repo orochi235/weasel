@@ -1,0 +1,17 @@
+import { num } from './num';
+
+/** A page's content stream, built one operator per line. */
+export class ContentStream {
+  private readonly lines: string[] = [];
+
+  /** Numbers are written with `num`; strings go in as given, so a name operand is `'/GS1'`. */
+  op(operator: string, ...operands: (number | string)[]): this {
+    const args = operands.map((o) => (typeof o === 'number' ? num(o) : o));
+    this.lines.push(args.length ? `${args.join(' ')} ${operator}` : operator);
+    return this;
+  }
+
+  bytes(): Uint8Array {
+    return Uint8Array.from(`${this.lines.join('\n')}\n`, (c) => c.charCodeAt(0));
+  }
+}
