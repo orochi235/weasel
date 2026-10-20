@@ -119,6 +119,32 @@ describe('App', () => {
     expect(within(screen.getByRole('menubar')).queryByRole('menuitem', { name: 'Page' })).toBeNull();
   });
 
+  it('picks a theme from Format › Theme, holding the one in use, and undoes it in one step', () => {
+    mount();
+    const themes = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Format' })); });
+      const theme = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Theme'))!;
+      act(() => { fireEvent.click(theme); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const held = (rows: HTMLElement[]) => rows.filter((r) => r.getAttribute('aria-checked') === 'true').map((r) => r.children[1]!.textContent);
+    const rows = themes();
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Paper', 'Night', 'Blueprint', 'Pastel', 'Mono']);
+    expect(held(rows)).toEqual(['Paper']);
+    act(() => { fireEvent.click(rows[1]!); });
+    expect(held(themes())).toEqual(['Night']);
+    act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
+    choose('Edit', 'Undo');
+    expect(held(themes())).toEqual(['Paper']);
+  });
+
+  it('gives chart mode a Format sidebar with the Style panel', () => {
+    mount();
+    const format = screen.getByRole('complementary', { name: 'Format' });
+    expect(within(format).getByText('Select shapes or connectors to style them.')).toBeTruthy();
+  });
+
   it('opens Page Setup on a page from the Page menu', () => {
     mount();
     choose('Page', 'Page Setup');

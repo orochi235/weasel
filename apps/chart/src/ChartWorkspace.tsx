@@ -9,13 +9,15 @@ import { TextEditDepPublisher, usePageFit, usePaperLayer, useSessionPersistence 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import {
-  CHART_LAYERS, CHART_PAGE, CHART_PAGE_COLOR, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
+  CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose,
 } from './chartDocument';
 import { CHART_HISTORY_KEY, CHART_SCENE_KEY, loadChartSession } from './chartPersistence';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { PAGE_FIT_PADDING, useChartPages } from './pages/useChartPages';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { stencilDropHandler } from './stencilDrop';
+import { StylePanel } from './theme/StylePanel';
+import { chartThemeOf, ThemeCommands } from './theme/themeCommands';
 import { StencilInsertPublisher, useChartDiagram, WaypointFollowerPublisher } from './useChartDiagram';
 import './workspace.css';
 
@@ -37,7 +39,8 @@ export function ChartWorkspace(): ReactElement {
   const selection = useSelection({ mode: 'multi', scene });
   useSessionPersistence(scene, SESSION);
   useChartCommands(scene);
-  const diagram = useChartDiagram(scene, selection);
+  const theme = chartThemeOf(scene);
+  const diagram = useChartDiagram(scene, selection, theme);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +50,7 @@ export function ChartWorkspace(): ReactElement {
   const [view, setView] = useState<View>(NO_VIEW);
   const pages = useChartPages(scene, view, dims, setView);
   const recenter = usePageFit(dims, 'chart', pages.placed[0] ?? CHART_PAGE, setView, PAGE_FIT_PADDING);
-  const paperLayer = usePaperLayer(pages.placed, CHART_PAGE_COLOR);
+  const paperLayer = usePaperLayer(pages.placed, theme.page);
   const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', onEnd: (id) => dropEmptyEdgeLabel(scene, id) });
@@ -91,7 +94,7 @@ export function ChartWorkspace(): ReactElement {
               alphaFor={alphaFor}
               layers={{ paper: { layer: paperLayer, before: 'scene' } }}
             >
-              <StencilInsertPublisher />
+              <StencilInsertPublisher theme={theme} />
               <WaypointFollowerPublisher scene={scene} />
               <TextEditDepPublisher edit={textEdit} />
             </SceneCanvas>
@@ -99,6 +102,10 @@ export function ChartWorkspace(): ReactElement {
         </div>
         <ChartPageStrip pages={pages} />
       </div>
+      <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
+        <StylePanel scene={scene} selected={selection.current} theme={theme} />
+      </Sidebar>
+      <ThemeCommands scene={scene} />
     </div>
   );
 }

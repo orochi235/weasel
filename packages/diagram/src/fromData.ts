@@ -27,7 +27,7 @@ import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './l
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
-import { roleEdgeStyle, roleStyle, themeFont } from './theme/resolve';
+import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
@@ -288,6 +288,7 @@ function nodeSpecs(
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
   const { theme } = opts;
   const font = opts.font ?? (theme ? themeFont(theme) : DEFAULT_FONT);
+  const labelFont = theme ? themeLabelFont(theme, font) : font;
   const styleOf = (s: RowTextStyle | undefined) => textFace(s, font);
   const measure: MeasureRowText = opts.measure
     ? (text, s) => opts.measure!(text, { ...s, fontFamily: s.fontFamily ?? font.fontFamily, fontSize: s.fontSize ?? font.fontSize })
@@ -352,7 +353,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   }
   const graph = graphOf(
     seeds,
-    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, font, measure))), graphGroups),
+    expandGroupEdges(edges.map((e) => graphEdgeOf(e, labelRoomOf(e, opts, labelFont, measure))), graphGroups),
     graphGroups,
   );
   const layout: LayoutFn | null = typeof opts.layout === 'function' ? opts.layout
@@ -367,7 +368,8 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   // The author's own ports and waypoints win over the plan's.
   const routes = plan === null || layout?.plan === undefined ? null : authoredOver(edges.map((e) => ({ ...e, id: edgeIdOf(e) })), plan);
   // Behind every node, so a box never paints over what it holds.
-  const edgeCtx = { idOf: edgeIdOf, font, measure, fallback: theme ? roleEdgeStyle(theme) : EDGE, labelPlacement: LABEL_PLACEMENT, routes, opts };
+  const fallback = theme ? roleEdgeStyle(theme) : EDGE;
+  const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, fallback, labelPlacement: LABEL_PLACEMENT, routes, opts };
   const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
   const footprints = new Map(seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)]));
   specs.push(...groupSpecs(groups, footprints, groupLook, wireLabels(edges, edgeCtx)));

@@ -261,7 +261,8 @@ export type { DiagramFont, DiagramRole, DiagramTheme, StyleField } from './theme
 export { DIAGRAM_THEMES } from './theme/themes';
 export { diagramThemeFromTokens } from './theme/fromTokens';
 export {
-  diagramThemeFrom, diagramThemeOf, roleEdgeStyle, roleStyle, themeDocValue, themeEdgeStroke, themeFont,
+  diagramThemeFrom, diagramThemeOf, roleEdgeStyle, roleStyle, themeDocValue, themeEdgeStroke, themeFont, themeLabelFont,
+  themeLabelStyle,
 } from './theme/resolve';
 export { themeWrites } from './theme/themeWrites';
 export type { ThemedNode, ThemedScene } from './theme/themeWrites';

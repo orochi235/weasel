@@ -4,13 +4,15 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { fitViewToBounds } from '@weasel-js/core';
+import { DIAGRAM_THEMES, themeEdgeStroke } from '@weasel-js/diagram';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_EDGE_STROKE, CHART_LABEL_FILL, CHART_NODE_STYLE, CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { STENCIL_MIME } from './stencilDrop';
+import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
+
+const paper = DIAGRAM_THEMES.paper!;
 
 registerCanvasFont('sans-serif');
 
@@ -36,14 +38,6 @@ const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
   return d !== undefined && 'from' in d;
 });
-
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding, at a zoom the fit
- *  rounds to a step. */
-function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
-  const box = host.getBoundingClientRect();
-  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 24 });
-  return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
-}
 
 function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
   el.dispatchEvent(new PointerEvent(type, {
@@ -101,9 +95,9 @@ describe('WeaselChart chart mode', () => {
     await drag(canvas, at(host, 150, 140), at(host, 560, 140));
     await expect.poll(() => edges().length).toBe(1);
     expect(edges()[0]!.data.diagram).toMatchObject({ from: {}, to: {} });
-    // Ink for a white page, not the kit's dark-ground defaults.
-    expect(edges()[0]!.data.stroke).toEqual(CHART_EDGE_STROKE);
-    expect(bodies()[0]!.data.fill).toEqual({ paint: { color: CHART_NODE_STYLE.fill } });
+    // The paper theme's ink for a white page, not the kit's dark-ground defaults.
+    expect(edges()[0]!.data.stroke).toEqual(themeEdgeStroke(paper));
+    expect(bodies()[0]!.data.fill).toEqual({ paint: { color: paper.roles.default!.fill } });
 
     await useTool('Select');
     click(canvas, at(host, 130, 115));
@@ -175,7 +169,7 @@ describe('WeaselChart chart mode', () => {
     editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     await expect.poll(editor).toBeNull();
     await expect.poll(() => saved().find((n) => n.id === `${edgeId}/label`)?.data.text).toBe('yes');
-    expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: CHART_LABEL_FILL } });
+    expect(saved().find((n) => n.id === `${edgeId}/label`)!.data.fill).toEqual({ paint: { color: paper.label.fill } });
   });
 
   it("types into a body's label and paints its text", async () => {
@@ -213,17 +207,7 @@ describe('WeaselChart chart mode', () => {
 
 /** Pixels darker than 128 on every channel inside a client rect: label ink on a body's white fill. */
 function darkPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): number {
-  const gl = canvas.getContext('webgl2')!;
-  const box = canvas.getBoundingClientRect();
-  const dpr = canvas.width / box.width;
-  const x0 = Math.round((a.x - box.left) * dpr);
-  const x1 = Math.round((b.x - box.left) * dpr);
-  const y0 = Math.round((a.y - box.top) * dpr);
-  const y1 = Math.round((b.y - box.top) * dpr);
-  const w = x1 - x0;
-  const h = y1 - y0;
-  const px = new Uint8Array(w * h * 4);
-  gl.readPixels(x0, canvas.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  const px = readClientPixels(canvas, a, b);
   let n = 0;
   for (let i = 0; i < px.length; i += 4) if (px[i]! < 128 && px[i + 1]! < 128 && px[i + 2]! < 128) n++;
   return n;

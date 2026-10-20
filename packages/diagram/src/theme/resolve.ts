@@ -1,4 +1,5 @@
 import type { Stroke } from '@weasel-js/core';
+import { labelStyleOf } from '../edgeLabel';
 import type { EdgeStyle, NodeStyle } from '../fromData';
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_THEME_KEY, type DiagramTheme } from './types';
@@ -32,8 +33,16 @@ export function themeEdgeStroke(theme: DiagramTheme): Stroke {
 export const themeFont = (theme: DiagramTheme): { fontFamily: string; fontSize: number } =>
   ({ fontFamily: theme.font.family, fontSize: theme.font.size });
 
-/** The face a connector's label is set in: the label's own family, else the theme's. */
+/** The family a connector's label is set in: the label's own, else the theme's. */
 export const themeLabelFamily = (theme: DiagramTheme): string => theme.label.font?.family ?? theme.font.family;
+
+/** The face edge labels are sized from, before `labelStyleOf` takes two sizes off: the theme's label
+ *  face where it names one, else `font`. */
+export const themeLabelFont = (theme: DiagramTheme, font = themeFont(theme)): { fontFamily: string; fontSize: number } =>
+  theme.label.font ? { fontFamily: theme.label.font.family, fontSize: theme.label.font.size } : font;
+
+/** The face a new connector label is set in under `theme`. */
+export const themeLabelStyle = (theme: DiagramTheme) => labelStyleOf(themeLabelFont(theme));
 
 /** The theme a document value names: a shipped theme by id, or a whole theme. `fallback` for none,
  *  or for an id no shipped theme has. */

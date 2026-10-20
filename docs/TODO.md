@@ -1332,8 +1332,8 @@ only story runner in the repo.
   serve both: the slot model is the general one, and the group drag could build its slots from the
   group.
 
-- **(P3) Second arc.** Themes; containers and swimlanes; connectors that route around shapes
-  while editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) Second arc.** Containers and swimlanes; connectors that route around shapes while
+  editing. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
 
 - **(P3) Pipeline mode keeps its own session.** `pipeline/usePipelineDoc.ts` reads and writes
   local storage with its own `load`/`save` and its own undo coalescing, beside the shared
