@@ -11,7 +11,8 @@ export function at(host: HTMLElement, x: number, y: number): { x: number; y: num
 
 /** The RGBA bytes the canvas drew inside a client rect, bottom row first. */
 export function readClientPixels(canvas: HTMLCanvasElement, a: { x: number; y: number }, b: { x: number; y: number }): Uint8Array {
-  const gl = canvas.getContext('webgl2')!;
+  // A read that comes before the app's first paint opens the context, so it asks for what the renderer needs.
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
   const x0 = Math.round((a.x - box.left) * dpr);

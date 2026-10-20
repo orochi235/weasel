@@ -52,7 +52,7 @@ async function mount(extra: Partial<DiagramViewProps>): Promise<HTMLCanvasElemen
 
 /** How many pixels of the label's red the canvas drew inside a CSS-pixel rect. */
 function redPixels(canvas: HTMLCanvasElement, x0: number, y0: number, x1: number, y1: number): number {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const [l, r, t, b] = [x0, x1, y0, y1].map((v) => Math.round(v * dpr));
   const px = new Uint8Array((r! - l!) * (b! - t!) * 4);

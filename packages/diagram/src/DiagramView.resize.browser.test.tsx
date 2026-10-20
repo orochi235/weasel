@@ -39,7 +39,7 @@ async function mount(onResize: (r: readonly NodeResize[]) => void): Promise<{ ca
 
 /** RGB at a CSS-pixel point in the canvas, read back from the framebuffer. */
 function pixelAt(canvas: HTMLCanvasElement, x: number, y: number): number[] {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const out = new Uint8Array(4);
   gl.readPixels(Math.round(x * dpr), Math.round(canvas.height - y * dpr), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, out);
