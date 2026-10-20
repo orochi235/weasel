@@ -24,9 +24,8 @@ merged.
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
 | 9 | Pipeline groups as editable containers | diagram, app | — | 3 |
-| 12 | Interchange document model | `diagram-formats`, diagram, app | 6 | 3 |
-| 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
-| 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
+| 13 | Mermaid and Graphviz DOT | `diagram-formats`, app tests | — | 4 |
+| 14 | Draw-style XML | `diagram-formats`, svg, app tests | — | 4 |
 
 Pieces are numbered by topic; build them by wave. Piece 6 needs nothing from piece 3 to compile,
 so it is built alongside it, but a page export is only right once cross-page connectors stop
@@ -37,7 +36,6 @@ Shared files, and who makes room in them first:
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
-| `packages/diagram/src/fromData.ts` | 264 | 12 | done: the data types are in `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
@@ -92,59 +90,21 @@ ends inside move by one offset, the rule `waypointFollower` keeps in chart mode.
 - `EffectEditor.groups.browser.test.tsx`: drag a stage into a group box; resize it; undo through
   the app's pipeline history (`usePipelineDoc.ts`).
 
-## 12. Interchange document model
+## Formats on the interchange document
 
-### What the user sees
-
-File › Import… opens a supported file as a new chart: one undo entry, "Import". Anything the
-format had that a chart cannot hold is listed in a toast. File › Export › As … writes the whole
-chart, or the current page for formats with no pages (piece 13).
-
-### The model (`packages/diagram-formats/src/document.ts`)
-
-```ts
-interface DiagramDocument { pages: readonly DocumentPage[]; theme?: string | DiagramTheme }
-interface DocumentPage { id: string; name?: string; width: number; height: number; data: DiagramData }
-interface ImportResult { document: DiagramDocument; warnings: readonly string[] }
-interface DiagramFormat {
-  id: string; name: string; extensions: readonly string[];
-  detect(text: string): boolean;
-  read?(text: string): ImportResult | Promise<ImportResult>;
-  write?(doc: DiagramDocument, opts?: { page?: string }): string;
-}
-```
-
-`DIAGRAM_FORMATS` lists the codecs; `detectFormat(text, fileName?)` picks one. A page's
-coordinates are page-relative.
-
-**Decision (2026-10-20).** Every codec reads and writes `DiagramDocument`, built on the package's
-existing `DiagramData`, and only `fromScene` and `toScene` know scenes, so a codec is written once
-for both chart mode and a data-backed host.
-
-### Engine surface
-
-- In diagram (`dataTypes.ts`, `fromData.ts`): `DataNode.colors?: Partial<NodeStyle>`,
-  `DataEdge.colors?: Partial<EdgeStyle>`, `DataContainer.colors?`; `diagramScene` writes them as
-  literal colors and lists them in `ownStyle`, so a theme change leaves an imported color.
-  `DiagramSceneOptions.layer` (default `'main'`).
-- `fromScene.ts`: `documentFromScene(scene)`, reading pages (`pagesOf`, `pageMembers`), each
-  participant's outline, box, rows, and colors, each edge's ends, ports, router, waypoints (an
-  `avoid` connector's stored `route` as waypoints), and label, and containers and pools.
-- `toScene.ts`: `documentSpecs(doc, { layer, theme, measure }) → { specs; doc: SerializedDoc }`:
-  pages placed with `layoutPages`; each page through `diagramScene` with `layout: 'none'` when every
-  node has `at`, else `'layered'` with the placed ones pinned; offset by its page's place;
-  `core:pages` and `diagram:theme` in `doc`.
-- App: `apps/chart/src/importExport.ts` (`pickFile`, `detectFormat`, `replaceChart`).
-
-### Tests
-
-- `fromScene.test.ts`, `toScene.test.ts`; `roundTrip.test.ts`: scene → document → specs gives the
-  same places, outlines, colors, edges, labels, containers, and pages.
+Pieces 13 and 14 are codecs on the interchange document already in `@weasel-js/diagram-formats`
+(its README, "The interchange document" and "Formats"): each is a `DiagramFormat` added to
+`DIAGRAM_FORMATS`, reading to and writing from a `DiagramDocument`, with warnings both ways.
+weaselchart's File › Import… and File › Export › As … list every registered format, so neither
+piece touches the app beyond its tests. A writer reads an item's drawn colors with diagram's
+`dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle` under the document's theme, and a route as
+`waypoints ?? routed`.
 
 ## 13. Mermaid and Graphviz DOT
 
 Both carry a graph's topology and labels, not its geometry (DOT's only when every node has `pos`),
-so import lays out with `layered`, which the package already does well.
+so import leaves `at` unset and `documentSpecs` lays the page out with `layered`, the way the
+page's `direction` says.
 
 ### Mappings
 
@@ -159,7 +119,7 @@ so import lays out with `layered`, which the package already does well.
 | trapezoid | `A[/text\]` | `shape=trapezium` |
 | edge, label | `A -->|text| B` | `A -> B [label=…]` |
 | container | `subgraph` | `subgraph cluster_*` |
-| direction | `flowchart TD/LR/BT/RL` | `rankdir` |
+| page `direction` | `flowchart TD/LR/BT/RL` | `rankdir` |
 | colors | `style` and `classDef` fill and stroke | `fillcolor`, `color`, `fontcolor` |
 | ports | — | `node:port:compass`, compass only |
 
@@ -171,8 +131,9 @@ either and export as nested containers.
 ### Engine surface (`packages/diagram-formats/src/`)
 
 `mermaid/` and `dot/`, each `lex.ts`, `parse.ts` (to a syntax tree), `read.ts`, and `write.ts`,
-registered in `DIAGRAM_FORMATS` with extensions `.mmd`/`.mermaid` and `.dot`/`.gv`. Export writes
-the current page. Saving and undo are piece 12's: an import is one entry, an export writes nothing.
+registered in `DIAGRAM_FORMATS` with extensions `.mmd`/`.mermaid` and `.dot`/`.gv`, each with
+`onePage`, so export writes the page in view. An import is one undo entry, "Import"; an export
+writes nothing to the scene.
 
 ### Tests
 
@@ -194,7 +155,7 @@ and swimlanes.
 | outline | `shape=rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is stadium; other shapes are rect, with a warning |
 | colors, font | `fillColor`, `strokeColor`, `fontColor`, `fontSize`, `fontFamily` |
 | text | `value`; with `html=1`, tags stripped and `<br>` kept as a line break |
-| router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, none straight; `avoid` exports as orthogonal with its route as points |
+| router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, none straight; `avoid` exports as orthogonal with its `routed` points |
 | waypoints | the edge geometry's points array |
 | ports | `exitX`/`exitY`, `entryX`/`entryY` to the nearest compass port |
 | container, pool, lane | `container=1`; `swimlane` with `horizontal` for pools and lanes |
@@ -207,7 +168,7 @@ compressed content is base64, raw deflate (`DecompressionStream('deflate-raw')`)
 so its `read` answers a promise. `write.ts` writes uncompressed, escaping with `escapeAttr` and
 `escapeText` from `@weasel-js/svg`'s `xmlEscape.ts`, exported from its barrel in this piece.
 `style.ts` parses and writes style strings. The extension is `.xml`, and a file is recognized by
-its root element rather than its extension. Saving and undo are piece 12's.
+its root element rather than its extension. It writes every page; an import is one undo entry.
 
 **Decisions (2026-10-20).**
 - In scope: draw-style XML, Mermaid, DOT, SVG export, and PNG export. Packaged office-suite drawing
