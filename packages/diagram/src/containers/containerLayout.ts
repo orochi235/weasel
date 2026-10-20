@@ -7,7 +7,8 @@
  * shape. Which nodes a container admits is `diagramCanDropInto`'s call.
  */
 import { createTransformOp, type LayoutStrategy, type RectPose } from '@weasel-js/core';
-import { bodyBox, titleIdOf, titlePose, type ContainerHeader } from './trait';
+import { titlePose } from './titlePose';
+import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
 
 /** Options for {@link diagramContainerLayout}. */
 export interface ContainerLayoutOptions {

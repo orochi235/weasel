@@ -16,7 +16,8 @@ import {
   type Op,
   type RectPose,
 } from '@weasel-js/core';
-import { bodyBox, titleIdOf, titlePose, type ContainerHeader } from './trait';
+import { titlePose } from './titlePose';
+import { bodyBox, titleIdOf, type ContainerHeader } from './trait';
 
 /** Options for {@link laneStackLayout}. */
 export interface LaneStackOptions {

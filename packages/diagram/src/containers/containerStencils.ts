@@ -8,7 +8,8 @@ import { DEFAULT_FONT } from '../edgeLabel';
 import { NODE, type DiagramSceneData, type NodeStyle } from '../fromData';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
-import { diagramContainerOf, titleIdOf, titlePose, type ContainerRole, type DiagramContainer } from './trait';
+import { titlePose } from './titlePose';
+import { diagramContainerOf, titleIdOf, type ContainerRole, type DiagramContainer } from './trait';
 
 /** One container a palette offers. A pool stacks its lanes along `axis`. */
 export interface ContainerStencil {

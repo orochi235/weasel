@@ -22,7 +22,8 @@ import { grabPortAction, grabPortBindings } from '../connect';
 import { addLane, releaseMembers } from './containerStencils';
 import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayerOptions, type PoolLanes } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
-import { diagramContainerOf, titleIdOf, titlePose } from './trait';
+import { titlePose } from './titlePose';
+import { diagramContainerOf, titleIdOf } from './trait';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';

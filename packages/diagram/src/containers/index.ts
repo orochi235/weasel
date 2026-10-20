@@ -1,6 +1,5 @@
-export {
-  bodyBox, diagramContainerOf, headerBox, titleIdOf, titlePose,
-} from './trait';
+export { bodyBox, diagramContainerOf, headerBox, titleIdOf } from './trait';
+export { titlePose } from './titlePose';
 export type { ContainerHeader, ContainerRole, DiagramContainer } from './trait';
 export { diagramContainerLayout } from './containerLayout';
 export type { ContainerLayoutOptions } from './containerLayout';

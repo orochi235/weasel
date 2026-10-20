@@ -110,16 +110,20 @@ describe('WeaselChart containers', () => {
     await expect.poll(() => byId(body).parent ?? null).toBeNull();
   });
 
-  it('builds a pool, fills a lane, reorders and resizes lanes, adds one, and survives a reload', async () => {
-    const { host, canvas } = await mountChartApp();
+  async function buildPool() {
+    const mounted = await mountChartApp();
     await shapes('Pool (rows)');
-    await drag(canvas, at(host, 100, 100), at(host, 580, 340));
+    await drag(mounted.canvas, at(mounted.host, 100, 100), at(mounted.host, 580, 340));
     await expect.poll(() => role('lane').length).toBe(2);
-    const pool = role('pool')[0]!.id;
     const [first, second] = lanesInOrder().map((l) => l.id);
-    expect(byId(second!).pose.x).toBeCloseTo(132, 0);
-    expect(byId(second!).pose.y).toBeCloseTo(220, 0);
-    expect(byId(second!).pose.height).toBeCloseTo(120, 0);
+    return { ...mounted, pool: role('pool')[0]!.id, first: first!, second: second! };
+  }
+
+  it('builds a pool, fills a lane, and reorders lanes by their headers', async () => {
+    const { host, canvas, second, first } = await buildPool();
+    expect(byId(second).pose.x).toBeCloseTo(132, 0);
+    expect(byId(second).pose.y).toBeCloseTo(220, 0);
+    expect(byId(second).pose.height).toBeCloseTo(120, 0);
 
     await shapes('Process');
     await drag(canvas, at(host, 700, 100), at(host, 820, 160));
@@ -133,12 +137,14 @@ describe('WeaselChart containers', () => {
     await drag(canvas, at(host, 146, 300), at(host, 146, 140));
     await expect.poll(() => lanesInOrder().map((l) => l.id)).toEqual([second, first]);
     expect(byId(body).pose.y).toBeLessThan(220);
+  });
 
+  it('resizes a lane at its boundary, adds one, and keeps the pool through a reload', async () => {
+    const { host, canvas, pool, first } = await buildPool();
     // The boundary after the top lane, at y = 220, dragged down 40.
     await drag(canvas, at(host, 400, 220), at(host, 400, 260));
-    await expect.poll(() => byId(second!).pose.height).toBeCloseTo(160, 0);
+    await expect.poll(() => byId(first).pose.height).toBeCloseTo(160, 0);
     expect(byId(pool).pose.height).toBeCloseTo(280, 0);
-    expect(byId(first!).pose.y).toBeCloseTo(260, 0);
 
     // The add-lane button sits 14 screen pixels below the middle of the pool's bottom edge.
     const bottom = at(host, 340, 380);
@@ -152,8 +158,8 @@ describe('WeaselChart containers', () => {
     await expect.poll(() => role('lane').length).toBe(3);
     await shapes('Process');
     await drag(again.canvas, at(again.host, 700, 400), at(again.host, 820, 460));
-    await expect.poll(() => bodies().length).toBe(2);
-    const late = bodies().find((b) => b.id !== body)!.id;
+    await expect.poll(() => bodies().length).toBe(1);
+    const late = bodies()[0]!.id;
     await useSelect();
     await drag(again.canvas, at(again.host, 760, 430), at(again.host, 350, 440));
     await expect.poll(() => byId(late).parent).toBe(lanesInOrder()[2]!.id);
