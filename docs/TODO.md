@@ -1172,17 +1172,26 @@ only story runner in the repo.
     extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but
     does not price one.
 
-- **(P2) A ring of buffers measures slower than rewriting one.** `SOLID_RING_SIZE` (64) exists so a
-  flush never writes a buffer a draw is still reading. On teitou (Apple M5 Max, ANGLE Metal),
-  2026-10-06, four passes back to back in ABBA order, a quad that ends its run (`image-quad`,
-  `renderer/unmerged`, 20,000 a frame) cost 22.50 and 21.99 us through a ring of 64 against 17.75
-  and 18.09 through a ring of 1, with no overlap between the sides' samples; `flush-anatomy` did
-  not separate them. Result files: `tests/perf/recorded/ring-size-2026-10-06/`. Only one GPU and
-  backend has been measured, and the ring's own case was made on an M2 Max by the retired block
-  method; D3D and Vulkan backends are where an in-flight buffer write would stall, if anywhere.
-  A single `image-quad` rerun on teitou on 2026-10-17, ring of 64, read `unmerged` at 27.4 us
-  (`tests/perf/recorded/batch-specs-2026-10-17/`), so the 22.5 / 22.0 above has drifted; why is
-  not known.
+- **(P3) `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
+  writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
+  ring of 1 on teitou (`ring-size-2026-10-06/`); on 2026-10-19 it did not reproduce. Eight passes
+  a node in ABBA order, ring of 64 against ring of 1, `image-quad`'s `renderer/unmerged` at 20,000
+  quads of 8 px, us a quad, medians of each pass's 3 runs, each node with no other onto job:
+
+  | Node | ring of 64 | ring of 1 |
+  |---|---|---|
+  | teitou (Apple M5 Max) | 20.79, 22.92, 22.40, 22.09 | 20.89, 19.68, 22.25, 21.42 |
+  | msb-uai (Apple M3 Max) | 34.49, 33.59, 34.30, 34.54 | 33.46, 33.66, 33.68, 33.74 |
+  | keiei (Apple M2) | 66.31, 67.54, 69.17, 65.58 | 65.37, 64.89, 64.97, 65.21 |
+
+  A ring of 1 is 2–5% cheaper on each, with the sides' samples overlapping. `flush-anatomy`'s
+  `bind+draw` (no vertex upload) separates them on two nodes, in opposite directions: a ring of 1
+  costs 0.3 us a flush less on teitou (3.05–3.23 against 3.34–3.79) and 2.8 more on keiei
+  (10.2–11.6 against 7.6–9.1); on msb-uai the samples overlap.
+  So no Apple GPU makes a case for changing the size. The 27.4 us the 2026-10-17 rerun recorded was
+  not drift: it ran `image-quad` at its defaults, 512 quads of 48 px. Left: a D3D or Vulkan
+  backend, where an in-flight buffer write would stall if anywhere; no fleet node has one. Result
+  files: `tests/perf/recorded/ring-size-2026-10-19/`.
 
 - **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run up to
   `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open, and up to
