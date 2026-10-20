@@ -26,7 +26,6 @@ merged.
 | 1 | Edit-pass composition | core, diagram | — | 1 |
 | 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
 | 8 | Waypoint editing under `rack` and `lanes` | diagram | — | 1 |
-| 10 | Theme builder | core, diagram, app | — | 1 |
 | 11 | Running a pipeline | diagram, app | — | 1 |
 | 3 | Off-page reference markers | diagram, app | 1 | 2 |
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | 1 | 2 |
@@ -528,64 +527,6 @@ ends inside move by one offset, the rule `waypointFollower` keeps in chart mode.
 - `editorMapping.test.ts`: a container under `nodeGraph`, a group under the others.
 - `EffectEditor.groups.browser.test.tsx`: drag a stage into a group box; resize it; undo through
   the app's pipeline history (`usePipelineDoc.ts`).
-
-## 10. Theme builder
-
-### What the user sees
-
-Format › Theme › Edit Theme… opens a Theme panel in the Format sidebar. It lists every role with
-its fill, stroke, and text swatches; the connector, label, container, lane header, and lane body
-colors; the page color; the font family and size; and the series colors. Roles can be added,
-renamed, and removed (not the default role). The chart recolors live as a color is dragged, and
-one undo takes back the whole drag. Format › Theme › Import Theme… and Export Theme… read and
-write `.weasel-theme.json` files.
-
-**Decisions (2026-10-20).**
-- Shipped themes are read-only. The first edit forks the current theme into the document as a
-  custom theme named "<name> (edited)"; later edits change it in place. A custom theme lives in the
-  document only (the `diagram:theme` value already holds a whole theme), and files carry it
-  between documents, so there is no second store to keep in step.
-- A removed role's shapes fall to the default role at the next apply, the rule `themeWrites`
-  already follows for a role a theme lacks.
-
-### Core foundation: coalesced batches
-
-`scene.batch(label, fn, { coalesceKey })` in `packages/core/src/core/scene/recorder.ts`: the entry
-it records carries the key, and `@weasel-js/history` (`history.ts`) folds it into the entry just
-before it when that one carries the same key, as it already folds keyed ops. The undo restores the
-state before the first of them.
-
-### Engine surface (`packages/diagram/src/theme/`)
-
-- `types.ts`: `DiagramTheme.roleLabels?: Record<string, string>` for roles beyond `DIAGRAM_ROLES`.
-- `themeEdit.ts`: `forkTheme(theme)`, `ThemePath` (`['roles', id, 'fill' | 'stroke' | 'text']`,
-  `['edge', 'stroke']`, `['page']`, …), `setThemeValue(theme, path, value)`, `addThemeRole`,
-  `renameThemeRole`, `removeThemeRole`.
-- `themeFile.ts`: `parseDiagramTheme(json) → { theme } | { errors }`, `themeToJson(theme)`,
-  `DIAGRAM_THEME_EXTENSION = '.weasel-theme.json'`.
-- `applyTheme.ts`: `applyDiagramTheme(scene, theme, label, { coalesceKey })`.
-
-App: `apps/chart/src/theme/ThemePanel.tsx` on `PropertyPanel`, `ColorField`, `FontFamilySelect`,
-`NumberField`, and `ListEditor` from `@weasel-js/ui`, with one section per file if it grows. A
-field change applies at most once a frame, throttled through `useVisibleRaf`, keyed
-`theme:<path>`, labeled "Edit theme".
-
-### Save, load, undo, and what else it reaches
-
-The custom theme saves as the `diagram:theme` value, which `diagramThemeOf` already reads back.
-A drag on one field is one entry; a role added, renamed, or removed is one each. Each apply goes
-through `themeWrites`, so it reaches containers, lanes, edge labels, and piece 3's tags, and leaves
-every `ownStyle` color, imported ones included (piece 12). New shapes and connectors take the
-edited theme through the inserts chart already builds from it (`useChartDiagram.tsx`).
-
-### Tests
-
-- `themeEdit.test.ts`: fork leaves the shipped theme alone; each path sets; role add, rename, remove.
-- `themeFile.test.ts`: round trip; a missing role or bad color is an error naming it.
-- Core `batchCoalesce.test.ts`: two batches with one key are one entry; another key or an edit
-  between makes two; undo restores the first state.
-- `ThemePanel.test.tsx`; `theme.browser.test.tsx`: drag a role color, read a shape's pixels, one
-  undo restores both the pixels and the doc value.
 
 ## 11. Running a pipeline
 

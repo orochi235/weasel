@@ -360,6 +360,24 @@ New shapes and connectors take the theme from whatever inserts them: pass `roleS
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
 
+A theme is edited as a value: each edit returns a new theme, so a shipped one is never changed.
+`editableTheme(theme)` is where an editor starts: a shipped theme forked as "<name> (edited)", a
+custom one as it is. A custom theme lives in the document's `diagram:theme` value and travels
+between documents as a `.weasel-theme.json` file.
+
+```ts
+let theme = editableTheme(diagramThemeOf(scene));
+theme = setThemeValue(theme, ['roles', 'accent', 'fill'], '#ff8800');  // also edge, lane, page, font, series…
+theme = addThemeRole(theme, 'Critical').theme;                         // in the default role's colors
+theme = removeThemeRole(theme, 'muted');                               // its shapes fall to the default role
+applyDiagramTheme(scene, theme, 'Edit theme', { coalesceKey: 'theme:roles.accent.fill' });
+const file = themeToJson(theme);                                       // and back: parseDiagramTheme(file)
+```
+
+Applies made under one `coalesceKey` with nothing between fold into one undo entry, so a color
+dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTheme` answers
+`{ theme }` or `{ errors }`, each error naming the bad value by its path.
+
 ### Laying it out
 
 `layered`, `tree`, `force` and `chain` are plain functions of the graph. Each
