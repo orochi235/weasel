@@ -1,16 +1,12 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useLatest, type Paint } from '@weasel-js/core';
-import type { CanConnect } from '../connect';
-import { isBodyEnd } from '../connectTargets';
-import {
-  DiagramView, type DeleteReport, type DiagramViewApi, type NodeMove, type ReconnectChange, type RouteChange,
-} from '../DiagramView';
-import { diagramScene, type DataEdge } from '../fromData';
+import { DiagramView, type DiagramViewApi } from '../DiagramView';
+import { diagramScene } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
-import {
-  addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, reconnectWire, removeStages, removeWires, setWireRoute,
-} from './edit';
-import { editorScene, type EditorLookOptions, type EditorScene } from './editorMapping';
+import { addStage, ensureWireIds, nextStageId } from './edit';
+import { editHandlers, pinShown, stageBoxes, type Box } from './editorHandlers';
+import { editorScene, type EditorLookOptions } from './editorMapping';
+import { applyLookRoutes } from './lookRoutes';
 import { editorReorders } from './editorReorder';
 import { useReleaseReplaced } from './releaseReplaced';
 import { paintRun } from './run';
@@ -19,7 +15,7 @@ import { freeSpot } from './place';
 import type { LanesOptions } from './lanes';
 import type { NodeGraphOptions } from './nodeGraph';
 import { stageFromType, type EffectStageType } from './stageTypes';
-import type { EffectDoc, EffectPipeline, EffectRun, EffectWire } from './types';
+import type { EffectDoc, EffectRun } from './types';
 
 /** Which look `EffectEditor` draws in, and that look's options. Keep the
  *  options object's identity steady between renders. */
@@ -64,41 +60,23 @@ export interface EffectEditorApi {
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
 }
 
-type Ref = { stage: string; port: string };
-
-/** The wire `a`–`b` describes, output first whichever end the drag began on,
- *  or `null` when `canWire` allows neither way. */
-function orient(p: EffectPipeline, a: Ref, b: Ref): EffectWire | null {
-  if (canWire(p, a, b)) return { from: a, to: b };
-  if (canWire(p, b, a)) return { from: b, to: a };
-  return null;
-}
-
-/** Whether a wire other than `except` already feeds input `to`. */
-const fed = (p: EffectPipeline, to: Ref, except?: string) =>
-  p.wires.some((w) => w.to.stage === to.stage && w.to.port === to.port && (except === undefined || w.id !== except));
-
-/** A wire may join only an output to a free input of its type. */
-function wireFor(p: EffectPipeline, a: Ref, b: Ref, except?: string): EffectWire | null {
-  const wire = orient(p, a, b);
-  return wire !== null && !fed(p, wire.to, except) ? wire : null;
-}
-
 /** The pipeline-mode editor: a look's drawing of an effect pipeline, whose
  *  ports wire output to input, and whose wires and stages reconnect and
  *  delete. Under `nodeGraph` stages drag freely; under `rack` and `lanes` a
  *  stage on the main line drags along it to another place, rewiring the
- *  pipeline, and under `lanes` a lane drags by its header. Every edit is a
- *  doc handed to `onChange`. Text paints only in a registered font family,
+ *  pipeline, and under `lanes` a lane drags by its header. A selected
+ *  wire's route drags under every look: into `routes` under `nodeGraph`, and
+ *  into `lookRoutes` under the others, where it holds only while the wire's
+ *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
  *  as with `EffectChart`. */
 export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(function EffectEditor(
   { doc, onChange, run, selected, onSelect, look = 'nodeGraph', options, width, height, background, className },
   ref,
 ) {
   const built = useMemo(() => editorScene(doc, look, options), [doc, look, options]);
-  const specs = useMemo(() => diagramScene(built.data, built.scene)
+  const specs = useMemo(() => applyLookRoutes(diagramScene(built.data, built.scene), doc, look, built)
     // A group box picked would stay lit while `onSelect` says none; DiagramView makes edges pickable again.
-    .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built]);
+    .map((s) => (s.pickable === false || built.stageOf(s.id as string) !== undefined ? s : { ...s, pickable: false })), [built, doc, look]);
   const painted = useMemo(() => paintRun(doc.pipeline, specs, run, built.exits), [doc.pipeline, specs, run, built]);
   useReleaseReplaced(run);
   const portOptions = useRunPortOptions(built.color, doc.pipeline, run);
@@ -161,7 +139,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       canConnect={handlers.canConnect}
       onConnect={handlers.onConnect}
       onReconnect={handlers.onReconnect}
-      {...(look === 'nodeGraph' ? { onEditRoute: handlers.onEditRoute } : {})}
+      onEditRoute={handlers.onEditRoute}
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient: reorders })}
       onSelect={pick}
@@ -172,79 +150,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   );
 });
 
-type Box = { x: number; y: number; width: number; height: number };
-
 /** The doc as `DiagramView` is handed it. */
 function drawnSpecs(doc: EffectDoc, options: NodeGraphOptions | undefined) {
   const built = editorScene(doc, 'nodeGraph', options);
   return diagramScene(built.data, built.scene);
-}
-
-/** The doc with every stage layout placed pinned where it shows, so a later
- *  layout pass moves nothing a person has seen. */
-function pinShown(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unknown }[]): EffectDoc {
-  const shown = Object.fromEntries([...stageBoxes(doc, specs)].map(([id, b]) => [id, { x: b.x, y: b.y }]));
-  return { ...doc, places: { ...shown, ...doc.places } };
-}
-
-/** Each stage's box as drawn, by stage id. */
-function stageBoxes(doc: EffectDoc, specs: readonly { id?: unknown; pose?: unknown }[]): Map<string, Box> {
-  const ids = new Set(doc.pipeline.stages.map((s) => s.id));
-  return new Map(specs.filter((s) => ids.has(s.id as string)).map((s) => [s.id as string, s.pose as Box]));
-}
-
-interface Now {
-  doc: EffectDoc;
-  built: EditorScene;
-  specs: readonly { id?: unknown; pose?: unknown }[];
-  onChange: (next: EffectDoc, label: string) => void;
-}
-
-/** DiagramView's edit callbacks, each turning a report into an edit of the
- *  latest doc. Nothing is read back out of the scene. */
-function editHandlers(now: () => Now, unpick: () => void) {
-  const commit = (label: string, edit: (d: EffectDoc, b: EditorScene) => EffectDoc | null) => {
-    const { doc, built, onChange } = now();
-    const d = ensureWireIds(doc);
-    const next = edit(d, built);
-    if (next !== null) onChange(next, label);
-  };
-  // A wire whose end is being moved does not count as feeding its own input.
-  const canConnect: CanConnect = (from, to, moving) => {
-    if (isBodyEnd(from) || isBodyEnd(to)) return false;
-    const { doc, built } = now();
-    const except = moving === undefined ? undefined : built.wireOf(moving.edge);
-    return wireFor(doc.pipeline, { stage: from.nodeId, port: from.id }, { stage: to.nodeId, port: to.id }, except) !== null;
-  };
-  return {
-    canConnect,
-    onConnect: (e: DataEdge) => commit('Connect', (d) => {
-      if (e.fromPort === undefined || e.toPort === undefined) return null;
-      const wire = wireFor(d.pipeline, { stage: e.from, port: e.fromPort }, { stage: e.to, port: e.toPort });
-      return wire === null ? null : addWire(d, wire);
-    }),
-    onReconnect: (c: ReconnectChange) => commit('Reconnect', (d, b) => {
-      const id = b.wireOf(c.edge);
-      const wire = d.pipeline.wires.find((w) => w.id === id);
-      if (id === undefined || wire === undefined || c.port === undefined) return null;
-      const moved = { stage: c.node, port: c.port };
-      const [from, to] = c.end === 'from' ? [moved, wire.to] : [wire.from, moved];
-      return canWire(d.pipeline, from, to) && !fed(d.pipeline, to, id) ? reconnectWire(d, id, c.end, moved) : null;
-    }),
-    onEditRoute: (c: RouteChange) => commit('Edit route', (d, b) => {
-      const id = b.wireOf(c.edge);
-      return id === undefined ? null : setWireRoute(d, id, c.waypoints);
-    }),
-    onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
-      // A freed wire id is minted again for the next wire, which would come back picked.
-      unpick();
-      const stages = r.nodes.flatMap((n) => b.stageOf(n) ?? []);
-      const wires = r.edges.flatMap((e) => b.wireOf(e) ?? []);
-      return stages.length === 0 && wires.length === 0 ? null : removeWires(removeStages(d, stages), wires);
-    }),
-    onMove: (moves: readonly NodeMove[]) => commit('Move', (d, b) => {
-      const mine = moves.filter((m) => b.stageOf(m.id) !== undefined);
-      return mine.length === 0 ? null : moveStages(pinShown(d, now().specs), mine);
-    }),
-  };
 }

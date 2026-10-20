@@ -41,6 +41,8 @@ export type { EditorLook, EditorLookOptions, EditorScene } from './effect/editor
 export { REORDER_LANES_ACTION_ID } from './effect/editorReorder';
 export { LANE_INSET, laneId, laneTypeOf, lanes } from './effect/lanes';
 export type { LanesOptions } from './effect/lanes';
+export { applyLookRoutes, pruneLookRoutes, setLookRoute, wireEnds } from './effect/lookRoutes';
+export type { RoutedLook } from './effect/lookRoutes';
 export {
   addStage,
   addWire,
@@ -54,6 +56,7 @@ export {
   removeWires,
   setLaneOrder,
   setParam,
+  setWireRoute,
 } from './effect/edit';
 export { formatParam, stageFromType } from './effect/stageTypes';
 export type { EffectStageType } from './effect/stageTypes';
@@ -100,4 +103,6 @@ export type {
   EffectStageRun,
   EffectType,
   EffectWire,
+  LookRoute,
+  LookRoutes,
 } from './effect/types';

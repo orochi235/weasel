@@ -123,8 +123,24 @@ export interface EffectDoc {
   places: EffectPlaces;
   /** The value types whose lanes the `lanes` look draws first, top down. */
   laneOrder?: readonly string[];
-  /** The waypoints a person routed each wire through, by wire id, beside the
-   *  pipeline as `places` is. Only `nodeGraph` draws them; `rack` and `lanes`
-   *  route their own wires. */
+  /** The waypoints a person routed each wire through under `nodeGraph`, by
+   *  wire id, beside the pipeline as `places` is. */
   routes?: Readonly<Record<string, readonly Vec2[]>>;
+  /** The routes a person drew under `rack` and `lanes`, by look, then by wire id. */
+  lookRoutes?: LookRoutes;
+}
+
+/** A wire's route under a look that places its stages itself. */
+export interface LookRoute {
+  waypoints: readonly Vec2[];
+  /** Where the wire's from and to ports were when it was routed. The route
+   *  is drawn only while they are still there: a reorder or an added stage
+   *  moves stages, and a route drawn for one arrangement means nothing in another. */
+  ends: readonly [Vec2, Vec2];
+}
+
+/** `EffectDoc.lookRoutes`. */
+export interface LookRoutes {
+  rack?: Readonly<Record<string, LookRoute>>;
+  lanes?: Readonly<Record<string, LookRoute>>;
 }

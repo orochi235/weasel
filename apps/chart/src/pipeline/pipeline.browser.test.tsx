@@ -7,7 +7,8 @@ import { page, userEvent } from 'vitest/browser';
 import { fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
 import { diagramScene } from '@weasel-js/diagram';
 import {
-  AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, stageFromType, type EffectDoc,
+  AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, setLookRoute, stageFromType, wireEnds,
+  type EffectDoc,
 } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
@@ -115,6 +116,52 @@ describe('WeaselChart pipeline mode', () => {
 
     await choose('Edit', /^Undo/);
     await expect.poll(chain).toEqual(['src', 'a', 'b']);
+  });
+
+  it('gives a wire routed under Rack back to the look from Format › Connector › Reset route, and undoes that', async () => {
+    const img = (id: string) => ({ id, title: id, inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
+    const plain: EffectDoc = {
+      pipeline: {
+        stages: [{ id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }, img('a'), img('b')],
+        wires: [
+          { id: 'w1', from: { stage: 'src', port: 'out' }, to: { stage: 'a', port: 'image' } },
+          { id: 'w2', from: { stage: 'a', port: 'out' }, to: { stage: 'b', port: 'image' } },
+        ],
+      },
+      places: {},
+    };
+    const built = editorScene(plain, 'rack');
+    const specs = diagramScene(built.data, built.scene);
+    const ends = wireEnds(specs, 'w2')!;
+    const bend = { x: (ends[0].x + ends[1].x) / 2, y: ends[0].y + 60 };
+    localStorage.setItem(PIPELINE_STORAGE_KEY, JSON.stringify(setLookRoute(plain, 'rack', 'w2', [bend], ends)));
+    const routes = () => (JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!) as EffectDoc).lookRoutes;
+    await mountChartApp();
+    await choose('Mode', /^Pipeline/);
+    await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack/.test(el.textContent ?? ''))!);
+    await new Promise((r) => setTimeout(r, 100));
+
+    const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
+    const r = canvas.getBoundingClientRect();
+    const all = ['src', 'a', 'b'].map((id) => specs.find((s) => s.id === id)!.pose as RectPose);
+    const left = Math.min(...all.map((b) => b.x));
+    const top = Math.min(...all.map((b) => b.y));
+    const bounds = { x: left, y: top, width: Math.max(...all.map((b) => b.x + b.width)) - left, height: Math.max(...all.map((b) => b.y + b.height)) - top };
+    const t = viewToTransform(fitViewToBounds(bounds, { width: r.width, height: r.height }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
+      maxScale: 1, minScale: EFFECT_MIN_SCALE, anchor: 'start',
+    }));
+    // The wire passes through its waypoint, so a click there picks it.
+    await userEvent.click(canvas, { position: { x: t.panX + bend.x * t.zoom.x, y: t.panY + bend.y * t.zoom.y } });
+
+    await choose('Format', /^Connector/);
+    const reset = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Reset route/.test(el.textContent ?? ''))!;
+    await userEvent.click(reset);
+    await expect.poll(routes).toBeUndefined();
+
+    await choose('Edit', /^Undo/);
+    await expect.poll(() => routes()?.rack?.w2?.waypoints).toEqual([bend]);
   });
 
   it('places stages added from the palette inside the view, clear of each other', async () => {

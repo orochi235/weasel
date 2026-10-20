@@ -45,7 +45,7 @@ export { reconcileSpecs } from './reconcileSpecs';
 export { sceneUnitScopes } from './unitScopes';
 export type { ScopedScene } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
-export type { SceneEditPass, SceneEditSummary } from './editPass';
+export type { SceneEditPass, SceneEditPassOptions, SceneEditSummary } from './editPass';
 export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';

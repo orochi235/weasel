@@ -5,6 +5,7 @@
  */
 import {
   createDeleteAction,
+  createResizeAction,
   dragPanContribution,
   useLatest,
   type Action,
@@ -25,7 +26,7 @@ import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
 import { groupReorderContribution } from './groupReorder';
 import { dataKeyReader } from './trait';
-import type { DeleteReport, DiagramViewProps, ReconnectChange } from './diagramViewProps';
+import type { DeleteReport, DiagramViewProps, NodeResize, ReconnectChange } from './diagramViewProps';
 
 const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
@@ -63,7 +64,23 @@ export function reportDeleteAction(report: (removed: DeleteReport) => void): Act
   });
 }
 
-export const reconnectChangeOf = ({ edgeId, end, target }: EndChange): ReconnectChange => ({
+/** Core's `resize`, reporting the selected boxes it would leave instead of writing them. */
+export function reportResizeAction(report: (resizes: readonly NodeResize[]) => void): Action {
+  return createResizeAction({
+    commit: (poses, deps) => {
+      const picked = new Set(deps.selection?.get() ?? []);
+      const resizes: NodeResize[] = [];
+      for (const [id, pose] of poses) {
+        if (!picked.has(id)) continue;
+        const { x, y, width, height } = pose as RectPose;
+        resizes.push({ id, x, y, width, height });
+      }
+      if (resizes.length > 0) report(resizes);
+    },
+  });
+}
+
+export const reconnectChangeOf =({ edgeId, end, target }: EndChange): ReconnectChange => ({
   edge: edgeId,
   end,
   node: target.nodeId,
@@ -77,7 +94,7 @@ export function withPickableEdges(specs: readonly DiagramSpec[]): DiagramSpec[] 
 
 type EditingProps = Pick<
   DiagramViewProps,
-  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'connectBodies' | 'canConnect'
+  'onConnect' | 'onReconnect' | 'onEditRoute' | 'onDelete' | 'onEditLabel' | 'onReorder' | 'onResize' | 'connectBodies' | 'canConnect'
   | 'portOptions' | 'ambient'
 >;
 
@@ -98,6 +115,7 @@ export function useDiagramEditing(
   const labels = props.onEditLabel !== undefined;
   const deletes = props.onDelete !== undefined;
   const reorders = props.onReorder !== undefined;
+  const resizes = props.onResize !== undefined;
 
   const ports = useMemo(() => mode === 'connect'
     ? diagramPorts<RectPose>({
@@ -149,10 +167,11 @@ export function useDiagramEditing(
     () => (reorders ? groupReorderContribution((change) => report.current.onReorder?.(change)) : null),
     [reorders, report],
   );
-  const actions = useMemo(
-    () => (deletes ? { ...NO_MARQUEE, delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : NO_MARQUEE),
-    [deletes, report],
-  );
+  const actions = useMemo(() => ({
+    ...NO_MARQUEE,
+    ...(deletes ? { delete: reportDeleteAction((r) => report.current.onDelete?.(r)) } : {}),
+    ...(resizes ? { resize: reportResizeAction((r) => report.current.onResize?.(r)) } : {}),
+  }), [deletes, resizes, report]);
 
   const portsLayer = ports?.layer ?? shown;
   const layers = useMemo(
