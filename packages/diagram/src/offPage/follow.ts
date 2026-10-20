@@ -77,7 +77,7 @@ export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Acti
     id: FOLLOW_OFF_PAGE_ACTION_ID,
     label: 'Go to the other page',
     group: 'diagram',
-    requires: ['scene', 'nodeAtPoint'],
+    requires: ['scene', 'nodeAtPoint', 'selection', 'view'],
     eligible: { mode: { in: ['normal', 'isolation'] } },
     invoker: {
       timing: 'immediate',
