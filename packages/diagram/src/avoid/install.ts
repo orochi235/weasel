@@ -17,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from '../edgeTrait';
+import { DIAGRAM_PASS_ORDER } from '../passOrder';
 import { createAvoidRouter, type AvoidRouter, type AvoidRoutes } from './router';
 import { avoidSceneInput, type AvoidSceneOptions } from './sceneInput';
 import type { AvoidInput, AvoidOptions } from './types';
@@ -145,6 +146,6 @@ export function installAvoidRouting<TPose>(
     if (!touched(summary)) return null;
     const ops = routeDataOps(sc, router.update(avoidSceneInput(scene, opts)));
     return ops.length === 0 ? null : ops;
-  });
+  }, { order: DIAGRAM_PASS_ORDER.avoid });
   return { router, follower: avoidFollower(scene, router, opts), dispose };
 }

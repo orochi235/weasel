@@ -90,6 +90,7 @@ export type {
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
 export { installAvoidRouting, routeDataOps } from './avoid/install';
+export { DIAGRAM_PASS_ORDER } from './passOrder';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
 export { createSpecRouter } from './avoid/specRoutes';

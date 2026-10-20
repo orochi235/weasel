@@ -174,7 +174,9 @@ each edit disturbed — a move, an insert onto a route, a delete, a paste, a
 panel edit — in that edit's own undo entry, and while a shape is dragged it
 reroutes the connectors near it each frame. Installing it reroutes nothing.
 `installAvoidRouting(scene)` does the same for a host without React, and hands
-back the drag's transform follower.
+back the drag's transform follower. Its scene edit pass runs at
+`DIAGRAM_PASS_ORDER.avoid`; a pass of your own that should see the routes it
+wrote takes a higher `order`.
 
 ```tsx
 function Routing({ scene }) {

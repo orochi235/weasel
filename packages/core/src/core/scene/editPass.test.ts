@@ -1,7 +1,7 @@
 /**
  * A scene edit pass hears each live edit — an op batch, a scene batch, a bare
- * call — once, and its ops land in that edit's undo entry. It never hears its
- * own writes, and undo, redo, and history replay never run it.
+ * call — once, and its ops land in that edit's undo entry. It never re-runs on
+ * its own writes, and undo, redo, and history replay never run it.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { createSetDataOp } from 'core/ops/setData';
@@ -81,7 +81,7 @@ describe('scene edit passes', () => {
     expect(scene.get(B)!.data.count).toBe(0);
   });
 
-  it('does not re-trigger on its own writes, nor on another pass’s', () => {
+  it('does not re-trigger on its own writes, nor on another pass’s, though a later pass hears them', () => {
     const { scene } = setup();
     const first = vi.fn<SceneEditPass>(() => [createSetPoseOp({ id: A, from: scene.get(A)!.pose, to: moved(50) })]);
     const second = vi.fn<SceneEditPass>(() => null);
@@ -90,7 +90,8 @@ describe('scene edit passes', () => {
     scene.update(B, { data: { count: 7 } });
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(1);
-    expect([...second.mock.calls[0]![0].posed]).toEqual([]);
+    expect([...second.mock.calls[0]![0].posed]).toEqual([A]);
+    expect([...first.mock.calls[0]![0].posed]).toEqual([]);
     expect([...second.mock.calls[0]![0].dataChanged]).toEqual([B]);
     expect(scene.get(A)!.pose).toEqual(moved(50));
   });
