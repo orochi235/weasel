@@ -4,12 +4,12 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
-## Overnight pass, 2026-10-20 (status at 05:20)
+## Overnight pass, 2026-10-20 (status at 05:40)
 
 For Mike in the morning. Every ruling below is also in `docs/unruled.md`, dated 2026-10-20 and
 marked "overnight pass". Nothing is pushed.
 
-**`main` is green at `48ac2d533`** (full fleet run on teitou: 27836 passed, 0 failed).
+**`main` is green at `1c3dbb092`** (full fleet run on msb-uai: 27858 passed, 0 failed).
 
 Merged:
 - `ToolPalette` with `columns` moves a row on Up and Down: `useRovingTabIndex` gained `columns`
@@ -42,6 +42,24 @@ Merged:
 - The bone and weight tools moved out of core into a new `@weasel-js/rig` (breaking for core's
   barrel; the changeset says so). It has never been published: the next release publishes it for
   the first time. A checkout needs `npm ci` before a dev server there resolves `@weasel-js/rig`.
+- GitHub CI's Node 22 leg, red on every push since 2026-10-19 (the fleet runs only Node 24): the
+  icon plugin now walks its parse tree itself, and the leg's failing files pass on Node 22 on the
+  fleet. CI has not run it, since nothing is pushed. Still open there, filed as a P2 under
+  "Release-gate & build hygiene": the fleet runs neither Node 22 nor Linux Chromium; ten Linux
+  browser failures last seen 2026-10-20 00:45 with unknown status; Visual Regression's 7 of 87.
+- `hover` takes `held`, and the loupe aims through hover bindings instead of its own listeners
+  (a real-mouse browser test drags over a lens).
+- Grid snapping and node length fields read a container's unit scope (no app passes the new
+  options yet, so nothing is seen in a browser); the drawn grid per scope is filed.
+- Renaming a baseline pref in the schema editor keeps its stored key; only a pref added in the
+  session takes its key from its name.
+- Both consumer smoke tests CI runs pass again (both failed on `main`; 45 packages, rig included,
+  run on keiei). Filed as a P2: the fleet gate skips every CI step after the build, the smokes
+  among them, so nothing checks them before a merge.
+- The diagram containers double-click test that failed only in full runs: its helper waited a
+  frame between clicks, and under load the gap passed the 600 ms double-click window (reproduced
+  with a 650 ms stall). Filed from it: the window is timed when a click is handled, not when it
+  happened (P3, "Tools & gestures").
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

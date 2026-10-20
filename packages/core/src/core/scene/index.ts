@@ -42,7 +42,7 @@ export type {
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
 export { reconcileSpecs } from './reconcileSpecs';
-export { sceneUnitScopes } from './unitScopes';
+export { sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
 export type { ScopedScene } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
 export type { SceneEditPass, SceneEditPassOptions, SceneEditSummary } from './editPass';

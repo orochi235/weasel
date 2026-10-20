@@ -90,12 +90,17 @@ async function mount() {
     });
     await frame();
   };
+  // Both clicks in one task: the recognizer times them on performance.now() against a
+  // 600ms window, which a frame awaited between them can outlast under load.
   const doubleClick = async (world: { x: number; y: number }) => {
-    await click(world);
-    await click(world);
     const at = toScreen(world);
     const r = canvas.getBoundingClientRect();
     await act(async () => {
+      fire('pointermove', at);
+      for (let i = 0; i < 2; i++) {
+        fire('pointerdown', at);
+        fire('pointerup', at);
+      }
       canvas.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: r.left + at.x, clientY: r.top + at.y, detail: 2 }));
     });
     await frame();

@@ -14,7 +14,7 @@ import type { LoupeLens, ResolvedLoupe } from './types';
 /** Options for {@link useLoupe}. */
 export interface UseLoupeOptions {
   options: ResolvedLoupe;
-  /** The element the lens tracks the pointer across. */
+  /** The element the lens tracks the pointer across: aims are taken in its box. */
   hostRef: RefObject<HTMLElement | null>;
   /** Whether the loupe is turned on. Hold-to-peek shows it regardless. */
   enabled: boolean;
@@ -63,14 +63,12 @@ function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
 }
 
 /**
- * Binds `@weasel-js/loupe`'s model to a host element and tracks the pointer
- * across it.
+ * Binds `@weasel-js/loupe`'s model to a host element.
  *
- * The peek key and the wheel are not here: they are `loupe.peek` and
- * `loupe.magnify`, routed through the gesture dispatcher that
- * `<LoupeGestures>` mounts on the same host. Aiming stays a plain listener
- * because the lens follows a pressed pointer too, and a `hover` binding stands
- * down while one is held.
+ * Its input is not here: the pointer's moves and its leaving, the peek key and
+ * the wheel are `loupe.aim`, `loupe.leave`, `loupe.peek` and `loupe.magnify`,
+ * routed through the gesture dispatcher that `<LoupeGestures>` mounts on the
+ * same host, driving `input`. Without `<LoupeGestures>` the lens never aims.
  */
 export function useLoupe({
   options,
@@ -161,32 +159,6 @@ export function useLoupe({
     else if (!peekingRef.current) bump();
   }, [enabled, aimAtPointer]);
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-
-    const onPointerMove = (e: PointerEvent): void => {
-      overRef.current = true;
-      pointerRef.current = { clientX: e.clientX, clientY: e.clientY };
-      const rect = host.getBoundingClientRect();
-      model.aimAt({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-      if (!shown()) return;
-      bump();
-    };
-    const onPointerLeave = (): void => {
-      overRef.current = false;
-      pointerRef.current = null;
-      bump();
-    };
-
-    host.addEventListener('pointermove', onPointerMove);
-    host.addEventListener('pointerleave', onPointerLeave);
-    return () => {
-      host.removeEventListener('pointermove', onPointerMove);
-      host.removeEventListener('pointerleave', onPointerLeave);
-    };
-  }, [hostRef, model, shown]);
-
   // Subscribed while the lens is up, and before any effect the caller declares
   // after this hook runs — so a frame its own effect provokes is not missed.
   // This render's `enabled`: `enabledRef` holds the last committed one.
@@ -251,6 +223,17 @@ export function useLoupe({
         bump();
       },
       magnifyBy: (deltaY) => magnify(modelRef.current, deltaY, wheelRateRef.current),
+      aimAt: (clientX, clientY) => {
+        overRef.current = true;
+        pointerRef.current = { clientX, clientY };
+        aimAtPointer();
+        if (shown()) bump();
+      },
+      leave: () => {
+        overRef.current = false;
+        pointerRef.current = null;
+        bump();
+      },
     };
   }
 

@@ -100,5 +100,10 @@ describe('describeRoute — hover', () => {
     expect(describeRoute(parseRoute('[initial] hover(leave)'))).toContain('moves the pointer off the surface');
     expect(describeRoute(parseRoute('[initial] hover(leave) => unselected-body'))).toContain('moves the pointer off a unselected-body');
   });
+
+  it('says whether a button may or must be held', () => {
+    expect(describeRoute(parseRoute('[initial] hover ?held'))).toContain('moves the pointer anywhere whether or not a button is held, while');
+    expect(describeRoute(parseRoute('[initial] hover +held'))).toContain('moves the pointer anywhere with a button held, while');
+  });
 });
 

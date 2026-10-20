@@ -1,6 +1,7 @@
 /**
- * The hover half of the pointer channel: a `hover` event for each move of an
- * unpressed pointer, and the cursor shown for what a press there would do.
+ * The hover half of the pointer channel: a `hover` event for each move of the
+ * pointer, marked `held` while a button is down, and the cursor shown for what
+ * a press there would do.
  */
 import { createCursorSink, resolveCursorTier, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
 import type { EventModifiers, HoverWhere } from '@weasel-js/gestures';
@@ -9,6 +10,7 @@ import type { DispatchCore } from '../dispatchCore';
 import type { ResolveOnlyResult } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 import { underPointer, type UnderPointer } from '../underPointer';
+import { anyBinding } from '../walk';
 
 type Hover = EventModifiers & { clientX: number; clientY: number };
 
@@ -59,6 +61,17 @@ export function hoverCursorInput(
   let last: Hover | null = null;
   /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
   let facts: { at: Hover; where: UnderPointer } | null = null;
+  /** Whether a binding hears a held pointer's moves, asked once a press, so a
+   *  drag nothing listens to is not hit-tested on every move. */
+  let heldHeard: boolean | null = null;
+  const hears = (): boolean => {
+    if (pointersHeld() === 0) {
+      heldHeard = null;
+      return true;
+    }
+    heldHeard ??= anyBinding(ctxNow(), (s) => s.kind === 'hover' && s.held !== undefined);
+    return heldHeard;
+  };
 
   const resolve = (): void => {
     if (!canvas || !last) return;
@@ -106,18 +119,19 @@ export function hoverCursorInput(
     const w = toWorld(at.clientX, at.clientY);
     const where = underPointer(target(), at, w);
     const from = facts ? { from: whereOf(facts.where) } : {};
+    const held = pointersHeld() > 0 ? { held: true } : {};
     facts = { at, where };
-    dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, ...from });
+    dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, ...from, ...held });
   };
 
   return {
     moved(e) {
       last = hoverOf(e);
-      // A held pointer's moves are its drag's; an unpressed one's are a hover.
-      if (pointersHeld() === 0) hoverAt(last);
+      if (hears()) hoverAt(last);
       refresh();
     },
     released(e) {
+      heldHeard = null;
       last = hoverOf(e);
       refreshSoon();
     },
@@ -140,7 +154,7 @@ export function hoverCursorInput(
       const changed = prev.altKey !== last.altKey || prev.ctrlKey !== last.ctrlKey
         || prev.metaKey !== last.metaKey || prev.shiftKey !== last.shiftKey;
       // A modifier changing over a resting pointer is a hover with new modifiers.
-      if (changed && pointersHeld() === 0) hoverAt(last);
+      if (changed && hears()) hoverAt(last);
       refreshSoon();
     },
     clear: override.clear,

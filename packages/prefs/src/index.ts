@@ -96,6 +96,7 @@ export {
   type PrefNumberUnit,
   type ResolvedPrefUnit,
 } from './unit';
+export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
 export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {

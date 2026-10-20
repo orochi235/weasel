@@ -176,4 +176,12 @@ describe('createSession2d', () => {
     const { s } = session({ req: { origin: { x: 0, y: 0 } }, sources: [atOrigin] });
     expect(s.at({ x: 2, y: 1 }, FREE)).toMatchObject({ point: { x: 2, y: 1 }, held: false });
   });
+
+  it("tells a source the gesture's subject, and nothing for a gesture with none", () => {
+    const seen: (readonly string[] | undefined)[] = [];
+    const spy: SnapSource = { id: 'spy', roles: ['pointer'], *collect(q) { seen.push(q.ids); } };
+    session({ req: { ids: ['a', 'b'] }, sources: [spy] }).s.at({ x: 1, y: 1 }, FREE);
+    session({ sources: [spy] }).s.at({ x: 1, y: 1 }, FREE);
+    expect(seen).toEqual([['a', 'b'], undefined]);
+  });
 });

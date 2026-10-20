@@ -5,6 +5,7 @@ import {
   type NodeRoutingEntry,
   type Scene,
   type SelectionApi,
+  type UnitScope,
   useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
@@ -18,6 +19,7 @@ import { useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
 import type { PanelCellScope } from './panelCells';
 import { panelSections } from './panelSections';
+import { sectionsInScopes } from './scopes';
 import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
@@ -55,6 +57,10 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    * only where the leaf is `absentIsDefault`.
    */
   over?: PrefGroup | PrefSection;
+  /** The scene's outermost unit scope. Given, a field whose leaf measures a
+   *  length shows it in the unit scopes the selected nodes share, through
+   *  `prefLeafInScopes`; what is typed is still stored in world units. */
+  units?: UnitScope;
   /** Kind → header label. Default: capitalized kind name. */
   kindLabel?: (kind: string) => string;
   /** Rendered when the selection is empty. */
@@ -117,7 +123,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
   const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
-  const { sections } = scope;
+  const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
   const leaves = new Map(
     sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
   );
