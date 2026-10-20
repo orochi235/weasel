@@ -4,7 +4,7 @@
  */
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { layoutPages } from '@weasel-js/core';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 import type { DiagramViewApi, DiagramViewProps } from '@weasel-js/diagram';
@@ -12,9 +12,11 @@ import { LOOK_THEME, type EffectDoc } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_PAGE } from '../chartDocument';
-import { choose } from '../testing/choose';
+import { makeChoose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
+
+const choose = makeChoose((el) => userEvent.click(el));
 
 registerCanvasFont('sans-serif');
 

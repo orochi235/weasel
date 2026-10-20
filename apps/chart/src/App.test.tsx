@@ -172,7 +172,7 @@ describe('App', () => {
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Undo', 'Redo', 'Delete']);
   });
 
-  it('gives chart mode a Page menu that adds and deletes pages, and pipeline mode none', () => {
+  it('gives chart and pipeline modes a Page menu offering Add Page and Delete Page', () => {
     mount();
     const tabs = () => screen.getAllByRole('tab').map((t) => t.textContent);
     expect(tabs()).toEqual(['Page 1']);
@@ -183,7 +183,11 @@ describe('App', () => {
     choose('Edit', 'Undo');
     expect(tabs()).toHaveLength(2);
     choose('Mode', 'Pipeline');
-    expect(within(screen.getByRole('menubar')).queryByRole('menuitem', { name: 'Page' })).toBeNull();
+    act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'Page' })); });
+    const rows = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    const labels = rows.map((r) => r.textContent ?? '');
+    expect(labels.some((l) => l.startsWith('Add Page'))).toBe(true);
+    expect(labels.some((l) => l.startsWith('Delete Page'))).toBe(true);
   });
 
   it('picks a theme from Format › Theme, holding the one in use, and undoes it in one step', () => {

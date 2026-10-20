@@ -10,11 +10,13 @@ import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from 
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
-import { choose } from '../testing/choose';
+import { makeChoose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 
 registerCanvasFont('sans-serif');
+
+const choose = makeChoose((el) => userEvent.click(el));
 
 const img = (id: string) => ({ id, title: id, inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
 const DOC: EffectDoc = {

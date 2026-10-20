@@ -13,12 +13,14 @@ import {
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
-import { choose } from '../testing/choose';
+import { makeChoose } from '../testing/choose';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 registerCanvasFont('sans-serif');
+
+const choose = makeChoose((el) => userEvent.click(el));
 
 beforeEach(async () => {
   await page.viewport(1280, 800);
