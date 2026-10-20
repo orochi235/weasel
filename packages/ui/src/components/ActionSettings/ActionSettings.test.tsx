@@ -60,10 +60,11 @@ describe('an action carrying settings, on a bar', () => {
 });
 
 function PaletteHarness({ run }: { run: (params?: Record<string, unknown>) => void }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <ActionsProvider>
       <Register action={snapAction(run)} />
+      <button type="button" onClick={() => setOpen(true)}>open</button>
       <CommandPalette open={open} onClose={() => setOpen(false)} />
     </ActionsProvider>
   );
@@ -73,6 +74,8 @@ describe('an action carrying settings, in the palette', () => {
   it('opens its form in a dialog when chosen, rather than running bare', async () => {
     const run = vi.fn();
     renderWithIcons(<PaletteHarness run={run} />);
+    // The palette reads the registry when it opens, so open it after the action registers.
+    fireEvent.click(screen.getByText('open'));
     fireEvent.mouseDown(screen.getByRole('option', { name: /Snap/ }));
     await act(async () => {});
     expect(run).not.toHaveBeenCalled();

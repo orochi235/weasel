@@ -44,6 +44,21 @@ const HINTS = [
   { keys: [keySpecFromKey('Escape')], label: 'close' },
 ];
 
+/** How much is selected, when known, and the keys the palette answers to. */
+function PaletteFooter({ selection }: { selection: string | null }) {
+  return (
+    <>
+      {selection && <span className={styles.selection}>{selection}</span>}
+      {HINTS.map((h) => (
+        <span className={styles.hint} key={h.label}>
+          <KeySequence keys={h.keys} joins="none" variant="inverse" />
+          {h.label}
+        </span>
+      ))}
+    </>
+  );
+}
+
 /** Props for {@link CommandPalette}. */
 export interface CommandPaletteProps {
   open: boolean;
@@ -189,17 +204,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
         showCloseButton={false}
         className={styles.palette}
         bodyClassName={styles.body}
-        footer={
-          <>
-            {headerText && <span className={styles.selection}>{headerText}</span>}
-            {HINTS.map((h) => (
-              <span className={styles.hint} key={h.label}>
-                <KeySequence keys={h.keys} joins="none" variant="inverse" />
-                {h.label}
-              </span>
-            ))}
-          </>
-        }
+        footer={<PaletteFooter selection={headerText} />}
       >
         <input
           className={styles.input}
