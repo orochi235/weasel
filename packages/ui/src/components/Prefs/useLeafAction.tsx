@@ -19,7 +19,7 @@ export interface LeafAction {
   /** It cannot be pressed now: the action says so, a `run` is still going, or the leaf is disabled. */
   disabled: boolean;
   /** Why the action says it cannot run, in words, when it says. */
-  reason: string | undefined;
+  disabledReason: string | undefined;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
@@ -72,7 +72,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       icon,
       shortcut: item ? (item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
-      reason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
+      disabledReason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
       active: shown.active,
       missing: item ? undefined : key,
       settings,
@@ -95,7 +95,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
     icon,
     shortcut: undefined,
     disabled: disabled || pending,
-    reason: undefined,
+    disabledReason: undefined,
     active: undefined,
     missing: undefined,
     settings: null,

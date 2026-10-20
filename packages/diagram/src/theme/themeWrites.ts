@@ -4,8 +4,8 @@
  * owner's `ownStyle` is the author's, and stays.
  */
 import type { NodeStyle } from '../fromData';
-import { roleEdgeStyle, roleStyle, themeLabelFamily } from './resolve';
-import type { DiagramTheme, StyleField } from './types';
+import { roleEdgeStyle, roleStyle, themeLabelFamily, themeLabelFont } from './resolve';
+import type { DiagramTheme, FontField, StyleField } from './types';
 
 /** A scene node as {@link themeWrites} reads it. */
 export interface ThemedNode {
@@ -22,12 +22,13 @@ export interface ThemedScene {
   childrenOf(id: never): readonly string[];
 }
 
-type Trait = Record<string, unknown> & { style?: string; ownStyle?: readonly StyleField[] };
+type Trait = Record<string, unknown> & { style?: string; ownStyle?: readonly StyleField[]; ownFont?: readonly FontField[] };
 type Paint = { paint?: { color?: string } & Record<string, unknown> } & Record<string, unknown>;
 type Data = Record<string, unknown> & { diagram?: Trait; fill?: Paint; stroke?: Paint; text?: unknown; style?: Record<string, unknown> };
 
-/** A box's colors, and the ones its author set. Its text rows take `style.text`. */
-interface Look { style: NodeStyle; own: ReadonlySet<StyleField> }
+/** A box's colors, and the ones its author set, and whether the author set its text size. Its text
+ *  rows take `style.text`. */
+interface Look { style: NodeStyle; own: ReadonlySet<StyleField>; ownSize: boolean }
 
 const traitOf = (data: unknown): Trait | null => {
   const d = (data as Data | null)?.diagram;
@@ -35,6 +36,7 @@ const traitOf = (data: unknown): Trait | null => {
 };
 
 const ownOf = (trait: Trait): ReadonlySet<StyleField> => new Set(trait.ownStyle ?? []);
+const ownsSize = (trait: Trait): boolean => trait.ownFont?.includes('size') === true;
 
 /** A container's role, as the containers trait (`data.diagram.container`) names it. */
 function containerRole(trait: Trait): string | null {
@@ -57,14 +59,15 @@ function boxLook(scene: ThemedScene, node: ThemedNode, theme: DiagramTheme): Loo
   const trait = traitOf(node.data);
   if (trait === null || 'from' in trait || 'label' in trait || 'anchor' in trait || 'mark' in trait) return null;
   const own = ownOf(trait);
+  const ownSize = ownsSize(trait);
   const role = containerRole(trait);
-  if (role === 'pool') return { style: theme.lane.header, own };
+  if (role === 'pool') return { style: theme.lane.header, own, ownSize };
   if (role === 'lane') {
     const bodies = theme.lane.bodies;
-    return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, own };
+    return { style: bodies[laneIndex(scene, node) % bodies.length] ?? theme.container, own, ownSize };
   }
-  if (role !== null || 'group' in trait) return { style: theme.container, own };
-  return { style: roleStyle(theme, trait.style), own };
+  if (role !== null || 'group' in trait) return { style: theme.container, own, ownSize };
+  return { style: roleStyle(theme, trait.style), own, ownSize };
 }
 
 const recolored = (paint: Paint | undefined, color: string): Paint | undefined =>
@@ -79,26 +82,31 @@ function paintBox(data: Data, look: Look): Data | null {
   return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
 }
 
-/** `data`'s text recolored to `color` (unless `undefined`) and set in `family`, or `null`. */
-function paintText(data: Data, color: string | undefined, family: string): Data | null {
+/** `data`'s text recolored to `color` (unless `undefined`), set in `family`, and its size moved by
+ *  `step`, or `null` when nothing changes. */
+function paintText(data: Data, color: string | undefined, family: string, step: number): Data | null {
   const fill = color === undefined ? undefined : recolored(data.fill, color);
-  const face = data.style !== undefined && data.style.fontFamily !== family ? { ...data.style, fontFamily: family } : undefined;
+  const size = data.style?.fontSize;
+  const resized = step !== 0 && typeof size === 'number' ? { fontSize: Math.max(1, size + step) } : {};
+  const face = data.style !== undefined && (data.style.fontFamily !== family || 'fontSize' in resized)
+    ? { ...data.style, fontFamily: family, ...resized } : undefined;
   if (fill === undefined && face === undefined) return null;
   return { ...data, ...(fill ? { fill } : {}), ...(face ? { style: face } : {}) };
 }
 
-/** An off-page tag's `data` in `theme`'s label color and face, on its page color, or `null`. */
-function paintTag(data: Data, theme: DiagramTheme): Data | null {
-  const text = paintText(data, theme.label.fill, themeLabelFamily(theme));
+/** An off-page tag's `data` in `theme`'s label color and face, on its page color, its size moved
+ *  by `step` as an edge label's is, or `null`. */
+function paintTag(data: Data, theme: DiagramTheme, step: number): Data | null {
+  const text = paintText(data, theme.label.fill, themeLabelFamily(theme), step);
   const background = recolored(data.background as Paint | undefined, theme.page);
   if (text === null && background === undefined) return null;
   return { ...(text ?? data), ...(background ? { background } : {}) };
 }
 
 /** A connector's own colors, and its label's, under `theme`. */
-function edgeLook(trait: Trait, theme: DiagramTheme): { stroke: string; label: string; own: ReadonlySet<StyleField> } {
+function edgeLook(trait: Trait, theme: DiagramTheme): { stroke: string; label: string; own: ReadonlySet<StyleField>; ownSize: boolean } {
   const style = roleEdgeStyle(theme, trait.style);
-  return { stroke: style.stroke, label: style.label ?? style.stroke, own: ownOf(trait) };
+  return { stroke: style.stroke, label: style.label ?? style.stroke, own: ownOf(trait), ownSize: ownsSize(trait) };
 }
 
 const ownerOf = (node: ThemedNode): string | null =>
@@ -108,10 +116,14 @@ const ownerOf = (node: ThemedNode): string | null =>
  * The new `data` for every node `theme` recolors: shapes, their text rows,
  * groups and containers and their titles, connectors and their labels. Given
  * `ids`, only those boxes and connectors, and the text that belongs to them.
- * A node already in the theme's colors is left out.
+ * Given `from`, the theme the scene was in, text moves by the step between the
+ * two themes' sizes, except where its owner's author set the size. A node
+ * already as the theme draws it is left out.
  */
-export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: ReadonlySet<string>): Map<string, unknown> {
+export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: ReadonlySet<string>, from?: DiagramTheme): Map<string, unknown> {
   const out = new Map<string, unknown>();
+  const step = from === undefined ? 0 : theme.font.size - from.font.size;
+  const labelStep = from === undefined ? 0 : themeLabelFont(theme).fontSize - themeLabelFont(from).fontSize;
   const looks = new Map<string, Look | null>();
   const lookOf = (id: string): Look | null => {
     if (!looks.has(id)) {
@@ -137,12 +149,12 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
       const edgeTrait = edgeId === null ? null : traitOf(scene.get(edgeId as never)?.data);
       if (edgeId === null || edgeTrait === null || (ids !== undefined && !ids.has(edgeId))) continue;
       const look = edgeLook(edgeTrait, theme);
-      write(node.id, paintText(data, look.own.has('text') ? undefined : look.label, themeLabelFamily(theme)));
+      write(node.id, paintText(data, look.own.has('text') ? undefined : look.label, themeLabelFamily(theme), look.ownSize ? 0 : labelStep));
       continue;
     }
     if (trait !== null && 'offPageTag' in trait) {
       const edgeId = ownerOf(node);
-      if (ids === undefined || (edgeId !== null && ids.has(edgeId))) write(node.id, paintTag(data, theme));
+      if (ids === undefined || (edgeId !== null && ids.has(edgeId))) write(node.id, paintTag(data, theme, labelStep));
       continue;
     }
     if (trait !== null && 'mark' in trait) continue;
@@ -155,7 +167,7 @@ export function themeWrites(scene: ThemedScene, theme: DiagramTheme, ids?: Reado
     const owner = ownerOf(node);
     const ownerLook = owner === null ? null : lookOf(owner);
     if (ownerLook === null || typeof data.text !== 'string' || (ids !== undefined && !ids.has(owner!))) continue;
-    write(node.id, paintText(data, ownerLook.own.has('text') ? undefined : ownerLook.style.text, theme.font.family));
+    write(node.id, paintText(data, ownerLook.own.has('text') ? undefined : ownerLook.style.text, theme.font.family, ownerLook.ownSize ? 0 : step));
   }
   return out;
 }

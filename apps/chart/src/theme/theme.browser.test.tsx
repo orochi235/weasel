@@ -6,7 +6,7 @@ import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from '../chartPersistence';
 import { STENCIL_MIME } from '../stencilDrop';
-import { at, colorAt } from '../testing/canvasPixels';
+import { at, colorAt, readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 
 registerCanvasFont('sans-serif');
@@ -58,5 +58,93 @@ describe('Format › Theme', () => {
     await menu('Edit', /^Undo/);
     await expect.poll(() => colorAt(canvas, ground)).toBe(paper!.page);
     await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
+  });
+});
+
+describe('Format › Theme › Edit Theme…', () => {
+  it('repaints a shape while its role color is dragged, and one undo restores the pixels and the theme', async () => {
+    const { host, canvas } = await mountChartApp();
+    await dropProcess(canvas, host);
+    const shape = at(host, 380, 290);
+    await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
+
+    await menu('Format', /^Theme/, /^Edit Theme/);
+    const input = page.getByLabelText('Default fill', { exact: true }).element() as HTMLInputElement;
+    // A picker drag: a run of input events, a frame or more apart, then the picker closing.
+    for (const hex of ['#400000', '#800000', '#c00000']) {
+      input.value = hex;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await expect.poll(() => colorAt(canvas, shape)).toBe(hex);
+    }
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').toContain('Paper (edited)');
+
+    await menu('Edit', /^Undo/);
+    await expect.poll(() => colorAt(canvas, shape)).toBe(paper!.roles.default!.fill);
+    await expect.poll(() => localStorage.getItem(CHART_SCENE_KEY) ?? '').not.toContain('Paper (edited)');
+    // The undo before the drag takes back the shape, so the drag was one entry.
+    await menu('Edit', /^Undo/);
+    await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"container"')).toBe(false);
+  });
+});
+
+type Box = { x: number; y: number; width: number; height: number };
+
+/** The saved body and its text row. */
+function savedBody(): { body: Box; row: { pose: Box; data: { text?: string } } } {
+  const nodes = (JSON.parse(localStorage.getItem(CHART_SCENE_KEY)!) as {
+    nodes: { id: string; kind: string; parent?: string | null; pose: Box; data: { text?: string } }[];
+  }).nodes;
+  const body = nodes.find((n) => n.kind === 'container')!;
+  return { body: body.pose, row: nodes.find((n) => n.parent === body.id)! };
+}
+
+/** Pixels darker than 128 on every channel between two world points: text ink on the white page or fill. */
+function ink(host: HTMLElement, canvas: HTMLCanvasElement, x0: number, y0: number, x1: number, y1: number): number {
+  const px = readClientPixels(canvas, at(host, x0, y0), at(host, x1, y1));
+  let n = 0;
+  for (let i = 0; i < px.length; i += 4) if (px[i]! < 128 && px[i + 1]! < 128 && px[i + 2]! < 128) n++;
+  return n;
+}
+
+/** Double-clicks the canvas at world (x, y), as a pointer does. */
+function doubleClick(canvas: HTMLCanvasElement, p: { x: number; y: number }): void {
+  const at = { bubbles: true, clientX: p.x, clientY: p.y };
+  for (let i = 0; i < 2; i++) {
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { ...at, pointerId: 1, isPrimary: true, button: 0, buttons: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { ...at, pointerId: 1, isPrimary: true, button: 0, buttons: 0 }));
+    canvas.dispatchEvent(new MouseEvent('click', at));
+  }
+  canvas.dispatchEvent(new MouseEvent('dblclick', { ...at, detail: 2 }));
+}
+
+describe('the theme Size field', () => {
+  it('grows a shape with its text, so the text stays inside it', async () => {
+    const { host, canvas } = await mountChartApp();
+    await dropProcess(canvas, host);
+    doubleClick(canvas, at(host, 400, 300));
+    const editor = () => document.querySelector<HTMLElement>('.wc-host [contenteditable="true"]');
+    await expect.poll(editor).not.toBeNull();
+    await userEvent.keyboard('MMMMMM');
+    editor()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await expect.poll(() => savedBody().row.data.text).toBe('MMMMMM');
+    const small = savedBody().body;
+
+    await menu('Format', /^Theme/, /^Edit Theme/);
+    await userEvent.fill(page.getByRole('spinbutton', { name: 'Size', exact: true }), '64');
+    await userEvent.keyboard('{Tab}');
+    await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"fontSize":64')).toBe(true);
+
+    const { body, row } = savedBody();
+    // Ink inside the body, and none in the strips between its outline and its rows' padding, where
+    // text cut off at the row's edge would sit. The strips start clear of the outline and the selection.
+    await expect.poll(() => ink(host, canvas, body.x, body.y, body.x + body.width, body.y + body.height)).toBeGreaterThan(50);
+    const [r, bottom] = [body.x + body.width, body.y + body.height];
+    expect(ink(host, canvas, body.x + 7, body.y + 7, body.x + 10, bottom - 7)).toBe(0);
+    expect(ink(host, canvas, r - 10, body.y + 7, r - 7, bottom - 7)).toBe(0);
+    expect(ink(host, canvas, body.x + 7, body.y + 7, r - 7, body.y + 10)).toBe(0);
+    expect(ink(host, canvas, body.x + 7, bottom - 10, r - 7, bottom - 7)).toBe(0);
+    expect(body.height).toBeGreaterThan(small.height);
+    expect(row.pose.y + row.pose.height).toBeLessThanOrEqual(body.y + body.height);
   });
 });

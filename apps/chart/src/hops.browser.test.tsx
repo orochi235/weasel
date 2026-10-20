@@ -62,17 +62,13 @@ describe('WeaselChart line jumps', () => {
     const { host, canvas } = await mountChartApp();
     const crossing = at(host, 450, 330);
     const apex = at(host, 450, 325);
-    expect(red(canvas, crossing)).toBe(true);
-    expect(red(canvas, apex)).toBe(false);
+    // The fitted frame lands after mount on its own schedule, so the pixels are polled.
+    await expect.poll(() => [red(canvas, crossing), red(canvas, apex)]).toEqual([true, false]);
 
     await userEvent.click(page.getByRole('menuitem', { name: 'Format' }));
     await userEvent.click(page.getByRole('menuitem', { name: /^Connector/ }));
     await userEvent.click(page.getByRole('menuitemcheckbox', { name: /^Line jumps/ }));
     await expect.poll(() => saved().doc?.[HOPS_DOC_KEY]).toEqual({ size: 5 });
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => requestAnimationFrame(r));
-
-    expect(red(canvas, crossing)).toBe(false);
-    expect(red(canvas, apex)).toBe(true);
+    await expect.poll(() => [red(canvas, crossing), red(canvas, apex)]).toEqual([false, true]);
   });
 });

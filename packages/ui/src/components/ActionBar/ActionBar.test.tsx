@@ -129,9 +129,9 @@ describe('ActionBar', () => {
     );
     const on = item('on') as HTMLButtonElement;
     const off = item('off') as HTMLButtonElement;
-    expect(on.disabled).toBe(false);
-    expect(off.disabled).toBe(true);
+    expect(on.getAttribute('aria-disabled')).toBeNull();
     expect(off.getAttribute('aria-disabled')).toBe('true');
+    expect(off.getAttribute('aria-description')).toBe('Selection required');
   });
 
   // Dep sources publish on commit, so the render that changes one reads the
@@ -157,9 +157,9 @@ describe('ActionBar', () => {
     );
     const { rerender } = renderWithIcons(view(false));
     const button = () => item('gated') as HTMLButtonElement;
-    expect(button().disabled).toBe(true);
+    expect(button().getAttribute('aria-disabled')).toBe('true');
     rerender(view(true));
-    expect(button().disabled).toBe(false);
+    expect(button().getAttribute('aria-disabled')).toBeNull();
   });
 
   it('follows a dep whose owner says it changed, with nothing re-rendering the bar', () => {
@@ -186,9 +186,9 @@ describe('ActionBar', () => {
       </DepRegistryProvider>,
     );
     const button = () => item('gated') as HTMLButtonElement;
-    expect(button().disabled).toBe(true);
+    expect(button().getAttribute('aria-disabled')).toBe('true');
     act(() => { gate.open = true; registry.changed!(); });
-    expect(button().disabled).toBe(false);
+    expect(button().getAttribute('aria-disabled')).toBeNull();
   });
 
   it('clicking a disabled button does not invoke run', () => {

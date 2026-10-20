@@ -46,6 +46,7 @@ export { sceneUnitScopes } from './unitScopes';
 export type { ScopedScene } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
 export type { SceneEditPass, SceneEditPassOptions, SceneEditSummary } from './editPass';
+export type { SceneBatchOptions } from './recorder';
 export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';
