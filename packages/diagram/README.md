@@ -178,7 +178,8 @@ fits its ends, after something that did not reroute moved one, draws as
 `useAvoidRouting(scene)`, mounted as a child of `<SceneCanvas>`, reroutes what
 each edit disturbed — a move, an insert onto a route, a delete, a paste, a
 panel edit — in that edit's own undo entry, and while a shape is dragged it
-reroutes the connectors near it each frame. Installing it reroutes nothing.
+reroutes the connectors near it each frame, through the waypoints a
+`waypointFollower` registered before it carried. Installing it reroutes nothing.
 `installAvoidRouting(scene)` does the same for a host without React, and hands
 back the drag's transform follower. Its scene edit pass runs at
 `DIAGRAM_PASS_ORDER.avoid`; a pass of your own that should see the routes it
@@ -203,7 +204,7 @@ What a connector routes around:
 | A container, pool, or group box | neither end is inside it |
 | A lane's body | never |
 | A lane's or pool's header | always |
-| An edge label | never |
+| An edge label | always, except to its own connector, 4 world units clear |
 
 Authored waypoints are stops the route passes in order. Layout names an
 `avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
@@ -216,6 +217,37 @@ each new `specs` around the shapes, holding one router across them so each
 reroutes only what changed, and never reports a route. `createSpecRouter` is
 that step on its own. The search itself, `createAvoidRouter`, reads plain boxes
 and ports and is in `@weasel-js/diagram/layout`.
+
+### Line jumps
+
+While the document value `HOPS_DOC_KEY` (`'diagram:hops'`) holds `{ size }`,
+wherever two connectors cross, the one later in render order bows over the other
+in a half circle of radius `size`. Hops are on or off for the whole document.
+A hop bulges toward −y on a horizontal run and −x on a vertical one, whichever
+way the connector travels, and to the left of travel on a diagonal. A crossing
+within `2 × size` of either connector's ends or within `size` of a bend makes no
+hop, nor does a collinear overlap; hops closer than `2 × size` merge into one
+longer hop. A connector split across pages takes no part: its stubs are too
+short to hold a hop clear of their ends, and the run between them is not drawn.
+
+Each connector stores its hops as `diagram.hops`, `{ at, over, r }` in world
+units, so a saved file draws them with no pass running. `edgeDerivePath` draws
+only the hops that still lie on the route, so one left behind by an edit that
+did not recompute never draws.
+
+`useHops(scene)`, mounted as a child of `<SceneCanvas>` after `useAvoidRouting`,
+recomputes the hops each edit disturbed in that edit's own undo entry, and
+setting or clearing the value recomputes or clears every connector in the entry
+that sets it. While a drag is in progress, the connectors it moves and those
+hopping over them draw without hops; the release puts them back.
+`installHops(scene)` does the same without React. Its pass runs at
+`DIAGRAM_PASS_ORDER.hops`, after routing.
+
+`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
+`hops={radius}`, applied after `router`; `createSpecHops` is that step on its
+own. `edgeHops`, which finds the hops over plain polylines, is in
+`@weasel-js/diagram/layout`.
 
 ### Edge labels
 
@@ -231,6 +263,40 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
+
+### Labels that dodge
+
+After any edit, a label that would sit on a shape, on another label, or across
+another connector slides along its own connector, or flips to the other side of
+it, to the nearest clear spot. It tries its preferred station first, then up to
+four stations either way, a label width and 8 apart, each on both sides of the
+line, and keeps the cheapest: area over shapes counts most, then area over
+other labels, then connectors it covers, then how far it moved. Labels move in
+id order, each an obstacle for the next, so the answer is always the same.
+
+The station placement chose is stored on the trait as `placed` (`at`, a
+fraction of the route's length, and `offset`), read before `at` and
+`offset`, which stay the author's preference; a label goes back to its
+preference once that spot is clear. `dodge: false` keeps a label where its
+author put it. Under `layered`, the room layout left a label is its preference,
+so a laid-out diagram's labels stay put unless something covers them.
+
+`useLabelPlacement(scene)` places what each edit may have covered or uncovered
+in that edit's own undo entry, and sizes a label to the text an edit gives it.
+Labels hold still while a shape is dragged and settle on release.
+`installLabelPlacement(scene)` does the same without React. Its edit pass runs
+at `DIAGRAM_PASS_ORDER.labels`, after routing: connectors route around labels as
+they stand, then labels move off the new routes, one round each per edit.
+
+```tsx
+useAvoidRouting(scene);
+useLabelPlacement(scene);
+```
+
+A data-backed `DiagramView` takes `labels="dodge"`, placed after any
+`router`, and never reports a placement; `createSpecLabelPlacer` is that step
+on its own. The arithmetic, `placeLabels`, reads plain boxes and routes and is
+in `@weasel-js/diagram/layout`.
 
 ### Connectors between pages
 

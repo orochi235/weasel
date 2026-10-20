@@ -24,22 +24,24 @@ merged.
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
 | 10 | Theme builder | core, diagram, app | — | 1 |
-| 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
-| 5 | Line jumps | diagram, app | — | 2 |
 | 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
 | 12 | Interchange document model | `diagram-formats`, diagram, app | 6, 7 | 3 |
 | 13 | Mermaid and Graphviz DOT | `diagram-formats`, app | 12 | 4 |
 | 14 | Draw-style XML | `diagram-formats`, svg, app | 12 | 4 |
 
+Pieces are numbered by topic; build them by wave. Piece 6 needs nothing from piece 3 to compile,
+so it is built alongside it, but a page export is only right once cross-page connectors stop
+drawing across the gap, so it merges second.
+
 Shared files, and who makes room in them first:
 
 | File | Lines now | Touched by | Split first, by |
 |---|---|---|---|
-| `packages/diagram/src/edge.ts` | 218 | 3, 5 | done: the four routers are in `routers.ts` |
+| `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 185 | 4, 5, 7 | none needed; each adds props |
+| `packages/diagram/src/diagramViewProps.ts` | 185 | 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -48,136 +50,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 4. Edge labels as obstacles, and labels that dodge
-
-### What the user sees
-
-Connectors routed around shapes also route around other connectors' labels. After any edit, a
-label that would sit on a shape, on another label, or on another connector slides along its own
-connector, or flips to the other side of it, to the nearest clear spot. Labels do not move during
-a drag; they settle on release, in the same undo entry.
-
-### Labels as obstacles (`packages/diagram/src/avoid/`)
-
-- `types.ts`: `AvoidEdge.label?: { id: string; placement: DiagramLabel; size: { width; height } }`;
-  `AvoidOptions.labelClearance` (default 4). `blocks(obstacle, edge)` takes the edge, so a label
-  blocks every connector but its own; `ObstacleIndex.forEdge(edge)` likewise.
-- `router.ts`: the router files each label as an obstacle from its edge's current route with
-  `labelCenter`. Within one commit, once a connector is routed its label is restationed on the new
-  route and refiled before the next connector routes.
-- `sceneInput.ts` fills `label` from each edge's label node; `specRoutes.ts` does the same from
-  label specs, so `DiagramView router="avoid"` gets it too.
-
-The obstacle table's "An edge label: never" row becomes "always, except to its own connector".
-
-### Labels that dodge (`packages/diagram/src/labels/`)
-
-- `labelTrait.ts`: `DiagramLabel.placed?: { at: number; offset: number }`, owned by placement, and
-  `dodge?: false` to opt out. `labelDerivePose` reads `placed` before `at` and `offset`, which stay
-  the author's preference.
-- `place.ts`, pure, exported from `@weasel-js/diagram/layout`:
-  `placeLabels(input, opts) → Map<labelId, { at; offset }>`. For each moving label it tries the
-  preferred station, then stations a label-width-plus-8 apart along the route on either side, up to
-  four each way, each on both sides of the line. It scores each candidate by area over shapes ×1000,
-  over labels already placed ×100, routes it covers ×10, plus the distance slid; it keeps the lowest,
-  and placed labels become obstacles for the next. Labels go in id order, so the answer is
-  deterministic.
-- `install.ts`: `installLabelPlacement(scene)` and `useLabelPlacement(scene)`, an edit pass at
-  `DIAGRAM_PASS_ORDER.labels`. The moving set is the labels of edges with changed data or moved
-  ends, new labels, and labels whose box meets a changed shape, route, or moving label.
-- `specLabels.ts`: `createSpecLabelPlacer()`; `DiagramView` takes `labels?: 'dodge'`, run after the
-  spec router.
-
-**Decision (2026-10-20).** Route first, then place: routes avoid labels as they stand, then labels
-move off the new routes. One round each, so an edit's cost is bounded; anything left touching
-settles on the next edit.
-
-### Works with
-
-Layered layout's label room (`at: { near }`) is the preferred station, so a laid-out diagram's
-labels stay where layout put them unless something covers them. A label on a split edge (piece 3)
-is placed on the first stub.
-
-### Performance budget
-
-Measured by `packages/diagram/src/labels/labels.bench.ts` on the fleet (`--kind bench`), printing
-each case as it finishes.
-
-| Case | Diagram | Budget |
-|---|---|---|
-| Commit | 200 shapes, 300 labeled connectors, 40 moving | 8 ms |
-| Full placement | same, all moving | 40 ms |
-| Avoid commit with labels | the second arc's commit case, labeled | its 30 ms budget, unchanged |
-
-### Tests
-
-- `place.test.ts`: clear preferred station kept; slides off a shape; flips sides; two labels on
-  parallel connectors separate; deterministic.
-- `search.test.ts`: a route avoids another connector's label and not its own.
-- `labels.scene.test.ts`: a move that covers a label re-places it in the move's entry; undo restores
-  `placed`; `dodge: false` never moves.
-- `DiagramView.labels.test.tsx`; chart browser test: drag a shape onto a label, release, the label's
-  pixels clear the shape.
-
-## 5. Line jumps
-
-### What the user sees
-
-Format › Connector › Line jumps turns hops on for the whole chart: where two connectors cross, the
-one drawn on top bows over the other in a small half circle. During a drag, hops on the connectors
-being moved disappear and come back on release.
-
-**Decisions (2026-10-20).**
-- Hops are on or off for the document, not per connector: a crossing has two connectors, and which
-  one hops is the pass's rule, so a per-connector setting would answer the question twice.
-- The connector later in render order hops, so the hop is drawn on the line that paints on top.
-- Arcs only, no gap style: a gap splits the stroke into subpaths, and the kit draws end markers on
-  every open subpath, so an arrowed connector would grow an arrowhead at each gap.
-- A hop bulges toward −y on a horizontal run and toward −x on a vertical one, whatever the direction
-  of travel, so every hop on a page bulges the same way; a diagonal run bulges to the left of travel.
-
-### Engine surface (`packages/diagram/src/hops/`)
-
-- `HOPS_DOC_KEY = 'diagram:hops'`, value `{ size: number }` (radius, default 5) while on, absent
-  while off.
-- `DiagramEdge.hops?: readonly { at: Vec2; over: string; r: number }[]`, literal, so any reader
-  draws them with no doc value, as themes write literal colors.
-- `crossings.ts`, pure, in `@weasel-js/diagram/layout`: `edgeHops(polylines, order, r)` finds
-  proper crossings of general segments through avoid's `SpatialHash` (`avoid/hash.ts`), skips
-  crossings within `2r` of either connector's ends and collinear overlaps, and merges hops closer
-  than `2r` into one longer hop.
-- `draw.ts`: `withHops(points, hops) → Path` replaces the stretch within `r` of each hop with a
-  half circle. `edgeDerivePath` uses it when a non-split edge has hops, keeping only those whose
-  point lies on the routed polyline within 0.5, so a stale hop never draws.
-- `install.ts`: `installHops(scene)` and `useHops(scene)`, an edit pass at `DIAGRAM_PASS_ORDER.hops`,
-  idle while the doc value is absent. It holds each connector's last polyline. On the key changing
-  it recomputes or clears every edge; otherwise the dirty set is connectors attached to changed
-  nodes, connectors whose data changed, and connectors whose last polyline meets a dirty one's old
-  or new box. Polylines come from `edgeRouter` (pre-hop), never from the derived path.
-- `hopFollower(scene)`: a transform follower that previews the moved connectors, and every
-  connector hopping over one, without hops.
-- `SET_HOPS_ACTION_ID = 'diagram.hops'`, a toggle that writes the doc value, in `diagramWaypoints`'
-  contribution beside the router commands. `DiagramView` takes `hops?: number`, applied by
-  `createSpecHops(r)` after the spec router and label placer.
-
-### Save, load, undo
-
-The doc value and each edge's hops save with the scene. Toggling is one entry; a recompute joins the
-edit that caused it.
-
-### Performance budget
-
-`hops/hops.bench.ts`: commit, 300 connectors with 20 dirty, 3 ms; all 300, 25 ms.
-
-### Tests
-
-- `crossings.test.ts`: proper crossings only; ends and overlaps skipped; merging; render order.
-- `draw.test.ts`: arc geometry; bulge side per axis; stale hops dropped.
-- `hops.scene.test.ts`: a move creates and removes hops in its entry; toggling off clears in one
-  entry; undo restores.
-- Chart browser test: two crossing connectors, toggle on, the top one's pixels leave its line at the
-  crossing.
 
 ## 7. Containers and swimlanes in `DiagramData`
 

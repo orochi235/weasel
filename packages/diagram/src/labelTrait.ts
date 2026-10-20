@@ -17,6 +17,20 @@ export interface DiagramLabel {
    *  of the direction of travel** — above a left-to-right edge. Default 0,
    *  which centers the label on the line. */
   offset?: number;
+  /** Where label placement moved it, off a station something covered:
+   *  `at` a fraction of the route's length, `offset` as above. Read in place
+   *  of `at` and `offset`, which stay the author's preference. Written only
+   *  by placement (`installLabelPlacement`). */
+  placed?: LabelSpot;
+  /** `false` keeps placement from ever moving this label. */
+  dodge?: false;
+}
+
+/** A station placement chose: a fraction of the route's length, and the
+ *  offset from the line. */
+export interface LabelSpot {
+  at: number;
+  offset: number;
 }
 
 /** Where an edge label sits when neither the edge nor the scene says. */

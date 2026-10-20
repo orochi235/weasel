@@ -4,7 +4,8 @@ import {
 import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
   diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
-  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting,
+  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting, useHops,
+  useLabelPlacement,
   useConnectorTool, useOffPageMarkers, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -37,10 +38,11 @@ export interface ChartDiagram {
   tools: Record<string, Tool>;
 }
 
-/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, lanes, off-page
- *  tags, the connector and the stencils. What it inserts is drawn in `theme`. */
+/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels and where they
+ *  settle, lanes, off-page tags, the connector and the stencils. What it inserts is drawn in `theme`. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
+  useLabelPlacement<ChartPose>(scene as never);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
   const selected = useCallback(() => selection.get() as readonly string[], [selection]);
   const edgeStroke = useMemo(() => themeEdgeStroke(theme), [theme]);
@@ -92,6 +94,13 @@ export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): nul
 /** Routes `avoid` connectors around shapes on every edit, and live while a shape is dragged. Mounted as a child of `<SceneCanvas>`. */
 export function AvoidRoutingPublisher({ scene }: { scene: ChartScene }): null {
   useAvoidRouting<ChartPose>(scene as never);
+  return null;
+}
+
+/** Hops connectors over the ones they cross while Line jumps is on, and hides the hops a drag moves. Mounted as a child
+ *  of `<SceneCanvas>`, after `AvoidRoutingPublisher`, so a drag's preview keeps the routes that one previews. */
+export function HopsPublisher({ scene }: { scene: ChartScene }): null {
+  useHops<ChartPose>(scene as never);
   return null;
 }
 
