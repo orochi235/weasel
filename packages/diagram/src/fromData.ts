@@ -14,6 +14,7 @@ import { groupSpecs, resolveGroups, type ResolvedGroup } from './dataGroups';
 import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
+import { ownNodeStyle, withColors } from './dataColors';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
   NODE,
@@ -95,6 +96,7 @@ function nodeSpecs(
     body: (trait) => ({
       diagram: {
         ...trait, ...bodyLayoutOf(body, trait), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+        ...ownNodeStyle(n.colors),
       },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
@@ -115,7 +117,16 @@ function nodeSpecs(
  *  nodes, groups, containers and lanes, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
-export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
+export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> & { layer: TLayer }): DiagramSpec<TLayer>[];
+export function diagramScene(data: DiagramData, opts?: DiagramSceneOptions): DiagramSpec[];
+export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> = {}): DiagramSpec<TLayer>[] {
+  const { layer, ...rest } = opts;
+  const specs = mainSpecs(data, rest);
+  return (layer === undefined ? specs : specs.map((s) => ({ ...s, layer }))) as DiagramSpec<TLayer>[];
+}
+
+/** {@link diagramScene}'s specs, on `main`. */
+function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] {
   const { theme } = opts;
   const font = opts.font ?? (theme ? themeFont(theme) : DEFAULT_FONT);
   const labelFont = theme ? themeLabelFont(theme, font) : font;
@@ -196,7 +207,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
   for (const [i, n] of data.nodes.entries()) {
     const seed = seeds[i]!.bounds;
     const at = placedAt.get(n.id)!;
-    const style = opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE);
+    const style = withColors(opts.nodeStyle?.(n) ?? (theme ? roleStyle(theme, n.style) : NODE), n.colors);
     const parent = regions.parentOf.get(n.id);
     const built = nodeSpecs(n, bodies[i]!, { x: at.x, y: at.y, width: seed.width, height: seed.height }, { style, text: (row) => rowTextStyle(row, font), measure });
     specs.push(...(parent === undefined ? built : built.map((s) => (s.id === n.id ? { ...s, parent: parent as never } : s))));

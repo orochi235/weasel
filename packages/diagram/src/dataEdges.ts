@@ -4,6 +4,7 @@ import type { WireLabel } from './dataGroups';
 import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec, EdgeStyle } from './fromData';
+import { ownEdgeStyle, withColors } from './dataColors';
 import { edgeLabelSpec, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
@@ -73,7 +74,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
     const waypoints = router === 'avoid' ? e.waypoints : planned.waypoints;
     // Layout's own route, marked so a later layout of the live scene owns it.
     const laidOut = e.waypoints === undefined && waypoints !== undefined;
-    const style = ctx.opts.edgeStyle?.(e) ?? ctx.fallback;
+    const style = withColors(ctx.opts.edgeStyle?.(e) ?? ctx.fallback, e.colors);
     const markerStart = style.markerStart ?? null;
     const markerEnd = style.markerEnd === undefined ? 'arrow' : style.markerEnd;
     specs.push({
@@ -89,6 +90,7 @@ export function edgeSpecs(edges: readonly DataEdge[], ctx: EdgeSpecContext): Dia
           router,
           ...(waypoints ? { waypoints } : {}),
           ...(laidOut ? { laidOut: waypoints } : {}),
+          ...ownEdgeStyle(e.colors),
         },
         stroke: {
           paint: { color: style.stroke },

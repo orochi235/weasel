@@ -10,6 +10,7 @@ import { regionSpecs } from './containers/regionSpecs';
 import { bodyBox } from './containers/trait';
 import { EMPTY_CONTAINER, fittedInset, laneSizes, type ContainerLayout, type DataRegion, type DataRegions } from './dataContainers';
 import { NODE, type DiagramSpec, type NodeStyle } from './dataTypes';
+import { ownNodeStyle, withColors } from './dataColors';
 import { grownBy } from './footprint';
 import type { DiagramTheme } from './theme/types';
 
@@ -123,8 +124,13 @@ export function placeContainers(
   return out;
 }
 
-/** The style a region is drawn in: its theme role's, else the theme's container, pool header, or lane body in turn. */
+/** The style a region is drawn in: its own colors over its theme role's, else over the theme's container, pool
+ *  header, or lane body in turn. */
 function regionStyle(r: DataRegion, theme: DiagramTheme | undefined): NodeStyle {
+  return withColors(themeRegionStyle(r, theme), r.colors);
+}
+
+function themeRegionStyle(r: DataRegion, theme: DiagramTheme | undefined): NodeStyle {
   if (theme === undefined) return NODE;
   const own = r.style !== undefined ? theme.roles[r.style] : undefined;
   if (own !== undefined) return own;
@@ -147,8 +153,9 @@ export function containerSpecs(
     const specs = regionSpecs(r.role, r.axis, { ...box }, r.label ?? null, {
       id: r.id, layer: 'main', parent: r.parent ?? null, style: regionStyle(r, theme), fitted: r.fitted, fontFamily,
     });
-    if (!r.pinned) return specs as DiagramSpec[];
+    const marks = { ...(r.pinned ? { pinned: true } : {}), ...ownNodeStyle(r.colors) };
+    if (Object.keys(marks).length === 0) return specs as DiagramSpec[];
     const [region, ...rest] = specs;
-    return [{ ...region!, data: { ...region!.data, diagram: { ...region!.data.diagram, pinned: true } as never } }, ...rest] as DiagramSpec[];
+    return [{ ...region!, data: { ...region!.data, diagram: { ...region!.data.diagram, ...marks } as never } }, ...rest] as DiagramSpec[];
   });
 }
