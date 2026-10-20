@@ -1,4 +1,4 @@
-import { type StanceProps, useStance } from '@weasel-js/ui';
+import { type StanceProps, useStance } from '@weasel-js/ui/stance';
 import type { ReactNode, Ref } from 'react';
 import type {
   RegionContribution,

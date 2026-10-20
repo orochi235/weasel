@@ -3,6 +3,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import { readOnlySelection } from 'core/selection/readOnlySelection';
 import { usePublishSceneSelection } from 'core/selection/usePublishSceneSelection';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
+import type { SceneCanvasProps } from './props';
 
 /**
  * The canvas's selection, published to any surrounding selection context.
@@ -18,13 +19,17 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
  */
 export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
-  /** `<SceneCanvas selection>`. */
-  supplied: SelectionApi | undefined;
-  options: UseSelectionOptions | undefined;
+  props: Pick<SceneCanvasProps<TData, TLayer, TPose>, 'selection' | 'selectionOptions' | 'describeKind'>;
   selectable: boolean;
-  describeKind: ((node: Node<TData, TLayer, TPose>) => string | undefined) | undefined;
+  /** The canvas's routing kind, published for each node unless `describeKind` is given. */
+  kindOf: ((node: { kind: string; data: TData }) => string) | undefined;
 }): SelectionApi {
-  const { scene, supplied, options, selectable, describeKind } = args;
+  const { scene, selectable, kindOf } = args;
+  const { selection: supplied, selectionOptions: options, describeKind } = args.props;
+  const describe = useMemo(() => describeKind ?? (kindOf && ((node: Node<TData, TLayer, TPose>) => {
+    const kind = kindOf(node);
+    return kind === 'unknown' ? undefined : kind;
+  })), [describeKind, kindOf]);
   const derivedOptions = useMemo<UseSelectionOptions>(
     () => ({ scene, ...(options ?? {}) }),
     [scene, options],
@@ -32,6 +37,6 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   const internal = useSelection(derivedOptions);
   const base = supplied ?? internal;
   const selection = selectable ? base : readOnlySelection(base);
-  usePublishSceneSelection(scene, selection.current as readonly NodeId[], describeKind);
+  usePublishSceneSelection(scene, selection.current as readonly NodeId[], describe);
   return selection;
 }

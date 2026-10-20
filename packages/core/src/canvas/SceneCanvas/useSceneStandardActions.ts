@@ -1,4 +1,4 @@
-import type { Action, ActionsProp } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
@@ -37,7 +37,7 @@ import {
   useViewDepSource,
 } from '../deps';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
-import { actionsMuting, useActionsPropResolver } from './useActionsPropResolver';
+import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings } from './useActionTunings';
 import { useViewportActions, viewportZoomOption } from './useViewportActions';
 
@@ -51,8 +51,6 @@ export type StandardActionsProps = Pick<
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
 export interface SceneStandardActionsInputs {
   props: StandardActionsProps;
-  /** `selectTool.rotate === false`, which mutes the rotate action. */
-  rotateOff: boolean;
   /** Whether the `view` preset is on; without it the viewport actions are off. */
   viewOn: boolean;
   selection: SelectionApi;
@@ -106,17 +104,13 @@ export interface SceneStandardActionsInputs {
  */
 export function useSceneStandardActions(inputs: SceneStandardActionsInputs): void {
   const {
-    props, rotateOff, viewOn, selection, scene, adapter, standardActions, currentViewRef,
+    props, viewOn, selection, scene, adapter, standardActions, currentViewRef,
     onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, viewAnimation,
     editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
   } = inputs;
   const { tune, viewport, ingestion } = props;
   const boundsIncludeStroke = props.geometry?.boundsIncludeStroke ?? true;
   const reflowTransition = props.reflowTransition as ReflowTransition<unknown> | null | undefined;
-  const actions = useMemo<ActionsProp | undefined>(
-    () => (rotateOff ? actionsMuting(props.actions, 'rotate') : props.actions),
-    [props.actions, rotateOff],
-  );
   const viewportZoom = useMemo(
     () => viewportZoomOption(viewport?.zoom, viewport?.animatedZoom),
     [viewport?.zoom, viewport?.animatedZoom],
@@ -201,6 +195,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Keyed on the set too: a re-registration of it would otherwise land over
   // the overrides applied on top of it.
-  useActionsPropResolver(actions, standardActions.map((a) => a.id).join('|'));
+  useActionsPropResolver(props.actions, standardActions.map((a) => a.id).join('|'));
   useActionTunings(tune);
 }

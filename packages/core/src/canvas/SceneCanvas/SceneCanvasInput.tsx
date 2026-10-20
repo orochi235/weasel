@@ -52,7 +52,6 @@ export interface SceneCanvasInputProps {
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
   nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
   tools: ReturnType<typeof useSceneCanvasTools>;
-  rotateOff: boolean;
   viewOn: boolean;
   camera: { viewState: CanvasViewState; viewAnimation: SceneStandardActionsInputs['viewAnimation'] };
   dispatcher: Dispatcher;
@@ -100,7 +99,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   }, []);
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
   useSceneStandardActions({
-    props, rotateOff: p.rotateOff, viewOn: p.viewOn,
+    props, viewOn: p.viewOn,
     selection, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,

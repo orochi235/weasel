@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { groupNodeRouting, styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefPair } from '@weasel-js/prefs';
 import {
   MIXED,
@@ -69,10 +69,21 @@ const leaf = (id: string, data: unknown, pose = { x: 0, y: 0 }) =>
   ({ id, kind: 'leaf', layer: 'default', pose, data, parent: null }) as never;
 
 describe('classifyKind', () => {
-  it('classifies containers as group and data by routing match', () => {
+  const container = { ...(leaf('c', {}) as object), kind: 'container' } as never;
+
+  it('classifies by the first routing entry that matches, unknown otherwise', () => {
     expect(classifyKind(leaf('a', { kind: 'rect' }), routing)).toBe('rect');
-    expect(classifyKind({ ...(leaf('c', {}) as object), kind: 'container' } as never, routing)).toBe('group');
     expect(classifyKind(leaf('u', { kind: 'blob' }), routing)).toBe('unknown');
+  });
+
+  it('names a container only through a routing entry, as the canvas does', () => {
+    expect(classifyKind(container, routing)).toBe('unknown');
+    expect(classifyKind(container, [groupNodeRouting, ...routing])).toBe('group');
+  });
+
+  it('hands each entry the node beside its data', () => {
+    const byKind: NodeRoutingEntry = { name: 'leafy', matches: (_d, node) => node?.kind === 'leaf' };
+    expect(classifyKind(leaf('b', {}), [byKind])).toBe('leafy');
   });
 });
 

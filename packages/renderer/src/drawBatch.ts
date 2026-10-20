@@ -18,6 +18,7 @@
 
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { GlMat3 } from '@weasel-js/geom';
+import type { LaidOutQuad } from '@weasel-js/text';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_IMAGE, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';
@@ -245,9 +246,9 @@ export class DrawBatch {
   }
 
   /**
-   * Append one glyph quad: the box `(x0, y0)`-`(x1, y1)` mapped through `m`,
-   * sampling `(u0, v0)`-`(u1, v1)` of the font atlas at `slot`, painted in
-   * `rgba`.
+   * Append one glyph quad: `q` moved by `(ox, oy)` and mapped through `m`,
+   * sampling the font atlas at `slot`, painted in `rgba`. Objects, not numbers:
+   * each fractional number passed to a call not inlined is a heap allocation.
    *
    * `mode` says which channels of that atlas carry the distance field, and
    * rides the vertices packed into the slot. `synthBold` is the shift on the
@@ -257,14 +258,13 @@ export class DrawBatch {
    * upright face. Corners wind as `pushQuad`'s do.
    */
   pushGlyph(
-    x0: number, y0: number, x1: number, y1: number,
-    baselineY: number, tanItalic: number, m: GlMat3,
-    u0: number, v0: number, u1: number, v1: number,
-    r: number, g: number, b: number, a: number,
-    slot: number, mode: number, synthBold: number,
+    q: LaidOutQuad, ox: number, oy: number, tanItalic: number, m: GlMat3,
+    rgba: ArrayLike<number>, slot: number, mode: number, synthBold: number,
   ): boolean {
     this.reserve(4, 6);
     let i = this.nVerts * FLOATS_PER_VERTEX;
+    const x0 = q.x0 + ox, y0 = q.y0 + oy, x1 = q.x1 + ox, y1 = q.y1 + oy, baselineY = q.baselineY + oy;
+    const { u0, v0, u1, v1 } = q, r = rgba[0], g = rgba[1], b = rgba[2], a = rgba[3];
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     // Above-baseline corners (lower y in screen coords) lean further right.
     const topShift = (baselineY - y0) * tanItalic;

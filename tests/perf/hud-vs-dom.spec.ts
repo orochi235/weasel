@@ -35,6 +35,7 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
 import { asyncSpans, busy, markWindow, parseTrace, selfTimes, threadCensus, type TraceEvent } from './lib/trace';
+import { allocators, type HeapProfile } from './lib/heapProfile';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import os from 'node:os';
@@ -82,6 +83,12 @@ const PASSES = rounds(2);
  *  comparable with a run without it. */
 const CENSUS = process.env.HVD_CENSUS === '1';
 
+/** `HVD_ALLOC=1` takes a sampling heap profile of one more window of `FRAMES`
+ *  frames per measurement, short-lived objects included, and prints the
+ *  functions that allocated the most. */
+const ALLOC = process.env.HVD_ALLOC === '1';
+const ALLOC_ROWS = 15;
+
 const CATEGORIES = [
   'toplevel',
   'devtools.timeline',
@@ -108,6 +115,8 @@ interface Census {
 }
 interface Sample extends Cell {
   pass: number;
+  /** Bytes allocated per frame, from `HVD_ALLOC`'s profile. */
+  allocBytes: number | null;
   perFrame: Breakdown;
   census: Census;
   frames: number;
@@ -188,6 +197,36 @@ async function traced(page: Page, browser: Browser, frames: number) {
   const stats = await countFrames(page, frames);
   const buf = await browser.stopTracing();
   return { stats, breakdown: analyze(buf, stats.frames) };
+}
+
+/** Bytes allocated per frame over `frames` frames, and who allocated them. */
+async function allocProfile(page: Page, frames: number) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('HeapProfiler.enable');
+  await cdp.send('HeapProfiler.startSampling', {
+    samplingInterval: 4096,
+    includeObjectsCollectedByMajorGC: true,
+    includeObjectsCollectedByMinorGC: true,
+  });
+  const stats = await countFrames(page, frames);
+  const { profile } = await cdp.send('HeapProfiler.stopSampling') as { profile: HeapProfile };
+  await cdp.send('HeapProfiler.disable');
+  await cdp.detach();
+  const { all, rows } = allocators(profile);
+  const per = (b: number) => b / stats.frames;
+  return {
+    perFrame: per(all),
+    rows: rows.map((r) => ({ fn: r.fn, self: per(r.self), total: per(r.total) })),
+  };
+}
+
+function printAlloc(a: Awaited<ReturnType<typeof allocProfile>>): void {
+  const kb = (b: number) => fmt(b / 1024, 8, 1);
+  console.log(`         allocated ${kb(a.perFrame)} KB/frame; by function, KB/frame self, total:`);
+  for (const r of a.rows.slice(0, ALLOC_ROWS)) console.log(`           ${kb(r.self)} ${kb(r.total)}  ${r.fn}`);
+  console.log('         by total:');
+  const byTotal = [...a.rows].sort((x, y) => y.total - x.total).filter((r) => !r.fn.startsWith('('));
+  for (const r of byTotal.slice(0, ALLOC_ROWS)) console.log(`           ${kb(r.self)} ${kb(r.total)}  ${r.fn}`);
 }
 
 async function install(
@@ -495,6 +534,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     viewport: `${W}x${H}`, dpr: 1, glyphs: GLYPHS, glyphsPerLabel: GLYPHS_PER_LABEL,
     updates: [...UPDATES], cameras: [...CAMERAS], approaches: [...APPROACHES], frames: FRAMES, warmup: WARMUP, passes: PASSES,
     order: 'each configuration\'s approaches forward then backward (ABCCBA), reversed on alternate passes', backgroundRects: 200,
+    census: CENSUS, alloc: ALLOC,
   });
   const errors: string[] = [];
   // The fixture page has no HMR socket to reach; vite's client says so.
@@ -510,8 +550,20 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
   });
   const reactJs = reactBundle.outputFiles[0].text;
   await page.route(`**${REACT_URL}`, (r) => r.fulfill({ contentType: 'text/javascript', body: reactJs }));
-  await page.goto('/weasel/__perf/hud-vs-dom');
-  const { glRenderer, gpuTimer } = await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
+  // A dev server that discovers a dependency on the first import reloads the
+  // page under it, as often as it finds more; a later load finds them optimized.
+  const installed = async () => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await page.goto('/weasel/__perf/hud-vs-dom');
+        return await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
+      } catch (e) {
+        if (attempt === 5 || !/Execution context was destroyed|interrupted by another navigation/.test((e as Error).message)) throw e;
+        await page.waitForTimeout(2000);
+      }
+    }
+  };
+  const { glRenderer, gpuTimer } = await installed();
   run.params({ gpuTimer });
 
   console.log('');
@@ -538,7 +590,8 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
       if (!breakdown.found.includes(t)) throw new Error(`trace has no ${t} thread; found ${breakdown.found.join(', ')}`);
     }
     const { found: _found, census, ...perFrame } = breakdown;
-    samples.push({ ...cell, perFrame, census, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
+    const alloc = ALLOC && cell.approach !== 'none' ? await allocProfile(page, FRAMES) : null;
+    samples.push({ ...cell, allocBytes: alloc?.perFrame ?? null, perFrame, census, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
     const b = perFrame;
     console.log(
       `  ${String(idx + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(9)}`
@@ -550,6 +603,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
       + `  load ${fmt(os.loadavg()[0], 6, 1)}  ${((Date.now() - t0) / 1000).toFixed(0).padStart(5)}s`,
     );
     if (CENSUS) printCensus(census, stats.intervalMs);
+    if (alloc) printAlloc(alloc);
     console.log(`onto: progress ${idx + 1}/${plan.length}`);
   }
 
@@ -607,6 +661,8 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     const gt = ss.map((s) => s.gpuTimeMs).filter((x): x is number => x !== null);
     if (gt.length) metrics.gpuTime = metric(med(gt), 'ms', `${stat}, EXT_disjoint_timer_query of the canvas render`, gt);
     if (CENSUS) Object.assign(metrics, censusMetrics(ss.map((s) => s.census), stat));
+    const ab = ss.map((s) => s.allocBytes).filter((x): x is number => x !== null).map((x) => Math.round(x));
+    if (ab.length) metrics.allocated = metric(med(ab), 'bytes', `median of ${ab.length} sampled heap profiles of ${FRAMES} frames, bytes allocated per frame`, ab);
     const id = c.approach === 'none' ? 'none' : `${c.approach} ${c.glyphs} ${c.update} ${c.camera}`;
     const loads = ss.map((s) => +s.load1.toFixed(2));
     metrics.load1 = metric(med(loads), 'load', 'median 1-minute load average as each sample finished', loads);

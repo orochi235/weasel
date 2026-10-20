@@ -11,6 +11,7 @@
 // configs, etc.) remain exported below because they form part of SceneCanvas's
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
+export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
 export { OVERLAY_ROLE_STROKES } from '../canvas/overlayRoleStrokes';
 export { LeanSceneCanvas, type LeanSceneCanvasProps } from '../canvas/LeanSceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
@@ -67,6 +68,7 @@ export { useSceneAdapter } from '../canvas/useSceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {
   createNodeRouting,
+  routeKind,
   type NodeRoutingEntry,
   type NodeRouting,
   type RoutedNode,

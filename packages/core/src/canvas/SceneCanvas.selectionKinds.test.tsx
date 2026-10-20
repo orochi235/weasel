@@ -1,8 +1,7 @@
 /**
- * Two things on a canvas name a node's kind, and they disagree: the label
- * published with the selection (`SelectionContextValue.kinds`), and the
- * routing kind a binding's `kind:` target and `Hit.kind` speak. This pins
- * both answers for the same nodes. They agree only on a container, `'group'`.
+ * The kind published with the selection (`SelectionContextValue.kinds`) is the
+ * routing kind a binding's `kind:` target and `Hit.kind` speak. This pins both
+ * answers for the same nodes.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -82,34 +81,38 @@ function answers(props: {
   return { table, seen, scene };
 }
 
-describe('the two kind classifiers on one canvas', () => {
-  it('the published label reads the node and its pose; the routing kind reads the data, and a container', () => {
+describe('the published selection kinds on one canvas', () => {
+  it('are the routing kinds, with an unrouted node left unlabeled', () => {
     expect(answers().table).toEqual({
-      pathData: { label: undefined, routing: 'path' },
-      pathPose: { label: 'path', routing: 'unknown' },
+      pathData: { label: 'path', routing: 'path' },
+      pathPose: { label: undefined, routing: 'unknown' },
       rect: { label: undefined, routing: 'unknown' },
-      text: { label: undefined, routing: 'text' },
-      image: { label: undefined, routing: 'image' },
+      text: { label: 'text', routing: 'text' },
+      image: { label: 'image', routing: 'image' },
       card: { label: undefined, routing: 'unknown' },
       group: { label: 'group', routing: 'group' },
     });
   });
 
-  it('a registered routing kind changes the routing answer and not the label', () => {
+  it('follow a registered routing table', () => {
     const routing = [{ name: 'card', matches: (d: unknown) => (d as D).card === true }];
     const { table } = answers({ routing });
-    expect(table.card).toEqual({ label: undefined, routing: 'card' });
+    expect(table.card).toEqual({ label: 'card', routing: 'card' });
     expect(table.pathData).toEqual({ label: undefined, routing: 'unknown' });
     // A routing table without the group entry leaves a container unrouted.
-    expect(table.group).toEqual({ label: 'group', routing: 'unknown' });
+    expect(table.group).toEqual({ label: undefined, routing: 'unknown' });
   });
 
-  it('describeKind replaces the label heuristic outright, containers included', () => {
+  it('are all unlabeled when the canvas opts out of routing', () => {
+    const { table } = answers({ routing: [] });
+    expect(Object.values(table).every((row) => row.label === undefined)).toBe(true);
+  });
+
+  it('give way to describeKind outright, without changing the routing kind', () => {
     const { table } = answers({ describeKind: (n) => (n.kind === 'container' ? undefined : 'thing') });
-    expect(table.group.label).toBeUndefined();
-    expect(table.pathPose.label).toBe('thing');
-    expect(table.rect.label).toBe('thing');
-    expect(table.rect.routing).toBe('unknown');
+    expect(table.group).toEqual({ label: undefined, routing: 'group' });
+    expect(table.pathData).toEqual({ label: 'thing', routing: 'path' });
+    expect(table.rect).toEqual({ label: 'thing', routing: 'unknown' });
   });
 
   it('publishes no labels for an empty selection, and undefined for an id the scene lacks', () => {

@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/diagram-formats",
   "version": "1.11.0",
-  "description": "Converts @weasel-js/diagram scenes to files: one page as an SVG document or a PNG image, cut to the page and drawn as the canvas draws it.",
+  "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and one page as an SVG document or a PNG image.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

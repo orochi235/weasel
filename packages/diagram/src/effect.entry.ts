@@ -58,6 +58,16 @@ export {
   setParam,
   setWireRoute,
 } from './effect/edit';
+export {
+  groupContents,
+  groupStages,
+  moveGroup,
+  moveToGroup,
+  nextGroupId,
+  renameGroup,
+  setGroupBox,
+  ungroup,
+} from './effect/groupEdit';
 export { formatParam, stageFromType } from './effect/stageTypes';
 export type { EffectStageType } from './effect/stageTypes';
 export { imageEvaluators } from './effect/image/evaluators';
@@ -91,6 +101,7 @@ export type { EffectRunnerHandle, UseEffectRunnerOptions } from './effect/runner
 export { BRANCH_SYMBOLS, branchNode, symbolNameFor } from './effect/symbols';
 export type { BranchChoice, BranchNode, BranchOptions, BranchSymbol } from './effect/symbols';
 export type {
+  EffectBox,
   EffectDoc,
   EffectGroup,
   EffectParam,

@@ -842,12 +842,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) `Prefs.stories.tsx` › Rail Filterable times out on the fleet and passes here.** Three
-  fleet runs on 2026-10-20 (after `66cd6d6e5`, and on two branches) failed it on the 15 s timeout
-  in the `forge-stories` project; locally the same file renders it in 34 ms, so it hangs rather
-  than runs slow. The story has no play function, so the wait is in rendering or settling. Find
-  what it waits on there (fonts, a frame, a pending promise) with the fleet log's trace.
-
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
@@ -1004,24 +998,16 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
+  `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
+  probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
+  against a bare `getContext('webgl2')` does not catch a call that passes attributes.
+
 - **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
   them ui source (measured 2026-10-19). Packages holding stories stay unbundled
   (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
   bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
   components only through package specifiers.
-
-- **(P3) Eight modules still import the `@weasel-js/ui` barrel, for names no subpath publishes.**
-  The rule in `eslint.config.js` that forbids importing the root barrel, which reaches about 640
-  modules a dev server serves one by one, covers draw, chart, theme-editor, site, and forge's and
-  labkit's `src`, and exempts these files by name. They import `useStance` and `StanceProps`
-  (`components/stance.ts`; forge's `story/library.ts`, labkit's `SidebarRegion`, `chrome/types`,
-  `ControlPanel`, `ControlMatrix`), `OverlayPortalProvider` and `useOverlayPortal`
-  (`overlays/portalHost.tsx`; forge's `TrialHost`, labkit's `ControlMatrix`), `oklchToHex`,
-  `chromaAt`, and `paintGradientTrack` (site's `PerceptualColorSlidersDemo`), and
-  `uiKitSettingsSchema` (site's `KitSettingsDemo`). Each needs a subpath in ui's `exports`, its
-  vite entry, and the root and core `tsconfig` paths, under a name not yet chosen; then the
-  exemption goes. labkit's `passthrough/weasel-ui.ts` re-exports the barrel on purpose and stays
-  exempt.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
@@ -1074,13 +1060,14 @@ only story runner in the repo.
 - **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
   `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
   layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **With the readout changing every frame the DOM is the cheaper overlay** once the renderer's
-    worker pool is counted: at 5,000 glyphs 10.5–12.8 ms a frame of all threads against 6.0–8.5,
-    ranges apart from 2,500 glyphs up under every camera, on msb-uai and keiei (one census run
-    each, 2026-10-19; README, "Frame rate"). 78–88% of the HUD's pool time is V8's background
-    GC. What allocates it is not known: a heap allocation profile of the every-frame path
-    (`attachHud` relayout, the renderer's text layout and command building) would say, and
-    cutting it is the fix if the profile names something.
+  - **With the readout changing every frame the DOM is still the cheaper overlay** once the
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
+    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
+    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
+    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
+    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
+    entries — one object per glyph with every number in it boxed. Cutting that means a layout
+    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1309,22 +1296,20 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `selectTool.rotate === false` is decided in three places that do not agree.** Making them
-  one changes behavior three ways, each needing a decision; `docs/audits/2026-10-12-SceneCanvas.md`
-  lists them. Left open by the preset table and the rule context.
-
-- **(P3) Three classifiers name a node's kind.** The kind label published with the selection and the
-  routing kind disagree on every node, and `SelectionPanel` has a third. The command palette's
-  summary prints the label, so making them one needs a decision on what it should say. Left open by
-  the selection pass.
-
 ## weaselchart
 
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
-- **(P3) Third arc.** Designed in `docs/superpowers/specs/2026-10-20-chart-arc-3-design.md`
-  (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
-  left.
+- **(P3) Fourth arc (not designed).** PDF export, as its own package; playing an audio pipeline
+  through `@weasel-js/audio`, a graph built once on the audio clock and patched as the pipeline is
+  edited; pages and off-page markers in a data-backed `DiagramView`; dragging an edge label by
+  hand, which label placement then keeps; authored group boxes under the `rack` and `lanes` looks.
+  Carried from the third arc's design (2026-10-20), deleted when that arc finished.
+- **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
+  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
+  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
+  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
+  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
   each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by

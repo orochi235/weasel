@@ -1,4 +1,5 @@
 export { downloadBlob, pickFile } from './fileIO';
+export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
 export { usePaperLayer, useSinglePage, type PageSize } from './paperLayer';
 export { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
 export { readStored, writeSession, type SessionEntry } from './sessionStore';

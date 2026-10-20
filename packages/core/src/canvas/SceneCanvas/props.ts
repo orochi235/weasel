@@ -176,8 +176,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
-      /** Rotation options, or `false` to disable rotation entirely — drops the
-       *  `rotate` action AND hides the selection rotation-handle chrome. */
+      /** Rotation options, or `false` to hide the rotation handle and bind it to
+       *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
       rotate?: UseRotateOptions<TPose> | false;
       handleHitRadius?: number;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
@@ -400,8 +400,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * Given a scene node, return a short human-readable "kind" label (e.g. `'rectangle'`,
      * `'sticky note'`), which the kit publishes per id into any surrounding
      * `<SelectionContextProvider>`. Return `undefined` to skip an entry. When omitted,
-     * containers report `'group'`, poses with a `kind` property report `'path'`, and
-     * everything else is left unlabelled.
+     * each node reports its routing kind (see `routing`), and a node that routes as
+     * `'unknown'` is left unlabeled.
      */
     describeKind?: (node: Node<TData, TLayer, TPose>) => string | undefined;
 

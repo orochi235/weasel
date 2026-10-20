@@ -128,7 +128,13 @@ export interface EffectDoc {
   routes?: Readonly<Record<string, readonly Vec2[]>>;
   /** The routes a person drew under `rack` and `lanes`, by look, then by wire id. */
   lookRoutes?: LookRoutes;
+  /** Each group's box under `nodeGraph`, by group id, beside the pipeline as
+   *  `places` is. A group with none fits its members. */
+  groupBoxes?: Readonly<Record<string, EffectBox>>;
 }
+
+/** A box on the page, in world units. */
+export interface EffectBox { x: number; y: number; width: number; height: number }
 
 /** A wire's route under a look that places its stages itself. */
 export interface LookRoute {

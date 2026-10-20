@@ -12,6 +12,7 @@ import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
 import { registerDiagramShape } from '../shape';
 import { useAvoidRouting } from './useAvoidRouting';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;
 
@@ -80,7 +81,7 @@ function pointer(canvas: HTMLCanvasElement, type: string, x: number, y: number):
 
 /** Whether any pixel within a pixel of a CSS point is lit on the black ground. */
 function inked(canvas: HTMLCanvasElement, x: number, y: number): boolean {
-  const gl = canvas.getContext('webgl2')!;
+  const gl = canvasGl(canvas);
   const dpr = canvas.width / canvas.getBoundingClientRect().width;
   const side = Math.ceil(3 * dpr);
   const out = new Uint8Array(side * side * 4);

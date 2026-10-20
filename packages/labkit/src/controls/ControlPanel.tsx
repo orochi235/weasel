@@ -7,8 +7,8 @@ import {
   type PropertyListPack,
   PropertyPanel,
   type PropertyRowLayout,
-  type StanceProps,
-} from '@weasel-js/ui';
+} from '@weasel-js/ui/components/Properties';
+import type { StanceProps } from '@weasel-js/ui/stance';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
