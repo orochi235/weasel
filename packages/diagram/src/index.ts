@@ -169,7 +169,7 @@ export type { LabelDragOptions, LabelEdit } from './labelDragAction';
 export { RESET_LABEL_ACTION_ID, createResetLabelAction } from './labelCommands';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, labelCenter, labelDerivePose } from './label';
 export type { LabelPoseOptions } from './label';
-export { diagramLabelOf } from './labelTrait';
+export { LABEL_PLACEMENT, diagramLabelOf } from './labelTrait';
 export type { DiagramLabel, LabelSpot } from './labelTrait';
 export { placeLabels } from './labels/place';
 export type { LabelPlacements, PlaceLabel, PlaceLabelsInput, PlaceLabelsOptions, PlaceRoute } from './labels/place';
