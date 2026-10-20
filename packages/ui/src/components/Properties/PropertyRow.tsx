@@ -141,7 +141,7 @@ export function PropertyRow({
       ) : (
         label
       )}
-      {hint != null && <span className={s.rowHint}>{hint}</span>}
+      {hint != null && <span className={s.rowHint} data-wzl-subordinate="">{hint}</span>}
       {description || autoValue != null ? (
         <PropertyHelp label={label} description={description} autoValue={autoValue} within={`[${ROW_ATTR}]`} />
       ) : null}

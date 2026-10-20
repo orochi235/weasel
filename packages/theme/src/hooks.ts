@@ -195,6 +195,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Width of a NumberField’s input.',
   },
   {
+    name: 'field-font-size',
+    type: 'dimension',
+    value: 'var(--wzl-font-size)',
+    description:
+      'Font size of the text in a field, a select, a radio, a segmented bar or a button. Unset, each takes its own size; a params row sets it to --wzl-params-text-size.',
+  },
+  {
     name: 'params-label-align',
     type: 'string',
     value: 'start',
@@ -218,6 +225,13 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     type: 'dimension',
     value: 'auto',
     description: 'Inline size of row labels in PropertyPanel, Prefs and labkit’s ControlPanel.',
+  },
+  {
+    name: 'params-text-size',
+    type: 'dimension',
+    value: 'var(--wzl-font-size-sm)',
+    description:
+      'Font size of a row’s label and of its value, one size for both, in PropertyPanel, Prefs, SelectionPanel and labkit’s ControlPanel.',
   },
   {
     name: 'prefs-rail-width',

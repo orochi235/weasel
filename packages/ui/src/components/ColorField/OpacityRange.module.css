@@ -8,6 +8,6 @@
   /* Holds `100%`: three digits and a percent sign wider than a digit. */
   min-inline-size: 5ch;
   text-align: end;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-field-font-size, var(--wzl-font-size-sm));
   opacity: 0.7;
 }
