@@ -8,7 +8,7 @@ traps from finished arcs are `docs/retained.md`.
 
 The spec (`docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`) was approved
 (2026-10-20). Each piece has a plan in `docs/superpowers/plans/2026-10-20-chart-arc4-*.md`; none
-is reviewed or built yet. Each plan lists the calls it made where the spec was silent, under its
+is reviewed or built yet, except pages in `DiagramData`, which is built. Each plan lists the calls it made where the spec was silent, under its
 gaps or "Decisions made while planning" — those need review before building.
 
 Next: review the plans, then build in the spec's two waves, one worktree per piece. The runner
@@ -17,8 +17,7 @@ plan depends on the graph plan's `AudioGraph` API, and `impulseResponse` lives i
 conflicts there when merging. `@weasel-js/pdf` needs its first npm publish and trusted-publisher
 setup done by hand before it can release.
 
-Pages in `DiagramData` are built on the `worktree-agent-a7d3012de73cf984b` branch (2026-10-20),
-awaiting merge.
+Pages in `DiagramData` are built (2026-10-20).
 
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
