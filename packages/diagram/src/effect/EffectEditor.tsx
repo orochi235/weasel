@@ -2,10 +2,14 @@ import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState
 import { useLatest, type Paint } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
-import { DiagramView, type DeleteReport, type DiagramViewApi, type DiagramViewProps, type NodeMove, type ReconnectChange } from '../DiagramView';
+import {
+  DiagramView, type DeleteReport, type DiagramViewApi, type DiagramViewProps, type NodeMove, type ReconnectChange, type RouteChange,
+} from '../DiagramView';
 import { diagramScene, type DataEdge } from '../fromData';
 import { EFFECT_MIN_SCALE } from './EffectChart';
-import { addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, reconnectWire, removeStages, removeWires } from './edit';
+import {
+  addStage, addWire, canWire, ensureWireIds, moveStages, nextStageId, reconnectWire, removeStages, removeWires, setWireRoute,
+} from './edit';
 import { editorScene, type EditorLookOptions, type EditorScene } from './editorMapping';
 import { editorReorders } from './editorReorder';
 import { freeSpot } from './place';
@@ -30,8 +34,8 @@ export interface EffectEditorBaseProps {
    *  every edit comes back through `onChange` and shows once `doc` follows. */
   doc: EffectDoc;
   /** Hears each edit as the doc it makes, and a name for it fit for an undo
-   *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Add stage', 'Reorder'
-   *  or 'Reorder lanes'. */
+   *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Edit route', 'Add stage',
+   *  'Reorder' or 'Reorder lanes'. */
   onChange: (next: EffectDoc, label: string) => void;
   /** A stage id, or null for none. */
   selected?: string | null;
@@ -154,6 +158,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       canConnect={handlers.canConnect}
       onConnect={handlers.onConnect}
       onReconnect={handlers.onReconnect}
+      {...(look === 'nodeGraph' ? { onEditRoute: handlers.onEditRoute } : {})}
       onDelete={handlers.onDelete}
       {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient: reorders })}
       onSelect={pick}
@@ -222,6 +227,10 @@ function editHandlers(now: () => Now, unpick: () => void) {
       const moved = { stage: c.node, port: c.port };
       const [from, to] = c.end === 'from' ? [moved, wire.to] : [wire.from, moved];
       return canWire(d.pipeline, from, to) && !fed(d.pipeline, to, id) ? reconnectWire(d, id, c.end, moved) : null;
+    }),
+    onEditRoute: (c: RouteChange) => commit('Edit route', (d, b) => {
+      const id = b.wireOf(c.edge);
+      return id === undefined ? null : setWireRoute(d, id, c.waypoints);
     }),
     onDelete: (r: DeleteReport) => commit('Delete', (d, b) => {
       // A freed wire id is minted again for the next wire, which would come back picked.

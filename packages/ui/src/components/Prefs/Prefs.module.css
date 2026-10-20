@@ -485,10 +485,12 @@
 /* `rowsAcross={2}`: two rows side by side. A leaf that spans both keeps to them, its label in the first column
    and its control in the second; a stacked one has the whole line under its label already. */
 .railLayout[data-across='2'] :is(.rows, [data-wide] > .row:not(.rowStacked)) {
+  --_across-gap: var(--wzl-prefs-across-gap, 28px);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Two columns, each at least half the line, so never three; and one once half the line is too narrow for a row. */
+  grid-template-columns: repeat(auto-fit, minmax(max(120px, (100% - var(--_across-gap)) / 2), 1fr));
   /* Wide between the columns: a row's control ends where the next row's label begins. */
-  gap: var(--wzl-space-3) var(--wzl-prefs-across-gap, 28px);
+  gap: var(--wzl-space-3) var(--_across-gap);
   align-items: start;
 }
 

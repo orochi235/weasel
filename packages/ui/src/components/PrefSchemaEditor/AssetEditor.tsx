@@ -16,7 +16,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { NO_TYPES } from './types';
-import { aliasNodes, copyNodes, joinPath, outermost, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasNodes, copyNodes, heirAfter, joinPath, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedAttributes, changedPaths } from './schemaExport';
 import { drawsNode } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -32,6 +32,10 @@ import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from '
 import s from './PrefSchemaEditor.module.css';
 
 const NO_KINDS: CustomKinds = {};
+
+/** How far a drag may size each pane. The narrowest is also as far as a pane gives way to a narrow window. */
+const RANGE = { structure: { min: 180, max: 640 }, attributes: { min: 220, max: 720 }, aside: { min: 120, max: 640 } } as const;
+const RANGE_VARS = Object.fromEntries(Object.entries(RANGE).map(([pane, { min }]) => [`--${pane}-min`, `${min}px`])) as CSSProperties;
 
 /** What the editor says of a draft that did not open on the source it was saved against. */
 const DRAFT_NOTICE = {
@@ -223,11 +227,11 @@ export function AssetEditor(
   const remove = () => {
     const { paths, workspace: ws } = latest.current;
     if (paths.length === 0) return;
-    const parent = parentPath(outermost(paths)[0]!);
+    const heir = heirAfter(latest.current.schema, expanded, paths);
     const next = removeInAsset(ws, assetId, paths);
     if (next === ws) return;
     doc.commit(next);
-    select(parent === null ? [] : [parent]);
+    select(heir === null ? [] : [heir]);
   };
   const attrKey = `attr:${[...selection.paths].sort().join(',')}`;
   const rename = (path: string, key: string) => {
@@ -244,14 +248,14 @@ export function AssetEditor(
     <EditorPrefsProvider value={editorPrefs}>
     {/* Capture: React Aria's fields and tree stop a keydown from bubbling past them. */}
     <div className={[s.editor, list && s.listed, className].filter(Boolean).join(' ')}
-      style={{ '--structure-w': `${structureSize.value}px`, '--attributes-w': `${attributesSize.value}px`, '--aside-w': `${asideSize.value}px` } as CSSProperties}
+      style={{ ...RANGE_VARS, '--structure-w': `${structureSize.value}px`, '--attributes-w': `${attributesSize.value}px`, '--aside-w': `${asideSize.value}px` } as CSSProperties}
       onKeyDownCapture={(e) => onEditorKey(e, step, ofActions ? catalog.remove : selection.paths.length > 0 ? remove : null)}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kinds} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={catalog ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} shelfSlot={shelfSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
-      <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
+      <ResizeHandle className={s.structureHandle} {...structureSize} {...RANGE.structure} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
@@ -270,7 +274,7 @@ export function AssetEditor(
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
           kinds={kindList} custom={kinds} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />}
       </div>
-      <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
+      <ResizeHandle {...attributesSize} {...RANGE.attributes} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
@@ -280,7 +284,7 @@ export function AssetEditor(
       <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
       {list && (
         <>
-          <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
+          <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} ariaLabel="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
             <AssetList assets={shownAssets(workspace)} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>

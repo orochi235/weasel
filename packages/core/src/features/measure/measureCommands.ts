@@ -41,7 +41,7 @@ function moveBy(ms: Measurements): Action {
     label: MOVE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'editAnchors'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
     enabled: transformable(ms),
     invoker: {
       timing: 'immediate',
@@ -66,7 +66,7 @@ function rotateBy(ms: Measurements): Action {
     label: ROTATE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'editAnchors'],
+    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'transformFollowers'],
     enabled: transformable(ms),
     invoker: {
       timing: 'immediate',

@@ -152,6 +152,19 @@ describe('EffectEditor', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
+  it('stores a route edit as the wire\'s route, and draws the wire through it', () => {
+    const { onChange, view } = mount();
+    view().onEditRoute!({ edge: 'w1', waypoints: [{ x: 150, y: 120 }] });
+    const [next, label] = onChange.mock.calls[0]!;
+    expect(label).toBe('Edit route');
+    expect(next.routes).toEqual({ w1: [{ x: 150, y: 120 }] });
+    const routed = mount(next as EffectDoc).view();
+    const wire = routed.specs.find((s) => s.id === 'w1')!;
+    expect(diagramEdgeOf(wire)!.waypoints).toEqual([{ x: 150, y: 120 }]);
+    view().onEditRoute!({ edge: 'nope', waypoints: [] });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('adds a stage of a type under the next free id', () => {
     const { onChange, api } = mount();
     const id = api.current!.addStage(blurType);

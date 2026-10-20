@@ -81,7 +81,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'editAnchors'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {

@@ -44,21 +44,35 @@ function pruneGroups(groups: readonly EffectGroup[], gone: Set<string>): EffectG
   }
 }
 
-/** Drops the stages with their wires, places and group memberships, and any
- *  group that leaves empty. */
+/** Drops the stages with their wires, places, routes and group memberships,
+ *  and any group that leaves empty. */
 export function removeStages(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
   const { groups } = doc.pipeline;
-  return {
+  const wires = doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage));
+  return withRoutesOf({
     ...doc,
     pipeline: {
       ...doc.pipeline,
       stages: doc.pipeline.stages.filter((s) => !gone.has(s.id)),
-      wires: doc.pipeline.wires.filter((w) => !gone.has(w.from.stage) && !gone.has(w.to.stage)),
+      wires,
       ...(groups ? { groups: pruneGroups(groups, new Set(gone)) } : {}),
     },
     places: Object.fromEntries(Object.entries(doc.places).filter(([id]) => !gone.has(id))),
-  };
+  });
+}
+
+/** `doc` keeping only the routes of wires it still has. */
+function withRoutesOf(doc: EffectDoc): EffectDoc {
+  if (doc.routes === undefined) return doc;
+  const ids = new Set(doc.pipeline.wires.map((w) => w.id));
+  return { ...doc, routes: Object.fromEntries(Object.entries(doc.routes).filter(([id]) => ids.has(id))) };
+}
+
+/** Routes wire `wire` through `points`; none clears its route. */
+export function setWireRoute(doc: EffectDoc, wire: string, points: readonly Vec2[]): EffectDoc {
+  const { [wire]: _was, ...rest } = doc.routes ?? {};
+  return { ...doc, routes: points.length > 0 ? { ...rest, [wire]: points.map((p) => ({ x: p.x, y: p.y })) } : rest };
 }
 
 /** Mints an id when the wire has none. */
@@ -70,7 +84,7 @@ export function addWire(doc: EffectDoc, wire: EffectWire): EffectDoc {
 /** An id-less wire is never matched: run `ensureWireIds` first. */
 export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
   const gone = new Set(ids);
-  return withPipeline(doc, { wires: doc.pipeline.wires.filter((w) => w.id === undefined || !gone.has(w.id)) });
+  return withRoutesOf(withPipeline(doc, { wires: doc.pipeline.wires.filter((w) => w.id === undefined || !gone.has(w.id)) }));
 }
 
 /** An id-less wire is never matched: run `ensureWireIds` first. */

@@ -6,11 +6,13 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
 import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
+import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 
@@ -28,12 +30,13 @@ export default defineConfig({
     react(),
     skipWorktrees(),
     devSourcemaps(),
+    prebundleWorkspace(repoRoot, [resolve(import.meta.dirname, 'src'), resolve(repoRoot, 'apps/shared')]),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     weaselIcons.vite({ mode: 'app' }),
     localWake(),
     watchProbe(),
   ],
-  server: { port: ports.themeEditor, strictPort: true, host: '::' },
+  server: { port: ports.themeEditor, strictPort: true, ...LAN_SERVER },
   define: weaselDefines(repoRoot),
   build: { outDir: resolve(repoRoot, 'dist-theme-editor'), emptyOutDir: true },
 });

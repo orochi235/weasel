@@ -111,7 +111,8 @@
     "proof:cursors": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-cursors.mjs",
     "proof:pixels": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-pixels.mjs",
     "proof:painted": "node --import ./packages/cursor/scripts/ts-resolve.mjs packages/cursor/scripts/proof-painted.mjs",
-    "view:advance": "node scripts/advance-view.mjs"
+    "view:advance": "node scripts/advance-view.mjs",
+    "dev:fleet": "node scripts/fleet-dev.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.1",

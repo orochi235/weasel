@@ -54,8 +54,16 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
     const id = byEnds.get(edgeEnds(e));
     return id === undefined ? [] : [[edgeIdOf(e), id] as const];
   }));
+  // Only `nodeGraph` draws hand-set routes; `rack` and `lanes` route their own wires.
+  const routes = look === 'nodeGraph' ? doc.routes : undefined;
+  const edges = routes === undefined ? drawn.data.edges : drawn.data.edges.map((e) => {
+    const id = wires.get(edgeIdOf(e));
+    const route = id === undefined ? undefined : routes[id];
+    return route === undefined ? e : { ...e, waypoints: route };
+  });
   return {
     ...drawn,
+    data: { ...drawn.data, edges },
     stageOf: (node) => (stages.has(node) ? node : undefined),
     wireOf: (edge) => wires.get(edge),
   };

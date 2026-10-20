@@ -35,10 +35,10 @@ describe('PrefSchemaEditor over a node property schema: one value path, one pref
     fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Left' } });
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'pose.x' } });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Key' }), { target: { value: 'pose.x' } });
     expect(dialog).toHaveTextContent('"pose.x" is taken here.');
     expect(within(dialog).getByRole('button', { name: 'Add' })).toBeDisabled();
-    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'pose.y' } });
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Key' }), { target: { value: 'pose.y' } });
     expect(dialog).not.toHaveTextContent('is taken here');
   });
 
