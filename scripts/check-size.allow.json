@@ -313,7 +313,7 @@
     "lines": 425
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 286
+    "longestFunction": 285
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 143

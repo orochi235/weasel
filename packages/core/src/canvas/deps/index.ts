@@ -14,6 +14,7 @@ export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { paletteInsertPaint, useInsertDepSource, type InsertNodeFactory, type InsertPaint } from './insert';
 export { useSnapDepSource } from './snap';
+export { useTransformFollower } from './transformFollowers';
 export { useSliceDep, useSliceDepSource } from './slice';
 export { useBooleansAdapterSource } from './booleans';
 export { usePathLeafDepSources } from './pathLeafDeps';

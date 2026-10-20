@@ -16,6 +16,14 @@ export interface ReconnectChange {
   port?: string;
 }
 
+/** A data edge's route as a drag or a double-click left it. */
+export interface RouteChange {
+  /** The data edge's id, `edgeIdOf` of it. */
+  edge: string;
+  /** Empty when the edge no longer has any. */
+  waypoints: readonly Vec2[];
+}
+
 /** What a delete would take: the data nodes, and every data edge that goes with them. */
 export interface DeleteReport {
   nodes: readonly string[];
@@ -54,6 +62,11 @@ export interface DiagramViewProps {
   /** Set to let a selected edge's ends be dragged onto another port, or with
    *  `connectBodies` onto a shape's body. Reports the move and draws nothing; change the data edge to keep it. */
   onReconnect?: (change: ReconnectChange) => void;
+  /** Set to give a selected edge handles along its route: drag one to move or
+   *  insert a waypoint, or slide an orthogonal segment; double-click one to
+   *  remove it. Reports the edge's new waypoints and draws nothing; store them
+   *  as the data edge's `waypoints` and clear its `routed`. */
+  onEditRoute?: (change: RouteChange) => void;
   /** Set to let Delete and Backspace remove the selection. Reports the
    *  selected data nodes (a selected group, not its members) and every edge
    *  selected or ending on one of them, and removes nothing. */

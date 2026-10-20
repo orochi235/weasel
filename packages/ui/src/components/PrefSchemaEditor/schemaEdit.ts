@@ -7,7 +7,7 @@ import {
 import { rebaseValuePaths, valueMove, valuePathsAt } from './valuePaths';
 
 export {
-  branchUnder, childrenOf, entryHolderAt, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, ownChildrenOf,
+  branchUnder, childrenOf, entryHolderAt, fitsUnder, heirAfter, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, ownChildrenOf,
   ownSlotOf, parentPath, pathOf, slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
 export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';

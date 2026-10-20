@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { diagramScene } from '../fromData';
+import { sequenceSlots } from '../slotReorder';
 import { PROBLEM_COLOR } from './draw';
 import { mainChain, skipDecisions } from './mainChain';
 import { rack, SIDE_PORT_GAP } from './rack';
@@ -147,5 +148,24 @@ describe('rack', () => {
     const empty = rack({ stages: [], wires: [] });
     expect(empty.data).toEqual({ nodes: [], edges: [], groups: [] });
     expect(diagramScene(empty.data, empty.scene)).toEqual([]);
+  });
+});
+
+describe('rack order', () => {
+  it('names the stages on the line, in order, as the sequence a reorder drags along', () => {
+    expect(rack(SKIP).order).toEqual({ axis: 'x', items: ['src', 'blur', 'mix', 'out'].map((id) => ({ id })) });
+  });
+
+  it('puts each gap between the drawn boxes of its neighbors', () => {
+    const drawn = rack(SKIP);
+    const specs = diagramScene(drawn.data, drawn.scene);
+    type Box = { x: number; y: number; width: number; height: number };
+    const items = drawn.order!.items.map(({ id }) => ({ id, bounds: specs.find((s) => s.id === id)!.pose as Box }));
+    const { gaps } = sequenceSlots('x', items);
+    for (let k = 1; k < items.length; k++) {
+      const [a, b] = [items[k - 1]!.bounds, items[k]!.bounds];
+      expect(gaps[k]!.a.x).toBeGreaterThan(a.x + a.width);
+      expect(gaps[k]!.a.x).toBeLessThan(b.x);
+    }
   });
 });

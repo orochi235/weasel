@@ -1,6 +1,6 @@
 # weaselchart (`apps/chart`), second arc — design
 
-**Unbuilt as of 2026-10-19.**
+**Pieces 2 to 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`).
 
 For whoever builds each piece of the second arc. It says what the user does and sees in
 weaselchart, which engine surface each piece adds and where, how it saves and undoes, and which
@@ -20,159 +20,16 @@ Each piece lands in its own worktree and merges on its own green `npm run test:f
 
 | # | Piece | Core foundation it adds | Needs |
 |---|---|---|---|
-| 1 | Waypoint editing | transform followers (generalizes `editAnchors.transformOps`) | — |
-| 2 | Stage reorder under `rack` and `lanes` | — | — |
-| 4 | Themes | — | 3 (document values) |
-| 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | 1 (followers) |
-| 6 | Obstacle-avoiding routing | scene edit passes | 1, 5 |
+| 4 | Themes | — | — |
+| 5 | Containers and swimlanes | drop filter dep; layout passes carry descendants | — |
+| 6 | Obstacle-avoiding routing | scene edit passes | 5 |
 
-The suggested order holds. Stage reorder sits second although it shares nothing with the others,
-because it closes out pipeline mode's first-arc gap while the scene foundations are still in review.
+The suggested order holds.
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README's
 editing section and `docs/TODO.md` in its merge; and, when it merges, deletes its own section of
 this doc (the doc is deleted with the last piece).
-
-## 1. Waypoint editing
-
-### What the user sees
-
-A selected connector shows handles along its route as well as the end handles it has today.
-
-| Router | Handles | Drag | Remove |
-|---|---|---|---|
-| `straight`, `bezier` | a dot on each waypoint; a smaller hollow dot at the middle of each leg | a dot moves its waypoint; a hollow dot inserts one there and moves it | double-click a dot |
-| `orthogonal` | a bar on the middle of each segment | a bar slides its segment across its own axis; a segment touching a port gets a jog so the port end stays square | double-click a bar straightens that jog away when its neighbors line up |
-
-While dragging, a handle snaps to line up with the neighboring stops and with a port's axis within
-6 screen pixels, and a thin guide shows the alignment. Escape cancels. Format › Connector › Reset
-route clears the selected connectors' waypoints.
-
-### Engine surface (`packages/diagram/src/`)
-
-- **`waypoints.ts`**, pure math on stops (`from.point`, the waypoints, `to.point`):
-  `routeHandles(drawn, stops, router) → RouteHandle[]` where
-  `RouteHandle = { kind: 'vertex', index } | { kind: 'insert', leg } | { kind: 'segment', index, axis }`;
-  `dragVertex`, `insertWaypoint`, `removeWaypoint`, `dragSegment(drawn, index, offset) → Vec2[]`,
-  and `simplifyStops` (drops duplicate and collinear stops). Every shipped router passes through each
-  stop exactly, so the drawn polyline splits at the stops and a leg's middle is found on it.
-- **`waypointLayer.ts`**, an affordance layer built the way `edgeEndLayer.ts` is:
-  `WAYPOINT_LAYER_ID = 'diagram-waypoints'`, `WAYPOINT_AFFORDANCE_KIND`, scratch
-  `{ edgeId, handle: RouteHandle }` read back with `waypointScratchOf`.
-- **`waypointAction.ts`**: `ROUTE_EDIT_ACTION_ID = 'diagram.editRoute'` and
-  `REMOVE_WAYPOINT_ACTION_ID = 'diagram.removeWaypoint'`, built by
-  `createRouteEditAction({ selected, participants, routers, snapPx, commit })`. The change is
-  `RouteEdit { edgeId: string; waypoints: readonly Vec2[] }`; the default commit
-  `commitRouteToScene` writes `data.diagram.waypoints` and drops `laidOut` in one `scene.update`
-  labeled "Edit route". The preview is the edge's own data with the new waypoints, published as the
-  ongoing handle's `previewData`, so the edge's `derivePath` draws it exactly as the commit will
-  (the way reconnect previews since 87fe75028, 2026-10-19).
-- **`diagramWaypoints(opts) → { layer, contribution }`** in `contribution.ts`, beside
-  `diagramPorts` and `diagramEdgeEnds`, carrying both actions, their bindings, and a
-  `diagram.resetRoute` command. Layer order: ports, waypoints, edge ends (last is hit first).
-- **`DiagramView`**: prop `onEditRoute?: (change: RouteChange) => void` in `diagramViewProps.ts`,
-  `RouteChange { edge: string; waypoints: readonly Vec2[] }`, installed by `useDiagramEditing`
-  (`diagramEditing.ts`). The host stores it as the data edge's `waypoints` and clears `routed`.
-- **`EffectEditor`**: `EffectDoc.routes?: Readonly<Record<string, readonly Vec2[]>>` keyed by wire
-  id (a sidecar like `places`), `setWireRoute(doc, wire, points)` in `effect/edit.ts`,
-  `removeWires` and `removeStages` prune it, and `editorScene` passes it as `DataEdge.waypoints`.
-  Only the `nodeGraph` look edits routes; `rack` and `lanes` own theirs.
-
-**Waypoints ride along with a move.** When a drag moves both ends of a connector (a multi-select,
-or later a container), its authored waypoints translate with them; otherwise they stay put. This
-needs a hook into whole-node transforms, and core has one only for path editing
-(`editAnchors.transformOps` and `transformPreview`, `packages/core/src/interactions/actions/transformFinish.ts`).
-
-**Core foundation: transform followers.** `TransformFollower { preview(frame) ; finish(ops, label) }`
-in `transformFinish.ts`, supplied through a `transformFollowers` dep that composes every source
-(`useDepSource('transformFollowers', …)` appends). `editAnchors`' constraint links move onto it in
-the same change, so there is one pathway (2026-10-19). Diagram's `waypointFollower(scene)` is the
-second user; the router in piece 6 is the third.
-
-**Decisions (2026-10-19).**
-- An orthogonal segment drag writes every interior bend of the new route as waypoints, because the
-  orthogonal router recomputes elbows between stops and only a full set keeps what the user sees.
-  (Under `avoid`, piece 6 pins only the dragged segment.)
-- Every selected connector shows its handles, matching the end handles.
-- Handles take Vec2: the edge trait's waypoints are already world-plane points, and kernel3d
-  hosts route no connectors.
-
-### Save, load, undo
-
-Waypoints already save in the edge trait. One drag is one history entry; a data-backed host gets
-one `onEditRoute` per drag. Layout leaves an edited route alone through the existing
-`layoutOwnsRoute` rule.
-
-### Tests
-
-- `waypoints.test.ts`: handles per router; segment drag next to a port inserts a jog; simplify.
-- `waypointAction.test.ts`: preview data matches commit; cancel writes nothing; snap.
-- `waypoint.scene.test.ts`: one undo entry; `applyLayout` afterward keeps the route; a two-shape
-  move translates the connector's waypoints and a one-shape move does not.
-- `transformFinish.test.ts`: two followers compose; constraint links still pass unchanged.
-- `DiagramView.route.test.tsx` and `effect/edit.test.ts` additions for the data-backed path.
-- `waypoints.browser.test.tsx`: a real pointer drag on a segment bar; the handle wins the press over
-  edge pick and the port affordance. `apps/chart/src/chart.browser.test.tsx` gains a drag and undo.
-
-## 2. Stage reorder under `rack` and `lanes`
-
-### What the user sees
-
-Pipeline mode gains View › Look › Node graph / Rack / Lanes. Under rack and lanes, connecting,
-reconnecting, deleting, and param editing work as under node graph; free moves do not. Instead,
-dragging a stage on the main line lifts it, it follows the pointer along the flow axis, and an
-insertion bar shows between the two stages it would land between. Releasing splices it in there.
-Where the splice cannot type-check, the bar draws in the problem color and release does nothing.
-Under lanes, dragging a lane's label up or down reorders the lanes.
-
-### What a reorder means
-
-**The wiring is the order (2026-10-19).** Both looks place stages from the wires (`mainChain` for
-rack, `columnsOf` for lanes), so a reorder rewires: the stage's main input and output wires come off,
-its old neighbors are wired to each other, the wire between its new neighbors comes off, and the
-stage is wired between them. Side wires, control wires, and params stay with the stage. A second
-stored order could contradict the wiring, so none is kept.
-
-**Only stages on the main line drag (2026-10-19).** An off-line stage sits where what it feeds
-puts it, so there is no slot to drag it to.
-
-### Engine surface
-
-- **`effect/chainEdit.ts`**: `chainLinks(pipeline, chain)` (the main-in and main-out port of each
-  chain stage, moved out of `rack.ts`'s `Line` so rack and the edit share one answer),
-  `canMoveInChain(doc, stage, to)`, and `moveInChain(doc, stage, to) → EffectDoc | null`.
-- **`EffectLookResult.order?: LookOrder`** in `effect/draw.ts`:
-  `{ axis: 'x' | 'y'; items: { id, bounds }[]; gaps: { index, a: Vec2, b: Vec2 }[] }`, the slots a
-  drag can land in, in world units. `rack` and `lanes` fill it; `lanes` also fills `laneOrder` with
-  each lane's header box.
-- **`slotReorder.ts`** in the diagram root, general to any drawing that is a sequence:
-  `REORDER_ACTION_ID = 'diagram.reorder'`, `createReorderAction({ slots, canDrop, commit })` where
-  `slots(ctx) → ReorderSlots | null` and the commit hears `{ id, from, to }`. It previews the
-  dragged node along the axis through a pose override and draws the insertion bar as its overlay.
-- **`EffectDoc.laneOrder?: readonly string[]`** and `setLaneOrder(doc, order)` in `effect/edit.ts`;
-  `editorScene` hands it to `lanes` as `LanesOptions.lanes`.
-- **`EffectEditor`** takes `look?: 'nodeGraph' | 'rack' | 'lanes'` and that look's options;
-  `editorScene(doc, look, options)` replaces the `nodeGraph`-only mapping in
-  `effect/editorMapping.ts`. Undo labels: "Reorder", "Reorder lanes".
-
-**The look is a view choice, kept in the session, not the document (2026-10-19)**: one pipeline is
-meant to read in every look. `compact` stays view-only.
-
-### Save, load, undo
-
-A reorder is a pipeline edit, so it saves with the pipeline. `laneOrder` is a new optional field;
-older files load unchanged. Each reorder is one `onChange`, so one entry in the app's pipeline
-history (`apps/chart/src/pipeline/usePipelineDoc.ts`).
-
-### Tests
-
-- `chainEdit.test.ts`: splice forward and back, to either end; type mismatch refuses; side and
-  control wires stay; `mainChain` after a splice puts the stage at its target.
-- `rack.test.ts`, `lanes.test.ts`: `order` slots match the drawn boxes.
-- `slotReorder.test.ts`; `EffectEditor.reorder.test.tsx` reporting "Reorder".
-- `EffectEditor.reorder.browser.test.tsx`: a real drag under rack; the insertion bar's place.
-- `apps/chart/src/pipeline/pipeline.browser.test.tsx`: switch look, reorder, undo.
 
 ## 4. Themes
 
@@ -305,7 +162,7 @@ release members are one entry each.
 
 - `containerLayout.test.ts`, `laneStack.test.ts`: drop regions, acceptance, stacking, gaps.
 - `containers.scene.test.ts`: drop in and out reparents in one entry; moving a container moves
-  members and translates their connectors' waypoints (piece 1's follower); resize leaves members;
+  members and translates their connectors' waypoints (`waypointFollower`); resize leaves members;
   delete takes members, release keeps them; a restack moves later lanes' members.
 - Core: `reparent.test.ts` and `dropPass` tests for `canDropInto`; `layoutPass` descendant carry.
 - `containers.browser.test.tsx`: a real drag into a container and into a lane, lane header reorder,
@@ -388,7 +245,7 @@ the last routes, and `update({ obstacles, edges }) → Map<edgeId, Vec2[]>` rero
 set: connectors attached to a changed shape, connectors whose route meets a changed obstacle's old
 or new inflated bounds, connectors whose stops or router changed, and new ones.
 
-- **During a drag** (a transform follower from piece 1), each frame reroutes attached connectors
+- **During a drag** (a transform follower, `useTransformFollower` in core), each frame reroutes attached connectors
   first and then the rest of the dirty set within a 4 ms budget; any it does not reach keep last
   frame's route and catch up next frame. No nudging, no crossing penalty, and no work when the
   pointer moved less than one screen pixel.

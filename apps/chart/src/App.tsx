@@ -1,4 +1,5 @@
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import type { EditorLook } from '@weasel-js/diagram/effect';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo, useState, type ReactElement } from 'react';
 import './app.css';
@@ -15,6 +16,8 @@ export type { ChartMode } from './modes';
 export function App(): ReactElement {
   const [mode, setMode] = useState<ChartMode>('chart');
   const pipeline = usePipelineDoc();
+  // A view choice, not part of the pipeline doc.
+  const [look, setLook] = useState<EditorLook>('nodeGraph');
   useModeCommands(mode, setMode);
   const menuBar = useMemo(
     () => chartMenuBar({ ...(mode === 'chart' ? CHART_MENUS : PIPELINE_MENUS), mode: MODE_MENU }),
@@ -24,7 +27,7 @@ export function App(): ReactElement {
   return (
     <div className="wc-app" data-mode={mode}>
       <MenuBar schema={menuBar} className="wc-menubar" />
-      {mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace pipeline={pipeline} />}
+      {mode === 'chart' ? <ChartWorkspace /> : <PipelineWorkspace pipeline={pipeline} look={look} setLook={setLook} />}
       <ContextMenuHost />
     </div>
   );

@@ -6,7 +6,7 @@ import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
   createScene, createTransformOp, defaultCommitAdapter, moveAction, pathsPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
-  type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
+  type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type Scene, type SelectionApi, type TransformFollower,
 } from '@weasel-js/core';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
@@ -64,8 +64,9 @@ function setup() {
     return useDepRegistry();
   }, { wrapper: ({ children }: { children: ReactNode }) => createElement(DepRegistryProvider, null, children) });
   const dep = () => (result.current.get as (key: string) => EditAnchorsDep)('editAnchors');
+  const followers = () => (result.current.get as (key: string) => TransformFollower[] | undefined)('transformFollowers') ?? [];
   const deps = () => ({
-    editAnchors: dep(), selection: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
+    editAnchors: dep(), transformFollowers: followers(), selection: { get: () => [editing] }, scene: loose, applyOps: adapter.applyOps,
   }) as unknown as ActionDeps;
   const points = (id: NodeId) => pathAnchorPoints(scene.get(id)!.pose as PolygonPath);
   const ctx = (x: number, y: number, anchor: number): InvocationCtx => ({
@@ -97,7 +98,8 @@ function setup() {
   const move = (id: NodeId, dx: number, dy: number) => {
     const from = scene.get(id)!.pose as PolygonPath;
     const to = polygonFromPoints(pathAnchorPoints(from).map((p) => ({ x: p.x + dx, y: p.y + dy }))) as PolygonPath;
-    const ops = dep().transformOps!([createTransformOp({ id, from, to, label: 'Move' })], 'Move');
+    let ops: Op[] | null = [createTransformOp({ id, from, to, label: 'Move' })];
+    for (const follower of followers()) ops = ops && follower.finish(ops, 'Move');
     if (ops) adapter.applyOps(ops, 'Move');
   };
   /** Bend `id`'s segment under `(x, y)` by `(dx, dy)` and release; answers each node's preview. */

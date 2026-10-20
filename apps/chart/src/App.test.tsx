@@ -75,6 +75,27 @@ describe('App', () => {
     expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['New', 'Open…', 'Save']);
   });
 
+  it('gives pipeline mode View › Look, and keeps the look picked through a visit to chart mode', () => {
+    mount();
+    expect(screen.queryByRole('menuitem', { name: 'View' })).toBeNull();
+    choose('Mode', 'Pipeline');
+    const looks = () => {
+      act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: 'View' })); });
+      const look = [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')]
+        .find((el) => el.textContent?.startsWith('Look'))!;
+      act(() => { fireEvent.click(look); });
+      return [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HTMLElement>('[role^="menuitem"]')];
+    };
+    const held = (rows: HTMLElement[]) => rows.filter((r) => r.getAttribute('aria-checked') === 'true').map((r) => r.children[1]!.textContent);
+    const rows = looks();
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Node graph', 'Rack', 'Lanes']);
+    expect(held(rows)).toEqual(['Node graph']);
+    act(() => { fireEvent.click(rows[1]!); });
+    choose('Mode', 'Chart');
+    choose('Mode', 'Pipeline');
+    expect(held(looks())).toEqual(['Rack']);
+  });
+
   it("points pipeline mode's Edit menu at the pipeline's own undo", () => {
     mount();
     choose('Mode', 'Pipeline');

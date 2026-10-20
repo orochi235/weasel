@@ -129,6 +129,37 @@ describe('WeaselChart chart mode', () => {
     expect(to.port).toBeDefined();
   });
 
+  it('slides a connector\'s segment by its bar, resets the route from the Format menu, and undoes the reset', async () => {
+    const { host, canvas } = await mountApp();
+    await twoBodies(host, canvas);
+    await useTool('Connector');
+    // East port to west port: one straight segment along y = 130.
+    await drag(canvas, at(host, 220, 130), at(host, 500, 130));
+    await expect.poll(() => edges().length).toBe(1);
+    const waypoints = () => (edges()[0]!.data.diagram as { waypoints?: { x: number; y: number }[] }).waypoints;
+    expect(waypoints()).toBeUndefined();
+
+    await useTool('Select');
+    click(canvas, at(host, 300, 130));
+    await new Promise((r) => requestAnimationFrame(r));
+    // The bar sits in the segment's middle; both ends touch a port, so each keeps a jog.
+    await drag(canvas, at(host, 360, 130), at(host, 360, 200));
+    await expect.poll(() => waypoints()?.length).toBe(4);
+    const [a, b, c, d] = waypoints()!;
+    expect([a!.y, d!.y]).toEqual([130, 130]);
+    expect(Math.abs(b!.y - 200)).toBeLessThan(2);
+    expect(c!.y).toBe(b!.y);
+
+    await userEvent.click(page.getByRole('menuitem', { name: 'Format' }));
+    await userEvent.click(page.getByRole('menuitem', { name: /^Connector/ }));
+    await userEvent.click(page.getByRole('menuitem', { name: /^Reset route/ }));
+    await expect.poll(waypoints).toBeUndefined();
+
+    await userEvent.click(page.getByRole('menuitem', { name: 'Edit' }));
+    await userEvent.click(page.getByRole('menuitem', { name: /^Undo/ }));
+    await expect.poll(() => waypoints()?.length).toBe(4);
+  });
+
   it('adds and edits an edge label on a double-click of the edge', async () => {
     const { host, canvas } = await mountApp();
     await twoBodies(host, canvas);

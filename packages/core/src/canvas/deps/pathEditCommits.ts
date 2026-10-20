@@ -8,7 +8,8 @@ import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetDataOp } from 'core/ops/setData';
 import { createDeleteOp } from 'core/ops/delete';
-import { sceneMutators } from 'core/scene/sceneMutators';
+import { writtenBy } from 'core/ops/writtenBy';
+import type { TransformFollower, TransformPreviewNode } from 'interactions/actions/transformFinish';
 import type { NodeId, Scene } from 'core/scene/types';
 import { pathEditPathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
@@ -117,36 +118,6 @@ export function reshapeOps(
   return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];
 }
 
-/** The pose and data `ops` leave each node they write, read by applying them to a recorder; null when one cannot be read that way. */
-function writtenBy(sc: AnyScene, ops: readonly Op[]): Map<string, EditableNode> | null {
-  const after = new Map<string, EditableNode>();
-  const current = (id: string): EditableNode | null => {
-    const node = after.get(id) ?? sc.get(id as NodeId);
-    return node ? { pose: node.pose, data: node.data } : null;
-  };
-  const write = (id: string, field: keyof EditableNode, value: unknown) => {
-    const node = current(id);
-    if (node) after.set(id, { ...node, [field]: value });
-  };
-  const reads = sceneMutators(sc);
-  const noop = () => {};
-  const recorder = {
-    ...reads,
-    setPose: (id: string, pose: unknown) => write(id, 'pose', pose),
-    setData: (id: string, data: unknown) => write(id, 'data', data),
-    setParent: noop, setChildOrder: noop, setLayer: noop, setDependsOn: noop, setLayout: noop,
-    setHidden: noop, setLocked: noop, removeNode: noop, insertNode: noop,
-    getSelection: (): string[] => [...sc.getSelection()],
-    setSelection: noop,
-  };
-  try {
-    for (const op of ops) op.apply(recorder);
-  } catch {
-    return null;
-  }
-  return after;
-}
-
 /** The other nodes `extensions` change along with a transform that leaves the nodes in `after` as given; null when one refuses it. */
 function transformOthers(
   sc: AnyScene,
@@ -190,13 +161,6 @@ export function transformOps(
   return others && [...ops, ...otherOps(sc, others, label, extensions)];
 }
 
-/** A node as a transform frame previews it: its pose, and its data where that changes. */
-export interface TransformPreviewNode {
-  id: string;
-  pose: unknown;
-  data?: unknown;
-}
-
 /**
  * The other nodes `extensions` change along with a transform frame that
  * poses the nodes in `poses` as given, each as it would be stored — what
@@ -221,4 +185,15 @@ export function transformPreview(
     if (!node || !stored) return [];
     return [stored.data === node.data ? { id: o.id, pose: stored.pose } : { id: o.id, pose: stored.pose, data: stored.data }];
   });
+}
+
+/** The transform follower `extensions` make: each one's `finishTransform`, as
+ *  {@link transformOps} and {@link transformPreview} read it. Null when none
+ *  has one, so a transform runs no follower for them. */
+export function pathEditFollower(sc: AnyScene, extensions: readonly PathEditExtension[]): TransformFollower | null {
+  if (!extensions.some((e) => e.finishTransform)) return null;
+  return {
+    finish: (ops, label) => transformOps(sc, extensions, ops, label),
+    preview: (poses) => transformPreview(sc, extensions, poses),
+  };
 }

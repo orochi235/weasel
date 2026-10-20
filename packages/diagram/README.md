@@ -116,6 +116,48 @@ changes nothing; update the data edge to keep it.
 `edge` is `edgeIdOf` the data edge, so give edges an `id` when you want it to
 survive a reorder.
 
+### Editing a route
+
+A selected edge shows handles along its route as well as at its ends.
+
+| Router | Handles | Drag | Double-click |
+|---|---|---|---|
+| `straight`, `bezier` | a dot on each waypoint; a smaller hollow dot in the middle of each leg | a dot moves its waypoint; a hollow dot inserts one there | a dot removes its waypoint |
+| `orthogonal` | a bar in the middle of each segment | slides the segment across its axis; a segment touching a port gets a jog, so the port end stays square | straightens a jog away, when a neighbor touching no port can slide into line |
+
+A dragged handle snaps into line with the stops beside it and with a port's
+axis within 6 screen pixels, and a guide shows the alignment. Escape cancels.
+A double-click that would remove nothing falls through, to label editing say.
+
+`DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and
+changes nothing: store them as the data edge's `waypoints` and clear its
+`routed`. On a bare canvas, `diagramWaypoints` returns the handle layer to
+register — after the port layer and before the edge-end layer — and the
+contribution to pass as `ambient`, which also carries the `diagram.resetRoute`
+command that clears the selected edges' waypoints. The default commit writes
+the scene in one undo entry, and the route is the author's from then on, so
+layout leaves it alone.
+
+```tsx
+<DiagramView
+  specs={specs}
+  onEditRoute={({ edge, waypoints }) => setEdges((all) => all.map((e) => edgeIdOf(e) !== edge ? e
+    : { ...e, waypoints, routed: undefined }))}
+/>
+
+const route = useMemo(() => diagramWaypoints({ participants, selected }), [participants, selected]);
+```
+
+An orthogonal segment drag writes every bend of the new route as a waypoint,
+since the router recomputes elbows between stops. The math is exported on its
+own: `routeHandles`, `dragVertex`, `insertWaypoint`, `removeWaypoint`,
+`dragSegment`, `removeSegment`, and `simplifyStops`.
+
+Waypoints ride along with a move that carries both of an edge's ends by the
+same offset: `waypointFollower(scene)` is a transform follower, added to the
+canvas with core's `useTransformFollower`. An edge with one end moved keeps its
+waypoints where they are.
+
 ### Edge labels
 
 `onEditLabel` reports a double-click on an edge. `edgeLabelSpec` builds the
@@ -680,7 +722,9 @@ const column: EffectLook = (pipeline) => {
 
 `EffectEditor` is `EffectChart` with the node-graph look made editable: drag a
 stage to move it, drag from an output to an input to wire them, press Delete to
-remove the selection, and drag an end of a selected wire to move it. It keeps no
+remove the selection, drag an end of a selected wire to move it, and drag the
+handles along a selected wire to route it (`EffectDoc.routes`, set with
+`setWireRoute`). It keeps no
 document state. Every edit comes back through `onChange` as the next `EffectDoc` with a
 name for an undo entry, and shows once `doc` follows.
 
@@ -698,6 +742,33 @@ An `EffectStageType` carries the ports and typed params a new stage starts
 with. `setParam`, `addWire`, `removeStages` and the rest of the edit model are
 plain functions from one `EffectDoc` to the next, and `canWire` asks an
 `EffectPipeline` whether two ports may be wired, for driving the edits yourself.
+
+`look` picks the drawing: `'nodeGraph'` (default), `'rack'`, or `'lanes'`, with
+that look's `options`. Connecting, reconnecting, and deleting work the same in
+all three. Rack and lanes place every stage themselves, so under them a stage
+does not move freely. Instead a stage on the main line drags along it: an
+insertion bar marks the gap it would land in, drawn in the problem color where
+the wiring cannot take it, and releasing it there reports `'Reorder'`. Under
+lanes, dragging a lane's label up or down reports `'Reorder lanes'`.
+
+```tsx
+<EffectEditor doc={doc} onChange={commit} look="rack" />
+```
+
+The order is the wiring, so a reorder rewires the pipeline:
+`moveInChain(doc, stage, to)` takes the stage's main input and output wires
+off, wires its old neighbors to each other, and wires it into gap `to` of
+`mainChain`. Side wires, control wires, and params stay with it. It returns
+`null` where a new wire would join unlike types. Lane order is
+`EffectDoc.laneOrder`, which `setLaneOrder` writes and the editor hands to
+`lanes` over `options.lanes`. Rack's `chain` option is not offered here, since a
+given chain could disagree with the wiring.
+
+The drag itself is general: `createReorderAction` (in `@weasel-js/diagram`)
+carries one item of any drawn sequence along its axis and draws the insertion
+bar. Give it `slots`, the items and gaps that `sequenceSlots(axis, items)` builds
+from their boxes, and a `commit` that hears `{ id, from, to }`.
+`reorderContribution` packs the action and its binding to pass as `ambient`.
 
 ## Design notes
 

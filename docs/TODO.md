@@ -741,6 +741,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
   is on would give the preview somewhere to land, and would also move the rows around it.
 
+- **(P3) Renaming a shipped pref can rename its stored key.** In the schema editor, a pref from
+  the baseline whose key is its name in camelCase (`gridDensity`, "Grid density") takes a new key
+  from a new name when the Name field loses focus: "Grid spacing" makes it `gridSpacing`, and the
+  Changes list shows a removal and an addition. Every value stored under the old key is then
+  orphaned. Deliberate since `bd2a870af` (2026-10-10), and pinned by
+  `PrefSchemaEditor.keyFollows.test.tsx`; found by e2e testing (2026-10-19). Needs a call: keep it,
+  or let only a node added in this session follow its name.
+
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides, and `.dialog` rows beside
   the `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
@@ -1022,12 +1030,11 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) The `@weasel-js/ui` barrel lint covers only draw.** The rule in `eslint.config.js` that
-  forbids importing the root barrel is scoped to `apps/draw/**`, and the barrel reaches about 640
-  modules the dev server serves one by one. `apps/site` still imports it in 48 non-test files and
-  `apps/theme-editor` in 13; forge and labkit do too. chart is already clean: a dev load there was
-  2,009 requests, 385 of them ui, none the barrel (measured 2026-10-19), and core's barrel is now
-  its largest share at 744.
+- **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
+  them ui source (measured 2026-10-19). Packages holding stories stay unbundled
+  (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
+  bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
+  components only through package specifiers.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
@@ -1306,5 +1313,5 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Second arc.** Connectors that route around shapes while editing; containers and
-  swimlanes; multiple pages (`core/pages`); themes; waypoint editing on connectors; editing under
-  the `rack` and `lanes` looks, where dragging a stage reorders it.
+  swimlanes; multiple pages (`core/pages`); themes. Designed in
+  `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.

@@ -271,8 +271,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   transformed and every node a link reaches gives way, its own constraints kept; their own
   constraints are carried unsolved, as before, and so is a link whose nodes all moved. A link that
   cannot hold does not stop the transform: it commits alone and `constraintLinkConflictsOf`
-  reports the link. Core's hook is `PathEditExtension.finishTransform`, reached through the
-  `editAnchors` dep's `transformOps`, so only a canvas with that dep finishes transforms.
+  reports the link. Core's hook is `PathEditExtension.finishTransform`, run as one of the
+  `transformFollowers` dep's followers, which the `editAnchors` dep source adds.
 - 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Lengthen,
   Balance, Simplify brush, spiro insert) shows nothing for a frame its constraints cannot hold,
   since that frame commits nothing; the anchor drag still holds its last good frame.

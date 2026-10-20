@@ -1,4 +1,6 @@
 import { useCommand } from '@weasel-js/core';
+import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
+import { pref } from '@weasel-js/prefs';
 import { downloadBlob, pickFile } from '@editor/index';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, emptyChart, replaceChart } from './chartPersistence';
@@ -7,7 +9,7 @@ import { PAGE_MENU } from './pages/pageCommands';
 
 export const CHART_ACTIONS = { new: 'chart.new', open: 'chart.open', save: 'chart.save' } as const;
 
-/** Chart mode's File and Edit menus. Undo, Redo and Delete are the kit's own actions. */
+/** Chart mode's File, Edit and Format menus. Undo, Redo and Delete are the kit's own actions; Reset route is the diagram package's. */
 export const CHART_MENUS: ChartMenuContributions = {
   file: {
     open: run({ new: CHART_ACTIONS.new, open: CHART_ACTIONS.open }),
@@ -16,6 +18,9 @@ export const CHART_MENUS: ChartMenuContributions = {
   edit: {
     history: run({ undo: 'undo', redo: 'redo' }),
     remove: run({ delete: 'delete' }),
+  },
+  format: {
+    connector: pref.group('', { connector: pref.group('Connector', { resetRoute: pref.action(RESET_ROUTE_ACTION_ID) }, { as: 'menu' }) }),
   },
   page: PAGE_MENU,
 };

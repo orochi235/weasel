@@ -47,10 +47,41 @@ describe('editorScene', () => {
     expect(wireOf('nope')).toBeUndefined();
   });
 
+  it('draws a wire through its route, found by the id ensureWireIds gives it', () => {
+    const ids = ensureWireIds(doc).pipeline.wires.map((w) => w.id!);
+    const { data } = editorScene({ ...doc, routes: { [ids[1]!]: [{ x: 300, y: 10 }] } });
+    expect(data.edges[0]!.waypoints).toBeUndefined();
+    expect(data.edges[1]!.waypoints).toEqual([{ x: 300, y: 10 }]);
+  });
+
   it('maps a stage node to its stage and nothing else', () => {
     const { stageOf } = editorScene(doc);
     expect(stageOf('blur')).toBe('blur');
     expect(stageOf('g')).toBeUndefined();
+  });
+
+  it('draws rack with no stage pinned, a place being node-graph’s own', () => {
+    const drawn = editorScene(doc, 'rack');
+    expect(drawn.scene.layout).toBe('chain');
+    expect(drawn.data.nodes.every((n) => n.pinned === undefined)).toBe(true);
+    expect(drawn.order?.items.map((i) => i.id)).toEqual(['src', 'blur', 'pick']);
+  });
+
+  it('maps each wire rack draws back to its wire by its ends', () => {
+    const { data, wireOf } = editorScene(doc, 'rack');
+    expect(data.edges.map((e) => wireOf(edgeIdOf(e)))).toEqual(ensureWireIds(doc).pipeline.wires.map((w) => w.id));
+  });
+
+  it('hands lanes the doc’s lane order over the options’ own', () => {
+    const typed: EffectDoc = {
+      ...doc,
+      pipeline: { ...doc.pipeline, stages: [...doc.pipeline.stages, { id: 'n', title: 'N', outputs: [{ id: 'v', type: 'number' }] }] },
+    };
+    const lanesOf = (d: EffectDoc, lanes?: readonly string[]) =>
+      editorScene(d, 'lanes', lanes === undefined ? undefined : { lanes }).laneOrder?.items.map((i) => i.id);
+    expect(lanesOf(typed)).toEqual(['~lane:image', '~lane:number']);
+    expect(lanesOf(typed, ['number'])).toEqual(['~lane:number', '~lane:image']);
+    expect(lanesOf({ ...typed, laneOrder: ['image', 'number'] }, ['number'])).toEqual(['~lane:image', '~lane:number']);
   });
 
   it('gives a decision the ports of its stage, by the same ids', () => {
