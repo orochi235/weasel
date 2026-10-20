@@ -1319,3 +1319,13 @@ only story runner in the repo.
 - **(P3) Second arc.** Connectors that route around shapes while editing; containers and
   swimlanes; multiple pages (`core/pages`); themes. Designed in
   `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
+- **(P3) A dropped stencil finds its snap by inserting and rolling back.** `stencilDropHandler`
+  (`apps/chart/src/stencilDrop.ts`) inserts the body inside a `scene.batch`, reads a `'move'`
+  snap session's delta, throws to revert, then inserts again at the shifted spot. That is because
+  core has no public way to move ids the way a drag does, carrying children whose poses are
+  world-space. With one, the handler becomes insert-then-move. Until then: inside an already-open
+  batch the probe would not revert, which no caller does today because handlers run from a microtask; and
+  `session.end()` is not in a `finally`. The stencil is also centered on the drop point in two
+  places (the handler and `stencilBuild`).
+- **(P3) `targetIds` builds node gates it doesn't use on the sibling path**
+  (`packages/guides/src/sources/targets.ts`).
