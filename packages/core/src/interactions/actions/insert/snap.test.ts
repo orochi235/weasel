@@ -119,4 +119,38 @@ describe('insert snapping', () => {
     expect(rig(null).draw('rect', { x: 13, y: 14 }, { x: 40, y: 40 }, {}, { behaviors: [moveStart] }).bounds)
       .toEqual({ x: 3, y: 3, width: 37, height: 37 });
   });
+
+  describe('the container a new node lands in', () => {
+    /** A scene with a container `g` and a leaf `l`, and a drawn rect whose
+     *  `insertInto` names `into`: the `parent` each collect was told. */
+    function drawInto(into: (ids: { g: string; l: string }) => string | null) {
+      const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] }) as unknown as AnyScene;
+      const g = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+      const l = scene.add({ kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } }) as string;
+      const told: Array<string | undefined> = [];
+      const spy: SnapSource = { id: 'spy', roles: ['pointer'], *collect(q) { told.push(q.parent); } };
+      const insert: InsertDep = { commit: () => 'n' as NodeId };
+      const deps = {
+        scene, insert, insertLive: { gesture: null },
+        insertInto: { get: () => into({ g, l }) },
+        snap: sessionDep(scene, [spy]),
+      };
+      const at = (p: Point) => ({ world: p, screen: p, modifiers: KEYS, deps }) as unknown as InvocationCtx;
+      const h = (insertAction.invoker as OngoingInvoker).start(at({ x: 1, y: 1 }), { params: { kind: 'rect' } });
+      h.onMove!(at({ x: 5, y: 5 }));
+      h.onEnd!(at({ x: 5, y: 5 }), 'commit');
+      return { told, g };
+    }
+
+    it('is told to every session, the start\'s and the end\'s', () => {
+      const { told, g } = drawInto(({ g }) => g);
+      expect(told.length).toBeGreaterThan(1);
+      expect(new Set(told)).toEqual(new Set([g]));
+    });
+
+    it('is the top of the tree when insertInto names no container', () => {
+      expect(new Set(drawInto(({ l }) => l).told)).toEqual(new Set([undefined]));
+      expect(new Set(drawInto(() => null).told)).toEqual(new Set([undefined]));
+    });
+  });
 });
