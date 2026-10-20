@@ -16,6 +16,7 @@ import {
 import type { MeasureRowText, RowTextStyle } from './body';
 import { diagramEdgeOf } from './edgeTrait';
 import { LABEL_DERIVE_POSE } from './label';
+import { labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
@@ -101,7 +102,9 @@ function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | 
   if (deps === undefined || at === undefined) return null;
   const id = deps.nodeAtPoint?.(at);
   const node = id == null ? undefined : deps.scene?.get(id);
-  return node !== undefined && diagramEdgeOf(node) !== null ? id! : null;
+  if (node !== undefined && diagramEdgeOf(node) !== null) return id!;
+  // A label is not pickable and the label layer claims its press, so a double-click on one finds its edge here.
+  return deps.scene === undefined ? null : labelUnder(deps.scene, at)?.edgeId ?? null;
 }
 
 function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>): void {
