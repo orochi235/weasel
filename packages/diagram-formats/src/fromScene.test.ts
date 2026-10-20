@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { setDiagramColor, type DataEdge, type DataNode } from '@weasel-js/diagram';
+import { createScene, type RectPose } from '@weasel-js/core';
+import { offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
 import { DOC_DATA, MEASURE, docScene, type DocScene } from './testing/docScene';
@@ -117,9 +118,13 @@ describe('documentFromScene', () => {
       const doc = documentFromScene(scene);
       expect(pageOf(scene, 'p1').data.nodes.map((n) => n.id)).toContain('g');
       expect(doc.crossPageEdges?.find((e) => e.id === 'gc')?.waypoints).toEqual(wp);
-      const { specs } = documentSpecs(doc, { measure: MEASURE });
-      const edge = (specs as { id?: string; data?: unknown }[]).find((n) => n.id === 'gc');
-      expect(JSON.stringify(edge)).not.toContain('offPage');
+      const imported = documentSpecs(doc, { measure: MEASURE });
+      const live = createScene<unknown, string, RectPose>({
+        systemLayers: [{ id: 'main' }], registry: withDiagramRegistry(), doc: imported.doc, initial: imported.specs as never,
+      });
+      const splitIds = offPageOps(live, 'all').filter((o) => o.name === 'setData').map((o) => (o.args as { id: string }).id);
+      expect(splitIds).toContain('ac');
+      expect(splitIds).not.toContain('gc');
     });
   });
 

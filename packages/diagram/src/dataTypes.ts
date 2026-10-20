@@ -120,7 +120,8 @@ export interface DiagramData {
   containers?: readonly DataContainer[];
   /** The sheets the diagram is drawn on, in world space as `layoutPages` places them; a node
    *  belongs to the page its box overlaps most (`pageOfBounds`). A connector whose ends belong
-   *  to different pages is split into two stubs, each with an off-page tag. */
+   *  to different pages is split into two stubs, each with an off-page tag. A node in the gap
+   *  between pages belongs to none, and its connectors stay whole. */
   pages?: readonly Page[];
   /** How `pages` are laid out in world space. */
   pageLayout?: PageLayoutOptions;

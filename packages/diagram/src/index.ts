@@ -187,6 +187,7 @@ export {
 export type { OffPageTagLook } from './offPage/tag';
 export { offPageTagId, offPageTagOf } from './offPage/trait';
 export type { OffPageSplit, OffPageTag } from './offPage/trait';
+export { documentBoundsOf } from './offPage/endBox';
 export { installOffPageMarkers, offPageOps } from './offPage/install';
 export type { OffPageMarkerOptions } from './offPage/install';
 export { useOffPageMarkers } from './offPage/useOffPageMarkers';

@@ -90,4 +90,19 @@ describe('diagramScene with pages', () => {
     expect(diagramEdgeOf(edgeOf(specs, 'edge:a->r'))!.offPage).toEqual({ ref: 'A', from: 'p1', to: 'p2' });
     expect(diagramEdgeOf(edgeOf(specs, 'edge:a->b'))!.offPage).toBeUndefined();
   });
+
+  it('splits an edge ending at a lane by the lane’s box', () => {
+    // The pool spans both pages; lane `l1` is p1's side of it and `l2` is p2's.
+    const specs = diagramScene({
+      ...TWO_PAGES,
+      nodes: [node('a', 20), node('b', 110), node('c', 300)],
+      containers: [{
+        id: 'pool', role: 'pool', axis: 'x', box: { x: 100, y: 10, width: 340, height: 80 },
+        lanes: [{ id: 'l1', size: 150, members: ['b'] }, { id: 'l2', size: 190, members: ['c'] }],
+      }],
+      edges: [{ from: 'a', to: 'l2' }, { from: 'a', to: 'l1' }],
+    }, { layout: 'none' });
+    expect(diagramEdgeOf(edgeOf(specs, 'edge:a->l2'))!.offPage).toEqual({ ref: 'A', from: 'p1', to: 'p2' });
+    expect(diagramEdgeOf(edgeOf(specs, 'edge:a->l1'))!.offPage).toBeUndefined();
+  });
 });

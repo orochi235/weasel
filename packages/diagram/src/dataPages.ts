@@ -1,12 +1,10 @@
 /** The pages a {@link DiagramData} is drawn on, and the connectors that cross between them. */
-import { layoutPages, type PlacedPage } from '@weasel-js/core';
+import { layoutPages, type Bounds, type PlacedPage } from '@weasel-js/core';
 import type { DiagramData, DiagramSpec } from './dataTypes';
 import { diagramGroupOf } from './group';
 import { offPageSplits } from './offPage/split';
 import { offPageTagSpecs, type OffPageTagLook } from './offPage/tag';
 import type { OffPageSplit } from './offPage/trait';
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** `data`'s pages, placed in world space. */
 export function diagramPages(data: DiagramData): PlacedPage[] {
@@ -21,7 +19,7 @@ export function diagramPages(data: DiagramData): PlacedPage[] {
 export function dataOffPage(
   edges: readonly { id: string; from: string; to: string }[],
   pages: readonly PlacedPage[],
-  boxOf: (id: string) => Rect | undefined,
+  boxOf: (id: string) => Bounds | undefined,
   look: OffPageTagLook,
 ): { splits: ReadonlyMap<string, OffPageSplit>; tags: DiagramSpec[] } {
   const input = edges.flatMap((e) => {
@@ -43,13 +41,13 @@ export function dataOffPage(
  *  placed, and by the group specs already made. Nothing when `data` has no pages. */
 export function scenePageSplits(
   data: DiagramData,
-  placedAt: ReadonlyMap<string, Rect>,
+  placedAt: ReadonlyMap<string, Bounds>,
   specs: readonly DiagramSpec[],
   edges: readonly { id: string; from: string; to: string }[],
   look: () => OffPageTagLook,
 ): { splits: ReadonlyMap<string, OffPageSplit>; tags: DiagramSpec[] } | null {
   const pages = diagramPages(data);
   if (pages.length === 0) return null;
-  const groups = new Map(specs.filter((s) => diagramGroupOf(s) !== null).map((s) => [String(s.id), s.pose as Rect]));
+  const groups = new Map(specs.filter((s) => diagramGroupOf(s) !== null).map((s) => [String(s.id), s.pose as Bounds]));
   return dataOffPage(edges, pages, (id) => placedAt.get(id) ?? groups.get(id), look());
 }

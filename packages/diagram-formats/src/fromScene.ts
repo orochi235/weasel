@@ -1,9 +1,9 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  AUTO_POSE_DESCRIPTOR, documentPose, pageHolding, placedPagesOf, type PlacedPage, type PoseDescriptor, type RectPose, type Scene,
+  pageHolding, placedPagesOf, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, diagramLabelOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
+  DIAGRAM_THEME_KEY, diagramLabelOf, documentBoundsOf, diagramThemeFrom, offPageSplits, type DataContainer, type DataEdge, type DataGroup,
   type DataNode, type DiagramTheme,
 } from '@weasel-js/diagram';
 import type { DiagramDocument, DocumentPage } from './document';
@@ -54,7 +54,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
   const placed = placedPagesOf(scene);
   const pages = placed.length > 0 ? placed : [contentPage(s)];
   const buckets = new Map(pages.map((p) => [p.id, { nodes: [], edges: [], groups: [], containers: [] } as PageBucket]));
-  const boxOf = (node: ReadNode) => (AUTO_POSE_DESCRIPTOR as PoseDescriptor<unknown>).getBounds(documentPose(s as never, node as never));
+  const boxOf = (node: ReadNode) => documentBoundsOf(scene, node);
   const pageCache = new Map<string, PlacedPage>();
   const pageOf = (node: ReadNode): PlacedPage => {
     let root = node;
@@ -97,7 +97,7 @@ export function documentFromScene<TData, TLayer extends string, TPose>(
     const fromPage = itemPage.get(from ?? '');
     const toPage = itemPage.get(to ?? '');
     if (fromPage === undefined || toPage === undefined) continue;
-    const split = splits.get(node.id) !== null;
+    const split = (splits.get(node.id) ?? null) !== null;
     if (fromPage === toPage && !split) buckets.get(fromPage.id)!.edges.push(readEdge(node, labels.get(node.id), fromPage, theme));
     else crossPageEdges.push(readEdge(node, labels.get(node.id), split ? null : { x: 0, y: 0 }, theme));
   }
