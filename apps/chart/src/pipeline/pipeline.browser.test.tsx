@@ -4,6 +4,9 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
+import { diagramScene } from '@weasel-js/diagram';
+import { EFFECT_MIN_SCALE, editorScene, mainChain, type EffectDoc } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
 import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
@@ -26,6 +29,12 @@ afterEach(() => {
 function stages(): string[] {
   const raw = localStorage.getItem(PIPELINE_STORAGE_KEY);
   return raw ? (JSON.parse(raw) as { pipeline: { stages: { id: string }[] } }).pipeline.stages.map((s) => s.id) : [];
+}
+
+/** The main line of the pipeline the doc last saved. */
+function chain(): string[] {
+  const raw = localStorage.getItem(PIPELINE_STORAGE_KEY);
+  return raw ? mainChain((JSON.parse(raw) as EffectDoc).pipeline) : [];
 }
 
 async function choose(menu: string, row: RegExp): Promise<void> {
@@ -55,6 +64,55 @@ describe('WeaselChart pipeline mode', () => {
     await userEvent.click(canvas, { position: { x: width - 20, y: height - 20 } });
     await userEvent.keyboard(isApplePlatform() ? '{Meta>}z{/Meta}' : '{Control>}z{/Control}');
     await expect.poll(stages).toEqual(['source', 'blur']);
+  });
+
+  it('switches to the rack look, splices a stage further along the line by dragging it, and undoes that', async () => {
+    const img = (id: string) => ({ id, title: id, inputs: [{ id: 'image', type: 'image' }], outputs: [{ id: 'out', type: 'image' }] });
+    const doc: EffectDoc = {
+      pipeline: {
+        stages: [{ id: 'src', title: 'Source', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }, img('a'), img('b')],
+        wires: [
+          { id: 'w1', from: { stage: 'src', port: 'out' }, to: { stage: 'a', port: 'image' } },
+          { id: 'w2', from: { stage: 'a', port: 'out' }, to: { stage: 'b', port: 'image' } },
+        ],
+      },
+      places: {},
+    };
+    localStorage.setItem(PIPELINE_STORAGE_KEY, JSON.stringify(doc));
+    await mountChartApp();
+    await choose('Mode', /^Pipeline/);
+    await userEvent.click(page.getByRole('menubar').getByRole('menuitem', { name: 'View' }));
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Look/.test(el.textContent ?? ''))!);
+    await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find((el) => /^Rack/.test(el.textContent ?? ''))!);
+    await new Promise((r) => setTimeout(r, 100));
+
+    const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
+    const r = canvas.getBoundingClientRect();
+    const built = editorScene(doc, 'rack');
+    const specs = diagramScene(built.data, built.scene);
+    const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
+    // The view the editor opens on: every stage in view, at most at scale 1, from the top-left.
+    const all = ['src', 'a', 'b'].map(box);
+    const left = Math.min(...all.map((b) => b.x));
+    const top = Math.min(...all.map((b) => b.y));
+    const bounds = { x: left, y: top, width: Math.max(...all.map((b) => b.x + b.width)) - left, height: Math.max(...all.map((b) => b.y + b.height)) - top };
+    const t = viewToTransform(fitViewToBounds(bounds, { width: r.width, height: r.height }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
+      maxScale: 1, minScale: EFFECT_MIN_SCALE, anchor: 'start',
+    }));
+    const at = (x: number, y: number) => ({ x: r.left + t.panX + x * t.zoom.x, y: r.top + t.panY + y * t.zoom.y });
+    const from = at(box('a').x + box('a').width / 2, box('a').y + box('a').height / 2);
+    const to = at(box('b').x + box('b').width + 20, box('a').y + box('a').height / 2);
+    const fire = (type: string, p: { x: number; y: number }) => canvas.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+      button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: p.x, clientY: p.y,
+    }));
+    fire('pointerdown', from);
+    for (let i = 1; i <= 10; i++) fire('pointermove', { x: from.x + (to.x - from.x) * i / 10, y: from.y });
+    fire('pointerup', to);
+    await expect.poll(chain).toEqual(['src', 'b', 'a']);
+
+    await choose('Edit', /^Undo/);
+    await expect.poll(chain).toEqual(['src', 'a', 'b']);
   });
 
   it('places stages added from the palette inside the view, clear of each other', async () => {

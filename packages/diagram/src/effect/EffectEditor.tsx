@@ -139,8 +139,10 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   }, [now, onSelectRef]);
 
   const shown = selected === undefined ? undefined : selected ?? (pickedWire === undefined ? null : edge);
+  // Keyed by look so each look opens fitted: DiagramView keeps its view across new specs.
   return (
     <DiagramView
+      key={look}
       ref={view}
       specs={specs}
       width={width}
