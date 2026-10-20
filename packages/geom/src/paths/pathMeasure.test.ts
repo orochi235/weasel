@@ -29,6 +29,12 @@ describe('measurePath', () => {
     expect(back.s).toBeCloseTo(137, 9);
   });
 
+  it('breaks a tie at a vertex toward the incoming segment, while at() reads the outgoing one', () => {
+    const m = measurePath(elbow)!;
+    expect(m.nearest({ x: 130, y: -30 })).toMatchObject({ s: 100, point: { x: 100, y: 0 }, tangent: { x: 1, y: 0 } });
+    expect(m.at(100).tangent).toEqual({ x: 0, y: 1 });
+  });
+
   it('answers a zero-length path at its point', () => {
     const m = measurePath(polylineFromPoints([{ x: 5, y: 5 }, { x: 5, y: 5 }]))!;
     expect(m.nearest({ x: 8, y: 9 })).toMatchObject({ s: 0, dist: 5, point: { x: 5, y: 5 } });

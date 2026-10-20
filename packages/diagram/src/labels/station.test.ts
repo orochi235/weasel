@@ -27,6 +27,26 @@ describe('labelSpotAt', () => {
     roundTrips(elbow, at, offset);
   });
 
+  // Outside a corner the vertex is nearest every point, and each leg reads an offset along its own normal.
+  it.each([[{ x: 100, y: -30 }], [{ x: 130, y: 0 }]])('round-trips a center on a corner normal, %o', (c) => {
+    const back = labelCenter(elbow, labelSpotAt(elbow, c, SIZE)!, SIZE)!;
+    expect(back.x).toBeCloseTo(c.x, 6);
+    expect(back.y).toBeCloseTo(c.y, 6);
+  });
+
+  it.each([
+    [{ x: 130, y: -30 }, { x: 100, y: -30 }],
+    [{ x: 140, y: -20 }, { x: 140, y: 0 }],
+  ])('keeps a center outside the corner, %o, on the leg nearer it', (c, expected) => {
+    const spot = labelSpotAt(elbow, c, SIZE)!;
+    const back = labelCenter(elbow, spot, SIZE)!;
+    expect(back.x).toBeCloseTo(expected.x, 6);
+    expect(back.y).toBeCloseTo(expected.y, 6);
+    const again = labelSpotAt(elbow, back, SIZE)!;
+    expect(again.at).toBeCloseTo(spot.at, 9);
+    expect(again.offset).toBeCloseTo(spot.offset, 6);
+  });
+
   it('puts a center dragged below a rightward edge on its right, offset negative', () => {
     expect(labelSpotAt(straight, { x: 100, y: 40 }, SIZE)).toEqual({ at: 0.5, offset: -34 });
   });
