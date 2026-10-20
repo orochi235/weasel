@@ -19,20 +19,17 @@ const osc = (frequency = 440): EffectPipeline => ({
 interface FakeGraph extends AudioGraph {
   applies: GraphPatch[][];
   calls: string[];
-  failNext: unknown;
+  failWhen: ((patches: readonly GraphPatch[]) => unknown) | undefined;
 }
 const fakeGraph = (): FakeGraph => {
   const g = {
     applies: [] as GraphPatch[][],
     calls: [] as string[],
-    failNext: undefined as unknown,
+    failWhen: undefined as FakeGraph['failWhen'],
     apply(patches: readonly GraphPatch[]) {
       g.applies.push([...patches]);
-      if (g.failNext !== undefined) {
-        const err = g.failNext;
-        g.failNext = undefined;
-        throw err;
-      }
+      const err = g.failWhen?.(patches);
+      if (err !== undefined) throw err;
     },
     start: () => { g.calls.push('start'); },
     stop: () => { g.calls.push('stop'); },
@@ -54,6 +51,10 @@ const setup = (pipeline: EffectPipeline = osc()) => {
   const buffer = () => ctx.createBuffer(1, 8, 8000) as never as AudioBuffer;
   return { runner, engine, graphs, graph: graphs[0]!, buffer, order };
 };
+const withGain = (frequency: number): EffectPipeline => ({
+  stages: [stage('osc', 'audio.oscillator', { frequency }), stage('gain', 'audio.gain'), stage('out', 'audio.output')],
+  wires: [wire('osc', 'gain'), wire('gain', 'out')],
+});
 const kinds = (patches: GraphPatch[]) => patches.map((p) => `${p.kind} ${'id' in p ? p.id : p.from}`);
 
 afterEach(() => vi.restoreAllMocks());
@@ -124,28 +125,37 @@ describe('createLiveAudioRunner', () => {
     expect(l).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the previous plan when apply throws structurally, and warns once', () => {
+  it('keeps the previous plan when the structural apply throws, sends no sets, and warns once', () => {
     const { runner, graph } = setup();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    graph.failNext = new Error('@weasel-js/audio: node "osc" has no param "frequency"');
-    runner.setPipeline(osc(220));
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'add') ? new Error('@weasel-js/audio: node "gain" has no input port "in"') : undefined);
+    runner.setPipeline(withGain(220));
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toMatch(/^@weasel-js\/diagram: /);
-    expect(runner.state.run?.stages.osc?.error).toMatch(/no param/);
-    runner.setPipeline(osc(220));
-    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
-    expect(runner.state.run?.stages.osc?.error).toBeUndefined();
+    expect(graph.applies).toHaveLength(2);
+    expect(runner.state.run?.stages.gain?.error).toMatch(/no input port/);
+    graph.failWhen = undefined;
+    runner.setPipeline(withGain(220));
+    expect(graph.applies).toHaveLength(4);
+    expect(graph.applies[2]!.some((p) => p.kind === 'add' && p.id === 'gain')).toBe(true);
+    expect(graph.applies[3]).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(runner.state.run?.stages.gain?.error).toBeUndefined();
   });
 
-  it('adopts the next plan when a set throws, and warns once', () => {
+  it('adopts the next plan when a set throws, and blames the stage whose set failed', () => {
     const { runner, graph } = setup();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    graph.failNext = new RangeError('frequency out of range');
-    runner.setPipeline(osc(220));
+    const delayMsg = '@weasel-js/audio: delay time 9 is outside 0 to 1';
+    graph.failWhen = (ps) => (ps.every((p) => p.kind === 'set') ? new RangeError(delayMsg) : undefined);
+    runner.setPipeline(withGain(220));
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(runner.state.run?.stages.osc?.error).toBe('frequency out of range');
-    runner.setPipeline(osc(330));
+    expect(graph.applies).toHaveLength(4);
+    expect(graph.applies[1]!.some((p) => p.kind === 'add' && p.id === 'gain')).toBe(true);
+    expect(runner.state.run?.stages.osc?.error).toBe(delayMsg);
+    graph.failWhen = undefined;
+    runner.setPipeline(withGain(330));
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 330 }]);
+    expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
   });
 
   it('resets onto a fresh graph holding the current plan, not playing', async () => {

@@ -32,20 +32,14 @@ export interface LiveAudioRunner {
   dispose(): void;
 }
 
-const GRAPH_ERROR = '@weasel-js/audio:';
-
 const messageOf = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 const idsOf = (p: GraphPatch): string[] =>
   'id' in p ? [p.id] : [p.from, ...('node' in p.to ? [p.to.node] : [])];
 
-/** The stage a failed apply names: the patch whose id the message quotes, else the first `set`. */
-function failingStage(patches: readonly GraphPatch[], message: string): string | undefined {
-  const named = patches.flatMap(idsOf).find((id) => message.includes(`"${id}"`));
-  if (named !== undefined) return named;
-  const firstSet = patches.find((p) => p.kind === 'set');
-  return firstSet?.kind === 'set' ? firstSet.id : undefined;
-}
+/** The stage a failed structural patch names: the one whose id the error message quotes. */
+const failingStage = (patches: readonly GraphPatch[], message: string): string | undefined =>
+  patches.flatMap(idsOf).find((id) => message.includes(`"${id}"`));
 
 const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean => {
   const keys = Object.keys(a);
@@ -76,27 +70,43 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     set({ run: { stages: Object.fromEntries(Object.entries(next).map(([id, error]) => [id, { error }])) } });
   };
 
-  /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. */
+  /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. Structure goes first
+   *  in its own apply: a throw there changed nothing, while a throw from the sets means structure landed. */
   const sync = (from: LivePlan) => {
     const next = livePlan(pipeline, nodes, sources);
-    let patches: GraphPatch[] = [];
+    const merged: Record<string, string> = { ...next.errors };
     let adopted = next;
-    let applyError: string | undefined;
+    let structural: GraphPatch[] = [];
+    let sets: GraphPatch[] = [];
     try {
-      patches = diffPlans(from, next, (_id, n) => nodes[n.type]!.build(engine.context, n.settings, n.levels));
-      if (patches.length > 0) graph.apply(patches);
+      const patches = diffPlans(from, next, (_id, n) => nodes[n.type]!.build(engine.context, n.settings, n.levels));
+      structural = patches.filter((p) => p.kind !== 'set');
+      sets = patches.filter((p) => p.kind === 'set');
+      if (structural.length > 0) graph.apply(structural);
     } catch (err) {
-      applyError = messageOf(err);
-      // A `set` that throws lets the rest of the list apply; every other failure leaves the graph as it was.
-      adopted = applyError.startsWith(GRAPH_ERROR) ? from : next;
+      const message = messageOf(err);
+      const id = failingStage(structural, message);
+      if (id !== undefined) merged[id] = message;
+      console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
+      adopted = from;
+      sets = [];
+    }
+    if (sets.length > 0) {
+      try {
+        graph.apply(sets);
+      } catch (err) {
+        console.warn(`@weasel-js/diagram: audio graph edit failed: ${messageOf(err)}`);
+        for (const p of sets) {
+          try {
+            graph.apply([p]);
+          } catch (one) {
+            if (p.kind === 'set') merged[p.id] = messageOf(one);
+            break;
+          }
+        }
+      }
     }
     plan = adopted;
-    const merged: Record<string, string> = { ...next.errors };
-    if (applyError !== undefined) {
-      const id = failingStage(patches, applyError);
-      if (id !== undefined) merged[id] = applyError;
-      console.warn(`@weasel-js/diagram: audio graph edit failed: ${applyError}`);
-    }
     publishErrors(merged);
   };
 
