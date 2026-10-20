@@ -201,6 +201,27 @@ describe('A11yPanel', () => {
     expect(audit).toHaveBeenCalledTimes(2);
   });
 
+  it('highlights a finding\'s elements while it is hovered, and only the one node while that is', async () => {
+    const frames = createTrialFrames();
+    const send = vi.fn();
+    const twoNodes: A11yReport = {
+      ...report,
+      violations: [{ ...report.violations[0]!, nodes: [...report.violations[0]!.nodes, { target: ['#b'], html: '<img>' }] }],
+    };
+    frames.connect('t1', { send, audit: vi.fn(async () => ({ ok: true as const, report: twoNodes })) });
+    frames.reportA11y('t1', { ok: true, report: twoNodes });
+    panel(frames);
+    await flush();
+    const highlights = () => send.mock.calls.map(([msg]) => msg).filter((msg) => msg.type === 'a11y.highlight');
+
+    fireEvent.mouseOver(screen.getByText('Images must have alternate text'));
+    expect(highlights().at(-1)).toEqual({ type: 'a11y.highlight', targets: [['#no-alt'], ['#b']] });
+    fireEvent.mouseOver(screen.getByText('#b'));
+    expect(highlights().at(-1)).toEqual({ type: 'a11y.highlight', targets: [['#b']] });
+    fireEvent.mouseLeave(screen.getByText('#b').closest('.fg-a11y__finding')!);
+    expect(highlights().at(-1)).toEqual({ type: 'a11y.highlight', targets: [] });
+  });
+
   it('shows the message when axe could not run', async () => {
     const frames = createTrialFrames();
     frames.connect('t1', { send: vi.fn(), audit: vi.fn(async () => ({ ok: false as const, message: 'boom' })) });
