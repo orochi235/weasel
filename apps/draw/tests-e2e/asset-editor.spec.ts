@@ -128,3 +128,25 @@ test('every pane fits the window, and the page does not scroll', async ({ page }
   const scroll = await page.evaluate(() => { window.scrollTo(0, 5000); return window.scrollY; });
   expect(scroll).toBe(0);
 });
+
+test('dragging a row above another reorders the group, and Alt+Up moves the selected row', async ({ page }) => {
+  const ids = () => tree(page).getByRole('treeitem').evaluateAll((rows) => rows.map((r) => r.getAttribute('data-tree-id')));
+  const from = (await row(page, /^Snap to grid/).locator(':scope > *').first().boundingBox())!;
+  const to = (await row(page, /^Show grid/).locator(':scope > *').first().boundingBox())!;
+  await page.mouse.move(from.x + 40, from.y + from.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 12; k++) await page.mouse.move(from.x + 40, from.y + (to.y + 3 - from.y) * k / 12);
+  await page.mouse.up();
+  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/snapToGrid') < all.indexOf('view/gridVisible'); }).toBe(true);
+  await row(page, /^Spacing hints/).click();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect.poll(async () => { const all = await ids(); return all.indexOf('view/spacingHints') < all.indexOf('view/symmetryAxis'); }).toBe(true);
+});
+
+test('a Shown if condition hides the pref in the preview until it holds', async ({ page }) => {
+  await row(page, /^Grid density/).click();
+  await attrs(page).getByRole('button', { name: /Add a condition on/ }).first().click();
+  await page.getByRole('listbox').getByRole('option', { name: /^Show grid/ }).first().click();
+  await expect(attrs(page).getByRole('button', { name: /Condition 1 comparison/ })).toHaveText('is on');
+  await expect(preview(page).getByText(/^hidden$/i)).toBeVisible();
+});
