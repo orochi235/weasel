@@ -50,7 +50,7 @@ app that does not import a preset never loads its code.
 interface FeaturePreset {
   id: string;
   actions?: Action[];                  // standard actions: `actions` and `tune` reach them
-  tools?: (BuiltinToolId | Tool)[];    // mounted in the canvas's registry
+  tools?: (BuiltinToolId | ToolSet | Tool)[]; // mounted in the canvas's registry
   ambient?: (options) => Contribution; // always-live bindings, under a takeover too
   chrome?: ChromeId[];                 // selection chrome drawn only while it is on
   chromeRules?: VisibilityRules;       // default visibility for chrome of its own
@@ -68,6 +68,15 @@ node nudging on the same arrow key. Core's own presets are exported too
 its names through them. `<SceneCanvas>` itself loads every core preset to
 resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
 holds just the presets it was handed.
+
+A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
+a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
+family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
+`PAGE_TOOLS`, `RIG_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
+...omit)` leaves some out, so an app takes "everything but the rig tools" without
+listing ids that a new built-in would then miss. A set names ids, not tools,
+because a tool is built by a hook holding its state: whatever mounts the set
+supplies each tool, core for its built-ins and a package's own hook for its.
 
 A `PathEditExtension` is how a package adds to path edit without core knowing
 it: `marks` draws on the open path under its anchors, `parts` adds points to

@@ -5,6 +5,7 @@ import { useSliceTool } from 'tools/builtin/slice';
 import type { Tool } from 'tools/overlayBinding';
 import type { EnabledPresets } from './features';
 import type { BuiltinToolId } from './props';
+import type { ToolEntry } from '@weasel-js/routing';
 import { resolveToolRegistry, type ToolsPatch } from './toolRegistry';
 import { useBuiltinRigTools } from './useBuiltinRigTools';
 import { useBuiltinShapeTools, type BuiltinToolOptions } from './useBuiltinShapeTools';
@@ -17,7 +18,7 @@ export interface UseBuiltinToolsArgs {
   /** The canvas's selection, which names the rig the rig tools edit. */
   selection: () => readonly NodeId[];
   enabled: EnabledPresets;
-  defaultTools?: readonly BuiltinToolId[];
+  defaultTools?: readonly ToolEntry<BuiltinToolId>[];
   patch: ToolsPatch | null;
   toolOptions?: BuiltinToolOptions;
   /** `viewport.inertia`, which is the hand tool's. */

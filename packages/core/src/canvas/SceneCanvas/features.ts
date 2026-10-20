@@ -13,7 +13,7 @@
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
-import type { Action } from '@weasel-js/routing';
+import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'features/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
 import type { MoveBehavior } from 'interactions/gestures/types';
@@ -73,8 +73,8 @@ export interface FeaturePreset {
    *  are standard actions: `<SceneCanvas actions>` overrides and mutes them,
    *  and `tune` reaches them. */
   readonly actions?: readonly Action[];
-  /** Tools it mounts: a built-in by id, or a tool of its own. */
-  readonly tools?: readonly (BuiltinToolId | Tool)[];
+  /** Tools it mounts: a built-in by id or a set of them, or a tool of its own. */
+  readonly tools?: readonly (ToolEntry<BuiltinToolId> | Tool)[];
   /** Its ambient bindings: an always-live entry routing a gesture to its
    *  actions under any tool that does not claim the gesture itself. */
   readonly ambient?: (options: FeatureBindingOptions) => Contribution;
@@ -185,17 +185,23 @@ export function presetActions(enabled: EnabledPresets): Action[] {
   return enabled.presets.flatMap((p) => p.actions ?? []);
 }
 
+/** Whether a preset's `tools` entry names built-ins, by id or set, rather than being a tool of its own. */
+const namesBuiltins = (t: ToolEntry<BuiltinToolId> | Tool): t is ToolEntry<BuiltinToolId> =>
+  typeof t === 'string' || 'members' in t;
+
 /** The built-in tool ids the given presets mount. */
 export function presetBuiltinTools(enabled: EnabledPresets): Set<BuiltinToolId> {
   const ids = new Set<BuiltinToolId>();
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t === 'string') ids.add(t);
+  for (const p of enabled.presets) {
+    for (const id of toolIdsOf((p.tools ?? []).filter(namesBuiltins))) ids.add(id);
+  }
   return ids;
 }
 
 /** The tools of their own the given presets mount, by id. */
 export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
   const out: Record<string, Tool> = {};
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t !== 'string') out[t.id] = t;
+  for (const p of enabled.presets) for (const t of p.tools ?? []) if (!namesBuiltins(t)) out[t.id] = t;
   return out;
 }
 

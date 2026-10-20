@@ -9,7 +9,6 @@ import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import { KIT_SHAPE_KINDS, type BuiltinShapeToolId } from 'core/shapeKinds';
 import type { ContentHandlerEntry } from 'features/ingestion';
 import type { SceneCanvasSnap } from 'features/snap/types';
 import type { SvgIngestOptions } from 'interactions/actions/depSchema';
@@ -80,13 +79,9 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
   Partial<SceneSlotConfig<TNode, TPose>>
 >;
 
-/** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
- *  is supplied, via `defaultTools`. */
-export type BuiltinToolId = 'select' | 'hand' | BuiltinShapeToolId | 'slice' | 'bone' | 'weight';
-
-/** Every built-in tool id, in palette order: the navigation tools, the shape
- *  tools of the `core/shapeKinds` table, then the knife and the rig tools. */
-export const BUILTIN_TOOL_IDS: readonly BuiltinToolId[] = ['select', 'hand', ...KIT_SHAPE_KINDS, 'slice', 'bone', 'weight'];
+import type { BuiltinToolId } from './builtinToolSets';
+import type { ToolEntry } from '@weasel-js/routing';
+export { BUILTIN_TOOL_IDS, type BuiltinToolId } from './builtinToolSets';
 
 export type { SceneCanvasHit };
 
@@ -345,12 +340,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Built-in tools SceneCanvas registers in its internal `useTools`, on top
-     * of the ones presets bring (`select` from `pick`, `hand` from `view`).
+     * of the ones presets bring (`select` from `pick`, `hand` from `view`):
+     * ids, or sets of them such as `SHAPE_TOOLS`, or `withoutTools(...)` of one.
      * Default: none. Each tool also registers the kit actions it binds, so
      * `['rect']` brings `insert`. Ignored when the consumer supplies their own
      * `tools` prop.
      */
-    defaultTools?: readonly BuiltinToolId[];
+    defaultTools?: readonly ToolEntry<BuiltinToolId>[];
 
     /** Per-tool option overrides for the built-in tools. Each entry is a
      *  narrow subset of the underlying hook's options surface — `lasso.mode`,

@@ -62,7 +62,9 @@ read as each drag starts, and `createHandleSnapPreset` options or a function
 read on every move; null from either function turns the feature off.
 
 The tools are hooks, mounted with `<SceneCanvas tools>` as core's are; each
-binds an action its family's preset registers, so turn on both. Two carry their
+binds an action its family's preset registers, so turn on both.
+`usePathToolsTools()` builds every one, keyed by id, and the sets `WARP_TOOLS`,
+`RESHAPE_TOOLS`, and `PATH_TOOLS_TOOLS` name them for a palette's `include`. Two carry their
 own actions and need no preset:
 
 | Tool | What it does |

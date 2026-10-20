@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { toolSetHas, type Tool, type ToolSet, type ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
@@ -75,10 +75,10 @@ export interface ToolPaletteProps {
    * Defaults to `['select', 'shape', 'draw', 'type', 'view']`.
    */
   groupOrder?: readonly string[];
-  /** Which of the registered tools this palette shows; all of them when omitted.
-   *  Two palettes over one `tools` with complementary filters split a canvas's
-   *  tools between two toolbars. */
-  include?: (tool: Tool) => boolean;
+  /** Which of the registered tools this palette shows: a tool set, or a test of
+   *  each tool; all of them when omitted. Two palettes over one `tools` with
+   *  complementary filters split a canvas's tools between two toolbars. */
+  include?: ToolSet | ((tool: Tool) => boolean);
   /** The toolbar's accessible name. Default `"Tools"`. */
   ariaLabel?: string;
   /**
@@ -109,7 +109,9 @@ export function ToolPalette(props: ToolPaletteProps) {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
     groupOrder = DEFAULT_GROUP_ORDER, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
   } = props;
-  const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && (!include || include(t)));
+  const shows = include === undefined ? () => true
+    : typeof include === 'function' ? include : (t: Tool) => toolSetHas(include, t.id);
+  const list = Object.values(tools.registry).filter((t) => !t.presentation?.hide && shows(t));
   const groups = partitionByGroup(list);
   const groupKeys = orderedGroupKeys(groups, groupOrder);
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]

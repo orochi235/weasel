@@ -1,6 +1,7 @@
 import type { Tool } from 'tools/overlayBinding';
 import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './features';
 import { isDev } from '@weasel-js/react';
+import { toolIdsOf, type ToolEntry } from '@weasel-js/routing';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
 /** The patch form of `<SceneCanvas tools>`: per id, `true` mounts that
@@ -12,8 +13,8 @@ export type BuiltinTools = Record<BuiltinToolId, Tool>;
 
 export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
-  /** Built-ins asked for by id. */
-  defaultTools?: readonly BuiltinToolId[];
+  /** Built-ins asked for, by id or by set. */
+  defaultTools?: readonly ToolEntry<BuiltinToolId>[];
   /** The presets the canvas runs with, each bringing the tools it names. */
   enabled: EnabledPresets;
   patch: ToolsPatch | null;
@@ -32,7 +33,8 @@ export interface ResolveToolRegistryArgs {
  * patch tool for an id `defaultTools` also names is warned about.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
-  const { builtins, defaultTools = [], enabled, patch, dev = isDev() } = args;
+  const { builtins, enabled, patch, dev = isDev() } = args;
+  const defaultTools = toolIdsOf(args.defaultTools ?? []);
   const registry: Record<string, Tool> = {};
   const preset = presetBuiltinTools(enabled);
   for (const id of BUILTIN_TOOL_IDS) {
@@ -52,7 +54,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
       }
       continue;
     }
-    if (dev && id in registry && defaultTools.includes(id as BuiltinToolId)) {
+    if (dev && id in registry && (defaultTools as string[]).includes(id)) {
       console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
     }
     registry[id] = value;

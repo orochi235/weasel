@@ -43,6 +43,12 @@ neither stays in core: `usePoseRun` was kept there on 2026-10-11 for this
 reason. The aim is a smaller core, but not at the cost of a cluttered package
 list.
 
+A tool lives in the package that owns the action it binds. A tool is a
+declarative shell over an action, so it leaves core only with its whole action
+family, and only into a package that qualifies above. A package that ships
+tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
+`RESHAPE_TOOLS`) and a hook that builds them all (`usePathToolsTools`).
+
 ## Todo list
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.

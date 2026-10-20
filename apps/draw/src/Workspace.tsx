@@ -1,5 +1,7 @@
 import {
-  BUILTIN_TOOL_IDS,
+  BUILTIN_TOOLS,
+  RIG_TOOLS,
+  withoutTools,
   type Measurements,
   measurementsContribution,
   measureEndSource,
@@ -14,7 +16,7 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
+import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
@@ -39,14 +41,13 @@ import { DRAW_FEATURES } from './drawFeatures';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { usePathDirection } from './usePathDirection';
-import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
 
 /** Every built-in but the rig tools, since a drawing has no skeletons to edit,
  *  and the sticky tool, whose `background` and `padding` the document's
  *  SVG round trip does not carry. */
-const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
+const DRAW_TOOLS = [withoutTools(BUILTIN_TOOLS, RIG_TOOLS, 'sticky')];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -115,8 +116,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPalette: props.openPalette,
   });
   const insertPaint = useInsertPaint();
-  const spiroTool = useSpiroTool();
-  const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
@@ -182,7 +181,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={DRAW_TOOLS}
-          tools={{ ...pathToolsTools, spiro: spiroTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
