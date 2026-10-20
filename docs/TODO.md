@@ -1011,8 +1011,8 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit across `packages/diagram`, `packages/core/src/canvas` and `apps/chart`, each opening the
-  context itself. A reader that opens it before the app's first paint must ask for the renderer's
+- **(P3) Every browser test that reads a canvas's pixels writes its own reader.** Copies sit
+  in diagram, core, labkit, chart and the site demos, each opening the context itself. A reader that opens it before the app's first paint must ask for the renderer's
   attributes (`{ preserveDrawingBuffer: true, stencil: true }`), or the renderer refuses the canvas;
   weaselchart's line-jumps test failed under fleet load that way (2026-10-20). Each copy now asks
   for them, but nothing stops a new one forgetting: one shared reader, or a lint on a bare
