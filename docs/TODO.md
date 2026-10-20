@@ -1330,13 +1330,11 @@ only story runner in the repo.
 `apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
 
 - **(P3) Second arc.** Themes. Designed in `docs/superpowers/specs/2026-10-19-chart-arc-2-design.md`.
-- **(P2) The avoid router misses its performance budget.** `npm run bench:avoid` on the fleet
-  (2026-10-20, msb-uai): a drag frame took a median 3.1 ms but up to 19 ms (budget 4), a commit a
-  median 44 ms (budget 30), and routing 500 shapes and 800 connectors from scratch a median 7.8 s
-  (budget 150 ms). The search settles every crossing of every grid line in its window — 275k states
-  for 200 connectors — so a long connector's leg runs over a grid of hundreds of lines a side. The
-  fix is structural: search a sparse orthogonal visibility graph, whose vertices are only where
-  lines from obstacle corners and ports meet, rather than the full grid in `avoid/search.ts`.
+- **(P3) An avoid drag frame's fixed cost sits outside its 4 ms cap.** `npm run bench:avoid` on the
+  fleet (2026-10-20, keiei): a drag frame took a median 1.8 ms and at worst 5.1 ms, measured
+  without the cap. The cap in `router.ts`'s `preview` stops rerouting, but each frame first finds
+  the dirty set over every connector and builds the obstacle index whole, which a long frame's cost
+  includes. Commits (median 6.9 ms) and full routes (136 ms) are inside their budgets.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
   `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
   and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
