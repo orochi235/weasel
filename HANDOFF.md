@@ -13,11 +13,7 @@ its own `.claude/worktrees/agent-*` worktree from that piece's plan in `docs/sup
 each controller deletes its plan when it finishes. Merge each branch to `main` once its fleet run
 is green; `docs/TODO.md`'s fourth-arc line and the spec's Pieces rows conflict on every merge.
 
-Open on `main`: no full fleet run has passed with the merges in. The run on `a64fe9501` failed one
-chart browser test by timeout ("moves an edge label off a shape dropped on it, on release") plus
-an unrelated draw timeout; the run on `72fe486f7` was void (every browser suite failed to import
-`vitest.browser.setup.ts`, probably the shared node tree changing mid-run). If the chart test fails
-again, investigate it before the next merge.
+`main` passed a full fleet run at `befd71b6c` with the first three pieces merged (2026-10-20).
 
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
