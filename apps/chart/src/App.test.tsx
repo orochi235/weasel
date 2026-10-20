@@ -31,11 +31,13 @@ const mount = () => render(
 );
 
 /** Opens a menu-bar menu and clicks the row whose label starts with `row`. */
-function choose(menu: string, row: string): void {
+function choose(menu: string, ...rows: string[]): void {
   act(() => { fireEvent.click(within(screen.getByRole('menubar')).getByRole('menuitem', { name: menu })); });
-  const open = screen.getAllByRole('menu').at(-1)!;
-  const item = [...open.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith(row));
-  act(() => { fireEvent.click(item!); });
+  for (const row of rows) {
+    const open = screen.getAllByRole('menu').at(-1)!;
+    const item = [...open.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.startsWith(row));
+    act(() => { fireEvent.click(item!); });
+  }
 }
 
 describe('App', () => {
@@ -195,13 +197,25 @@ describe('App', () => {
     };
     const held = (rows: HTMLElement[]) => rows.filter((r) => r.getAttribute('aria-checked') === 'true').map((r) => r.children[1]!.textContent);
     const rows = themes();
-    expect(rows.map((r) => r.children[1]!.textContent)).toEqual(['Paper', 'Night', 'Blueprint', 'Pastel', 'Mono']);
+    expect(rows.map((r) => r.children[1]!.textContent)).toEqual([
+      'Paper', 'Night', 'Blueprint', 'Pastel', 'Mono', 'Edit Theme…', 'Import Theme…', 'Export Theme…',
+    ]);
     expect(held(rows)).toEqual(['Paper']);
     act(() => { fireEvent.click(rows[1]!); });
     expect(held(themes())).toEqual(['Night']);
     act(() => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
     choose('Edit', 'Undo');
     expect(held(themes())).toEqual(['Paper']);
+  });
+
+  it('opens the Theme panel in the Format sidebar from Format › Theme › Edit Theme…', () => {
+    mount();
+    const format = screen.getByRole('complementary', { name: 'Format' });
+    expect(within(format).queryByRole('heading', { name: 'Theme' })).toBeNull();
+    choose('Format', 'Theme', 'Edit Theme…');
+    expect(within(format).getByRole('heading', { name: 'Theme' })).toBeTruthy();
+    act(() => { fireEvent.click(within(format).getByRole('button', { name: 'Close theme' })); });
+    expect(within(format).queryByRole('heading', { name: 'Theme' })).toBeNull();
   });
 
   it('gives chart mode a Format sidebar with the Style panel', () => {

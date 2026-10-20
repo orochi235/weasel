@@ -40,7 +40,7 @@ export function routeEdge(edge: AvoidEdge, ctx: EdgeRouteContext): Vec2[] | null
   const fromPorts = edge.from.ports;
   const toPorts = edge.to.ports;
   if (fromPorts.length === 0 || toPorts.length === 0) return null;
-  const obstacles = ctx.index.forEdge(edge.from.node, edge.to.node);
+  const obstacles = ctx.index.forEdge(edge);
   const waypoints = edge.waypoints ?? [];
   const crossings = ctx.crossings === undefined ? undefined : { index: ctx.crossings, penalty: crossPenalty };
 

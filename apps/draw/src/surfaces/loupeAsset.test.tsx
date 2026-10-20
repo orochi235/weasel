@@ -100,7 +100,7 @@ describe('the loupe asset', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     renderWithIcons(<App />);
     click(loupeBar().getByRole('switch', { name: 'Loupe' }));
-    expect(loupeBar().getByRole('button', { name: 'Copy' })).toBeDisabled();
+    expect(loupeBar().getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
 
     act(() => { lens.events!.onColorChange('#336699'); });
     expect(loupeBar().getByRole('status', { name: 'Color' }).textContent).toBe('#336699');

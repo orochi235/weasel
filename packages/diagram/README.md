@@ -178,7 +178,8 @@ fits its ends, after something that did not reroute moved one, draws as
 `useAvoidRouting(scene)`, mounted as a child of `<SceneCanvas>`, reroutes what
 each edit disturbed — a move, an insert onto a route, a delete, a paste, a
 panel edit — in that edit's own undo entry, and while a shape is dragged it
-reroutes the connectors near it each frame. Installing it reroutes nothing.
+reroutes the connectors near it each frame, through the waypoints a
+`waypointFollower` registered before it carried. Installing it reroutes nothing.
 `installAvoidRouting(scene)` does the same for a host without React, and hands
 back the drag's transform follower. Its scene edit pass runs at
 `DIAGRAM_PASS_ORDER.avoid`; a pass of your own that should see the routes it
@@ -203,7 +204,7 @@ What a connector routes around:
 | A container, pool, or group box | neither end is inside it |
 | A lane's body | never |
 | A lane's or pool's header | always |
-| An edge label | never |
+| An edge label | always, except to its own connector, 4 world units clear |
 
 Authored waypoints are stops the route passes in order. Layout names an
 `avoid` connector's ports and writes it no waypoints. `diagram.router.avoid`,
@@ -216,6 +217,37 @@ each new `specs` around the shapes, holding one router across them so each
 reroutes only what changed, and never reports a route. `createSpecRouter` is
 that step on its own. The search itself, `createAvoidRouter`, reads plain boxes
 and ports and is in `@weasel-js/diagram/layout`.
+
+### Line jumps
+
+While the document value `HOPS_DOC_KEY` (`'diagram:hops'`) holds `{ size }`,
+wherever two connectors cross, the one later in render order bows over the other
+in a half circle of radius `size`. Hops are on or off for the whole document.
+A hop bulges toward −y on a horizontal run and −x on a vertical one, whichever
+way the connector travels, and to the left of travel on a diagonal. A crossing
+within `2 × size` of either connector's ends or within `size` of a bend makes no
+hop, nor does a collinear overlap; hops closer than `2 × size` merge into one
+longer hop. A connector split across pages takes no part: its stubs are too
+short to hold a hop clear of their ends, and the run between them is not drawn.
+
+Each connector stores its hops as `diagram.hops`, `{ at, over, r }` in world
+units, so a saved file draws them with no pass running. `edgeDerivePath` draws
+only the hops that still lie on the route, so one left behind by an edit that
+did not recompute never draws.
+
+`useHops(scene)`, mounted as a child of `<SceneCanvas>` after `useAvoidRouting`,
+recomputes the hops each edit disturbed in that edit's own undo entry, and
+setting or clearing the value recomputes or clears every connector in the entry
+that sets it. While a drag is in progress, the connectors it moves and those
+hopping over them draw without hops; the release puts them back.
+`installHops(scene)` does the same without React. Its pass runs at
+`DIAGRAM_PASS_ORDER.hops`, after routing.
+
+`diagram.hops` (`SET_HOPS_ACTION_ID`, carried by `diagramWaypoints`) toggles the
+value, at radius 5 (`DEFAULT_HOP_SIZE`). A data-backed `DiagramView` takes
+`hops={radius}`, applied after `router`; `createSpecHops` is that step on its
+own. `edgeHops`, which finds the hops over plain polylines, is in
+`@weasel-js/diagram/layout`.
 
 ### Edge labels
 
@@ -231,6 +263,87 @@ const spec = edgeLabelSpec(edgeId, 'yes', { layer: 'diagram' });
 
 `labelSize` is the box a label's text takes. Both routes size with it, so a
 label built from data and one the action creates come out the same size.
+
+### Labels that dodge
+
+After any edit, a label that would sit on a shape, on another label, or across
+another connector slides along its own connector, or flips to the other side of
+it, to the nearest clear spot. It tries its preferred station first, then up to
+four stations either way, a label width and 8 apart, each on both sides of the
+line, and keeps the cheapest: area over shapes counts most, then area over
+other labels, then connectors it covers, then how far it moved. Labels move in
+id order, each an obstacle for the next, so the answer is always the same.
+
+The station placement chose is stored on the trait as `placed` (`at`, a
+fraction of the route's length, and `offset`), read before `at` and
+`offset`, which stay the author's preference; a label goes back to its
+preference once that spot is clear. `dodge: false` keeps a label where its
+author put it. Under `layered`, the room layout left a label is its preference,
+so a laid-out diagram's labels stay put unless something covers them.
+
+`useLabelPlacement(scene)` places what each edit may have covered or uncovered
+in that edit's own undo entry, and sizes a label to the text an edit gives it.
+Labels hold still while a shape is dragged and settle on release.
+`installLabelPlacement(scene)` does the same without React. Its edit pass runs
+at `DIAGRAM_PASS_ORDER.labels`, after routing: connectors route around labels as
+they stand, then labels move off the new routes, one round each per edit.
+
+```tsx
+useAvoidRouting(scene);
+useLabelPlacement(scene);
+```
+
+A data-backed `DiagramView` takes `labels="dodge"`, placed after any
+`router`, and never reports a placement; `createSpecLabelPlacer` is that step
+on its own. The arithmetic, `placeLabels`, reads plain boxes and routes and is
+in `@weasel-js/diagram/layout`.
+
+### Connectors between pages
+
+On a scene with pages (core's `core:pages` document value), a connector whose
+two shapes sit on different pages draws nothing across the gap. Each end draws
+a stub `OFF_PAGE_STUB` (24) world units out of its shape, ending at a tag that
+reads the other page's name and a reference letter, such as "Page 2 · A". The
+start stub ends in the connector's end marker, so it reads as leaving the page.
+A shape in the gap between pages belongs to none, and its connectors stay
+whole.
+
+`useOffPageMarkers(scene)` splits and joins connectors as edits move their
+ends or change the pages, in that edit's own undo entry; installing it
+recomputes nothing. `installOffPageMarkers(scene)` does the same without React.
+Its pass runs at `DIAGRAM_PASS_ORDER.offPage`, before routing, so the `avoid`
+router skips a split connector and routes it again in the entry that joins it.
+A split connector shows no route handles and keeps its waypoints for when it
+joins.
+
+```tsx
+function Markers({ scene }) {
+  useOffPageMarkers(scene);
+  return null;
+}
+
+const offPage = diagramOffPage();
+<SceneCanvas scene={scene} ambient={[offPage.contribution]} /* … */>
+  <Markers scene={scene} />
+</SceneCanvas>
+```
+
+| Surface | What it is |
+|---|---|
+| `DiagramEdge.offPage` | `{ ref, from, to }`: the reference and the two ends' page ids, written by the pass |
+| `offPageSplits`, `nextOffPageRef` | which connectors split, as arithmetic on page rects and end boxes; refs run A…Z, AA… and stay while a split does |
+| `offPageTagSpec`, `offPageTagOf` | a tag: a text node with a background, id `<edge>/offpage-<end>`, that stations itself past its stub |
+| `offPageOps` | the pass's ops for named connectors, or `'all'`, for a document saved before it had markers |
+| `diagramOffPage`, `createFollowOffPageAction` | a double-click on a tag selects the far shape and fits the view to its page; `follow` replaces that |
+| `offPageTargetOf` | where a tag leads: the far shape and its page |
+
+Tags take the theme's label color and face on its page color, and applying a
+theme recolors them. A host whose text editing opens on any text node should
+leave tags out: the pass owns their text.
+
+To save one page as an SVG document or a PNG image, cut to the page with its
+stubs and tags, use `exportPageSvg` and `exportPagePng` from
+`@weasel-js/diagram-formats`.
 
 ### Overlays and hover
 
@@ -352,12 +465,21 @@ such as a look's value types. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprin
 
 A theme writes literal colors into the scene, so whatever draws or exports the scene needs no
 theme. A shape or connector names its role in its trait's `style`, and lists the colors its
-author set by hand in `ownStyle`; a theme leaves those.
+author set by hand in `ownStyle`; a theme leaves those. A theme whose font size differs from the
+one the scene was in moves every text by the step between them, keeping a title or label's offset
+from the body size, except text whose owner lists `'size'` in `ownFont`. A body whose text changes
+size is laid out again in the same undo entry: it grows to what its rows need, never shrinks, and a
+body the author made larger keeps its size. A body built from text rows alone records how it
+stacks them (`DiagramNode.body`, each row's text node carrying `bodyRow`), which is what
+`relayoutBodies(scene, ids, measure)` reads back. `rendererMeasure` measures a row as the kit's
+text renderer lays it out, from the registered font, for a host whose bodies should hold their
+text exactly.
 
 ```ts
 applyDiagramTheme(scene, DIAGRAM_THEMES.blueprint);          // one undo entry, saved as `diagram:theme`
 setDiagramStyle(scene, selection.get(), 'warning');          // name a role, and recolor in it
 setDiagramColor(scene, selection.get(), 'fill', '#ffcc00');  // by hand: survives the next theme
+setDiagramFontSize(scene, selection.get(), 16);              // by hand, recorded in `ownFont`
 const theme = diagramThemeOf(scene, DIAGRAM_THEMES.paper);   // the scene's theme, or a fallback
 ```
 
@@ -367,6 +489,24 @@ New shapes and connectors take the theme from whatever inserts them: pass `roleS
 `edgeStroke`, and `themeLabelStyle(theme)` and `theme.label.fill` to `editEdgeLabelAction`.
 `diagramScene` takes `theme` too, drawing each `DataNode` in its `style` role, and the effect
 looks take one in their options (default `night`, which draws them as they always were).
+
+A theme is edited as a value: each edit returns a new theme, so a shipped one is never changed.
+`editableTheme(theme)` is where an editor starts: a shipped theme forked as "<name> (edited)", a
+custom one as it is. A custom theme lives in the document's `diagram:theme` value and travels
+between documents as a `.weasel-theme.json` file.
+
+```ts
+let theme = editableTheme(diagramThemeOf(scene));
+theme = setThemeValue(theme, ['roles', 'accent', 'fill'], '#ff8800');  // also edge, lane, page, font, series…
+theme = addThemeRole(theme, 'Critical').theme;                         // in the default role's colors
+theme = removeThemeRole(theme, 'muted');                               // its shapes fall to the default role
+applyDiagramTheme(scene, theme, 'Edit theme', { coalesceKey: 'theme:roles.accent.fill' });
+const file = themeToJson(theme);                                       // and back: parseDiagramTheme(file)
+```
+
+Applies made under one `coalesceKey` with nothing between fold into one undo entry, so a color
+dragged undoes in one step; `scene.history.seal()` ends the run. `parseDiagramTheme` answers
+`{ theme }` or `{ errors }`, each error naming the bad value by its path.
 
 ### Laying it out
 
@@ -721,7 +861,9 @@ about. A `switch` symbol is drawn thrown to its first exit, and a run whose
 `taken` is the second throws it there. `EffectChart` fades the port dots of a
 stage the run never reached as well; `paintRun` alone cannot, since the port
 layer draws them outside the scene. A decision a look does not draw has nowhere
-to show its cost.
+to show its cost. A stage whose entry has an `error` shows it where its cost
+would go, in the problem color, and a run's `at` names a stage to outline,
+as a run taken a step at a time does.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`
@@ -975,6 +1117,66 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
 group's members. `reorderContribution` packs the action and its binding to pass
 as `ambient`.
+
+`EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
+
+#### Running a pipeline
+
+A run can be made as well as drawn. An `EffectEvaluator` evaluates one stage:
+it is handed `{ stage, inputs, params, sources, time, signal }` and returns
+`{ outputs, taken? }`, sync or async, with a value per output by port id. An
+`EffectValueKind` says how a run shows (`show`), previews (`preview`), and frees
+(`dispose`) the values of one value type. Both are keyed: evaluators by stage
+`type`, kinds by value type.
+
+```tsx
+import {
+  IMAGE_STAGE_TYPES, imageEvaluators, imageValueKinds, testCard, runPipeline, useEffectRunner,
+} from '@weasel-js/diagram/effect';
+
+const once = await runPipeline(pipeline, {
+  evaluators: imageEvaluators, kinds: imageValueKinds, sources: { image: testCard(256) }, time: 0,
+});
+
+// In a component: Run, Step, and Play, with the run to draw.
+const { run, playing, runner } = useEffectRunner({ pipeline, evaluators: imageEvaluators, kinds: imageValueKinds, sources });
+<EffectEditor doc={doc} onChange={commit} run={run} options={{ showValues: true, showPreviews: true }} />;
+runner.step();
+```
+
+`runPipeline` evaluates the stages in `runOrder(pipeline)`: topologically over
+data and control wires alike, stable by stage order, leaving out the stages on a
+cycle, which never run. A stage with inputs none of which a value reaches is
+skipped, so a decision's untaken branch stays faded. A bypassed stage passes its
+first input of each output's type through. An evaluator that throws sets the
+stage's `error`, and what it feeds is left unreached. Each stage's `cost` is the
+time its evaluator took. Every value the run made is disposed before it
+resolves, but never a source; the previews in the run are yours to close.
+`createPass` takes the same run a stage at a time. A stage with no outputs, such
+as a sink, shows and previews what reached its inputs instead, so the end of a
+pipeline shows the finished result; `shownPorts(stage)` says which ports a look
+keeps value rows and preview slots for.
+
+`createEffectRunner` keeps one pipeline running: `run()`, `step()` (the next
+stage, as the run's `at`, and back to the first after the last), `play()`,
+`pause()`, `reset()`, and `setPipeline`, `setSources`, and `setOptions` for the
+next run to follow. While playing, `advance(seconds)` moves its clock on and
+starts a run unless one is still going. It owns the previews of its runs:
+`drawn(run)` says a run is on screen, and closes the previews of every older run
+it does not show. `useEffectRunner` makes one for the life of a component,
+advances it from `useVisibleRaf` while playing, so time spent hidden is not
+counted, and calls `drawn` after each render.
+
+`IMAGE_STAGE_TYPES` is a palette of image stages (Source, Blur, Composite, Mask,
+Oscillator, Decision, and Out), and `imageEvaluators` runs them on
+`OffscreenCanvas` 2D, an image or mask being an `ImageBitmap`. A source puts out
+`sources.image`; blur uses the canvas `filter`; composite blends by
+`globalCompositeOperation`; mask keeps what lies under the mask's opaque
+pixels; an oscillator puts out `sin(2π·rate·t)`; and a decision chooses by its
+`split`, or else its first output while the tested number is above 0. A stage
+missing an input it needs fails, naming it. `imageValueKinds` shows an image by
+its size and a number to three places. `testCard(size)` draws an image to start
+from.
 
 ## Design notes
 

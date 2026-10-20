@@ -4,6 +4,7 @@
  */
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
 import { buildBody, type MeasureRowText, type Row } from './body';
+import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
 import { NODE, type DiagramSceneData, type NodeStyle } from './fromData';
 import { rowTextStyle } from './rowStyle';
@@ -72,15 +73,16 @@ export function stencilBuild<TLayer extends string>(
   const id = opts.newId();
   const style = opts.style ?? NODE;
   const at = placedBounds(stencil, bounds);
+  const spec = { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS };
   const built = buildBody<DiagramSceneData, TLayer, RectPose>(
-    { outline: stencil.outline, rows: stencil.rows ?? DEFAULT_ROWS },
+    spec,
     at,
     {
       id,
       layer: opts.layer,
       ...(opts.measure ? { measure: opts.measure } : {}),
       body: (trait) => ({
-        diagram: trait,
+        diagram: { ...trait, ...bodyLayoutOf(spec, trait) },
         fill: { paint: { color: style.fill } },
         stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
       }),
@@ -89,6 +91,7 @@ export function stencilBuild<TLayer extends string>(
             text,
             style: rowTextStyle(box.row, opts.font ?? DEFAULT_FONT),
             fill: { paint: { color: style.text } },
+            bodyRow: box.index,
           }
         : null,
     },

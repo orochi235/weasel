@@ -122,7 +122,7 @@ export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './us
 export { useReorderDragList } from './useReorderDragList';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
-export { useRovingTabIndex } from './useRovingTabIndex';
+export { rovingGridTarget, rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export type {
   ReorderItem,

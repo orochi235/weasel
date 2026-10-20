@@ -9,6 +9,7 @@
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
 import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
 import { groupSpecs, resolveGroups } from './dataGroups';
+import { bodyLayoutOf } from './bodyRelayout';
 import { bodyTrait, buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { edgeIdOf } from './edgeId';
 import { edgeSpecs, wireLabels } from './dataEdges';
@@ -25,6 +26,7 @@ export type { DiagramTextStyle };
 import { layered } from './layered';
 import { planOf, type LayoutFn, type LayoutOptions, type LayoutPorts } from './layout';
 import { markSpecs, type DataMark, type DiagramMark } from './marks';
+import type { OffPageTag } from './offPage/trait';
 import type { Outline } from './outline';
 import { authoredOver } from './route';
 import { roleEdgeStyle, roleStyle, themeFont, themeLabelFont } from './theme/resolve';
@@ -153,7 +155,7 @@ export interface EdgeStyle {
 export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal' | 'avoid';
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark } | { offPageTag: OffPageTag };
   fill?: { paint: { color: string; opacity?: number } };
   stroke?: Stroke;
   text?: string;
@@ -161,6 +163,11 @@ export interface DiagramSceneData {
   verticalAlign?: 'top' | 'center' | 'bottom';
   /** What a slot is filled with: an image the kit's image painter draws. */
   image?: { src: string; opacity?: number };
+  /** A body's text row: its place among the body's rows (see `DiagramNode.body`). */
+  bodyRow?: number;
+  /** An off-page tag's box, behind its text, and the room between them. */
+  background?: { paint: { color: string } };
+  padding?: number;
 }
 
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
@@ -266,14 +273,16 @@ function nodeSpecs(
     layer: 'main',
     measure: look.measure,
     body: (trait) => ({
-      diagram: { ...trait, ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}) },
+      diagram: {
+        ...trait, ...bodyLayoutOf(body, trait), ...(n.pinned === true ? { pinned: true } : {}), ...(n.style !== undefined ? { style: n.style } : {}),
+      },
       fill: { paint: { color: style.fill } },
       stroke: { paint: { color: style.stroke }, width: style.strokeWidth ?? 2, ...(style.dash ? { dash: style.dash } : {}) },
     }),
     row: (text, at) =>
       at.row.kind === 'slot'
         ? (at.row.id === undefined ? null : { diagram: { mark: { d: SLOT_FRAME } }, stroke: { paint: { color: style.stroke }, width: 1 } })
-        : text === '' ? null : textData(text, at.row),
+        : text === '' ? null : { ...textData(text, at.row), bodyRow: at.index },
     portLabel: (text) => textData(text, undefined),
   });
   return built.specs.map((s, k) => ({ ...s, ...(s.id !== undefined ? {} : { id: `${n.id}/${k}` }) }) as DiagramSpec);

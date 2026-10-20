@@ -3,16 +3,20 @@ import { siblingIds } from '../guides/alignment/sceneBounds';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
+function visibleRoots(scene: AnyScene): readonly NodeId[] {
+  const gates = nodeGates(scene);
+  return scene.roots.filter((id) => !gates.hidden(id));
+}
+
 /** Which nodes may be targets; one that fails offers no lines or gaps. */
 export type TargetFilter = (node: SceneNode<unknown, string, unknown>) => boolean;
 
 /** The nodes a gesture's subject lines up with: its siblings when it has
  *  ids, the scene's visible top-level nodes for a point gesture. */
 function targetIds(scene: AnyScene, exclude: readonly string[], filter?: TargetFilter): readonly NodeId[] {
-  const gates = nodeGates(scene);
   const ids = exclude.length > 0
     ? siblingIds(scene, exclude as readonly NodeId[])
-    : scene.roots.filter((id) => !gates.hidden(id));
+    : visibleRoots(scene);
   if (!filter) return ids;
   return ids.filter((id) => {
     const node = scene.get(id);

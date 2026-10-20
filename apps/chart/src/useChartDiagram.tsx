@@ -3,12 +3,14 @@ import {
 } from '@weasel-js/core';
 import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
-  diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
-  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting,
-  useConnectorTool, useStencilInsert, waypointFollower, type DiagramTheme,
+  diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
+  sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting, useHops,
+  useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { ChartPose, ChartScene } from './chartDocument';
+import { PAGE_FIT_PADDING } from './pages/useChartPages';
+import { CHART_DEFAULT_THEME } from './theme/themeCommands';
 
 /** New connectors route around shapes; saved ones keep the router they have. */
 const ROUTER = 'avoid';
@@ -21,6 +23,12 @@ const edgeLabel = (theme: DiagramTheme): Contribution => ({
   bindings: [editEdgeLabelBinding()],
 });
 
+/** Double-click an off-page tag to go to the other page. */
+const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING }).contribution;
+
+/** Labels sized by the renderer's own text metrics, as stencil rows are. */
+const LABEL_PLACEMENT = { measure: rendererMeasure };
+
 const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(
   [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map((s) => [stencilKind(s.id), stencilTool(s)]),
 );
@@ -32,10 +40,11 @@ export interface ChartDiagram {
   tools: Record<string, Tool>;
 }
 
-/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, lanes, the connector
- *  and the stencils. What it inserts is drawn in `theme`. */
+/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels and where they
+ *  settle, lanes, off-page tags, the connector and the stencils. What it inserts is drawn in `theme`. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
+  useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
   const selected = useCallback(() => selection.get() as readonly string[], [selection]);
   const edgeStroke = useMemo(() => themeEdgeStroke(theme), [theme]);
@@ -51,10 +60,11 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
   const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
   const connector = useConnectorTool<ChartPose>({ participants, router: ROUTER, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
+  useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends last: an edge's end sits on a port and beside a route handle, and a press on it must start neither.
     layers: [containers.layer, ports.layer, route.layer, ends.layer],
-    ambient: [containers.contribution, ports.contribution, route.contribution, ends.contribution, label],
+    ambient: [containers.contribution, ports.contribution, route.contribution, ends.contribution, label, OFF_PAGE],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS },
   }), [containers, ports, route, ends, connector, label]);
 }
@@ -67,7 +77,7 @@ export function useChartDiagram(scene: ChartScene, selection: SelectionApi, them
 export function StencilInsertPublisher({ theme }: { theme: DiagramTheme }): null {
   const opts = useMemo(
     () => ({
-      style: roleStyle(theme), font: themeFont(theme),
+      style: roleStyle(theme), font: themeFont(theme), measure: rendererMeasure,
       containers: CONTAINER_STENCILS, containerStyle: theme.container, laneStyles: theme.lane,
     }),
     [theme],
@@ -86,6 +96,13 @@ export function WaypointFollowerPublisher({ scene }: { scene: ChartScene }): nul
 /** Routes `avoid` connectors around shapes on every edit, and live while a shape is dragged. Mounted as a child of `<SceneCanvas>`. */
 export function AvoidRoutingPublisher({ scene }: { scene: ChartScene }): null {
   useAvoidRouting<ChartPose>(scene as never);
+  return null;
+}
+
+/** Hops connectors over the ones they cross while Line jumps is on, and hides the hops a drag moves. Mounted as a child
+ *  of `<SceneCanvas>`, after `AvoidRoutingPublisher`, so a drag's preview keeps the routes that one previews. */
+export function HopsPublisher({ scene }: { scene: ChartScene }): null {
+  useHops<ChartPose>(scene as never);
   return null;
 }
 

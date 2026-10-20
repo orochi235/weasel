@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
+  headingDates,
   parseChangeset,
   releasesFromChangelogs,
   splitSummary,
@@ -140,5 +141,24 @@ describe('compareVersions', () => {
     expect(compareVersions('1.4.0', '1.4.0-pre.1')).toBeGreaterThan(0);
     expect(compareVersions('1.4.0-pre.0', '1.3.0')).toBeGreaterThan(0);
     expect(compareVersions('1.4.0-pre.10', '1.4.0-pre.9')).toBeGreaterThan(0);
+  });
+});
+
+describe('headingDates', () => {
+  /** `git log --reverse --format=%x00%aI -p --unified=0` text, oldest commit first. */
+  const log = (...commits: [date: string, ...lines: string[]][]) =>
+    commits
+      .map(([date, ...lines]) => `\0${date}\n\ndiff --git a/CHANGELOG.md b/CHANGELOG.md\n@@ -1 +1 @@\n${lines.join('\n')}\n`)
+      .join('');
+
+  it('dates each version by the first commit adding its heading', () => {
+    const text = log(['2026-01-01', '+## 1.0.0', '+- first'], ['2026-02-01', '+## 1.1.0'], ['2026-03-01', '-## 1.0.0', '+## 1.0.0']);
+    expect(headingDates(text)).toEqual(new Map([['1.0.0', '2026-01-01'], ['1.1.0', '2026-02-01']]));
+  });
+
+  it('reads only a whole heading line, not one that merely contains it', () => {
+    expect(headingDates(log(['2026-01-01', '+### 1.0.0', '+## 1.0.0-pre.0', '+ ## 1.0.0']))).toEqual(
+      new Map([['1.0.0-pre.0', '2026-01-01']]),
+    );
   });
 });
