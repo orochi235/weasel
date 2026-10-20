@@ -25,6 +25,7 @@ import {
 } from '@weasel-js/core';
 import { portCurvePoints } from '@weasel-js/geom';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
+import { routeHolds } from './avoid/holds';
 import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
@@ -32,12 +33,13 @@ import { selfLoop } from './selfLoop';
 import { diagramEdgeOf, type EdgeEnd } from './edgeTrait';
 import type { Port } from './types';
 
-/** What a router is given: the two resolved ends, and the author's waypoints
- *  between them. */
+/** What a router is given: the two resolved ends, the author's waypoints
+ *  between them, and the route stored on the edge, when it holds one. */
 export interface RouteRequest {
   from: Port;
   to: Port;
   waypoints: readonly Vec2[];
+  route?: readonly Vec2[] | undefined;
 }
 
 /** A router returns the points the edge runs through, `from.point` first and
@@ -148,11 +150,23 @@ function through(stops: readonly Vec2[], i: number): Vec2 | null {
 
 const negated = (v: Vec2 | null): Vec2 | null => (v === null ? null : { x: -v.x, y: -v.y });
 
+/**
+ * The route the obstacle-avoiding router stored on the edge, while it still
+ * fits the ends and passes every waypoint; else `orthogonal` through the stops,
+ * so an end moved by something that did not reroute still draws sensibly.
+ * The route itself is computed at edit time (`useAvoidRouting`).
+ */
+export const avoid: Router = (req) =>
+  (req.route !== undefined && routeHolds(req.from, req.to, req.waypoints, req.route)
+    ? [req.from.point, ...req.route, req.to.point]
+    : orthogonal(req));
+
 /** The routers this package ships. A consumer's own go in the same shape. */
 export const ROUTERS: Readonly<Record<string, Router>> = Object.freeze({
   straight,
   orthogonal,
   bezier,
+  avoid,
 });
 
 /**
@@ -186,12 +200,21 @@ export function boxCenter<TPose>(geometry: PoseDescriptor<TPose>, pose: TPose): 
 }
 
 /**
- * Where each end of an edge aims as it resolves: its nearest authored
- * waypoint, else the other end's center. Centers are stable while both ends
- * resolve; aiming at the other *port* would be circular.
+ * Where each end of an edge aims as it resolves: the nearest bend of its
+ * stored route, else its nearest authored waypoint, else the other end's
+ * center. Centers are stable while both ends resolve; aiming at the other
+ * *port* would be circular.
  */
-export function endAims(fromCenter: Vec2, toCenter: Vec2, waypoints: readonly Vec2[]): { from: Vec2; to: Vec2 } {
-  return { from: waypoints[0] ?? toCenter, to: waypoints[waypoints.length - 1] ?? fromCenter };
+export function endAims(
+  fromCenter: Vec2,
+  toCenter: Vec2,
+  waypoints: readonly Vec2[],
+  route: readonly Vec2[] = [],
+): { from: Vec2; to: Vec2 } {
+  return {
+    from: route[0] ?? waypoints[0] ?? toCenter,
+    to: route[route.length - 1] ?? waypoints[waypoints.length - 1] ?? fromCenter,
+  };
 }
 
 /** The port pointing at `toward` most directly, tie-broken toward the closer. */
@@ -285,13 +308,13 @@ export function edgeRouter<TPose>(
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
       : null;
     const authored = edge.waypoints ?? [];
-    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored);
+    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored, edge.route);
     const from = loop?.from ?? resolveEnd(edge.from, fromDep, aims.from, portOpts, allPorts);
     const to = loop?.to ?? resolveEnd(edge.to, toDep, aims.to, portOpts, allPorts);
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
-    return { from, to, waypoints, points: routerOf(edge, opts.routers)({ from, to, waypoints }) };
+    return { from, to, waypoints, points: routerOf(edge, opts.routers)({ from, to, waypoints, route: edge.route }) };
   };
 }
 

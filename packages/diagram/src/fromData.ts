@@ -146,7 +146,7 @@ export interface EdgeStyle {
 }
 
 /** How an edge is drawn between its ends. */
-export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal';
+export type DiagramRouter = 'straight' | 'bezier' | 'orthogonal' | 'avoid';
 /** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
   diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor } | { mark: DiagramMark };

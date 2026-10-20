@@ -20,7 +20,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsRoute, type DiagramEdge } from './edgeTrait';
+import { diagramEdgeOf, layoutWritesRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
 import { routeWrites, type LayoutRoutes } from './routeWrites';
 
@@ -97,7 +97,7 @@ export function routeEasings<TPose>(
     if (next === null) continue;
     const ends = { from: next.from, to: next.to };
     const was = edge.waypoints ?? [];
-    if (!layoutOwnsRoute(edge)) {
+    if (!layoutWritesRoute(edge)) {
       out.push({ id, from: was, to: was, ends });
       continue;
     }

@@ -3,12 +3,13 @@
  * where its label sits among them.
  *
  * Layout writes only what it owns. An edge's route is its own while the edge
- * has no waypoints or still has the ones layout last wrote (`laidOut`); a
+ * has no waypoints or still has the ones layout last wrote (`laidOut`), and
+ * is not an `avoid` connector, which only gets its ports named; a
  * label's place is its own while the label sits at the default middle or at a
  * `{ near }`, and its edge's route is layout's.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, type DiagramEdge, type EdgeEnd } from './edgeTrait';
+import { diagramEdgeOf, layoutOwnsPort, layoutWritesRoute, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import { labelFollowsLayout, type Graph } from './graph';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { LayoutPlan, LayoutPorts } from './layout';
@@ -56,11 +57,11 @@ export function routeWrites(scene: RoutedScene, routes: LayoutRoutes): Map<strin
     const node = scene.get(id as never);
     const edge = node === undefined ? null : diagramEdgeOf(node);
     if (node === undefined || edge === null || scene.isLocked(id as never)) {
-      if (edge !== null && layoutOwnsRoute(edge)) owned.add(id);
+      if (edge !== null && layoutWritesRoute(edge)) owned.add(id);
       continue;
     }
     let next = edge;
-    if (layoutOwnsRoute(edge)) {
+    if (layoutWritesRoute(edge)) {
       owned.add(id);
       next = rerouted(edge, routes.waypoints.get(id));
     }
