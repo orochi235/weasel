@@ -34,6 +34,8 @@ Merged:
   (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
 - A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
   the command palette names it) and `SelectionPanel` (new core export `routeKind`).
+- A move, resize or rotate preview carries pose once, in the scene's overrides; the ghost and the
+  selection chrome read `effectivePose`, and the three handles drop `previewPose`.
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
   canvas's WebGL context before the app did, with no stencil buffer, and the renderer refused the
   canvas for good (both failing logs carry the error). Every pixel reader that made a bare

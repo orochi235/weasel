@@ -151,6 +151,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): A transform preview carries pose once, in the scene's overrides:
+  `move`, `resize`, and `rotate` handles drop `previewPose` (read `effectivePose(scene, node)`), the
+  ghost resolves through `effectivePose`, and selection chrome boxes an in-flight id at its effective
+  pose (`useInFlightBounds`). `PoseOverride` gained no `data`; `previewData` stays on the handle. A
+  transform follower that previews a node away from its own pose publishes that pose as an
+  override; one answering the node's own pose pins nothing, so a derived edge keeps deriving.
 - 2026-10-20 (overnight pass): A node's kind has one classifier, the routing kind (`routeKind`, new
   in core; `NodeRouting.classify` calls it). The kind published with the selection is the routing
   kind, so the command palette says "2 paths selected"; a node the table calls `'unknown'`
