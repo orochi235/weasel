@@ -51,3 +51,12 @@ it('stacks a stacked fraction numerator over denominator, and keeps its text cop
   expect(copy.getBoundingClientRect().width).toBeLessThanOrEqual(1);
   expect(root.getBoundingClientRect().width).toBeCloseTo(root.querySelector('math')!.getBoundingClientRect().width, 0);
 });
+
+it('draws a stacked fraction in the numeric face, with room between the bar and each digit', () => {
+  const { container } = render(<QuantityText value={tag(1 / 24, fraction({ form: 'stacked' }))} />);
+  const root = container.firstElementChild!;
+  const math = root.querySelector('math')!;
+  expect(getComputedStyle(math).fontFamily).toBe(getComputedStyle(root).fontFamily);
+  const [top, bottom] = Array.from(math.querySelector('mfrac')!.children).map((el) => el.getBoundingClientRect());
+  expect(bottom!.top - top!.bottom).toBeGreaterThan(1);
+});

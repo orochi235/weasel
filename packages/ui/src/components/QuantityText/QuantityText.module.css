@@ -15,6 +15,20 @@
   user-select: none;
 }
 
+/* The theme's numeric face, not the browser's math font. Only a math font carries the gap between a
+ * fraction's bar and its digits, so without one the gap is set here. */
+.math math {
+  font-family: inherit;
+}
+
+.math mfrac > :first-child {
+  padding-block-end: 0.12em;
+}
+
+.math mfrac > :last-child {
+  padding-block-start: 0.12em;
+}
+
 .hidden {
   position: absolute;
   inline-size: 1px;
