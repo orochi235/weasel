@@ -980,6 +980,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) `DiagramView.containers.browser.test.tsx` › "reports a double-click on a header as the
+  region whose title to edit" fails in full fleet runs and passes alone.** Three times on 2026-10-20
+  (two runs on studio, one more on studio after main moved), each `expected [] to deeply equal
+  [{ kind: 'title', id: 'k' }]`, an assertion rather than a timeout, so the double-click reached
+  nothing; seven of seven alone.
+
 - **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
   Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
   `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
