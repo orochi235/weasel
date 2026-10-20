@@ -6,6 +6,11 @@
   tab-size: 2;
 }
 
+.block:focus-visible {
+  outline: 1px solid var(--wzl-focus-ring);
+  outline-offset: -1px;
+}
+
 .block code {
   display: grid;
   font: inherit;

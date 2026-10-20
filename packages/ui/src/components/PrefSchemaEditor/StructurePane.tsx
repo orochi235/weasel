@@ -259,7 +259,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         onExpandedChange={(next) => {
           if (sought === '') onExpandedChange(next);
         }}
-        selectionMode="multiple"
+        selectionMode="multiple" selectionFollowsFocus
         selectedIds={selected}
         onSelectionChange={onPick}
         externalDrag={paletteDrag}

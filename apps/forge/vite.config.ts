@@ -12,6 +12,7 @@ import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 
@@ -38,6 +39,6 @@ export default defineConfig(({ command, isPreview }) => ({
     }),
     localWake(),
   ],
-  server: { port: ports.forge, strictPort: true, host: '::' },
+  server: { port: ports.forge, strictPort: true, ...LAN_SERVER },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },
 }));

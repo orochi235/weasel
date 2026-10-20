@@ -4,6 +4,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { AssetEditor } from './AssetEditor';
 import { asset, assets, attributes, CODE, hasRow, Live, pickRow, rekey, row, SETTINGS, structure, tool, WITH_LOCKED, WORKSPACE } from './AssetEditor.fixture';
 import type { Workspace } from './workspace';
+import { pointer } from './workspace.fixtures';
 import { workspaceCodec } from './workspaceCodec';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -76,23 +77,28 @@ describe('AssetEditor asset list', () => {
   });
 
   it('selects the panel a step changed, and none of the rows the dialog had selected', () => {
-    const start: Workspace = { assets: [dialogWith('snap'), WORKSPACE.assets[1]!] };
+    const code = WORKSPACE.assets[1]!;
+    const panel = { ...code, root: { ...CODE, children: { ...CODE.children, extra: pointer('view.extra') } } } as typeof code;
+    const start: Workspace = { assets: [dialogWith('extra'), panel] };
     renderWithIcons(<Live start={start} />);
     fireEvent.click(asset('Code'));
     pickRow('grid');
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(hasRow('grid')).toBe(false);
+    // Removing a row selects the one after it.
+    expect(row('snap')).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(asset('Settings'));
-    // The dialog's own row at the path `snap`, which the panel holds a pointer at too.
-    pickRow('snap');
+    // The dialog's own row at the path `extra`, which the panel holds a pointer at too.
+    pickRow('extra');
     fireEvent.click(tool('Undo'));
     expect(asset('Code')).toHaveAttribute('aria-selected', 'true');
     expect(row('grid')).toHaveAttribute('aria-selected', 'true');
-    expect(row('snap')).toHaveAttribute('aria-selected', 'false');
-    // Forward again the step leaves the panel shown, and the dialog's `snap` is not taken for the panel's.
+    expect(row('extra')).toHaveAttribute('aria-selected', 'false');
+    // Forward again the step leaves the panel shown, with what the removal selected, and the dialog's `extra` is not taken for the panel's.
     fireEvent.click(tool('Redo'));
     expect(asset('Code')).toHaveAttribute('aria-selected', 'true');
-    expect(row('snap')).toHaveAttribute('aria-selected', 'false');
+    expect(row('snap')).toHaveAttribute('aria-selected', 'true');
+    expect(row('extra')).toHaveAttribute('aria-selected', 'false');
   });
 
   it('marks every asset a removal changed', () => {
