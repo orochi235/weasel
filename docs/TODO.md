@@ -1332,6 +1332,6 @@ only story runner in the repo.
   (2026-10-20). Each piece deletes its own section there when it merges, so the doc holds what is
   left.
 - **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, and `pages/pages.browser.test.tsx` each define their own pointer
-  and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  `containers.browser.test.tsx`, `pages/pages.browser.test.tsx`, and `pages/offPage.browser.test.tsx`
+  each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
   containers (2026-10-19) so parallel arc pieces editing those files would not conflict.
