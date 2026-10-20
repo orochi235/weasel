@@ -27,7 +27,6 @@ merged.
 | 2 | Resize reporting in `DiagramView` | diagram | — | 1 |
 | 8 | Waypoint editing under `rack` and `lanes` | diagram | — | 1 |
 | 10 | Theme builder | core, diagram, app | — | 1 |
-| 11 | Running a pipeline | diagram, app | — | 1 |
 | 3 | Off-page reference markers | diagram, app | 1 | 2 |
 | 4 | Edge labels as obstacles, and labels that dodge | diagram, app | 1 | 2 |
 | 5 | Line jumps | diagram, app | 1 | 2 |
@@ -48,7 +47,7 @@ Shared files, and who makes room in them first:
 |---|---|---|---|
 | `packages/diagram/src/edge.ts` | 351 | 3, 5 | piece 1: the four routers move to `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
-| `packages/diagram/src/effect/EffectEditor.tsx` | 247 | 8, 9, 11 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
+| `packages/diagram/src/effect/EffectEditor.tsx` | 254 | 8, 9 | piece 8: `editHandlers` and its helpers move to `effect/editorHandlers.ts` |
 | `packages/diagram/src/diagramViewProps.ts` | 175 | 2, 4, 5, 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
@@ -586,75 +585,6 @@ edited theme through the inserts chart already builds from it (`useChartDiagram.
   between makes two; undo restores the first state.
 - `ThemePanel.test.tsx`; `theme.browser.test.tsx`: drag a role color, read a shape's pixels, one
   undo restores both the pixels and the doc value.
-
-## 11. Running a pipeline
-
-### What it means
-
-`effect/` already draws a run (`EffectRun`: cost, values, previews, the decision `taken`), and
-chart's stage types carry `image`, `mask`, and `number` values. Running means evaluating the
-pipeline over an input image and drawing the run on the editor: once, a stage at a time, or every
-frame while playing.
-
-**Decision (2026-10-20).** Not audio playback: the stage types are image types, and an audio graph
-runs continuously on the audio clock rather than evaluating once per pass, which needs a different
-runner contract (fourth arc).
-
-### What the user sees
-
-A Run menu in pipeline mode: Run, Step, Play, Pause, Reset, and Choose Source Image…. Run fills
-every stage's cost, its output values, and a preview of each image output. Step evaluates the next
-stage and outlines it; its values appear as it finishes. Play re-runs every frame with time
-advancing, so an Oscillator's value moves and a Decision flips. A stage that fails shows its error
-in the problem color, and what it feeds stays faded. Editing a param while playing shows on the
-next frame. View › Show Values and Show Previews turn the look's rows on. Without a chosen image,
-sources start from a generated test card.
-
-### Engine surface (`packages/diagram/src/effect/runner/`, in `@weasel-js/diagram/effect`)
-
-- `types.ts`: `EffectEvaluator` (`(ctx: { stage; inputs; params; time; signal }) =>
-  { outputs; taken? }`, sync or async) and `EffectValueKind` (`show(value)`, `preview(value,
-  size)`, `dispose(value)`), each keyed by stage `type` and value type.
-- `order.ts`: `runOrder(pipeline) → { order; cyclic }`, topological over data and control wires,
-  stable by stage order.
-- `runPipeline.ts`: `runPipeline(pipeline, opts) → Promise<EffectRun>`. A stage none of whose fed
-  inputs is reached is skipped; a bypassed stage passes its first input of each output's type
-  through; a throwing evaluator sets `EffectStageRun.error` and leaves what it feeds unreached;
-  stages in a cycle never run.
-- `runner.ts`: `createEffectRunner(opts)` with `run()`, `step()`, `play()`, `pause()`, `reset()`,
-  `setPipeline`, `setInputs`, and `subscribe`. It owns its values and closes the bitmaps of a run
-  once a newer one has been drawn.
-- `useEffectRunner.ts`: play through `useVisibleRaf` (`@weasel-js/react`), with `onResume`
-  rebasing the clock; a frame starts a run only once the last finished.
-- `effect/types.ts`: `EffectStageRun.error?: string`, `EffectRun.at?: string` (the stage Step is on);
-  `run.ts`'s `paintRun` outlines `at` and writes `error` where the cost goes.
-- `EffectEditor` takes `run?: EffectRun`, painted with `paintRun` as `EffectChart` does.
-- `image/`: `IMAGE_STAGE_TYPES` (chart's `CHART_STAGE_TYPES` moved here; chart imports them),
-  `imageEvaluators` on `OffscreenCanvas` 2D (blur by `filter`, composite by
-  `globalCompositeOperation`, mask by `destination-in`, oscillator `sin(2π·rate·t)`, decision by
-  its `split`, else its first output while the tested number is above 0), `imageValueKinds`, and
-  `testCard(size)`.
-
-**Decision (2026-10-20).** A stage type and its evaluator ship together in the engine: they are one
-definition, and labkit's pipeline labs need both.
-
-### Save, load, undo
-
-A run is not document state: nothing saves and nothing undoes. The chosen source image is held for
-the session.
-
-A run draws under every look. A stage reorder, a rewire, or a param edit is a new doc, which the
-runner takes with `setPipeline`, so the next run or played frame follows it. `paintRun` edits data
-only, so a running chart never lays out again, and groups (piece 9) and look routes (piece 8) are
-untouched by it.
-
-### Tests
-
-- `order.test.ts`; `runPipeline.test.ts` with fake evaluators: order, skipped exits, bypass,
-  error, cycle.
-- `runner.test.ts`: step advances `at`; reset; play with a fake frame source; old bitmaps closed.
-- `imageEvaluators.browser.test.ts`: each operation changes the pixels it should.
-- `EffectEditor.run.test.tsx`; chart `pipeline.browser.test.tsx`: run, step, play, pause.
 
 ## 12. Interchange document model
 

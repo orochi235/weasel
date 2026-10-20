@@ -698,7 +698,9 @@ about. A `switch` symbol is drawn thrown to its first exit, and a run whose
 `taken` is the second throws it there. `EffectChart` fades the port dots of a
 stage the run never reached as well; `paintRun` alone cannot, since the port
 layer draws them outside the scene. A decision a look does not draw has nowhere
-to show its cost.
+to show its cost. A stage whose entry has an `error` shows it where its cost
+would go, in the problem color, and a run's `at` names a stage to outline,
+as a run taken a step at a time does.
 
 A run never lays the chart out again or refits it: `paintRun(pipeline, specs,
 run)` edits the specs the look already built, data only, and `DiagramView`
@@ -940,6 +942,63 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
 group's members. `reorderContribution` packs the action and its binding to pass
 as `ambient`.
+
+`EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
+
+#### Running a pipeline
+
+A run can be made as well as drawn. An `EffectEvaluator` evaluates one stage:
+it is handed `{ stage, inputs, params, sources, time, signal }` and returns
+`{ outputs, taken? }`, sync or async, with a value per output by port id. An
+`EffectValueKind` says how a run shows (`show`), previews (`preview`), and frees
+(`dispose`) the values of one value type. Both are keyed: evaluators by stage
+`type`, kinds by value type.
+
+```tsx
+import {
+  IMAGE_STAGE_TYPES, imageEvaluators, imageValueKinds, testCard, runPipeline, useEffectRunner,
+} from '@weasel-js/diagram/effect';
+
+const once = await runPipeline(pipeline, {
+  evaluators: imageEvaluators, kinds: imageValueKinds, sources: { image: testCard(256) }, time: 0,
+});
+
+// In a component: Run, Step, and Play, with the run to draw.
+const { run, playing, runner } = useEffectRunner({ pipeline, evaluators: imageEvaluators, kinds: imageValueKinds, sources });
+<EffectEditor doc={doc} onChange={commit} run={run} options={{ showValues: true, showPreviews: true }} />;
+runner.step();
+```
+
+`runPipeline` evaluates the stages in `runOrder(pipeline)`: topologically over
+data and control wires alike, stable by stage order, leaving out the stages on a
+cycle, which never run. A stage with inputs none of which a value reaches is
+skipped, so a decision's untaken branch stays faded. A bypassed stage passes its
+first input of each output's type through. An evaluator that throws sets the
+stage's `error`, and what it feeds is left unreached. Each stage's `cost` is the
+time its evaluator took. Every value the run made is disposed before it
+resolves, but never a source; the previews in the run are yours to close.
+`createPass` takes the same run a stage at a time.
+
+`createEffectRunner` keeps one pipeline running: `run()`, `step()` (the next
+stage, as the run's `at`, and back to the first after the last), `play()`,
+`pause()`, `reset()`, and `setPipeline`, `setSources`, and `setOptions` for the
+next run to follow. While playing, `advance(seconds)` moves its clock on and
+starts a run unless one is still going. It owns the previews of its runs:
+`drawn(run)` says a run is on screen, and closes the previews of every older run
+it does not show. `useEffectRunner` makes one for the life of a component,
+advances it from `useVisibleRaf` while playing, so time spent hidden is not
+counted, and calls `drawn` after each render.
+
+`IMAGE_STAGE_TYPES` is a palette of image stages (Source, Blur, Composite, Mask,
+Oscillator, Decision, and Out), and `imageEvaluators` runs them on
+`OffscreenCanvas` 2D, an image or mask being an `ImageBitmap`. A source puts out
+`sources.image`; blur uses the canvas `filter`; composite blends by
+`globalCompositeOperation`; mask keeps what lies under the mask's opaque
+pixels; an oscillator puts out `sin(2π·rate·t)`; and a decision chooses by its
+`split`, or else its first output while the tested number is above 0. A stage
+missing an input it needs fails, naming it. `imageValueKinds` shows an image by
+its size and a number to three places. `testCard(size)` draws an image to start
+from.
 
 ## Design notes
 
