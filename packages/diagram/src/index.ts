@@ -94,6 +94,17 @@ export { DIAGRAM_PASS_ORDER } from './passOrder';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
 export { createSpecRouter } from './avoid/specRoutes';
+export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';
+export type { EdgeHop, HopsDocValue } from './hops/types';
+export { edgeHops } from './hops/crossings';
+export { withHops } from './hops/draw';
+export { installHops } from './hops/install';
+export type { Hops, HopsOptions } from './hops/install';
+export { hopFollower } from './hops/follower';
+export { useHops } from './hops/useHops';
+export { SET_HOPS_ACTION_ID, createSetHopsAction } from './hops/hopsAction';
+export type { SetHopsOptions } from './hops/hopsAction';
+export { createSpecHops } from './hops/specHops';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,

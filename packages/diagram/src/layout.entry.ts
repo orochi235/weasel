@@ -49,6 +49,9 @@ export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
   AvoidEdge, AvoidEnd, AvoidInput, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
 } from './avoid';
+export { edgeHops } from './hops/crossings';
+export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';
+export type { EdgeHop, HopsDocValue } from './hops/types';
 export { backEdges, layered, layeredPlan, ranksByLength, ranksOf, type LayeredPlan } from './layered';
 export type {
   LayoutAxes,

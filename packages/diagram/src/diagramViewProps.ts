@@ -43,6 +43,10 @@ export interface DiagramViewProps {
    *  new `specs` so each reroutes only what it disturbed. The routes derive
    *  from the specs and are never reported. */
   router?: 'avoid';
+  /** Line jumps of this radius: where two edges cross, the later one bows
+   *  over the earlier in a half circle. Applied after `router`; derived from
+   *  the specs and never reported. */
+  hops?: number;
   /** The view opens fitted to the diagram, and fits again when the size or a
    *  fit option changes or a layout run settles, until the user pans or zooms;
    *  from then on the view is theirs. Omit both to fill the parent, which
