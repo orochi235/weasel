@@ -47,8 +47,12 @@ export interface DiagramViewProps {
    *  new `specs` so each reroutes only what it disturbed. The routes derive
    *  from the specs and are never reported. */
   router?: 'avoid';
+  /** `'dodge'` moves each edge label off whatever covers it, along its
+   *  route or across it, after any `router` has run. Placement derives from
+   *  the specs and is never reported. */
+  labels?: 'dodge';
   /** Line jumps of this radius: where two edges cross, the later one bows
-   *  over the earlier in a half circle. Applied after `router`; derived from
+   *  over the earlier in a half circle. Applied after `router` and `labels`; derived from
    *  the specs and never reported. */
   hops?: number;
   /** The view opens fitted to the diagram, and fits again when the size or a

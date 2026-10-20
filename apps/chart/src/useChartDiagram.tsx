@@ -5,6 +5,7 @@ import {
   CONNECTOR_TOOL_ID, CONTAINER_STENCILS, FLOWCHART_STENCILS, diagramCanDropInto, diagramContainers, diagramEdgeEnds,
   diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding, registerDiagramShape, roleStyle,
   sceneParticipants, stencilKind, stencilTool, themeEdgeStroke, themeFont, themeLabelStyle, useAvoidRouting, useHops,
+  useLabelPlacement,
   useConnectorTool, useOffPageMarkers, useStencilInsert, waypointFollower, type DiagramTheme,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -37,10 +38,11 @@ export interface ChartDiagram {
   tools: Record<string, Tool>;
 }
 
-/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, lanes, off-page
- *  tags, the connector and the stencils. What it inserts is drawn in `theme`. */
+/** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels and where they
+ *  settle, lanes, off-page tags, the connector and the stencils. What it inserts is drawn in `theme`. */
 export function useChartDiagram(scene: ChartScene, selection: SelectionApi, theme: DiagramTheme): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
+  useLabelPlacement<ChartPose>(scene as never);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
   const selected = useCallback(() => selection.get() as readonly string[], [selection]);
   const edgeStroke = useMemo(() => themeEdgeStroke(theme), [theme]);

@@ -24,7 +24,6 @@ merged.
 | # | Piece | Package | Needs | Wave |
 |---|---|---|---|---|
 | 10 | Theme builder | core, diagram, app | — | 1 |
-| 4 | Edge labels as obstacles, and labels that dodge | diagram, app | — | 2 |
 | 6 | Exporting one page | new `diagram-formats`, app | merges after 3 | 2 |
 | 7 | Containers and swimlanes in `DiagramData` | diagram | — | 2 |
 | 9 | Pipeline groups as editable containers | diagram, app | 7 | 3 |
@@ -43,7 +42,7 @@ Shared files, and who makes room in them first:
 | `packages/diagram/src/edge.ts` | 218 | 3 | done: the four routers are in `routers.ts` |
 | `packages/diagram/src/fromData.ts` | 386 | 7, 12 | piece 7: the data types move to `dataTypes.ts`, re-exported |
 | `packages/diagram/src/effect/EffectEditor.tsx` | 154 | 9, 11 | done: `editHandlers` moved to `effect/editorHandlers.ts` |
-| `packages/diagram/src/diagramViewProps.ts` | 185 | 4, 7 | none needed; each adds props |
+| `packages/diagram/src/diagramViewProps.ts` | 185 | 7 | none needed; each adds props |
 
 Every piece also: writes `patch` changesets; keeps files under 400 lines and functions under 120
 (`npm run check:size`); exports only public surface to the app; updates the diagram README and
@@ -52,77 +51,6 @@ merges (the doc goes with the last piece). Points, offsets, and boxes here are `
 boxes on purpose: everything in this arc lives on the page plane, and kernel3d hosts route no
 connectors (the second arc's call, kept).
 
-
-## 4. Edge labels as obstacles, and labels that dodge
-
-### What the user sees
-
-Connectors routed around shapes also route around other connectors' labels. After any edit, a
-label that would sit on a shape, on another label, or on another connector slides along its own
-connector, or flips to the other side of it, to the nearest clear spot. Labels do not move during
-a drag; they settle on release, in the same undo entry.
-
-### Labels as obstacles (`packages/diagram/src/avoid/`)
-
-- `types.ts`: `AvoidEdge.label?: { id: string; placement: DiagramLabel; size: { width; height } }`;
-  `AvoidOptions.labelClearance` (default 4). `blocks(obstacle, edge)` takes the edge, so a label
-  blocks every connector but its own; `ObstacleIndex.forEdge(edge)` likewise.
-- `router.ts`: the router files each label as an obstacle from its edge's current route with
-  `labelCenter`. Within one commit, once a connector is routed its label is restationed on the new
-  route and refiled before the next connector routes.
-- `sceneInput.ts` fills `label` from each edge's label node; `specRoutes.ts` does the same from
-  label specs, so `DiagramView router="avoid"` gets it too.
-
-The obstacle table's "An edge label: never" row becomes "always, except to its own connector".
-
-### Labels that dodge (`packages/diagram/src/labels/`)
-
-- `labelTrait.ts`: `DiagramLabel.placed?: { at: number; offset: number }`, owned by placement, and
-  `dodge?: false` to opt out. `labelDerivePose` reads `placed` before `at` and `offset`, which stay
-  the author's preference.
-- `place.ts`, pure, exported from `@weasel-js/diagram/layout`:
-  `placeLabels(input, opts) → Map<labelId, { at; offset }>`. For each moving label it tries the
-  preferred station, then stations a label-width-plus-8 apart along the route on either side, up to
-  four each way, each on both sides of the line. It scores each candidate by area over shapes ×1000,
-  over labels already placed ×100, routes it covers ×10, plus the distance slid; it keeps the lowest,
-  and placed labels become obstacles for the next. Labels go in id order, so the answer is
-  deterministic.
-- `install.ts`: `installLabelPlacement(scene)` and `useLabelPlacement(scene)`, an edit pass at
-  `DIAGRAM_PASS_ORDER.labels`. The moving set is the labels of edges with changed data or moved
-  ends, new labels, and labels whose box meets a changed shape, route, or moving label.
-- `specLabels.ts`: `createSpecLabelPlacer()`; `DiagramView` takes `labels?: 'dodge'`, run after the
-  spec router.
-
-**Decision (2026-10-20).** Route first, then place: routes avoid labels as they stand, then labels
-move off the new routes. One round each, so an edit's cost is bounded; anything left touching
-settles on the next edit.
-
-### Works with
-
-Layered layout's label room (`at: { near }`) is the preferred station, so a laid-out diagram's
-labels stay where layout put them unless something covers them. A label on a split edge (piece 3)
-is placed on the first stub.
-
-### Performance budget
-
-Measured by `packages/diagram/src/labels/labels.bench.ts` on the fleet (`--kind bench`), printing
-each case as it finishes.
-
-| Case | Diagram | Budget |
-|---|---|---|
-| Commit | 200 shapes, 300 labeled connectors, 40 moving | 8 ms |
-| Full placement | same, all moving | 40 ms |
-| Avoid commit with labels | the second arc's commit case, labeled | its 30 ms budget, unchanged |
-
-### Tests
-
-- `place.test.ts`: clear preferred station kept; slides off a shape; flips sides; two labels on
-  parallel connectors separate; deterministic.
-- `search.test.ts`: a route avoids another connector's label and not its own.
-- `labels.scene.test.ts`: a move that covers a label re-places it in the move's entry; undo restores
-  `placed`; `dodge: false` never moves.
-- `DiagramView.labels.test.tsx`; chart browser test: drag a shape onto a label, release, the label's
-  pixels clear the shape.
 
 ## 6. Exporting one page
 
@@ -157,7 +85,7 @@ App: `apps/chart/src/exportCommands.ts` registers the commands with `useChartPag
 `downloadBlob` (`apps/shared/editor/src/fileIO.ts`).
 
 An export reads the scene and writes nothing, so it has no history entry. Hops (`diagram.hops`), placed
-labels (piece 4), and stored routes are in the scene, so the export draws them as the canvas does.
+labels (`diagram.label.placed`), and stored routes are in the scene, so the export draws them as the canvas does.
 
 ### Tests
 
