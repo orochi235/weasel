@@ -183,6 +183,14 @@ writes a `kit:image` leaf back as an `SvgImageNode`.
 in (a non-`none` value warns) and written back as `none`, so a source file
 that relied on letterboxing imports stretched.
 
+## Writing XML by hand
+
+`escapeAttr(s)` and `escapeText(s)` are the escaping this package writes XML
+with, for a caller writing its own. Both drop the characters XML 1.0 cannot
+hold, even as references, and turn a vertical tab or form feed into a line
+break. `escapeAttr` also writes tabs and line breaks as references, since a
+parser reads a literal one in an attribute as a space.
+
 ## License
 
 MIT

@@ -6,7 +6,7 @@
 import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
-  DEFAULT_PORTS, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
+  DEFAULT_PORTS, EDGE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
   layoutOwnsRoute, poolAxisOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
@@ -76,7 +76,7 @@ export function readShape(scene: ReadScene, node: ReadNode, page: Vec2, theme: D
   const colors = ownColors<NodeStyle>({
     fill: colorOf(data.fill), stroke: colorOf(data.stroke), text: colorOf(dataOf(rows[0]).fill),
     strokeWidth: data.stroke?.width as number | undefined, dash: data.stroke?.dash as number[] | undefined,
-  }, { ...themed, strokeWidth: themed.strokeWidth ?? 2 }, trait.ownStyle);
+  }, { ...themed, strokeWidth: themed.strokeWidth ?? NODE_STROKE_WIDTH }, trait.ownStyle);
   const body = trait.body as { padding: number; gap: number; verticalAlign: DataNode['verticalAlign'] } | undefined;
   return {
     id: node.id,
@@ -124,7 +124,7 @@ export function readEdge(node: ReadNode, label: ReadNode | undefined, page: Vec2
     width: stroke?.width as number | undefined, dash: stroke?.dash as number[] | undefined,
     markerStart: (stroke?.markerStart ?? null) as EdgeStyle['markerStart'], markerEnd: (stroke?.markerEnd ?? null) as EdgeStyle['markerEnd'],
   }, {
-    ...themed, width: themed.width ?? 1.5, markerStart: themed.markerStart ?? null,
+    ...themed, width: themed.width ?? EDGE_STROKE_WIDTH, markerStart: themed.markerStart ?? null,
     markerEnd: themed.markerEnd === undefined ? 'arrow' : themed.markerEnd,
   }, trait.ownStyle);
   const text = label === undefined ? undefined : dataOf(label).text;

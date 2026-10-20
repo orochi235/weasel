@@ -4,7 +4,7 @@
  * from.
  */
 import type { AddNodeSpec, NodeId, RectPose } from '@weasel-js/core';
-import { NODE, type DiagramSceneData, type NodeStyle } from '../dataTypes';
+import { LANE_STROKE_WIDTH, NODE, NODE_STROKE_WIDTH, type DiagramSceneData, type NodeStyle } from '../dataTypes';
 import { DEFAULT_FONT } from '../edgeLabel';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -48,7 +48,7 @@ function regionData(role: ContainerRole, axis: 'x' | 'y', style: NodeStyle, fitt
   return {
     diagram: { outline: 'rect', container },
     ...(role === 'lane' ? {} : { fill: { paint: { color: style.fill } } }),
-    stroke: { paint: { color: style.stroke }, width: role === 'lane' ? 1 : style.strokeWidth ?? 2 },
+    stroke: { paint: { color: style.stroke }, width: role === 'lane' ? LANE_STROKE_WIDTH : style.strokeWidth ?? NODE_STROKE_WIDTH },
   };
 }
 

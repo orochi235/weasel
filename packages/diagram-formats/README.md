@@ -66,6 +66,48 @@ with it and rejects on a file nothing reads.
 | Format | Extensions | Reads | Writes |
 | --- | --- | --- | --- |
 | `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes | the whole document |
+| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
+
+Not read, by decision (2026-10-20): packaged office-suite drawing formats,
+which are zip archives of many XML parts built on master shapes a scene has no
+equivalent for; and SVG, which carries drawn paths rather than shapes and
+connectors, so a connector would arrive as a path that follows nothing.
+
+### Draw-style XML
+
+The format that keeps a chart laid out. A file is an `<mxfile>` holding a
+`<diagram name=…>` per page, each a graph model of cells; a bare
+`<mxGraphModel>` reads as one page. A cell has a `key=value;` style string and
+a geometry measured from the corner of the cell holding it. A compressed page
+is base64 of raw deflate of the URI-encoded model, so `read` answers a promise.
+The file is known by its root element, not its `.xml` extension.
+
+| Diagram | Draw-style XML |
+| --- | --- |
+| Outline | `rhombus` diamond, `ellipse`, `hexagon`, `parallelogram`, `trapezoid`; `rounded=1` with `arcSize` 50 or more is a stadium; any other shape reads as a rect, with a warning |
+| Colors and font | `fillColor` (`none` is transparent), `strokeColor`, `fontColor`, `strokeWidth`, `dashed`; `fontSize`, `fontFamily`, and bold in `fontStyle` as label rows' style |
+| Text | `value`; with `html=1`, tags stripped and `<br>` and blocks kept as line breaks. Written plain. |
+| Router | `edgeStyle=orthogonalEdgeStyle` orthogonal, `curved=1` bezier, else straight; `avoid` writes as orthogonal along its route |
+| Route | the edge geometry's points: `waypoints`, else `routed`, read back as `waypoints` |
+| Ports | `exitX`/`exitY` and `entryX`/`entryY`, read as the nearest compass port |
+| Edge label | the edge's `value`, or a label cell on it; its geometry `x` (-1 to 1) is where along, `y` how far off the line |
+| Arrowheads | `startArrow`/`endArrow` and their `Fill` |
+| Container, pool, lane | `container=1` or a `swimlane` is a container; a swimlane whose swimlanes span its body is a pool of lanes, stacked in rows with `horizontal=0` |
+| Group | a `group` cell around its members |
+| Page | one `<diagram>` each, `pageWidth` and `pageHeight` its size |
+
+Reading leaves a color the style does not name unset, so the chart's theme
+draws it. A page grows to hold what is on it, and what sits left of or above it
+moves onto it. An id an earlier page used is prefixed with its page's id.
+Layers merge into one, and edges with a loose end are left out, each with a
+warning.
+
+Writing spells out every color as the document's theme draws it, so the file
+looks the same anywhere. A node is written the size it states, which is its
+drawn size in a document read from a scene; a page with unplaced nodes is laid
+out first, as an import would. Edges between pages are left out, with a
+warning, since a page's cells cannot reach another's; so are marks, port rows,
+and outline paths, which become rects.
 
 ## Exporting a page
 
