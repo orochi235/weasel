@@ -57,12 +57,12 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function mount(look: Look) {
+async function mount(look: Look, initial: EffectDoc = DOC) {
   const host = document.createElement('div');
   document.body.append(host);
   const changes: [EffectDoc, string][] = [];
   function Host() {
-    const [doc, setDoc] = useState(DOC);
+    const [doc, setDoc] = useState(initial);
     return <EffectEditor doc={doc} look={look} {...SIZE} onChange={(next, label) => { changes.push([next, label]); setDoc(next); }} />;
   }
   await act(async () => {
@@ -89,7 +89,29 @@ async function mount(look: Look) {
     await act(async () => { fire('pointerup', to); });
     await frame();
   };
-  return { changes, drag };
+  // Both clicks in one task, so a frame awaited between them cannot outlast the double-click window.
+  const doubleClick = async (at: { x: number; y: number }) => {
+    const r = canvas.getBoundingClientRect();
+    await act(async () => {
+      fire('pointermove', at);
+      for (let i = 0; i < 2; i++) {
+        fire('pointerdown', at);
+        fire('pointerup', at);
+      }
+      canvas.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: r.left + at.x, clientY: r.top + at.y, detail: 2 }));
+    });
+    await frame();
+  };
+  const field = () => host.querySelector<HTMLInputElement>('input[aria-label="Group name"]');
+  const type = async (text: string) => {
+    const input = field()!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, text);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+  };
+  return { changes, drag, doubleClick, field, type };
 }
 
 describe('<EffectEditor> group reorder', () => {
@@ -118,5 +140,46 @@ describe('<EffectEditor> group reorder', () => {
     await expect.poll(() => changes.length).toBe(1);
     expect(changes[0]![1]).toBe('Reorder');
     expect(mainChain(changes[0]![0].pipeline)).toEqual(['src', 'b', 'a', 'c', 'out']);
+  });
+});
+
+describe('<EffectEditor> group rename under rack and lanes', () => {
+  it.each(['rack', 'lanes'] as const)('renames a group from a field opened by double-clicking its title under %s', async (look) => {
+    const { changes, doubleClick, field, type } = await mount(look);
+    await doubleClick(drawn(look).center(groupLabelIdOf('g')));
+    await expect.poll(field).not.toBeNull();
+    expect(document.activeElement).toBe(field());
+    await type('Duo');
+    await expect.poll(() => changes.length).toBe(1);
+    expect(changes.at(-1)![1]).toBe('Rename group');
+    expect(changes.at(-1)![0].pipeline.groups).toEqual([{ id: 'g', label: 'Duo', members: ['a', 'b'] }]);
+    expect(field()).toBeNull();
+  });
+
+  it('renames an unlabeled group from its top band under rack', async () => {
+    const bare: EffectDoc = { ...DOC, pipeline: { ...DOC.pipeline, groups: [{ id: 'g', members: ['a', 'b'] }] } };
+    const { changes, doubleClick, field, type } = await mount('rack', bare);
+    const built = editorScene(bare, 'rack');
+    const specs = diagramScene(built.data, built.scene);
+    const t = viewToTransform(fitDiagram(specs, SIZE, { anchor: 'start', minScale: EFFECT_MIN_SCALE })!);
+    const box = (id: string) => specs.find((s) => s.id === id)!.pose as RectPose;
+    const [g, a] = [box('g'), box('a')];
+    expect(a.y).toBeGreaterThan(g.y);
+    const world = { x: a.x + a.width / 2, y: (g.y + a.y) / 2 };
+    await doubleClick({ x: t.panX + world.x * t.zoom.x, y: t.panY + world.y * t.zoom.y });
+    await expect.poll(field).not.toBeNull();
+    await type('New');
+    await expect.poll(() => changes.length).toBe(1);
+    expect(changes[0]![1]).toBe('Rename group');
+    expect(changes[0]![0].pipeline.groups).toEqual([{ id: 'g', label: 'New', members: ['a', 'b'] }]);
+  });
+
+  it('opens nothing on a double-click on a stage body', async () => {
+    const { changes, doubleClick, field } = await mount('rack');
+    await doubleClick(drawn('rack').center('a'));
+    await frame();
+    await frame();
+    expect(field()).toBeNull();
+    expect(changes).toEqual([]);
   });
 });

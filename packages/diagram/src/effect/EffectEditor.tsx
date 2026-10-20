@@ -10,7 +10,8 @@ import { groupStages, nextGroupId, ungroup } from './groupEdit';
 import { useGroupTitle } from './groupTitle';
 import { editorScene, type EditorLookOptions } from './editorMapping';
 import { applyLookRoutes } from './lookRoutes';
-import { editorReorders } from './editorReorder';
+import { editorReorders, type ReorderSource } from './editorReorder';
+import { renameGroupContribution } from './renameGroupAction';
 import { useReleaseReplaced } from './releaseReplaced';
 import { paintRun } from './run';
 import { useRunPortOptions } from './runPorts';
@@ -71,9 +72,9 @@ export interface EffectEditorApi {
   group(ids: readonly string[]): string | null;
   /** Dissolves a group, as `ungroup` does, and reports it as 'Ungroup'. */
   ungroup(id: string): void;
-  /** Opens the field a group's title is renamed in, over its title, under
-   *  `nodeGraph`; a double-click on the title does the same. Renaming
-   *  reports 'Rename group'. */
+  /** Opens the field a group's title is renamed in, over its title, or over
+   *  the top of its box where it has none; a double-click on the title does
+   *  the same. Renaming reports 'Rename group'. */
   renameGroup(id: string): void;
 }
 
@@ -83,7 +84,8 @@ export interface EffectEditorApi {
  *  box: drag a stage into or out of it, drag the box to carry what it holds,
  *  resize it, or double-click its title to rename it; under `rack` and `lanes` a
  *  stage on the main line drags along it to another place, rewiring the
- *  pipeline, and under `lanes` a lane drags by its header. A selected
+ *  pipeline, a group drags along it by its title, and a double-click on that
+ *  title renames it; under `lanes` a lane drags by its header. A selected
  *  wire's route drags under every look: into `routes` under `nodeGraph`, and
  *  into `lookRoutes` under the others, where it holds only while the wire's
  *  ends stay put. Every edit is a doc handed to `onChange`. Text paints only in a registered font family,
@@ -105,11 +107,14 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const view = useRef<DiagramViewApi | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const handlers = useMemo(() => editHandlers(() => now.current, picks.unpick, setRenaming), [now, picks.unpick]);
-  const reorders = useMemo(() => editorReorders(() => {
-    const { doc: d, built: b, specs: shown, onChange: report } = now.current;
-    const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
-    return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
-  }), [now]);
+  const ambient = useMemo(() => {
+    const source = (): ReorderSource => {
+      const { doc: d, built: b, specs: shown, onChange: report } = now.current;
+      const boxes = new Map(shown.map((s) => [s.id as string, s.pose as EffectBox]));
+      return { doc: d, order: b.order, laneOrder: b.laneOrder, boxOf: (id) => boxes.get(id), onChange: report };
+    };
+    return [...editorReorders(source), renameGroupContribution(source, setRenaming)];
+  }, [now]);
 
   useImperativeHandle(ref, () => ({
     addStage: (type, client) => {
@@ -163,7 +168,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onReconnect={handlers.onReconnect}
       onEditRoute={handlers.onEditRoute}
       onDelete={handlers.onDelete}
-      {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient: reorders })}
+      {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient })}
       {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
       onSelect={picks.pick}
       {...(picks.shown !== undefined ? { selected: picks.shown } : {})}

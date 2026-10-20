@@ -52,12 +52,13 @@ export function unitStages(doc: EffectDoc, unit: string): Set<string> {
   return doc.pipeline.groups?.some((g) => g.id === unit) ? groupContents(doc, unit).stages : new Set([unit]);
 }
 
-/** The group a press at `at` takes: the innermost whose grip holds it, of those whole on the main chain. */
-function groupAt(doc: EffectDoc, parent: ReadonlyMap<string, string>, boxOf: ReorderSource['boxOf'], at: Vec2): string | undefined {
+/** The innermost group whose grip holds `at`, of those `among` admits. */
+export function groupAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2, among: (group: string) => boolean = () => true): string | undefined {
+  const parent = new Map<string, string>();
+  for (const g of doc.pipeline.groups ?? []) for (const m of g.members) parent.set(m, g.id);
   const depth = (id: string): number => (parent.has(id) ? 1 + depth(parent.get(id)!) : 0);
-  const runs = groupRuns(doc.pipeline, mainChain(doc.pipeline));
   const held = (doc.pipeline.groups ?? []).filter((g) => {
-    const grip = runs.get(g.id) == null ? undefined : groupGripOf(doc, g.id, boxOf);
+    const grip = among(g.id) ? groupGripOf(doc, g.id, boxOf) : undefined;
     return grip !== undefined && holds(grip, at);
   });
   return held.sort((a, b) => depth(b.id) - depth(a.id))[0]?.id;
@@ -65,8 +66,8 @@ function groupAt(doc: EffectDoc, parent: ReadonlyMap<string, string>, boxOf: Reo
 
 /**
  * The sequence a press at `at` drags a group along: the group {@link groupAt}
- * picks, among the direct members of its parent, or the top level, that have
- * stages on the drawn order. A group carries everything inside it and its
+ * picks of those whole on the main chain, among the direct members of its
+ * parent, or the top level, that have stages on the drawn order. A group carries everything inside it and its
  * label; a stage is never picked up. `null` off every such grip.
  */
 export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | null {
@@ -75,7 +76,8 @@ export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | nu
   if (order === undefined || groups.length === 0) return null;
   const parent = new Map<string, string>();
   for (const g of groups) for (const m of g.members) parent.set(m, g.id);
-  const held = groupAt(doc, parent, boxOf, at);
+  const runs = groupRuns(doc.pipeline, mainChain(doc.pipeline));
+  const held = groupAt(doc, boxOf, at, (g) => runs.get(g) != null);
   if (held === undefined) return null;
 
   const up = parent.get(held);
