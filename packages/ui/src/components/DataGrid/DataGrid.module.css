@@ -8,7 +8,7 @@
   border-collapse: collapse;
   font-size: var(--wzl-font-size-sm);
   /* A select in a cell is one of the row's values, so it is set at the row's size. */
-  --wzl-select-font-size: 1em;
+  --wzl-select-font-size: var(--wzl-font-size-sm);
 }
 
 .table th,
