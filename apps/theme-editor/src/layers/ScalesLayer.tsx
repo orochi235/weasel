@@ -1,6 +1,7 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
 import type { Lookup, ScaleDef } from '@weasel-js/theme/engine';
-import { Button, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useEffect, useMemo, useRef } from 'react';
 import styles from '../ThemeEditor.module.css';
 import type { DerivedDraft } from '../theme/draft';

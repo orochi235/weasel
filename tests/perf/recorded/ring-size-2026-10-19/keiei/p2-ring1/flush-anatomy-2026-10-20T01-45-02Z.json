@@ -1,0 +1,257 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "flush-anatomy",
+  "git": {
+    "sha": "7ddf3ce93ce639c4edccd6d503bd2b1d004a979a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-20T01:45:02.035Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M2",
+    "cores": 8,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.2",
+    "loadavg": [
+      5.82,
+      6.67,
+      7.98
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "flushesPerFrame": 512,
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "flush",
+      "params": {
+        "drops": "— the full flushBatch sequence"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 59.267578125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            76.806640625,
+            57.587890625,
+            59.267578125
+          ]
+        }
+      }
+    },
+    {
+      "id": "-unbind",
+      "params": {
+        "drops": "bindVertexArray(null) after the draw"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 58.994140625,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            79.970703125,
+            56.54296875,
+            58.994140625
+          ]
+        },
+        "saves": {
+          "value": 0.2734375,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-activetex",
+      "params": {
+        "drops": "activeTexture(TEXTURE0), before the binds and after the draw"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 58.3984375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            88.9453125,
+            57.24609375,
+            58.3984375
+          ]
+        },
+        "saves": {
+          "value": 0.595703125,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-cliptest",
+      "params": {
+        "drops": "disable(STENCIL_TEST) (applyClipTest at depth 0)"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 57.880859375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            90.9375,
+            56.34765625,
+            57.880859375
+          ]
+        },
+        "saves": {
+          "value": 0.517578125,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-samplers",
+      "params": {
+        "drops": "uniform1iv(u_samplers) + uniform2fv(u_fieldScale)"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 58.88671875,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            73.73046875,
+            56.26953125,
+            58.88671875
+          ]
+        },
+        "saves": {
+          "value": -1.005859375,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-colormatrix",
+      "params": {
+        "drops": "the color-matrix uniforms, which are this frame's run-breaker"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 57.4609375,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            65,
+            57.4609375,
+            57.24609375
+          ]
+        },
+        "saves": {
+          "value": 1.42578125,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-whitetex",
+      "params": {
+        "drops": "bindTexture(white) to unit 0"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 60.01953125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            64.912109375,
+            56.259765625,
+            60.01953125
+          ]
+        },
+        "saves": {
+          "value": -2.55859375,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-useprogram",
+      "params": {
+        "drops": "useProgram"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 58.203125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            74.306640625,
+            57.021484375,
+            58.203125
+          ]
+        },
+        "saves": {
+          "value": 1.81640625,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-idxupload",
+      "params": {
+        "drops": "the index bufferSubData"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 58.095703125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            70.283203125,
+            56.396484375,
+            58.095703125
+          ]
+        },
+        "saves": {
+          "value": 0.107421875,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "bind+draw",
+      "params": {
+        "drops": "the vertex bufferSubData — bind and draw only"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 10.3125,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            11.591796875,
+            10.3125,
+            10.244140625
+          ]
+        },
+        "saves": {
+          "value": 47.783203125,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    }
+  ]
+}

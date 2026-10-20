@@ -1,4 +1,4 @@
-import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui';
+import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 import { Fragment, type ReactNode } from 'react';
 import type { RegionContribution, StatusReadout, TrialChromeContext } from '../types';
 

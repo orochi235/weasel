@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
-import { PARAMS_TEXT_WAIT_MS } from '@weasel-js/ui';
+import { PARAMS_TEXT_WAIT_MS } from '@weasel-js/ui/components/Prefs';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ControlPanel } from './ControlPanel';

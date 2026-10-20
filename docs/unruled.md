@@ -485,3 +485,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
   and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
   on `packages/icons-plugin/src` requires the extension.
+- 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
+  and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
+  publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
+  names are a call not made; labkit's `weasel-ui` passthrough is exempt on purpose.

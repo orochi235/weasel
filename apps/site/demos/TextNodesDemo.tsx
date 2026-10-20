@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
-import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui';
+import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui/components/CharacterOptions';
 import { DemoStage } from './DemoStage';
 
 const W = 480;

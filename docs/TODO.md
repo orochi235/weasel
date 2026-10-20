@@ -1004,12 +1004,27 @@ only story runner in the repo.
   one each story loads. Bundling forge needs the stories to reach components only through package
   specifiers, or a bundle boundary drawn per package.
 
+- **(P3) Eight modules still import the `@weasel-js/ui` barrel, for names no subpath publishes.**
+  The rule in `eslint.config.js` that forbids importing the root barrel, which reaches about 640
+  modules a dev server serves one by one, covers draw, chart, theme-editor, site, and forge's and
+  labkit's `src`, and exempts these files by name. They import `useStance` and `StanceProps`
+  (`components/stance.ts`; forge's `story/library.ts`, labkit's `SidebarRegion`, `chrome/types`,
+  `ControlPanel`, `ControlMatrix`), `OverlayPortalProvider` and `useOverlayPortal`
+  (`overlays/portalHost.tsx`; forge's `TrialHost`, labkit's `ControlMatrix`), `oklchToHex`,
+  `chromaAt`, and `paintGradientTrack` (site's `PerceptualColorSlidersDemo`), and
+  `uiKitSettingsSchema` (site's `KitSettingsDemo`). Each needs a subpath in ui's `exports`, its
+  vite entry, and the root and core `tsconfig` paths, under a name not yet chosen; then the
+  exemption goes. labkit's `passthrough/weasel-ui.ts` re-exports the barrel on purpose and stays
+  exempt.
+
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
   to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug
   that Node 24.22.0 fixes, and every fleet node's nvm resolves `.nvmrc`'s `24` to 24.22.0 since
   2026-10-19. The flag stays because the same crash is reported on Node 26.7 and 26.8.1, which ad-hoc
-  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix.
+  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix. The fix is the
+  backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
+  2026-10-19).
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
@@ -1019,33 +1034,18 @@ only story runner in the repo.
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
-  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
-  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
-  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
-  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
-  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
-  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
-  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
-  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
-  closed while running tests", every file after it left unrun; at six workers too, on
-  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
-  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
-  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
-  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
-  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
-  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
-  not traced inside Chromium: every socket and request of that page closes at once from the
-  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
-  open:
+- **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
+  others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
+  so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
+  file's start until vitest's frame lookup returns that file's own frame (`settleFrame`,
+  `scripts/vitest-browser-commands.ts`); the measurements behind each are in the commits that
+  made them (2026-10-13 to 10-17). On 2026-10-19, 15 runs of the project alone on the fleet, beside
+  other jobs (teitou 12, studio 2, keiei 1), passed all 220 files with no detached frame and no
+  lost tab. Left open:
   - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test failed `frame.evaluate: Frame was
-    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. vitest finds the
-    frame a command acts on by name, `page.frame('vitest-iframe')`, and every test file's iframe has
-    that name, so while Playwright still lists the previous file's iframe it can return that one.
-    `vitest.browser.setup.ts` now waits at each file's start (`settleFrame`, in
-    `scripts/vitest-browser-commands.ts`) until the lookup returns the file's own frame. That this
-    lookup is the cause is inferred, never caught in a run; a sighting with the wait in place
-    means it is something else.
+    detached` under `userEvent.keyboard`** in 8 runs before `settleFrame`, all at the old worker
+    count. That the frame lookup was the cause is inferred, never caught in a run; a sighting
+    with the wait in place means it is something else.
   - **A trial's status strip grows 2 px when its numeric face arrives**, which refits the view a
     second time. The strip itself now takes its room on the first layout (`TrialChrome` reads an
     unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
@@ -1055,15 +1055,16 @@ only story runner in the repo.
     rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
-- **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
-  the HUD against plain DOM, a React overlay, and a DOM layer moved as one element
-  (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **The all-threads figures leave out the renderer's worker pool**, which the HUD keeps 1.8–2.4
-    ms a frame busier than the DOM at 5,000 glyphs changing every frame (`HVD_CENSUS=1`, teitou and
-    msb-uai, 2026-10-17; README, "Frame rate"). Rerunning the every-frame half of the sweep with
-    the census on would say whether "off the main thread the HUD is cheaper" survives, and the
-    pool's self times would say what it is doing. The 70 ms frame gap this entry used to ask about
-    no longer reproduces.
+- **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
+  `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
+  layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
+  - **With the readout changing every frame the DOM is the cheaper overlay** once the renderer's
+    worker pool is counted: at 5,000 glyphs 10.5–12.8 ms a frame of all threads against 6.0–8.5,
+    ranges apart from 2,500 glyphs up under every camera, on msb-uai and keiei (one census run
+    each, 2026-10-19; README, "Frame rate"). 78–88% of the HUD's pool time is V8's background
+    GC. What allocates it is not known: a heap allocation profile of the every-frame path
+    (`attachHud` relayout, the renderer's text layout and command building) would say, and
+    cutting it is the fix if the profile names something.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1099,20 +1100,36 @@ only story runner in the repo.
     (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
     clip only the stencil expresses, and a paint that draws for itself (a pattern, a shader,
     per-vertex colors).
-  - **What joined the run since is checked in a browser but not timed.** Each is pinned by draw
-    count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium (run
-    2026-10-17):
+  - **What joined the run since is checked in a browser.** Each is pinned
+    by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
+    (run 2026-10-17):
     - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
     - Fifteen textures where a run held seven, fetched through a tree of four compares where the
-      chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
-      (`fill-rate.spec.ts`), and the wider `u_samplers` and `u_fieldScale` uploads per flush.
+      chain took up to seven (`batchSlots.browser.test.ts`). The tree costs a fragment what the
+      chain's deepest slot did: `fill-rate.spec.ts`'s `batch` came within 1.2% of
+      `batch-chain8-7` on msb-uai (Apple M3 Max) and keiei (Apple M2), two passes each with no
+      other onto job on the node, 2026-10-19; the chain's slot 1 was 2–4% cheaper. The wider
+      `u_samplers` and `u_fieldScale` uploads are under `flush-anatomy`'s noise: dropping them
+      saved 0.06 us a flush on teitou (2026-10-17), and 0.1–1.9 us in four passes on msb-uai
+      (2026-10-19) where a flush cost 31–34 (result files with the ring measurement below).
     - A gradient or an image under any color matrix: each vertex names one of up to eight
       (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
       (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
-      only scales channels down rides a vertex tint, as an image does. Not timed: the indexed
-      matrix per fragment, and three array uniforms a flush where the matrices changed.
+      only scales channels down rides a vertex tint, as an image does. The program such a run
+      draws with costs each of its fragments 12–13% more than the one-matrix program on msb-uai
+      and 22–23% on keiei (`batch-8-matrices`, the same runs). The matrix uploads are under the
+      same noise as the sampler uploads (`-colormatrix`: 0.08 us on teitou, 0.3–2.2 on msb-uai).
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
+  - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
+    `batch` variant draws `BATCH_FRAG_SRC` through `BATCH_VERT_SRC` (`tests/perf/lib/batchFragments.ts`);
+    it cost 2.95–2.98 times `split-sample`, the hand-written fragment the spec's older variants
+    price the glyph math and the gradient split against, on both nodes, and 4.7 (M3 Max) and 5.9
+    (M2) times a plain textured fragment. So those variants' percentages are shares of a fragment
+    a third as dear as the real one. What the rest is spent on (the color matrix and clamp,
+    `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
+    ran 2.5–4 times slower in both passes, every variant alike; the spec keeps the fastest run,
+    so they do not reach a figure. Result files: `tests/perf/recorded/fill-rate-batch-2026-10-19/`.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 2.2 us a push and pop around a
@@ -1133,17 +1150,26 @@ only story runner in the repo.
     extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but
     does not price one.
 
-- **(P2) A ring of buffers measures slower than rewriting one.** `SOLID_RING_SIZE` (64) exists so a
-  flush never writes a buffer a draw is still reading. On teitou (Apple M5 Max, ANGLE Metal),
-  2026-10-06, four passes back to back in ABBA order, a quad that ends its run (`image-quad`,
-  `renderer/unmerged`, 20,000 a frame) cost 22.50 and 21.99 us through a ring of 64 against 17.75
-  and 18.09 through a ring of 1, with no overlap between the sides' samples; `flush-anatomy` did
-  not separate them. Result files: `tests/perf/recorded/ring-size-2026-10-06/`. Only one GPU and
-  backend has been measured, and the ring's own case was made on an M2 Max by the retired block
-  method; D3D and Vulkan backends are where an in-flight buffer write would stall, if anywhere.
-  A single `image-quad` rerun on teitou on 2026-10-17, ring of 64, read `unmerged` at 27.4 us
-  (`tests/perf/recorded/batch-specs-2026-10-17/`), so the 22.5 / 22.0 above has drifted; why is
-  not known.
+- **(P3) `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
+  writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
+  ring of 1 on teitou (`ring-size-2026-10-06/`); on 2026-10-19 it did not reproduce. Eight passes
+  a node in ABBA order, ring of 64 against ring of 1, `image-quad`'s `renderer/unmerged` at 20,000
+  quads of 8 px, us a quad, medians of each pass's 3 runs, each node with no other onto job:
+
+  | Node | ring of 64 | ring of 1 |
+  |---|---|---|
+  | teitou (Apple M5 Max) | 20.79, 22.92, 22.40, 22.09 | 20.89, 19.68, 22.25, 21.42 |
+  | msb-uai (Apple M3 Max) | 34.49, 33.59, 34.30, 34.54 | 33.46, 33.66, 33.68, 33.74 |
+  | keiei (Apple M2) | 66.31, 67.54, 69.17, 65.58 | 65.37, 64.89, 64.97, 65.21 |
+
+  A ring of 1 is 2–5% cheaper on each, with the sides' samples overlapping. `flush-anatomy`'s
+  `bind+draw` (no vertex upload) separates them on two nodes, in opposite directions: a ring of 1
+  costs 0.3 us a flush less on teitou (3.05–3.23 against 3.34–3.79) and 2.8 more on keiei
+  (10.2–11.6 against 7.6–9.1); on msb-uai the samples overlap.
+  So no Apple GPU makes a case for changing the size. The 27.4 us the 2026-10-17 rerun recorded was
+  not drift: it ran `image-quad` at its defaults, 512 quads of 48 px. Left: a D3D or Vulkan
+  backend, where an in-flight buffer write would stall if anywhere; no fleet node has one. Result
+  files: `tests/perf/recorded/ring-size-2026-10-19/`.
 
 - **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run up to
   `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open, and up to

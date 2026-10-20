@@ -5,7 +5,7 @@
  */
 import { asNodeId, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, pathFromD, type Fill, type PathEffect, type RectPose, type Scene, type Stroke, useActionsRegistry } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { type ReactNode, useEffect, useRef } from 'react';
 import s from './pathEffectLab.module.css';
 

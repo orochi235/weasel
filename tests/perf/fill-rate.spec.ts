@@ -251,12 +251,19 @@ void main() {
         for (let i = 0; i < layers; i++) gl!.drawArrays(gl!.TRIANGLES, 0, 6);
       }
 
+      const batchFill = await import(/* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/shaders/batchFill.ts`);
+      const { batchFragmentVariants } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/batchFragments.ts`);
+      const timedVariants = [
+        ...variants.map((v) => ({ id: v.name, frame: () => frame(v.prog) })),
+        ...batchFragmentVariants(gl, batchFill, { layers, tex: tex!, quad: vbo! }).map((v: { name: string; frame: () => void }) => ({ id: v.name, frame: v.frame })),
+      ];
+
       const rows: { run: number; variant: string; msPerFrame: number }[] = [];
       for (let run = 1; run <= runs; run++) {
-        const timed = await timeInterleaved(gl, variants.map((v) => ({ id: v.name, frame: () => frame(v.prog) })), { samples });
-        for (const v of variants) {
-          rows.push({ run, variant: v.name, msPerFrame: timed[v.name].net });
-          await report({ run, variant: v.name, msPerFrame: timed[v.name].net });
+        const timed = await timeInterleaved(gl, timedVariants, { samples });
+        for (const v of timedVariants) {
+          rows.push({ run, variant: v.id, msPerFrame: timed[v.id].net });
+          await report({ run, variant: v.id, msPerFrame: timed[v.id].net });
         }
       }
 
@@ -306,6 +313,14 @@ void main() {
     + `  (against glyph-math, its only difference)`);
   console.log(`  splitting the sample ${(((split / glyph) - 1) * 100).toFixed(1)}% more`
     + `  (the form that ships)`);
+  const batch = Math.min(...settled('batch'));
+  console.log('');
+  console.log('  the batch program as it ships, against what it replaced:');
+  for (const name of ['batch', 'batch-chain8-1', 'batch-chain8-7', 'batch-8-matrices']) {
+    const x = Math.min(...settled(name));
+    console.log(`  fastest  ${name.padEnd(16)} ${x.toFixed(3).padStart(7)} ms/frame  spread ${spread(name).toFixed(1).padStart(5)}%`
+      + `  ${(((x / batch) - 1) * 100).toFixed(1).padStart(6)}% against batch`);
+  }
   console.log('');
 
   expect(errors, errors.join('\n')).toEqual([]);

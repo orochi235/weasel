@@ -1,5 +1,5 @@
 import type { Constraints } from '@weasel-js/theme/engine';
-import { PropertyField, PropertyGroup } from '@weasel-js/ui';
+import { PropertyField, PropertyGroup } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 
 export type SetConstraint = <K extends keyof Constraints>(key: K, value: Constraints[K]) => void;

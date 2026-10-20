@@ -1,6 +1,7 @@
 import { isByAxis, type AxisDefs, type Varying } from '@weasel-js/theme';
 import type { SemanticRule } from '@weasel-js/theme/engine';
-import { Button, PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';

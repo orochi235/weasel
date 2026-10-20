@@ -1,7 +1,10 @@
 import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
-import { Button, Dialog, Input, Select } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { Input } from '@weasel-js/ui/components/Input';
+import { Select } from '@weasel-js/ui/components/Select';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';

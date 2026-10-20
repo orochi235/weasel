@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { analyze, mirror, reorder, type BidiDirection } from '@weasel-js/bidi';
-import { Input, ToggleBar } from '@weasel-js/ui';
+import { Input } from '@weasel-js/ui/components/Input';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import s from './BidiDemo.module.css';
 
 const PRESETS = [

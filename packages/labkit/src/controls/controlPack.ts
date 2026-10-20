@@ -1,4 +1,4 @@
-import type { PropertyListPack, PropertyRowLayout } from '@weasel-js/ui';
+import type { PropertyListPack, PropertyRowLayout } from '@weasel-js/ui/components/Properties';
 import type { SectionSpec } from '../config/types';
 
 /** How a panel packs its rows into the two-column property grid.
