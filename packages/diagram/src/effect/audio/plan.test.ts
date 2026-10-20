@@ -65,6 +65,16 @@ describe('livePlan', () => {
     expect(p.edges).toEqual([]);
   });
 
+  it('keeps planning the rest beside a feedback loop', () => {
+    const p = plan(
+      [stage('osc', 'audio.oscillator'), stage('out', 'audio.output'), stage('gain', 'audio.gain'), stage('delay', 'audio.delay')],
+      [wire('osc', 'out'), wire('gain', 'delay'), wire('delay', 'gain')],
+    );
+    expect(Object.keys(p.nodes)).toEqual(['osc']);
+    expect(p.edges).toEqual([{ from: 'osc', to: { output: true } }]);
+    expect(p.errors).toEqual({ gain: 'on a feedback loop', delay: 'on a feedback loop' });
+  });
+
   it('ignores an image stage', () => {
     const pipeline: EffectPipeline = {
       stages: [stage('osc', 'audio.oscillator'), { id: 'blur', title: 'Blur', type: 'blur' }, stage('out', 'audio.output')],

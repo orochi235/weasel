@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useVisibleRaf, type VisibleRafOptions } from '@weasel-js/react';
 import type { EffectPipeline } from '../types';
-import { errorsRun, type LiveAudioRunner, type LiveAudioRunnerState } from './liveRunner';
+import type { LiveAudioRunner, LiveAudioRunnerState } from './liveRunner';
+import { errorsRun } from './livePreviews';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
 import { livePlan } from './plan';
 import type { AudioPreview } from './scope';

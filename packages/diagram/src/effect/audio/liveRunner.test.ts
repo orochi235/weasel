@@ -84,6 +84,20 @@ describe('createLiveAudioRunner', () => {
     expect(runner.state.run?.stages.b?.error).toBe('on a feedback loop');
   });
 
+  it('keeps the rest playing beside a feedback loop', () => {
+    const { runner, graph } = setup();
+    runner.setPipeline({
+      stages: [...osc().stages, stage('gain', 'audio.gain'), stage('delay', 'audio.delay')],
+      wires: [...osc().wires, wire('gain', 'delay'), wire('delay', 'gain')],
+    });
+    const later = graph.applies.slice(1).flat();
+    expect(later.filter((p) => 'id' in p && p.id === 'osc' && p.kind !== 'set')).toEqual([]);
+    expect(later.filter((p) => p.kind === 'disconnect')).toEqual([]);
+    expect(graph.applies[0]).toContainEqual({ kind: 'connect', from: 'osc', to: { output: true } });
+    const errors = Object.entries(runner.state.run?.stages ?? {}).filter(([, r]) => r.error !== undefined);
+    expect(Object.fromEntries(errors.map(([id, r]) => [id, r.error]))).toEqual({ gain: 'on a feedback loop', delay: 'on a feedback loop' });
+  });
+
   it('unlocks before starting, and stops on pause', async () => {
     const { runner, graph, order } = setup();
     const done = runner.play();

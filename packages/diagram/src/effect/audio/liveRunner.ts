@@ -1,7 +1,7 @@
 import type { AudioEngine, AudioGraph, GraphPatch } from '@weasel-js/audio';
 import type { EffectPipeline, EffectRun } from '../types';
 import { audioStageNodes, type AudioSources, type AudioStageNodes } from './nodes';
-import { createLivePreviews } from './livePreviews';
+import { createLivePreviews, errorsRun } from './livePreviews';
 import { diffPlans } from './patches';
 import { EMPTY_PLAN, livePlan, type LivePlan } from './plan';
 import type { AudioPreview } from './scope';
@@ -73,10 +73,6 @@ function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Rec
     }
   }
 }
-
-/** A run holding only `errors`, by stage id. */
-export const errorsRun = (errors: Readonly<Record<string, string>>): EffectRun =>
-  ({ stages: Object.fromEntries(Object.entries(errors).map(([id, error]) => [id, { error }])) });
 
 /** A runner over `opts.pipeline` holding a fresh graph on `opts.engine`, not playing. */
 export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRunner {

@@ -21,6 +21,10 @@ export interface LivePreviews {
   dispose(): void;
 }
 
+/** A run holding only `errors`, by stage id. */
+export const errorsRun = (errors: Readonly<Record<string, string>>): EffectRun =>
+  ({ stages: Object.fromEntries(Object.entries(errors).map(([id, error]) => [id, { error }])) });
+
 export function createLivePreviews(): LivePreviews {
   let mode: AudioPreview = 'off';
   let taps = new Map<string, AnalyserTap>();
@@ -55,9 +59,7 @@ export function createLivePreviews(): LivePreviews {
     draw(errors) {
       if (mode === 'off' || taps.size === 0) return undefined;
       const paint = mode === 'scope' ? drawScope : drawSpectrum;
-      const stages: Record<string, EffectStageRun> = Object.fromEntries(
-        Object.entries(errors).map(([id, error]) => [id, { error }]),
-      );
+      const stages: Record<string, EffectStageRun> = { ...errorsRun(errors).stages };
       for (const [id, tap] of taps) {
         stages[id] = { ...stages[id], previews: { out: paint(tap, { width: PREVIEW_SIZE, height: PREVIEW_SIZE }) } };
       }

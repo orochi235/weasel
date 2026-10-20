@@ -45,7 +45,7 @@ function levelsOf(levels: readonly string[], params: Readonly<Record<string, unk
 export function livePlan(pipeline: EffectPipeline, nodes: AudioStageNodes, sources: AudioSources): LivePlan {
   const stages = new Map<string, EffectStage>();
   for (const s of uniqueStages(pipeline)) {
-    if (s.type !== undefined && (s.type in nodes || s.type === OUTPUT_TYPE)) stages.set(s.id, s);
+    if (s.type !== undefined && (Object.hasOwn(nodes, s.type) || s.type === OUTPUT_TYPE)) stages.set(s.id, s);
   }
   const { order, cyclic } = runOrder(pipeline);
   const planNodes: Record<string, PlanNode> = {};
