@@ -147,6 +147,8 @@ export interface ComponentHistory {
   modified: string;
   /** The first release holding the file, from the nearest tag after it was added; null while no release does. */
   introduced: string | null;
+  /** The first release holding the file's last change; null while no release does. */
+  modifiedIn: string | null;
 }
 
 /** One component's place in the component graph. Every list holds story titles, sorted. */
