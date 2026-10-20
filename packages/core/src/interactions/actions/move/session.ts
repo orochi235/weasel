@@ -9,6 +9,7 @@ import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { moveSources } from '../selectionSubtree';
 import { layoutDrop } from './behaviors/layoutDrop';
@@ -55,6 +56,8 @@ export interface MoveSession {
   readonly adapter: MoveGestureAdapter<unknown>;
   readonly layout: LayoutDep | undefined;
   readonly applyOps?: (ops: Op[], label: string) => void;
+  /** Finishes the committed batch with the other nodes that change with it. */
+  readonly finish?: TransformFinisher;
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
@@ -101,6 +104,7 @@ export function beginMove(
   const layout = ctx.deps.layout;
   const applyOps = ctx.deps.applyOps;
   const geometryProjection = ctx.deps.geometryProjection;
+  const finish = transformFinisher(ctx.deps);
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
@@ -134,7 +138,7 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
+    commitGestureOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), selection.adapterMethods);
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
@@ -158,6 +162,7 @@ export function beginMove(
     layout,
     pc,
     applyOps,
+    finish,
     geometryProjection,
     lifecycle,
     nodeAtPoint: ctx.deps.nodeAtPoint,

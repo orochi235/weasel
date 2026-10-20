@@ -4,6 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { translateSelection } from 'interactions/actions/defaults/nudge';
 import { requiresSelection } from 'interactions/actions/defaults/requiresSelection';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
+import { commitTransformOps, transformApplyOps } from 'interactions/actions/transformFinish';
 import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import { rotateSelectionOps } from 'interactions/actions/rotate/replay';
 import { recordTransform } from 'interactions/actions/transform-again/memory';
@@ -40,7 +41,7 @@ function moveBy(ms: Measurements): Action {
     label: MOVE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'editAnchors'],
     enabled: transformable(ms),
     invoker: {
       timing: 'immediate',
@@ -50,7 +51,7 @@ function moveBy(ms: Measurements): Action {
         if (!c || !selection || !scene) return;
         const { dx, dy } = c.m;
         const moved = translateSelection(
-          selection, scene, dx, dy, deps.applyOps, deps.geometryProjection,
+          selection, scene, dx, dy, transformApplyOps(deps), deps.geometryProjection,
           poseDescriptorOf(deps.poseDescriptor), MOVE_LABEL,
         );
         if (moved) recordTransform(scene, { kind: 'translate', dx, dy }, selection.get());
@@ -65,7 +66,7 @@ function rotateBy(ms: Measurements): Action {
     label: ROTATE_LABEL,
     group: 'measure',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view'],
+    requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'editAnchors'],
     enabled: transformable(ms),
     invoker: {
       timing: 'immediate',
@@ -80,8 +81,7 @@ function rotateBy(ms: Measurements): Action {
         const ops = rotateSelectionOps(
           scene, selected, deps, turn, 'union', ROTATE_LABEL,
         );
-        if (ops.length === 0) return;
-        commitOps(deps, ops, ROTATE_LABEL);
+        if (!commitTransformOps(deps, ops, ROTATE_LABEL)) return;
         recordTransform(scene, { kind: 'rotate', angle: turn, pivot: 'union' }, selected);
       },
     },

@@ -81,6 +81,7 @@ export function commitResize(session: ResizeSession, frame: ResizeFrame): boolea
   const target = {
     scene: session.scene,
     applyOps: session.applyOps,
+    finish: session.finish,
     adapter: defaultCommitAdapter(session.scene, session.selectionMethods),
   };
   const r = reduceBehaviorEnd(session.constraints, session.gestureCtx);

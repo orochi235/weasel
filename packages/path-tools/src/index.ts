@@ -114,7 +114,7 @@ export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
 export {
-  constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
+  constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
 } from './constraints/constraintLinks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {

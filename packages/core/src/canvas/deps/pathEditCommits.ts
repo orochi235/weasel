@@ -1,0 +1,180 @@
+/**
+ * What the `editAnchors` dep commits: an edit finished by every path-edit
+ * extension, the other nodes the extensions change with it, and the same for
+ * a whole-node transform's batch.
+ */
+import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import { createSetDataOp } from 'core/ops/setData';
+import { createDeleteOp } from 'core/ops/delete';
+import { sceneMutators } from 'core/scene/sceneMutators';
+import type { NodeId, Scene } from 'core/scene/types';
+import { pathEditPathOf, storeEditablePath } from 'features/paths/editablePath';
+import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import {
+  withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther, type PathTransformFinishCtx,
+} from 'features/paths/pathEditExtension';
+
+type AnyScene = Scene<unknown, string, unknown>;
+export type EditableNode = { pose: unknown; data: unknown };
+
+/** What {@link finishEdit} answers: the edited path, the data set beside it, and the other nodes it changes, by id. */
+export interface Finished {
+  path: PolygonPath;
+  data: Record<string, unknown> | null;
+  others: Map<string, PathEditOther>;
+}
+
+/** The nodes that list `id` in their `dependsOn`, directly or through others. */
+function dependentsOf(sc: AnyScene, id: string): readonly string[] {
+  if (!sc.get(id as NodeId)) return [];
+  return sc.removalClosure([id as NodeId]).filter((d) => d !== id && !sc.ancestorsOf(d).includes(id as NodeId));
+}
+
+/** The scene as an extension's `finishEdit` reads it. */
+export function finishCtx(sc: AnyScene, id: string, extensions: readonly PathEditExtension[]): PathEditFinishCtx {
+  return {
+    id,
+    node(nid) {
+      const node = sc.get(nid as NodeId);
+      return node ? { pose: node.pose, data: node.data, dependsOn: node.dependsOn } : null;
+    },
+    path: (nid) => pathEditPathOf(sc.get(nid as NodeId) as EditableNode | undefined, extensions),
+    dependents: (nid) => dependentsOf(sc, nid),
+  };
+}
+
+/** `o` laid over what `others` already holds for its node. */
+function addOther(others: Map<string, PathEditOther>, o: PathEditOther): void {
+  const had = others.get(o.id);
+  others.set(o.id, {
+    id: o.id,
+    path: o.path ?? had?.path,
+    data: o.data || had?.data ? { ...had?.data, ...o.data } : undefined,
+    remove: o.remove || had?.remove,
+  });
+}
+
+/** `worldPath` finished by each of `extensions` in turn, the data they set
+ *  beside it, and the other nodes they change; null when one cannot finish it. */
+export function finishEdit(
+  extensions: readonly PathEditExtension[],
+  node: EditableNode,
+  worldPath: PolygonPath,
+  origins: readonly (PointOrigin | null)[] | undefined,
+  ctx: PathEditFinishCtx,
+): Finished | null {
+  let path = worldPath;
+  let data: Record<string, unknown> | null = null;
+  const others = new Map<string, PathEditOther>();
+  for (const ext of extensions) {
+    if (!ext.finishEdit) continue;
+    const done = ext.finishEdit(node, path, origins, ctx);
+    if (!done) return null;
+    path = done.path;
+    if (done.data) data = { ...(data ?? {}), ...done.data };
+    for (const o of done.others ?? []) addOther(others, o);
+  }
+  return { path, data, others };
+}
+
+/** The ops that commit `others`, each from its node as committed. */
+export function otherOps(
+  sc: AnyScene,
+  others: ReadonlyMap<string, PathEditOther>,
+  label: string,
+  extensions: readonly PathEditExtension[],
+): Op[] {
+  return [...others.values()].flatMap((o) => {
+    const node = sc.get(o.id as NodeId) as EditableNode | undefined;
+    if (!node) return [];
+    if (o.remove) return [createDeleteOp({ node: sc.get(o.id as NodeId)!, label })];
+    if (o.path) return reshapeOps(o.id, node, o.path, label, o.data ?? null, extensions);
+    return o.data ? [createSetDataOp({ id: o.id, from: node.data, to: { ...(node.data as object), ...o.data }, label })] : [];
+  });
+}
+
+/** The ops that store `worldPath` where `node` keeps its polygon, with `patch` laid over its data. */
+export function reshapeOps(
+  id: string,
+  node: EditableNode,
+  worldPath: PolygonPath,
+  label: string,
+  patch: Record<string, unknown> | null,
+  extensions: readonly PathEditExtension[],
+): Op[] {
+  const next = storeEditablePath(node, worldPath, extensions);
+  if (!next) return [];
+  const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
+  // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
+  // Its skin and constraints stay, renumbered by the caller's patch where it has one, and the
+  // form it was drawn from as storing it left it.
+  const data = withoutGeometryBoundData(
+    next.data === node.data ? node.data : withoutShapeGenerator(next.data), ['skin', 'constraints', 'representation'],
+  );
+  if (data === node.data && !patch) return [reshape];
+  return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];
+}
+
+/** The pose and data `ops` leave each node they write, read by applying them to a recorder; null when one cannot be read that way. */
+function writtenBy(sc: AnyScene, ops: readonly Op[]): Map<string, EditableNode> | null {
+  const after = new Map<string, EditableNode>();
+  const current = (id: string): EditableNode | null => {
+    const node = after.get(id) ?? sc.get(id as NodeId);
+    return node ? { pose: node.pose, data: node.data } : null;
+  };
+  const write = (id: string, field: keyof EditableNode, value: unknown) => {
+    const node = current(id);
+    if (node) after.set(id, { ...node, [field]: value });
+  };
+  const reads = sceneMutators(sc);
+  const noop = () => {};
+  const recorder = {
+    ...reads,
+    setPose: (id: string, pose: unknown) => write(id, 'pose', pose),
+    setData: (id: string, data: unknown) => write(id, 'data', data),
+    setParent: noop, setChildOrder: noop, setLayer: noop, setDependsOn: noop, setLayout: noop,
+    setHidden: noop, setLocked: noop, removeNode: noop, insertNode: noop,
+    getSelection: (): string[] => [...sc.getSelection()],
+    setSelection: noop,
+  };
+  try {
+    for (const op of ops) op.apply(recorder);
+  } catch {
+    return null;
+  }
+  return after;
+}
+
+/** `ops`, a whole-node transform's batch, with the ops `extensions` add for the other nodes it changes; null when one refuses it. */
+export function transformOps(
+  sc: AnyScene,
+  extensions: readonly PathEditExtension[],
+  ops: readonly Op[],
+  label: string,
+): Op[] | null {
+  const finishing = extensions.filter((e) => e.finishTransform);
+  const after = finishing.length > 0 ? writtenBy(sc, ops) : null;
+  if (!after || after.size === 0) return [...ops];
+  const nodeAfter = (id: string) => {
+    const node = sc.get(id as NodeId);
+    if (!node) return null;
+    const written = after.get(id);
+    return { pose: written?.pose ?? node.pose, data: written?.data ?? node.data, dependsOn: node.dependsOn };
+  };
+  const ctx: PathTransformFinishCtx = {
+    ids: [...after.keys()],
+    node: nodeAfter,
+    path: (id) => pathEditPathOf(nodeAfter(id) ?? undefined, extensions),
+    before: (id) => pathEditPathOf(sc.get(id as NodeId) as EditableNode | undefined, extensions),
+    dependents: (id) => dependentsOf(sc, id),
+  };
+  const others = new Map<string, PathEditOther>();
+  for (const ext of finishing) {
+    const done = ext.finishTransform!(ctx);
+    if (!done) return null;
+    for (const o of done) if (!after.has(o.id)) addOther(others, o);
+  }
+  return [...ops, ...otherOps(sc, others, label, extensions)];
+}

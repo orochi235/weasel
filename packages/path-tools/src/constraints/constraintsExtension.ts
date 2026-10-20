@@ -1,10 +1,11 @@
 /**
  * Path constraints in path edit: their marks on the open path, a click
- * selecting one, Delete removing it, and every edit finished so they hold.
+ * selecting one, Delete removing it, and every edit finished so they hold —
+ * a whole-node transform too, for the links tying the nodes it moves.
  */
 import { pathAnchorPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathEditExtension, PathEditTarget } from '@weasel-js/core';
-import { finishLinkedEdit, registerConstraintLinkShape } from './constraintLinks';
+import { finishLinkedEdit, finishLinkedTransform, registerConstraintLinkShape } from './constraintLinks';
 import { constraintGlyphs, constraintMarkAt, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { conflictsIn, constrainNodeEdit, constraintAxisOf, constraintsOf, solveNodeConstraints } from './pathConstraints';
 
@@ -101,5 +102,6 @@ export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> 
         ? { path: done.path }
         : { path: done.path, data: { constraints: done.constraints } };
     },
+    finishTransform: finishLinkedTransform,
   };
 }

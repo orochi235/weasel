@@ -9,10 +9,14 @@
  *
  * An edit of any node a link ties solves every node the links reach in one
  * solve: an anchor held on another node's segment slides along it when
- * dragged and follows it when that node is edited.
+ * dragged and follows it when that node is edited. A whole-node transform —
+ * move, resize, rotate, flip, nudge — of a node a link ties carries the
+ * linked nodes with it.
  */
 import {
   constrainPathsEdit,
+  pathAnchorPoints,
+  unsatisfiedConstraints,
   type PathConstraint,
   type PathLink,
   type PathsEditItem,
@@ -21,7 +25,9 @@ import {
 } from '@weasel-js/geom';
 import {
   registerNodeShape,
-  type AddNodeSpec, type NodeId, type NodeShapeEntry, type PathEditFinishCtx, type PathEditOther, type RectPose,
+  resolveEditablePathOf,
+  type AddNodeSpec, type NodeId, type NodeShapeEntry, type PathEditFinishCtx, type PathEditOther,
+  type PathTransformFinishCtx, type RectPose, type Scene,
 } from '@weasel-js/core';
 import { constraintAxisOf, constraintsOf } from './pathConstraints';
 
@@ -86,16 +92,18 @@ interface Link {
   constraint: PathConstraint;
 }
 
-function linkAt(ctx: PathEditFinishCtx, id: string): Link | null {
+type LinkReader = Pick<PathEditFinishCtx, 'node' | 'dependents'>;
+
+function linkAt(ctx: LinkReader, id: string): Link | null {
   const node = ctx.node(id);
   const constraint = constraintLinkOf(node?.data);
   const nodes = node?.dependsOn;
   return constraint && Array.isArray(nodes) ? { id, nodes, constraint } : null;
 }
 
-/** Every link reached from `start` through the nodes links tie, and those nodes, `start` first. */
-function linkedFrom(ctx: PathEditFinishCtx, start: string): { nodes: string[]; links: Link[] } {
-  const nodes = [start];
+/** Every link reached from `starts` through the nodes links tie, and those nodes, `starts` first. */
+function linkedFrom(ctx: LinkReader, starts: readonly string[]): { nodes: string[]; links: Link[] } {
+  const nodes = [...starts];
   const links = new Map<string, Link>();
   for (let k = 0; k < nodes.length; k++) {
     for (const id of ctx.dependents(nodes[k])) {
@@ -129,7 +137,7 @@ export function finishLinkedEdit(
   worldPath: PolygonPath,
   origins?: readonly (PointOrigin | null)[],
 ): LinkedEdit | null | undefined {
-  const { nodes, links } = linkedFrom(ctx, ctx.id);
+  const { nodes, links } = linkedFrom(ctx, [ctx.id]);
   if (links.length === 0) return undefined;
   const items: PathsEditItem[] = [];
   for (const [k, id] of nodes.entries()) {
@@ -166,4 +174,47 @@ export function finishLinkedEdit(
   const own = constraintsOf(ctx.node(ctx.id)?.data);
   const [first] = done.items;
   return { path: first.path, constraints: same(own, first.constraints) ? own : first.constraints, others };
+}
+
+/**
+ * The other nodes a whole-node transform of `ctx.ids` changes so the links
+ * reaching them hold: each transformed node is held as the transform left it
+ * and the linked nodes give way, their own constraints kept. A link between
+ * transformed nodes only is carried as it is, as their own constraints are.
+ * Empty when the links cannot all hold — the transform stands, and
+ * {@link constraintLinkConflictsOf} reports what it broke.
+ */
+export function finishLinkedTransform(ctx: PathTransformFinishCtx): PathEditOther[] {
+  const moved = new Set(ctx.ids);
+  const reached = linkedFrom(ctx, ctx.ids);
+  const links = reached.links.filter((l) => l.nodes.some((n) => !moved.has(n)));
+  if (links.length === 0) return [];
+  const nodes = reached.nodes.filter((n) => links.some((l) => l.nodes.includes(n)));
+  const items: PathsEditItem[] = [];
+  for (const id of nodes) {
+    const node = ctx.node(id);
+    const after = ctx.path(id);
+    const before = moved.has(id) ? ctx.before(id) : after;
+    if (!node || !after || !before) return [];
+    items.push(moved.has(id)
+      ? { before, after, constraints: [] }
+      : { before, after, constraints: constraintsOf(node.data), axisAngle: constraintAxisOf(node), yields: true });
+  }
+  const done = constrainPathsEdit(items, links.map((l) => ({ constraint: l.constraint, paths: l.nodes.map((n) => nodes.indexOf(n)) })));
+  if (!done.converged) return [];
+  return done.items.flatMap((item, k) => (moved.has(nodes[k]) || item.path === items[k].after ? [] : [{ id: nodes[k], path: item.path }]));
+}
+
+/** The ids of the link nodes tying `id` whose constraint does not hold in the nodes' committed paths. */
+export function constraintLinkConflictsOf(scene: Pick<Scene<unknown, string, unknown>, 'get' | 'removalClosure'>, id: string): string[] {
+  if (!scene.get(id as NodeId)) return [];
+  const reader: LinkReader = { node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] };
+  return scene.removalClosure([id as NodeId]).flatMap((lid) => {
+    const link = lid === id ? null : linkAt(reader, lid);
+    if (!link?.nodes.includes(id)) return [];
+    const paths = link.nodes.map((n) => resolveEditablePathOf(scene.get(n as NodeId)));
+    if (paths.some((p) => !p)) return [link.id];
+    const points = paths.flatMap((p) => pathAnchorPoints(p!));
+    return unsatisfiedConstraints(points, [link.constraint]).length > 0 ? [link.id] : [];
+  });
 }

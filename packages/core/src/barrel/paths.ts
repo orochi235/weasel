@@ -151,6 +151,7 @@ export type {
   PathEditDragStart,
   PathEditExtension,
   PathEditFinishCtx,
+  PathTransformFinishCtx,
   PathEditHandleMove,
   PathEditMark,
   PathEditMarksCtx,

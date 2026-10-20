@@ -5,13 +5,13 @@ import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonP
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  createScene, defaultCommitAdapter, deleteAnchorsAction, editAnchorsAction, findNodeShape,
+  createScene, createTransformOp, defaultCommitAdapter, deleteAnchorsAction, editAnchorsAction, findNodeShape,
   type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
 } from '@weasel-js/core';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
 } from '@weasel-js/core/test-seams';
-import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
+import { constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf } from './constraintLinks';
 import { createConstraintsExtension } from './constraintsExtension';
 
 type Data = { constraints?: PathConstraint[]; constraintLink?: PathConstraint };
@@ -90,7 +90,14 @@ function setup() {
     rerender();
   };
   const run = (action: { invoker?: unknown }) => (action.invoker as ImmediateInvoker).run(deps(), undefined);
-  return { scene, square, triangle, link, drag, points, select, run };
+  /** Move node `id` whole by `(dx, dy)`, as a transform action commits it. */
+  const move = (id: NodeId, dx: number, dy: number) => {
+    const from = scene.get(id)!.pose as PolygonPath;
+    const to = polygonFromPoints(pathAnchorPoints(from).map((p) => ({ x: p.x + dx, y: p.y + dy }))) as PolygonPath;
+    const ops = dep().transformOps!([createTransformOp({ id, from, to, label: 'Move' })], 'Move');
+    if (ops) adapter.applyOps(ops, 'Move');
+  };
+  return { scene, square, triangle, link, drag, points, select, run, move };
 }
 
 describe('constraint links', () => {
@@ -138,5 +145,28 @@ describe('constraint links', () => {
     expect(shape.paint(t.scene.get(t.link)! as never, undefined as never)).toEqual([]);
     t.scene.remove(t.square);
     expect(t.scene.get(t.link)).toBeUndefined();
+  });
+  it('carries a linked node with a whole-node move, as one undo step', () => {
+    const t = setup();
+    t.move(t.square, 0, 30);
+    expect(t.points(t.square)[0]).toEqual({ x: 0, y: 30 });
+    const [a, b] = t.points(t.triangle);
+    expect(a.x).toBeCloseTo(40, 3);
+    expect(a.y).toBeCloseTo(30, 3);
+    expect(b).toEqual({ x: 40, y: -50 });
+    expect(constraintLinkConflictsOf(t.scene, t.square)).toEqual([]);
+    t.scene.undo();
+    expect(t.points(t.triangle)[0]).toEqual({ x: 40, y: 0 });
+    expect(t.points(t.square)[0]).toEqual({ x: 0, y: 0 });
+  });
+
+  it('moves a node whose link cannot follow, and reports the link it breaks', () => {
+    const t = setup();
+    t.scene.update(t.triangle, { data: { constraints: [{ kind: 'fixed', anchor: 0 }] } } as never);
+    t.move(t.square, 0, 30);
+    expect(t.points(t.square)[0]).toEqual({ x: 0, y: 30 });
+    expect(t.points(t.triangle)[0]).toEqual({ x: 40, y: 0 });
+    expect(constraintLinkConflictsOf(t.scene, t.square)).toEqual([t.link]);
+    expect(constraintLinkConflictsOf(t.scene, t.triangle)).toEqual([t.link]);
   });
 });
