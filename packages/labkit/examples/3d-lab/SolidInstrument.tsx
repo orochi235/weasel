@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  CANVAS_CONTEXT_ATTRIBUTES,
   DEFAULT_ALLOWED_CAPABILITIES,
   WeaselProvider,
   buildRuleCtx,
@@ -164,7 +165,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // ── Painting ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!glCanvas) return;
-    const gl = glCanvas.getContext('webgl2', { preserveDrawingBuffer: true });
+    const gl = glCanvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
     if (!gl) return;
 
     const renderer = createRenderer3d(gl);
