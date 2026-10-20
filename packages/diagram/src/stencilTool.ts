@@ -5,14 +5,16 @@
 import { useMemo } from 'react';
 import {
   commitOps, defineTool, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
-  type ActionDeps, type InsertDep, type NodeId, type Tool,
+  type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
+import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
+import { containerBuild, type ContainerStencil } from './containers/containerStencils';
 import type { NodeStyle } from './fromData';
 import { stencilBuild, stencilIdOf, stencilKind, type DiagramStencil } from './stencil';
 
-/** The tool that draws `stencil`: its id is the stencil's insert kind. */
-export function stencilTool(stencil: DiagramStencil): Tool {
+/** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
+export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label'>): Tool {
   return defineTool({
     id: stencilKind(stencil.id),
     hookName: 'useStencilTool',
@@ -27,7 +29,7 @@ export function stencilTool(stencil: DiagramStencil): Tool {
 }
 
 /** {@link stencilTool}, rebuilt only when the stencil changes. */
-export function useStencilTool(stencil: DiagramStencil): Tool {
+export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label'>): Tool {
   return useMemo(() => stencilTool(stencil), [stencil]);
 }
 
@@ -38,12 +40,17 @@ export interface StencilInsertOptions {
   measure?: MeasureRowText;
   /** The body's fill, stroke and text colors. Default `diagramScene`'s node style. */
   style?: NodeStyle;
+  /** Container stencils to draw beside the shapes (`CONTAINER_STENCILS`). */
+  containers?: readonly ContainerStencil[];
 }
+
+type Bounds = { x: number; y: number; width: number; height: number };
 
 /**
  * Registers the `insert` dep for stencil kinds. Any other kind goes to the
  * `insert` dep this one displaced, so core's rect, ellipse and text tools
- * keep working beside the stencils.
+ * keep working beside the stencils. A stencil drawn inside a container or a
+ * lane becomes its member (`diagramDropParentAt`).
  */
 export function useStencilInsert(stencils: readonly DiagramStencil[], opts: StencilInsertOptions = {}): void {
   const registry = useDepRegistry();
@@ -54,31 +61,42 @@ export function useStencilInsert(stencils: readonly DiagramStencil[], opts: Sten
     const scene = registry.get('scene');
     const fallback = below();
     const layer = () => optsRef.current.layer ?? fallback?.layer?.() ?? scene?.layers[0]?.id ?? 'default';
-    const stencilOf = (kind: string) => {
+    const stencilOf = (kind: string): DiagramStencil | ContainerStencil | undefined => {
       const id = stencilIdOf(kind);
-      return id === null ? undefined : stencilsRef.current.find((s) => s.id === id);
+      if (id === null) return undefined;
+      return stencilsRef.current.find((s) => s.id === id) ?? optsRef.current.containers?.find((s) => s.id === id);
+    };
+    const builtAt = (stencil: DiagramStencil | ContainerStencil, bounds: Bounds): { id: string; ops: Op[] } | null => {
+      if (scene === undefined) return null;
+      const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+      const role = 'role' in stencil ? stencil.role : null;
+      const { style, measure } = optsRef.current;
+      const common = {
+        layer: layer(),
+        newId: () => scene.mintId() as string,
+        parent: diagramDropParentAt(scene as unknown as DropParentScene, center, role),
+        ...(style ? { style } : {}),
+      };
+      return 'role' in stencil
+        ? containerBuild(stencil, bounds, common)
+        : stencilBuild(stencil, bounds, { ...common, ...(measure ? { measure } : {}) });
     };
     const build: NonNullable<InsertDep['build']> = (bounds, extras, ends) => {
       const stencil = stencilOf(extras.kind);
       if (stencil === undefined) return fallback?.build?.(bounds, extras, ends) ?? null;
-      if (scene === undefined) return null;
-      const built = stencilBuild(stencil, bounds, {
-        layer: layer(),
-        newId: () => scene.mintId(),
-        ...(optsRef.current.measure ? { measure: optsRef.current.measure } : {}),
-        ...(optsRef.current.style ? { style: optsRef.current.style } : {}),
-      });
-      return { id: built.id as NodeId, ops: built.ops };
+      const built = builtAt(stencil, bounds);
+      return built === null ? null : { id: built.id as NodeId, ops: built.ops };
     };
     return {
       layer,
       build,
       commit(bounds, extras, ends) {
-        if (stencilOf(extras.kind) === undefined) return fallback?.commit(bounds, extras, ends) ?? null;
+        const stencil = stencilOf(extras.kind);
+        if (stencil === undefined) return fallback?.commit(bounds, extras, ends) ?? null;
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const deps = { scene, applyOps: registry.get('applyOps'), selection: registry.get('selection') };
-        commitOps(deps as unknown as ActionDeps, built.ops, `Insert ${stencilOf(extras.kind)!.label}`);
+        commitOps(deps as unknown as ActionDeps, built.ops, `Insert ${stencil.label}`);
         return built.id;
       },
     };

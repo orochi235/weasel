@@ -54,11 +54,12 @@ function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
  * The ops that insert `stencil` at `bounds`: its container first, then one
  * text node per text row. Applied as one batch, they are one undo entry.
  * `style` colors the body and its text; default `diagramScene`'s node style.
+ * `parent` is the container the body goes in; default the top level.
  */
 export function stencilBuild<TLayer extends string>(
   stencil: DiagramStencil,
   bounds: Bounds,
-  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle },
+  opts: { layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle; parent?: string | null },
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
   const style = opts.style ?? NODE;
@@ -85,7 +86,7 @@ export function stencilBuild<TLayer extends string>(
     },
   );
   const ops = built.specs.map((spec, k) => createInsertOp({
-    node: { ...spec, id: spec.id ?? `${id}/${k}`, parent: spec.parent ?? null },
+    node: { ...spec, id: spec.id ?? `${id}/${k}`, parent: spec.parent ?? opts.parent ?? null },
     label: `Insert ${stencil.label}`,
   }));
   return { id, ops };
