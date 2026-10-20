@@ -75,8 +75,8 @@ export function rankInset(inset: GroupInset, axes: LayoutAxes): { lo: number; hi
  * that ends, or starts, at the same rank. `rows` is the nodes of each rank.
  */
 export function rankGaps(
-  graph: Graph,
-  rows: readonly (readonly GraphNode[])[],
+  graph: Pick<Graph, 'groups'>,
+  rows: readonly (readonly Pick<GraphNode, 'id'>[])[],
   axes: LayoutAxes,
   rankGap: number,
 ): number[] {
@@ -108,7 +108,7 @@ interface Span {
   children: Span[];
 }
 
-function groupSpans(graph: Graph, rows: readonly (readonly GraphNode[])[]): Span[] {
+function groupSpans(graph: Pick<Graph, 'groups'>, rows: readonly (readonly Pick<GraphNode, 'id'>[])[]): Span[] {
   const rankOf = new Map<string, number>();
   rows.forEach((row, i) => row.forEach((n) => rankOf.set(n.id, i)));
   const spans: Span[] = [];

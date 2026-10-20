@@ -65,6 +65,9 @@ export function resolveGroups(
 
 type Rect = { x: number; y: number; width: number; height: number };
 
+/** The node id of a group's title. */
+export const groupLabelIdOf = (id: string): string => `${id}/label`;
+
 /** A label on a wire, as a group box takes it in: the label node's id, and
  *  where it sits when that is known before the scene derives it. */
 export interface WireLabel {
@@ -169,7 +172,7 @@ export function groupSpecs(
     if (g.title === null || !g.group.label) continue;
     const anchor: DiagramAnchor = { at: { u: 0, v: 0 }, offset: { x: g.pad, y: g.pad } };
     specs.push({
-      id: `${g.group.id}/label` as never,
+      id: groupLabelIdOf(g.group.id) as never,
       kind: 'leaf',
       layer: 'main',
       pickable: false,
