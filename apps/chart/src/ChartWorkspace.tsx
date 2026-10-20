@@ -33,9 +33,10 @@ const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool);
 
 /** The page the grid covers: the one in view, or the last one that was while the view is between pages. */
 function useGridPage(pages: ChartPages): PlacedPage | typeof FALLBACK_PAGE {
-  const last = useRef<string | null>(null);
-  if (pages.current !== null) last.current = pages.current;
-  return pages.placed.find((p) => p.id === last.current) ?? pages.placed[0] ?? FALLBACK_PAGE;
+  const [last, setLast] = useState<string | null>(null);
+  if (pages.current !== null && pages.current !== last) setLast(pages.current);
+  const id = pages.current ?? last;
+  return pages.placed.find((p) => p.id === id) ?? pages.placed[0] ?? FALLBACK_PAGE;
 }
 
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
