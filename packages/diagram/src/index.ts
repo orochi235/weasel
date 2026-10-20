@@ -92,6 +92,7 @@ export type { AvoidSceneOptions } from './avoid/sceneInput';
 export { installAvoidRouting, routeDataOps } from './avoid/install';
 export type { AvoidRouting, AvoidRoutingOptions } from './avoid/install';
 export { useAvoidRouting } from './avoid/useAvoidRouting';
+export { createSpecRouter } from './avoid/specRoutes';
 export {
   EDGE_END_AFFORDANCE_KIND,
   EDGE_END_LAYER_ID,
