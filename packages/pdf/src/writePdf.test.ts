@@ -20,6 +20,15 @@ describe('writePdf', () => {
     expect(s).toContain('1 0 0 -1 0 75 cm');
   });
 
+  it('compresses streams with the injected deflater and marks them FlateDecode', async () => {
+    const { bytes } = await writePdf([{ width: 10, height: 10, commands: [] }], {
+      fonts: NO_FONTS,
+      deflate: async () => Uint8Array.of(65, 66, 67),
+    });
+    const s = latin1(bytes);
+    expect(s).toContain('/Filter /FlateDecode /Length 3>>\nstream\nABC\nendstream');
+  });
+
   it('puts the title in the info dictionary', async () => {
     const { bytes } = await writePdf([{ width: 10, height: 10, commands: [] }], {
       fonts: NO_FONTS,

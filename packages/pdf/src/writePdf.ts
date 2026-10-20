@@ -4,7 +4,7 @@ import { ContentStream } from './content';
 import { deflate } from './deflate';
 import { type PageCtx, writeCommands } from './drawCommands';
 import type { PdfFontSource } from './fonts/fontSource';
-import { name, PdfObjects, type PdfRef, text } from './objects';
+import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -28,6 +28,8 @@ export interface WritePdfOptions {
   title?: string;
   /** Default true; unit tests pass false because jsdom realms lack `CompressionStream`. */
   compress?: boolean;
+  /** @internal Replaces the zlib compressor; unit tests use it where `CompressionStream` is missing. */
+  deflate?: Deflater;
   readPixels?: (image: ImageBitmap | HTMLImageElement) => RasterPixels;
   rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number) => Promise<RasterPixels>;
 }
@@ -60,13 +62,13 @@ export async function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions)
       opts,
       skipped,
       view: page.view,
+      height: page.height,
     };
     // Page units are points, origin top left, y down.
     ctx.out.op('cm', 1, 0, 0, -1, 0, page.height);
     await writeCommands(ctx, page.commands, { transform: mat3.identity(), alpha: 1, colorMatrix: null });
     const raw = ctx.out.bytes();
-    if (opts.compress === false) objects.stream(contentRef, {}, raw);
-    else objects.stream(contentRef, { Filter: name('FlateDecode') }, await deflate(raw));
+    objects.streamDeflated(contentRef, {}, raw);
     objects.set(pageRef, {
       Type: name('Page'),
       Parent: tree,
@@ -80,5 +82,6 @@ export async function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions)
   objects.set(catalog, { Type: name('Catalog'), Pages: tree });
   objects.set(tree, { Type: name('Pages'), Kids: kids, Count: kids.length });
   objects.set(info, { Producer: text('weasel'), Title: opts.title === undefined ? undefined : text(opts.title) });
+  await objects.settle(opts.compress !== false, opts.deflate ?? deflate);
   return { bytes: objects.serialize(catalog, info), skipped };
 }

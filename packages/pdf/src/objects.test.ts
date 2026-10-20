@@ -48,3 +48,24 @@ describe('PdfObjects', () => {
     expect(s).toContain('/Length 2');
   });
 });
+
+describe('streamDeflated', () => {
+  it('writes the raw bytes when compression is off', async () => {
+    const o = new PdfObjects();
+    const a = o.alloc();
+    o.streamDeflated(a, { K: 1 }, new Uint8Array([104, 105]));
+    await o.settle(false, async () => new Uint8Array());
+    const s = latin1(o.serialize(a));
+    expect(s).toContain('/K 1 /Length 2>>\nstream\nhi\nendstream');
+    expect(s).not.toContain('FlateDecode');
+  });
+
+  it('writes the compressor output under /Filter /FlateDecode when it is on', async () => {
+    const o = new PdfObjects();
+    const a = o.alloc();
+    o.streamDeflated(a, {}, new Uint8Array([104, 105]));
+    await o.settle(true, async (d) => Uint8Array.from([...d, 33]));
+    const s = latin1(o.serialize(a));
+    expect(s).toContain('/Filter /FlateDecode /Length 3>>\nstream\nhi!\nendstream');
+  });
+});

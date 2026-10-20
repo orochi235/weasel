@@ -78,8 +78,11 @@ function writeDict(d: PdfDict): string {
 
 const latin1 = (s: string): Uint8Array => Uint8Array.from(s, (c) => c.charCodeAt(0));
 
+export type Deflater = (data: Uint8Array) => Promise<Uint8Array>;
+
 export class PdfObjects {
   private readonly bodies: (Uint8Array | undefined)[] = [];
+  private readonly pending: { ref: PdfRef; dict: PdfDict; data: Uint8Array }[] = [];
 
   alloc(): PdfRef {
     this.bodies.push(undefined);
@@ -99,6 +102,19 @@ export class PdfObjects {
     out.set(data, head.length);
     out.set(tail, head.length + data.length);
     this.bodies[ref.id - 1] = out;
+  }
+
+  /** Like `stream`, but takes the raw bytes: `settle` compresses them (or not) before `serialize`. */
+  streamDeflated(ref: PdfRef, dict: PdfDict, data: Uint8Array): void {
+    this.pending.push({ ref, dict, data });
+  }
+
+  /** Writes every `streamDeflated` stream, FlateDecode-compressed when `compress` is set. */
+  async settle(compress: boolean, deflate: Deflater): Promise<void> {
+    for (const { ref, dict, data } of this.pending.splice(0)) {
+      if (compress) this.stream(ref, { ...dict, Filter: name('FlateDecode') }, await deflate(data));
+      else this.stream(ref, dict, data);
+    }
   }
 
   serialize(root: PdfRef, info?: PdfRef): Uint8Array {

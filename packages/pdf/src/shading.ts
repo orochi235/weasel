@@ -1,6 +1,7 @@
 import { boundsOfPath, type GlMat3, mat3, type Path } from '@weasel-js/geom';
 import {
   type CommandPaint,
+  type CommandPaintUnits,
   gradientGeometry,
   isGradientPaint,
   resolveGradientStops,
@@ -57,7 +58,7 @@ export function paintShading(ctx: PageCtx, paint: CommandPaint, state: DrawState
 }
 
 /** Paint space to the current frame, resolving `units` as the renderer's `gradientSpaceInverse` does. */
-function paintToFrame(ctx: PageCtx, paint: Gradient, state: DrawState): GlMat3 | null {
+export function paintToFrame(ctx: PageCtx, paint: { units?: CommandPaintUnits }, state: DrawState): GlMat3 | null {
   if (paint.units === 'local') return mat3.identity();
   const fromPage = mat3.invert(state.transform);
   if (!fromPage) return null;
@@ -202,7 +203,7 @@ function conicMesh(center: { x: number; y: number }, angle: number, r: number): 
 function writeShading(ctx: PageCtx, g: Geometry, fn: PdfDict, colorSpace: string): PdfRef {
   const ref = ctx.objects.alloc();
   const dict: Record<string, PdfValue> = { ...g.dict, ColorSpace: name(colorSpace), Function: fn };
-  if (g.data) ctx.objects.stream(ref, dict, g.data);
+  if (g.data) ctx.objects.streamDeflated(ref, dict, g.data);
   else ctx.objects.set(ref, dict);
   return ref;
 }
@@ -211,7 +212,7 @@ function writeShading(ctx: PageCtx, g: Geometry, fn: PdfDict, colorSpace: string
 function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box): PdfRef {
   const ref = ctx.objects.alloc();
   const body = Uint8Array.from('/Sh1 sh\n', (c) => c.charCodeAt(0));
-  ctx.objects.stream(
+  ctx.objects.streamDeflated(
     ref,
     {
       Type: name('XObject'),

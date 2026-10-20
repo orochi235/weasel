@@ -106,11 +106,11 @@ describe('writeCommands', () => {
     expect(content).toContain('0 0 10 20 re\nS\n');
   });
 
-  it('skips a pattern fill and kinds not yet written', async () => {
+  it('skips an unregistered texture and kinds not yet written', async () => {
     const { skipped } = await render([
-      { kind: 'path', path: rect, fill: { paint: { kind: 'texture', texture: {} as never } } },
+      { kind: 'path', path: rect, fill: { paint: { kind: 'texture', texture: { id: 'tex_none' } } } },
       { kind: 'text' } as never,
     ]);
-    expect(skipped.map((k) => k.detail)).toEqual(['pattern fill not yet supported', 'text not yet supported']);
+    expect(skipped.map((k) => k.detail)).toEqual(['texture tex_none cannot be drawn', 'text not yet supported']);
   });
 });

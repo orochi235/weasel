@@ -7,3 +7,8 @@ export type Rgba = [number, number, number, number];
 export function colorFor(color: string | readonly [number, number, number, number], _state: DrawState): Rgba {
   return typeof color === 'string' ? parseColor(color) : [color[0], color[1], color[2], color[3]];
 }
+
+/** Every image pixel comes through here, so a color matrix has one place to apply. Straight RGBA in, straight RGBA out. */
+export function foldPixels(data: Uint8ClampedArray, _state: DrawState): Uint8ClampedArray {
+  return data;
+}

@@ -3,6 +3,7 @@ import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/pai
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { colorFor } from './color';
 import type { ContentStream } from './content';
+import { type TextureFill, texturePattern, writeImage } from './images';
 import type { PdfObjects } from './objects';
 import { pathOps } from './pathOps';
 import type { PageResources } from './resources';
@@ -23,6 +24,8 @@ export interface PageCtx {
   opts: WritePdfOptions;
   skipped: PdfSkip[];
   view: GlMat3 | undefined;
+  /** The page's height in points, which a pattern's matrix needs to undo the page flip. */
+  height: number;
 }
 
 function skip(ctx: PageCtx, detail: string): void {
@@ -54,11 +57,25 @@ function writeShadedFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, p
   out.op('Q');
 }
 
+function writeTextureFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, paint: TextureFill): void {
+  const pattern = texturePattern(ctx, paint, state);
+  if (!pattern) return skip(ctx, `texture ${paint.texture.id} cannot be drawn`);
+  const alpha = (paint.opacity ?? 1) * state.alpha;
+  const { out } = ctx;
+  out.op('q');
+  setAlpha(ctx, alpha, alpha);
+  out.op('cs', '/Pattern');
+  out.op('scn', `/${pattern}`);
+  out.op(fillPathOps(out, cmd.path) ? 'f*' : 'f');
+  out.op('Q');
+}
+
 function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): void {
   const paint = cmd.fill?.paint;
   if (!paint) return;
   if (isGradientPaint(paint)) return writeShadedFill(ctx, cmd, state, paint);
-  if (!isSolidPaint(paint)) return skip(ctx, 'pattern fill not yet supported');
+  if (paint.kind === 'texture') return writeTextureFill(ctx, cmd, state, paint);
+  if (!isSolidPaint(paint)) return skip(ctx, 'fill paint not yet supported');
   const [r, g, b, a] = colorFor(paint.color, state);
   const alpha = a * (paint.opacity ?? 1) * state.alpha;
   const { out } = ctx;
@@ -104,6 +121,7 @@ export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], 
   for (const cmd of cmds) {
     if (cmd.kind === 'path') await writePath(ctx, cmd, state);
     else if (cmd.kind === 'group') await writeGroup(ctx, cmd, state);
+    else if (cmd.kind === 'image' || cmd.kind === 'sprites') writeImage(ctx, cmd, state);
     else skip(ctx, `${cmd.kind} not yet supported`);
   }
 }
