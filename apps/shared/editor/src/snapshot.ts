@@ -51,9 +51,10 @@ export function reviveTypedArrays<T>(node: T): T {
  *  (parents before children), so a sequential `add` finds each
  *  node's parent already present.
  *
- *  A node's `dependsOn` and its derivations come back too, each derivation
- *  looked up by its key in `registry`: a key `registry` lacks leaves the node
- *  as authored. Container clip-paths (`clipFromPoseKey`) are not restored.
+ *  A node's `dependsOn`, its derivations, and a container's layout come back
+ *  too, each looked up by its key in `registry`: a key `registry` lacks leaves
+ *  the node as authored. So do the pickable, hidden, and locked flags.
+ *  Container clip-paths (`clipFromPoseKey`) are not restored.
  *  `revive` rewrites each node's data on the way in; the default revives typed arrays only. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
@@ -63,6 +64,7 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   return json.nodes.map((n) => {
     const derivePath = n.derivePathKey === undefined ? undefined : registry.derivePath?.[n.derivePathKey];
     const derivePose = n.derivePoseKey === undefined ? undefined : registry.derivePose?.[n.derivePoseKey];
+    const layout = n.layoutKey === undefined ? undefined : registry.layout?.[n.layoutKey];
     return {
       kind: n.kind,
       layer: n.layer,
@@ -73,6 +75,10 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
       ...(n.dependsOn !== undefined ? { dependsOn: n.dependsOn === 'children' ? 'children' : n.dependsOn.map(asNodeId) } : {}),
       ...(derivePath ? { derivePath } : {}),
       ...(derivePose ? { derivePose } : {}),
+      ...(layout ? { layout } : {}),
+      ...(n.pickable === false ? { pickable: false } : {}),
+      ...(n.hidden === true ? { hidden: true } : {}),
+      ...(n.locked === true ? { locked: true } : {}),
     };
   });
 }

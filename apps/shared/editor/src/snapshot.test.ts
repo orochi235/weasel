@@ -62,4 +62,21 @@ describe('snapshot — scene snapshot to node specs', () => {
 
     expect(nodeSpecsFromSnapshot(json)[0].data).toEqual({ image });
   });
+
+  it('restores a container\'s layout by its key, and the pickable, hidden, and locked flags', () => {
+    const layout = { snap: { pickTarget: () => null } } as never;
+    const json: SerializedScene<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [
+        { id: 'g', kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {}, layoutKey: 'stack', locked: true },
+        { id: 'a', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {}, parent: 'g', pickable: false, hidden: true },
+      ],
+    };
+    const [g, a] = nodeSpecsFromSnapshot(json, { layout: { stack: layout } });
+    expect(g!.layout).toBe(layout);
+    expect(g!.locked).toBe(true);
+    expect(a!.pickable).toBe(false);
+    expect(a!.hidden).toBe(true);
+  });
 });
