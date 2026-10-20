@@ -1005,6 +1005,15 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) Two files time out in most full fleet runs on keiei and nowhere else.**
+  `packages/forge/src/timeline/timeline.test.tsx` (two tests past 20 s; once a third test then saw
+  three playheads where it expected two, likely left by the one that timed out) and
+  `apps/site/__tests__/WeaselDemos.routing.test.tsx` › "opens the releases view on its own id" (5 s)
+  failed in three keiei runs on 2026-10-20, `main` at `416328e36` among them, and passed alone each
+  time and in full runs on teitou, studio and msb-uai. keiei reports memory pressure and 7–11 GB of
+  swap in `onto status`. Either what these tests wait on scales badly with a loaded machine, or keiei
+  should take no full runs.
+
 - **(P3) `LabLightbox.browser.test.tsx`'s `Solid` painter opens the shared "under" buffer with
   `{ preserveDrawingBuffer: true }` and no stencil.** Inside a painter callback the surface has
   probably opened the context already, so it may be harmless; unverified (2026-10-20). The lint rule
