@@ -30,6 +30,8 @@ Merged:
 - Prefs' Rail Filterable timed out on the fleet because each story test resized the browser page
   for a story's viewport, and Chromium took 6–13 s per resize on a loaded node (measured). A story's
   viewport now sizes its box instead; `RunStoryOptions.viewport` is gone.
+- Nothing outside labkit's passthrough imports the `@weasel-js/ui` barrel: five new subpaths
+  (`stance`, `portal-host`, `color`, `paint-gradient-track`, `kit-settings`), names ruled.
 - A node's kind has one classifier, the routing kind, read by the canvas, the selection label (so
   the command palette names it) and `SelectionPanel` (new core export `routeKind`).
 - weaselchart's line-jumps browser test failed in full runs because its pixel reader opened the
@@ -39,7 +41,6 @@ Merged:
   one shared reader or a lint rule (P3, "Release-gate & build hygiene").
 
 In flight (each in `.claude/worktrees/agent-*`, branch `worktree-agent-*`):
-- ui subpaths for the eight barrel importers.
 - forge's "ResizeObserver loop" error.
 
 ## State

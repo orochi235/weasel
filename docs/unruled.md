@@ -500,6 +500,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Build
 
+- 2026-10-20 (overnight pass): Five `@weasel-js/ui` subpaths, named in kebab-case after their
+  source module as `./paint-value` and `./kit-icons` are: `./stance`, `./portal-host`, `./color`
+  (the whole color module, oklch and ramps, from a new `color/index.ts`), `./paint-gradient-track`,
+  and `./kit-settings`. Only labkit's `passthrough/weasel-ui.ts` still imports the barrel.
 - 2026-10-07: `react-hooks/set-state-in-effect` is on.
 - 2026-10-11 (core split): two size allowlist entries went up one line each (`Specimen.tsx`,
   `createKeyframeLayer.tsx`).
