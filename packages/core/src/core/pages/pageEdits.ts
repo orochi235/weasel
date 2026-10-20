@@ -17,6 +17,7 @@ export interface PagesDoc {
   readonly layout?: PageLayoutOptions;
 }
 
+/** The scene document value key a page list lives under (`scene.doc`). */
 export const PAGES_DOC_KEY = 'core:pages';
 
 /** Options every page edit takes. */
