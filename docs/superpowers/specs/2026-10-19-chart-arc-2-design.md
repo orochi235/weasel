@@ -1,6 +1,6 @@
 # weaselchart (`apps/chart`), second arc — design
 
-**Pieces 2 to 6 unbuilt as of 2026-10-19.** Piece 1, waypoint editing, landed with core's transform followers (`useTransformFollower`).
+**Pieces 4 to 6 unbuilt as of 2026-10-19.** Pieces 1 to 3 (waypoint editing, stage reorder, multiple pages) have landed.
 
 For whoever builds each piece of the second arc. It says what the user does and sees in
 weaselchart, which engine surface each piece adds and where, how it saves and undoes, and which
