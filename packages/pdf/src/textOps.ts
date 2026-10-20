@@ -15,7 +15,6 @@ import { type TextSegment, writeSegment } from './textSegment';
 /** Code points that hold a slot and never ink: they advance and are left out silently. */
 const BLANK = /^[\s\p{Default_Ignorable_Code_Point}]$/u;
 
-
 /** Whether `g` can join `seg`: one text object holds one line, run, face, size and baseline. */
 function joins(seg: TextSegment | undefined, g: PlacedGlyph, line: number): seg is TextSegment {
   if (!seg || seg.line !== line) return false;
