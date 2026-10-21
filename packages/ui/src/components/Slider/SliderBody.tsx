@@ -1,4 +1,4 @@
-import { useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
+import { useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
@@ -44,7 +44,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   // The value span. Every pointer is measured against it, and thumbs, ticks
   // and stop labels are laid out inside it, so they agree by construction.
   const railRef = useRef<HTMLDivElement | null>(null);
-  const geometry = useMemo(() => lineGeometry(() => railRef.current), []);
+  const [geometry] = useState(() => lineGeometry(() => railRef.current));
   const scale = useScale(span, strict, step);
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
