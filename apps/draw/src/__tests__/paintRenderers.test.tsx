@@ -44,14 +44,13 @@ function colorInputValue(value: unknown): string | undefined {
 }
 
 describe("WeaselDraw's data.stroke.paint renderer", () => {
-  // A node with no stroke at all leaves the leaf with no value. Falling back
-  // to the schema default — a whole `Paint` — handed the old color input
-  // an object and threw the panel away.
-  it.each([
-    ['no stroke', undefined, '#000000'],
-    ['a solid stroke', { kind: 'solid', color: '#123456ff' }, '#123456'],
-  ])('shows a color for %s', (_label, value, expected) => {
-    expect(colorInputValue(value)).toBe(expected);
+  it('shows the color of a solid stroke', () => {
+    expect(colorInputValue({ kind: 'solid', color: '#123456ff' })).toBe('#123456');
+  });
+
+  it('shows None, not a default color, for no stroke', () => {
+    renderWithIcons(<ActionsProvider>{WD_RENDERERS['data.stroke.paint'](ctxWith(undefined))}</ActionsProvider>);
+    expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();
   });
 
   it('edits a gradient stroke as a gradient', () => {

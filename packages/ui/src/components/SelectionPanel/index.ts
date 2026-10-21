@@ -20,3 +20,4 @@ export {
   type PanelShown,
 } from './model';
 export { conditionedSections, selectionJudge } from './conditions';
+export { nestedPaintValue } from './leafField';
