@@ -214,24 +214,26 @@ test('the wheel and a drag along the band scroll; a still press on an action fir
   const c = centerOf(box);
   const first = () => bearing(mid(items()[0]!), c);
 
-  // A spot on the run between two items, where only the band takes the press.
-  const gapDeg = Array.from({ length: 241 }, (_, i) => -30 + i / 4).find((deg) => {
+  // Each item takes a press at its middle; somewhere on the run between them only the band does.
+  const shape = (el: HTMLElement) => {
+    const at = mid(el);
+    const hit = document.elementFromPoint(at.x, at.y);
+    return `${el.getAttribute('data-bar-item')} ${bearing(at, c).toFixed(2)}° ${el.offsetWidth}x${el.offsetHeight} hit ${hit?.tagName}${el.contains(hit) ? ' (own)' : ''}`;
+  };
+  const layout = items().map(shape).join('\n');
+  for (const el of items().filter((one) => one.getAttribute('data-clipped') === 'none')) {
+    const at = mid(el);
+    expect(el.contains(document.elementFromPoint(at.x, at.y)), layout).toBe(true);
+  }
+  const gapDeg = Array.from({ length: 201 }, (_, i) => -25 + i / 4).find((deg) => {
     const hit = document.elementFromPoint(...onCircle(c, deg));
     return hit instanceof SVGPathElement && bar().contains(hit);
   });
-  expect(gapDeg).toBeDefined();
+  expect(gapDeg, layout).toBeDefined();
   const before = first();
-  const log: string[] = [];
-  const types = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'gotpointercapture', 'lostpointercapture', 'click', 'dragstart', 'selectstart'];
-  const note = (e: Event) => {
-    const p = e as PointerEvent;
-    log.push(`${e.type} ${(e.target as Element).tagName ?? '?'} b${p.buttons ?? ''} ${p.clientX?.toFixed?.(1)},${p.clientY?.toFixed?.(1)} first ${first().toFixed(2)}`);
-  };
-  for (const t of types) document.addEventListener(t, note, { capture: true });
   await dragAlong(c, gapDeg!, gapDeg! - 15);
   await settle();
-  for (const t of types) document.removeEventListener(t, note, { capture: true });
-  expect(Math.abs(first() - before + 15), `gap ${gapDeg} before ${before} after ${first()}\n${log.join('\n')}`).toBeLessThanOrEqual(1);
+  expect(Math.abs(first() - before + 15), `gap ${gapDeg}°, first ${before} → ${first()}\n${layout}`).toBeLessThanOrEqual(1);
 
   const wheels: number[] = [];
   const onWheel = (e: WheelEvent) => wheels.push(e.deltaY);
