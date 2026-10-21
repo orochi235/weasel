@@ -227,7 +227,9 @@ test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewpor
     );
   } catch (error) {
     // eslint-disable-next-line no-console -- stdout is the only stream an onto log keeps
-    console.log(`LabFit ${fixture} ${viewport}, fonts ${document.fonts.status}:\n  ${seen.join('\n  ')}`);
+    console.log(
+      `LabFit ${fixture} ${viewport}, fonts ${document.fonts.status}:\n  ${seen.join('\n  ')}`,
+    );
     throw error;
   }
   expect(fitProblems(fixture, viewport)).toEqual([]);
