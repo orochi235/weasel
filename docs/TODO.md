@@ -551,6 +551,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
+  `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
+  highlighted literal (`pre[data-testid=schema-literal]`) is about 3,300 elements and 130 ms of a
+  jsdom test, and `IconAttrField`'s grid of every registered icon about 2,200 and 90 ms. Virtualizing
+  either, or mounting the literal only while its panel is open, changes the UI.
+
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
