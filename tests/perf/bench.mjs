@@ -2,19 +2,23 @@
 /**
  * Runs the vitest microbenchmarks in `tests/perf/bench/` and writes one result.
  *
- *   npm run perf:bench -- [--out <path>] [vitest filters, e.g. a bench file]
+ *   npm run perf:bench -- [--out <path>] [--raw <path>] [vitest filters, e.g. a bench file]
+ *
+ * `--raw` also keeps vitest's own JSON report, which `bench-report.mjs --merge` reads.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { DEFAULT_RESULTS_DIR, REPO_ROOT, startRun } from './lib/result.ts';
 import { addVitestBench } from './lib/vitest-bench.ts';
 
 const args = process.argv.slice(2);
 let out;
+let rawOut;
 const filters = [];
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--out') out = args[++i];
+  else if (args[i] === '--raw') rawOut = resolve(args[++i]);
   else filters.push(args[i]);
 }
 
@@ -35,6 +39,10 @@ try {
     process.exitCode = res.status ?? 1;
   } else {
     addVitestBench(run, JSON.parse(readFileSync(raw, 'utf8')));
+    if (rawOut) {
+      mkdirSync(dirname(rawOut), { recursive: true });
+      copyFileSync(raw, rawOut);
+    }
     run.write({ out });
   }
 } finally {

@@ -503,6 +503,8 @@ numbers, not a threshold, and nothing fails when they are exceeded.
 
 ```sh
 npm run perf:bench:baseline   # re-measure, overwrite both files
+npm run perf:bench -- --raw <json> tests/perf/bench/<file>.bench.ts
+node tests/perf/bench-report.mjs --merge <json>   # replace that file's rows only
 ```
 
 vitest 5 dropped `--compare`. To measure a change, run `npm run perf:bench`
@@ -511,7 +513,8 @@ before and after it and put the two result files through `npm run perf:compare`.
 Re-record it when a change is *meant* to move the numbers, on an idle machine,
 and say what moved in the commit message. `bench-report.mjs` stamps the
 header with the date and machine it runs on, so run it only straight after
-the measurement it describes.
+the measurement it describes. `--merge` leaves the header alone; add a sentence
+to it saying which rows were re-measured, where, and why.
 
 They run from their own config, `vitest.bench.config.ts`, not as a project in
 the root `vitest.config.ts`, so no `--project` selection and no bare
