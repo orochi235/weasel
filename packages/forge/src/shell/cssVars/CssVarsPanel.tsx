@@ -156,7 +156,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     setFilter((was) => (name.toLowerCase().includes(was.trim().toLowerCase()) ? was : ''));
     setFolds((prev) => (prev[category] ? { ...prev, [category]: false } : prev));
   }, [setFolds]);
-  useRevealToken(listRef, byTab, show);
+  useRevealToken(listRef, byTab, show, frame.vars.length > 0);
 
   const query = filter.trim().toLowerCase();
   const shown = tokens

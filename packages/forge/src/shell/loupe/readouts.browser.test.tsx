@@ -64,7 +64,8 @@ function loupeKey(body: Element, key: string) {
   press(body, { key });
 }
 
-it('reads Token and Contrast from a compared lens’s own copy, under the opposite mode', async () => {
+/** A Workshop showing the story, with one lens added over its text and set to compare against the opposite mode. */
+async function comparedLens() {
   history.replaceState(null, '', `${location.pathname}#/r--ink`);
   const { container } = renderWithIcons(
     <div className="fg-readouts-test-workshop">
@@ -84,16 +85,19 @@ it('reads Token and Contrast from a compared lens’s own copy, under the opposi
     if (!el || host?.hasAttribute('data-pending')) throw new Error('no story yet');
     return el;
   });
-
   await userEvent.hover(text);
   const body = container.querySelector('.lk-lab__body')!;
   loupeKey(body, 'l');
   await waitFor(() => expect(document.querySelector('.lk-lens-interior')).not.toBeNull());
   loupeKey(body, 'o');
+  await waitFor(() => expect(document.querySelector('.fg-lens-copy [data-fg-copy]:not([data-pending]) .fg-readouts-test-text')).not.toBeNull());
+  return body;
+}
+
+it('reads Token and Contrast from a compared lens’s own copy, under the opposite mode', async () => {
+  const body = await comparedLens();
   loupeKey(body, 't');
   loupeKey(body, 'c');
-
-  await waitFor(() => expect(document.querySelector('.fg-lens-copy [data-fg-copy]:not([data-pending]) .fg-readouts-test-text')).not.toBeNull());
   // The story renders light, whose text is gray-900; the compared copy is dark, whose text is gray-100.
   await waitFor(() =>
     expect(document.querySelector('.fg-lens-token')?.textContent).toMatch(/^color ← --wzl-fg ← --wzl-gray-100 ← /),
@@ -101,4 +105,25 @@ it('reads Token and Contrast from a compared lens’s own copy, under the opposi
   await waitFor(() => expect(document.querySelector('.fg-lens-contrast')?.textContent).toMatch(/^\d+\.\d\d:1 · AA /));
   // No probe is left behind on the layer.
   expect(document.querySelector('.lk-lens-layer')?.hasAttribute('data-probe')).toBe(false);
+});
+
+it('passes a wheel over a compared lens to what lies beneath it, not to the lens’s copy', async () => {
+  await comparedLens();
+  const layer = document.querySelector<HTMLElement>('.lk-lens-layer')!;
+  const box = document.querySelector('.lk-lens-interior')!.getBoundingClientRect();
+  const at = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 };
+  const hit = document.elementFromPoint(at.clientX, at.clientY)!;
+  expect(hit.classList.contains('lk-lens-hit')).toBe(true);
+  const beneath: EventTarget[] = [];
+  const listen = (e: Event) => {
+    if (e.target instanceof Node && !layer.contains(e.target)) beneath.push(e.target);
+  };
+  document.addEventListener('wheel', listen, { capture: true });
+  try {
+    hit.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 40, ...at }));
+  } finally {
+    document.removeEventListener('wheel', listen, { capture: true });
+  }
+  expect(beneath).toHaveLength(1);
+  expect(layer.hasAttribute('data-probe')).toBe(false);
 });

@@ -34,12 +34,13 @@ const MARK = 'data-revealed';
 /**
  * Answers reveals for a CSS vars panel: brings the token into view through `show`, then marks its row — or its
  * swatch or slider thumb, which carry its name the same way — in `list` and scrolls to it. A token neither tab
- * lists is dropped.
+ * lists is dropped once the story's frame has reported its variables, and shown when they arrive if it is among them.
  */
 export function useRevealToken(
   list: RefObject<HTMLElement | null>,
   tokens: Readonly<Record<RevealTab, readonly TokenEntry[]>>,
   show: ShowToken,
+  storyReported: boolean,
 ): void {
   // The token to mark, until it is marked; a render is asked for, and the mark lands once its row is drawn.
   const asked = useRef<string | null>(null);
@@ -50,14 +51,14 @@ export function useRevealToken(
         const tab = (['theme', 'story'] as const).find((t) => tokens[t].some((token) => token.name === name));
         const token = tab && tokens[tab].find((t) => t.name === name);
         if (!tab || !token) {
-          if (pending === name) pending = null;
+          if (storyReported && pending === name) pending = null;
           return;
         }
         show(name, tab, tokenCategory(token));
         asked.current = name;
         rerender((n) => n + 1);
       }),
-    [tokens, show],
+    [tokens, show, storyReported],
   );
   useLayoutEffect(() => {
     const root = list.current;

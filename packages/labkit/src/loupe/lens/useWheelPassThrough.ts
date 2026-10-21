@@ -8,7 +8,7 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
     const onWheel = (e: WheelEvent): void => {
       // Hit boxes are the only part of the layer that takes input; with them
       // stood down for one hit-test, the point lands on what is beneath.
-      layer.dataset.probe = '';
+      layer.dataset.probe = 'wheel';
       const beneath = document.elementFromPoint(e.clientX, e.clientY);
       delete layer.dataset.probe;
       if (!beneath || layer.contains(beneath)) return;

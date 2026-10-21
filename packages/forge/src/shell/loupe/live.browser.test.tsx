@@ -18,6 +18,7 @@ import { Workshop } from '../Workshop';
 import { resolveComparison } from './conditions';
 import { createLiveLenses, LiveLensesContext } from './liveLenses';
 import { createLiveSource } from './liveSource';
+import { topmostIn } from './tokenChain';
 
 // Where a copy lands, what a hit test inside a lens finds, and where a popover is placed are layout, scrolling and
 // hit-testing: a real browser's.
@@ -98,12 +99,10 @@ it('shows the patch under the reticle in a story scrolled inside its host', asyn
   });
   const layer = document.querySelector<HTMLElement>('.lk-lens-layer')!;
   const at = center(document.querySelector('.lk-lens-interior .lk-lens-cell')!);
-  // The production probe: the hit boxes stand down and the copy takes the hit test, for this one look. Outside
-  // `waitFor`, which would re-run on these very mutations.
-  layer.dataset.probe = '';
-  const found = document.elementFromPoint(at.x, at.y);
-  delete layer.dataset.probe;
-  expect(found).toBe(copyMarker);
+  // The readouts' own probe, which stands the copy up for one look. Outside `waitFor`, which would re-run on the
+  // probe's own mutations.
+  expect(topmostIn(document.querySelector('.fg-lens-copy')!, at)).toBe(copyMarker);
+  expect(layer.hasAttribute('data-probe')).toBe(false);
 });
 
 function Menu() {

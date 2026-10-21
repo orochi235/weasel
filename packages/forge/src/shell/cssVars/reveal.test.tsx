@@ -72,8 +72,22 @@ describe('revealVar', () => {
     expect(late).not.toHaveBeenCalled();
   });
 
+  it('holds a reveal of a story var until the frame reports its variables, then shows it', async () => {
+    const { frame } = await openTrial();
+    fireEvent.click(await screen.findByRole('button', { name: 'CSS Vars panel' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
+    act(() => revealVar('--wzl-bg'));
+    expect(vars().queryByRole('group', { name: '--wzl-bg' })).toBeNull();
+
+    frame.send({ type: 'vars', vars: [{ name: '--wzl-bg', value: 'rgb(1, 2, 3)', overridden: false, used: true }] });
+    await flush();
+    await waitFor(() => expect(vars().getByRole('group', { name: '--wzl-bg' })).toHaveAttribute('data-revealed'));
+  });
+
   it('drops a reveal of a token the open panel lists nowhere, so no later mount reopens it', async () => {
-    await openTrial();
+    const { frame } = await openTrial();
+    frame.send({ type: 'vars', vars: [{ name: '--gap', value: '4px', overridden: false, used: true }] });
+    await flush();
     fireEvent.click(await screen.findByRole('button', { name: 'CSS Vars panel' }));
     await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
     act(() => revealVar('--wzl-listed-nowhere'));

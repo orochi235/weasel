@@ -25,11 +25,11 @@ export const INLINE = 'style attribute';
 /**
  * The topmost element under a client point inside `within`, `within` itself included. Inside a lens the layer
  * takes no pointer, so a hit test would pass through a lens's copy: for this one look the layer is marked
- * `data-probe`, which stands its hit boxes down and the copy up.
+ * `data-probe="copy"`, which stands the copy up. The wheel pass-through's `"wheel"` probe leaves it down.
  */
 export function topmostIn(within: Element, client: LoupePoint): Element | undefined {
   const layer = within.closest<HTMLElement>('.lk-lens-layer');
-  if (layer) layer.dataset.probe = '';
+  if (layer) layer.dataset.probe = 'copy';
   try {
     return (within.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => within.contains(el));
   } finally {
