@@ -26,13 +26,16 @@ export const changedFiles = (rawDiff) => {
   return files;
 };
 
+/** The marker alone, for a job that is not a vitest run and passes `COMMIT_ENV` itself (`onto do --env`). */
+export const writeMarker = (tree, marker) => writeFileSync(join(tree, MARKER), `${JSON.stringify(marker, null, 1)}\n`);
+
 /**
  * The marker says what the tree must hold, and travels with the tree. The exported commit says
  * which marker this run expects, and travels with the job: onto reads the plan here and sends its
  * script in the launch request, so a tree another run synced in between cannot supply it.
  */
 export const armTree = (tree, marker) => {
-  writeFileSync(join(tree, MARKER), `${JSON.stringify(marker, null, 1)}\n`);
+  writeMarker(tree, marker);
   const plan = join(tree, PLAN);
   const gap = readFileSync(plan, 'utf8').endsWith('\n') ? '' : '\n';
   appendFileSync(plan, `${gap}prelude: export ${COMMIT_ENV}=${marker.commit}\n`);
