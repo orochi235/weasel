@@ -118,13 +118,12 @@ Priority tags:
 
 ## Viewport
 
-- **(P3) Some 3D labs still escape labkit's missing-camera check.** A trial with `orbit` undeclared
-  flags a 3D view in the console and with a "no camera" title-bar badge when the instrument calls
-  `useOrbitView()` or a three.js `WebGLRenderer` lands in it (`packages/labkit/src/trial/threeWatch.ts`,
-  2026-10-19); `orbit: false` and `orbit: { fixed: true }` opt out. Not caught: raw WebGL that skips
-  `useOrbitView`, and three's `WebGPURenderer`, which does not announce itself. The three.js check is
-  tested only against a hand-fired announcement, not a real three build, and nobody has looked at the
-  badge in a browser.
+- **(P3) Raw WebGL that skips `useOrbitView` escapes labkit's missing-camera check.** A trial with
+  `orbit` undeclared flags a 3D view in the console and with a "no camera" title-bar badge when the
+  instrument calls `useOrbitView()` or a three.js `WebGLRenderer` or `WebGPURenderer` lands in it
+  (`packages/labkit/src/trial/threeWatch.ts`); a hand-written WebGL view does neither. Watching
+  `getContext('webgl2')` on canvases in the trial cannot tell it apart, because weasel's own 2D
+  renderer opens the same context there.
 
 - **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
   aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
