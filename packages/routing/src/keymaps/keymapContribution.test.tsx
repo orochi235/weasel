@@ -169,6 +169,14 @@ describe('keymapContribution', () => {
     expect(inside).toHaveBeenCalledOnce();
   });
 
+  it('puts its overlay on the keymap entry, so it draws only while the keymap is open', () => {
+    const [keymap, leader] = keymapContribution({
+      id: 'loupe', label: 'Loupe', leader: key('l'), bindings: [], overlay: 'reticle', overlayPosition: 'after-selection',
+    });
+    expect(keymap).toMatchObject({ overlay: 'reticle', overlayPosition: 'after-selection' });
+    expect(leader!.overlay).toBeUndefined();
+  });
+
   it('refuses a keymap that binds Escape', () => {
     expect(() => keymapContribution({
       id: 'k', label: 'K', leader: key('k'), bindings: [{ spec: key('Escape'), actionId: 'x' }],

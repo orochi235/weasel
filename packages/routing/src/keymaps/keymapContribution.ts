@@ -7,11 +7,11 @@
 import type { GestureSpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { BoundGesture, GestureBinding } from '../interactions/actions/binding';
-import type { Contribution } from '../contributions/types';
+import type { Contribution, OverlayPosition } from '../contributions/types';
 import { KEYMAP_HOLD, type KeymapUnbound } from './keymapStack';
 
 /** What {@link keymapContribution} builds a keymap and its leader from. */
-export interface KeymapDef {
+export interface KeymapDef<TOverlay = never> {
   /** The keymap entry's id. Its leader action is `keymap.<id>`. */
   id: string;
   /** What the hint and a shortcut chip call it: `Loupe ▸ 2`. */
@@ -25,6 +25,9 @@ export interface KeymapDef {
   actions?: readonly Action[];
   /** Overrides the `gestures.keymapUnbound` kit setting for this keymap. */
   unbound?: KeymapUnbound;
+  /** Drawn while the keymap is open. */
+  overlay?: TOverlay | TOverlay[];
+  overlayPosition?: OverlayPosition;
 }
 
 /** The leader action's id for keymap `id`. */
@@ -50,7 +53,7 @@ const isPlainEscape = (spec: GestureSpec): boolean =>
  *  its keymap tapped; `trigger('keymap.<id>', { hold: true })` holds it open
  *  until Escape. Install both, with `<SceneCanvas ambient>`
  *  or `useTools`'s `ambient`; the leader entry carries the actions. */
-export function keymapContribution(def: KeymapDef): Contribution<never>[] {
+export function keymapContribution<TOverlay = never>(def: KeymapDef<TOverlay>): Contribution<TOverlay>[] {
   if (def.bindings.some((b) => isPlainEscape(b.spec))) {
     throw new Error(`keymap "${def.id}" binds Escape, which always closes a keymap`);
   }
@@ -74,6 +77,8 @@ export function keymapContribution(def: KeymapDef): Contribution<never>[] {
       eligibility: { keymap: def.unbound ? { unbound: def.unbound } : true },
       bindings: [...def.bindings],
       presentation: { label: def.label },
+      ...(def.overlay !== undefined ? { overlay: def.overlay } : {}),
+      ...(def.overlayPosition ? { overlayPosition: def.overlayPosition } : {}),
     },
     {
       id: `${def.id}.leader`,
