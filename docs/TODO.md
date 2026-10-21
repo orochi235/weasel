@@ -942,6 +942,15 @@ only story runner in the repo.
   (measured 2026-10-20), closed `<details>` included. A test rendering it spent 3 s committing and
   0.5 s a `getByRole` under fleet load; in a browser the cost is unmeasured.
 
+- **(P2) Visual Regression fails on `main` beyond the missing EffectChart baselines.** Every push
+  to `main` since at least 7ddf3ce93 fails the workflow; on 179f2409d (2026-10-21) 7 of 87 specs
+  failed. Besides the two EffectChart specs below: `diagram`'s nodes and edges specs fail with
+  "Canvas width changed vs baseline"; `hud-context-menu`'s two hovered-row specs differ by 11.22%
+  and 14.75% against a 2% threshold (a pixel diff, not the first-load timeout recorded below); and
+  `batch-pixels`' "batched runs paint their own colors" dies with "Execution context was
+  destroyed, most likely because of a navigation". Whether each is a regression or a stale baseline
+  is not checked.
+
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
   write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
