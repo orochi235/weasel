@@ -236,14 +236,13 @@
      moves between a two-row group and a twenty-row one, and the rail entry
      they are aiming at moves while they aim at it. */
   min-block-size: min(60vh, 420px);
-  /* Same reason across: a filter that narrows the schema to two rows should
-     not pull the dialog's edges in around them. */
-  min-inline-size: min(800px, 90vw);
 }
 
-/* Drawn in place, the box is as wide as what holds it makes it. */
-.railBody.railBodyInline {
-  min-inline-size: 0;
+/* Same reason across: a filter that narrows the schema to two rows should not pull the dialog's edges in
+   around them. Set on the modal, whose percentages read the overlay: the room the box has, which in a
+   contained portal is not the window. */
+:where(.railModal) {
+  min-inline-size: min(800px, 100% - 32px);
 }
 
 .railBody > .railLayout {
@@ -478,8 +477,8 @@
      as wide as the pane reads as a text area, and every row's control starts
      at the same x either way. */
   grid-template-columns:
-    minmax(140px, var(--wzl-params-label-width, 240px))
-    minmax(180px, 260px);
+    minmax(min(140px, 40% - var(--wzl-space-3)), var(--wzl-params-label-width, 240px))
+    minmax(min(180px, 60%), 260px);
 }
 
 /* `rowsAcross={2}`: two rows side by side. A leaf that spans both keeps to them, its label in the first column

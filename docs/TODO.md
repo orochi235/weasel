@@ -564,12 +564,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) The Prefs rail dialog overflows its own box below about 700px wide.** Its pane's fields
-  keep their width, so the Zoom step field and the sliders run past the box's right edge and are
-  cut off: seen 2026-10-20 in `Prefs › Rail In Dialog` in a 698px forge trial, where the box itself
-  fit at 664px. A window that narrow cuts it off the same way. The rail or the pane needs to give
-  way: narrow the rail, or let the field column shrink.
-
 - **(P3) A baseline pref whose key and then name are both changed in the schema editor reads as
   new.** The editor calls a node new when the Changes list shows it as an addition. A key edited
   in the Key field shows as a move while the name stands; rename it afterward and the two can no

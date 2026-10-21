@@ -46,9 +46,9 @@ export function PrefsDialog(props: PrefsDialogProps) {
       onOpenChange={onOpenChange}
       inline={inline}
       aria-label={typeof title === 'string' ? title : form.schema.name}
-      className={dialogClassName}
+      className={rail && !inline ? [s.railModal, dialogClassName].filter(Boolean).join(' ') : dialogClassName}
       footer={footer}
-      bodyClassName={rail ? (inline ? `${s.railBody} ${s.railBodyInline}` : s.railBody) : undefined}
+      bodyClassName={rail ? s.railBody : undefined}
       title={
         headerExtra !== undefined ? (
           <span className={s.titleRow}>
