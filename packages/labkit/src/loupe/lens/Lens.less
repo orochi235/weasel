@@ -58,13 +58,14 @@
 
 .lk-lens-reason {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 8px;
-  text-align: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: 2px 4px;
   font-size: 11px;
-  color: var(--wzl-fg-muted, currentColor);
+  color: var(--wzl-fg, #fff);
+  background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
 }
 
 // Above the hit boxes, which are later siblings in the same layer, so its

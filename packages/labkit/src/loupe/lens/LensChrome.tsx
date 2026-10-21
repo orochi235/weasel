@@ -27,13 +27,18 @@ export function LensChrome<C>({
   reticle,
   size,
   describe,
-}: LensSlotProps<C>) {
+  onFocus,
+}: LensSlotProps<C> & {
+  /** Called with this lens's id before a toggle fires, so the action lands on it. */
+  onFocus?: (lensId: string) => void;
+}) {
   const registry = useActionsRegistry();
   const { source } = useLensResolution(settings.source, sources);
   const labels = source
     ? requestsOf(source, lens, settings, reticle, size).map((r) => source.label(r))
     : [];
   const trigger = (id: string) => () => {
+    onFocus?.(lens.lensId);
     registry?.trigger(id);
   };
   return (
@@ -48,7 +53,7 @@ export function LensChrome<C>({
             key={t.id}
             type="button"
             className="lk-lens-chrome__toggle"
-            aria-pressed={settings.source === t.kind}
+            aria-pressed={source?.kind === t.kind}
             onClick={trigger(t.id)}
           >
             {t.label}

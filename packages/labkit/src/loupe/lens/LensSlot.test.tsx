@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { type Action, ActionsProvider, useActionsRegistry } from '@weasel-js/core';
-import { useEffect } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
@@ -189,5 +189,74 @@ describe('LensSlot and LensChrome', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Pixels' }));
     expect(ran).toHaveBeenCalledTimes(1);
+  });
+
+  it('presses the toggle of the source that renders, not the one wanted', () => {
+    const live = fakeSource('live');
+    const pixels = fakeSource('pixels', { status: 'install playwright' });
+    render(
+      <Both
+        settings={settings({ source: 'pixels' })}
+        sources={{ live: live.source, pixels: pixels.source }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Live' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Pixels' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('sends no update for the remount StrictMode forces', () => {
+    const live = fakeSource('live');
+    render(
+      <StrictMode>
+        <Both settings={settings()} sources={{ live: live.source }} />
+      </StrictMode>,
+    );
+    expect(live.update).not.toHaveBeenCalled();
+  });
+
+  it('focuses its own lens before a toggle fires, so the action lands there', () => {
+    const live = fakeSource('live');
+    let current = 'a';
+    const landed: string[] = [];
+    function Spy() {
+      const registry = useActionsRegistry();
+      useEffect(
+        () =>
+          registry?.register({
+            id: 'loupe.source.pixels',
+            label: 'Source: pixels',
+            invoker: { timing: 'immediate', run: () => landed.push(current) },
+          } satisfies Action),
+        [registry],
+      );
+      return null;
+    }
+    const ids = (lensId: string) => ({ ...IDS, lensId });
+    const chromeOf = (lensId: string) => (
+      <div data-testid={`chrome-${lensId}`}>
+        <LensChrome
+          lens={ids(lensId)}
+          settings={settings()}
+          sources={{ live: live.source }}
+          reticle={{ x: 0, y: 0 }}
+          size={SIZE}
+          describe={String}
+          onFocus={(id) => {
+            current = id;
+          }}
+        />
+      </div>
+    );
+    render(
+      <ActionsProvider>
+        <Spy />
+        {chromeOf('a')}
+        {chromeOf('b')}
+      </ActionsProvider>,
+    );
+    fireEvent.click(within(screen.getByTestId('chrome-b')).getByRole('button', { name: 'Pixels' }));
+    expect(landed).toEqual(['b']);
   });
 });

@@ -45,15 +45,17 @@ function LensCell<C>({
   const el = useRef<HTMLDivElement | null>(null);
   const handle = useRef<LensSourceHandle<C> | null>(null);
   const latest = useLatest(request);
+  const first = useRef(true);
   useEffect(() => {
     if (!el.current) return;
     handle.current = source.attach(el.current, latest.current);
     return () => {
       handle.current?.detach();
       handle.current = null;
+      // A remount attaches afresh with the latest request, so its first update is redundant.
+      first.current = true;
     };
   }, [source, latest]);
-  const first = useRef(true);
   const { reticle, factor, size, conditions, dpr } = request;
   // `request` is a new object every render, so the effect runs on its fields.
   useEffect(() => {

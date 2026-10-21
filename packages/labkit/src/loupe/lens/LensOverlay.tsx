@@ -133,6 +133,7 @@ function LensInterior<C>({
   scene,
   sources,
   describe,
+  onFocus,
 }: {
   lens: LensIds;
   rect: LensHitBox['rect'];
@@ -140,6 +141,7 @@ function LensInterior<C>({
   scene: LensScene<C>;
   sources: LensSources<C>;
   describe: (compare: C) => string;
+  onFocus: ((lensId: string) => void) | undefined;
 }) {
   const settings = settingsOf(scene, lens.lensId);
   if (!settings) return null;
@@ -154,7 +156,7 @@ function LensInterior<C>({
   return (
     <div className="lk-lens-interior" data-lens={lens.lensId} style={boxStyle(rect)}>
       <LensSlot {...props} />
-      <LensChrome {...props} />
+      <LensChrome {...props} {...(onFocus ? { onFocus } : {})} />
     </div>
   );
 }
@@ -329,6 +331,7 @@ export function LensOverlay<C>({
                 scene={scene}
                 sources={sources}
                 describe={describe}
+                onFocus={onFocusLens}
               />
             ) : null;
           })

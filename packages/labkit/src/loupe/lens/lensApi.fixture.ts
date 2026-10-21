@@ -4,7 +4,7 @@ import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
 import { addLensOps, createLensScene, lensesOf } from './lensScene';
 import { type LensScene, type LoupePoint, RETICLE_SIZE } from './lensTypes';
 
-export const PIXELS_MISSING = 'Pixels needs Playwright';
+export const PIXELS_MISSING = 'needs Playwright';
 
 /** A host's lens API over a fresh scene, as a test stands one up: lenses added
  *  in order, the latest one current, client points taken as scene points. */
