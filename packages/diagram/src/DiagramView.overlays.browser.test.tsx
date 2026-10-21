@@ -1,4 +1,5 @@
-import { act, createRef } from 'react';
+import { act } from '@testing-library/react';
+import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it } from 'vitest';
 import type { View } from '@weasel-js/core';

@@ -1,6 +1,7 @@
 import './canvas-kit-demo.css';
 import { afterEach, expect, test } from 'vitest';
-import { act, type ReactNode } from 'react';
+import { act } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { DemoFrame } from './DemoFrame';
 import { PanZoomDemo } from './demos/PanZoomDemo';

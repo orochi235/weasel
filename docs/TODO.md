@@ -1066,8 +1066,8 @@ only story runner in the repo.
 
 - **(P3) Browser-project runs print "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
   The notice is on stderr from passing tests in `labkit/src/loupe/lens/LensOverlay.browser.test.tsx`,
-  `forge/src/shell/FrameView.browser.test.tsx`, `LabLightbox`, `Lab.sidebar` and `AnnotationOverlay.clip`'s browser
-  tests, seen across the forge-loupe branch's runs. Nothing fails on it, so a new loop hides among the old ones;
+  `forge/src/shell/FrameView.browser.test.tsx`, `LabLightbox`, `Lab.sidebar`, `AnnotationOverlay.clip`'s and the site's
+  `PuppetSolverLabDemo` browser tests, seen across the forge-loupe branch's runs. Nothing fails on it, so a new loop hides among the old ones;
   `SidebarPanes.browser.test.tsx` shows the shape of a test that asserts none is raised. Find which observer resizes
   its own target in each, and fail the browser project on the notice once they are gone.
 

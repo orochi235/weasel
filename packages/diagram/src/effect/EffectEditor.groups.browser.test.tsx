@@ -1,4 +1,5 @@
-import { act, useState } from 'react';
+import { act } from '@testing-library/react';
+import { useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { viewToTransform, type RectPose } from '@weasel-js/core';
