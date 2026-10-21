@@ -109,7 +109,9 @@ export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } fr
 // input routed to it — one GL context, N views. Contrast the detached
 // canvases below, which each own their own context.
 export { CanvasView } from '../canvas/CanvasView';
-export type { CanvasViewProps, ViewRect } from '../canvas/CanvasView';
+export type {
+  CanvasViewProps, CanvasViewCommonProps, CameraHeldViewProps, AimHeldViewProps, ViewRect,
+} from '../canvas/canvasViewProps';
 export type { CanvasViewCamera } from '../canvas/canvasExtension';
 // `<ViewMarker>` outlines one view's aim inside another's frame.
 export { ViewMarker } from '../canvas/ViewMarker';

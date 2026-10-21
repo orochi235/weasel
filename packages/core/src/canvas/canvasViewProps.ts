@@ -109,5 +109,7 @@ export interface AimHeldViewProps {
   viewBounds?: never;
 }
 
-/** Props for `<CanvasView>`: the common ones, and either a camera or an aim. */
+/** Props for `<CanvasView>`: the common ones, and either a camera or an aim. `Omit` does not distribute over
+ *  the union, and a `Partial` of it does not spread back into `<CanvasView>`, so a wrapper builds its props from
+ *  {@link CanvasViewCommonProps} and one half. */
 export type CanvasViewProps = CanvasViewCommonProps & (CameraHeldViewProps | AimHeldViewProps);
