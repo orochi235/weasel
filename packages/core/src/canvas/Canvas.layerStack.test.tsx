@@ -9,6 +9,10 @@ import type { CanvasDebugSink } from '../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import type { ReactNode } from 'react';
+import { ViewRegistryProvider } from './viewRegistry';
+import { ViewMarker } from './ViewMarker';
+import { CanvasView } from './CanvasView';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -28,11 +32,10 @@ const tools = {
   getActiveOverlays: (position: string) => [layer(`tool:${position}`)],
 } as unknown as ToolsApi;
 
-async function stackOf(props: Partial<CanvasProps>): Promise<string[]> {
+async function stackOf(props: Partial<CanvasProps>, around?: (canvas: ReactNode) => ReactNode): Promise<string[]> {
   const sinkRef = { current: null as CanvasDebugSink | null };
-  render(
-    <Canvas width={100} height={100} layers={{}} {...props} debug={{ layers: true }} debugSinkRef={sinkRef} />,
-  );
+  const canvas = <Canvas width={100} height={100} layers={{}} {...props} debug={{ layers: true }} debugSinkRef={sinkRef} />;
+  render(<>{around ? around(canvas) : canvas}</>);
   await act(waitForFrame);
   await act(waitForFrame);
   return sinkRef.current!.snapshot().layers.map((l) => l.id);
@@ -67,5 +70,15 @@ describe('<Canvas> layer stack', () => {
       'grid', 'above', 'loose', 'decoration',
       'tool:before-selection', 'tool:after-selection', 'tool:top', 'painted-cursor',
     ]);
+  });
+
+  it('paints root markers above the slot layers and beneath the views', async () => {
+    expect(await stackOf({ layers: { grid: { layer: layer('grid') } } }, (canvas) => (
+      <ViewRegistryProvider>
+        {canvas}
+        <ViewMarker id="m" source="pip" target={null} />
+        <CanvasView id="pip" bounds={{ x: 50, y: 50, w: 40, h: 30 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} />
+      </ViewRegistryProvider>
+    ))).toEqual(['grid', 'view-marker:m', 'pip', 'painted-cursor']);
   });
 });

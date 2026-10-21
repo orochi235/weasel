@@ -19,7 +19,6 @@ import type React from 'react';
 import { forwardRef, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { Canvas } from './Canvas';
-import { CanvasView } from './CanvasView';
 import { canvasDebug, DevHuds } from './SceneCanvas/DevHuds';
 import { CanvasKitProviders } from './SceneCanvas/CanvasKitProviders';
 import { canvasPassThrough } from './SceneCanvas/canvasPassThrough';
@@ -32,6 +31,7 @@ import { useCanvasDispatcher } from './SceneCanvas/useCanvasDispatcher';
 import { useCanvasSelection } from './SceneCanvas/useCanvasSelection';
 import { useEnabledFeatures } from './SceneCanvas/useCanvasTools';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
+import { SurfaceDeclarations } from './SceneCanvas/SurfaceDeclarations';
 import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanvasHandle';
 import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
@@ -157,11 +157,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} devtools={devtools}
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
-      {props.views?.map((v, i) => <CanvasView key={v.id} {...v} order={v.order ?? i} />)}
-      {contributionEntries(tools.tools).flatMap((e) => e.views ?? []).map((v) => (
-        <CanvasView key={`contribution:${v.id}`} {...v} />
-      ))}
-      {addedViews.map((v) => <CanvasView key={`added:${v.id}`} {...v} />)}
+      <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
       {props.children}
     </CanvasKitProviders>
   );

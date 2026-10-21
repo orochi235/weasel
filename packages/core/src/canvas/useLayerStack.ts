@@ -50,7 +50,7 @@ export interface StackAbove {
 }
 
 /**
- * The full stack the canvas paints: its slot layers, then registered views, the debug overlay,
+ * The full stack the canvas paints: its slot layers, then root view markers, registered views, the debug overlay,
  * externally registered layers, and the cursor. Every layer that can change on its own
  * repaints the canvas through `requestRedraw`.
  */
@@ -68,9 +68,14 @@ export function useComposedLayers(
 
   const composed = useMemo(() => {
     // Views paint through the surface's own stack, so they sit above it and
-    // below both the debug overlay and externally-registered layers.
+    // below both the debug overlay and externally-registered layers. Root
+    // markers sit under the views, as a view's own markers sit under its nested ones.
     const withViews = viewRegistry
-      ? [...layers, ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>)]
+      ? [
+          ...layers,
+          ...viewRegistry.markerLayers(null),
+          ...viewRegistry.list().filter((r) => r.paint).map((r) => r.layer as RenderLayer<unknown>),
+        ]
       : layers;
     const base = debugOverlay ? [...withViews, debugOverlay] : withViews;
     // The cursor goes last: it is the one thing that is always in front of

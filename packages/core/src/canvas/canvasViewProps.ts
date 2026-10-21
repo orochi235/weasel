@@ -101,7 +101,7 @@ export interface AimHeldViewProps {
   /** What the view shows, as a world rect; its camera fits it to the frame, uniformly and centered.
    *  A thunk is read at each paint and event, measured like a thunked `view`. */
   aim: Bounds | ((outer: View, dims: Dims) => Bounds);
-  /** A pan or zoom inside the view, or `setAim` on it, reported as the rect the view would then show. */
+  /** A pan or zoom inside the view, or `setAim` on it, reported as the held rect that camera move carries. */
   onAimChange?: (aim: Bounds) => void;
   view?: never;
   defaultView?: never;

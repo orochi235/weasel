@@ -247,7 +247,7 @@ export function CanvasView(props: CanvasViewProps): null {
     layer: createViewportLayer<unknown, unknown>({
       id,
       label: label ?? id,
-      source: drawnLayers,
+      source: () => [...drawnLayers(), ...(registry?.markerLayers(id) ?? [])],
       view: cameraAt,
       bounds: (outer, dims) => rectAt(outer, dims),
       ...(parent !== undefined ? { clip: (outer: View, dims: Dims) => frameIn(outer, dims)?.clip ?? NO_RECT } : {}),
@@ -279,7 +279,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, live, inputsRef, helpersRef, frameIn]);
+       layerIsPainted, live, inputsRef, helpersRef, frameIn, registry]);
 
   useEffect(() => {
     if (!registry) return;

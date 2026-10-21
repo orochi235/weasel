@@ -111,6 +111,12 @@ export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } fr
 export { CanvasView } from '../canvas/CanvasView';
 export type { CanvasViewProps, ViewRect } from '../canvas/CanvasView';
 export type { CanvasViewCamera } from '../canvas/canvasExtension';
+// `<ViewMarker>` outlines one view's aim inside another's frame.
+export { ViewMarker } from '../canvas/ViewMarker';
+export { createViewMarkerLayer, VIEW_MARKER_DEFAULT_STYLE } from '../features/viewports/viewMarker';
+export type {
+  ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource,
+} from '../features/viewports/viewMarker';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a

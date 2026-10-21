@@ -8,6 +8,7 @@ import type { DepName, DepSchema } from 'interactions/actions/depSchema';
 import type { Contribution } from '../tools/overlayBinding';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { CanvasViewProps } from './CanvasView';
+import type { ViewMarkerProps } from '../features/viewports/viewMarker';
 import type { View } from '../core/viewport/view';
 import type { KitRequirements } from './kitRequirements';
 
@@ -39,6 +40,8 @@ export interface ContributionFrameCtx {
 export interface SurfaceContribution extends Contribution {
   /** Views this entry adds to the surface, as `<SceneCanvas views>` takes. */
   views?: readonly CanvasViewProps[];
+  /** Markers this entry draws, as `<ViewMarker>` elements would. */
+  markers?: readonly ViewMarkerProps[];
   /**
    * Runs once the surface mounts; returns its teardown. For what the roles
    * above cannot say — a registered (hit-testable) layer, a subscription.
@@ -69,25 +72,32 @@ export interface SurfaceContribution extends Contribution {
 
 /**
  * Concatenate contribution bundles into one registry, preserving order. Throws
- * on a duplicate entry id, dep name or view id — two features answering for
- * the same name is a bug in whichever was added second.
+ * on a duplicate entry id, dep name, view id or marker id — two features
+ * answering for the same name is a bug in whichever was added second.
  */
 export function mergeContributions<T extends SurfaceContribution>(
   ...bundles: readonly (readonly T[])[]
 ): T[] {
   const out = mergeRoutingContributions<T>(...bundles);
-  const viewOwner = new Map<string, string>();
-  for (const entry of out) {
-    for (const view of entry.views ?? []) {
-      const owner = viewOwner.get(view.id);
+  claimIds(out, 'view', (entry) => entry.views ?? []);
+  claimIds(out, 'marker', (entry) => entry.markers ?? []);
+  return out;
+}
+
+function claimIds<T extends SurfaceContribution>(
+  entries: readonly T[], kind: 'view' | 'marker', of: (entry: T) => readonly { id: string }[],
+): void {
+  const owners = new Map<string, string>();
+  for (const entry of entries) {
+    for (const { id } of of(entry)) {
+      const owner = owners.get(id);
       if (owner !== undefined) {
         throw new Error(
-          `mergeContributions: view "${view.id}" is added by both "${owner}" and "${entry.id}". `
-          + `View ids are unique per surface; rename one.`,
+          `mergeContributions: ${kind} "${id}" is added by both "${owner}" and "${entry.id}". `
+          + `${kind === 'view' ? 'View' : 'Marker'} ids are unique per surface; rename one.`,
         );
       }
-      viewOwner.set(view.id, entry.id);
+      owners.set(id, entry.id);
     }
   }
-  return out;
 }

@@ -19,6 +19,7 @@ import { createEmitter } from '@weasel-js/registry';
 import type { ViewAt } from './canvasExtension';
 import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
+import { createViewMarkerLayer, type ViewMarkerProps } from 'features/viewports/viewMarker';
 
 /**
  * What a view needs from the surface hosting it.
@@ -137,6 +138,10 @@ export interface ViewRegistry {
   aimOf(id: string | null): ViewAim | null;
   /** Point view `id` at `aim`; `false` when it cannot. */
   setAim(id: string | null, aim: ViewAim): boolean;
+  /** Returns an unregister. `props` is read at every draw. */
+  registerMarker(props: () => ViewMarkerProps): () => void;
+  /** The layers of the markers drawn in `target`'s frame, in mount order. */
+  markerLayers(target: string | null): readonly RenderLayer<unknown>[];
   /** Bumped whenever the list changes. Pair with {@link ViewRegistry.subscribe}
    *  for `useSyncExternalStore`. */
   getVersion(): number;
@@ -160,6 +165,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
   const seqRef = useRef(0);
   const versionRef = useRef(0);
   const surfaceRef = useRef<SurfaceHandle | null>(null);
+  const markersRef = useRef(new Map<() => ViewMarkerProps, RenderLayer<unknown>>());
 
   const registry = useMemo<ViewRegistry>(() => {
     const listeners = createEmitter();
@@ -194,7 +200,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       toLocal: (clientX, clientY) => surfaceLocal(surfaceRef.current, clientX, clientY),
       occluded: (x, y) => surfaceRef.current?.claimsAbove(x, y) ?? false,
     });
-    return {
+    const registry: ViewRegistry = {
       resolver,
       register: (reg) => {
         entriesRef.current.set(reg, seqRef.current++);
@@ -229,6 +235,16 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         surface.setView(viewForAim(aim.extent, surface.dims(), 'exact'));
         return true;
       },
+      registerMarker: (props) => {
+        markersRef.current.set(props, createViewMarkerLayer(props, registry));
+        changed();
+        return () => { markersRef.current.delete(props); changed(); };
+      },
+      markerLayers: (target) => {
+        const out: RenderLayer<unknown>[] = [];
+        for (const [props, layer] of markersRef.current) if (props().target === target) out.push(layer);
+        return out;
+      },
       getVersion: () => versionRef.current,
       subscribe: listeners.subscribe,
       surface: () => surfaceRef.current,
@@ -237,6 +253,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         return () => { if (surfaceRef.current === handle) surfaceRef.current = null; };
       },
     };
+    return registry;
   }, []);
 
   return <ViewRegistryContext.Provider value={registry}>{children}</ViewRegistryContext.Provider>;
