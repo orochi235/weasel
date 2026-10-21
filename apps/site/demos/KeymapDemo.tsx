@@ -1,5 +1,5 @@
 import { asNodeId, key, keymapContribution, SceneCanvas } from '@weasel-js/core';
-import { KeymapHint } from '@weasel-js/ui';
+import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { DemoStage } from './DemoStage';
 import s from './KeymapDemo.module.css';
 
