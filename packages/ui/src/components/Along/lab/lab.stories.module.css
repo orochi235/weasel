@@ -1,0 +1,98 @@
+/* The frame every arc lab shares: what it shows on the left, its readouts on the right. */
+.lab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-6);
+  align-items: flex-start;
+  align-content: flex-start;
+  height: 100%;
+  padding: var(--wzl-space-6);
+  box-sizing: border-box;
+  overflow: auto;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+}
+
+.stack {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-4);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wzl-fg-muted);
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2);
+}
+
+.readouts {
+  border-collapse: collapse;
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.readouts th {
+  padding: 2px var(--wzl-space-4) 2px 0;
+  text-align: start;
+  font-weight: normal;
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+.readouts td {
+  padding: 2px 0;
+  text-align: end;
+  font-family: var(--wzl-font-mono);
+  white-space: pre;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+/* A verdict that disagrees with what it was checked against. */
+.mismatch {
+  color: var(--wzl-danger);
+}
+
+/* What the lab shows, at its own fixed size. */
+.stage {
+  align-self: start;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  overflow: hidden;
+}
+
+/* The readouts column: beside what the lab shows while there is room, under it once there is not. */
+.side {
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+
+/* What the lab shows: as wide as its stage, so the presets and notes under it wrap to that width. */
+.main {
+  width: min-content;
+}
