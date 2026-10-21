@@ -9,7 +9,9 @@ import {
   verticalAlignOffset,
 } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { pathFromD } from '@weasel-js/geom';
+import { pathFromD, transformPath } from '@weasel-js/geom';
+import { MAX_DASH_RUNS } from '@weasel-js/paint';
+import { dashLength } from '@weasel-js/stroke';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -246,6 +248,15 @@ describe('writeText', () => {
     const fine = await dashed([1e-4, 1e-4]);
     expect(fine).toContain('\n2 Tr\n');
     expect(fine).not.toMatch(/ d\n/);
+  });
+
+  it('keeps a text stroke dashed when each glyph is under the dash cap and only their sum is over it', async () => {
+    const d = registryFontSource.outline('sans-serif', 400, 'normal', 'H'.charCodeAt(0))!;
+    const length = dashLength(transformPath(pathFromD(d), [SIZE, 0, 0, SIZE, 0, 0]));
+    // An [on, off] dash of v cuts a line of this length into length / v runs: 60% of the cap per H.
+    const v = length / (0.6 * MAX_DASH_RUNS);
+    const stroke = { paint: { color: '#ff0000' }, width: 2, dash: [v, v] };
+    expect((await render(textCmd([run('HHHH', { stroke })]))).content).toMatch(/\] 0 d\n/);
   });
 
   it('fakes bold with render mode 2 at the offset syntheticBoldOffset gives, and italic with a skewed Tm', async () => {

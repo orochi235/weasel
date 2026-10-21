@@ -81,12 +81,15 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   out.op('ET');
 }
 
-/** The length a dash runs along every glyph outline in the segment, for `dashPattern`'s cap. */
-function outlinesLength(ctx: PageCtx, seg: TextSegment, dx: number, dy: number): number {
+/**
+ * The longest glyph outline in the segment, for `dashPattern`'s cap. The renderer strokes each
+ * glyph on its own, so this goes solid when its longest glyph would.
+ */
+function longestOutline(ctx: PageCtx, seg: TextSegment, dx: number, dy: number): number {
   let length = 0;
   for (const { g } of seg.glyphs) {
     const outline = isSpace(g.cp) ? null : placedOutline(ctx, g, dx, dy);
-    if (outline) length += dashLength(outline);
+    if (outline) length = Math.max(length, dashLength(outline));
   }
   return length;
 }
@@ -158,7 +161,7 @@ export async function writeSegment(
   if (paintsFill) out.op('rg', ...fillColor.rgb);
   if (stroke && strokeColor) {
     out.op('RG', ...strokeColor.rgb);
-    const length = stroke.stroke.dash ? outlinesLength(ctx, seg, dx, dy) : undefined;
+    const length = stroke.stroke.dash ? longestOutline(ctx, seg, dx, dy) : undefined;
     strokeStyleOps(ctx, stroke.stroke, stroke.width, length);
   } else if (bold && fillColor) {
     out.op('RG', ...fillColor.rgb);
