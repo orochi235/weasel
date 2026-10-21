@@ -127,9 +127,18 @@ describe('useSelectTool', () => {
     expect(sel.applyClick).not.toHaveBeenCalled();
   });
 
+  /** An adapter whose `g` is a group (pose derived from its children) and `box` a place (pose of its own). */
+  function nestedAdapter(parents: Record<string, string | null>) {
+    const envelope = { dependsOn: 'children', derivePose: () => null };
+    return {
+      ...minimalAdapter,
+      getParent: (id: string) => parents[id] ?? null,
+      getNode: (id: string) => (id === 'g' ? { id, ...envelope } : { id }),
+    } as any;
+  }
+
   it('pressing a member of a selected group defers, so a drag moves the group and a click selects the member', () => {
-    const parents: Record<string, string | null> = { g: null, inner: 'g', m: 'inner' };
-    const adapter = { ...minimalAdapter, getParent: (id: string) => parents[id] ?? null } as any;
+    const adapter = nestedAdapter({ g: null, inner: 'g', m: 'inner' });
     const { result } = renderHook(() => useSelectTool(adapter, { pickEvery: () => ['m'] } as any));
     const sel = selectionStub(['g']);
     press(result.current, sel.api);
@@ -138,9 +147,16 @@ describe('useSelectTool', () => {
     expect(sel.applyClick).toHaveBeenCalledWith('m', NO_MODS);
   });
 
+  it('pressing a member of a selected container with its own pose picks the member on the press', () => {
+    const adapter = nestedAdapter({ box: null, m: 'box' });
+    const { result } = renderHook(() => useSelectTool(adapter, { pickEvery: () => ['m'] } as any));
+    const sel = selectionStub(['box']);
+    press(result.current, sel.api);
+    expect(sel.applyClick).toHaveBeenCalledWith('m', NO_MODS);
+  });
+
   it('shift-pressing a member of a selected group extends on the press, as any extend does', () => {
-    const parents: Record<string, string | null> = { g: null, m: 'g' };
-    const adapter = { ...minimalAdapter, getParent: (id: string) => parents[id] ?? null } as any;
+    const adapter = nestedAdapter({ g: null, m: 'g' });
     const { result } = renderHook(() => useSelectTool(adapter, { pickEvery: () => ['m'] } as any));
     const sel = selectionStub(['g']);
     press(result.current, sel.api, { mods: { shift: true } });

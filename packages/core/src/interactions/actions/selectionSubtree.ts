@@ -15,12 +15,21 @@ export function hasSelectedAncestor(
   id: string,
   set: ReadonlySet<string>,
 ): boolean {
+  return selectedAncestor(parentOf, id, set) !== null;
+}
+
+/** The nearest ancestor of `id` that is in `set`, or `null`. */
+export function selectedAncestor(
+  parentOf: (id: string) => string | null,
+  id: string,
+  set: ReadonlySet<string>,
+): string | null {
   let parent = parentOf(id);
   while (parent != null) {
-    if (set.has(parent)) return true;
+    if (set.has(parent)) return parent;
     parent = parentOf(parent);
   }
-  return false;
+  return null;
 }
 
 /** The ids in `ids` that are in the scene and have no selected ancestor. */

@@ -11,7 +11,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { hasSelectedAncestor } from '../../../interactions/actions/selectionSubtree';
+import { pressDecision } from './pressDecision';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -208,19 +208,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           return;
         }
 
-        const hitAlreadySelected = sel.includes(top as NodeId);
-        const insideSelected = !hitAlreadySelected
-          && hasSelectedAncestor((id) => adapterRef.current.getParent(id), top, new Set<string>(sel));
-        const isExtend = mods.shift || mods.meta;
         // See `extendClickLocked`. An option rather than `Action.enabled`
         // because it only applies to *extend* presses, and `enabled` is
         // evaluated without the event's modifiers.
-        const extendLocked = isExtend && opts.extendClickLocked?.() === true;
-        const deferClick = ((hitAlreadySelected && sel.length > 1) || insideSelected) && !isExtend;
-        if (!deferClick && !extendLocked) {
-          selection.applyClick(top as NodeId, mods);
-        }
-        pressRef.current = { deferredClickId: deferClick ? top : null };
+        const extendLocked = () => opts.extendClickLocked?.() === true;
+        const press = pressDecision(top, sel, mods, extendLocked, adapterRef.current);
+        if (press.applyNow) selection.applyClick(top as NodeId, mods);
+        pressRef.current = { deferredClickId: press.deferred };
       },
     },
   }), [optionsRef, pickEveryRef, adapterRef]);
