@@ -19,6 +19,7 @@ import {
   useTileId,
 } from '../../surface/useSurfaceTile';
 import { LensOverlay, type LensOverlayProps } from './LensOverlay';
+import type { LensSource } from './lensSource';
 import { addLensOps, createLensScene, lensesOf } from './lensScene';
 import { BODY_SIZE, type LensScene } from './lensTypes';
 
@@ -199,14 +200,28 @@ test('deletes the whole lens when only its reticle is selected', async () => {
   expect(scene.nodes.size).toBe(0);
 });
 
+const liveSource: LensSource<string> = {
+  kind: 'live',
+  produces: 'dom',
+  label: () => 'Live',
+  status: () => true,
+  subscribe: () => () => {},
+  attach: (slot, request) => {
+    const mark = document.createElement('span');
+    mark.dataset.testid = `inside-${request.lensId}`;
+    slot.append(mark);
+    return { update: () => {}, detach: () => mark.remove() };
+  },
+};
+
 test('reports the lens a press focuses, and renders an interior over each body', async () => {
   const focused: (string | null)[] = [];
   await mount({
     onFocusLens: (id) => focused.push(id),
-    children: (lens) => <span data-testid={`inside-${lens.lensId}`} />,
+    sources: { live: liveSource },
   });
-  const interior = screen.getByTestId('inside-a').parentElement as HTMLElement;
-  expect(interior.classList.contains('lk-lens-interior')).toBe(true);
+  const interior = document.querySelector('.lk-lens-interior') as HTMLElement;
+  expect(interior.querySelector('[data-testid="inside-a"]')).not.toBeNull();
   const r = interior.getBoundingClientRect();
   const [cx, cy] = client(BODY_AT);
   expect(r.left + r.width / 2).toBeCloseTo(cx, 0);

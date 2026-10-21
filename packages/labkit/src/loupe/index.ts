@@ -26,6 +26,19 @@ export type { LensActionsProps } from './lens/LensActions';
 export { LensActions } from './lens/LensActions';
 export type { LensAttachment, LensOverlayProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
+export { LensChrome } from './lens/LensChrome';
+export { LensSlot, useLensResolution } from './lens/LensSlot';
+export type {
+  LensCapture,
+  LensResolution,
+  LensSlotProps,
+  LensSource,
+  LensSourceHandle,
+  LensSourceRequest,
+  LensSources,
+  LensSourceStatus,
+} from './lens/lensSource';
+export { requestsOf, resolveSource } from './lens/lensSource';
 export type { LensActionApi } from './lens/lensActionDefs';
 export {
   createLensActions,

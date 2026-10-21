@@ -1,6 +1,7 @@
 import {
   commitDeleteToScene,
   createDeleteAction,
+  effectivePose,
   ellipsePath,
   type NodeId,
   type NodeShapeEntry,
@@ -15,7 +16,6 @@ import {
 import { useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -26,8 +26,11 @@ import {
 import { createPortal, flushSync } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
 import { HANDLE_SLOP, hitBoxesOf, type LensHitBox } from './lensHitBoxes';
-import { lensClosure, lensesOf, lensIdsOf } from './lensScene';
-import type { LensIds, LensNodeData, LensScene } from './lensTypes';
+import { LensChrome } from './LensChrome';
+import { LensSlot } from './LensSlot';
+import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
+import type { LensSources } from './lensSource';
+import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */
@@ -54,8 +57,10 @@ export interface LensOverlayProps<C> {
   /** Default {@link VIEWPORT_ATTACHMENT}. A host attaching lenses to a pane
    *  passes that pane's camera. */
   attachment?: LensAttachment;
-  /** What a lens shows inside its body, rendered into an element over it. */
-  children?: (lens: LensIds, interior: HTMLElement) => ReactNode;
+  /** What each lens can show inside its body. Without them no lens shows a render. */
+  sources?: LensSources<C>;
+  /** Names a comparison on the lens chrome. Default `String`. */
+  describe?: (compare: C) => string;
   /** The lens the selection is on, or null when nothing is selected. */
   onFocusLens?: (lensId: string | null) => void;
 }
@@ -121,21 +126,54 @@ function boxStyle(rect: { x: number; y: number; w: number; h: number }): CSSProp
   } as CSSProperties;
 }
 
-function LensInterior({
+function LensInterior<C>({
   lens,
   rect,
-  children,
+  reticle,
+  scene,
+  sources,
+  describe,
 }: {
   lens: LensIds;
   rect: LensHitBox['rect'];
-  children: NonNullable<LensOverlayProps<unknown>['children']>;
+  reticle: LoupePoint;
+  scene: LensScene<C>;
+  sources: LensSources<C>;
+  describe: (compare: C) => string;
 }) {
-  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const settings = settingsOf(scene, lens.lensId);
+  if (!settings) return null;
+  const props = {
+    lens,
+    settings,
+    sources,
+    reticle,
+    size: { width: rect.w, height: rect.h },
+    describe,
+  };
   return (
-    <div ref={setEl} className="lk-lens-interior" data-lens={lens.lensId} style={boxStyle(rect)}>
-      {el ? children(lens, el) : null}
+    <div className="lk-lens-interior" data-lens={lens.lensId} style={boxStyle(rect)}>
+      <LensSlot {...props} />
+      <LensChrome {...props} />
     </div>
   );
+}
+
+/** A lens's reticle center in client px: its pose through the view, from the layer's own origin. */
+function reticleClient<C>(
+  scene: LensScene<C>,
+  lens: LensIds,
+  view: View,
+  layer: HTMLElement | null,
+): LoupePoint {
+  const node = scene.get(lens.reticle);
+  if (!node || !layer) return { x: 0, y: 0 };
+  const p = effectivePose(scene, node);
+  const origin = layer.getBoundingClientRect();
+  return {
+    x: origin.left + (p.x + p.width / 2 - view.x) * view.scale.x,
+    y: origin.top + (p.y + p.height / 2 - view.y) * view.scale.y,
+  };
 }
 
 /** A body's own rect: its hit box without the slop a selected one grows by. */
@@ -217,7 +255,8 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
 export function LensOverlay<C>({
   scene,
   attachment = VIEWPORT_ATTACHMENT,
-  children,
+  sources,
+  describe = String,
   onFocusLens,
 }: LensOverlayProps<C>) {
   const canvas = useSurfaceCanvas('top');
@@ -275,16 +314,22 @@ export function LensOverlay<C>({
   );
 
   if (!container) return null;
-  const lenses = children ? lensesOf(scene) : [];
+  const lenses = sources ? lensesOf(scene) : [];
   return createPortal(
     <div ref={attachLayer} className="lk-lens-layer">
-      {children
+      {sources
         ? boxes.map((b) => {
             const lens = b.role === 'lens-body' && lenses.find((l) => l.body === b.nodeId);
             return lens ? (
-              <LensInterior key={lens.lensId} lens={lens} rect={interiorOf(b, selected)}>
-                {children as NonNullable<LensOverlayProps<unknown>['children']>}
-              </LensInterior>
+              <LensInterior
+                key={lens.lensId}
+                lens={lens}
+                rect={interiorOf(b, selected)}
+                reticle={reticleClient(scene, lens, view, layer)}
+                scene={scene}
+                sources={sources}
+                describe={describe}
+              />
             ) : null;
           })
         : null}

@@ -42,3 +42,56 @@
 .lk-lens-interior {
   pointer-events: none;
 }
+
+.lk-lens-slot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.lk-lens-cell {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.lk-lens-reason {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--wzl-fg-muted, currentColor);
+}
+
+// Above the hit boxes, which are later siblings in the same layer, so its
+// toggles take presses.
+.lk-lens-chrome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
+  color: var(--wzl-fg, #fff);
+}
+
+.lk-lens-chrome__toggles {
+  display: inline-flex;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.lk-lens-chrome__toggle[aria-pressed='true'] {
+  font-weight: 600;
+}
