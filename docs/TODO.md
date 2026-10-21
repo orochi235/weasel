@@ -341,7 +341,8 @@ Priority tags:
   - picking: `ink().filled` decides whether a node's interior is grabbable, so an alpha-0 fill is
     clickable and an absent one is not;
   - a derived part's `fill: undefined` means "inherit the node's", not "none";
-  - a container's `data.fill` paints nothing, while an SVG `<g fill>` is inherited by its children;
+  - a container never paints its own `data.fill` (decided 2026-10-21), but whether its members
+    inherit it, as an SVG `<g fill>`'s children do, is open;
   - the property panel shows unset, None and mixed as three states over these values;
   - SVG import writes black for an element with no `fill`, as SVG does, and export writes `none`.
 

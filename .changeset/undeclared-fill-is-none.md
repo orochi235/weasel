@@ -11,5 +11,6 @@ removed, since nothing falls back to it any more, and `resolveNodeFill` takes no
 
 The rect fallback painter no longer matches containers. A container without `clipFromPose` used to
 take that painter's box as its silhouette and clip its members to it, which cut off the outer half of
-their strokes, since a group's derived pose leaves stroke width out. Such a container now paints
-nothing and clips nothing; one that should clip says so with `clipFromPose`.
+their strokes, since a group's derived pose leaves stroke width out. A container now paints
+nothing, even a `data.fill` it declares, and clips nothing; one that should clip says so with
+`clipFromPose`, and a background behind a group's members is a leaf among them.

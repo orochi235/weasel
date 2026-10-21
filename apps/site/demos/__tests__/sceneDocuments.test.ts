@@ -18,6 +18,12 @@ describe('the demos\' scene documents', () => {
     const filled = document.nodes.filter((node) => (node.data as { fill?: unknown } | null)?.fill != null);
 
     for (const node of filled) {
+      if (node.kind === 'container') {
+        it(`${file}: container ${node.id} declares no fill, which a container never paints`, () => {
+          expect(node.data).not.toHaveProperty('fill');
+        });
+        continue;
+      }
       it(`${file}: node ${node.id} paints the fill it declares`, () => {
         const [body] = defaultDrawOne(node as unknown as SceneNode<unknown, string, unknown>, node.pose);
         expect(body).toMatchObject({ kind: 'path', fill: { paint: expect.anything() } });

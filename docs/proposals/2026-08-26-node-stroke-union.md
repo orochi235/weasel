@@ -16,7 +16,8 @@ data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
 cap, join, dash, miter limit, align. `null` and `undefined` on either both
 mean "no paint": a node paints only what it declares. (Until 2026-10-21 an
 undeclared fill painted `DEFAULT_SHAPE_FILL`, gray, which put a gray box behind
-every group.) `solid()` and `strokeOf()` are the
+every group.) A container paints nothing, a fill it declares included
+(2026-10-21): a group is SVG's `<g>`, not a box. `solid()` and `strokeOf()` are the
 authoring helpers — `resolveNodeFill` and `resolveNodeStroke` in `NodeShape.ts`
 are the only readers.
 
