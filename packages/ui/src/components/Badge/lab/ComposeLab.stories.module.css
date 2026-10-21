@@ -77,10 +77,17 @@
 }
 
 .triple {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
-  align-items: start;
+  align-items: flex-start;
+}
+
+/* A fixed track minimum ignores what a panel holds, and a segmented control keeps its labels whole, so a
+   panel too narrow for its toggles must wrap rather than let them run into its neighbor. */
+.triple > * {
+  flex: 1 1 220px;
+  min-width: min-content;
 }
 
 .status { grid-template-columns: 110px 1fr 24px; }
