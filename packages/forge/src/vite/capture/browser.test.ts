@@ -36,23 +36,34 @@ interface FakeRoute {
   fulfill(response: unknown): Promise<void>;
 }
 
-/** What a route handler decided for a request to `url`. */
-async function decide(handler: (route: FakeRoute) => unknown, url: string): Promise<'continue' | 'abort' | 'fulfill'> {
+/** What a route handler decided for a `method` request to `url`, and what it fulfilled the request with. */
+async function route(
+  handler: (route: FakeRoute) => unknown,
+  url: string,
+  method = 'GET',
+): Promise<{ decision: 'continue' | 'abort' | 'fulfill'; fulfilled?: { status: number; headers: Record<string, string> } }> {
   let decision: 'continue' | 'abort' | 'fulfill' | null = null;
+  let fulfilled: { status: number; headers: Record<string, string> } | undefined;
   await handler({
-    request: () => ({ url: () => url, method: () => 'GET', headers: () => ({}) }),
+    request: () => ({ url: () => url, method: () => method, headers: () => ({}) }),
     continue: async () => {
       decision = 'continue';
     },
     abort: async () => {
       decision = 'abort';
     },
-    fulfill: async () => {
+    fulfill: async (response) => {
       decision = 'fulfill';
+      fulfilled = response as typeof fulfilled;
     },
   });
   if (decision === null) throw new Error(`no decision for ${url}`);
-  return decision;
+  return { decision, fulfilled };
+}
+
+/** What a route handler decided for a request to `url`. */
+async function decide(handler: (route: FakeRoute) => unknown, url: string): Promise<'continue' | 'abort' | 'fulfill'> {
+  return (await route(handler, url)).decision;
 }
 
 /** A stand-in for Playwright recording what forge asks of it. `hold` keeps each screenshot pending until released;
@@ -287,6 +298,56 @@ describe('launchCaptureBrowser', () => {
     expect(fetched).toEqual(['https://fonts.gstatic.com/s/face.woff2']);
     expect(await decide(handler!, 'https://127.0.0.1:5173/@vite/client')).toBe('continue');
     expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
+    await browser.close();
+  });
+
+  it('hands an allowlisted redirect to the page instead of following it from Node', async () => {
+    const fake = fakePlaywright();
+    const fetched: { url: string; redirect?: RequestRedirect }[] = [];
+    const fetchImpl = (async (input: string, init?: RequestInit) => {
+      fetched.push({ url: input, redirect: init?.redirect });
+      if (init?.redirect !== 'manual') return new Response('internal');
+      return new Response(null, { status: 302, headers: { location: 'http://10.0.0.1/secret' } });
+    }) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.gstatic.com']);
+    const [handler] = fake.routes;
+    const { decision, fulfilled } = await route(handler!, 'https://fonts.gstatic.com/s/face.woff2');
+    expect(decision).toBe('fulfill');
+    expect(fulfilled?.status).toBe(302);
+    expect(fulfilled?.headers.location).toBe('http://10.0.0.1/secret');
+    expect(fetched).toEqual([{ url: 'https://fonts.gstatic.com/s/face.woff2', redirect: 'manual' }]);
+    expect(await decide(handler!, 'http://10.0.0.1/secret')).toBe('abort');
+    await browser.close();
+  });
+
+  it('serves a pass-through body without the encoding headers Node already decoded it from', async () => {
+    const fake = fakePlaywright();
+    const fetchImpl = (async () =>
+      new Response('font', {
+        headers: { 'content-type': 'font/woff2', 'content-encoding': 'gzip', 'content-length': '24', 'transfer-encoding': 'chunked' },
+      })) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.gstatic.com']);
+    const [handler] = fake.routes;
+    const { fulfilled } = await route(handler!, 'https://fonts.gstatic.com/s/face.woff2');
+    expect(fulfilled?.headers).toEqual({ 'content-type': 'font/woff2' });
+    await browser.close();
+  });
+
+  it('passes only GET and HEAD through to an allowlisted origin, and aborts anything else', async () => {
+    const fake = fakePlaywright();
+    const fetched: string[] = [];
+    const fetchImpl = (async (_input: string, init?: RequestInit) => {
+      fetched.push(init?.method ?? 'GET');
+      return new Response(init?.method === 'HEAD' ? null : 'font');
+    }) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.gstatic.com']);
+    const [handler] = fake.routes;
+    expect((await route(handler!, 'https://fonts.gstatic.com/s/face.woff2', 'HEAD')).decision).toBe('fulfill');
+    expect((await route(handler!, 'https://fonts.gstatic.com/log', 'POST')).decision).toBe('abort');
+    expect(fetched).toEqual(['HEAD']);
     await browser.close();
   });
 

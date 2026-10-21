@@ -45,15 +45,21 @@ export async function captureAvailability(load: Load = loadPlaywright): Promise<
   return existsSync(executable) ? { available: true } : { unavailable: INSTALL_CHROMIUM };
 }
 
+/** Headers describing the body as it came over the wire, which Node's fetch has already decoded. */
+const WIRE_HEADERS = new Set(['content-encoding', 'content-length', 'transfer-encoding']);
+
 /** A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's
- *  context ignores certificate errors. */
+ *  context ignores certificate errors. Only GET and HEAD pass, and a redirect goes back to the page as-is, so its
+ *  target meets the route guard on its own origin rather than being fetched from Node. */
 async function passThrough(route: Route, fetchImpl: typeof fetch): Promise<void> {
   const request = route.request();
+  const method = request.method();
+  if (method !== 'GET' && method !== 'HEAD') return route.abort();
   try {
-    const response = await fetchImpl(request.url(), { method: request.method(), headers: request.headers() });
+    const response = await fetchImpl(request.url(), { method, headers: request.headers(), redirect: 'manual' });
     await route.fulfill({
       status: response.status,
-      headers: Object.fromEntries(response.headers),
+      headers: Object.fromEntries([...response.headers].filter(([name]) => !WIRE_HEADERS.has(name))),
       body: Buffer.from(await response.arrayBuffer()),
     });
   } catch {
