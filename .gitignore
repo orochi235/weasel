@@ -48,3 +48,6 @@ packages/*/tsconfig.docs.json
 
 # Xcode wrapper the devtools extension's safari script generates
 apps/devtools-extension/safari/
+
+# bench harness output (scripts/bench-overlap-reserve.mjs); delete after its numbers are recorded
+.bench/
