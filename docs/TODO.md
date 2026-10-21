@@ -590,7 +590,8 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Rows other than `Bar` do not follow an `Along` yet.** `ButtonBar`, `ToggleBar`, segmented
   controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. They
-  follow on `BarAlong`'s placement (`runPlaces.ts`, `useRunScroll.ts`).
+  follow on what `BarAlong` uses: `runPlaces` and `useRunScroll` (`Bar/`) for where items fall and how a run
+  scrolls, and `placeOnRun` (`Along/placeOnRun.ts`) for the custom properties that put a part there.
 
 - **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
   draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
