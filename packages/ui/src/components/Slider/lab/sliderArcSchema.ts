@@ -105,29 +105,19 @@ export interface SliderArcPreset {
   config: Record<string, unknown>;
 }
 
+/** Every knob at its default, by dotted path: what each preset starts from, so loading one leaves nothing of the last behind. */
+function defaultsByPath(): Record<string, unknown> {
+  const d = SLIDER_ARC_SCHEMA.defaults() as unknown as Record<string, Record<string, unknown>>;
+  return Object.fromEntries(Object.entries(d).flatMap(([group, leaves]) => Object.entries(leaves).map(([k, v]) => [`${group}.${k}`, v])));
+}
+const preset = (name: string, config: Record<string, unknown>): SliderArcPreset => ({ name, config: { ...defaultsByPath(), ...config } });
+
 export const SLIDER_ARC_PRESETS: readonly SliderArcPreset[] = [
-  {
-    name: 'Zoom detents',
-    config: { 'values.min': 2, 'values.max': 16, 'values.step': 1, 'values.thumbs': 1, 'stops.set': 'uneven', 'stops.snap': 'strict', 'stops.spacing': 'even', 'arc.start': 240, 'arc.end': 120, 'arc.direction': 'ccw' },
-  },
-  {
-    name: 'Range on top',
-    config: { 'values.min': 0, 'values.max': 100, 'values.step': 1, 'values.thumbs': 2, 'values.constraint': 'ordered', 'stops.set': 'quarters', 'stops.snap': 'magnetic', 'stops.spacing': 'linear', 'arc.start': 300, 'arc.end': 60, 'arc.direction': 'cw' },
-  },
-  {
-    name: 'Fine, no stops',
-    config: { 'values.min': 0, 'values.max': 1, 'values.step': 0.01, 'values.thumbs': 1, 'stops.set': 'none', 'stops.snap': 'magnetic', 'stops.spacing': 'linear', 'look.readoutPlacement': 'below-thumb' },
-  },
-  {
-    name: 'Endless max',
-    config: { 'values.min': 0, 'values.max': 100, 'values.step': 5, 'values.thumbs': 1, 'stops.set': 'labeled', 'behavior.endless': 'max' },
-  },
-  {
-    name: 'Right side, cw',
-    config: { 'arc.start': 30, 'arc.end': 150, 'arc.direction': 'cw', 'values.thumbs': 1 },
-  },
-  {
-    name: 'Slim, overhang',
-    config: { 'look.density': 'slim', 'behavior.thumbFit': 'overhang', 'look.trackHeight': 4 },
-  },
+  preset('Zoom detents', { 'values.min': 2, 'values.max': 16, 'stops.set': 'uneven', 'stops.snap': 'strict', 'stops.spacing': 'even' }),
+  preset('Range on top', { 'values.thumbs': 2, 'values.constraint': 'ordered', 'stops.set': 'quarters', 'arc.start': 300, 'arc.end': 60, 'arc.direction': 'cw' }),
+  preset('Fine, no stops', { 'values.max': 1, 'values.step': 0.01, 'stops.set': 'none' }),
+  preset('Endless max', { 'values.step': 5, 'behavior.endless': 'max' }),
+  preset('Right side, cw', { 'arc.start': 30, 'arc.end': 150, 'arc.direction': 'cw' }),
+  preset('Slim, overhang', { 'look.density': 'slim', 'behavior.thumbFit': 'overhang', 'look.trackHeight': 4 }),
+  preset('Add and remove', { 'values.thumbs': 2, 'behavior.addRemove': true, 'values.link': false, 'look.thumbShape': 'notched' }),
 ];
