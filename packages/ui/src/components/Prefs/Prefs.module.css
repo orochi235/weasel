@@ -453,10 +453,13 @@
   text-transform: var(--wzl-params-label-case, uppercase);
 }
 
-/* What is scrolled to inside a section stops below the heading stuck over it: that heading's padding, border,
-   and one line. */
+/* What is scrolled to inside a section stops below the heading stuck over it, at the height `stuckHeadingRef`
+   measures; until it has, the heading's padding, border, and one line. */
 .paneSection :where([data-pref-path]) {
-  scroll-margin-top: calc(var(--wzl-space-3) + var(--wzl-space-2) + 1px + var(--wzl-font-size-sm) * var(--wzl-leading));
+  scroll-margin-top: var(
+    --pref-stuck-height,
+    calc(var(--wzl-space-3) + var(--wzl-space-2) + 1px + var(--wzl-font-size-sm) * var(--wzl-leading))
+  );
 }
 
 .subsectionTitle {

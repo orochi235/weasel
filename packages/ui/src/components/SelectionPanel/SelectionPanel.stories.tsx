@@ -220,6 +220,33 @@ export const Conditions: Story = {
   },
 };
 
+const HEADED: PrefSection = {
+  name: 'Card',
+  members: {
+    'data.title': field('Title', 'string'),
+    shadow: {
+      name: 'Shadow',
+      members: {
+        'data.shadow': { kind: 'boolean', name: 'Shadow', description: '', default: false, control: 'switch', heading: true } as PrefLeaf,
+        'data.blur': { ...field('Blur'), enableIf: { path: 'data.shadow' } },
+      },
+    },
+  },
+};
+const HEADED_PROPERTIES: NodePropertiesEntry[] = [{ name: 'card', schema: HEADED }];
+
+/** A leaf marked `heading` is drawn in the title row of the section holding it, and has no row beneath. */
+export const HeadingControl: Story = {
+  render: function HeadingStory() {
+    const scene = useMemo(() => sceneWith({ text: '', title: 'Card', shadow: false } as Data), []);
+    return (
+      <div className={s.narrow}>
+        <SelectionPanel scene={scene} selection={selection} properties={HEADED_PROPERTIES} routing={SECTIONED_ROUTING} />
+      </div>
+    );
+  },
+};
+
 const CARD: PrefSection = {
   name: 'Card',
   members: {

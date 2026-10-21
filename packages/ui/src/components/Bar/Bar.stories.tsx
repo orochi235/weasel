@@ -226,3 +226,32 @@ function ArrangeBar(args: BarProps) {
  *  `readout` leaves, shown as values; View is a group `as: 'menu'`, which opens as a menu of checked items, radio
  *  rows, and the same actions. */
 export const ActionsReadoutsAndMenus: Story = { args: { label: 'Arrange' }, render: (args) => <ArrangeBar {...args} /> };
+
+const NESTED: PrefGroup = pref.group('Shape', {
+  width: pref.number('Width', 120),
+  more: pref.group('More', {
+    gap: pref.number('Gap', 4),
+    fill: pref.group('Fill', { opacity: pref.number('Opacity', 1), blend: pref.enum('Blend', 'normal', ['normal', 'multiply', 'screen']) }, { as: 'tab' }),
+    edge: pref.group('Edge', { stroke: pref.number('Stroke', 1) }, { as: 'tab' }),
+    box: pref.group('Box', { inset: pref.number('Inset', 0), round: pref.boolean('Rounded', false) }, { as: 'panel' }),
+    shadow: pref.group('Shadow', {
+      on: { ...pref.boolean('Shadow on', true, { control: 'switch' }), heading: true },
+      blur: pref.number('Blur', 4),
+    }, { as: 'section' }),
+    loose: pref.group('', { label: pref.string('Label', 'Box 1') }, { as: 'fragment' }),
+  }, { as: 'page' }),
+}, { as: 'bar' });
+
+/** A group the bar opens from a button draws its nested groups as a form does: neighboring tabs as one strip, a
+ *  panel in a box, a section under its heading, a fragment's rows among the rest. A `heading` leaf stays a row. */
+export const OpensNestedGroups: Story = {
+  args: { label: 'Shape' },
+  render: function NestedStory(args) {
+    const [values, setValues] = useState<Record<string, unknown>>({ width: 120 });
+    return (
+      <div className={s.strip}>
+        <Bar {...args} schema={NESTED} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+      </div>
+    );
+  },
+};

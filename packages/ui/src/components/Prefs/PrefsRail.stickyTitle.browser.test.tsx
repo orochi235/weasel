@@ -46,3 +46,21 @@ it('stops a row scrolled to right under the stuck heading', () => {
   expect(gap).toBeGreaterThanOrEqual(-0.5);
   expect(gap).toBeLessThan(1.5);
 });
+
+it('stops a row scrolled to right under a stuck heading that wraps to two lines', async () => {
+  const long = { ...SCHEMA.children.tools, children: { brush: { name: 'Brush pressure, tilt, and the curves shaping both', as: 'section', children: flags('Brush', 40) } } } as PrefGroup;
+  const { container } = render(
+    <div style={{ width: 420, height: 300, display: 'flex' }}>
+      <PrefsForm layout="rail" schema={{ ...SCHEMA, children: { tools: long } }} values={{}} onChange={() => {}} />
+    </div>,
+  );
+  const pane = container.querySelector<HTMLElement>('[data-pref-into]')!;
+  const title = pane.querySelector<HTMLElement>('[data-pref-sticky]')!;
+  const row = pane.querySelector<HTMLElement>('[data-pref-path="tools.brush.f20"]')!;
+  expect(title.getBoundingClientRect().height).toBeGreaterThan(parseFloat(getComputedStyle(title).lineHeight) * 2);
+  await expect.poll(() => parseFloat(getComputedStyle(row).scrollMarginTop)).toBeCloseTo(title.getBoundingClientRect().height, 1);
+  row.scrollIntoView({ block: 'start', behavior: 'instant' });
+  const gap = row.getBoundingClientRect().top - title.getBoundingClientRect().bottom;
+  expect(gap).toBeGreaterThanOrEqual(-0.5);
+  expect(gap).toBeLessThan(1.5);
+});
