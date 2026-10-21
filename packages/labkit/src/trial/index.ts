@@ -8,7 +8,6 @@ export type { LoupeBindings, TrialChromeProps, UndoBindings } from './TrialChrom
 export { TrialChrome } from './TrialChrome';
 export type { MountTrialHistory, TrialHistorySource } from './trialHistory';
 export { TrialHistoryContext, useTrialHistory } from './trialHistory';
-export { TrialTitleContext, useTrialTitle } from './trialTitle';
 export type { AddTrialOptions } from './trialOps';
 export {
   addTrial,
@@ -17,6 +16,7 @@ export {
   reorderTrials,
   resetTrial,
 } from './trialOps';
+export { TrialTitleContext, useTrialTitle } from './trialTitle';
 export { useOrbitView } from './useOrbitView';
 export type { TrialOrbit } from './useTrialOrbit';
 export { useTrialOrbit } from './useTrialOrbit';
