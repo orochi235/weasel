@@ -5,14 +5,14 @@
  *  glyphs included. Arrange, Pathfinder, and Path are surface assets, drawn in the
  *  `surfaces` slot when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
- *  (`recording`) and New, Open, Import and Save (`fileCommands`), so a button's shortcut is the
+ *  (`recording`) and Open, Import and Save (`fileCommands`), so a button's shortcut is the
  *  binding that fires it. The Debug menu's rows are `debug.open`'s variants, one per dev page. */
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { DEBUG_MENU } from './dev/devRoutes';
-import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
+import { FILE_ACTIONS } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
 
@@ -26,7 +26,6 @@ export interface CommandBarProps {
 }
 
 const FILE_BAR = pref.group('', {
-  new: FILE_NEW_MENU,
   open: pref.action(FILE_ACTIONS.open, { description: 'Open SVG…' }),
   import: pref.action(FILE_ACTIONS.import, { description: 'Add an SVG to this document…' }),
   save: pref.action(FILE_ACTIONS.save, { description: 'Save as SVG' }),

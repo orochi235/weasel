@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ActionsProvider, createScene } from '@weasel-js/core';
+import { pref } from '@weasel-js/prefs';
 import { parseSvg } from '@weasel-js/svg';
-import { CommandBar } from './CommandBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { loadDoc, DOC_KEY } from './docPersistence';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { useFileCommands } from './fileCommands';
+import { FILE_NEW_MENU, useFileCommands } from './fileCommands';
 import { isPaperSize, PAPER_OPTIONS, PAPER_PRESETS, PAPER_SIZES } from './paperSizes';
 import { parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 
@@ -19,9 +20,11 @@ function FileCommands() {
   return null;
 }
 
+const NEW_BAR = pref.group('', { new: FILE_NEW_MENU }, { as: 'bar' });
+
 describe('paper sizes', () => {
   it('labels the New menu from the table the document properties read', () => {
-    render(<ActionsProvider><FileCommands /><CommandBar /></ActionsProvider>);
+    render(<ActionsProvider><FileCommands /><Bar schema={NEW_BAR} /></ActionsProvider>);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /New/ })); });
     const menu = screen.getAllByRole('menuitem').map((el) => el.textContent);
     expect(menu).toEqual(PAPER_SIZES.map((s) => s.label));

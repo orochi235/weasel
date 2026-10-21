@@ -6,7 +6,7 @@ import { saveSvgFile, type SavedDoc } from './saveSvg';
 
 export const FILE_ACTIONS = { new: 'file.new', open: 'file.open', import: 'file.import', save: 'file.save' } as const;
 
-/** New, opening onto one row per paper size: the command bar's and the File menu's. */
+/** New, opening onto one row per paper size, in the File menu. */
 export const FILE_NEW_MENU: PrefGroup = pref.group(
   'New',
   { sizes: pref.action(FILE_ACTIONS.new) },

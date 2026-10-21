@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
 import { CommandBar } from './CommandBar';
 import { DEBUG_MENU, DEV_ROUTES, useDebugCommands } from './dev/devRoutes';
-import { FILE_NEW_MENU } from './fileCommands';
 import { PAPER_SIZES } from './paperSizes';
 
 const newRun = vi.fn();
@@ -47,15 +46,9 @@ afterEach(() => {
 });
 
 describe('CommandBar', () => {
-  it('draws New from the file.new action, one row per paper size', () => {
-    expect(Object.values(FILE_NEW_MENU.children)).toEqual([expect.objectContaining({ kind: 'action', action: 'file.new' })]);
-  });
-
-  it.each(PAPER_SIZES)('starts a new document at $label when that row is picked from New', ({ key, label }) => {
+  it('leaves New to the File menu', () => {
     renderBar();
-    openMenu(/New/);
-    fireEvent.click(screen.getByRole('menuitem', { name: label }));
-    expect(newRun).toHaveBeenCalledWith({ size: key });
+    expect(screen.queryByRole('button', { name: /New/ })).toBeNull();
   });
 
   it('opens, imports and saves from their own buttons', () => {
