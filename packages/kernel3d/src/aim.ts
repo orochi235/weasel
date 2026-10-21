@@ -50,6 +50,13 @@ function frustumOf(viewport: Viewport3d): Frustum3d {
   };
 }
 
+/** Where the ray through a point in the pane's own coordinates meets z = 0, or `null`. */
+function groundHit(viewport: Viewport3d, point: { x: number; y: number }): Vec3 | null {
+  const ray = rayAt(viewport, point);
+  const t = ray && intersectRayPlane(ray, GROUND_NORMAL, 0);
+  return ray && t !== null ? pointOnRay(ray, t) : null;
+}
+
 function toZ(p: AimPoint): Vec3 {
   return { x: p.x, y: p.y, z: p.z ?? 0 };
 }
@@ -75,10 +82,9 @@ export function aimOf3d(viewport: Viewport3d, viewId: string | null): Aim3d {
       if (space.kind === '3d') return projectAll(space, extent.far);
       const onGround: Vec3[] = [];
       for (const c of paneCorners(viewport)) {
-        const ray = rayAt(viewport, c);
-        const t = ray && intersectRayPlane(ray, GROUND_NORMAL, 0);
-        if (!ray || t === null) return null;
-        onGround.push(pointOnRay(ray, t));
+        const hit = groundHit(viewport, c);
+        if (!hit) return null;
+        onGround.push(hit);
       }
       return projectAll(space, onGround);
     },
@@ -105,9 +111,7 @@ export function aimSpace3d(viewport: Viewport3d, viewId: string | null): AimSpac
       return s && { x: s.x - ox, y: s.y - oy };
     },
     unproject(px) {
-      const ray = rayAt(viewport, { x: px.x + ox, y: px.y + oy });
-      const t = ray && intersectRayPlane(ray, GROUND_NORMAL, 0);
-      return ray && t !== null ? pointOnRay(ray, t) : null;
+      return groundHit(viewport, { x: px.x + ox, y: px.y + oy });
     },
   };
 }
