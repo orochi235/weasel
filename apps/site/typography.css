@@ -13,3 +13,6 @@ body { font-family: var(--wzl-font-body); }
 .ckd-release-pkgs { font-family: var(--wzl-font-ui); }
 
 .ckd-hint { font-family: var(--wzl-font-body); }
+
+/* A bare <button> or <select> takes the browser's own UI face rather than inheriting one. */
+:where(.ckd-canvas-wrap) :is(button, select) { font-family: inherit; }
