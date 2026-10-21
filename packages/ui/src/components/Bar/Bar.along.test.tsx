@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { arcShape, lineShape, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
@@ -164,5 +164,57 @@ describe('Bar along a curve: scroll mode', () => {
     render(<Bar schema={schema} shape={shape} overflow="menu" label="Tools" />);
     expect(marks()).toEqual([]);
     expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
+  });
+});
+
+describe('Bar along a curve: dragging the run', () => {
+  const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
+  const run = trackRun(shape);
+  const number = (name: string) => ({ kind: 'number', name, description: '', default: 4 }) as PrefLeaf;
+  const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', 'n2', 'n3', 'n4', 'n5', 'n6'].map((n) => [n, number(n)])) };
+  const values = Object.fromEntries(Object.keys(fields.children).map((n) => [n, 4]));
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('marks an overflowing run so touch drags it rather than panning the page', () => {
+    render(<Bar schema={fields} values={values} shape={shape} label="Tools" />);
+    expect(screen.getByRole('toolbar')).toHaveAttribute('data-scrolls');
+    cleanup();
+    render(<Bar schema={fields} values={values} shape={shape} overflow="menu" label="Tools" />);
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-scrolls');
+  });
+
+  // A touch held long raises no click after its release, and react-aria then clicks the trigger itself 80 ms on.
+  test.each([['with', true], ['without', false]])('a drag that starts on a popover trigger scrolls the run and opens nothing, %s a click after it', (_, clicks) => {
+    vi.useFakeTimers();
+    // A proxy for the browser: jsdom's setPointerCapture does nothing, so the retargeting it would do is played here —
+    // once an element captures the pointer, the release and its click go to that element, not the one under the pointer.
+    let captor: Element | null = null;
+    const proto = Element.prototype as { setPointerCapture?: Element['setPointerCapture'] };
+    const real = proto.setPointerCapture;
+    proto.setPointerCapture = function capture(this: Element) {
+      captor = this;
+    };
+    onTestFinished(() => {
+      proto.setPointerCapture = real;
+    });
+    render(<Bar schema={fields} values={values} shape={shape} label="Tools" />);
+    const trigger = screen.getByRole('button', { name: 'n2' });
+    const at = (g: number) => {
+      const { point } = run.at(g);
+      return { pointerId: 1, button: 0, pointerType: 'mouse', pressure: 0.5, clientX: point.x, clientY: point.y };
+    };
+    fireEvent.pointerDown(trigger, { ...at(0.5), buttons: 1 });
+    fireEvent.pointerMove(document, { ...at(0.3), buttons: 1 });
+    const released = captor ?? trigger;
+    fireEvent.pointerUp(released, { ...at(0.3), buttons: 0 });
+    if (clicks) fireEvent.click(released, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(items()[0]).not.toHaveAttribute('data-clipped', 'none');
   });
 });

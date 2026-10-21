@@ -52,7 +52,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const scrolls = total > run.length;
 
   return (
-    <div {...rootAttrs} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label} onPointerDownCapture={scroll.onPointerDownCapture} onFocusCapture={scroll.onFocusCapture}>
+    <div {...rootAttrs} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} data-scrolls={scrolls ? '' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label} onPointerDownCapture={scroll.onPointerDownCapture} onFocusCapture={scroll.onFocusCapture}>
       {scrolls && (
         <svg className={s.band} aria-hidden="true">
           <path className={s.bandPath} d={trackShapeD(shape)} />

@@ -48,6 +48,7 @@
 
 .bandPath {
   fill: none;
+  touch-action: none;
   stroke: transparent;
   stroke-width: var(--wzl-tb-height);
   pointer-events: stroke;
@@ -61,4 +62,10 @@
   transform: translate(-50%, -50%) rotate(var(--at-angle));
   pointer-events: none;
   opacity: 0.7;
+}
+
+/* An overflowing run is dragged along itself, so a touch on it must not pan the page instead. */
+.root[data-scrolls] > .item,
+.root[data-scrolls] > .band {
+  touch-action: none;
 }

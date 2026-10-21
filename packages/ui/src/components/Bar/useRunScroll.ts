@@ -11,7 +11,7 @@ export const SCROLL_SLOP = 4;
 /** Px one line of a line-mode wheel moves the run. */
 const LINE = 16;
 
-/** Capture would retarget the release and kill the click on whatever item was pressed. */
+/** Capture at the press would retarget the release and kill the click on whatever item was pressed. */
 const NO_CAPTURE = { capture: false } as const;
 
 /** What {@link useRunScroll} reads: the bar's root, its run, how long its items lie end to end, and where each falls now. */
@@ -77,7 +77,15 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
     let scrolling = false;
     const onMove = (ev: PointerEvent): void => {
       const travel = (fractionAt(el, latest.current.run, ev) - g0) * latest.current.run.length;
-      scrolling ||= Math.abs(travel) > SCROLL_SLOP;
+      if (!scrolling && Math.abs(travel) > SCROLL_SLOP) {
+        scrolling = true;
+        // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
+        try {
+          el.setPointerCapture?.(ev.pointerId);
+        } catch {
+          /* a pointer already gone: nothing to retarget */
+        }
+      }
       if (scrolling) scrollTo(from - travel);
     };
     const onEnd = (): void => {
