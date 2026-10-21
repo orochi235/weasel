@@ -16,7 +16,9 @@ export {
 } from './curve';
 export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
 export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest } from './track/shape';
-export { arcShape, type ArcTrackSpec } from './track/arc';
+export { arcShape, type ArcTrackSpec, type ArcTrackShape } from './track/arc';
+export { trackRun, type TrackRun, type TrackPlace } from './track/run';
+export { trackShapeD } from './track/pathData';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
 export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,

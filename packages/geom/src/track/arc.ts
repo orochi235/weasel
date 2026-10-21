@@ -1,4 +1,5 @@
 import type { Point } from "../paths/cubicMath";
+import { clamp } from "../scalar";
 import type { TrackShape, TrackStation } from "./shape";
 
 /** An arc track: degrees clockwise from 12 o'clock on a y-down plane. Equal `start` and `end` is a whole circle. */
@@ -14,8 +15,11 @@ export interface ArcTrackSpec {
 const RAD = Math.PI / 180;
 const mod360 = (a: number): number => ((a % 360) + 360) % 360;
 
+/** A track shape that remembers the arc it was built from, so path data can be drawn as arcs. */
+export type ArcTrackShape = TrackShape & { readonly arc: ArcTrackSpec };
+
 /** An arc track; its normal points away from the center, whichever way it runs. */
-export function arcShape(spec: ArcTrackSpec): TrackShape {
+export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
 	const { center, radius, start } = spec;
 	const sign = spec.direction === "ccw" ? -1 : 1;
 	const raw = mod360(sign * (spec.end - start));
@@ -23,7 +27,7 @@ export function arcShape(spec: ArcTrackSpec): TrackShape {
 	const length = radius * sweep * RAD;
 
 	const at = (f: number): TrackStation => {
-		const t = f < 0 ? 0 : f > 1 ? 1 : f;
+		const t = clamp(f, 0, 1);
 		const theta = (start + sign * t * sweep) * RAD;
 		const s = Math.sin(theta);
 		const c = Math.cos(theta);
@@ -34,7 +38,7 @@ export function arcShape(spec: ArcTrackSpec): TrackShape {
 		};
 	};
 
-	return {
+	const shape: TrackShape = {
 		kind: "arc",
 		length,
 		at,
@@ -50,4 +54,6 @@ export function arcShape(spec: ArcTrackSpec): TrackShape {
 			return { f, dist: Math.hypot(p.x - q.x, p.y - q.y) };
 		},
 	};
+	Object.defineProperty(shape, "arc", { value: spec, enumerable: false });
+	return shape as ArcTrackShape;
 }

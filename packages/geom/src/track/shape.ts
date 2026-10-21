@@ -1,6 +1,7 @@
 import { nearestOnLine } from "../nearest";
 import type { Point } from "../paths/cubicMath";
 import type { PathStation } from "../paths/pathMeasure";
+import { clamp } from "../scalar";
 
 /** A station on a track, plus the side items stand on. */
 export interface TrackStation extends PathStation {
@@ -39,7 +40,7 @@ export function lineShape(from: Point, to: Point): TrackShape {
 		kind: "line",
 		length,
 		at(f) {
-			const t = f < 0 ? 0 : f > 1 ? 1 : f;
+			const t = clamp(f, 0, 1);
 			return {
 				point: { x: from.x + t * dx, y: from.y + t * dy },
 				tangent: { ...tangent },
