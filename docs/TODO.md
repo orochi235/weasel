@@ -954,19 +954,18 @@ only story runner in the repo.
   with no timeout and at no particular reserve, and in Linux CI on 179f2409d. Flaky or broken, not
   contention; the cause is not looked at.
 
-- **(P2) Visual Regression fails on `main` beyond the missing EffectChart baselines.** Every push
-  to `main` since at least 7ddf3ce93 fails the workflow; on 179f2409d (2026-10-21) 7 of 87 specs
-  failed. Besides the two EffectChart specs below: `diagram`'s nodes and edges specs fail with
-  "Canvas width changed vs baseline"; `hud-context-menu`'s two hovered-row specs differ by 11.22%
-  and 14.75% against a 2% threshold (a pixel diff, not the first-load timeout recorded below); and
-  `batch-pixels`' "batched runs paint their own colors" dies with "Execution context was
-  destroyed, most likely because of a navigation". Whether each is a regression or a stale baseline
-  is not checked.
-
-- **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
-  names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
-  write them. Its `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`; set it
-  from the first captured baselines.
+- **(P2) Visual Regression stays red on `main` until six baselines are captured.** Run the
+  "Visual Regression — Update Baselines" workflow and commit these from its artifact; every other
+  spec passes. Each one changed on purpose (checked against CI's captures, 2026-10-21):
+  - `diagram-nodes.png`, `diagram-edges.png`: fd3875dc1 moved `DiagramView`'s `className` onto a
+    new box around the canvas, so the demos' 1px `.ckd-canvas` border now sits outside the canvas,
+    which reads 638×358 rather than 640×360. Offset by that pixel, the old baselines differ by
+    0.32% and 0.39% (limit 0.4%): body text centered in 10da7a020 and moved edge labels.
+  - `hud-context-menu-light.png`, `hud-context-menu-dark.png`: c4e499e30 lists each reorder
+    action's two variants (Bring to Front and Send to Back appear), and b14dec111, 4a446579f and
+    58e558da6 draw shortcuts, rounded corners, a shadow and row icons.
+  - `effect-chart.png`, `effect-chart-rack.png`: never captured. Their `maxDiffRatio` of 0.004
+    was copied from `diagram.spec.ts`; set it from the first captures.
 
 - **(P3) A dev server on orochi has missed a file write.** A site dev server there served a file
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
