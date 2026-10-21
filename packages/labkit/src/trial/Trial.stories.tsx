@@ -1,7 +1,7 @@
 import { createPointerStore } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { LabContext, type LabContextValue, DEFAULT_VIEW, TrialChrome } from '@weasel-js/labkit';
-import { LabStoreContext, createLabStore } from '@weasel-js/labkit/state';
+import { DEFAULT_VIEW, LabContext, type LabContextValue, TrialChrome } from '@weasel-js/labkit';
+import { createLabStore, LabStoreContext } from '@weasel-js/labkit/state';
 import type { Instrument } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
 

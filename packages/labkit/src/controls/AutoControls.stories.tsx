@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useState } from 'react';
 import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
 import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
+import { useState } from 'react';
 import { applyConfigWrite } from '../config/autoConfig';
 
 /**

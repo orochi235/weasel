@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useEffect } from 'react';
 import { Lab, useLabContext } from '@weasel-js/labkit';
+import { useEffect } from 'react';
 import type { Instrument } from '../instrument/types';
 
 const StubInstrument: Instrument = {

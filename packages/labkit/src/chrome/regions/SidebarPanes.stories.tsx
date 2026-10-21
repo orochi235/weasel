@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, waitFor } from '@weasel-js/forge/play';
-import { useState } from 'react';
 import { LabRoot } from '@weasel-js/labkit';
 import { SidebarPanes } from '@weasel-js/labkit/chrome';
+import { useState } from 'react';
 import type { SidebarSlotContext } from '../types';
 
 const meta: Meta<typeof SidebarPanes> = {

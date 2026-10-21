@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useEffect, useRef } from 'react';
 import { defineInstrument, Lab, useLabContext } from '@weasel-js/labkit';
+import { useEffect, useRef } from 'react';
 import type { ConfigField } from '../controls/types';
 import type { Instrument, RenderContext } from '../instrument/types';
 import type { JobEvent } from '../job/types';

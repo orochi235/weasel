@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useState } from 'react';
 import { Readout } from '@weasel-js/labkit/primitives';
+import { useState } from 'react';
 
 const meta: Meta<typeof Readout> = {
   title: 'labkit/Primitives/Readout',

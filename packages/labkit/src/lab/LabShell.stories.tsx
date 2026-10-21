@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, within } from '@weasel-js/forge/play';
+import { LabShell } from '@weasel-js/labkit';
+import { Toolbar } from '@weasel-js/labkit/primitives';
 import { Select } from '@weasel-js/ui/components/Select';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
-import { Toolbar } from '@weasel-js/labkit/primitives';
-import { LabShell } from '@weasel-js/labkit';
 
 const meta: Meta<typeof LabShell> = {
   title: 'labkit/Lab/LabShell',
