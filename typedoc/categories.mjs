@@ -83,6 +83,7 @@ export const RULES = [
   ['packages/routing/src/vocabulary', 'Tools & gestures'],
   ['packages/routing/src/menus', 'Menu'],
   ['packages/routing/src/kitSettings', 'Tools & gestures'],
+  ['packages/routing/src/keymaps', 'Tools & gestures'],
 ];
 
 /**

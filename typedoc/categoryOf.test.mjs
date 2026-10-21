@@ -97,14 +97,18 @@ describe('the rule table', () => {
     expect(shadowed).toEqual([]);
   });
 
-  it("covers every directory of core's source that declares exports", () => {
-    // These hold tests, test helpers, re-export lists, and module shims, never a declaration the reference documents.
-    const noDeclarations = new Set(['__tests__', 'barrel', 'import-shims', 'test-hook', 'testing']);
-    const src = join(import.meta.dirname, '../packages/core/src');
-    const uncovered = readdirSync(src, { withFileTypes: true })
+  // These hold tests, test helpers, re-export lists, and module shims, never a declaration the reference documents.
+  const noDeclarations = new Set(['__tests__', 'barrel', 'import-shims', 'test-hook', 'testing']);
+  const uncoveredIn = (pkg) =>
+    readdirSync(join(import.meta.dirname, `../${pkg}`), { withFileTypes: true })
       .filter((e) => e.isDirectory() && !noDeclarations.has(e.name))
-      .map((e) => `packages/core/src/${e.name}`)
+      .map((e) => `${pkg}/${e.name}`)
       .filter((dir) => categoryOf(`${dir}/any.ts`, 'any') === null);
-    expect(uncovered).toEqual([]);
-  });
+
+  it.each(['packages/core/src', 'packages/routing/src'])(
+    'covers every directory of %s that declares exports',
+    (pkg) => {
+      expect(uncoveredIn(pkg)).toEqual([]);
+    },
+  );
 });
