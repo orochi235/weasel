@@ -920,7 +920,8 @@ only story runner in the repo.
   as it was before an edit on 2026-10-12, and a `touch` did not wake it. Seen once and not
   reproduced. `forge/src/vite/plugin.test.ts` lost file events for its temp directory the same way,
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
-  measured.
+  measured. Polling did not save "indexes a file added under a glob written with a leading ./", which
+  timed out at 15 s in a full fleet run on 2026-10-21 (onto job 2c564a18).
 
 - **(P3) SVG text export: lines written without a layout sit half the leading off.** Without
   `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
