@@ -615,14 +615,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   animates a selector's weights yet: `store.get(path, { weights })` is there for an animator
   target to drive.
 
-- **(P3) A removable badge's remove control can wrap onto a line by itself.** On a wrapped `pill` or
-  `plain` `Badge`, when the line cannot hold the last word and the control together, the control
-  breaks alone and takes its negative margin with it, so it sits left of the line's start. Measured
-  in bare markup, not on a badge. A word joiner, a non-breaking space, and `white-space: nowrap` do
-  not stop Chromium breaking before an inline-block. Seen once in a screenshot and not read to a
-  cause: a removable `pill` with a two-word label wrapped onto two lines in a flex row with room
-  to spare. Both need a browser to work in.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which

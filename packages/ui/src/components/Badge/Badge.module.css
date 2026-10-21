@@ -205,24 +205,27 @@ a.badge {
   padding: calc(var(--_pad-top) + var(--_edge)) 0 calc(var(--_pad-bottom) + var(--_edge)) var(--_hit-left);
   margin-left: calc(-1 * var(--_hit-left));
 }
-/* Chromium breaks a line before an inline-block whatever the text before it says, so the remove
-   control could wrap onto a line of its own. Instead the label ends in a tail, joined to its
-   last word, that holds room for the control and the badge's closing edge, and the control
-   backs up into it so that it and the edge add nothing to the line. On a label that acts, the
-   tail is also the click target from the label to the badge's end. */
+/* The label ends in a tail joined to its last word. Being nowrap is what keeps the control on
+   that word's line: Chromium breaks before an inline-block whatever the text before it says,
+   unless that text is nowrap. The tail's padding is the label's click target out to the badge's
+   end, and its margin takes it back at once: a line breaker that meets extra width before
+   anything takes it back wraps a badge whose own measured width fits. */
 .badge:is([data-shape='pill'], [data-shape='plain']) .content > :has(+ .remove)::after {
   content: '\2060';
+  white-space: nowrap;
   padding-right: calc(var(--wzl-space-1) + var(--_remove-size) + var(--_hit-right));
+  margin-right: calc(-1 * (var(--_remove-size) + var(--_hit-right)));
 }
 .badge:is([data-shape='pill'], [data-shape='plain']) .remove {
-  margin-left: calc(-1 * (var(--_remove-size) + var(--_hit-right)));
+  margin-left: 0;
 }
 .badge:is([data-shape='pill'], [data-shape='plain']) .content > .target::after {
   padding-block: calc(var(--_pad-top) + var(--_edge)) calc(var(--_pad-bottom) + var(--_edge));
 }
 /* A cloned break closes every fragment of the badge, so the label closes over each one too. Its
-   last closing would reach past the badge's end, so there the tail gives the edge back, and
-   over a span of line widths as wide as that edge the control can still wrap alone. */
+   last closing would reach past the badge's end, so there the tail gives the edge back. That
+   closing is drawn where the tail leaves off, so the tail keeps its width and the control backs
+   up into it instead. */
 .badge[data-break='clone']:is([data-shape='pill'], [data-shape='plain']) .target {
   padding-right: var(--_hit-right);
   margin-right: calc(-1 * var(--_hit-right));
