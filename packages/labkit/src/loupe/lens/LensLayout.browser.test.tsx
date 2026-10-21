@@ -112,7 +112,7 @@ test('keeps the chrome within the body’s width, directly below it', async () =
   sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { compare: 'b', view: 'split' }), 'split');
   const interior = await mount();
   const chrome = interior.querySelector<HTMLElement>('.lk-lens-chrome')!;
-  await waitFor(() => expect(chrome.querySelectorAll('button')).toHaveLength(7));
+  await waitFor(() => expect(chrome.querySelectorAll('button')).toHaveLength(8));
   const body = interior.getBoundingClientRect();
   const strip = chrome.getBoundingClientRect();
   expect(strip.left).toBeGreaterThanOrEqual(body.left - 0.5);
