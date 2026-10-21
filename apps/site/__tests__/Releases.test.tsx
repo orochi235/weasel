@@ -40,6 +40,12 @@ const chip = (name: string) => within(chips()).getByRole('button', { name: new R
 const titles = () =>
   screen.getAllByRole('listitem').map((li) => li.querySelector('.ckd-release-title')?.textContent);
 const versions = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+// Only the first release starts open, and a closed one mounts no entries.
+async function openAll() {
+  for (const h of screen.getAllByRole('heading', { level: 3 })) {
+    if (!h.closest('details')?.open) await userEvent.click(h);
+  }
+}
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/');
@@ -60,9 +66,10 @@ describe('the package filter', () => {
     ]);
   });
 
-  it('starts unfiltered, with All pressed', () => {
+  it('starts unfiltered, with All pressed', async () => {
     render(<Releases />);
     expect(chip('All')).toHaveAttribute('aria-pressed', 'true');
+    await openAll();
     expect(titles()).toHaveLength(4);
   });
 
@@ -80,6 +87,14 @@ describe('the package filter', () => {
     expect(versions()).toEqual(['Unreleased']);
   });
 
+  it('opens whichever release the filter leaves first', async () => {
+    render(<Releases />);
+    // `svg` appears only in 1.5.0, which starts closed.
+    await userEvent.click(chip('svg'));
+    expect(versions()).toEqual(['1.5.0']);
+    expect(titles()).toEqual(['svg and ui']);
+  });
+
   it('unions two packages rather than intersecting them', async () => {
     render(<Releases />);
     await userEvent.click(chip('text'));
@@ -94,6 +109,7 @@ describe('the package filter', () => {
     await userEvent.click(chip('text'));
     await userEvent.click(chip('text'));
     expect(chip('All')).toHaveAttribute('aria-pressed', 'true');
+    await openAll();
     expect(titles()).toHaveLength(4);
   });
 
@@ -102,6 +118,7 @@ describe('the package filter', () => {
     await userEvent.click(chip('text'));
     await userEvent.click(chip('bidi'));
     await userEvent.click(chip('All'));
+    await openAll();
     expect(titles()).toHaveLength(4);
     expect(window.location.search).toBe('');
   });
@@ -146,15 +163,19 @@ describe('the filter in the URL', () => {
 describe('an entry with a body', () => {
   it('shows its title and folds the body away until the title is clicked', async () => {
     render(<Releases />);
-    const body = screen.getByText('the long account');
-    const change = body.closest('details');
+    // 1.5.0 is closed at first, as is the change inside it.
+    await userEvent.click(screen.getByRole('heading', { level: 3, name: '1.5.0' }));
+    const change = screen.getByText('svg and ui').closest('details');
     expect(change?.open).toBe(false);
+    expect(screen.queryByText('the long account')).toBeNull();
     await userEvent.click(screen.getByText('svg and ui'));
     expect(change?.open).toBe(true);
+    expect(screen.getByText('the long account')).toBeTruthy();
   });
 
-  it('leaves a title-only entry as plain text', () => {
+  it('leaves a title-only entry as plain text', async () => {
     render(<Releases />);
+    await openAll();
     expect(screen.getByText('core only').closest('.ckd-release-change')).toBeNull();
   });
 });

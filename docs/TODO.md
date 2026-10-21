@@ -929,10 +929,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) The site's Releases view mounts every changelog entry: about 46,000 elements** in jsdom
-  (measured 2026-10-20), closed `<details>` included. A test rendering it spent 3 s committing and
-  0.5 s a `getByRole` under fleet load; in a browser the cost is unmeasured.
-
 - **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" once saved no typed text.** In
   Linux CI on 179f2409d (2026-10-21, run 39523286313) `savedBody().row.data.text` stayed `''` past
   the poll after Escape, so the six typed `M`s presumably went somewhere other than the open editor
