@@ -9,6 +9,8 @@ import {
   pathFromD,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
+  resolveFill,
+  resolveStroke,
   transformPath,
   type Fill,
   type NodeShapeEntry,
@@ -86,8 +88,10 @@ export function markShape<TPose>(
       if (mark === null) return [];
       const box = geometry.getBounds(pose);
       const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
-      const fill = d.fill && commandFill(d.fill, box);
-      const stroke = d.stroke && commandStroke(d.stroke, box);
+      const declaredFill = resolveFill(d.fill);
+      const declaredStroke = resolveStroke(d.stroke);
+      const fill = declaredFill && commandFill(declaredFill, box);
+      const stroke = declaredStroke && commandStroke(declaredStroke, box);
       return [{
         kind: 'path',
         path: transformPath(unitPath(mark.d), [box.width, 0, 0, box.height, box.x, box.y]),

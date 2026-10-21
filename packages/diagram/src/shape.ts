@@ -12,6 +12,8 @@ import {
   polylineFromPoints,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
+  resolveFill,
+  resolveStroke,
   type NodeShapeEntry,
   type Path,
   type PoseDescriptor,
@@ -31,9 +33,6 @@ export interface DiagramShapeOptions<TPose> {
   read?: DiagramNodeReader;
   /** Reads the box the outline is built in. Default `RECT_POSE_DESCRIPTOR`. */
   geometry?: PoseDescriptor<TPose>;
-  /** Painted when the node's data declares neither. */
-  defaultFill?: Fill | null;
-  defaultStroke?: Stroke | null;
 }
 
 /** The entry, for a consumer composing their own painter list. */
@@ -52,8 +51,8 @@ export function diagramShape<TPose>(
       if (outline === undefined) return [];
       const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
       const box = geometry.getBounds(pose);
-      const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
-      const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
+      const declaredFill = resolveFill(d.fill);
+      const declaredStroke = resolveStroke(d.stroke);
       const fill = declaredFill && commandFill(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
       const header = headerBox(box, diagramContainerOf(node)?.header);
