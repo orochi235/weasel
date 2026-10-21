@@ -758,11 +758,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
   Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
   needs a custom pref kind before it can sit in a schema asset.
-- **(P3) A schema bar has no strip of its own to match `ActionBar`'s.** `ActionBar.module.css` draws
-  the bordered strip under its buttons, and draw's `SchemaSurfaces.module.css` restates it for a
-  `Bar` drawn from a surface asset. `Bar`'s `framed` is a different strip (margin, height). One strip
-  form on `Bar` would serve both.
-
 - **(P3) Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
   "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
   `pageEdits.ts` move each page's nodes with it in one undo entry, and `PageTabs` (`@weasel-js/ui`) is
