@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type ReactElement } from 'react';
+import { useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
@@ -9,7 +9,6 @@ import { READOUT, fractionToPosition } from './stops';
 import { onThumbKeyDown } from './thumbKeys';
 import type { SliderProps, Thumb } from './types';
 import { useBoxes } from './useBoxes';
-import { useLatestHandlers } from './useLatestHandlers';
 import { useSliderPointer } from './useSliderPointer';
 import { useScale, useSpan } from './useSpan';
 import { useThumbDrags } from './useThumbDrags';
@@ -45,11 +44,10 @@ export function SliderBody<T extends Thumb = Thumb>(
   // The value span. Every pointer is measured against it, and thumbs, ticks
   // and stop labels are laid out inside it, so they agree by construction.
   const railRef = useRef<HTMLDivElement | null>(null);
-  const geometry = useRef(lineGeometry(() => railRef.current)).current;
+  const geometry = useMemo(() => lineGeometry(() => railRef.current), []);
   const scale = useScale(span, strict, step);
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
-  const { onInput, onChange } = useLatestHandlers(props);
   const thumbEls = useRef<(HTMLDivElement | null)[]>([]);
   // The track first, then each thumb.
   const boxes = useBoxes(() => [trackRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length);
