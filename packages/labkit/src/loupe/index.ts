@@ -22,25 +22,11 @@ export type { LoupeBubbleProps } from './LoupeBubble';
 export { LoupeBubble } from './LoupeBubble';
 export type { LoupeGesturesProps } from './LoupeGestures';
 export { LoupeGestures } from './LoupeGestures';
-export type { LensSide, SeamPreview } from './lens/compare';
-export {
-  createSeamPreview,
-  lensSides,
-  SEAM_GRAB,
-  SEAM_LAYER_ID,
-  SEAM_MAX,
-  SEAM_MIN,
-  seamAction,
-  splitRects,
-} from './lens/compare';
-export type { DifferenceView, DiffOptions, DiffResult } from './lens/difference';
-export { diffPixels, paintDifference } from './lens/difference';
 export type { LensActionsProps } from './lens/LensActions';
 export { LensActions } from './lens/LensActions';
-export { LensChrome } from './lens/LensChrome';
 export type { LensAttachment, LensOverlayProps, LensReadoutProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
-export { LensSlot, useLensResolution, useShownSource } from './lens/LensSlot';
+export { useShownSource } from './lens/LensSlot';
 export type { LensActionApi } from './lens/lensActionDefs';
 export {
   createLensActions,
@@ -50,12 +36,9 @@ export {
   LOUPE_LEADER,
   MAX_LENSES,
 } from './lens/lensActionDefs';
-export type { LensHitBox } from './lens/lensHitBoxes';
-export { HANDLE_SLOP, hitBoxesOf, interiorOf } from './lens/lensHitBoxes';
 export {
   addLensOps,
   createLensScene,
-  LENS_REGISTRY,
   lensClosure,
   lensesOf,
   lensIdsOf,
@@ -74,7 +57,7 @@ export type {
   LensSourceStatus,
   LensSources,
 } from './lens/lensSource';
-export { requestsOf, resolveSource, shownSource, unavailableText } from './lens/lensSource';
+export { requestsOf, resolveSource, unavailableText } from './lens/lensSource';
 export type {
   LensAim,
   LensBodyData,
@@ -91,22 +74,13 @@ export type {
 export {
   BODY_SIZE,
   GLASS_POSE_KEY,
-  LEADER_PATH_KEY,
   LENS_DEFAULTS,
   LENS_REST_MS,
   RETICLE_SIZE,
 } from './lens/lensTypes';
 export type { LensProbe } from './lens/probeUnderLens';
 export { probeUnderLens } from './lens/probeUnderLens';
-export type { PixelGridView } from './lens/pixelGrid';
-export {
-  drawPixelGrid,
-  GRID_MIN_FACTOR,
-  GRID_NEEDS,
-  gridFits,
-  readBitmap,
-  softEdgeMask,
-} from './lens/pixelGrid';
+export { readBitmap } from './lens/pixelGrid';
 export type { LoupeInputApi } from './loupeActions';
 export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { SourceLoupeProps } from './SourceLoupe';

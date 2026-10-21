@@ -1,6 +1,6 @@
 import {
   effectivePose,
-  moveSources,
+  moveNodesOps,
   type Op,
   type RectPose,
   sceneToAdapter,
@@ -24,6 +24,11 @@ const centerOf = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2
 let scene: LensScene<string>;
 const apply = (ops: Op[]) => sceneToAdapter(scene).applyOps(ops, 'test');
 const poseOf = (id: string) => effectivePose(scene, scene.get(id as never)!);
+/** Drags `id` 10 px right the way a move commits, and says where the body and the reticle end up. */
+const dragRight = (id: string) => {
+  apply(moveNodesOps(scene, [id], { dx: 10, dy: 0 }));
+  return { body: centerOf(poseOf('a:body')), reticle: centerOf(poseOf('a:reticle')) };
+};
 
 beforeEach(() => {
   scene = createLensScene<string>();
@@ -46,13 +51,14 @@ describe('lens scene', () => {
   });
 
   it('moves a pinned reticle on its own: dragging it writes the reticle, not the body', () => {
-    expect(moveSources(scene, ['a:reticle'])).toEqual(['a:reticle']);
+    expect(dragRight('a:reticle')).toEqual({ body: { x: 300, y: 200 }, reticle: { x: 110, y: 100 } });
   });
 
   it('makes Glass two kit calls: the reticle sits at the body’s center, dragging it moves the body, and undo restores Pinned', () => {
     apply(setAimOps(scene, 'a', 'glass'));
     expect(centerOf(poseOf('a:reticle'))).toEqual({ x: 300, y: 200 });
-    expect(moveSources(scene, ['a:reticle'])).toEqual(['a:body']);
+    expect(dragRight('a:reticle')).toEqual({ body: { x: 310, y: 200 }, reticle: { x: 310, y: 200 } });
+    scene.history.undo();
     expect(settingsOf(scene, 'a')!.aim).toBe('glass');
     scene.history.undo();
     expect(scene.get('a:reticle' as never)!.dependsOn).toBeUndefined();
