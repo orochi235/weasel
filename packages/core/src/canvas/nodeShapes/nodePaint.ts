@@ -1,4 +1,5 @@
 import type { Paint, Stroke, Fill } from '@weasel-js/paint';
+import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
@@ -10,41 +11,6 @@ import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 // The painters memoize a node's paint and resolve a fill's frame inside the
 // memo, so the kind set is ambient state that memo cannot see change.
 paintDrawKindRegistry.subscribe(bumpNodeMemoGeneration);
-
-/**
- * What a node's `data.fill` means to the built-in painters.
- *
- * Its {@link Paint} is used as-is — which is how a gradient or a pattern
- * reaches the renderer without a consumer registering a painter of its own.
- * An absent fill, `null`, and a fill carrying no `paint` all mean "no fill":
- * a node paints only what it declares. Write the paint with {@link solid}
- * rather than by hand when all you have is a color.
- */
-export function resolveNodeFill(fill: Fill | null | undefined): PaintedFill | null {
-  return fill?.paint == null ? null : (fill as PaintedFill);
-}
-
-/** A fill that paints — what everything downstream of `resolveNodeFill`
- *  works with. */
-export type PaintedFill = Fill & { paint: Paint };
-
-/** The stroke a built-in painter should emit, or `null` for "no stroke".
- *  `data.stroke` is a whole {@link Stroke} — width, cap, join, dash, miter
- *  limit, and align all reach the renderer. {@link strokeOf} builds one from a
- *  color.
- *
- *  A stroke carrying no `paint` reads as no stroke. The type requires `paint`,
- *  but a document is data, and a stroke assembled a field at a time arrives
- *  here without one; painting it throws out of the painter and takes the whole
- *  frame with it. */
-export function resolveNodeStroke(stroke: Stroke | null | undefined): PaintedStroke | null {
-  if (stroke?.paint == null) return null;
-  return stroke as PaintedStroke;
-}
-
-/** A stroke that paints — what everything downstream of `resolveNodeStroke`
- *  works with. */
-export type PaintedStroke = Stroke & { paint: Paint };
 
 /** Per-side grab reach for a resolved stroke: world units for what the
  *  renderer builds in world, screen pixels for what it builds on screen — a
@@ -136,7 +102,7 @@ export interface PathPaint {
  *  `data.stroke`, as the built-in path painter draws it: a stroke or a fill
  *  with no `paint` is none. */
 export function pathPaintOf(data: { fill?: Fill | null; stroke?: Stroke | null }): PathPaint {
-  const stroke = resolveNodeStroke(data.stroke);
-  const fill = resolveNodeFill(data.fill);
+  const stroke = resolveStroke(data.stroke);
+  const fill = resolveFill(data.fill);
   return stroke !== null ? { fill, stroke } : { fill };
 }

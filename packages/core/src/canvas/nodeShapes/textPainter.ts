@@ -13,7 +13,8 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { inkReach, resolveNodeFill, resolveNodeStroke, strokeOutsetPerAxis } from './nodePaint';
+import { inkReach, strokeOutsetPerAxis } from './nodePaint';
+import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose } from './poseBox';
 
 /** The `data` a `kit:text` node carries. */
@@ -73,7 +74,7 @@ export function textPoseOf(d: TextNodeData, p: RectPose): TextPose {
     runs: d.runs as StyledRun[] | undefined,
     style: d.style,
     fill: d.fill,
-    stroke: resolveNodeStroke(d.stroke) ?? undefined,
+    stroke: resolveStroke(d.stroke) ?? undefined,
     verticalAlign: d.verticalAlign,
   };
 }
@@ -96,7 +97,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as TextNodeData;
     const laid = textCommandFromPose(textPoseOf(d, pose));
     const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
-    const bg = resolveNodeFill(d.background);
+    const bg = resolveFill(d.background);
     if (!bg) return [text];
     const fill = commandFill(bg, pose);
     return [
@@ -115,7 +116,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // A clipped node's lines are cut to the box, as they are drawn.
   silhouette: (node, pose) => {
     const d = node.data as TextNodeData;
-    if (resolveNodeFill(d.background)) {
+    if (resolveFill(d.background)) {
       return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
     }
     const lines = textLineBoxes(textPoseOf(d, pose));
@@ -128,11 +129,11 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // grabbable within a stroke width of a box edge and nowhere near the letters.
   ink: (node, _pose, ctx) => {
     const d = node.data as { stroke?: Stroke | null };
-    return { filled: true, ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale) };
+    return { filled: true, ...inkReach(resolveStroke(d.stroke), ctx?.scale) };
   },
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    const stroke = resolveNodeStroke(d.stroke);
+    const stroke = resolveStroke(d.stroke);
     return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose)), strokeOutsetPerAxis(stroke, ctx)) : null;
   },
 };
