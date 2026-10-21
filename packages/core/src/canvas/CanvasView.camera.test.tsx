@@ -6,11 +6,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef, useEffect } from 'react';
-import { CanvasView, type CanvasViewProps } from './CanvasView';
+import { CanvasView } from './CanvasView';
+import type { CameraHeldViewProps, CanvasViewCommonProps } from './canvasViewProps';
 import type { CanvasViewCamera } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
+
+/** What a test sets on the camera-held view the harness mounts. */
+type HarnessProps = Partial<CanvasViewCommonProps> & CameraHeldViewProps;
 
 const PANEL = { x: 100, y: 0, w: 100, h: 100 };
 const at = (x: number, y = 0): View => ({ x, y, scale: { x: 1, y: 1 } });
@@ -43,14 +47,14 @@ function Surface({ outer, redraw, onReady }: {
   return null;
 }
 
-function mount(props: Partial<CanvasViewProps> = {}) {
+function mount(props: HarnessProps = {}) {
   const camera = createRef<CanvasViewCamera>();
   const redraw = vi.fn();
   let outer = at(0);
   const readOuter = (): View => outer;
   let registry!: ViewRegistry;
   const onReady = (r: ViewRegistry): void => { registry = r; };
-  const ui = (p: Partial<CanvasViewProps>) => (
+  const ui = (p: HarnessProps) => (
     <ViewRegistryProvider>
       <Surface outer={readOuter} redraw={redraw} onReady={onReady} />
       <CanvasView id="panel" bounds={PANEL} cameraRef={camera} {...p} />
@@ -63,7 +67,7 @@ function mount(props: Partial<CanvasViewProps> = {}) {
     setOuter: (v: View) => { outer = v; },
     /** The camera as an action dispatched inside the view sees it. */
     viewDep: (): ViewApi => registry.list()[0]!.target.deps!().view!,
-    rerender: (p: Partial<CanvasViewProps>) => r.rerender(ui(p)),
+    rerender: (p: HarnessProps) => r.rerender(ui(p)),
     unmount: r.unmount,
   };
 }

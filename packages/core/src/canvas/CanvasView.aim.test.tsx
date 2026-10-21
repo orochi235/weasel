@@ -5,11 +5,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef, useEffect } from 'react';
-import { CanvasView, type CanvasViewProps } from './CanvasView';
+import { CanvasView } from './CanvasView';
+import type { AimHeldViewProps, CameraHeldViewProps, CanvasViewCommonProps } from './canvasViewProps';
 import type { CanvasViewCamera } from './canvasExtension';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { rectAim } from 'features/viewports/aim';
 import type { View } from 'core/viewport/view';
+
+/** What a test sets on the view the harness mounts: either side, the common props optional. */
+type HarnessProps = Partial<CanvasViewCommonProps> & (CameraHeldViewProps | AimHeldViewProps);
 
 const PANEL = { x: 0, y: 0, w: 200, h: 100 };
 const at = (x: number, y = 0): View => ({ x, y, scale: { x: 1, y: 1 } });
@@ -42,7 +46,7 @@ function Surface({ outer, redraw, onReady }: {
   return null;
 }
 
-function mount(props: Partial<CanvasViewProps> = {}) {
+function mount(props: HarnessProps = {}) {
   const camera = createRef<CanvasViewCamera>();
   const redraw = vi.fn();
   let outer = at(0);
@@ -52,7 +56,7 @@ function mount(props: Partial<CanvasViewProps> = {}) {
   render(
     <ViewRegistryProvider>
       <Surface outer={readOuter} redraw={redraw} onReady={onReady} />
-      <CanvasView id="panel" bounds={PANEL} cameraRef={camera} {...(props as object)} />
+      <CanvasView id="panel" bounds={PANEL} cameraRef={camera} {...props} />
     </ViewRegistryProvider>,
   );
   return {
