@@ -8,13 +8,14 @@ import {
   strokeHasInk,
 } from '@weasel-js/paint';
 import type { TextDrawCommand } from '@weasel-js/renderer';
+import { dashLength } from '@weasel-js/stroke';
 import { type PlacedGlyph, SYNTHETIC_ITALIC_RADIANS, syntheticBoldOffset } from '@weasel-js/text';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { num } from './num';
 import { isNative, resolveStroke, strokeStyleOps } from './strokeOps';
-import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
+import { isSpace, outlineCommand, placedOutline, skipGlyph } from './textOutlines';
 
 /** Glyphs one text object draws: one line, run, face, size and baseline. */
 export interface TextSegment {
@@ -78,6 +79,19 @@ function textObject(ctx: PageCtx, seg: TextSegment, mode: number, dx: number, dy
   parts.push(`<${hex}>`);
   out.op('TJ', `[${parts.join(' ')}]`);
   out.op('ET');
+}
+
+/**
+ * The longest glyph outline in the segment, for `dashPattern`'s cap. The renderer strokes each
+ * glyph on its own, so this goes solid when its longest glyph would.
+ */
+function longestOutline(ctx: PageCtx, seg: TextSegment, dx: number, dy: number): number {
+  let length = 0;
+  for (const { g } of seg.glyphs) {
+    const outline = isSpace(g.cp) ? null : placedOutline(ctx, g, dx, dy);
+    if (outline) length = Math.max(length, dashLength(outline));
+  }
+  return length;
 }
 
 /** Paints the segment's glyphs from their outlines: all of the run's paint, or only its stroke. */
@@ -147,7 +161,8 @@ export async function writeSegment(
   if (paintsFill) out.op('rg', ...fillColor.rgb);
   if (stroke && strokeColor) {
     out.op('RG', ...strokeColor.rgb);
-    strokeStyleOps(ctx, stroke.stroke, stroke.width);
+    const length = stroke.stroke.dash ? longestOutline(ctx, seg, dx, dy) : undefined;
+    strokeStyleOps(ctx, stroke.stroke, stroke.width, length);
   } else if (bold && fillColor) {
     out.op('RG', ...fillColor.rgb);
     // The growth is per side and a stroke straddles the outline, so the line is twice it.
