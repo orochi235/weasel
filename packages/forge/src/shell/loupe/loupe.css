@@ -68,3 +68,9 @@
   cursor: pointer;
   pointer-events: auto;
 }
+
+/* A readout's hit test of a compared copy: the lens layer takes no pointer, and is marked for the one look. */
+.lk-lens-layer[data-probe] .fg-lens-copy,
+.lk-lens-layer[data-probe] .fg-lens-copy * {
+  pointer-events: auto;
+}

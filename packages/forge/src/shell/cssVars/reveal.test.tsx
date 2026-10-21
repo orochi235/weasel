@@ -71,4 +71,14 @@ describe('revealVar', () => {
     subscribeReveal(late)();
     expect(late).not.toHaveBeenCalled();
   });
+
+  it('drops a reveal of a token the open panel lists nowhere, so no later mount reopens it', async () => {
+    await openTrial();
+    fireEvent.click(await screen.findByRole('button', { name: 'CSS Vars panel' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument());
+    act(() => revealVar('--wzl-listed-nowhere'));
+    const late = vi.fn();
+    subscribeReveal(late)();
+    expect(late).not.toHaveBeenCalled();
+  });
 });

@@ -22,11 +22,6 @@
   background: red;
 }
 
-/* A lens interior takes no pointer, so a hit test sees nothing inside it; this lets one see the copy. */
-.fg-live-test-probing .fg-lens-copy {
-  pointer-events: auto;
-}
-
 /* A stand-in for a lens interior: the box a Live source is attached to. */
 .fg-live-test-slot {
   position: fixed;

@@ -22,9 +22,19 @@ export interface ChainLink {
 /** The selector a link reports for a declaration in an element's `style` attribute. */
 export const INLINE = 'style attribute';
 
-/** The topmost element under a client point inside `within`, `within` itself included. */
+/**
+ * The topmost element under a client point inside `within`, `within` itself included. Inside a lens the layer
+ * takes no pointer, so a hit test would pass through a lens's copy: for this one look the layer is marked
+ * `data-probe`, which stands its hit boxes down and the copy up.
+ */
 export function topmostIn(within: Element, client: LoupePoint): Element | undefined {
-  return (within.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => within.contains(el));
+  const layer = within.closest<HTMLElement>('.lk-lens-layer');
+  if (layer) layer.dataset.probe = '';
+  try {
+    return (within.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => within.contains(el));
+  } finally {
+    if (layer) delete layer.dataset.probe;
+  }
 }
 
 /** The first opaque `background-color` from `el` up to `stop`; null when none is, or the unreadable color that stopped the walk. */
@@ -154,22 +164,43 @@ function declaredIn(style: CSSStyleDeclaration, property: string): { value: stri
   return null;
 }
 
+/** A rule's declaration of one property. */
+interface Declared {
+  readonly selector: string;
+  readonly value: string;
+  readonly important: boolean;
+}
+
+/** The rules declaring each property asked about, read from `rules` once per property. */
+function indexOf(rules: readonly Rule[]): (property: string) => readonly Declared[] {
+  const index = new Map<string, Declared[]>();
+  return (property) => {
+    let got = index.get(property);
+    if (!got) {
+      got = rules.flatMap((r) => {
+        const d = declaredIn(r.style, property);
+        return d ? [{ selector: r.selector, ...d }] : [];
+      });
+      index.set(property, got);
+    }
+    return got;
+  };
+}
+
 /**
  * The declaration of `property` that wins on `el` itself: important above normal, inline style above every rule of
  * the same importance, then the highest specificity, then the last in source order. Layer order is not modeled.
  */
-function winning(el: Element, property: string, rules: readonly Rule[]): ChainLink | null {
+function winning(el: Element, property: string, rules: readonly Declared[]): ChainLink | null {
   let best: { value: string; important: boolean; spec: Specificity; selector: string } | null = null;
-  for (const rule of rules) {
-    const got = declaredIn(rule.style, property);
-    if (!got) continue;
-    const spec = matching(el, rule.selector);
+  for (const got of rules) {
+    const spec = matching(el, got.selector);
     if (!spec) continue;
     const wins =
       best === null ||
       (got.important && !best.important) ||
       (got.important === best.important && compareSpecificity(spec, best.spec) >= 0);
-    if (wins) best = { ...got, spec, selector: rule.selector };
+    if (wins) best = { ...got, spec };
   }
   const inline = (el as Element & { style?: CSSStyleDeclaration }).style;
   const own = inline ? declaredIn(inline, property) : null;
@@ -178,7 +209,7 @@ function winning(el: Element, property: string, rules: readonly Rule[]): ChainLi
 }
 
 /** The winning declaration of `property` on `el`, or, for an inherited property, on its nearest ancestor that has one. */
-function declarationOf(el: Element, property: string, rules: readonly Rule[]): ChainLink | null {
+function declarationOf(el: Element, property: string, rules: readonly Declared[]): ChainLink | null {
   for (let at: Element | null = el; at; at = INHERITED(property) ? at.parentElement : null) {
     const link = winning(at, property, rules);
     if (link) return link;
@@ -189,16 +220,17 @@ function declarationOf(el: Element, property: string, rules: readonly Rule[]): C
 /**
  * How a color came to be: the declaration that sets its property, then, for each `var()` that names, the winning
  * declaration of that custom property on the element or its nearest ancestor declaring it, until a value names no
- * `var()`. A forge override is a rule like any other. Empty when nothing but the user agent sets the property.
+ * `var()`. A forge override is a rule like any other. Empty when nothing but the user agent sets the property:
+ * user-agent styles, such as a link's or a form control's own colors, are not modeled.
  */
 export function tokenChain(at: ColorAt): readonly ChainLink[] {
-  const rules = rulesOf(at.element.ownerDocument);
+  const declaring = indexOf(rulesOf(at.element.ownerDocument));
   const chain: ChainLink[] = [];
   const seen = new Set<string>();
   const follow = (el: Element, property: string) => {
     if (seen.has(property)) return;
     seen.add(property);
-    const link = declarationOf(el, property, rules);
+    const link = declarationOf(el, property, declaring(property));
     if (!link) return;
     chain.push(link);
     for (const name of varRefs(link.declared)) follow(link.element, name);

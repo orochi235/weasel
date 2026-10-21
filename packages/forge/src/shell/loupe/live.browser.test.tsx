@@ -98,13 +98,11 @@ it('shows the patch under the reticle in a story scrolled inside its host', asyn
   });
   const layer = document.querySelector<HTMLElement>('.lk-lens-layer')!;
   const at = center(document.querySelector('.lk-lens-interior .lk-lens-cell')!);
-  // The hit boxes stand down and the copy takes the hit test, for this one look. Outside `waitFor`, which would
-  // re-run on these very mutations.
+  // The production probe: the hit boxes stand down and the copy takes the hit test, for this one look. Outside
+  // `waitFor`, which would re-run on these very mutations.
   layer.dataset.probe = '';
-  document.body.classList.add('fg-live-test-probing');
   const found = document.elementFromPoint(at.x, at.y);
   delete layer.dataset.probe;
-  document.body.classList.remove('fg-live-test-probing');
   expect(found).toBe(copyMarker);
 });
 
@@ -193,13 +191,8 @@ it('clips a popover opened in the copy to the lens, and paints it in the copy’
   const lens = slot.getBoundingClientRect();
   const box = popover.getBoundingClientRect();
   const outside = { x: box.left + box.width / 2, y: Math.max(box.top + 4, lens.bottom + 4) };
-  document.body.classList.add('fg-live-test-probing');
-  try {
-    expect(document.elementFromPoint(center(copyOpen).x, center(copyOpen).y)).toBe(copyOpen);
-    expect(popover.contains(document.elementFromPoint(outside.x, outside.y))).toBe(false);
-  } finally {
-    document.body.classList.remove('fg-live-test-probing');
-  }
+  expect(document.elementFromPoint(center(copyOpen).x, center(copyOpen).y)).toBe(copyOpen);
+  expect(popover.contains(document.elementFromPoint(outside.x, outside.y))).toBe(false);
   // The fill is the popover's, around the dialog.
   const fill = (el: Element) => getComputedStyle(el.closest('[data-weasel-overlay]')!).backgroundColor;
   expect(fill(popover)).not.toBe('rgba(0, 0, 0, 0)');

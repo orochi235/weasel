@@ -48,12 +48,19 @@ export function createLiveSource(
   conditions: () => { base: Globals; ctx: ResolveContext },
 ): LiveSource {
   const measures = new Set<() => void>();
+  const listeners = new Set<() => void>();
   return {
     kind: 'live',
     produces: 'dom',
     label: () => 'Live',
     status: () => true,
-    subscribe: () => () => {},
+    // A copy renders after the lens asks for it and changes as its story does; a reader of the copy hears of both.
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     attach(slot, first) {
       const doc = slot.ownerDocument;
       const target = doc.createElement('div');
@@ -62,6 +69,13 @@ export function createLiveSource(
       empty.className = 'fg-lens-empty';
       empty.hidden = true;
       slot.append(target, empty);
+      const watch =
+        typeof MutationObserver === 'undefined'
+          ? null
+          : new MutationObserver(() => {
+              for (const listener of [...listeners]) listener();
+            });
+      watch?.observe(target, { subtree: true, childList: true, characterData: true, attributes: true });
       let request: LensSourceRequest<ForgeComparison> = first;
       let posted: LiveRequest | null = null;
       const post = (next: LiveRequest | null) => {
@@ -99,6 +113,7 @@ export function createLiveSource(
           measure();
         },
         detach() {
+          watch?.disconnect();
           measures.delete(measure);
           lenses.set(liveCellId(request.lensId, request.conditions), null);
           target.remove();

@@ -10,7 +10,8 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { revealVar } from '../cssVars/reveal';
 import type { ForgeComparison } from './conditions';
-import { backgroundOf, colorAt, tokenChain, topmostIn } from './tokenChain';
+import { backgroundOf, colorAt, tokenChain } from './tokenChain';
+import { varRefs } from '../../frame/cssVarUse';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';
@@ -26,9 +27,6 @@ export type ContrastReading =
 
 /** Pixels either side of the aim that a Pixels reading looks at: a 5×5 neighborhood. */
 const REACH = 2;
-
-const hasText = (el: Element): boolean =>
-  Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '');
 
 /** WCAG's large text: 24px and up, or 18.66px and up when bold. */
 function isLarge(style: CSSStyleDeclaration): boolean {
@@ -65,19 +63,20 @@ function ofPixels(capture: LensCapture | undefined, point: LoupePoint): Contrast
 
 /**
  * The contrast of what lies under a lens's aim. Over a Live source it is the
- * text of `element` against the first opaque background up its ancestors;
+ * text drawn at `point` inside `within` against the first opaque background
+ * from it up to `within`, found by the same hit test as the Token readout's;
  * over Pixels it is the pixel at `point`, in host px, against the most
  * distant color within two pixels of it in `capture`.
  */
 export function contrastAt(
   source: 'live' | 'pixels',
-  at: { element?: Element; capture?: LensCapture; point: LoupePoint },
+  at: { within?: HTMLElement; capture?: LensCapture; point: LoupePoint },
 ): ContrastReading {
   if (source === 'pixels') return ofPixels(at.capture, at.point);
-  const el = at.element;
-  if (!el || !hasText(el)) return { unavailable: NO_TEXT };
-  const style = getComputedStyle(el);
-  const background = backgroundOf(el);
+  const text = at.within ? colorAt(at.point, at.within) : null;
+  if (!text || text.property !== 'color') return { unavailable: NO_TEXT };
+  const style = getComputedStyle(text.element);
+  const background = backgroundOf(text.element, at.within);
   if (background === null) return { unavailable: NO_BACKGROUND };
   if ('unreadable' in background) return { unavailable: unreadable(background.unreadable) };
   const ratio = contrastRatio(style.color, background.color);
@@ -116,12 +115,6 @@ function liveAim(lensId: string, settings: LensSlotProps<ForgeComparison>['setti
   return { within: copyOf(lensId), point: comparedAim(lensId) ?? reticle };
 }
 
-/** The element a Live reading is of: the topmost one under the aim inside what the lens reads. */
-function liveAt(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
-  const { within, point } = liveAim(lensId, settings, reticle);
-  return { element: within && topmostIn(within, point), point };
-}
-
 const verdict = (pass: boolean) => (pass ? 'pass' : 'fail');
 
 function textOf(reading: ContrastReading): string {
@@ -137,7 +130,7 @@ export function ContrastReadout({ lens, settings, sources, reticle, size }: Lens
   const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
   // A Live reading is of the page as it stands, read each render and again whenever the source says a story changed.
   const live = useSyncExternalStore(subscribe, () =>
-    kind === 'live' ? textOf(contrastAt('live', liveAt(lens.lensId, settings, reticle))) : null,
+    kind === 'live' ? textOf(contrastAt('live', liveAim(lens.lensId, settings, reticle))) : null,
   );
   const [pixels, setPixels] = useState<ContrastReading | null>(null);
   const [tick, setTick] = useState(0);
@@ -187,7 +180,9 @@ export function tokenAt(
     return { unavailable: unreadable(at.value) };
   }
   const chain = tokenChain(at);
-  const end = chain.at(-1)?.declared ?? at.value;
+  // A value naming several tokens branches, and its last branch's literal is not the color: end on what it computes to.
+  const branches = chain.some((l) => varRefs(l.declared).size > 1);
+  const end = branches ? at.value : (chain.at(-1)?.declared ?? at.value);
   return { steps: [at.property, ...chain.slice(1).map((l) => l.property), end] };
 }
 

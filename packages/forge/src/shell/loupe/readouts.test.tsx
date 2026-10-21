@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import type { LensCapture, LensIds, LensSettings, LensSource, LensSources } from '@weasel-js/labkit/loupe';
 import { LENS_DEFAULTS } from '@weasel-js/labkit/loupe';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ForgeComparison } from './conditions';
 import { ContrastReadout, contrastAt } from './readouts';
 
@@ -18,14 +18,26 @@ function el(html: string): Element {
 }
 
 const originalElementsFromPoint = document.elementsFromPoint;
+const originalClientRects = Range.prototype.getClientRects;
+
+// jsdom lays nothing out, so every text run is taken to be drawn under the aim: a proxy for the hit test the
+// browser test makes for real.
+beforeEach(() => {
+  Range.prototype.getClientRects = () => [new DOMRect(-1e6, -1e6, 2e6, 2e6)] as unknown as DOMRectList;
+});
 
 afterEach(() => {
   document.elementsFromPoint = originalElementsFromPoint;
+  Range.prototype.getClientRects = originalClientRects;
   document.body.replaceChildren();
   pixels.image = null;
 });
 
-const at = (element: Element) => ({ element, point: { x: 0, y: 0 } });
+/** A Live aim at `element`, the topmost thing under the point, read inside the document's body. */
+const at = (element: Element) => {
+  document.elementsFromPoint = () => [element];
+  return { within: document.body, point: { x: 0, y: 0 } };
+};
 
 describe('contrastAt over a Live source', () => {
   it('reads the text color against the first opaque background up the tree', () => {
@@ -49,6 +61,18 @@ describe('contrastAt over a Live source', () => {
   it('says so when no ancestor has an opaque background to read against', () => {
     const aim = el('<p data-aim style="color: black">Hi</p>');
     expect(contrastAt('live', at(aim))).toEqual({ unavailable: 'No opaque background behind the text' });
+  });
+
+  it('reads no background from outside what the lens reads, as the Token readout does not', () => {
+    const aim = el('<div style="background-color: white"><div data-host><p data-aim style="color: black">Hi</p></div></div>');
+    const host = document.querySelector<HTMLElement>('[data-host]')!;
+    expect(contrastAt('live', { ...at(aim), within: host })).toEqual({ unavailable: 'No opaque background behind the text' });
+  });
+
+  it('finds no text where the element’s text runs are drawn away from the aim', () => {
+    const aim = el('<div style="background-color: white"><p data-aim style="color: black">Hi</p></div>');
+    Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+    expect(contrastAt('live', at(aim))).toEqual({ unavailable: 'No text under the aim' });
   });
 
   it('says it cannot read a color paint does not parse, rather than that there is no text', () => {

@@ -1,10 +1,11 @@
 import { tokenCategory, type TokenCategory, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
-import { type RefObject, useEffect, useLayoutEffect, useState } from 'react';
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const listeners = new Set<(name: string) => void>();
 /**
- * The token asked for until a panel has marked it. The panel can mount only after the reveal that turned it on,
- * and the lab can mount it more than once on the way, so a reveal is spent by the mark, not by being heard.
+ * The token asked for until a panel has marked it, or has looked and lists it nowhere. The panel can mount only
+ * after the reveal that turned it on, and the lab can mount it more than once on the way, so a reveal is spent by
+ * the mark, not by being heard.
  */
 let pending: string | null = null;
 
@@ -33,33 +34,41 @@ const MARK = 'data-revealed';
 /**
  * Answers reveals for a CSS vars panel: brings the token into view through `show`, then marks its row — or its
  * swatch or slider thumb, which carry its name the same way — in `list` and scrolls to it. A token neither tab
- * lists yet is shown once one does.
+ * lists is dropped.
  */
 export function useRevealToken(
   list: RefObject<HTMLElement | null>,
   tokens: Readonly<Record<RevealTab, readonly TokenEntry[]>>,
   show: ShowToken,
 ): void {
-  const [revealed, setRevealed] = useState<string | null>(null);
+  // The token to mark, until it is marked; a render is asked for, and the mark lands once its row is drawn.
+  const asked = useRef<string | null>(null);
+  const [, rerender] = useState(0);
   useEffect(
     () =>
       subscribeReveal((name) => {
         const tab = (['theme', 'story'] as const).find((t) => tokens[t].some((token) => token.name === name));
         const token = tab && tokens[tab].find((t) => t.name === name);
-        if (!tab || !token) return;
+        if (!tab || !token) {
+          if (pending === name) pending = null;
+          return;
+        }
         show(name, tab, tokenCategory(token));
-        setRevealed(name);
+        asked.current = name;
+        rerender((n) => n + 1);
       }),
     [tokens, show],
   );
   useLayoutEffect(() => {
     const root = list.current;
+    const revealed = asked.current;
     if (!root || revealed === null) return;
     const target = root.querySelector(`[aria-label="${revealed.replace(/["\\]/g, '\\$&')}"]`);
     for (const el of Array.from(root.querySelectorAll(`[${MARK}]`))) if (el !== target) el.removeAttribute(MARK);
-    if (!target || target.hasAttribute(MARK)) return;
+    if (!target) return;
     target.setAttribute(MARK, '');
     target.scrollIntoView?.({ block: 'nearest' });
     if (pending === revealed) pending = null;
+    asked.current = null;
   });
 }
