@@ -19,7 +19,8 @@ export interface OuterFrame { view: View; dims: Dims; origin: { x: number; y: nu
 /** The props the nesting reads, as of the last committed render. */
 export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'>;
 
-const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
+/** A view rect's size, as the `Dims` its camera looks through. */
+export const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
 
 export function useViewNesting(
   registry: ViewRegistry | null,

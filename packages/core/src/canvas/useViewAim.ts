@@ -12,10 +12,21 @@ import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
 import { useCanvasView, type CanvasViewState } from './useCanvasView';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
-import type { useViewNesting } from './useViewNesting';
+import { sizeOf, type useViewNesting } from './useViewNesting';
 import { IDENTITY_VIEW, UNMEASURED_DIMS, type ViewRegistry } from './viewRegistry';
 
-const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
+/** `held` carried by the camera move that turns the world rect `from` into `to`: panned and scaled
+ *  with it, so the aim keeps its own shape rather than taking the frame's. */
+function carried(held: Bounds, from: Bounds, to: Bounds): Bounds {
+  const kx = from.width > 0 ? to.width / from.width : 1;
+  const ky = from.height > 0 ? to.height / from.height : 1;
+  return {
+    x: to.x + (held.x - from.x) * kx,
+    y: to.y + (held.y - from.y) * ky,
+    width: held.width * kx,
+    height: held.height * ky,
+  };
+}
 
 type Nesting = ReturnType<typeof useViewNesting>;
 
@@ -58,11 +69,21 @@ export function useViewAim(args: {
     return [surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS];
   }, [registry]);
 
+  /** A camera write on an aim-held view, reported as the held rect it carries. */
+  const reportWrite = useCallback((next: View): void => {
+    const frame = surfaceFrame();
+    const held = heldAt(...frame);
+    const current = derivedCamera(...frame);
+    if (!held || !current) return;
+    const size = sizeOf(rectAt(...frame));
+    live.current.onAimChange?.(carried(held, viewportWorldRect(current, size), viewportWorldRect(next, size)));
+  }, [live, surfaceFrame, heldAt, derivedCamera, rectAt]);
+
   const state = useCanvasView({
     view: held === 'aim' || typeof view === 'function' ? () => derivedCamera(...surfaceFrame())! : view,
     defaultView,
     onViewChange: held === 'aim'
-      ? onAimChange && ((next) => onAimChange(viewportWorldRect(next, sizeOf(rectNow()))))
+      ? onAimChange && reportWrite
       : onViewChange,
     viewBounds,
     dims: () => sizeOf(rectNow()),

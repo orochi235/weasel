@@ -79,13 +79,35 @@ describe('<CanvasView aim>', () => {
     expect(h.camera.current!.getView()).toMatchObject({ x: 40, scale: { x: 2, y: 2 } });
   });
 
-  it('reports a camera write as the rect it would show', () => {
+  it('reports a pan as the held rect carried with the camera', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const onAimChange = vi.fn();
     const h = mount({ aim: { x: 10, y: 20, width: 50, height: 50 }, onAimChange });
     act(() => h.camera.current!.setView({ x: 0, y: 20, scale: { x: 2, y: 2 } }));
-    expect(onAimChange).toHaveBeenLastCalledWith({ x: 0, y: 20, width: 100, height: 50 });
+    expect(onAimChange).toHaveBeenLastCalledWith({ x: 25, y: 20, width: 50, height: 50 });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('`onAimChange`'));
+  });
+
+  it('reports a zoom as the held rect scaled with the camera, keeping its aspect', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onAimChange = vi.fn();
+    const h = mount({ aim: { x: 10, y: 20, width: 50, height: 50 }, onAimChange });
+    act(() => h.camera.current!.setView({ x: -15, y: 20, scale: { x: 4, y: 4 } }));
+    expect(onAimChange).toHaveBeenLastCalledWith({ x: -2.5, y: 20, width: 25, height: 25 });
+  });
+
+  it('reports a written aim through onAimChange', () => {
+    const onAimChange = vi.fn();
+    const h = mount({ aim: { x: 10, y: 20, width: 50, height: 50 }, onAimChange });
+    expect(h.registry.setAim('panel', rectAim('panel', { x: 1, y: 2, width: 3, height: 4 }))).toBe(true);
+    expect(onAimChange).toHaveBeenLastCalledWith({ x: 1, y: 2, width: 3, height: 4 });
+  });
+
+  it('refuses an aim it cannot read while holding one', () => {
+    const onAimChange = vi.fn();
+    const h = mount({ aim: { x: 10, y: 20, width: 50, height: 50 }, onAimChange });
+    expect(h.registry.setAim('panel', { ...rectAim('panel', { x: 0, y: 0, width: 1, height: 1 }), kind: 'frustum' })).toBe(false);
+    expect(onAimChange).not.toHaveBeenCalled();
   });
 
   it("answers a camera-held view's aim from its camera", () => {

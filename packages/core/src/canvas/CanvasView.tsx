@@ -33,7 +33,7 @@ import {
 import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 export type { CanvasViewProps, ViewRect } from './canvasViewProps';
-import { NO_RECT, useViewNesting } from './useViewNesting';
+import { NO_RECT, sizeOf, useViewNesting } from './useViewNesting';
 import {
   useOptionalViewRegistry,
   surfaceLocal,
@@ -53,8 +53,6 @@ const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
 };
 
 const ALWAYS_VISIBLE = (): boolean => true;
-
-const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
