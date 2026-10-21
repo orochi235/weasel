@@ -1,11 +1,12 @@
 # Lenses as views: aims and markers in core, `@weasel-js/lens` on top
 
-**Status: designed 2026-10-21, nothing built.** This is the design for arcs 1–3 below; delete this doc
-once they land, keeping anything durable in the packages' own READMEs.
+**Status: Arc 1 built 2026-10-21 (core aims, held side, markers; kernel3d aims): see
+`packages/core/src/features/viewports/README.md`. Arcs 2–3 unbuilt.** Delete this doc once they land,
+keeping anything durable in the packages' own READMEs.
 
-**For** whoever plans and builds these arcs. **Answers:** what a lens is in weasel; what core's view
-model gains so that a loupe, a parked lens, a picture-in-picture view and a minimap are one idea; and
-what moves out of labkit and forge into a new `@weasel-js/lens` package.
+**For** whoever plans and builds arcs 2–3. **Answers:** what a lens is in weasel; what moves out of
+labkit and forge into a new `@weasel-js/lens` package; and how the loupe, a parked lens, a
+picture-in-picture view and the minimap are rebuilt on core's aims and markers.
 
 ## Why
 
@@ -57,9 +58,6 @@ any weasel app can use, not only forge.
 
 ## Goals
 
-- One representation of "what this view looks at" for every viewport, 2D and 3D.
-- A marker between any two views, drawn and dragged by the kit: dragging a marker edits the aim it
-  draws.
 - The parked lens usable in a plain `<SceneCanvas>` app (draw, chart) and in labkit, with a canvas
   source that paints through a viewport.
 - Minimap, PiP and the hud loupe rebuilt as assemblies of the model, losing nothing they do today.
@@ -82,41 +80,6 @@ any weasel app can use, not only forge.
 - Consumer-facing `@internal` imports to wire any assembly together. If an assembly needs a hook, it is
   public surface designed as such.
 - Forge vocabulary in `@weasel-js/lens`: no story, trial, globals or capture-server concepts.
-
-## Arc 1 — core: aims, held side, markers
-
-**What core gains.**
-
-- Every viewport answers its aim. The aim is an object that names the view whose world it is read in
-  and can (a) say where it lies in that world, and (b) draw its outline into another view's frame,
-  given that view's camera and frame. Naming its view is what lets an aim fall over a nested
-  `<CanvasView>` and read that view's world, as the hud loupe does today through `viewAt`, and what
-  lets a 3D view and a 2D view mark each other (designer's call, 2026-10-21). The 2D
-  implementation is the world rect plus corner projection. 3D supplies its own (a frustum, drawn as its
-  footprint or projected outline) through the same contract; kernel3d owns that implementation.
-- Every viewport says which side it holds. Camera-held is today's behavior everywhere. An aim-held
-  viewport derives its camera from its aim and frame: in 2D, the camera that fits the aim rect to the
-  frame. `<CanvasView>`'s thunked `view` already derives a camera from its host's; an aim-held view is
-  the case where what is derived from is an aim rather than another camera, so the builder should
-  widen that mechanism rather than add a parallel one.
-- Markers: a declaration on a surface naming a source (whose aim), a target view (whose frame it is
-  drawn in), and a style. The source is a view on the same surface, or an aim handed in by value with a
-  writer for it — the second is how a detached `<MinimapCanvas>`, a surface of its own fed the main
-  camera through props and the `rootView` dep, draws the main view's aim without a cross-surface
-  registry (designer's call, 2026-10-21). The root view is addressed the way core already addresses it (`null`, as
-  `createLinkedCursorContribution`'s `views` does). The surface paints each marker in its target's frame
-  after the target's layers.
-- A marker can be interactive. Dragging it edits the source view's aim — for a camera-held source that
-  means moving its camera so its aim lands where the marker was dropped. This is what the minimap's pan
-  and a lens reticle drag both are.
-
-**Where it lives.** `features/viewports` (which already says "Viewports are lenses, not copies") and
-the view registry `<CanvasView>` registers with. The registry already knows every view on a surface,
-the root included; aims and markers are queries and declarations on it.
-
-**Done when** a test surface can declare a PiP `<CanvasView>`, draw the root view's aim in it as a
-marker, and drag that marker to pan the root camera, with no minimap code involved; and kernel3d can
-answer an aim for its camera without core importing anything 3D.
 
 ## Arc 2 — `@weasel-js/lens`
 
@@ -153,7 +116,7 @@ and `LensReadout` become keys a host registers, with the lens package naming non
 "opposite" comparison stays injected (`opposite: () => C`), as now.
 
 **A canvas source.** A lens over a `<SceneCanvas>` paints through a viewport: its frame is an aim-held
-view (arc 1) whose aim is the reticle node's pose. The body still carries settings and the chrome
+`<CanvasView aim>` whose aim is the reticle node's pose. The body still carries settings and the chrome
 strip; its pose is the frame.
 
 **Two spaces in one lens scene.** Because the body is screen-fixed and the reticle document-fixed over
@@ -166,7 +129,7 @@ both spaces are the lab body's px.
 **The reticle stays a lens-scene node** (designer's call, 2026-10-21). The lens scene already draws,
 picks, selects and undoes it, and forge's DOM lenses aim at no core viewport, so a core marker could
 not be their reticle. A parked lens therefore draws its reticle and leader itself, for every source;
-core's markers serve views with no placed object of their own — the minimap's indicator and a PiP's
+core's `ViewMarker` serves views with no placed object of their own — the minimap's indicator and a PiP's
 optional outline. One drawing path per use: the lens's reticle is never also declared as a core marker.
 
 **labkit and forge afterward.** labkit re-exports or thinly wraps what it exposed from
@@ -180,18 +143,20 @@ source.
 
 ## Arc 3 — the assemblies
 
-Each is rebuilt on arcs 1–2 and keeps its public API unless the arc's plan names a change.
+Each is rebuilt on core's aims and markers and on `@weasel-js/lens`, keeping its public API unless the
+arc's plan names a change.
 
 | Assembly | Frame | Aim | Held | Marker |
 |---|---|---|---|---|
 | hud loupe | follows the pointer | a patch around the pointer | aim | none |
-| parked lens | placed body | the reticle's pose (pinned, follow, glass) | aim | its own reticle node, not a core marker |
+| parked lens | placed body | the reticle's pose (pinned, follow, glass) | aim | its own reticle node, not a `ViewMarker` |
 | PiP | the `<CanvasView>` rect | its camera | camera | optional: its aim in the root view |
 | minimap | its rect | everything, fitted | aim (fit) | the root view's aim inside it, draggable |
 
-- **Minimap:** the indicator layer and `minimapPanAction` give way to an interactive marker of the
-  root view's aim; `computeFitView` becomes the minimap's aim. `<MinimapCanvas>` on a second canvas
-  element keeps working.
+- **Minimap:** the indicator layer and `minimapPanAction` give way to an interactive `ViewMarker`
+  (or a contribution's `markers`) of the root view's aim; `computeFitView` becomes the minimap's aim.
+  `<MinimapCanvas>` on a second canvas element keeps working, drawing the main view's aim from an
+  `AimSource` fed the main camera through props and the `rootView` dep.
 - **hud loupe:** `createLoupe` already builds its picture with `addView` and a viewport layer; its
   pointer-derived camera becomes an aim-held view whose aim follows the pointer.
 - **PiP:** `<CanvasView>` is already the PiP; it gains the optional marker, nothing else.
@@ -211,8 +176,6 @@ no longer has an indicator layer or pan action of its own.
 
 ## Left to the builder
 
-- The aim contract's exact shape, within the 3D anti-goal; whether markers are `<CanvasView>` props, a
-  `<ViewMarker>` element, a surface contribution, or more than one of these.
 - How the `<SceneCanvas>` lens layer gets a canvas and a container — over the surface's overlay
   machinery or a view of its own.
 - CSS class prefix for the moved styles, and how the package ships its stylesheet.

@@ -122,6 +122,27 @@ Priority tags:
   the canvas's selection where the panel owns one. Its view would need to follow the view under its
   aim the way a `parent` does, without being measured from or cut to that view's rect.
 
+- **(P3) A view marker drags only where the surface installs the always-on `view.marker.drag` entry.**
+  `actions={null}` and a `tools` takeover both leave it out, so markers paint but stop dragging.
+  Long-press feedback has the same gap.
+
+- **(P3) A view marker claims presses anywhere inside its outline.** That suits a minimap marker in a
+  small picture-in-picture. A marker drawn in a larger frame — a zoomed-out PiP's aim shown in the
+  root — can cover the whole frame and take every press there. Decide between grabbing the interior
+  and grabbing near the rim before arc 3's markers ship
+  (`docs/superpowers/specs/2026-10-21-lens-views-design.md`); until then `interactive={false}` is the
+  escape.
+
+- **(P3) A marker whose source is an `AimSource` repaints only when something else asks for a
+  redraw.** An aim handed in by value has no way to say it changed. Arc 3's detached
+  `<MinimapCanvas>` draws its marker this way and needs one.
+
+- **(P3) kernel3d's frustum outlines into a 2D view only as its footprint on z = 0.** In kernel3d's
+  y-up world that plane is a wall facing yaw 0, but a top-down map wants the ground plane. And the
+  outline draws only when all four corner rays meet the plane, so a tilted camera with the horizon in
+  view draws none. Decide which plane 2D and 3D views share, and what a partial footprint draws,
+  before building a 3D minimap (`packages/kernel3d/src/aim.ts`).
+
 ---
 
 ## Paths & booleans

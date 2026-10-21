@@ -46,6 +46,47 @@ reusable here, and it's the one to preserve: a layer that reaches for the
 outer/camera view directly instead of the view it's handed will render wrong
 inside a viewport, and the bug won't show up until someone puts it in one.
 
+## Aims, held side and markers
+
+A view's **aim** is what it shows, read in its own world: a `ViewAim` names its
+view (`null` for the root), carries an `extent` in its owner's terms, and can
+outline itself in another view's frame or pan itself there. Core's aim is
+`RectAim`, a world rect, built by `rectAim`. The frame an aim is drawn into is
+an `AimSpace`; `aimSpace2d` builds one from a camera and frame size. A 2D world
+is the plane z = 0, which is how a 3D aim (kernel3d's `aimOf3d`) and a 2D view
+meet.
+
+**A `<CanvasView>` holds either its camera or its aim.** Pass `view` /
+`defaultView` / `onViewChange` and it holds its camera, as before. Pass `aim`, a
+world rect or a thunk of the outer camera and frame, and it holds its aim: its
+camera is `viewForAim(aim, frame, 'contain')`, the rect fitted uniformly and
+centered. A pan or zoom inside an aim-held view reports through `onAimChange`
+the held rect moved by that camera change, keeping its shape, not the frame's
+rect. The two forms are exclusive in the types: `aim` cannot be passed with
+`view`, `defaultView`, `onViewChange` or `viewBounds`.
+
+**`SceneCanvasApi.aimOf(id)` and `setAim(id, aim)`** read and write any view's
+aim, the root's at `null`. A camera-held view takes the camera that shows the aim
+exactly at its current frame (`viewForAim(…, 'exact')`); an aim-held one
+reports the aim through `onAimChange`. The root writes through
+the canvas's own input path, so the write clamps to `viewBounds`, reaches
+`onViewChange` and ends an `animateView` glide.
+
+**A marker** is one view's aim outlined in another's frame, after that frame's
+layers: `<ViewMarker id source target style interactive>`, or the same props in
+a contribution's `markers`. `source` is a view id, `null` for the root, or an
+`AimSource` (an aim handed in by value, with an optional writer). The default
+style is `VIEW_MARKER_DEFAULT_STYLE`: white, 1px, dashed [2, 3]. Marker ids are
+unique per surface; a second marker with the same id throws.
+
+Dragging a marker pans its source: a press inside its outline, or within
+`VIEW_MARKER_HIT_SLOP_PX` of it, starts the `view.marker.drag` action
+(`VIEW_MARKER_DRAG`). That binding comes from an always-on entry the surface
+installs, so `actions={null}` and a `tools` takeover both turn dragging off;
+the marker still paints, and presses fall through to the view's own bindings.
+`interactive={false}` turns off one marker, and a by-value source with no
+`setAim` is never draggable.
+
 ## Related
 
 - [`../parallax`](../parallax/README.md) also derives an inner view from the

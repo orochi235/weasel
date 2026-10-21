@@ -73,6 +73,16 @@ carries a unit cube by the pose; override it when a primitive knows better. A
 sphere is the case that forces the seam to be shaped this way — its box is the
 same under every rotation, and no transform of a local box reproduces that.
 
+## Aims
+
+A kernel3d viewport answers core's `ViewAim` contract, so a 2D view and a 3D
+pane can mark each other. `aimOf3d(viewport, viewId)` is the `Aim3d` its camera
+sees, whose extent is a `Frustum3d`: the eye and the near and far rectangles.
+Outlined in a 3D space it draws its far rectangle; in a 2D one, its footprint on
+z = 0, or nothing when any corner ray misses that plane. `aimSpace3d` makes a
+pane a target, unprojecting onto z = 0, and `cameraOfAim3d` gives back the camera
+a dragged aim stands for — what an `AimSource`'s `setAim` writes.
+
 ## Math
 
 Vectors, quaternions, 4×4 matrices and ray intersection live in
