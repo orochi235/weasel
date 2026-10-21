@@ -2,10 +2,9 @@ import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import type { Globals } from '../../protocol/messages';
 import { type ForgeComparison, globalsSetBy, type ResolveContext, type ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
-import { frameAt, trialAt } from './trialAt';
+import { trialAt } from './trialAt';
 
 export const NOTHING_UNDER = 'Nothing under the reticle';
-export const NEEDS_FRAME = 'Live needs a frame for isolated stories';
 
 /** The Live source, plus a way for its host to have every attached lens look again at what lies under it. */
 export interface LiveSource extends LensSource<ForgeComparison> {
@@ -73,7 +72,7 @@ export function createLiveSource(
         empty.hidden = hit !== null;
         if (!hit) {
           post(null);
-          empty.textContent = frameAt(reticle, doc) ? NEEDS_FRAME : NOTHING_UNDER;
+          empty.textContent = NOTHING_UNDER;
           return;
         }
         const { base, ctx } = conditions();

@@ -1,18 +1,22 @@
-import { TrialIdContext } from '@weasel-js/labkit';
+import { LabContext, type LabContextValue, type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import type { LensSourceHandle, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import { act, fireEvent, within } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describeSchema } from '../../protocol/schema';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
-import { installResizeObserver } from '../labHarness';
+import { createAnswerBook } from '../answers';
+import { FrameView } from '../FrameView';
+import { connectFrame, flush, installResizeObserver } from '../labHarness';
+import { type Ready, readyKey } from '../readyKey';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { StoryTrial } from '../StoryTrial';
 import { type ForgeComparison, resolveComparison } from './conditions';
 import { createLiveLenses, type LiveLenses, LiveLensesContext } from './liveLenses';
-import { createLiveSource, NEEDS_FRAME, NOTHING_UNDER } from './liveSource';
+import { createLiveSource, NOTHING_UNDER } from './liveSource';
 
 installResizeObserver();
 
@@ -168,18 +172,30 @@ describe('LiveCopies', () => {
     expect(slot.textContent).toBe(NOTHING_UNDER);
   });
 
-  it('says an isolated story needs a frame rather than showing nothing', () => {
-    const frame = document.body.appendChild(document.createElement('div'));
-    frame.className = 'fg-frame-host';
-    const iframe = frame.appendChild(document.createElement('iframe'));
-    document.elementsFromPoint = () => [iframe, frame, document.body];
-    try {
-      attach({ x: 100, y: 100 });
-      expect(lenses.forTrial('t1')).toEqual([]);
-      expect(slot.textContent).toBe(NEEDS_FRAME);
-    } finally {
-      frame.remove();
-    }
+  it('gives a lens over an isolated story a frame of its own, under the comparison’s globals and args', async () => {
+    const ready: Ready = { type: 'ready', schema: describeSchema(f.schema({ label: f.string('A') })), layout: 'centered', viewport: null };
+    const entry = { id: 'test-live--live', title: 'Test/Live', name: 'Live', exportName: 'Live', file: '/x.stories.tsx' };
+    const trial = { config: { label: 'A' }, state: null, setConfig: () => {}, setState: () => {} } as unknown as RenderContext<unknown, unknown>;
+    renderWithIcons(
+      <LabContext.Provider value={{ instruments: [] } as unknown as LabContextValue}>
+        <LiveLensesContext.Provider value={lenses}>
+          <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
+            <TrialIdContext.Provider value="t1">
+              <FrameView entry={entry} frameUrl="/frame.html" answers={createAnswerBook()} onReady={() => {}} descriptionKey={readyKey(ready)} ctx={trial} />
+            </TrialIdContext.Provider>
+          </StoryGlobalsContext.Provider>
+        </LiveLensesContext.Provider>
+      </LabContext.Provider>,
+    );
+    attach({ x: 100, y: 100 });
+    const copy = slot.querySelector<HTMLElement>('.fg-frame-host[data-fg-host="t1~lens-a"]');
+    expect(copy?.hasAttribute('data-fg-copy')).toBe(true);
+    expect(slot.querySelector<HTMLElement>('.fg-lens-live__empty')!.hidden).toBe(true);
+    const { frame, received } = connectFrame(copy!.querySelector('iframe') as HTMLIFrameElement);
+    frame.send(ready);
+    await flush();
+    expect(received[0]).toEqual({ type: 'init', config: { label: 'B' }, state: null, globals: { mode: 'dark' } });
+    frame.close();
   });
 
   it('shows the mode a comparison asks for even where the lab already has it and the trial pins another', async () => {

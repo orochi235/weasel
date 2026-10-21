@@ -2,6 +2,7 @@ import './loupe.css';
 import { withValueAtPath } from '@weasel-js/labkit/config';
 import {
   type CSSProperties,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -60,26 +61,33 @@ function AfterCommit({ sync }: { sync: () => void }) {
   return null;
 }
 
-function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
+/** The globals a lens's copy renders under: the comparison's for each global it sets, the trial's own for the rest. */
+function useCopyGlobals(request: LiveRequest, trialConfig: unknown): Globals {
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const own = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
   const { globals: resolved, sets } = request;
-  const globals = useMemo<Globals>(
+  return useMemo<Globals>(
     () => (resolved ? { ...own, ...Object.fromEntries(sets.map((key) => [key, resolved[key]])) } : own),
     [own, resolved, sets],
   );
-  const id = `${trialId}~lens-${request.lensId}`;
-  const copy = useMemo(() => ({ id, globals }), [id, globals]);
+}
 
-  const { config: trialStoryConfig, setConfig: trialSetConfig } = body;
+/**
+ * A copy's config and its writer: the trial's config with each of `args` written at its path, and a `setConfig`
+ * that drops a write to any of them, since the comparison owns those, and passes every other write to the trial.
+ */
+export function useCopyConfig(
+  trialConfig: unknown,
+  trialSetConfig: (path: string, value: unknown) => void,
+  args: Readonly<Record<string, unknown>>,
+): { config: unknown; setConfig: (path: string, value: unknown) => void } {
   const config = useMemo(
-    () => Object.entries(request.args).reduce((c, [path, value]) => withValueAtPath(c, path, value), trialStoryConfig),
-    [request.args, trialStoryConfig],
+    () => Object.entries(args).reduce((c, [path, value]) => withValueAtPath(c, path, value), trialConfig),
+    [args, trialConfig],
   );
   // Keyed by the paths alone, so a comparison re-resolved to the same args keeps the story's `setConfig` stable.
-  const argPaths = Object.keys(request.args).join('\n');
-  // The comparison owns the args it sets; any other write is the trial's.
+  const argPaths = Object.keys(args).join('\n');
   const setConfig = useCallback(
     (path: string, value: unknown) => {
       const owned = argPaths === '' ? [] : argPaths.split('\n');
@@ -87,6 +95,32 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }:
     },
     [argPaths, trialSetConfig],
   );
+  return { config, setConfig };
+}
+
+/** Portals a copy into its lens's slot, placed and scaled about the reticle's point. */
+function LensPortal({ request, children }: { request: LiveRequest; children: ReactNode }) {
+  return createPortal(
+    <div className="fg-lens-copy" style={placement(request)}>
+      {children}
+    </div>,
+    request.slot,
+  );
+}
+
+const copyId = (trialId: string, request: LiveRequest) => `${trialId}~lens-${request.lensId}`;
+
+/** The Live requests standing over `trialId`, re-read as they change. */
+function useRequests(lenses: LiveLenses, trialId: string): readonly LiveRequest[] {
+  const forTrial = useCallback(() => lenses.forTrial(trialId), [lenses, trialId]);
+  return useSyncExternalStore(lenses.subscribe, forTrial);
+}
+
+function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
+  const globals = useCopyGlobals(request, trialConfig);
+  const id = copyId(trialId, request);
+  const copy = useMemo(() => ({ id, globals }), [id, globals]);
+  const { config, setConfig } = useCopyConfig(body.config, body.setConfig, request.args);
 
   const main = request.hit.host;
   const { slot } = request;
@@ -105,8 +139,8 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }:
     return () => from?.removeEventListener('scroll', sync);
   }, [main, sync]);
 
-  return createPortal(
-    <div className="fg-lens-copy" style={placement(request)}>
+  return (
+    <LensPortal request={request}>
       <TrialHost layout={layout} setup={setup} config={trialConfig} copy={copy}>
         {(g) => (
           <ClockContext.Provider value={clock}>
@@ -115,14 +149,12 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }:
           </ClockContext.Provider>
         )}
       </TrialHost>
-    </div>,
-    request.slot,
+    </LensPortal>
   );
 }
 
 function Copies({ lenses, trialId, ...props }: LiveCopiesProps & { lenses: LiveLenses; trialId: string }) {
-  const forTrial = useCallback(() => lenses.forTrial(trialId), [lenses, trialId]);
-  const requests = useSyncExternalStore(lenses.subscribe, forTrial);
+  const requests = useRequests(lenses, trialId);
   return requests.map((request) => (
     <LensCopy key={request.lensId} request={request} trialId={trialId} {...props} />
   ));
@@ -136,4 +168,43 @@ export function LiveCopies(props: LiveCopiesProps) {
   const lenses = useContext(LiveLensesContext);
   const { trialId } = props;
   return lenses && trialId ? <Copies {...props} lenses={lenses} trialId={trialId} /> : null;
+}
+
+/** What a lens's copy of an isolated story renders: its host id, and the globals and args it renders under. */
+export interface LensFrameCopy {
+  id: string;
+  globals: Globals;
+  args: Readonly<Record<string, unknown>>;
+}
+
+/** Props for `LiveFrameCopies`. */
+export interface LiveFrameCopiesProps {
+  trialId: string | null;
+  /** The trial's whole config, read for its `$globals` pins. */
+  trialConfig: unknown;
+  /** The trial's frame view in copy mode. */
+  children: (copy: LensFrameCopy) => ReactNode;
+}
+
+function FrameLensCopy({ request, trialId, trialConfig, children }: Omit<LiveFrameCopiesProps, 'trialId'> & { request: LiveRequest; trialId: string }) {
+  const globals = useCopyGlobals(request, trialConfig);
+  const id = copyId(trialId, request);
+  const { args } = request;
+  const copy = useMemo(() => ({ id, globals, args }), [id, globals, args]);
+  return <LensPortal request={request}>{children(copy)}</LensPortal>;
+}
+
+function FrameCopies({ lenses, trialId, ...props }: Omit<LiveFrameCopiesProps, 'trialId'> & { lenses: LiveLenses; trialId: string }) {
+  const requests = useRequests(lenses, trialId);
+  return requests.map((request) => <FrameLensCopy key={request.lensId} request={request} trialId={trialId} {...props} />);
+}
+
+/**
+ * The copies an isolated trial owes the Live lenses over it: each a frame of its own, portaled into its lens, under
+ * the lens's globals and args. The trial's frame view renders itself as each copy, through `children`.
+ */
+export function LiveFrameCopies(props: LiveFrameCopiesProps) {
+  const lenses = useContext(LiveLensesContext);
+  const { trialId } = props;
+  return lenses && trialId ? <FrameCopies {...props} lenses={lenses} trialId={trialId} /> : null;
 }

@@ -13,7 +13,10 @@ export interface TrialHit {
 const stackAt = (client: LoupePoint, doc: Document): readonly Element[] =>
   doc.elementsFromPoint?.(client.x, client.y) ?? [];
 
-/** The topmost story host under `client`, skipping a lens's copies, which only ever show some host beneath them. */
+/**
+ * The topmost story host under `client`, an in-document story's or an isolated one's frame host, skipping a lens's
+ * copies, which only ever show some host beneath them.
+ */
 export function trialAt(client: LoupePoint, doc: Document = document): TrialHit | null {
   for (const el of stackAt(client, doc)) {
     const host = el.closest<HTMLElement>('[data-fg-host]');
@@ -28,9 +31,4 @@ export function trialAt(client: LoupePoint, doc: Document = document): TrialHit 
     };
   }
   return null;
-}
-
-/** Whether an isolated story's frame is under `client`. */
-export function frameAt(client: LoupePoint, doc: Document = document): boolean {
-  return stackAt(client, doc).some((el) => el.closest('.fg-frame-host') !== null);
 }
