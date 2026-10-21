@@ -68,8 +68,10 @@ export function summarizeLeaf(leaf: PrefLeaf, value: unknown): string {
  * Moves a control into a modal: the row becomes a button showing a summary of
  * the value, and the button opens a dialog whose body is `body`, handed the
  * same context a row renderer gets. For a leaf whose editor will never fit a
- * sidebar row. The body edits a draft, which Done writes and Cancel or Escape
- * drops.
+ * sidebar row. The body edits a draft, which Done writes — through
+ * `opts.commit` when given — and Cancel or Escape drops. The body writes each
+ * edit into the draft as it is made: a write after the dialog closes, such as
+ * one from an unmount cleanup, is dropped.
  */
 export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): ControlRenderer {
   return (ctx) => {
@@ -88,6 +90,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
         changed={ctx.changed}
         value={value}
         setValue={ctx.setValue}
+        commit={opts.commit}
         error={ctx.error}
       >
         {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}

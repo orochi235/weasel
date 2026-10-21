@@ -170,6 +170,11 @@ export interface InDialogOptions {
   summary?: (value: unknown) => ReactNode;
   /** The dialog's heading. Defaults to the row's label. */
   title?: ReactNode;
+  /** Turns the body's draft into the value Done writes, so the draft may pass
+   *  through states the saved value never should (a blank entry, a half-typed
+   *  duplicate) and be cleaned once. Runs once at Done, only on a draft that was
+   *  edited; Cancel never runs it. */
+  commit?: (draft: unknown) => unknown;
 }
 
 /** A `.dialog` row: `body` is the dialog's content, handed the context a row
