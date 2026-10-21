@@ -1,0 +1,47 @@
+/* A Live lens's own box inside its slot: the copy is portaled into it, and the message beneath it shows when no copy is. */
+.fg-lens-live {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* A second render of a story, at its host's own size, scaled about the reticle's point onto the slot's center. */
+.fg-lens-copy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fg-lens-copy-w);
+  height: var(--fg-lens-copy-h);
+  transform-origin: 0 0;
+  transform: translate(var(--fg-lens-copy-x), var(--fg-lens-copy-y)) scale(var(--fg-lens-copy-f));
+}
+
+/* Painted in the copy's own mode, so a transparent story does not show the lab through the lens. */
+.fg-lens-copy > .fg-story {
+  background: var(--wzl-bg);
+}
+
+.fg-lens-live__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wzl-space-4);
+  text-align: center;
+  font-size: 11px;
+  color: var(--wzl-fg-muted);
+  background: var(--wzl-bg);
+}
+
+.fg-lens-live__empty[hidden] {
+  display: none;
+}
+
+/* Above the lens layer, in the lab body's corner. */
+.fg-loupe-hint {
+  position: absolute;
+  left: var(--wzl-space-8);
+  bottom: var(--wzl-space-8);
+  z-index: 4;
+}

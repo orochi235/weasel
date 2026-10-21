@@ -21,6 +21,8 @@ import { CssVarsChrome } from './cssVars/cssVarsChrome';
 import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
+import { ForgeLoupe } from './loupe/ForgeLoupe';
+import { createLiveLenses, LiveLensesContext } from './loupe/liveLenses';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
@@ -115,6 +117,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   useDocumentTitle(title);
   const [frames] = useState(createTrialFrames);
   const [clocks] = useState(createTrialClocks);
+  const [liveLenses] = useState(createLiveLenses);
   const [pool, setPool] = useState<FramePool | null>(null);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
   const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
@@ -167,6 +170,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
       { id: 'fg-info', region: 'header', group: 'story', item: infoCommand },
+      { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal="mode" /> },
       ...(config?.labChrome ?? []),
     ],
     [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome],
@@ -181,6 +185,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
             <TrialClocksContext.Provider value={clocks}>
+            <LiveLensesContext.Provider value={liveLenses}>
               <Lab
                 title={title}
                 density="roomy"
@@ -209,6 +214,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 <GlobalsMenus declarations={declarations} onMenus={setMenus} />
                 {showsCssVars ? <CssVarsChrome onChrome={setCssVarsChrome} /> : null}
               </Lab>
+            </LiveLensesContext.Provider>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>

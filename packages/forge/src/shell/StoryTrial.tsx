@@ -1,16 +1,17 @@
 import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { useLatest } from '@weasel-js/core';
-import { memo, type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
-import { StoryHost } from '../frame/StoryHost';
 import type { Globals } from '../protocol/messages';
-import type { Decorator, LoadedStory, StoryContext } from '../story/types';
+import type { Decorator, LoadedStory } from '../story/types';
 import { ClockContext } from '../timeline/context';
 import { useStoryClock } from '../timeline/StoryClock';
 import { TrialClocksContext } from '../timeline/trialClocks';
 import { useClockLoop } from '../timeline/useClockLoop';
 import { usePersistedPlayhead } from '../timeline/usePersistedPlayhead';
 import { isForgePath, PLAYHEAD_KEY, storyConfig } from './globals';
+import { LiveCopies } from './loupe/LiveCopies';
+import { StoryBody } from './StoryBody';
 import { TrialHost } from './TrialHost';
 
 /** Props for `StoryTrial`. */
@@ -26,25 +27,6 @@ export interface StoryTrialProps {
 }
 
 const NO_DECORATORS: readonly Decorator[] = [];
-
-interface StoryBodyProps {
-  story: LoadedStory;
-  config: StoryContext['config'];
-  setConfig: StoryContext['setConfig'];
-  state: unknown;
-  setState: StoryContext['setState'];
-  globals: Globals;
-  decorators: readonly Decorator[];
-  resetKey: number;
-  onError: (error: unknown) => void;
-}
-
-/** Calls `render` only when its inputs change, as Storybook does: the lab re-renders a trial for its own reasons, and a
- *  story declaring a component inside `render` remounts it on every extra call. */
-const StoryBody = memo(function StoryBody({ story, config, setConfig, state, setState, globals, decorators, resetKey, onError }: StoryBodyProps) {
-  const storyCtx: StoryContext = { config, setConfig, state, setState, globals, title: story.title, name: story.name };
-  return <StoryHost story={story} ctx={storyCtx} decorators={decorators} resetKey={resetKey} onError={onError} />;
-});
 
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
@@ -93,31 +75,34 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   const decorators = setup.decorators ?? NO_DECORATORS;
   const latestError = useLatest(onError);
   const reportError = useCallback((error: unknown) => latestError.current?.(error), [latestError]);
+  const body = {
+    story,
+    config,
+    setConfig,
+    state: ctx.state,
+    setState,
+    decorators,
+    resetKey,
+    onError: reportError,
+  };
   const render = (globals: Globals) => (
     <ClockContext.Provider value={clock}>
-      <StoryBody
-        story={story}
-        config={config}
-        setConfig={setConfig}
-        state={ctx.state}
-        setState={setState}
-        globals={globals}
-        decorators={decorators}
-        resetKey={resetKey}
-        onError={reportError}
-      />
+      <StoryBody {...body} globals={globals} />
     </ClockContext.Provider>
   );
 
   return (
-    <TrialHost
-      layout={story.layout}
-      setup={setup}
-      config={ctx.config}
-      hostRef={host}
-      {...(onRendered ? { onRendered } : {})}
-    >
-      {render}
-    </TrialHost>
+    <>
+      <TrialHost
+        layout={story.layout}
+        setup={setup}
+        config={ctx.config}
+        hostRef={host}
+        {...(onRendered ? { onRendered } : {})}
+      >
+        {render}
+      </TrialHost>
+      <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config} clock={clock} body={body} />
+    </>
   );
 }
