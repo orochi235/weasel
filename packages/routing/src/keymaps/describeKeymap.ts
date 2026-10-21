@@ -8,7 +8,7 @@ import type { Action } from '../interactions/actions/action';
 import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
 import { keySpecShortcut, paramsMatch } from '../interactions/actions/actionShortcuts';
 import { resolveParams } from '../interactions/actions/invoker';
-import { bindingId, NO_OVERRIDES, overridden, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
+import { NO_OVERRIDES, overriddenBindings, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { keymapLeaderId, leaderBindings, type KeymapDef } from './keymapContribution';
 import type { OpenKeymap } from './keymapStack';
 
@@ -67,9 +67,7 @@ export function describeKeymap(
     return variant ? variant.label : action?.label ?? b.actionId;
   };
   const rows: KeymapRow[] = [ESCAPE];
-  level.bindings.forEach((declared, i) => {
-    const b = overridden(declared, bindingId(declared, level.id, i), overrides);
-    if (!b) return;
+  for (const b of overriddenBindings(level.bindings, level.id, overrides)) {
     const label = labelOf(b);
     const shortcut = b.spec.kind === 'key' ? keySpecShortcut(b.spec) : undefined;
     if (shortcut) rows.push({ shortcut, label });
@@ -77,7 +75,7 @@ export function describeKeymap(
       const gesture = gestureWords(b.spec);
       if (gesture) rows.push({ gesture, label });
     }
-  });
+  }
   return { id: level.id, label: level.label, held: level.heldBy !== undefined, rows };
 }
 
@@ -90,18 +88,16 @@ export function keymapShortcuts(
   def: KeymapDef,
   overrides: ResolvedBindingOverrides = NO_OVERRIDES,
 ): ReadonlyMap<string, readonly MenuShortcut[]> {
-  const leaderChip = actionBindings({ id: keymapLeaderId(def.id), defaultBinding: leaderBindings(def) })
-    .map((b, i) => overridden(b, bindingId(b, null, i), overrides))
-    .map((b) => (b ? keySpecShortcut(b.spec) : undefined))
+  const leaderChip = overriddenBindings(actionBindings({ id: keymapLeaderId(def.id), defaultBinding: leaderBindings(def) }), null, overrides)
+    .map((b) => keySpecShortcut(b.spec))
     .find((c) => c !== undefined);
   const out = new Map<string, MenuShortcut[]>();
-  def.bindings.forEach((declared, i) => {
-    const b = overridden(declared, bindingId(declared, def.id, i), overrides);
-    if (!b || b.spec.kind !== 'key') return;
+  for (const b of overriddenBindings(def.bindings, def.id, overrides)) {
+    if (b.spec.kind !== 'key') continue;
     const chip = keySpecShortcut(b.spec);
-    if (!chip) return;
+    if (!chip) continue;
     const withPath: MenuShortcut = leaderChip ? { ...chip, leader: [{ label: def.label, shortcut: leaderChip }] } : chip;
     out.set(b.actionId, [...(out.get(b.actionId) ?? []), withPath]);
-  });
+  }
   return out;
 }

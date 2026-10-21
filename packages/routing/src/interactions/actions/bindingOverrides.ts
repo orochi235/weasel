@@ -50,6 +50,21 @@ export function overridden(
   return spec === null ? null : { ...b, spec };
 }
 
+/** The bindings `ownerId` declares, each under its override, the unbound ones
+ *  left out: what dispatch routes by. A `null` owner is an action's own. */
+export function overriddenBindings(
+  bindings: readonly GestureBinding[],
+  ownerId: string | null,
+  overrides: ResolvedBindingOverrides = NO_OVERRIDES,
+): GestureBinding[] {
+  const out: GestureBinding[] = [];
+  bindings.forEach((b, i) => {
+    const next = overridden(b, bindingId(b, ownerId, i), overrides);
+    if (next) out.push(next);
+  });
+  return out;
+}
+
 /** `action` with `overrides` applied to its own bindings, each keeping its id,
  *  so every reader of `defaultBinding` — dispatch, menus, chips — sees the same keys. */
 export function overrideActionBindings(action: Action, overrides: ResolvedBindingOverrides): Action {

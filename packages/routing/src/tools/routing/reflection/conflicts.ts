@@ -1,6 +1,7 @@
 import type { Contribution } from '../../../contributions/types';
 import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
+import { overriddenBindings, type ResolvedBindingOverrides } from '../../../interactions/actions/bindingOverrides';
 import type { ParsedModifiers } from '../routeGrammar';
 import { canonicalModifiers, formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
@@ -140,6 +141,9 @@ export interface ToolScopes {
    *  definition). Two gated actions conflict only when some mode lets both
    *  rules hold. Default: the kit's `DEFAULT_MODES`. */
   modes?: readonly ActiveMode[];
+  /** Binding overrides in force, applied to the entries' bindings. Actions are
+   *  read as given: an `ActionsRegistry`'s `list()` has applied them already. */
+  overrides?: ResolvedBindingOverrides;
 }
 
 /** Whether two rules can hold at once: never when {@link rulesExclusive}
@@ -182,9 +186,13 @@ function eligibleRule(action: Action): Rule | undefined {
  * collide.
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
-  const registry = Array.isArray(scopes.registry)
+  const overrides = scopes.overrides;
+  const asBound = (e: Contribution<unknown>): Contribution<unknown> =>
+    (overrides?.size && e.bindings ? { ...e, bindings: overriddenBindings(e.bindings, e.id, overrides) } : e);
+  const registry = (Array.isArray(scopes.registry)
     ? (scopes.registry as readonly Contribution<unknown>[])
-    : Object.values(scopes.registry as Readonly<Record<string, Contribution<unknown>>>);
+    : Object.values(scopes.registry as Readonly<Record<string, Contribution<unknown>>>)).map(asBound);
+  const declaredAmbient = (scopes.ambient ?? []).map(asBound);
   const actions = scopes.actions ?? [];
   const rules = new Map<string, Rule>();
   for (const a of actions) {
@@ -201,8 +209,8 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const modes = scopes.modes ?? KIT_MODES;
   // A keymap is live only while it is the one open, so it can collide with nothing but itself.
   const isKeymap = (e: Contribution<unknown>): boolean => e.eligibility?.keymap !== undefined;
-  const keymaps = (scopes.ambient ?? []).filter(isKeymap);
-  const ambient = [...(scopes.ambient ?? []).filter((e) => !isKeymap(e)), ...ungated];
+  const keymaps = declaredAmbient.filter(isKeymap);
+  const ambient = [...declaredAmbient.filter((e) => !isKeymap(e)), ...ungated];
 
   const out: Conflict[] = [];
   const seen = new Set<string>();
