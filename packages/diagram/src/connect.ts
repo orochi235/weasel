@@ -143,6 +143,7 @@ export function connectBinding(actionId: string = CONNECT_ACTION_ID): GestureBin
   return {
     spec: { kind: 'drag', target: `affordance:${PORT_AFFORDANCE_KIND}` },
     actionId,
+    opts: { id: `${actionId}.drag` },
   };
 }
 
@@ -176,8 +177,8 @@ export function grabPortBindings(
   kind: string = PORT_AFFORDANCE_KIND,
 ): GestureBinding[] {
   return [
-    { spec: { kind: 'pointerDown', target: `affordance:${kind}` }, actionId },
-    { spec: { kind: 'click', target: `affordance:${kind}` }, actionId },
+    { spec: { kind: 'pointerDown', target: `affordance:${kind}` }, actionId, opts: { id: `${actionId}.pointerDown` } },
+    { spec: { kind: 'click', target: `affordance:${kind}` }, actionId, opts: { id: `${actionId}.click` } },
   ];
 }
 

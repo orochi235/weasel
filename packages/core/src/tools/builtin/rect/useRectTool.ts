@@ -35,7 +35,7 @@ export function useRectTool(options: InsertToolOptions = {}): Tool {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'rect' } , ...insertBindingBehaviors(behaviors) },
+            opts: { id: 'rect.drag', params: { kind: 'rect' }, ...insertBindingBehaviors(behaviors) },
           },
           INSERT_REPOSITION_BINDING,
         ],

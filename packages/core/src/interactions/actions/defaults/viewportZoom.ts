@@ -65,7 +65,7 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
   return [
     {
       spec: wheelSpec,
-      opts: { params: { kind: 'wheel' } },
+      opts: { id: 'viewport.zoom.wheel', params: { kind: 'wheel' } },
     },
     // Trackpad pinch, which the browser delivers as ctrl+wheel. Distinct from
     // the `mod` binding on mac (`mod` is metaKey there), so without its own
@@ -73,27 +73,27 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
     // duplicates `mod`, and `matchBest` picks a single winner.
     {
       spec: { kind: 'wheel' as const, mods: { ctrl: true } },
-      opts: { params: { kind: 'wheel' } },
+      opts: { id: 'viewport.zoom.trackpad', params: { kind: 'wheel' } },
     },
     // Safari's trackpad pinch, reported as a scale rather than a wheel. Safari
     // may send the same pinch as ctrl+wheel too; the dispatcher swallows that
     // copy while a claimed gesture is live.
     {
       spec: { kind: 'pinch' as const },
-      opts: { params: { kind: 'pinch' } },
+      opts: { id: 'viewport.zoom.pinch', params: { kind: 'pinch' } },
     },
     // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
     {
       spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
-      opts: { params: { kind: 'in' } },
+      opts: { id: 'viewport.zoom.in', params: { kind: 'in' } },
     },
     {
       spec: { kind: 'key', key: '-', mods: { mod: true } },
-      opts: { params: { kind: 'out' } },
+      opts: { id: 'viewport.zoom.out', params: { kind: 'out' } },
     },
     {
       spec: { kind: 'key', key: '0', mods: { mod: true } },
-      opts: { params: { kind: 'reset' } },
+      opts: { id: 'viewport.zoom.reset', params: { kind: 'reset' } },
     },
   ];
 }

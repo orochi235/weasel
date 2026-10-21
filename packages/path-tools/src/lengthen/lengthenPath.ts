@@ -69,7 +69,7 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
   id: 'lengthenPath',
   label: 'Lengthen path',
   tags: pathOperationTags('drag'),
-  defaultBinding: { kind: 'drag', target: { kindOf: isAnchor }, mods: { shift: 'optional' } },
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isAnchor }, mods: { shift: 'optional' } }, opts: { id: 'lengthenPath.drag' } }],
   cursor: LENGTHEN_CURSOR,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],

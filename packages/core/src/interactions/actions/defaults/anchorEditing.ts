@@ -137,8 +137,8 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   label: 'Select anchor',
   tags: pathOperationTags('click'),
   defaultBinding: [
-    { spec: { kind: 'click', mods: {} },              opts: { params: { additive: false } } },
-    { spec: { kind: 'click', mods: { shift: true } }, opts: { params: { additive: true } } },
+    { spec: { kind: 'click', mods: {} },              opts: { id: 'selectAnchor.click', params: { additive: false } } },
+    { spec: { kind: 'click', mods: { shift: true } }, opts: { id: 'selectAnchor.add', params: { additive: true } } },
   ],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],
@@ -190,8 +190,8 @@ function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: strin
     group: 'nudgeAnchors',
     icon: NUDGE_ICON[dir],
     defaultBinding: [
-      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors', 'pathSymmetry'],
@@ -233,11 +233,14 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
   id: 'deleteAnchors',
   label: 'Delete Anchors',
   tags: pathOperationTags('command'),
-  defaultBinding: {
-    kind: 'key',
-    key: ['Delete', 'Backspace'],
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
+  defaultBinding: [{
+    spec: {
+      kind: 'key',
+      key: ['Delete', 'Backspace'],
+      phase: [{ channel: '*', phase: 'initial' }],
+    },
+    opts: { id: 'deleteAnchors.key' },
+  }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
@@ -268,7 +271,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'cutPathAtAnchor',
   label: 'Cut path at anchor',
   tags: pathOperationTags('click'),
-  defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
+  defaultBinding: [{ spec: { kind: 'click', mods: { alt: true, shift: true } }, opts: { id: 'cutPathAtAnchor.click' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {
@@ -340,7 +343,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
   label: 'Marquee-select anchors',
   tags: pathOperationTags('drag'),
-  defaultBinding: { kind: 'drag', target: 'empty' },
+  defaultBinding: [{ spec: { kind: 'drag', target: 'empty' }, opts: { id: 'marqueeAnchors.drag' } }],
   eligible: { capability: 'edits-anchors' },
   modifierRoles: MARQUEE_ANCHORS_ROLES,
   requires: ['editAnchors'],

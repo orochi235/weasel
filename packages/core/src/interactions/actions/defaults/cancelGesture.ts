@@ -11,11 +11,14 @@ import type { Action } from '@weasel-js/routing';
 export const cancelGestureAction: Action & { requires: string[] } = {
   id: 'cancelGesture',
   label: 'Cancel gesture',
-  defaultBinding: {
-    kind: 'key',
-    key: 'Escape',
-    phase: [{ channel: '*', phase: 'engaged' }],
-  },
+  defaultBinding: [{
+    spec: {
+      kind: 'key',
+      key: 'Escape',
+      phase: [{ channel: '*', phase: 'engaged' }],
+    },
+    opts: { id: 'cancelGesture.key' },
+  }],
   requires: ['dispatcher'],
   invoker: {
     timing: 'immediate',

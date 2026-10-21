@@ -55,13 +55,13 @@ function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): G
   const target = `affordance:layer:${warpLayerId(kind)}` as const;
   const out: GestureBinding[] = [];
   if (kind === 'puppet') {
-    out.push({ spec: { kind: 'click', target, mods: { alt: true } }, actionId: 'puppet.removePin' });
-    out.push({ spec: { kind: 'click', target: 'selected-body' }, actionId: 'puppet.addPin', opts: { params: settings } });
+    out.push({ spec: { kind: 'click', target, mods: { alt: true } }, actionId: 'puppet.removePin', opts: { id: 'puppet.removePin' } });
+    out.push({ spec: { kind: 'click', target: 'selected-body' }, actionId: 'puppet.addPin', opts: { id: 'puppet.addPin', params: settings } });
   }
   out.push(
-    { spec: { kind: 'drag', target }, actionId: `${kind}.drag`, opts: { params: settings } },
-    { spec: { kind: 'pointerDown', target, mods: ANY_MODS }, actionId: `${kind}.grab` },
-    { spec: { kind: 'click', target }, actionId: `${kind}.grab` },
+    { spec: { kind: 'drag', target }, actionId: `${kind}.drag`, opts: { id: `${kind}.drag`, params: settings } },
+    { spec: { kind: 'pointerDown', target, mods: ANY_MODS }, actionId: `${kind}.grab`, opts: { id: `${kind}.grab` } },
+    { spec: { kind: 'click', target }, actionId: `${kind}.grab`, opts: { id: `${kind}.grabClick` } },
   );
   return out;
 }

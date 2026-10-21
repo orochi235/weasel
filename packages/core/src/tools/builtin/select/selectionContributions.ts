@@ -41,19 +41,16 @@ export function selectionMoveBindings<TPose>(
   // Shared move-binding opts (params + behaviors). Applied to
   // both the selected-body and unselected-body move bindings so a
   // first-touch drag and a re-drag commit identically.
-  const moveOpts: { opts?: BindingOpts } = (() => {
+  const moveOpts: BindingOpts = (() => {
     const move = options.move ?? {};
     const params: Record<string, unknown> = gestureLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.dragThresholdPx !== undefined) params.dragThresholdPx = move.dragThresholdPx;
     if (move.expandIds) params.expandIds = move.expandIds;
-    const withParams = Object.keys(params).length > 0 ? { params } : undefined;
-    const behaviors = options.move?.behaviors?.length
-      ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
-      : undefined;
-    return withParams || behaviors
-      ? { opts: { ...withParams, ...behaviors } satisfies BindingOpts }
-      : {};
+    return {
+      ...(Object.keys(params).length > 0 ? { params } : {}),
+      ...(move.behaviors?.length ? { behaviors: move.behaviors as BindingOpts['behaviors'] } : {}),
+    };
   })();
 
   return [
@@ -64,8 +61,8 @@ export function selectionMoveBindings<TPose>(
     // select tool's pointerDown classifier calls `selection.applyClick(top, mods)`
     // on an unselected hit before the drag fires, so cloneAction's
     // `start` sees the hit node in `selection.get()` either way.
-    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone' },
-    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone' },
+    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone', opts: { id: 'selection.move.clone' } },
+    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone', opts: { id: 'selection.move.cloneUnselected' } },
     {
       // Body-drag → move, BUT defer when the pointerdown hit a path
       // anchor, control, or segment affordance. Those lie on the curve so
@@ -84,7 +81,7 @@ export function selectionMoveBindings<TPose>(
         },
       },
       actionId: 'move',
-      ...moveOpts,
+      opts: { ...moveOpts, id: 'selection.move.body' },
     },
     // Body-drag on a NOT-yet-selected node → also move. The select tool's
     // pointerDown classifier selects the hit node before the drag fires (same
@@ -97,7 +94,7 @@ export function selectionMoveBindings<TPose>(
     {
       spec: { kind: 'drag' as const, target: 'unselected-body' as const },
       actionId: 'move',
-      ...moveOpts,
+      opts: { ...moveOpts, id: 'selection.move.unselectedBody' },
     },
   ];
 }
@@ -116,7 +113,7 @@ export type SelectionTransformOptions<TPose = unknown> = SelectionRotateOptions<
 /** Drag a resize handle to resize the selection. Options come through the
  *  `resizePolicy` dep (`useResizePolicy`). */
 export function selectionResizeBindings(): GestureBinding[] {
-  return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' }];
+  return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize', opts: { id: 'selection.resize.handle' } }];
 }
 
 /** Drag the rotation handle to rotate the selection. */
@@ -127,13 +124,14 @@ export function selectionRotateBindings<TPose>(
   const params: Record<string, unknown> = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
   const opts: BindingOpts = {
+    id: 'selection.rotate.handle',
     ...(Object.keys(params).length > 0 ? { params } : {}),
     ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
   };
   return [{
     spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },
     actionId: 'rotate',
-    ...(Object.keys(opts).length > 0 ? { opts } : {}),
+    opts,
   }];
 }
 
@@ -210,6 +208,6 @@ export function areaSelectContribution(): Contribution {
   return {
     id: AREA_SELECT_ID,
     eligibility: { always: true },
-    bindings: [{ spec: { kind: 'drag', target: { kindOf: onEmptyCanvas } }, actionId: 'areaSelect' }],
+    bindings: [{ spec: { kind: 'drag', target: { kindOf: onEmptyCanvas } }, actionId: 'areaSelect', opts: { id: 'selection.areaSelect.drag' } }],
   };
 }

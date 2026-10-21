@@ -36,7 +36,7 @@ export function useLineTool(options: InsertToolOptions = {}): Tool {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'line' } , ...insertBindingBehaviors(behaviors) },
+            opts: { id: 'line.drag', params: { kind: 'line' }, ...insertBindingBehaviors(behaviors) },
           },
           INSERT_REPOSITION_BINDING,
         ],

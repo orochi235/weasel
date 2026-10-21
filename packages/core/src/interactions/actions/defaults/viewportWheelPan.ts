@@ -17,8 +17,8 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
    * modifier, and `mods: { shift: true }` forbids the others.
    */
   defaultBinding: [
-    { spec: { kind: 'wheel' }, opts: {} },
-    { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true } } },
+    { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel' } },
+    { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true } } },
   ],
   requires: ['view', 'debug'],
   invoker: {
@@ -53,8 +53,8 @@ export function makeViewportWheelPanAction(
   return {
     ...viewportWheelPanAction,
     defaultBinding: [
-      { spec: { kind: 'wheel' }, opts: { params: { axis } } },
-      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis } } },
+      { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis } } },
     ],
   };
 }

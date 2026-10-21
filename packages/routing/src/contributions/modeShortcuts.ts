@@ -94,7 +94,7 @@ function shortcutAction(
     scope: 'hotkey',
     defaultBinding: [{
       spec: { ...modeShortcutSpec(shortcut), phase: [{ channel: '*', phase: 'initial' }] },
-      opts: { yields },
+      opts: { id: `mode.${mode.id}.${role}.key`, yields },
     }],
     eligible,
     // `eligible` is the gate the dispatcher and palettes read, but a canvas

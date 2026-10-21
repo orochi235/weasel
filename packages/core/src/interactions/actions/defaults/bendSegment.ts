@@ -40,7 +40,7 @@ export const bendSegmentAction: Action & { requires: string[] } = inPlane({
   label: 'Bend segment',
   icon: icon('bendSegment'),
   tags: pathOperationTags('drag'),
-  defaultBinding: { kind: 'drag', target: { kindOf: isSegment } },
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isSegment } }, opts: { id: 'bendSegment.drag' } }],
   cursor: BEND_CURSOR,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],

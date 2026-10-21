@@ -51,7 +51,7 @@ export function pathEditToolAction(
 export const exitPathEditToolAction: Action & { requires: string[] } = {
   id: 'pathEditTool.exit',
   label: 'Put down path-edit tool',
-  defaultBinding: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] },
+  defaultBinding: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] }, opts: { id: 'pathEditTool.exit.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

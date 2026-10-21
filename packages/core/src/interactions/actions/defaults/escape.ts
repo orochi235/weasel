@@ -12,11 +12,14 @@ export const escapeAction: Action & { requires: string[] } = {
   // Gated to "no tool is engaged" so a mid-drag Escape goes to
   // `cancelGestureAction` (cancels the drag) instead of clearing
   // selection.
-  defaultBinding: {
-    kind: 'key',
-    key: 'Escape',
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
+  defaultBinding: [{
+    spec: {
+      kind: 'key',
+      key: 'Escape',
+      phase: [{ channel: '*', phase: 'initial' }],
+    },
+    opts: { id: 'escape.key' },
+  }],
   requires: ['selection', 'editAnchors'],
   invoker: {
     timing: 'immediate',

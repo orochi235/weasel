@@ -278,7 +278,7 @@ describe('a declared offhand trigger engages its entry', () => {
     expect(offhands[0].defaultBinding).toEqual([
       {
         spec: { ...heldKeySpec(' '), phase: [{ channel: '*', phase: 'initial' }] },
-        opts: { params: { toolId: 'hand' } },
+        opts: { id: 'tool.offhand.hand', params: { toolId: 'hand' } },
       },
     ]);
   });

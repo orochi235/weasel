@@ -55,7 +55,7 @@ describe('createOutlinesAction', () => {
   });
 
   it("binds Affinity's Mod+Enter", () => {
-    expect(createOutlinesAction.defaultBinding).toEqual({ kind: 'key', key: 'Enter', mods: { mod: true } });
+    expect(createOutlinesAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'Enter', mods: { mod: true } }, opts: { id: 'createOutlines.key' } }]);
   });
 });
 

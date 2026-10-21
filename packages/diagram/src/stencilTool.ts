@@ -22,7 +22,7 @@ export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon
     cursor: 'crosshair',
     presentation: { label: stencil.label, icon: stencil.icon, group: 'stencil' },
     bindings: [
-      { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: stencilKind(stencil.id) } } },
+      { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: `${stencilKind(stencil.id)}.drag`, params: { kind: stencilKind(stencil.id) } } },
       INSERT_REPOSITION_BINDING,
     ],
   });

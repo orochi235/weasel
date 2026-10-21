@@ -263,13 +263,16 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'editAnchors',
   label: 'Edit Anchors',
   tags: pathOperationTags('drag'),
-  defaultBinding: {
-    kind: 'drag',
-    // Only matches drags whose pointerdown hit an anchor or control handle.
-    // Ties moveAction's `selected-body` on specificity and registers after
-    // it, so move declines these presses in `start`.
-    target: { kindOf: isAnchorOrControl },
-  },
+  defaultBinding: [{
+    spec: {
+      kind: 'drag',
+      // Only matches drags whose pointerdown hit an anchor or control handle.
+      // Ties moveAction's `selected-body` on specificity and registers after
+      // it, so move declines these presses in `start`.
+      target: { kindOf: isAnchorOrControl },
+    },
+    opts: { id: 'editAnchors.drag' },
+  }],
   eligible: { capability: 'edits-anchors' },
   modifierRoles: EDIT_ANCHORS_ROLES,
   requires: ['selection', 'editAnchors', 'pathSymmetry', 'snap'],

@@ -32,7 +32,7 @@ export const bridgePathsAction = joinPathsCommand(
     label: 'Bridge',
     icon: icon('core:bridge'),
     // `code` too: with Alt held on a Mac the key reads as another glyph.
-    defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } },
+    defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgePaths.key' } }],
   },
   (params) => ({ tension: bridgeTensionOf(params) }),
 );
@@ -52,7 +52,7 @@ export const bridgeAnchorsAction: Action & { requires: string[] } = {
   tags: pathOperationTags('command'),
   icon: icon('core:bridge'),
   group: 'anchors',
-  defaultBinding: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

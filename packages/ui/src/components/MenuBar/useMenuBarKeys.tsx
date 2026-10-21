@@ -42,7 +42,7 @@ function openBindings(titles: readonly AccessTitle[], chord: MenuAccessChord): A
     const code = codeOf(letter);
     return [{
       spec: { kind: 'key' as const, key: letter, ...(code ? { code } : {}), mods: { ...chord }, phase: [...INITIAL] },
-      opts: { params: { menu: key } },
+      opts: { id: `menu.open.${letter}`, params: { menu: key } },
     }];
   });
 }
@@ -88,7 +88,7 @@ export function useMenuBarKeys(titles: readonly AccessTitle[], chord: MenuAccess
       {
         id: 'menu.bar',
         label: 'Focus Menu Bar',
-        defaultBinding: [{ kind: 'key', key: 'F10', phase: [...INITIAL] }],
+        defaultBinding: [{ spec: { kind: 'key', key: 'F10', phase: [...INITIAL] }, opts: { id: 'menu.bar.key' } }],
         invoker: { timing: 'immediate', run: () => { barNow.current.focus(); } },
       },
       {

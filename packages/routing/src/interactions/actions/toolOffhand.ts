@@ -31,8 +31,8 @@ export function offhandKeyFor(trigger: HotkeyTrigger): string {
 
 /** Build the per-tool `BoundGesture` list for the consolidated action's
  *  `defaultBinding`. Each entry pairs a `key-held` spec with
- *  `opts.params.toolId` so the invoker's `start` can pick out which tool
- *  to engage.
+ *  `opts.params.toolId`, so the invoker's `start` can pick out which tool
+ *  to engage, and is overridden as `tool.offhand.<toolId>`.
  *
  *  An offhand tool engages only between gestures. Swapping the tool out
  *  mid-drag would cancel the drag, and the key is free for the gesture's own
@@ -42,7 +42,7 @@ export function buildToolOffhandBindings(
 ): BoundGesture[] {
   return specs.map(({ toolId, key }) => ({
     spec: { ...heldKeySpec(key), phase: BETWEEN_GESTURES },
-    opts: { params: { toolId } },
+    opts: { id: `${TOOL_OFFHAND_ID}.${toolId}`, params: { toolId } },
   }));
 }
 

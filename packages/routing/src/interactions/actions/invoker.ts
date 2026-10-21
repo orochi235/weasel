@@ -179,9 +179,10 @@ export interface InvocationCtx {
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
  *  `opts` field and passes to `OngoingInvoker.start`. */
 export interface BindingOpts {
-  /** The id a binding override names this binding by. Without one it is its
-   *  owner's id and its position, which moves when the defaults are reordered,
-   *  so a binding a host may persist an override for declares one. */
+  /** The id a binding override names this binding by, `<owner>.<role>`:
+   *  `undo.key`, `rect.drag`, `nudge.left.big`. Without one it is its owner and
+   *  its position (`<entry>#<n>`, `<action>@<n>`), which moves when the defaults
+   *  are reordered, so a binding a host may persist an override for declares one. */
   id?: string;
   /** Gesture behaviors the action's own invoker runs. Routing carries the
    *  array to the action and never reads an element, so the element type is

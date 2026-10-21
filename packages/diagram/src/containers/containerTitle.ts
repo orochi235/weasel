@@ -52,5 +52,9 @@ const onBody = bodyPredicate((target) => target === 'selected-body' || target ==
 
 /** A double-click on a node's body; the action declines unless it lands in a region's header. */
 export function editContainerTitleBinding(): GestureBinding {
-  return { spec: { kind: 'doubleClick', target: { kindOf: onBody } }, actionId: EDIT_CONTAINER_TITLE_ACTION_ID };
+  return {
+    spec: { kind: 'doubleClick', target: { kindOf: onBody } },
+    actionId: EDIT_CONTAINER_TITLE_ACTION_ID,
+    opts: { id: `${EDIT_CONTAINER_TITLE_ACTION_ID}.doubleClick` },
+  };
 }

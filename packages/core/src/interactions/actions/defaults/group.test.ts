@@ -24,7 +24,7 @@ describe('groupAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
-    expect(groupAction.defaultBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
+    expect(groupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true } }, opts: { id: 'group.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -39,7 +39,7 @@ describe('ungroupAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {
-    expect(ungroupAction.defaultBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
+    expect(ungroupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true } }, opts: { id: 'ungroup.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

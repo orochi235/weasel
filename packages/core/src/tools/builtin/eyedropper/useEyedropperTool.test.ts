@@ -50,7 +50,7 @@ describe('useEyedropperTool', () => {
       useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
     );
     expect(result.current.bindings).toEqual([
-      { spec: { kind: 'click' }, actionId: 'eyedropper.pick' },
+      { spec: { kind: 'click' }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } },
     ]);
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.

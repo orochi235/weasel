@@ -572,17 +572,17 @@ export function usePenTool(
       bindings: [
         // Plain click places an anchor; ⌘/Ctrl-click open-finishes. Strict
         // modifier matching keeps the two apart.
-        { spec: { kind: 'click' as const, mods: { shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.placeAnchor' },
-        { spec: { kind: 'click' as const, mods: { mod: true, shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.finishOpen' },
+        { spec: { kind: 'click' as const, mods: { shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.placeAnchor', opts: { id: 'pen.click' } },
+        { spec: { kind: 'click' as const, mods: { mod: true, shift: 'optional' as const, alt: 'optional' as const } }, actionId: 'pen.finishOpen', opts: { id: 'pen.modClick' } },
         // Double-click on the last anchor also open-finishes.
         {
           spec: { kind: 'doubleClick' as const, mods: { shift: 'optional' as const, alt: 'optional' as const } },
           actionId: 'pen.finishOpen',
-          opts: { params: { viaDoubleClick: true } },
+          opts: { id: 'pen.doubleClick', params: { viaDoubleClick: true } },
         },
-        { spec: { kind: 'drag' as const, mods: { shift: 'optional' as const, alt: 'optional' as const, ctrl: 'optional' as const } }, actionId: 'pen.dragHandle' },
-        { spec: { kind: 'key' as const, key: 'Enter' }, actionId: 'pen.finish' },
-        { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel' },
+        { spec: { kind: 'drag' as const, mods: { shift: 'optional' as const, alt: 'optional' as const, ctrl: 'optional' as const } }, actionId: 'pen.dragHandle', opts: { id: 'pen.drag' } },
+        { spec: { kind: 'key' as const, key: 'Enter' }, actionId: 'pen.finish', opts: { id: 'pen.finish' } },
+        { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel', opts: { id: 'pen.cancel' } },
       ],
     });
   }, [actions, trail, overlay]);

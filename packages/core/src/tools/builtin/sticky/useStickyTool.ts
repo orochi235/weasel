@@ -53,9 +53,9 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
         group: 'type',
       },
       bindings: [
-        { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: look, ...insertBindingBehaviors(behaviors) } },
-        { spec: { kind: 'click' }, actionId: 'place', opts: { params: { ...look, size } } },
-        { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
+        { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'sticky.drag', params: look, ...insertBindingBehaviors(behaviors) } },
+        { spec: { kind: 'click' }, actionId: 'place', opts: { id: 'sticky.click', params: { ...look, size } } },
+        { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'sticky.editText' } },
         INSERT_REPOSITION_BINDING,
       ],
     });

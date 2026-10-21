@@ -268,7 +268,7 @@ function CameraDispatch({
     const tap: Action = {
       id: TAP_ID,
       label: 'Tap the canvas',
-      defaultBinding: { kind: 'click' },
+      defaultBinding: [{ spec: { kind: 'click' }, opts: { id: `${TAP_ID}.click` } }],
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
@@ -281,13 +281,16 @@ function CameraDispatch({
     const goHome: Action = {
       id: HOME_ID,
       label: 'Reset view',
-      defaultBinding: { kind: 'doubleClick' },
+      defaultBinding: [{ spec: { kind: 'doubleClick' }, opts: { id: `${HOME_ID}.doubleClick` } }],
       invoker: { timing: 'immediate', run: () => onHomeRef.current?.() },
     };
     return [
       ...(labMenu ? [contextMenuAction] : []),
       // A trial pans on a plain drag; the kit action binds none of its own.
-      ...(drag ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
+      ...(drag ? [{
+        ...viewportDragPanAction,
+        defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: `${viewportDragPanAction.id}.drag` } }],
+      } as Action] : []),
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),

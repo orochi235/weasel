@@ -161,7 +161,7 @@ describe('simplifyBrush', () => {
   });
 
   it('owns a plain drag only while its path-edit tool is on', () => {
-    expect(simplifyBrushAction.defaultBinding).toEqual([{ spec: { kind: 'drag' }, opts: { yields: true } }]);
+    expect(simplifyBrushAction.defaultBinding).toEqual([{ spec: { kind: 'drag' }, opts: { id: 'simplifyBrush.drag', yields: true } }]);
     const off = setup(wave(), null);
     expect(start(off.at(100, 0))).toEqual({});
     expect(simplifyBrushAction.enabled?.(off.at(0, 0).deps)).not.toBe(true);

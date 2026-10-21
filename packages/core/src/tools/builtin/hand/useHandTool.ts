@@ -63,6 +63,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
           spec: { kind: 'drag' as const },
           actionId: 'viewport.dragPan',
           opts: {
+            id: 'hand.drag',
             params: () => ({
               axis: optsRef.current.axis ?? 'both',
               inertia: optsRef.current.inertia,

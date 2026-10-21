@@ -108,6 +108,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
             // ArrowUp/Down/wheel side-count changes flow through both
             // the ghost and the committed geometry.
             opts: {
+              id: 'polygon.drag',
               params: () => ({
                 kind: 'polygon',
                 sides: sidesRef.current,
@@ -122,6 +123,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'polygon.adjustSides',
+            opts: { id: 'polygon.wheelSides' },
           },
           // Shift+wheel during engaged drag → rotate the in-flight
           // shape in place. Strict modifier matching means this
@@ -129,6 +131,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
             actionId: 'insert.adjustRotation',
+            opts: { id: 'polygon.wheelRotation' },
           },
           // ArrowUp/Down → adjust side count. These were phase-table
           // `initial.keyDown` routes, which put them on the OTHER dispatch
@@ -142,12 +145,12 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'key', key: 'ArrowUp' },
             actionId: 'polygon.adjustSides',
-            opts: { params: { delta: 1 } },
+            opts: { id: 'polygon.moreSides', params: { delta: 1 } },
           },
           {
             spec: { kind: 'key', key: 'ArrowDown' },
             actionId: 'polygon.adjustSides',
-            opts: { params: { delta: -1 } },
+            opts: { id: 'polygon.fewerSides', params: { delta: -1 } },
           },
         ],
       }),

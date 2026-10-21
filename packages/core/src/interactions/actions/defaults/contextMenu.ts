@@ -85,9 +85,9 @@ export const contextMenuAction: Action & { requires: string[] } = {
   id: 'menu.context',
   label: 'Show Context Menu',
   defaultBinding: [
-    { kind: 'contextMenu' },
-    { kind: 'key', key: 'F10', mods: { shift: true }, phase: [...INITIAL] },
-    { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] },
+    { spec: { kind: 'contextMenu' }, opts: { id: 'menu.context.contextMenu' } },
+    { spec: { kind: 'key', key: 'F10', mods: { shift: true }, phase: [...INITIAL] }, opts: { id: 'menu.context.key' } },
+    { spec: { kind: 'key', key: 'ContextMenu', phase: [...INITIAL] }, opts: { id: 'menu.context.menuKey' } },
   ],
   requires: ['menuHost', 'selection', 'scene', 'poseDescriptor', 'view', 'worldToClient', 'hitAt', 'kindOfNode'],
   // Disabled when no menu would open, so the dispatcher leaves the press, click and drag to whatever else is bound.

@@ -236,7 +236,7 @@ export const ANYWHERE = bodyPredicate(() => true);
 
 /** The binding that starts a reorder: a drag pressed on `on`, by default anywhere; the action declines off an item's grip. */
 export function reorderBinding(actionId: string = REORDER_ACTION_ID, on: TargetPredicate = ANYWHERE): GestureBinding {
-  return { spec: { kind: 'drag', target: { kindOf: on } }, actionId };
+  return { spec: { kind: 'drag', target: { kindOf: on } }, actionId, opts: { id: on === ANYWHERE ? `${actionId}.drag` : `${actionId}.bodyDrag` } };
 }
 
 /** The reorder action and its binding, to pass as `ambient`. */

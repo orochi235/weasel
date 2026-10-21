@@ -158,5 +158,5 @@ const onBody = bodyPredicate((target) => target === 'selected-body' || target ==
 
 /** A double-click on a node's body; the action itself declines unless that node is an edge. */
 export function editEdgeLabelBinding(actionId: string = EDIT_EDGE_LABEL_ACTION_ID): GestureBinding {
-  return { spec: { kind: 'doubleClick', target: { kindOf: onBody } }, actionId };
+  return { spec: { kind: 'doubleClick', target: { kindOf: onBody } }, actionId, opts: { id: `${actionId}.doubleClick` } };
 }

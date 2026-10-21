@@ -34,7 +34,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // which catches every drag in ambient scope and bleeds the move into
   // drawing-tool gestures wherever the higher-priority active match falls
   // through.
-  defaultBinding: { kind: 'drag', target: 'selected-body' },
+  defaultBinding: [{ spec: { kind: 'drag', target: 'selected-body' }, opts: { id: 'move.drag' } }],
   eligible: { capability: 'transforms-selection' },
   modifierRoles: SNAP_ROLES,
   requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap', 'transformFollowers'],

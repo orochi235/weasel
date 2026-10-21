@@ -109,10 +109,10 @@ export const dollyAction: Action = {
   label: 'Dolly',
   group: 'viewport',
   defaultBinding: [
-    { spec: { kind: 'wheel' }, opts: {} },
+    { spec: { kind: 'wheel' }, opts: { id: 'camera.dolly.wheel' } },
     // Unbound, a trackpad pinch zooms the page instead.
-    { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: {} },
-    { spec: { kind: 'pinch' }, opts: {} },
+    { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: { id: 'camera.dolly.trackpadPinch' } },
+    { spec: { kind: 'pinch' }, opts: { id: 'camera.dolly.pinch' } },
   ],
   requires: ['camera3d', 'kitSettings'],
   invoker: {
@@ -139,7 +139,7 @@ export const pinchDollyAction: Action = {
   id: 'camera.pinchDolly',
   label: 'Pinch Dolly',
   group: 'viewport',
-  defaultBinding: { kind: 'multiTouch', fingers: 2 },
+  defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'camera.pinchDolly.multiTouch' } }],
   requires: ['camera3d'],
   invoker: {
     timing: 'ongoing',
@@ -168,7 +168,7 @@ export const homeAction: Action = {
   id: 'camera.home',
   label: 'Reset Camera',
   group: 'viewport',
-  defaultBinding: { kind: 'doubleClick' },
+  defaultBinding: [{ spec: { kind: 'doubleClick' }, opts: { id: 'camera.home.doubleClick' } }],
   requires: ['camera3d'],
   invoker: {
     timing: 'immediate',
@@ -189,8 +189,8 @@ export function useOrbitTool(): Tool {
     cursor: 'grab',
     presentation: { label: 'Orbit', group: 'viewport' },
     bindings: [
-      { spec: { kind: 'drag' }, actionId: 'camera.orbit' },
-      { spec: { kind: 'drag', mods: { shift: true } }, actionId: 'camera.pan' },
+      { spec: { kind: 'drag' }, actionId: 'camera.orbit', opts: { id: 'orbit.orbit' } },
+      { spec: { kind: 'drag', mods: { shift: true } }, actionId: 'camera.pan', opts: { id: 'orbit.pan' } },
     ],
   }), []);
 }

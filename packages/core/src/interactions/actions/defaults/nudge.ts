@@ -47,8 +47,8 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
     label: `Nudge ${NUDGE_LABEL[dir]}`,
     group: 'nudge',
     defaultBinding: [
-      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                              opts: { params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                              opts: { id: `nudge.${dir}.small`, params: { magnitude: 'small' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { id: `nudge.${dir}.big`, params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],

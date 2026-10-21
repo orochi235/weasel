@@ -190,15 +190,15 @@ function orbitActions({
 }: Omit<ResolvedCameraGestures, 'tap' | 'home'> & { homes: boolean; menu: boolean }): Action[] {
   const wheelSpec =
     wheel === 'plain'
-      ? [{ spec: { kind: 'wheel' }, opts: {} }]
+      ? [{ spec: { kind: 'wheel' }, opts: { id: 'camera.dolly.wheel' } }]
       : wheel === 'mod'
-        ? [{ spec: { kind: 'wheel', mods: { mod: true } }, opts: {} }]
+        ? [{ spec: { kind: 'wheel', mods: { mod: true } }, opts: { id: 'camera.dolly.modWheel' } }]
         : [];
   // The trackpad's pinch: ctrl+wheel, and WebKit's gesture events.
   const padPinch = trackpadPinch
     ? [
-        { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: {} },
-        { spec: { kind: 'pinch' }, opts: {} },
+        { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: { id: 'camera.dolly.trackpadPinch' } },
+        { spec: { kind: 'pinch' }, opts: { id: 'camera.dolly.pinch' } },
       ]
     : [];
   const dollyBindings = [...wheelSpec, ...padPinch];
@@ -206,8 +206,8 @@ function orbitActions({
     ...(menu ? [contextMenuAction] : []),
     ...(drag
       ? [
-          { ...orbitAction, defaultBinding: { kind: 'drag' } } as Action,
-          { ...panAction, defaultBinding: { kind: 'drag', mods: { shift: true } } } as Action,
+          { ...orbitAction, defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'camera.orbit.drag' } }] } as Action,
+          { ...panAction, defaultBinding: [{ spec: { kind: 'drag', mods: { shift: true } }, opts: { id: 'camera.pan.drag' } }] } as Action,
         ]
       : []),
     ...(dollyBindings.length > 0

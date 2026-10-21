@@ -24,7 +24,7 @@ export function connectorTool<TPose>(opts: ConnectActionOptions<TPose>): Tool {
     cursor: 'crosshair',
     presentation: { label: 'Connector', icon: icon('core:arrow'), group: 'draw' },
     actions: [createConnectAction({ ...opts, id: CONNECTOR_ACTION_ID, startFrom: 'body', bodies: true })],
-    bindings: [{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID }],
+    bindings: [{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID, opts: { id: `${CONNECTOR_TOOL_ID}.drag` } }],
   });
 }
 

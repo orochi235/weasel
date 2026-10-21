@@ -84,10 +84,10 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
     overlay,
     onDeactivate: () => env.show(null),
     bindings: [
-      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.pick' },
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.drag' },
-      { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'bone.remove' },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.clear' },
+      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.pick', opts: { id: 'bone.pick' } },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'bone.drag', opts: { id: 'bone.drag' } },
+      { spec: { kind: 'key', key: ['Delete', 'Backspace'] }, actionId: 'bone.remove', opts: { id: 'bone.remove' } },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'bone.clear', opts: { id: 'bone.clear' } },
     ],
   }), [actions, overlay, keybinding, env]);
 }

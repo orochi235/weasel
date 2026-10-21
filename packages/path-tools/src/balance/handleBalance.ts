@@ -67,7 +67,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
-  defaultBinding: { kind: 'drag', target: { kindOf: isBalanceGrip } },
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isBalanceGrip } }, opts: { id: 'balanceHandles.drag' } }],
   cursor: 'grab',
   eligible: { capability: 'edits-anchors' },
   modifierRoles: HANDLE_LOCK_ROLES,
@@ -123,7 +123,7 @@ export const equalizeHandlesAction: Action & { requires: string[] } = {
   label: 'Equalize handles',
   icon: icon('equalizeHandles'),
   tags: pathOperationTags('click'),
-  defaultBinding: { kind: 'doubleClick', target: { kindOf: isBalanceGrip } },
+  defaultBinding: [{ spec: { kind: 'doubleClick', target: { kindOf: isBalanceGrip } }, opts: { id: 'equalizeHandles.doubleClick' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
