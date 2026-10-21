@@ -32,7 +32,7 @@ export const groupAction: Action & { requires: string[] } = {
   label: 'Group',
   icon: icon('group'),
   group: 'structure',
-  defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true } }, opts: { id: 'group.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'applyOps', 'poseDescriptor'],
   invoker: {
@@ -130,7 +130,7 @@ export const ungroupAction: Action & { requires: string[] } = {
   label: 'Ungroup',
   icon: icon('ungroup'),
   group: 'structure',
-  defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true } }, opts: { id: 'ungroup.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection'],
   invoker: {

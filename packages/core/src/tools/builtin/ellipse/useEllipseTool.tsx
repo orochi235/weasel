@@ -31,7 +31,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'ellipse' } , ...insertBindingBehaviors(behaviors) },
+            opts: { id: 'ellipse.drag', params: { kind: 'ellipse' }, ...insertBindingBehaviors(behaviors) },
           },
           INSERT_REPOSITION_BINDING,
         ],

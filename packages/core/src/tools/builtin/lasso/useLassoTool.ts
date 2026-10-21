@@ -56,6 +56,7 @@ export function useLassoTool(options: UseLassoToolOptions = {}): Tool {
           // Thunked so a mode or spacing change reaches the next gesture
           // without rebuilding the tool.
           opts: {
+            id: 'lasso.drag',
             params: () => paramsRef.current,
             ...(behaviors ? { behaviors } : {}),
           },

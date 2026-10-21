@@ -53,7 +53,7 @@
     "longestFunction": 438
   },
   "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
-    "longestFunction": 123
+    "longestFunction": 122
   },
   "packages/core/src/tools/builtin/select/useSelectTool.ts": {
     "longestFunction": 209

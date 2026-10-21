@@ -222,13 +222,13 @@ export function createHudContribution(hud?: Hud, options?: AttachHudOptions): Su
       wheelAction(),
     ],
     bindings: [
-      { spec: { kind: 'pointerDown', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.press' },
-      { spec: { kind: 'click', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.release' },
-      { spec: { kind: 'drag', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.drag' },
-      { spec: { kind: 'doubleClick', target: { kindOf: hudHitClaiming('doubleClick') }, mods: MODS_ANY }, actionId: 'hud.doubleClick' },
-      { spec: { kind: 'contextMenu', target: { kindOf: hudHitClaiming('contextMenu') }, mods: MODS_ANY }, actionId: 'hud.contextMenu' },
-      { spec: { kind: 'longPress', target: { kindOf: hudHitClaiming('longPress') }, mods: MODS_ANY }, actionId: 'hud.longPress' },
-      { spec: { kind: 'wheel', target: { kindOf: hudHitClaiming('wheel') }, mods: MODS_ANY }, actionId: 'hud.wheel' },
+      { spec: { kind: 'pointerDown', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.press', opts: { id: 'weasel-hud.press' } },
+      { spec: { kind: 'click', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.release', opts: { id: 'weasel-hud.release' } },
+      { spec: { kind: 'drag', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.drag', opts: { id: 'weasel-hud.drag' } },
+      { spec: { kind: 'doubleClick', target: { kindOf: hudHitClaiming('doubleClick') }, mods: MODS_ANY }, actionId: 'hud.doubleClick', opts: { id: 'weasel-hud.doubleClick' } },
+      { spec: { kind: 'contextMenu', target: { kindOf: hudHitClaiming('contextMenu') }, mods: MODS_ANY }, actionId: 'hud.contextMenu', opts: { id: 'weasel-hud.contextMenu' } },
+      { spec: { kind: 'longPress', target: { kindOf: hudHitClaiming('longPress') }, mods: MODS_ANY }, actionId: 'hud.longPress', opts: { id: 'weasel-hud.longPress' } },
+      { spec: { kind: 'wheel', target: { kindOf: hudHitClaiming('wheel') }, mods: MODS_ANY }, actionId: 'hud.wheel', opts: { id: 'weasel-hud.wheel' } },
     ],
   };
 }

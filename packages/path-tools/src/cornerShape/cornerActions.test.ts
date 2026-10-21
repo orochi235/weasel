@@ -41,7 +41,7 @@ function start(dep: EditAnchorsDep, kind: string, at: { x: number; y: number }) 
 
 describe('editCornerAction', () => {
   it('matches only corner-widget affordances', () => {
-    const binding = editCornerAction.defaultBinding as { target: { kindOf: (h: unknown) => boolean } };
+    const [{ spec: binding }] = editCornerAction.defaultBinding as unknown as [{ spec: { target: { kindOf: (h: unknown) => boolean } } }];
     expect(binding.target.kindOf({ kind: 'corner:2' })).toBe(true);
     expect(binding.target.kindOf({ kind: 'anchor:2' })).toBe(false);
   });

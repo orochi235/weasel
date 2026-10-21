@@ -53,10 +53,14 @@ function triggerAction(
     if (id === undefined) return null;
     return canEnter?.(mode.id, id) === false ? null : id;
   };
+  const id = `mode.${mode.id}.trigger`;
   return {
-    id: `mode.${mode.id}.trigger`,
+    id,
     label: `Enter ${modeLabel(mode)}`,
-    defaultBinding: targets.map((kind) => ({ kind: 'doubleClick' as const, target: `kind:${kind}` as const })),
+    defaultBinding: targets.map((kind) => ({
+      spec: { kind: 'doubleClick' as const, target: `kind:${kind}` as const },
+      opts: { id: `${id}.doubleClick.${kind}` },
+    })),
     requires: ['hitAt'],
     enabled: (deps, at) => (targetAt(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
     invoker: {

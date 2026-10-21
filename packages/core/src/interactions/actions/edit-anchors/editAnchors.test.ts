@@ -44,7 +44,9 @@ describe('editAnchorsAction descriptor', () => {
     // Binding is a drag with a target predicate filtering for anchor-kind
     // affordances (`anchor:N` / `controlIn:N` / `controlOut:N`). The predicate
     // function identity is opaque to the equality check; verify shape + behavior.
-    const binding = editAnchorsAction.defaultBinding as { kind: string; target: { kindOf: (h: unknown) => boolean } };
+    const [bound] = editAnchorsAction.defaultBinding as [{ spec: { kind: string; target: { kindOf: (h: unknown) => boolean } }; opts: { id: string } }];
+    expect(bound.opts.id).toBe('editAnchors.drag');
+    const binding = bound.spec;
     expect(binding.kind).toBe('drag');
     expect(typeof binding.target.kindOf).toBe('function');
     expect(binding.target.kindOf({ kind: 'anchor:0' })).toBe(true);

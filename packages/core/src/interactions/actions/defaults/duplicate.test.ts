@@ -44,7 +44,7 @@ function inserted(ops: Op[]): StubNode[] {
 describe('duplicateAction', () => {
   it('is Cmd/Ctrl+Shift+D and declares the `selection` its gate reads', () => {
     expect(duplicateAction.id).toBe('duplicate');
-    expect(duplicateAction.defaultBinding).toEqual({ kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } });
+    expect(duplicateAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } }, opts: { id: 'duplicate.key' } }]);
     expect(duplicateAction.requires).toContain('selection');
   });
 

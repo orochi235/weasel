@@ -60,7 +60,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   label: 'Simplify brush',
   tags: pathOperationTags('brush'),
   // Declines through `enabled` unless its tool is on.
-  defaultBinding: [{ spec: { kind: 'drag' }, opts: { yields: true } }],
+  defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'simplifyBrush.drag', yields: true } }],
   cursor: (params) => brushRingCursor(radiusOf(params as SimplifyBrushParams | undefined)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],

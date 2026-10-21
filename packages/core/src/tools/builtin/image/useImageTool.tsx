@@ -48,7 +48,7 @@ export function useImageTool(options: UseImageToolOptions): Tool {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
+            opts: { id: 'image.drag', params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),

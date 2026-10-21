@@ -142,7 +142,7 @@ export function joinPathsCommand(
  * instead.
  */
 export const joinPathsAction = joinPathsCommand(
-  { id: 'joinPaths', label: 'Join', icon: icon('join'), defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } } },
+  { id: 'joinPaths', label: 'Join', icon: icon('join'), defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true } }, opts: { id: 'joinPaths.key' } }] },
   () => ({}),
 );
 

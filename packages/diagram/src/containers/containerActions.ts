@@ -221,8 +221,8 @@ export function diagramContainers(opts: LaneActionOptions): { layer: RenderLayer
         createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
       ],
       bindings: [
-        { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID },
-        { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID },
+        { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
+        { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.click' } },
         ...grabPortBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
       ],
     },

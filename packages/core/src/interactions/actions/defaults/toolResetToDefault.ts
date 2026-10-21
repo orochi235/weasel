@@ -36,7 +36,7 @@ export function makeToolResetToDefaultAction(
   return {
     id: TOOL_RESET_TO_DEFAULT_ID,
     label: 'Return to default tool',
-    defaultBinding: { kind: 'key', key: 'Escape' },
+    defaultBinding: [{ spec: { kind: 'key', key: 'Escape' }, opts: { id: 'tool.resetToDefault.key' } }],
     invoker,
     requires: ['activeTool'],
     // Report disabled (rather than silently no-op'ing) when there's nothing

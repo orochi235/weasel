@@ -69,7 +69,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
     // Alt+Shift, which no major browser takes for these letters (see
     // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the
     // key reads as another glyph.
-    defaultBinding: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true } },
+    defaultBinding: [{ spec: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true } }, opts: { id: `${spec.id}.key` } }],
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
@@ -191,7 +191,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
   label: EXPAND_LABEL,
   icon: icon('expand'),
   group: PATH_EFFECTS_GROUP,
-  defaultBinding: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } }, opts: { id: 'expandPathEffect.key' } }],
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {

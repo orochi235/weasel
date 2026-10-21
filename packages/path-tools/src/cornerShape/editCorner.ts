@@ -65,7 +65,7 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
-  defaultBinding: { kind: 'drag', target: { kindOf: isCornerWidget } },
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isCornerWidget } }, opts: { id: 'editCorner.drag' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

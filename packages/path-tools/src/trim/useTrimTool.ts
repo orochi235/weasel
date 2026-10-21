@@ -38,7 +38,7 @@ export function useTrimTool(options: UseTrimToolOptions = {}): Tool {
     };
     return {
       actions: [action],
-      bindings: [{ spec: { kind: 'hover' }, actionId: TRIM_PREVIEW_ID }],
+      bindings: [{ spec: { kind: 'hover' }, actionId: TRIM_PREVIEW_ID, opts: { id: 'trim.hover' } }],
       overlay: preview.layer,
       onDeactivate: () => preview.show(null),
     };

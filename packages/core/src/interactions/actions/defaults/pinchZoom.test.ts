@@ -62,7 +62,7 @@ describe('pinchZoomAction descriptor', () => {
   it('declares id, label, multiTouch defaultBinding, and ongoing timing', () => {
     expect(pinchZoomAction.id).toBe('viewport.pinchZoom');
     expect(pinchZoomAction.label).toBe('Pinch Zoom');
-    expect(pinchZoomAction.defaultBinding).toEqual({ kind: 'multiTouch', fingers: 2 });
+    expect(pinchZoomAction.defaultBinding).toEqual([{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.pinchZoom.pinch' } }]);
     expect(pinchZoomAction.invoker?.timing).toBe('ongoing');
   });
 

@@ -32,7 +32,7 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
     { key: 'line', label: 'Make segments straight', icon: icon('straightenSegment'), params: { to: 'line' } },
     { key: 'curve', label: 'Make segments curved', icon: icon('curveSegment'), params: { to: 'curve' } },
   ],
-  defaultBinding: { kind: 'key', key: ['c', 'C'], mods: { shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: ['c', 'C'], mods: { shift: true } }, opts: { id: 'convertSegments.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
@@ -61,7 +61,7 @@ export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   icon: icon('convertSegment'),
   label: 'Convert segment',
   tags: pathOperationTags('click'),
-  defaultBinding: { kind: 'doubleClick', mods: { shift: true } },
+  defaultBinding: [{ spec: { kind: 'doubleClick', mods: { shift: true } }, opts: { id: 'convertSegmentAt.doubleClick' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],
   invoker: {

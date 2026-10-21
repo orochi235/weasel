@@ -42,8 +42,8 @@ export function useStrokeClickTool(
   const { keybinding = spec.keybinding, radiusPx } = options;
   const { id, label, icon, hookName, actionId } = spec;
   return useMemo(() => {
-    const opts = radiusPx !== undefined
-      ? { opts: { params: () => ({ radiusPx: typeof radiusPx === 'function' ? radiusPx() : radiusPx }) } }
+    const params = radiusPx !== undefined
+      ? { params: () => ({ radiusPx: typeof radiusPx === 'function' ? radiusPx() : radiusPx }) }
       : {};
     return defineTool({
       id,
@@ -56,8 +56,8 @@ export function useStrokeClickTool(
       ...(extras.overlay ? { overlay: extras.overlay } : {}),
       ...(extras.onDeactivate ? { onDeactivate: extras.onDeactivate } : {}),
       bindings: [
-        { spec: { kind: 'click' }, actionId, ...opts },
-        ...(extras.bindings ?? []).map((b) => ({ ...b, ...opts })),
+        { spec: { kind: 'click' }, actionId, opts: { id: `${id}.click`, ...params } },
+        ...(extras.bindings ?? []).map((b) => ({ ...b, opts: { ...b.opts, ...params } })),
       ],
     });
   }, [id, label, icon, hookName, actionId, keybinding, radiusPx, extras.actions, extras.bindings, extras.overlay, extras.onDeactivate]);

@@ -127,7 +127,7 @@ describe('SceneCanvas actions integration', () => {
     expect(captured).toBeDefined();
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } });
+    expect(captured!.defaultBinding).toEqual([{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } }, opts: { id: 'duplicate.key' } }]);
     if (captured!.invoker!.timing === 'immediate') {
       (captured!.invoker as { run: (d: unknown) => void }).run({});
     }
@@ -289,7 +289,7 @@ describe('SceneCanvas actions integration', () => {
       </SceneCanvas>,
     );
     expect(captured!.label).toBe('Clone');
-    expect(captured!.defaultBinding).toEqual({ kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } });
+    expect(captured!.defaultBinding).toEqual([{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } }, opts: { id: 'duplicate.key' } }]);
   });
 
   it('binding-only override keeps run + label', () => {

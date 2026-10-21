@@ -28,7 +28,10 @@ export interface ToolActivateBindingSpec {
 export function buildToolActivateBindings(
   specs: readonly ToolActivateBindingSpec[],
 ): BoundGesture[] {
+  const seen = new Set<string>();
   return specs.map(({ toolId, keyOpts }) => {
+    const id = seen.has(toolId) ? `${TOOL_ACTIVATE_ID}.${toolId}.${keyOpts.key}` : `${TOOL_ACTIVATE_ID}.${toolId}`;
+    seen.add(toolId);
     // Modifiers belong under `mods` (a `ModSpec`), not at the top level of
     // the spec: the matcher treats an absent modifier as "must NOT be held".
     const mods: Record<string, boolean | 'optional'> = {};
@@ -41,7 +44,7 @@ export function buildToolActivateBindings(
         key: keyOpts.key,
         ...(Object.keys(mods).length > 0 ? { mods } : {}),
       },
-      opts: { params: { toolId } },
+      opts: { id, params: { toolId } },
     } as BoundGesture;
   });
 }

@@ -10,7 +10,7 @@ describe('selectAllAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
-    expect(selectAllAction.defaultBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
+    expect(selectAllAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'a', mods: { mod: true } }, opts: { id: 'selectAll.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

@@ -15,7 +15,7 @@ export function dragPanContribution(params: DragPanParams = {}): Contribution {
     bindings: [{
       spec: { kind: 'drag' },
       actionId: 'viewport.dragPan',
-      ...(Object.keys(params).length > 0 ? { opts: { params: { ...params } } } : {}),
+      opts: { id: 'viewport.dragPanBinding.drag', ...(Object.keys(params).length > 0 ? { params: { ...params } } : {}) },
     }],
   };
 }

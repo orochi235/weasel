@@ -63,10 +63,10 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
     overlay,
     onDeactivate: () => env.setFocus(null),
     bindings: [
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: GIRTH_DRAG_ID },
-      { spec: { kind: 'click', mods: { alt: true } }, actionId: GIRTH_CLEAR_ID },
-      { spec: { kind: 'hover', mods: { alt: 'optional', shift: 'optional' } }, actionId: GIRTH_HOVER_ID },
-      { spec: { kind: 'hover', motion: 'leave' }, actionId: GIRTH_UNHOVER_ID },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: GIRTH_DRAG_ID, opts: { id: 'girth.drag' } },
+      { spec: { kind: 'click', mods: { alt: true } }, actionId: GIRTH_CLEAR_ID, opts: { id: 'girth.clear' } },
+      { spec: { kind: 'hover', mods: { alt: 'optional', shift: 'optional' } }, actionId: GIRTH_HOVER_ID, opts: { id: 'girth.hover' } },
+      { spec: { kind: 'hover', motion: 'leave' }, actionId: GIRTH_UNHOVER_ID, opts: { id: 'girth.leave' } },
     ],
   }), [actions, overlay, keybinding, env]);
 }

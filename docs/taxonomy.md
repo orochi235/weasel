@@ -414,11 +414,19 @@ predict the drag route" in `docs/concepts.md`.
 A **binding override** replaces or removes one binding by its id, on an action
 or on a contribution alike (`ActionsRegistry.overrideBindings`,
 `<SceneCanvas bindingOverrides>`). A binding's id is its `opts.id`, or its
-owner's id and its position (`bindingId`); a binding a host may persist an
-override for declares one. An override is a route string, a spec (`key('Mod+=')`,
-`held('Space')`), or `unbound()`; it applies to the declared binding, never to
-another override's result, so overrides do not chain, and holders merge with an
-inner scope over an outer and a later one over an earlier. Adding a key beside
+owner and its position (`bindingId`): `<entry>#<n>` for a contribution's binding,
+`<action>@<n>` for an action's own, so the two never collide. Every binding the
+kit ships declares an id, written `<owner>.<role>`: the owner is the action for
+an action's own binding and the tool or entry for a contribution's, and the role
+names what sets the binding apart there — its variant (`nudge.left.big`,
+`reorder.forward.extreme`) or, for a lone binding, its gesture (`undo.key`,
+`rect.drag`). A generated binding takes its role from what generated it
+(`tool.activate.rect`, `keymap.loupe.leader`), and one several owners share keeps
+one id, so one override moves it everywhere. A consumer's binding a host may
+persist an override for should declare one the same way. An override is a route
+string, a spec (`key('Mod+=')`, `held('Space')`), or `unbound()`; it applies
+to the declared binding, never to another override's result, so overrides do
+not chain, and holders merge with an inner scope over an outer and a later one over an earlier. Adding a key beside
 an action's own stays a tuning's job. The registry lays overrides over an
 action's own bindings, so menus, the palette and shortcut chips show the rebound
 key; the dispatcher lays them over contribution bindings. `captureGesture` reads

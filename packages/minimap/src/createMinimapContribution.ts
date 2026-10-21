@@ -157,8 +157,8 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     }],
     actions: [minimapCenterAction(), minimapPanAction()],
     bindings: [
-      { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { views: [id] } },
-      { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { views: [id] } },
+      { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: `${id}.pointerDown`, views: [id] } },
+      { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: `${id}.drag`, views: [id] } },
     ],
     overlay: [indicator, cursor.layer],
     attach: (api, reader) => {

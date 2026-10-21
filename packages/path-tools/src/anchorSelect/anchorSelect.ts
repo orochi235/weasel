@@ -39,7 +39,7 @@ function makeSelectCommand(
     label,
     group: ANCHOR_SELECTION_GROUP,
     tags: pathOperationTags('command'),
-    defaultBinding: key,
+    defaultBinding: [{ spec: key, opts: { id: `${id}.key` } }],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
     invoker: {

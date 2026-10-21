@@ -98,8 +98,8 @@ const MINIMAP_INPUT: Tool = {
   id: 'minimap',
   eligibility: { always: true },
   bindings: [
-    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER },
-    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN },
+    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: 'minimap.pointerDown' } },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'minimap.drag' } },
   ],
 };
 const TOOLS_BY_ID: ReadonlyMap<string, Tool> = new Map([[MINIMAP_INPUT.id, MINIMAP_INPUT]]);

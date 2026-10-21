@@ -90,7 +90,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       // and no-ops on empty. Sampling deliberately reads the PRESS point
       // rather than the release — a 4px drift between the two can land on a
       // different node, and the color you meant is the one you pressed.
-      bindings: [{ spec: { kind: 'click' as const }, actionId: 'eyedropper.pick' }],
+      bindings: [{ spec: { kind: 'click' as const }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } }],
     });
   }, [opts.keybinding, opts.hotkey, pickAction]);
 }

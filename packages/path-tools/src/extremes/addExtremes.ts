@@ -51,7 +51,7 @@ export const addExtremeAnchorsAction: Action & { requires: string[] } = {
   group: 'anchors',
   tags: pathOperationTags('command'),
   // `code` too: with Alt held on a Mac the key reads as another glyph.
-  defaultBinding: { kind: 'key', key: 'x', code: 'KeyX', mods: { alt: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'x', code: 'KeyX', mods: { alt: true } }, opts: { id: 'addExtremeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

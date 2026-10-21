@@ -181,7 +181,7 @@ export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Act
 
 /** The binding that starts a reconnect: a drag pressed on an edge-end handle. */
 export function reconnectBinding(actionId: string = RECONNECT_ACTION_ID): GestureBinding {
-  return { spec: { kind: 'drag', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` }, actionId };
+  return { spec: { kind: 'drag', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` }, actionId, opts: { id: `${actionId}.drag` } };
 }
 
 /**

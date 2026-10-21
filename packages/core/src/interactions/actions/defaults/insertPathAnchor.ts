@@ -27,7 +27,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'insertPathAnchor',
   label: 'Insert anchor',
   tags: pathOperationTags('click'),
-  defaultBinding: { kind: 'click', mods: { alt: true } },
+  defaultBinding: [{ spec: { kind: 'click', mods: { alt: true } }, opts: { id: 'insertPathAnchor.click' } }],
   cursor: INSERT_CURSOR,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view', 'kitSettings'],

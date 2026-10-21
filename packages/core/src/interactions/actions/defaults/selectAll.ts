@@ -12,7 +12,7 @@ import { nodeGates } from 'core/scene/nodeGates';
 export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
   label: 'Select All',
-  defaultBinding: { kind: 'key', key: 'a', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'a', mods: { mod: true } }, opts: { id: 'selectAll.key' } }],
   eligible: { capability: 'creates-selection' },
   requires: ['scene', 'selection', 'view'],
   invoker: {

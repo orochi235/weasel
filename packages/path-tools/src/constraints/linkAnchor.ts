@@ -144,7 +144,10 @@ export const linkAnchorAction: Action & { requires: string[] } = {
   id: 'linkAnchor',
   label: 'Link anchor',
   tags: pathOperationTags('drag'),
-  defaultBinding: { kind: 'drag', target: { kindOf: isAnchor }, mods: { alt: true, shift: 'optional', ctrl: 'optional' } },
+  defaultBinding: [{
+    spec: { kind: 'drag', target: { kindOf: isAnchor }, mods: { alt: true, shift: 'optional', ctrl: 'optional' } },
+    opts: { id: 'linkAnchor.drag' },
+  }],
   eligible: { capability: 'edits-anchors' },
   // `editAnchors` runs the drag, its plane mapping included.
   requires: [...new Set([...editAnchorsAction.requires, 'scene', 'applyOps', 'view'])] as Action['requires'] & string[],

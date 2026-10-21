@@ -96,7 +96,7 @@ const onBody = bodyPredicate((target) => target === 'selected-body' || target ==
 
 /** A double-click on a node's body; the action itself declines unless that node is an off-page tag. */
 export function followOffPageBinding(actionId: string = FOLLOW_OFF_PAGE_ACTION_ID): GestureBinding {
-  return { spec: { kind: 'doubleClick', target: { kindOf: onBody } }, actionId };
+  return { spec: { kind: 'doubleClick', target: { kindOf: onBody } }, actionId, opts: { id: `${actionId}.doubleClick` } };
 }
 
 /** Following off-page tags, as a contribution to pass as `ambient`. */

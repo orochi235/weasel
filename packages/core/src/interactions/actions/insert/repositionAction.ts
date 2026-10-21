@@ -35,4 +35,5 @@ export const insertRepositionAction: Action = {
 export const INSERT_REPOSITION_BINDING: GestureBinding = {
   spec: { ...heldKeySpec(' '), phase: 'engaged' },
   actionId: 'insert.reposition',
+  opts: { id: 'insert.reposition.held' },
 };

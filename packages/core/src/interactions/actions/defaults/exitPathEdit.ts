@@ -13,7 +13,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 export const exitPathEditAction: Action & { requires: string[] } = {
   id: 'exitPathEdit',
   label: 'Exit path edit',
-  defaultBinding: { kind: 'key', key: 'Escape' },
+  defaultBinding: [{ spec: { kind: 'key', key: 'Escape' }, opts: { id: 'exitPathEdit.key' } }],
   eligible: { mode: 'path-edit' },
   requires: ['editAnchors'],
   invoker: {

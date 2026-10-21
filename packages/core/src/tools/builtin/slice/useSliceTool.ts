@@ -214,19 +214,19 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       live.notify();
     },
     bindings: [
-      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.addPoint' },
+      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.addPoint', opts: { id: 'slice.click' } },
       {
         spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } },
         actionId: 'slice.finish',
-        opts: { params: { viaDoubleClick: true } },
+        opts: { id: 'slice.doubleClick', params: { viaDoubleClick: true } },
       },
       // Ahead of the cutting drags: it declines unless points are placed.
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { yields: true } },
-      { spec: { kind: 'drag' }, actionId: 'slice' },
-      { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { params: { cut: 'freehand' } } },
-      { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish' },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: 'slice.cancel' },
-      { spec: { kind: 'key', key: 'Backspace' }, actionId: 'slice.dropPoint' },
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint', yields: true } },
+      { spec: { kind: 'drag' }, actionId: 'slice', opts: { id: 'slice.drag' } },
+      { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { id: 'slice.freehand', params: { cut: 'freehand' } } },
+      { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish', opts: { id: 'slice.finish' } },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'slice.cancel', opts: { id: 'slice.cancel' } },
+      { spec: { kind: 'key', key: 'Backspace' }, actionId: 'slice.dropPoint', opts: { id: 'slice.dropPoint' } },
     ],
   }), [actions, overlay, keybinding, live]);
 }

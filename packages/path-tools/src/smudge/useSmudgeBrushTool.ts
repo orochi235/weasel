@@ -27,6 +27,6 @@ export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Too
     hookName: 'useSmudgeBrushTool',
     cursor: 'crosshair',
     presentation: { label: 'Smudge brush', group: 'path', icon: icon('smudgeBrush') },
-    bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush' }],
+    bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush', opts: { id: 'smudgeBrush.drag' } }],
   }), [keybinding]);
 }

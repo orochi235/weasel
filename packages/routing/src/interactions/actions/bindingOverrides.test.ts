@@ -14,9 +14,9 @@ const press = (k: string): InputEvent => ({
 });
 
 describe('bindingId', () => {
-  it('derives an id from the owner and the position', () => {
+  it("derives an id from the owner and the position, an entry's with # and an action's with @", () => {
     expect(bindingId({ spec: key('A'), actionId: 'act' }, 'loupe', 2)).toBe('loupe#2');
-    expect(bindingId({ spec: key('A'), actionId: 'act' }, null, 0)).toBe('act#0');
+    expect(bindingId({ spec: key('A'), actionId: 'act' }, null, 0)).toBe('act@0');
   });
 
   it('takes a declared id over the derived one', () => {
@@ -84,6 +84,29 @@ describe('the dispatcher under overrides', () => {
     expect(d.handleInput(press('3'), ctx)).toBe('unhandled');
     expect(d.handleInput(press('4'), ctx)).toBe('unhandled');
     expect(d.handleInput(press('5'), ctx)).toBe('handled');
+  });
+
+  it('keeps an entry and an action of one id apart', () => {
+    run.mockClear();
+    const own: Action = { id: 'x', label: 'X', defaultBinding: key('1'), invoker: { timing: 'immediate', run } };
+    const entry: Contribution<never> = {
+      id: 'x', eligibility: { always: true }, bindings: [{ spec: key('2'), actionId: 'x' }],
+    };
+    const overrides = { 'x@0': key('3'), 'x#0': key('4') };
+    const { registry } = new ActionsNode(null, true, () => null);
+    registry.register(own);
+    registry.overrideBindings(overrides);
+    const d = createDispatcher();
+    const ctx = makeCtx({
+      actions: registry,
+      entriesById: new Map([['x', entry]]),
+      bindingOverrides: () => resolveBindingOverrides([overrides]),
+    });
+    expect(d.handleInput(press('1'), ctx)).toBe('unhandled');
+    expect(d.handleInput(press('2'), ctx)).toBe('unhandled');
+    expect(d.handleInput(press('3'), ctx)).toBe('handled');
+    expect(d.handleInput(press('4'), ctx)).toBe('handled');
+    expect(run).toHaveBeenCalledTimes(2);
   });
 
   it('ignores an id no binding has', () => {

@@ -32,8 +32,8 @@ describe('viewportWheelPanAction descriptor', () => {
     expect(viewportWheelPanAction.id).toBe('viewport.wheelPan');
     expect(viewportWheelPanAction.label).toBe('Pan (wheel)');
     expect(viewportWheelPanAction.defaultBinding).toEqual([
-      { spec: { kind: 'wheel' }, opts: {} },
-      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true } } },
+      { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel' } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true } } },
     ]);
     expect(viewportWheelPanAction.invoker?.timing).toBe('immediate');
   });
@@ -148,8 +148,8 @@ describe('makeViewportWheelPanAction', () => {
   it('bakes the axis into both default bindings', () => {
     const action = makeViewportWheelPanAction({ axis: 'x' });
     expect(action.defaultBinding).toEqual([
-      { spec: { kind: 'wheel' }, opts: { params: { axis: 'x' } } },
-      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis: 'x' } } },
+      { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis: 'x' } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis: 'x' } } },
     ]);
   });
 
@@ -158,8 +158,8 @@ describe('makeViewportWheelPanAction', () => {
     expect(action.id).toBe('viewport.wheelPan');
     expect(action.invoker).toBe(viewportWheelPanAction.invoker);
     expect(action.defaultBinding).toEqual([
-      { spec: { kind: 'wheel' }, opts: { params: { axis: 'both' } } },
-      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true, axis: 'both' } } },
+      { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis: 'both' } } },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis: 'both' } } },
     ]);
   });
 });

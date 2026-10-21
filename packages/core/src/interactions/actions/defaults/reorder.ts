@@ -71,7 +71,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // the shifted `'}'` on this binding would be dead weight, since you
       // can't type it without the Shift this spec forbids.
       spec: { kind: 'key', key: [']'], mods: { mod: true } },
-      opts: { params: { distance: 'adjacent' } },
+      opts: { id: 'reorder.forward.adjacent', params: { distance: 'adjacent' } },
     },
     {
       // Cmd+Shift+] → bring-to-front, the convention every drawing app uses.
@@ -80,7 +80,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // may consume the event before the page sees it — hence the Cmd+Alt
       // binding below, which nothing reserves.
       spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
-      opts: { params: { distance: 'extreme' } },
+      opts: { id: 'reorder.forward.extreme', params: { distance: 'extreme' } },
     },
     {
       // Cmd+Alt+] → bring-to-front. On macOS Option+] emits '‘' (U+2018);
@@ -88,7 +88,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // both the bracket and the Option-produced char (US layout). `code`
       // covers the layouts where Option types something else on that key.
       spec: { kind: 'key', key: [']', '‘'], code: 'BracketRight', mods: { mod: true, alt: true } },
-      opts: { params: { distance: 'extreme' } },
+      opts: { id: 'reorder.forward.extremeAlt', params: { distance: 'extreme' } },
     },
   ],
   eligible: { capability: 'edits-page' },
@@ -124,18 +124,18 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   defaultBinding: [
     {
       spec: { kind: 'key', key: ['['], mods: { mod: true } },
-      opts: { params: { distance: 'adjacent' } },
+      opts: { id: 'reorder.backward.adjacent', params: { distance: 'adjacent' } },
     },
     {
       // Cmd+Shift+[ → send-to-back. See the bring-to-front notes above.
       spec: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
-      opts: { params: { distance: 'extreme' } },
+      opts: { id: 'reorder.backward.extreme', params: { distance: 'extreme' } },
     },
     {
       // Cmd+Alt+[ → send-to-back, the binding no browser reserves. On macOS
       // Option+[ emits '“' (U+201C), included alongside the bracket.
       spec: { kind: 'key', key: ['[', '“'], code: 'BracketLeft', mods: { mod: true, alt: true } },
-      opts: { params: { distance: 'extreme' } },
+      opts: { id: 'reorder.backward.extremeAlt', params: { distance: 'extreme' } },
     },
   ],
   eligible: { capability: 'edits-page' },

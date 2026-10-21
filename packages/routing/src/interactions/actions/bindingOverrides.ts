@@ -16,10 +16,12 @@ export type ResolvedBindingOverrides = ReadonlyMap<string, GestureSpec | null>;
 
 export const NO_OVERRIDES: ResolvedBindingOverrides = new Map();
 
-/** A binding's id: its declared `opts.id`, else its owner (the entry, or the
- *  action for an action's own binding) and its position there. */
+/** A binding's id: its declared `opts.id`, else its owner and its position
+ *  there — `<entry>#<n>` for an entry's binding (`ownerId`), `<action>@<n>` for
+ *  an action's own (`ownerId` null), so an entry and an action of one id never
+ *  share a derived id. */
 export function bindingId(b: GestureBinding, ownerId: string | null, index: number): string {
-  return b.opts?.id ?? `${ownerId ?? b.actionId}#${index}`;
+  return b.opts?.id ?? (ownerId === null ? `${b.actionId}@${index}` : `${ownerId}#${index}`);
 }
 
 /** Merge override maps into one, a later map winning per id. A route string

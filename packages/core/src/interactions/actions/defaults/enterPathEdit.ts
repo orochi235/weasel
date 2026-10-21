@@ -22,10 +22,13 @@ export const enterPathEditAction: Action & { requires: string[] } = {
   // mode regardless of prior selection state. The `kindOf` predicate fires
   // on either body class but not on empty space, so a double-click on
   // empty canvas doesn't accidentally enter edit mode.
-  defaultBinding: {
-    kind: 'doubleClick',
-    target: { kindOf: isBody },
-  },
+  defaultBinding: [{
+    spec: {
+      kind: 'doubleClick',
+      target: { kindOf: isBody },
+    },
+    opts: { id: 'enterPathEdit.doubleClick' },
+  }],
   eligible: { mode: { in: ['normal', 'isolation'] } },
   requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt'],
   invoker: {

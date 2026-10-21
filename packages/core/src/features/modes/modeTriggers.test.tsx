@@ -36,8 +36,8 @@ describe('modeTriggers', () => {
     const entry = modeTriggers(registry, { enter: () => {} });
     expect(entry.actions!.map((a) => a.id)).toEqual(['mode.note.trigger']);
     expect(entry.actions![0]!.defaultBinding).toEqual([
-      { kind: 'doubleClick', target: 'kind:text' },
-      { kind: 'doubleClick', target: 'kind:image' },
+      { spec: { kind: 'doubleClick', target: 'kind:text' }, opts: { id: 'mode.note.trigger.doubleClick.text' } },
+      { spec: { kind: 'doubleClick', target: 'kind:image' }, opts: { id: 'mode.note.trigger.doubleClick.image' } },
     ]);
   });
 

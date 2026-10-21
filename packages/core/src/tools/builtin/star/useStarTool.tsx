@@ -99,6 +99,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
             spec: { kind: 'drag' },
             actionId: 'insert',
             opts: {
+              id: 'star.drag',
               params: () => ({
                 kind: 'star',
                 points: pointsRef.current,
@@ -111,10 +112,12 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'star.adjustPoints',
+            opts: { id: 'star.wheelPoints' },
           },
           {
             spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
             actionId: 'insert.adjustRotation',
+            opts: { id: 'star.wheelRotation' },
           },
           // ArrowUp/Down → adjust point count. Ported off the phase table for
           // the same reason as polygon's: as an `initial.keyDown` route the
@@ -123,12 +126,12 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'key', key: 'ArrowUp' },
             actionId: 'star.adjustPoints',
-            opts: { params: { delta: 1 } },
+            opts: { id: 'star.morePoints', params: { delta: 1 } },
           },
           {
             spec: { kind: 'key', key: 'ArrowDown' },
             actionId: 'star.adjustPoints',
-            opts: { params: { delta: -1 } },
+            opts: { id: 'star.fewerPoints', params: { delta: -1 } },
           },
         ],
       }),
