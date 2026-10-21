@@ -1,5 +1,5 @@
 import { Highlight, Prism, type PrismTheme } from 'prism-react-renderer';
-import type { CSSProperties } from 'react';
+import { memo, type CSSProperties } from 'react';
 import s from './CodeBlock.module.css';
 
 /** A language the bundled highlighter reads. */
@@ -39,7 +39,7 @@ for (const lang of ['javascript', 'typescript', 'jsx', 'tsx']) {
  * A block of source, syntax-highlighted, in the monospace face. Token colors come from the theme's `--wzl-code-*`
  * tokens, so a block reads in either mode and a theme can recolor it.
  */
-export function CodeBlock({ code, language = 'tsx', lineNumbers = false, className, ...rest }: CodeBlockProps) {
+export const CodeBlock = memo(function CodeBlock({ code, language = 'tsx', lineNumbers = false, className, ...rest }: CodeBlockProps) {
   return (
     <Highlight code={code} language={language} theme={UNSTYLED}>
       {({ tokens, getLineProps, getTokenProps }) => {
@@ -70,4 +70,4 @@ export function CodeBlock({ code, language = 'tsx', lineNumbers = false, classNa
       }}
     </Highlight>
   );
-}
+});

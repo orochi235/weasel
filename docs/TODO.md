@@ -1044,12 +1044,6 @@ only story runner in the repo.
   backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
   2026-10-19).
 
-- **(P3) `AssetsPage`'s first test times out in full fleet runs.** "opens on WeaselDraw
-  preferences, and opens a node property schema picked from the list"
-  (`apps/draw/src/dev/AssetsPage.test.tsx`) hit its 5000ms timeout in the full runs of `a64fe9501`,
-  `72fe486f7` and `69662b198` on studio, and passed in `befd71b6c`'s (2026-10-20). Three in four
-  stops being load noise; it likely needs more than 5 s on a busy node, or waits on something slow.
-
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
