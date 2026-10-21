@@ -1,0 +1,27 @@
+.fg-readouts-test-workshop {
+  width: 1000px;
+  height: 700px;
+}
+
+.fg-readouts-test-story {
+  position: relative;
+  height: 600px;
+}
+
+/* A panel in the theme's own tokens, and a line of text on it. */
+.fg-readouts-test-panel {
+  position: absolute;
+  left: 100px;
+  top: 100px;
+  width: 360px;
+  height: 200px;
+  background: var(--wzl-surface);
+}
+
+.fg-readouts-test-text {
+  margin: 0;
+  padding: 40px;
+  font-size: 40px;
+  white-space: nowrap;
+  color: var(--wzl-fg);
+}

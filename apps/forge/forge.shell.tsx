@@ -18,6 +18,8 @@ export default defineShellConfig({
       // App follows the lab header's own mode switch, which styles the workshop's chrome either way.
       default: FOLLOW_APP,
       follows: (chrome) => chrome.mode,
+      // A lens's opposite-mode comparison; App and Auto reach it as the mode they show.
+      opposite: (value) => (value === 'light' ? 'dark' : value === 'dark' ? 'light' : undefined),
       options: [
         { value: 'auto', label: 'Auto (OS)' },
         { value: 'light', label: 'Light' },
@@ -37,4 +39,6 @@ export default defineShellConfig({
     ...DEVTOOLS_GLOBALS,
   },
   labTheme: (globals) => fontTheme(chromeTheme, globals),
+  // loadWebFonts' stylesheet and the faces it names, so a capture renders the fonts the screen does.
+  capture: { allowOrigins: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
 });

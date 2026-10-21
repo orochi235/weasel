@@ -38,7 +38,7 @@ const stubs: Plugin = {
   load: (id) =>
     // The side effects keep vite 8.3's bundler from dropping the shell as dead code.
     id.startsWith('\0stub:')
-      ? 'export const mountWorkshop = () => { globalThis.mounted = true; return { setIndex() {} }; };\nexport const mountFrame = () => { globalThis.mounted = true; };\n'
+      ? 'export const mountWorkshop = () => { globalThis.mounted = true; return { setIndex() {} }; };\nexport const followEdits = () => ({ importers() {} });\nexport const mountFrame = () => { globalThis.mounted = true; };\n'
       : undefined,
 };
 
@@ -420,9 +420,8 @@ describe('forge vite plugin, with a config module per realm', () => {
   it('accepts a story edit in both entries: the workshop reloads the story, a frame reloads itself', async () => {
     const shell = await entry('shell-entry.js');
     const frame = await entry('frame-entry.js');
-    expect(shell).toContain(`import.meta.hot?.on('forge:story'`);
-    expect(shell).toContain(`import.meta.hot?.accept('virtual:forge/importers.js'`);
-    expect(shell).toContain('workshop.reloadStory(file)');
+    expect(shell).toContain('followEdits(import.meta.hot, workshop)');
+    expect(shell).toContain(`import.meta.hot?.accept('virtual:forge/importers.js', (next) => edits.importers(next?.default))`);
     expect(frame).toContain(`import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload())`);
   });
 

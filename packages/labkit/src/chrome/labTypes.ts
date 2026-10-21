@@ -15,8 +15,10 @@ import type {
  * one trial. `header` and `footer` are the shell's two bars, named as
  * `<LabShell>` names them; `palette` is the tool rail down the side of the
  * workspace; `sidebar` is a column of sections left of the tool rail.
+ * `overlay` sits over the trials inside the lab's drawing surface; it takes
+ * only the `render` form, and whatever it renders lays itself out.
  */
-export type LabRegion = 'header' | 'palette' | 'sidebar' | 'aside' | 'footer';
+export type LabRegion = 'header' | 'palette' | 'sidebar' | 'aside' | 'footer' | 'overlay';
 
 /**
  * Everything a lab-level contribution can read and command: the lab's own

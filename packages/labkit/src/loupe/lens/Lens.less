@@ -1,0 +1,190 @@
+// The lens canvas's layer: the whole surface container, taking no input
+// itself. Above the top buffer, which it paints into.
+.lk-lens-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+// The dispatcher's element. It covers the layer so its points are layer px,
+// and still takes no input: only the hit boxes inside it do, and a press on
+// one bubbles here.
+.lk-lens-input {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  outline: none;
+}
+
+.lk-lens-hit,
+.lk-lens-interior {
+  position: absolute;
+  left: var(--lk-lens-x);
+  top: var(--lk-lens-y);
+  width: var(--lk-lens-w);
+  height: var(--lk-lens-h);
+}
+
+.lk-lens-hit {
+  pointer-events: auto;
+
+  &[data-round] {
+    border-radius: 50%;
+  }
+}
+
+// Stood down for the one hit-test that finds what lies beneath the lenses (probeUnderLens).
+.lk-lens-layer[data-probe='beneath'] .lk-lens-hit {
+  pointer-events: none;
+}
+
+.lk-lens-interior {
+  pointer-events: none;
+}
+
+// Stood up for the one hit-test that finds what a lens shows (probeUnderLens).
+.lk-lens-layer[data-probe='interior'] .lk-lens-interior,
+.lk-lens-layer[data-probe='interior'] .lk-lens-interior * {
+  pointer-events: auto;
+}
+
+// A round lens shows only what lies inside its rim.
+.lk-lens-interior[data-shape='circle'] .lk-lens-slot {
+  clip-path: circle(50%);
+}
+
+.lk-lens-slot {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+// Each side fills the whole interior, so the story lines up across the seam;
+// a Split lens clips each to its half.
+.lk-lens-side {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.lk-lens-slot[data-view='split'] {
+  .lk-lens-side[data-side='base'] {
+    clip-path: inset(0 calc(100% - var(--lk-lens-seam)) 0 0);
+  }
+
+  .lk-lens-side[data-side='compared'] {
+    clip-path: inset(0 0 0 var(--lk-lens-seam));
+  }
+}
+
+.lk-lens-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--lk-lens-seam);
+  width: 2px;
+  margin-inline-start: -1px;
+  background: var(--wzl-accent);
+}
+
+.lk-lens-difference {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.lk-lens-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+// Readouts sit low in the interior. A round interior is only as wide as its
+// chord there, so they stay inside the circle.
+.lk-lens-readouts {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 1;
+  max-width: calc(100% - 8px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  font-size: var(--wzl-font-size-2xs);
+  .numeric();
+  text-align: center;
+  color: var(--wzl-fg);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
+  padding: 1px var(--wzl-space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lk-lens-readouts:empty {
+  display: none;
+}
+
+.lk-lens-interior[data-shape='circle'] .lk-lens-readouts {
+  bottom: 14%;
+  max-width: 60%;
+}
+
+.lk-lens-hit[data-role='lens-seam'] {
+  cursor: ew-resize;
+}
+
+.lk-lens-cell {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.lk-lens-reason {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
+}
+
+// Directly below the body, as wide as it, above the hit boxes, which are later
+// siblings in the same layer, so its toggles take presses.
+.lk-lens-chrome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 1;
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  font-size: var(--wzl-font-size-2xs);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
+  color: var(--wzl-fg);
+}
+
+.lk-lens-chrome__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-1);
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-start: auto;
+}
+
+.lk-lens-chrome__toggle[aria-pressed='true'] {
+  font-weight: var(--wzl-font-weight-bold);
+}

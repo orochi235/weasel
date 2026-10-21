@@ -1,0 +1,70 @@
+/* A Live lens's own box inside its slot: the copy is portaled into it, and the message beneath it shows when no copy is. */
+.fg-lens-live {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* A second render of a story, at its host's own size, scaled about the reticle's point onto the slot's center. */
+.fg-lens-copy {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fg-lens-copy-w);
+  height: var(--fg-lens-copy-h);
+  transform-origin: 0 0;
+  transform: translate(var(--fg-lens-copy-x), var(--fg-lens-copy-y)) scale(var(--fg-lens-copy-f));
+}
+
+/* Painted in the copy's own mode, so a transparent story does not show the lab through the lens. */
+.fg-lens-copy > .fg-story,
+.fg-lens-copy > .fg-frame-host {
+  background: var(--wzl-bg);
+}
+
+/* A Pixels lens's capture, enlarged nearest-neighbor: the browser scaling the canvas to the screen keeps it so. */
+.fg-lens-pixels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* What a lens says in place of its story: nothing under the reticle, or why it cannot show it. */
+.fg-lens-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wzl-space-4);
+  text-align: center;
+  font-size: 11px;
+  color: var(--wzl-fg-muted);
+  background: var(--wzl-bg);
+}
+
+.fg-lens-empty[hidden] {
+  display: none;
+}
+
+/* Above the lens layer, in the lab body's corner. */
+.fg-loupe-hint {
+  position: absolute;
+  left: var(--wzl-space-8);
+  bottom: var(--wzl-space-8);
+  z-index: 4;
+}
+
+/* A token in the Token readout: the readouts take no pointer, so the link takes it back. */
+.fg-lens-token__link {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}

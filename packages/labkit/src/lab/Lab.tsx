@@ -299,7 +299,7 @@ function LabRuntime({
                     >
                       <UnreadableRecords />
                       <PanelHostContext.Provider value={panelHosts}>
-                        <LabSurface bodyRef={setLabBody}>
+                        <LabSurface bodyRef={setLabBody} contributions={labChromeAll}>
                           {hasPaneChrome ? (
                             <LabPanes contributions={labChromeAll}>
                               <LabPalette contributions={labChromeAll} />

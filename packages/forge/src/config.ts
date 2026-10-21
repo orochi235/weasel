@@ -28,6 +28,13 @@ export interface ShellConfig {
   pages?: readonly LabPage[];
   /** Which of `pages` the workshop is, when the URL alone cannot say, as across dev servers on different ports. */
   path?: string;
+  /** What a Pixels capture may load besides the dev server's own pages, such as the origins of a web-font service
+   *  the stories' fonts come from. Every other request a capture makes is refused. The dev server reads the list
+   *  from this module's source, as it does `title`, so write each origin as a string. */
+  capture?: { allowOrigins?: readonly string[] };
+  /** The workshop's lenses. `modeGlobal` names the global holding the color mode, which a lens's opposite-mode
+   *  comparison flips through its declaration's `opposite`. Default `mode`. */
+  loupe?: { modeGlobal?: string };
 }
 
 /** A frame config module's default export. The workshop page imports it as well as every frame document, so CSS it imports reaches both; the plugin's `frameStyles` is for CSS meant for frames alone. */

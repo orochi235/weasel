@@ -117,6 +117,19 @@ describe('createOverrides', () => {
     expect(styles.every((style) => late.compareDocumentPosition(style) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
+  it('keeps a value or a name that would close the rule from adding one of its own', () => {
+    const overrides = create(document);
+    overrides.set('--fg-t-a', 'red');
+    overrides.set('--fg-t-b', 'x} [data-fg-capture]{background:url(http://10.0.0.1/any.png)} b{c:d');
+    overrides.set('--fg-t-c} b{c:d', 'blue');
+    const style = overridesStyle() as HTMLStyleElement;
+    expect(style.sheet?.cssRules).toHaveLength(1);
+    expect(style.textContent).not.toContain('url(');
+    expect(style.textContent).not.toContain('b{');
+    expect(style.textContent).toContain('--fg-t-a: red;');
+    overrides.dispose();
+  });
+
   it('removes its style element on dispose', () => {
     const overrides = create(document);
     overrides.set('--fg-t-a', 'red');

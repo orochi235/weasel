@@ -1,6 +1,7 @@
 import { createKitRoot } from '../kitIcons';
 import type { FrameImporters } from '../frame/mountFrame';
 import type { DepGraph, IndexEntry } from '../story/types';
+import { createRevision } from './loupe/captureContext';
 import { createStoryChanges } from './storyChanges';
 import { Workshop, type WorkshopProps } from './Workshop';
 
@@ -20,6 +21,8 @@ export interface MountedWorkshop {
   reloadStory(file: string): void;
   /** Swaps in the component graph, as the vite plugin's `forge:deps` event carries. */
   setDependencies(dependencies: DepGraph): void;
+  /** Says a story, or a module one imports, was edited: no lens shows a capture taken before it. */
+  revise(): void;
   unmount(): void;
 }
 
@@ -29,7 +32,8 @@ export function mountWorkshop({ container, ...props }: MountWorkshopOptions): Mo
   if (!target) throw new Error('mountWorkshop: no container given and no #root element');
   const root = createKitRoot(target, props.setup?.icons);
   const changes = createStoryChanges();
-  let current: WorkshopProps = { ...props, changes };
+  const revision = createRevision();
+  let current: WorkshopProps = { ...props, changes, revision };
   root.render(<Workshop {...current} />);
   return {
     setIndex(index) {
@@ -45,6 +49,7 @@ export function mountWorkshop({ container, ...props }: MountWorkshopOptions): Mo
       current = { ...current, dependencies };
       root.render(<Workshop {...current} />);
     },
+    revise: () => revision.bump(),
     unmount: () => root.unmount(),
   };
 }

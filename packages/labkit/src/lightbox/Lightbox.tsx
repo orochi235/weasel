@@ -122,8 +122,8 @@ export function Lightbox({
     const unlift = liftStack(stack, el);
     const release = inertOutside(stack);
     // A shared buffer lifted with this one must stop painting every other tile
-    // over it.
-    surface?.scope(el);
+    // over it. A tile inside a lifted layer came along too, so it stays.
+    surface?.scope(stack);
     closeRef.current?.focus({ preventScroll: true });
     return () => {
       surface?.scope(null);

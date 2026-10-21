@@ -13,7 +13,7 @@ export { contextMenuAction, openContextMenu } from '../interactions/actions/defa
 
 // --- Action types -----------------------------------------------------------
 export { ActionDisabledReason } from '@weasel-js/routing';
-export type { ActionDisabledReasonValue, ActionVariant, Carried } from '@weasel-js/routing';
+export type { ActionDisabledReasonValue, ActionUnavailable, ActionVariant, Carried } from '@weasel-js/routing';
 
 // --- Actions registry -----------------------------------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction, useOpenKeymap } from '@weasel-js/routing/react';

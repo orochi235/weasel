@@ -24,6 +24,12 @@ export interface GlobalDeclaration {
    * pin follows the lab or names a value; it cannot follow the app on its own.
    */
   follows?: (chrome: LabChrome) => string;
+  /**
+   * The value opposite `value`, for the global a lens's opposite-mode comparison flips (`ShellConfig.loupe`'s
+   * `modeGlobal`); undefined when it has none. `App` and `auto` are resolved to the mode they show before this is
+   * asked. Absent, the lens swaps `light` and `dark`.
+   */
+  opposite?: (value: string, globals: Globals) => string | undefined;
 }
 
 /** The lab chrome's own settings a global can follow. */

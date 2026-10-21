@@ -22,6 +22,65 @@ export type { LoupeBubbleProps } from './LoupeBubble';
 export { LoupeBubble } from './LoupeBubble';
 export type { LoupeGesturesProps } from './LoupeGestures';
 export { LoupeGestures } from './LoupeGestures';
+export type { LensActionsProps } from './lens/LensActions';
+export { LensActions } from './lens/LensActions';
+export type { LensAttachment, LensOverlayProps, LensReadoutProps } from './lens/LensOverlay';
+export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
+export { useShownSource } from './lens/LensSlot';
+export type { LensActionApi } from './lens/lensActionDefs';
+export {
+  createLensActions,
+  createLoupeKeymap,
+  LENS_ACTION_IDS,
+  LENS_KEYS,
+  LOUPE_LEADER,
+  MAX_LENSES,
+} from './lens/lensActionDefs';
+export {
+  addLensOps,
+  createLensScene,
+  lensClosure,
+  lensesOf,
+  lensIdsOf,
+  setAimOps,
+  setLensOps,
+  settingsOf,
+} from './lens/lensScene';
+export type {
+  LensCapture,
+  LensDescribeContext,
+  LensResolution,
+  LensSlotProps,
+  LensSource,
+  LensSourceHandle,
+  LensSourceRequest,
+  LensSourceStatus,
+  LensSources,
+} from './lens/lensSource';
+export { requestsOf, resolveSource, unavailableText } from './lens/lensSource';
+export type {
+  LensAim,
+  LensBodyData,
+  LensIds,
+  LensLeaderData,
+  LensNodeData,
+  LensReadout,
+  LensReticleData,
+  LensScene,
+  LensSettings,
+  LensSourceKind,
+  LensView,
+} from './lens/lensTypes';
+export {
+  BODY_SIZE,
+  GLASS_POSE_KEY,
+  LENS_DEFAULTS,
+  LENS_REST_MS,
+  RETICLE_SIZE,
+} from './lens/lensTypes';
+export { readBitmap } from './lens/pixelGrid';
+export type { LensProbe } from './lens/probeUnderLens';
+export { probeUnderLens } from './lens/probeUnderLens';
 export type { LoupeInputApi } from './loupeActions';
 export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { SourceLoupeProps } from './SourceLoupe';

@@ -85,10 +85,12 @@ from under the buffers. So the lab declares its two buffer layers with
 under layer, then itself, then the over layer — the same stacking as before,
 each covering the window. The over layer is the surface container, so the
 surface re-measures against the window and the buffers resize. The lightbox
-also calls `scope(el)`: tiles outside it leave `rects`, are not painted, and
-the retile clears them; `useTileInScope` tells a tenant's own chrome on the
-surface (the annotation input box) to hide. A host owning its own surface does
-the same for its buffers, or an expanded tile shows without them.
+also scopes the surface to everything it lifted — itself and those layers.
+Tiles outside all of them leave `rects`, are not painted, and the retile clears
+them, while a tile inside a lifted layer (the lab's lens canvas) stays.
+`useTileInScope` tells a tenant's own chrome on the surface (the annotation
+input box) to hide. A host owning its own surface does the same for its
+buffers, or an expanded tile shows without them.
 
 ## Traps
 
@@ -109,13 +111,21 @@ the same for its buffers, or an expanded tile shows without them.
   the DOM trick that resets a 2D canvas is a no-op here. Only the context that
   drew the pixels can erase them, which is why the clear is a tenant's to
   register.
-- **There are two buffers, and the default is the wrong one for an opaque
+- **There are two shared buffers, and the default is the wrong one for an opaque
   tenant.** `useSurfaceCanvas()` gives you the buffer *over* the trial DOM,
   which is what a mark annotating an instrument wants and what every tenant
   predating the split asked for. A renderer that fills its tile buries anything
   the pane draws, so it wants `useSurfaceCanvas('under')` and a transparent
   pane. Both buffers share one set of tile rects — rects are measured against
   the surface container either way — so nothing else about a tenant changes.
+- **A tenant whose tile covers the whole surface gets a buffer of its own.** A
+  weasel renderer clears the rect it paints on every frame, so one whose rect
+  is the whole buffer erases every co-tenant's pixels each time it redraws.
+  `useSurfaceCanvas('top')` claims a third buffer, above `over`, that mounts
+  only while something claims it; the lab's lenses are its tenant. It shares
+  the same tile rects. A host owning its own surface offers it by publishing
+  `top` and `claimTop` in its `SurfaceCanvases`, or the claim gets null and
+  `useSurfaceCanvas('top')` warns in dev.
 - **A tile that moves without resizing** is handled twice over, and it needs
   both. `Workspace` invalidates rects off the grid's own `node.placementChanged`,
   which catches the move being *ordered*; the surface then keeps measuring until

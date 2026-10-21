@@ -1,7 +1,13 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SurfaceContext } from './SurfaceContext';
-import { useSurface, useSurfaceOptional, useSurfaceTile } from './useSurfaceTile';
+import { SurfaceCanvasContext, type SurfaceCanvases, SurfaceContext } from './SurfaceContext';
+import {
+  TOP_UNOFFERED,
+  useSurface,
+  useSurfaceCanvas,
+  useSurfaceOptional,
+  useSurfaceTile,
+} from './useSurfaceTile';
 import type { SurfaceHandle } from './useTiledSurface';
 
 function fakeHandle(): SurfaceHandle {
@@ -70,5 +76,61 @@ describe('useSurface', () => {
     }
     render(<Consumer />);
     expect(seen).toBeNull();
+  });
+});
+
+describe("useSurfaceCanvas('top')", () => {
+  function Top() {
+    useSurfaceCanvas('top');
+    return null;
+  }
+  const mountUnder = (canvases: SurfaceCanvases) =>
+    render(
+      <SurfaceCanvasContext.Provider value={canvases}>
+        <Top />
+      </SurfaceCanvasContext.Provider>,
+    );
+
+  it('warns when the owner above publishes buffers but offers no top, which would leave the tenant painting nothing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      mountUnder({
+        over: document.createElement('canvas'),
+        under: document.createElement('canvas'),
+      });
+      expect(warn).toHaveBeenCalledWith(TOP_UNOFFERED);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('claims the top buffer, and says nothing, where the owner offers one', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const release = vi.fn();
+    const claimTop = vi.fn(() => release);
+    try {
+      const { unmount } = mountUnder({
+        over: document.createElement('canvas'),
+        under: null,
+        top: null,
+        claimTop,
+      });
+      expect(claimTop).toHaveBeenCalledTimes(1);
+      unmount();
+      expect(release).toHaveBeenCalledTimes(1);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('says nothing with no surface owner above at all', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      render(<Top />);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

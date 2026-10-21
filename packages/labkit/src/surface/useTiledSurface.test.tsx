@@ -159,6 +159,37 @@ describe('useTiledSurface', () => {
     expect([...(frames[0]?.rects.keys() ?? [])].sort()).toEqual(['a', 'b']);
   });
 
+  it('keeps every tile inside any element of a scope list', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    const { getByTestId } = render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+    const h = handle as SurfaceHandle | null;
+    act(() => h?.scope([getByTestId('a'), getByTestId('b')]));
+    flushFrames();
+    expect(h?.inScope('a')).toBe(true);
+    expect(h?.inScope('b')).toBe(true);
+
+    const heard = vi.fn();
+    act(() => {
+      h?.subscribeScope(heard);
+    });
+    // The same elements again are not a change of scope.
+    act(() => h?.scope([getByTestId('a'), getByTestId('b')]));
+    expect(heard).not.toHaveBeenCalled();
+    act(() => h?.scope([getByTestId('b')]));
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(h?.inScope('a')).toBe(false);
+    flushFrames();
+  });
+
   it('fires nothing on a clean tick', () => {
     const frames: SurfaceFrame[] = [];
     render(<Harness frames={frames} onHandle={() => {}} />);

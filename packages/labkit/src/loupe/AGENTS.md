@@ -1,7 +1,8 @@
 # Loupe — Agent Guide
 
 `src/loupe/` is `@weasel-js/labkit/loupe`: `<TrialLoupe>`, a magnifier the
-instrument mounts in its own content, painted by whichever painter suits it.
+instrument mounts in its own content, painted by whichever painter suits it,
+and `<LensOverlay>`, lenses a host parks over a whole lab ("Lenses" below).
 Its own bundle entry; nothing in the main bundle imports it, so a lab that
 mounts no lens never loads it.
 
@@ -25,6 +26,67 @@ This directory binds that model to a labkit trial and draws it.
 | `SourceLoupe.tsx` | Painter for any canvas named by `source` |
 | `sourceLens.ts` | That painter's source resolution, box measurement and drawing |
 | `useHostSize.ts` | The host's measured box, for the DOM stage |
+| `lens/` | Lenses as scene objects, their sources and actions ("Lenses" below) |
+
+## Lenses
+
+`lens/` is a second kind of loupe: lenses as objects a host parks, moves and
+aims, many at once (at most `MAX_LENSES`, 8). The host owns the `LensScene`
+(`createLensScene`), so it decides whether lenses outlive the overlay, and
+passes a `LensAttachment` saying what they are attached to;
+`VIEWPORT_ATTACHMENT` keeps them still in lab-body px.
+
+A lens is three nodes on the scene's `lenses` layer: the **body** (the bubble,
+whose data carries the lens's `LensSettings`), the **reticle** (the spot it
+shows) and the **leader**, a line whose path derives from the other two and
+which is drawn and never picked. Moving, resizing, selecting and undoing are
+core's `pick`/`move`/`transform`/`edit` features on `<LensOverlay>`'s own
+`SceneCanvas`, with an undo history of its own that answers only while its input
+element has focus.
+
+The reticle's aim is `pinned`, `follow` or `glass`. Glass is the reticle's pose
+derived from the body (`GLASS_POSE_KEY`), so `setAimOps` switches to it by
+setting the reticle's `dependsOn` and leaves it with a transform to where the
+derived pose put it. The ops are built and tested; no action aims a lens at
+Glass yet.
+
+`<LensOverlay>` paints into the surface's `top` buffer (`useSurfaceCanvas('top')`,
+`src/surface/AGENTS.md`), a layer no other tenant shares, so a lens redraw never
+clears annotation marks. The layer and its input element take no pointer input;
+each body, reticle and split seam has a `.lk-lens-hit` box that does, so a press
+that misses every lens falls through to the trials. Every hit test under the
+layer goes through `probeUnderLens(el, kind, fn)`, which marks the layer for one
+synchronous call: `'beneath'` stands the hit boxes down, so a point lands on
+what lies under the lenses, and `'interior'` stands each lens interior up, so a
+point lands on what a source attached there. A wheel over a hit box is handed on
+by `useWheelPassThrough`, which finds what is beneath that way and dispatches a
+copy of the wheel on it; a host's readouts find their element in a lens's copy
+with `'interior'`. `renderReadouts` is handed `LensReadoutProps`, the slot props
+plus the lens's interior element, so a host never queries the overlay's DOM.
+
+The canvas overrides `delete`: deleting any node of a lens deletes all three
+(`lensClosure`). Core's delete cascades only down from a deleted body, so a
+lone selected reticle would otherwise be deleted and strand its body.
+
+What a lens shows is a `LensSource` (`lens/lensSource.ts`), one per kind —
+`live`, `pixels`, and the reserved `revision` and `reference`. A source says
+whether it `produces` DOM or pixels; `attach` gives it the lens interior to
+render into and a handle that takes each new `LensSourceRequest` (reticle in
+client px, factor, interior size, the comparison or null, DPR); `status()` is
+`true` or the bare reason it cannot answer, which the slot prefixes as
+"Pixels unavailable: …". A pixels source also answers `capture()`, which
+Difference (always two Pixels captures, whatever the lens's source) and the
+pixel grid read. A lens whose source is unavailable falls back to the first
+one that is (`resolveSource`) and says why on its chrome.
+
+The lens actions (`lens/lensActionDefs.ts`) live in one keymap,
+`createLoupeKeymap`, opened by the leader `LOUPE_LEADER`, Alt+L matched by
+`code: 'KeyL'` because Alt changes the produced character on macOS. Inside it
+the keys are plain (`LENS_KEYS`), each binding's `opts.id` is its action id so
+`bindingOverrides` can rebind it, and Escape closes it (`docs/taxonomy.md`,
+"Keymap and leader"). The host supplies a `LensActionApi` and mounts
+`<LensActions>`; `loupe.seam` alone registers on the lens canvas, since a drag
+on the seam reaches that dispatcher and not the lab's.
 
 ## How it reads the trial
 

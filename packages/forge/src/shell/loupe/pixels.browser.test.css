@@ -1,0 +1,16 @@
+/* A 40 px trial host and a lens-sized slot beside it, apart so the reticle's point finds only the host. */
+.fg-pixels-test-host {
+  position: absolute;
+  left: 13px;
+  top: 17px;
+  width: 40px;
+  height: 40px;
+}
+
+.fg-pixels-test-slot {
+  position: absolute;
+  left: 200px;
+  top: 0;
+  width: 160px;
+  height: 160px;
+}

@@ -19,6 +19,7 @@ export {
   alignedStrokeRect,
   composePatternTransform,
   contrastLineColor,
+  contrastRatio,
   dashForStrokeStyle,
   decomposePatternTransform,
   hexToRgbBytes,
@@ -32,6 +33,7 @@ export {
   STROKE_DASH_RATIOS,
   vertexHalfWidths,
   vertexWidthFromSides,
+  wcagLevels,
   widestHalfWidth,
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from '@weasel-js/stroke';

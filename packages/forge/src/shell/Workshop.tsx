@@ -18,9 +18,13 @@ import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CssVarsChrome } from './cssVars/cssVarsChrome';
+import { KeysChrome } from './keys/keysChrome';
 import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
+import { ForgeLoupe } from './loupe/ForgeLoupe';
+import type { Revision } from './loupe/captureContext';
+import { LoupeProvider } from './loupe/CaptureInputs';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
@@ -29,6 +33,7 @@ import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { GlobalsMenus } from './globalsMenu';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { LAB_DENSITY } from './labDensity';
 import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
@@ -52,6 +57,10 @@ export interface WorkshopProps {
   storage?: StorageAdapter;
   /** The component graph index pages list dependencies from. */
   dependencies?: DepGraph;
+  /** The dev server's base, where it takes captures of a story; absent, lenses offer no Pixels source. */
+  captureBase?: string;
+  /** Bumped on every story edit, so no lens shows a capture of a story as it was. */
+  revision?: Revision;
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
@@ -109,7 +118,8 @@ function NoStories({ stories }: { stories: readonly string[] }) {
 }
 
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
-export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
+export function Workshop(props: WorkshopProps) {
+  const { index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies } = props;
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const title = config?.title ?? DEFAULT_TITLE;
   useDocumentTitle(title);
@@ -157,19 +167,23 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   );
   const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);
   const showsCssVars = config?.cssVars !== false;
+  const modeGlobal = config?.loupe?.modeGlobal ?? 'mode';
   const [cssVarsChrome, setCssVarsChrome] = useState<readonly LabContribution[]>([]);
+  const [keysChrome, setKeysChrome] = useState<readonly LabContribution[]>([]);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
       ...(showsCssVars ? cssVarsChrome : []),
       A11Y_SECTION,
+      ...keysChrome,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
       { id: 'fg-info', region: 'header', group: 'story', item: infoCommand },
+      { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal={modeGlobal} /> },
       ...(config?.labChrome ?? []),
     ],
-    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome],
+    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, keysChrome, config?.labChrome, modeGlobal],
   );
   const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
@@ -181,9 +195,10 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
             <TrialClocksContext.Provider value={clocks}>
+            <LoupeProvider captureBase={props.captureBase} revision={props.revision}>
               <Lab
                 title={title}
-                density="roomy"
+                density={LAB_DENSITY}
                 {...(labTheme ? { theme: labTheme } : {})}
                 instruments={instruments}
                 defaultInstrument={readRoute() ?? first.id}
@@ -208,7 +223,9 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />
                 <GlobalsMenus declarations={declarations} onMenus={setMenus} />
                 {showsCssVars ? <CssVarsChrome onChrome={setCssVarsChrome} /> : null}
+                <KeysChrome onChrome={setKeysChrome} />
               </Lab>
+            </LoupeProvider>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>

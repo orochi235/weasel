@@ -50,6 +50,28 @@ if (typeof globalThis.PointerEvent === 'undefined') {
   globalThis.PointerEvent = PointerEventPolyfill as unknown as typeof PointerEvent;
 }
 
+// jsdom defines `ImageData` only when the native `canvas` package is installed. The root setup stubs it the same way.
+if (typeof globalThis.ImageData === 'undefined') {
+  class ImageDataStub {
+    readonly data: Uint8ClampedArray;
+    readonly width: number;
+    readonly height: number;
+    readonly colorSpace = 'srgb' as const;
+    constructor(data: Uint8ClampedArray | number, width: number, height?: number) {
+      if (typeof data === 'number') {
+        this.width = data;
+        this.height = width;
+        this.data = new Uint8ClampedArray(this.width * this.height * 4);
+      } else {
+        this.data = data;
+        this.width = width;
+        this.height = height ?? data.length / 4 / width;
+      }
+    }
+  }
+  (globalThis as { ImageData: unknown }).ImageData = ImageDataStub;
+}
+
 // jsdom implements neither side of pointer capture.
 if (typeof Element.prototype.setPointerCapture === 'undefined') {
   Element.prototype.setPointerCapture = () => {};

@@ -72,6 +72,7 @@
     "@weasel-js/icons": "1.11.1",
     "@weasel-js/prefs": "1.11.1",
     "@weasel-js/registry": "1.11.1",
+    "@weasel-js/svg": "1.11.1",
     "@weasel-js/theme": "1.11.1",
     "@weasel-js/ui": "1.11.1",
     "axe-core": "^4.13.0",
@@ -84,12 +85,16 @@
     "@weasel-js/core": "1.11.1",
     "@weasel-js/labkit": "1.11.1",
     "react": "^19.0.0",
+    "playwright": "^1.50.0",
     "react-dom": "^19.0.0",
     "typescript": ">=5.0.0",
     "vite": "^8.0.0",
     "vitest": "^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     },

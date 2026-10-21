@@ -160,6 +160,93 @@ focused trial when it shows the routed story, else the first that does. An index
 isolated story's frame and a story test show the story paused at its span's
 start, with no transport.
 
+## Loupe
+
+A lens shows the patch of a story under its reticle, magnified, or rendered
+under a different condition, or both. Lenses float over the whole workshop:
+one stays where it was put while the panes under it scroll and zoom, and one
+parked over a trial can aim at another. They last for the session and are not
+saved with a trial. Drag a lens or its reticle to move it, drag its edge to
+resize it, and press Delete to close a selected one; the lenses keep an undo
+history of their own.
+
+Every lens key is in the Loupe keymap. Alt+L opens it, a hint lists its keys
+while it is open, and Escape closes it. Holding Alt+L keeps it open, so a Follow
+lens can be pinned while the pointer is still on the story. Inside it, each key
+acts on the selected lens, or on the last one added when none is selected:
+
+| Key | Does | Key | Does |
+|---|---|---|---|
+| `l` | add a lens | `Shift+L` | close the lens |
+| `p` | pin the reticle | `f` | make the reticle follow the pointer |
+| `v` | Live source | `x` | Pixels source |
+| `r` | Pixels at 1×, 2×, or both side by side | `=` / `-` | zoom in / out |
+| `o` | compare with the opposite mode | `k` | choose a comparison |
+| `Shift+O` | clear the comparison | `s` / `\` / `d` | Swap / Split / Difference |
+| `t` | Token readout | `c` | Contrast readout |
+| `g` | pixel grid | | |
+
+Each binding's id is its action id (`loupe.add`, `loupe.view.split`, …), so a
+binding override can rebind it. Alt+Slash opens a panel listing every key
+binding the workshop registers, the lens keys included.
+
+Token shows the color at the aim and the `--wzl-*` token chain behind it;
+Contrast shows the WCAG ratio of the text there against its background, with
+AA and AAA marks, read from computed styles on a Live lens and from the pixels
+on a Pixels one; the pixel grid draws on a Pixels lens zoomed to 8× or more per
+captured pixel (its zoom over the capture's DPR). On a Live lens with a
+comparison, Token and Contrast read the compared copy. Token reads the DOM, so a
+Pixels lens with a comparison has none to give, and neither reads inside an
+isolated story's frame.
+
+**Live** renders the story a second time inside the lens, with the
+comparison's globals or args laid over the trial's. It is sharp at any factor
+and follows the trial's state, but takes no clicks, and it is never the real
+pixels. **Pixels** asks the dev server
+for a PNG of the story rendered in headless Chromium at a chosen DPR and enlarges
+it nearest-neighbor, so a hairline half a pixel off looks as it does on screen.
+A capture reproduces the story's args, globals, trial state, playhead, CSS
+variable overrides, scroll position (an isolated story's excepted), the lab's
+theme and the OS color scheme; it lags the live story
+by one capture, and has no hover or focus in it. Difference always compares two
+Pixels captures, whichever source the lens shows.
+
+Playwright is an optional peer dependency. Without it, or without its Chromium
+(`npx playwright install chromium`), a lens says why Pixels is unavailable and
+offers Live only. The endpoint imports `@weasel-js/core/json`, which resolves to
+core's built `dist`, so build core before starting the dev server in a fresh
+checkout.
+
+The endpoint is `<base>__forge/capture`, on the dev server only. A GET says
+whether captures are available, without starting Chromium; a POST takes a JSON
+payload and answers with the PNG. It is guarded against being used to load
+anyone else's page:
+
+- The capture page's URL is built from the socket the request arrived on,
+  never from its `Host` header.
+- A POST must be `application/json`, and one whose `Origin` is not the dev
+  server's own is refused.
+- A CSS variable override must be a custom property name with no `{`, `}` or
+  `;` in its value, and overrides are written through the CSSOM.
+- A body past 16 MB is answered 413 and the connection closed.
+- The capture browser blocks service workers, closes every WebSocket but the
+  dev server's own, and ignores certificate errors only for an https dev
+  server; a listed origin's requests are then fetched from Node, so its
+  certificate is still checked.
+- The capture page can load nothing but the dev server's own origin and the
+  origins the shell config lists in `capture.allowOrigins`, such as a web-font
+  service's:
+
+```ts
+defineShellConfig({ capture: { allowOrigins: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] } });
+```
+
+Captures are cached in the dev-server process, at most 64 entries and 64 MB of
+PNG bytes, least recently used out first. The cache is cleared on any client
+module update and when the server closes. There is one Chromium, started on the
+first capture that misses the cache and closed after 120 s idle or when the
+server closes.
+
 ## Index pages
 
 Every component — every story title — has an index page, opened by clicking

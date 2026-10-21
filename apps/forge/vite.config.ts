@@ -11,7 +11,7 @@ import { localWake } from '../../scripts/vite-wake.ts';
 import { skipWorktrees } from '../../scripts/vite-watch.ts';
 import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
 import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
-import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
+import { forgeAliases, frameConfig, frameStyles, shellConfig, skipWake, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
@@ -47,7 +47,7 @@ export default defineConfig(({ command, isPreview }) => ({
       // react-aria's DOM-level props: ids, ARIA labeling, `dir`, `lang`, `hidden`, and the like.
       propControls: { skip: (file) => /@react-types[\\/]shared[\\/]src[\\/]dom\.d\.ts$/.test(file) },
     }),
-    localWake(),
+    localWake({ skip: skipWake }),
   ],
   server: { port: ports.forge, strictPort: true, ...LAN_SERVER },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },

@@ -1,6 +1,7 @@
 import './shell.css';
 
 export { A11Y_SECTION, A11yPanel } from './a11y/A11yPanel';
+export { type FollowedEdits, followEdits, type HotEvents } from './followEdits';
 export { type MountedWorkshop, type MountWorkshopOptions, mountWorkshop } from './mountWorkshop';
 export { StoryGlobalsContext } from './StoryGlobalsContext';
 export { StoryTrial, type StoryTrialProps } from './StoryTrial';

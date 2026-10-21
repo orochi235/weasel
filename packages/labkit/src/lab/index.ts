@@ -11,6 +11,7 @@ export { LabShell } from './LabShell';
 export type { LabPage, LabSwitcherProps } from './LabSwitcher';
 export { currentPage, LabSwitcher } from './LabSwitcher';
 export { LabZoom } from './LabZoom';
+export { useLabEntries } from './labAmbient';
 export type { LabMenus } from './labMenus';
 export type { LabBaseProps, LabProps } from './labProps';
 export type { PresentationSeed } from './openLab';

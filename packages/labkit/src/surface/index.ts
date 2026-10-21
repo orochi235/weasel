@@ -1,5 +1,6 @@
 export { composeRects } from './composeRects';
 export { toDeviceRect } from './deviceRect';
+export type { SurfaceScope } from './measureTiles';
 export type { Box, Rect } from './rect';
 export type { SurfaceCanvases, SurfaceLayer } from './SurfaceContext';
 export { SurfaceCanvasContext, SurfaceContext } from './SurfaceContext';

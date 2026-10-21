@@ -1,0 +1,43 @@
+/* The tall story: a decoy at content y 100, the marker 300 below it at 400. */
+.fg-live-test-tall {
+  position: relative;
+  height: 2000px;
+}
+
+.fg-live-test-decoy,
+.fg-live-test-marker {
+  position: absolute;
+  left: 100px;
+  width: 60px;
+  height: 60px;
+}
+
+.fg-live-test-decoy {
+  top: 100px;
+  background: blue;
+}
+
+.fg-live-test-marker {
+  top: 400px;
+  background: red;
+}
+
+/* A stand-in for a lens interior: the box a Live source is attached to. */
+.fg-live-test-slot {
+  position: fixed;
+  left: 520px;
+  top: 80px;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+}
+
+.fg-live-test-host {
+  width: 400px;
+  height: 300px;
+}
+
+.fg-live-test-workshop {
+  width: 1000px;
+  height: 700px;
+}

@@ -2,6 +2,7 @@
 
 import { parenEnd, skipString, splitTopLevel } from './cssScan';
 
+/** A selector's specificity as (ids, classes, types). */
 export type Specificity = readonly [number, number, number];
 
 /** Read an identifier (with escapes) starting at `i`; returns its end index. */
@@ -18,6 +19,7 @@ function identEnd(s: string, i: number): number {
 const LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
 const MAX_ARG_PSEUDOS = new Set(['not', 'is', 'matches', '-webkit-any', 'has']);
 
+/** Negative when `a` is less specific than `b`, positive when more, 0 when equal. */
 export function compareSpecificity(a: Specificity, b: Specificity): number {
   return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 }

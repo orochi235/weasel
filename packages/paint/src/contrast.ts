@@ -1,4 +1,5 @@
-import { oklabToSrgbU8, srgbU8ToOklab } from './colorSpaces';
+import { parseColor } from './color';
+import { oklabToSrgbU8, srgbToLinear, srgbU8ToOklab } from './colorSpaces';
 import { parseHexBytes } from './hex';
 
 const hex2 = (v: number): string => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
@@ -20,4 +21,33 @@ export function contrastLineColor(background: string, strength: number): string 
   const next = L > 0.5 ? Math.max(0, L - strength) : Math.min(1, L + strength);
   const [r, g, b] = oklabToSrgbU8(next, A, B);
   return `#${hex2(r)}${hex2(g)}${hex2(b)}`;
+}
+
+const luminance = (r: number, g: number, b: number): number =>
+  0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+
+/**
+ * The WCAG 2.x contrast ratio of `foreground` text on `background`: 1 for two
+ * equal colors up to 21 for black on white, whichever is the lighter. A
+ * translucent foreground is laid over the background first; the background's
+ * own alpha is ignored. `null` for a color {@link parseColor} cannot read.
+ */
+export function contrastRatio(foreground: string, background: string): number | null {
+  let fg: [number, number, number, number];
+  let bg: [number, number, number, number];
+  try {
+    fg = parseColor(foreground);
+    bg = parseColor(background);
+  } catch {
+    return null;
+  }
+  const a = fg[3];
+  const lf = luminance(a * fg[0] + (1 - a) * bg[0], a * fg[1] + (1 - a) * bg[1], a * fg[2] + (1 - a) * bg[2]);
+  const lb = luminance(bg[0], bg[1], bg[2]);
+  return (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05);
+}
+
+/** Whether `ratio` passes WCAG AA and AAA: 4.5 and 7, or 3 and 4.5 for large text. */
+export function wcagLevels(ratio: number, largeText: boolean): { aa: boolean; aaa: boolean } {
+  return { aa: ratio >= (largeText ? 3 : 4.5), aaa: ratio >= (largeText ? 4.5 : 7) };
 }

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { html } from './html';
-import { shellTitle } from './shellTitle';
+import { shellAllowOrigins, shellTitle } from './shellTitle';
 
 const FILE = '/repo/forge.shell.tsx';
 
@@ -16,6 +16,21 @@ describe('shellTitle', () => {
     expect(shellTitle(`export default defineShellConfig({ globals: {} });\n`, FILE)).toBeUndefined();
     expect(shellTitle(`export default defineShellConfig({ title: name() });\n`, FILE)).toBeUndefined();
     expect(shellTitle(`export default {`, FILE)).toBeUndefined();
+  });
+});
+
+describe('shellAllowOrigins', () => {
+  it("reads the origins a shell config's capture.allowOrigins names, as origins, without running it", () => {
+    const code = `const FONTS = ['https://fonts.googleapis.com/', 'https://fonts.gstatic.com'] as const;\nexport default defineShellConfig({ capture: { allowOrigins: FONTS } });\n`;
+    expect(shellAllowOrigins(code, FILE)).toEqual(['https://fonts.googleapis.com', 'https://fonts.gstatic.com']);
+  });
+
+  it('reads none from a config with no list or one that does not parse, and skips a computed entry or one that is no URL', () => {
+    expect(shellAllowOrigins(`export default defineShellConfig({ title: 'A' });\n`, FILE)).toEqual([]);
+    expect(
+      shellAllowOrigins(`export default defineShellConfig({ capture: { allowOrigins: [host(), 'not a url', 'https://ok.example'] } });\n`, FILE),
+    ).toEqual(['https://ok.example']);
+    expect(shellAllowOrigins(`export default {`, FILE)).toEqual([]);
   });
 });
 
