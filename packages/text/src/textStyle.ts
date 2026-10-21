@@ -8,7 +8,7 @@
  */
 
 import type { Paint, ScreenLength, Stroke, Fill } from '@weasel-js/paint';
-import { isSolidPaint, resolveScreenLength } from '@weasel-js/paint';
+import { isSolidPaint, resolveFill, resolveScreenLength, type PaintedFill } from '@weasel-js/paint';
 import { cssFamilyName } from '@weasel-js/font';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
@@ -122,9 +122,8 @@ export interface ResolvedTextStyle {
   lineHeight: number;
   tabSize: number;
   wrap: boolean;
-  /** `null` is an explicit no-fill, the way it is on every other node kind:
-   *  outline-only text, painted by its stroke alone. */
-  fill: Fill | null;
+  /** `null` is no fill: outline-only text, painted by its stroke alone. */
+  fill: PaintedFill | null;
   caretColor: string;
   selectionBackground: string | null;
   selectionColor: string | null;
@@ -142,6 +141,10 @@ export interface ResolvedTextStyle {
 }
 
 const DEFAULT_FILL: Paint = { kind: 'solid', color: '#000' };
+
+/** The black a text node is made with. A node read with no fill paints no
+ *  glyphs, so whatever creates one writes this rather than leaving it out. */
+export const DEFAULT_TEXT_FILL: PaintedFill = { paint: DEFAULT_FILL };
 
 function paintColor(p: Paint | null): string {
   return isSolidPaint(p) ? p.color : '#000';
@@ -162,7 +165,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   lineHeight: 1.2,
   tabSize: DEFAULT_TAB_SIZE,
   wrap: false,
-  fill: { paint: DEFAULT_FILL },
+  fill: null,
   caretColor: paintColor(DEFAULT_FILL),
   selectionBackground: defaultSelectionBackground(paintColor(DEFAULT_FILL)),
   selectionColor: null,
@@ -176,9 +179,8 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
 
 /** The paint a text node hands its glyphs — `data.fill` and `data.stroke`. Runs inherit these when they name none of their own. */
 export interface TextPaint {
-  /** `null` is an explicit no-fill and absent takes the default black — the
-   *  reading every other node kind gives `data.fill`. Unfilled text paints
-   *  through its stroke and nothing else, so it needs one to be visible. */
+  /** Read by `resolveFill`: absent and `null` are no fill. Unfilled text
+   *  paints through its stroke and nothing else. */
   fill?: Fill | null;
   /**
    * Outline painted over the glyph fill. Absent means no outline.
@@ -203,10 +205,10 @@ export function resolveTextStyle(
   paint?: TextPaint,
   scale = 1,
 ): ResolvedTextStyle {
-  const fill = paint?.fill === undefined ? DEFAULT_TEXT_STYLE.fill : paint.fill;
+  const fill = resolveFill(paint?.fill);
   const stroke = paint?.stroke ?? undefined;
   if (!style) {
-    return fill === DEFAULT_TEXT_STYLE.fill && stroke === undefined
+    return fill === null && stroke === undefined
       ? DEFAULT_TEXT_STYLE
       : {
         ...DEFAULT_TEXT_STYLE,

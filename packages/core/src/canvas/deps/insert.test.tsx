@@ -66,7 +66,7 @@ describe('useInsertDepSource', () => {
     expect(label).toBe('Insert text');
     // The kit:text painter matches on `data.text != null`; an empty string is
     // a valid, selectable, editable text node (you type into it after).
-    expect(ops[0].args.node.data).toEqual({ text: '' });
+    expect(ops[0].args.node.data).toEqual({ text: '', fill: { paint: { kind: 'solid', color: '#000' } } });
     expect(ops[0].args.node.pose).toEqual({ x: 2, y: 3, width: 40, height: 20 });
   });
 
@@ -103,7 +103,7 @@ describe('useInsertDepSource', () => {
     );
     const dep = (reg.get as any)('insert');
     dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'text', text: 'hello' });
-    expect(applyOps.mock.calls[0][0][0].args.node.data).toEqual({ text: 'hello' });
+    expect(applyOps.mock.calls[0][0][0].args.node.data).toEqual({ text: 'hello', fill: { paint: { kind: 'solid', color: '#000' } } });
   });
 
   it('paints a kit shape from the `paint` option, keeping the kit geometry', () => {

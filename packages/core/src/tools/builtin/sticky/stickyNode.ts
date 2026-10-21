@@ -1,15 +1,15 @@
 import type { Fill } from '@weasel-js/paint';
-import type { TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import { DEFAULT_TEXT_FILL, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import type { InsertNodeFactory } from '../../../canvas/deps/insert';
 import type { TextNodeData, TextOverflow } from '../../../canvas/nodeShapes/textPainter';
 import type { MinSize } from '../../../core/scene/minSize';
 
 /** How a sticky note looks as it is made, named as the text node it becomes
- *  names them. Every field but `fill` has a default, in {@link STICKY_DEFAULTS}. */
+ *  names them. Every field has a default, in {@link STICKY_DEFAULTS}. */
 export interface StickyStyle {
   /** The note itself, painted over its whole box. */
   background?: Fill;
-  /** The text's paint. Absent, the text style's default. */
+  /** The text's paint. */
   fill?: Fill;
   /** World units from the note's edge to its text, on every side. */
   padding?: number;
@@ -28,6 +28,7 @@ export interface StickyStyle {
 /** The look a sticky note takes for any field its tool leaves out. */
 export const STICKY_DEFAULTS = {
   background: { paint: { kind: 'solid', color: '#fff1a6ff' } },
+  fill: DEFAULT_TEXT_FILL,
   padding: 12,
   style: { fontSize: 18, align: 'center', wrap: true },
   verticalAlign: 'center',
@@ -35,7 +36,7 @@ export const STICKY_DEFAULTS = {
   // One line of the default type inside the default padding.
   minSize: { width: 48, height: 48 },
   size: { width: 160, height: 160 },
-} as const satisfies Required<Omit<StickyStyle, 'fill'>>;
+} as const satisfies Required<StickyStyle>;
 
 /**
  * A sticky note's `data`: a text node with a `background`, so the `kit:text`
@@ -52,7 +53,7 @@ export function stickyData(look: StickyStyle & { text?: string }): TextNodeData 
     verticalAlign: look.verticalAlign ?? STICKY_DEFAULTS.verticalAlign,
     overflow: look.overflow ?? STICKY_DEFAULTS.overflow,
     minSize: look.minSize ?? STICKY_DEFAULTS.minSize,
-    ...(look.fill ? { fill: look.fill } : {}),
+    fill: look.fill ?? STICKY_DEFAULTS.fill,
   };
 }
 

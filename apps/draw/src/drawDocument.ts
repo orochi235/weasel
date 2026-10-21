@@ -41,8 +41,8 @@ export interface WeaselDrawData {
   /** Where the lines sit in the box's height — read by the `kit:text`
    *  painter and the editor, edited beside the Paragraph group. */
   verticalAlign?: TextVerticalAlign;
-  /** The node's paint — solid, gradient or pattern. `null` is an explicit
-   *  "no fill"; absent takes the painter's default. */
+  /** The node's paint — solid, gradient or pattern. Absent and `null` are
+   *  no fill, as `Fill` says. */
   fill?: Fill | null;
   /** The whole stroke — paint, width, dash, cap, join, align. */
   stroke?: Stroke | null;

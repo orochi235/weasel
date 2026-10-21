@@ -23,11 +23,14 @@ export {
   dashForStrokeStyle,
   decomposePatternTransform,
   hexToRgbBytes,
+  INHERIT,
   lerpFill,
   lerpPaint,
   lerpStroke,
   parseHexBytes,
+  resolveFill,
   resolveScreenLength,
+  resolveStroke,
   scaleVertexWidth,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
@@ -38,6 +41,9 @@ export {
 } from '@weasel-js/paint';
 export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
+  Inherit,
+  PaintedFill,
+  PaintedStroke,
   ColorSpace,
   CommandPaint,
   CommandPaintUnits,

@@ -1,11 +1,10 @@
 import {
   isGradientPaint,
-  isSolidPaint,
   isTilePaint,
   type Measurements,
   measurementOf,
   type Paint,
-  resolveTextStyle,
+  resolveFill,
   sampleGradientStops,
   type SelectionApi,
 } from '@weasel-js/core';
@@ -28,12 +27,7 @@ const AT = decimal({ places: 1, grouping: false });
 
 /**
  * The color chip on a layer row. Every node kind keeps its paint in
- * `data.fill`, text included.
- *
- * `resolveTextStyle` is the same function the renderer resolves through, so
- * an unpainted text node reports the black it actually paints rather than
- * nothing. Non-solid paints (gradient, pattern) have no single color to show
- * and return undefined until the row can draw a real preview.
+ * `data.fill`, text included; a node with no fill shows no chip.
  */
 export function LayerSwatch({ color }: { color: string | undefined }): ReactElement | null {
   if (color === undefined) return null;
@@ -42,10 +36,8 @@ export function LayerSwatch({ color }: { color: string | undefined }): ReactElem
 }
 
 export function layerSwatch(data: WeaselDrawData): string | undefined {
-  if (data.fill?.paint) return paintChipColor(data.fill.paint);
-  if (data.text === undefined) return undefined;
-  const paint = resolveTextStyle(data.style, { fill: data.fill }).fill?.paint;
-  return isSolidPaint(paint) ? paint.color : undefined;
+  const fill = resolveFill(data.fill);
+  return fill ? paintChipColor(fill.paint) : undefined;
 }
 
 /** One representative color for a `Paint`, for a chip too small to draw

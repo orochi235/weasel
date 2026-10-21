@@ -3,7 +3,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { asNodeId, createMeasurements, createScene, measureNode, rectPath, solid, useSelection } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { useState } from 'react';
-import { LayersPanel } from './LayersPanel';
+import { LayersPanel, layerSwatch } from './LayersPanel';
 import { drawPrefs } from './prefs';
 import { renderWithIcons } from './testIcons';
 
@@ -129,5 +129,13 @@ describe('LayersPanel — one row at a time', () => {
     expect(screen.queryByRole('checkbox', { name: 'Show Background' })).toBeNull();
     fireEvent.doubleClick(screen.getByText('Background'));
     expect(screen.queryByLabelText('Rename Background')).toBeNull();
+  });
+});
+
+describe('layerSwatch', () => {
+  it('shows no chip for a node that paints no fill, text included', () => {
+    expect(layerSwatch({ text: 'hi' } as WeaselDrawData)).toBeUndefined();
+    expect(layerSwatch({ path: rectPath(0, 0, 1, 1), fill: {} } as WeaselDrawData)).toBeUndefined();
+    expect(layerSwatch({ text: 'hi', fill: { paint: solid('#123456') } } as WeaselDrawData)).toBe('#123456');
   });
 });

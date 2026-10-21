@@ -11,6 +11,8 @@ import {
   pathThroughPoseFrame,
   poseFrameOf,
   poseLinearOf,
+  resolveFill,
+  resolveStroke,
   type Paint,
   type ImageNodeData,
   type Path,
@@ -72,8 +74,9 @@ export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
 
 /** A kit `Stroke` as an `SvgStroke` — the inverse of `strokeDataFromSvg`.
  *  One with no paint or no width draws nothing and is written as no stroke. */
-export function svgStrokeFromKit(stroke: Stroke | null | undefined, box: SvgKitPose): SvgStroke | undefined {
-  if (!stroke?.paint) return undefined;
+export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose): SvgStroke | undefined {
+  const stroke = resolveStroke(raw);
+  if (!stroke) return undefined;
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return undefined;
   const opacity = stroke.paint.opacity;
@@ -131,10 +134,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
  * draws. A text node with a `background` is a group: the box, then the text.
  * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
- * A path with no `fill` takes `kit:path`'s fallback: the default shape fill
- * when it has no stroke, and no fill when it has one. Under a pose `transform`
- * its stroke width takes the uniform part of the stretch, as `parseSvg` reads
- * a stroke under a skewed element.
+ * A fill or stroke that paints nothing is written `none`. Under a pose
+ * `transform` a stroke's width takes the uniform part of the stretch, as
+ * `parseSvg` reads a stroke under a skewed element.
  */
 export function svgLeafFromKit(
   data: SvgKitLeafData,
@@ -145,17 +147,16 @@ export function svgLeafFromKit(
     const text = svgTextFromKit({ ...data, text: data.text }, pose);
     const boxPath: Path = { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
     const clip = data.overflow === 'clip' ? { clip: pathThroughPoseFrame(boxPath, pose) } : {};
-    if (!data.background?.paint) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
+    if (!resolveFill(data.background)) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
     const box = svgLeafFromKit({ path: boxPath, fill: data.background }, pose) as SvgPathNode;
     return { kind: 'group', children: [box, text], ...clip };
   }
   if (!data.path) return null;
   const stroke = svgStrokeFromKit(data.stroke, pose);
-  const fill = data.fill;
   const node: SvgPathNode = {
     kind: 'path',
     path: pathInPoseFrame(data.path, pose),
-    fill: svgPaintFromKit(fill?.paint ?? null, pose),
+    fill: svgPaintFromKit(resolveFill(data.fill)?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;
   const frame = poseLinearOf(pose) && poseFrameOf(pose);
@@ -178,8 +179,10 @@ function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPos
   if (data.style) node.style = data.style;
   if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
   if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
-  if (data.fill !== undefined) node.fill = data.fill && mapFillPaint(data.fill, (p) => fillInPoseFrame(p, pose));
-  if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
+  const fill = resolveFill(data.fill);
+  node.fill = fill && mapFillPaint(fill, (p) => fillInPoseFrame(p, pose));
+  const stroke = resolveStroke(data.stroke);
+  if (stroke) node.stroke = strokeInPoseFrame(stroke, pose);
   if (pose.rotation) node.rotation = pose.rotation;
   if (pose.transform) node.transform = pose.transform;
   return node;

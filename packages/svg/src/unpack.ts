@@ -18,7 +18,7 @@ import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import {
   boundsOfPath,
   createInsertOp,
-  DEFAULT_TEXT_STYLE,
+  DEFAULT_TEXT_FILL,
   dwarn,
   fillToBoundsFrame,
   getMarker,
@@ -220,19 +220,15 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       const box: SvgDraftBounds = {
         x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       };
-      // Absent takes the painter's default, which has to be spelled out once
-      // there is an opacity to carry.
-      const fill = n.fill === undefined && k !== 1 ? DEFAULT_TEXT_STYLE.fill : n.fill;
+      // Absent is SVG's initial black, which a kit text node has to state.
+      const fill = n.fill === undefined ? DEFAULT_TEXT_FILL : n.fill;
       return pushLeaf(n, parentId, pose, {
         text: n.text,
         ...(n.style ? { style: n.style } : {}),
         ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
         ...(n.runs ? { runs: n.runs.map((r) => fadeRun(runInBoxFrame(r, box), k)) } : {}),
-        // `!== undefined`, not a truthiness test: `null` is the document
-        // saying `fill="none"`, and absent takes the painter's default.
-        ...(fill !== undefined
-          ? { fill: fill && mapFillPaint(fill, (p) => fadeFill(fillInBoxFrame(p, box), k)) }
-          : {}),
+        // `null` is the document saying `fill="none"`.
+        fill: fill && mapFillPaint(fill, (p) => fadeFill(fillInBoxFrame(p, box), k)),
         ...(n.stroke !== undefined ? { stroke: fadeStroke(strokeInBoxFrame(n.stroke, box), k) } : {}),
       });
     }

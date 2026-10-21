@@ -17,6 +17,7 @@ export type { StyledRun, RunGrammar, RunMarker, RunFlag } from './runs';
 
 export {
   DEFAULT_TEXT_STYLE,
+  DEFAULT_TEXT_FILL,
   resolveTextStyle,
   resolveAlign,
   fontString,

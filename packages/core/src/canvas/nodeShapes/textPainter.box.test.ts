@@ -61,3 +61,18 @@ describe('kit:text — a background and padding', () => {
     expect(findShapeSilhouette(n, POSE)).toBeNull();
   });
 });
+
+describe('kit:text — the glyph fill', () => {
+  const runFills = (data: unknown) =>
+    (paint(data).find((c) => c.kind === 'text') as Extract<DrawCommand, { kind: 'text' }>).runs.map((r) => r.fill ?? null);
+
+  it('paints no glyphs when the node has no fill, a null one, or one with no paint', () => {
+    expect(runFills({ text: 'hi' })).toEqual([null]);
+    expect(runFills({ text: 'hi', fill: null })).toEqual([null]);
+    expect(runFills({ text: 'hi', fill: {} })).toEqual([null]);
+  });
+
+  it('paints the glyphs with the fill the node names', () => {
+    expect(runFills({ text: 'hi', fill: { paint: solid('#000') } })).toEqual([{ paint: solid('#000') }]);
+  });
+});
