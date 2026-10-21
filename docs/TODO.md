@@ -968,6 +968,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
+  writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
+  only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21
+  with a test failing on purpose, job 401c89a8). This is onto's (`~/src/onto`), not this repo's. Until
+  it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
+  (`LabFit.browser.test.tsx` does).
+
 - **(P3) `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
