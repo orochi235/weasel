@@ -77,13 +77,17 @@ layers: `<ViewMarker id source target style interactive>`, or the same props in
 a contribution's `markers`. `source` is a view id, `null` for the root, or an
 `AimSource` (an aim handed in by value, with an optional writer). The default
 style is `VIEW_MARKER_DEFAULT_STYLE`: white, 1px, dashed [2, 3]. Marker ids are
-unique per surface; a second marker with the same id throws.
+unique per surface. Two contributions declaring the same id throw; a second
+`<ViewMarker>` with a live id logs an error and is skipped, so the first keeps
+painting and taking presses.
 
 Dragging a marker pans its source: a press inside its outline, or within
 `VIEW_MARKER_HIT_SLOP_PX` of it, starts the `view.marker.drag` action
 (`VIEW_MARKER_DRAG`). That binding comes from an always-on entry the surface
 installs, so `actions={null}` and a `tools` takeover both turn dragging off;
 the marker still paints, and presses fall through to the view's own bindings.
+Passing `createViewMarkerContribution()` in `ambient`, or in a takeover's own
+`useTools` ambient list, turns it back on.
 `interactive={false}` turns off one marker, and a by-value source with no
 `setAim` is never draggable.
 

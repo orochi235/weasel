@@ -14,8 +14,8 @@ import { layerAffordance } from './affordanceAt';
 
 /** @internal Composed into `ViewRegistry`. */
 export interface ViewMarkerRegistry {
-  /** Returns an unregister. `props` is read at every draw. Throws on an id
-   *  already live on the surface. */
+  /** Returns an unregister. `props` is read at every draw. An id already live
+   *  on the surface logs an error and is skipped, and its unregister does nothing. */
   registerMarker(props: () => ViewMarkerProps): () => void;
   /** The layers of the markers drawn in `target`'s frame, in mount order. */
   markerLayers(target: string | null): readonly RenderLayer<unknown>[];
@@ -55,7 +55,8 @@ export function createViewMarkerRegistry(
       const { id } = props();
       for (const live of markers.keys()) {
         if (live().id === id) {
-          throw new Error(`registerMarker: marker "${id}" is already on this surface. Marker ids are unique per surface; rename one.`);
+          console.error(`[weasel] registerMarker: marker "${id}" is already on this surface, so this one is skipped. Marker ids are unique per surface; rename one.`);
+          return () => {};
         }
       }
       markers.set(props, createViewMarkerLayer(props, deps.host));

@@ -7,7 +7,7 @@ import { render, act } from '@testing-library/react';
 import { createRef, type RefObject } from 'react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
-import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { ViewMarker } from './ViewMarker';
 import { createScene } from 'core/scene/scene';
 import { mergeContributions, type SurfaceContribution } from './surfaceContribution';
@@ -15,6 +15,7 @@ import type { CanvasViewHandle, SceneCanvasApi } from './canvasExtension';
 import type { CanvasViewProps } from './canvasViewProps';
 import type { View } from 'core/viewport/view';
 import type { ViewMarkerProps } from 'features/viewports/viewMarker';
+import { rectAim } from 'features/viewports/aim';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -106,17 +107,38 @@ describe('<ViewMarker>', () => {
     )).toThrow(/marker "m"/);
   });
 
-  // A press routes to a marker by id, so two live markers may not share one.
-  it('refuses to register a marker id already live on the surface', () => {
-    let registry: ViewRegistry | null = null;
-    function Probe() {
-      registry = useOptionalViewRegistry();
-      return null;
+  // A press routes to a marker by id, so the second of two live markers sharing one is skipped.
+  it('skips a marker whose id is already live on the surface, keeping the first', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      let registry: ViewRegistry | null = null;
+      function Probe() {
+        registry = useOptionalViewRegistry();
+        return null;
+      }
+      const elsewhere = { aim: () => rectAim(null, { x: 450, y: 330, width: 100, height: 80 }), setAim: vi.fn() };
+      const api = createRef<SceneCanvasApi>();
+      const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+      const surface = (second: boolean) => (
+        <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} ref={api}>
+          <Probe />
+          <ViewMarker {...MARKER} style={{ stroke: '#ff0000' }} />
+          {second ? <ViewMarker {...MARKER} source={elsewhere} style={{ stroke: '#00ff00' }} /> : null}
+        </SceneCanvas>
+      );
+      const r = render(surface(true));
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('marker "m" is already on this surface'));
+      const pip = add(api, PIP);
+      const strokes = () => flat(pip.draw({}, ROOT, DIMS))
+        .flatMap((c) => (c.kind === 'path' && c.stroke?.dash ? [c.stroke.paint] : []));
+      expect(strokes()).toEqual([{ kind: 'solid', color: '#ff0000' }]);
+      expect(registry!.markerAt('pip', { x: 200, y: 150 })).not.toBeNull();
+      expect(registry!.markerAt('pip', { x: 500, y: 370 })).toBeNull();
+
+      r.rerender(surface(false));
+      expect(strokes()).toEqual([{ kind: 'solid', color: '#ff0000' }]);
+    } finally {
+      error.mockRestore();
     }
-    render(<ViewRegistryProvider><Probe /></ViewRegistryProvider>);
-    const off = registry!.registerMarker(() => MARKER);
-    expect(() => registry!.registerMarker(() => ({ ...MARKER, target: null }))).toThrow(/marker "m" is already on this surface/);
-    off();
-    expect(() => registry!.registerMarker(() => MARKER)).not.toThrow();
   });
 });
