@@ -1,3 +1,4 @@
+import type { GlMat3 } from '@weasel-js/geom';
 import type { ImageMinification } from './cache/GLImageCache';
 import type { FlattenTolerance } from './draw/flattenTolerance';
 
@@ -13,6 +14,14 @@ export interface RenderSpan {
 /** Per-frame options for {@link WeaselRenderer.render}. */
 export interface RenderOptions {
   spans?: readonly RenderSpan[];
+  /**
+   * The frame's screen space → CSS pixels of the drawing surface. `'screen'`-unit
+   * paint is measured in screen space, and so is `'world'`-unit paint without a
+   * view. Unset, screen space is the surface's CSS pixels; a render whose
+   * surface is only part of what it stands for — a tile, an export's raster —
+   * names the whole here.
+   */
+  screen?: GlMat3;
 }
 
 /** What one span cost. A batched run is drawn when something closes it, so

@@ -8,6 +8,7 @@ import type { WritePdfOptions } from '@weasel-js/pdf';
  * A hook that draws its commands through `session`, which are in page points. The renderer reads
  * `world`-unit paint through the session's view, so that view is the page view followed by the move
  * from page points to raster pixels, written as the source rect and scale the session plans it from.
+ * `screen`-unit paint is in page points too, so the session's screen space is the page.
  */
 export function pageRasterizer(session: RasterSession): NonNullable<WritePdfOptions['rasterize']> {
   const empty = createScene({ systemLayers: [{ id: 'main' }] });
@@ -22,6 +23,7 @@ export function pageRasterizer(session: RasterSession): NonNullable<WritePdfOpti
       sourceRect: { x: -toRaster[6]! / sx, y: -toRaster[7]! / sy, width: (rect.width * scale) / sx, height: (rect.height * scale) / sy },
       scale: { x: sx, y: sy },
       overlay: [{ kind: 'group', transform: toPixels, children: [...commands] }],
+      screen: toPixels,
     });
   };
 }

@@ -11,6 +11,7 @@ import { RetainedSurfaces } from './RetainedSurfaces';
 import type { RetainedKey } from './retainedKey';
 import { contentBounds } from './contentBounds';
 import type { DrawCommand } from '../DrawCommand';
+import { blur, vignette } from '../effects/builtins';
 
 const W = 800;
 const H = 600;
@@ -124,6 +125,14 @@ describe('contentBounds', () => {
     expect(contentBounds([rect(0, 0, 1, 1), shader], I, [], 1, 100, 80)).toEqual({ x: 0, y: 0, width: 100, height: 80 });
     const clip = pathFromD('M10 10 L20 10 L20 20 L10 20 Z');
     expect(contentBounds([shader], I, [{ path: clip, transform: I }], 1, 100, 80)).toEqual({ x: 9, y: 9, width: 12, height: 12 });
+  });
+
+  it('grows a group with effects by how far they reach, in device pixels', () => {
+    // Two passes of 4 device pixels each, 4 CSS pixels at a scale of 2, plus the slack.
+    const blurred: DrawCommand = { kind: 'group', effects: blur({ radius: 4 }), children: [rect(10, 10, 5, 5)] };
+    expect(contentBounds([blurred], I, [], 2, 200, 200)).toEqual({ x: 10, y: 10, width: 30, height: 30 });
+    const shaded: DrawCommand = { kind: 'group', effects: vignette({ amount: 1 }), children: [rect(10, 10, 5, 5)] };
+    expect(contentBounds([shaded], I, [], 2, 200, 200)).toEqual({ x: 0, y: 0, width: 200, height: 200 });
   });
 
   it('reaches as far as a stroke can', () => {

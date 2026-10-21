@@ -74,6 +74,7 @@ export function drawRetainedGroup(
     alpha: ctx.state.alpha,
     colorMatrix: ctx.state.colorMatrix,
     viewMatrix: ctx.viewMatrix,
+    screenMatrix: ctx.screenMatrix,
     clips,
   };
   let pixels = store.lookup(id, width, height, key);

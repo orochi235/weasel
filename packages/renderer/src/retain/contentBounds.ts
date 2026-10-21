@@ -1,5 +1,6 @@
 import { mat3, type GlMat3, type Rect } from '@weasel-js/geom';
 import type { DrawCommand } from '../DrawCommand';
+import { effectsReach } from '../effects/types';
 import { CULL_SLACK_PX, paintedBox, pathBox, type ScreenBox } from '../cullDrawCommands';
 import type { RetainedClip } from './retainedKey';
 
@@ -17,17 +18,22 @@ const ANYWHERE: ScreenBox = { minX: -Infinity, minY: -Infinity, maxX: Infinity, 
 /**
  * The device pixels a retained group's `children` can paint, drawn under
  * `transform` inside `clips`, within a buffer `width × height` device pixels
- * that is `scale` device pixels to the CSS pixel. Text, a custom shader, and a
- * group with `effects`, which may move pixels anywhere, are bounded only by
- * the clips around them; with none, the bound is the whole buffer. Empty
- * where nothing lands inside it.
+ * that is `scale` device pixels to the CSS pixel. A group with `effects` is
+ * grown by how far they reach (`effectsReach`). Text, a custom shader, and
+ * effects that do not say how far they reach are bounded only by the clips
+ * around them; with none, the bound is the whole buffer. Empty where nothing
+ * lands inside it.
  */
 export function contentBounds(
   children: readonly DrawCommand[], transform: GlMat3, clips: readonly RetainedClip[],
   scale: number, width: number, height: number,
 ): DeviceRect {
-  let box = listBox(children, transform);
+  let box = listBox(children, transform, scale);
   for (const clip of clips) box = clipped(box, pathBox(clip.path, undefined, clip.transform));
+  return toDevice(box, scale, width, height);
+}
+
+function toDevice(box: ScreenBox, scale: number, width: number, height: number): DeviceRect {
   const x0 = Math.max(0, Math.floor((box.minX - CULL_SLACK_PX) * scale));
   const y0 = Math.max(0, Math.floor((box.minY - CULL_SLACK_PX) * scale));
   const x1 = Math.min(width, Math.ceil((box.maxX + CULL_SLACK_PX) * scale));
@@ -37,20 +43,22 @@ export function contentBounds(
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
-function listBox(cmds: readonly DrawCommand[], m: GlMat3): ScreenBox {
+/** `scale` is device pixels to the unit of the space `m` maps into, which an effect's reach is measured in. */
+function listBox(cmds: readonly DrawCommand[], m: GlMat3, scale: number): ScreenBox {
   let acc = EMPTY;
   for (const cmd of cmds) {
-    acc = union(acc, commandBox(cmd, m));
+    acc = union(acc, commandBox(cmd, m, scale));
     if (acc === ANYWHERE) break;
   }
   return acc;
 }
 
-function commandBox(cmd: DrawCommand, m: GlMat3): ScreenBox {
+function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBox {
   switch (cmd.kind) {
     case 'group': {
       const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
-      const box = cmd.effects && cmd.effects.length > 0 ? ANYWHERE : listBox(cmd.children, inner);
+      let box = listBox(cmd.children, inner, scale);
+      if (cmd.effects && cmd.effects.length > 0) box = grown(box, effectsReach(cmd.effects) / scale);
       return cmd.clip ? clipped(box, pathBox(cmd.clip, undefined, inner)) : box;
     }
     case 'path':
@@ -60,6 +68,12 @@ function commandBox(cmd: DrawCommand, m: GlMat3): ScreenBox {
     default:
       return ANYWHERE;
   }
+}
+
+function grown(box: ScreenBox, by: number): ScreenBox {
+  if (box === EMPTY || box === ANYWHERE || by === 0) return box;
+  if (!Number.isFinite(by)) return ANYWHERE;
+  return { minX: box.minX - by, minY: box.minY - by, maxX: box.maxX + by, maxY: box.maxY + by };
 }
 
 function union(a: ScreenBox, b: ScreenBox): ScreenBox {
@@ -83,10 +97,12 @@ function clipped(a: ScreenBox, clip: ScreenBox | null): ScreenBox {
 /**
  * The rect `commands` can paint under `transform`, in whole units of the space
  * `transform` maps into, within a `width × height` page from that space's
- * origin; zero-sized where nothing lands on it.
+ * origin; zero-sized where nothing lands on it. `scale` is the device pixels
+ * per unit they will be drawn at, which is what an effect's reach is measured
+ * in.
  */
 export function commandsBounds(
-  commands: readonly DrawCommand[], transform: GlMat3, page: { width: number; height: number },
+  commands: readonly DrawCommand[], transform: GlMat3, page: { width: number; height: number }, scale = 1,
 ): Rect {
-  return contentBounds(commands, transform, [], 1, page.width, page.height);
+  return toDevice(listBox(commands, transform, scale), 1, page.width, page.height);
 }
