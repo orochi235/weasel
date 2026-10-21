@@ -5,6 +5,7 @@
  */
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings, type GestureBinding } from '../actions/binding';
+import { bindingId, NO_OVERRIDES, overridden } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
@@ -36,17 +37,18 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
   });
   const view = ctx.viewId ?? null;
   const live = (b: GestureBinding): boolean => liveInView(b, view) && liveForKeys(b, ctx.keyReach);
-  const result: ScopedBinding[] = scopeBindings(ordered, state)
+  const overrides = ctx.bindingOverrides?.() ?? NO_OVERRIDES;
+  const result: ScopedBinding[] = scopeBindings(ordered, state, overrides)
     .filter((sb) => live(sb.binding));
 
   // Actions have no owning tool — `'&'`-channel phase atoms on their
   // bindings won't match.
   for (const action of ctx.actions.list()) {
     const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
-    for (const binding of actionBindings(action)) {
-      if (!live(binding)) continue;
-      result.push({ binding, scope: targetScope, ownerId: null });
-    }
+    actionBindings(action).forEach((declared, i) => {
+      const binding = overridden(declared, bindingId(declared, null, i), overrides);
+      if (binding && live(binding)) result.push({ binding, scope: targetScope, ownerId: null });
+    });
   }
 
   return result;

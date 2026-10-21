@@ -55,6 +55,8 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     unregister: () => {},
     mute: () => () => {},
     tune: () => () => {},
+    overrideBindings: () => () => {},
+    bindingOverrides: () => new Map(),
     paramsOf: (_id, given) => ({ ...given }),
     list: () => actions,
     trigger: () => false,

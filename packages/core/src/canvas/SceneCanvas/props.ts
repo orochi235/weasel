@@ -3,7 +3,7 @@ import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
-import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
+import type { ActionsProp, ActionTunings, BindingOverrides } from '@weasel-js/routing';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
@@ -389,6 +389,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * every call. See the core README ("Tuning an action").
      */
     tune?: ActionTunings;
+
+    /**
+     * Replace or remove bindings by binding id, on actions and contributions
+     * alike: a route string (`'[*:*] keyDown(=) +mod'`), a spec (`key('Mod+=')`),
+     * or `null` to unbind. Pass a stable object.
+     */
+    bindingOverrides?: BindingOverrides;
 
     /**
      * Replace, add or mute whole action descriptors. Pass `null` to disable

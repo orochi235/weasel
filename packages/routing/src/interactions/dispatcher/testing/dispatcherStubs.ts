@@ -14,6 +14,8 @@ export function makeRegistry(actions: Action[]): ActionsRegistry {
     mute: vi.fn().mockReturnValue(() => {}),
     tune: vi.fn().mockReturnValue(() => {}),
     paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
+    overrideBindings: vi.fn().mockReturnValue(() => {}),
+    bindingOverrides: () => new Map(),
     list: () => Array.from(map.values()),
     trigger: vi.fn().mockReturnValue(false),
     preview: vi.fn(() => () => {}),

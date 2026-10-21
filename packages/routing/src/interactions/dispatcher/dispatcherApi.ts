@@ -8,6 +8,7 @@ import type { Contribution } from '../../contributions/types';
 import type { RuleCtx } from '../../eligibility';
 import type { Action, ActionSource } from '../actions/action';
 import type { GestureBinding } from '../actions/binding';
+import type { ResolvedBindingOverrides } from '../actions/bindingOverrides';
 import type { DepRegistry } from '../actions/depNode';
 import type { ActionDeps, OngoingHandle } from '../actions/invoker';
 import type { DispatchRecord } from './dispatchRecord';
@@ -52,6 +53,8 @@ export interface DispatcherContext {
    * is, the rest only while it holds them. Absent, every binding is live.
    */
   keyReach?: KeyReach;
+  /** The binding overrides in force, read per input. Absent overrides nothing. */
+  bindingOverrides?: () => ResolvedBindingOverrides;
   /** Where the dispatcher records how it resolved each input. Absent records nothing. */
   trace?: DispatchTrace;
 }

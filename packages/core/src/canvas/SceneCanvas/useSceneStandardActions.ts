@@ -38,13 +38,13 @@ import {
 } from '../deps';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
-import { useActionTunings } from './useActionTunings';
+import { useActionTunings, useBindingOverrides } from './useActionTunings';
 import { useViewportActions, viewportZoomOption } from './useViewportActions';
 
 /** The `<SceneCanvas>` props the standard actions and their deps read. */
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
-  | 'actions' | 'tune' | 'geometry' | 'viewport' | 'layoutDropTarget'
+  | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport' | 'layoutDropTarget'
   | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'ingestion' | 'snap'
 >;
 
@@ -197,4 +197,5 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   // the overrides applied on top of it.
   useActionsPropResolver(props.actions, standardActions.map((a) => a.id).join('|'));
   useActionTunings(tune);
+  useBindingOverrides(props.bindingOverrides);
 }

@@ -7,6 +7,7 @@ import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
 import type { ActionTuning } from './tuning';
+import type { BindingOverrides, ResolvedBindingOverrides } from './bindingOverrides';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
@@ -51,6 +52,12 @@ export interface ActionsRegistry {
    *  passes `given`: every tuning's params, `given` laid over them. What a
    *  tool's chrome reads to show what the action it binds will do. */
   paramsOf(id: string, given?: Record<string, unknown>): Record<string, unknown>;
+  /** Replace or remove bindings by id, here and in scopes below. Holders
+   *  merge: an inner scope's beats an outer one's, and a later one beats an
+   *  earlier one in the same scope. Returns a release. See {@link BindingOverrides}. */
+  overrideBindings(overrides: BindingOverrides): () => void;
+  /** Every override in force from this scope, read into specs. */
+  bindingOverrides(): ResolvedBindingOverrides;
   list(): readonly Action[];
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for

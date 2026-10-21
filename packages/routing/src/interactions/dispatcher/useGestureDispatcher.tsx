@@ -69,6 +69,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     entriesById,
     isMac,
     trace,
+    bindingOverrides: () => registryRef.current.bindingOverrides(),
   });
 
   // The flat options are view zero.
