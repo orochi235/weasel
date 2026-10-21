@@ -17,6 +17,8 @@ export type { OriginProjection } from '../interactions/gestures/shared';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
 export type { UseMoveOptions } from '../interactions/actions/move';
+// The nodes a drag of a selection writes, with derived poses resolved to their sources.
+export { moveSources } from '../interactions/actions/selectionSubtree';
 export {
   AUTO_POSE_DESCRIPTOR,
   isPathLike,
