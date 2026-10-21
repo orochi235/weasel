@@ -10,6 +10,10 @@ export interface TrialHit {
   scale: number;
 }
 
+/** The element an in-document story scrolls in, inside its host; null for a host with none, as a frame's. */
+export const scrollerOf = (host: HTMLElement | null): HTMLElement | null =>
+  host?.querySelector<HTMLElement>(':scope > .fg-story__scroll') ?? null;
+
 const stackAt = (client: LoupePoint, doc: Document): readonly Element[] =>
   doc.elementsFromPoint?.(client.x, client.y) ?? [];
 

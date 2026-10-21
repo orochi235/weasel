@@ -20,6 +20,7 @@ import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { TrialHost } from '../TrialHost';
 import { comparedGlobals, withArgs } from './conditions';
 import { type LiveLenses, LiveLensesContext, type LiveRequest } from './liveLenses';
+import { scrollerOf } from './trialAt';
 
 /** Props for `LiveCopies`: what a trial renders its own story with, which every copy of it shares. */
 export interface LiveCopiesProps {
@@ -53,7 +54,6 @@ function placement(request: LiveRequest): CSSProperties {
   } as CSSProperties;
 }
 
-const scrollerOf = (host: HTMLElement | null) => host?.querySelector<HTMLElement>(':scope > .fg-story__scroll') ?? null;
 
 /** Runs `sync` after every commit of the copy's content, which mounts a render after the copy's host does. */
 function AfterCommit({ sync }: { sync: () => void }) {

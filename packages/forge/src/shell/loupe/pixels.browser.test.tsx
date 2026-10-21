@@ -49,6 +49,7 @@ it('enlarges real pixels nearest-neighbor: a 1px hairline at 8× is an 8px band 
     box: { width: SIDE, height: SIDE },
     layout: 'padded',
     dpr: 1,
+    scroll: { left: 0, top: 0 },
     lab: { globals: {}, mode: 'light' },
   };
   const fetch = (async (_url: string, init?: RequestInit) =>

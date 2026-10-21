@@ -12,12 +12,14 @@ const valid: CapturePayload = {
   box: { width: 320, height: 200 },
   layout: 'centered',
   dpr: 2,
+  scroll: { left: 0, top: 0 },
   lab: { globals: { theme: 'chrome' }, mode: 'dark' },
 };
 
 describe('parsePayload', () => {
   it('accepts a whole payload as sent', () => {
     expect(parsePayload(valid)).toEqual(valid);
+    expect(parsePayload({ ...valid, scroll: { left: 12.5, top: 300 } })).toEqual({ ...valid, scroll: { left: 12.5, top: 300 } });
     expect(parsePayload({ ...valid, playhead: null, isolate: true })).toEqual({ ...valid, playhead: null, isolate: true });
   });
 
@@ -39,6 +41,9 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, globals: [] })).toEqual({ error: expect.stringContaining('globals') });
     expect(parsePayload({ ...valid, lab: { globals: {}, mode: 'auto' } })).toEqual({ error: expect.stringContaining('lab') });
     expect(parsePayload({ ...valid, lab: undefined })).toEqual({ error: expect.stringContaining('lab') });
+    for (const scroll of [undefined, { left: 0 }, { left: Number.NaN, top: 0 }, { left: 0, top: '3' }]) {
+      expect(parsePayload({ ...valid, scroll })).toEqual({ error: expect.stringContaining('scroll') });
+    }
   });
 
   it('rejects an override whose name is not a custom property, or whose value could close the rule', () => {

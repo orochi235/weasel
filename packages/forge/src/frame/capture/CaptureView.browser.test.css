@@ -1,0 +1,14 @@
+/* A story taller and wider than its capture box, with a marker 300 px down and 40 px in. */
+.fg-capture-test-tall {
+  position: relative;
+  width: 1000px;
+  height: 2000px;
+}
+
+.fg-capture-test-marker {
+  position: absolute;
+  left: 40px;
+  top: 300px;
+  width: 10px;
+  height: 10px;
+}

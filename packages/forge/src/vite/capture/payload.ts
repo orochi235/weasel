@@ -21,6 +21,8 @@ export interface CapturePayload {
   layout: Layout;
   /** Device pixel ratio, in [1, 3]. */
   dpr: number;
+  /** Where the story's scroller stands in its host, in CSS pixels, so the capture shows the patch the screen does. */
+  scroll: { left: number; top: number };
   /** The workshop lab's theme as the screen shows it: the lab's globals, which the shell config's `labTheme` reads,
    *  and its resolved color mode. An isolated story's document has no lab, and ignores it. */
   lab: { globals: Globals; mode: 'light' | 'dark' };
@@ -40,12 +42,13 @@ const LAYOUTS: readonly string[] = ['centered', 'padded', 'fullscreen'] satisfie
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const positive = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n > 0;
+const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+const positive = (n: unknown): n is number => finite(n) && n > 0;
 
 /** Reads a request body as a payload, or names the first field it rejects. */
 export function parsePayload(body: unknown): CapturePayload | { error: string } {
   if (!isRecord(body)) return { error: 'a capture payload is an object' };
-  const { story, isolate, config, state, globals, overrides, playhead, box, layout, dpr, lab } = body;
+  const { story, isolate, config, state, globals, overrides, playhead, box, layout, dpr, scroll, lab } = body;
   if (typeof story !== 'string' || story === '') return { error: 'story must be an index id' };
   if (typeof isolate !== 'boolean') return { error: 'isolate must be a boolean' };
   if (!isRecord(globals)) return { error: 'globals must be an object' };
@@ -62,6 +65,7 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
   }
   if (typeof layout !== 'string' || !LAYOUTS.includes(layout)) return { error: `layout must be one of ${LAYOUTS.join(', ')}` };
   if (typeof dpr !== 'number' || !(dpr >= MIN_DPR && dpr <= MAX_DPR)) return { error: `dpr must be in [${MIN_DPR}, ${MAX_DPR}]` };
+  if (!isRecord(scroll) || !finite(scroll.left) || !finite(scroll.top)) return { error: 'scroll must hold a finite left and top' };
   if (!isRecord(lab) || !isRecord(lab.globals) || (lab.mode !== 'light' && lab.mode !== 'dark')) {
     return { error: 'lab must hold globals and a mode of light or dark' };
   }
@@ -76,6 +80,7 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
     box: { width: box.width, height: box.height },
     layout: layout as Layout,
     dpr,
+    scroll: { left: scroll.left, top: scroll.top },
     lab: { globals: lab.globals, mode: lab.mode },
   };
 }

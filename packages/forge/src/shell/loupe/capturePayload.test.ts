@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { capturePayload, type CapturePayloadInput, STATE_UNSENDABLE } from './capturePayload';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { capturePayload, type CapturePayloadInput, CONFIG_UNSENDABLE, STATE_UNSENDABLE, trialPayload } from './capturePayload';
+import type { TrialInputs } from './captureContext';
+import type { TrialHit } from './trialAt';
 
 /** A host whose box jsdom, having no layout, would otherwise report as 0 × 0. */
 function host(width: number, height: number): HTMLElement {
@@ -31,6 +33,27 @@ describe('capturePayload', () => {
     expect(capturePayload({ ...input, state: { n: Number.NaN } })).toEqual({ unavailable: STATE_UNSENDABLE });
     expect(capturePayload({ ...input, state: { gone: undefined } })).toEqual({ unavailable: STATE_UNSENDABLE });
     expect(capturePayload({ ...input, state: { big: 1n } })).toEqual({ unavailable: STATE_UNSENDABLE });
+    // JSON writes a hole as null.
+    expect(capturePayload({ ...input, state: { items: [1, , 3] } })).toEqual({ unavailable: STATE_UNSENDABLE });
+  });
+
+  it('refuses a config, or a comparison arg, that JSON would change', () => {
+    expect(capturePayload({ ...input, config: { at: new Date(0) } })).toEqual({ unavailable: CONFIG_UNSENDABLE });
+    expect(capturePayload({ ...input, resolved: { ...input.resolved, args: { tags: new Set(['a']) } } })).toEqual({
+      unavailable: CONFIG_UNSENDABLE,
+    });
+    expect(CONFIG_UNSENDABLE).toBe("this story's config cannot be sent to a capture");
+  });
+
+  it("reads where the story's scroller stands in its host", () => {
+    const scrolled = host(320, 180);
+    const scroller = document.createElement('div');
+    scroller.className = 'fg-story__scroll';
+    // jsdom lays nothing out, so it keeps no scroll position of its own.
+    Object.defineProperty(scroller, 'scrollLeft', { value: 12 });
+    Object.defineProperty(scroller, 'scrollTop', { value: 340 });
+    scrolled.append(scroller);
+    expect(capturePayload({ ...input, host: scrolled })).toMatchObject({ scroll: { left: 12, top: 340 } });
   });
 
   it('carries args, globals, state, the playhead and the vars overrides', () => {
@@ -45,6 +68,7 @@ describe('capturePayload', () => {
       box: { width: 320, height: 180 },
       layout: 'padded',
       dpr: 2,
+      scroll: { left: 0, top: 0 },
       lab: { globals: { mode: 'light', theme: 'paper' }, mode: 'light' },
     });
     expect(capturePayload({ ...input, config: { label: 'Go' } })).toMatchObject({ playhead: null });
@@ -53,5 +77,58 @@ describe('capturePayload', () => {
   it('sends no playhead for an isolated story', () => {
     const payload = capturePayload({ ...input, entry: { id: 'ui-a--b', isolate: 'needs a document of its own' } });
     expect(payload).toMatchObject({ isolate: true, playhead: null, config: { label: 'Stop', size: 'm' } });
+  });
+});
+
+describe('trialPayload', () => {
+  const trial: TrialInputs = {
+    entry: { id: 'ui-a--b' },
+    layout: 'padded',
+    config: { label: 'Go', $globals: { theme: 'paper', density: 'lab' } },
+    state: null,
+    overrides: {},
+  };
+  const hit = (): TrialHit => ({ trialId: 't1', host: host(100, 50), local: { x: 10, y: 10 }, scale: 1 });
+  const lab = {
+    labValues: { mode: 'light', theme: 'chrome', density: 'compact' },
+    mode: 'auto' as const,
+    declarations: {},
+    modeGlobal: 'mode',
+  };
+  const prefersDark = (dark: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: dark && query === '(prefers-color-scheme: dark)' }));
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders under the trial's pins, and the lab's values for the rest", () => {
+    prefersDark(false);
+    expect(trialPayload(trial, lab, hit(), 1, null)).toMatchObject({
+      globals: { mode: 'light', theme: 'paper', density: 'compact' },
+      lab: { globals: lab.labValues, mode: 'light' },
+    });
+  });
+
+  it('takes the comparison’s value for each global it sets, a pin included, and its args', () => {
+    prefersDark(false);
+    const c = { kind: 'custom' as const, globals: { theme: 'ink' }, args: { label: 'Stop' } };
+    expect(trialPayload(trial, lab, hit(), 2, c)).toMatchObject({
+      globals: { mode: 'light', theme: 'ink', density: 'compact' },
+      config: { label: 'Stop' },
+      dpr: 2,
+    });
+  });
+
+  it("resolves the lab's auto mode through the OS color scheme", () => {
+    prefersDark(true);
+    expect(trialPayload(trial, lab, hit(), 1, null)).toMatchObject({ lab: { mode: 'dark' } });
+    prefersDark(false);
+    expect(trialPayload(trial, lab, hit(), 1, null)).toMatchObject({ lab: { mode: 'light' } });
+    expect(trialPayload(trial, { ...lab, mode: 'dark' }, hit(), 1, null)).toMatchObject({ lab: { mode: 'dark' } });
+  });
+
+  it('says a trial that published nothing shows no story', () => {
+    expect(trialPayload(null, lab, hit(), 1, null)).toEqual({ unavailable: 'this trial shows no story to capture' });
   });
 });

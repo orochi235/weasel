@@ -1,5 +1,5 @@
 import { TrialIdContext } from '@weasel-js/labkit';
-import { type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Layout } from '../../protocol/messages';
 import { useCssOverrides } from '../cssVars/overrides';
 import { createCaptureTrials, type LoupeCapture, LoupeCaptureContext, type Revision, type TrialInputs } from './captureContext';
@@ -13,14 +13,25 @@ export interface CaptureInputsProps {
   state: unknown;
 }
 
-/** Publishes the trial it renders in to the workshop's Pixels lenses: what a capture of its story is made from. */
+/**
+ * Publishes the trial it renders in to the workshop's Pixels lenses: what a capture of its story is made from. A
+ * change republishes over the last; only unmounting, or moving to another trial, withdraws it, so a lens never sees
+ * the trial gone between the two.
+ */
 export function CaptureInputs({ entry, layout, config, state }: CaptureInputsProps) {
   const capture = useContext(LoupeCaptureContext);
   const trialId = useContext(TrialIdContext);
   const [overrides] = useCssOverrides();
+  const withdraw = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (capture && trialId) withdraw.current = capture.trials.publish(trialId, { entry, layout, config, state, overrides });
+  }, [capture, trialId, entry, layout, config, state, overrides]);
   useEffect(
-    () => (capture && trialId ? capture.trials.publish(trialId, { entry, layout, config, state, overrides }) : undefined),
-    [capture, trialId, entry, layout, config, state, overrides],
+    () => () => {
+      withdraw.current?.();
+      withdraw.current = null;
+    },
+    [capture, trialId],
   );
   return null;
 }

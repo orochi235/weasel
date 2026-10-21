@@ -24,6 +24,7 @@ const payload: CapturePayload = {
   box: { width: 100.5, height: 50 },
   layout: 'padded',
   dpr: 2,
+  scroll: { left: 0, top: 0 },
   lab: { globals: {}, mode: 'light' },
 };
 

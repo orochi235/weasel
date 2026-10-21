@@ -21,7 +21,7 @@ const stubs: Plugin = {
   name: 'stub-weasel',
   enforce: 'pre',
   resolveId: (id) => (id.startsWith('@weasel-js/') ? `\0stub:${id}.js` : undefined),
-  load: (id) => (id.startsWith('\0stub:') ? 'export const mountWorkshop = () => {};\nexport const mountCapture = () => {};\n' : undefined),
+  load: (id) => (id.startsWith('\0stub:') ? 'export const mountWorkshop = () => {};\nexport const followEdits = () => ({});\nexport const mountCapture = () => {};\n' : undefined),
 };
 
 describe('localWake in the forge workshop', () => {

@@ -1,6 +1,6 @@
 /** The workshop page's entry module. `stories` are the globs, shown when they match nothing. */
 export function shellEntry(base: string, stories: readonly string[]): string {
-  return `import { mountWorkshop } from '@weasel-js/forge/shell';
+  return `import { followEdits, mountWorkshop } from '@weasel-js/forge/shell';
 import '@weasel-js/labkit/styles.css';
 import '@weasel-js/forge/shell.css';
 import index from 'virtual:forge/index.js';
@@ -17,25 +17,10 @@ const workshop = mountWorkshop({
   captureBase: ${JSON.stringify(base)},
   stories: ${JSON.stringify(stories)},
 });
-import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
 // Read from source on first request, so the graph costs nothing until the page is up.
 import('virtual:forge/deps.js').then((m) => workshop.setDependencies(m.default));
-import.meta.hot?.on('forge:deps', (next) => workshop.setDependencies(next));
-// An edit to a story file, or to a module one imports, reaches here as an update of the importers module, whose
-// fresh import() URLs carry the new timestamps; the files it reaches arrive just before, so the reload waits for
-// the importers that can fetch them. Either one also means a capture taken before it shows a story that is gone.
-const stale = new Set();
-import.meta.hot?.on('forge:story', ({ file }) => {
-  stale.add(file);
-  workshop.revise();
-});
-import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
-  workshop.revise();
-  if (!next) return;
-  workshop.setImporters(next.default);
-  for (const file of stale) workshop.reloadStory(file);
-  stale.clear();
-});
+const edits = followEdits(import.meta.hot, workshop);
+import.meta.hot?.accept('virtual:forge/importers.js', (next) => edits.importers(next?.default));
 `;
 }
 

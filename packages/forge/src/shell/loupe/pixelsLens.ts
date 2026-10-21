@@ -151,6 +151,8 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
       paint(canvas, shot, hit.local, request);
       return;
     }
+    // The last image stays up, and nothing is said over it, until the new one arrives.
+    say(null);
     if (wanted?.key === key && pending !== null) return;
     wanted = { key, payload };
     schedule();

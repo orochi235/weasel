@@ -4,7 +4,7 @@ import { interstellarTheme, LabRoot } from '@weasel-js/labkit';
 import type { Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useHostConditions } from '../../shell/hostConditions';
 import { LAB_DENSITY } from '../../shell/labDensity';
 import type { Globals } from '../../protocol/messages';
@@ -33,6 +33,14 @@ const NO_WRITE = () => {};
 const boxStyle = ({ width, height }: CapturePayload['box']): CSSProperties =>
   ({ ['--fg-capture-w' as string]: `${width}px`, ['--fg-capture-h' as string]: `${height}px` }) as CSSProperties;
 
+/** Scrolls the story's scroller to where the screen's stood; a story still growing is scrolled again before the shot. */
+function scrollTo(host: HTMLElement | null, { left, top }: CapturePayload['scroll']) {
+  const scroller = host?.querySelector<HTMLElement>(':scope > .fg-story__scroll');
+  if (!scroller) return;
+  scroller.scrollLeft = left;
+  scroller.scrollTop = top;
+}
+
 /**
  * One story rendered from a capture payload, still: its clock stands at the payload's playhead and nothing plays
  * it, and nothing it writes to its config or state goes anywhere. A story that would be in the workshop document
@@ -60,14 +68,16 @@ export function CaptureView({ story, payload, setup, labTheme, onRendered }: Cap
     name: story.name,
   };
 
-  const latest = useLatest(onRendered);
+  const latest = useLatest({ onRendered, host, scroll: payload.scroll });
+  useLayoutEffect(() => scrollTo(host, payload.scroll), [host, payload.scroll]);
   const ticks = useRef(0);
   // A capture page is never looked at, and a headless page can count as hidden.
   const raf = useVisibleRaf(
     (_now, loop) => {
       ticks.current += 1;
+      scrollTo(latest.current.host, latest.current.scroll);
       if (ticks.current < 2) loop.request();
-      else latest.current();
+      else latest.current.onRendered();
     },
     { dangerouslyRunWhenHidden: true },
   );
