@@ -1,0 +1,133 @@
+import { f } from '@weasel-js/forge';
+import type { Endless } from '@weasel-js/quantity';
+import type { AlongArc } from '@weasel-js/ui/components/Along';
+import type { SliderProps, SliderStop, Thumb } from '@weasel-js/ui/components/Slider';
+
+/** The knobs the Slider-on-an-arc lab reads: the arc, and every Slider prop that is not a callback. */
+export interface SliderArcConfig {
+  arc: { start: number; end: number; direction: 'cw' | 'ccw'; inset: number; size: number };
+  values: { min: number; max: number; step: number; thumbs: number; constraint: 'free' | 'ordered'; link: boolean };
+  stops: { set: StopSet; showStops: boolean; stopLabels: 'all' | 'ends' | 'none'; snap: 'magnetic' | 'strict'; spacing: 'linear' | 'even' };
+  behavior: { trackClick: 'default' | 'none' | 'move-nearest'; allowShiftAll: boolean; thumbFit: 'inside' | 'overhang'; endless: 'none' | Endless; addRemove: boolean };
+  look: { trackHeight: number; density: 'default' | 'slim'; readoutPlacement: 'none' | 'inline-after' | 'below-thumb'; thumbShape: 'round' | 'notched' };
+}
+
+export type StopSet = 'none' | 'quarters' | 'labeled' | 'uneven';
+
+export const SLIDER_ARC_SCHEMA = f.schema({
+  arc: f.group({
+    start: f.number(240).range(0, 359).step(1).suffix('°').label('Start'),
+    end: f.number(120).range(0, 359).step(1).suffix('°').label('End'),
+    direction: f.enum('ccw', ['cw', 'ccw']).radio().label('Direction'),
+    inset: f.number(24).range(0, 80).step(1).suffix('px').label('Inset'),
+    size: f.number(280).range(160, 420).step(10).suffix('px').label('Box'),
+  }).label('Arc'),
+  values: f.group({
+    min: f.number(0).step(1).label('Min'),
+    max: f.number(100).step(1).label('Max'),
+    step: f.number(1).range(0.01, 50).step(0.01).label('Step'),
+    thumbs: f.number(1).range(1, 3).step(1).label('Thumbs'),
+    constraint: f.enum('free', ['free', 'ordered']).radio().label('Constraint'),
+    link: f.boolean(true).label('Twins share one value'),
+  }).label('Values'),
+  stops: f.group({
+    set: f.enum('labeled', ['none', 'quarters', 'labeled', 'uneven']).label('Stops'),
+    showStops: f.boolean(true).label('Show stops'),
+    stopLabels: f.enum('all', ['all', 'ends', 'none']).radio().label('Stop labels'),
+    snap: f.enum('magnetic', ['magnetic', 'strict']).radio().label('Snap'),
+    spacing: f.enum('linear', ['linear', 'even']).radio().label('Spacing'),
+  }).label('Stops'),
+  behavior: f.group({
+    trackClick: f.enum('default', ['default', 'none', 'move-nearest']).label('Track click'),
+    allowShiftAll: f.boolean(false).label('Shift-drag moves all'),
+    thumbFit: f.enum('inside', ['inside', 'overhang']).radio().label('Thumb fit'),
+    endless: f.enum('none', ['none', 'min', 'max', 'both']).label('Endless'),
+    addRemove: f.boolean(false).label('Add and remove thumbs'),
+  }).label('Behavior'),
+  look: f.group({
+    trackHeight: f.number(8).range(2, 32).step(1).suffix('px').label('Track height'),
+    density: f.enum('default', ['default', 'slim']).radio().label('Density'),
+    readoutPlacement: f.enum('below-thumb', ['none', 'inline-after', 'below-thumb']).label('Readout'),
+    thumbShape: f.enum('round', ['round', 'notched']).radio().label('Thumb'),
+  }).label('Look'),
+});
+
+/** The stops `set` names, laid over `min..max`. */
+export function stopsOf(set: StopSet, min: number, max: number): (number | SliderStop)[] | undefined {
+  const at = (k: number) => min + k * (max - min);
+  const round = (v: number) => Math.round(v * 100) / 100;
+  if (set === 'none') return undefined;
+  if (set === 'quarters') return [0, 0.25, 0.5, 0.75, 1].map((k) => round(at(k)));
+  const ks = set === 'labeled' ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.1, 0.25, 0.6, 1];
+  return ks.map((k) => ({ value: round(at(k)), label: String(round(at(k))) }));
+}
+
+/** The arc the curved twin lies along. */
+export function arcOf({ start, end, direction, inset }: Omit<SliderArcConfig['arc'], 'size'>): AlongArc {
+  return { start, end, direction, inset };
+}
+
+/** `n` thumbs spread evenly over `min..max`, each on a `step`. */
+export function spreadThumbs(n: number, min: number, max: number, step: number): Thumb[] {
+  const on = (k: number) => ({ value: Math.round((min + Math.round((k * (max - min)) / step) * step) * 1e6) / 1e6 });
+  if (n <= 1) return [on(0.3)];
+  return Array.from({ length: n }, (_, i) => on((i + 1) / (n + 1)));
+}
+
+/** The props both twins are given: everything but the thumbs, their handlers and the shape. */
+export type TwinProps = Omit<SliderProps, 'thumbs' | 'onInput' | 'onChange' | 'shape'>;
+
+export function twinProps(c: SliderArcConfig): TwinProps {
+  const { values: v, stops: st, behavior: b, look: l } = c;
+  return {
+    min: v.min,
+    max: v.max,
+    step: v.step,
+    constraint: v.constraint,
+    stops: stopsOf(st.set, v.min, v.max),
+    showStops: st.showStops,
+    stopLabels: st.stopLabels,
+    snap: st.snap,
+    spacing: st.spacing,
+    ...(b.trackClick === 'default' ? {} : { trackClick: b.trackClick }),
+    allowShiftAll: b.allowShiftAll,
+    thumbFit: b.thumbFit,
+    ...(b.endless === 'none' ? {} : { endless: b.endless }),
+    trackHeight: l.trackHeight,
+    density: l.density,
+    readoutPlacement: l.readoutPlacement,
+  };
+}
+
+/** A named set of knob values, by dotted path. */
+export interface SliderArcPreset {
+  name: string;
+  config: Record<string, unknown>;
+}
+
+export const SLIDER_ARC_PRESETS: readonly SliderArcPreset[] = [
+  {
+    name: 'Zoom detents',
+    config: { 'values.min': 2, 'values.max': 16, 'values.step': 1, 'values.thumbs': 1, 'stops.set': 'uneven', 'stops.snap': 'strict', 'stops.spacing': 'even', 'arc.start': 240, 'arc.end': 120, 'arc.direction': 'ccw' },
+  },
+  {
+    name: 'Range on top',
+    config: { 'values.min': 0, 'values.max': 100, 'values.step': 1, 'values.thumbs': 2, 'values.constraint': 'ordered', 'stops.set': 'quarters', 'stops.snap': 'magnetic', 'stops.spacing': 'linear', 'arc.start': 300, 'arc.end': 60, 'arc.direction': 'cw' },
+  },
+  {
+    name: 'Fine, no stops',
+    config: { 'values.min': 0, 'values.max': 1, 'values.step': 0.01, 'values.thumbs': 1, 'stops.set': 'none', 'stops.snap': 'magnetic', 'stops.spacing': 'linear', 'look.readoutPlacement': 'below-thumb' },
+  },
+  {
+    name: 'Endless max',
+    config: { 'values.min': 0, 'values.max': 100, 'values.step': 5, 'values.thumbs': 1, 'stops.set': 'labeled', 'behavior.endless': 'max' },
+  },
+  {
+    name: 'Right side, cw',
+    config: { 'arc.start': 30, 'arc.end': 150, 'arc.direction': 'cw', 'values.thumbs': 1 },
+  },
+  {
+    name: 'Slim, overhang',
+    config: { 'look.density': 'slim', 'behavior.thumbFit': 'overhang', 'look.trackHeight': 4 },
+  },
+];
