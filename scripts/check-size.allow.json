@@ -82,7 +82,7 @@
     "longestFunction": 225
   },
   "packages/forge/src/shell/TrialHost.tsx": {
-    "longestFunction": 132
+    "longestFunction": 130
   },
   "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
     "longestFunction": 149

@@ -22,6 +22,7 @@ import type { CssVarReport, Globals, Layout, ToFrame } from '../protocol/message
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { StoryScroller } from './StoryScroller';
 import { TrialFramesContext } from './trialFrames';
 
 /** Props for `TrialHost`. */
@@ -187,9 +188,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-fg-layout={layout}
       data-pending={pending || undefined}
     >
-      <div className="fg-story__scroll">
-        {host && inView ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}
-      </div>
+      <StoryScroller>{host && inView ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}</StoryScroller>
     </div>
   );
 }
