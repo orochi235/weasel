@@ -4,3 +4,5 @@ export { keymapContribution, keymapLeaderBindingId, keymapLeaderId } from './key
 export type { KeymapDef } from './keymapContribution';
 export { describeKeymap, keymapShortcuts } from './describeKeymap';
 export type { KeymapDescription, KeymapRow } from './describeKeymap';
+export { captureKey } from './captureKey';
+export type { CaptureKeyOptions } from './captureKey';
