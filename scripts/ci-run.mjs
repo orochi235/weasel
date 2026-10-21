@@ -11,6 +11,7 @@ import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { calibrate, createBar, planWeights, readWeights, writeWeights } from './lib/ci-progress.mjs';
 import { CI_YML, builtSteps, jobSteps, readCi } from './lib/ci-steps.mjs';
 import { COMMIT_ENV, checkTree, stampReport, treeReport, treeStamp } from './lib/fleet-tree.mjs';
 
@@ -18,6 +19,20 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TAIL = 80;
 const say = (line) => console.log(`ci-run: ${line}`);
 const mode = process.argv[2] ?? 'built';
+if (mode === '--calibrate') {
+  const log = process.argv[3];
+  if (!log) {
+    say('usage: ci-run.mjs --calibrate <log>');
+    process.exit(2);
+  }
+  const before = readWeights();
+  const after = calibrate(before, readFileSync(log === '-' ? 0 : log, 'utf8'));
+  for (const [label, secs] of Object.entries(after)) {
+    if (before[label] !== secs) say(`${String(before[label] ?? '-').padStart(7)} -> ${secs.toFixed(1).padStart(7)}s  ${label}`);
+  }
+  writeWeights(after);
+  process.exit(0);
+}
 if (mode !== 'built' && mode !== 'job') {
   say(`unknown mode "${mode}": built or job`);
   process.exit(2);
@@ -35,6 +50,17 @@ const stamp = treeStamp(ROOT);
 
 const { env: jobEnv, steps } = readCi(readFileSync(CI_YML, 'utf8'));
 const nodeMajor = Number(process.versions.node.split('.')[0]);
+const plan = mode === 'job' ? jobSteps(steps, nodeMajor) : [{ run: 'npm ci', env: {} }, ...builtSteps(steps, nodeMajor)];
+const labels = plan.map((step) => step.run.replace(/\n/g, ' && '));
+const weights = planWeights(labels, readWeights());
+
+// The job's stdout, which onto reads protocol lines from in a `do` job's log. Not fd 3, as
+// vitest-overlap.mjs uses: that is onto adapt's channel, and in a `do` job fd 3 is open to
+// something that refuses writes (ENXIO).
+const toOnto = (line) => console.log(line);
+const bar = createBar(weights, toOnto);
+bar.start();
+const started = Date.now();
 
 // CI installs its pinned npm globally; here it goes in a per-version directory under the OS temp dir,
 // and every other version's directory is deleted, so at most one is ever kept.
@@ -68,21 +94,26 @@ const runStep = (run, stepEnv) =>
     child.on('close', (status) => done({ ok: status === 0, output: Buffer.concat(chunks).toString('utf8') }));
   });
 
-const plan = mode === 'job' ? jobSteps(steps, nodeMajor) : [{ run: 'npm ci', env: {} }, ...builtSteps(steps, nodeMajor)];
 const width = String(plan.length).length;
-const started = Date.now();
+const secs = (s) => `${s.toFixed(1).padStart(7)}s`;
 let failed = 0;
 let broken = '';
+say(`setup took ${((Date.now() - started) / 1000).toFixed(1)}s; plan ${bar.total}s over ${plan.length} steps`);
 for (const [i, step] of plan.entries()) {
-  const label = step.run.replace(/\n/g, ' && ');
+  const label = labels[i];
   const at = `${String(i + 1).padStart(width)}/${plan.length}`;
+  const planned = secs(weights[i]).trim();
   if (broken) {
-    say(`${at} skip           ${label}  (after ${broken} failed)`);
+    bar.skip(i);
+    say(`${at} skip           (plan ${planned.padStart(7)})  ${label}  (after ${broken} failed)`);
     continue;
   }
   const t0 = Date.now();
+  bar.begin(i);
   const { ok, output } = await runStep(step.run, step.env);
-  say(`${at} ${ok ? 'ok  ' : 'FAIL'} ${((Date.now() - t0) / 1000).toFixed(1).padStart(7)}s  ${label}`);
+  bar.end(i);
+  const took = (Date.now() - t0) / 1000;
+  say(`${at} ${ok ? 'ok  ' : 'FAIL'} ${secs(took)}  (plan ${planned.padStart(7)}, ${(took / weights[i]).toFixed(2).padStart(5)}×)  ${label}`);
   if (ok) continue;
   failed++;
   const lines = output.trimEnd().split('\n');
@@ -91,6 +122,8 @@ for (const [i, step] of plan.entries()) {
   if (/^npm (ci|run build)\b/.test(step.run)) broken = label;
 }
 
+const score = bar.finish();
+say(`bar strayed ${score.mean.toFixed(1)} points on average from a perfectly paced one, ${score.worst.toFixed(1)} at worst`);
 const end = stampReport(stamp, treeStamp(ROOT));
 say(end.text);
 say(`${failed ? `${failed} step(s) failed` : 'every step passed'} in ${((Date.now() - started) / 60000).toFixed(1)} min`);

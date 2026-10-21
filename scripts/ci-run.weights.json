@@ -1,0 +1,13 @@
+{
+  "npm ci": 103,
+  "npm run build": 97.1,
+  "npm run build -w @weasel-js/labkit": 13.9,
+  "npx vitest run --project=forge-node packages/forge/src/csf/shims/alias.test.ts": 6.6,
+  "npm run check:manifests": 15,
+  "npm run check:treeshake": 1.3,
+  "npm run check:react-free": 0.2,
+  "npm run build -w @weasel-js/ui -w @weasel-js/hud": 6.5,
+  "npm run test:smoke:consumer -w @weasel-js/labkit": 0.4,
+  "npm run test:smoke:consumer": 17.5,
+  "npm run build:demo && npm run build:draw && npm run build:chart && npm run build:forge": 56.9
+}
