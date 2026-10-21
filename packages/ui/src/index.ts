@@ -22,6 +22,7 @@ export * from './components/LayerList';
 export * from './components/MeasureReadout';
 export * from './components/KeymapHint';
 export * from './components/Slider';
+export * from './components/Along';
 export * from './components/ItemList';
 export * from './components/ListEditor';
 export * from './components/ToggleBar';
