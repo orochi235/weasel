@@ -4,7 +4,6 @@ import {
   ActiveToolContextProvider,
   DepRegistryProvider,
   type MenuDef,
-  type Tool,
   useActionsRegistry,
   useGestureDispatcher,
   useMenuHost,
@@ -12,9 +11,9 @@ import {
 } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { createContext, type ReactNode, useContext } from 'react';
+import { LabAmbientContext, useLabAmbientHost } from './labAmbient';
 import { LabContextMenusContext } from './labContextMenus';
 
-const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
 const NO_ELEMENT = { current: null };
 const NONE: readonly MenuDef[] = [];
@@ -43,29 +42,32 @@ export function LabActions({
     <DepRegistryProvider>
       <ActionsProvider>
         <ActiveToolContextProvider>
-          <LabKeys />
-          <LabContextMenus defs={contextMenus ?? NONE}>
-            <LabActionsContext.Provider value={true}>{children}</LabActionsContext.Provider>
-          </LabContextMenus>
+          <LabKeys>
+            <LabContextMenus defs={contextMenus ?? NONE}>
+              <LabActionsContext.Provider value={true}>{children}</LabActionsContext.Provider>
+            </LabContextMenus>
+          </LabKeys>
         </ActiveToolContextProvider>
       </ActionsProvider>
     </DepRegistryProvider>
   );
 }
 
-function LabKeys() {
+/** The lab's key dispatcher, over what `useLabAmbient` installs below it. */
+function LabKeys({ children }: { children: ReactNode }) {
   const actions = useActionsRegistry() as ActionsRegistry;
+  const { entriesById, host } = useLabAmbientHost();
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions,
-    entriesById: NO_TOOLS,
+    entriesById,
     channels: CHANNELS,
     // First, so a story's own zoom keys don't also fire over a trial with a camera;
     // over one without, the action is disabled and the keys pass on.
     keyboard: 'first',
     hears: 'own',
   });
-  return null;
+  return <LabAmbientContext.Provider value={host}>{children}</LabAmbientContext.Provider>;
 }
 
 /** Declares the lab's context menus on its root's host and draws whichever one opens. */
