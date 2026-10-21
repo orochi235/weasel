@@ -212,9 +212,10 @@ test('scroll mode: Tab reaches every action, scrolling each past the end into vi
 test('the wheel and a drag along the band scroll; a still press on an action fires it', async () => {
   const { box } = await mount({ arc: SHORT });
   const c = centerOf(box);
-  const first = () => bearing(mid(items()[0]!), c);
+  // An item that stays on the run through both scrolls: one past an end is drawn at that end.
+  const third = () => bearing(mid(items()[2]!), c);
 
-  // Each item takes a press at its middle; somewhere on the run between them only the band does.
+  // Each item takes a press at its middle; between two of them only the band does.
   const shape = (el: HTMLElement) => {
     const at = mid(el);
     const hit = document.elementFromPoint(at.x, at.y);
@@ -227,25 +228,26 @@ test('the wheel and a drag along the band scroll; a still press on an action fir
   }
   const gapDeg = Array.from({ length: 201 }, (_, i) => -25 + i / 4).find((deg) => {
     const hit = document.elementFromPoint(...onCircle(c, deg));
-    return hit instanceof SVGPathElement && bar().contains(hit);
+    return hit?.parentElement?.parentElement === bar();
   });
   expect(gapDeg, layout).toBeDefined();
-  const before = first();
-  await dragAlong(c, gapDeg!, gapDeg! - 15);
+  // 25°: on past the run's start, which the drag keeps scrolling through.
+  const before = third();
+  await dragAlong(c, gapDeg!, gapDeg! - 25);
   await settle();
-  expect(Math.abs(first() - before + 15), `gap ${gapDeg}°, first ${before} → ${first()}\n${layout}`).toBeLessThanOrEqual(1);
+  expect(Math.abs(third() - before + 25), `gap ${gapDeg}°, third ${before} → ${third()}\n${layout}`).toBeLessThanOrEqual(1);
 
   const wheels: number[] = [];
   const onWheel = (e: WheelEvent) => wheels.push(e.deltaY);
   document.addEventListener('wheel', onWheel, { capture: true });
-  const dragged = first();
+  const dragged = third();
   const visible = items().find((el) => el.getAttribute('data-clipped') === 'none')!;
   await commands.pointer([to(mid(visible).x, mid(visible).y), { wheel: [0, 40] }]);
   document.removeEventListener('wheel', onWheel, { capture: true });
   await settle();
   const scrolled = wheels.reduce((a, b) => a + b, 0);
   expect(scrolled).toBeGreaterThan(0);
-  expect(Math.abs(first() - dragged + ((scrolled / RADIUS) * 180) / Math.PI)).toBeLessThanOrEqual(1);
+  expect(Math.abs(third() - dragged + ((scrolled / RADIUS) * 180) / Math.PI)).toBeLessThanOrEqual(1);
 
   const target = items().find((el) => el.getAttribute('data-clipped') === 'none')!;
   const name = target.querySelector('button')!.getAttribute('aria-label')!;
