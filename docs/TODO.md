@@ -377,6 +377,11 @@ Priority tags:
   takes 474, so 64 curves take 1.44 ms against 0.48 ms, and 512 curves 12.0 ms against 1.65 ms. Left:
   re-record those rows; and decide whether the cap should still subdivide wiggles smaller than
   the stroke is wide, which is where the 512-curve case spends its 10034 points.
+  The re-record is one command, `bash tests/perf/recorded/tessellate-bench-2026-10-21/run.sh` sent with
+  `onto do --kind bench --node studio --solo`, then `node tests/perf/bench-report.mjs --merge` on its
+  `vitest-bench.json`. It did not run on 2026-10-21: onto's solo check (`soloBlock` in
+  `~/src/onto/queuesolo.go`) counts studio's idle `brick-spot-render` service as a running job, so a
+  `--solo` job never starts there.
 
 ---
 
