@@ -107,6 +107,9 @@ export async function launchCaptureBrowser(
     return context;
   };
   const render = async (page: Page, payload: CapturePayload, url: string): Promise<Buffer> => {
+    // The page reaches nothing but the server it came from, whatever a story or an override asks it to load.
+    const own = new URL(url).origin;
+    await page.route('**/*', (route) => (new URL(route.request().url()).origin === own ? route.continue() : route.abort()));
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
     await page.goto(url);
     await page.waitForFunction(() => (window as CaptureWindow).__forgeCapture !== undefined);

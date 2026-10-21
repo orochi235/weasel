@@ -1,5 +1,6 @@
 import type { CssVarReport } from '../protocol/messages';
 import { usedCssVars, varRefs } from './cssVarUse';
+import { isSafeOverride } from './safeOverride';
 
 const collect = (text: string, names: Set<string>) => void varRefs(text, names);
 
@@ -97,9 +98,19 @@ export function createOverrides(doc: Document, scope = ':root'): Overrides {
     }
     doc.head.append(style);
   };
+  const selector = `:is(${scope}):not(#fg-overrides)`;
+  /** Each declaration goes through the rule's own CSSOM, which drops what the browser would not take as one value,
+   *  and the text is written back from what it kept; an override that could close the rule is never offered. */
   const write = () => {
-    const decls = [...values].map(([name, value]) => `  ${name}: ${value};`);
-    style.textContent = decls.length > 0 ? `:is(${scope}):not(#fg-overrides) {\n${decls.join('\n')}\n}\n` : '';
+    style.textContent = values.size > 0 ? `${selector} {}` : '';
+    const rule = style.sheet?.cssRules[0] as CSSStyleRule | undefined;
+    if (!rule) return;
+    for (const [name, value] of values) if (isSafeOverride(name, value)) rule.style.setProperty(name, value);
+    const decls = [...values.keys()].flatMap((name) => {
+      const value = rule.style.getPropertyValue(name).trim();
+      return value && isSafeOverride(name, value) ? [`  ${name}: ${value};`] : [];
+    });
+    style.textContent = decls.length > 0 ? `${selector} {\n${decls.join('\n')}\n}\n` : '';
   };
 
   keepLast();

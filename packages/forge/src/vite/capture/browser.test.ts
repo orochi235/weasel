@@ -27,6 +27,28 @@ const payload: CapturePayload = {
   lab: { globals: {}, mode: 'light' },
 };
 
+interface FakeRoute {
+  request(): { url(): string };
+  continue(): Promise<void>;
+  abort(): Promise<void>;
+}
+
+/** What a route handler decided for a request to `url`. */
+async function decide(handler: (route: FakeRoute) => unknown, url: string): Promise<'continue' | 'abort'> {
+  let decision: 'continue' | 'abort' | null = null;
+  await handler({
+    request: () => ({ url: () => url }),
+    continue: async () => {
+      decision = 'continue';
+    },
+    abort: async () => {
+      decision = 'abort';
+    },
+  });
+  if (decision === null) throw new Error(`no decision for ${url}`);
+  return decision;
+}
+
 /** A stand-in for Playwright recording what forge asks of it. `hold` keeps each screenshot pending until released;
  *  the first `hang` renders never settle. */
 function fakePlaywright({ hold = false, hang = 0 } = {}) {
@@ -36,7 +58,11 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
   const contexts: number[] = [];
   const viewports: unknown[] = [];
   const pending: (() => void)[] = [];
+  const routes: ((route: FakeRoute) => unknown)[] = [];
   const page = {
+    route: async (_pattern: string, handler: (route: FakeRoute) => unknown) => {
+      routes.push(handler);
+    },
     setViewportSize: async (size: unknown) => {
       viewports.push(size);
     },
@@ -70,7 +96,7 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
       },
     },
   };
-  return { load: async () => playwright as never, launches, contexts, viewports, pending, pagesClosed };
+  return { load: async () => playwright as never, launches, contexts, viewports, pending, pagesClosed, routes };
 }
 
 const launched = async (load: () => Promise<never>): Promise<CaptureBrowser> => {
@@ -151,6 +177,19 @@ describe('launchCaptureBrowser', () => {
     expect(fake.pagesClosed.length).toBeGreaterThan(0);
 
     await expect(browser.capture('http://x/', payload)).resolves.toEqual(Buffer.from('png'));
+    await browser.close();
+  });
+
+  it('lets the capture page reach only the dev server it came from', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload);
+    const [handler] = fake.routes;
+    expect(handler).toBeDefined();
+    expect(await decide(handler!, 'http://127.0.0.1:5173/@id/virtual:forge/index.js')).toBe('continue');
+    expect(await decide(handler!, 'http://10.0.0.1/any.png')).toBe('abort');
+    expect(await decide(handler!, 'http://127.0.0.1:8080/other')).toBe('abort');
+    expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
     await browser.close();
   });
 

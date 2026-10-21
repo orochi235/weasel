@@ -20,9 +20,10 @@ type Launched = CaptureBrowser | { unavailable: string };
 
 const keyOf = (payload: CapturePayload) => createHash('sha1').update(stableStringify(payload)).digest('hex');
 
-const hostOf = (address: string) => {
+/** A socket address as a URL's host: IPv6 bracketed with its zone id escaped (RFC 6874), IPv4-mapped unwrapped. */
+export const urlHost = (address: string): string => {
   const v4 = address.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/, '');
-  return v4.includes(':') ? `[${v4}]` : v4;
+  return v4.includes(':') ? `[${v4.replace('%', '%25')}]` : v4;
 };
 
 /**
@@ -30,7 +31,7 @@ const hostOf = (address: string) => {
  * the capture page is loaded from here, and a forged host would have Chromium screenshot someone else's page.
  */
 const socketOrigin = (req: IncomingMessage, protocol: string) =>
-  `${protocol}://${hostOf(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`;
+  `${protocol}://${urlHost(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`;
 
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 

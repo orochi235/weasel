@@ -1,3 +1,4 @@
+import { isSafeOverride } from '../../frame/safeOverride.ts';
 import type { Globals, Layout } from '../../protocol/messages.ts';
 
 /** Everything the screen renders a story from, as the capture endpoint takes it. */
@@ -51,6 +52,8 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
   if (!isRecord(overrides) || !Object.values(overrides).every((v) => typeof v === 'string')) {
     return { error: 'overrides must map property names to strings' };
   }
+  const unsafe = Object.entries(overrides as Record<string, string>).find(([name, value]) => !isSafeOverride(name, value));
+  if (unsafe) return { error: `overrides must name custom properties, with no { } or ; in a value: ${unsafe[0]}` };
   if (playhead !== null && !(typeof playhead === 'number' && Number.isFinite(playhead))) {
     return { error: 'playhead must be a number or null' };
   }

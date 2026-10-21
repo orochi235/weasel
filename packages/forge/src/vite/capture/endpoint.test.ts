@@ -8,6 +8,7 @@ import { createServer, type Plugin, type ViteDevServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forge } from '../plugin';
 import type { CaptureBrowser } from './browser';
+import { urlHost } from './endpoint';
 import type { CapturePayload } from './payload';
 
 const launch = vi.hoisted(() => vi.fn());
@@ -49,6 +50,15 @@ const pngNumbered = (n: number) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e,
 
 const fakeBrowser = (capture = vi.fn(async () => pngNumbered(1))) =>
   ({ capture, close: vi.fn(async () => {}) }) satisfies CaptureBrowser;
+
+describe('urlHost', () => {
+  it('writes a socket address as a URL host: IPv6 bracketed, its zone id escaped as RFC 6874 writes it, IPv4-mapped unwrapped', () => {
+    expect(urlHost('127.0.0.1')).toBe('127.0.0.1');
+    expect(urlHost('::1')).toBe('[::1]');
+    expect(urlHost('::ffff:10.0.0.5')).toBe('10.0.0.5');
+    expect(urlHost('fe80::1%en0')).toBe('[fe80::1%25en0]');
+  });
+});
 
 describe('capture endpoint', () => {
   let root: string;

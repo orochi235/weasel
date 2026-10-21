@@ -41,6 +41,15 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, lab: undefined })).toEqual({ error: expect.stringContaining('lab') });
   });
 
+  it('rejects an override whose name is not a custom property, or whose value could close the rule', () => {
+    for (const name of ['color', '--a} b{c:d', '--a b']) {
+      expect(parsePayload({ ...valid, overrides: { [name]: 'red' } })).toEqual({ error: expect.stringContaining('overrides') });
+    }
+    for (const value of ['x} [data-fg-capture]{background:url(http://10.0.0.1/any.png)} b{c:d', 'a{', 'red; color: blue']) {
+      expect(parsePayload({ ...valid, overrides: { '--wzl-accent': value } })).toEqual({ error: expect.stringContaining('overrides') });
+    }
+  });
+
   it('drops fields the payload does not define', () => {
     expect(parsePayload({ ...valid, extra: 1 })).toEqual(valid);
   });
