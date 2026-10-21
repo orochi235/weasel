@@ -39,7 +39,7 @@ Where the code disagrees with the spec, or the spec is silent on something the c
 - At most 8 lenses at once (`MAX_LENSES = 8`). Every Live lens is a whole second render.
 - Lenses last for the session (in memory at the `Workshop`) and are never written to trial storage.
 - The lens scene keeps its own undo history, separate from `varsHistory`. It answers undo keys only while its input element has focus.
-- Leader scopes are out of scope. Every lens key except none is `Alt+` the letter in the Task 4 table (ruled 2026-10-20), matched by `code` (`KeyL`, …) since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
+- Leader scopes are out of scope. Every lens key is Alt plus the key in the Task 4 table (ruled 2026-10-20), matched by `code` (`KeyL`, …) since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
 - US English in code, copy and commits. Commit subjects are imperative and lower-case, and every commit ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Work in a worktree (`git worktree add .claude/worktrees/forge-loupe -b forge-loupe`, then `npm ci` inside it). Before merging, run `npm run test:gate` and `npm run test:fleet -- HEAD` on the branch.
 
