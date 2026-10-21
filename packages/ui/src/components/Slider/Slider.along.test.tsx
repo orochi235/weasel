@@ -175,3 +175,17 @@ describe('Slider on a curve', () => {
     expect(Number.parseFloat(placed(thumb).y)).toBeCloseTo(p.y, 9);
   });
 });
+
+describe('readouts along a curve', () => {
+  test.each(['below-thumb', 'inline-after'] as const)('%s draws one readout per thumb at that thumb\'s place', (readoutPlacement) => {
+    const { container, thumbs } = mount({ thumbs: [{ value: 25 }, { value: 75 }], readoutPlacement });
+    const readouts = Array.from(container.querySelectorAll<HTMLElement>('[data-readout="below"]'));
+    expect(readouts).toHaveLength(2);
+    expect(container.querySelector('[data-readout="inline"]')).toBeNull();
+    readouts.forEach((r, i) => expect(r.style.getPropertyValue('--at-x')).toBe(placed(thumbs[i]!).x));
+  });
+
+  test('placement none draws none', () => {
+    expect(mount().container.querySelector('[data-readout]')).toBeNull();
+  });
+});

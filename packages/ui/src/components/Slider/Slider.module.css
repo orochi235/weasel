@@ -314,3 +314,23 @@
 .curved .stopLabel {
   transform: translate(-50%, -50%) rotate(var(--at-angle)) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh));
 }
+
+.readoutsAlong {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.readoutAlong {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-xs);
+  line-height: var(--wzl-leading-tight);
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+  /* Below the stop labels' line, one row per step of --row. */
+  transform: translate(-50%, -50%) rotate(var(--at-angle)) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-2) + (var(--row, 0) + 1) * 1lh));
+}

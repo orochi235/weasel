@@ -1,5 +1,6 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import s from './Slider.module.css';
+import { staggerRows } from './staggerRows';
 
 /** Space kept between two readouts sharing a row, in px. */
 const GAP = 4;
@@ -18,17 +19,10 @@ function stagger(row: HTMLElement): void {
   const boxes = items.map((item) => item.getBoundingClientRect());
   // With no layout to measure (jsdom, a hidden panel) there is nothing to avoid.
   if (boxes.every((b) => b.width === 0)) return;
-  const order = boxes.map((_, i) => i).sort((a, b) => boxes[a]!.left - boxes[b]!.left);
-  const rightEdges: number[] = [];
   const rowHeight = Math.max(...boxes.map((b) => b.height));
-  for (const i of order) {
-    const box = boxes[i]!;
-    let at = rightEdges.findIndex((right) => box.left >= right + GAP);
-    if (at < 0) at = rightEdges.push(0) - 1;
-    rightEdges[at] = box.right;
-    items[i]!.style.top = `${at * rowHeight}px`;
-  }
-  row.style.height = `${rightEdges.length * rowHeight}px`;
+  const rows = staggerRows(boxes.map((b) => ({ start: b.left, end: b.right })), GAP);
+  rows.forEach((at, i) => { items[i]!.style.top = `${at * rowHeight}px`; });
+  row.style.height = `${(Math.max(...rows) + 1) * rowHeight}px`;
 }
 
 /**

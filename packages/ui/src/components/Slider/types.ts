@@ -155,6 +155,7 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
    *  `aria-valuetext` when the thumb gives no `valueText` of its own. Default:
    *  three decimals shown, nothing spoken beyond `aria-valuenow`. */
   display?: Display;
+  /** Where each thumb's value shows. On a curved track `'inline-after'` is drawn as `'below-thumb'`, there being no row beside a curve. */
   readoutPlacement?: 'none' | 'inline-after' | 'below-thumb';
   /** Which end gets a stop for infinity, one `step` beyond `min` or `max`
    *  (under `spacing: 'even'`, one stop beyond the first or last): a thumb

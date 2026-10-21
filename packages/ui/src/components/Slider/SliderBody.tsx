@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
 import { useTrackShape } from '../Along/alongContext';
 import { QuantityText } from '../QuantityText';
+import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { SliderBand } from './SliderBand';
@@ -104,13 +105,16 @@ export function SliderBody<T extends Thumb = Thumb>(
     </>
   );
 
-  // Readouts along a curve are not drawn yet: neither a row beside it nor one below it follows its shape.
+  // On a curve there is no row beside the track, so 'inline-after' is drawn as 'below-thumb'.
   if (curved) {
     return (
       <div className={rootClass} style={rootVarsOf(density, props.trackHeight)} ref={trackRef} data-shape={shape.kind}>
         <SliderBand shape={shape} faceRef={bandRef} onPointerDown={pointer.onTrackPointerDown} />
         {props.renderTrack && <div className={s.paintLayer} ref={paintRef}>{painted}</div>}
         {marks}
+        {run && placement !== 'none' && (
+          <ReadoutsAlong readouts={thumbs.map((t, i) => ({ g: valueToFraction(t.value), content: readoutOf(t, i) }))} place={geometry.place} length={run.length} />
+        )}
       </div>
     );
   }
