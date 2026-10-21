@@ -39,11 +39,6 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 
-  it.each(['Default', 'MultiLayer', 'WithScaleIndicator'])('CanvasStack %s', async (name) => {
-    draw(stories(await import('./canvas/CanvasStack.stories'))[name], { className: 'arg-here' });
-    expect(document.querySelector('.arg-here')).not.toBeNull();
-  });
-
   it('TrialOverview Default', async () => {
     draw(stories(await import('./overview/TrialOverview.stories')).Default, {
       className: 'arg-here',

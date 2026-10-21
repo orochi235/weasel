@@ -81,5 +81,3 @@ export const LENS_REST_MS = 250;
 
 /** A new lens body's width and height, in px. */
 export const BODY_SIZE = 160;
-/** A reticle's width and height, in px. */
-export const RETICLE_SIZE = 16;

@@ -2,15 +2,13 @@ import {
   commitDeleteToScene,
   createDeleteAction,
   effectivePose,
-  ellipsePath,
   type NodeId,
-  type NodeShapeEntry,
   type RectPose,
-  rectPath,
   registerNodeShape,
   SceneCanvas,
   type SceneCanvasApi,
   sceneToAdapter,
+  useTransformFollower,
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
@@ -30,10 +28,12 @@ import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTi
 import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
-import { hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
+import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
+import { type LensColors, lensShapes } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
+import { reticleFollower } from './reticleFollower';
 import { useWheelPassThrough } from './useWheelPassThrough';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
@@ -80,50 +80,9 @@ export interface LensReadoutProps<C> extends LensSlotProps<C> {
 }
 
 const TILE = 'lab-loupe';
-const RIM_PX = 2;
-
-interface LensColors {
-  rim: string;
-  reticle: string;
-}
 
 function cssVar(el: Element, name: string, fallback: string): string {
   return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
-}
-
-type LensNode = { layer: string; data: LensNodeData<unknown> };
-const isRole = (node: unknown, role: LensNodeData<unknown>['role']): boolean =>
-  (node as LensNode).layer === 'lenses' && (node as LensNode).data?.role === role;
-
-/** How each node of a lens draws and picks. A body and a reticle are picked by
- *  their whole silhouette; a leader is drawn and never picked. */
-function lensShapes(colors: LensColors): NodeShapeEntry<LensNodeData<unknown>, RectPose>[] {
-  const ring = (color: string) => ({ paint: { color }, width: { px: RIM_PX } });
-  const outline = (node: { data: LensNodeData<unknown> }, p: RectPose) =>
-    node.data.role === 'lens-body' && node.data.shape === 'square'
-      ? rectPath(p.x, p.y, p.width, p.height)
-      : ellipsePath(p);
-  return [
-    {
-      id: 'labkit:lens-body',
-      matches: (node) => isRole(node, 'lens-body'),
-      paint: (node, p) => [{ kind: 'path', path: outline(node, p), stroke: ring(colors.rim) }],
-      silhouette: (node, p) => outline(node, p),
-    },
-    {
-      id: 'labkit:lens-reticle',
-      matches: (node) => isRole(node, 'lens-reticle'),
-      paint: (_node, p) => [{ kind: 'path', path: ellipsePath(p), stroke: ring(colors.reticle) }],
-      silhouette: (_node, p) => ellipsePath(p),
-    },
-    {
-      id: 'labkit:lens-leader',
-      matches: (node) => isRole(node, 'lens-leader'),
-      paint: (_node, _p, ctx) =>
-        ctx?.derivedPath ? [{ kind: 'path', path: ctx.derivedPath, stroke: ring(colors.rim) }] : [],
-      silhouette: () => null,
-    },
-  ];
 }
 
 const sameSize = (a: { w: number; h: number } | null, b: { w: number; h: number }) =>
@@ -178,7 +137,7 @@ function LensInterior<C>({
       className="lk-lens-interior"
       data-lens={lens.lensId}
       data-shape={settings.shape}
-      style={boxStyle(rect)}
+      style={{ ...boxStyle(rect), ['--lk-lens-slop' as string]: `${HANDLE_SLOP}px` }}
     >
       <LensSlot {...props} />
       {renderReadouts && settings.readouts.length > 0 ? (
@@ -230,6 +189,13 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
   return { container: surface?.getContainer() ?? null, size };
 }
 
+/** Resizes each reticle with its body, in the same undo entry, for the lens canvas below it. */
+function ReticleFollower<C>({ scene }: { scene: LensScene<C> }) {
+  const follower = useMemo(() => reticleFollower(scene), [scene]);
+  useTransformFollower(() => follower);
+  return null;
+}
+
 /**
  * The lens canvas's handle and what it adds to the canvas: the seam layer,
  * which claims a press on a split lens's seam so the drag reaches `loupe.seam`
@@ -261,7 +227,14 @@ function useLensCanvas<C>(scene: LensScene<C>) {
     }),
     [scene, preview],
   );
-  return { redraw, preview, attachSceneCanvas, actions };
+  // A reticle's size is its lens's patch, which the body and the factor set, so only a body takes resize handles.
+  const selectTool = useMemo(
+    () => ({
+      resize: { resizable: (id: string) => scene.get(id as NodeId)?.data.role === 'lens-body' },
+    }),
+    [scene],
+  );
+  return { redraw, preview, attachSceneCanvas, actions, selectTool };
 }
 
 /**
@@ -283,7 +256,7 @@ export function LensOverlay<C>({
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const [colors, setColors] = useState<LensColors | null>(null);
-  const { redraw, preview, attachSceneCanvas, actions } = useLensCanvas(scene);
+  const { redraw, preview, attachSceneCanvas, actions, selectTool } = useLensCanvas(scene);
   const { container, size } = useLensTile(layer, redraw);
   // Read once, from the layer, so the lenses take the theme the lab is in.
   const attachLayer = useCallback((el: HTMLDivElement | null) => {
@@ -298,12 +271,12 @@ export function LensOverlay<C>({
 
   useEffect(() => {
     if (!colors) return;
-    const off = lensShapes(colors).map((s) => registerNodeShape(s, { priority: 'high' }));
+    const off = lensShapes(colors, scene).map((s) => registerNodeShape(s, { priority: 'high' }));
     redraw();
     return () => {
       for (const u of off) u();
     };
-  }, [colors, redraw]);
+  }, [colors, scene, redraw]);
 
   useSyncExternalStore(scene.subscribe, scene.getVersion);
   const view = useSyncExternalStore(attachment.subscribe, attachment.view);
@@ -370,6 +343,7 @@ export function LensOverlay<C>({
       </div>
       {canvas && input && size ? (
         <WeaselProvider isolate>
+          <ReticleFollower scene={scene} />
           <SceneCanvas<LensNodeData<C>, 'lenses', RectPose>
             features={['pick', 'move', 'transform', 'edit']}
             ref={attachSceneCanvas}
@@ -380,6 +354,7 @@ export function LensOverlay<C>({
             paintInto={{ canvas, x: 0, y: 0 }}
             inputElement={input}
             actions={actions}
+            selectTool={selectTool}
           />
         </WeaselProvider>
       ) : null}

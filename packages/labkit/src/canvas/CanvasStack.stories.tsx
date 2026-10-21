@@ -1,13 +1,16 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { useArgs } from '@weasel-js/forge/preview-api';
 import type { CanvasLayerDescriptor } from '@weasel-js/labkit/canvas';
 import { CanvasStack, type CanvasStackProps } from '@weasel-js/labkit/canvas';
 import { ScaleIndicator } from '@weasel-js/labkit/primitives';
-import { useState } from 'react';
 
 const meta: Meta<typeof CanvasStack> = {
   title: 'labkit/Canvas/CanvasStack',
   component: CanvasStack,
   parameters: { layout: 'fullscreen' },
+  // The view is an arg, not the harness's own state, so a Live lens's copy and a Pixels capture show it as panned.
+  args: { view: { zoom: 1, pan: { x: 50, y: 50 } } },
+  argTypes: { view: { control: false }, onViewChange: { control: false } },
 };
 export default meta;
 
@@ -31,12 +34,18 @@ function makeColoredLayer(id: string, color: string, x: number, y: number): Canv
 
 function Harness({
   layers,
+  view,
   ...args
 }: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
-  const [view, setView] = useState({ zoom: 1, pan: { x: 50, y: 50 } });
+  const [, updateArgs] = useArgs();
   return (
     <div style={{ width: '100cqi', height: '100cqb' }}>
-      <CanvasStack {...args} layers={layers} view={view} onViewChange={setView}>
+      <CanvasStack
+        {...args}
+        layers={layers}
+        view={view ?? { zoom: 1, pan: { x: 50, y: 50 } }}
+        onViewChange={(next) => updateArgs({ view: next })}
+      >
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
           <ScaleIndicator />
         </div>

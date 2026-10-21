@@ -44,6 +44,12 @@ core's `pick`/`move`/`transform`/`edit` features on `<LensOverlay>`'s own
 `SceneCanvas`, with an undo history of its own that answers only while its input
 element has focus.
 
+The reticle's pose is the patch the body shows: the body's box divided by the
+factor (`patchAt`), drawn in the body's shape. So it is never resized directly
+and takes no handles. A new factor resizes it in `setLensOps`, and a resized
+body resizes it in the same undo entry through `reticleFollower`, a core
+transform follower.
+
 The reticle's aim is `pinned`, `follow` or `glass`. Glass is the reticle's pose
 derived from the body (`GLASS_POSE_KEY`), so `setAimOps` switches to it by
 setting the reticle's `dependsOn` and leaves it with a transform to where the

@@ -826,9 +826,14 @@ only story runner in the repo.
   (`useWheelPassThrough`) hands the wheel on as a dispatched copy, which is untrusted, and a browser scrolls an element
   only for a trusted wheel. A camera's wheel zoom answers the copy; a story's native `overflow` scroller under a lens
   does not move. A fix scrolls the element the copy lands on by its deltas when nothing called `preventDefault`.
-- **(P2) A lens's chrome strip takes the wheel and the press at the bottom of its body** (review finding,
-  2026-10-21). The strip sits in the lens interior over the body's hit box, so a wheel there is not passed through
-  and a drag starting there does not move the lens.
+- **(P3) A Live copy of an isolated story is drawn soft at magnification** (2026-10-21, inferred, not seen). A
+  `<CanvasStack>` puts the scale an ancestor transform shows it at into its backing density, so an in-document copy
+  is sharp at any factor. Inside an isolated story's frame the lens's transform is outside the frame's document,
+  where the stack's measurement cannot see it, so its canvas is enlarged instead.
+- **(P3) A `<CanvasStack>` under a scaled ancestor maps the pointer in client px** (2026-10-21, read in the code, not
+  seen). `CameraInput`'s `clientToWorld`, `worldToClient` and `hostSize` read the host's client rect, which an
+  ancestor transform (a `<Stage>`, `<TrialOverview>`) scales, while the stack now draws in its layout px. Nothing
+  takes input there today: a lens's copy takes no clicks.
 - **(P2) Two Follow lenses share one reticle hold** (review finding, 2026-10-21). `createApi`
   (`shell/loupe/ForgeLoupe.tsx`) keeps one `PoseHold` for every Follow lens and each `follow` sets it to the
   focused lens's reticle alone, so moving the focus to another Follow lens drops the first one's held pose. One hold

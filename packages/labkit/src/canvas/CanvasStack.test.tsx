@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { CanvasStack } from './CanvasStack';
+import { backingDensity, CanvasStack } from './CanvasStack';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
 
 beforeAll(() => {
@@ -141,6 +141,51 @@ describe('<CanvasStack> backing size', () => {
 
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+});
+
+describe('<CanvasStack> under a scaled ancestor', () => {
+  it('keeps its layout size and puts the scale into the backing density', () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 400,
+      right: 800,
+      bottom: 400,
+    } as unknown as DOMRect);
+    // The layout box, as an observer reports it: a quarter of the client rect the ancestor's scale draws.
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private readonly fn: ResizeObserverCallback) {}
+        observe() {
+          const entry = { contentRect: { width: 200, height: 100 } } as ResizeObserverEntry;
+          this.fn([entry], this as unknown as ResizeObserver);
+        }
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal('devicePixelRatio', 2);
+    const { container } = render(
+      <CanvasStack
+        layers={makeLayers(1)}
+        view={{ zoom: 1, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+      />,
+    );
+    const canvas = container.querySelector('canvas');
+    expect([canvas?.style.width, canvas?.style.height]).toEqual(['200px', '100px']);
+    expect([canvas?.width, canvas?.height]).toEqual([1600, 800]);
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('caps the density a large magnification asks for, never below the display', () => {
+    expect(backingDensity(200, 100, 2, 4)).toBe(8);
+    expect(backingDensity(2000, 2000, 2, 8)).toBeCloseTo(2.048);
+    expect(backingDensity(8000, 8000, 2, 4)).toBe(2);
+    expect(backingDensity(200, 100, 2, 0.5)).toBe(1);
   });
 });
 

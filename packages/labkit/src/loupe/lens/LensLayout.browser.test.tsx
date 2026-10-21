@@ -11,6 +11,7 @@ import { page } from 'vitest/browser';
 import { defineInstrument } from '../../instrument/defineInstrument';
 import { Lab } from '../../lab/Lab';
 import { LensOverlay } from './LensOverlay';
+import { HANDLE_SLOP } from './lensHitBoxes';
 import { addLensOps, createLensScene, setLensOps } from './lensScene';
 import type { LensSource } from './lensSource';
 import type { LensScene } from './lensTypes';
@@ -107,7 +108,7 @@ test('clips a round lens’s interior to its circle', async () => {
   expect(isRed(img, img.width / 2, img.height / 2)).toBe(true);
 });
 
-test('keeps the chrome within the body’s width, directly below it', async () => {
+test('keeps the chrome within the body’s width, below the reach of its handles', async () => {
   // A comparison shows every toggle the chrome has.
   sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { compare: 'b', view: 'split' }), 'split');
   const interior = await mount();
@@ -117,7 +118,7 @@ test('keeps the chrome within the body’s width, directly below it', async () =
   const strip = chrome.getBoundingClientRect();
   expect(strip.left).toBeGreaterThanOrEqual(body.left - 0.5);
   expect(strip.right).toBeLessThanOrEqual(body.right + 0.5);
-  expect(strip.top).toBeCloseTo(body.bottom, 0);
+  expect(strip.top).toBeCloseTo(body.bottom + HANDLE_SLOP, 0);
   for (const button of chrome.querySelectorAll('button')) {
     const r = button.getBoundingClientRect();
     expect(r.left).toBeGreaterThanOrEqual(body.left - 0.5);

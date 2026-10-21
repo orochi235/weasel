@@ -157,13 +157,14 @@
   background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
 }
 
-// Directly below the body, as wide as it, above the hit boxes, which are later
-// siblings in the same layer, so its toggles take presses.
+// Below the body, as wide as it, above the hit boxes, which are later
+// siblings in the same layer, so its toggles take presses. It starts past the
+// reach of a selected body's handles, so it never covers one.
 .lk-lens-chrome {
   position: absolute;
   left: 0;
   right: 0;
-  top: 100%;
+  top: calc(100% + var(--lk-lens-slop, 0px));
   z-index: 1;
   pointer-events: auto;
   display: flex;

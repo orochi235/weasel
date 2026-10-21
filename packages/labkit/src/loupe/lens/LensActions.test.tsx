@@ -107,7 +107,10 @@ describe('<LensActions>', () => {
       fireEvent.pointerMove(body, { clientX: 70, clientY: 80 });
     });
     expect(api.scene.history.undoDepth()).toBe(lengthBefore + 1);
-    expect(api.scene.overrides.read('l0:reticle' as never)?.pose).toMatchObject({ x: 62, y: 72 });
+    expect(centerOf(api.scene.overrides.read('l0:reticle' as never)!.pose as RectPose)).toEqual({
+      x: 70,
+      y: 80,
+    });
     act(() => void registry.trigger(LENS_ACTION_IDS.pinned));
     expect(centerOf(api.scene.get('l0:reticle' as never)!.pose)).toEqual({ x: 70, y: 80 });
     expect(api.scene.history.undoDepth()).toBe(lengthBefore + 2);

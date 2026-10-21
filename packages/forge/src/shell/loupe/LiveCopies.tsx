@@ -135,7 +135,9 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }:
 
   return (
     <LensPortal request={request}>
-      <TrialHost layout={layout} setup={setup} config={trialConfig} copy={copy}>
+      {/* Remounted on a new factor: no observer sees a transform change, and a canvas inside sizes its backing
+          store for the magnification it mounted under. */}
+      <TrialHost key={request.factor} layout={layout} setup={setup} config={trialConfig} copy={copy}>
         {(g) => (
           <ClockContext.Provider value={clock}>
             <StoryBody {...body} config={config} setConfig={setConfig} globals={g} />

@@ -16,8 +16,8 @@ import {
   lensIdsOf,
   type LoupePoint,
   MAX_LENSES,
-  RETICLE_SIZE,
   resolveSource,
+  reticleAt,
   settingsOf,
 } from '@weasel-js/labkit/loupe';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
@@ -123,10 +123,10 @@ export function createApi(
       const lensId = current();
       const body = refs.body.current;
       if (lensId === null || !body) return;
-      const p = toBody(client, body.getBoundingClientRect());
-      const half = RETICLE_SIZE / 2;
+      const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
+      if (pose === null) return;
       hold ??= scene.overrides.hold();
-      hold.set([[`${lensId}:reticle` as never, { x: p.x - half, y: p.y - half, width: RETICLE_SIZE, height: RETICLE_SIZE }]]);
+      hold.set([[`${lensId}:reticle` as never, pose]]);
     },
     sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
     openCompareMenu: (lensId) => refs.compare?.current?.(lensId),

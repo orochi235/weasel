@@ -1,6 +1,7 @@
 import { effectivePose, type View } from '@weasel-js/core';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { SEAM_GRAB, type SeamPreview, seamOf, showsSeam, splitRects } from './compare';
+import { lensShapeOf } from './lensScene';
 import type { LensScene } from './lensTypes';
 
 /** How far a selected body's box reaches past it on every side, in px: enough
@@ -61,7 +62,9 @@ export function hitBoxesOf<C>(
     }
     // A selected body's handles sit on its bounding box's corners, outside a
     // round body, so its box goes square to keep them reachable.
-    const round = body ? !grown && data.shape === 'circle' : true;
+    const round = body
+      ? !grown && data.shape === 'circle'
+      : lensShapeOf(scene, data.lensId) !== 'square';
     out.push({ nodeId: node.id, role: data.role, rect, round });
     if (body && showsSeam(data)) {
       const interior = interiorOf(rect, grown);

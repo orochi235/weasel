@@ -1,8 +1,8 @@
 import { type Op, type PoseHold, type RectPose, sceneToAdapter } from '@weasel-js/core';
 import { vi } from 'vitest';
 import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
-import { addLensOps, createLensScene, lensesOf } from './lensScene';
-import { type LensScene, type LoupePoint, RETICLE_SIZE } from './lensTypes';
+import { addLensOps, createLensScene, lensesOf, reticleAt } from './lensScene';
+import type { LensScene, LoupePoint } from './lensTypes';
 
 export const PIXELS_MISSING = 'needs Playwright';
 
@@ -37,14 +37,10 @@ export function lensApiFixture(): LensActionApi<string> & {
     follow: (client: LoupePoint) => {
       const lensId = api.current();
       if (lensId === null) return;
+      const pose = reticleAt(scene, lensId, client);
+      if (pose === null) return;
       hold ??= scene.overrides.hold();
-      const half = RETICLE_SIZE / 2;
-      hold.set([
-        [
-          `${lensId}:reticle` as never,
-          { x: client.x - half, y: client.y - half, width: RETICLE_SIZE, height: RETICLE_SIZE },
-        ],
-      ]);
+      hold.set([[`${lensId}:reticle` as never, pose]]);
     },
     sourceAvailable: (kind: string) => (kind === 'pixels' ? PIXELS_MISSING : true) as true | string,
     openCompareMenu: vi.fn(),

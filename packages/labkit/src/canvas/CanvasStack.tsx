@@ -48,7 +48,25 @@ export interface CanvasStackProps {
   ticks?: (fn: () => void) => () => void;
 }
 
-/** The element's CSS size and the display's pixel density, kept current. */
+/** The most backing pixels one layer's canvas is given, whatever magnifies it: 4096², 64 MB of RGBA. */
+const MAX_BACKING_PIXELS = 4096 * 4096;
+
+/**
+ * Backing pixels per CSS px for a box of `width × height` CSS px that a transform shows at `scale` times its size on a
+ * display of `dpr`: enough to stay sharp, capped at {@link MAX_BACKING_PIXELS} but never below `dpr` itself.
+ */
+export function backingDensity(width: number, height: number, dpr: number, scale: number): number {
+  const wanted = dpr * scale;
+  const area = width * height;
+  const most = area > 0 ? Math.sqrt(MAX_BACKING_PIXELS / area) : wanted;
+  return Math.min(wanted, Math.max(dpr, most));
+}
+
+/**
+ * The element's layout size in CSS px and the backing density its canvases need, kept current. Measured from layout,
+ * not from its client rect, which a scaled ancestor (a lens, a `<Stage>`) inflates or shrinks: the scale goes into
+ * the density instead, so a magnified stack is drawn sharp rather than enlarged.
+ */
 function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
   width: number;
   height: number;
@@ -58,19 +76,27 @@ function useMeasuredBox(ref: RefObject<HTMLElement | null>): {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () => {
+    // The layout box as the observer last reported it; a transform does not reach it.
+    let layout: { width: number; height: number } | null = null;
+    const update = (entries?: readonly ResizeObserverEntry[]) => {
+      const observed = entries?.at(-1)?.contentRect;
+      if (observed) layout = { width: observed.width, height: observed.height };
       const rect = el.getBoundingClientRect();
-      const dpr = window.devicePixelRatio ?? 1;
+      // Unscaled, the client rect is the box, read the same way on every call: a size that changed only in how it
+      // was rounded would place a view a second time.
+      const scaled = layout !== null && rect.width > 0 && Math.abs(rect.width - layout.width) > 0.5;
+      const box = scaled && layout ? layout : rect;
+      const scale = box.width > 0 ? rect.width / box.width : 1;
+      const { width, height } = box;
+      const dpr = backingDensity(width, height, window.devicePixelRatio ?? 1, scale);
       setSize((prev) => {
-        if (prev.width === rect.width && prev.height === rect.height && prev.dpr === dpr) {
-          return prev;
-        }
-        return { width: rect.width, height: rect.height, dpr };
+        if (prev.width === width && prev.height === height && prev.dpr === dpr) return prev;
+        return { width, height, dpr };
       });
     };
     update();
     // A window moved to a display of another density keeps its CSS box, so no observer fires.
-    const unwatchDensity = watchDevicePixelRatio(update);
+    const unwatchDensity = watchDevicePixelRatio(() => update());
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
     ro?.observe(el);
     return () => {

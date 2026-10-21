@@ -12,6 +12,8 @@ import {
   LENS_REGISTRY,
   lensClosure,
   lensesOf,
+  patchAt,
+  reticleAt,
   setAimOps,
   setLensOps,
   settingsOf,
@@ -103,7 +105,39 @@ describe('lens scene', () => {
     expect(settingsOf(scene, 'a')).toMatchObject({ factor: 4, view: 'swap' });
   });
 
-  it('draws the leader from the body’s rim to the reticle, and not at all while the reticle is inside the body', () => {
+  it('makes the reticle the patch the body shows: the body’s box over the factor', () => {
+    expect(poseOf('a:reticle')).toEqual({ x: 80, y: 80, width: 40, height: 40 });
+    expect(patchAt({ x: 0, y: 0, width: 200, height: 100 }, 8, { x: 100, y: 100 })).toEqual({
+      x: 87.5,
+      y: 93.75,
+      width: 25,
+      height: 12.5,
+    });
+  });
+
+  it('resizes a pinned reticle about its center with a new factor, in the same undo step', () => {
+    apply(setLensOps(scene, 'a', { factor: 8 }));
+    expect(poseOf('a:reticle')).toEqual({ x: 90, y: 90, width: 20, height: 20 });
+    scene.history.undo();
+    expect(poseOf('a:reticle')).toEqual({ x: 80, y: 80, width: 40, height: 40 });
+  });
+
+  it('derives a Glass reticle at the patch, centered on the body', () => {
+    apply(setAimOps(scene, 'a', 'glass'));
+    apply(setLensOps(scene, 'a', { factor: 2 }));
+    expect(poseOf('a:reticle')).toEqual({ x: 260, y: 160, width: 80, height: 80 });
+  });
+
+  it('keeps a Follow reticle’s size as it moves it', () => {
+    expect(reticleAt(scene, 'a', { x: 50, y: 60 })).toEqual({
+      x: 30,
+      y: 40,
+      width: 40,
+      height: 40,
+    });
+  });
+
+  it('draws the leader from the body’s rim to the reticle’s, and not at all while they overlap', () => {
     const leader = () => scene.get('a:leader' as never)!;
     const bounds = () => {
       const path = (leader() as { derivePath?: unknown }).derivePath as
@@ -113,13 +147,16 @@ describe('lens scene', () => {
       return path!(leader(), [dep('a:body'), dep('a:reticle')]);
     };
     const outside = bounds()!;
-    // Body center (300,200), reticle center (100,100): the rim is 80 along that line.
+    // Body center (300,200), reticle center (100,100): the body's rim is 80 along that line, the
+    // reticle's 20 (its 160 px body over factor 4, halved) back from the reticle's center.
     const d = Math.hypot(200, 100);
     expect(outside.coords[0]).toBeCloseTo(300 - (200 / d) * 80, 3);
     expect(outside.coords[1]).toBeCloseTo(200 - (100 / d) * 80, 3);
-    expect([outside.coords[2], outside.coords[3]]).toEqual([100, 100]);
+    expect(outside.coords[2]).toBeCloseTo(100 + (200 / d) * 20, 3);
+    expect(outside.coords[3]).toBeCloseTo(100 + (100 / d) * 20, 3);
 
-    scene.setPose('a:reticle' as never, { x: 292, y: 192, width: 16, height: 16 });
+    // 95 from the body's center: past its rim, but the reticle's rim reaches back inside it.
+    scene.setPose('a:reticle' as never, { x: 185, y: 180, width: 40, height: 40 });
     expect(bounds()).toBeNull();
   });
 

@@ -42,6 +42,7 @@ export {
   lensClosure,
   lensesOf,
   lensIdsOf,
+  reticleAt,
   setAimOps,
   setLensOps,
   settingsOf,
@@ -76,7 +77,6 @@ export {
   GLASS_POSE_KEY,
   LENS_DEFAULTS,
   LENS_REST_MS,
-  RETICLE_SIZE,
 } from './lens/lensTypes';
 export { readBitmap } from './lens/pixelGrid';
 export type { LensProbe } from './lens/probeUnderLens';

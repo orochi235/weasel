@@ -2,7 +2,7 @@ import { type Op, sceneToAdapter } from '@weasel-js/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { HANDLE_SLOP, hitBoxesOf } from './lensHitBoxes';
 import { addLensOps, createLensScene } from './lensScene';
-import { BODY_SIZE, type LensScene, RETICLE_SIZE } from './lensTypes';
+import { BODY_SIZE, type LensScene } from './lensTypes';
 
 let scene: LensScene<string>;
 const apply = (ops: Op[]) => sceneToAdapter(scene).applyOps(ops, 'test');
@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 describe('hitBoxesOf', () => {
-  it('gives each body and reticle a box at its effective pose, and none to the leader', () => {
+  it('gives the body a box at its pose, the reticle one over the patch it aims at, and the leader none', () => {
     const boxes = hitBoxesOf(scene, new Set());
     expect(boxes.map((b) => b.role)).toEqual(['lens-body', 'lens-reticle']);
     expect(boxes[0]).toEqual({
@@ -22,11 +22,12 @@ describe('hitBoxesOf', () => {
       rect: { x: 300 - BODY_SIZE / 2, y: 200 - BODY_SIZE / 2, w: BODY_SIZE, h: BODY_SIZE },
       round: true,
     });
-    expect(boxes[1]?.rect).toEqual({
-      x: 100 - RETICLE_SIZE / 2,
-      y: 100 - RETICLE_SIZE / 2,
-      w: RETICLE_SIZE,
-      h: RETICLE_SIZE,
+    const patch = BODY_SIZE / 4;
+    expect(boxes[1]).toEqual({
+      nodeId: 'a:reticle',
+      role: 'lens-reticle',
+      rect: { x: 100 - patch / 2, y: 100 - patch / 2, w: patch, h: patch },
+      round: true,
     });
   });
 
@@ -45,7 +46,7 @@ describe('hitBoxesOf', () => {
     const body = hitBoxesOf(scene, new Set(['a:body']))[0];
     expect(body?.rect.w).toBe(BODY_SIZE + 24);
     expect(body?.rect.x).toBe(300 - BODY_SIZE / 2 - 12);
-    expect(hitBoxesOf(scene, new Set(['a:reticle']))[1]?.rect.w).toBe(RETICLE_SIZE);
+    expect(hitBoxesOf(scene, new Set(['a:reticle']))[1]?.rect.w).toBe(BODY_SIZE / 4);
   });
 
   it('squares a selected round body’s box, so the handles on its corners stay reachable', () => {
@@ -53,7 +54,7 @@ describe('hitBoxesOf', () => {
     expect(hitBoxesOf(scene, new Set(['a:body']))[0]?.round).toBe(false);
   });
 
-  it('marks a square lens’s body box as not round', () => {
+  it('marks a square lens’s body and reticle boxes as not round', () => {
     scene = createLensScene<string>();
     apply(
       addLensOps(
@@ -63,6 +64,6 @@ describe('hitBoxesOf', () => {
         { shape: 'square' },
       ),
     );
-    expect(hitBoxesOf(scene, new Set())[0]?.round).toBe(false);
+    expect(hitBoxesOf(scene, new Set()).map((b) => b.round)).toEqual([false, false]);
   });
 });

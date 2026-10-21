@@ -23,7 +23,12 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
       this.#cb = cb;
     }
     observe(target: Element) {
-      const contentRect = { width: 1024, height: 768, x: 0, y: 0, top: 0, left: 0 };
+      // A test that gives an element a box gets that box back, as a browser's observer agrees with its layout.
+      const box = target.getBoundingClientRect();
+      const contentRect =
+        box.width > 0
+          ? { width: box.width, height: box.height, x: 0, y: 0, top: 0, left: 0 }
+          : { width: 1024, height: 768, x: 0, y: 0, top: 0, left: 0 };
       this.#cb([{ target, contentRect } as ResizeObserverEntry], this);
     }
     unobserve() {}

@@ -24,23 +24,31 @@ import {
   type LensScene,
   type LensSettings,
   type LoupePoint,
-  RETICLE_SIZE,
 } from './lensTypes';
 
 const center = (p: RectPose): LoupePoint => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
 
-const boxAt = (c: LoupePoint, size: number): RectPose => ({
-  x: c.x - size / 2,
-  y: c.y - size / 2,
-  width: size,
-  height: size,
-});
+/**
+ * The patch a lens shows: the body's box divided by the factor, centered on `at`. It is the reticle's pose, so the
+ * reticle marks exactly what the body magnifies, and it is drawn and picked in the body's shape.
+ */
+export function patchAt(body: RectPose, factor: number, at: LoupePoint): RectPose {
+  const width = body.width / factor;
+  const height = body.height / factor;
+  return { x: at.x - width / 2, y: at.y - height / 2, width, height };
+}
+
+const factorOf = (node: { data: unknown }): number => {
+  const data = node.data as LensNodeData<unknown> | undefined;
+  return data?.role === 'lens-body' ? data.factor : LENS_DEFAULTS.factor;
+};
 
 const glassPose: DerivePoseFn<RectPose, unknown, string> = (_node, deps) => {
   const body = deps[0];
-  return body === undefined ? null : boxAt(center(body.pose), RETICLE_SIZE);
+  return body === undefined ? null : patchAt(body.pose, factorOf(body.node), center(body.pose));
 };
 
+/** Joins the body's rim to the reticle's, or nothing while they overlap. */
 const leaderPath: DerivePathFn<RectPose, unknown, string> = (_node, deps) => {
   const [body, reticle] = deps;
   if (body === undefined || reticle === undefined) return null;
@@ -52,9 +60,14 @@ const leaderPath: DerivePathFn<RectPose, unknown, string> = (_node, deps) => {
   const square = data?.role === 'lens-body' && data.shape === 'square';
   const reach = square ? Math.max(Math.abs(dx), Math.abs(dy)) : Math.hypot(dx, dy);
   const half = body.pose.width / 2;
-  if (reach <= half) return null;
+  const patchHalf = reticle.pose.width / 2;
+  if (reach <= half + patchHalf) return null;
   const k = half / reach;
-  return linePath({ x: from.x + dx * k, y: from.y + dy * k }, to);
+  const j = patchHalf / reach;
+  return linePath(
+    { x: from.x + dx * k, y: from.y + dy * k },
+    { x: to.x - dx * j, y: to.y - dy * j },
+  );
 };
 
 /** The functions a lens scene's nodes carry, by key: what a restored history resolves them against. */
@@ -89,13 +102,14 @@ export function addLensOps<C>(
   const merged = { ...LENS_DEFAULTS, ...settings } as LensSettings<C>;
   const label = 'add lens';
   const base = { layer: 'lenses', kind: 'leaf' } as const;
+  const body = patchAt({ x: 0, y: 0, width: BODY_SIZE, height: BODY_SIZE }, 1, at.body);
   return [
     createInsertOp({
       label,
       node: {
         ...base,
         id: ids.body,
-        pose: boxAt(at.body, BODY_SIZE),
+        pose: body,
         data: { ...merged, role: 'lens-body', lensId } satisfies LensBodyData<C>,
       },
     }),
@@ -104,7 +118,7 @@ export function addLensOps<C>(
       node: {
         ...base,
         id: ids.reticle,
-        pose: boxAt(at.reticle, RETICLE_SIZE),
+        pose: patchAt(body, merged.factor, at.reticle),
         data: { role: 'lens-reticle', lensId },
         derivePose: glassPose,
         ...(merged.aim === 'glass' ? { dependsOn: [ids.body] } : {}),
@@ -164,7 +178,25 @@ export function settingsOf<C>(scene: LensScene<C>, lensId: string): LensSettings
   return settings;
 }
 
-/** Writes a patch to the body's settings. Aim has its own entry point, `setAimOps`. */
+/** A lens's reticle box moved to center on `at`, at the size it has now: what a Follow reticle is held at. Null when
+ *  the lens is gone. */
+export function reticleAt<C>(scene: LensScene<C>, lensId: string, at: LoupePoint): RectPose | null {
+  const reticle = scene.get(idsFor(lensId).reticle);
+  if (!reticle) return null;
+  const { width, height } = effectivePose(scene, reticle);
+  return { x: at.x - width / 2, y: at.y - height / 2, width, height };
+}
+
+/** The shape a lens's body, and so its reticle, is drawn in; null when the lens is gone. */
+export function lensShapeOf<C>(
+  scene: LensScene<C>,
+  lensId: string,
+): LensSettings<C>['shape'] | null {
+  return bodyOf(scene, lensId)?.shape ?? null;
+}
+
+/** Writes a patch to the body's settings. Aim has its own entry point, `setAimOps`. A new factor resizes a pinned or
+ *  Follow reticle to the patch it now shows; a Glass one derives it. */
 export function setLensOps<C>(
   scene: LensScene<C>,
   lensId: string,
@@ -172,16 +204,27 @@ export function setLensOps<C>(
 ): Op[] {
   const from = bodyOf(scene, lensId);
   if (from === null) return [];
+  const ids = idsFor(lensId);
   const keys = Object.keys(patch).sort().join(',');
-  return [
+  const label = 'set lens';
+  const coalesceKey = `lens:${lensId}:${keys}`;
+  const ops: Op[] = [
     createSetDataOp<LensNodeData<C>>({
-      id: idsFor(lensId).body,
+      id: ids.body,
       from,
       to: { ...from, ...patch },
-      label: 'set lens',
-      coalesceKey: `lens:${lensId}:${keys}`,
+      label,
+      coalesceKey,
     }),
   ];
+  const body = scene.get(ids.body);
+  const reticle = scene.get(ids.reticle);
+  const factor = patch.factor ?? from.factor;
+  if (factor !== from.factor && from.aim !== 'glass' && body && reticle) {
+    const to = patchAt(body.pose, factor, center(reticle.pose));
+    ops.push(createTransformOp({ id: ids.reticle, from: reticle.pose, to, label, coalesceKey }));
+  }
+  return ops;
 }
 
 /** Switches aim. Entering Glass makes the reticle derive from the body; leaving it plants the reticle where it was drawn. */

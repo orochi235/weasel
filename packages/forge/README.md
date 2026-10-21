@@ -202,7 +202,10 @@ isolated story's frame.
 **Live** renders the story a second time inside the lens, with the
 comparison's globals or args laid over the trial's. It is sharp at any factor
 and follows the trial's state, but takes no clicks, and it is never the real
-pixels. **Pixels** asks the dev server
+pixels. Being a second render, it shares the story's args and trial state but
+not the story's own React state: a story whose pan and zoom a lens should
+follow keeps them in an arg through `useArgs`, as CanvasStack's stories do.
+**Pixels** asks the dev server
 for a PNG of the story rendered in headless Chromium at a chosen DPR and enlarges
 it nearest-neighbor, so a hairline half a pixel off looks as it does on screen.
 A capture reproduces the story's args, globals, trial state, playhead, CSS
