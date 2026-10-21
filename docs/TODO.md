@@ -888,6 +888,13 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) `AssetsPage`'s first test still times out in some full fleet runs.** "opens on WeaselDraw
+  preferences, and opens a node property schema picked from the list" (`apps/draw/src/dev/AssetsPage.test.tsx`)
+  hit its 5 s limit at 5195 ms on 2026-10-21 (onto job 9139de7e), after 69d135f92 moved its one-off
+  warmup into a `beforeAll` and memoized `CodeBlock` (501 ms locally, about 1.5 s under moderate
+  load). Its body still renders about 6,800 elements; the two big lists are the entry under
+  "Selection, actions & UI panels".
+
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
   same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
