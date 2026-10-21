@@ -53,7 +53,8 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
       const q = at(f).point;
       const dist = Math.hypot(p.x - q.x, p.y - q.y);
       if (!options?.open) return { f, dist };
-      const unwrapped = sweep / 2 + mod360(offset - sweep / 2 + 180) - 180;
+      const mid = (options.about ?? 0.5) * sweep;
+      const unwrapped = mid + mod360(offset - mid + 180) - 180;
       return { f: unwrapped / sweep, dist };
     },
   };

@@ -17,9 +17,12 @@ export interface TrackNearest {
 
 /** How `nearest` treats a track's ends. */
 export interface TrackNearestOptions {
-  /** Let `f` run on past 0 and 1: a line extends straight, an arc by angle, unwrapped about its middle. A shape
+  /** Let `f` run on past 0 and 1: a line extends straight, an arc by angle, unwrapped about `about`. A shape
    *  that cannot extend clamps. `dist` is to the track either way. */
   open?: boolean;
+  /** The fraction an open arc is unwrapped about: a point is placed on whichever side of it is nearer by angle.
+   *  Default 0.5, the middle. */
+  about?: number;
 }
 
 /** Which family a track shape belongs to. `'path'` is reserved for a shape over `nearestOnPath`. */

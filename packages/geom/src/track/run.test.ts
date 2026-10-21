@@ -85,5 +85,9 @@ describe('trackRun', () => {
       expect(r.nearest({ x: -100, y: 0 }, open).f).toBeCloseTo(-0.25);
       expect(r.nearest({ x: 100, y: 0 }, open).f).toBeCloseTo(1.25);
     });
+    test("a sub-run of a circle unwraps about the run's middle, not the circle's", () => {
+      const r = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 0 }), 0.75, 1);
+      expect(r.nearest({ x: 100, y: 0 }, open).f).toBeCloseTo(2);
+    });
   });
 });
