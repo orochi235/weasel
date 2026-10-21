@@ -1,7 +1,7 @@
 import type { LabMode } from '@weasel-js/labkit';
 import { withValueAtPath } from '@weasel-js/labkit/config';
 import type { Globals } from '../../protocol/messages';
-import { FOLLOW_APP, type GlobalDeclarations } from '../globals';
+import { effectiveGlobals, FOLLOW_APP, GLOBALS_KEY, type GlobalDeclarations } from '../globals';
 
 /** What a lens compares the story against: the opposite color mode, or globals, args and a DPR of its own. */
 export type ForgeComparison =
@@ -74,22 +74,38 @@ function globalLabel(key: string, value: string, declarations: GlobalDeclaration
   return `${declaration.label}: ${option?.label ?? value}`;
 }
 
+/** What a lens's comparison is named against: the globals it resolves over, and whether the lens shows Pixels. */
+export interface DescribeAgainst {
+  base: Globals;
+  ctx: ResolveContext;
+  /** False on a lens that shows no Pixels, where a DPR comparison changes nothing. */
+  pixels?: boolean;
+}
+
 /**
  * How a lens names `c`: "Opposite mode", "Theme: Ocean", "Arg size = 3", "DPR 2×". Given what the lens renders
- * against, opposite mode says so when there is no opposite to show.
+ * against, opposite mode says so when there is no opposite to show, and a DPR says it applies to Pixels only on a
+ * lens that shows none.
  */
-export function describeComparison(
-  c: ForgeComparison,
-  declarations: GlobalDeclarations,
-  against?: { base: Globals; ctx: ResolveContext },
-): string {
+export function describeComparison(c: ForgeComparison, declarations: GlobalDeclarations, against?: DescribeAgainst): string {
   if (c.kind === 'opposite-mode') {
     const flip = against ? oppositeMode(against.base, against.ctx) : null;
     return flip && flip.to === undefined ? `Opposite mode: no opposite for '${flip.from}'` : 'Opposite mode';
   }
   const globals = Object.entries(c.globals ?? {}).map(([key, value]) => globalLabel(key, value, declarations));
   const args = Object.entries(c.args ?? {}).map(([path, value]) => `Arg ${path} = ${String(value)}`);
-  return [...globals, ...args, ...(c.dpr ? [`DPR ${c.dpr}×`] : [])].join(', ') || 'As it is';
+  const dpr = c.dpr ? [`DPR ${c.dpr}×${against?.pixels === false ? ' (Pixels only)' : ''}`] : [];
+  return [...globals, ...args, ...dpr].join(', ') || 'As it is';
+}
+
+/**
+ * How a lens over a trial names `c`: against that trial's own globals, pins included, as the lens renders it, and
+ * whether the lens shows Pixels.
+ */
+export function describeLens(c: ForgeComparison, lab: LabConditions, trialConfig: unknown, pixels: boolean): string {
+  const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
+  const base = effectiveGlobals(lab.labValues, pins);
+  return describeComparison(c, lab.declarations, { base, ctx: resolveContextOf(lab), pixels });
 }
 
 /** `config` with each of `args` written at its path. */

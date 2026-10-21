@@ -17,6 +17,12 @@ export interface LensHitBox {
   round: boolean;
 }
 
+/** A body's own rect, given its hit box: without the slop it grows by while selected. */
+export function interiorOf(rect: LoupeRect, grown: boolean): LoupeRect {
+  if (!grown) return rect;
+  return { x: rect.x + HANDLE_SLOP, y: rect.y + HANDLE_SLOP, w: rect.w - 2 * HANDLE_SLOP, h: rect.h - 2 * HANDLE_SLOP };
+}
+
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Every body and reticle's box, through `view`, in paint order, with a split
@@ -53,7 +59,7 @@ export function hitBoxesOf<C>(
     const round = body ? !grown && data.shape === 'circle' : true;
     out.push({ nodeId: node.id, role: data.role, rect, round });
     if (body && showsSeam(data)) {
-      const interior = grown ? { ...rect, x: rect.x + HANDLE_SLOP, y: rect.y + HANDLE_SLOP, w: rect.w - 2 * HANDLE_SLOP, h: rect.h - 2 * HANDLE_SLOP } : rect;
+      const interior = interiorOf(rect, grown);
       const { seamX } = splitRects(interior, seamOf(data, preview, data.lensId));
       const seam = { x: seamX - SEAM_GRAB, y: interior.y, w: 2 * SEAM_GRAB, h: interior.h };
       out.push({ nodeId: node.id, role: 'lens-seam', rect: seam, round: false });

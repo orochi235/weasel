@@ -27,12 +27,12 @@ import {
 import { createPortal, flushSync } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
 import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
-import { HANDLE_SLOP, hitBoxesOf, type LensHitBox } from './lensHitBoxes';
+import { hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import { useWheelPassThrough } from './useWheelPassThrough';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
-import type { LensSources } from './lensSource';
+import type { LensDescribeContext, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
@@ -63,7 +63,7 @@ export interface LensOverlayProps<C> {
   /** What each lens can show inside its body. Without them no lens shows a render. */
   sources?: LensSources<C>;
   /** Names a comparison on the lens chrome. Default `String`. */
-  describe?: (compare: C) => string;
+  describe?: (compare: C, at: LensDescribeContext) => string;
   /** The lens the selection is on, or null when nothing is selected. */
   onFocusLens?: (lensId: string | null) => void;
 }
@@ -144,7 +144,7 @@ function LensInterior<C>({
   reticle: LoupePoint;
   scene: LensScene<C>;
   sources: LensSources<C>;
-  describe: (compare: C) => string;
+  describe: (compare: C, at: LensDescribeContext) => string;
   onFocus: ((lensId: string) => void) | undefined;
   preview: SeamPreview;
 }) {
@@ -159,7 +159,12 @@ function LensInterior<C>({
     describe,
   };
   return (
-    <div className="lk-lens-interior" data-lens={lens.lensId} style={boxStyle(rect)}>
+    <div
+      className="lk-lens-interior"
+      data-lens={lens.lensId}
+      data-shape={settings.shape}
+      style={boxStyle(rect)}
+    >
       <LensSlot {...props} />
       <LensChrome {...props} {...(onFocus ? { onFocus } : {})} />
     </div>
@@ -183,12 +188,6 @@ function reticleClient<C>(
   };
 }
 
-/** A body's own rect: its hit box without the slop a selected one grows by. */
-function interiorOf(box: LensHitBox, selected: ReadonlySet<string>): LensHitBox['rect'] {
-  if (!selected.has(box.nodeId)) return box.rect;
-  const { x, y, w, h } = box.rect;
-  return { x: x + HANDLE_SLOP, y: y + HANDLE_SLOP, w: w - 2 * HANDLE_SLOP, h: h - 2 * HANDLE_SLOP };
-}
 
 /** Registers the lens tile on the layer and keeps the layer's size, which is
  *  the canvas's, current with every frame the surface paints. */
@@ -314,7 +313,7 @@ export function LensOverlay<C>({
               <LensInterior
                 key={lens.lensId}
                 lens={lens}
-                rect={interiorOf(b, selected)}
+                rect={interiorOf(b.rect, selected.has(b.nodeId as NodeId))}
                 reticle={reticleClient(scene, lens, view, layer)}
                 scene={scene}
                 sources={sources}

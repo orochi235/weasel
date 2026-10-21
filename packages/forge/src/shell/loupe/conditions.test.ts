@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { FOLLOW_APP, type GlobalDeclarations } from '../globals';
-import { describeComparison, type ForgeComparison, type ResolveContext, resolveComparison } from './conditions';
+import {
+  describeComparison,
+  describeLens,
+  type ForgeComparison,
+  type LabConditions,
+  type ResolveContext,
+  resolveComparison,
+} from './conditions';
 
 const MODE = {
   label: 'Mode',
@@ -107,5 +114,30 @@ describe('describeComparison', () => {
       "Opposite mode: no opposite for 'sepia'",
     );
     expect(describeComparison(OPPOSITE, DECLARATIONS, { base: { mode: 'light' }, ctx: ctx() })).toBe('Opposite mode');
+  });
+});
+
+describe('describeLens', () => {
+  const lab = (mode: string): LabConditions => ({
+    labValues: { mode, theme: 'paper' },
+    mode: 'light',
+    declarations: DECLARATIONS,
+    modeGlobal: 'mode',
+  });
+  const pinned = (mode: string) => ({ $globals: { mode } });
+
+  it('says there is no opposite for a trial pinned to a mode without one, under a lab mode that has one', () => {
+    expect(describeLens(OPPOSITE, lab('light'), pinned('sepia'), false)).toBe("Opposite mode: no opposite for 'sepia'");
+  });
+
+  it('names opposite mode for a trial pinned to a mode with one, under a lab mode that has none', () => {
+    expect(describeLens(OPPOSITE, lab('sepia'), pinned('dark'), false)).toBe('Opposite mode');
+    expect(describeLens(OPPOSITE, lab('sepia'), {}, false)).toBe("Opposite mode: no opposite for 'sepia'");
+  });
+
+  it('says a DPR applies to Pixels only on a lens that shows none', () => {
+    const dpr: ForgeComparison = { kind: 'custom', dpr: 2 };
+    expect(describeLens(dpr, lab('light'), {}, false)).toBe('DPR 2× (Pixels only)');
+    expect(describeLens(dpr, lab('light'), {}, true)).toBe('DPR 2×');
   });
 });

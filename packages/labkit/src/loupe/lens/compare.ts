@@ -77,7 +77,9 @@ export function createSeamPreview(): SeamPreview {
 export const seamOf = <C>(settings: LensSettings<C>, preview: SeamPreview | undefined, lensId: string) =>
   preview?.get(lensId) ?? settings.seam;
 
-/** The lens whose seam lies at the world point, within `SEAM_GRAB` screen px at `scale`. */
+/** The lens whose seam lies at the world point, within `SEAM_GRAB` screen px at
+ *  `scale`. Only the topmost body under the point counts: a press on a lens over
+ *  another's seam belongs to the lens on top. */
 export function seamHit<C>(
   scene: LensScene<C>,
   preview: SeamPreview | undefined,
@@ -89,13 +91,15 @@ export function seamHit<C>(
   for (const { lensId, body } of [...lensesOf(scene)].reverse()) {
     const settings = settingsOf(scene, lensId);
     const node = scene.get(body);
-    if (!settings || !node || !showsSeam(settings)) continue;
+    if (!settings || !node) continue;
     const p = effectivePose(scene, node);
+    if (x < p.x - grab || x > p.x + p.width + grab || y < p.y || y > p.y + p.height) continue;
+    if (!showsSeam(settings)) return null;
     const { seamX } = splitRects(
       { x: p.x, y: p.y, w: p.width, h: p.height },
       seamOf(settings, preview, lensId),
     );
-    if (Math.abs(x - seamX) <= grab && y >= p.y && y <= p.y + p.height) return { lensId };
+    return Math.abs(x - seamX) <= grab ? { lensId } : null;
   }
   return null;
 }

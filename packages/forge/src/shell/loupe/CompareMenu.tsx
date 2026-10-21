@@ -6,14 +6,20 @@ import { useEffect, useMemo } from 'react';
 import { type GlobalDeclarations, isForgePath } from '../globals';
 import type { ForgeComparison } from './conditions';
 
-/** The action whose variants are the compare menu's rows, each setting the current lens's comparison. */
+/** The actions whose variants are the compare menu's rows, each setting the comparison of the lens it opened on.
+ *  DPR rows have one of their own, which a lens showing no Pixels disables. */
 export const COMPARE_WITH_ID = 'loupe.compare.with';
+export const COMPARE_DPR_ID = 'loupe.compare.dpr';
+/** Why a DPR row is disabled: a DPR changes only a Pixels capture. */
+export const PIXELS_ONLY = 'Pixels only';
 export const COMPARE_MENU_ID = 'loupe.compare';
 
 const DPRS = [1, 2, 3] as const;
 
 /** One row of the compare menu: the submenu it sits in, its label, and the comparison it sets. */
 export interface CompareChoice {
+  /** The action whose variant the row is. */
+  action: typeof COMPARE_WITH_ID | typeof COMPARE_DPR_ID;
   key: string;
   group: string;
   label: string;
@@ -33,7 +39,8 @@ function argChoices(shape: Readonly<Record<string, ConfigEntry>>, at: string): C
             { value: false, label: 'Off' },
           ]
         : (entry.annotations.options ?? []);
-    return options.map((o) => ({
+    return options.map((o): CompareChoice => ({
+      action: COMPARE_WITH_ID,
       key: `arg.${path}.${String(o.value)}`,
       group: `Arg ${path}`,
       label: o.label,
@@ -46,14 +53,21 @@ function argChoices(shape: Readonly<Record<string, ConfigEntry>>, at: string): C
  *  story under it that are booleans or have options. */
 export function compareChoices(declarations: GlobalDeclarations, schema: ConfigSchema<unknown> | null): CompareChoice[] {
   const globals = Object.entries(declarations).flatMap(([key, declaration]) =>
-    declaration.options.map((o) => ({
+    declaration.options.map((o): CompareChoice => ({
+      action: COMPARE_WITH_ID,
       key: `global.${key}.${o.value}`,
       group: declaration.label,
       label: o.label,
       compare: { kind: 'custom', globals: { [key]: o.value } } as const,
     })),
   );
-  const dprs = DPRS.map((dpr) => ({ key: `dpr.${dpr}`, group: 'DPR', label: `${dpr}×`, compare: { kind: 'custom', dpr } as const }));
+  const dprs = DPRS.map((dpr): CompareChoice => ({
+    action: COMPARE_DPR_ID,
+    key: `dpr.${dpr}`,
+    group: 'DPR',
+    label: `${dpr}×`,
+    compare: { kind: 'custom', dpr } as const,
+  }));
   return [...globals, ...dprs, ...(schema ? argChoices(schema.nodes, '') : [])];
 }
 
@@ -62,7 +76,7 @@ export function compareMenuDef(choices: readonly CompareChoice[]): MenuDef {
   const groups = new Map<string, Record<string, PrefLeaf>>();
   for (const choice of choices) {
     const rows = groups.get(choice.group) ?? {};
-    rows[`c${Object.keys(rows).length}`] = pref.action(`${COMPARE_WITH_ID}:${choice.key}`);
+    rows[`c${Object.keys(rows).length}`] = pref.action(`${choice.action}:${choice.key}`);
     groups.set(choice.group, rows);
   }
   const submenus: Record<string, PrefGroup> = {};
@@ -72,29 +86,40 @@ export function compareMenuDef(choices: readonly CompareChoice[]): MenuDef {
   return { id: COMPARE_MENU_ID, menu: pref.group('', submenus) };
 }
 
-/** `COMPARE_WITH_ID`, with a variant per choice. */
-export function compareWithAction(api: LensActionApi<ForgeComparison>, choices: readonly CompareChoice[]): Action {
-  return {
-    id: COMPARE_WITH_ID,
-    label: 'Compare with',
+/** A request to show the menu: where, on which lens, whether it shows Pixels, and the choices for it. `seq` changes
+ *  on every open. */
+export interface CompareMenuRequest {
+  seq: number;
+  client: LoupePoint;
+  lensId: string;
+  /** Whether the lens shows Pixels, the only source a DPR changes. */
+  pixels: boolean;
+  choices: readonly CompareChoice[];
+}
+
+/** The compare menu's two actions, a variant per row, each setting the comparison on the lens `request` opened on. */
+export function compareActions(api: LensActionApi<ForgeComparison>, request: CompareMenuRequest): Action[] {
+  const one = (id: CompareChoice['action'], label: string, enabled: () => true | string): Action => ({
+    id,
+    label,
     group: 'loupe',
-    variants: choices.map((c) => ({ key: c.key, label: `${c.group}: ${c.label}`, params: { compare: c.compare } })),
+    enabled,
+    variants: request.choices
+      .filter((c) => c.action === id)
+      .map((c) => ({ key: c.key, label: `${c.group}: ${c.label}`, params: { compare: c.compare, lensId: request.lensId } })),
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const lensId = api.current();
+        const lensId = (params?.lensId as string | undefined) ?? api.current();
         const compare = params?.compare as ForgeComparison | undefined;
         if (lensId !== null && compare) api.apply(setLensOps(api.scene, lensId, { compare }));
       },
     },
-  };
-}
-
-/** A request to show the menu: where, and the choices for the lens it opened on. `seq` changes on every open. */
-export interface CompareMenuRequest {
-  seq: number;
-  client: LoupePoint;
-  choices: readonly CompareChoice[];
+  });
+  return [
+    one(COMPARE_WITH_ID, 'Compare with', () => true),
+    one(COMPARE_DPR_ID, 'Compare at DPR', () => (request.pixels ? true : PIXELS_ONLY)),
+  ];
 }
 
 /** Props for `CompareMenu`. */
@@ -105,14 +130,20 @@ export interface CompareMenuProps {
 
 const NO_CHOICES: readonly CompareChoice[] = [];
 
-/** Registers the compare menu's action and menu for the choices last asked for, and opens it at each request. */
+/** Registers the compare menu's actions and menu for the lens last asked about, and opens it at each request. */
 export function CompareMenu({ api, request }: CompareMenuProps) {
   const registry = useActionsRegistry();
   const host = useMenuHost();
   const choices = request?.choices ?? NO_CHOICES;
   const defs = useMemo(() => [compareMenuDef(choices)], [choices]);
   useMenus(defs);
-  useEffect(() => registry?.register(compareWithAction(api, choices)), [registry, api, choices]);
+  useEffect(() => {
+    if (!registry || !request) return;
+    const offs = compareActions(api, request).map((a) => registry.register(a));
+    return () => {
+      for (const off of offs) off();
+    };
+  }, [registry, api, request]);
   // After the registrations above, which run first in the same commit.
   useEffect(() => {
     if (request) host?.open({ menu: COMPARE_MENU_ID, client: request.client, source: 'keyboard' });

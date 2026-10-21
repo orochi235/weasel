@@ -11,7 +11,7 @@ import {
 } from './compare';
 import { lensApiFixture } from './lensApi.fixture';
 import { hitBoxesOf } from './lensHitBoxes';
-import { setLensOps, settingsOf } from './lensScene';
+import { addLensOps, setLensOps, settingsOf } from './lensScene';
 import { BODY_SIZE, LENS_DEFAULTS } from './lensTypes';
 
 /** A fixture with one split lens comparing against 'b', its body centered at (300, 200). */
@@ -97,6 +97,16 @@ describe('the seam', () => {
     expect(seamHit(api.scene, preview, seamX + SEAM_GRAB + 2, 200, 1)).toBeNull();
     // At 2× a grab of SEAM_GRAB screen px is half as many world px.
     expect(seamHit(api.scene, preview, seamX + SEAM_GRAB - 1, 200, 2)).toBeNull();
+  });
+
+  it('belongs to the lens on top: a press on lens B over A’s seam is B’s', () => {
+    const { api, lensId } = splitLens();
+    const preview = createSeamPreview();
+    const seamX = LEFT + BODY_SIZE / 2;
+    // B, added later, paints over A, covering the lower half of A's seam.
+    api.apply(addLensOps(api.scene, 'b', { body: { x: seamX + 20, y: 200 + BODY_SIZE / 2 }, reticle: { x: 50, y: 50 } }));
+    expect(seamHit(api.scene, preview, seamX, 250, 1)).toBeNull();
+    expect(seamHit(api.scene, preview, seamX, 150, 1)).toEqual({ lensId });
   });
 
   it('previews a drag without writing to the scene, and commits one data op on release', () => {

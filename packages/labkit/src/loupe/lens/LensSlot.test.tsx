@@ -312,7 +312,7 @@ describe('LensSlot comparisons', () => {
   it('captures both sides from Pixels for Difference, even on a Live lens', async () => {
     const live = fakeSource('live');
     const pixels = fakeSource('pixels');
-    const capture = vi.fn(async (_r: LensSourceRequest<string>) => null);
+    const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({ reason: 'Nothing under the reticle' }));
     pixels.source.capture = capture;
     render(
       <Both
@@ -325,6 +325,59 @@ describe('LensSlot comparisons', () => {
     });
     expect(capture.mock.calls.map(([r]) => r.conditions)).toEqual([null, 'b']);
     expect(live.attach).not.toHaveBeenCalled();
-    expect(within(screen.getByTestId('slot')).getByText('Nothing to compare')).toBeTruthy();
+    expect(within(screen.getByTestId('slot')).getByText('Nothing under the reticle')).toBeTruthy();
+    // A message stands in for the diff, so nothing stale shows beneath it.
+    expect(screen.getByTestId('slot').querySelector('canvas')?.hidden).toBe(true);
+  });
+
+  it('labels a Live lens in Difference with the Pixels source it really shows', () => {
+    const live = fakeSource('live');
+    const pixels = fakeSource('pixels', { label: (r) => `Pixels ${r.dpr}×` });
+    pixels.source.capture = async () => ({ reason: 'later' });
+    render(
+      <Both
+        settings={settings({ source: 'live', compare: 'b', view: 'difference', dprs: [2, 1] })}
+        sources={{ live: live.source, pixels: pixels.source }}
+      />,
+    );
+    const chrome = within(screen.getByTestId('chrome'));
+    expect(chrome.getByText('Pixels 2×')).toBeTruthy();
+    expect(chrome.queryByText('Live', { selector: '.lk-lens-chrome__label' })).toBeNull();
+  });
+
+  it('labels a Difference lens with why Pixels cannot answer', () => {
+    const live = fakeSource('live');
+    render(
+      <Both
+        settings={settings({ source: 'live', compare: 'b', view: 'difference' })}
+        sources={{ live: live.source }}
+      />,
+    );
+    const label = screen.getByTestId('chrome').querySelector('.lk-lens-chrome__label');
+    expect(label?.textContent).toBe('Pixels unavailable: not provided');
+  });
+
+  it('tells describe which source the lens really shows', () => {
+    const live = fakeSource('live');
+    const pixels = fakeSource('pixels');
+    pixels.source.capture = async () => ({ reason: 'later' });
+    const seen: (string | null)[] = [];
+    const shared = {
+      lens: IDS,
+      sources: { live: live.source, pixels: pixels.source },
+      reticle: { x: 1, y: 2 },
+      size: SIZE,
+      describe: (c: string, at: { source: string | null }) => {
+        seen.push(`${c}:${at.source}`);
+        return c;
+      },
+    };
+    render(
+      <>
+        <LensChrome {...shared} settings={settings({ source: 'live', compare: 'b', view: 'swap' })} />
+        <LensChrome {...shared} settings={settings({ source: 'live', compare: 'c', view: 'difference' })} />
+      </>,
+    );
+    expect(new Set(seen)).toEqual(new Set(['b:live', 'c:pixels']));
   });
 });

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LensCapture } from '@weasel-js/labkit/loupe';
 import { type Bitmap, endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
 import { createPixelsSource, RECAPTURE_DEBOUNCE_MS } from './pixelsSource';
 import type { TrialHit } from './trialAt';
@@ -62,7 +63,7 @@ describe('createPixelsSource', () => {
     await settle();
     expect(shown(slot)).toBe(true);
     const before = await source.capture!(request(50));
-    expect((before?.bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #1');
+    expect(((before as LensCapture).bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #1');
     expect(posts).toHaveLength(1);
 
     rev.bump();
@@ -75,7 +76,7 @@ describe('createPixelsSource', () => {
     await settle();
     expect(shown(slot)).toBe(true);
     const after = await source.capture!(request(50));
-    expect((after?.bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #2');
+    expect(((after as LensCapture).bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #2');
     handle.detach();
   });
 
@@ -101,7 +102,7 @@ describe('createPixelsSource', () => {
     await settle();
     expect(shown(slot)).toBe(true);
     const shot = await source.capture!(request(50));
-    expect((shot?.bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #2');
+    expect(((shot as LensCapture).bitmap as unknown as Bitmap).from).toBe('png story-of-trial-a #2');
     handle.detach();
   });
 

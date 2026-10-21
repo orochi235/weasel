@@ -1,11 +1,14 @@
 import './loupe.css';
-import type { LensCapture, LensSource } from '@weasel-js/labkit/loupe';
+import { type LensCapture, type LensSource, unavailableText } from '@weasel-js/labkit/loupe';
 import { createEmitter } from '@weasel-js/registry';
 import { createCaptureClient } from './captureClient';
 import type { ForgeComparison } from './conditions';
 import { aim, attachPixelsLens, fresh, type PayloadFor, type PixelsLens, type PixelsShared, type Shot, sideOf } from './pixelsLens';
 
 export { CHECKING } from './captureClient';
+
+/** Why a capture is not given: the story was edited while it was being taken. */
+export const STORY_CHANGED = 'the story changed while it was captured';
 export { RECAPTURE_DEBOUNCE_MS } from './pixelsLens';
 
 /** The Pixels source, plus a way for its host to have every attached lens look again at what lies under it. */
@@ -63,15 +66,20 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
       lenses.add(lens);
       return lens;
     },
-    async capture(request): Promise<LensCapture | null> {
+    async capture(request): Promise<LensCapture | { reason: string }> {
       const aimed = aim(shared, request, document);
-      if ('reason' in aimed) return null;
+      if ('reason' in aimed) return { reason: aimed.reason };
       const side = sideOf(request);
       let shot = shared.shots.get(side);
       if (!fresh(shared, shot, aimed.key)) {
         const at = opts.revision();
         const bitmap = await client.take(aimed.payload);
-        if (bitmap === null || opts.revision() !== at) return null;
+        if (bitmap === null) {
+          const status = client.status();
+          return { reason: unavailableText('pixels', status === true ? 'the capture was refused' : status) };
+        }
+        // The source tells its subscribers of the edit, and they ask again.
+        if (opts.revision() !== at) return { reason: STORY_CHANGED };
         shot = { key: aimed.key, revision: at, bitmap, payload: aimed.payload };
         shared.shots.set(side, shot);
       }

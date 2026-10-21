@@ -27,9 +27,10 @@ export { LensActions } from './lens/LensActions';
 export type { LensAttachment, LensOverlayProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
 export { LensChrome } from './lens/LensChrome';
-export { LensSlot, useLensResolution } from './lens/LensSlot';
+export { LensSlot, useLensResolution, useShownSource } from './lens/LensSlot';
 export type {
   LensCapture,
+  LensDescribeContext,
   LensResolution,
   LensSlotProps,
   LensSource,
@@ -38,7 +39,7 @@ export type {
   LensSources,
   LensSourceStatus,
 } from './lens/lensSource';
-export { requestsOf, resolveSource, unavailableText } from './lens/lensSource';
+export { requestsOf, resolveSource, shownSource, unavailableText } from './lens/lensSource';
 export type { LensActionApi } from './lens/lensActionDefs';
 export {
   createLensActions,
@@ -62,7 +63,7 @@ export {
 export type { DiffOptions, DiffResult, DifferenceView } from './lens/difference';
 export { diffPixels, paintDifference } from './lens/difference';
 export type { LensHitBox } from './lens/lensHitBoxes';
-export { HANDLE_SLOP, hitBoxesOf } from './lens/lensHitBoxes';
+export { HANDLE_SLOP, hitBoxesOf, interiorOf } from './lens/lensHitBoxes';
 export {
   addLensOps,
   createLensScene,

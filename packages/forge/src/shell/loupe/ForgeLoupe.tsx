@@ -7,6 +7,7 @@ import {
   createLensScene,
   LensActions,
   type LensActionApi,
+  type LensDescribeContext,
   LensOverlay,
   type LensScene,
   type LensSourceKind,
@@ -16,6 +17,7 @@ import {
   type LoupePoint,
   MAX_LENSES,
   RETICLE_SIZE,
+  resolveSource,
   settingsOf,
 } from '@weasel-js/labkit/loupe';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
@@ -23,7 +25,7 @@ import { type RefObject, useCallback, useContext, useEffect, useMemo, useReducer
 import type { GlobalDeclarations } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { CompareMenu, type CompareMenuRequest, compareChoices } from './CompareMenu';
-import { describeComparison, type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
+import { describeLens, type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
 import { LiveLensesContext } from './liveLenses';
 import { createLiveSource } from './liveSource';
 import { trialAt } from './trialAt';
@@ -206,13 +208,23 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
     const trialId = trialAt(at.reticle)?.trialId;
     const name = trials.find((t) => t.id === trialId)?.instrumentName;
     const schema = instruments.find((i) => i.name === name)?.config ?? null;
-    setMenu((last) => ({ seq: (last?.seq ?? 0) + 1, client: at.body, choices: compareChoices(declarations, schema) }));
+    const settings = settingsOf(scene, lensId);
+    // Difference compares two Pixels captures whatever the lens's source.
+    const pixels =
+      settings !== null &&
+      (settings.view === 'difference' || resolveSource(settings.source, sourcesRef.current).source?.kind === 'pixels');
+    const choices = compareChoices(declarations, schema);
+    setMenu((last) => ({ seq: (last?.seq ?? 0) + 1, client: at.body, lensId, pixels, choices }));
   });
   const [api] = useState(() => createApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef, compare }));
+  // Named against the trial under the reticle, whose pins the lens renders under.
   const describe = useCallback(
-    (c: ForgeComparison) =>
-      describeComparison(c, declarations, { base: labValues, ctx: resolveContextOf({ labValues, mode, declarations, modeGlobal }) }),
-    [declarations, labValues, mode, modeGlobal],
+    (c: ForgeComparison, at: LensDescribeContext) => {
+      const trialId = trialAt(at.reticle)?.trialId;
+      const config = trials.find((t) => t.id === trialId)?.config;
+      return describeLens(c, { labValues, mode, declarations, modeGlobal }, config, at.source === 'pixels');
+    },
+    [declarations, labValues, mode, modeGlobal, trials],
   );
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.

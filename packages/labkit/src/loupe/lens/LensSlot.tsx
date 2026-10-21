@@ -3,6 +3,7 @@ import { type CSSProperties, useCallback, useEffect, useRef, useState, useSyncEx
 import { type LensSide, lensSides, splitRects } from './compare';
 import { paintDifference } from './difference';
 import {
+  type LensCapture,
   type LensResolution,
   type LensSlotProps,
   type LensSource,
@@ -12,9 +13,10 @@ import {
   LENS_SOURCE_KINDS,
   requestsOf,
   resolveSource,
+  shownSource,
   unavailableText,
 } from './lensSource';
-import type { LensSourceKind } from './lensTypes';
+import type { LensSettings, LensSourceKind } from './lensTypes';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
 export function useLensResolution<C>(
@@ -36,6 +38,12 @@ export function useLensResolution<C>(
     LENS_SOURCE_KINDS.map((k) => String(sources[k]?.status())).join('|'),
   );
   return resolveSource(wanted, sources);
+}
+
+/** What a lens shows (`shownSource`), re-resolved whenever any source's availability changes. */
+export function useShownSource<C>(settings: LensSettings<C>, sources: LensSources<C>): LensResolution<C> {
+  useLensResolution(settings.source, sources);
+  return shownSource(settings, sources);
 }
 
 function LensCell<C>({
@@ -111,11 +119,12 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
       Promise.all([capture(base), capture({ ...base, conditions: compare })])
         .then(([a, b]) => {
           if (!live) return;
-          if (!a || !b) {
-            say('Nothing to compare');
+          const missing = 'reason' in a ? a : 'reason' in b ? b : null;
+          if (missing) {
+            say(missing.reason);
             return;
           }
-          paintDifference(el, a, b, { size: box, factor });
+          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor });
           say(null);
         })
         .catch((err: unknown) => {
@@ -130,9 +139,14 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
     };
   }, [pixels, status, lensId, reticle.x, reticle.y, size.width, size.height, factor, compare, dpr, tick, latest]);
   const reason = status === true ? said : unavailableText('pixels', status);
+  // A message stands in for the image: what was drawn before it no longer answers.
+  useEffect(() => {
+    const el = canvas.current;
+    if (reason !== null && el) el.getContext('2d')?.clearRect(0, 0, el.width, el.height);
+  }, [reason]);
   return (
     <div className="lk-lens-slot" data-view="difference">
-      <canvas ref={canvas} className="lk-lens-difference" hidden={status !== true} />
+      <canvas ref={canvas} className="lk-lens-difference" hidden={reason !== null} />
       {reason ? <div className="lk-lens-reason">{reason}</div> : null}
     </div>
   );

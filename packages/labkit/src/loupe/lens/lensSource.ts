@@ -37,8 +37,8 @@ export interface LensSource<C> {
   status(): LensSourceStatus;
   subscribe(listener: () => void): () => void;
   attach(slot: HTMLElement, request: LensSourceRequest<C>): LensSourceHandle<C>;
-  /** Required when `produces` is `'pixels'`. */
-  capture?(request: LensSourceRequest<C>): Promise<LensCapture | null>;
+  /** Required when `produces` is `'pixels'`. Answers why when it has no capture to give. */
+  capture?(request: LensSourceRequest<C>): Promise<LensCapture | { reason: string }>;
 }
 
 export type LensSources<C> = Partial<Record<LensSourceKind, LensSource<C>>>;
@@ -49,7 +49,16 @@ export interface LensSlotProps<C> {
   sources: LensSources<C>;
   reticle: LoupePoint;
   size: { width: number; height: number };
-  describe: (c: C) => string;
+  describe: (c: C, at: LensDescribeContext) => string;
+}
+
+/** What a lens's comparison is named against: the lens, where it aims, and the source it really shows. */
+export interface LensDescribeContext {
+  lensId: string;
+  /** In client px. */
+  reticle: LoupePoint;
+  /** The kind of source the lens shows, after any fallback; Difference always shows Pixels. */
+  source: LensSourceKind | null;
 }
 
 export const LENS_SOURCE_KINDS: readonly LensSourceKind[] = [
@@ -93,6 +102,17 @@ export function resolveSource<C>(
     source: fallback ? (sources[fallback] ?? null) : null,
     reason: unavailableText(wanted, own),
   };
+}
+
+/** What a lens shows: the source its settings resolve to, except that Difference
+ *  compares two Pixels captures whatever the lens's source, so it shows Pixels
+ *  or why Pixels cannot answer. */
+export function shownSource<C>(settings: LensSettings<C>, sources: LensSources<C>): LensResolution<C> {
+  if (settings.compare === null || settings.view !== 'difference') return resolveSource(settings.source, sources);
+  const pixels = sources.pixels;
+  const status = pixels ? pixels.status() : 'not provided';
+  if (status === true) return { source: pixels ?? null, reason: null };
+  return { source: null, reason: unavailableText('pixels', status) };
 }
 
 /** One request per side-by-side cell: a pixels source gets one per DPR, any

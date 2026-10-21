@@ -43,6 +43,11 @@
   pointer-events: none;
 }
 
+// A round lens shows only what lies inside its rim.
+.lk-lens-interior[data-shape='circle'] .lk-lens-slot {
+  clip-path: circle(50%);
+}
+
 .lk-lens-slot {
   position: absolute;
   inset: 0;
@@ -107,13 +112,13 @@
   background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
 }
 
-// Above the hit boxes, which are later siblings in the same layer, so its
-// toggles take presses.
+// Directly below the body, as wide as it, above the hit boxes, which are later
+// siblings in the same layer, so its toggles take presses.
 .lk-lens-chrome {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 100%;
   z-index: 1;
   pointer-events: auto;
   display: flex;
@@ -127,8 +132,11 @@
 }
 
 .lk-lens-chrome__toggles {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   gap: 2px;
+  min-width: 0;
+  max-width: 100%;
   margin-inline-start: auto;
 }
 
