@@ -10,8 +10,8 @@ The forge loupe merged to `main` (fb370f72c, pushed); its design of record is
 `packages/labkit/src/loupe/AGENTS.md` ("Lenses"), `packages/forge/README.md` ("Loupe"), and the
 unbuilt half in `docs/superpowers/specs/2026-10-20-forge-loupe-design.md`.
 
-**Landed, not yet seen by Mike: the three CanvasStack lens bugs** (merged from `loupe-fixes`, not
-pushed). Each was reproduced in headless Chrome before the fix and checked there after.
+**Landed, not yet seen by Mike: the three CanvasStack lens bugs** (72203c596, pushed).
+Each was reproduced in headless Chrome before the fix and checked there after.
 1. Zoom: the Live copy kept its own `useState` view, so a canvas zoom never reached it; the story
    now keeps its view in an arg. Its canvas was also sized from a client rect the lens's ×4 had
    inflated, then enlarged; `<CanvasStack>` now puts an ancestor's scale into its backing density.
