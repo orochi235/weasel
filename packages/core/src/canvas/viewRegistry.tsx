@@ -17,6 +17,8 @@ import type { DispatcherViewTarget } from '@weasel-js/routing/internal';
 import { createViewResolver, viewContains, type ViewResolver } from 'features/viewports/viewResolver';
 import { createEmitter } from '@weasel-js/registry';
 import type { ViewAt } from './canvasExtension';
+import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
+import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 
 /**
  * What a view needs from the surface hosting it.
@@ -54,6 +56,8 @@ export interface SurfaceHandle {
    *  own frame. Registered layers paint over every view, so such a point is
    *  theirs even inside a view's rect. */
   claimsAbove(x: number, y: number): boolean;
+  /** The root camera's input write: clamped, forwarded when controlled, and ending a glide. */
+  setView?(next: View): void;
 }
 
 /**
@@ -108,6 +112,12 @@ export interface ViewRegistration {
   /** The layers this view draws, in order — what a view nested in it paints
    *  from. */
   drawnLayers(): readonly RenderLayer<unknown>[];
+  /** Whether the view keeps its camera or its aim; the other is derived. */
+  held: 'camera' | 'aim';
+  /** What the view shows: the aim it holds, or its camera's. */
+  aim(): ViewAim;
+  /** `false` for an aim the view cannot read, or one with nowhere to go. */
+  setAim(aim: ViewAim): boolean;
 }
 
 
@@ -123,6 +133,10 @@ export interface ViewRegistry {
   /** The innermost view painted under a canvas-local point, whether or not it
    *  takes input, passing over `except` and the views nested in it. */
   viewAt(at: { x: number; y: number }, opts?: { except?: string }): ViewAt;
+  /** What view `id` shows (`null`: the surface's root), or `null` while there is no such view. */
+  aimOf(id: string | null): ViewAim | null;
+  /** Point view `id` at `aim`; `false` when it cannot. */
+  setAim(id: string | null, aim: ViewAim): boolean;
   /** Bumped whenever the list changes. Pair with {@link ViewRegistry.subscribe}
    *  for `useSyncExternalStore`. */
   getVersion(): number;
@@ -202,6 +216,18 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
           if (viewContains(v, x, y)) return { id: v.id, view: v.view, rect: v.rect };
         }
         return { id: null, view, rect: { x: 0, y: 0, w: dims.width, h: dims.height } };
+      },
+      aimOf: (id) => {
+        if (id !== null) return get(id)?.aim() ?? null;
+        const surface = surfaceRef.current;
+        return surface ? rectAim(null, viewportWorldRect(surface.view(), surface.dims())) : null;
+      },
+      setAim: (id, aim) => {
+        if (id !== null) return get(id)?.setAim(aim) ?? false;
+        const surface = surfaceRef.current;
+        if (!isRectAim(aim) || !surface?.setView) return false;
+        surface.setView(viewForAim(aim.extent, surface.dims(), 'exact'));
+        return true;
       },
       getVersion: () => versionRef.current,
       subscribe: listeners.subscribe,

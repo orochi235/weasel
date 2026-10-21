@@ -114,11 +114,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
-  const { views: addedViews, addView, viewAt } = useAddedViews();
+  const { views: addedViews, addView, viewAt, aimOf, setAim } = useAddedViews();
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
-    ingest, viewAnimation, camera, addView, viewAt,
+    ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim,
   });
   const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles,
     descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,

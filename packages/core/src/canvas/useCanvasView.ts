@@ -42,6 +42,8 @@ export interface CanvasViewOptions {
   /** The size the camera looks through, which `viewBounds` clamps against. */
   dims: () => Dims;
   requestRedraw: () => void;
+  /** The prop a controlled camera answers to, which a warning names. Default `'view'`. */
+  controlledBy?: 'view' | 'aim';
 }
 
 /** What `useCanvasView` hands back. The owner decides when in a commit
@@ -84,6 +86,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
   const live = useLatest({
     controlled: viewProp !== undefined, derived, onViewChange, viewBounds, dims, requestRedraw,
+    by: opts.controlledBy ?? 'view',
   });
   const controlledWarnedRef = useRef(false);
 
@@ -103,9 +106,10 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
       // out of step with nothing to reconcile them.
       if (imperative && !controlledWarnedRef.current) {
         controlledWarnedRef.current = true;
+        const [prop, cb] = live.current.by === 'aim' ? ['aim', 'onAimChange'] : ['view', 'onViewChange'];
         console.warn(forward
-          ? '[weasel] setView not applied locally: this canvas is controlled by its `view` prop. The value was forwarded to `onViewChange` — update the prop from there, or drop it to take the imperative path.'
-          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.');
+          ? `[weasel] setView not applied locally: this canvas is controlled by its \`${prop}\` prop. The value was forwarded to \`${cb}\` — update the prop from there, or drop it to take the imperative path.`
+          : `[weasel] setView ignored: this canvas is controlled by its \`${prop}\` prop and has no \`${cb}\`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.`);
       }
       forward?.(clamped);
       // A derived camera has no prop to change, so nothing else repaints it.

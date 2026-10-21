@@ -117,7 +117,7 @@ function CanvasInner<TPose>(
   });
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, getDebug: () => debugSink, viewId: null };
 
-  useViewRegistrySurface(viewRegistry, layers, frame, { requestRedraw, hitTestExtrasIn, clientToWorld: toWorld });
+  useViewRegistrySurface(viewRegistry, layers, frame, { requestRedraw, hitTestExtrasIn, clientToWorld: toWorld, setView: viewState.setViewFromInput });
   const layersWithDebug = useComposedLayers(layers, {
     viewRegistry, debugOverlay, extrasRef, extrasVersion, cursorLayer: paintedCursorLayer,
   }, requestRedraw);

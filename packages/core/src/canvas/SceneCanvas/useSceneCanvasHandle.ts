@@ -10,6 +10,8 @@ export function useAddedViews(): {
   views: readonly CanvasViewProps[];
   addView: SceneCanvasApi['addView'];
   viewAt: SceneCanvasApi['viewAt'];
+  aimOf: SceneCanvasApi['aimOf'];
+  setAim: SceneCanvasApi['setAim'];
 } {
   const surfaceViewRegistry = useOptionalViewRegistry();
   const [views, setViews] = useState<readonly CanvasViewProps[]>([]);
@@ -25,7 +27,11 @@ export function useAddedViews(): {
   const viewAt = useCallback<SceneCanvasApi['viewAt']>((at, opts) => (
     surfaceViewRegistry?.viewAt(at, opts) ?? { id: null, view: IDENTITY_VIEW, rect: { x: 0, y: 0, w: 0, h: 0 } }
   ), [surfaceViewRegistry]);
-  return { views, addView, viewAt };
+  const aimOf = useCallback<SceneCanvasApi['aimOf']>(
+    (id) => surfaceViewRegistry?.aimOf(id) ?? null, [surfaceViewRegistry]);
+  const setAim = useCallback<SceneCanvasApi['setAim']>(
+    (id, aim) => surfaceViewRegistry?.setAim(id, aim) ?? false, [surfaceViewRegistry]);
+  return { views, addView, viewAt, aimOf, setAim };
 }
 
 /**
@@ -46,13 +52,15 @@ export function useSceneCanvasHandle(args: {
   camera: SceneCanvasApi['camera'];
   addView: SceneCanvasApi['addView'];
   viewAt: SceneCanvasApi['viewAt'];
+  aimOf: SceneCanvasApi['aimOf'];
+  setAim: SceneCanvasApi['setAim'];
 }): {
   handleRef: (node: CanvasExtensionApi | null) => void;
   /** Whether the handle is attached, as state: an effect needing the handle
    *  keys off this instead of assuming when React attaches it. */
   ready: boolean;
 } {
-  const { ref, elementRef, apiRef, onElement, ingest, viewAnimation, camera, addView, viewAt } = args;
+  const { ref, elementRef, apiRef, onElement, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim } = args;
   const [ready, setReady] = useState(false);
   const handleRef = useCallback(
     (node: CanvasExtensionApi | null) => {
@@ -68,13 +76,15 @@ export function useSceneCanvasHandle(args: {
             camera,
             addView,
             viewAt,
+            aimOf,
+            setAim,
           }
         : null;
       apiRef.current = extended;
       setReady(extended !== null);
       assignRef(ref, extended);
     },
-    [ref, elementRef, apiRef, ingest, viewAnimation, camera, addView, viewAt, onElement],
+    [ref, elementRef, apiRef, ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim, onElement],
   );
   return { handleRef, ready };
 }

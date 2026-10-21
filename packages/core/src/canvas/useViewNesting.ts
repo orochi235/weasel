@@ -54,8 +54,8 @@ export function useViewNesting(
     return { ...r, x: r.x + frame.origin.x, y: r.y + frame.origin.y };
   }, [live, frameIn]);
 
-  /** A derived camera, for a surface frame: asked of the frame it is measured in. */
-  const derivedAt = useCallback((derive: (outer: View, dims: Dims) => View, outer: View, dims: Dims): View => {
+  /** A derived camera or aim, for a surface frame: asked of the frame it is measured in. */
+  const derivedAt = useCallback(<T>(derive: (outer: View, dims: Dims) => T, outer: View, dims: Dims): T => {
     const frame = frameIn(outer, dims);
     return frame ? derive(frame.view, frame.dims) : derive(outer, dims);
   }, [frameIn]);

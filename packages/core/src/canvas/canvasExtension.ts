@@ -7,6 +7,7 @@ import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
+import type { ViewAim } from '../features/viewports/aim';
 import type { Target } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 
@@ -243,4 +244,10 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
    * a lens asking what is beneath itself.
    */
   viewAt(at: { x: number; y: number }, opts?: { except?: string }): ViewAt;
+  /** What view `id` shows (`null`: the canvas's own camera), or `null` while no such view is mounted. */
+  aimOf(id: string | null): ViewAim | null;
+  /** Point view `id` at `aim`. A camera-held view moves its camera; an aim-held one reports the aim through
+   *  `onAimChange`. `false` when there is no such view, the aim is not one it can read, or the canvas has no
+   *  camera writer. */
+  setAim(id: string | null, aim: ViewAim): boolean;
 }

@@ -9,14 +9,14 @@ import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelect
 /** A rect on the surface, in CSS pixels from the canvas top-left. */
 export interface ViewRect { x: number; y: number; w: number; h: number }
 
-/** Props for `<CanvasView>`. */
-export interface CanvasViewProps {
+/** The props every `<CanvasView>` takes, whichever side it holds. */
+export interface CanvasViewCommonProps {
   /** Identifies the view to the surface and to input routing. Must be unique
    *  among the views on one canvas. */
   id: string;
   /**
    * The id of a view to nest this one in. `bounds` is then measured from that
-   * view's rect, and a thunked `bounds` or `view` receives that view's camera
+   * view's rect, and a thunked `bounds`, `view` or `aim` receives that view's camera
    * and size as `outer` and `dims`. The view paints after it, cut to what it
    * shows, paints only the layers it paints, and takes input there before it
    * does. While no view has that id, this one neither paints nor takes input.
@@ -25,19 +25,6 @@ export interface CanvasViewProps {
   /** Where this view paints, recomputed every frame so the rect can track the
    *  outer camera. A plain rect is accepted for a fixed panel. */
   bounds: ViewRect | ((outer: View, dims: Dims) => ViewRect);
-  /** Camera. Supply this to control it; otherwise the view keeps its own,
-   *  seeded from `defaultView`. `onViewChange` fires either way.
-   *
-   *  A thunk is a camera derived from the canvas's — a loupe following the
-   *  pointer — read fresh at every paint and every event, so the two cannot
-   *  disagree mid-gesture. It is controlled: a pan inside the view reaches
-   *  only `onViewChange`. */
-  view?: View | ((outer: View, dims: Dims) => View);
-  defaultView?: View;
-  onViewChange?: (v: View) => void;
-  /** Pan limits, applied to every camera change the same way `<Canvas>`
-   *  applies its own. */
-  viewBounds?: Bounds;
   /** Receives this view's camera, to read, drive, and watch from outside it. */
   cameraRef?: Ref<CanvasViewCamera>;
   /** Which of the surface's layers this view paints. Defaults to all of them —
@@ -89,3 +76,38 @@ export interface CanvasViewProps {
    *  `selection` is supplied. */
   selectionOptions?: UseSelectionOptions;
 }
+
+/** A view that holds its camera. */
+export interface CameraHeldViewProps {
+  /** Camera. Supply this to control it; otherwise the view keeps its own,
+   *  seeded from `defaultView`. `onViewChange` fires either way.
+   *
+   *  A thunk is a camera derived from the canvas's — a loupe following the
+   *  pointer — read fresh at every paint and every event, so the two cannot
+   *  disagree mid-gesture. It is controlled: a pan inside the view reaches
+   *  only `onViewChange`. */
+  view?: View | ((outer: View, dims: Dims) => View);
+  defaultView?: View;
+  onViewChange?: (v: View) => void;
+  /** Pan limits, applied to every camera change the same way `<Canvas>`
+   *  applies its own. */
+  viewBounds?: Bounds;
+  aim?: never;
+  onAimChange?: never;
+}
+
+/** A view that holds its aim, and derives its camera from it. */
+export interface AimHeldViewProps {
+  /** What the view shows, as a world rect; its camera fits it to the frame, uniformly and centered.
+   *  A thunk is read at each paint and event, measured like a thunked `view`. */
+  aim: Bounds | ((outer: View, dims: Dims) => Bounds);
+  /** A pan or zoom inside the view, or `setAim` on it, reported as the rect the view would then show. */
+  onAimChange?: (aim: Bounds) => void;
+  view?: never;
+  defaultView?: never;
+  onViewChange?: never;
+  viewBounds?: never;
+}
+
+/** Props for `<CanvasView>`: the common ones, and either a camera or an aim. */
+export type CanvasViewProps = CanvasViewCommonProps & (CameraHeldViewProps | AimHeldViewProps);

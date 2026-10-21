@@ -9,7 +9,7 @@ import {
   useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef,
 } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
-import { normalizeView, type View } from 'core/viewport/view';
+import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
@@ -19,7 +19,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
-import { useCanvasView } from './useCanvasView';
+import { useViewAim } from './useViewAim';
 import { hitAtOf } from './deps/dispatchSources';
 import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget, layerAffordance } from './affordanceAt';
 import { pathFromPlane } from './planeClips';
@@ -69,7 +69,7 @@ const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<un
  */
 export function CanvasView(props: CanvasViewProps): null {
   const {
-    id, parent, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
+    id, parent, bounds,
     layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
     selection: selectionProp, selectionOptions, interactive = true, paint = true,
   } = props;
@@ -92,7 +92,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    parent, bounds, layers, layerVisibility, layerOrder, viewProp, viewSelection, selection,
+    parent, bounds, layers, layerVisibility, layerOrder, viewSelection, selection,
   });
 
   const { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted } = useViewNesting(registry, live);
@@ -106,31 +106,12 @@ export function CanvasView(props: CanvasViewProps): null {
 
   const {
     getView: camera, setView, setViewFromInput, subscribeView,
-    adoptControlled, announceControlled, clearSubscribers,
-  } = useCanvasView({
-    view: typeof viewProp === 'function'
-      ? () => {
-        const surface = registry?.surface();
-        return derivedAt(viewProp, surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
-      }
-      : viewProp,
-    defaultView,
-    onViewChange,
-    viewBounds,
-    dims: () => sizeOf(rectNow()),
-    requestRedraw: () => registry?.surface()?.requestRedraw(),
-  });
+    adoptControlled, announceControlled, clearSubscribers, held, aim, setAim, cameraAt,
+  } = useViewAim({ props, id, registry, derivedAt, rectAt, rectNow });
   useInsertionEffect(adoptControlled);
   useLayoutEffect(announceControlled);
   useEffect(() => clearSubscribers, [clearSubscribers]);
   useImperativeHandle(cameraRef, () => ({ getView: camera, setView, subscribeView }), [camera, setView, subscribeView]);
-
-  /** The camera for a frame the caller names. A derived camera is asked for
-   *  that frame; any other is the same whatever the surface is doing. */
-  const cameraAt = useCallback((outer: View, dims: Dims): View => {
-    const v = live.current.viewProp;
-    return typeof v === 'function' ? normalizeView(derivedAt(v, outer, dims)) : camera();
-  }, [live, camera, derivedAt]);
 
   const viewApi = useMemo<ViewApi>(() => ({
     get: camera,
@@ -262,6 +243,9 @@ export function CanvasView(props: CanvasViewProps): null {
     order,
     interactive,
     paint,
+    held,
+    aim,
+    setAim,
     layer: createViewportLayer<unknown, unknown>({
       id,
       label: label ?? id,
@@ -295,7 +279,7 @@ export function CanvasView(props: CanvasViewProps): null {
       // another.
       getRuleCtx: () => inputsRef.current?.chromeCaps?.ruleCtx(ruleInputs()),
     },
-  }), [id, parent, order, interactive, paint, label, background, rectAt, cameraAt, viewApi,
+  }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
        layerIsPainted, live, inputsRef, helpersRef, frameIn]);
 

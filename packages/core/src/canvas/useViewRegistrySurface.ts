@@ -17,6 +17,7 @@ export interface SurfaceServices {
   requestRedraw: () => void;
   hitTestExtrasIn: SurfaceHandle['hitTestExtras'];
   clientToWorld: SurfaceHandle['clientToWorld'];
+  setView: NonNullable<SurfaceHandle['setView']>;
 }
 
 /**
@@ -32,7 +33,7 @@ export function useViewRegistrySurface(
 ): void {
   const surfaceLayersRef = useLatest<readonly RenderLayer<unknown>[]>(layers);
   const { viewRef, dimsRef, helpersRef } = frame;
-  const { requestRedraw, hitTestExtrasIn, clientToWorld } = services;
+  const { requestRedraw, hitTestExtrasIn, clientToWorld, setView } = services;
   useEffect(() => {
     return viewRegistry?.attachSurface({
       view: () => viewRef.current,
@@ -42,6 +43,7 @@ export function useViewRegistrySurface(
       chromeState: () => helpersRef.current!.getChromeState(),
       hitTestExtras: hitTestExtrasIn,
       clientToWorld,
+      setView,
       claimsAbove: (x, y) => {
         const view = viewRef.current;
         const worldX = x / view.scale.x + view.x;
@@ -49,5 +51,5 @@ export function useViewRegistrySurface(
         return hitTestExtrasIn(worldX, worldY, view, dimsRef.current, helpersRef.current) !== null;
       },
     });
-  }, [viewRegistry, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, helpersRef, clientToWorld]);
+  }, [viewRegistry, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef, helpersRef, clientToWorld, setView]);
 }
