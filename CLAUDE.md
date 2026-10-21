@@ -295,6 +295,9 @@ and React-free checks, both consumer smokes, the site builds — reading the lis
 `scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
 (`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; run it
 beside `test:fleet` before merging any branch.
+`npm run test:fleet:matrix -- <ref>` runs that whole ci.yml job under each matrix Node the fleet
+doesn't (22), in its own `weasel-node22` tree; it took 13.9 min wall on 2026-10-21, so run it before
+merging a branch that touches dependencies, build tooling, or anything loaded through a native module.
 
 ## Test and typecheck commands
 

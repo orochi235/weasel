@@ -974,21 +974,14 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
 
-- **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
-  Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
-  `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
-  `Unexpected token 'export'` under vitest's vm pools on Node 22 from 2026-10-19 until the plugin
-  stopped using oxc-parser's `Visitor` (2026-10-20). A Node 22 pass can be run by hand —
-  `onto do --kind test -- npx -y -p node@22 node node_modules/.bin/vitest run …` — but nothing
-  runs one. The `browser` project has the same gap for Linux: CI run 39349499006 (2026-10-20, at
+- **(P2) CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
+  `ubuntu-latest`, while every fleet node is a Mac. CI run 39349499006 (2026-10-20, at
   `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
   `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
   and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
   `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
-  whether they still fail is unknown. Two fixes, not exclusive: a Node 22 leg in `test:fleet` or
-  the gate, and a Linux node (or container) for the `browser` project.
-  `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
-  needs `>=22.12.0`.
+  whether they still fail is unknown. The fix is a Linux node (or container) for the `browser`
+  project. (CI's Node 22 leg has a fleet twin since 2026-10-21: `npm run test:fleet:matrix`.)
 
 - **(P3) Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
   (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five

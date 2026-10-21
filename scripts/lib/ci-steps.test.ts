@@ -1,18 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { builtSteps, readCi, sourceChecks } from './ci-steps.mjs';
+import { builtSteps, jobSteps, offFleetNodes, readCi, sourceChecks } from './ci-steps.mjs';
 
 const FIXTURE = `
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # the floor and the target
+        node: [22, 24]
     env:
       NPM_CONFIG_LOGLEVEL: error
       # a comment between entries
       NPM_VERSION: 12.0.2
     steps:
       - uses: actions/checkout@v7
+      - run: npm install -g npm@\${{ env.NPM_VERSION }}
       - run: npm ci
       # explains the next step
       - run: npm run check:bumps
@@ -39,6 +44,7 @@ describe('readCi', () => {
 
   it('reads every step that runs something, with its own env and condition', () => {
     expect(ci.steps.map((step) => step.run)).toEqual([
+      'npm install -g npm@${{ env.NPM_VERSION }}',
       'npm ci',
       'npm run check:bumps',
       'npm run audit:jsdoc -- --quiet --check',
@@ -49,8 +55,41 @@ describe('readCi', () => {
       'npm run check:manifests',
       'npm run build:demo\nnpm run build:draw',
     ]);
-    expect(ci.steps[6].env).toEqual({ FORGE_BUILT: '1' });
-    expect(ci.steps[8].if).toBe('matrix.node == 24');
+    expect(ci.steps[7].env).toEqual({ FORGE_BUILT: '1' });
+    expect(ci.steps[9].if).toBe('matrix.node == 24');
+  });
+});
+
+describe('the Node versions the matrix runs', () => {
+  it('reads them from the job', () => {
+    expect(readCi(FIXTURE).nodes).toEqual([22, 24]);
+  });
+
+  it('leaves out the one every fleet node runs', () => {
+    expect(offFleetNodes([22, 24], '24\n')).toEqual([22]);
+    expect(offFleetNodes([24], 'v24')).toEqual([]);
+  });
+});
+
+describe('the whole job on one Node version', () => {
+  const { steps } = readCi(FIXTURE);
+
+  it('runs from the install on, without the global npm install the runner does itself', () => {
+    const runs = jobSteps(steps, 22).map((step) => step.run);
+    expect(runs[0]).toBe('npm ci');
+    expect(runs).toContain('npm run check:bumps');
+    expect(runs).toContain('npx vitest run --project=core');
+    expect(runs).toContain('npm run check:manifests');
+  });
+
+  it('keeps a step for one Node version only on that version', () => {
+    expect(jobSteps(steps, 22).map((step) => step.run)).not.toContain('npm run build:demo\nnpm run build:draw');
+    expect(jobSteps(steps, 24).map((step) => step.run)).toContain('npm run build:demo\nnpm run build:draw');
+  });
+
+  it('refuses a step reading a workflow expression it cannot evaluate', () => {
+    const odd = readCi(FIXTURE.replace("npx vitest run --project=core", "npx vitest run --project=\${{ matrix.project }}"));
+    expect(() => jobSteps(odd.steps, 22)).toThrow(/matrix\.project/);
   });
 });
 
@@ -93,6 +132,13 @@ describe('ci.yml itself', () => {
       'npm run test:smoke:consumer -w @weasel-js/labkit',
       'npm run test:smoke:consumer',
     ]));
+  });
+
+  it('runs on a Node version the fleet does not', () => {
+    const { nodes } = readCi(readFileSync(join(import.meta.dirname, '../../.github/workflows/ci.yml'), 'utf8'));
+    const nvmrc = readFileSync(join(import.meta.dirname, '../../.nvmrc'), 'utf8');
+    expect(offFleetNodes(nodes, nvmrc).length).toBeGreaterThan(0);
+    expect(jobSteps(steps, offFleetNodes(nodes, nvmrc)[0]).map((step) => step.run)).toContain('npm run test:browser');
   });
 
   it('leaves the gate none of them', () => {

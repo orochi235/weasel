@@ -1,26 +1,31 @@
 #!/usr/bin/env node
 /**
- * The node-side half of `npm run test:fleet:postbuild`: from a clean install, ci.yml's first build
- * and every step after it, one line per step as it finishes. Not for a checkout anyone works in —
- * it deletes the ignored build output under packages/ and apps/ first, so a `dist` left by an
- * earlier run cannot supply a file the build no longer emits — and it refuses to start in a tree
- * `fleet-postbuild.mjs` did not arm.
+ * The node-side half of `scripts/fleet-ci.mjs`: from a clean install, ci.yml's steps on the Node it
+ * runs under, one line per step as it finishes — its first build and every step after it, or with
+ * `job` the whole job. Not for a checkout anyone works in — it deletes the ignored build output
+ * under packages/ and apps/ first, so a `dist` left by an earlier run cannot supply a file the build
+ * no longer emits — and it refuses to start in a tree `fleet-ci.mjs` did not arm.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CI_YML, builtSteps, readCi } from './lib/ci-steps.mjs';
+import { CI_YML, builtSteps, jobSteps, readCi } from './lib/ci-steps.mjs';
 import { COMMIT_ENV, checkTree, stampReport, treeReport, treeStamp } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TAIL = 80;
-const say = (line) => console.log(`ci-postbuild: ${line}`);
+const say = (line) => console.log(`ci-run: ${line}`);
+const mode = process.argv[2] ?? 'built';
+if (mode !== 'built' && mode !== 'job') {
+  say(`unknown mode "${mode}": built or job`);
+  process.exit(2);
+}
 
 const check = checkTree(ROOT, process.env);
 if (!check.armed) {
-  say(`refusing: this tree was not armed by fleet-postbuild.mjs (no ${COMMIT_ENV}). Run npm run test:fleet:postbuild.`);
+  say(`refusing: this tree was not armed by fleet-ci.mjs (no ${COMMIT_ENV}). Run npm run test:fleet:postbuild or test:fleet:matrix.`);
   process.exit(2);
 }
 const tree = treeReport(check);
@@ -63,7 +68,7 @@ const runStep = (run, stepEnv) =>
     child.on('close', (status) => done({ ok: status === 0, output: Buffer.concat(chunks).toString('utf8') }));
   });
 
-const plan = [{ run: 'npm ci', env: {} }, ...builtSteps(steps, nodeMajor)];
+const plan = mode === 'job' ? jobSteps(steps, nodeMajor) : [{ run: 'npm ci', env: {} }, ...builtSteps(steps, nodeMajor)];
 const width = String(plan.length).length;
 const started = Date.now();
 let failed = 0;
