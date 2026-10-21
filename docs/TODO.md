@@ -588,6 +588,16 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
+- **(P3) Rows other than `Bar` do not follow an `Along` yet.** `ButtonBar`, `ToggleBar`, segmented
+  controls, `SwatchStrip`, `Tabs`/`PageTabs` and `RadioGroup` still lay out on a straight line. They
+  follow on `BarAlong`'s placement (`runPlaces.ts`, `useRunScroll.ts`).
+
+- **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
+  draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
+
+- **(P3) No `path` track shape.** `TrackShape` has `lineShape` and `arcShape`; a shape over any path
+  would build on geom's `measurePath` and `nearestOnPath`, and needs no change to the interface.
+
 - **(P3) draw's asset editor renders two large lists whole.** Measured 2026-10-21 in
   `apps/draw/src/dev/AssetsPage.test.tsx` with a node property schema open: the Export panel's
   highlighted literal (`pre[data-testid=schema-literal]`) is about 3,300 elements and 130 ms of a

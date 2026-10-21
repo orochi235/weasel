@@ -29,6 +29,8 @@ export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & 
  * `align-items` on the root or on a wrapper that replaces it governs the
  * *horizontal* axis here and collapses the track to its content width. Style
  * the wrapper around one, not the root.
+ *
+ * Straight only; for a control along a curve, use `Slider` inside `Along`.
  */
 export function RangeSlider(props: RangeSliderProps) {
   const { label, showOutput, formatOutput, className, ...rest } = props;

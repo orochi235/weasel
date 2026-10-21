@@ -17,6 +17,10 @@ export type { BoundsCtx, SliderProps, SliderStop, Thumb, ThumbRenderCtx, ThumbSh
  * keystrokes fire `onInput` and `onChange` together, since there is no
  * in-flight state to buffer.
  *
+ * It lies along a curve when given a `shape` or placed inside an `Along`: thumbs, ticks, stop labels and
+ * readouts follow the shape, and values still run left to right after any flip. `aria-orientation` is left off
+ * on a curve.
+ *
  * A thumb's `value` may be tagged: it is placed by its amount, shown and
  * spoken through its own display where it carries one, and handed back with
  * its unit and display around the new number.

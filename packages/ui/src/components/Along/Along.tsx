@@ -20,7 +20,15 @@ export interface AlongProps {
 const TOP_HALF: AlongArc = { start: 270, end: 90 };
 const NONE: Box = { width: 0, height: 0 };
 
-/** Fills its containing block and hands controls inside it a track shape sized from that box. */
+/**
+ * Fills its containing block and hands controls inside it a track shape sized from that box.
+ *
+ * An arc's angles are degrees clockwise from 12 o'clock on a y-down plane; the default arc is the inscribed
+ * circle's top half. The box takes no pointer input, only the controls inside it do, so a press elsewhere
+ * reaches whatever lies beneath. Two `Along`s over one box with different arcs put, say, a `Bar` along the top
+ * and a `Slider` along the bottom of one circle. `Slider`, `DetentSlider`, `Jog` and `Bar` follow the shape; any
+ * other control renders as it does outside an `Along`.
+ */
 export function Along({ arc = TOP_HALF, shape, align = 'center', className, children }: AlongProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const box = useBoxes(() => [ref.current], 1)[0] ?? NONE;

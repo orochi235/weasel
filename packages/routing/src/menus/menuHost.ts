@@ -12,7 +12,7 @@ export interface MenuOpenRequest {
   client: Point;
   /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
   under?: Rect;
-  /** With `under`: opens above the button when it fits there, below when it does not. */
+  /** With `under`: opens above the button when it fits there, below when it does not. The canvas HUD menu host places below only and ignores it. */
   above?: boolean;
   /** World point, passed to `enabled` and to every item. */
   world?: Point;
@@ -26,6 +26,7 @@ export interface OpenMenu {
   entries: readonly MenuEntry[];
   client: Point;
   under?: Rect;
+  /** `MenuOpenRequest.above`, carried to the renderer. */
   above?: boolean;
   world?: Point;
   source: 'pointer' | 'keyboard';

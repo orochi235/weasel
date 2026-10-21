@@ -19,6 +19,8 @@ export type InlineRangeProps = Omit<
  * and `RangeSlider` is a full-width labelled form control on React Aria. This
  * one exists to sit inline beside a swatch or a readout, and to own the track
  * painting both of those surfaces need.
+ *
+ * Straight only; for a control along a curve, use `Slider` inside `Along`.
  */
 export const InlineRange = forwardRef(function InlineRange(
   props: InlineRangeProps,
