@@ -282,20 +282,37 @@ export function dashForStrokeStyle(
 }
 
 /**
- * The style a stored `dash` reads as at `width`. Absent or empty is `solid`;
- * an array matching neither preset is `custom`.
+ * What a `Stroke.dash` array draws, decided once for every reader of it: the
+ * array itself when it is a pattern that advances along the line, `'solid'`
+ * when it is absent, empty, has a negative entry or sums to zero (as SVG
+ * reads those), and `'non-finite'` when any entry is NaN or infinite, which
+ * draws no stroke at all.
+ */
+export function dashPattern(dash: readonly number[] | undefined): readonly number[] | 'solid' | 'non-finite' {
+  if (dash === undefined || dash.length === 0) return 'solid';
+  if (!dash.every(Number.isFinite)) return 'non-finite';
+  if (dash.some((v) => v < 0) || !dash.some((v) => v > 0)) return 'solid';
+  return dash;
+}
+
+/**
+ * The style a stored `dash` reads as at `width`: `solid` wherever
+ * {@link dashPattern} draws it solid, and `custom` for an array matching
+ * neither preset, a non-finite one included.
  */
 export function strokeDashStyleOf(
   dash: readonly number[] | undefined,
   width: number | { px: number } | undefined,
 ): StrokeDashStyle {
-  if (dash === undefined || dash.length === 0 || dash.every((v) => v === 0)) return 'solid';
+  const pattern = dashPattern(dash);
+  if (pattern === 'solid') return 'solid';
+  if (pattern === 'non-finite') return 'custom';
   const w = dashWidth(width);
   for (const style of ['dashed', 'dotted'] as const) {
     const preset = STROKE_DASH_RATIOS[style];
     // Tolerance is relative to the width: the presets are multiples of it, and
     // a round-tripped array carries the serializer's decimal trimming.
-    if (dash.length === preset.length && preset.every((r, i) => Math.abs(dash[i] - r * w) <= w * 1e-3)) {
+    if (pattern.length === preset.length && preset.every((r, i) => Math.abs(pattern[i] - r * w) <= w * 1e-3)) {
       return style;
     }
   }

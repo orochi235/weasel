@@ -189,6 +189,36 @@ describe('tessellateStroke dash patterns', () => {
     expect(meshEmptyDash.indices.length).toBe(meshNoDash.indices.length);
   });
 
+  // Without the guard this spins synchronously until the worker dies; the
+  // timeout cannot interrupt it, so give a red run a job-level timeout too.
+  it('strokes a dash that cannot advance solid', { timeout: 2000 }, () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    const solid = tessellateStroke(path, { paint: { color: '#000' }, width: 4 });
+    for (const dash of [[0], [0, 0], [0, 0, 0], [5, -5], [-1, 3]]) {
+      const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash });
+      expect(Array.from(mesh.indices), JSON.stringify(dash)).toEqual(Array.from(solid.indices));
+      expect(Array.from(mesh.vertices), JSON.stringify(dash)).toEqual(Array.from(solid.vertices));
+    }
+  });
+
+  it('draws no stroke for a dash with a non-finite entry', { timeout: 2000 }, () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    for (const dash of [[NaN, 2], [5, NaN], [Infinity, 2]]) {
+      const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash });
+      expect(mesh.indices.length, String(dash)).toBe(0);
+    }
+  });
+
   it('carries the dash phase across a corner instead of restarting it', () => {
     // (0,0) → (3,0) → (3,3) with dash [2, 2]. The first "on" run ends 2 units
     // along; the gap consumes the last unit of the first leg plus one unit up

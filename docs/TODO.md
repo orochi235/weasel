@@ -347,13 +347,12 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P2) A dash whose entries are all zero hangs stroke tessellation.** `splitForDash`
-  (`packages/stroke/src/tessellate/dash.ts`) never advances along a segment when the current dash
-  length is 0, and `tessellateStroke` calls it whenever `dash.length > 0`, so `dash: [0, 0]` loops
-  forever (read from the code, not yet run). It wants a guard that strokes such a dash solid, and a
-  test. `@weasel-js/pdf`'s `strokeStyleOps` already writes it solid, but its comment says the
-  renderer does too; correct that once the guard lands. The same function writes a dash with a
-  `NaN` entry as solid instead of dropping the command as non-finite (2026-10-20).
+- **(P3) A dash whose period is tiny against its line has no bound on the work it makes.**
+  `splitForDash` (`packages/stroke/src/tessellate/dash.ts`) walks one dash at a time, so a pattern
+  that sums to 1e-9 on a 100-unit line makes 1e11 runs and exhausts the worker, as an all-zero dash
+  did before `dashPattern` (`@weasel-js/paint`) stroked that solid (read from the code, not run).
+  It wants a cap on dashes per polyline, or a rule for a period below some fraction of the width,
+  applied in `dashPattern` so the PDF writer agrees (2026-10-20).
 
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap

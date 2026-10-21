@@ -53,6 +53,7 @@ export {
   resolveScreenLength,
   STROKE_DASH_RATIOS,
   dashForStrokeStyle,
+  dashPattern,
   strokeDashStyleOf,
 } from './paint';
 export {
