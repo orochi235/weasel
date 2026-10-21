@@ -72,11 +72,11 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
     const el = root.current;
     if (latest.current.max <= 0 || el === null || e.button !== 0 || !el.contains(e.target as Node)) return;
     session.current?.cancel();
-    const g0 = fractionAt(el, latest.current.run, e);
+    const s0 = positionAt(el, latest.current.run, e);
     const from = now();
     let scrolling = false;
     const onMove = (ev: PointerEvent): void => {
-      const travel = (fractionAt(el, latest.current.run, ev) - g0) * latest.current.run.length;
+      const travel = positionAt(el, latest.current.run, ev) - s0;
       if (!scrolling && Math.abs(travel) > SCROLL_SLOP) {
         scrolling = true;
         // Once it is a drag the root takes the pointer, so the release lands off the item and its press cancels.
@@ -115,10 +115,21 @@ export function useRunScroll({ root, run, total, spots, lengths }: RunScrollArgs
   return { offset, onPointerDownCapture, onFocusCapture };
 }
 
-/** The fraction of `run` nearest the pointer, `run`'s coordinates being `el`'s box. */
-function fractionAt(el: HTMLElement, run: TrackRun, e: { clientX: number; clientY: number }): number {
+/**
+ * How far along `run` the pointer is, in px, `run`'s coordinates being `el`'s box: past either end, carried on
+ * along the end's tangent, so a drag that leaves the run keeps scrolling it.
+ */
+function positionAt(el: HTMLElement, run: TrackRun, e: { clientX: number; clientY: number }): number {
   const box = el.getBoundingClientRect();
-  return run.nearest({ x: e.clientX - box.left, y: e.clientY - box.top }).f;
+  const p = { x: e.clientX - box.left, y: e.clientY - box.top };
+  const { f } = run.nearest(p);
+  const beyond = (g: 0 | 1): number => {
+    const { point, tangent } = run.at(g);
+    return (p.x - point.x) * tangent.x + (p.y - point.y) * tangent.y;
+  };
+  if (f <= 0) return Math.min(0, beyond(0));
+  if (f >= 1) return run.length + Math.max(0, beyond(1));
+  return f * run.length;
 }
 
 /** Where along the run the item holding `target` falls, counting the lead: its index among `root`'s items, or -1. */

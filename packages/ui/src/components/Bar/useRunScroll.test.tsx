@@ -91,6 +91,15 @@ describe('useRunScroll', () => {
     expect(clickReaches(items[1]!)).toBe(false);
   });
 
+  test('a drag that carries on past the end of the run keeps scrolling it', () => {
+    const { items, hook } = mount(160);
+    act(() => {
+      hook.result.current.onPointerDownCapture(press(items[0]!, 20));
+      document.dispatchEvent(pointer('pointermove', -20));
+    });
+    expect(hook.result.current.offset).toBe(40);
+  });
+
   test('focus on an item past the end scrolls it fully into view at that end', () => {
     const { items, hook } = mount(160);
     act(() => {
