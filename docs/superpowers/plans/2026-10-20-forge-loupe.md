@@ -39,14 +39,14 @@ Where the code disagrees with the spec, or the spec is silent on something the c
 - At most 8 lenses at once (`MAX_LENSES = 8`). Every Live lens is a whole second render.
 - Lenses last for the session (in memory at the `Workshop`) and are never written to trial storage.
 - The lens scene keeps its own undo history, separate from `varsHistory`. It answers undo keys only while its input element has focus.
-- Leader scopes are out of scope. Keys are plain default bindings.
+- Leader scopes are out of scope. Every lens key except none is `Alt+` the letter in the Task 4 table (ruled 2026-10-20), matched by `code` (`KeyL`, …) since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
 - US English in code, copy and commits. Commit subjects are imperative and lower-case, and every commit ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Work in a worktree (`git worktree add .claude/worktrees/forge-loupe -b forge-loupe`, then `npm ci` inside it). Before merging, run `npm run test:gate` and `npm run test:fleet -- HEAD` on the branch.
 
 ## Review Focus
 
 1. **A story scrolled inside its host, or a workspace pane zoomed.** The lens must show the patch the reticle sits on. A Live copy matches the main host's scroll offsets, and both sources map client to host-local points by the host rect's scale (Task 6, Task 9).
-2. **Typing a lens key into a story's text field.** Typing `l` in an `<input>` inside a story must add no lens (Task 4).
+2. **Typing a lens key into a story's text field.** Typing Alt+L in an `<input>` inside a story must add no lens (Task 4).
 3. **Trial state that JSON cannot carry** (a `Map`, a function, a class instance). The Pixels source must report "unavailable: this story's state cannot be sent to a capture" rather than capture a different story (Task 9).
 4. **A story file edited while a Pixels lens is up.** The next capture must be fresh, never a pre-edit image from the cache (Task 8, Task 9).
 5. **A reticle over no trial, or over a trial that just closed.** The lens shows "Nothing under the reticle" and unmounts any copy, with no throw (Task 6).
@@ -304,7 +304,7 @@ export function createLensActions(api: LensActionApi, comparisons: { opposite: (
 export function LensActions(props: { api: LensActionApi; bodyRef: RefObject<HTMLElement | null>; opposite: () => unknown }): null;
 ```
 
-Default keys. Each binding is a `{ kind: 'key', key, phase: [{ channel: '*', phase: 'initial' }] }`, and every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up:
+Default keys. Each binding is a `{ kind: 'key', code, mods: { alt: true }, phase: [{ channel: '*', phase: 'initial' }] }` — every key in the table below is held with Alt, and Shift where the table says so (ruled 2026-10-20), matched by `code`, and every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up:
 
 | Action | Key | Action | Key |
 |---|---|---|---|
@@ -323,7 +323,7 @@ Default keys. Each binding is a `{ kind: 'key', key, phase: [{ channel: '*', pha
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-it('adds a lens on l, up to eight, and declines the ninth with a reason', () => {
+it('adds a lens on Alt+L, up to eight, and declines the ninth with a reason', () => {
   for (let i = 0; i < 9; i++) registry.trigger('loupe.add');
   expect(lensesOf(scene)).toHaveLength(8);
   expect(actionOf('loupe.add').enabled!(deps)).toMatch(/8 lenses/);
@@ -336,13 +336,13 @@ it('switches aim to Follow, tracks hover without writing history, and commits on
 });
 it('cycles DPR 1×, 2×, 1×|2×', () => { /* three triggers → [2], [1,2], [1] */ });
 it('declines every lens key but add while no lens is up', () => { /* enabled === 'not-applicable' */ });
-it('types l into a story’s text input without adding a lens', async () => { /* Review Focus 2: Lab with an <input> trial; userEvent.type(input,'l'); lensesOf(scene) empty */ });
+it('types Alt+L into a story’s text input without adding a lens', async () => { /* Review Focus 2: Lab with an <input> trial; userEvent.type(input,'l'); lensesOf(scene) empty */ });
 ```
 
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/lensActions.test.ts packages/labkit/src/loupe/lens/LensActions.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.** If the typing test fails, the lab dispatcher is not skipping editable targets. Fix that in routing's key matcher, with a test there in the `weasel-ui` project, rather than in the lens.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
-- [ ] **Step 5: Commit** with the subject `add lens actions with plain default keys and a follow aim`.
+- [ ] **Step 5: Commit** with the subject `add lens actions with Alt-held default keys and a follow aim`.
 
 ### Task 5: The source contract and the lens slot
 
@@ -730,7 +730,7 @@ it('opens on ?', async () => {});
 ### Task 14: Docs, changeset, and the full run
 
 **Files:**
-- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass and the later readouts unbuilt), `docs/TODO.md` (one entry for Glass, one for leader-scope rebinding of lens keys, and one for "Delete on a Pinned lens goes through a lens-specific override" if Mike has not ruled on it)
+- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass and the later readouts unbuilt), `docs/TODO.md` (one entry for Glass, one for leader-scope rebinding of lens keys, and one for moving lens keys under the leader scope once it lands)
 - Create: `.changeset/forge-loupe.md` (`patch` for `@weasel-js/labkit`, `@weasel-js/forge`, `@weasel-js/paint`, `@weasel-js/svg`; the prose says it is additive)
 
 - [ ] **Step 1: Write the docs.** Do a cut pass and show the cut list.
@@ -741,7 +741,7 @@ it('opens on ?', async () => {});
 
 ---
 
-## Could not resolve
+## Rulings (2026-10-20)
 
-- **Delete on a Pinned lens (Spec correction 2).** The plan overrides the lens canvas's `delete` to expand to whole lenses. The alternative is a core change: have `moveSources` and `shapeSources` treat a node whose `derivePose` answers `null` as its own source. The reticle could then always depend on the body, and core's cascade would do the deleting. That is the cleaner engine answer, but it touches every derived node's drag. This is Mike's call before Task 3 Step 4.
-- **Plain letter keys at lab level pre-empt a story's own keys while a lens is up.** `LabKeys` runs `keyboard: 'first'`, so a draw story's `v` or `r` tool keys go to the lens. Every lens key but `l` is disabled with no lens up, which narrows this without removing it. The leader-scope arc is the real fix. Until then, should the defaults carry a modifier?
+- **Delete on a Pinned lens keeps the lens canvas's `delete` override** (Spec correction 2). The core alternative only cascades down from a deleted body, so deleting a selected reticle alone would still strand the body; the override uses the canvas's public `actions` prop and `createDeleteOp`.
+- **Lens keys default to Alt plus the letter** until leader scopes land, so a story's plain keys are never taken.
