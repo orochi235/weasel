@@ -136,10 +136,12 @@ describe('the theme Size field', () => {
     await expect.poll(() => (localStorage.getItem(CHART_SCENE_KEY) ?? '').includes('"fontSize":64')).toBe(true);
 
     const { body, row } = savedBody();
-    // Ink inside the body, and none in the strips between its outline and its rows' padding, where
-    // text cut off at the row's edge would sit. The strips start clear of the outline and the selection.
-    await expect.poll(() => ink(host, canvas, body.x, body.y, body.x + body.width, body.y + body.height)).toBeGreaterThan(50);
     const [r, bottom] = [body.x + body.width, body.y + body.height];
+    // Text drawn past where the small body ended: the scene saves before the canvas repaints, and the
+    // frame before shows the small body, whose outline crosses the top strip below.
+    await expect.poll(() => ink(host, canvas, small.x + small.width + 8, body.y, r - 12, bottom)).toBeGreaterThan(50);
+    // None in the strips between the outline and its rows' padding, where text cut off at the row's
+    // edge would sit. The strips start clear of the outline and the selection.
     expect(ink(host, canvas, body.x + 7, body.y + 7, body.x + 10, bottom - 7)).toBe(0);
     expect(ink(host, canvas, r - 10, body.y + 7, r - 7, bottom - 7)).toBe(0);
     expect(ink(host, canvas, body.x + 7, body.y + 7, r - 7, body.y + 10)).toBe(0);
