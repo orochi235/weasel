@@ -22,7 +22,8 @@ import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { ForgeLoupe } from './loupe/ForgeLoupe';
-import { createLiveLenses, LiveLensesContext } from './loupe/liveLenses';
+import type { Revision } from './loupe/captureContext';
+import { LoupeProvider } from './loupe/CaptureInputs';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
@@ -55,6 +56,10 @@ export interface WorkshopProps {
   storage?: StorageAdapter;
   /** The component graph index pages list dependencies from. */
   dependencies?: DepGraph;
+  /** The dev server's base, where it takes captures of a story; absent, lenses offer no Pixels source. */
+  captureBase?: string;
+  /** Bumped on every story edit, so no lens shows a capture of a story as it was. */
+  revision?: Revision;
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
@@ -112,13 +117,13 @@ function NoStories({ stories }: { stories: readonly string[] }) {
 }
 
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
-export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
+export function Workshop(props: WorkshopProps) {
+  const { index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies } = props;
   const declarations = config?.globals ?? NO_DECLARATIONS;
   const title = config?.title ?? DEFAULT_TITLE;
   useDocumentTitle(title);
   const [frames] = useState(createTrialFrames);
   const [clocks] = useState(createTrialClocks);
-  const [liveLenses] = useState(createLiveLenses);
   const [pool, setPool] = useState<FramePool | null>(null);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
   const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
@@ -186,7 +191,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
             <TrialClocksContext.Provider value={clocks}>
-            <LiveLensesContext.Provider value={liveLenses}>
+            <LoupeProvider captureBase={props.captureBase} revision={props.revision}>
               <Lab
                 title={title}
                 density={LAB_DENSITY}
@@ -215,7 +220,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 <GlobalsMenus declarations={declarations} onMenus={setMenus} />
                 {showsCssVars ? <CssVarsChrome onChrome={setCssVarsChrome} /> : null}
               </Lab>
-            </LiveLensesContext.Provider>
+            </LoupeProvider>
             </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>

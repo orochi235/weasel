@@ -5,6 +5,7 @@ import { schemaFromDescription } from '../protocol/schema';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { FrameView } from './FrameView';
+import { CaptureInputs } from './loupe/CaptureInputs';
 import { type GlobalDeclarations, withGlobals } from './globals';
 import { type Ready, readyKey } from './readyKey';
 
@@ -35,14 +36,17 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
     defaultConfig: () => config.defaults(),
     initialState: () => null,
     render: (ctx) => (
-      <FrameView
-        entry={entry}
-        frameUrl={frameUrl}
-        answers={answers}
-        onReady={onReady}
-        descriptionKey={descriptionKey}
-        ctx={ctx}
-      />
+      <>
+        <FrameView
+          entry={entry}
+          frameUrl={frameUrl}
+          answers={answers}
+          onReady={onReady}
+          descriptionKey={descriptionKey}
+          ctx={ctx}
+        />
+        <CaptureInputs entry={entry} layout={ready?.layout ?? 'centered'} config={ctx.config} state={ctx.state} />
+      </>
     ),
     // Taken from the index until the frame reports, so the trial does not move the frame into a stage and reload it.
     ...(viewport ? { stage: { size: { width: viewport.width, height: viewport.height } } } : {}),

@@ -193,6 +193,19 @@ describe('launchCaptureBrowser', () => {
     await browser.close();
   });
 
+  it('lets the capture page reach the origins it is given as well, and still nothing else', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.googleapis.com', 'https://fonts.gstatic.com']);
+    const [handler] = fake.routes;
+    expect(await decide(handler!, 'https://fonts.googleapis.com/css2?family=Oswald')).toBe('continue');
+    expect(await decide(handler!, 'https://fonts.gstatic.com/s/oswald/v53/face.woff2')).toBe('continue');
+    expect(await decide(handler!, 'http://127.0.0.1:5173/@id/virtual:forge/index.js')).toBe('continue');
+    expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
+    expect(await decide(handler!, 'http://fonts.gstatic.com/s/face.woff2')).toBe('abort');
+    await browser.close();
+  });
+
   it('refuses a capture past eight outstanding, and takes captures one at a time', async () => {
     const fake = fakePlaywright({ hold: true });
     const browser = await launched(fake.load);

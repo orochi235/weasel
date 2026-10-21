@@ -7,6 +7,7 @@ import { TrialTransport } from '../timeline/TransportBar';
 import { crumbTitle } from './Crumbs';
 import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
 import { type IndexBundle, IndexTrial } from './IndexTrial';
+import { CaptureInputs } from './loupe/CaptureInputs';
 import { StoryTrial } from './StoryTrial';
 
 /** What the registry has loaded for an entry: one story, or a component's index page. */
@@ -39,7 +40,10 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     initialState: (c) => initialState?.(c) ?? null,
     render: (ctx) =>
       loaded.kind === 'story' ? (
-        <StoryTrial key={loaded.story.id} story={loaded.story} setup={setup} ctx={ctx} />
+        <>
+          <StoryTrial key={loaded.story.id} story={loaded.story} setup={setup} ctx={ctx} />
+          <CaptureInputs entry={entry} layout={loaded.story.layout} config={ctx.config} state={ctx.state} />
+        </>
       ) : (
         <IndexTrial bundle={loaded.bundle} setup={setup} config={ctx.config} />
       ),

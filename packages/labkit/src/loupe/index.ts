@@ -38,7 +38,7 @@ export type {
   LensSources,
   LensSourceStatus,
 } from './lens/lensSource';
-export { requestsOf, resolveSource } from './lens/lensSource';
+export { requestsOf, resolveSource, unavailableText } from './lens/lensSource';
 export type { LensActionApi } from './lens/lensActionDefs';
 export {
   createLensActions,

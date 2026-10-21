@@ -22,9 +22,10 @@ import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { type RefObject, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import type { GlobalDeclarations } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
-import { type ForgeComparison, resolveComparison } from './conditions';
+import { type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
 import { LiveLensesContext } from './liveLenses';
-import { createLiveSource, type LiveSource } from './liveSource';
+import { createLiveSource } from './liveSource';
+import { usePixelsSource } from './usePixelsSource';
 
 /** Props for `ForgeLoupe`. */
 export interface ForgeLoupeProps {
@@ -128,20 +129,27 @@ export function createApi(
   };
 }
 
-/** Has `live` look again whenever what lies under a lens can change without a reticle moving. */
-export function useRemeasure(live: LiveSource | null, body: HTMLElement | null, rerender: () => void) {
+/** A source whose attached lenses can be told to look again at what lies under them. */
+interface Remeasurable {
+  remeasure(): void;
+}
+
+/** Has each source look again whenever what lies under a lens can change without a reticle moving. */
+export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement | null, rerender: () => void) {
   const { trials, mode } = useLabContext();
   const labValues = useContext(StoryGlobalsContext);
   useEffect(() => {
-    live?.remeasure();
-  }, [live, trials, mode, labValues]);
+    for (const source of sources) source.remeasure();
+  }, [sources, trials, mode, labValues]);
   useEffect(() => {
-    if (!live || !body) return;
-    const remeasure = () => live.remeasure();
+    if (sources.length === 0 || !body) return;
+    const remeasure = () => {
+      for (const source of sources) source.remeasure();
+    };
     // A resize can move the lab body, and with it every reticle's client point, which only a render recomputes.
     const resize = () => {
       rerender();
-      live.remeasure();
+      remeasure();
     };
     body.addEventListener('scroll', remeasure, { capture: true, passive: true });
     window.addEventListener('resize', resize);
@@ -149,13 +157,13 @@ export function useRemeasure(live: LiveSource | null, body: HTMLElement | null, 
       body.removeEventListener('scroll', remeasure, { capture: true });
       window.removeEventListener('resize', resize);
     };
-  }, [live, body, rerender]);
+  }, [sources, body, rerender]);
 }
 
 /**
- * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, and
- * a Live source rendering a second copy of whichever story sits under each reticle. Lenses last as long as the
- * workshop does and are never stored.
+ * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, a
+ * Live source rendering a second copy of whichever story sits under each reticle, and a Pixels source showing a real
+ * capture of it. Lenses last as long as the workshop does and are never stored.
  */
 export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const lenses = useContext(LiveLensesContext);
@@ -166,26 +174,24 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const bodyRef = useRef<HTMLElement | null>(null);
   const pointer = useRef<LoupePoint | null>(null);
   const { focus, onFocusLens } = useLensFocus(scene);
-  const conditions = useLatest({ labValues, mode, declarations, modeGlobal });
+  const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
   const [live] = useState(() =>
     lenses
-      ? createLiveSource(lenses, resolveComparison, () => {
-          const c = conditions.current;
-          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-          return {
-            base: c.labValues,
-            ctx: { declarations: c.declarations, modeGlobal: c.modeGlobal, prefersDark, labMode: c.mode },
-          };
-        })
+      ? createLiveSource(lenses, resolveComparison, () => ({ base: conditions.current.labValues, ctx: resolveContextOf(conditions.current) }))
       : null,
   );
-  const sources = useMemo<LensSources<ForgeComparison>>(() => (live ? { live } : {}), [live]);
+  const pixels = usePixelsSource(conditions);
+  const sources = useMemo<LensSources<ForgeComparison>>(
+    () => ({ ...(live ? { live } : {}), ...(pixels ? { pixels } : {}) }),
+    [live, pixels],
+  );
+  const remeasured = useMemo(() => [live, pixels].filter((s) => s !== null), [live, pixels]);
   const sourcesRef = useLatest(sources);
   const [api] = useState(() => createApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef }));
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.
   useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
-  useRemeasure(live, body, rerender);
+  useRemeasure(remeasured, body, rerender);
 
   useEffect(() => {
     if (!body) return;

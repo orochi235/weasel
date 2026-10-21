@@ -12,7 +12,7 @@ import { propControls } from './propControls.ts';
 import type { PropControlsOptions } from './propTypes.ts';
 import type { CaptureEndpoint } from './capture/endpoint.ts';
 import { servePages } from './servePages.ts';
-import { shellTitle } from './shellTitle.ts';
+import { readShellFields } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
@@ -133,16 +133,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     return graph;
   }
 
-  /** The shell config's title as its source names it; undefined, and so the default, when it cannot be read. */
-  const titleUnder = (at: string): string | undefined => {
-    if (!options.shellConfig) return undefined;
-    const file = resolve(at, options.shellConfig);
-    try {
-      return shellTitle(readFileSync(file, 'utf8'), file);
-    } catch {
-      return undefined;
-    }
-  };
+  /** What the shell config's source names under `at`: its title, undefined and so the default when unread. */
+  const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined);
 
   const modules = virtualModules(options, { index, files, root: () => root, base: () => base });
   let capture: CaptureEndpoint | null = null;
@@ -245,7 +237,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         ];
         const optimizeDeps = { entries };
         if (command !== 'build') return { optimizeDeps };
-        return { optimizeDeps, build: { rolldownOptions: { input: writePages(at, titleUnder(at)) } } };
+        return { optimizeDeps, build: { rolldownOptions: { input: writePages(at, shellUnder(at).title) } } };
       },
       generateBundle: {
         order: 'post',
@@ -299,7 +291,7 @@ export function forge(options: ForgeOptions): Plugin[] {
             }, logError);
           });
         }
-        capture = servePages(server, base, () => titleUnder(root));
+        capture = servePages(server, base, () => shellUnder(root));
       },
       closeServer: () => capture?.close(),
     },

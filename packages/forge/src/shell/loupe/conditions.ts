@@ -1,4 +1,5 @@
 import type { LabMode } from '@weasel-js/labkit';
+import { withValueAtPath } from '@weasel-js/labkit/config';
 import type { Globals } from '../../protocol/messages';
 import type { GlobalDeclarations } from '../globals';
 
@@ -52,4 +53,27 @@ const NO_KEYS: readonly string[] = [];
 export function globalsSetBy(c: ForgeComparison | null, ctx: ResolveContext): readonly string[] {
   if (c === null) return NO_KEYS;
   return c.kind === 'opposite-mode' ? [ctx.modeGlobal] : Object.keys(c.globals ?? {});
+}
+
+/** `config` with each of `args` written at its path. */
+export const withArgs = (config: unknown, args: Readonly<Record<string, unknown>>): unknown =>
+  Object.entries(args).reduce((c, [path, value]) => withValueAtPath(c, path, value), config);
+
+/** The globals a compared render runs under: `resolved`'s for each global the comparison sets, `own` for the rest. */
+export function comparedGlobals(own: Globals, resolved: Globals | null, sets: readonly string[]): Globals {
+  return resolved ? { ...own, ...Object.fromEntries(sets.map((key) => [key, resolved[key]])) } : own;
+}
+
+/** The lab as a lens reads it when it renders: its globals, its mode, and the declarations behind them. */
+export interface LabConditions {
+  labValues: Globals;
+  mode: LabMode;
+  declarations: GlobalDeclarations;
+  modeGlobal: string;
+}
+
+/** What resolving a comparison against `lab` reads, the OS color scheme included. */
+export function resolveContextOf(lab: LabConditions): ResolveContext {
+  const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  return { declarations: lab.declarations, modeGlobal: lab.modeGlobal, prefersDark, labMode: lab.mode };
 }

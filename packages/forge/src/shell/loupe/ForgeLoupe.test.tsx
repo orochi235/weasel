@@ -62,7 +62,8 @@ describe('the workshop’s re-measuring', () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <LabContext.Provider value={{ trials, mode: 'light' } as unknown as LabContextValue}>{children}</LabContext.Provider>
     );
-    const { rerender } = renderHook(() => useRemeasure(live, null, () => {}), { wrapper });
+    const sources = [live];
+    const { rerender } = renderHook(() => useRemeasure(sources, null, () => {}), { wrapper });
     const before = remeasure.mock.calls.length;
     trials = [{ id: 't1', view: { zoom: 2, pan: { x: 40, y: 0 } } }];
     rerender();

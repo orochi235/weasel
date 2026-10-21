@@ -1,5 +1,4 @@
 import './loupe.css';
-import { withValueAtPath } from '@weasel-js/labkit/config';
 import {
   type CSSProperties,
   type ReactNode,
@@ -19,6 +18,7 @@ import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryBody, type StoryBodyProps } from '../StoryBody';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { TrialHost } from '../TrialHost';
+import { comparedGlobals, withArgs } from './conditions';
 import { type LiveLenses, LiveLensesContext, type LiveRequest } from './liveLenses';
 
 /** Props for `LiveCopies`: what a trial renders its own story with, which every copy of it shares. */
@@ -67,10 +67,7 @@ function useCopyGlobals(request: LiveRequest, trialConfig: unknown): Globals {
   const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const own = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
   const { globals: resolved, sets } = request;
-  return useMemo<Globals>(
-    () => (resolved ? { ...own, ...Object.fromEntries(sets.map((key) => [key, resolved[key]])) } : own),
-    [own, resolved, sets],
-  );
+  return useMemo<Globals>(() => comparedGlobals(own, resolved, sets), [own, resolved, sets]);
 }
 
 /**
@@ -82,10 +79,7 @@ export function useCopyConfig(
   trialSetConfig: (path: string, value: unknown) => void,
   args: Readonly<Record<string, unknown>>,
 ): { config: unknown; setConfig: (path: string, value: unknown) => void } {
-  const config = useMemo(
-    () => Object.entries(args).reduce((c, [path, value]) => withValueAtPath(c, path, value), trialConfig),
-    [args, trialConfig],
-  );
+  const config = useMemo(() => withArgs(trialConfig, args), [args, trialConfig]);
   // Keyed by the paths alone, so a comparison re-resolved to the same args keeps the story's `setConfig` stable.
   const argPaths = Object.keys(args).join('\n');
   const setConfig = useCallback(

@@ -37,4 +37,6 @@ export default defineShellConfig({
     ...DEVTOOLS_GLOBALS,
   },
   labTheme: (globals) => fontTheme(chromeTheme, globals),
+  // loadWebFonts' stylesheet and the faces it names, so a capture renders the fonts the screen does.
+  capture: { allowOrigins: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
 });

@@ -22,7 +22,17 @@
   background: var(--wzl-bg);
 }
 
-.fg-lens-live__empty {
+/* A Pixels lens's capture, enlarged nearest-neighbor: the browser scaling the canvas to the screen keeps it so. */
+.fg-lens-pixels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* What a lens says in place of its story: nothing under the reticle, or why it cannot show it. */
+.fg-lens-empty {
   position: absolute;
   inset: 0;
   display: flex;
@@ -35,7 +45,7 @@
   background: var(--wzl-bg);
 }
 
-.fg-lens-live__empty[hidden] {
+.fg-lens-empty[hidden] {
   display: none;
 }
 

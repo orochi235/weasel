@@ -4,8 +4,9 @@ import type { CapturePayload } from './payload.ts';
 
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
 export interface CaptureBrowser {
-  /** A PNG of `url` rendering `payload`. Rejects with `QUEUE_FULL` while `QUEUE_CAP` captures are outstanding. */
-  capture(url: string, payload: CapturePayload): Promise<Buffer>;
+  /** A PNG of `url` rendering `payload`, loading nothing but `url`'s own origin and `allow`. Rejects with
+   *  `QUEUE_FULL` while `QUEUE_CAP` captures are outstanding. */
+  capture(url: string, payload: CapturePayload, allow?: readonly string[]): Promise<Buffer>;
   close(): Promise<void>;
 }
 
@@ -106,10 +107,11 @@ export async function launchCaptureBrowser(
     }
     return context;
   };
-  const render = async (page: Page, payload: CapturePayload, url: string): Promise<Buffer> => {
-    // The page reaches nothing but the server it came from, whatever a story or an override asks it to load.
-    const own = new URL(url).origin;
-    await page.route('**/*', (route) => (new URL(route.request().url()).origin === own ? route.continue() : route.abort()));
+  const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[]): Promise<Buffer> => {
+    // The page reaches nothing but the server it came from and the origins the shell config lists, whatever a story
+    // or an override asks it to load.
+    const reach = new Set([new URL(url).origin, ...allow]);
+    await page.route('**/*', (route) => (reach.has(new URL(route.request().url()).origin) ? route.continue() : route.abort()));
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
     await page.goto(url);
     await page.waitForFunction(() => (window as CaptureWindow).__forgeCapture !== undefined);
@@ -118,7 +120,7 @@ export async function launchCaptureBrowser(
   };
   /** One capture, failed and its page closed once `SHOT_DEADLINE_MS` passes, so a render that never settles cannot
    *  hold the queue. */
-  const shoot = async (url: string, payload: CapturePayload): Promise<Buffer> => {
+  const shoot = async (url: string, payload: CapturePayload, allow: readonly string[]): Promise<Buffer> => {
     let page: Page | null = null;
     let late = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -129,7 +131,7 @@ export async function launchCaptureBrowser(
       const opened = await (await contextFor(payload.dpr)).newPage();
       page = opened;
       if (late) throw new Error('capture timed out');
-      return render(opened, payload, url);
+      return render(opened, payload, url, allow);
     })();
     try {
       return await Promise.race([work, deadline]);
@@ -144,11 +146,11 @@ export async function launchCaptureBrowser(
 
   arm();
   return {
-    capture(url, payload) {
+    capture(url, payload, allow = []) {
       if (outstanding >= QUEUE_CAP) return Promise.reject(new Error(QUEUE_FULL));
       outstanding += 1;
       clearTimeout(idle);
-      const run = tail.then(() => shoot(url, payload));
+      const run = tail.then(() => shoot(url, payload, allow));
       tail = run.catch(() => {});
       return run.finally(() => {
         outstanding -= 1;

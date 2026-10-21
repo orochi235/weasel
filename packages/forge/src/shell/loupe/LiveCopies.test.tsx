@@ -154,7 +154,7 @@ describe('LiveCopies', () => {
     act(() => handle.update(request({ x: 700, y: 100 })));
     expect(slot.querySelector('[data-fg-copy]')).toBeNull();
     expect(lenses.forTrial('t1')).toEqual([]);
-    const empty = slot.querySelector<HTMLElement>('.fg-lens-live__empty')!;
+    const empty = slot.querySelector<HTMLElement>('.fg-lens-empty')!;
     expect(empty.hidden).toBe(false);
     expect(empty.textContent).toBe(NOTHING_UNDER);
   });
@@ -190,7 +190,7 @@ describe('LiveCopies', () => {
     attach({ x: 100, y: 100 });
     const copy = slot.querySelector<HTMLElement>('.fg-frame-host[data-fg-host="t1~lens-a"]');
     expect(copy?.hasAttribute('data-fg-copy')).toBe(true);
-    expect(slot.querySelector<HTMLElement>('.fg-lens-live__empty')!.hidden).toBe(true);
+    expect(slot.querySelector<HTMLElement>('.fg-lens-empty')!.hidden).toBe(true);
     const { frame, received } = connectFrame(copy!.querySelector('iframe') as HTMLIFrameElement);
     frame.send(ready);
     await flush();

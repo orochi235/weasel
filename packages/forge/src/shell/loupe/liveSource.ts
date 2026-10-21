@@ -56,7 +56,7 @@ export function createLiveSource(
       const target = doc.createElement('div');
       target.className = 'fg-lens-live';
       const empty = doc.createElement('div');
-      empty.className = 'fg-lens-live__empty';
+      empty.className = 'fg-lens-empty';
       empty.hidden = true;
       slot.append(target, empty);
       let request: LensSourceRequest<ForgeComparison> = first;

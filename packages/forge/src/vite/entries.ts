@@ -14,6 +14,7 @@ const workshop = mountWorkshop({
   setup,
   config,
   frameUrl: ${JSON.stringify(`${base}frame.html`)},
+  captureBase: ${JSON.stringify(base)},
   stories: ${JSON.stringify(stories)},
 });
 import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
@@ -22,10 +23,14 @@ import('virtual:forge/deps.js').then((m) => workshop.setDependencies(m.default))
 import.meta.hot?.on('forge:deps', (next) => workshop.setDependencies(next));
 // An edit to a story file, or to a module one imports, reaches here as an update of the importers module, whose
 // fresh import() URLs carry the new timestamps; the files it reaches arrive just before, so the reload waits for
-// the importers that can fetch them.
+// the importers that can fetch them. Either one also means a capture taken before it shows a story that is gone.
 const stale = new Set();
-import.meta.hot?.on('forge:story', ({ file }) => stale.add(file));
+import.meta.hot?.on('forge:story', ({ file }) => {
+  stale.add(file);
+  workshop.revise();
+});
 import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
+  workshop.revise();
   if (!next) return;
   workshop.setImporters(next.default);
   for (const file of stale) workshop.reloadStory(file);

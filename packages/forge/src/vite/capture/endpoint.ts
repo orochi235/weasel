@@ -72,9 +72,14 @@ function readBody(req: IncomingMessage): Promise<string | null> {
 /**
  * Answers `<base>__forge/capture`: a GET says whether Pixels is available, and a POST of a `CapturePayload` answers
  * with a PNG of the story rendered from it, from the cache when the same payload was captured since the last
- * `revise()`. Chromium starts on the first POST that is not served from the cache.
+ * `revise()`. Chromium starts on the first POST that is not served from the cache. `allowOrigins` names what a
+ * capture page may load besides this server, read at each capture.
  */
-export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoint {
+export function serveCapture(
+  server: ViteDevServer,
+  base: string,
+  allowOrigins: () => readonly string[] = () => [],
+): CaptureEndpoint {
   const cache = createCaptureCache();
   let launched: Promise<Launched> | null = null;
   /** Bumped by `revise()`, so a capture that started before an edit is not cached after it. */
@@ -120,7 +125,7 @@ export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoi
       const page = `${socketOrigin(req, protocol)}${base}${payload.isolate ? CAPTURE_PAGES.frame : CAPTURE_PAGES.shell}`;
       const at = revision;
       try {
-        png = await result.capture(page, payload);
+        png = await result.capture(page, payload, allowOrigins());
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (message === QUEUE_FULL) return json(res, 503, { available: false, reason: QUEUE_FULL });

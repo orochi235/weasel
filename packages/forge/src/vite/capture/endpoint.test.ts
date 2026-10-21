@@ -67,14 +67,15 @@ describe('capture endpoint', () => {
   let port: number;
   let url: string;
 
-  const start = async (base = '/') => {
+  const start = async (base = '/', shell?: string) => {
     root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-capture-')));
     writeFileSync(join(root, 'a.stories.tsx'), story('first'));
+    if (shell) writeFileSync(join(root, 'forge.shell.tsx'), shell);
     server = await createServer({
       root,
       base,
       configFile: false,
-      plugins: [stubs, forge({ stories: ['*.stories.tsx'] })],
+      plugins: [stubs, forge({ stories: ['*.stories.tsx'], ...(shell ? { shellConfig: 'forge.shell.tsx' } : {}) })],
       server: { middlewareMode: true, watch: POLLED },
       appType: 'custom',
       optimizeDeps: { noDiscovery: true },
@@ -152,7 +153,7 @@ describe('capture endpoint', () => {
     await start();
     const status = await rawPost(payload, { 'Content-Type': 'application/json', Host: '203.0.113.5:1234' });
     expect(status).toBe(200);
-    expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload);
+    expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload, []);
   });
 
   it('refuses a POST that is not JSON with 415', async () => {
@@ -183,7 +184,7 @@ describe('capture endpoint', () => {
     expect(first.headers.get('content-type')).toBe('image/png');
     const firstBytes = Buffer.from(await first.arrayBuffer());
     expect(firstBytes).toEqual(pngNumbered(1));
-    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload);
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload, []);
 
     const again = await post(payload);
     expect(Buffer.from(await again.arrayBuffer())).toEqual(firstBytes);
@@ -207,12 +208,24 @@ describe('capture endpoint', () => {
     expect(browser.close).toHaveBeenCalledTimes(1);
   });
 
+  it("lets a capture load the origins the shell config's capture.allowOrigins lists", async () => {
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
+    const shell = `export default { capture: { allowOrigins: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] } };\n`;
+    await start('/', shell);
+    expect((await post(payload)).status).toBe(200);
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload, [
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+    ]);
+  });
+
   it('captures an isolated story on the frame page', async () => {
     const browser = fakeBrowser();
     launch.mockResolvedValue(browser);
     await start();
     await post({ ...payload, isolate: true });
-    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true });
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true }, []);
   });
 
   it('serves the capture pages under base', async () => {

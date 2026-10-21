@@ -66,6 +66,10 @@ const KIND_LABEL: Record<LensSourceKind, string> = {
   reference: 'Reference',
 };
 
+/** How a lens says a source cannot answer: "Pixels unavailable: install playwright". */
+export const unavailableText = (kind: LensSourceKind, reason: string): string =>
+  `${KIND_LABEL[kind]} unavailable: ${reason}`;
+
 /** What a lens shows: the source it wanted when that answers, else the first
  *  that does. */
 export interface LensResolution<C> {
@@ -87,7 +91,7 @@ export function resolveSource<C>(
   const fallback = LENS_SOURCE_KINDS.find((k) => k !== wanted && status(k) === true);
   return {
     source: fallback ? (sources[fallback] ?? null) : null,
-    reason: `${KIND_LABEL[wanted]} unavailable: ${own}`,
+    reason: unavailableText(wanted, own),
   };
 }
 
