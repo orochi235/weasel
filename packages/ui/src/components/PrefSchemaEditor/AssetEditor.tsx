@@ -130,7 +130,7 @@ export function AssetEditor(
     schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, pageless, locked: readOnly, onOpen: (paths) => select(paths),
   });
   const doc = useDocument<Workspace>({
-    value: workspace, onChange: (next) => onChange(withRoots(latest.current.workspace, next)), base, same, codec, opened, draftKey, draftStorage, taken,
+    value: workspace, onChange: (next) => onChange(withRoots(latest.current.workspace, next)), base, same, codec, opened, draftKey, draftStorage, taken, onCommit: (before, after) => changedAssets.follow(before, after),
     selection: { get: () => [...view.recorded(beforeOpening.current ?? latest.current.paths), ...(catalog?.recorded() ?? [])], set: (ids) => { view.restore(ids); catalog?.restore(ids); } },
   });
   // A key names its asset, so the same path edited in two of them close together is two steps.
