@@ -822,13 +822,16 @@ a:hover { text-decoration: underline; }
   margin-bottom: 7px;
 }
 .ckd-release-pkg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 1px 7px;
   border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-pill);
   background: var(--wzl-surface-sunken);
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: inherit;
 }
 .ckd-release-pkg.is-more {
   border-style: dashed;
@@ -836,12 +839,7 @@ a:hover { text-decoration: underline; }
 }
 
 .ckd-release-pkg.is-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
   cursor: pointer;
-  font-family: inherit;
-  font-size: var(--wzl-font-size-sm);
 }
 .ckd-release-pkg.is-filter:hover {
   border-color: var(--wzl-accent-strong);
