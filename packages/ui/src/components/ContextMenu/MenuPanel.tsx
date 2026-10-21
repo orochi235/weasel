@@ -11,7 +11,7 @@ export function MenuPanel(props: {
   highlight: number | null; childOpen: boolean; idBase: string;
   /** The row a submenu hangs from. */
   labelledBy?: string;
-  anchor: { client: { x: number; y: number }; under?: Rect } | null;
+  anchor: { client: { x: number; y: number }; under?: Rect; above?: boolean } | null;
   parentRow: () => Rect | null;
   focus: boolean;
   /** While true, a pointerup over a row presses it. Read at the event, never rendered from. */
@@ -29,7 +29,7 @@ export function MenuPanel(props: {
     const bounds = { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
     const row = parentRow();
     const at = row ? placeSubmenu(size, row, bounds)
-      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds)
+      : anchor?.under ? placeMenuUnder(size, anchor.under, bounds, anchor.above)
         : placeMenu(size, anchor?.client ?? { x: 0, y: 0 }, bounds);
     el.style.left = `${at.x}px`;
     el.style.top = `${at.y}px`;

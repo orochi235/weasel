@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import {
   Button as RACButton,
   Dialog as RACDialog,
@@ -9,6 +9,7 @@ import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portal
 import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
+import { BarSideContext } from './barSide';
 import s from './Bar.module.css';
 
 /** Props for {@link BarPopover}. */
@@ -31,6 +32,7 @@ export interface BarPopoverProps extends OverlayPortalProps {
  */
 export function BarPopover({ label, icon, children, isDisabled, className, portalContainer }: BarPopoverProps) {
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const side = useContext(BarSideContext);
   return (
     <DialogTrigger>
       {anchor}
@@ -42,7 +44,7 @@ export function BarPopover({ label, icon, children, isDisabled, className, porta
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
       {ready && provide(
-        <RACPopover className={s.popover} data-weasel-overlay="">
+        <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
             {children}
           </RACDialog>

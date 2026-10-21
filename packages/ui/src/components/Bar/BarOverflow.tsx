@@ -3,11 +3,12 @@ import { Button as RACButton, Dialog as RACDialog, DialogTrigger, Popover as RAC
 import { Icon } from '../../icons/Icon';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
+import type { BarSide } from './barSide';
 import s from './Bar.module.css';
 import { icon } from '../../icons.gen';
 
-/** The button at the end of a bar that opens the cells its line had no room for, one under another. */
-export function BarOverflow({ label, children }: { label: string; children: ReactNode }) {
+/** The button at the end of a bar that opens the cells its line had no room for, one under another. A curved bar gives it the `side` its popover opens on. */
+export function BarOverflow({ label, children, side }: { label: string; children: ReactNode; side?: BarSide }) {
   const { anchor, provide, ready } = useOverlayPortal();
   return (
     <DialogTrigger>
@@ -16,7 +17,7 @@ export function BarOverflow({ label, children }: { label: string; children: Reac
         <Icon name={icon('more')} size={16} />
       </RACButton>
       {ready && provide(
-        <RACPopover className={s.popover} data-weasel-overlay="">
+        <RACPopover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
             {children}
           </RACDialog>

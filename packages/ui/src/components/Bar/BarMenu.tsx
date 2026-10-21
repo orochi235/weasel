@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import {
   buildDepsFromRequires,
   resolveSchemaMenu,
@@ -12,6 +12,7 @@ import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
+import { BarSideContext } from './barSide';
 import s from './Bar.module.css';
 
 /** Where a bar's menu reads and writes the values its rows show: the bar's own. */
@@ -45,12 +46,13 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
+  const above = useContext(BarSideContext) === 'top';
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
 
   const resolve = () => resolveMenu(schema, { values, onChange, over });
-  const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true));
+  const showQuiet = useLatest(() => trigger.show(resolve(), 'pointer', true, above));
 
   // An action registered after this mounts can be what makes the menu non-empty, so a shut default retries on each change.
   useEffect(() => {
@@ -76,7 +78,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
           onPointerDown={trigger.press}
           onClick={(e) => {
             pending.current = false;
-            trigger.click(e, resolve);
+            trigger.click(e, resolve, above);
           }}
         >
           {icon}

@@ -1,6 +1,7 @@
 import { useMemo, useRef, type ReactElement } from 'react';
 import { trackRun, type TrackShape } from '@weasel-js/geom';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
+import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
@@ -39,7 +40,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
 
   const order = [...(leading != null ? [BAR_LEAD] : []), ...line.map((item) => item.key), ...(rest.length > 0 ? [BAR_MORE] : [])];
   const spots = alongSpots(order.map((key) => lengths.get(key) ?? 0), gap, run.length, align, menu);
-  const place = (i: number) => ({ className: s.item!, style: placeAlong(run, spots[i]!.center), clipped: menu ? undefined : spots[i]!.clipped });
+  const place = (i: number) => ({ className: s.item!, style: placeAlong(run, spots[i]!.center), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
   const first = leading != null ? 1 : 0;
 
   return (
@@ -49,7 +50,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
         {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
         {rest.length > 0 && (
           <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
-            <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(item, true, attrs))}</BarOverflow>
+            <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(item, true, attrs))}</BarOverflow>
           </span>
         )}
       </AlongContext.Provider>

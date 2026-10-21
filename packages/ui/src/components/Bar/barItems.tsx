@@ -5,6 +5,7 @@ import { resolveIcon } from '../../icons/resolveIcon';
 import { BarMenu } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
+import { BarSideContext, type BarSide } from './barSide';
 import { BAR_ITEM } from './useBarOverflow';
 import { barLeafName, type BarCell, type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
 import s from './Bar.module.css';
@@ -103,6 +104,8 @@ export interface BarItemPlace {
   className: string;
   style: CSSProperties;
   clipped?: string;
+  /** The side its popovers and menus open on. */
+  side?: BarSide;
 }
 
 /** An item as its element, a divider set `across` the line when the line runs down; `place` sets it along a curve. */
@@ -112,7 +115,7 @@ export function drawBarItem(item: BarItem, across: boolean, attrs: BarLayoutProp
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} style={place?.style} />
   ) : (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...attrs?.(item.path!, item.leaf!)} style={place?.style} data-clipped={place?.clipped}>
-      {item.content}
+      {place?.side ? <BarSideContext.Provider value={place.side}>{item.content}</BarSideContext.Provider> : item.content}
     </span>
   );
 }

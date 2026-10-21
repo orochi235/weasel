@@ -15,14 +15,14 @@ export interface MenuTrigger {
   /** The menu is open. */
   open: boolean;
   /** Open `entries` under the button. With `silent` the panel takes focus only once focus is already inside it.
-   *  Returns false, opening nothing, for an empty list. */
-  show: (entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent?: boolean) => boolean;
+   *  With `above` it opens over the button when it fits there. Returns false, opening nothing, for an empty list. */
+  show: (entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent?: boolean, above?: boolean) => boolean;
   close: () => void;
   /** The button's `onPointerDown`: a press on the open button closes the menu. */
   press: (e: PointerEvent) => void;
   /** The button's `onClick`: opens `build()`, unless the press behind this click closed the menu, which stays closed.
    *  A click with no pointer under it came from the keyboard, which highlights the first row. */
-  click: (e: MouseEvent, build: () => ReadonlyArray<MenuEntry>) => void;
+  click: (e: MouseEvent, build: () => ReadonlyArray<MenuEntry>, above?: boolean) => void;
   /** A hidden marker the portal host is found from; render it beside the button. */
   anchor: ReactElement;
   /** The open menu's panels, in a portal; render it beside the button. */
@@ -48,9 +48,9 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
     if (!quietNow.current || inMenuOf(document.activeElement, id)) button.current?.focus();
   }, [id]);
 
-  const show = useCallback((entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent = false): boolean => {
+  const show = useCallback((entries: ReadonlyArray<MenuEntry>, source: OpenMenu['source'], silent = false, above = false): boolean => {
     if (entries.length === 0) return false;
-    setOpen(menuUnder(button.current!, entries, source, ++seq.current));
+    setOpen(menuUnder(button.current!, entries, source, ++seq.current, above));
     quietNow.current = silent;
     setQuiet(silent);
     return true;
@@ -71,10 +71,10 @@ export function useMenuTrigger(portalContainer?: Element | null): MenuTrigger {
     if (isOpen.current) close();
   }, [isOpen, close]);
 
-  const click = useCallback((e: MouseEvent, build: () => ReadonlyArray<MenuEntry>) => {
+  const click = useCallback((e: MouseEvent, build: () => ReadonlyArray<MenuEntry>, above = false) => {
     const swallow = closedByPress.current && e.detail !== 0;
     closedByPress.current = false;
-    if (!swallow) show(build(), e.detail === 0 ? 'keyboard' : 'pointer');
+    if (!swallow) show(build(), e.detail === 0 ? 'keyboard' : 'pointer', false, above);
   }, [show]);
 
   const portal = open && target

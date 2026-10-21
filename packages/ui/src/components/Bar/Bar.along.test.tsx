@@ -107,3 +107,23 @@ describe('Bar along a curve', () => {
     expectAt(items()[1]!, shape, spots[1]!.center / run.length);
   });
 });
+
+describe('Bar along a curve: popovers open away from the center', () => {
+  const sideOfItem = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Width' }));
+    return document.querySelector('[data-weasel-overlay]')!.getAttribute('data-placement');
+  };
+  const width: PrefGroup = { name: 'Tools', children: { width: { kind: 'number', name: 'Width', description: '', default: 4 } } };
+
+  test('an item on the top of a ring opens its popover upward', () => {
+    render(<Bar schema={width} values={{ width: 4 }} shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })} label="Tools" />);
+    expect(sideOfItem()).toBe('top');
+  });
+
+  test('an item on the bottom of a ring, whose run is flipped, opens its popover downward', () => {
+    const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 120, end: 240 });
+    expect(trackRun(shape).flipped).toBe(true);
+    render(<Bar schema={width} values={{ width: 4 }} shape={shape} label="Tools" />);
+    expect(sideOfItem()).toBe('bottom');
+  });
+});

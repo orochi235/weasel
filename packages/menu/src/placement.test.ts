@@ -56,4 +56,13 @@ describe('placeMenuUnder', () => {
     expect(placeMenuUnder({ w: 200, h: 390 }, { x: 100, y: 180, w: 60, h: 24 }, { x: 0, y: 0, w: 800, h: 400 }))
       .toEqual({ x: 100, y: 10 });
   });
+  it('opens above the rect when asked and the top fits', () => {
+    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 200, w: 40, h: 20 }, bounds, true)).toEqual({ x: 10, y: 150 });
+  });
+  it('flips below when asked above with no room there', () => {
+    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 20, w: 40, h: 20 }, bounds, true)).toEqual({ x: 10, y: 40 });
+  });
+  it('stays below by default', () => {
+    expect(placeMenuUnder({ w: 100, h: 50 }, { x: 10, y: 200, w: 40, h: 20 }, bounds)).toEqual({ x: 10, y: 220 });
+  });
 });

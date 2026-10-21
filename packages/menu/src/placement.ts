@@ -34,10 +34,11 @@ export function placeSubmenu(size: Size, row: Rect, bounds: Rect): Point {
 
 /** Where a menu opened from the button at `under` goes: below it and
  *  left-aligned, flipped above it or right-aligned to it on an axis that does
- *  not fit, shifted inside `bounds` when neither side does. */
-export function placeMenuUnder(size: Size, under: Rect, bounds: Rect): Point {
-  return {
-    x: flipOrShift(under.x, size.w, bounds.x, bounds.w, under.x + under.w),
-    y: flipOrShift(under.y + under.h, size.h, bounds.y, bounds.h, under.y),
-  };
+ *  not fit, shifted inside `bounds` when neither side does. With `above` the
+ *  top is tried first and the menu flips below when it does not fit there. */
+export function placeMenuUnder(size: Size, under: Rect, bounds: Rect, above = false): Point {
+  const y = above && under.y - size.h >= bounds.y
+    ? under.y - size.h
+    : flipOrShift(under.y + under.h, size.h, bounds.y, bounds.h, under.y);
+  return { x: flipOrShift(under.x, size.w, bounds.x, bounds.w, under.x + under.w), y };
 }

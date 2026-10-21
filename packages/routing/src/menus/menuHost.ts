@@ -12,6 +12,8 @@ export interface MenuOpenRequest {
   client: Point;
   /** Viewport rect of the button the menu hangs from: placed below it, or above when below does not fit. */
   under?: Rect;
+  /** With `under`: opens above the button when it fits there, below when it does not. */
+  above?: boolean;
   /** World point, passed to `enabled` and to every item. */
   world?: Point;
   params?: Record<string, unknown>;
@@ -24,6 +26,7 @@ export interface OpenMenu {
   entries: readonly MenuEntry[];
   client: Point;
   under?: Rect;
+  above?: boolean;
   world?: Point;
   source: 'pointer' | 'keyboard';
 }
@@ -81,6 +84,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
       open = {
         seq: ++seq, entries, client: req.client, world: req.world,
         ...(req.under ? { under: req.under } : {}),
+        ...(req.above ? { above: true } : {}),
         source: req.source ?? 'pointer',
       };
       emit();
