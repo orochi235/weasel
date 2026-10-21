@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { FocusEvent as ReactFocusEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { lineShape, trackRun } from '@weasel-js/geom';
-import { runPlaces } from './runPlaces';
+import { runPlaces, type RunSpot } from './runPlaces';
 import { useRunScroll } from './useRunScroll';
 
 // Five items 20 long with 15 between run to 160 along a run 100 long; jsdom puts every box at (0, 0).
@@ -19,9 +19,12 @@ function mount(total: number) {
   }
   document.body.append(root);
   const ref = { current: root };
-  const hook = renderHook(() =>
-    useRunScroll({ root: ref, run, total, lengths, spots: () => runPlaces(lengths, GAP, run.length, 'start', hook.result.current?.offset ?? 0) }),
-  );
+  const drawn = { offset: 0 };
+  const hook = renderHook(() => {
+    const scroll = useRunScroll({ root: ref, run, total, lengths, spots: (): RunSpot[] => runPlaces(lengths, GAP, run.length, 'start', drawn.offset) });
+    drawn.offset = scroll.offset;
+    return scroll;
+  });
   const items = Array.from(root.children) as HTMLElement[];
   return { root, items, hook };
 }
