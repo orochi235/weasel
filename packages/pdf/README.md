@@ -47,7 +47,8 @@ rasterize(commands, rect, scale, view) => Promise<{ width, height, data }>
 the page's `view`, which `world`-unit paint in `commands` resolves through.
 `data` is straight RGBA, top-down.
 
-A face that is CFF-only, restricted (`fsType` 0x0002), bitmap-only (`fsType`
+Each TrueType face is embedded as a subset of the glyphs the document draws;
+`subsetFonts: false` embeds it whole. A face that is CFF-only, restricted (`fsType` 0x0002), bitmap-only (`fsType`
 0x0200), registered from a WOFF file, or unreadable is drawn as glyph outlines
 instead, so its text is not selectable.
 

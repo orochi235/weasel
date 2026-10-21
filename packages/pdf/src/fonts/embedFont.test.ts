@@ -46,10 +46,10 @@ function withEmbedding(patch: Partial<FaceEmbedding>): PdfFontSource {
 }
 
 describe('DocumentFonts', () => {
-  it('embeds a TrueType face whole as a Type0 font', async () => {
+  it('embeds a TrueType face whole as a Type0 font when told not to subset', async () => {
     registerInter('pdf-inter-whole');
     const objects = new PdfObjects();
-    const fonts = new DocumentFonts(objects, registryFontSource);
+    const fonts = new DocumentFonts(objects, registryFontSource, false);
     const font = (await fonts.face('pdf-inter-whole', 400, 'normal'))!;
     font.use(0x41);
     const s = await render(objects, fonts);
@@ -62,6 +62,35 @@ describe('DocumentFonts', () => {
     const emb = (await registryFontSource.embedding('pdf-inter-whole', 400, 'normal'))!;
     expect(s).toContain(`/Length1 ${emb.sfnt.byteLength}`);
     expect(s).toMatch(new RegExp(`/Length ${emb.sfnt.byteLength}>>\\nstream\\n`));
+  });
+
+  it('embeds only the glyphs used, under a subset-tagged name', async () => {
+    registerInter('pdf-inter-subset');
+    const objects = new PdfObjects();
+    const fonts = new DocumentFonts(objects, registryFontSource);
+    const font = (await fonts.face('pdf-inter-subset', 400, 'normal'))!;
+    font.use(0x41);
+    const s = await render(objects, fonts);
+    const emb = (await registryFontSource.embedding('pdf-inter-subset', 400, 'normal'))!;
+    const length1 = Number(/\/Length1 (\d+)/.exec(s)![1]);
+    expect(length1).toBeLessThan(emb.sfnt.byteLength / 8);
+    expect(s).toContain('/CIDToGIDMap /Identity');
+    const tagged = new RegExp(`/BaseFont /[A-Z]{6}\\+${emb.postScriptName}\\b`, 'g');
+    expect(s.match(tagged)).toHaveLength(2);
+    expect(s).toMatch(new RegExp(`/FontName /[A-Z]{6}\\+${emb.postScriptName}\\b`));
+  });
+
+  it('tags two subsets of one face differently, and one subset the same every time', async () => {
+    registerInter('pdf-inter-tag');
+    const tag = async (cps: number[]) => {
+      const objects = new PdfObjects();
+      const fonts = new DocumentFonts(objects, registryFontSource);
+      const font = (await fonts.face('pdf-inter-tag', 400, 'normal'))!;
+      for (const cp of cps) font.use(cp);
+      return /\/BaseFont \/([A-Z]{6})\+/.exec(await render(objects, fonts))![1];
+    };
+    expect(await tag([0x41])).toBe(await tag([0x41]));
+    expect(await tag([0x41])).not.toBe(await tag([0x42]));
   });
 
   it('maps every glyph used back to its character', async () => {
@@ -151,7 +180,7 @@ describe('DocumentFonts', () => {
     const font = (await fonts.face('pdf-inter-name', 400, 'italic'))!;
     font.use(0x41);
     const s = await render(objects, fonts);
-    expect(s).toContain('/BaseFont /pdf-inter-name-400-italic');
+    expect(s).toMatch(/\/BaseFont \/[A-Z]{6}\+pdf-inter-name-400-italic\b/);
   });
 
   it('strips characters a PDF name cannot carry from a synthesized BaseFont', async () => {
@@ -159,7 +188,7 @@ describe('DocumentFonts', () => {
     const objects = new PdfObjects();
     const fonts = new DocumentFonts(objects, withEmbedding({ postScriptName: '' }));
     (await fonts.face('My Font (x)', 700, 'normal'))!.use(0x41);
-    expect(await render(objects, fonts)).toContain('/BaseFont /MyFontx-700-normal');
+    expect(await render(objects, fonts)).toMatch(/\/BaseFont \/[A-Z]{6}\+MyFontx-700-normal\b/);
   });
 
   it('leaves a face that was fetched and never used out of the file', async () => {

@@ -1305,9 +1305,6 @@ only story runner in the repo.
 - **(P3) `cullDrawCommands` keeps every group with effects.** `contentBounds` already bounds one by
   `effectsReach`, but that is device pixels and the cull rect is CSS pixels with no pixel ratio to
   convert by, so culling one needs `cullDrawCommands` to take that ratio (2026-10-21).
-- **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
-  the full face. Subsetting needs the glyphs a document uses collected per face before it is written
-  (2026-10-20).
 - **(P3) Check `@weasel-js/rig`'s and `@weasel-js/diagram-formats`' trusted-publisher
   registration.** Both are on the registry at 1.11.1 under `latest` and `pre` (`npm view`,
   2026-10-21); whether each is registered as a trusted publisher (`docs/releasing.md`, "Setting up a
