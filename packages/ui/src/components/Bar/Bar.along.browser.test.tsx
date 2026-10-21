@@ -221,9 +221,17 @@ test('the wheel and a drag along the band scroll; a still press on an action fir
   });
   expect(gapDeg).toBeDefined();
   const before = first();
+  const log: string[] = [];
+  const types = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'gotpointercapture', 'lostpointercapture', 'click', 'dragstart', 'selectstart'];
+  const note = (e: Event) => {
+    const p = e as PointerEvent;
+    log.push(`${e.type} ${(e.target as Element).tagName ?? '?'} b${p.buttons ?? ''} ${p.clientX?.toFixed?.(1)},${p.clientY?.toFixed?.(1)} first ${first().toFixed(2)}`);
+  };
+  for (const t of types) document.addEventListener(t, note, { capture: true });
   await dragAlong(c, gapDeg!, gapDeg! - 15);
   await settle();
-  expect(Math.abs(first() - before + 15)).toBeLessThanOrEqual(1);
+  for (const t of types) document.removeEventListener(t, note, { capture: true });
+  expect(Math.abs(first() - before + 15), `gap ${gapDeg} before ${before} after ${first()}\n${log.join('\n')}`).toBeLessThanOrEqual(1);
 
   const wheels: number[] = [];
   const onWheel = (e: WheelEvent) => wheels.push(e.deltaY);
@@ -255,7 +263,8 @@ test('a drag along the run that starts on a popover trigger scrolls it and opens
   await settle();
   expect(Math.abs(bearing(mid(gain), c) - from + 15)).toBeLessThanOrEqual(1);
 
-  const target = items().find((el) => el.getAttribute('data-clipped') === 'none')!;
+  // The fields are wide enough that none lies wholly within the run now: press one whose middle does.
+  const target = items().find((el) => el.getAttribute('data-clipped') !== 'past' && Math.abs(bearing(mid(el), c)) < 25)!;
   const trigger = within(target).getByRole('button');
   await pressAt(mid(trigger));
   expect(await screen.findByRole('dialog', { name: trigger.textContent! })).toBeTruthy();

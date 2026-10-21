@@ -285,7 +285,7 @@ function LensStory({ overflow }: Pick<BarProps, 'overflow'>) {
           <Bar label="Lens" schema={LENS} overflow={overflow} />
         </Along>
         <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
-          <Slider min={2} max={16} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={thumbs} onInput={setThumbs} />
+          <Slider ariaLabel="Zoom" min={2} max={16} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={thumbs} onInput={setThumbs} />
         </Along>
       </div>
     </ActionsProvider>
