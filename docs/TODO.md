@@ -627,11 +627,16 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `Button` with a leading icon; the theme editor's swatch tabs against `ToggleBar`'s flat variant
   and its hex and number inputs against `Input` and `NumberField`.
 
-- **(P3) The site's demos are colored for a dark page.** The demo shell's sidebar has a
-  `ColorModeControl` now, dark until a reader picks. Nobody has looked at the pages in light
-  mode: demo scenes still draw in colors chosen for a dark page (`#d4c4a8` labels in
-  `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
-  in either mode, and the front page pins its own theme to dark.
+- **(P3) Some site demos still draw a dark look in light mode.** Every demo now sits under a
+  theme in the reader's mode, and a scene reads a theme color with `useColorHex`
+  (`ViewportDemo`'s background). Left after the 2026-10-21 pass through every demo in light mode:
+  `Kernel3dDemo`'s room, `ScoreDemo`'s roll and `EffectChartDemo`'s ground stay dark in both
+  modes, which may be the look they want; undecided. Separately, the `.ckd-canvas` stage is
+  `#6a6a6a` in both modes, and the scene labels drawn on it (`#a89878` in `AudioDemo`,
+  `RigDemo` and `EasingsDemo`, `#1a130d` in `StrokeMarkersDemo`) are hard to read in either;
+  whether the stage follows the mode is undecided, and the labels follow from that. The code
+  panel's header still darkens with `rgba(0, 0, 0, 0.18)`: it sits on a sunken panel, and the
+  theme's step toward `fg` would lighten it in dark mode.
 
 - **(P3) Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
   (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the

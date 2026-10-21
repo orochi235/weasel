@@ -1,9 +1,9 @@
-import type { ColorSource, Palette } from '@weasel-js/paint';
+import { colorLiteralToHex, type ColorSource, type Palette } from '@weasel-js/paint';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
 import { isDev } from '@weasel-js/registry';
 import { applyTheme } from './applyTheme';
 import { themeTones, type ColorList } from './colorList';
-import { colorSourceCss } from './colorSource';
+import { colorSourceCss, colorSourceLiteral } from './colorSource';
 import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
@@ -166,4 +166,19 @@ export function useTones(): ThemeContextValue {
 export function useColorCss(): (source: ColorSource | null | undefined) => string | undefined {
   const ctx = useTones();
   return useCallback((source) => (source == null ? undefined : (colorSourceCss(source, ctx) ?? undefined)), [ctx]);
+}
+
+/**
+ * Turns a `ColorSource` into a hex color under the theme, tones, and palette in force, for a
+ * surface drawn without the cascade, such as a scene's paint. `useColorCss` may answer
+ * `var(--wzl-…)`, which only the DOM resolves; this answers the value. `undefined` for no
+ * source, and for one nothing answers.
+ */
+export function useColorHex(): (source: ColorSource | null | undefined) => string | undefined {
+  const ctx = useTones();
+  return useCallback((source) => {
+    if (source == null) return undefined;
+    const literal = colorSourceLiteral(source, ctx);
+    return (literal && colorLiteralToHex(literal)) ?? undefined;
+  }, [ctx]);
 }

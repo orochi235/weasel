@@ -108,23 +108,21 @@ function D3SortableDemoInner() {
   }, [items, scene, animator]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ color: '#888' }}>order:</span>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
+        <span className="ckd-toolbar-note">order:</span>
         {(['index', 'asc', 'desc', 'shuffle'] as SortKey[]).map((k) => (
           <button
             key={k}
             onClick={() => setSortKey(k === 'shuffle' && sortKey === 'shuffle' ? 'index' : k)}
-            style={{
-              fontWeight: sortKey === k ? 'bold' : 'normal',
-              padding: '4px 10px',
-            }}
+            className="ckd-btn"
+            aria-pressed={sortKey === k}
             disabled={animating && sortKey === k}
           >
             {k}
           </button>
         ))}
-        <span style={{ color: '#888', fontSize: 12, marginLeft: 12 }}>
+        <span className="ckd-hint">
           d3Bind → join → transition().duration(600).ease(easeInOutCubic).delay(i × 30)
           {animating ? ' · animating…' : ''}
         </span>

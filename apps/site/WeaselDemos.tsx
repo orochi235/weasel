@@ -41,6 +41,7 @@ import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { SiteColorModeContext, useSiteColorMode } from './colorMode';
+import { SiteThemeProvider } from './SiteThemeProvider';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
 
@@ -120,7 +121,9 @@ export function WeaselDemos() {
         <PageBoundary key={activeId} reload={() => window.location.reload()} store={sessionStore()}>
           {active ? (
             <SiteColorModeContext.Provider value={colorMode.mode}>
-              <DemoView entry={active} key={active.id} />
+              <SiteThemeProvider className="ckd-demo-theme">
+                <DemoView entry={active} key={active.id} />
+              </SiteThemeProvider>
             </SiteColorModeContext.Provider>
           ) : null}
           <Suspense fallback={null}>

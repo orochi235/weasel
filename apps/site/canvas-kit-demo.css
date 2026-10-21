@@ -262,7 +262,9 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
-/* Lay out as if they were not there. A group holds the resize delta its stages inherit. */
+/* Lay out as if they were not there. A group holds the resize delta its stages inherit; the
+ * theme wrapper holds the tokens of the reader's color mode. */
+.ckd-demo-theme,
 .ckd-demo-frame,
 .ckd-stage-group { display: contents; }
 
@@ -346,6 +348,11 @@ a:hover { text-decoration: underline; }
   font-style: italic;
 }
 .ckd-hint kbd { font-style: normal; }
+/* A hint long enough to wrap, held to a readable line. */
+.ckd-prose {
+  max-width: 64ch;
+  margin: 0;
+}
 
 /* A row of inline controls under a canvas (EffectsDemo's blur slider). */
 .ckd-controls {
@@ -697,7 +704,7 @@ a:hover { text-decoration: underline; }
   font-family: ui-monospace, monospace;
   color: var(--wzl-fg);
   padding: var(--wzl-space-2) var(--wzl-space-4);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--wzl-surface-sunken);
 }
 
 .curve-lab-readout {
@@ -705,7 +712,7 @@ a:hover { text-decoration: underline; }
   color: var(--wzl-fg);
   padding: var(--wzl-space-2) var(--wzl-space-4);
   border-top: 1px solid var(--wzl-border-strong);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--wzl-surface-sunken);
   display: grid;
   grid-template-columns: auto auto;
   column-gap: var(--wzl-space-4);
@@ -721,7 +728,7 @@ a:hover { text-decoration: underline; }
   display: flex;
   gap: var(--wzl-space-6);
   padding: var(--wzl-space-3);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   align-items: center;
@@ -977,6 +984,13 @@ a:hover { text-decoration: underline; }
   gap: var(--wzl-space-3);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   color: var(--wzl-fg-muted);
+}
+.ckd-field:has(input:disabled) { opacity: 0.45; }
+
+/* A `.ckd-btn` that holds a state: a feature toggle, a mode. */
+.ckd-btn[aria-pressed='true'] {
+  background-image: linear-gradient(var(--wzl-surface-pressed), var(--wzl-surface-pressed));
+  font-weight: 600;
 }
 
 .ckd-range { width: 130px; }

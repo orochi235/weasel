@@ -143,19 +143,12 @@ export function EasingsDemo() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <button
-          onClick={play}
-          style={{
-            padding: '4px 12px', fontSize: 12, cursor: 'pointer',
-            background: '#2a2018', color: '#d4c4a8',
-            border: '1px solid #4a3c2e', borderRadius: 3,
-          }}
-        >play all</button>
-        <label style={{ fontSize: 12, color: '#a89878', display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
+        <button className="ckd-btn" onClick={play}>play all</button>
+        <label className="ckd-field">
           duration
-          <div style={{ width: 140 }}>
+          <div className={styles.slider}>
             <Slider
               min={300} max={4000} step={100}
               thumbs={[{ value: duration }]}
@@ -185,13 +178,13 @@ export function EasingsDemo() {
           }}
         />
       </DemoStage>
-      <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
+      <p className="ckd-hint ckd-prose">
         Click <strong>play all</strong> to fire one tween per easing simultaneously, all sharing
         the same duration. Each marker's x is driven by its named curve from <code>EASINGS</code>;
         the dim line below each track plots the curve shape (clamped to [0,1] for the back/
         elastic overshoot rows — the marker itself still shows the overshoot through its
         actual position).
-      </div>
+      </p>
     </div>
   );
 }

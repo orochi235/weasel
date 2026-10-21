@@ -6,7 +6,6 @@ import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/cor
 import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
-import { SiteThemeProvider } from '../SiteThemeProvider';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }
@@ -81,8 +80,8 @@ function Demo() {
 
 export function HudContextMenuDemo() {
   return (
-    <SiteThemeProvider className="ckd-shape-tools-demo">
+    <div className="ckd-shape-tools-demo">
       <ActionsProvider><Demo /></ActionsProvider>
-    </SiteThemeProvider>
+    </div>
   );
 }

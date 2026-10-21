@@ -10,6 +10,7 @@ import {
   asNodeId,
   textCommandFromRuns,
 } from '@weasel-js/core';
+import styles from './CompoundPathsDemo.module.css';
 import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
@@ -174,8 +175,8 @@ export function CompoundPathsDemo() {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-    <div style={{ position: 'relative' }}>
+    <div className={styles.demo}>
+    <div className={styles.stage}>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={['pick', 'move', 'transform']}
           className="ckd-canvas"
@@ -224,31 +225,16 @@ export function CompoundPathsDemo() {
         }}
       />
       {toast && (
-        <div
-          style={{
-            position: 'absolute', left: '50%', top: 12, transform: 'translateX(-50%)',
-            background: '#1a130d', color: '#fafafa', padding: '4px 12px',
-            borderRadius: 4, fontFamily: 'monospace', fontSize: 14, pointerEvents: 'none',
-          }}
-        >
+        <div className={styles.toast}>
           {toast}
         </div>
       )}
     </div>
-      <aside
-        style={{
-          width: 340,
-          padding: 16,
-          fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
-          color: '#e8d8b8',
-          lineHeight: 1.55,
-          fontSize: 14,
-        }}
-      >
-        <h3 style={{ margin: '0 0 12px', fontSize: 20, fontFamily: '"Comic Sans MS", "Comic Sans", cursive', color: '#f5c542' }}>
+      <aside className={styles.story}>
+        <h3 className={styles.title}>
           The Tale of the Ghost, the Duck, the Hamburglar, the Goose, and the Octopus
         </h3>
-        <p style={{ marginTop: 0 }}>
+        <p className={styles.lead}>
           The afternoon hung over the canvas like a damp beach towel —
           cyan, patient, vaguely chlorinated. The Ghost drifted in expecting
           a quiet haunt and found instead a crime in progress, which is the
@@ -292,7 +278,7 @@ export function CompoundPathsDemo() {
           And so peace returned to the canvas — fragile, pixel-perfect,
           and absolutely doomed to last only until the next resize.
         </p>
-        <p style={{ fontStyle: 'italic', marginBottom: 0, fontSize: 12, opacity: 0.8 }}>
+        <p className={styles.byline}>
           — a story by Claude (Opus 4.7)
         </p>
       </aside>
@@ -306,11 +292,8 @@ function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: nu
   return (
     <button
       onPointerDown={(e) => { e.stopPropagation(); onHonk(); }}
-      style={{
-        position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h,
-        font: '11px monospace', background: '#f5c542', border: '1px solid #1a130d',
-        borderRadius: 3, cursor: 'pointer', padding: 0,
-      }}
+      className={styles.honk}
+      style={{ left: b.x, top: b.y, width: b.w, height: b.h }}
     >
       honk
     </button>
