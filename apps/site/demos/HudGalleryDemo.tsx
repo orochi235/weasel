@@ -3,7 +3,6 @@ import { SceneCanvas, useScene } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { Hud } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
-import { SiteThemeProvider } from '../SiteThemeProvider';
 
 const W = 640, H = 264;
 const COL = [24, 232, 440], ROW = [24, 144];
@@ -38,7 +37,7 @@ function cell(hud: Hud, col: number, row: number, caption: string) {
 }
 
 export function HudGalleryDemo() {
-  return <SiteThemeProvider className="ckd-canvas-wrap"><Demo /></SiteThemeProvider>;
+  return <div className="ckd-canvas-wrap"><Demo /></div>;
 }
 
 function Demo() {

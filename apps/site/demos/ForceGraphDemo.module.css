@@ -18,13 +18,13 @@
 }
 
 .hint {
-  color: #888;
+  color: var(--wzl-fg-subtle);
 }
 
 /* Last in the row and pushed to its end, so the zoom changing width moves nothing. */
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: #555;
+  color: var(--wzl-fg-muted);
   margin-inline-start: auto;
   text-align: end;
 }

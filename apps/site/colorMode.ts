@@ -7,7 +7,7 @@ export const MODE_STORAGE_KEY = 'ckd-mode';
 /** The demo shell's mode until a reader chooses one. */
 const DEFAULT_MODE: ColorMode = 'dark';
 
-/** The mode the demo shell shows, for a demo whose chrome is drawn in the canvas and cannot read the cascade. */
+/** The mode the demo shell shows, which `SiteThemeProvider` turns into the theme every demo draws under. */
 export const SiteColorModeContext = createContext<ColorMode>(DEFAULT_MODE);
 
 /**

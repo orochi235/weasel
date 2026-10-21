@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { useColorHex } from '@weasel-js/theme/react';
 import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
@@ -22,6 +23,9 @@ type Boundary = 'none' | 'stop' | 'bounce';
 export function ViewportDemo() {
   const [boundary, setBoundary] = useState<Boundary>('none');
   const [inertiaOn, setInertiaOn] = useState(true);
+  const colorHex = useColorHex();
+  const background = colorHex({ ref: 'workspace-surface' });
+  const backgroundFill = useMemo(() => (background ? { color: background } : undefined), [background]);
 
   const scene = useScene<Data, Layer, Pose>({
     systemLayers: [{ id: 'scene' }],
@@ -39,27 +43,27 @@ export function ViewportDemo() {
     : false as const;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
+        <label className="ckd-field">
           <input type="checkbox" checked={inertiaOn} onChange={(e) => setInertiaOn(e.target.checked)} />
           inertia
         </label>
-        <span style={{ color: '#666' }}>boundary:</span>
+        <span className="ckd-toolbar-note">boundary:</span>
         {(['none', 'stop', 'bounce'] as Boundary[]).map((b) => (
-          <label key={b} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', opacity: inertiaOn ? 1 : 0.4 }}>
+          <label key={b} className="ckd-field">
             <input type="radio" name="boundary" value={b} checked={boundary === b} onChange={() => setBoundary(b)} disabled={!inertiaOn} />
             {b}
           </label>
         ))}
-        <span style={{ color: '#888', fontSize: 12 }}>
+        <span className="ckd-hint">
           {boundary !== 'none' && inertiaOn ? '(bounds: x 0–300, y 0–200)' : ''}
         </span>
       </div>
       <DemoStage width={480} height={320}>
         <SceneCanvas
           scene={scene}
-          backgroundFill={{ color: '#1a130d' }}
+          backgroundFill={backgroundFill}
           viewport={{
             inertia: inertiaConfig,
             pinchZoom: true,
@@ -97,7 +101,7 @@ export function ViewportDemo() {
           }}
         />
       </DemoStage>
-      <div style={{ fontSize: 11, color: '#888' }}>
+      <div className="ckd-hint">
         H / space = hand · drag fast + release = inertia · ⌘+= / ⌘+- / ⌘+0 = animated zoom (pan to interrupt) · pinch = zoom (touch multitouch; trackpad via ctrl+wheel, or Safari's gesture events)
       </div>
     </div>

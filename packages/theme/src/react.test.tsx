@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { colorAt } from './colorList';
-import { ThemeProvider, useColorCss, useTheme, useTones } from './react';
+import { ThemeProvider, useColorCss, useColorHex, useTheme, useTones } from './react';
 import { defineTheme } from './theme';
 
 function Probe(): React.ReactElement {
@@ -97,5 +97,25 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByTestId('c').textContent).toBe('var(--wzl-accent) #fff #ff0000 undefined');
+  });
+
+  it('resolves a color source to the value a canvas can draw, in the mode in force', () => {
+    function Colors(): React.ReactElement {
+      const hex = useColorHex();
+      const all = [hex({ ref: 'surface-sunken' }), hex({ ref: 'fg' }), hex({ ref: 'no-such-token' }), hex(undefined)];
+      return <span data-testid="h">{all.map(String).join(' ')}</span>;
+    }
+    const at = (mode: string): string => {
+      const { getByTestId, unmount } = render(
+        <ThemeProvider selection={{ mode }}>
+          <Colors />
+        </ThemeProvider>,
+      );
+      const text = getByTestId('h').textContent ?? '';
+      unmount();
+      return text;
+    };
+    expect(at('dark')).toBe('#0e0f12 #e6e7e9 undefined undefined');
+    expect(at('light')).toBe('#c9cbcf #0e0f12 undefined undefined');
   });
 });

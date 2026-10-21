@@ -23,12 +23,6 @@ const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
   { label: 'all',          config: { bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true } },
 ];
 
-const btn: React.CSSProperties = {
-  padding: '4px 10px', fontSize: 12, cursor: 'pointer',
-  background: '#2a2018', color: '#d4c4a8',
-  border: '1px solid #4a3c2e', borderRadius: 3,
-};
-
 const W = 400, H = 300;
 const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
 const ID = 'p';
@@ -61,10 +55,10 @@ export function PathPoseDemo() {
   const selection = useSelection({ initial: [asNodeId(ID)] });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', gap: 4 }}>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
         <button
-          style={btn}
+          className="ckd-btn"
           onClick={() => setDebugIdx((i) => (i + 1) % DEBUG_STATES.length)}
         >
           Debug overlay: {DEBUG_STATES[debugIdx].label}

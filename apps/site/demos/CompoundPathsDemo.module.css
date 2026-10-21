@@ -1,0 +1,58 @@
+.demo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wzl-space-8);
+}
+
+.stage {
+  position: relative;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  padding: var(--wzl-space-2) var(--wzl-space-6);
+  border-radius: 4px;
+  background: #1a130d;
+  color: #fafafa;
+  font: 14px monospace;
+  pointer-events: none;
+}
+
+/* Drawn over the goose on the cyan scene, so its colors belong to the scene, not the page. */
+.honk {
+  position: absolute;
+  padding: 0;
+  border: 1px solid #1a130d;
+  border-radius: 3px;
+  background: #f5c542;
+  font: 11px monospace;
+  cursor: pointer;
+}
+
+.story {
+  width: 340px;
+  padding: var(--wzl-space-8);
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--wzl-fg);
+}
+
+.lead {
+  margin-top: 0;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.byline {
+  margin-bottom: 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--wzl-fg-muted);
+}

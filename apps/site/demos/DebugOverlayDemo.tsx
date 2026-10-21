@@ -52,18 +52,6 @@ const drawBox = (_node: unknown, p: Box): DrawCommand[] => [{
   fill: { paint: { color: p.color } },
 }];
 
-const btn: React.CSSProperties = {
-  padding: '4px 10px', fontSize: 12, cursor: 'pointer',
-  background: '#2a2018', color: '#d4c4a8',
-  border: '1px solid #4a3c2e', borderRadius: 3,
-};
-
-const chip = (active: boolean): React.CSSProperties => ({
-  ...btn,
-  background: active ? '#4a3c2e' : '#2a2018',
-  fontWeight: active ? 600 : 400,
-});
-
 export function DebugOverlayDemo() {
   const scene = useScene<Box>({ items: INITIAL });
 
@@ -104,21 +92,22 @@ export function DebugOverlayDemo() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
         {FEATURES.map((f) => (
           <button
             key={f.key}
-            style={chip(enabled[f.key])}
+            className="ckd-btn"
+            aria-pressed={enabled[f.key]}
             title={f.help}
             onClick={() => toggle(f.key)}
           >
-            {enabled[f.key] ? '☑' : '☐'} {f.label}
+            {f.label}
           </button>
         ))}
-        <button style={btn} onClick={allOn}>all on</button>
-        <button style={btn} onClick={allOff}>all off</button>
-        <button style={btn} onClick={snapshot} disabled={!debug}>snapshot</button>
+        <button className="ckd-btn" onClick={allOn}>all on</button>
+        <button className="ckd-btn" onClick={allOff}>all off</button>
+        <button className="ckd-btn" onClick={snapshot} disabled={!debug}>snapshot</button>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={['view', 'pick', 'move', 'transform']}
@@ -135,13 +124,13 @@ export function DebugOverlayDemo() {
           }}
         />
       </DemoStage>
-      <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>
+      <p className="ckd-hint ckd-prose">
         Click a box to select; drag the body to move or a corner to resize, both
         snapping to a 20px grid; wheel to pan and Cmd/Ctrl+wheel to zoom. Toggle features
         above to layer in the kit's view of the scene. Hover any chip for a one-line
         description of what it shows. Snapshot rasterizes the scene and the overlay
         into one PNG, below.
-      </div>
+      </p>
       {shot && (
         <a href={shot.url} download="weasel-debug-snapshot.png">
           <img src={shot.url} width={shot.size.width} height={shot.size.height} alt="Debug snapshot of the canvas above" />

@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { SiteColorModeContext } from '../../colorMode';
+import { SiteThemeProvider } from '../../SiteThemeProvider';
 import { HudDemo } from '../HudDemo';
 import { HudGalleryDemo } from '../HudGalleryDemo';
 import { LoupeDemo } from '../LoupeDemo';
@@ -37,13 +38,14 @@ const demos: [string, ComponentType][] = [
   ['hud-context-menu', HudContextMenuDemo],
 ];
 
+// The shell's wrapping, as `WeaselDemos` mounts every demo.
 describe('the hud demos follow the site color mode', () => {
   for (const [id, Demo] of demos) {
     for (const mode of ['light', 'dark'] as const) {
       it(`${id} draws its hud in ${mode} when the site shows ${mode}`, () => {
         render(
           <SiteColorModeContext.Provider value={mode}>
-            <Demo />
+            <SiteThemeProvider><Demo /></SiteThemeProvider>
           </SiteColorModeContext.Provider>,
         );
         expect(seen.length).toBeGreaterThan(0);
