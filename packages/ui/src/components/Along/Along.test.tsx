@@ -15,7 +15,7 @@ afterAll(() => { Element.prototype.getBoundingClientRect = real; });
 describe('Along', () => {
   it('hands its descendants an arc sized from its own box', () => {
     size = 200;
-    let seen: AlongCtx | null = null;
+    let seen = null as AlongCtx | null;
     const Probe = () => { seen = useTrackShape(); return null; };
     render(<Along arc={{ start: 300, end: 60 }}><Probe /></Along>);
     expect(seen!.shape.kind).toBe('arc');
@@ -24,7 +24,7 @@ describe('Along', () => {
   });
 
   it('gives no shape outside an Along', () => {
-    let seen: AlongCtx | null | undefined;
+    let seen = undefined as AlongCtx | null | undefined;
     const Probe = () => { seen = useTrackShape(); return null; };
     render(<Probe />);
     expect(seen).toBeNull();
@@ -32,7 +32,7 @@ describe('Along', () => {
 
   it('places everything at the center of a 0 by 0 box, never NaN', () => {
     size = 0;
-    let seen: AlongCtx | null = null;
+    let seen = null as AlongCtx | null;
     const Probe = () => { seen = useTrackShape(); return null; };
     render(<Along><Probe /></Along>);
     const { point } = seen!.shape.at(0.5);
