@@ -26,7 +26,9 @@ export interface ViewMarkerProps {
   target: string | null;
   /** Screen px. Default: stroke `#ffffff`, width 1, dash [2, 3]. */
   style?: ViewMarkerStyle;
-  /** Default true: dragging the marker edits the source's aim. A source with no writer is never interactive. */
+  /** Default true: dragging the marker edits the source's aim. A source with no writer is never interactive.
+   *  A marker grabs its whole interior plus {@link VIEW_MARKER_HIT_SLOP_PX}, so one covering much of its
+   *  frame takes every press there; `false` opts out. */
   interactive?: boolean;
 }
 

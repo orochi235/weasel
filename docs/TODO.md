@@ -127,7 +127,7 @@ Priority tags:
   the consumer passes `createViewMarkerContribution()` in `ambient` (or the takeover's own `useTools`
   ambient list). Long-press feedback has the same gap.
 
-- **(P3) A view marker claims presses anywhere inside its outline.** That suits a minimap marker in a
+- **(P2) A view marker claims presses anywhere inside its outline.** That suits a minimap marker in a
   small picture-in-picture. A marker drawn in a larger frame — a zoomed-out PiP's aim shown in the
   root — can cover the whole frame and take every press there. Decide between grabbing the interior
   and grabbing near the rim before arc 3's markers ship
