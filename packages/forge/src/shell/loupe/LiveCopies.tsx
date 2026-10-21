@@ -18,7 +18,7 @@ import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryBody, type StoryBodyProps } from '../StoryBody';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { TrialHost } from '../TrialHost';
-import { comparedGlobals, withArgs } from './conditions';
+import { resolveComparison, withArgs } from './conditions';
 import { type LiveLenses, LiveLensesContext, type LiveRequest } from './liveLenses';
 import { scrollerOf } from './trialAt';
 
@@ -61,13 +61,13 @@ function AfterCommit({ sync }: { sync: () => void }) {
   return null;
 }
 
-/** The globals a lens's copy renders under: the comparison's for each global it sets, the trial's own for the rest. */
+/** The globals a lens's copy renders under: the comparison resolved over the trial's own, pins included. */
 function useCopyGlobals(request: LiveRequest, trialConfig: unknown): Globals {
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const own = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
-  const { globals: resolved, sets } = request;
-  return useMemo<Globals>(() => comparedGlobals(own, resolved, sets), [own, resolved, sets]);
+  const { compare, ctx } = request;
+  return useMemo<Globals>(() => resolveComparison(compare, own, ctx).globals, [own, compare, ctx]);
 }
 
 /**

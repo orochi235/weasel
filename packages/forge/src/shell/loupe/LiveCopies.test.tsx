@@ -130,7 +130,7 @@ describe('LiveCopies', () => {
     expect((await inSlot().findByTestId('mode')).textContent).toBe('dark');
     expect(inSlot().getByTestId('label').textContent).toBe('B');
     expect(inSlot().getByTestId('count').textContent).toBe('5');
-    expect(slot.querySelector('[data-fg-host="t1~lens-a"]')?.hasAttribute('data-fg-copy')).toBe(true);
+    expect(slot.querySelector('[data-fg-host="t1~lens-a~compared"]')?.hasAttribute('data-fg-copy')).toBe(true);
     expect(main().getByTestId('mode').textContent).toBe('light');
     expect(main().getByTestId('label').textContent).toBe('A');
   });
@@ -188,7 +188,7 @@ describe('LiveCopies', () => {
       </LabContext.Provider>,
     );
     attach({ x: 100, y: 100 });
-    const copy = slot.querySelector<HTMLElement>('.fg-frame-host[data-fg-host="t1~lens-a"]');
+    const copy = slot.querySelector<HTMLElement>('.fg-frame-host[data-fg-host="t1~lens-a~compared"]');
     expect(copy?.hasAttribute('data-fg-copy')).toBe(true);
     expect(slot.querySelector<HTMLElement>('.fg-lens-empty')!.hidden).toBe(true);
     const { frame, received } = connectFrame(copy!.querySelector('iframe') as HTMLIFrameElement);
@@ -203,6 +203,31 @@ describe('LiveCopies', () => {
     expect((await main().findByTestId('mode')).textContent).toBe('light');
     attach({ x: 100, y: 100 }, { lab: 'dark', compare: { kind: 'custom', globals: { mode: 'dark' } } });
     expect((await inSlot().findByTestId('mode')).textContent).toBe('dark');
+  });
+
+  it('flips a trial’s own pin in opposite mode, so a trial pinned light under a dark lab shows dark', async () => {
+    renderWithIcons(<Harness lab="dark" pin="light" />);
+    expect((await main().findByTestId('mode')).textContent).toBe('light');
+    attach({ x: 100, y: 100 }, { lab: 'dark', compare: { kind: 'opposite-mode' } });
+    expect((await inSlot().findByTestId('mode')).textContent).toBe('dark');
+  });
+
+  it('renders a Split lens’s two cells as two copies: the story as it is, and the compared one', async () => {
+    renderWithIcons(<Harness />);
+    await main().findByTestId('mode');
+    const compared = attach({ x: 100, y: 100 }, { compare: { kind: 'opposite-mode' } });
+    const other = slot;
+    slot = document.body.appendChild(document.createElement('div'));
+    const source = createLiveSource(lenses, resolveComparison, () => ({
+      base: { mode: 'light' },
+      ctx: { declarations: {}, modeGlobal: 'mode', prefersDark: false, labMode: 'light' },
+    }));
+    act(() => void source.attach(slot, request({ x: 100, y: 100 }, null)));
+    expect((await inSlot().findByTestId('mode')).textContent).toBe('light');
+    expect((await within(other).findByTestId('mode')).textContent).toBe('dark');
+    expect(lenses.forTrial('t1').map((r) => r.lensId).sort()).toEqual(['a', 'a~compared']);
+    act(() => compared.detach());
+    other.remove();
   });
 
   it('keeps a trial’s pin on a global the comparison leaves alone', async () => {

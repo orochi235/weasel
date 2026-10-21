@@ -1,5 +1,6 @@
 import './loupe.css';
 import type { LensCapture, LensSource } from '@weasel-js/labkit/loupe';
+import { createEmitter } from '@weasel-js/registry';
 import { createCaptureClient } from './captureClient';
 import type { ForgeComparison } from './conditions';
 import { aim, attachPixelsLens, fresh, type PayloadFor, type PixelsLens, type PixelsShared, type Shot, sideOf } from './pixelsLens';
@@ -32,6 +33,7 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
   const shared: PixelsShared = { take: client.take, payloadFor: opts.payloadFor, revision: opts.revision, shots: new Map<string, Shot>() };
   const lenses = new Set<PixelsLens>();
   let unrevise: (() => void) | null = null;
+  const remeasured = createEmitter<[]>();
   const revised = () => {
     shared.shots.clear();
     for (const lens of [...lenses]) lens.revised();
@@ -42,7 +44,13 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
     produces: 'pixels',
     label: (request) => `Pixels ${request.dpr}×`,
     status: client.status,
-    subscribe: client.subscribe,
+    // Also told whenever a capture may have gone stale, for a lens that captures without attaching, as Difference does.
+    subscribe(listener) {
+      const offs = [client.subscribe(listener), remeasured.subscribe(listener), opts.subscribeRevision(listener)];
+      return () => {
+        for (const off of offs) off();
+      };
+    },
     attach(slot, first) {
       client.poll();
       unrevise ??= opts.subscribeRevision(revised);
@@ -71,6 +79,7 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
     },
     remeasure() {
       for (const lens of [...lenses]) lens.measure();
+      remeasured.emit();
     },
   };
 }

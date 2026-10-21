@@ -29,7 +29,8 @@ export interface PixelsShared {
   shots: Map<string, Shot>;
 }
 
-export const sideOf = (r: Request): string => `${r.lensId}:${r.dpr}`;
+/** One lens side: its lens, its DPR, and whether it shows the comparison or the story as it is. */
+export const sideOf = (r: Request): string => `${r.lensId}:${r.dpr}${r.conditions === null ? '' : ':compared'}`;
 
 /** What a lens aims at: the payload it sends for the trial under its reticle, keyed by its content, or why none. */
 export type Aimed = { hit: TrialHit; payload: CapturePayload; key: string } | { reason: string };

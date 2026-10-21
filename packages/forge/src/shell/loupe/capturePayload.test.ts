@@ -120,6 +120,18 @@ describe('trialPayload', () => {
     });
   });
 
+  it('flips the trial’s own mode in opposite mode: a trial pinned light under a dark lab captures dark', () => {
+    prefersDark(false);
+    const pinned = { ...trial, config: { ...(trial.config as object), $globals: { mode: 'light' } } };
+    const dark = { ...lab, labValues: { ...lab.labValues, mode: 'dark' } };
+    expect(trialPayload(pinned, dark, hit(), 1, { kind: 'opposite-mode' })).toMatchObject({ globals: { mode: 'dark' } });
+  });
+
+  it('captures at a DPR comparison’s own DPR', () => {
+    prefersDark(false);
+    expect(trialPayload(trial, lab, hit(), 1, { kind: 'custom', dpr: 3 })).toMatchObject({ dpr: 3 });
+  });
+
   it("resolves the lab's auto mode through the OS color scheme", () => {
     prefersDark(true);
     expect(trialPayload(trial, lab, hit(), 1, null)).toMatchObject({ lab: { mode: 'dark' } });

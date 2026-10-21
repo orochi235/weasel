@@ -260,3 +260,71 @@ describe('LensSlot and LensChrome', () => {
     expect(landed).toEqual(['b']);
   });
 });
+
+describe('LensSlot comparisons', () => {
+  const conditionsOf = (attach: ReturnType<typeof fakeSource>['attach']) =>
+    attach.mock.calls.map(([, r]) => r.conditions);
+
+  it('attaches only the compared request in Swap', () => {
+    const live = fakeSource('live');
+    render(<Both settings={settings({ compare: 'b', view: 'swap' })} sources={{ live: live.source }} />);
+    expect(conditionsOf(live.attach)).toEqual(['b']);
+  });
+
+  it('attaches the story as it is on the left and the compared one on the right in Split', () => {
+    const live = fakeSource('live');
+    render(
+      <Both
+        settings={settings({ compare: 'b', view: 'split', seam: 0.25 })}
+        sources={{ live: live.source }}
+      />,
+    );
+    expect(conditionsOf(live.attach)).toEqual([null, 'b']);
+    const slot = screen.getByTestId('slot').querySelector<HTMLElement>('.lk-lens-slot')!;
+    expect(slot.dataset.view).toBe('split');
+    expect(slot.style.getPropertyValue('--lk-lens-seam')).toBe(`${SIZE.width * 0.25}px`);
+    const sides = [...slot.querySelectorAll<HTMLElement>('.lk-lens-side')].map((s) => s.dataset.side);
+    expect(sides).toEqual(['base', 'compared']);
+  });
+
+  it('says why Difference cannot show, with no Pixels source', () => {
+    const live = fakeSource('live');
+    render(
+      <Both settings={settings({ compare: 'b', view: 'difference' })} sources={{ live: live.source }} />,
+    );
+    expect(within(screen.getByTestId('slot')).getByText('Pixels unavailable: not provided')).toBeTruthy();
+    expect(live.attach).not.toHaveBeenCalled();
+  });
+
+  it('says why Difference cannot show while Pixels is unavailable', () => {
+    const pixels = fakeSource('pixels', { status: 'install playwright' });
+    render(
+      <Both
+        settings={settings({ compare: 'b', view: 'difference' })}
+        sources={{ pixels: pixels.source }}
+      />,
+    );
+    expect(
+      within(screen.getByTestId('slot')).getByText('Pixels unavailable: install playwright'),
+    ).toBeTruthy();
+  });
+
+  it('captures both sides from Pixels for Difference, even on a Live lens', async () => {
+    const live = fakeSource('live');
+    const pixels = fakeSource('pixels');
+    const capture = vi.fn(async (_r: LensSourceRequest<string>) => null);
+    pixels.source.capture = capture;
+    render(
+      <Both
+        settings={settings({ source: 'live', compare: 'b', view: 'difference' })}
+        sources={{ live: live.source, pixels: pixels.source }}
+      />,
+    );
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(capture.mock.calls.map(([r]) => r.conditions)).toEqual([null, 'b']);
+    expect(live.attach).not.toHaveBeenCalled();
+    expect(within(screen.getByTestId('slot')).getByText('Nothing to compare')).toBeTruthy();
+  });
+});

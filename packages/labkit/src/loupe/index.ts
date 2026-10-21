@@ -48,6 +48,19 @@ export {
   LOUPE_LEADER,
   MAX_LENSES,
 } from './lens/lensActionDefs';
+export type { LensSide, SeamPreview } from './lens/compare';
+export {
+  createSeamPreview,
+  lensSides,
+  SEAM_GRAB,
+  SEAM_LAYER_ID,
+  SEAM_MAX,
+  SEAM_MIN,
+  seamAction,
+  splitRects,
+} from './lens/compare';
+export type { DiffOptions, DiffResult, DifferenceView } from './lens/difference';
+export { diffPixels, paintDifference } from './lens/difference';
 export type { LensHitBox } from './lens/lensHitBoxes';
 export { HANDLE_SLOP, hitBoxesOf } from './lens/lensHitBoxes';
 export {

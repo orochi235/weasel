@@ -1,5 +1,7 @@
 import { useLatest } from '@weasel-js/react';
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { type CSSProperties, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { type LensSide, lensSides, splitRects } from './compare';
+import { paintDifference } from './difference';
 import {
   type LensResolution,
   type LensSlotProps,
@@ -10,6 +12,7 @@ import {
   LENS_SOURCE_KINDS,
   requestsOf,
   resolveSource,
+  unavailableText,
 } from './lensSource';
 import type { LensSourceKind } from './lensTypes';
 
@@ -68,20 +71,105 @@ function LensCell<C>({
   return <div ref={el} className="lk-lens-cell" data-dpr={request.dpr} />;
 }
 
+/** The seam's offset in the interior, as a custom property the stylesheet clips each side by. */
+function seamStyle(x: number): CSSProperties {
+  return { ['--lk-lens-seam' as string]: `${x}px` } as CSSProperties;
+}
+
+/** How long a Difference lens waits, after anything changes, before capturing again. */
+export const RECAPTURE_REST_MS = 250;
+
+const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
 /**
- * Attaches the chosen source to the lens's interior. With no source, or one
- * that is unavailable, it says why and falls back to the first that answers.
+ * The Difference view: a Pixels capture of the story as it is and one under
+ * the comparison, whatever the lens's own source, with the pixels that differ
+ * lit. A DOM render has no pixels, so without a Pixels source it says why.
  */
-export function LensSlot<C>({ lens, settings, sources, reticle, size }: LensSlotProps<C>) {
-  const { source, reason } = useLensResolution(settings.source, sources);
-  const requests = requestsOf(source, lens, settings, reticle, size);
+function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotProps<C>) {
+  const pixels = sources.pixels;
+  const subscribe = useCallback((fn: () => void) => pixels?.subscribe(fn) ?? (() => {}), [pixels]);
+  const status = useSyncExternalStore(subscribe, () => pixels?.status() ?? 'not provided');
+  // Bumped by anything the source says may have changed, such as the story under the reticle.
+  const [tick, setTick] = useState(0);
+  useEffect(() => subscribe(() => setTick((n) => n + 1)), [subscribe]);
+  const canvas = useRef<HTMLCanvasElement | null>(null);
+  const [said, say] = useState<string | null>(null);
+  const started = useRef(false);
+  const latest = useLatest({ reticle, size });
+  const dpr = settings.dprs[0] ?? 1;
+  const { compare, factor } = settings;
+  const { lensId } = lens;
+  useEffect(() => {
+    const el = canvas.current;
+    if (status !== true || !pixels?.capture || !el) return;
+    const { reticle: at, size: box } = latest.current;
+    const base: LensSourceRequest<C> = { lensId, reticle: at, factor, size: box, conditions: null, dpr };
+    const capture = pixels.capture.bind(pixels);
+    let live = true;
+    const run = () =>
+      Promise.all([capture(base), capture({ ...base, conditions: compare })])
+        .then(([a, b]) => {
+          if (!live) return;
+          if (!a || !b) {
+            say('Nothing to compare');
+            return;
+          }
+          paintDifference(el, a, b, { size: box, factor });
+          say(null);
+        })
+        .catch((err: unknown) => {
+          if (live) say(messageOf(err));
+        });
+    // At once the first time; after that, once whatever moved has come to rest.
+    const timer = setTimeout(run, started.current ? RECAPTURE_REST_MS : 0);
+    started.current = true;
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [pixels, status, lensId, reticle.x, reticle.y, size.width, size.height, factor, compare, dpr, tick, latest]);
+  const reason = status === true ? said : unavailableText('pixels', status);
   return (
-    <div className="lk-lens-slot">
+    <div className="lk-lens-slot" data-view="difference">
+      <canvas ref={canvas} className="lk-lens-difference" hidden={status !== true} />
+      {reason ? <div className="lk-lens-reason">{reason}</div> : null}
+    </div>
+  );
+}
+
+/**
+ * Attaches the chosen source to the lens's interior: the story as it is, the
+ * compared render (Swap), or both (Split), each side the whole interior clipped
+ * to its half of the seam so the two line up. With no source, or one that is
+ * unavailable, it says why and falls back to the first that answers.
+ */
+export function LensSlot<C>(props: LensSlotProps<C>) {
+  const { lens, settings, sources, reticle, size } = props;
+  const { source, reason } = useLensResolution(settings.source, sources);
+  if (settings.compare !== null && settings.view === 'difference') return <LensDifference {...props} />;
+  const requests = requestsOf(source, lens, settings, reticle, size);
+  const sides = lensSides(settings);
+  const split = sides.length > 1;
+  const { seamX } = splitRects({ x: 0, y: 0, w: size.width, h: size.height }, settings.seam);
+  const sideRequests = (side: LensSide) =>
+    side === 'base' ? requests.map((r) => ({ ...r, conditions: null })) : requests;
+  return (
+    <div
+      className="lk-lens-slot"
+      data-view={split ? 'split' : undefined}
+      style={split ? seamStyle(seamX) : undefined}
+    >
       {source
-        ? requests.map((request) => (
-            <LensCell key={`${source.kind}:${request.dpr}`} source={source} request={request} />
+        ? sides.map((side) => (
+            <div key={side} className="lk-lens-side" data-side={side}>
+              {sideRequests(side).map((request) => (
+                <LensCell key={`${source.kind}:${request.dpr}`} source={source} request={request} />
+              ))}
+            </div>
           ))
         : null}
+      {split ? <div className="lk-lens-seam" /> : null}
       {reason ? <div className="lk-lens-reason">{reason}</div> : null}
     </div>
   );

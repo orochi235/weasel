@@ -1,6 +1,6 @@
 import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import type { Globals } from '../../protocol/messages';
-import { type ForgeComparison, globalsSetBy, type ResolveContext, type ResolvedConditions } from './conditions';
+import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
 import { trialAt } from './trialAt';
 
@@ -12,9 +12,12 @@ export interface LiveSource extends LensSource<ForgeComparison> {
   remeasure(): void;
 }
 
-const sameGlobals = (a: Globals | null, b: Globals | null) =>
-  a === b ||
-  (a !== null && b !== null && Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([k, v]) => b[k] === v));
+const sameContext = (a: ResolveContext, b: ResolveContext) =>
+  a.declarations === b.declarations && a.modeGlobal === b.modeGlobal && a.prefersDark === b.prefersDark && a.labMode === b.labMode;
+
+/** The id a lens cell asks under: a cell showing a comparison is a request of its own beside the lens's story. */
+export const liveCellId = (lensId: string, compare: ForgeComparison | null): string =>
+  compare === null ? lensId : `${lensId}~compared`;
 
 /** Whether `b` would render the copy `a` does: a measure that finds nothing new posts nothing. */
 function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
@@ -30,8 +33,8 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
     a.size.width === b.size.width &&
     a.size.height === b.size.height &&
     a.args === b.args &&
-    a.sets.join('\n') === b.sets.join('\n') &&
-    sameGlobals(a.globals, b.globals)
+    a.compare === b.compare &&
+    sameContext(a.ctx, b.ctx)
   );
 }
 
@@ -64,7 +67,7 @@ export function createLiveSource(
       const post = (next: LiveRequest | null) => {
         if (next === null ? posted === null : sameRequest(posted, next)) return;
         posted = next;
-        lenses.set(request.lensId, next);
+        lenses.set(liveCellId(request.lensId, request.conditions), next);
       };
       const measure = () => {
         const { lensId, reticle, conditions: compare } = request;
@@ -78,13 +81,13 @@ export function createLiveSource(
         const { base, ctx } = conditions();
         const resolved = resolve(compare, base, ctx);
         post({
-          lensId,
+          lensId: liveCellId(lensId, compare),
           slot: target,
           hit,
           factor: request.factor,
           size: request.size,
-          globals: compare === null ? null : resolved.globals,
-          sets: globalsSetBy(compare, ctx),
+          compare,
+          ctx,
           args: resolved.args,
         });
       };
@@ -97,7 +100,7 @@ export function createLiveSource(
         },
         detach() {
           measures.delete(measure);
-          lenses.set(request.lensId, null);
+          lenses.set(liveCellId(request.lensId, request.conditions), null);
           target.remove();
           empty.remove();
         },

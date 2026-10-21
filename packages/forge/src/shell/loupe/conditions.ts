@@ -1,9 +1,9 @@
 import type { LabMode } from '@weasel-js/labkit';
 import { withValueAtPath } from '@weasel-js/labkit/config';
 import type { Globals } from '../../protocol/messages';
-import type { GlobalDeclarations } from '../globals';
+import { FOLLOW_APP, type GlobalDeclarations } from '../globals';
 
-/** What a lens compares the story against: the lab's opposite color mode, or globals, args and a DPR of its own. */
+/** What a lens compares the story against: the opposite color mode, or globals, args and a DPR of its own. */
 export type ForgeComparison =
   | { kind: 'opposite-mode' }
   | {
@@ -30,16 +30,35 @@ export interface ResolveContext {
 
 const NO_ARGS: Readonly<Record<string, unknown>> = {};
 
+/** `value` with `App` read from the lab's own mode and `auto` from the OS, as the story would be shown. */
+function shownMode(value: string, ctx: ResolveContext): string {
+  const followed = value === FOLLOW_APP ? ctx.labMode : value;
+  return followed === 'auto' ? (ctx.prefersDark ? 'dark' : 'light') : followed;
+}
+
+const SWAP: Readonly<Record<string, string>> = { light: 'dark', dark: 'light' };
+
 /**
- * The conditions `c` asks for, starting from `base`. Resolved when a lens renders rather than when the comparison is
- * chosen, so it follows the lab. Only `custom` is resolved so far; `opposite-mode` leaves the story as it is.
+ * The mode opposite the one `base` shows, from its declaration's `opposite` or else a swap of light and dark; `to`
+ * is undefined where it has none.
  */
-export function resolveComparison(
-  c: ForgeComparison | null,
-  base: Globals,
-  _ctx: ResolveContext,
-): ResolvedConditions {
-  if (c === null || c.kind !== 'custom') return { globals: base, args: NO_ARGS, dpr: null };
+export function oppositeMode(base: Globals, ctx: ResolveContext): { from: string; to: string | undefined } {
+  const from = shownMode(String(base[ctx.modeGlobal] ?? ''), ctx);
+  const own = ctx.declarations[ctx.modeGlobal]?.opposite;
+  return { from, to: own ? own(from, base) : SWAP[from] };
+}
+
+/**
+ * The conditions `c` asks for, starting from `base` — the globals the story renders under before the comparison,
+ * pins included. Resolved when a lens renders rather than when the comparison is chosen, so opposite mode keeps
+ * showing the opposite after the lab's mode changes; a mode with no opposite leaves the story as it is.
+ */
+export function resolveComparison(c: ForgeComparison | null, base: Globals, ctx: ResolveContext): ResolvedConditions {
+  if (c === null) return { globals: base, args: NO_ARGS, dpr: null };
+  if (c.kind === 'opposite-mode') {
+    const { to } = oppositeMode(base, ctx);
+    return { globals: to === undefined ? base : { ...base, [ctx.modeGlobal]: to }, args: NO_ARGS, dpr: null };
+  }
   return {
     globals: c.globals ? { ...base, ...c.globals } : base,
     args: c.args ?? NO_ARGS,
@@ -47,22 +66,35 @@ export function resolveComparison(
   };
 }
 
-const NO_KEYS: readonly string[] = [];
+/** A global's value as the toolbar names it: "Theme: Ocean". */
+function globalLabel(key: string, value: string, declarations: GlobalDeclarations): string {
+  const declaration = declarations[key];
+  if (!declaration) return `${key}: ${value}`;
+  const option = declaration.options.find((o) => o.value === value);
+  return `${declaration.label}: ${option?.label ?? value}`;
+}
 
-/** The globals `c` sets, which a copy takes from its resolution; every other global stays the trial's own. */
-export function globalsSetBy(c: ForgeComparison | null, ctx: ResolveContext): readonly string[] {
-  if (c === null) return NO_KEYS;
-  return c.kind === 'opposite-mode' ? [ctx.modeGlobal] : Object.keys(c.globals ?? {});
+/**
+ * How a lens names `c`: "Opposite mode", "Theme: Ocean", "Arg size = 3", "DPR 2×". Given what the lens renders
+ * against, opposite mode says so when there is no opposite to show.
+ */
+export function describeComparison(
+  c: ForgeComparison,
+  declarations: GlobalDeclarations,
+  against?: { base: Globals; ctx: ResolveContext },
+): string {
+  if (c.kind === 'opposite-mode') {
+    const flip = against ? oppositeMode(against.base, against.ctx) : null;
+    return flip && flip.to === undefined ? `Opposite mode: no opposite for '${flip.from}'` : 'Opposite mode';
+  }
+  const globals = Object.entries(c.globals ?? {}).map(([key, value]) => globalLabel(key, value, declarations));
+  const args = Object.entries(c.args ?? {}).map(([path, value]) => `Arg ${path} = ${String(value)}`);
+  return [...globals, ...args, ...(c.dpr ? [`DPR ${c.dpr}×`] : [])].join(', ') || 'As it is';
 }
 
 /** `config` with each of `args` written at its path. */
 export const withArgs = (config: unknown, args: Readonly<Record<string, unknown>>): unknown =>
   Object.entries(args).reduce((c, [path, value]) => withValueAtPath(c, path, value), config);
-
-/** The globals a compared render runs under: `resolved`'s for each global the comparison sets, `own` for the rest. */
-export function comparedGlobals(own: Globals, resolved: Globals | null, sets: readonly string[]): Globals {
-  return resolved ? { ...own, ...Object.fromEntries(sets.map((key) => [key, resolved[key]])) } : own;
-}
 
 /** The lab as a lens reads it when it renders: its globals, its mode, and the declarations behind them. */
 export interface LabConditions {

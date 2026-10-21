@@ -1,5 +1,5 @@
 import './loupe.css';
-import { type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest } from '@weasel-js/core';
+import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest } from '@weasel-js/core';
 import { useLabContext } from '@weasel-js/labkit';
 import {
   addLensOps,
@@ -22,9 +22,11 @@ import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { type RefObject, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import type { GlobalDeclarations } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
-import { type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
+import { CompareMenu, type CompareMenuRequest, compareChoices } from './CompareMenu';
+import { describeComparison, type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
 import { LiveLensesContext } from './liveLenses';
 import { createLiveSource } from './liveSource';
+import { trialAt } from './trialAt';
 import { usePixelsSource } from './usePixelsSource';
 
 /** Props for `ForgeLoupe`. */
@@ -38,13 +40,6 @@ export interface ForgeLoupeProps {
 const STAGGER = 24;
 const OPPOSITE: ForgeComparison = { kind: 'opposite-mode' };
 
-function describe(c: ForgeComparison): string {
-  if (c.kind === 'opposite-mode') return 'Opposite mode';
-  const globals = Object.entries(c.globals ?? {}).map(([key, value]) => `${key}: ${value}`);
-  const args = Object.entries(c.args ?? {}).map(([path, value]) => `Arg ${path} = ${String(value)}`);
-  return [...globals, ...args, ...(c.dpr ? [`DPR ${c.dpr}×`] : [])].join(', ') || 'As it is';
-}
-
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
 /** A new body beside its reticle, in lab-body px, flipped left where the right has no room. */
@@ -53,6 +48,21 @@ function bodyBeside(reticle: LoupePoint, box: DOMRect, n: number): LoupePoint {
   const gap = BODY_SIZE * 0.75 + STAGGER * n;
   const x = reticle.x + gap + half > box.width ? reticle.x - gap : reticle.x + gap;
   return { x: clamp(x, half, box.width - half), y: clamp(reticle.y + STAGGER * n, half, box.height - half) };
+}
+
+/** A lens's reticle and body centers in client px, from the scene's lab-body px. */
+function lensClient(
+  scene: LensScene<ForgeComparison>,
+  lensId: string,
+  body: HTMLElement | null,
+): { reticle: LoupePoint; body: LoupePoint } | null {
+  const ids = lensIdsOf(scene, `${lensId}:body`);
+  const reticle = ids ? scene.get(ids.reticle) : undefined;
+  const lens = ids ? scene.get(ids.body) : undefined;
+  if (!body || !reticle || !lens) return null;
+  const box = body.getBoundingClientRect();
+  const center = (p: RectPose) => ({ x: box.left + p.x + p.width / 2, y: box.top + p.y + p.height / 2 });
+  return { reticle: center(effectivePose(scene, reticle)), body: center(effectivePose(scene, lens)) };
 }
 
 /**
@@ -85,6 +95,8 @@ export function createApi(
     pointer: RefObject<LoupePoint | null>;
     focus: RefObject<string | null>;
     sources: RefObject<LensSources<ForgeComparison>>;
+    /** Opens the compare menu on a lens. */
+    compare?: RefObject<((lensId: string) => void) | null>;
   },
 ): LensActionApi<ForgeComparison> {
   let next = 0;
@@ -124,8 +136,7 @@ export function createApi(
       hold.set([[`${lensId}:reticle` as never, { x: p.x - half, y: p.y - half, width: RETICLE_SIZE, height: RETICLE_SIZE }]]);
     },
     sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
-    // The compare menu is not built yet.
-    openCompareMenu: () => {},
+    openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
   };
 }
 
@@ -168,7 +179,7 @@ export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement
 export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const lenses = useContext(LiveLensesContext);
   const labValues = useContext(StoryGlobalsContext);
-  const { mode } = useLabContext();
+  const { mode, trials, instruments } = useLabContext();
   const [scene] = useState(createLensScene<ForgeComparison>);
   const [body, setBody] = useState<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
@@ -187,7 +198,22 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   );
   const remeasured = useMemo(() => [live, pixels].filter((s) => s !== null), [live, pixels]);
   const sourcesRef = useLatest(sources);
-  const [api] = useState(() => createApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef }));
+  const [menu, setMenu] = useState<CompareMenuRequest | null>(null);
+  // The menu offers the args of the story under the lens's reticle, as it is when the menu opens.
+  const compare = useLatest((lensId: string) => {
+    const at = lensClient(scene, lensId, bodyRef.current);
+    if (!at) return;
+    const trialId = trialAt(at.reticle)?.trialId;
+    const name = trials.find((t) => t.id === trialId)?.instrumentName;
+    const schema = instruments.find((i) => i.name === name)?.config ?? null;
+    setMenu((last) => ({ seq: (last?.seq ?? 0) + 1, client: at.body, choices: compareChoices(declarations, schema) }));
+  });
+  const [api] = useState(() => createApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef, compare }));
+  const describe = useCallback(
+    (c: ForgeComparison) =>
+      describeComparison(c, declarations, { base: labValues, ctx: resolveContextOf({ labValues, mode, declarations, modeGlobal }) }),
+    [declarations, labValues, mode, modeGlobal],
+  );
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.
   useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
@@ -215,6 +241,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
       <span hidden ref={attachMarker} />
       <LensOverlay scene={scene} sources={sources} describe={describe} onFocusLens={onFocusLens} />
       <LensActions api={api} bodyRef={bodyRef} opposite={opposite} />
+      <CompareMenu api={api} request={menu} />
       <KeymapHint className="fg-loupe-hint" />
     </>
   );

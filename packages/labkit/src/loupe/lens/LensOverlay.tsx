@@ -9,6 +9,7 @@ import {
   rectPath,
   registerNodeShape,
   SceneCanvas,
+  sceneToAdapter,
   type SceneCanvasApi,
   type View,
   WeaselProvider,
@@ -25,9 +26,11 @@ import {
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
+import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
 import { HANDLE_SLOP, hitBoxesOf, type LensHitBox } from './lensHitBoxes';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
+import { useWheelPassThrough } from './useWheelPassThrough';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
@@ -134,6 +137,7 @@ function LensInterior<C>({
   sources,
   describe,
   onFocus,
+  preview,
 }: {
   lens: LensIds;
   rect: LensHitBox['rect'];
@@ -142,12 +146,13 @@ function LensInterior<C>({
   sources: LensSources<C>;
   describe: (compare: C) => string;
   onFocus: ((lensId: string) => void) | undefined;
+  preview: SeamPreview;
 }) {
   const settings = settingsOf(scene, lens.lensId);
   if (!settings) return null;
   const props = {
     lens,
-    settings,
+    settings: { ...settings, seam: seamOf(settings, preview, lens.lensId) },
     sources,
     reticle,
     size: { width: rect.w, height: rect.h },
@@ -185,44 +190,6 @@ function interiorOf(box: LensHitBox, selected: ReadonlySet<string>): LensHitBox[
   return { x: x + HANDLE_SLOP, y: y + HANDLE_SLOP, w: w - 2 * HANDLE_SLOP, h: h - 2 * HANDLE_SLOP };
 }
 
-/** Hands a wheel over a hit box to whatever lies beneath the lens layer, so a
- *  trial's camera still zooms under a lens. The lens itself binds no wheel. */
-function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElement | null) {
-  useEffect(() => {
-    if (!input || !layer) return;
-    const onWheel = (e: WheelEvent): void => {
-      // Hit boxes are the only part of the layer that takes input; with them
-      // stood down for one hit-test, the point lands on what is beneath.
-      layer.dataset.probe = '';
-      const beneath = document.elementFromPoint(e.clientX, e.clientY);
-      delete layer.dataset.probe;
-      if (!beneath || layer.contains(beneath)) return;
-      e.stopPropagation();
-      const copy = new WheelEvent('wheel', {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        deltaX: e.deltaX,
-        deltaY: e.deltaY,
-        deltaZ: e.deltaZ,
-        deltaMode: e.deltaMode,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        screenX: e.screenX,
-        screenY: e.screenY,
-        buttons: e.buttons,
-        ctrlKey: e.ctrlKey,
-        shiftKey: e.shiftKey,
-        altKey: e.altKey,
-        metaKey: e.metaKey,
-      });
-      if (!beneath.dispatchEvent(copy)) e.preventDefault();
-    };
-    input.addEventListener('wheel', onWheel, { passive: false });
-    return () => input.removeEventListener('wheel', onWheel);
-  }, [input, layer]);
-}
-
 /** Registers the lens tile on the layer and keeps the layer's size, which is
  *  the canvas's, current with every frame the surface paints. */
 function useLensTile(layer: HTMLElement | null, redraw: () => void) {
@@ -248,9 +215,43 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
 }
 
 /**
+ * The lens canvas's handle and what it adds to the canvas: the seam layer,
+ * which claims a press on a split lens's seam so the drag reaches `loupe.seam`
+ * rather than the body's move, and the `delete` and `loupe.seam` actions.
+ */
+function useLensCanvas<C>(scene: LensScene<C>) {
+  const sceneCanvas = useRef<SceneCanvasApi | null>(null);
+  const redraw = useCallback(() => sceneCanvas.current?.requestRedraw(), []);
+  const [preview] = useState(createSeamPreview);
+  useSyncExternalStore(preview.subscribe, preview.version);
+  const unregisterSeam = useRef<(() => void) | null>(null);
+  const attachSceneCanvas = useCallback(
+    (api: SceneCanvasApi | null) => {
+      sceneCanvas.current = api;
+      unregisterSeam.current?.();
+      unregisterSeam.current = api ? api.registerLayer(seamLayer(scene, preview)) : null;
+    },
+    [scene, preview],
+  );
+  const actions = useMemo(
+    () => ({
+      delete: createDeleteAction({
+        commit: (ids, deps) => commitDeleteToScene(lensClosure(scene, ids) as NodeId[], deps),
+      }),
+      'loupe.seam': seamAction(
+        { scene, apply: (ops) => sceneToAdapter(scene).applyOps([...ops], 'lens') },
+        preview,
+      ),
+    }),
+    [scene, preview],
+  );
+  return { redraw, preview, attachSceneCanvas, actions };
+}
+
+/**
  * The lab's lenses: a scene painted into the surface's `top` buffer, on a
  * layer covering the whole surface container. The layer and its input element
- * take no input; each body and reticle has a hit box inside the input element
+ * take no input; each body, reticle and seam has a hit box inside the input element
  * that does, so a press on a lens bubbles to the dispatcher and a press
  * anywhere else falls through to the trials.
  */
@@ -265,11 +266,7 @@ export function LensOverlay<C>({
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const [colors, setColors] = useState<LensColors | null>(null);
-  const sceneCanvas = useRef<SceneCanvasApi | null>(null);
-  const redraw = useCallback(() => sceneCanvas.current?.requestRedraw(), []);
-  const attachSceneCanvas = useCallback((api: SceneCanvasApi | null) => {
-    sceneCanvas.current = api;
-  }, []);
+  const { redraw, preview, attachSceneCanvas, actions } = useLensCanvas(scene);
   const { container, size } = useLensTile(layer, redraw);
   // Read once, from the layer, so the lenses take the theme the lab is in.
   const attachLayer = useCallback((el: HTMLDivElement | null) => {
@@ -296,7 +293,7 @@ export function LensOverlay<C>({
   useEffect(() => attachment.subscribe(redraw), [attachment, redraw]);
   const selection = scene.getSelection();
   const selected = new Set(selection);
-  const boxes = hitBoxesOf(scene, selected, view);
+  const boxes = hitBoxesOf(scene, selected, view, preview);
   useWheelPassThrough(input, layer);
 
   const focusRef = useLatest(onFocusLens);
@@ -305,15 +302,6 @@ export function LensOverlay<C>({
   useEffect(() => {
     focusRef.current?.(focused);
   }, [focused, focusRef]);
-
-  const actions = useMemo(
-    () => ({
-      delete: createDeleteAction({
-        commit: (ids, deps) => commitDeleteToScene(lensClosure(scene, ids) as NodeId[], deps),
-      }),
-    }),
-    [scene],
-  );
 
   if (!container) return null;
   const lenses = sources ? lensesOf(scene) : [];
@@ -332,6 +320,7 @@ export function LensOverlay<C>({
                 sources={sources}
                 describe={describe}
                 onFocus={onFocusLens}
+                preview={preview}
               />
             ) : null;
           })
@@ -346,9 +335,10 @@ export function LensOverlay<C>({
       >
         {boxes.map((b) => (
           <div
-            key={b.nodeId}
+            key={`${b.role}:${b.nodeId}`}
             className="lk-lens-hit"
             data-node={b.nodeId}
+            data-role={b.role}
             data-round={b.round ? '' : undefined}
             style={boxStyle(b.rect)}
           />

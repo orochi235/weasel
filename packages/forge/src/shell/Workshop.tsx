@@ -166,6 +166,7 @@ export function Workshop(props: WorkshopProps) {
   );
   const infoCommand = useMemo(() => infoItem(() => setInfoOpen(true)), []);
   const showsCssVars = config?.cssVars !== false;
+  const modeGlobal = config?.loupe?.modeGlobal ?? 'mode';
   const [cssVarsChrome, setCssVarsChrome] = useState<readonly LabContribution[]>([]);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
@@ -176,10 +177,10 @@ export function Workshop(props: WorkshopProps) {
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
       { id: 'fg-info', region: 'header', group: 'story', item: infoCommand },
-      { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal="mode" /> },
+      { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal={modeGlobal} /> },
       ...(config?.labChrome ?? []),
     ],
-    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome],
+    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome, modeGlobal],
   );
   const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];

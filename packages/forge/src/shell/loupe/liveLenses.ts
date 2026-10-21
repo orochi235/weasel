@@ -1,19 +1,20 @@
 import { createContext } from 'react';
-import type { Globals } from '../../protocol/messages';
+import type { ForgeComparison, ResolveContext } from './conditions';
 import type { TrialHit } from './trialAt';
 
-/** One Live lens's ask of the trial under its reticle: render a copy into `slot`, magnified about `hit.local`. */
+/** One Live lens cell's ask of the trial under its reticle: render a copy into `slot`, magnified about `hit.local`. */
 export interface LiveRequest {
+  /** The lens's id; a cell showing a comparison adds `~compared`, so a Split lens's two cells are two requests. */
   lensId: string;
   slot: HTMLElement;
   hit: TrialHit;
   factor: number;
   /** The slot's size, in CSS px. */
   size: { width: number; height: number };
-  /** The comparison's resolved globals, whole; null when the lens shows the story as it is. */
-  globals: Globals | null;
-  /** The globals the comparison sets: the copy takes these from `globals` and keeps the trial's own for the rest. */
-  sets: readonly string[];
+  /** What the copy compares against, resolved over the trial's own globals, pins included; null shows the story
+   *  as it is. */
+  compare: ForgeComparison | null;
+  ctx: ResolveContext;
   /** Config values written over the trial's at their paths. */
   args: Readonly<Record<string, unknown>>;
 }

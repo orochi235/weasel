@@ -5,9 +5,7 @@ import type { CssOverrides } from '../cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY, PLAYHEAD_KEY, storyConfig } from '../globals';
 import type { TrialInputs } from './captureContext';
 import {
-  comparedGlobals,
   type ForgeComparison,
-  globalsSetBy,
   type LabConditions,
   resolveComparison,
   resolveContextOf,
@@ -28,13 +26,13 @@ export interface CapturePayloadInput {
   /** The trial's whole config, forge's `$` keys included. */
   config: unknown;
   state: unknown;
-  /** The globals the capture renders under, the comparison's laid over the trial's own. */
+  /** The globals the capture renders under: the comparison resolved over the trial's own. */
   globals: Globals;
   overrides: CssOverrides;
   /** The story's host, whose box the capture takes. */
   host: HTMLElement;
   dpr: number;
-  /** The comparison, whose args are laid over the config. */
+  /** The comparison, whose args are laid over the config and whose DPR, if any, replaces `dpr`. */
   resolved: ResolvedConditions;
   lab: CapturePayload['lab'];
 }
@@ -89,16 +87,15 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
     playhead: !isolate && typeof kept === 'number' && Number.isFinite(kept) ? kept : null,
     box,
     layout,
-    dpr: clampDpr(dpr),
+    dpr: clampDpr(resolved.dpr ?? dpr),
     scroll: { left: scroller?.scrollLeft ?? 0, top: scroller?.scrollTop ?? 0 },
     lab,
   };
 }
 
 /**
- * The payload a Pixels lens over `hit` sends: `trial`'s story under `c`, resolved against the lab as it is now, the
- * way a Live copy of it renders — the comparison's globals for those it sets, the trial's own, pins included, for
- * the rest.
+ * The payload a Pixels lens over `hit` sends: `trial`'s story under `c`, resolved against the lab as it is now and
+ * over the trial's own globals, pins included, the way a Live copy of it renders.
  */
 export function trialPayload(
   trial: TrialInputs | null,
@@ -109,12 +106,12 @@ export function trialPayload(
 ): CapturePayload | { unavailable: string } {
   if (!trial) return { unavailable: NO_STORY };
   const ctx = resolveContextOf(lab);
-  const resolved = resolveComparison(c, lab.labValues, ctx);
   const own = effectiveGlobals(lab.labValues, (trial.config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY]);
+  const resolved = resolveComparison(c, own, ctx);
   const mode = lab.mode === 'auto' ? (ctx.prefersDark ? 'dark' : 'light') : lab.mode;
   return capturePayload({
     ...trial,
-    globals: comparedGlobals(own, c === null ? null : resolved.globals, globalsSetBy(c, ctx)),
+    globals: resolved.globals,
     host: hit.host,
     dpr,
     resolved,
