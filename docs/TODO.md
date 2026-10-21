@@ -20,10 +20,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) Keymap follow-ups.** Keymaps and leaders shipped 2026-10-20 (`docs/taxonomy.md`, "Keymap
-  and leader"). Left: forge's loupe ships its controls on plain default keys and is to move them under a keymap
-  (`docs/superpowers/specs/2026-10-20-forge-loupe-design.md`, "Keys").
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
@@ -805,12 +801,23 @@ only story runner in the repo.
   `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
   paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
   undoes) or upstream in react-aria.
-- **(P2) A Live lens on a scrolled isolated story shows a different patch than the one under its reticle**
-  (found 2026-10-21). The lens's copy frame loads at its own scroll position, because the story's scroll lives
+- **(P2) A lens on a scrolled isolated story shows a different patch than the one under its reticle**
+  (found 2026-10-21). A Pixels capture of an isolated story is taken at scroll 0 for the same reason: the payload's
+  `scroll` is read from the trial's `.fg-story__scroll`, which a frame host does not have (2026-10-21). The lens's copy frame loads at its own scroll position, because the story's scroll lives
   inside the frame document and no protocol message reports it to the shell; an in-document copy follows its
   trial's `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`), a frame copy cannot. The fix: the
   frame reports its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of
   that trial (a new `ToFrame` message that the frame applies to its scroller).
+- **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
+  pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
+  so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
+- **(P2) A Live lens with no comparison never tells its readouts the main story changed** (2026-10-21). With nothing
+  compared, Token and Contrast read the main story, but the Live source notifies them from a `MutationObserver` on the
+  lens's own copy (`shell/loupe/liveSource.ts`). A change only the main story shows, such as a hover or a menu opened in
+  it, leaves the readout on its old reading until the lens next renders.
+- **(P3) The Live source notifies its readers once per DOM mutation** (2026-10-21). Its `MutationObserver` calls every
+  listener on each batch of records, so an animating story keeps Token and Contrast recomputing styles every
+  mutation. Coalesce the notifications to one per frame through `useVisibleRaf`.
 
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
@@ -1003,6 +1010,13 @@ only story runner in the repo.
   with a test failing on purpose, job 401c89a8). This is onto's (`~/src/onto`), not this repo's. Until
   it changes, a browser test can print its own diagnosis with `console.log`, which does reach the log
   (`LabFit.browser.test.tsx` does).
+
+- **(P3) Browser-project runs print "ResizeObserver loop completed with undelivered notifications"** (2026-10-21).
+  The notice is on stderr from passing tests in `labkit/src/loupe/lens/LensOverlay.browser.test.tsx`,
+  `forge/src/shell/FrameView.browser.test.tsx`, `LabLightbox`, `Lab.sidebar` and `AnnotationOverlay.clip`'s browser
+  tests, seen across the forge-loupe branch's runs. Nothing fails on it, so a new loop hides among the old ones;
+  `SidebarPanes.browser.test.tsx` shows the shape of a test that asserts none is raised. Find which observer resizes
+  its own target in each, and fail the browser project on the notice once they are gone.
 
 - **(P3) `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone

@@ -1,7 +1,10 @@
 # Forge loupe
 
-**Status: designed, unbuilt (2026-10-20).** For whoever plans and builds weaselforge's loupe. It
-answers what the loupe does, what it is built from, and what ships first.
+**Status: first version built (2026-10-21); Glass and the later readouts are unbuilt.** Glass has
+its ops (`setAimOps`) but no action, so no user can aim a lens at it. For whoever extends
+weaselforge's loupe. It answers what the loupe does, what it is built from, and what shipped first.
+How the built version works: `packages/labkit/src/loupe/AGENTS.md` ("Lenses") and
+`packages/forge/README.md` ("Loupe").
 
 ## What it is
 
