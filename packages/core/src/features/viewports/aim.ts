@@ -39,8 +39,10 @@ export interface ViewAim<TExtent = unknown> {
   pannedIn(space: AimSpace, from: { x: number; y: number }, to: { x: number; y: number }): ViewAim<TExtent> | null;
 }
 
+/** Core's 2D aim: a world rect a view shows. */
 export type RectAim = ViewAim<Bounds> & { readonly kind: 'rect' };
 
+/** The aim of view `viewId` (`null`: a surface's root) showing world rect `rect`. */
 export function rectAim(viewId: string | null, rect: Bounds): RectAim {
   return {
     viewId,
@@ -70,6 +72,7 @@ export function rectAim(viewId: string | null, rect: Bounds): RectAim {
   };
 }
 
+/** Whether `aim` is core's 2D rect aim, so its `extent` is a world rect. */
 export function isRectAim(aim: ViewAim): aim is RectAim {
   return aim.kind === 'rect';
 }

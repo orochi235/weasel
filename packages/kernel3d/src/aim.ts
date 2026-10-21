@@ -18,6 +18,7 @@ export interface Frustum3d {
   far: Quad;
 }
 
+/** A kernel3d view's aim: the frustum its camera sees, with the viewport it was read from. */
 export type Aim3d = ViewAim<Frustum3d> & { readonly kind: 'frustum'; readonly viewport: Viewport3d };
 
 const GROUND_NORMAL: Vec3 = { x: 0, y: 0, z: 1 };
@@ -71,6 +72,7 @@ function projectAll(space: AimSpace, points: readonly AimPoint[]): AimOutline | 
   return out;
 }
 
+/** The aim of view `viewId` (`null`: a surface's root): the frustum `viewport`'s camera sees. */
 export function aimOf3d(viewport: Viewport3d, viewId: string | null): Aim3d {
   const extent = frustumOf(viewport);
   return {
