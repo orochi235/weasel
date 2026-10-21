@@ -102,8 +102,14 @@ function harness(signal: AbortSignal) {
     until,
     loaded: () =>
       until(() => expect(screen.getAllByRole('status', { name: 'playhead' }).length).toBeGreaterThan(0), { timeout: 15_000 }),
-    /** Past labkit's write-behind, so what the lab holds has reached storage. */
-    persisted: () => act(() => new Promise((r) => setTimeout(r, 400))).then(live),
+    /**
+     * Past labkit's write-behind, so what the lab holds has reached storage. `act`'s thenable returns nothing from
+     * `then`, so chaining on it resolves at once and leaves its scope open, holding back every later `act`'s render.
+     */
+    persisted: async () => {
+      await act(() => new Promise((r) => setTimeout(r, 400)));
+      live(undefined);
+    },
   };
 }
 
@@ -135,6 +141,12 @@ describe('the workshop helpers', () => {
     expect(() => mount('/#/t--timed')).toThrow('timed out');
     expect(screen.queryAllByRole('region', { name: /^Trial / })).toEqual([]);
     delete document.body.dataset.never;
+  });
+
+  it('close the act scope a wait for persistence opens before resolving', async ({ lab }) => {
+    const start = performance.now();
+    await lab.persisted();
+    expect(performance.now() - start).toBeGreaterThanOrEqual(390);
   });
 });
 
