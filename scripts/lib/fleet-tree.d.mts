@@ -13,6 +13,9 @@ export interface TreeCheck {
 }
 export const MARKER: string;
 export const COMMIT_ENV: string;
+export const ONTO_STAMP: string;
+export function treeStamp(root: string): string;
+export function stampReport(before: string, after: string): { ok: boolean; text: string };
 export function blobHash(bytes: Uint8Array): string;
 export function changedFiles(rawDiff: string): Record<string, string | null>;
 export function armTree(tree: string, marker: TreeMarker): void;

@@ -2,7 +2,19 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { COMMIT_ENV, MARKER, armTree, blobHash, changedFiles, checkTree, selection, treeReport } from './fleet-tree.mjs';
+import {
+  COMMIT_ENV,
+  MARKER,
+  ONTO_STAMP,
+  armTree,
+  blobHash,
+  changedFiles,
+  checkTree,
+  selection,
+  stampReport,
+  treeReport,
+  treeStamp,
+} from './fleet-tree.mjs';
 
 const COMMIT = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
@@ -159,5 +171,51 @@ describe('treeReport', () => {
     const report = treeReport(checkTree(root, { [COMMIT_ENV]: COMMIT }));
     expect(report.ok).toBe(false);
     expect(report.text).toContain('a.ts is missing');
+  });
+});
+
+describe('treeStamp', () => {
+  const stamped = (stamp: string) => put(ONTO_STAMP, JSON.stringify({ stamp, at: '2026-10-21T00:00:00Z' }));
+
+  it('is the same for a tree nothing synced in between', () => {
+    stamped('0123456789abcdef');
+    mark(COMMIT, { 'a.ts': null });
+    expect(treeStamp(root)).toBe(treeStamp(root));
+  });
+
+  it('names the stamp onto left', () => {
+    stamped('0123456789abcdef');
+    expect(treeStamp(root)).toContain('0123456789abcdef');
+  });
+
+  it('changes when onto syncs the tree again', () => {
+    stamped('0123456789abcdef');
+    mark(COMMIT, { 'a.ts': null });
+    const before = treeStamp(root);
+    stamped('fedcba9876543210');
+    expect(treeStamp(root)).not.toBe(before);
+  });
+
+  it('changes when a sync replaces or removes the marker, even with no onto stamp', () => {
+    mark(COMMIT, { 'a.ts': null });
+    const before = treeStamp(root);
+    mark(OTHER, { 'a.ts': null });
+    const replaced = treeStamp(root);
+    expect(replaced).not.toBe(before);
+    rmSync(join(root, MARKER));
+    expect(treeStamp(root)).not.toBe(replaced);
+  });
+});
+
+describe('stampReport', () => {
+  it('passes a tree that kept its stamp', () => {
+    expect(stampReport('abc', 'abc')).toEqual({ ok: true, text: 'fleet-tree: the tree held abc for the whole run' });
+  });
+
+  it('voids the run when the stamp moved', () => {
+    expect(stampReport('abc', 'def')).toEqual({
+      ok: false,
+      text: 'fleet-tree: the tree changed during the run (abc → def); this run is void, and none of its results count',
+    });
   });
 });
