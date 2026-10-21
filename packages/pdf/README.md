@@ -36,8 +36,10 @@ masks for transparency), strokes (native, or outlined where PDF cannot express
 them) with their markers, images, sprites, tiling patterns, text as Type0 fonts
 with a ToUnicode map, color matrices, and isolated groups.
 
-Handed to the `rasterize` hook: effects groups, shader commands, and fills in
-a registered paint kind. Without a hook they are skipped.
+Handed to the `rasterize` hook: effects groups, shader commands, fills in a
+registered paint kind, and groups with a Porter-Duff `composite` other than
+`source-over`, which PDF has no operator for. Without a hook the first three are
+skipped and a composite is drawn source-over.
 
 ```ts
 rasterize(commands, rect, scale, view) => Promise<{ width, height, data }>
@@ -45,7 +47,15 @@ rasterize(commands, rect, scale, view) => Promise<{ width, height, data }>
 
 `rect` is the region in page points, `scale` the pixels per point, and `view`
 the page's `view`, which `world`-unit paint in `commands` resolves through.
-`data` is straight RGBA, top-down.
+`data` is straight RGBA, top-down. The hook draws `commands` in order onto a
+clear raster.
+
+For a composite group, `commands` are the page up to and including that group,
+so the raster is the group composited onto what it was drawn over. It is placed
+on white paper over the group's bounds, or over the whole page for an operator
+that clears what the group leaves empty (`source-in`, `source-out`,
+`destination-in`, `destination-atop`, `copy`). An isolated group holding a
+composite is rasterized whole.
 
 A face that is CFF-only, restricted (`fsType` 0x0002), bitmap-only (`fsType`
 0x0200), registered from a WOFF file, or unreadable is drawn as glyph outlines
@@ -55,16 +65,14 @@ instead, so its text is not selectable.
 
 Each entry is `{ kind: 'glyph' | 'command', detail }`. It reports:
 
-- an effects group, shader command or registered-paint fill with no `rasterize` hook, or one whose hook threw or returned the wrong number of pixels;
+- an effects group, shader command or registered-paint fill with no `rasterize` hook, a composite group with none (drawn source-over), or a raster whose hook threw or returned the wrong number of pixels;
 - an image that could not be read, and a texture that cannot be drawn;
 - a glyph nothing can draw: a color glyph, a slot the layout left empty, or one with no outline in the outline fallback;
 - a command holding NaN or an infinity, which is left out whole;
-- the approximations below, except the stroke width and `screen`-unit paint.
+- the approximations below, except the stroke width.
 
 ## Known approximations
 
 - A `{ px }` stroke width under an anisotropic view uses the mean scale.
 - A `vertexColors` stroke uses a single paint, and a `vertexColors` fill its solid fill.
-- `screen`-unit paint inside a rasterized group is placed in the raster's pixels, not the page's points.
-- A Porter-Duff composite is drawn source-over.
 - An isolated group's color matrix alpha offset is not drawn.

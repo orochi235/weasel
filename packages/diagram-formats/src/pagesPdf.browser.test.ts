@@ -179,6 +179,46 @@ describe('the raster hook', () => {
       session.dispose();
     }
   });
+  // Blue under a red cut, inside a moved, faded parent, read back from pdf.js against the renderer's own page.
+  it.each(['destination-out', 'xor', 'source-atop', 'source-in'] as const)('composites %s onto what it was drawn over', async (composite) => {
+    const fill = (color: string, x: number, y: number, width: number, height: number): DrawCommand => ({
+      kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: { paint: { color } },
+    });
+    const commands: DrawCommand[] = [
+      fill('#0000ff', 20, 10, 80, 50),
+      {
+        kind: 'group', alpha: 0.8, transform: Float64Array.from([1, 0, 0, 0, 1, 0, 10, 5, 1]),
+        children: [fill('#00ff00', 0, 0, 30, 20), { kind: 'group', composite, children: [fill('#ff0000', 60, 15, 50, 30)] }],
+      },
+      fill('#000000', 130, 60, 10, 10),
+    ];
+    const session = createRasterSession();
+    try {
+      const rasterize = pageRasterizer(session);
+      const { bytes, skipped } = await writePdf([{ width: 150, height: 75, commands }], { fonts: { embedding: async () => null, outline: () => null }, rasterize });
+      const pdf = await draw(await read(new Blob([bytes.slice().buffer as ArrayBuffer])), 1, 2);
+      const own = await rasterize(commands, { x: 0, y: 0, width: 150, height: 75 }, 2, undefined);
+      expect([pdf.width, pdf.height]).toEqual([own.width, own.height]);
+      let off = 0;
+      for (let i = 0; i < own.data.length; i += 4) {
+        const a = own.data[i + 3]! / 255;
+        for (let c = 0; c < 3; c++) {
+          // pdf.js draws on white paper.
+          const want = own.data[i + c]! * a + 255 * (1 - a);
+          if (Math.abs(pdf.data[i + c]! - want) > 12) {
+            off++;
+            break;
+          }
+        }
+      }
+      // Measured 0 on 2026-10-21; drawn source-over, thousands of pixels differ.
+      expect(off).toBeLessThanOrEqual(20);
+      expect(skipped).toEqual([]);
+    } finally {
+      session.dispose();
+    }
+  });
+
   it('blurs the same pixels into a raster cropped to the blur\'s reach as into the whole page', async () => {
     const blob: DrawCommand = {
       kind: 'group', effects: blur({ radius: 6 }),

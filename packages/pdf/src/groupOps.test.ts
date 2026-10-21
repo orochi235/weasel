@@ -138,17 +138,12 @@ describe('writeGroup', () => {
     expect(box).toEqual({ x: 10, y: 20, width: 30, height: 40 });
   });
 
-  it('draws a composite group as vector source-over and says so', async () => {
-    const rasterize = vi.fn(async () => pixels());
-    const { skipped, content } = await render(
-      [
-        { kind: 'group', composite: 'destination-out', children: [red] },
-        { kind: 'group', composite: { source: 'one', destination: 'zero' }, children: [red] },
-        { kind: 'group', composite: 'source-over', children: [red] },
-      ],
-      { rasterize },
-    );
-    expect(rasterize).not.toHaveBeenCalled();
+  it('draws a composite group as vector source-over and says so when there is no hook', async () => {
+    const { skipped, content } = await render([
+      { kind: 'group', composite: 'destination-out', children: [red] },
+      { kind: 'group', composite: { source: 'one', destination: 'zero' }, children: [red] },
+      { kind: 'group', composite: 'source-over', children: [red] },
+    ]);
     expect(skipped.map((k) => k.detail)).toEqual([
       'composite destination-out drawn as source-over',
       'composite one/zero drawn as source-over',
@@ -156,14 +151,50 @@ describe('writeGroup', () => {
     expect(content.match(/1 0 0 rg/g)).toHaveLength(3);
   });
 
-  it('rasterizes for effects and still reports the composite', async () => {
+  it('rasterizes a composite group over everything drawn before it, cropped to the group', async () => {
     const rasterize = vi.fn(async () => pixels());
-    const { skipped } = await render(
-      [{ kind: 'group', composite: 'xor', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] }],
-      { rasterize },
-    );
+    const ground: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 }, fill: { paint: { color: '#0000ff' } } };
+    const cut: DrawCommand = { kind: 'group', composite: 'destination-out', children: [red] };
+    const after: DrawCommand = { kind: 'path', path: rect, fill: { paint: { color: '#00ff00' } } };
+    const outer: DrawCommand = { kind: 'group', alpha: 0.5, transform: Float64Array.from([1, 0, 0, 0, 1, 0, 5, 0, 1]), children: [red, cut, after] };
+    const { skipped, content } = await render([ground, outer, after], { rasterize });
+    expect(skipped).toEqual([]);
     expect(rasterize).toHaveBeenCalledTimes(1);
-    expect(skipped.map((k) => k.detail)).toEqual(['composite xor drawn as source-over']);
+    const [cmds, box] = rasterize.mock.calls[0] as unknown as [DrawCommand[], unknown];
+    expect(cmds).toEqual([ground, { ...outer, children: [red, cut] }]);
+    // The red rect moved 5 right, plus a point of slack.
+    expect(box).toEqual({ x: 14, y: 19, width: 32, height: 42 });
+    // Paper under the raster, so what the composite cleared does not show the vectors beneath.
+    expect(content).toMatch(/1 1 1 rg\n14 19 32 42 re\nf\n.*32 0 0 -42 14 61 cm\n\/Im1 Do\n/s);
+    expect(content.match(/0 1 0 rg/g)).toHaveLength(2);
+  });
+
+  it('rasterizes a composite that clears what its group leaves empty over the whole page', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    await render([red, { kind: 'group', composite: 'source-in', children: [red] }], { rasterize });
+    expect((rasterize.mock.calls[0] as unknown[])[1]).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it('rasterizes an isolated group holding a composite whole, with no backdrop', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const iso: DrawCommand = { kind: 'group', isolate: true, alpha: 0.5, children: [red, { kind: 'group', composite: 'xor', children: [red] }] };
+    const { skipped, s } = await render([red, iso], { rasterize });
+    expect(skipped).toEqual([]);
+    expect(rasterize).toHaveBeenCalledTimes(1);
+    const [cmds] = rasterize.mock.calls[0] as unknown as [DrawCommand[]];
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0]).toMatchObject({ kind: 'group', children: iso.children });
+    expect(s).not.toContain('/S /Transparency');
+    expect(s).toContain('/ca 0.5');
+  });
+
+  it('rasterizes a composite group with effects against its backdrop', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const fx: DrawCommand = { kind: 'group', composite: 'xor', effects: [{ kind: 'blur', radius: 2 } as never], children: [red] };
+    const { skipped } = await render([red, fx], { rasterize });
+    expect(rasterize).toHaveBeenCalledTimes(1);
+    expect((rasterize.mock.calls[0] as unknown[])[0]).toEqual([red, fx]);
+    expect(skipped).toEqual([]);
   });
 
   it('skips a failed or malformed raster instead of failing the document', async () => {
