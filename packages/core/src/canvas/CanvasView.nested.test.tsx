@@ -5,14 +5,17 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { createRef, useEffect } from 'react';
+import { createRef, useEffect, type ReactNode, type Ref } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { GroupDrawCommand } from '@weasel-js/renderer';
-import type { SceneCanvasApi } from './canvasExtension';
+import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
+import type { PolygonPath } from '@weasel-js/geom';
+import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
+import type { AimHeldViewProps, CameraHeldViewProps } from './canvasViewProps';
+import { ViewMarker } from './ViewMarker';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 
 type D = { kind: 'rect' };
@@ -67,7 +70,10 @@ function press(el: Element, at: { x: number; y: number }, dx = 0) {
   });
 }
 
-function mount(opts: { insetFirst?: boolean; inset?: typeof INSET; panelHides?: boolean } = {}) {
+function mount(opts: {
+  insetFirst?: boolean; inset?: typeof INSET; panelHides?: boolean;
+  insetHeld?: CameraHeldViewProps | AimHeldViewProps; insetRef?: Ref<CanvasViewCamera>; extra?: ReactNode;
+} = {}) {
   const s = makeScene();
   const ref = createRef<SceneCanvasApi>();
   let registry: ViewRegistry | null = null;
@@ -76,7 +82,10 @@ function mount(opts: { insetFirst?: boolean; inset?: typeof INSET; panelHides?: 
     useEffect(() => { registry = r; });
     return null;
   }
-  const inset = <CanvasView key="inset" id="inset" parent="panel" bounds={opts.inset ?? INSET} view={insetCamera} />;
+  const inset = (
+    <CanvasView key="inset" id="inset" parent="panel" bounds={opts.inset ?? INSET} cameraRef={opts.insetRef}
+      {...(opts.insetHeld ?? { view: insetCamera })} />
+  );
   const panel = (
     <CanvasView key="panel" id="panel" bounds={PANEL} defaultView={PANEL_VIEW}
       {...(opts.panelHides ? { layerVisibility: { 'scene:main': false } } : {})} />
@@ -84,6 +93,7 @@ function mount(opts: { insetFirst?: boolean; inset?: typeof INSET; panelHides?: 
   const r = render(
     <SceneCanvas features={['draw']} ref={ref} scene={s.scene} layers={{}} width={400} height={300}>
       {opts.insetFirst ? [inset, panel] : [panel, inset]}
+      {opts.extra}
       <Probe />
     </SceneCanvas>,
   );
@@ -162,5 +172,43 @@ describe('SceneCanvasApi.viewAt', () => {
     expect(h.api().viewAt({ x: 20, y: 20 })).toMatchObject({
       id: null, view: { x: 0, y: 0 }, rect: { x: 0, y: 0, w: 400, h: 300 },
     });
+  });
+});
+
+describe('an aim-held view nested in another', () => {
+  it("fits its aim to its own frame, measured from the outer view's camera", () => {
+    const h = mount({ insetHeld: { aim: (outer) => ({ x: outer.x + 1000, y: outer.y, width: 50, height: 25 }) } });
+    expect(h.api().viewAt(PRESS)).toMatchObject({
+      id: 'inset', view: { x: 2000, y: -12.5, scale: { x: 2, y: 2 } }, rect: { x: 150, y: 50, w: 100, h: 100 },
+    });
+    expect(h.api().aimOf('inset')!.extent).toEqual({ x: 2000, y: 0, width: 50, height: 25 });
+  });
+});
+
+describe('a marker of a nested view, drawn in the view around it', () => {
+  /** The inset shows world (1010..1035, 160..185): panel px (10..35, 160..185), clear of the inset's own frame. */
+  const INSET_VIEW: View = { x: 1010, y: 160, scale: { x: 4, y: 4 } };
+  const marked = (insetRef?: Ref<CanvasViewCamera>) => mount({
+    insetHeld: { defaultView: INSET_VIEW },
+    insetRef,
+    extra: <ViewMarker id="inset-aim" source="inset" target="panel" />,
+  });
+
+  it("paints the nested view's aim in the outer view's frame", () => {
+    const h = marked();
+    const panel = h.registry().list().find((r) => r.id === 'panel')!;
+    const flat = (cmds: readonly DrawCommand[]): DrawCommand[] =>
+      cmds.flatMap((c) => (c.kind === 'group' ? flat(c.children) : [c]));
+    const outline = flat(panel.layer.draw({}, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 }))
+      .find((c): c is PathDrawCommand => c.kind === 'path' && c.stroke?.dash !== undefined);
+    expect(outline?.path.kind).toBe('polygon');
+    expect(Array.from((outline!.path as PolygonPath).coords)).toEqual([10, 160, 35, 160, 35, 185, 10, 185]);
+  });
+
+  it('moves the nested view when dragged', () => {
+    const insetRef = createRef<CanvasViewCamera>();
+    const h = marked(insetRef);
+    press(h.canvas, { x: 120, y: 170 }, 10);
+    expect(insetRef.current!.getView()).toEqual({ ...INSET_VIEW, x: 1020 });
   });
 });
