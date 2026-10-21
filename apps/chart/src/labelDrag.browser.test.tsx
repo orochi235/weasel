@@ -13,6 +13,7 @@ import { CHART_LAYERS, CHART_REGISTRY, chartDoc, type ChartData, type ChartLayer
 import { CHART_SCENE_KEY, chartFromJson, chartToJson } from './chartPersistence';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
+import { click, drag, frames } from './testing/pointer';
 
 registerCanvasFont('sans-serif');
 
@@ -87,33 +88,6 @@ function inked(canvas: HTMLCanvasElement, p: { x: number; y: number }): boolean 
   return false;
 }
 
-function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
-  el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: 0, buttons: type === 'pointerup' ? 0 : buttons, clientX: p.x, clientY: p.y,
-  }));
-}
-
-async function drag(el: Element, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointermove', from, 0);
-  pointer(el, 'pointerdown', from);
-  for (let i = 1; i <= 8; i++) {
-    pointer(el, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  pointer(el, 'pointerup', to);
-}
-
-function click(el: Element, p: { x: number; y: number }): void {
-  pointer(el, 'pointerdown', p);
-  pointer(el, 'pointerup', p);
-  el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: p.x, clientY: p.y }));
-}
-
-const frames = async (n: number) => {
-  for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
-};
-
 beforeEach(async () => {
   await page.viewport(1280, 800);
   localStorage.clear();
@@ -147,10 +121,10 @@ describe('WeaselChart edge label dragging', () => {
     expect(Math.hypot(centerOf(moved).x - before.x, centerOf(moved).y - before.y)).toBeGreaterThan(10);
 
     const middle = at(host, 450, 295);
-    click(canvas, at(host, 1000, 700));
+    await click(canvas, at(host, 1000, 700));
     await frames(2);
     expect(inked(canvas, middle)).toBe(false);
-    click(canvas, labelCenter(host));
+    await click(canvas, labelCenter(host));
     await expect.poll(() => inked(canvas, middle)).toBe(true);
 
     await userEvent.click(page.getByRole('menuitem', { name: 'Format' }));

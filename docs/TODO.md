@@ -1411,7 +1411,6 @@ only story runner in the repo.
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
   Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
   groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
-- **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
-  `containers.browser.test.tsx`, `labelDrag.browser.test.tsx`, `pages/pages.browser.test.tsx`, and
-  `pages/offPage.browser.test.tsx` each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
-  containers (2026-10-19) so parallel arc pieces editing those files would not conflict.
+- **(P3) `theme/theme.browser.test.tsx` keeps its own `doubleClick`.** The other chart browser tests
+  take theirs from `apps/chart/src/testing/pointer.ts`; this one was left out (2026-10-21) because
+  another branch was editing the file. Its copy omits `pointerType` and the clicks' `detail`.

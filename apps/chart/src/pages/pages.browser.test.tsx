@@ -12,6 +12,7 @@ import { CHART_SCENE_KEY } from '../chartPersistence';
 import { chartPrefs } from '../prefs';
 import { STENCIL_MIME } from '../stencilDrop';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
+import { drag } from '../testing/pointer';
 import { PAGE_FIT_PADDING } from './useChartPages';
 
 registerCanvasFont('sans-serif');
@@ -39,22 +40,6 @@ function onPage(host: HTMLElement, index: number, x: number, y: number): { x: nu
   const placed = layoutPages([{ id: 'a', ...CHART_PAGE }, { id: 'b', ...CHART_PAGE }])[index]!;
   const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING });
   return { x: box.left + (placed.x + x - view.x) * view.scale.x, y: box.top + (placed.y + y - view.y) * view.scale.y };
-}
-
-function pointer(el: Element, type: string, p: { x: number; y: number }): void {
-  el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: p.x, clientY: p.y,
-  }));
-}
-
-async function drag(el: Element, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointerdown', from);
-  for (let i = 1; i <= 8; i++) {
-    pointer(el, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  pointer(el, 'pointerup', to);
 }
 
 const middle = (el: Element) => {

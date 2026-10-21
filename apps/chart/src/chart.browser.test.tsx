@@ -12,6 +12,7 @@ import { chartPrefs } from './prefs';
 import { STENCIL_MIME } from './stencilDrop';
 import { at, readClientPixels } from './testing/canvasPixels';
 import { mountChartApp as mountApp, unmountChartApp } from './testing/mountChartApp';
+import { click, doubleClick, drag } from './testing/pointer';
 
 const paper = DIAGRAM_THEMES.paper!;
 
@@ -43,35 +44,6 @@ const edges = () => saved().filter((n) => {
   const d = n.data.diagram as { from?: unknown } | undefined;
   return d !== undefined && 'from' in d;
 });
-
-function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
-  el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: 0, buttons: type === 'pointerup' ? 0 : buttons, clientX: p.x, clientY: p.y,
-  }));
-}
-
-async function drag(el: Element, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointermove', from, 0);
-  pointer(el, 'pointerdown', from);
-  for (let i = 1; i <= 8; i++) {
-    pointer(el, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  pointer(el, 'pointerup', to);
-}
-
-function click(el: Element, p: { x: number; y: number }): void {
-  pointer(el, 'pointerdown', p);
-  pointer(el, 'pointerup', p);
-  el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: p.x, clientY: p.y }));
-}
-
-function doubleClick(el: Element, p: { x: number; y: number }): void {
-  click(el, p);
-  click(el, p);
-  el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: p.x, clientY: p.y, detail: 2 }));
-}
 
 const key = (k: string): void => {
   window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
@@ -105,7 +77,7 @@ describe('WeaselChart chart mode', () => {
     expect(bodies()[0]!.data.fill).toEqual({ paint: { color: paper.roles.default!.fill } });
 
     await useTool('Select');
-    click(canvas, at(host, 130, 115));
+    await click(canvas, at(host, 130, 115));
     key('Delete');
     await expect.poll(() => bodies().map((b) => b.id)).not.toContain(first);
     expect(edges()).toHaveLength(0);
@@ -139,7 +111,7 @@ describe('WeaselChart chart mode', () => {
     expect(waypoints()).toBeUndefined();
 
     await useTool('Select');
-    click(canvas, at(host, 300, 130));
+    await click(canvas, at(host, 300, 130));
     await new Promise((r) => requestAnimationFrame(r));
     // The bar sits in the segment's middle. A connector routed around shapes pins only the dragged segment: its two
     // ends, jogged off the ports, become the waypoints.
