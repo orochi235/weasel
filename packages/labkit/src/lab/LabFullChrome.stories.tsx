@@ -1,11 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useRef } from 'react';
+import { defineInstrument, Lab, useLabContext } from '@weasel-js/labkit';
 import type { ConfigField } from '../controls/types';
-import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument, RenderContext } from '../instrument/types';
 import type { JobEvent } from '../job/types';
-import { Lab } from './Lab';
-import { useLabContext } from './LabContext';
 
 interface ScanConfig {
   gain: number;

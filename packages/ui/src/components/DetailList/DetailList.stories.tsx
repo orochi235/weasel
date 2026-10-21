@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Badge } from '../Badge';
-import { Button } from '../Button';
-import { Code } from '../Code';
-import { KeySequence } from '../Keycaps';
-import { PropertyList, PropertyRow } from '../Properties';
-import { DetailList, DetailRow } from './DetailList';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Code } from '@weasel-js/ui/components/Code';
+import { KeySequence } from '@weasel-js/ui/components/Keycaps';
+import { PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import s from './DetailList.stories.module.css';
 
 const meta: Meta<typeof DetailList> = {

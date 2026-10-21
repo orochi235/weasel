@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ToolButton, type ToolButtonProps } from './ToolButton';
-import { ToolGroup } from '../ToolGroup';
-import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { ToolButton, type ToolButtonProps } from '@weasel-js/ui/components/ToolButton';
+import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
+import { useRovingTabIndex } from '@weasel-js/ui';
 
 // Inline placeholder icons keep the story free of cross-package imports
 // and focus the visual on the button chrome itself, not specific glyphs.

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyControl } from './PropertyField';
+import { PropertyControl } from '@weasel-js/ui/components/Properties';
 import s from './PropertyField.stories.module.css';
 
 const meta: Meta<typeof PropertyControl> = {

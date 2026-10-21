@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { decimal, fraction, percent, tag, unit } from '@weasel-js/quantity';
-import { QuantityText } from './QuantityText';
+import { QuantityText } from '@weasel-js/ui/components/QuantityText';
 
 const meta: Meta<typeof QuantityText> = {
   title: 'ui/QuantityText',

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Paint } from '@weasel-js/core';
-import type { PropertyControlProps } from '../Properties/PropertyField';
+import type { PropertyControlProps } from '@weasel-js/ui/components/Properties';
 
 const ALIGN = [
   { value: 'left', label: 'Left' },

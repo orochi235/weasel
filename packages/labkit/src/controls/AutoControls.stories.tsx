@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { applyConfigWrite } from '../config/autoConfig';
-import { f } from '../config/builder';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel, type ControlPanelProps } from './ControlPanel';
 
 /**
  * The ghosting and the muted accent are CSS, and jsdom resolves neither

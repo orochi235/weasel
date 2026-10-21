@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Transport, type TransportProps } from './Transport';
+import { Transport, type TransportProps } from '@weasel-js/ui/components/Timeline';
 
 const meta: Meta<typeof Transport> = {
   title: 'ui/Transport',

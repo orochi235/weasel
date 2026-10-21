@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { localStorageAdapter } from '@weasel-js/storage';
-import { Persistence } from '../state/Persistence';
-import { FloatingPanel } from './FloatingPanel';
-import { Legend } from './Legend';
+import { Persistence } from '@weasel-js/labkit/state';
+import { FloatingPanel, Legend } from '@weasel-js/labkit/primitives';
 
 // The panel positions against its offset parent, so a story needs a sized,
 // positioned host or there is nothing for it to float in.

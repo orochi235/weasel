@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Icon } from '../../icons/Icon';
-import { PropertyField } from '../Properties/PropertyField';
-import { PropertyList } from '../Properties/PropertyList';
-import { BarPopover } from './BarPopover';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
+import { BarPopover } from '@weasel-js/ui/components/Bar';
 import s from './Bar.stories.module.css';
 import { icon } from '../../icons.gen';
 

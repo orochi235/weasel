@@ -1,6 +1,5 @@
 import { f } from '@weasel-js/labkit/config';
-import { meta, story } from '../story/define';
-import { usePlayhead, useTimeline } from './context';
+import { meta, story, usePlayhead, useTimeline } from '@weasel-js/forge';
 
 /** A story that declares a timeline: forge puts a transport under its trial and hands it the playhead. */
 export default meta({});

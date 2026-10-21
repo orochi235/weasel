@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Paint } from '@weasel-js/core';
-import { PaintField } from './PaintField';
+import { PaintField } from '@weasel-js/ui/components/PaintField';
 
 const meta: Meta<typeof PaintField> = {
   title: 'Primitives/PaintField',

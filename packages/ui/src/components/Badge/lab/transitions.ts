@@ -1,6 +1,5 @@
 import { cssColorLiteral } from '@weasel-js/paint';
-import type { BadgeBase } from '../bases';
-import type { BadgeEffect, BadgeEffectSpec } from '../effects';
+import type { BadgeBase, BadgeEffect, BadgeEffectSpec } from '@weasel-js/ui/components/Badge';
 import { defaultsOf } from '../shapeControls';
 import { BASE_LAB_CONTROLS, EFFECT_LAB_CONTROLS, isColorParam } from './controls';
 import type { LabPreset } from './presets';

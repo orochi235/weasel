@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ToolGroup } from './ToolGroup';
-import { ToolButton } from '../ToolButton';
+import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
+import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 
 function Dot() {
   return (

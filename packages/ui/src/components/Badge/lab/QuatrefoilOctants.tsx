@@ -1,4 +1,5 @@
-import { quatrefoilRadius, type BadgeQuatrefoilBaseParams } from '../bases/Quatrefoil';
+import { type BadgeQuatrefoilBaseParams } from '@weasel-js/ui/components/Badge';
+import { quatrefoilRadius } from '../bases/Quatrefoil';
 import s from './QuatrefoilOctants.stories.module.css';
 
 const STEPS = 96;

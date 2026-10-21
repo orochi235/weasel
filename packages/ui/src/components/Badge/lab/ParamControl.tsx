@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
-import { ToggleBar } from '../../ToggleBar/ToggleBar';
-import { InlineRange } from '../../InlineRange';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import type { ShapeControl } from '../shapeControls';
 import s from './controls.stories.module.css';
 

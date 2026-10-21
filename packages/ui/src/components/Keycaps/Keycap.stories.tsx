@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
-import { KeyCap, type KeyCapVariant, type KeyCapProps } from './Keycap';
+import { KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
 import {
   keySpecFromKey,
@@ -9,7 +9,6 @@ import {
   type LogicalMod,
   type Platform,
 } from '@weasel-js/gestures';
-import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];

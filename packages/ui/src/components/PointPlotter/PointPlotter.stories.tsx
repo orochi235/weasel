@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PointPlotter } from './PointPlotter';
-import type { ControlPoint } from '../CurveEditor';
+import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
+import type { ControlPoint } from '@weasel-js/ui/components/CurveEditor';
 
 interface InteractiveProps {
   initial: ControlPoint[];

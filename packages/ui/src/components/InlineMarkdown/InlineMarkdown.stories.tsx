@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { InlineMarkdown } from './InlineMarkdown';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 
 const meta: Meta<typeof InlineMarkdown> = {
   title: 'ui/Foundations/InlineMarkdown',

@@ -1,6 +1,6 @@
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import type { BadgeStatus, BadgeVariant } from '../types';
 import { Field, LabToggle, RangeRow } from './ParamControl';
-import { InlineRange } from '../../InlineRange';
 import type { LabSnapshot } from './snapshot';
 import controls from './controls.stories.module.css';
 import s from './ComposeLab.stories.module.css';

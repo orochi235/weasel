@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Badge } from '../Badge';
+import { Badge } from '@weasel-js/ui/components/Badge';
 import { SHAPES } from '../shapes';
 import { SHAPE_CONTROLS, defaultParamsFor } from '../shapeControls';
 import type { BadgeShape, BadgeStatus, BadgeVariant } from '../types';

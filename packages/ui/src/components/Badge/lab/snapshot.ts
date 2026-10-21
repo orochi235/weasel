@@ -1,5 +1,4 @@
-import type { BadgeBase } from '../bases';
-import type { BadgeEffect } from '../effects';
+import type { BadgeBase, BadgeEffect } from '@weasel-js/ui/components/Badge';
 import { defaultsOf } from '../shapeControls';
 import type { BadgeStatus, BadgeVariant } from '../types';
 import { BASE_LAB_CONTROLS } from './controls';

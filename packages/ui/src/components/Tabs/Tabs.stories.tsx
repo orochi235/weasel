@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Tabs, TabList, Tab, TabPanel } from './Tabs';
+import { Tabs, TabList, Tab, TabPanel } from '@weasel-js/ui/components/Tabs';
 
 const meta: Meta<typeof Tabs> = {
   title: 'Primitives/Tabs',

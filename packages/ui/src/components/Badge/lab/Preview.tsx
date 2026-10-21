@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { Badge } from '../Badge';
-import { InlineRange } from '../../InlineRange';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import type { BadgeStatus } from '../types';
 import { Field } from './ParamControl';
 import type { LabSnapshot } from './snapshot';

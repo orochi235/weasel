@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ComboBox, ComboBoxItem, type ComboBoxProps } from './ComboBox';
-import { useAsyncOptions } from '../../useAsyncOptions';
+import { ComboBox, ComboBoxItem, type ComboBoxProps } from '@weasel-js/ui/components/ComboBox';
+import { useAsyncOptions } from '@weasel-js/ui';
 
 const meta: Meta<typeof ComboBox> = {
   title: 'Primitives/ComboBox',

@@ -1,16 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
-import { KeySequence, type KeySpec, type KeySequenceProps } from './Keycaps';
-import {
-  keySpecFromKey,
-  keySpecsFromMods,
-  keySpecsFromShortcut,
-  type KeyCapVariant,
-  type LegendStyle,
-  type LogicalMod,
-  type Platform,
-} from './index';
-import { KEYCAP_VARIANT_ICONS } from './variantIcons';
+import { KeySequence, type KeySpec, type KeySequenceProps, type KeyCapVariant, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
+import { keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type LegendStyle, type LogicalMod, type Platform } from '@weasel-js/gestures';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];

@@ -11,7 +11,7 @@ import {
   type GestureBinding,
 } from '@weasel-js/core';
 import { useState } from 'react';
-import { KeymapHint } from './KeymapHint';
+import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 
 const ACTIONS: readonly Action[] = [
   { id: 'zoomIn', label: 'Zoom in' },

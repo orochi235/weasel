@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { SidebarPanel, type SidebarPanelProps } from './SidebarPanel';
-import { Sidebar } from '../Sidebar';
-import { MenuButton } from '../MenuButton';
+import { SidebarPanel, type SidebarPanelProps } from '@weasel-js/ui/components/SidebarPanel';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 
 const meta: Meta<typeof SidebarPanel> = {
   title: 'ui/SidebarPanel',

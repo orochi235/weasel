@@ -1,9 +1,7 @@
-import type { BadgeBase } from '../bases';
+import type { BadgeBase } from '@weasel-js/ui/components/Badge';
+import { type BadgeOctantSplineBaseParams } from '@weasel-js/ui/components/Badge';
 import { OCTANT_BSPLINE_MIN_WEIGHT, compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
-import {
-  OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled,
-  type Anchor, type BadgeOctantSplineBaseParams,
-} from '../bases/OctantSpline';
+import { OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled, type Anchor } from '../bases/OctantSpline';
 import type { LabParams } from './snapshot';
 
 export type SplineAnchor = Anchor;

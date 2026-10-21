@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefConditionEditor, type PrefConditionEditorProps } from './PrefConditionEditor';
+import { PrefConditionEditor, type PrefConditionEditorProps } from '@weasel-js/ui/components/PrefConditionEditor';
 import s from './PrefConditionEditor.stories.module.css';
 
 const meta: Meta<typeof PrefConditionEditor> = {

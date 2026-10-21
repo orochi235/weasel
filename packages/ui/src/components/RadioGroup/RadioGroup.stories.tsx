@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { RadioGroup, Radio } from './RadioGroup';
+import { RadioGroup, Radio } from '@weasel-js/ui/components/RadioGroup';
 
 const meta: Meta<typeof RadioGroup> = {
   title: 'Primitives/RadioGroup',

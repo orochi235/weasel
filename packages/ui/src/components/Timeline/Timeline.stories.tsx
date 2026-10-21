@@ -2,8 +2,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type Track, type TimelineHandle } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import { Timeline, type TimelineProps } from './Timeline';
-import { AnimatedTimeline } from './AnimatedTimeline';
+import { Timeline, type TimelineProps, AnimatedTimeline } from '@weasel-js/ui/components/Timeline';
 
 const meta: Meta<typeof Timeline> = {
   title: 'ui/Timeline',

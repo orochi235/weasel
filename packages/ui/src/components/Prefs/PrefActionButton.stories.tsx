@@ -2,8 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { PrefActionButton } from './PrefActionButton';
-import { PrefsForm } from './PrefsForm';
+import { PrefActionButton, PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefActionButton> = {

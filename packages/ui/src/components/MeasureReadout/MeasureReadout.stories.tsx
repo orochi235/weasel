@@ -14,7 +14,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import { useState } from 'react';
-import { MeasureReadout } from './MeasureReadout';
+import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
 
 type AnyScene = Scene<unknown, string, unknown>;

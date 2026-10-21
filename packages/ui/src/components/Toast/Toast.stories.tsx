@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ToastRegion } from './Toast';
-import { createToastQueue } from './queue';
-import { Button } from '../Button';
+import { ToastRegion, createToastQueue } from '@weasel-js/ui/components/Toast';
+import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof ToastRegion> = {
   title: 'Primitives/Toast',

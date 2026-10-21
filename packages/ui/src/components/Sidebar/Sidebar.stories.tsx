@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Sidebar } from './Sidebar';
-import { SidebarPanel } from '../SidebarPanel';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 
 const meta: Meta<typeof Sidebar> = {
   title: 'ui/Sidebar',

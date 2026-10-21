@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Workspace } from './Workspace';
+import { Workspace } from '@weasel-js/labkit';
 
 const meta: Meta<typeof Workspace> = {
   title: 'labkit/Lab/Workspace',

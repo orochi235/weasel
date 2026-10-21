@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ToggleBar } from './ToggleBar';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 
 const meta: Meta<typeof ToggleBar> = {
   title: 'ui/Foundations/ToggleBar',

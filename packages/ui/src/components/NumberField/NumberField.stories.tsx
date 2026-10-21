@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type CSSProperties } from 'react';
-import { NumberField } from './NumberField';
+import { NumberField } from '@weasel-js/ui/components/NumberField';
 
 const meta: Meta<typeof NumberField> = {
   title: 'Primitives/NumberField',

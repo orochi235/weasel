@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyRow } from './PropertyRow';
 import { decimal } from '@weasel-js/quantity';
+import { PropertyField, PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof PropertyList> = {
   title: 'ui/Properties/PropertyList',

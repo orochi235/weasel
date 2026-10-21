@@ -1,13 +1,11 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Badge } from './Badge';
+import { Badge, BADGE_STATUS_ICONS, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
 import st from './Badge.stories.module.css';
 import { ALL_SHAPES } from './shapes';
 import type { BadgeStatus, BadgeVariant } from './types';
 import { ComposeLabView } from './lab/ComposeLabView';
 import { QuatrefoilOctantSweeps } from './lab/QuatrefoilOctants';
 import { ShapeGallery } from './lab/ShapeGallery';
-import { BADGE_STATUS_ICONS } from './statusIcons';
-import { BADGE_VARIANT_ICONS } from './variantIcons';
 
 const STATUSES: BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];

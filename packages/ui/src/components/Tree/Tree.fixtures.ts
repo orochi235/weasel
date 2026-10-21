@@ -1,5 +1,4 @@
-import type { TreeDropTarget } from '../../dropTarget';
-import type { TreeNode } from './Tree';
+import type { TreeDropTarget, TreeNode } from '@weasel-js/ui/components/Tree';
 import { siblingsOf } from './treeMoves';
 
 /** Applies an `onMove` result to a node list, for stories and tests that need rows to land. */

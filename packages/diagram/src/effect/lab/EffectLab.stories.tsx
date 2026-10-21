@@ -1,14 +1,8 @@
 import { registerCanvasFont } from '@weasel-js/font';
 import { f, meta, story } from '@weasel-js/forge';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { EffectProblem } from '../check';
-import { EffectChart } from '../EffectChart';
-import { EFFECT_LOOKS } from '../looks';
-import type { NodeGraphOptions } from '../nodeGraph';
-import type { RackOptions } from '../rack';
-import type { CompactOptions } from '../compact';
-import type { LanesOptions } from '../lanes';
-import { BRANCH_SYMBOLS, type BranchChoice } from '../symbols';
+import type { EffectProblem, NodeGraphOptions, RackOptions, CompactOptions, LanesOptions } from '@weasel-js/diagram/effect';
+import { EffectChart, EFFECT_LOOKS, BRANCH_SYMBOLS, type BranchChoice } from '@weasel-js/diagram/effect';
 import { SAMPLES } from './samples';
 import s from './EffectLab.stories.module.css';
 

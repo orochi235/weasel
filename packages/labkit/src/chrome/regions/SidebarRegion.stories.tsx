@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
-import { LabRoot } from '../../lab/LabRoot';
+import { LabRoot } from '@weasel-js/labkit';
+import { SidebarRegion } from '@weasel-js/labkit/chrome';
 import type { SidebarSlotContext } from '../types';
-import { SidebarRegion } from './SidebarRegion';
 
 const meta: Meta<typeof SidebarRegion> = {
   title: 'labkit/Chrome/SidebarRegion',

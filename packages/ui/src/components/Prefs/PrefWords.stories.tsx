@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefsForm } from './PrefsForm';
-import { PrefLabelLine, PrefRule } from './PrefWords';
+import { PrefsForm, PrefLabelLine, PrefRule } from '@weasel-js/ui/components/Prefs';
 
 const note: PrefLeaf = { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined };
 

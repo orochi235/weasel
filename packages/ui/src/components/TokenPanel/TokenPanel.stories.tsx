@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useCallback, useState } from 'react';
-import { TokenPanel, type TokenPanelProps } from './TokenPanel';
-import type { TokenEntry } from './tokenTypes';
+import { TokenPanel, type TokenPanelProps } from '@weasel-js/ui/components/TokenPanel';
+import type { TokenEntry } from '@weasel-js/ui/components/TokenPanel';
 
 const meta: Meta<typeof TokenPanel> = {
   title: 'ui/TokenPanel',

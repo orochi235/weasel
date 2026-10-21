@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { LegendStyle, Platform } from '@weasel-js/gestures';
-import { KeyDiagram, type KeyMark } from './KeyDiagram';
-import { KEYBOARD_LAYOUTS } from './keyboardLayout';
-import { useHeldKeys } from './useHeldKeys';
+import { KeyDiagram, type KeyMark, KEYBOARD_LAYOUTS, useHeldKeys } from '@weasel-js/ui/components/Keycaps';
 
 interface StoryArgs {
   platform?: Platform;

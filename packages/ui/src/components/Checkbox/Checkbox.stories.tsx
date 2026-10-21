@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Checkbox } from './Checkbox';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 
 const meta: Meta<typeof Checkbox> = {
   title: 'Primitives/Checkbox',

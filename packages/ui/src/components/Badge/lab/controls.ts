@@ -1,5 +1,6 @@
-import { BASES, type BadgeBase } from '../bases';
-import { EFFECTS, type BadgeEffect } from '../effects';
+import { type BadgeBase, type BadgeEffect } from '@weasel-js/ui/components/Badge';
+import { BASES } from '../bases';
+import { EFFECTS } from '../effects';
 import { QUATREFOIL_CONTROLS, type ShapeControl } from '../shapeControls';
 
 const OCTANT_SPLINE_CONTROLS: ShapeControl[] = [

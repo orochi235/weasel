@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Specimen } from './Specimen';
+import { Specimen } from '@weasel-js/labkit';
 
 const meta: Meta<typeof Specimen> = {
   title: 'labkit/Specimen',

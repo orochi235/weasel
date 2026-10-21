@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Toolbar } from './Toolbar';
+import { Toolbar } from '@weasel-js/labkit/primitives';
 
 const meta: Meta<typeof Toolbar> = {
   title: 'labkit/Primitives/Toolbar',

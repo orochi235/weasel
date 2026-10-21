@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
-import { Callout, CalloutTrigger } from './Callout';
-import { Button } from '../Button';
+import { Callout, CalloutTrigger } from '@weasel-js/ui/components/Callout';
+import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof Callout> = {
   title: 'Primitives/Callout',

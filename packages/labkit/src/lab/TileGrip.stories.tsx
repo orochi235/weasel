@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { TileGrip } from './TileGrip';
-import { Workspace } from './Workspace';
+import { TileGrip, Workspace } from '@weasel-js/labkit';
 
 const meta: Meta<typeof TileGrip> = {
   title: 'labkit/Lab/TileGrip',

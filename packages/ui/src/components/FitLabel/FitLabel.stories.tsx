@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ToggleBar } from '../ToggleBar';
-import { FitLabel } from './FitLabel';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { FitLabel } from '@weasel-js/ui/components/FitLabel';
 import s from './FitLabel.stories.module.css';
 
 const meta: Meta<typeof FitLabel> = {

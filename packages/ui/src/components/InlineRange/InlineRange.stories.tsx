@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { InlineRange } from './InlineRange';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 
 const meta: Meta<typeof InlineRange> = {
   title: 'Primitives/InlineRange',

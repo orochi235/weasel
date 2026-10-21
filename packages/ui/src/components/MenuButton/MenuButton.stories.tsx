@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { MenuButton } from './MenuButton';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 
 const meta: Meta<typeof MenuButton> = {
   title: 'Primitives/MenuButton',

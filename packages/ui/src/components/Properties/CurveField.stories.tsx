@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CurveField } from './CurveField';
+import { CurveField } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof CurveField> = {
   title: 'ui/Properties/CurveField',

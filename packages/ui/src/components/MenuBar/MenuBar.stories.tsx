@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { MenuBar, type MenuBarProps } from './MenuBar';
+import { MenuBar, type MenuBarProps } from '@weasel-js/ui/components/MenuBar';
 import s from './MenuBar.stories.module.css';
 
 const meta: Meta<typeof MenuBar> = {

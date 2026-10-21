@@ -1,8 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
-import { Subpanel } from './Subpanel';
+import { PropertyField, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof Subpanel> = {
   title: 'ui/Properties/Subpanel',

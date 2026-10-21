@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/core';
-import { AnchorFields, type AnchorFieldsProps } from './AnchorFields';
+import { AnchorFields, type AnchorFieldsProps } from '@weasel-js/ui/components/AnchorFields';
 
 const meta: Meta<typeof AnchorFields> = {
   title: 'ui/AnchorFields',

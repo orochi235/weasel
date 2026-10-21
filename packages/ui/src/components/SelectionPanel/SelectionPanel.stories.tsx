@@ -14,7 +14,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { SelectionPanel, type SelectionPanelProps } from './SelectionPanel';
+import { SelectionPanel, type SelectionPanelProps } from '@weasel-js/ui/components/SelectionPanel';
 import s from './SelectionPanel.stories.module.css';
 
 interface Data {

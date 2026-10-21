@@ -1,12 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CloseButton } from '../CloseButton';
-import { DragGrip } from '../DragGrip';
-import { PropertyGroup } from './PropertyGroup';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
-import { Subpanel } from './Subpanel';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { DragGrip } from '@weasel-js/ui/components/DragGrip';
+import { PropertyGroup, PropertyField, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof PropertyGroup> = {
   title: 'ui/Properties/PropertyGroup',

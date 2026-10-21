@@ -1,12 +1,9 @@
 import { createPointerStore } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { LabContext, type LabContextValue, DEFAULT_VIEW, TrialChrome } from '@weasel-js/labkit';
+import { LabStoreContext, createLabStore } from '@weasel-js/labkit/state';
 import type { Instrument } from '../instrument/types';
-import { LabContext, type LabContextValue } from '../lab/LabContext';
-import { LabStoreContext } from '../state/context';
-import { createLabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
-import { DEFAULT_VIEW } from '../state/view';
-import { TrialChrome } from './TrialChrome';
 
 const noop = () => {};
 

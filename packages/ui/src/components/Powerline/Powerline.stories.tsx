@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Powerline } from './Powerline';
-import type { EdgeCap } from '../Badge/bases/edgeProfiles';
+import { Powerline } from '@weasel-js/ui/components/Powerline';
+import type { EdgeCap } from '@weasel-js/ui/components/Powerline';
+import { BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
 import s from './Powerline.module.css';
-import { BADGE_VARIANT_ICONS } from '../Badge/variantIcons';
 
 const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'puzzle', 'concave-chevron'];
 

@@ -1,13 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { LayerList, type LayerListItem, moveLayers } from '../LayerList';
-import { Subpanel } from './Subpanel';
-import { PropertyField } from './PropertyField';
-import { PropertyList, type PropertyListPack, PropertySpan } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
-import { PropertyRow } from './PropertyRow';
-import { Switch } from '../Switch';
 import { decimal } from '@weasel-js/quantity';
+import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
+import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
+import { Switch } from '@weasel-js/ui/components/Switch';
 
 // Args common to most stories — exposed as controls so the
 // title, pack mode, and container width can be tweaked live.

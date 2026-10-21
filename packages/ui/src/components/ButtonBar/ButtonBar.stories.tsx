@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ButtonBar, type ButtonBarItem } from './ButtonBar';
+import { ButtonBar, type ButtonBarItem } from '@weasel-js/ui/components/ButtonBar';
 
 const meta: Meta<typeof ButtonBar> = {
   title: 'ui/Foundations/ButtonBar',

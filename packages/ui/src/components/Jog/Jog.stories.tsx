@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Jog, type JogProps } from './Jog';
+import { Jog, type JogProps } from '@weasel-js/ui/components/Jog';
 
 const meta: Meta<typeof Jog> = {
   title: 'ui/Jog',

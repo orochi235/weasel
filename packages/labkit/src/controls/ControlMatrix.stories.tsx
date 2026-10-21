@@ -1,11 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useState } from 'react';
-import { isAuto } from '../config/auto';
-import { f } from '../config/builder';
-import { valueAtPath, withValueAtPath } from '../config/path';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlMatrix, type ControlMatrixColumn } from './ControlMatrix';
-import { ControlPanel } from './ControlPanel';
+import { isAuto, f, valueAtPath, withValueAtPath, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { ControlMatrix, type ControlMatrixColumn, ControlPanel } from '@weasel-js/labkit/controls';
 import './ControlMatrix.stories.less';
 
 const meta: Meta<typeof ControlMatrix> = {

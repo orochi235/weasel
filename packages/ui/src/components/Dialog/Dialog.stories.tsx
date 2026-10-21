@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Dialog } from './Dialog';
-import { Button } from '../Button';
+import { Dialog } from '@weasel-js/ui/components/Dialog';
+import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof Dialog> = {
   title: 'Primitives/Dialog',
