@@ -888,6 +888,11 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
+  run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
+  same file passed 15 of 15 in three runs alone on the fleet at the same commit. The log keeps only
+  the test's name, not its assertion. Not looked at.
+
 - **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" once saved no typed text.** In
   Linux CI on 179f2409d (2026-10-21, run 39523286313) `savedBody().row.data.text` stayed `''` past
   the poll after Escape, so the six typed `M`s presumably went somewhere other than the open editor
