@@ -96,7 +96,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as TextNodeData;
     const laid = textCommandFromPose(textPoseOf(d, pose));
     const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
-    const bg = resolveNodeFill(d.background, null);
+    const bg = resolveNodeFill(d.background);
     if (!bg) return [text];
     const fill = commandFill(bg, pose);
     return [
@@ -115,7 +115,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // A clipped node's lines are cut to the box, as they are drawn.
   silhouette: (node, pose) => {
     const d = node.data as TextNodeData;
-    if (resolveNodeFill(d.background, null)) {
+    if (resolveNodeFill(d.background)) {
       return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
     }
     const lines = textLineBoxes(textPoseOf(d, pose));

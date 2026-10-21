@@ -9,7 +9,6 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
-import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { PAINT_SLOT } from './memo';
 import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';
@@ -33,7 +32,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; fill?: Fill | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
-    const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
+    const declaredFill = resolveNodeFill(d.fill);
     const shapeFill = declaredFill && commandFill(declaredFill, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
     const stroke = strokeSpec && commandStroke(strokeSpec, pose);
@@ -48,13 +47,10 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose);
   },
-  // `paint` above emits the default fill when none is declared, so a shape
-  // is filled unless it declares `fill: null` — unlike `kit:path`, it has no
-  // implicit stroke-only form.
   ink: (node, _pose, ctx) => {
     const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
     return {
-      filled: resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL) !== null,
+      filled: resolveNodeFill(d.fill) !== null,
       ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale),
     };
   },

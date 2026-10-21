@@ -48,8 +48,8 @@ describe('kit:path accepts a Paint in data.fill', () => {
     expect(paintOf({ path: RECT_PATH, fill: null }).fill).toBeUndefined();
   });
 
-  it('falls back to the default fill when none is declared', () => {
-    expect(paintOf({ path: RECT_PATH }).fill).toEqual({ paint: { color: '#888' } });
+  it('paints no fill when none is declared', () => {
+    expect(paintOf({ path: RECT_PATH }).fill).toBeUndefined();
   });
 
   it('still leaves a stroke-only path unfilled', () => {
@@ -86,8 +86,8 @@ describe('kit:shape accepts a Paint too', () => {
     expect(paintOf({ shape: 'ellipse', fill: { paint: GRADIENT } }).fill).toEqual({ paint: GRADIENT });
   });
 
-  it('still defaults and still honours a solid paint', () => {
-    expect(paintOf({ shape: 'ellipse' }).fill).toEqual({ paint: { color: '#888' } });
+  it('paints no fill when none is declared, and honors a solid paint', () => {
+    expect(paintOf({ shape: 'ellipse' }).fill).toBeUndefined();
     expect(paintOf({ shape: 'ellipse', fill: { paint: solid('#abc') } }).fill).toEqual({ paint: { color: '#abc' } });
   });
 

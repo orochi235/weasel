@@ -14,7 +14,6 @@ import {
   resolvePaletteColor,
   type ColorLiteral,
   type CommandStroke,
-  type Fill,
   type Paint,
   type Palette,
   type SolidPaint,
@@ -82,9 +81,6 @@ export function strokeOf(color: string, width = 1): CommandStroke & { paint: Sol
 export function strokeWith(paint: Paint, width = 1): Stroke {
   return { paint, width };
 }
-
-/** The kit's default node fill — what a shape with no declared fill paints. */
-export const DEFAULT_SHAPE_FILL: Fill & { paint: Paint } = { paint: { color: '#888' } };
 
 /**
  * The 0..1 alpha a paint paints at.

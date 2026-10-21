@@ -333,6 +333,21 @@ Priority tags:
 
 ## Rendering & paint
 
+- **(P1) Settle what each kind of "no paint" means, once, for every reader** (2026-10-21). A fill or a
+  stroke can be absent, `null`, a record with no `paint`, a paint with alpha 0, or the color
+  `transparent`, and nothing states which of those are the same thing. The painters now treat the first
+  three as "none" (2026-10-21; until then an absent fill painted gray), but the other readers each decide
+  for themselves:
+  - picking: `ink().filled` decides whether a node's interior is grabbable, so an alpha-0 fill is
+    clickable and an absent one is not;
+  - a derived part's `fill: undefined` means "inherit the node's", not "none";
+  - a container's `data.fill` paints nothing, while an SVG `<g fill>` is inherited by its children;
+  - the property panel shows unset, None and mixed as three states over these values;
+  - SVG import writes black for an element with no `fill`, as SVG does, and export writes `none`.
+
+  Decide which of these are distinct states, give each one spelling, and make every reader resolve
+  through one function.
+
 - **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
   (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`
   (`labkit/src/lab/LabSurface.tsx`), and an owner publishing only `over` and `under` leaves

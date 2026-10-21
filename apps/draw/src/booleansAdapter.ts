@@ -2,7 +2,6 @@ import {
   asNodeId,
   type BooleansAdapter,
   boundsOfPath,
-  DEFAULT_SHAPE_FILL,
   defaultCommitAdapter,
   type NodeId,
   type Path,
@@ -74,7 +73,7 @@ export function drawBooleansAdapter(
           ...carriedData(template),
           path,
           ...(paint ?? {
-            fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
+            ...(template?.fill !== undefined ? { fill: template.fill } : {}),
             ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
           }),
         },

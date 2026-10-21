@@ -69,7 +69,8 @@ describe('buildSceneTree', () => {
 
   it('container with two same-layer children → flat bucket [container, child1, child2] in DFS order', () => {
     const scene = makeScene();
-    const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
+    const aabb = { kind: 'rect' as const, x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height };
+    const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' }, clipFromPose: () => aabb });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p1' }, parent: bed });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p2' }, parent: bed });
     const adapter = sceneToAdapter(scene);
@@ -79,8 +80,7 @@ describe('buildSceneTree', () => {
     // under the container group.
     expect(bgGroup.children).toHaveLength(3);
     for (const c of bgGroup.children) expect((c as { kind: string }).kind).toBe('group');
-    const aabb = { kind: 'rect', x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height };
-    // The container carries its own fallback-silhouette clip…
+    // The container carries its own clip…
     expect((bgGroup.children[0] as { clip?: unknown }).clip).toEqual(aabb);
     // …and both children inherit it (clipped to the container).
     expect((bgGroup.children[1] as { clip?: unknown }).clip).toEqual(aabb);
@@ -89,8 +89,9 @@ describe('buildSceneTree', () => {
 
   it('nested containers (3 levels) → each node clipped by its full ancestor chain', () => {
     const scene = makeScene();
-    const a = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'a' } });
-    const b = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a });
+    const clip = () => ({ kind: 'rect' as const, ...POSE });
+    const a = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'a' }, clipFromPose: clip });
+    const b = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a, clipFromPose: clip });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'c' }, parent: b });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
@@ -162,15 +163,13 @@ describe('buildSceneTree', () => {
     expect(bedGroup.clip).toBeUndefined();
   });
 
-  it('container without clipFromPose → clip falls back to the painter silhouette (rect-fallback = AABB)', () => {
+  it('a plain container clips nothing: no painter claims it, so it has no silhouette', () => {
     const scene = makeScene();
     scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
-    // No `data.text` / `data.path` → kit:rect-fallback painter matches, and
-    // its `silhouette` returns the pose's rect. That becomes the clip.
-    expect(bedGroup.clip).toEqual({ kind: 'rect', x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height });
+    expect(bedGroup.clip).toBeUndefined();
   });
 
   it('calls clipFromPose with the pose the node has at walk time', () => {

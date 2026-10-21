@@ -4,7 +4,6 @@ import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { derivedPartsOf, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import { strokedBounds } from './strokedBounds';
@@ -42,10 +41,7 @@ export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | u
 /** One part's command: its own paint where it names one, else the node's. */
 function partCommand(part: DerivedPart, d: PaintData | null): DrawCommand {
   const strokeSpec = resolveNodeStroke(part.stroke === undefined ? d?.stroke : part.stroke);
-  const declared = resolveNodeFill(
-    part.fill === undefined ? d?.fill : part.fill,
-    strokeSpec === null ? DEFAULT_SHAPE_FILL : null,
-  );
+  const declared = resolveNodeFill(part.fill === undefined ? d?.fill : part.fill);
   return pathCommand(part.path, declared, strokeSpec, undefined);
 }
 
@@ -84,7 +80,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     const parts = derivedPartsOf(path);
     if (parts !== undefined) return parts.map((part) => partCommand(part, d));
     const strokeSpec = resolveNodeStroke(d?.stroke);
-    const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
+    const declared = resolveNodeFill(d?.fill);
     return withAnimatedVertexColors([pathCommand(path, declared, strokeSpec, d?.vertexColors)], ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
@@ -97,7 +93,7 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     const d = node.data as { fill?: Fill | null; stroke?: Stroke | null } | null;
     const stroke = resolveNodeStroke(d?.stroke);
     return {
-      filled: resolveNodeFill(d?.fill, stroke === null ? DEFAULT_SHAPE_FILL : null) !== null,
+      filled: resolveNodeFill(d?.fill) !== null,
       ...inkReach(stroke, ctx?.scale),
     };
   },

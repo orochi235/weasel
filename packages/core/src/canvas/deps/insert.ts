@@ -58,7 +58,7 @@ export type InsertNodeFactory = (
 /**
  * The paint a kit-built shape is inserted with. `kind` is the shape being
  * built and `seq` counts this canvas's inserts from 1. A key left out stays
- * off the node, so its painter's default applies; `null` is "none". A pencil
+ * off the node, which paints none of it, the same as `null`. A pencil
  * trail too short to fit is built as a rect and asks as one. A line and an
  * open pen path are inserted unfilled: a fill given to either is dropped.
  * `fillRule` is the rule a path that carries one is built with, where the

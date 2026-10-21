@@ -6,7 +6,6 @@ import { resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
-import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 
 // The painters memoize a node's paint and resolve a fill's frame inside the
 // memo, so the kind set is ambient state that memo cannot see change.
@@ -17,16 +16,12 @@ paintDrawKindRegistry.subscribe(bumpNodeMemoGeneration);
  *
  * Its {@link Paint} is used as-is — which is how a gradient or a pattern
  * reaches the renderer without a consumer registering a painter of its own.
- * `null` is an explicit "no fill", and so is a fill carrying no `paint`;
- * `undefined` takes the painter's fallback. Write the paint with
- * {@link solid} rather than by hand when all you have is a color.
+ * An absent fill, `null`, and a fill carrying no `paint` all mean "no fill":
+ * a node paints only what it declares. Write the paint with {@link solid}
+ * rather than by hand when all you have is a color.
  */
-export function resolveNodeFill(
-  fill: Fill | null | undefined,
-  fallback: Fill | null,
-): PaintedFill | null {
-  const declared = fill === undefined ? fallback : fill;
-  return declared?.paint == null ? null : (declared as PaintedFill);
+export function resolveNodeFill(fill: Fill | null | undefined): PaintedFill | null {
+  return fill?.paint == null ? null : (fill as PaintedFill);
 }
 
 /** A fill that paints — what everything downstream of `resolveNodeFill`
@@ -138,11 +133,10 @@ export interface PathPaint {
 }
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and
- *  `data.stroke`, as the built-in path painter draws it: a stroke with no
- *  `paint` is none, and an undeclared fill is the default shape fill unless
- *  the node is stroked. */
+ *  `data.stroke`, as the built-in path painter draws it: a stroke or a fill
+ *  with no `paint` is none. */
 export function pathPaintOf(data: { fill?: Fill | null; stroke?: Stroke | null }): PathPaint {
   const stroke = resolveNodeStroke(data.stroke);
-  const fill = resolveNodeFill(data.fill, stroke !== null ? null : DEFAULT_SHAPE_FILL);
+  const fill = resolveNodeFill(data.fill);
   return stroke !== null ? { fill, stroke } : { fill };
 }
