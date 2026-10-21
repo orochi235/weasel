@@ -1,5 +1,6 @@
 import { isApplePlatform, type KeyHeldSpec, type KeySpec, type ModSpec } from '@weasel-js/gestures';
 
+/** Options for {@link captureKey}. */
 export interface CaptureKeyOptions {
   /** Capture the held form, `key-held`, rather than the keystroke. */
   held?: boolean;

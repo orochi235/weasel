@@ -10,6 +10,7 @@ import type { BoundGesture, GestureBinding } from '../interactions/actions/bindi
 import type { Contribution } from '../contributions/types';
 import type { KeymapUnbound } from './keymapStack';
 
+/** What {@link keymapContribution} builds a keymap and its leader from. */
 export interface KeymapDef {
   /** The keymap entry's id. Its leader action is `keymap.<id>`. */
   id: string;

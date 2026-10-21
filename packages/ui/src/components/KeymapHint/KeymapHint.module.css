@@ -11,7 +11,7 @@
 }
 
 .title {
-  font-weight: 600;
+  font-weight: var(--wzl-font-weight-bold);
 }
 
 .rows {

@@ -11,6 +11,7 @@ import type { GestureBinding } from '../interactions/actions/binding';
  *  keymap open; `'cascade'` closes the keymap and dispatches it as if none were. */
 export type KeymapUnbound = 'modal' | 'cascade';
 
+/** One open level of a {@link KeymapStack}. */
 export interface OpenKeymap {
   readonly id: string;
   readonly label: string;
@@ -26,6 +27,7 @@ export interface OpenKeymap {
  *  them handled it, `'cascaded'` when it went on past them, `null` before either. */
 export type KeymapVerdict = 'taken' | 'cascaded' | null;
 
+/** The keymaps open on one surface, innermost last; a canvas's `keymaps` dep. */
 export interface KeymapStack {
   /** Every open level, outermost first. */
   open(): readonly OpenKeymap[];
@@ -65,6 +67,7 @@ interface Level {
   openedIn: number;
 }
 
+/** An empty {@link KeymapStack}. `useGestureDispatcher` makes one per surface. */
 export function createKeymapStack(): KeymapStack {
   let levels: Level[] = [];
   let version = 0;

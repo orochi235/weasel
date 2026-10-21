@@ -19,6 +19,7 @@ export interface KeymapRow {
   label: string;
 }
 
+/** An open keymap as a hint shows it: {@link describeKeymap}'s result. */
 export interface KeymapDescription {
   id: string;
   label: string;
