@@ -995,11 +995,12 @@ only story runner in the repo.
   runs on each mount. A timeout no longer leaks: the file's helpers stop once vitest aborts the
   test's signal, where before a timed-out test could mount into the next one's document.
 
-- **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
-  them ui source (measured 2026-10-19). Packages holding stories stay unbundled
-  (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
-  bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
-  components only through package specifiers.
+- **(P3) Every forge load fetches Badge's internals file by file.** The Badge story and its `lab/`
+  import `shapes/`, `bases/` and `effects/`, which ui does not export, so `scripts/vite-prebundle.ts`
+  leaves those modules out of ui's bundle and serves them from source to keep one copy. Each of
+  forge's three documents loads them, 159 of a load's 1,269 requests (2026-10-21); 262 more are ui's
+  CSS modules, which a bundle never holds. Removing the 159 needs the story to reach them through a
+  published subpath, which is a decision about ui's public surface.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
@@ -1024,9 +1025,10 @@ only story runner in the repo.
   files paying it. Splitting the longest files would not help: the tail is the small ones.
   `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
   Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
-  servers, is the likely fix (inferred, not tried); tests that import their own package by relative
-  path would then load a second copy of it beside the bundle, splitting module state such as the
-  font registry, the same obstacle the forge entry above names.
+  servers, is the likely fix (inferred, not tried). The prebundle already keeps out of a bundle
+  whatever source imports by relative path, so no module would load twice, but tests import their
+  own package that way, so most of each package would stay unbundled. forge got its gain by moving
+  its stories onto package specifiers first (2026-10-21); the tests would need the same.
 
 - **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
   others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
