@@ -282,16 +282,31 @@ export function dashForStrokeStyle(
 }
 
 /**
+ * The most dash and gap runs {@link dashPattern} lets a pattern cut one line
+ * into. Past it a pattern is too fine to see as dashes, and walking it would
+ * cost work without bound.
+ */
+export const MAX_DASH_RUNS = 100_000;
+
+/**
  * What a `Stroke.dash` array draws, decided once for every reader of it: the
  * array itself when it is a pattern that advances along the line, `'solid'`
  * when it is absent, empty, has a negative entry or sums to zero (as SVG
  * reads those), and `'non-finite'` when any entry is NaN or infinite, which
- * draws no stroke at all.
+ * draws no stroke at all. Given the `length` of the path it strokes, a pattern
+ * that would cut it into more than {@link MAX_DASH_RUNS} runs is `'solid'` too.
  */
-export function dashPattern(dash: readonly number[] | undefined): readonly number[] | 'solid' | 'non-finite' {
+export function dashPattern(
+  dash: readonly number[] | undefined,
+  length?: number,
+): readonly number[] | 'solid' | 'non-finite' {
   if (dash === undefined || dash.length === 0) return 'solid';
   if (!dash.every(Number.isFinite)) return 'non-finite';
   if (dash.some((v) => v < 0) || !dash.some((v) => v > 0)) return 'solid';
+  if (length !== undefined) {
+    const period = dash.reduce((a, b) => a + b, 0);
+    if ((length / period) * dash.length > MAX_DASH_RUNS) return 'solid';
+  }
   return dash;
 }
 

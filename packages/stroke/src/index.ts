@@ -10,7 +10,7 @@
 
 export { tessellateStroke, resolveStrokeWidth } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
-export { splitForDash } from './tessellate/dash';
+export { dashLength, splitForDash } from './tessellate/dash';
 export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
 export { nibWidthScale } from './tessellate/nib';
 export type { WidthScale } from './tessellate/vertexWidths';

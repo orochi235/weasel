@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   dashForStrokeStyle,
   dashPattern,
+  MAX_DASH_RUNS,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
 } from './paint';
@@ -82,5 +83,12 @@ describe('dashPattern', () => {
     for (const dash of [[NaN], [4, NaN], [Infinity, 1], [-1, -Infinity]]) {
       expect(dashPattern(dash), String(dash)).toBe('non-finite');
     }
+  });
+
+  it('reads a pattern that would cut its line into more than MAX_DASH_RUNS runs as solid', () => {
+    const dash = [1, 1];
+    expect(dashPattern(dash, MAX_DASH_RUNS)).toBe(dash);
+    expect(dashPattern(dash, MAX_DASH_RUNS + 2)).toBe('solid');
+    expect(dashPattern([1e-9, 1e-9], 100)).toBe('solid');
   });
 });

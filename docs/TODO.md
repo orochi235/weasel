@@ -343,12 +343,11 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P3) A dash whose period is tiny against its line has no bound on the work it makes.**
-  `splitForDash` (`packages/stroke/src/tessellate/dash.ts`) walks one dash at a time, so a pattern
-  that sums to 1e-9 on a 100-unit line makes 1e11 runs and exhausts the worker, as an all-zero dash
-  did before `dashPattern` (`@weasel-js/paint`) stroked that solid (read from the code, not run).
-  It wants a cap on dashes per polyline, or a rule for a period below some fraction of the width,
-  applied in `dashPattern` so the PDF writer agrees (2026-10-20).
+- **(P3) PDF text strokes write a dash too fine for its glyphs.** `dashPattern`'s `MAX_DASH_RUNS`
+  cap reaches `strokeStyleOps` (`packages/pdf/src/strokeOps.ts`) only with a path length, and a
+  native text stroke (`writeSegment`, `textSegment.ts`) has none to pass, so it writes any dash,
+  however fine, where the renderer's outline stroke (`outlineStrokeMeshCache`) goes through the
+  capped tessellator (read from the code, 2026-10-21). Passing the glyph outlines' length closes it.
 
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap

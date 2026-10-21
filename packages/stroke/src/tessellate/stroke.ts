@@ -2,7 +2,7 @@ import { remapPerAnchor, resolveCornersWithSources, type Path } from '@weasel-js
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
-import { splitForDash } from './dash';
+import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
 import { populateWidths, type WidthScale } from './vertexWidths';
 import { type InsetLength, trimInSpace } from './insets';
@@ -99,7 +99,6 @@ export function tessellateStroke(
   const scale: WidthScale | undefined = !metric ? undefined
     : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
-  const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
   const anchorA: number[] = [];
@@ -109,14 +108,14 @@ export function tessellateStroke(
   // Trim before dashing, so the dash pattern fits the visible line rather than
   // running off under a marker head.
   const ribbonSpace = metric ?? null;
+  const trimmed: Polyline[] = [];
   for (const pl of polylines) {
     populateWidths(pl, vertexWidths, stroke.nib, width, scale);
-    const trimmed = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
-    if (trimmed === null) continue;
-    const subs = dash.length > 0 ? splitForDash(trimmed, dash) : [trimmed];
-    for (const sub of subs) {
-      expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
-    }
+    const t = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
+    if (t !== null) trimmed.push(t);
+  }
+  for (const sub of dashPolylines(trimmed, stroke.dash)) {
+    expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
   }
 
   const vertices = new Float32Array(verts);
