@@ -14,7 +14,8 @@ import {
 import { Dialog } from '../Dialog';
 import { ActionSettingsDialog } from '../ActionSettings/ActionSettingsDialog';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
-import { KeySequence, keySpecFromKey, keySpecsFromShortcut } from '../Keycaps';
+import { formatShortcutParts } from '@weasel-js/gestures';
+import { KeySequence, keySpecFromKey } from '../Keycaps';
 import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
 import styles from './CommandPalette.module.css';
@@ -27,13 +28,17 @@ function ShortcutChips({ item }: { item: ActionItem }) {
   if (shortcuts.length === 0) return null;
   return (
     <span className={styles.shortcuts}>
-      {shortcuts.map((s) => (
-        <KeySequence
-          key={`${s.key}|${s.mod}|${s.alt}|${s.shift}`}
-          keys={keySpecsFromShortcut(s)}
-          joins="none"
-        />
-      ))}
+      {shortcuts.map((s) => {
+        const parts = formatShortcutParts(s);
+        return (
+          <KeySequence
+            key={`${s.leader?.map((l) => l.label).join('|')}|${s.key}|${s.mod}|${s.alt}|${s.shift}`}
+            keys={parts?.keys}
+            leader={parts?.leader}
+            joins="none"
+          />
+        );
+      })}
     </span>
   );
 }

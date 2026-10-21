@@ -45,6 +45,21 @@
   line-height: 1;
 }
 
+/* A keymap's label before its keys, `Loupe ▸ 2`: plain text, centered on the keys like `.sep`. */
+.leader,
+.leaderSep {
+  display: inline-flex;
+  align-items: center;
+  height: var(--key-h);
+  font-size: var(--key-font-size);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.leaderSep {
+  color: var(--wzl-fg-muted);
+}
+
 .key {
   position: relative;
   display: inline-flex;

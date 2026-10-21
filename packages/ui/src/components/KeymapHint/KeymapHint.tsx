@@ -1,5 +1,4 @@
 import { useId } from 'react';
-import { formatShortcut } from '@weasel-js/gestures';
 import { useOpenKeymap } from '@weasel-js/core';
 import { ShortcutKeys } from '../Keycaps/ShortcutKeys';
 import s from './KeymapHint.module.css';
@@ -26,7 +25,7 @@ export function KeymapHint({ className }: KeymapHintProps) {
         {open.rows.map((row, i) => (
           <li key={i} className={s.row}>
             {row.shortcut
-              ? <ShortcutKeys legend={formatShortcut(row.shortcut) ?? ''} className={s.keys} />
+              ? <ShortcutKeys shortcut={row.shortcut} className={s.keys} />
               : <span className={s.gesture}>{row.gesture}</span>}
             <span className={s.label}>{row.label}</span>
           </li>
