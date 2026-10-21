@@ -156,7 +156,8 @@ arc's plan names a change.
 - **Minimap:** the indicator layer and `minimapPanAction` give way to an interactive `ViewMarker`
   (or a contribution's `markers`) of the root view's aim; `computeFitView` becomes the minimap's aim.
   `<MinimapCanvas>` on a second canvas element keeps working, drawing the main view's aim from an
-  `AimSource` fed the main camera through props and the `rootView` dep.
+  `AimSource` fed the main camera through props and the `rootView` dep. Having no view registry, it grabs
+  its marker through `grabViewMarker` and binds the drag with `createViewMarkerContribution`.
 - **hud loupe:** `createLoupe` already builds its picture with `addView` and a viewport layer; its
   pointer-derived camera becomes an aim-held view whose aim follows the pointer.
 - **PiP:** `<CanvasView>` is already the PiP; it gains the optional marker, nothing else.

@@ -123,8 +123,9 @@ Priority tags:
   aim the way a `parent` does, without being measured from or cut to that view's rect.
 
 - **(P3) A view marker drags only where the surface installs the always-on `view.marker.drag` entry.**
-  `actions={null}` and a `tools` takeover both leave it out, so markers paint but stop dragging.
-  Long-press feedback has the same gap.
+  `actions={null}` and a `tools` takeover both leave it out, so markers paint but stop dragging until
+  the consumer passes `createViewMarkerContribution()` in `ambient` (or the takeover's own `useTools`
+  ambient list). Long-press feedback has the same gap.
 
 - **(P3) A view marker claims presses anywhere inside its outline.** That suits a minimap marker in a
   small picture-in-picture. A marker drawn in a larger frame — a zoomed-out PiP's aim shown in the

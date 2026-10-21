@@ -24,6 +24,7 @@ import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 import type { NodeId } from 'core/scene/types';
 import type { ViewMarkerProps } from 'features/viewports/viewMarker';
+import { createViewMarkerContribution } from 'features/viewports/viewMarkerDrag';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -80,17 +81,19 @@ function Selected({ children }: { children: (s: SelectionApi) => ReactNode }) {
   return <>{children(s)}</>;
 }
 
+const MARKER_DRAG_ENTRY = createViewMarkerContribution();
+
 /** A consumer-assembled tool set: the select tool alone, handed in as a takeover. */
-function Takeover({ s, children }: { s: SelectionApi; children: (tools: ToolsApi) => ReactNode }) {
+function Takeover({ s, markerDrag, children }: { s: SelectionApi; markerDrag?: boolean; children: (tools: ToolsApi) => ReactNode }) {
   const adapter = useSceneAdapter(scene, { selection: s });
   const select = useSelectTool(adapter, {});
-  const tools = useTools({ active: 'select', registry: { select } });
+  const tools = useTools({ active: 'select', registry: { select }, ...(markerDrag ? { ambient: [MARKER_DRAG_ENTRY] } : {}) });
   return <>{children(tools)}</>;
 }
 
 function mount(
   extra: Partial<SceneCanvasProps<D, 'main', P>> = {},
-  opts: { rootAim?: Partial<ViewMarkerProps>; markers?: ReactNode; takeover?: boolean } = {},
+  opts: { rootAim?: Partial<ViewMarkerProps>; markers?: ReactNode; takeover?: boolean; markerDrag?: boolean } = {},
 ) {
   const surface = (s: SelectionApi, tools?: ToolsApi) => (
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ref={api} selection={s} {...(tools ? { tools } : {})} {...extra}>
@@ -102,7 +105,7 @@ function mount(
   const r = render(
     <WeaselProvider>
       <Selected>
-        {(s) => (opts.takeover ? <Takeover s={s}>{(tools) => surface(s, tools)}</Takeover> : surface(s))}
+        {(s) => (opts.takeover ? <Takeover s={s} markerDrag={opts.markerDrag}>{(tools) => surface(s, tools)}</Takeover> : surface(s))}
       </Selected>
     </WeaselProvider>,
   );
@@ -194,5 +197,18 @@ describe('a surface that installs no marker drag', () => {
     drag([300, 200], [310, 210]);
     expect(onViewChange).not.toHaveBeenCalled();
     expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
+  });
+
+  it('drags the marker again under actions={null} given the entry in ambient', () => {
+    mount({ features: ['draw'], actions: null, ambient: [createViewMarkerContribution()] });
+    drag([300, 200], [310, 210]);
+    expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
+  });
+
+  it("drags the marker again under a tools takeover given the entry in the takeover's ambient", () => {
+    mount({ features: ['draw'] }, { takeover: true, markerDrag: true });
+    drag([300, 200], [310, 210]);
+    expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
+    expect(scene.get(node)!.pose).toMatchObject({ x: 180, y: 60 });
   });
 });

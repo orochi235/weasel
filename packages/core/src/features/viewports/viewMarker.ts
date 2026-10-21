@@ -84,7 +84,8 @@ export const VIEW_MARKER_HIT_SLOP_PX = 4;
 /**
  * The grab for a press at frame px `at` in `space`, the marker's target, or
  * `null` when the marker is not interactive, its source has no writer or no
- * aim, or `at` is not on its outline or within {@link VIEW_MARKER_HIT_SLOP_PX} of it.
+ * aim, or `at` is not on its outline or within {@link VIEW_MARKER_HIT_SLOP_PX} of it. A surface with views
+ * calls this itself; a canvas with none, such as a detached minimap, calls it to route a press to its marker.
  */
 export function grabViewMarker(
   props: ViewMarkerProps,

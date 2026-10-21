@@ -34,7 +34,11 @@ export function viewMarkerDragAction(): Action {
   };
 }
 
-/** The always-on entry (id `'view-marker'`) that binds a drag on any marker to {@link VIEW_MARKER_DRAG}. */
+/**
+ * The always-on entry (id `'view-marker'`) that binds a drag on any marker to {@link VIEW_MARKER_DRAG}.
+ * A `<SceneCanvas>` installs it unless `actions={null}` or a `tools` takeover leaves it out; to turn marker
+ * dragging back on there, pass it in `ambient`, or in the takeover's own `useTools` ambient list.
+ */
 export function createViewMarkerContribution(): SurfaceContribution {
   return {
     id: VIEW_MARKER_ENTRY_ID,
