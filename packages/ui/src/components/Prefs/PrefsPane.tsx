@@ -8,6 +8,7 @@ import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
 import { splitMarks } from './SplitRow';
+import { stuckHeadingRef } from './stuckHeading';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -137,7 +138,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >
-      <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined}>
+      <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined} ref={depth === 0 ? stuckHeadingRef : undefined}>
         {group.name}
         {marksHidden(ctx.hidden, path) && <HiddenBadge />}
         {head.control}

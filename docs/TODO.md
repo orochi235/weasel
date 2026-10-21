@@ -98,11 +98,6 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
-  (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
-  `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
-  looked at in a browser on 2026-10-18, but no card was dragged.
-
 ### Cursor package follow-ups
 
 - **(P3) Cursor rasterization is unmeasured in Safari.** Chrome and headed Firefox are measured
@@ -681,12 +676,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   trial's config, the lab's store, or the app's) is not decided, and the instrument's `render`
   would need them too.
 
-- **(P3) Nobody has looked at what a standalone `Bar` opens in a browser.** A group a `Bar` opens
-  draws its nested groups through the form's pane (`paneChildren`, with `WalkCtx.leaves` handing
-  each leaf back to the bar's own rows and cells), so tabs, panels, sections, and fragments draw as
-  a `PrefsForm` draws them; jsdom only. A `heading` leaf there stays a row, since the bar's rows
-  read an absent value as unset and a heading's control would read it as the default. Nobody has
-  looked at `ActionBar` in a browser since it became a `Bar` of `action` leaves.
+- **(P3) An `ActionBar` fills its container's width.** Its `framed="segmented"` strip is a
+  block-level flex box, so in a forge story the horizontal bar's frame runs the stage's full width
+  with its buttons at the start, and the vertical one is a full-width column with its buttons
+  centered (seen in headless Chromium, 2026-10-21).
+  `Bar`'s own vertical stories size it with an `inline-flex` rail around it. Needs a call: whether a
+  segmented strip sizes itself to its buttons, or its host sizes it.
 
 - **(P3) An empty fragment takes no drop in the live preview.** It draws nothing
   (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
@@ -703,11 +698,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   kind or a group marked to keep its config paths); what the export writes for a schema whose
   source is `f.section(…)` calls rather than a literal; and whether labkit wraps `AssetEditor`
   and converts both ways, or `@weasel-js/ui` gains the vocabulary itself.
-
-- **(P3) Nobody has looked at a `heading` leaf's control in a browser.** `PrefsForm`, labkit's
-  `ControlPanel`, and `SelectionPanel` each draw a leaf marked `heading` in the heading of the group
-  or section holding it (`prefHeadingKey`); `SelectionPanel` sets it in a title row beside its
-  dimmed title. `PrefsForm`'s sticky section heading's `scroll-margin-top` assumes one line of text.
 
 - **(P3) Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
@@ -755,6 +745,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
   Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
   needs a custom pref kind before it can sit in a schema asset.
+
 - **(P3) Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
   "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
   `pageEdits.ts` move each page's nodes with it in one undo entry, and `PageTabs` (`@weasel-js/ui`) is
