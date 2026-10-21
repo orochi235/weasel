@@ -45,3 +45,11 @@ export function resolveComparison(
     dpr: c.dpr ?? null,
   };
 }
+
+const NO_KEYS: readonly string[] = [];
+
+/** The globals `c` sets, which a copy takes from its resolution; every other global stays the trial's own. */
+export function globalsSetBy(c: ForgeComparison | null, ctx: ResolveContext): readonly string[] {
+  if (c === null) return NO_KEYS;
+  return c.kind === 'opposite-mode' ? [ctx.modeGlobal] : Object.keys(c.globals ?? {});
+}

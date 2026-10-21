@@ -139,7 +139,7 @@ function Reference() {
   );
 }
 
-it('keeps a popover opened in the copy inside the lens, in the copy’s mode', async () => {
+it('clips a popover opened in the copy to the lens, and paints it in the copy’s mode', async () => {
   const lenses = createLiveLenses();
   const { container } = renderWithIcons(
     <LiveLensesContext.Provider value={lenses}>
@@ -187,8 +187,8 @@ it('keeps a popover opened in the copy inside the lens, in the copy’s mode', a
   });
   const reference = await screen.findByRole('dialog', { name: 'Reference' });
 
-  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. Where in the lens it
-  // lands is off by the factor, since react-aria places it in client px inside a scaled container (see the report).
+  // The popover lives in the copy, so the lens clips it: no part of it paints over the lab. Where it lands is off
+  // by the factor: react-aria places it in client px inside a scaled container (docs/TODO.md).
   expect(slot.contains(popover)).toBe(true);
   const lens = slot.getBoundingClientRect();
   const box = popover.getBoundingClientRect();

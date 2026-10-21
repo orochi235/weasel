@@ -10,8 +10,10 @@ export interface LiveRequest {
   factor: number;
   /** The slot's size, in CSS px. */
   size: { width: number; height: number };
-  /** The globals the comparison sets, laid over the trial's own; null when the lens shows the story as it is. */
+  /** The comparison's resolved globals, whole; null when the lens shows the story as it is. */
   globals: Globals | null;
+  /** The globals the comparison sets: the copy takes these from `globals` and keeps the trial's own for the rest. */
+  sets: readonly string[];
   /** Config values written over the trial's at their paths. */
   args: Readonly<Record<string, unknown>>;
 }

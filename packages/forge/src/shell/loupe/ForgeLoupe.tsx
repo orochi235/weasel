@@ -129,7 +129,7 @@ export function createApi(
 }
 
 /** Has `live` look again whenever what lies under a lens can change without a reticle moving. */
-function useRemeasure(live: LiveSource | null, body: HTMLElement | null, rerender: () => void) {
+export function useRemeasure(live: LiveSource | null, body: HTMLElement | null, rerender: () => void) {
   const { trials, mode } = useLabContext();
   const labValues = useContext(StoryGlobalsContext);
   useEffect(() => {
@@ -158,7 +158,6 @@ function useRemeasure(live: LiveSource | null, body: HTMLElement | null, rerende
  * workshop does and are never stored.
  */
 export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
-
   const lenses = useContext(LiveLensesContext);
   const labValues = useContext(StoryGlobalsContext);
   const { mode } = useLabContext();

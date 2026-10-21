@@ -1,6 +1,6 @@
 import type { LensSource, LensSourceRequest } from '@weasel-js/labkit/loupe';
 import type { Globals } from '../../protocol/messages';
-import type { ForgeComparison, ResolveContext, ResolvedConditions } from './conditions';
+import { type ForgeComparison, globalsSetBy, type ResolveContext, type ResolvedConditions } from './conditions';
 import type { LiveLenses, LiveRequest } from './liveLenses';
 import { frameAt, trialAt } from './trialAt';
 
@@ -11,11 +11,6 @@ export const NEEDS_FRAME = 'Live needs a frame for isolated stories';
 export interface LiveSource extends LensSource<ForgeComparison> {
   /** Re-reads the trial under each lens: for a scroll, a resize, or a trial closing, none of which moves a reticle. */
   remeasure(): void;
-}
-
-/** The entries of `globals` that differ from `base`: what the comparison changes. */
-function changes(globals: Globals, base: Globals): Globals {
-  return Object.fromEntries(Object.entries(globals).filter(([key, value]) => base[key] !== value));
 }
 
 const sameGlobals = (a: Globals | null, b: Globals | null) =>
@@ -36,6 +31,7 @@ function sameRequest(a: LiveRequest | null, b: LiveRequest): boolean {
     a.size.width === b.size.width &&
     a.size.height === b.size.height &&
     a.args === b.args &&
+    a.sets.join('\n') === b.sets.join('\n') &&
     sameGlobals(a.globals, b.globals)
   );
 }
@@ -69,11 +65,9 @@ export function createLiveSource(
       const post = (next: LiveRequest | null) => {
         if (next === null ? posted === null : sameRequest(posted, next)) return;
         posted = next;
-
         lenses.set(request.lensId, next);
       };
       const measure = () => {
-
         const { lensId, reticle, conditions: compare } = request;
         const hit = trialAt(reticle, doc);
         empty.hidden = hit !== null;
@@ -90,7 +84,8 @@ export function createLiveSource(
           hit,
           factor: request.factor,
           size: request.size,
-          globals: compare === null ? null : changes(resolved.globals, base),
+          globals: compare === null ? null : resolved.globals,
+          sets: globalsSetBy(compare, ctx),
           args: resolved.args,
         });
       };

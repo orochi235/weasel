@@ -1,8 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
+import { LabContext, type LabContextValue } from '@weasel-js/labkit';
+import type { ReactNode } from 'react';
 import { createLensScene, lensesOf, MAX_LENSES } from '@weasel-js/labkit/loupe';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ForgeComparison } from './conditions';
-import { createApi, useLensFocus } from './ForgeLoupe';
+import { createApi, useLensFocus, useRemeasure } from './ForgeLoupe';
+import type { LiveSource } from './liveSource';
 
 function setup() {
   const scene = createLensScene<ForgeComparison>();
@@ -46,5 +49,23 @@ describe('the workshop’s lens API', () => {
     for (let i = 0; i < MAX_LENSES; i++) api.add();
     expect(api.add()).toBeNull();
     expect(lensesOf(scene)).toHaveLength(MAX_LENSES);
+  });
+});
+
+describe('the workshop’s re-measuring', () => {
+  it('looks again when a pane’s camera moves, which writes the trial’s view', () => {
+    // A proxy: jsdom lays nothing out, so this asserts the re-measure a zoom or pan triggers, not what the lens then
+    // shows. Panning or zooming a pane writes the trial's `view` into its record (labkit's `updateTrialView`).
+    const live = { remeasure: vi.fn() } as unknown as LiveSource;
+    const remeasure = live.remeasure as ReturnType<typeof vi.fn>;
+    let trials = [{ id: 't1', view: { zoom: 1, pan: { x: 0, y: 0 } } }];
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <LabContext.Provider value={{ trials, mode: 'light' } as unknown as LabContextValue}>{children}</LabContext.Provider>
+    );
+    const { rerender } = renderHook(() => useRemeasure(live, null, () => {}), { wrapper });
+    const before = remeasure.mock.calls.length;
+    trials = [{ id: 't1', view: { zoom: 2, pan: { x: 40, y: 0 } } }];
+    rerender();
+    expect(remeasure.mock.calls.length).toBe(before + 1);
   });
 });

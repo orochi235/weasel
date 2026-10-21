@@ -797,6 +797,14 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P2) A popover opened in a magnified Live copy lands off by the lens factor.** react-aria's
+  `calculatePosition` places an overlay in client px inside its containing block, and a Live copy is that block
+  scaled by `transform: scale(f)`, so the popover's offset from the copy's corner is multiplied by `f`. Measured in
+  `shell/loupe/live.browser.test.tsx` at `f = 2` (2026-10-21): the copy's trigger spans client y 159 to 202 and the
+  popover opens at y 303 where about 214 is expected, wholly below a 200-px lens at y 80 to 280. Scaling with CSS
+  `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
+  paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
+  undoes) or upstream in react-aria.
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the

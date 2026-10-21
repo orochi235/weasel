@@ -61,11 +61,14 @@ function AfterCommit({ sync }: { sync: () => void }) {
 }
 
 function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
-
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (trialConfig as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
   const own = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
-  const globals = useMemo<Globals>(() => (request.globals ? { ...own, ...request.globals } : own), [own, request.globals]);
+  const { globals: resolved, sets } = request;
+  const globals = useMemo<Globals>(
+    () => (resolved ? { ...own, ...Object.fromEntries(sets.map((key) => [key, resolved[key]])) } : own),
+    [own, resolved, sets],
+  );
   const id = `${trialId}~lens-${request.lensId}`;
   const copy = useMemo(() => ({ id, globals }), [id, globals]);
 

@@ -44,13 +44,17 @@ let lenses: LiveLenses;
 let slot: HTMLElement;
 let closeTrial: () => void;
 
-function Harness() {
-  const [config, setConfigState] = useState<Record<string, unknown>>({ label: 'A', size: 1 });
+function Harness({ lab = 'light', pin }: { lab?: string; pin?: string }) {
+  const [config, setConfigState] = useState<Record<string, unknown>>({
+    label: 'A',
+    size: 1,
+    ...(pin ? { $globals: { mode: pin } } : {}),
+  });
   const [open, setOpen] = useState(true);
   closeTrial = () => setOpen(false);
   return (
     <LiveLensesContext.Provider value={lenses}>
-      <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
+      <StoryGlobalsContext.Provider value={{ mode: lab }}>
         <TrialIdContext.Provider value="t1">
           {open ? (
             <StoryTrial
@@ -76,19 +80,25 @@ const inSlot = () => within(slot);
 
 const DARK_B: ForgeComparison = { kind: 'custom', globals: { mode: 'dark' }, args: { label: 'B' } };
 
-function request(reticle: { x: number; y: number }, conditions: ForgeComparison | null = DARK_B): LensSourceRequest<ForgeComparison> {
+function request(
+  reticle: { x: number; y: number },
+  conditions: ForgeComparison | null = DARK_B,
+): LensSourceRequest<ForgeComparison> {
   return { lensId: 'a', reticle, factor: 4, size: { width: 160, height: 160 }, conditions, dpr: 1 };
 }
 
 /** The Live source attached to `slot`, as a lens slot would attach it. */
-function attach(at: { x: number; y: number }): LensSourceHandle<ForgeComparison> & { remeasure(): void } {
+function attach(
+  at: { x: number; y: number },
+  opts: { lab?: string; compare?: ForgeComparison } = {},
+): LensSourceHandle<ForgeComparison> & { remeasure(): void } {
   const source = createLiveSource(lenses, resolveComparison, () => ({
-    base: { mode: 'light' },
+    base: { mode: opts.lab ?? 'light' },
     ctx: { declarations: {}, modeGlobal: 'mode', prefersDark: false, labMode: 'light' },
   }));
   let handle!: LensSourceHandle<ForgeComparison>;
   act(() => {
-    handle = source.attach(slot, request(at));
+    handle = source.attach(slot, request(at, opts.compare));
   });
   return { ...handle, remeasure: () => act(() => source.remeasure()) };
 }
@@ -170,5 +180,20 @@ describe('LiveCopies', () => {
     } finally {
       frame.remove();
     }
+  });
+
+  it('shows the mode a comparison asks for even where the lab already has it and the trial pins another', async () => {
+    renderWithIcons(<Harness lab="dark" pin="light" />);
+    expect((await main().findByTestId('mode')).textContent).toBe('light');
+    attach({ x: 100, y: 100 }, { lab: 'dark', compare: { kind: 'custom', globals: { mode: 'dark' } } });
+    expect((await inSlot().findByTestId('mode')).textContent).toBe('dark');
+  });
+
+  it('keeps a trial’s pin on a global the comparison leaves alone', async () => {
+    renderWithIcons(<Harness lab="dark" pin="light" />);
+    await main().findByTestId('mode');
+    attach({ x: 100, y: 100 }, { lab: 'dark', compare: { kind: 'custom', args: { label: 'B' } } });
+    expect((await inSlot().findByTestId('label')).textContent).toBe('B');
+    expect(inSlot().getByTestId('mode').textContent).toBe('light');
   });
 });
