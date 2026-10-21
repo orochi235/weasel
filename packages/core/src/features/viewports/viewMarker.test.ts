@@ -35,7 +35,6 @@ describe('createViewMarkerLayer', () => {
     expect(cmd!.path).toEqual(polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 75 }, { x: 0, y: 75 }]));
   });
 
-  // Review Focus
   it('draws nothing for a source with no view, or a source that is its own target', () => {
     expect(createViewMarkerLayer(() => ({ id: 'm', source: 'gone', target: 'pip' }), host).draw({}, view, dims)).toEqual([]);
     expect(createViewMarkerLayer(() => ({ id: 'm', source: 'pip', target: 'pip' }), host).draw({}, view, dims)).toEqual([]);
@@ -76,7 +75,6 @@ describe('grabViewMarker', () => {
     expect(source.setAim.mock.lastCall![0].extent).toEqual({ x: 80, y: 0, width: 400, height: 300 });
   });
 
-  // Review Focus
   it('does not grab a source with no writer, or a marker that is not interactive', () => {
     expect(grabViewMarker({ ...props, source: { aim: () => rectAim(null, R) } }, host, space, { x: 50, y: 40 })).toBeNull();
     expect(grabViewMarker({ ...props, interactive: false }, host, space, { x: 50, y: 40 })).toBeNull();

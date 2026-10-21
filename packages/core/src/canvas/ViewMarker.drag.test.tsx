@@ -7,7 +7,7 @@
  * camera writes. A drag that leaves the PiP keeps routing to it because the
  * view resolver is sticky for the pressed pointer, not because of capture.
  */
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, type Mock } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef, useEffect, type ReactNode } from 'react';
 import { SceneCanvas } from './SceneCanvas';
@@ -15,6 +15,10 @@ import { CanvasView } from './CanvasView';
 import { ViewMarker } from './ViewMarker';
 import { createScene } from 'core/scene/scene';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { useSceneAdapter } from './useSceneAdapter';
+import { useSelectTool } from '../tools/builtin/select/useSelectTool';
+import { useTools, type ToolsApi } from '../tools/overlayBinding';
+import { WeaselProvider } from '../WeaselProvider';
 import type { SceneCanvasProps } from './SceneCanvas/props';
 import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
@@ -49,10 +53,10 @@ function pointer(el: Element, type: string, x: number, y: number) {
   }));
 }
 
-const last = (fn: ReturnType<typeof vi.fn>): View => fn.mock.calls.at(-1)![0] as View;
+const last = (fn: Mock<(next: View) => void>): View => fn.mock.calls.at(-1)![0];
 
 let scene: ReturnType<typeof createScene<D, 'main', P>>;
-let onViewChange: ReturnType<typeof vi.fn>;
+let onViewChange: Mock<(next: View) => void>;
 let api: ReturnType<typeof createRef<SceneCanvasApi>>;
 let pip: ReturnType<typeof createRef<CanvasViewCamera>>;
 let canvas: HTMLCanvasElement;
@@ -64,7 +68,7 @@ beforeEach(() => {
   // Under the marker's press point in the PiP (world 200, 80): a select tool
   // that saw the press would select it.
   node = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 180, y: 60, width: 40, height: 40 }, data: { kind: 'rect' } });
-  onViewChange = vi.fn();
+  onViewChange = vi.fn<(next: View) => void>();
   api = createRef<SceneCanvasApi>();
   pip = createRef<CanvasViewCamera>();
   selection = null;
@@ -76,20 +80,31 @@ function Selected({ children }: { children: (s: SelectionApi) => ReactNode }) {
   return <>{children(s)}</>;
 }
 
+/** A consumer-assembled tool set: the select tool alone, handed in as a takeover. */
+function Takeover({ s, children }: { s: SelectionApi; children: (tools: ToolsApi) => ReactNode }) {
+  const adapter = useSceneAdapter(scene, { selection: s });
+  const select = useSelectTool(adapter, {});
+  const tools = useTools({ active: 'select', registry: { select } });
+  return <>{children(tools)}</>;
+}
+
 function mount(
   extra: Partial<SceneCanvasProps<D, 'main', P>> = {},
-  opts: { rootAim?: Partial<ViewMarkerProps>; markers?: ReactNode } = {},
+  opts: { rootAim?: Partial<ViewMarkerProps>; markers?: ReactNode; takeover?: boolean } = {},
 ) {
+  const surface = (s: SelectionApi, tools?: ToolsApi) => (
+    <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ref={api} selection={s} {...(tools ? { tools } : {})} {...extra}>
+      <CanvasView id="pip" bounds={{ x: 250, y: 180, w: 140, h: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} cameraRef={pip} />
+      <ViewMarker id="root-aim" source={null} target="pip" {...opts.rootAim} />
+      {opts.markers}
+    </SceneCanvas>
+  );
   const r = render(
-    <Selected>
-      {(s) => (
-        <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ref={api} selection={s} {...extra}>
-          <CanvasView id="pip" bounds={{ x: 250, y: 180, w: 140, h: 105 }} defaultView={{ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }} cameraRef={pip} />
-          <ViewMarker id="root-aim" source={null} target="pip" {...opts.rootAim} />
-          {opts.markers}
-        </SceneCanvas>
-      )}
-    </Selected>,
+    <WeaselProvider>
+      <Selected>
+        {(s) => (opts.takeover ? <Takeover s={s}>{(tools) => surface(s, tools)}</Takeover> : surface(s))}
+      </Selected>
+    </WeaselProvider>,
   );
   canvas = r.container.querySelector('canvas')!;
 }
@@ -121,7 +136,6 @@ describe('dragging a view marker', () => {
     expect(last(onViewChange)).toMatchObject({ x: -800, y: -400 });
   });
 
-  // Review Focus
   it('wins over the select tool on a draw surface', () => {
     mount({ features: ['draw'] });
     drag([300, 200], [310, 210]);
@@ -130,14 +144,12 @@ describe('dragging a view marker', () => {
     expect(scene.get(node)!.pose).toMatchObject({ x: 180, y: 60 });
   });
 
-  // Review Focus
   it('reaches onViewChange clamped by viewBounds', () => {
     mount({ viewBounds: { x: 0, y: 0, width: 420, height: 320 } });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 20, y: 20 });
   });
 
-  // Review Focus
   it('ends a camera glide in flight', () => {
     mount();
     act(() => api.current!.animateView({ x: 500, y: 0, scale: { x: 1, y: 1 } }));
@@ -152,7 +164,6 @@ describe('dragging a view marker', () => {
     expect(pip.current!.getView()).toMatchObject({ x: 10, y: 0 });
   });
 
-  // Review Focus
   it('lets a press on a marker that is not interactive fall through to the view', () => {
     mount({ features: ['draw'] }, { rootAim: { interactive: false } });
     drag([300, 200], [310, 210]);
@@ -160,10 +171,26 @@ describe('dragging a view marker', () => {
     expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
   });
 
-  // Review Focus
   it('lets a press on a marker whose source has no writer fall through to the view', () => {
     const source = { aim: () => api.current!.aimOf(null) };
     mount({ features: ['draw'] }, { rootAim: { source } });
+    drag([300, 200], [310, 210]);
+    expect(onViewChange).not.toHaveBeenCalled();
+    expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
+  });
+});
+
+describe('a surface that installs no marker drag', () => {
+  it('lets a press on a marker fall through to the view under actions={null}', () => {
+    // `actions={null}` mutes the kit's move too, so the select tool's own pick is what answers.
+    mount({ features: ['draw'], actions: null });
+    drag([300, 200], [310, 210]);
+    expect(onViewChange).not.toHaveBeenCalled();
+    expect(selection!.get()).toEqual([node]);
+  });
+
+  it('lets a press on a marker fall through to the view under a tools takeover', () => {
+    mount({ features: ['draw'] }, { takeover: true });
     drag([300, 200], [310, 210]);
     expect(onViewChange).not.toHaveBeenCalled();
     expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });

@@ -6,6 +6,9 @@ import type { ViewMarkerGrab } from './viewMarker';
 /** The action id a drag on a view marker routes to. */
 export const VIEW_MARKER_DRAG = 'view.marker.drag';
 
+/** The id of the entry {@link createViewMarkerContribution} builds. */
+export const VIEW_MARKER_ENTRY_ID = 'view-marker';
+
 const MARKER_KIND_PREFIX = 'layer:view-marker:';
 
 function grabIn(affordance: unknown): ViewMarkerGrab | null {
@@ -34,7 +37,7 @@ export function viewMarkerDragAction(): Action {
 /** The always-on entry (id `'view-marker'`) that binds a drag on any marker to {@link VIEW_MARKER_DRAG}. */
 export function createViewMarkerContribution(): SurfaceContribution {
   return {
-    id: 'view-marker',
+    id: VIEW_MARKER_ENTRY_ID,
     eligibility: { always: true },
     actions: [viewMarkerDragAction()],
     bindings: [{

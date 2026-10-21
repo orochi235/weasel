@@ -6,7 +6,7 @@ import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { RuleCtx } from 'features/chrome-caps';
 import type React from 'react';
-import { useCallback, useInsertionEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useInsertionEffect, useMemo, useState } from 'react';
 import type { Contribution } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import { useDispatchDepSources } from '../deps/dispatchSources';
@@ -19,6 +19,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
 import { traceConversion, type CoordTraceEntry } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
+import { VIEW_MARKER_ENTRY_ID } from '../../features/viewports/viewMarkerDrag';
 
 /** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
 export interface SceneGestureDispatcherInputs {
@@ -156,6 +157,14 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
   }, [affordanceAt, canvasApiRef, viewRegistry]);
 }
 
+/** Markers take presses only while the routed tools carry the marker drag:
+ *  `actions={null}` and a tools takeover both leave it out. */
+function useMarkerGate(viewRegistry: ViewRegistry | null, ambient: readonly Contribution[]): void {
+  const installed = ambient.some((entry) => entry.id === VIEW_MARKER_ENTRY_ID);
+  const installedRef = useLatest(installed);
+  useEffect(() => viewRegistry?.gateMarkers(() => installedRef.current), [viewRegistry, installedRef]);
+}
+
 /** Which body a world point lands on, its selection state, and its routing kind. */
 function useClassifyTarget(
   inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef' | 'doubleClickNames'>,
@@ -215,6 +224,7 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
   }, [tools.registry, tools.ambient, contributions]);
 
   const kindOfNodeRef = useLatest(kindOfNode);
+  useMarkerGate(viewRegistry, tools.ambient);
 
   const affordanceWithLayers = useAffordanceAt(inputs, depRegistry, viewRegistry);
   const classifyTarget = useClassifyTarget(inputs, kindOfNodeRef);

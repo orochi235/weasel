@@ -114,7 +114,7 @@ export type { CanvasViewCamera } from '../canvas/canvasExtension';
 // `<ViewMarker>` outlines one view's aim inside another's frame.
 export { ViewMarker } from '../canvas/ViewMarker';
 export {
-  createViewMarkerLayer, grabViewMarker, VIEW_MARKER_DEFAULT_STYLE, VIEW_MARKER_HIT_SLOP_PX,
+  createViewMarkerLayer, VIEW_MARKER_DEFAULT_STYLE, VIEW_MARKER_HIT_SLOP_PX,
 } from '../features/viewports/viewMarker';
 export type {
   ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource, ViewMarkerGrab,

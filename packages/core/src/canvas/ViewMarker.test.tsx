@@ -87,7 +87,6 @@ describe('<ViewMarker>', () => {
     expect(drawn.filter((c) => c.kind === 'path' && c.stroke?.dash !== undefined)).toEqual([]);
   });
 
-  // Review Focus
   it('mounts before its target view', () => {
     const api = mount({ marker: true });
     expect(api.current!.aimOf('pip')).toBeNull();
@@ -107,7 +106,7 @@ describe('<ViewMarker>', () => {
     )).toThrow(/marker "m"/);
   });
 
-  // Ruling I: a press routes to a marker by id, so two live markers may not share one.
+  // A press routes to a marker by id, so two live markers may not share one.
   it('refuses to register a marker id already live on the surface', () => {
     let registry: ViewRegistry | null = null;
     function Probe() {

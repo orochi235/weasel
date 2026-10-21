@@ -66,6 +66,8 @@ export function useCanvasTools(args: {
   /** `viewport.inertia`, which is the hand tool's. */
   inertia: NonNullable<Props['viewport']>['inertia'];
   ambient: Props['ambient'];
+  /** `null` leaves out the kit's default actions, the marker drag among them. */
+  actions: Props['actions'];
   /** `longPress.feedback`. Default true, which installs the kit's own. */
   pressFeedback: NonNullable<Props['longPress']>['feedback'];
   initialActiveTool: Props['initialActiveTool'];
@@ -93,9 +95,13 @@ export function useCanvasTools(args: {
   const defaultPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = args.pressFeedback ?? true;
   const pressFeedback = feedbackOpt === true ? defaultPressFeedback : feedbackOpt || null;
-  const markerDrag = useMemo(() => createViewMarkerContribution(), []);
+  const defaultMarkerDrag = useMemo(() => createViewMarkerContribution(), []);
+  const markerDrag = args.actions === null ? null : defaultMarkerDrag;
   const mergedAmbient = useMemo(
-    () => [...presetContributions(enabled), ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : []), markerDrag],
+    () => [
+      ...presetContributions(enabled), ...(ambient ?? []),
+      ...(pressFeedback ? [pressFeedback] : []), ...(markerDrag ? [markerDrag] : []),
+    ],
     [enabled, ambient, pressFeedback, markerDrag],
   );
 

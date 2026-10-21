@@ -22,6 +22,9 @@ export interface ViewMarkerRegistry {
   /** The topmost interactive marker drawn in `target` under `world` (a point
    *  in `target`'s world), as the affordance a press there routes. */
   markerAt(target: string | null, world: { x: number; y: number }): AffordanceHit | null;
+  /** Lets `markerAt` answer while `open()` says the surface binds a marker drag;
+   *  until then it answers `null`, so a press falls through. Returns an undo. */
+  gateMarkers(open: () => boolean): () => void;
 }
 
 /** What the marker half reads off the rest of the registry. */
@@ -39,6 +42,7 @@ export function createViewMarkerRegistry(
   markers: Map<() => ViewMarkerProps, RenderLayer<unknown>>,
   deps: ViewMarkerRegistryDeps,
 ): ViewMarkerRegistry {
+  let gate: (() => boolean) | null = null;
   const targetSpace = (target: string | null): AimSpace | null => {
     const surface = deps.surface();
     if (!surface) return null;
@@ -64,6 +68,7 @@ export function createViewMarkerRegistry(
       return out;
     },
     markerAt: (target, world) => {
+      if (!gate?.()) return null;
       const space = targetSpace(target);
       const at = space?.project(world);
       if (!space || !at) return null;
@@ -75,6 +80,10 @@ export function createViewMarkerRegistry(
         if (grab) return layerAffordance(`view-marker:${props.id}`, { initialScratch: grab });
       }
       return null;
+    },
+    gateMarkers: (open) => {
+      gate = open;
+      return () => { if (gate === open) gate = null; };
     },
   };
 }
