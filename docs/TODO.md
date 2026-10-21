@@ -101,8 +101,7 @@ Priority tags:
 - **(P3) The Badge Compose lab's Appearance and Type & Padding panels overlap at forge's stage
   width.** In `packages/ui/src/components/Badge/lab/`, at a stage about 480px wide, the variant
   toggle's "subtle" runs under the "font" label beside it, and the caps toggle runs past its panel's
-  edge ([screenshot](http://localhost:8787/to/weasel/9487179A-A3DC-42FC-861F-AFC265BEEDD1.png),
-  2026-10-21).
+  edge (seen in headless Chromium, 2026-10-21).
 
 ### Cursor package follow-ups
 
@@ -696,8 +695,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) An `ActionBar` fills its container's width.** Its `framed="segmented"` strip is a
   block-level flex box, so in a forge story the horizontal bar's frame runs the stage's full width
   with its buttons at the start, and the vertical one is a full-width column with its buttons
-  centered ([horizontal](http://localhost:8787/to/weasel/D8A46F70-6283-4D8A-9C09-BC6B419BD295.png),
-  [vertical](http://localhost:8787/to/weasel/0FB50D8C-9844-47C9-A633-7E2573CA26E8.png), 2026-10-21).
+  centered (seen in headless Chromium, 2026-10-21).
   `Bar`'s own vertical stories size it with an `inline-flex` rail around it. Needs a call: whether a
   segmented strip sizes itself to its buttons, or its host sizes it.
 
