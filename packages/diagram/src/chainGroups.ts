@@ -3,6 +3,9 @@
  * columns, nothing else hangs among them, and the gaps along the line leave
  * room for its box.
  *
+ * The gaps between levels of hung nodes, across the line, leave room for
+ * boxes the same way.
+ *
  * The line's order is the signal's order, so a group whose line members a
  * non-member splits keeps its box over that non-member.
  */
@@ -123,14 +126,9 @@ function clearColumns(
   return level;
 }
 
-/**
- * The gap after each line node but the last: `rankGap`, widened by the
- * rank-side insets of the groups that end at the node before it or start at
- * the one after, the way `rankGaps` widens a layered layout's ranks. Then,
- * along a horizontal line, each group's gaps on either side widen by half
- * of what its box falls short of its `minWidth`. `packed` is every node's
- * slot with all gaps zero.
- */
+/** The gap after each line node but the last, widened for group boxes as
+ *  {@link bandGaps} widens them. `packed` is every node's slot with all gaps
+ *  zero. */
 export function lineGaps(
   graph: Graph,
   line: readonly GraphNode[],
@@ -144,37 +142,88 @@ export function lineGaps(
   for (const node of graph.nodes) {
     if (!index.has(node.id)) columns[index.get(hanging.owner.get(node.id)!)!]!.push(node);
   }
-  const gaps = rankGaps(graph, columns, axes, rankGap);
-  const groups = graph.groups ?? [];
-  if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return gaps;
+  return bandGaps(graph, columns, axes, columns.slice(1).map(() => rankGap), (id) => packed.get(id)?.rank);
+}
 
-  const columnOf = (id: string) => index.get(id) ?? index.get(hanging.owner.get(id)!)!;
+/**
+ * The gap after each level of hung nodes but the last, the line being level 0:
+ * `base`, widened for group boxes as {@link bandGaps} widens them, so a box
+ * holding a column's deeper members keeps its inset clear of the outsiders
+ * hung past it. `levelSize` is each level's depth across the line, and
+ * `before` hangs them on the low side.
+ */
+export function levelGaps(
+  graph: Graph,
+  hanging: Hanging,
+  levelSize: readonly number[],
+  axes: LayoutAxes,
+  before: boolean,
+  base: readonly number[],
+): number[] {
+  const levels: GraphNode[][] = Array.from(levelSize, () => []);
+  for (const node of graph.nodes) (levels[hanging.level.get(node.id)!] ??= []).push(node);
+  const outward: LayoutAxes = { rank: axes.cross, cross: axes.rank, sign: before ? -1 : 1 };
+  const from: number[] = [0];
+  for (let k = 1; k < levelSize.length; k++) from[k] = from[k - 1]! + (levelSize[k - 1] ?? 0);
+  return bandGaps(graph, levels, outward, base, (id) => {
+    const node = graph.node(id);
+    const at = hanging.level.get(id);
+    if (node === undefined || at === undefined) return undefined;
+    // A line node is centered in its band; a hung one sits against the edge facing the line.
+    return at === 0 ? (levelSize[0]! - extent(node.bounds, outward.rank)) / 2 : from[at]!;
+  });
+}
+
+/**
+ * `gaps`, the gap after each band of nodes but the last, widened by the
+ * insets of the groups that end at the band before it or start at the one
+ * after, the way `rankGaps` widens a layered layout's ranks. Then, where the
+ * bands follow one another along x, each group's gaps on either side widen by
+ * half of what its box falls short of its `minWidth`. `axes.rank` is the axis
+ * the bands follow one another along, `axes.sign` which way, and `start` is
+ * where a node starts along it with every gap zero.
+ */
+export function bandGaps(
+  graph: Graph,
+  bands: readonly (readonly GraphNode[])[],
+  axes: LayoutAxes,
+  gaps: readonly number[],
+  start: (id: string) => number | undefined,
+): number[] {
+  const insets = rankGaps(graph, bands, axes, 0);
+  const out = gaps.map((gap, i) => gap + (insets[i] ?? 0));
+  const groups = graph.groups ?? [];
+  if (axes.rank !== 'x' || !groups.some((g) => g.minWidth !== undefined)) return out;
+
+  const bandOf = new Map<string, number>();
+  bands.forEach((band, i) => band.forEach((n) => bandOf.set(n.id, i)));
   const children = new Map<string, string[]>();
   for (const g of groups) if (g.parent !== undefined) children.set(g.parent, [...(children.get(g.parent) ?? []), g.id]);
   const byId = new Map(groups.map((g) => [g.id, g]));
   const span = (id: string, now: readonly number[]) => {
     let [lo, hi] = [Infinity, -Infinity];
     for (const m of byId.get(id)!.members) {
-      const slot = packed.get(m);
+      const at = start(m);
+      const band = bandOf.get(m);
       const node = graph.node(m);
-      if (slot === undefined || node === undefined) continue;
-      const from = slot.rank + now.slice(0, columnOf(m)).reduce((s, gap) => s + gap, 0);
+      if (at === undefined || band === undefined || node === undefined) continue;
+      const from = at + now.slice(0, band).reduce((s, gap) => s + gap, 0);
       [lo, hi] = [Math.min(lo, from), Math.max(hi, from + extent(node.bounds, axes.rank))];
     }
     return { lo, hi };
   };
   widenForMinWidth(deepestFirst(groups).map((g) => {
-    const cols = g.members.filter((id) => packed.has(id)).map(columnOf);
+    const placed = g.members.flatMap((id) => (bandOf.has(id) && start(id) !== undefined ? [bandOf.get(id)!] : []));
     return {
       id: g.id,
       ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
       inset: rankInset(g.inset, axes),
       children: children.get(g.id) ?? [],
-      before: cols.length === 0 ? -1 : Math.min(...cols) - 1,
-      after: cols.length === 0 ? -1 : Math.max(...cols),
+      before: placed.length === 0 ? -1 : Math.min(...placed) - 1,
+      after: placed.length === 0 ? -1 : Math.max(...placed),
     };
-  }), gaps, span);
-  return gaps;
+  }), out, span);
+  return out;
 }
 
 /** A group as {@link widenForMinWidth} reads it. */

@@ -7,7 +7,7 @@
  * two neighbors' hangers never share space, and each group's members hang in
  * one stretch of columns with room left for its box (`chainGroups`).
  */
-import { groupHanging, lineGaps } from './chainGroups';
+import { groupHanging, levelGaps, lineGaps } from './chainGroups';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, ranksOf } from './layered';
@@ -109,11 +109,17 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const slots = (rank: readonly number[], side: number) => slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank, side }, before);
-  const gaps = graph.groups?.length
-    ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), nodeGap))
+  const grouped = (graph.groups?.length ?? 0) > 0;
+  const across = (side: number) => {
+    const base = Array.from(levelSize.slice(1), (_, k) => (k === 0 ? side : nodeGap));
+    return grouped ? levelGaps(graph, hanging, levelSize, axes, before, base) : base;
+  };
+  const slots = (rank: readonly number[], level: readonly number[]) =>
+    slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank, level }, before);
+  const gaps = grouped
+    ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), []))
     : line.map(() => rankGap);
-  const place = (side: number) => settle(graph, slots(gaps, side), opts);
+  const place = (side: number) => settle(graph, slots(gaps, across(side)), opts);
   // Where a side edge turns depends only on positions along the line, which
   // the gap across it does not move, so one trial run counts the tracks.
   let moves = place(nodeGap);
@@ -127,18 +133,18 @@ function slotsFor(
   rows: ReadonlyMap<string, GraphNode[][]>,
   levelSize: readonly number[],
   axes: LayoutAxes,
-  gaps: { node: number; rank: readonly number[]; side: number },
+  gaps: { node: number; rank: readonly number[]; level: readonly number[] },
   before: boolean,
 ): Map<string, Slot> {
-  const { node: nodeGap, rank: rankGap } = gaps;
+  const { node: nodeGap, rank: rankGap, level: levelGap } = gaps;
   const rowSpan = (row: readonly GraphNode[]) =>
     row.reduce((sum, n) => sum + extent(n.bounds, axes.rank), 0) + nodeGap * Math.max(row.length - 1, 0);
-  /** The low cross edge of level `at`'s band, the line's own being 0. The
-   *  gap between the line and the first band is `gaps.side`. */
+  /** The low cross edge of level `at`'s band, the line's own being 0.
+   *  `levelGap[k]` is the gap between level `k` and the next. */
   const bandStart = (at: number): number => {
     let offset = 0;
-    const first = before ? 1 : 0;
-    for (let k = first; k < (before ? at + 1 : at); k++) offset += (levelSize[k] ?? 0) + (k === first ? gaps.side : nodeGap);
+    if (before) for (let k = 1; k <= at; k++) offset += (levelSize[k] ?? 0) + (levelGap[k - 1] ?? 0);
+    else for (let k = 0; k < at; k++) offset += (levelSize[k] ?? 0) + (levelGap[k] ?? 0);
     return before ? -offset : offset;
   };
 

@@ -1395,14 +1395,6 @@ only story runner in the repo.
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
-- **(P3) A group's inset can overlap an outsider under `rack`.** The chain layout moves an
-  outsider one level past a group's deepest member but leaves only `nodeGap` between levels, so the
-  box's inset clears the outsider only while the inset is smaller than `nodeGap`. That holds at the
-  defaults (12 against 48); a custom `rack` `nodeGap` or a large group inset breaks it.
-  `clearColumns` in `packages/diagram/src/chainGroups.ts` (2026-10-20).
-- **(P3) The `chain` layout ignores a group's `minWidth` on a vertical line.** `lineGaps` in
-  `packages/diagram/src/chainGroups.ts` widens for it only when the line runs horizontally, though
-  `GraphGroup.minWidth`'s doc says a layout leaves room for it (2026-10-20).
 - **(P3) `lanes` doesn't route wires around group boxes.** A wire between two stages outside a
   group can run straight through the group's box, and a group title's inset reaches into the lane
   above. `lanesRoutes.ts` knows nothing of group boxes (2026-10-20).
