@@ -1076,13 +1076,6 @@ only story runner in the repo.
   backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
   2026-10-19).
 
-- **(P3) A node's shared tree can change under a run already in progress.** onto refuses to *start*
-  a suite in a tree another session synced, but nothing stops a sync landing mid-run. On 2026-10-20
-  the full run of `72fe486f7` on studio had all 241 browser suites fail to import
-  `vitest.browser.setup.ts` with `SyntaxError: Unexpected identifier 'error'`, which no source
-  matches; the same commits passed on the next run. A mid-run sync is inferred, not observed. A
-  check at the end of the run, comparing the tree's stamp with the one it started on, would turn
-  this into a void run rather than 241 failures.
 - **(P3) `AssetsPage`'s first test times out in full fleet runs.** "opens on WeaselDraw
   preferences, and opens a node property schema picked from the list"
   (`apps/draw/src/dev/AssetsPage.test.tsx`) hit its 5000ms timeout in the full runs of `a64fe9501`,

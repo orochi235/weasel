@@ -258,7 +258,8 @@ it on the branch before merging and on `main` after. `onto` keeps one tree per r
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
 path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fleet-tree.setup.ts`
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
-line once per shard. Sharding is not a way to make a run faster: each of its slices starts vitest
+line once per shard. A run whose tree another sync moved before it finished ends with `fleet-tree:
+the tree changed during the run (…); this run is void`, after the summary: none of its failures are real. Sharding is not a way to make a run faster: each of its slices starts vitest
 afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-minutes where an
 unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest whenever the node's idle
 cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overlap.mjs` prints its
