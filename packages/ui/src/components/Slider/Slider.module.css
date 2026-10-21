@@ -281,14 +281,14 @@
   pointer-events: none;
 }
 
+/* Each also takes `onRun`; this outranks what the straight rules give the same parts. */
 .curved .thumb,
 .curved .tick,
 .curved .stopLabel {
-  left: var(--at-x);
   top: var(--at-y);
   bottom: auto;
   margin-left: 0;
-  transform: translate(-50%, -50%) rotate(var(--at-angle));
+  transform: var(--on-run);
 }
 
 .curved .thumb {
@@ -312,7 +312,7 @@
 
 /* Down the run's normal, past the band: outside the circle on a bottom arc. */
 .curved .stopLabel {
-  transform: translate(-50%, -50%) rotate(var(--at-angle)) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh));
+  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh));
 }
 
 .readoutsAlong {
@@ -323,14 +323,12 @@
 
 .readoutAlong {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  position: absolute;
-  left: var(--at-x);
-  top: var(--at-y);
+  composes: onRun from '../Along/onRun.module.css';
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
   line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg-muted);
   white-space: nowrap;
   /* Below the stop labels' line, one row per step of --row. */
-  transform: translate(-50%, -50%) rotate(var(--at-angle)) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh));
+  transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh));
 }

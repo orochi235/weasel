@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { placeOnRun } from '../Along/placeOnRun';
 import { lineShape, trackRun, type ArcTrackShape, type Point, type TrackRun, type TrackShape } from '@weasel-js/geom';
 
 /** Where a client point falls on a slider's value span. */
@@ -80,10 +81,7 @@ function thicknessOf(band: SVGElement | null): number {
 export function curvedGeometry(run: TrackRun, root: () => HTMLElement | null, band: () => SVGElement | null): SliderGeometry {
   return {
     curved: true,
-    place: (g) => {
-      const { point, angle } = run.at(g);
-      return { '--at-x': `${point.x}px`, '--at-y': `${point.y}px`, '--at-angle': `${angle}deg` } as CSSProperties;
-    },
+    place: (g) => placeOnRun(run, g),
     measure: (clientX, clientY) => {
       const el = root();
       if (!el) return null;

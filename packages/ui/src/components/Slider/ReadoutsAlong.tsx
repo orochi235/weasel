@@ -1,9 +1,6 @@
 import { useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from './Slider.module.css';
-import { staggerRows } from './staggerRows';
-
-/** Space kept between two readouts sharing a row, in px. */
-const GAP = 4;
+import { GAP, staggerRows } from './staggerRows';
 
 /** Each readout at its `g` along a curve, below the track and tipped to it, stepping down a row where two would overlap. */
 export function ReadoutsAlong({ readouts, place, length }: {

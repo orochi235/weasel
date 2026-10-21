@@ -1,9 +1,6 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import s from './Slider.module.css';
-import { staggerRows } from './staggerRows';
-
-/** Space kept between two readouts sharing a row, in px. */
-const GAP = 4;
+import { GAP, staggerRows } from './staggerRows';
 
 export interface Readout {
   /** Where along the track its thumb sits, 0–1. */

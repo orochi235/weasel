@@ -1,13 +1,14 @@
-import { useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
+import { useMemo, useRef, type ReactElement } from 'react';
 import { trackRun, trackShapeD, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
+import { placeOnRun } from '../Along/placeOnRun';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
-import { placeAlong, runLength, runPlaces, type RunSpot } from './runPlaces';
+import { runLength, runPlaces, type RunSpot } from './runPlaces';
 import { BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useItemLengths, useRunGap } from './useItemLengths';
 import { useRunScroll } from './useRunScroll';
@@ -47,7 +48,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   let spots: RunSpot[] = [];
   const scroll = useRunScroll({ root, run, total, spots: () => spots, lengths: orderLengths });
   spots = alongSpots(orderLengths, gap, run.length, align, menu, scroll.offset);
-  const place = (i: number) => ({ className: s.item!, style: placeAlong(run, spots[i]!.center), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
+  const place = (i: number) => ({ className: s.item!, style: placeOnRun(run, run.length > 0 ? spots[i]!.center / run.length : 0.5), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
   const first = leading != null ? 1 : 0;
   const scrolls = total > run.length;
 
@@ -86,9 +87,7 @@ function alongSpots(lengths: readonly number[], gap: number, room: number, align
 function MorePast({ run, start, end }: { run: TrackRun; start: boolean; end: boolean }): ReactElement {
   // The chevron glyph points down, a quarter turn clockwise from the reading direction `angle` tips to.
   const mark = (at: 'start' | 'end') => {
-    const { point, angle } = run.at(at === 'start' ? 0 : 1);
-    const turn = at === 'start' ? angle + 90 : angle - 90;
-    const style = { '--at-x': `${point.x}px`, '--at-y': `${point.y}px`, '--at-angle': `${turn}deg` } as CSSProperties;
+    const style = at === 'start' ? placeOnRun(run, 0, 90) : placeOnRun(run, 1, -90);
     return (
       <span className={s.morePast} data-more-past={at} aria-hidden="true" style={style}>
         <Icon name={icon('chevron')} size={14} />

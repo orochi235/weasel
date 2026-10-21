@@ -1,3 +1,6 @@
+/** Space kept between two readouts sharing a row, in px. */
+export const GAP = 4;
+
 /** The row each span takes: the first where it clears everything already there by `gap`. */
 export function staggerRows(spans: readonly { start: number; end: number }[], gap: number): number[] {
   const order = spans.map((_, i) => i).sort((a, b) => spans[a]!.start - spans[b]!.start);

@@ -1,5 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import { qty } from '@weasel-js/quantity';
+import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import type { SliderGeometry } from './sliderGeometry';
 import type { SliderProps, Thumb } from './types';
@@ -26,7 +27,7 @@ export interface SliderThumbProps<T extends Thumb> {
 export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactElement {
   const { thumb, active } = p;
   const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
-  const cls = [s.thumb, thumb.shape === 'notched' && s.notched, active && s.thumbActive].filter(Boolean).join(' ');
+  const cls = [s.thumb, p.geometry.curved && on.onRun, thumb.shape === 'notched' && s.notched, active && s.thumbActive].filter(Boolean).join(' ');
   return (
     <div
       ref={p.elRef}

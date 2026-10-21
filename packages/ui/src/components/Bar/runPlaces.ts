@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-import type { TrackRun } from '@weasel-js/geom';
 import type { RunAlign } from '../Along/alongContext';
 
 /** Where one item of a run falls: its center along the run, and how much of it lies past the run's ends. */
@@ -25,10 +23,4 @@ export function runPlaces(lengths: readonly number[], gap: number, room: number,
 /** How long items of `lengths` are laid end to end with `gap` between each two. */
 export function runLength(lengths: readonly number[], gap: number): number {
   return lengths.reduce((sum, length, i) => sum + length + (i > 0 ? gap : 0), 0);
-}
-
-/** The custom properties that set an item `center` px along `run`, tipped to it. */
-export function placeAlong(run: TrackRun, center: number): CSSProperties {
-  const { point, angle } = run.at(run.length > 0 ? center / run.length : 0.5);
-  return { '--at-x': `${point.x}px`, '--at-y': `${point.y}px`, '--at-angle': `${angle}deg` } as CSSProperties;
 }

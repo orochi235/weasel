@@ -1,0 +1,9 @@
+/* A part placed by `placeOnRun`: centered on its spot and tipped to the run.
+ * A rule that moves it further writes `transform: var(--on-run) …`. */
+.onRun {
+  --on-run: translate(-50%, -50%) rotate(var(--at-angle));
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  transform: var(--on-run);
+}

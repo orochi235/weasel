@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import type { SliderGeometry } from './sliderGeometry';
 import type { SliderProps, SliderStop } from './types';
@@ -13,7 +14,7 @@ export function SliderTicks({ stops, valueToFraction, geometry }: {
     <div className={s.ticks} data-slider-ticks aria-hidden="true">
       {stops.map(v => {
         const f = valueToFraction(v);
-        return <span key={v} className={s.tick} data-slider-tick data-fraction={String(f)} style={geometry.place(f)} />;
+        return <span key={v} className={geometry.curved ? `${s.tick} ${on.onRun}` : s.tick} data-slider-tick data-fraction={String(f)} style={geometry.place(f)} />;
       })}
     </div>
   );
@@ -49,7 +50,7 @@ export function SliderStopLabels({ labeled, last, selected, valueToFraction, geo
       {labeled.map(({ stop, i }) => (
         <span
           key={stop.value}
-          className={s.stopLabel}
+          className={geometry.curved ? `${s.stopLabel} ${on.onRun}` : s.stopLabel}
           data-slider-stop-label
           data-selected={selected.includes(stop.value) ? 'true' : undefined}
           data-edge={geometry.curved ? undefined : i === 0 ? 'start' : i === last ? 'end' : undefined}
