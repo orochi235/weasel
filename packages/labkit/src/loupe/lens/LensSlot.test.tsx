@@ -191,6 +191,34 @@ describe('LensSlot and LensChrome', () => {
     expect(ran).toHaveBeenCalledTimes(1);
   });
 
+  it('offers a Token toggle that triggers loupe.readout.token and shows whether it is on', () => {
+    const live = fakeSource('live');
+    const ran = vi.fn();
+    function Spy() {
+      const registry = useActionsRegistry();
+      useEffect(
+        () =>
+          registry?.register({
+            id: 'loupe.readout.token',
+            label: 'Readout: token',
+            invoker: { timing: 'immediate', run: ran },
+          } satisfies Action),
+        [registry],
+      );
+      return null;
+    }
+    render(
+      <ActionsProvider>
+        <Spy />
+        <Both settings={settings({ readouts: ['token'] })} sources={{ live: live.source }} />
+      </ActionsProvider>,
+    );
+    const token = screen.getByRole('button', { name: 'Token' });
+    expect(token.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(token);
+    expect(ran).toHaveBeenCalledTimes(1);
+  });
+
   it('presses the toggle of the source that renders, not the one wanted', () => {
     const live = fakeSource('live');
     const pixels = fakeSource('pixels', { status: 'install playwright' });

@@ -79,7 +79,7 @@
     "longestFunction": 176
   },
   "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
-    "longestFunction": 149
+    "longestFunction": 145
   },
   "packages/forge/src/shell/tree/StoryTree.tsx": {
     "longestFunction": 315

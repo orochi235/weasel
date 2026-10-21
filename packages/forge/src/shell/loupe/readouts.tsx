@@ -7,14 +7,18 @@ import {
   requestsOf,
   useShownSource,
 } from '@weasel-js/labkit/loupe';
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { revealVar } from '../cssVars/reveal';
 import type { ForgeComparison } from './conditions';
+import { backgroundOf, colorAt, tokenChain, topmostIn } from './tokenChain';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';
 export const unreadable = (color: string) => `Cannot read the color "${color}"`;
 export const NO_CAPTURE = 'No capture to read';
 export const OUTSIDE = 'The aim is outside the capture';
+export const NO_COLOR = 'No color under the aim';
+export const NEEDS_LIVE = 'Token needs a Live source for changed conditions';
 
 export type ContrastReading =
   | { ratio: number; aa: boolean; aaa: boolean; large: boolean }
@@ -22,20 +26,6 @@ export type ContrastReading =
 
 /** Pixels either side of the aim that a Pixels reading looks at: a 5×5 neighborhood. */
 const REACH = 2;
-
-/** The first opaque `background-color` from `el` up; null when none is, or the unreadable color that stopped the walk. */
-function backgroundOf(el: Element): { color: string } | { unreadable: string } | null {
-  for (let at: Element | null = el; at; at = at.parentElement) {
-    const color = getComputedStyle(at).backgroundColor;
-    if (color.trim() === '') continue;
-    try {
-      if (parseColor(color)[3] === 1) return { color };
-    } catch {
-      return { unreadable: color };
-    }
-  }
-  return null;
-}
 
 const hasText = (el: Element): boolean =>
   Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '');
@@ -96,11 +86,11 @@ export function contrastAt(
   return { ratio, ...wcagLevels(ratio, large), large };
 }
 
-/** The topmost element of a story, not of a lens's copy of one, under a client point. */
-function elementAt(client: LoupePoint): Element | undefined {
+/** The story host, not a lens's copy of one, whose content is topmost under a client point. */
+function hostAt(client: LoupePoint): HTMLElement | undefined {
   for (const el of document.elementsFromPoint?.(client.x, client.y) ?? []) {
-    const host = el.closest('[data-fg-host]');
-    if (host && !host.hasAttribute('data-fg-copy')) return el;
+    const host = el.closest<HTMLElement>('[data-fg-host]');
+    if (host && !host.hasAttribute('data-fg-copy')) return host;
   }
   return undefined;
 }
@@ -108,15 +98,10 @@ function elementAt(client: LoupePoint): Element | undefined {
 const interiorOf = (lensId: string) =>
   Array.from(document.querySelectorAll<HTMLElement>('.lk-lens-interior')).find((el) => el.dataset.lens === lensId);
 
-/**
- * The topmost element under a client point inside a lens's own compared copy, or undefined. A Split lens holds
- * the compared render beside the base one, so the `~compared` copy is preferred.
- */
-function elementInCopy(lensId: string, client: LoupePoint): Element | undefined {
-  const copies = Array.from(interiorOf(lensId)?.querySelectorAll('[data-fg-copy]') ?? []);
-  const copy = copies.find((c) => (c.getAttribute('data-fg-host') ?? '').endsWith('~compared')) ?? copies[0];
-  if (!copy) return undefined;
-  return (document.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => copy.contains(el));
+/** A lens's own compared copy. A Split lens holds the compared render beside the base one, so the `~compared` copy is preferred. */
+function copyOf(lensId: string): HTMLElement | undefined {
+  const copies = Array.from(interiorOf(lensId)?.querySelectorAll<HTMLElement>('[data-fg-copy]') ?? []);
+  return copies.find((c) => (c.getAttribute('data-fg-host') ?? '').endsWith('~compared')) ?? copies[0];
 }
 
 /** Where a lens's compared render sits at its aim, in client px: the interior's center, in Swap and Split alike, since each side renders the whole interior. */
@@ -125,11 +110,16 @@ function comparedAim(lensId: string): LoupePoint | null {
   return box ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
 }
 
-/** What a Live lens reads: its compared copy at its aim when it has a comparison, else the main story at the reticle. */
+/** What a Live lens reads, and where in it: its compared copy at its aim when it has a comparison, else the main story at the reticle. */
 function liveAim(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
-  if (settings.compare === null) return { element: elementAt(reticle), point: reticle };
-  const point = comparedAim(lensId) ?? reticle;
-  return { element: elementInCopy(lensId, point), point };
+  if (settings.compare === null) return { within: hostAt(reticle), point: reticle };
+  return { within: copyOf(lensId), point: comparedAim(lensId) ?? reticle };
+}
+
+/** The element a Live reading is of: the topmost one under the aim inside what the lens reads. */
+function liveAt(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
+  const { within, point } = liveAim(lensId, settings, reticle);
+  return { element: within && topmostIn(within, point), point };
 }
 
 const verdict = (pass: boolean) => (pass ? 'pass' : 'fail');
@@ -147,7 +137,7 @@ export function ContrastReadout({ lens, settings, sources, reticle, size }: Lens
   const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
   // A Live reading is of the page as it stands, read each render and again whenever the source says a story changed.
   const live = useSyncExternalStore(subscribe, () =>
-    kind === 'live' ? textOf(contrastAt('live', liveAim(lens.lensId, settings, reticle))) : null,
+    kind === 'live' ? textOf(contrastAt('live', liveAt(lens.lensId, settings, reticle))) : null,
   );
   const [pixels, setPixels] = useState<ContrastReading | null>(null);
   const [tick, setTick] = useState(0);
@@ -174,7 +164,71 @@ export function ContrastReadout({ lens, settings, sources, reticle, size }: Lens
   return text ? <span className="fg-lens-contrast">{text}</span> : null;
 }
 
+/** A Token reading: the color's property, each custom property it passes through, and the value they end at. */
+export type TokenReading = { steps: readonly string[] } | { unavailable: string };
+
+/**
+ * How the color under a lens's aim is declared, read from the DOM: the lens's compared copy, or the main story when
+ * nothing is compared. A Pixels capture of changed conditions has no DOM to read.
+ */
+export function tokenAt(
+  kind: 'live' | 'pixels',
+  lensId: string,
+  settings: LensSlotProps<ForgeComparison>['settings'],
+  reticle: LoupePoint,
+): TokenReading {
+  if (kind === 'pixels' && settings.compare !== null) return { unavailable: NEEDS_LIVE };
+  const { within, point } = liveAim(lensId, settings, reticle);
+  const at = within ? colorAt(point, within) : null;
+  if (!at) return { unavailable: NO_COLOR };
+  try {
+    parseColor(at.value);
+  } catch {
+    return { unavailable: unreadable(at.value) };
+  }
+  const chain = tokenChain(at);
+  const end = chain.at(-1)?.declared ?? at.value;
+  return { steps: [at.property, ...chain.slice(1).map((l) => l.property), end] };
+}
+
+const isToken = (step: string) => step.startsWith('--wzl-');
+
+/** The Token readout: the chain of tokens the color under the aim comes from, each token opening the CSS vars panel at it. */
+export function TokenReadout({ lens, settings, sources, reticle }: LensSlotProps<ForgeComparison>) {
+  const { source } = useShownSource(settings, sources);
+  const kind = source?.kind;
+  const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
+  const json = useSyncExternalStore(subscribe, () =>
+    kind === 'live' || kind === 'pixels' ? JSON.stringify(tokenAt(kind, lens.lensId, settings, reticle)) : null,
+  );
+  const reading = useMemo(() => (json === null ? null : (JSON.parse(json) as TokenReading)), [json]);
+  if (!reading) return null;
+  if ('unavailable' in reading) return <span className="fg-lens-token">{reading.unavailable}</span>;
+  return (
+    <span className="fg-lens-token">
+      {reading.steps.map((step, i) => (
+        <Fragment key={i}>
+          {i > 0 ? ' ← ' : null}
+          {isToken(step) && i < reading.steps.length - 1 ? (
+            <button type="button" className="fg-lens-token__link" onClick={() => revealVar(step)}>
+              {step}
+            </button>
+          ) : (
+            step
+          )}
+        </Fragment>
+      ))}
+    </span>
+  );
+}
+
 /** What a lens draws for the readouts it has on, other than the Pixel grid, which the lens draws itself. */
 export function renderReadouts(props: LensSlotProps<ForgeComparison>) {
-  return props.settings.readouts.includes('contrast') ? <ContrastReadout {...props} /> : null;
+  const { readouts } = props.settings;
+  return (
+    <>
+      {readouts.includes('token') ? <TokenReadout {...props} /> : null}
+      {readouts.includes('contrast') ? <ContrastReadout {...props} /> : null}
+    </>
+  );
 }

@@ -21,12 +21,13 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
+import { type ShowToken, useRevealToken } from './reveal';
 import { SectionJump } from './SectionJump';
 import { THEME_NAME, type ThemeSave, TOKEN_PREFIX, type UnsavedScale, useThemeSave } from './useThemeSave';
 import { useStoryTokens } from './useStoryTokens';
@@ -105,6 +106,20 @@ function standingScale(source: ScaleSource, amounts: readonly number[]): TokenSc
   return { ...seed, base: Math.round(base * 100) / 100, rule };
 }
 
+/**
+ * The edited scales a save writes. A scale is saved only while every one of its steps still holds what its edit
+ * generated: a step edited by hand after the scale is an override the scale has no place for.
+ */
+function unsavedScales(edited: Readonly<Record<string, TokenScale>>, overrides: Readonly<Record<string, string>>): UnsavedScale[] {
+  return SCALE_SOURCES.flatMap((source): UnsavedScale[] => {
+    const edit = edited[source.group];
+    if (!edit || !source.tokens.some((name) => overrides[name] !== undefined)) return [];
+    const { name, group, tokens } = source;
+    const clean = scaleValues(source, edit).every(([token, value]) => overrides[token] === value);
+    return clean ? [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }] : [];
+  });
+}
+
 export interface CssVarsPanelProps {
   /** The globals the trial renders under, which pick the axis values a save writes into. */
   readonly globals?: Globals;
@@ -134,6 +149,14 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   const themeTokens = useThemeTokens(globals, frame.vars);
   const story = useStoryTokens(frame.vars);
   const tokens = tab === 'theme' ? themeTokens : story.tokens;
+  const listRef = useRef<HTMLDivElement>(null);
+  const byTab = useMemo(() => ({ theme: themeTokens, story: story.tokens }), [themeTokens, story.tokens]);
+  const show = useCallback<ShowToken>((name, at, category) => {
+    setTab(at);
+    setFilter((was) => (name.toLowerCase().includes(was.trim().toLowerCase()) ? was : ''));
+    setFolds((prev) => (prev[category] ? { ...prev, [category]: false } : prev));
+  }, [setFolds]);
+  useRevealToken(listRef, byTab, show);
 
   const query = filter.trim().toLowerCase();
   const shown = tokens
@@ -180,19 +203,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     );
   };
 
-  // A scale is saved only while every one of its steps still holds what its edit generated: a step edited by hand
-  // after the scale is an override the scale has no place for.
-  const unsaved = useMemo(
-    () =>
-      SCALE_SOURCES.flatMap((source): UnsavedScale[] => {
-        const edit = edited[source.group];
-        if (!edit || !source.tokens.some((name) => overrides[name] !== undefined)) return [];
-        const { name, group, tokens } = source;
-        const clean = scaleValues(source, edit).every(([token, value]) => overrides[token] === value);
-        return clean ? [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }] : [];
-      }),
-    [edited, overrides],
-  );
+  const unsaved = useMemo(() => unsavedScales(edited, overrides), [edited, overrides]);
   const { pending, saving, notice, save } = useThemeSave({ trialId, globals, themeApi, scales: unsaved, overrides, history });
   const onCollapsedChange = useCallback(
     (category: TokenCategory, collapsed: boolean) => setFolds((prev) => ({ ...prev, [category]: collapsed })),
@@ -252,7 +263,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
           {tokens.length > 0 ? 'No variables match.' : tab === 'story' ? story.emptyText : 'The story’s frame has reported no variables.'}
         </p>
       ) : (
-        <div className="fg-css-vars__list">
+        <div ref={listRef} className="fg-css-vars__list">
           <TokenPanel
             tokens={shown}
             namePrefix={TOKEN_PREFIX}

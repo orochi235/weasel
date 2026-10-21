@@ -72,6 +72,7 @@
     "@weasel-js/icons": "1.11.1",
     "@weasel-js/prefs": "1.11.1",
     "@weasel-js/registry": "1.11.1",
+    "@weasel-js/svg": "1.11.1",
     "@weasel-js/theme": "1.11.1",
     "@weasel-js/ui": "1.11.1",
     "axe-core": "^4.13.0",

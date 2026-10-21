@@ -1,0 +1,38 @@
+/* The dark block comes first: it wins on specificity, not on source order. */
+.fg-tc-root[data-wzl-mode='dark'] {
+  --wzl-bg: var(--wzl-gray-900);
+}
+
+.fg-tc-root {
+  --wzl-gray-50: #f5f5f6;
+  --wzl-gray-900: #18181b;
+  --wzl-fg: var(--wzl-gray-900);
+  --wzl-bg: var(--wzl-gray-50);
+}
+
+/* A media block that holds nowhere does not count. */
+@media (max-width: 1px) {
+  .fg-tc-root {
+    --wzl-bg: red;
+  }
+}
+
+.fg-tc-root {
+  position: fixed;
+  left: 40px;
+  top: 40px;
+  width: 300px;
+  height: 200px;
+}
+
+.fg-tc-box {
+  width: 120px;
+  height: 80px;
+  background: var(--wzl-bg);
+}
+
+.fg-tc-text {
+  margin: 0;
+  color: var(--wzl-fg);
+  font-size: 20px;
+}

@@ -63,7 +63,7 @@ function walk(rules: CSSRuleList, root: Element, defs: Map<string, Set<string>>,
   }
 }
 
-function cssRulesOf(sheet: CSSStyleSheet): CSSRuleList | null {
+export function cssRulesOf(sheet: CSSStyleSheet): CSSRuleList | null {
   try {
     return sheet.cssRules;
   } catch {

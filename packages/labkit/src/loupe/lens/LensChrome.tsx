@@ -17,6 +17,7 @@ const VIEW_TOGGLES: readonly { view: LensView; label: string; id: string }[] = [
 ];
 
 const READOUT_TOGGLES: readonly { readout: LensReadout; label: string; id: string }[] = [
+  { readout: 'token', label: 'Token', id: LENS_ACTION_IDS.token },
   { readout: 'contrast', label: 'Contrast', id: LENS_ACTION_IDS.contrast },
   { readout: 'grid', label: 'Grid', id: LENS_ACTION_IDS.grid },
 ];

@@ -23,6 +23,8 @@ export { escapeAttr, escapeText } from './xmlEscape';
 export { svgNeeds, warmSvg } from './warm';
 export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export { nativeSvgKind, nativeSvgSpace } from './gradients';
+export { specificity, compareSpecificity, type Specificity } from './specificity';
+export { splitTopLevel } from './cssScan';
 export { evaluateMediaQuery, DEFAULT_MEDIA_ENVIRONMENT, type SvgMediaEnvironment } from './media';
 export { evaluateSupports, type SupportsOptions } from './supports';
 export {

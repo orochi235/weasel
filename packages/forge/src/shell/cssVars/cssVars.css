@@ -84,3 +84,9 @@
 .fg-css-vars__unused {
   font-size: var(--wzl-font-size-sm);
 }
+
+/* The token a lens's Token readout asked for. */
+.fg-css-vars__list [data-revealed] {
+  outline: var(--wzl-line-width) solid var(--wzl-accent);
+  outline-offset: 1px;
+}

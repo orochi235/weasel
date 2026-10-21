@@ -56,3 +56,15 @@
   bottom: var(--wzl-space-8);
   z-index: 4;
 }
+
+/* A token in the Token readout: the readouts take no pointer, so the link takes it back. */
+.fg-lens-token__link {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
