@@ -942,6 +942,13 @@ only story runner in the repo.
   (measured 2026-10-20), closed `<details>` included. A test rendering it spent 3 s committing and
   0.5 s a `getByRole` under fleet load; in a browser the cost is unmeasured.
 
+- **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" fails one run in four.** "the
+  theme Size field > grows a shape with its text, so the text stays inside it"
+  (`apps/chart/src/theme/theme.browser.test.tsx`) failed in 4 of the 21 full runs of the overlap sweep
+  on 2026-10-21 (msb-uai R=3, teitou R=2, studio R=1 and R=4; `scripts/bench-overlap-reserve.runs.jsonl`),
+  with no timeout and at no particular reserve, and in Linux CI on 179f2409d. Flaky or broken, not
+  contention; the cause is not looked at.
+
 - **(P2) Visual Regression fails on `main` beyond the missing EffectChart baselines.** Every push
   to `main` since at least 7ddf3ce93 fails the workflow; on 179f2409d (2026-10-21) 7 of 87 specs
   failed. Besides the two EffectChart specs below: `diagram`'s nodes and edges specs fail with

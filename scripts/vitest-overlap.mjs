@@ -3,10 +3,9 @@
 // after it: one vitest process runs its sequence groups one after another, so `groupOrder: 1`
 // alone would leave the browser project waiting for every jsdom file. Takes vitest's own arguments.
 //
-// WEASEL_JSDOM_WORKERS sets the other process's workers (default 50%): at the full count the
-// browser tests' clicks and screenshots stall on a busy node and time out. On a node already busy
-// before the run, they stall at any count, so the run keeps to one process there; WEASEL_OVERLAP=1
-// or 0 skips the check.
+// The other process gets the node's idle cores less the browser project's reserve
+// (`scripts/lib/node-load.mjs`); WEASEL_JSDOM_WORKERS overrides the count, and WEASEL_OVERLAP=1 or 0
+// skips the check.
 import { spawn } from 'node:child_process';
 import { writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -27,18 +26,24 @@ const browser = projects.filter((a) => a === '--project=browser');
 const rest = projects.filter((a) => a !== '--project=browser');
 
 const overlap = async () => {
-  if (!browser.length || !rest.length) return false;
+  if (!browser.length || !rest.length) return { ok: false };
   const forced = process.env.WEASEL_OVERLAP;
-  if (forced === '0' || forced === '1') return forced === '1';
-  const { ok, reading } = roomToOverlap(await sampleLoad());
-  console.log(`vitest-overlap: ${reading}; ${ok ? 'running the browser project beside the rest' : 'running it after the rest, in one process'}`);
-  return ok;
+  if (forced === '0') return { ok: false };
+  const room = roomToOverlap(await sampleLoad());
+  if (forced === '1') return { ok: true, jsdomWorkers: room.jsdomWorkers };
+  console.log(
+    `vitest-overlap: ${room.reading}; ` +
+      (room.ok ? `running the browser project beside ${room.jsdomWorkers} jsdom workers` : 'running it after the rest, in one process'),
+  );
+  return room;
 };
 
 const runs = [];
-if (!(await overlap())) runs.push(args);
+const room = await overlap();
+if (!room.ok) runs.push(args);
 else {
-  const workers = common.some((a) => a.startsWith('--maxWorkers')) ? [] : [`--maxWorkers=${process.env.WEASEL_JSDOM_WORKERS || '50%'}`];
+  const count = process.env.WEASEL_JSDOM_WORKERS || room.jsdomWorkers || '50%';
+  const workers = common.some((a) => a.startsWith('--maxWorkers')) ? [] : [`--maxWorkers=${count}`];
   // --passWithNoTests: a branch run can select no browser file at all.
   runs.push([...common, ...rest, ...workers], [...common, ...browser, '--passWithNoTests']);
 }

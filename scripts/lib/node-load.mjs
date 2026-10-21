@@ -35,13 +35,18 @@ export const sampleLoad = async (ms = 1000) => {
 };
 
 /**
- * What a node needs free to run the browser project beside the rest. With 13 idle on msb-uai the overlap
- * failed three chart drag tests on timeouts that one process passes; teitou, with 16, passed every run.
+ * How the browser project shares a node with the rest. It keeps `reserve` cores and jsdom gets the
+ * idle ones left, so long as that is at least `minJsdomWorkers`. Measured 2026-10-21 over R = 1-4 on
+ * 10-, 14- and 18-core nodes (`scripts/bench-overlap-reserve.mjs`): no browser test timed out at any R,
+ * jsdom timed out on the 10-core node at R 1-2, and R 3 ran fastest on 18 cores.
  */
-export const LIMITS = { idleCores: 15, gpu: 30 };
+export const LIMITS = { reserve: 3, minJsdomWorkers: 4, gpu: 30 };
 
-/** Whether `load` leaves room to run the browser project beside the rest, and the reading that decided it. */
+/** Whether `load` leaves room to run the browser project beside the rest, the jsdom workers it leaves,
+ *  and the reading that decided it. */
 export const roomToOverlap = ({ cores, busy, gpu }, limits = LIMITS) => {
   const reading = `${busy.toFixed(1)} of ${cores} cores busy${gpu === null ? '' : `, GPU ${gpu}%`}`;
-  return { ok: cores - busy >= limits.idleCores && (gpu === null || gpu <= limits.gpu), reading };
+  const jsdomWorkers = Math.floor(cores - busy) - limits.reserve;
+  const ok = jsdomWorkers >= limits.minJsdomWorkers && (gpu === null || gpu <= limits.gpu);
+  return ok ? { ok, jsdomWorkers, reading } : { ok, reading };
 };

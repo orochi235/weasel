@@ -260,9 +260,10 @@ path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fle
 checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
 line once per shard. Sharding is not a way to make a run faster: each of its slices starts vitest
 afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-minutes where an
-unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest only on a node with
-15 cores idle (`scripts/vitest-overlap.mjs` prints its reading); anywhere smaller or busier, its chart
-drag tests time out, so the run keeps to one process and takes about twice as long.
+unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest whenever the node's idle
+cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overlap.mjs` prints its
+reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
+`scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`.
 
 **On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
 a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so
