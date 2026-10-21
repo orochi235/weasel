@@ -100,7 +100,7 @@ describe('replace', () => {
     graph.start();
     const next = testNode(ctx, [], true);
     graph.replace('src', next.def);
-    expect(next.start).toHaveBeenCalledWith(ctx.currentTime);
+    expect(next.start).toHaveBeenCalledWith(ctx.currentTime, expect.any(Function));
     expect(old.stop).not.toHaveBeenCalled();
     settle();
     expect(old.stop).toHaveBeenCalledTimes(1);
@@ -119,6 +119,23 @@ describe('replace', () => {
     expect(next.start).not.toHaveBeenCalled();
     graph.start();
     expect(next.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("a replace inside stop's fade stops the old source with the rest", () => {
+    const { ctx, graph, settle, timers } = harness();
+    const old = testNode(ctx, [], true);
+    graph.add('src', old.def);
+    graph.connect('src', { output: true });
+    graph.start();
+    settle();
+    graph.stop();
+    ctx._advance(FADE / 2);
+    graph.replace('src', testNode(ctx, [], true).def);
+    ctx._advance(FADE / 2);
+    const due = [...timers.values()];
+    timers.clear();
+    for (const f of due) f();
+    expect(old.stop).toHaveBeenCalledWith(ctx.currentTime);
   });
 
   it('closes edges into a port the new def lacks', () => {

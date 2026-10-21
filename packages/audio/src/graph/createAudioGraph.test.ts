@@ -313,12 +313,12 @@ describe('createAudioGraph lifetime', () => {
     ctx._advance(3);
     graph.start();
     expect(graph.playing()).toBe(true);
-    expect(s1.start).toHaveBeenCalledWith(ctx.currentTime);
+    expect(s1.start).toHaveBeenCalledWith(ctx.currentTime, expect.any(Function));
     graph.start();
     expect(s1.start).toHaveBeenCalledTimes(1);
     const s2 = testNode(ctx, [], true);
     graph.add('s2', s2.def);
-    expect(s2.start).toHaveBeenCalledWith(ctx.currentTime);
+    expect(s2.start).toHaveBeenCalledWith(ctx.currentTime, expect.any(Function));
 
     const out = dest.connectedFrom[0] as FakeGain;
     const now = ctx.currentTime;

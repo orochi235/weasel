@@ -2,6 +2,7 @@ import { periodicWave } from '../periodicWave';
 import { initParam, writeParam } from '../param';
 import { noiseBuffer } from '../synthVoice';
 import type { Inharmonic, NoiseColor, Waveform } from '../types';
+import { createPlayhead } from './playhead';
 import type { GraphNodeDef } from './types';
 
 /** The waves an oscillator node takes: any `Waveform` except an inharmonic one. */
@@ -9,13 +10,16 @@ export type OscillatorWave = Exclude<Waveform, Inharmonic>;
 
 type Scheduled = AudioBufferSourceNode | OscillatorNode;
 
-/** A source's stable output gain and the one live, single-use node behind it. */
+/** A source's stable output gain and the one live, single-use node behind it.
+ *  A node told to stop later stays `sounding` until it ends. */
 function sourceShell<N extends Scheduled>(ctx: BaseAudioContext, make: () => N) {
   const output = ctx.createGain();
   let live: N | null = null;
+  const ending = new Set<N>();
   return {
     output,
     live: (): N | null => live,
+    sounding: (): N[] => (live ? [live, ...ending] : [...ending]),
     /** `onEnd` runs if the node ends while it is still the live one: it played out. */
     begin(when: number, setup: (node: N) => void, offset?: number, onEnd?: () => void): N {
       const node = make();
@@ -36,7 +40,11 @@ function sourceShell<N extends Scheduled>(ctx: BaseAudioContext, make: () => N) 
       if (!live) return;
       const node = live;
       live = null;
-      node.onended = () => node.disconnect();
+      ending.add(node);
+      node.onended = () => {
+        ending.delete(node);
+        node.disconnect();
+      };
       node.stop(when);
     },
     dispose(): void {
@@ -63,44 +71,35 @@ export function createFileSourceNode(ctx: BaseAudioContext, opts: FileSourceNode
   const { buffer } = opts;
   const loop = opts.loop ?? true;
   let rate = 1;
-  let offset = 0;
-  let startedAt = 0;
+  const head = createPlayhead(buffer.duration, loop, rate);
   const shell = sourceShell(ctx, () => ctx.createBufferSource());
-
-  const advance = (to: number): void => {
-    const next = offset + Math.max(0, to - startedAt) * rate;
-    offset = loop ? next % buffer.duration : Math.min(next, buffer.duration);
-    startedAt = to;
-  };
 
   return {
     inputs: {},
     output: shell.output,
     params: {
       rate(value, rampMs) {
-        const src = shell.live();
-        if (src) {
-          advance(ctx.currentTime);
-          writeParam(ctx, src.playbackRate, value, rampMs);
-        }
+        for (const src of shell.sounding()) writeParam(ctx, src.playbackRate, value, rampMs);
+        head.rate(value, rampMs, ctx.currentTime);
         rate = value;
       },
       level: shell.level,
     },
-    start(when) {
+    start(when, ended) {
       if (shell.live()) return;
-      startedAt = when;
+      const offset = head.start(when, ctx.currentTime);
       shell.begin(when, (s) => {
         s.buffer = buffer;
         s.loop = loop;
         initParam(ctx, s.playbackRate, rate);
       }, offset, () => {
-        offset = 0;
+        head.rewind(ctx.currentTime);
+        ended?.();
       });
     },
     stop(when) {
       if (!shell.live()) return;
-      advance(when);
+      head.stop(when, ctx.currentTime);
       shell.end(when);
     },
     dispose: shell.dispose,
@@ -127,25 +126,23 @@ export function createOscillatorNode(ctx: BaseAudioContext, opts: OscillatorNode
     output: shell.output,
     params: {
       frequency(value, rampMs) {
-        const osc = shell.live();
-        if (osc) writeParam(ctx, osc.frequency, value, rampMs);
+        for (const osc of shell.sounding()) writeParam(ctx, osc.frequency, value, rampMs);
         frequency = value;
       },
       detune(value, rampMs) {
-        const osc = shell.live();
-        if (osc) writeParam(ctx, osc.detune, value, rampMs);
+        for (const osc of shell.sounding()) writeParam(ctx, osc.detune, value, rampMs);
         detune = value;
       },
       level: shell.level,
     },
-    start(when) {
+    start(when, ended) {
       if (shell.live()) return;
       shell.begin(when, (osc) => {
         if (typeof wave === 'string') osc.type = wave;
         else osc.setPeriodicWave(periodicWave(ctx, wave));
         initParam(ctx, osc.frequency, frequency);
         initParam(ctx, osc.detune, detune);
-      });
+      }, undefined, ended);
     },
     stop: shell.end,
     dispose: shell.dispose,
@@ -164,12 +161,12 @@ export function createNoiseNode(ctx: BaseAudioContext, opts: NoiseNodeOptions): 
     inputs: {},
     output: shell.output,
     params: { level: shell.level },
-    start(when) {
+    start(when, ended) {
       if (shell.live()) return;
       shell.begin(when, (src) => {
         src.buffer = noiseBuffer(ctx, opts.color);
         src.loop = true;
-      });
+      }, undefined, ended);
     },
     stop: shell.end,
     dispose: shell.dispose,

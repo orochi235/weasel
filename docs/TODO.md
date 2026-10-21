@@ -548,18 +548,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
 
-- **(P3) Edge cases left open in the patchable graph** (`packages/audio/src/graph/`, 2026-10-20).
-  None is reachable from `AudioGraph`'s own calls today, which always start sources at
-  `ctx.currentTime`:
-  - `createFileSourceNode` counts its resume offset from `when`, so a start dated in the future
-    or the past, or a `rate` write before a future start plays, miscounts it. A `rate` write
-    after `stop(later)` doesn't retune the node still sounding, and a ramped rate folds as a step.
-  - A non-looping file that plays to its end rewinds, but its node stays marked running, so
-    `start()` on a graph still playing doesn't restart it; stop then start does.
-  - `replace` during `stop()`'s fade stops the old source a fade after the replace, so a quick
-    `start()` lets under 15 ms of its tail play beneath the fade-in.
-  - `createFader`'s second `close(ms, done)` drops its `done`; the graph never closes one twice.
-
 ---
 
 ## Selection, actions & UI panels

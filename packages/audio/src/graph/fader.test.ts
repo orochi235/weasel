@@ -96,6 +96,21 @@ describe('createFader', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it('a second close keeps its done', () => {
+    const { ctx, fader, runTimers } = harness();
+    const first = vi.fn();
+    const second = vi.fn();
+    fader.close(MS, first);
+    fader.close(MS, second);
+    ctx._advance(MS);
+    runTimers();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    const late = vi.fn();
+    fader.close(MS, late);
+    expect(late).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves a consumer's other edges from the source alone", () => {
     const { ctx, from, to, fader, runTimers } = harness();
     const other = ctx.createGain() as FakeNode;

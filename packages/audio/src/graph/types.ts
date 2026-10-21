@@ -7,8 +7,9 @@ export interface GraphNodeDef {
   readonly output: AudioNode;
   /** `rampMs` is always passed; the graph supplies its fade when the caller gives none. */
   readonly params: Readonly<Record<string, (value: number, rampMs: number) => void>>;
-  /** Sources only. `when` is context seconds. Called when the graph starts, or on add/replace while it runs. A source must be startable again after `stop`. */
-  start?(when: number): void;
+  /** Sources only. `when` is context seconds. Called when the graph starts, or on add/replace while it runs. A source must be startable again after `stop`.
+   *  A source that stops on its own, as a non-looping file reaching its end does, calls `ended` so the graph can start it again. */
+  start?(when: number, ended?: () => void): void;
   /** Sources only. Stop at `when` (context seconds). */
   stop?(when: number): void;
   /** Called once, after the node has faded out of the graph. */
