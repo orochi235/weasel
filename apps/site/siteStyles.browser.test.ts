@@ -1,4 +1,5 @@
 import './canvas-kit-demo.css';
+import './typography.css';
 import { afterEach, expect, test } from 'vitest';
 
 // The site's spacing and chrome colors come from --wzl-* tokens, which only a browser resolves.
@@ -49,4 +50,17 @@ test('the active nav link sets its text in the color made for an accent fill', (
   const probe = el.querySelector('span')!;
   probe.style.color = 'var(--wzl-fg-on-accent)';
   expect(getComputedStyle(el.querySelector('a')!).color).toBe(getComputedStyle(probe).color);
+});
+
+test('running text is set in the body face, and headings and chrome in Oswald', () => {
+  el = document.createElement('div');
+  el.innerHTML = '<aside class="ckd-sidebar"><a>Scene</a></aside>'
+    + '<main class="ckd-main"><h2>Title</h2><p>Prose.</p><div class="ckd-canvas-wrap"><span class="ckd-hint">Hint</span></div></main>';
+  document.body.append(el);
+  const face = (selector: string) => getComputedStyle(el!.querySelector(selector)!).fontFamily.split(',')[0];
+  expect(face('main p')).toBe('Inter');
+  expect(face('.ckd-hint')).toBe('Inter');
+  expect(face('main h2')).toBe('Oswald');
+  expect(face('.ckd-sidebar a')).toBe('Oswald');
+  expect(face('.ckd-canvas-wrap')).toBe('Oswald');
 });

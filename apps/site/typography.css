@@ -1,0 +1,15 @@
+/* Running text is set in the body face. Oswald, which `fonts.css` puts on :root, is kept for
+   headings and for the chrome named below; prose set in a condensed face is hard to read. */
+body { font-family: var(--wzl-font-body); }
+
+:where(.ckd-main) :is(h1, h2, h3, h4, h5, h6) { font-family: var(--wzl-font-display); }
+
+.ckd-sidebar,
+.ckd-eyebrow,
+.ckd-canvas-wrap,
+.ckd-whatsnew-table th,
+.ckd-release-summary,
+.ckd-release-filter,
+.ckd-release-pkgs { font-family: var(--wzl-font-ui); }
+
+.ckd-hint { font-family: var(--wzl-font-body); }

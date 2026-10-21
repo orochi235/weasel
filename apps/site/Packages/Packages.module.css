@@ -40,6 +40,7 @@
 }
 
 .tab {
+  font-family: var(--wzl-font-ui);
   padding: var(--wzl-space-3) var(--wzl-space-md);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -130,6 +131,7 @@
 
 .facts dt {
   color: var(--wzl-fg-subtle);
+  font-family: var(--wzl-font-ui);
 }
 
 .facts dd {
