@@ -291,11 +291,8 @@
   "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
     "longestFunction": 132
   },
-  "packages/ui/src/components/Slider/SliderBody.tsx": {
-    "longestFunction": 239
-  },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 140
+    "longestFunction": 136
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 201

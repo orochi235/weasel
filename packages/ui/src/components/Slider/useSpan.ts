@@ -46,11 +46,11 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
 
   /** The value a pointer at track fraction `f` chooses, before bounds. */
   const valueAt = useCallback(
-    (f: number, trackWidth: number): number => {
+    (f: number, length: number): number => {
       const v = fractionToValue(f);
       if (strict) return attract(v, stops, Infinity, valueToFraction);
       const q = clamp(snapToStep(v, step, min), min, max);
-      return stops.length > 0 ? attract(q, stops, stopSnapPx / trackWidth, valueToFraction) : q;
+      return stops.length > 0 ? attract(q, stops, stopSnapPx / length, valueToFraction) : q;
     },
     [fractionToValue, valueToFraction, strict, stops, step, min, max, stopSnapPx],
   );

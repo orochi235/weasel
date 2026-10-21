@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '@weasel-js/quantity';
 import { clamp } from '@weasel-js/geom';
+import { DROP_OFF, type SliderGeometry } from './sliderGeometry';
 import { clampOrdered, resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale, useSpan } from './useSpan';
@@ -11,16 +12,16 @@ import { useLatestHandlers } from './useLatestHandlers';
  *  and capture would retarget pointerup and kill the click on it. */
 const NO_CAPTURE = { capture: false } as const;
 
-/** What the drags read: the slider's props, the span and scale they run over, and the rail they measure against. */
+/** What the drags read: the slider's props, the span and scale they run over, and the geometry they measure through. */
 export interface ThumbDragArgs<T extends Thumb> {
   props: SliderProps<T>;
   span: ReturnType<typeof useSpan>;
   scale: ReturnType<typeof useScale>;
-  railRef: RefObject<HTMLDivElement | null>;
+  geometry: SliderGeometry;
 }
 
 /** A slider's two pointer gestures: one thumb dragged along the rail, and every thumb moved together. */
-export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: ThumbDragArgs<T>) {
+export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }: ThumbDragArgs<T>) {
   const { thumbs, step, constraint } = props;
   const { onInput, onChange } = useLatestHandlers(props);
   const { even, min, max } = span;
@@ -45,20 +46,17 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
       let droppedOff = false;
 
       const onMove = (ev: PointerEvent) => {
-        const rail = railRef.current;
+        const m = geometry.measure(ev.clientX, ev.clientY);
         const buffer = dragBufferRef.current;
-        if (!rail || !buffer) return;
-        const rect = rail.getBoundingClientRect();
-        let v = valueAt((ev.clientX - rect.left) / rect.width, rect.width);
+        if (!m || !buffer) return;
+        let v = valueAt(m.g, m.length);
 
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
 
         if (constraint === 'ordered') v = clampOrdered(v, buffer, index, min, max, step);
 
-        // Drop-off detection: pointer exits the track vertically by more than trackHeight.
-        const bandHeight = rect.height;
-        if (props.onRemoveThumb) droppedOff = ev.clientY < rect.top - bandHeight || ev.clientY > rect.bottom + bandHeight;
+        if (props.onRemoveThumb) droppedOff = m.across > DROP_OFF * m.thickness;
 
         buffer[index] = { ...buffer[index], value: v };
         onInput(buffer.map(t => ({ ...t })));
@@ -94,11 +92,11 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, valueAt, min, max, step, constraint, props, railRef],
+    [thumbs, onInput, onChange, valueAt, min, max, step, constraint, props, geometry],
   );
 
   const beginShiftAllDrag = useCallback(
-    (origin: Element, down: ReactPointerEvent, anchorX: number) => {
+    (origin: Element, down: ReactPointerEvent, anchorG: number) => {
       sessionRef.current?.cancel();
       setDragged(null);
       const buf: T[] = thumbs.map(t => ({ ...t }));
@@ -106,11 +104,10 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
       dragBufferRef.current = buf;
 
       const onMove = (ev: PointerEvent) => {
-        const rail = railRef.current;
+        const m = geometry.measure(ev.clientX, ev.clientY);
         const buffer = dragBufferRef.current;
-        if (!rail || !buffer) return;
-        const rect = rail.getBoundingClientRect();
-        const dxFraction = (ev.clientX - anchorX) / rect.width;
+        if (!m || !buffer) return;
+        const dxFraction = m.gRaw - anchorG;
         // Evenly spaced gaps span different amounts of value, so equal value
         // offsets would pull the thumbs apart; move them by track distance.
         if (even) {
@@ -155,7 +152,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue, railRef],
+    [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue, geometry],
   );
 
   return { beginThumbDrag, beginShiftAllDrag, dragged };
