@@ -15,11 +15,13 @@ export default meta;
 type Story = StoryObj<typeof ControlPanel>;
 
 const headed = f.schema({
-  shadow: f.group({
-    on: f.boolean(true).label('Shadow on').heading(),
-    blur: f.number(4).range(0, 40).slider().label('Blur').enableIf({ path: 'shadow.on' }),
-    offset: f.number(2).range(0, 20).slider().label('Offset').enableIf({ path: 'shadow.on' }),
-  }).label('Shadow'),
+  shadow: f
+    .group({
+      on: f.boolean(true).label('Shadow on').heading(),
+      blur: f.number(4).range(0, 40).slider().label('Blur').enableIf({ path: 'shadow.on' }),
+      offset: f.number(2).range(0, 20).slider().label('Offset').enableIf({ path: 'shadow.on' }),
+    })
+    .label('Shadow'),
   join: f.enum('round', ['round', 'miter', 'bevel']).label('Join').section('Edge').heading(),
   width: f.number(1).range(0, 12).slider().label('Width').section('Edge'),
 });
