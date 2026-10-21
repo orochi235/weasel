@@ -15,6 +15,13 @@ export interface TrackNearest {
 	dist: number;
 }
 
+/** How `nearest` treats a track's ends. */
+export interface TrackNearestOptions {
+	/** Let `f` run on past 0 and 1: a line extends straight, an arc by angle, unwrapped about its middle. A shape
+	 *  that cannot extend clamps. `dist` is to the track either way. */
+	open?: boolean;
+}
+
 /** Which family a track shape belongs to. `'path'` is reserved for a shape over `nearestOnPath`. */
 export type TrackShapeKind = "line" | "arc" | "path";
 
@@ -25,7 +32,7 @@ export interface TrackShape {
 	/** The station at fraction `f`, clamped to 0..1. */
 	at(f: number): TrackStation;
 	/** The spot on the track nearest `p`. */
-	nearest(p: Point): TrackNearest;
+	nearest(p: Point, options?: TrackNearestOptions): TrackNearest;
 }
 
 /** A straight track from `from` to `to`; its normal is the left of travel. */
@@ -47,9 +54,11 @@ export function lineShape(from: Point, to: Point): TrackShape {
 				normal: { ...normal },
 			};
 		},
-		nearest(p) {
+		nearest(p, options) {
 			const n = nearestOnLine(p.x, p.y, from.x, from.y, to.x, to.y);
-			return { f: n.t, dist: n.dist };
+			if (!options?.open || length === 0) return { f: n.t, dist: n.dist };
+			const f = ((p.x - from.x) * dx + (p.y - from.y) * dy) / (length * length);
+			return { f, dist: n.dist };
 		},
 	};
 }

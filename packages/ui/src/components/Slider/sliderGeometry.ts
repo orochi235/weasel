@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { placeOnRun } from '../Along/placeOnRun';
-import { lineShape, trackRun, type ArcTrackShape, type Point, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { lineShape, trackRun, type Point, type TrackRun } from '@weasel-js/geom';
 
 /** Where a client point falls on a slider's value span. */
 export interface SliderMeasure {
@@ -27,6 +27,8 @@ export interface SliderGeometry {
   measure(clientX: number, clientY: number): SliderMeasure | null;
 }
 
+const OPEN = { open: true };
+
 /** Band thicknesses off the centerline past which a drag drops a thumb. */
 export const DROP_OFF = 1.5;
 
@@ -43,7 +45,7 @@ export function lineGeometry(rail: () => HTMLElement | null): SliderGeometry {
       const run = trackRun(lineShape({ x: left, y }, { x: left + width, y }));
       const p = { x: clientX, y: clientY };
       const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: (clientX - left) / width, dist, across: acrossAt(run, g, p), length: width, thickness: height };
+      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: width, thickness: height };
     },
   };
 }
@@ -52,22 +54,6 @@ export function lineGeometry(rail: () => HTMLElement | null): SliderGeometry {
 function acrossAt(run: TrackRun, g: number, p: Point): number {
   const { point, normal } = run.at(g);
   return Math.abs((p.x - point.x) * normal.x + (p.y - point.y) * normal.y);
-}
-
-const isArc = (s: TrackShape): s is ArcTrackShape => s.kind === 'arc' && 'arc' in s;
-const mod360 = (a: number): number => ((a % 360) + 360) % 360;
-
-/** `p`'s place along `run` with the ends left open: on an arc, by its angle, unwrapped about the arc's middle. */
-function unclampedAt(run: TrackRun, p: Point, g: number): number {
-  const span = run.to - run.from;
-  if (!isArc(run.shape) || span === 0) return g;
-  const { center, start, end, direction } = run.shape.arc;
-  const sign = direction === 'ccw' ? -1 : 1;
-  const sweep = mod360(sign * (end - start)) || 360;
-  const angle = (Math.atan2(p.x - center.x, center.y - p.y) * 180) / Math.PI;
-  const offset = sweep / 2 + mod360(sign * (angle - start) - sweep / 2 + 180) - 180;
-  const f = offset / sweep;
-  return run.reversed ? (run.to - f) / span : (f - run.from) / span;
 }
 
 /** A band's thickness: the track height it inherits, else the stylesheet's 24px default. Read from the custom
@@ -88,7 +74,7 @@ export function curvedGeometry(run: TrackRun, root: () => HTMLElement | null, ba
       const { left, top } = el.getBoundingClientRect();
       const p = { x: clientX - left, y: clientY - top };
       const { f: g, dist } = run.nearest(p);
-      return { g, gRaw: unclampedAt(run, p, g), dist, across: acrossAt(run, g, p), length: run.length, thickness: thicknessOf(band()) };
+      return { g, gRaw: run.nearest(p, OPEN).f, dist, across: acrossAt(run, g, p), length: run.length, thickness: thicknessOf(band()) };
     },
   };
 }

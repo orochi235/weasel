@@ -1,6 +1,11 @@
 import type { Point } from "../paths/cubicMath";
 import { clamp } from "../scalar";
-import type { TrackNearest, TrackShape, TrackStation } from "./shape";
+import type {
+	TrackNearest,
+	TrackNearestOptions,
+	TrackShape,
+	TrackStation,
+} from "./shape";
 
 /** A station as a run places an item: `normal` is the item's up after any flip, `tangent` its reading direction,
  *  `angle` the CSS rotation in degrees that tips an upright item to it (0 = upright, clockwise positive, in (-180, 180]). */
@@ -47,11 +52,15 @@ export function trackRun(shape: TrackShape, from = 0, to = 1): TrackRun {
 		};
 	};
 
-	const nearest = (p: Point): TrackNearest => {
+	const toG = (f: number): number =>
+		span === 0 ? 0 : reversed ? (to - f) / span : (f - from) / span;
+
+	const nearest = (p: Point, options?: TrackNearestOptions): TrackNearest => {
 		const f = clamp(shape.nearest(p).f, lo, hi);
 		const q = shape.at(f).point;
-		const g = span === 0 ? 0 : reversed ? (to - f) / span : (f - from) / span;
-		return { f: g, dist: Math.hypot(p.x - q.x, p.y - q.y) };
+		const dist = Math.hypot(p.x - q.x, p.y - q.y);
+		if (!options?.open) return { f: toG(f), dist };
+		return { f: toG(shape.nearest(p, options).f), dist };
 	};
 
 	return {

@@ -42,7 +42,7 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
 		kind: "arc",
 		length,
 		at,
-		nearest(p) {
+		nearest(p, options) {
 			const dx = p.x - center.x;
 			const dy = p.y - center.y;
 			const angle = dx === 0 && dy === 0 ? 0 : Math.atan2(dx, -dy) / RAD;
@@ -51,7 +51,10 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
 			if (offset <= sweep) f = offset / sweep;
 			else f = 360 - offset < offset - sweep ? 0 : 1;
 			const q = at(f).point;
-			return { f, dist: Math.hypot(p.x - q.x, p.y - q.y) };
+			const dist = Math.hypot(p.x - q.x, p.y - q.y);
+			if (!options?.open) return { f, dist };
+			const unwrapped = sweep / 2 + mod360(offset - sweep / 2 + 180) - 180;
+			return { f: unwrapped / sweep, dist };
 		},
 	};
 	Object.defineProperty(shape, "arc", { value: spec, enumerable: false });

@@ -15,7 +15,7 @@ export {
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
 export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
-export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest } from './track/shape';
+export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest, type TrackNearestOptions } from './track/shape';
 export { arcShape, type ArcTrackSpec, type ArcTrackShape } from './track/arc';
 export { trackRun, type TrackRun, type TrackPlace } from './track/run';
 export { trackShapeD } from './track/pathData';

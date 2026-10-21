@@ -83,4 +83,41 @@ describe("trackRun", () => {
 		);
 		expect(r.nearest({ x: -86.6025, y: 50 }).f).toBeCloseTo(0);
 	});
+	describe("an open nearest runs on past the ends", () => {
+		const open = { open: true };
+		test("a line extends straight past both ends", () => {
+			const r = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }));
+			expect(r.nearest({ x: -50, y: 10 }, open).f).toBeCloseTo(-0.5);
+			expect(r.nearest({ x: 150, y: -10 }, open).f).toBeCloseTo(1.5);
+			expect(r.nearest({ x: 150, y: -10 }).f).toBe(1);
+		});
+		test("an arc extends by angle past both ends, unwrapped about its middle", () => {
+			const r = trackRun(
+				arcShape({ center: C, radius: 100, start: 300, end: 60 }),
+			);
+			expect(r.nearest({ x: -100, y: 0 }, open).f).toBeCloseTo(-0.25);
+			expect(r.nearest({ x: 100, y: 0 }, open).f).toBeCloseTo(1.25);
+			expect(r.nearest({ x: 100, y: 0 }).f).toBe(1);
+		});
+		test("a reversed bottom arc answers in reading order", () => {
+			const r = trackRun(
+				arcShape({ center: C, radius: 100, start: 120, end: 240 }),
+			);
+			expect(r.nearest({ x: -100, y: 0 }, open).f).toBeCloseTo(-0.25);
+			expect(r.nearest({ x: 100, y: 0 }, open).f).toBeCloseTo(1.25);
+		});
+		test("a ccw arc answers as the cw arc over the same stretch", () => {
+			const r = trackRun(
+				arcShape({
+					center: C,
+					radius: 100,
+					start: 240,
+					end: 120,
+					direction: "ccw",
+				}),
+			);
+			expect(r.nearest({ x: -100, y: 0 }, open).f).toBeCloseTo(-0.25);
+			expect(r.nearest({ x: 100, y: 0 }, open).f).toBeCloseTo(1.25);
+		});
+	});
 });
