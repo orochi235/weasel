@@ -934,15 +934,6 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
-- **(P3) A freshly started site dev server's first page load can come up blank.** Started from a
-  worktree with `WAKE_EXTRA=<port> npx vite --port <port>`, the first one or two loads of a demo
-  show an empty page with wake's "dev server unreachable" pill, and a reload renders it. Seen on
-  every one of a dozen servers on 2026-10-14. The server logs no dependency re-optimization or
-  reload, so the cause isn't known; the first load after an agent edits a lab once threw
-  `instrument.defaultConfig is not a function` before a reload fixed it. A visual spec run on its
-  own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
-  2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
-
 - **(P3) Package pages: undescribed exports.** Every published package has a page at
   `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and only geom,
   gestures, and labkit have guides. About 420 exports have no doc comment, so their row in a
