@@ -1,6 +1,9 @@
 import type { MeasureRowText } from '../body';
+import { insetOf } from '../cluster';
 import { groupLabelIdOf } from '../dataGroups';
 import { diagramScene, type DataNode, type DiagramRouter } from '../fromData';
+import { nestGroups } from '../groupTree';
+import { diagramNodeOf } from '../trait';
 import type { PortSpec } from '../types';
 import {
   LOOK_THEME, boxNode, drawableWires, isControl, kindOf, sceneStyles, stageStyle, typeColors, uniqueGroups, uniqueStages,
@@ -95,15 +98,21 @@ function controlSideOf(stage: EffectStage, pipeline: EffectPipeline, lane: Reado
   return control.length > 0 && signal.length > 0 && mean(control) > mean(signal) ? 'bottom' : 'top';
 }
 
-/** How far what a node draws reaches past its box on each side. */
+/** How far what a node draws reaches past its box on each side, and above
+ *  and below, the boxes of the groups holding it. */
 type Overhang = { left: number; top: number; right: number; bottom: number };
 
 /** Each node's size as `diagramScene` would draw it unconstrained, and how
- *  far its marks reach past it: a decision's title and cut values. And the
- *  width of each labeled group's title. */
+ *  far its marks reach past it: a decision's title and cut values, and the
+ *  insets of the group boxes around it, a title's included. And the width
+ *  of each labeled group's title. */
 function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], measure: MeasureRowText | undefined) {
   const specs = diagramScene({ nodes, edges: [], groups }, { layout: 'none', ...(measure !== undefined ? { measure } : {}) });
   const pose = new Map(specs.map((s) => [s.id as string, s.pose as Box]));
+  const spec = new Map(specs.map((s) => [s.id as string, s]));
+  const nested = nestGroups(groups, (id) => nodes.some((n) => n.id === id))
+    .map((g) => ({ members: g.members, inset: insetOf(diagramNodeOf({ id: g.id, kind: 'leaf', data: spec.get(g.id)?.data })?.group?.inset) }));
+  const boxed = (id: string, side: 'top' | 'bottom') => nested.reduce((sum, g) => sum + (g.members.includes(id) ? g.inset[side] : 0), 0);
   const titles = new Map(groups.flatMap((g) => {
     const title = pose.get(groupLabelIdOf(g.id));
     return title === undefined ? [] : [[g.id, title.width] as const];
@@ -113,9 +122,9 @@ function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], mea
     const ink = inkOf(n.id, specs);
     const over = {
       left: box.x - Math.min(...ink.map((b) => b.x)),
-      top: box.y - Math.min(...ink.map((b) => b.y)),
+      top: box.y - Math.min(...ink.map((b) => b.y)) + boxed(n.id, 'top'),
       right: Math.max(...ink.map((b) => b.x + b.width)) - box.x - box.width,
-      bottom: Math.max(...ink.map((b) => b.y + b.height)) - box.y - box.height,
+      bottom: Math.max(...ink.map((b) => b.y + b.height)) - box.y - box.height + boxed(n.id, 'bottom'),
     };
     return [n.id, { box, over }];
   }));
@@ -239,13 +248,14 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   // another; a few rounds settle each corridor's tracks.
   let insets = insetsFor(rows.length + 1, new Map());
   let laid = place(plan, insets);
-  let routed = routeWires(wires, laid.nodes, { grid: laid, column, router, measure: options.measure });
+  const route = (at: typeof laid) => routeWires(wires, at.nodes, { grid: at, column, router, measure: options.measure, groups });
+  let routed = route(laid);
   for (let round = 0; round < 4; round++) {
     const need = insetsFor(rows.length + 1, routed.tracks);
     if (need.every((n, k) => n <= insets[k]!)) break;
     insets = need.map((n, k) => Math.max(n, insets[k]!));
     laid = place(plan, insets);
-    routed = routeWires(wires, laid.nodes, { grid: laid, column, router, measure: options.measure });
+    routed = route(laid);
   }
 
   const { columns, tops, heights } = laid;

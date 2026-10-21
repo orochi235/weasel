@@ -1,14 +1,16 @@
 /** Routes for the `lanes` look: each wire kept clear of what the stages it
- *  passes draw, each wire sharing a corridor on a track of its own, and each
- *  label set where it covers no stage. */
+ *  passes draw and of the group boxes it neither leaves nor enters, each wire
+ *  sharing a corridor on a track of its own, and each label set where it
+ *  covers no stage. */
 import { pointAlongPath, type Path } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
 import {
-  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataNode, type DiagramRouter, type DiagramSpec, type EdgeStyle,
+  diagramScene, edgeIdOf, LABEL_PLACEMENT, type DataEdge, type DataGroup, type DataNode, type DiagramRouter, type DiagramSpec, type EdgeStyle,
 } from '../fromData';
+import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
 
@@ -236,6 +238,31 @@ export interface Laid {
   column: ReadonlyMap<string, number>;
   router: DiagramRouter;
   measure: MeasureRowText | undefined;
+  groups?: readonly DataGroup[];
+}
+
+/** A group's box as the scene draws it, the run of columns it stands over, and the stages it holds. */
+interface Wall {
+  box: Box;
+  first: number;
+  last: number;
+  holds: ReadonlySet<string>;
+}
+
+/** `grid` as a wire sees it that runs past `walls`: each wall's box is ink
+ *  in the columns it stands over, and those columns reach out past its
+ *  sides, so the wire changes height clear of it. */
+function walledIn(grid: LaneGrid, walls: readonly Wall[]): LaneGrid {
+  if (walls.length === 0) return grid;
+  const over = (c: number) => walls.filter((w) => w.first <= c && c <= w.last);
+  return {
+    edges: grid.edges,
+    ink: grid.ink.map((boxes, c) => boxes.concat(over(c).map((w) => w.box))),
+    columns: grid.columns.map(([lo, hi], c) => over(c).reduce<readonly [number, number]>(([l, h], { box, first, last }) => [
+      c === first ? Math.min(l, box.x - CLEAR) : l,
+      c === last ? Math.max(h, box.x + box.width + CLEAR) : h,
+    ], [lo, hi])),
+  };
 }
 
 /** Each wire's edge, given the waypoints that keep it clear of the stages it
@@ -244,7 +271,7 @@ export interface Laid {
 export function routeWires(
   wires: readonly { edge: DataEdge; style: EdgeStyle }[], nodes: readonly DataNode[], laid: Laid,
 ): { edges: { edge: DataEdge; style: EdgeStyle }[]; tracks: ReadonlyMap<number, number> } {
-  const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge) }, {
+  const specs = diagramScene({ nodes, edges: wires.map((w) => w.edge), ...(laid.groups !== undefined ? { groups: laid.groups } : {}) }, {
     layout: 'none', router: laid.router, ...(laid.measure !== undefined ? { measure: laid.measure } : {}),
   });
   const spec = new Map(specs.map((s) => [s.id as string, s]));
@@ -255,7 +282,13 @@ export function routeWires(
     const [site, ...sites] = portSitesOf({ id: stage, data: s.data } as never, s.pose, port);
     return { column: laid.column.get(stage)!, point: site?.point ?? { x: 0, y: 0 }, normal: site?.normal ?? null, sites };
   };
-  const courses = wires.map(({ edge }) => (edge.from === edge.to ? undefined : laneCourse(grid, end(edge.from, edge.fromPort!), end(edge.to, edge.toPort!))));
+  const walls = nestGroups(laid.groups ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
+    const box = spec.get(g.id)?.pose as Box | undefined;
+    const at = g.members.flatMap((m) => (laid.column.has(m) ? [laid.column.get(m)!] : []));
+    return box === undefined || at.length === 0 ? [] : [{ box, first: Math.min(...at), last: Math.max(...at), holds: new Set(g.members) }];
+  });
+  const grids = wires.map(({ edge }) => walledIn(grid, walls.filter((w) => !w.holds.has(edge.from) && !w.holds.has(edge.to))));
+  const courses = wires.map(({ edge }, w) => (edge.from === edge.to ? undefined : laneCourse(grids[w]!, end(edge.from, edge.fromPort!), end(edge.to, edge.toPort!))));
   const { stretches, tracks } = assignTracks(courses);
   // Outside the lanes is off the chart: a label goes no further than its wires.
   const [top, bottom] = [grid.edges[0] ?? 0, grid.edges[grid.edges.length - 1] ?? 0];
@@ -268,7 +301,7 @@ export function routeWires(
       const s = stretches[w]!.find((t) => t.edge === at.edge && t.lo <= column && column <= t.hi)!;
       return trackY(grid, at.edge, s.track, tracks.get(at.edge)!);
     });
-    const waypoints = course === undefined ? undefined : waypointsOf(grid, course, ys!);
+    const waypoints = course === undefined ? undefined : waypointsOf(grids[w]!, course, ys!);
     return { waypoints, path: routeOf(spec.get(edge.from)!, edge.fromPort!, spec.get(edge.to)!, edge.toPort!, laid.router, waypoints) };
   });
   // Each wire, as the boxes of its drawn segments, for the labels of the others to keep off.

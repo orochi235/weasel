@@ -1329,9 +1329,6 @@ only story runner in the repo.
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
-- **(P3) `lanes` doesn't route wires around group boxes.** A wire between two stages outside a
-  group can run straight through the group's box, and a group title's inset reaches into the lane
-  above. `lanesRoutes.ts` knows nothing of group boxes (2026-10-20).
 - **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
   `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
   composites against (2026-10-20).
