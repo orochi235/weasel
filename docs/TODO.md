@@ -882,6 +882,15 @@ only story runner in the repo.
   the port lock; either re-read and compare just before the write, or have the next `claim` treat a
   dead holder as released and make the exit-time release a no-op.
 
+- **(P3) wake (`~/src/wake`, not this repo): the pill calls a busy server unreachable.** It shows "dev
+  server unreachable" whenever `/__wake` takes over 5 s to answer, so a server stalled in a slow
+  module load reads the same as a dead one. That is what a fresh site server showed until
+  a598e6b2d (2026-10-20) took the demo timestamps' per-file `git log` out of its first load.
+
+- **(P3) The site's `virtual:demo-timestamps` plugin still runs `git log` synchronously while
+  loading.** One pass, about 95 ms on 2026-10-21, where the old per-file pass froze the server for a
+  minute; it grows with the demos' history and blocks every other request while it runs.
+
 ---
 
 ## Demos & visual regression
