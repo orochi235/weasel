@@ -19,7 +19,7 @@ export function skipGlyph(ctx: PageCtx, g: PlacedGlyph, why: string): void {
 }
 
 /** The glyph's outline where the renderer's outline tier places it, faked bold and oblique as it fakes them. */
-function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: number): Path | null {
+export function placedOutline(ctx: PageCtx, g: PlacedGlyph, dx: number, dy: number): Path | null {
   const { family, weight, style } = g.resolved.resolved;
   let d: string | null;
   try {

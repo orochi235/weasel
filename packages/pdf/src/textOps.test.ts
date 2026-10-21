@@ -237,6 +237,17 @@ describe('writeText', () => {
     expect(only).not.toMatch(/ rg\n/);
   });
 
+  it('writes a text stroke dash, and writes one too fine for its glyphs as solid, as the renderer does', async () => {
+    const dashed = async (dash: number[]) => {
+      _resetLayoutCacheForTests();
+      return (await render(textCmd([run('H', { stroke: { paint: { color: '#ff0000' }, width: 2, dash } })]))).content;
+    };
+    expect(await dashed([2, 1])).toContain('\n[2 1] 0 d\n');
+    const fine = await dashed([1e-4, 1e-4]);
+    expect(fine).toContain('\n2 Tr\n');
+    expect(fine).not.toMatch(/ d\n/);
+  });
+
   it('fakes bold with render mode 2 at the offset syntheticBoldOffset gives, and italic with a skewed Tm', async () => {
     await registerAtlas('faux');
     const style = { fontFamily: 'faux', fontSize: SIZE };
