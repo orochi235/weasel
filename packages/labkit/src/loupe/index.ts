@@ -28,6 +28,8 @@ export type { LensAttachment, LensOverlayProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
 export { LensChrome } from './lens/LensChrome';
 export { LensSlot, useLensResolution, useShownSource } from './lens/LensSlot';
+export type { PixelGridView } from './lens/pixelGrid';
+export { drawPixelGrid, GRID_MIN_FACTOR, GRID_NEEDS, gridFits, readBitmap, softEdgeMask } from './lens/pixelGrid';
 export type {
   LensCapture,
   LensDescribeContext,

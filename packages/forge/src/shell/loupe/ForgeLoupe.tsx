@@ -28,6 +28,7 @@ import { CompareMenu, type CompareMenuRequest, compareChoices } from './CompareM
 import { describeLens, type ForgeComparison, type LabConditions, resolveComparison, resolveContextOf } from './conditions';
 import { LiveLensesContext } from './liveLenses';
 import { createLiveSource } from './liveSource';
+import { renderReadouts } from './readouts';
 import { trialAt } from './trialAt';
 import { usePixelsSource } from './usePixelsSource';
 
@@ -251,7 +252,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   return (
     <>
       <span hidden ref={attachMarker} />
-      <LensOverlay scene={scene} sources={sources} describe={describe} onFocusLens={onFocusLens} />
+      <LensOverlay scene={scene} sources={sources} describe={describe} renderReadouts={renderReadouts} onFocusLens={onFocusLens} />
       <LensActions api={api} bodyRef={bodyRef} opposite={opposite} />
       <CompareMenu api={api} request={menu} />
       <KeymapHint className="fg-loupe-hint" />

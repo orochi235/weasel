@@ -5,6 +5,7 @@ import './LensOverlay.browser.test.less';
 import { cleanup, waitFor } from '@testing-library/react';
 import { sceneToAdapter } from '@weasel-js/core';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { defineInstrument } from '../../instrument/defineInstrument';
@@ -51,7 +52,7 @@ beforeEach(async () => {
   );
 });
 
-async function mount(): Promise<HTMLElement> {
+async function mount(readouts?: () => ReactNode): Promise<HTMLElement> {
   renderWithIcons(
     <div className="lk-lens-test-host">
       <Lab
@@ -61,7 +62,7 @@ async function mount(): Promise<HTMLElement> {
           {
             id: 'loupe',
             region: 'overlay',
-            render: () => <LensOverlay scene={scene} sources={{ live: red }} />,
+            render: () => <LensOverlay scene={scene} sources={{ live: red }} {...(readouts ? { renderReadouts: readouts } : {})} />,
           },
         ]}
       />
@@ -105,7 +106,7 @@ test('keeps the chrome within the body’s width, directly below it', async () =
   sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { compare: 'b', view: 'split' }), 'split');
   const interior = await mount();
   const chrome = interior.querySelector<HTMLElement>('.lk-lens-chrome')!;
-  await waitFor(() => expect(chrome.querySelectorAll('button')).toHaveLength(5));
+  await waitFor(() => expect(chrome.querySelectorAll('button')).toHaveLength(7));
   const body = interior.getBoundingClientRect();
   const strip = chrome.getBoundingClientRect();
   expect(strip.left).toBeGreaterThanOrEqual(body.left - 0.5);
@@ -115,5 +116,22 @@ test('keeps the chrome within the body’s width, directly below it', async () =
     const r = button.getBoundingClientRect();
     expect(r.left).toBeGreaterThanOrEqual(body.left - 0.5);
     expect(r.right).toBeLessThanOrEqual(body.right + 0.5);
+  }
+});
+
+test('keeps a readout inside a round lens’s circle, however long its text', async () => {
+  sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { readouts: ['contrast'] }), 'readout');
+  const interior = await mount(() => <span>12.34:1 · AA pass · AAA pass · large text · and more besides</span>);
+  const readout = await waitFor(() => {
+    const el = interior.querySelector<HTMLElement>('.lk-lens-readouts');
+    if (!el?.textContent) throw new Error('no readout');
+    return el;
+  });
+  const body = interior.getBoundingClientRect();
+  const r = readout.getBoundingClientRect();
+  const cx = body.left + body.width / 2;
+  const cy = body.top + body.height / 2;
+  for (const [x, y] of [[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]] as const) {
+    expect(Math.hypot(x - cx, y - cy)).toBeLessThanOrEqual(body.width / 2 + 0.5);
   }
 });

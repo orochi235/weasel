@@ -17,6 +17,8 @@ import {
   unavailableText,
 } from './lensSource';
 import type { LensSettings, LensSourceKind } from './lensTypes';
+import { GridCanvas } from './GridCanvas';
+import { gridFits } from './pixelGrid';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
 export function useLensResolution<C>(
@@ -49,9 +51,11 @@ export function useShownSource<C>(settings: LensSettings<C>, sources: LensSource
 function LensCell<C>({
   source,
   request,
+  grid,
 }: {
   source: LensSource<C>;
   request: LensSourceRequest<C>;
+  grid: boolean;
 }) {
   const el = useRef<HTMLDivElement | null>(null);
   const handle = useRef<LensSourceHandle<C> | null>(null);
@@ -76,7 +80,11 @@ function LensCell<C>({
     }
     handle.current?.update(latest.current);
   }, [reticle.x, reticle.y, factor, size.width, size.height, conditions, dpr, latest]);
-  return <div ref={el} className="lk-lens-cell" data-dpr={request.dpr} />;
+  return (
+    <div ref={el} className="lk-lens-cell" data-dpr={request.dpr}>
+      {grid ? <GridCanvas source={source} request={request} /> : null}
+    </div>
+  );
 }
 
 /** The seam's offset in the interior, as a custom property the stylesheet clips each side by. */
@@ -164,6 +172,7 @@ export function LensSlot<C>(props: LensSlotProps<C>) {
   if (settings.compare !== null && settings.view === 'difference') return <LensDifference {...props} />;
   const requests = requestsOf(source, lens, settings, reticle, size);
   const sides = lensSides(settings);
+  const wantsGrid = settings.readouts.includes('grid');
   const split = sides.length > 1;
   const { seamX } = splitRects({ x: 0, y: 0, w: size.width, h: size.height }, settings.seam);
   const sideRequests = (side: LensSide) =>
@@ -178,7 +187,12 @@ export function LensSlot<C>(props: LensSlotProps<C>) {
         ? sides.map((side) => (
             <div key={side} className="lk-lens-side" data-side={side}>
               {sideRequests(side).map((request) => (
-                <LensCell key={`${source.kind}:${request.dpr}`} source={source} request={request} />
+                <LensCell
+                  key={`${source.kind}:${request.dpr}`}
+                  source={source}
+                  request={request}
+                  grid={wantsGrid && gridFits(source.kind, request.factor, request.dpr)}
+                />
               ))}
             </div>
           ))

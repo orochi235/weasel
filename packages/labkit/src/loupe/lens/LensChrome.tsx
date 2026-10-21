@@ -2,7 +2,8 @@ import { useActionsRegistry } from '@weasel-js/core';
 import { LENS_ACTION_IDS } from './lensActionDefs';
 import { type LensSlotProps, requestsOf } from './lensSource';
 import { useLensResolution, useShownSource } from './LensSlot';
-import type { LensSourceKind, LensView } from './lensTypes';
+import type { LensReadout, LensSourceKind, LensView } from './lensTypes';
+import { GRID_NEEDS, gridFits } from './pixelGrid';
 
 const SOURCE_TOGGLES: readonly { kind: LensSourceKind; label: string; id: string }[] = [
   { kind: 'live', label: 'Live', id: LENS_ACTION_IDS.live },
@@ -13,6 +14,11 @@ const VIEW_TOGGLES: readonly { view: LensView; label: string; id: string }[] = [
   { view: 'swap', label: 'Swap', id: LENS_ACTION_IDS.swap },
   { view: 'split', label: 'Split', id: LENS_ACTION_IDS.split },
   { view: 'difference', label: 'Difference', id: LENS_ACTION_IDS.difference },
+];
+
+const READOUT_TOGGLES: readonly { readout: LensReadout; label: string; id: string }[] = [
+  { readout: 'contrast', label: 'Contrast', id: LENS_ACTION_IDS.contrast },
+  { readout: 'grid', label: 'Grid', id: LENS_ACTION_IDS.grid },
 ];
 
 /**
@@ -41,6 +47,8 @@ export function LensChrome<C>({
   // Difference compares one pair of captures, at the first DPR.
   const labelled = difference ? shownRequests.slice(0, 1) : shownRequests;
   const labels = labelled.map((r) => shown.source?.label(r) ?? '');
+  // The grid has no meaning over a render of the DOM, or below 8× a captured pixel.
+  const gridOk = shownRequests.length > 0 && shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) && !difference;
   const at = { lensId: lens.lensId, reticle, source: shown.source?.kind ?? null };
   const trigger = (id: string) => () => {
     onFocus?.(lens.lensId);
@@ -66,6 +74,21 @@ export function LensChrome<C>({
             {t.label}
           </button>
         ))}
+        {READOUT_TOGGLES.map((t) => {
+          const on = settings.readouts.includes(t.readout);
+          const needs = t.readout === 'grid' && on && !gridOk;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              className="lk-lens-chrome__toggle"
+              aria-pressed={on}
+              onClick={trigger(t.id)}
+            >
+              {needs ? GRID_NEEDS : t.label}
+            </button>
+          );
+        })}
         {settings.compare !== null
           ? VIEW_TOGGLES.map((t) => (
               <button

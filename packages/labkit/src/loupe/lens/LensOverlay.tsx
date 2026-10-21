@@ -17,6 +17,7 @@ import {
 import { useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -32,7 +33,7 @@ import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import { useWheelPassThrough } from './useWheelPassThrough';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
-import type { LensDescribeContext, LensSources } from './lensSource';
+import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
@@ -64,6 +65,9 @@ export interface LensOverlayProps<C> {
   sources?: LensSources<C>;
   /** Names a comparison on the lens chrome. Default `String`. */
   describe?: (compare: C, at: LensDescribeContext) => string;
+  /** What a lens with a readout switched on draws for the host's own readouts, such as Contrast. The Pixel grid is the
+   *  lens's own. Called only while the lens has some readout on. */
+  renderReadouts?: (props: LensSlotProps<C>) => ReactNode;
   /** The lens the selection is on, or null when nothing is selected. */
   onFocusLens?: (lensId: string | null) => void;
 }
@@ -136,6 +140,7 @@ function LensInterior<C>({
   scene,
   sources,
   describe,
+  renderReadouts,
   onFocus,
   preview,
 }: {
@@ -145,6 +150,7 @@ function LensInterior<C>({
   scene: LensScene<C>;
   sources: LensSources<C>;
   describe: (compare: C, at: LensDescribeContext) => string;
+  renderReadouts: ((props: LensSlotProps<C>) => ReactNode) | undefined;
   onFocus: ((lensId: string) => void) | undefined;
   preview: SeamPreview;
 }) {
@@ -166,6 +172,9 @@ function LensInterior<C>({
       style={boxStyle(rect)}
     >
       <LensSlot {...props} />
+      {renderReadouts && settings.readouts.length > 0 ? (
+        <div className="lk-lens-readouts">{renderReadouts(props)}</div>
+      ) : null}
       <LensChrome {...props} {...(onFocus ? { onFocus } : {})} />
     </div>
   );
@@ -259,6 +268,7 @@ export function LensOverlay<C>({
   attachment = VIEWPORT_ATTACHMENT,
   sources,
   describe = String,
+  renderReadouts,
   onFocusLens,
 }: LensOverlayProps<C>) {
   const canvas = useSurfaceCanvas('top');
@@ -318,6 +328,7 @@ export function LensOverlay<C>({
                 scene={scene}
                 sources={sources}
                 describe={describe}
+                renderReadouts={renderReadouts}
                 onFocus={onFocusLens}
                 preview={preview}
               />

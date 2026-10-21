@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrastLineColor } from './contrast';
+import { contrastLineColor, contrastRatio, wcagLevels } from './contrast';
 import { hexToOklchDeg } from './colorSpaces';
 
 const L = (hex: string): number => hexToOklchDeg(hex.slice(0, 7)).L;
@@ -48,5 +48,50 @@ describe('contrastLineColor', () => {
 
   it('reads a four-digit hex background, ignoring its alpha', () => {
     expect(contrastLineColor('#fff8', 0.1)).toBe(contrastLineColor('#ffffff', 0.1));
+  });
+});
+
+describe('contrastRatio', () => {
+  it('gives 21 for black on white and 1 for a color on itself', () => {
+    expect(contrastRatio('#000', '#fff')).toBeCloseTo(21, 5);
+    expect(contrastRatio('#777', '#777')).toBe(1);
+  });
+
+  it('is the same whichever color is the text', () => {
+    expect(contrastRatio('#fff', '#000')).toBeCloseTo(21, 5);
+  });
+
+  it('matches the published WCAG figure for #767676 on white', () => {
+    expect(contrastRatio('#767676', '#ffffff')).toBeCloseTo(4.54, 2);
+  });
+
+  it('reads the forms a computed style comes back in', () => {
+    expect(contrastRatio('rgb(0, 0, 0)', 'rgb(255 255 255)')).toBeCloseTo(21, 5);
+  });
+
+  it('lays a translucent foreground over the background before comparing', () => {
+    expect(contrastRatio('rgba(0, 0, 0, 0)', '#fff')).toBe(1);
+  });
+
+  it('is null for a color it cannot parse', () => {
+    expect(contrastRatio('papayawhipped', '#fff')).toBeNull();
+    expect(contrastRatio('#000', 'oklch(0.5 0.1 20)')).toBeNull();
+  });
+});
+
+describe('wcagLevels', () => {
+  it('passes AA but not AAA at 4.5', () => {
+    expect(wcagLevels(4.5, false)).toEqual({ aa: true, aaa: false });
+  });
+
+  it('passes both at 7 and neither below 4.5', () => {
+    expect(wcagLevels(7, false)).toEqual({ aa: true, aaa: true });
+    expect(wcagLevels(4.49, false)).toEqual({ aa: false, aaa: false });
+  });
+
+  it('asks 3 and 4.5 of large text', () => {
+    expect(wcagLevels(3, true)).toEqual({ aa: true, aaa: false });
+    expect(wcagLevels(4.5, true)).toEqual({ aa: true, aaa: true });
+    expect(wcagLevels(2.99, true)).toEqual({ aa: false, aaa: false });
   });
 });
