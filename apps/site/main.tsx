@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@weasel-js/theme/fonts.css';
+import './typography.css';
 import { App } from './App';
 import { reloadOnce, sessionStore } from './chunkReload';
 
