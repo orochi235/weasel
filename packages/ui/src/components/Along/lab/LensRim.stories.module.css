@@ -1,0 +1,55 @@
+/* The lens: its picture clipped to the circle, its controls free to hang outside it. Room around it for labels and popovers. */
+.lens {
+  position: relative;
+  width: var(--lens);
+  height: var(--lens);
+  margin: var(--wzl-space-8) calc(var(--wzl-space-8) * 2);
+}
+
+.window {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  outline: 1px solid var(--wzl-border-strong);
+  outline-offset: -1px;
+  cursor: crosshair;
+}
+
+/* The picture and its marks, turned and zoomed about the lens's middle. */
+.picture {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--turn)) scale(var(--zoom));
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.mark {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--wzl-danger);
+  box-shadow: 0 0 0 2px var(--wzl-surface);
+  /* The same size at any zoom: the picture it sits in is scaled. */
+  transform: scale(calc(1 / var(--zoom)));
+}
+
+/* The rim the controls sit on: a dark band round the inside of the circle, so they read over any picture. */
+.rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle closest-side, transparent calc(100% - 36px), color-mix(in srgb, var(--wzl-surface) 88%, transparent) calc(100% - 35px));
+}
