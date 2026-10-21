@@ -193,17 +193,21 @@ binding the workshop registers, the lens keys included.
 Token shows the color at the aim and the `--wzl-*` token chain behind it;
 Contrast shows the WCAG ratio of the text there against its background, with
 AA and AAA marks, read from computed styles on a Live lens and from the pixels
-on a Pixels one; the pixel grid draws from 8× up on a Pixels lens. On a Live lens
-with a comparison, Token and Contrast read the compared copy. Token reads the
-DOM, so a Pixels lens with a comparison has none to give.
+on a Pixels one; the pixel grid draws on a Pixels lens zoomed to 8× or more per
+captured pixel (its zoom over the capture's DPR). On a Live lens with a
+comparison, Token and Contrast read the compared copy. Token reads the DOM, so a
+Pixels lens with a comparison has none to give, and neither reads inside an
+isolated story's frame.
 
 **Live** renders the story a second time inside the lens, with the
 comparison's globals or args laid over the trial's. It is sharp at any factor
-and interactive, and it is never the real pixels. **Pixels** asks the dev server
+and follows the trial's state, but takes no clicks, and it is never the real
+pixels. **Pixels** asks the dev server
 for a PNG of the story rendered in headless Chromium at a chosen DPR and enlarges
 it nearest-neighbor, so a hairline half a pixel off looks as it does on screen.
 A capture reproduces the story's args, globals, trial state, playhead, CSS
-variable overrides, scroll position and the lab's theme; it lags the live story
+variable overrides, scroll position (an isolated story's excepted), the lab's
+theme and the OS color scheme; it lags the live story
 by one capture, and has no hover or focus in it. Difference always compares two
 Pixels captures, whichever source the lens shows.
 
@@ -224,6 +228,11 @@ anyone else's page:
   server's own is refused.
 - A CSS variable override must be a custom property name with no `{`, `}` or
   `;` in its value, and overrides are written through the CSSOM.
+- A body past 16 MB is answered 413 and the connection closed.
+- The capture browser blocks service workers, closes every WebSocket but the
+  dev server's own, and ignores certificate errors only for an https dev
+  server; a listed origin's requests are then fetched from Node, so its
+  certificate is still checked.
 - The capture page can load nothing but the dev server's own origin and the
   origins the shell config lists in `capture.allowOrigins`, such as a web-font
   service's:

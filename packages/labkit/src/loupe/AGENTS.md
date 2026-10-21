@@ -54,12 +54,15 @@ Glass yet.
 `src/surface/AGENTS.md`), a layer no other tenant shares, so a lens redraw never
 clears annotation marks. The layer and its input element take no pointer input;
 each body, reticle and split seam has a `.lk-lens-hit` box that does, so a press
-that misses every lens falls through to the trials. A wheel over a hit box is
-handed on by `useWheelPassThrough`: it sets `data-probe="wheel"` on the layer,
-which stands the hit boxes down for one `elementFromPoint`, and dispatches a
-copy of the wheel on what is beneath. A host probing under a lens uses a
-different value (forge's readouts use `"copy"`), so the two never see each
-other's targets.
+that misses every lens falls through to the trials. Every hit test under the
+layer goes through `probeUnderLens(el, kind, fn)`, which marks the layer for one
+synchronous call: `'beneath'` stands the hit boxes down, so a point lands on
+what lies under the lenses, and `'interior'` stands each lens interior up, so a
+point lands on what a source attached there. A wheel over a hit box is handed on
+by `useWheelPassThrough`, which finds what is beneath that way and dispatches a
+copy of the wheel on it; a host's readouts find their element in a lens's copy
+with `'interior'`. `renderReadouts` is handed `LensReadoutProps`, the slot props
+plus the lens's interior element, so a host never queries the overlay's DOM.
 
 The canvas overrides `delete`: deleting any node of a lens deletes all three
 (`lensClosure`). Core's delete cascades only down from a deleted body, so a

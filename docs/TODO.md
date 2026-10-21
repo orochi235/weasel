@@ -333,6 +333,13 @@ Priority tags:
 
 ## Rendering & paint
 
+- **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
+  (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`
+  (`labkit/src/lab/LabSurface.tsx`), and an owner publishing only `over` and `under` leaves
+  `useSurfaceCanvas('top')` null for good, so the lab's lenses paint nothing. `useSurfaceCanvas` now warns
+  in dev when this happens. The fix is for such a lab to make its own `top` canvas when the owner offers
+  no `claimTop`.
+
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
   needs a paint kind that persists the image itself (data URI, or a document-scoped asset table),
@@ -802,12 +809,12 @@ only story runner in the repo.
   paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
   undoes) or upstream in react-aria.
 - **(P2) A lens on a scrolled isolated story shows a different patch than the one under its reticle**
-  (found 2026-10-21). A Pixels capture of an isolated story is taken at scroll 0 for the same reason: the payload's
-  `scroll` is read from the trial's `.fg-story__scroll`, which a frame host does not have (2026-10-21). The lens's copy frame loads at its own scroll position, because the story's scroll lives
-  inside the frame document and no protocol message reports it to the shell; an in-document copy follows its
-  trial's `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`), a frame copy cannot. The fix: the
-  frame reports its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of
-  that trial (a new `ToFrame` message that the frame applies to its scroller).
+  (found 2026-10-21). The story's scroll lives inside the frame document, and no protocol message reports it to the
+  shell. So a Live lens's copy frame loads at its own scroll position, where an in-document copy follows its trial's
+  `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`); and a Pixels capture is taken at scroll 0, since
+  the payload's `scroll` is read from a `.fg-story__scroll` a frame host does not have. The fix: the frame reports
+  its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of that trial (a
+  new `ToFrame` message that the frame applies to its scroller) and into the capture payload.
 - **(P3) Glass is unbuilt as a user-facing aim** (2026-10-21). `setAimOps(scene, id, 'glass')` makes the reticle's
   pose depend on the body and is tested (`labkit/src/loupe/lens/lensScene.test.ts`), but no lens action switches to it,
   so the Loupe keymap has no key for it. What is left: a `loupe.aim.glass` action and key in `lensActionDefs.ts`.
@@ -815,6 +822,21 @@ only story runner in the repo.
   compared, Token and Contrast read the main story, but the Live source notifies them from a `MutationObserver` on the
   lens's own copy (`shell/loupe/liveSource.ts`). A change only the main story shows, such as a hover or a menu opened in
   it, leaves the readout on its old reading until the lens next renders.
+- **(P2) A story's own scroller cannot be wheel-scrolled under a lens** (2026-10-21). labkit's wheel pass-through
+  (`useWheelPassThrough`) hands the wheel on as a dispatched copy, which is untrusted, and a browser scrolls an element
+  only for a trusted wheel. A camera's wheel zoom answers the copy; a story's native `overflow` scroller under a lens
+  does not move. A fix scrolls the element the copy lands on by its deltas when nothing called `preventDefault`.
+- **(P2) A lens's chrome strip takes the wheel and the press at the bottom of its body** (review finding,
+  2026-10-21). The strip sits in the lens interior over the body's hit box, so a wheel there is not passed through
+  and a drag starting there does not move the lens.
+- **(P2) Two Follow lenses share one reticle hold** (review finding, 2026-10-21). `createApi`
+  (`shell/loupe/ForgeLoupe.tsx`) keeps one `PoseHold` for every Follow lens and each `follow` sets it to the
+  focused lens's reticle alone, so moving the focus to another Follow lens drops the first one's held pose. One hold
+  per lens, released when its lens leaves Follow or closes, fixes it.
+- **(P3) A Live copy of an isolated story is backed by the lab's background, not the compared mode's**
+  (2026-10-21). `.fg-lens-copy > .fg-frame-host` paints `var(--wzl-bg)` as the shell resolves it there, and the
+  compared globals apply inside the copy's frame, not to its host in the shell. A transparent isolated story under
+  an opposite-mode lens shows the lab's background through it.
 - **(P3) The Live source notifies its readers once per DOM mutation** (2026-10-21). Its `MutationObserver` calls every
   listener on each batch of records, so an animating story keeps Token and Contrast recomputing styles every
   mutation. Coalesce the notifications to one per frame through `useVisibleRaf`.
