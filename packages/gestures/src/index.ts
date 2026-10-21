@@ -123,6 +123,8 @@ export type {
 export { keySpecsFromShortcut } from './ui/keySpecsFromShortcut';
 export { keySpecFromCode } from './ui/keySpecFromCode';
 export { formatShortcut, formatShortcutParts } from './ui/formatShortcut';
+export { bindingSpec, held, key, keySpecRoute, unbound } from './ui/keySugar';
+export type { BindingOverrideInput } from './ui/keySugar';
 export type { ShortcutInput, FormatShortcutOptions } from './ui/formatShortcut';
 export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';
 export type { FixedSeat } from './ui/fixedSeat';
