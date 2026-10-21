@@ -158,16 +158,11 @@ lens's image while args change).
 
 ## Keys
 
-Every control is a labkit action with a default key. Forge has no list of its key bindings today, so this work adds one: a panel listing every binding forge registers, the loupe's included (my call, 2026-10-20); rebinding comes with the leader-scope arc. The loupe's
-keymap is reached through a **leader scope**: a binding that opens a keymap for the next input
-(next keystroke or pointer gesture), or for as long as its key is held. The gesture system has no
-such scope yet; it is a separate engine arc in `@weasel-js/routing` and `@weasel-js/gestures`,
-designed in another session (`docs/superpowers/specs/2026-10-20-leader-scopes-design.md`, not
-written as of 2026-10-20). The loupe ships its actions with plain default keys and moves them under
-the leader scope when it lands.
+Every control is a labkit action. Forge has no list of its key bindings today, so this work adds one: a panel listing every binding forge registers, the loupe's included (my call, 2026-10-20).
 
-While Follow is aiming, the pointer is busy. How to freeze a Follow reticle so the pointer can
-work the story belongs to the leader-scope design.
+The loupe's actions live in one **Loupe keymap** (`keymapContribution`, `docs/taxonomy.md` "Keymap and leader"), opened by the leader Alt+L, matched by physical key. Inside it the keys are plain (`l` adds a lens, `Shift+L` closes it), so a story's own typing never reaches a lens action. Escape closes the keymap, `<KeymapHint>` lists it while open, and each binding has an id equal to its action id, so `bindingOverrides` can rebind it (2026-10-20).
+
+While Follow is aiming, the pointer is busy. A held leader keeps the keymap open, so `Alt+L`-held then `p` pins the reticle while the pointer works the story.
 
 ## Left to the builder
 

@@ -39,14 +39,14 @@ Where the code disagrees with the spec, or the spec is silent on something the c
 - At most 8 lenses at once (`MAX_LENSES = 8`). Every Live lens is a whole second render.
 - Lenses last for the session (in memory at the `Workshop`) and are never written to trial storage.
 - The lens scene keeps its own undo history, separate from `varsHistory`. It answers undo keys only while its input element has focus.
-- Leader scopes are out of scope. Every lens key is Alt (or Alt+Shift) plus the key in the Task 4 table (ruled 2026-10-20), a `KeySpec` with both `key` and `code` (`KeyL`, …), matched by `code` since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
+- Every lens key lives in ONE keymap, `keymapContribution({ id: 'loupe', label: 'Loupe', leader, bindings, actions })` (leader keymaps landed on main; `docs/taxonomy.md` "Keymap and leader"), installed through `ambient` as `apps/site/demos/KeymapDemo.tsx` does. The leader is Alt+L matched by `code: 'KeyL'` (Alt changes the produced character on macOS). Inside it the bindings are plain keys, so a story's own typing never reaches a lens action. Each binding carries an `opts.id` equal to its action id, so `bindingOverrides` / `ActionsRegistry.overrideBindings` can rebind it. Escape closes the keymap (the API does this; the plan never binds it). `<KeymapHint>` from `@weasel-js/ui/components/KeymapHint` shows the open keymap, and the lens chrome or forge mounts one (ruled 2026-10-20).
 - US English in code, copy and commits. Commit subjects are imperative and lower-case, and every commit ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Work in a worktree (`git worktree add .claude/worktrees/forge-loupe -b forge-loupe`, then `npm ci` inside it). Before merging, run `npm run test:gate` and `npm run test:fleet -- HEAD` on the branch.
 
 ## Review Focus
 
 1. **A story scrolled inside its host, or a workspace pane zoomed.** The lens must show the patch the reticle sits on. A Live copy matches the main host's scroll offsets, and both sources map client to host-local points by the host rect's scale (Task 6, Task 9).
-2. **Typing a lens key into a story's text field.** Typing Alt+L in an `<input>` inside a story must add no lens (Task 4).
+2. **Typing a lens key into a story's text field.** Typing a plain `l` in an `<input>` inside a story must add no lens and open no keymap: lens actions live only inside the Loupe keymap, which only Alt+L opens (Task 4).
 3. **Trial state that JSON cannot carry** (a `Map`, a function, a class instance). The Pixels source must report "unavailable: this story's state cannot be sent to a capture" rather than capture a different story (Task 9).
 4. **A story file edited while a Pixels lens is up.** The next capture must be fresh, never a pre-edit image from the cache (Task 8, Task 9).
 5. **A reticle over no trial, or over a trial that just closed.** The lens shows "Nothing under the reticle" and unmounts any copy, with no throw (Task 6).
@@ -280,7 +280,7 @@ it('keeps painting lenses while a trial is expanded', async () => { /* expand tr
 - [ ] **Step 5: Run to verify the tests pass.** Expected: PASS. Also run `npm run check:size` (Lab.tsx must be unchanged in length) and `npm run typecheck`.
 - [ ] **Step 6: Commit** with the subject `add a lab overlay region and a lens canvas whose misses fall through to the trials`.
 
-### Task 4: Lens actions, Follow, and default keys
+### Task 4: Lens actions, Follow, and the Loupe keymap
 
 **Files:**
 - Create: `packages/labkit/src/loupe/lens/lensActions.ts`, `packages/labkit/src/loupe/lens/LensActions.tsx`
@@ -288,7 +288,7 @@ it('keeps painting lenses while a trial is expanded', async () => { /* expand tr
 - Test: `packages/labkit/src/loupe/lens/lensActions.test.ts`, `packages/labkit/src/loupe/lens/LensActions.test.tsx`
 
 **Interfaces:**
-- Consumes: Task 2's ops and Task 3's overlay. `heldKeySpec` and the `Action` type from core.
+- Consumes: Task 2's ops and Task 3's overlay. `keymapContribution`, `key` and the `Action` type from core.
 - Produces:
 
 ```ts
@@ -309,33 +309,36 @@ export const LENS_ACTION_IDS: { add: 'loupe.add'; close: 'loupe.close'; pinned: 
   token: 'loupe.readout.token'; contrast: 'loupe.readout.contrast'; grid: 'loupe.readout.grid';
   zoomIn: 'loupe.factor.in'; zoomOut: 'loupe.factor.out' };
 export function createLensActions<C>(api: LensActionApi<C>, comparisons: { opposite: () => C }): readonly Action[];
+export function createLoupeKeymap(actions: readonly Action[]): Contribution<never>[];   // keymapContribution({ id: 'loupe', … })
 export function LensActions<C>(props: { api: LensActionApi<C>; bodyRef: RefObject<HTMLElement | null>; opposite: () => C }): null;
 ```
 
-Default keys. Each binding is a `KeySpec` (`packages/gestures/src/ui/spec.ts`): `{ kind: 'key', key, code, mods: { alt: true, shift: <true|false> }, phase: [{ channel: '*', phase: 'initial' }] }`. `key` is the produced character the field requires (the unshifted base letter, matched case-insensitively) and `code` is the physical key; Alt plus `code` is what a macOS keyboard can match, since Alt changes the produced character. `shift` is always written out, so Alt+L and Alt+Shift+L never collide (ruled 2026-10-20). Every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up:
+Default keys. `createLoupeKeymap` builds one keymap with `keymapContribution({ id: 'loupe', label: 'Loupe', leader: { ...key('Alt+L'), code: 'KeyL' }, bindings, actions })`; `LensActions` installs it through `ambient`, and `<KeymapHint>` shows it while open. The leader matches by `code` (`KeyL`), since Alt changes the produced character on macOS. Inside the keymap every binding is a plain key, written `{ spec: key('l'), actionId: 'loupe.add', opts: { id: 'loupe.add' } }`: the `opts.id` equals the action id, so a host rebinds it with `bindingOverrides` or `ActionsRegistry.overrideBindings`. Shift variants are written out (`key('Shift+L')`), so `l` and `Shift+L` never collide. Keymap-mode `'modal'` (the default) swallows an unbound key while the keymap is open. Every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up; that still applies inside the keymap:
 
-| Action | Key | `code` | Action | Key | `code` |
-|---|---|---|---|---|---|
-| `loupe.add` | `Alt+L` | `KeyL` | `loupe.close` | `Alt+Shift+L` | `KeyL` |
-| `loupe.aim.pinned` | `Alt+P` | `KeyP` | `loupe.aim.follow` | `Alt+F` | `KeyF` |
-| `loupe.source.live` | `Alt+V` | `KeyV` | `loupe.source.pixels` | `Alt+X` | `KeyX` |
-| `loupe.dpr.next` | `Alt+R` | `KeyR` | `loupe.view.swap` | `Alt+S` | `KeyS` |
-| `loupe.view.split` | `Alt+\` | `Backslash` | `loupe.view.difference` | `Alt+D` | `KeyD` |
-| `loupe.compare.opposite` | `Alt+O` | `KeyO` | `loupe.compare.menu` | `Alt+K` | `KeyK` |
-| `loupe.compare.clear` | `Alt+Shift+O` | `KeyO` | `loupe.readout.token` | `Alt+T` | `KeyT` |
-| `loupe.readout.contrast` | `Alt+C` | `KeyC` | `loupe.readout.grid` | `Alt+G` | `KeyG` |
-| `loupe.factor.in` | `Alt+=` | `Equal` | `loupe.factor.out` | `Alt+-` | `Minus` |
+| Action | Key | Action | Key |
+|---|---|---|---|
+| `loupe.add` | `L` | `loupe.close` | `Shift+L` |
+| `loupe.aim.pinned` | `P` | `loupe.aim.follow` | `F` |
+| `loupe.source.live` | `V` | `loupe.source.pixels` | `X` |
+| `loupe.dpr.next` | `R` | `loupe.view.swap` | `S` |
+| `loupe.view.split` | `\` | `loupe.view.difference` | `D` |
+| `loupe.compare.opposite` | `O` | `loupe.compare.menu` | `K` |
+| `loupe.compare.clear` | `Shift+O` | `loupe.readout.token` | `T` |
+| `loupe.readout.contrast` | `C` | `loupe.readout.grid` | `G` |
+| `loupe.factor.in` | `=` | `loupe.factor.out` | `-` |
 
 `loupe.follow` binds `{ kind: 'hover', held: 'optional', mods: ANY_MODS }` on a dispatcher that `LensActions` mounts on the lab body with `channels: { pointer: false, hover: true, contextMenu: false, ingest: false }`. That is `LoupeGestures`' own-dispatcher pattern, and the action is enabled only while the current lens's aim is `follow`. `loupe.aim.pinned` from Follow commits the held reticle pose with one `createTransformOp` and releases the hold. `loupe.dpr.next` cycles `[1] → [2] → [1, 2] → [1]`. Factor steps by ×2, clamped to `[1, 64]`. `loupe.source.pixels` returns the source's unavailable reason from `enabled` when Pixels is missing. Every action registers on the lab registry (`useActionsRegistry()` at `LensActions`), in `group: 'loupe'`, with a `label` written for the key panel ("Add lens", "Close lens", "Aim: pinned", …).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-it('adds a lens on a real Alt+L keydown, through the lab’s key handling', () => {
-  fireEvent.keyDown(labBody, { code: 'KeyL', key: 'l', altKey: true });
+it('opens the Loupe keymap on Alt+L and adds a lens on l', () => {
+  fireEvent.keyDown(labBody, { code: 'KeyL', key: 'l', altKey: true });   // the leader, matched by code
+  expect(screen.getByText('Loupe')).toBeVisible();                        // KeymapHint is up
+  fireEvent.keyDown(labBody, { code: 'KeyL', key: 'l' });
   expect(lensesOf(scene)).toHaveLength(1);
 });
-it('caps lenses at eight at the registry, declining the ninth with a reason', () => {
+it('declines the ninth lens with a reason', () => {
   for (let i = 0; i < 9; i++) registry.trigger('loupe.add');
   expect(lensesOf(scene)).toHaveLength(8);
   expect(actionOf('loupe.add').enabled!(deps)).toMatch(/8 lenses/);
@@ -348,7 +351,8 @@ it('switches aim to Follow, tracks hover without writing history, and commits on
 });
 it('cycles DPR 1×, 2×, 1×|2×', () => { /* three triggers → [2], [1,2], [1] */ });
 it('declines every lens key but add while no lens is up', () => { /* enabled === 'not-applicable' */ });
-it('types Alt+L into a story’s text input without adding a lens', async () => { /* Review Focus 2: Lab with an <input> trial; real keydown and keyup events with code 'KeyL', altKey true on the focused input; lensesOf(scene) empty */ });
+it('types l into a story’s text input without adding a lens and without opening the keymap', async () => { /* Review Focus 2: Lab with an <input> trial; real keydown and keyup events with key 'l', code 'KeyL', no modifiers, on the focused input; lensesOf(scene) empty and no KeymapHint rendered */ });
+it('rebinds add through bindingOverrides by its id', () => { /* mount with bindingOverrides={{ 'loupe.add': key('n') }}; Alt+L then n adds a lens, Alt+L then l does not */ });
 ```
 
 Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
@@ -356,7 +360,7 @@ Every test listed asserts the behavior its name states; a body shown as a commen
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/lensActions.test.ts packages/labkit/src/loupe/lens/LensActions.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.** If the typing test fails, the lab dispatcher is not skipping editable targets. Fix that in routing's key matcher, with a test there in the `weasel-ui` project, rather than in the lens.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
-- [ ] **Step 5: Commit** with the subject `add lens actions with Alt-held default keys and a follow aim`.
+- [ ] **Step 5: Commit** with the subject `add lens actions in a leader keymap and a follow aim`.
 
 ### Task 5: The source contract and the lens slot
 
@@ -742,13 +746,13 @@ Every test listed asserts the behavior its name states; a body shown as a commen
 - Produces:
   - `describeBinding(spec: GestureSpec): string` gives the chip text for key specs. For the rest it gives `"Wheel"`, `"Hover"`, `"Drag"`, `"Click"` and `"Hold <key>"`.
   - `KEYS_SECTION: LabContribution` (region `aside`, titled "Keys").
-  - `KeysChrome({ onChrome })` mirrors `CssVarsChrome`, with the persisted lab record `fg-keys-shown`, a header toggle `fg-keys-toggle`, and an action `forge.keys.toggle` on `Alt+Slash` (`code: 'Slash'`, never plain `?`, which would fire while typing in a story field).
-  - The panel lists `registry.list()` grouped by `group`, sorted by label, one row per action: label, then every binding's chip. It re-reads on `registry.subscribe`.
+  - `KeysChrome({ onChrome })` mirrors `CssVarsChrome`, with the persisted lab record `fg-keys-shown`, a header toggle `fg-keys-toggle`, and an action `forge.keys.toggle` on `Alt+Slash` (`code: 'Slash'`, never plain `?`, which would fire while typing in a story field); the panel's own open key stays Alt+Slash, outside the Loupe keymap.
+  - The panel lists `registry.list()` grouped by `group`, sorted by label, one row per action: label, then every binding's chip. The Loupe keymap's rows show as the formatter prints them, `Loupe ▸ L`, so each chip carries the leader that reaches it. It re-reads on `registry.subscribe`.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```tsx
-it('lists every lab action with its keys, the loupe’s included', () => { expect(row('Add lens')).toHaveTextContent(formatShortcut({ key: 'l', alt: true })); // the Alt glyph form the label formatter prints, never bare 'L' expect(row('Magnify (loupe)')).toHaveTextContent('Wheel'); });
+it('lists every lab action with its keys, the loupe’s included', () => { expect(row('Add lens')).toHaveTextContent('Loupe ▸ L'); // the form `formatShortcut` draws for a keymap binding, never bare 'L' expect(row('Magnify (loupe)')).toHaveTextContent('Wheel'); });
 it('gives no two lab actions the same key', () => { /* collect key chips across registry.list() in a mounted Workshop with a lens up; expect no duplicates */ });
 it('opens on Alt+Slash', async () => {});
 ```
@@ -756,14 +760,14 @@ it('opens on Alt+Slash', async () => {});
 Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
 
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/shell/keys/KeysPanel.test.tsx`. Expected: FAIL.
-- [ ] **Step 3: Implement.** If the duplicate test finds a lens key that collides with an existing lab key, change the lens key in `lensActions.ts` and its row in Task 4's table, never the existing key.
+- [ ] **Step 3: Implement.** If the duplicate test finds a lens key that collides with an existing lab key, change the lens key in `createLoupeKeymap` and its row in Task 4's table, never the existing key.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
 - [ ] **Step 5: Commit** with the subject `add a forge panel listing every key binding the workshop registers`.
 
 ### Task 14: Docs, changeset, and the full run
 
 **Files:**
-- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass unbuilt as a user-facing aim; the "Keys" section rewritten to say lens keys are Alt-held until leader scopes land), `docs/TODO.md` (one entry for Glass, and one for moving lens keys under the leader scope once it lands)
+- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass unbuilt as a user-facing aim; the "Keys" section rewritten to describe the Loupe keymap and point at `docs/taxonomy.md` "Keymap and leader"), `docs/TODO.md` (one entry for Glass; the lens-keys-under-the-leader-scope entry is done and gets none)
 - Create: `.changeset/forge-loupe.md` (`patch` for `@weasel-js/labkit`, `@weasel-js/forge`, `@weasel-js/paint`, `@weasel-js/svg`, and `@weasel-js/core` (Task 11 edits its barrel); the prose says it is additive)
 
 - [ ] **Step 1: Write the docs.** Do a cut pass and show the cut list.
@@ -780,5 +784,4 @@ Every test listed asserts the behavior its name states; a body shown as a commen
 ## Rulings (2026-10-20)
 
 - **Delete on a Pinned lens keeps the lens canvas's `delete` override** (Spec correction 2). The core alternative only cascades down from a deleted body, so deleting a selected reticle alone would still strand the body; the override uses the canvas's public `actions` prop and `createDeleteOp`.
-- **Lens keys default to Alt plus the letter** until leader scopes land, so a story's plain keys are never taken.
-- **Lens keys are `KeySpec`s with `key`, `code` and an explicit `shift`**, Alt-held; the key panel opens on `Alt+Slash`; Glass has ops and no action.
+- **Lens keys live in one `loupe` keymap opened by Alt+L** (leader keymaps landed on main). Inside it the bindings are plain keys, each with an `opts.id` equal to its action id for rebinding; Escape closes it; `<KeymapHint>` shows it. The key panel still opens on `Alt+Slash`; Glass has ops and no action.
