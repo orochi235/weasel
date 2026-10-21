@@ -1,4 +1,4 @@
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
 import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { ZOOM_FLOOR } from 'core/viewport/zoomBounds';
@@ -88,19 +88,17 @@ export function aimSpace2d(viewId: string | null, view: View, size: Dims): AimSp
   };
 }
 
-function scaleFor(frame: number, extent: number): number {
-  return extent > 0 && frame > 0 ? frame / extent : ZOOM_FLOOR;
-}
+const UNUSED_CURRENT: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-/** The camera that shows `rect` in a frame of `size`: `'exact'` per axis (the inverse of `viewportWorldRect`), `'contain'` uniform and centered. Normalized. */
+/**
+ * The camera that shows `rect` in a frame of `size`: `'exact'` per axis (the inverse of `viewportWorldRect`),
+ * `'contain'` uniform and centered. Not clamped to a zoom range, and finite for an empty rect or frame. Normalized.
+ */
 export function viewForAim(rect: Bounds, size: Dims, fit: 'exact' | 'contain'): View {
-  const sx = scaleFor(size.width, rect.width);
-  const sy = scaleFor(size.height, rect.height);
-  if (fit === 'exact') return normalizeView({ x: rect.x, y: rect.y, scale: { x: sx, y: sy } });
-  const s = Math.min(sx, sy);
-  return normalizeView({
-    x: rect.x + rect.width / 2 - size.width / s / 2,
-    y: rect.y + rect.height / 2 - size.height / s / 2,
-    scale: { x: s, y: s },
-  });
+  if (!(rect.width > 0 && rect.height > 0 && size.width > 0 && size.height > 0)) {
+    return normalizeView({ x: rect.x, y: rect.y, scale: { x: ZOOM_FLOOR, y: ZOOM_FLOOR } });
+  }
+  return normalizeView(fitViewToBounds(rect, size, UNUSED_CURRENT, {
+    mode: fit === 'exact' ? 'stretch' : 'contain', padding: 0, minScale: 0, maxScale: Infinity,
+  }));
 }
