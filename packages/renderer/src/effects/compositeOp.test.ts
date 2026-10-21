@@ -10,6 +10,7 @@ import { WeaselRenderer } from '../WeaselRenderer';
 import { _resetProgramRegistryForTests } from '../shaders/registerProgram';
 import type { DrawCommand } from '../DrawCommand';
 import { cullDrawCommands } from '../cullDrawCommands';
+import { leavesUncovered, readsBackdrop } from './compositeOp';
 
 const RECT: DrawCommand = {
   kind: 'path',
@@ -67,5 +68,23 @@ describe('a group composite operator', () => {
     const off: DrawCommand = { ...RECT, path: { kind: 'rect', x: 900, y: 900, width: 10, height: 10 } };
     const cmds: DrawCommand[] = [{ kind: 'group', composite: 'destination-in', children: [off] }];
     expect(cullDrawCommands(cmds, mat3.identity(), { x: 0, y: 0, width: 100, height: 50 })).toBe(cmds);
+  });
+});
+
+describe('leavesUncovered', () => {
+  it('holds for the operators that keep the destination where the source is empty', () => {
+    const ops = ['source-over', 'source-in', 'source-out', 'source-atop', 'destination-over', 'destination-in',
+      'destination-out', 'destination-atop', 'xor', 'lighter', 'copy'] as const;
+    expect(ops.filter((op) => leavesUncovered(op))).toEqual(
+      ['source-over', 'source-atop', 'destination-over', 'destination-out', 'xor', 'lighter']);
+    expect(leavesUncovered({ source: 'one', destination: 'source-alpha' })).toBe(false);
+  });
+});
+
+describe('readsBackdrop', () => {
+  it('finds a composite at any depth and nothing in a plain tree', () => {
+    const deep: DrawCommand[] = [RECT, { kind: 'group', children: [{ kind: 'group', composite: 'xor', children: [RECT] }] }];
+    expect(readsBackdrop(deep)).toBe(true);
+    expect(readsBackdrop([RECT, { kind: 'group', composite: 'source-over', children: [RECT] }])).toBe(false);
   });
 });

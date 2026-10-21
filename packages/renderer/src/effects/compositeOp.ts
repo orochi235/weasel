@@ -5,6 +5,7 @@
  * operator is `source * Fa + destination * Fb` with both factors read off one
  * alpha or the other, which is a blend function and needs no second pass.
  */
+import type { DrawCommand } from '../DrawCommand';
 
 /** A Porter-Duff operator, named as canvas 2D's `globalCompositeOperation` names it. */
 export type CompositeOp =
@@ -48,6 +49,28 @@ export function isOwnComposite(composite: CompositeOp | BlendFactors | undefined
   if (composite === undefined) return false;
   const { source, destination } = blendFactorsOf(composite);
   return source !== 'one' || destination !== 'one-minus-source-alpha';
+}
+
+/**
+ * Whether `composite` leaves the destination as it was wherever the source is
+ * empty, so what it changes lies inside what its group draws. The others clear
+ * or scale everything else inside the enclosing clip.
+ */
+export function leavesUncovered(composite: CompositeOp | BlendFactors): boolean {
+  const { destination } = blendFactorsOf(composite);
+  return destination === 'one' || destination === 'one-minus-source-alpha';
+}
+
+/** Keyed by array: the lists a renderer draws are not mutated once drawn. */
+const backdropReaders = new WeakMap<readonly DrawCommand[], boolean>();
+
+/** Whether any group in `commands`, at any depth, has its own composite, and so reads the pixels drawn before it. */
+export function readsBackdrop(commands: readonly DrawCommand[]): boolean {
+  const known = backdropReaders.get(commands);
+  if (known !== undefined) return known;
+  const reads = commands.some((cmd) => cmd.kind === 'group' && (isOwnComposite(cmd.composite) || readsBackdrop(cmd.children)));
+  backdropReaders.set(commands, reads);
+  return reads;
 }
 
 function glFactor(gl: WebGL2RenderingContext, factor: BlendFactor): number {

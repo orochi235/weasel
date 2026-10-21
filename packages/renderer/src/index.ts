@@ -70,7 +70,7 @@ export {
 export { registerEffect, effectsReach, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
-export { isOwnComposite } from './effects/compositeOp';
+export { isOwnComposite, leavesUncovered, readsBackdrop } from './effects/compositeOp';
 export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';
 export { ShaderCompileError } from './shaders/ShaderProgram';
 export { getProgramSource } from './shaders/registerProgram';

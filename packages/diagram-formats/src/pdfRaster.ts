@@ -1,5 +1,5 @@
 /**
- * The raster hook `writePdf` calls for what a PDF cannot draw: effects and shaders.
+ * The raster hook `writePdf` calls for what a PDF cannot draw.
  */
 import { createScene, mat3, warmRender, type RasterSession } from '@weasel-js/core';
 import type { WritePdfOptions } from '@weasel-js/pdf';

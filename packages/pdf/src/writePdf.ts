@@ -34,7 +34,12 @@ export interface WritePdfOptions {
   /** Default true; unit tests pass false because jsdom realms lack `CompressionStream`. */
   compress?: boolean;
   readPixels?: (image: ImageBitmap | HTMLImageElement) => RasterPixels;
-  /** `view` is the page's `PdfPage.view`: what a `world`-unit paint in `commands` resolves through. */
+  /**
+   * Draws `commands`, which are in the page's frame, in order onto a clear raster of `rect` at `scale`
+   * pixels per point. `view` is the page's `PdfPage.view`: what a `world`-unit paint in `commands`
+   * resolves through. For a group with its own `composite`, `commands` are the page up to and including
+   * that group, so the raster is the group composited onto what it was drawn over.
+   */
   rasterize?: (commands: readonly DrawCommand[], rect: Rect, scale: number, view: GlMat3 | undefined) => Promise<RasterPixels>;
 }
 
@@ -83,6 +88,7 @@ export async function writePdfWith(
       view: page.view,
       width: page.width,
       height: page.height,
+      trail: [],
     };
     // Page units are points, origin top left, y down.
     ctx.out.op('cm', ...mat3.toAffine(pageFlip(page)));

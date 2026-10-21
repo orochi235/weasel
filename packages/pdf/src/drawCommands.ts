@@ -1,6 +1,6 @@
 import { type GlMat3, mat3 } from '@weasel-js/geom';
 import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
-import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { solidColor } from './color';
 import type { ContentStream } from './content';
 import type { DocumentFonts } from './fonts/embedFont';
@@ -33,6 +33,26 @@ export interface PageCtx {
   width: number;
   /** The page's height in points, which a pattern's matrix needs to undo the page flip. */
   height: number;
+  /** The lists being written, outermost first, each with the index reached in it. */
+  trail: TrailStep[];
+}
+
+/** One list on the way down to the command being written; `group` holds it, except for the page's own. */
+export interface TrailStep {
+  cmds: readonly DrawCommand[];
+  at: number;
+  group?: GroupDrawCommand;
+}
+
+/** The page cut off after the command being written: everything before it, inside the groups it sits in. */
+export function pageThrough(trail: readonly TrailStep[]): DrawCommand[] {
+  let tail: DrawCommand[] = [];
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const { cmds, at, group } = trail[i]!;
+    const list = [...cmds.slice(0, at), ...(tail.length ? tail : [cmds[at]!])];
+    tail = group ? [{ ...group, children: list }] : list;
+  }
+  return tail;
 }
 
 export function skip(ctx: PageCtx, detail: string): void {
@@ -105,20 +125,33 @@ async function writeCommand(ctx: PageCtx, cmd: DrawCommand, state: DrawState): P
   else await writeShader(ctx, cmd, state);
 }
 
-/** Writes each command; one holding a number PDF cannot write is dropped whole and reported. */
-export async function writeCommands(ctx: PageCtx, cmds: readonly DrawCommand[], state: DrawState): Promise<void> {
-  for (const cmd of cmds) {
-    const line = ctx.out.mark();
-    const object = ctx.objects.mark();
-    const skips = ctx.skipped.length;
-    try {
-      await writeCommand(ctx, cmd, state);
-    } catch (err) {
-      if (!(err instanceof NonFiniteNumber)) throw err;
-      ctx.out.rollback(line);
-      ctx.objects.nullUnset(object);
-      ctx.skipped.length = skips;
-      skip(ctx, `${cmd.kind} has a non-finite coordinate`);
-    }
+/**
+ * Writes each command; one holding a number PDF cannot write is dropped whole and reported. `group` is
+ * the group `cmds` are the children of.
+ */
+export async function writeCommands(
+  ctx: PageCtx, cmds: readonly DrawCommand[], state: DrawState, group?: GroupDrawCommand,
+): Promise<void> {
+  const step: TrailStep = { cmds, at: 0, group };
+  ctx.trail.push(step);
+  try {
+    for (; step.at < cmds.length; step.at++) await writeOne(ctx, cmds[step.at]!, state);
+  } finally {
+    ctx.trail.pop();
+  }
+}
+
+async function writeOne(ctx: PageCtx, cmd: DrawCommand, state: DrawState): Promise<void> {
+  const line = ctx.out.mark();
+  const object = ctx.objects.mark();
+  const skips = ctx.skipped.length;
+  try {
+    await writeCommand(ctx, cmd, state);
+  } catch (err) {
+    if (!(err instanceof NonFiniteNumber)) throw err;
+    ctx.out.rollback(line);
+    ctx.objects.nullUnset(object);
+    ctx.skipped.length = skips;
+    skip(ctx, `${cmd.kind} has a non-finite coordinate`);
   }
 }

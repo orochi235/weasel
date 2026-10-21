@@ -1299,9 +1299,6 @@ only story runner in the repo.
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
   Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
   Left open by label drag (2026-10-20).
-- **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
-  `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
-  composites against (2026-10-20).
 - **(P3) `cullDrawCommands` keeps every group with effects.** `contentBounds` already bounds one by
   `effectsReach`, but that is device pixels and the cull rect is CSS pixels with no pixel ratio to
   convert by, so culling one needs `cullDrawCommands` to take that ratio (2026-10-21).

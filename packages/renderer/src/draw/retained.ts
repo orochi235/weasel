@@ -1,6 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { compositeProgramId } from '../effects/composite';
-import { isOwnComposite } from '../effects/compositeOp';
+import { readsBackdrop } from '../effects/compositeOp';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
 import { contentBounds, type DeviceRect } from '../retain/contentBounds';
@@ -13,25 +13,6 @@ import { flushBatch } from './flushBatch';
 type Dispatch = (ctx: DrawContext, cmd: DrawCommand) => void;
 
 const COMPOSITE_AS_DRAWN = { alpha: 1, colorMatrix: IDENTITY_COLOR_MATRIX };
-
-/** Whether a tree reads only its own pixels, keyed by children array. Arrays
- *  a retained group draws are immutable, so the answer holds for good. */
-const ownPixelsOnly = new WeakMap<readonly DrawCommand[], boolean>();
-
-function readsOnlyOwnPixels(children: readonly DrawCommand[]): boolean {
-  const known = ownPixelsOnly.get(children);
-  if (known !== undefined) return known;
-  let ok = true;
-  for (const child of children) {
-    if (child.kind !== 'group') continue;
-    if (isOwnComposite(child.composite) || !readsOnlyOwnPixels(child.children)) {
-      ok = false;
-      break;
-    }
-  }
-  ownPixelsOnly.set(children, ok);
-  return ok;
-}
 
 /**
  * Draw a group carrying `retain` from the pixels it left last time, drawing
@@ -59,7 +40,7 @@ export function drawRetainedGroup(
   const width = ctx.deviceWidth;
   const height = ctx.deviceHeight;
   if (!store || !width || !height) return false;
-  if (ownsSurface || ctx.renderTarget || !readsOnlyOwnPixels(cmd.children)) {
+  if (ownsSurface || ctx.renderTarget || readsBackdrop(cmd.children)) {
     store.decline();
     return false;
   }
