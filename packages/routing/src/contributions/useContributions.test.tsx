@@ -209,6 +209,30 @@ describe('route-conflict reporting sees action default bindings', () => {
   });
 });
 
+describe('route-conflict reporting sees binding overrides', () => {
+  const keyed = (id: string, key: string): Contribution => ({
+    id, eligibility: { always: true }, bindings: [{ spec: { kind: 'key', key }, actionId: `${id}.run` }],
+  });
+
+  it('checks again when an override moves a binding onto a taken key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { result } = renderHook(
+      () => {
+        useContributions({ entries: [keyed('a', 'L'), keyed('b', 'M')], focused: null });
+        return useActionsRegistry()!;
+      },
+      { wrapper: ({ children }) => <ActionsProvider><ActiveToolContextProvider>{children}</ActiveToolContextProvider></ActionsProvider> },
+    );
+    const conflicts = () => warn.mock.calls.map((args) => String(args[0])).filter((m) => m.includes('route conflict'));
+    expect(conflicts()).toEqual([]);
+    act(() => { result.current.overrideBindings({ 'b#0': { kind: 'key', key: 'L' } }); });
+    const said = conflicts();
+    warn.mockRestore();
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('a, b');
+  });
+});
+
 // Every tool `defineTool` builds declares `focus: true`, and `useTools`'
 // `declareSlot(tool, 'always')` adds `always: true` on top of it. Bucketing on
 // "not focus-eligible" therefore put every ambient tool in the registry

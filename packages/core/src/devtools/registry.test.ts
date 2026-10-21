@@ -76,6 +76,19 @@ describe('describeRegistry', () => {
     });
   });
 
+  it('lists tool bindings under their overrides', () => {
+    const { tools } = describeRegistry({
+      tools: { registry: { rect }, ambient: [wheel] },
+      contributions: [],
+      actions: null,
+      overrides: new Map([['rect#0', { kind: 'click' }], ['wheel-zoom#0', null]]),
+      deps: null,
+      routingKinds: [],
+    });
+    expect(tools[0]!.bindings.map((b) => b.spec)).toEqual([{ kind: 'click' }]);
+    expect(tools[1]!.bindings).toEqual([]);
+  });
+
   it('lists the deps the registry answers, and the routing kinds', () => {
     const r = setup();
     expect(r.deps).toEqual([{ name: 'selection', depth: 0, stacked: 1 }]);

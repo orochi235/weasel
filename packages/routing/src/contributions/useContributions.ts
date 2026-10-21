@@ -10,6 +10,7 @@ import {
   type ToolOffhandBindingSpec,
 } from '../interactions/actions/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
+import { NO_OVERRIDES } from '../interactions/actions/bindingOverrides';
 import type { HotkeyTrigger } from './types';
 import { assembleEntries } from './assemble';
 import { liveScope } from './eligibility';
@@ -19,7 +20,7 @@ import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
 
-const NO_MODES = (): (() => void) => () => {};
+const NO_SUBSCRIBE = (): (() => void) => () => {};
 
 /** Options for {@link useContributions}. */
 export interface UseContributionsOptions<TOverlay = KernelOverlay> {
@@ -97,7 +98,7 @@ export function useContributions<TOverlay = KernelOverlay>(
   // as state so `overlays` changes identity when the mode does.
   const modes = opts.modes;
   const modeVersion = useSyncExternalStore(
-    modes ? modes.subscribe : NO_MODES,
+    modes ? modes.subscribe : NO_SUBSCRIBE,
     () => modes?.getVersion() ?? 0,
   );
   const openKeymap = useInnermostKeymap()?.id ?? null;
@@ -134,35 +135,43 @@ export function useContributions<TOverlay = KernelOverlay>(
   // almost certainly not as either author intended. This is where the entry set
   // is assembled, so this is where it looks.
   //
-  // Dev-only, and deduped on a signature of the entry set: the check walks
-  // every binding of every entry, and consumers usually rebuild the entry list
-  // each render. Actions are read inside the effect, after the registrations
-  // that ran in child effects have landed.
+  // Dev-only, and deduped on a signature of the entry set and the binding
+  // overrides: the check walks every binding of every entry, and consumers
+  // usually rebuild the entry list each render. Actions are read inside the
+  // effect, after the registrations that ran in child effects have landed, and
+  // the registry is watched so an override set later is checked too.
   const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
   const entrySig = entries.map((e) => e.id).join(',');
   const modesRegistry = opts.modes;
   useEffect(() => {
     if (!isDev()) return;
-    const last = lastConflictSigRef.current;
-    if (last?.sig === entrySig && last.modes === modesRegistry) return;
-    lastConflictSigRef.current = { sig: entrySig, modes: modesRegistry };
-    // An entry can be in both buckets and usually is: every tool `defineTool`
-    // builds declares `focus: true`, and an ambient one carries `always: true`
-    // on top of that. Sorting on "not focus-eligible" put ambient tools in the
-    // registry bucket, which is never compared against itself — registry tools
-    // take turns in the active slot — so ambient-vs-ambient went unreported.
-    const registry: Contribution<TOverlay>[] = [];
-    const ambient: Contribution<TOverlay>[] = [];
-    for (const entry of entries) {
-      if (entry.eligibility?.focus) registry.push(entry);
-      if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
-    }
-    reportRouteConflicts({
-      registry,
-      ambient,
-      actions: actionsRegistry?.list() ?? [],
-      ...(modesRegistry ? { modes: modesRegistry.list().map(activeModeOf) } : {}),
-    });
+    const check = (): void => {
+      const overrides = actionsRegistry?.bindingOverrides() ?? NO_OVERRIDES;
+      const sig = `${entrySig}|${JSON.stringify([...overrides])}`;
+      const last = lastConflictSigRef.current;
+      if (last?.sig === sig && last.modes === modesRegistry) return;
+      lastConflictSigRef.current = { sig, modes: modesRegistry };
+      // An entry can be in both buckets and usually is: every tool `defineTool`
+      // builds declares `focus: true`, and an ambient one carries `always: true`
+      // on top of that. Sorting on "not focus-eligible" put ambient tools in the
+      // registry bucket, which is never compared against itself — registry tools
+      // take turns in the active slot — so ambient-vs-ambient went unreported.
+      const registry: Contribution<TOverlay>[] = [];
+      const ambient: Contribution<TOverlay>[] = [];
+      for (const entry of entries) {
+        if (entry.eligibility?.focus) registry.push(entry);
+        if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
+      }
+      reportRouteConflicts({
+        registry,
+        ambient,
+        actions: actionsRegistry?.list() ?? [],
+        overrides,
+        ...(modesRegistry ? { modes: modesRegistry.list().map(activeModeOf) } : {}),
+      });
+    };
+    check();
+    return actionsRegistry?.subscribe(check);
   }, [entrySig, entries, actionsRegistry, modesRegistry]);
 
   // Memoized so consumers using the result as an effect dep don't see identity
