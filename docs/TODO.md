@@ -350,8 +350,11 @@ Priority tags:
   is in doubles, a large model translation is rebased before upload (`setProjAndModel`,
   `u_origin`), and a gradient's or a pattern's paint space is rebased the same way (`bindGradient`
   measures from the gradient's own start, `bindPattern` drops whole tiles). Both are proven by
-  float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser;
-  `gradientStart.browser.test.ts` checks where a ramp lands and has not been run. Still float32:
+  float32 arithmetic (`draw.precision.test.ts`, `draw.paintPrecision.test.ts`), not in a browser
+  far from the origin. Near it, `gradientStart.browser.test.ts` shows the shader honors the rebase:
+  a linear, radial and conic ramp each land where their paint says in headless Chromium on the
+  fleet, and all three fail with `bindGradient` handing over the unrebased inverse (2026-10-21).
+  Still float32:
   a path's own coordinates (`PolygonPath.coords`, `Mesh.vertices`), which at world x = 262,144
   sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is quantized where a batched
   rect (doubles) is not; and what a consumer's own stage receives, which has no origin to rebase
