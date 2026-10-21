@@ -1,6 +1,7 @@
 import type { FaceEmbedding, FontStyle } from '@weasel-js/font';
 import { name, type PdfObjects, type PdfRef, text } from '../objects';
 import type { PdfFontSource } from './fontSource';
+import { subsetTrueType } from './subset';
 import { toUnicodeCMap } from './toUnicode';
 
 export interface EmbeddedFont {
@@ -19,6 +20,15 @@ function baseFontName(e: FaceEmbedding, family: string, weight: number, style: F
   return safe(e.postScriptName) || safe(`${family}-${weight}-${style}`);
 }
 
+/** Six capitals naming a subset, as ISO 32000 9.6.4 asks; the same glyphs always get the same tag. */
+function subsetTag(gids: Iterable<number>): string {
+  let h = 0x811c9dc5;
+  for (const gid of [...gids].sort((a, b) => a - b)) h = Math.imul(h ^ gid, 0x01000193) >>> 0;
+  let tag = '';
+  for (let i = 0; i < 6; i++, h = Math.floor(h / 26)) tag += String.fromCharCode(65 + (h % 26));
+  return tag;
+}
+
 class Face implements EmbeddedFont {
   /** Glyph id to the first codepoint that asked for it. */
   readonly used = new Map<number, number>();
@@ -29,6 +39,7 @@ class Face implements EmbeddedFont {
     private readonly objects: PdfObjects,
     private readonly emb: FaceEmbedding,
     private readonly baseFont: string,
+    private readonly subset: boolean,
   ) {}
 
   get ref(): PdfRef {
@@ -57,11 +68,13 @@ class Face implements EmbeddedFont {
     const descriptor = objects.alloc();
     const cid = objects.alloc();
     const toUnicode = objects.alloc();
-    objects.streamDeflated(file, { Length1: emb.sfnt.byteLength }, new Uint8Array(emb.sfnt));
+    const program = this.subset ? subsetTrueType(emb.sfnt, this.used.keys()) : new Uint8Array(emb.sfnt);
+    const fontName = this.subset ? `${subsetTag(this.used.keys())}+${this.baseFont}` : this.baseFont;
+    objects.streamDeflated(file, { Length1: program.byteLength }, program);
     objects.streamDeflated(toUnicode, {}, encoder.encode(toUnicodeCMap(this.used)));
     objects.set(descriptor, {
       Type: name('FontDescriptor'),
-      FontName: name(this.baseFont),
+      FontName: name(fontName),
       Flags: 4,
       FontBBox: emb.bbox.map((v, i) => (i < 2 ? Math.floor(v * k) : Math.ceil(v * k))),
       ItalicAngle: emb.italicAngle,
@@ -76,7 +89,7 @@ class Face implements EmbeddedFont {
     objects.set(cid, {
       Type: name('Font'),
       Subtype: name('CIDFontType2'),
-      BaseFont: name(this.baseFont),
+      BaseFont: name(fontName),
       CIDSystemInfo: { Registry: text('Adobe'), Ordering: text('Identity'), Supplement: 0 },
       FontDescriptor: descriptor,
       CIDToGIDMap: name('Identity'),
@@ -85,7 +98,7 @@ class Face implements EmbeddedFont {
     objects.set(this.fontRef, {
       Type: name('Font'),
       Subtype: name('Type0'),
-      BaseFont: name(this.baseFont),
+      BaseFont: name(fontName),
       Encoding: name('Identity-H'),
       DescendantFonts: [cid],
       ToUnicode: toUnicode,
@@ -93,13 +106,15 @@ class Face implements EmbeddedFont {
   }
 }
 
-/** One document's embedded fonts: each face is written once, with `/W` and `/ToUnicode` covering the glyphs used. */
+/** One document's embedded fonts: each face is written once, its program, `/W` and `/ToUnicode` covering the glyphs used. */
 export class DocumentFonts {
   private readonly faces = new Map<string, Promise<Face | null>>();
 
   constructor(
     private readonly objects: PdfObjects,
     private readonly source: PdfFontSource,
+    /** False embeds each face whole. */
+    private readonly subset = true,
   ) {}
 
   /** The embedded font for a face, or null to draw its glyphs as outlines. */
@@ -121,7 +136,7 @@ export class DocumentFonts {
       return null;
     }
     if (!emb || emb.outlines !== 'truetype' || !emb.embeddable) return null;
-    return new Face(this.objects, emb, baseFontName(emb, family, weight, style));
+    return new Face(this.objects, emb, baseFontName(emb, family, weight, style), this.subset);
   }
 
   /** Writes every face's objects; call before `PdfObjects.settle`. */

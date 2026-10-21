@@ -57,7 +57,8 @@ that clears what the group leaves empty (`source-in`, `source-out`,
 `destination-in`, `destination-atop`, `copy`). An isolated group holding a
 composite is rasterized whole.
 
-A face that is CFF-only, restricted (`fsType` 0x0002), bitmap-only (`fsType`
+Each TrueType face is embedded as a subset of the glyphs the document draws;
+`subsetFonts: false` embeds it whole. A face that is CFF-only, restricted (`fsType` 0x0002), bitmap-only (`fsType`
 0x0200), registered from a WOFF file, or unreadable is drawn as glyph outlines
 instead, so its text is not selectable.
 

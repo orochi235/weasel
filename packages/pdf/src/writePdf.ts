@@ -30,6 +30,8 @@ export interface RasterPixels {
 /** Settings and host callbacks for `writePdf`; only `fonts` is required. */
 export interface WritePdfOptions {
   fonts: PdfFontSource;
+  /** Default true: each face carries only the glyphs the document draws. False embeds each face whole. */
+  subsetFonts?: boolean;
   title?: string;
   /** Default true; unit tests pass false because jsdom realms lack `CompressionStream`. */
   compress?: boolean;
@@ -73,7 +75,7 @@ export async function writePdfWith(
   const info = objects.alloc();
   const skipped: PdfSkip[] = [];
   const kids: PdfRef[] = [];
-  const fonts = new DocumentFonts(objects, opts.fonts);
+  const fonts = new DocumentFonts(objects, opts.fonts, opts.subsetFonts !== false);
 
   for (const page of pages) {
     const pageRef = objects.alloc();
