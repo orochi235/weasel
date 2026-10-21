@@ -119,18 +119,16 @@ function elementInCopy(lensId: string, client: LoupePoint): Element | undefined 
   return (document.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => copy.contains(el));
 }
 
-/** Where a lens's compared render sits at its aim, in client px: the interior's center, or the compared half's in Split. */
-function comparedAim(lensId: string, split: boolean, seam: number): LoupePoint | null {
+/** Where a lens's compared render sits at its aim, in client px: the interior's center, in Swap and Split alike, since each side renders the whole interior. */
+function comparedAim(lensId: string): LoupePoint | null {
   const box = interiorOf(lensId)?.getBoundingClientRect();
-  if (!box) return null;
-  const seamX = Math.round(box.width * seam);
-  return { x: box.left + (split ? (seamX + box.width) / 2 : box.width / 2), y: box.top + box.height / 2 };
+  return box ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
 }
 
 /** What a Live lens reads: its compared copy at its aim when it has a comparison, else the main story at the reticle. */
 function liveAim(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
   if (settings.compare === null) return { element: elementAt(reticle), point: reticle };
-  const point = comparedAim(lensId, settings.view === 'split', settings.seam) ?? reticle;
+  const point = comparedAim(lensId) ?? reticle;
   return { element: elementInCopy(lensId, point), point };
 }
 

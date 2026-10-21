@@ -185,6 +185,25 @@ describe('ContrastReadout', () => {
     expect(await screen.findByText(/4\.69:1/)).toBeTruthy();
   });
 
+  it('samples a Split lens’s compared copy at the interior’s center, not the compared half’s', async () => {
+    const interior = document.createElement('div');
+    interior.className = 'lk-lens-interior';
+    interior.dataset.lens = 'a';
+    interior.getBoundingClientRect = () => new DOMRect(100, 200, 160, 160);
+    interior.innerHTML =
+      '<div data-fg-copy data-fg-host="t1~lens-a~compared"><div style="background-color: black"><p style="color: white">Hi</p></div></div>';
+    document.body.append(interior);
+    const copyText = interior.querySelector('p') as Element;
+    const asked: [number, number][] = [];
+    document.elementsFromPoint = (x, y) => {
+      asked.push([x, y]);
+      return [copyText];
+    };
+    mount({ compare: { kind: 'opposite-mode' }, view: 'split', seam: 0.25 }, { live: liveSource() });
+    expect(await screen.findByText(/21\.00:1/)).toBeTruthy();
+    expect(new Set(asked.map(([x, y]) => `${x},${y}`))).toEqual(new Set(['180,280']));
+  });
+
   it('says why it has nothing when the aim is over no text', async () => {
     const host = document.createElement('div');
     host.dataset.fgHost = 't1';
