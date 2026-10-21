@@ -1,10 +1,9 @@
 import { useLatest } from '@weasel-js/react';
 import { useEffect, useRef, useState } from 'react';
 import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
+import { LENS_REST_MS } from './lensTypes';
 import { drawPixelGrid, readBitmap, softEdgeMask } from './pixelGrid';
 
-/** How long the grid waits, after anything changes, before it asks for the capture again. */
-const REST_MS = 250;
 
 interface Read {
   capture: LensCapture;
@@ -62,7 +61,7 @@ export function GridCanvas<C>({
           setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
         });
       },
-      started.current ? REST_MS : 0,
+      started.current ? LENS_REST_MS : 0,
     );
     started.current = true;
     return () => {

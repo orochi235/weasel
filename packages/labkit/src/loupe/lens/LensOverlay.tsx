@@ -67,9 +67,16 @@ export interface LensOverlayProps<C> {
   describe?: (compare: C, at: LensDescribeContext) => string;
   /** What a lens with a readout switched on draws for the host's own readouts, such as Contrast. The Pixel grid is the
    *  lens's own. Called only while the lens has some readout on. */
-  renderReadouts?: (props: LensSlotProps<C>) => ReactNode;
-  /** The lens the selection is on, or null when nothing is selected. */
+  renderReadouts?: (props: LensReadoutProps<C>) => ReactNode;
+  /** Called with the lens each new selection is on, or null when nothing is selected, and with the lens whose chrome
+   *  a press lands on. */
   onFocusLens?: (lensId: string | null) => void;
+}
+
+/** What a host's readouts are drawn from: the lens's slot props, and the lens's interior, which holds whatever its
+ *  sources attached, such as a host's copy of a story. Null until the interior has mounted. */
+export interface LensReadoutProps<C> extends LensSlotProps<C> {
+  interior: HTMLElement | null;
 }
 
 const TILE = 'lab-loupe';
@@ -150,10 +157,11 @@ function LensInterior<C>({
   scene: LensScene<C>;
   sources: LensSources<C>;
   describe: (compare: C, at: LensDescribeContext) => string;
-  renderReadouts: ((props: LensSlotProps<C>) => ReactNode) | undefined;
+  renderReadouts: ((props: LensReadoutProps<C>) => ReactNode) | undefined;
   onFocus: ((lensId: string) => void) | undefined;
   preview: SeamPreview;
 }) {
+  const [interior, setInterior] = useState<HTMLDivElement | null>(null);
   const settings = settingsOf(scene, lens.lensId);
   if (!settings) return null;
   const props = {
@@ -166,6 +174,7 @@ function LensInterior<C>({
   };
   return (
     <div
+      ref={setInterior}
       className="lk-lens-interior"
       data-lens={lens.lensId}
       data-shape={settings.shape}
@@ -173,7 +182,7 @@ function LensInterior<C>({
     >
       <LensSlot {...props} />
       {renderReadouts && settings.readouts.length > 0 ? (
-        <div className="lk-lens-readouts">{renderReadouts(props)}</div>
+        <div className="lk-lens-readouts">{renderReadouts({ ...props, interior })}</div>
       ) : null}
       <LensChrome {...props} {...(onFocus ? { onFocus } : {})} />
     </div>
@@ -305,11 +314,17 @@ export function LensOverlay<C>({
   useWheelPassThrough(input, layer);
 
   const focusRef = useLatest(onFocusLens);
-  const focused =
-    selection[0] === undefined ? null : (lensIdsOf(scene, selection[0])?.lensId ?? null);
+  // Every new selection is reported, the same lens again included, so it takes the focus back from a chrome toggle.
   useEffect(() => {
-    focusRef.current?.(focused);
-  }, [focused, focusRef]);
+    let last = scene.getSelection();
+    return scene.subscribe(() => {
+      const next = scene.getSelection();
+      if (next === last) return;
+      last = next;
+      const first = next[0];
+      focusRef.current?.(first === undefined ? null : (lensIdsOf(scene, first)?.lensId ?? null));
+    });
+  }, [scene, focusRef]);
 
   if (!container) return null;
   const lenses = sources ? lensesOf(scene) : [];

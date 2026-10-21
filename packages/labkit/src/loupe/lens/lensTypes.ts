@@ -75,6 +75,10 @@ export const GLASS_POSE_KEY = 'labkit:lens-glass';
 /** Registry key of the leader's path: body rim to reticle center. */
 export const LEADER_PATH_KEY = 'labkit:lens-leader';
 
+/** How long a lens waits, after what it shows moves or changes, before capturing it again: the reticle at rest,
+ *  the story unedited. Its first capture is taken at once. */
+export const LENS_REST_MS = 250;
+
 /** A new lens body's width and height, in px. */
 export const BODY_SIZE = 160;
 /** A reticle's width and height, in px. */

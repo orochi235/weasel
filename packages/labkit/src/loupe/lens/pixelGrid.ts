@@ -8,8 +8,9 @@ import type { LensSourceKind, LoupePoint } from './lensTypes';
 /** The smallest enlargement, in CSS px per captured pixel, at which a grid reads as one. */
 export const GRID_MIN_FACTOR = 8;
 
-/** What the Grid toggle says when its lens cannot draw one. */
-export const GRID_NEEDS = `Grid needs Pixels at ${GRID_MIN_FACTOR}× and up`;
+/** What the Grid toggle says when its lens cannot draw one: `gridFits` wants Pixels at a zoom of
+ *  `GRID_MIN_FACTOR` per captured pixel, the lens's factor over the capture's DPR. */
+export const GRID_NEEDS = `Grid needs Pixels at ${GRID_MIN_FACTOR}× per captured pixel (zoom ÷ DPR)`;
 
 const LINE_ALPHA = 0.3;
 const TINT_ALPHA = 0.35;

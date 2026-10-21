@@ -1,10 +1,14 @@
+import { act, render } from '@testing-library/react';
+import { type ActionsRegistry, ActionsProvider, type MenuHost, useActionsRegistry, useMenuHost } from '@weasel-js/core';
 import { f } from '@weasel-js/labkit/config';
 import { createLensScene, settingsOf } from '@weasel-js/labkit/loupe';
+import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { FOLLOW_APP, type GlobalDeclarations, GLOBALS_KEY } from '../globals';
 import {
   COMPARE_DPR_ID,
   COMPARE_WITH_ID,
+  CompareMenu,
   compareActions,
   compareChoices,
   compareMenuDef,
@@ -122,5 +126,23 @@ describe('the compare menu', () => {
     if (action?.invoker?.timing !== 'immediate' || !variant) throw new Error('an immediate action with a dpr.3 row');
     action.invoker.run({}, variant.params);
     expect(settingsOf(api.scene, lensId)?.compare).toEqual({ kind: 'custom', dpr: 3 });
+  });
+});
+
+describe('CompareMenu', () => {
+  it('registers its actions while its menu is open, and drops them once the menu closes', async () => {
+    const { api, lensId } = createSettledLensApi();
+    const got: { registry: ActionsRegistry | null; host: MenuHost | null } = { registry: null, host: null };
+    const Probe = () => {
+      got.registry = useActionsRegistry();
+      got.host = useMenuHost();
+      return null;
+    };
+    render(createElement(ActionsProvider, null, createElement(CompareMenu, { api, request: requestFor(lensId, true) }), createElement(Probe)));
+    const ids = () => (got.registry?.list() ?? []).map((a) => a.id).filter((id) => id.startsWith('loupe.compare'));
+    expect(ids()).toEqual([COMPARE_WITH_ID, COMPARE_DPR_ID]);
+    expect(got.host?.current()).not.toBeNull();
+    await act(async () => got.host?.close());
+    expect(ids()).toEqual([]);
   });
 });

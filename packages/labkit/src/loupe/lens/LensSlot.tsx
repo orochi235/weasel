@@ -24,7 +24,7 @@ import {
   shownSource,
   unavailableText,
 } from './lensSource';
-import type { LensSettings, LensSourceKind } from './lensTypes';
+import { LENS_REST_MS, type LensSettings, type LensSourceKind } from './lensTypes';
 import { gridFits } from './pixelGrid';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
@@ -70,24 +70,21 @@ function LensCell<C>({
   const el = useRef<HTMLDivElement | null>(null);
   const handle = useRef<LensSourceHandle<C> | null>(null);
   const latest = useLatest(request);
-  const first = useRef(true);
+  /** The request the handle was attached with, which an update in the same commit would only send again. */
+  const attached = useRef<LensSourceRequest<C> | null>(null);
   useEffect(() => {
     if (!el.current) return;
+    attached.current = latest.current;
     handle.current = source.attach(el.current, latest.current);
     return () => {
       handle.current?.detach();
       handle.current = null;
-      // A remount attaches afresh with the latest request, so its first update is redundant.
-      first.current = true;
     };
   }, [source, latest]);
   const { reticle, factor, size, conditions, dpr } = request;
   // biome-ignore lint/correctness/useExhaustiveDependencies: `request` is a new object every render, so its fields are the signal; the effect reads `latest`
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    if (latest.current === attached.current) return;
     handle.current?.update(latest.current);
   }, [reticle.x, reticle.y, factor, size.width, size.height, conditions, dpr, latest]);
   return (
@@ -101,9 +98,6 @@ function LensCell<C>({
 function seamStyle(x: number): CSSProperties {
   return { ['--lk-lens-seam' as string]: `${x}px` } as CSSProperties;
 }
-
-/** How long a Difference lens waits, after anything changes, before capturing again. */
-export const RECAPTURE_REST_MS = 250;
 
 const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -157,7 +151,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
           if (live) say(messageOf(err));
         });
     // At once the first time; after that, once whatever moved has come to rest.
-    const timer = setTimeout(run, started.current ? RECAPTURE_REST_MS : 0);
+    const timer = setTimeout(run, started.current ? LENS_REST_MS : 0);
     started.current = true;
     return () => {
       live = false;

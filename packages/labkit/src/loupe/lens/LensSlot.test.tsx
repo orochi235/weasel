@@ -150,6 +150,19 @@ describe('LensSlot and LensChrome', () => {
     expect(live.detach).not.toHaveBeenCalled();
   });
 
+  it('sends the next update to a source swapped in for one of the same kind', () => {
+    const first = fakeSource('live');
+    const second = fakeSource('live');
+    const { rerender } = render(<Both settings={settings()} sources={{ live: first.source }} />);
+    rerender(<Both settings={settings()} sources={{ live: second.source }} />);
+    expect(first.detach).toHaveBeenCalledTimes(1);
+    expect(second.attach).toHaveBeenCalledTimes(1);
+    expect(second.update).not.toHaveBeenCalled();
+    rerender(<Both settings={settings()} sources={{ live: second.source }} reticle={{ x: 40, y: 50 }} />);
+    expect(second.update).toHaveBeenCalledTimes(1);
+    expect(second.update.mock.lastCall?.[0].reticle).toEqual({ x: 40, y: 50 });
+  });
+
   it('detaches on unmount', () => {
     const live = fakeSource('live');
     const { unmount } = render(<Both settings={settings()} sources={{ live: live.source }} />);

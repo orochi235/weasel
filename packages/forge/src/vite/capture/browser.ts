@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import type { Browser, BrowserContext, Page, Route } from 'playwright';
-import type { CapturePayload } from './payload.ts';
+import { type CapturePayload, messageOf } from './payload.ts';
 
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
 export interface CaptureBrowser {
@@ -27,8 +27,6 @@ const loadPlaywright: Load = () => import('playwright');
 interface CaptureWindow {
   __forgeCapture?: { render(payload: CapturePayload): Promise<void> };
 }
-
-const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 /** Whether a capture could start, without starting Chromium: Playwright loads and its Chromium is installed. */
 export async function captureAvailability(load: Load = loadPlaywright): Promise<{ available: true } | { unavailable: string }> {

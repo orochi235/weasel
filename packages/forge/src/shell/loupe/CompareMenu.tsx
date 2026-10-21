@@ -130,7 +130,8 @@ export interface CompareMenuProps {
 
 const NO_CHOICES: readonly CompareChoice[] = [];
 
-/** Registers the compare menu's actions and menu for the lens last asked about, and opens it at each request. */
+/** Registers the compare menu's actions for the lens asked about and opens the menu on it, at each request; the
+ *  actions go again once that menu closes. */
 export function CompareMenu({ api, request }: CompareMenuProps) {
   const registry = useActionsRegistry();
   const host = useMenuHost();
@@ -138,15 +139,28 @@ export function CompareMenu({ api, request }: CompareMenuProps) {
   const defs = useMemo(() => [compareMenuDef(choices)], [choices]);
   useMenus(defs);
   useEffect(() => {
-    if (!registry || !request) return;
+    if (!registry || !host || !request) return;
     const offs = compareActions(api, request).map((a) => registry.register(a));
-    return () => {
+    let held = true;
+    const drop = () => {
+      if (!held) return;
+      held = false;
       for (const off of offs) off();
     };
-  }, [registry, api, request]);
-  // After the registrations above, which run first in the same commit.
-  useEffect(() => {
-    if (request) host?.open({ menu: COMPARE_MENU_ID, client: request.client, source: 'keyboard' });
-  }, [host, request]);
+    // Opened after the registrations, which its rows resolve against.
+    const opened = host.open({ menu: COMPARE_MENU_ID, client: request.client, source: 'keyboard' }) ? host.current()?.seq : undefined;
+    if (opened === undefined) {
+      drop();
+      return;
+    }
+    // A menu closes before it runs the row picked, so the actions stay until that run has happened.
+    const unsubscribe = host.subscribe(() => {
+      if (host.current()?.seq !== opened) queueMicrotask(drop);
+    });
+    return () => {
+      unsubscribe();
+      drop();
+    };
+  }, [registry, host, api, request]);
   return null;
 }

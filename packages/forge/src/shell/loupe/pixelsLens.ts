@@ -1,13 +1,9 @@
-import { type LensSourceHandle, type LensSourceRequest, unavailableText } from '@weasel-js/labkit/loupe';
+import { LENS_REST_MS, type LensSourceHandle, type LensSourceRequest, unavailableText } from '@weasel-js/labkit/loupe';
 import { stableStringify } from '../../protocol/messages';
-import type { CapturePayload } from '../../vite/capture/payload';
-import { messageOf } from './captureClient';
+import { type CapturePayload, messageOf } from '../../vite/capture/payload';
 import type { ForgeComparison } from './conditions';
 import { NOTHING_UNDER } from './liveSource';
 import { type TrialHit, trialAt } from './trialAt';
-
-/** How long the reticle has to rest over a new story, or the story to stay unedited, before it is captured again. */
-export const RECAPTURE_DEBOUNCE_MS = 250;
 
 type Request = LensSourceRequest<ForgeComparison>;
 export type PayloadFor = (hit: TrialHit, dpr: number, c: ForgeComparison | null) => CapturePayload | { unavailable: string };
@@ -79,7 +75,7 @@ export interface PixelsLens extends LensSourceHandle<ForgeComparison> {
 
 /**
  * Attaches one lens side: a canvas showing the side's last capture, cropped about the reticle, and asking for a new
- * one when what lies under the reticle changes — at once the first time, after `RECAPTURE_DEBOUNCE_MS` at rest after
+ * one when what lies under the reticle changes — at once the first time, after labkit's `LENS_REST_MS` at rest after
  * that. The last image stays up until the new one arrives, and a capture that started before a story edit is dropped.
  */
 export function attachPixelsLens(slot: HTMLElement, first: Request, shared: PixelsShared, onDetach: () => void): PixelsLens {
@@ -132,7 +128,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     timer = setTimeout(() => {
       timer = undefined;
       void run();
-    }, RECAPTURE_DEBOUNCE_MS);
+    }, LENS_REST_MS);
   };
   const measure = () => {
     const aimed = aim(shared, request, doc);

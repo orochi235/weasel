@@ -119,6 +119,7 @@ function mountReadout(settings: Partial<LensSettings<ForgeComparison>>, kind: 'l
       reticle={reticle}
       size={{ width: 160, height: 160 }}
       describe={String}
+      interior={null}
     />,
   );
 }

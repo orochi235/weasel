@@ -4,7 +4,7 @@ import { stableStringify } from '@weasel-js/core/json';
 import type { ViteDevServer } from 'vite';
 import { type CaptureBrowser, captureAvailability, launchCaptureBrowser, QUEUE_FULL } from './browser.ts';
 import { createCaptureCache } from './cache.ts';
-import { CAPTURE_PAGES, CAPTURE_PATH, type CapturePayload, parsePayload } from './payload.ts';
+import { CAPTURE_PAGES, CAPTURE_PATH, type CapturePayload, messageOf, parsePayload } from './payload.ts';
 
 /** The capture endpoint as the plugin drives it. */
 export interface CaptureEndpoint {
@@ -135,7 +135,7 @@ export function serveCapture(
       try {
         png = await result.capture(page, payload, allowOrigins());
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = messageOf(err);
         if (message === QUEUE_FULL) return json(res, 503, { available: false, reason: QUEUE_FULL });
         return json(res, 500, { error: message });
       }

@@ -1,5 +1,5 @@
 import { parseColor } from '@weasel-js/core';
-import type { LoupePoint } from '@weasel-js/labkit/loupe';
+import { type LoupePoint, probeUnderLens } from '@weasel-js/labkit/loupe';
 import { compareSpecificity, type Specificity, specificity, splitTopLevel } from '@weasel-js/svg';
 import { cssRulesOf, varRefs } from '../../frame/cssVarUse';
 
@@ -23,18 +23,13 @@ export interface ChainLink {
 export const INLINE = 'style attribute';
 
 /**
- * The topmost element under a client point inside `within`, `within` itself included. Inside a lens the layer
- * takes no pointer, so a hit test would pass through a lens's copy: for this one look the layer is marked
- * `data-probe="copy"`, which stands the copy up. The wheel pass-through's `"wheel"` probe leaves it down.
+ * The topmost element under a client point inside `within`, `within` itself included. Inside a lens the layer takes
+ * no pointer, so the hit test runs under labkit's `interior` probe, which stands the lens's interior up for it.
  */
 export function topmostIn(within: Element, client: LoupePoint): Element | undefined {
-  const layer = within.closest<HTMLElement>('.lk-lens-layer');
-  if (layer) layer.dataset.probe = 'copy';
-  try {
-    return (within.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => within.contains(el));
-  } finally {
-    if (layer) delete layer.dataset.probe;
-  }
+  return probeUnderLens(within, 'interior', () =>
+    (within.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => within.contains(el)),
+  );
 }
 
 /** The first opaque `background-color` from `el` up to `stop`; null when none is, or the unreadable color that stopped the walk. */
@@ -217,13 +212,54 @@ function declarationOf(el: Element, property: string, rules: readonly Declared[]
   return null;
 }
 
+/** How often each document's head has changed: a sheet added or removed, or a `<style>` rewritten, as a forge
+ *  override or a vite CSS update does. */
+const revisions = new WeakMap<Document, { n: number; observer: MutationObserver | null }>();
+
+function revisionOf(doc: Document): number {
+  let r = revisions.get(doc);
+  if (!r) {
+    const made = { n: 0, observer: null as MutationObserver | null };
+    if (typeof MutationObserver !== 'undefined' && doc.head) {
+      made.observer = new MutationObserver(() => {
+        made.n += 1;
+      });
+      made.observer.observe(doc.head, { childList: true, subtree: true, characterData: true, attributes: true });
+    }
+    revisions.set(doc, made);
+    r = made;
+  }
+  // Records not yet delivered count now, so a change made in this same task is not missed.
+  if ((r.observer?.takeRecords().length ?? 0) > 0) r.n += 1;
+  return r.n;
+}
+
+const chains = new WeakMap<Element, Map<string, { key: string; chain: readonly ChainLink[] }>>();
+
 /**
  * How a color came to be: the declaration that sets its property, then, for each `var()` that names, the winning
  * declaration of that custom property on the element or its nearest ancestor declaring it, until a value names no
- * `var()`. A forge override is a rule like any other. Empty when nothing but the user agent sets the property:
- * user-agent styles, such as a link's or a form control's own colors, are not modeled.
+ * `var()`. A forge override is a rule like any other. User-agent styles are not modeled: where the user agent sets
+ * an element's own color, as for a link or a button, an inherited property's chain is that of the nearest ancestor
+ * an author rule declares it on, and empty when none does. Reused while the element's computed value and the
+ * document's stylesheets stand as they were.
  */
 export function tokenChain(at: ColorAt): readonly ChainLink[] {
+  const doc = at.element.ownerDocument;
+  const key = `${at.value}|${revisionOf(doc)}|${doc.styleSheets.length}|${doc.adoptedStyleSheets?.length ?? 0}`;
+  let byProperty = chains.get(at.element);
+  const held = byProperty?.get(at.property);
+  if (held?.key === key) return held.chain;
+  const chain = chainOf(at);
+  if (!byProperty) {
+    byProperty = new Map();
+    chains.set(at.element, byProperty);
+  }
+  byProperty.set(at.property, { key, chain });
+  return chain;
+}
+
+function chainOf(at: ColorAt): readonly ChainLink[] {
   const declaring = indexOf(rulesOf(at.element.ownerDocument));
   const chain: ChainLink[] = [];
   const seen = new Set<string>();

@@ -252,6 +252,13 @@ test('reports the lens a press focuses, and renders an interior over each body',
 
   await click(RETICLE_AT);
   await waitFor(() => expect(focused.at(-1)).toBe('a'));
+  // Selecting the same lens again reports it again, so it takes the focus back from a chrome toggle.
+  const reported = focused.length;
+  scene.setSelection([...scene.getSelection()]);
+  await waitFor(() => expect(focused.length).toBe(reported + 1));
+  expect(focused.at(-1)).toBe('a');
+  scene.setSelection([]);
+  await waitFor(() => expect(focused.at(-1)).toBeNull());
 });
 
 test('keeps painting lenses, in a buffer of their own, while a trial is expanded', {

@@ -84,7 +84,7 @@ describe('the Pixel grid canvas', () => {
   it('has its toggle say what it needs when it is on and cannot draw', () => {
     mount({ source: 'live', factor: 16, readouts: ['grid'] }, { live: source('live').s });
     expect(screen.getByTestId('chrome').textContent).toContain(GRID_NEEDS);
-    expect(GRID_NEEDS).toBe('Grid needs Pixels at 8× and up');
+    expect(GRID_NEEDS).toBe('Grid needs Pixels at 8× per captured pixel (zoom ÷ DPR)');
   });
 
   it('keeps its plain label while it draws, and while it is off', () => {

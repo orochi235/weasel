@@ -9,7 +9,7 @@ import type { LiveSource } from './liveSource';
 
 function setup() {
   const scene = createLensScene<ForgeComparison>();
-  const { result } = renderHook(() => useLensFocus(scene));
+  const { result } = renderHook(() => useLensFocus());
   const body = document.createElement('div');
   const api = createApi(scene, {
     body: { current: body },
@@ -21,17 +21,15 @@ function setup() {
 }
 
 describe('the workshop’s lens API', () => {
-  it('acts on the lens a chrome toggle focuses, then on whichever lens the canvas selects, the same one again included', () => {
-    const { scene, api, onFocusLens } = setup();
+  it('acts on the lens last reported focused, straight away', () => {
+    const { api, onFocusLens } = setup();
     const [a, b] = [api.add(), api.add()];
     expect(api.current()).toBe(b);
-    // The chrome calls this before it triggers, and the action reads it straight away.
+    // The chrome reports its lens before it triggers, and the action reads it straight away.
     onFocusLens(a);
     expect(api.current()).toBe(a);
-    act(() => scene.setSelection([`${b}:body` as never]));
-    expect(api.current()).toBe(b);
-    onFocusLens(a);
-    act(() => scene.setSelection([`${b}:body` as never]));
+    // The overlay reports a selection of nothing, after which the latest lens is acted on.
+    onFocusLens(null);
     expect(api.current()).toBe(b);
   });
 

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { probeUnderLens } from './probeUnderLens';
 
 /** Hands a wheel over a hit box to whatever lies beneath the lens layer, so a
  *  trial's camera still zooms under a lens. The lens itself binds no wheel. */
@@ -6,11 +7,7 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
   useEffect(() => {
     if (!input || !layer) return;
     const onWheel = (e: WheelEvent): void => {
-      // Hit boxes are the only part of the layer that takes input; with them
-      // stood down for one hit-test, the point lands on what is beneath.
-      layer.dataset.probe = 'wheel';
-      const beneath = document.elementFromPoint(e.clientX, e.clientY);
-      delete layer.dataset.probe;
+      const beneath = probeUnderLens(layer, 'beneath', () => document.elementFromPoint(e.clientX, e.clientY));
       if (!beneath || layer.contains(beneath)) return;
       e.stopPropagation();
       const copy = new WheelEvent('wheel', {

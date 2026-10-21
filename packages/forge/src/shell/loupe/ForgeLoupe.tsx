@@ -70,20 +70,10 @@ function lensClient(
 
 /**
  * The lens the lens actions act on, held in a ref so a chrome toggle's focus lands before its action reads it.
- * Every selection the lens canvas makes, the same lens again included, puts it back on the selected lens.
+ * `LensOverlay` reports through `onFocusLens` both the chrome's focus and every selection the lens canvas makes.
  */
-export function useLensFocus(scene: LensScene<ForgeComparison>) {
+export function useLensFocus() {
   const focus = useRef<string | null>(null);
-  useEffect(() => {
-    let last = scene.getSelection();
-    return scene.subscribe(() => {
-      const selection = scene.getSelection();
-      if (selection === last) return;
-      last = selection;
-      const first = selection[0];
-      focus.current = first === undefined ? null : (lensIdsOf(scene, first)?.lensId ?? null);
-    });
-  }, [scene]);
   const onFocusLens = useCallback((lensId: string | null) => {
     focus.current = lensId;
   }, []);
@@ -187,7 +177,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const [body, setBody] = useState<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
   const pointer = useRef<LoupePoint | null>(null);
-  const { focus, onFocusLens } = useLensFocus(scene);
+  const { focus, onFocusLens } = useLensFocus();
   const conditions = useLatest<LabConditions>({ labValues, mode, declarations, modeGlobal });
   const [live] = useState(() =>
     lenses

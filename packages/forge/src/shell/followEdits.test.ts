@@ -3,7 +3,8 @@ import type { FrameImporters } from '../frame/mountFrame';
 import { followEdits, type HotEvents } from './followEdits';
 import { createRevision } from './loupe/captureContext';
 import { endpoint, hosts, payload, request, settle, shown, stubBitmaps } from './loupe/pixels.fixture';
-import { createPixelsSource, RECAPTURE_DEBOUNCE_MS } from './loupe/pixelsSource';
+import { LENS_REST_MS } from '@weasel-js/labkit/loupe';
+import { createPixelsSource } from './loupe/pixelsSource';
 import type { MountedWorkshop } from './mountWorkshop';
 
 /** vite's `import.meta.hot`, as far as the workshop listens: the test emits what the plugin would push. */
@@ -76,7 +77,7 @@ describe('followEdits', () => {
 
     emit('vite:beforeUpdate', { type: 'update', updates: [{ type: 'css-update', path: '/src/button.css', acceptedPath: '/src/button.css', timestamp: 1 }] });
     expect(shown(slot)).toBe(false);
-    await vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS);
     expect(posts).toHaveLength(2);
     handle.detach();
   });

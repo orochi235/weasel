@@ -2,8 +2,9 @@ import { act, render, screen } from '@testing-library/react';
 import type { LensCapture, LensIds, LensSettings, LensSource, LensSources } from '@weasel-js/labkit/loupe';
 import { LENS_DEFAULTS } from '@weasel-js/labkit/loupe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cssRulesOf } from '../../frame/cssVarUse';
 import type { ForgeComparison } from './conditions';
-import { ContrastReadout, contrastAt } from './readouts';
+import { ContrastReadout, contrastAt, TokenReadout } from './readouts';
 
 // jsdom has no canvas, so a capture's pixels come from this stand-in for `readBitmap`.
 const pixels = vi.hoisted(() => ({ image: null as ImageData | null }));
@@ -11,6 +12,11 @@ vi.mock('@weasel-js/labkit/loupe', async (original) => ({
   ...(await original<typeof import('@weasel-js/labkit/loupe')>()),
   readBitmap: () => pixels.image,
 }));
+// Counts the Token readout's reads of the page's stylesheets.
+vi.mock('../../frame/cssVarUse', async (original) => {
+  const actual = await original<typeof import('../../frame/cssVarUse')>();
+  return { ...actual, cssRulesOf: vi.fn(actual.cssRulesOf) };
+});
 
 function el(html: string): Element {
   document.body.innerHTML = html;
@@ -166,7 +172,11 @@ function liveSource(): LensSource<ForgeComparison> {
 const IDS = { lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:leader' } as LensIds;
 const SIZE = { width: 160, height: 160 };
 
-function mount(settings: Partial<LensSettings<ForgeComparison>>, sources: LensSources<ForgeComparison>) {
+function mount(
+  settings: Partial<LensSettings<ForgeComparison>>,
+  sources: LensSources<ForgeComparison>,
+  interior: HTMLElement | null = null,
+) {
   return render(
     <ContrastReadout
       lens={IDS}
@@ -175,6 +185,7 @@ function mount(settings: Partial<LensSettings<ForgeComparison>>, sources: LensSo
       reticle={{ x: 10, y: 10 }}
       size={SIZE}
       describe={String}
+      interior={interior}
     />,
   );
 }
@@ -197,22 +208,18 @@ describe('ContrastReadout', () => {
     main.dataset.fgHost = 't1';
     main.innerHTML = '<div style="background-color: white"><p style="color: black">Hi</p></div>';
     const interior = document.createElement('div');
-    interior.className = 'lk-lens-interior';
-    interior.dataset.lens = 'a';
     interior.innerHTML =
       '<div data-fg-copy data-fg-host="t1~lens-a"><div style="background-color: black"><p style="color: rgb(119, 119, 119)">Hi</p></div></div>';
     document.body.append(main, interior);
     const copyText = interior.querySelector('p') as Element;
     document.elementsFromPoint = () => [copyText, main.querySelector('p') as Element];
-    mount({ compare: { kind: 'opposite-mode' } }, { live: liveSource() });
+    mount({ compare: { kind: 'opposite-mode' } }, { live: liveSource() }, interior);
     // #777 on black is 4.69:1; the main story's black on white would read 21.00:1.
     expect(await screen.findByText(/4\.69:1/)).toBeTruthy();
   });
 
   it('samples a Split lens’s compared copy at the interior’s center, not the compared half’s', async () => {
     const interior = document.createElement('div');
-    interior.className = 'lk-lens-interior';
-    interior.dataset.lens = 'a';
     interior.getBoundingClientRect = () => new DOMRect(100, 200, 160, 160);
     interior.innerHTML =
       '<div data-fg-copy data-fg-host="t1~lens-a~compared"><div style="background-color: black"><p style="color: white">Hi</p></div></div>';
@@ -223,9 +230,20 @@ describe('ContrastReadout', () => {
       asked.push([x, y]);
       return [copyText];
     };
-    mount({ compare: { kind: 'opposite-mode' }, view: 'split', seam: 0.25 }, { live: liveSource() });
+    mount({ compare: { kind: 'opposite-mode' }, view: 'split', seam: 0.25 }, { live: liveSource() }, interior);
     expect(await screen.findByText(/21\.00:1/)).toBeTruthy();
     expect(new Set(asked.map(([x, y]) => `${x},${y}`))).toEqual(new Set(['180,280']));
+  });
+
+  it("says it cannot read inside an isolated story's frame, rather than reading the frame's host", async () => {
+    const host = document.createElement('div');
+    host.className = 'fg-frame-host';
+    host.dataset.fgHost = 't1';
+    host.innerHTML = '<div style="background-color: white"><p style="color: black">Hi</p></div>';
+    document.body.append(host);
+    document.elementsFromPoint = () => [host.querySelector('p') as Element];
+    mount({}, { live: liveSource() });
+    expect(await screen.findByText("Cannot read inside an isolated story's frame")).toBeTruthy();
   });
 
   it('says why it has nothing when the aim is over no text', async () => {
@@ -260,5 +278,44 @@ describe('ContrastReadout', () => {
     };
     mount({ source: 'pixels' }, { pixels: source });
     expect(await screen.findByText('Nothing under the reticle')).toBeTruthy();
+  });
+});
+
+describe('TokenReadout', () => {
+  it('reads the stylesheets once, not again on a re-render that changes nothing, and again once a sheet changes', async () => {
+    const sheet = document.createElement('style');
+    sheet.textContent = '.other { color: red; }';
+    document.head.append(sheet);
+    const host = document.createElement('div');
+    host.dataset.fgHost = 't1';
+    // jsdom resolves no var(), so the color is a literal one, declared where the chain still reads every sheet.
+    host.innerHTML = '<p style="color: rgb(1, 2, 3)">Hi</p>';
+    document.body.append(host);
+    document.elementsFromPoint = () => [host.querySelector('p') as Element];
+    const props = {
+      lens: IDS,
+      settings: LENS_DEFAULTS as LensSettings<ForgeComparison>,
+      sources: { live: liveSource() },
+      reticle: { x: 10, y: 10 },
+      size: SIZE,
+      describe: String,
+      interior: null,
+    };
+    const reads = vi.mocked(cssRulesOf);
+    try {
+      const { rerender } = render(<TokenReadout {...props} />);
+      expect(await screen.findByText('color ← rgb(1, 2, 3)')).toBeTruthy();
+      const once = reads.mock.calls.length;
+      expect(once).toBeGreaterThan(0);
+      rerender(<TokenReadout {...props} />);
+      rerender(<TokenReadout {...props} />);
+      expect(reads.mock.calls.length).toBe(once);
+
+      sheet.textContent = '.other { color: blue; }';
+      rerender(<TokenReadout {...props} />);
+      expect(reads.mock.calls.length).toBeGreaterThan(once);
+    } finally {
+      sheet.remove();
+    }
   });
 });

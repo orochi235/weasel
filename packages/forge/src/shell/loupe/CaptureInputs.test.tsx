@@ -7,7 +7,8 @@ import { CaptureInputs, LoupeProvider } from './CaptureInputs';
 import type { LabConditions } from './conditions';
 import { NO_STORY } from './capturePayload';
 import { endpoint, hosts, request, settle, shown, stubBitmaps } from './pixels.fixture';
-import { RECAPTURE_DEBOUNCE_MS, type PixelsSource } from './pixelsSource';
+import { LENS_REST_MS } from '@weasel-js/labkit/loupe';
+import type { PixelsSource } from './pixelsSource';
 import { usePixelsSource } from './usePixelsSource';
 
 // jsdom: hit testing and decoding are the fixture's stand-ins, and `data-shown` stands in for the canvas's pixels.
@@ -68,7 +69,7 @@ it('keeps the trial published and its last image up while a knob change is recap
   expect(slot.textContent).not.toContain(NO_STORY);
   expect(shown(slot)).toBe(true);
 
-  await act(() => vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS));
+  await act(() => vi.advanceTimersByTimeAsync(LENS_REST_MS));
   expect(posts.map((p) => p.body.config)).toEqual([{ label: 'Go' }, { label: 'Stop' }]);
   expect(shown(slot)).toBe(true);
   posts[1]!.answer();

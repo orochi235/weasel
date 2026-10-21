@@ -1,12 +1,10 @@
 import type { LensSourceStatus } from '@weasel-js/labkit/loupe';
-import { CAPTURE_PATH, type CapturePayload } from '../../vite/capture/payload';
+import { CAPTURE_PATH, type CapturePayload, messageOf } from '../../vite/capture/payload';
 
 export const CHECKING = 'checking for a capture browser';
 const UNAVAILABLE = 'captures are unavailable';
 /** A built workshop, served without the dev server, has no endpoint to ask. */
 export const NO_ENDPOINT = 'this server takes no captures';
-
-export const messageOf = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 /** The dev server's capture endpoint as a Pixels source talks to it. */
 export interface CaptureClient {

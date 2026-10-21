@@ -38,7 +38,7 @@ export { diffPixels, paintDifference } from './lens/difference';
 export type { LensActionsProps } from './lens/LensActions';
 export { LensActions } from './lens/LensActions';
 export { LensChrome } from './lens/LensChrome';
-export type { LensAttachment, LensOverlayProps } from './lens/LensOverlay';
+export type { LensAttachment, LensOverlayProps, LensReadoutProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
 export { LensSlot, useLensResolution, useShownSource } from './lens/LensSlot';
 export type { LensActionApi } from './lens/lensActionDefs';
@@ -93,8 +93,11 @@ export {
   GLASS_POSE_KEY,
   LEADER_PATH_KEY,
   LENS_DEFAULTS,
+  LENS_REST_MS,
   RETICLE_SIZE,
 } from './lens/lensTypes';
+export type { LensProbe } from './lens/probeUnderLens';
+export { probeUnderLens } from './lens/probeUnderLens';
 export type { PixelGridView } from './lens/pixelGrid';
 export {
   drawPixelGrid,

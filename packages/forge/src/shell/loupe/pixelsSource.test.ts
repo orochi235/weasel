@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LensCapture } from '@weasel-js/labkit/loupe';
 import { type Bitmap, endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
-import { createPixelsSource, RECAPTURE_DEBOUNCE_MS } from './pixelsSource';
+import { LENS_REST_MS } from '@weasel-js/labkit/loupe';
+import { createPixelsSource } from './pixelsSource';
 import type { TrialHit } from './trialAt';
 
 const payloadFor = (hit: TrialHit) => payload(`story-of-${hit.trialId}`);
@@ -15,6 +16,13 @@ afterEach(() => {
 });
 
 describe('createPixelsSource', () => {
+  it("labels a lens with the DPR its capture is taken at, a DPR comparison's own included", () => {
+    const source = createPixelsSource({ base: '/', payloadFor, fetch: endpoint().fetch, ...revisions() });
+    expect(source.label({ ...request(50), dpr: 2 })).toBe('Pixels 2×');
+    expect(source.label({ ...request(50), dpr: 1, conditions: { kind: 'custom', dpr: 3 } })).toBe('Pixels 3×');
+    expect(source.label({ ...request(50), dpr: 2, conditions: { kind: 'opposite-mode' } })).toBe('Pixels 2×');
+  });
+
   it('debounces recapture to 250 ms while the reticle moves', async () => {
     vi.useFakeTimers();
     hosts();
@@ -32,7 +40,7 @@ describe('createPixelsSource', () => {
 
     // Moving within the trial changes only where the image is cropped: nothing to capture again.
     handle.update(request(60));
-    await vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS * 2);
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS * 2);
     expect(posts).toHaveLength(1);
 
     // Crossing to the other trial and wandering there waits for the reticle to settle.
@@ -41,7 +49,7 @@ describe('createPixelsSource', () => {
     handle.update(request(160));
     await vi.advanceTimersByTimeAsync(100);
     handle.update(request(170));
-    await vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS - 1);
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS - 1);
     expect(posts).toHaveLength(1);
     // The last image stays up meanwhile.
     expect(shown(slot)).toBe(true);
@@ -69,7 +77,7 @@ describe('createPixelsSource', () => {
     rev.bump();
     expect(shown(slot)).toBe(false);
     // The same payload is captured again rather than served from the lens's own copy.
-    await vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS);
     expect(posts).toHaveLength(2);
     expect(posts[1]!.body).toEqual(posts[0]!.body);
     posts[1]!.answer();
@@ -96,7 +104,7 @@ describe('createPixelsSource', () => {
     posts[0]!.answer();
     await settle();
     expect(shown(slot)).toBe(false);
-    await vi.advanceTimersByTimeAsync(RECAPTURE_DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(LENS_REST_MS);
     expect(posts).toHaveLength(2);
     posts[1]!.answer();
     await settle();

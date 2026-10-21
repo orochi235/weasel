@@ -5,11 +5,8 @@ import { createCaptureClient } from './captureClient';
 import type { ForgeComparison } from './conditions';
 import { aim, attachPixelsLens, fresh, type PayloadFor, type PixelsLens, type PixelsShared, type Shot, sideOf } from './pixelsLens';
 
-export { CHECKING } from './captureClient';
-
 /** Why a capture is not given: the story was edited while it was being taken. */
 export const STORY_CHANGED = 'the story changed while it was captured';
-export { RECAPTURE_DEBOUNCE_MS } from './pixelsLens';
 
 /** The Pixels source, plus a way for its host to have every attached lens look again at what lies under it. */
 export interface PixelsSource extends LensSource<ForgeComparison> {
@@ -45,7 +42,8 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
   return {
     kind: 'pixels',
     produces: 'pixels',
-    label: (request) => `Pixels ${request.dpr}×`,
+    // A DPR comparison captures at its own DPR, as the payload does.
+    label: ({ conditions, dpr }) => `Pixels ${(conditions?.kind === 'custom' ? conditions.dpr : undefined) ?? dpr}×`,
     status: client.status,
     // Also told whenever a capture may have gone stale, for a lens that captures without attaching, as Difference does.
     subscribe(listener) {

@@ -34,13 +34,19 @@
   }
 }
 
-// Stood down for the one hit-test that finds what a wheel over a lens lands on.
-.lk-lens-layer[data-probe='wheel'] .lk-lens-hit {
+// Stood down for the one hit-test that finds what lies beneath the lenses (probeUnderLens).
+.lk-lens-layer[data-probe='beneath'] .lk-lens-hit {
   pointer-events: none;
 }
 
 .lk-lens-interior {
   pointer-events: none;
+}
+
+// Stood up for the one hit-test that finds what a lens shows (probeUnderLens).
+.lk-lens-layer[data-probe='interior'] .lk-lens-interior,
+.lk-lens-layer[data-probe='interior'] .lk-lens-interior * {
+  pointer-events: auto;
 }
 
 // A round lens shows only what lies inside its rim.

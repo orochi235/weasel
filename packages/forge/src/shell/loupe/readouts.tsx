@@ -1,6 +1,7 @@
 import { contrastRatio, parseColor, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
+  type LensReadoutProps,
   type LensSlotProps,
   type LoupePoint,
   readBitmap,
@@ -11,6 +12,7 @@ import { Fragment, useCallback, useEffect, useMemo, useState, useSyncExternalSto
 import { revealVar } from '../cssVars/reveal';
 import type { ForgeComparison } from './conditions';
 import { backgroundOf, colorAt, tokenChain } from './tokenChain';
+import { trialAt } from './trialAt';
 import { varRefs } from '../../frame/cssVarUse';
 
 export const NO_TEXT = 'No text under the aim';
@@ -20,6 +22,7 @@ export const NO_CAPTURE = 'No capture to read';
 export const OUTSIDE = 'The aim is outside the capture';
 export const NO_COLOR = 'No color under the aim';
 export const NEEDS_LIVE = 'Token needs a Live source for changed conditions';
+export const IN_FRAME = "Cannot read inside an isolated story's frame";
 
 export type ContrastReading =
   | { ratio: number; aa: boolean; aaa: boolean; large: boolean }
@@ -85,34 +88,35 @@ export function contrastAt(
   return { ratio, ...wcagLevels(ratio, large), large };
 }
 
-/** The story host, not a lens's copy of one, whose content is topmost under a client point. */
-function hostAt(client: LoupePoint): HTMLElement | undefined {
-  for (const el of document.elementsFromPoint?.(client.x, client.y) ?? []) {
-    const host = el.closest<HTMLElement>('[data-fg-host]');
-    if (host && !host.hasAttribute('data-fg-copy')) return host;
-  }
-  return undefined;
-}
-
-const interiorOf = (lensId: string) =>
-  Array.from(document.querySelectorAll<HTMLElement>('.lk-lens-interior')).find((el) => el.dataset.lens === lensId);
-
 /** A lens's own compared copy. A Split lens holds the compared render beside the base one, so the `~compared` copy is preferred. */
-function copyOf(lensId: string): HTMLElement | undefined {
-  const copies = Array.from(interiorOf(lensId)?.querySelectorAll<HTMLElement>('[data-fg-copy]') ?? []);
+function copyIn(interior: HTMLElement | null): HTMLElement | undefined {
+  const copies = Array.from(interior?.querySelectorAll<HTMLElement>('[data-fg-copy]') ?? []);
   return copies.find((c) => (c.getAttribute('data-fg-host') ?? '').endsWith('~compared')) ?? copies[0];
 }
 
 /** Where a lens's compared render sits at its aim, in client px: the interior's center, in Swap and Split alike, since each side renders the whole interior. */
-function comparedAim(lensId: string): LoupePoint | null {
-  const box = interiorOf(lensId)?.getBoundingClientRect();
+function comparedAim(interior: HTMLElement | null): LoupePoint | null {
+  const box = interior?.getBoundingClientRect();
   return box ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
 }
 
-/** What a Live lens reads, and where in it: its compared copy at its aim when it has a comparison, else the main story at the reticle. */
-function liveAim(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
-  if (settings.compare === null) return { within: hostAt(reticle), point: reticle };
-  return { within: copyOf(lensId), point: comparedAim(lensId) ?? reticle };
+/** A Live reading's subject: an element to read inside and the client point to read at, or why there is none. */
+type LiveAim = { within?: HTMLElement; point: LoupePoint } | { unavailable: string };
+
+/**
+ * What a Live lens reads, and where in it: its compared copy at its aim when it has a comparison, else the main story
+ * at the reticle. An isolated story renders in a frame of its own, whose document a readout cannot reach.
+ */
+function liveAim(
+  interior: HTMLElement | null,
+  settings: LensSlotProps<ForgeComparison>['settings'],
+  reticle: LoupePoint,
+): LiveAim {
+  const aim =
+    settings.compare === null
+      ? { within: trialAt(reticle)?.host, point: reticle }
+      : { within: copyIn(interior), point: comparedAim(interior) ?? reticle };
+  return aim.within?.classList.contains('fg-frame-host') ? { unavailable: IN_FRAME } : aim;
 }
 
 const verdict = (pass: boolean) => (pass ? 'pass' : 'fail');
@@ -124,14 +128,16 @@ function textOf(reading: ContrastReading): string {
 }
 
 /** The Contrast readout: the WCAG ratio of what lies under the aim, and whether it passes AA and AAA. */
-export function ContrastReadout({ lens, settings, sources, reticle, size }: LensSlotProps<ForgeComparison>) {
+export function ContrastReadout({ lens, settings, sources, reticle, size, interior }: LensReadoutProps<ForgeComparison>) {
   const { source } = useShownSource(settings, sources);
   const kind = source?.kind;
   const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
   // A Live reading is of the page as it stands, read each render and again whenever the source says a story changed.
-  const live = useSyncExternalStore(subscribe, () =>
-    kind === 'live' ? textOf(contrastAt('live', liveAim(lens.lensId, settings, reticle))) : null,
-  );
+  const live = useSyncExternalStore(subscribe, () => {
+    if (kind !== 'live') return null;
+    const aim = liveAim(interior, settings, reticle);
+    return textOf('unavailable' in aim ? aim : contrastAt('live', aim));
+  });
   const [pixels, setPixels] = useState<ContrastReading | null>(null);
   const [tick, setTick] = useState(0);
   useEffect(() => source?.subscribe(() => setTick((n) => n + 1)), [source]);
@@ -166,12 +172,14 @@ export type TokenReading = { steps: readonly string[] } | { unavailable: string 
  */
 export function tokenAt(
   kind: 'live' | 'pixels',
-  lensId: string,
+  interior: HTMLElement | null,
   settings: LensSlotProps<ForgeComparison>['settings'],
   reticle: LoupePoint,
 ): TokenReading {
   if (kind === 'pixels' && settings.compare !== null) return { unavailable: NEEDS_LIVE };
-  const { within, point } = liveAim(lensId, settings, reticle);
+  const aim = liveAim(interior, settings, reticle);
+  if ('unavailable' in aim) return aim;
+  const { within, point } = aim;
   const at = within ? colorAt(point, within) : null;
   if (!at) return { unavailable: NO_COLOR };
   try {
@@ -189,12 +197,12 @@ export function tokenAt(
 const isToken = (step: string) => step.startsWith('--wzl-');
 
 /** The Token readout: the chain of tokens the color under the aim comes from, each token opening the CSS vars panel at it. */
-export function TokenReadout({ lens, settings, sources, reticle }: LensSlotProps<ForgeComparison>) {
+export function TokenReadout({ settings, sources, reticle, interior }: LensReadoutProps<ForgeComparison>) {
   const { source } = useShownSource(settings, sources);
   const kind = source?.kind;
   const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
   const json = useSyncExternalStore(subscribe, () =>
-    kind === 'live' || kind === 'pixels' ? JSON.stringify(tokenAt(kind, lens.lensId, settings, reticle)) : null,
+    kind === 'live' || kind === 'pixels' ? JSON.stringify(tokenAt(kind, interior, settings, reticle)) : null,
   );
   const reading = useMemo(() => (json === null ? null : (JSON.parse(json) as TokenReading)), [json]);
   if (!reading) return null;
@@ -218,7 +226,7 @@ export function TokenReadout({ lens, settings, sources, reticle }: LensSlotProps
 }
 
 /** What a lens draws for the readouts it has on, other than the Pixel grid, which the lens draws itself. */
-export function renderReadouts(props: LensSlotProps<ForgeComparison>) {
+export function renderReadouts(props: LensReadoutProps<ForgeComparison>) {
   const { readouts } = props.settings;
   return (
     <>
