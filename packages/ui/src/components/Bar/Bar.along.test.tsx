@@ -153,6 +153,23 @@ describe('Bar along a curve: scroll mode', () => {
     expect(turn('start')).toBeCloseTo(trackRun(shape).at(0).angle + 90);
   });
 
+  test('an item part past an end slides on along that end, rather than stopping there', () => {
+    render(<Bar schema={schema} shape={shape} label="Tools" />);
+    // 30 px back, `a` (0..40, no gap in jsdom) spans -30..10: its middle is 10 px before the run's start.
+    fireEvent.wheel(screen.getByRole('toolbar'), { deltaY: 30 });
+    const a = items()[0]!;
+    expect(a).toHaveAttribute('data-clipped', 'part');
+    const start = trackRun(shape).at(0);
+    const got = placed(a);
+    expect(got.x).toBeCloseTo(start.point.x - 10 * start.tangent.x);
+    expect(got.y).toBeCloseTo(start.point.y - 10 * start.tangent.y);
+    expect(got.angle).toBeCloseTo(start.angle);
+    // Wholly past the end and hidden, `f` waits at the end instead of reaching out past the bar's box.
+    const f = items().at(-1)!;
+    expect(f).toHaveAttribute('data-clipped', 'past');
+    expect(placed(f).x).toBeCloseTo(trackRun(shape).at(1).point.x);
+  });
+
   test('Tab reaching an item past the end brings it into view', () => {
     render(<Bar schema={schema} shape={shape} label="Tools" />);
     const f = screen.getByRole('button', { name: 'f' });

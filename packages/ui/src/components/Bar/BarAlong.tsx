@@ -48,7 +48,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   let spots: RunSpot[] = [];
   const scroll = useRunScroll({ root, run, total, spots: () => spots, lengths: orderLengths });
   spots = alongSpots(orderLengths, gap, run.length, align, menu, scroll.offset);
-  const place = (i: number) => ({ className: s.item!, style: placeOnRun(run, run.length > 0 ? spots[i]!.center / run.length : 0.5), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
+  const place = (i: number) => ({ className: s.item!, style: placeOnRun(run, spotG(spots[i]!, run.length)), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
   const first = leading != null ? 1 : 0;
   const scrolls = total > run.length;
 
@@ -71,6 +71,14 @@ export function BarAlong(props: BarAlongProps): ReactElement {
       {scrolls && <MorePast run={run} start={scroll.offset > 0} end={total - scroll.offset > run.length} />}
     </div>
   );
+}
+
+/** Where along the run, 0..1, a spot is drawn: a part-clipped item slides on past the end it overhangs, and one
+ *  wholly past an end, which is hidden, waits at that end rather than reaching out beyond the bar's box. */
+function spotG(spot: RunSpot, length: number): number {
+  if (length <= 0) return 0.5;
+  const g = spot.center / length;
+  return spot.clipped === 'past' ? Math.min(1, Math.max(0, g)) : g;
 }
 
 /** The keys of what the bar holds, so its lengths are watched again when that set changes. */
