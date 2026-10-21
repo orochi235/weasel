@@ -1390,11 +1390,6 @@ only story runner in the repo.
   (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
   Decision needed: whether audio inputs accept several wires, as a port-level flag, or Mix stays
   the way to combine (2026-10-20).
-- **(P3) `useLiveAudioRunner` loops on a `nodes` built in render.** It remakes its runner when
-  `engine`, `bus` or `nodes` change (`packages/diagram/src/effect/audio/useLiveAudioRunner.ts`), so
-  `nodes={{ ...audioStageNodes, mine }}` written inline re-renders forever, and its JSDoc doesn't say
-  to pass a stable one. Read `nodes` through `latest` at creation, as `pipeline` and `sources` are, or
-  document it (2026-10-20).
 - **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
   (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
   rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).

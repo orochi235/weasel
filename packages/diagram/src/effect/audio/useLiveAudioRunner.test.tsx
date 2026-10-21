@@ -5,6 +5,7 @@ import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectPipeline } from '../types';
 import type { AudioPreview } from './scope';
+import { audioStageNodes, type AudioStageNode } from './nodes';
 import { AUDIO_STAGE_TYPES } from './stageTypes';
 import { useFollowAudioRunner } from './useFollowAudioRunner';
 import { useLiveAudioRunner } from './useLiveAudioRunner';
@@ -112,6 +113,26 @@ describe('useLiveAudioRunner', () => {
     await waitFor(() => expect(result.current.runner).not.toBe(first));
     expect(dispose).toHaveBeenCalledOnce();
     expect(result.current.runner).not.toBeNull();
+  });
+  it('keeps its runner across renders that rebuild equivalent nodes, and remakes it when they change', async () => {
+    const engine = fakeEngine();
+    const mine: AudioStageNode = { settings: () => ({}), levels: [], build: audioStageNodes['audio.oscillator']!.build };
+    const other: AudioStageNode = { ...mine };
+    const { result, rerender } = renderHook(
+      ({ node }: { node: AudioStageNode }) =>
+        useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'off', nodes: { ...audioStageNodes, mine: node } }),
+      { initialProps: { node: mine } },
+    );
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const first = result.current.runner!;
+    rerender({ node: mine });
+    rerender({ node: mine });
+    expect(result.current.runner).toBe(first);
+
+    const dispose = vi.spyOn(first, 'dispose');
+    rerender({ node: other });
+    await waitFor(() => expect(result.current.runner).not.toBe(first));
+    expect(dispose).toHaveBeenCalledOnce();
   });
 });
 
