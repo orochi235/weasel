@@ -39,7 +39,7 @@ Where the code disagrees with the spec, or the spec is silent on something the c
 - At most 8 lenses at once (`MAX_LENSES = 8`). Every Live lens is a whole second render.
 - Lenses last for the session (in memory at the `Workshop`) and are never written to trial storage.
 - The lens scene keeps its own undo history, separate from `varsHistory`. It answers undo keys only while its input element has focus.
-- Leader scopes are out of scope. Every lens key is Alt plus the key in the Task 4 table (ruled 2026-10-20), matched by `code` (`KeyL`, …) since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
+- Leader scopes are out of scope. Every lens key is Alt (or Alt+Shift) plus the key in the Task 4 table (ruled 2026-10-20), a `KeySpec` with both `key` and `code` (`KeyL`, …), matched by `code` since Alt changes the produced character on macOS, so a lens never takes a story's own plain keys.
 - US English in code, copy and commits. Commit subjects are imperative and lower-case, and every commit ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Work in a worktree (`git worktree add .claude/worktrees/forge-loupe -b forge-loupe`, then `npm ci` inside it). Before merging, run `npm run test:gate` and `npm run test:fleet -- HEAD` on the branch.
 
@@ -135,6 +135,8 @@ describe('TrialHost copy', () => {
 });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/shell/TrialHost.copy.test.tsx`. Expected: FAIL, because `copy` is not a prop.
 - [ ] **Step 3: Extract `useHostConditions`** from `TrialHost`'s globals-target effect and overrides effects into `hostConditions.ts`. `TrialHost` keeps its registry effect, gated on `!copy`. Run `npx vitest run --project=forge packages/forge/src/shell/TrialHost.test.tsx`. Expected: PASS, unchanged.
 - [ ] **Step 4: Add `copy`.**
@@ -155,7 +157,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Test: `packages/labkit/src/loupe/lens/lensScene.test.ts`
 
 **Interfaces:**
-- Consumes: `createScene`, `createInsertOp`, `createDeleteOp`, `createSetDataOp`, `createSetDependsOnOp`, `createTransformOp`, `RectPose` from `@weasel-js/core`.
+- Consumes: `createScene`, `moveSources`, `effectivePose`, `createInsertOp`, `createDeleteOp`, `createSetDataOp`, `createSetDependsOnOp`, `createTransformOp`, `RectPose` from `@weasel-js/core`.
 - Produces:
 
 ```ts
@@ -177,6 +179,7 @@ export const LENS_DEFAULTS: LensSettings<never>; // aim 'pinned', source 'live',
 export const GLASS_POSE_KEY = 'labkit:lens-glass';
 export const LEADER_PATH_KEY = 'labkit:lens-leader';
 export const BODY_SIZE = 160; export const RETICLE_SIZE = 16;
+export const LENS_REGISTRY: { derivePose: Record<string, DerivePose>; derivePath: Record<string, DerivePath> }; // the registry passed to createLensScene
 export function createLensScene<C>(): LensScene<C>;
 export function addLensOps<C>(scene: LensScene<C>, lensId: string, at: { body: LoupePoint; reticle: LoupePoint }, settings?: Partial<LensSettings<C>>): Op[];
 export function lensIdsOf<C>(scene: LensScene<C>, nodeId: string): LensIds | null;
@@ -215,8 +218,10 @@ it('closes over whole lenses from any one of their nodes', () => {
 it('round-trips through a serialized history with the glass and leader functions restored by key', () => { /* serialize, restore with LENS_REGISTRY, effectivePose equal */ });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/lensScene.test.ts`. Expected: FAIL, because the module is missing.
-- [ ] **Step 3: Implement** `lensTypes.ts` and `lensScene.ts` with the signatures above. `createLensScene` passes `{ derivePose: { [GLASS_POSE_KEY]: … }, derivePath: { [LEADER_PATH_KEY]: … } }` as its registry.
+- [ ] **Step 3: Implement** `lensTypes.ts` and `lensScene.ts` with the signatures above. `LENS_REGISTRY` is `{ derivePose: { [GLASS_POSE_KEY]: … }, derivePath: { [LEADER_PATH_KEY]: … } }`, and `createLensScene` passes it as its registry. Glass ops and their test stay so Glass needs no new mechanism, but no Glass action exists: Glass is unbuilt as a user-facing aim, and the docs say so.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
 - [ ] **Step 5: Commit** with the subject `add the lens scene: body, reticle and leader nodes with a glass-ready reticle`.
 
@@ -234,6 +239,7 @@ it('round-trips through a serialized history with the glass and leader functions
   - `interface LensHitBox { nodeId: string; role: 'lens-body' | 'lens-reticle'; rect: LoupeRect; round: boolean }`
   - `hitBoxesOf<C>(scene: LensScene<C>, selected: ReadonlySet<string>): readonly LensHitBox[]`. The rects are effective poses in lab-body px. A selected body's rect grows by `HANDLE_SLOP = 12` on every side so its transform handles stay reachable. Leaders get no box.
   - `LensOverlayProps<C> { scene: LensScene<C>; attachment?: LensAttachment; children?: (lens: LensIds, interior: HTMLElement) => ReactNode; onFocusLens?: (lensId: string | null) => void }`
+  - `export const VIEWPORT_ATTACHMENT: LensAttachment` is defined in `LensOverlay.tsx`: an identity view whose `subscribe` is a no-op.
   - `interface LensAttachment { view(): View; subscribe(listener: () => void): () => void }` is the camera the lens scene is drawn and picked through. It defaults to `VIEWPORT_ATTACHMENT` (identity: lenses stay put in lab-body px), which is forge's choice. A host attaching lenses to a pane passes that pane's camera. Persistence is the host's too: it owns the `scene` it passes in. Together these are the spec's "attachment and persistence are host options".
   - `<LensOverlay>` registers tile `lab-loupe` on a full-size `.lk-lens-layer` portaled into `surface.getContainer()`. It paints the scene into the `over` buffer with `paintInto` and `features={['pick','move','transform','edit']}`. Its input element is `.lk-lens-input` (`pointer-events: none`, `role="application"`, `tabIndex={0}`), and that element holds one `.lk-lens-hit` (`pointer-events: auto`, `border-radius: 50%` when `round`) per box, so a press on a hit box bubbles to the dispatcher. It overrides the canvas's `delete` action (`actions={{ delete: lensDeleteAction }}`) so it deletes `lensClosure` of the selection through `createDeleteOp`. It renders one `.lk-lens-interior` per body for `children`.
 
@@ -249,6 +255,8 @@ it('grows a selected body’s box by the handle slop', () => {
 });
 it('renders overlay contributions inside the lab surface, after the trials', () => { /* Lab with labChrome [{id:'x', region:'overlay', render:()=> <i data-testid="o"/>}]; expect o inside .lk-lab__body */ });
 ```
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
 
 - [ ] **Step 2: Write the failing browser test.** This is the riskiest fact in the plan: that `setPointerCapture` on a `pointer-events: none` input element still lets a drag that starts on a hit box finish.
 
@@ -284,46 +292,50 @@ it('keeps painting lenses while a trial is expanded', async () => { /* expand tr
 - Produces:
 
 ```ts
-export interface LensActionApi {
+export interface LensActionApi<C> {
   current(): string | null;               // focused or selected lens, else the most recently added
   add(at?: LoupePoint): string | null;    // null when MAX_LENSES are up
   apply(ops: readonly Op[]): void;
-  scene: LensScene<unknown>;
+  scene: LensScene<C>;
   follow(client: LoupePoint): void;       // writes the reticle through scene.overrides.hold()
-  sourceAvailable(kind: LensSourceKind): true | string;
+  sourceAvailable(kind: LensSourceKind): true | string;   // a string is the reason it is unavailable; the host adapts LensSource.status() to this
   openCompareMenu(lensId: string): void;
 }
 export const MAX_LENSES = 8;
 export const LENS_ACTION_IDS: { add: 'loupe.add'; close: 'loupe.close'; pinned: 'loupe.aim.pinned'; follow: 'loupe.aim.follow';
-  followMove: 'loupe.follow'; live: 'loupe.source.live'; pixels: 'loupe.source.pixels'; dpr: 'loupe.dpr.next';
+  followMove: 'loupe.follow'; seam: 'loupe.seam'; live: 'loupe.source.live'; pixels: 'loupe.source.pixels'; dpr: 'loupe.dpr.next';
   swap: 'loupe.view.swap'; split: 'loupe.view.split'; difference: 'loupe.view.difference';
   opposite: 'loupe.compare.opposite'; compareMenu: 'loupe.compare.menu'; clearCompare: 'loupe.compare.clear';
   token: 'loupe.readout.token'; contrast: 'loupe.readout.contrast'; grid: 'loupe.readout.grid';
   zoomIn: 'loupe.factor.in'; zoomOut: 'loupe.factor.out' };
-export function createLensActions(api: LensActionApi, comparisons: { opposite: () => unknown }): readonly Action[];
-export function LensActions(props: { api: LensActionApi; bodyRef: RefObject<HTMLElement | null>; opposite: () => unknown }): null;
+export function createLensActions<C>(api: LensActionApi<C>, comparisons: { opposite: () => C }): readonly Action[];
+export function LensActions<C>(props: { api: LensActionApi<C>; bodyRef: RefObject<HTMLElement | null>; opposite: () => C }): null;
 ```
 
-Default keys. Each binding is a `{ kind: 'key', code, mods: { alt: true }, phase: [{ channel: '*', phase: 'initial' }] }` — every key in the table below is held with Alt, and Shift where the table says so (ruled 2026-10-20), matched by `code`, and every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up:
+Default keys. Each binding is a `KeySpec` (`packages/gestures/src/ui/spec.ts`): `{ kind: 'key', key, code, mods: { alt: true, shift: <true|false> }, phase: [{ channel: '*', phase: 'initial' }] }`. `key` is the produced character the field requires (the unshifted base letter, matched case-insensitively) and `code` is the physical key; Alt plus `code` is what a macOS keyboard can match, since Alt changes the produced character. `shift` is always written out, so Alt+L and Alt+Shift+L never collide (ruled 2026-10-20). Every action except `loupe.add` returns `'not-applicable'` from `enabled` while no lens is up:
 
-| Action | Key | Action | Key |
-|---|---|---|---|
-| `loupe.add` | `l` | `loupe.close` | `Shift+L` |
-| `loupe.aim.pinned` | `p` | `loupe.aim.follow` | `f` |
-| `loupe.source.live` | `v` | `loupe.source.pixels` | `x` |
-| `loupe.dpr.next` | `r` | `loupe.view.swap` | `s` |
-| `loupe.view.split` | `\` | `loupe.view.difference` | `d` |
-| `loupe.compare.opposite` | `o` | `loupe.compare.menu` | `k` |
-| `loupe.compare.clear` | `Shift+O` | `loupe.readout.token` | `t` |
-| `loupe.readout.contrast` | `c` | `loupe.readout.grid` | `g` |
-| `loupe.factor.in` | `=` | `loupe.factor.out` | `-` |
+| Action | Key | `code` | Action | Key | `code` |
+|---|---|---|---|---|---|
+| `loupe.add` | `Alt+L` | `KeyL` | `loupe.close` | `Alt+Shift+L` | `KeyL` |
+| `loupe.aim.pinned` | `Alt+P` | `KeyP` | `loupe.aim.follow` | `Alt+F` | `KeyF` |
+| `loupe.source.live` | `Alt+V` | `KeyV` | `loupe.source.pixels` | `Alt+X` | `KeyX` |
+| `loupe.dpr.next` | `Alt+R` | `KeyR` | `loupe.view.swap` | `Alt+S` | `KeyS` |
+| `loupe.view.split` | `Alt+\` | `Backslash` | `loupe.view.difference` | `Alt+D` | `KeyD` |
+| `loupe.compare.opposite` | `Alt+O` | `KeyO` | `loupe.compare.menu` | `Alt+K` | `KeyK` |
+| `loupe.compare.clear` | `Alt+Shift+O` | `KeyO` | `loupe.readout.token` | `Alt+T` | `KeyT` |
+| `loupe.readout.contrast` | `Alt+C` | `KeyC` | `loupe.readout.grid` | `Alt+G` | `KeyG` |
+| `loupe.factor.in` | `Alt+=` | `Equal` | `loupe.factor.out` | `Alt+-` | `Minus` |
 
 `loupe.follow` binds `{ kind: 'hover', held: 'optional', mods: ANY_MODS }` on a dispatcher that `LensActions` mounts on the lab body with `channels: { pointer: false, hover: true, contextMenu: false, ingest: false }`. That is `LoupeGestures`' own-dispatcher pattern, and the action is enabled only while the current lens's aim is `follow`. `loupe.aim.pinned` from Follow commits the held reticle pose with one `createTransformOp` and releases the hold. `loupe.dpr.next` cycles `[1] → [2] → [1, 2] → [1]`. Factor steps by ×2, clamped to `[1, 64]`. `loupe.source.pixels` returns the source's unavailable reason from `enabled` when Pixels is missing. Every action registers on the lab registry (`useActionsRegistry()` at `LensActions`), in `group: 'loupe'`, with a `label` written for the key panel ("Add lens", "Close lens", "Aim: pinned", …).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-it('adds a lens on Alt+L, up to eight, and declines the ninth with a reason', () => {
+it('adds a lens on a real Alt+L keydown, through the lab’s key handling', () => {
+  fireEvent.keyDown(labBody, { code: 'KeyL', key: 'l', altKey: true });
+  expect(lensesOf(scene)).toHaveLength(1);
+});
+it('caps lenses at eight at the registry, declining the ninth with a reason', () => {
   for (let i = 0; i < 9; i++) registry.trigger('loupe.add');
   expect(lensesOf(scene)).toHaveLength(8);
   expect(actionOf('loupe.add').enabled!(deps)).toMatch(/8 lenses/);
@@ -336,8 +348,10 @@ it('switches aim to Follow, tracks hover without writing history, and commits on
 });
 it('cycles DPR 1×, 2×, 1×|2×', () => { /* three triggers → [2], [1,2], [1] */ });
 it('declines every lens key but add while no lens is up', () => { /* enabled === 'not-applicable' */ });
-it('types Alt+L into a story’s text input without adding a lens', async () => { /* Review Focus 2: Lab with an <input> trial; userEvent.type(input,'l'); lensesOf(scene) empty */ });
+it('types Alt+L into a story’s text input without adding a lens', async () => { /* Review Focus 2: Lab with an <input> trial; real keydown and keyup events with code 'KeyL', altKey true on the focused input; lensesOf(scene) empty */ });
 ```
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
 
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/lensActions.test.ts packages/labkit/src/loupe/lens/LensActions.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.** If the typing test fails, the lab dispatcher is not skipping editable targets. Fix that in routing's key matcher, with a test there in the `weasel-ui` project, rather than in the lens.
@@ -355,7 +369,7 @@ it('types Alt+L into a story’s text input without adding a lens', async () => 
 - Produces:
 
 ```ts
-export type LensSourceStatus = { available: true } | { available: false; reason: string };
+export type LensSourceStatus = true | string;   // the one availability shape: a string is the reason
 export interface LensSourceRequest<C> {
   lensId: string;
   reticle: LoupePoint;               // client px
@@ -393,6 +407,8 @@ it('attaches one pixels source per DPR side by side', () => { expect(attach).toH
 it('re-sends the request, not a re-attach, when the reticle moves', () => { expect(update).toHaveBeenCalled(); expect(attach).toHaveBeenCalledTimes(1); });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/LensSlot.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
@@ -416,11 +432,11 @@ export interface LiveRequest { lensId: string; slot: HTMLElement; hit: TrialHit;
 export interface LiveLenses { set(lensId: string, request: LiveRequest | null): void; forTrial(trialId: string): readonly LiveRequest[]; subscribe(listener: () => void): () => void }
 export function createLiveLenses(): LiveLenses;
 export const LiveLensesContext: Context<LiveLenses | null>;
-export function createLiveSource(lenses: LiveLenses, resolve: (c: ForgeComparison | null, base: Globals) => ResolvedConditions): LensSource<ForgeComparison>;
+export function createLiveSource(lenses: LiveLenses, resolve: (c: ForgeComparison | null, base: Globals, ctx: ResolveContext) => ResolvedConditions): LensSource<ForgeComparison>; // Task 10's four-argument resolveComparison; ForgeLoupe supplies ctx
 export function ForgeLoupe(props: { declarations: GlobalDeclarations; modeGlobal: string }): ReactNode;
 ```
 
-`LiveCopies` sits inside `StoryTrial`, beside `TrialHost`. For each request on its trial, it portals into `request.slot` a `TrialHost copy={{ id: \`${trialId}~lens-${lensId}\`, globals }}` sized to the main host's `offsetWidth × offsetHeight`, inside a `.fg-lens-copy` wrapper. The wrapper's transform `translate(w/2 - local.x·f, h/2 - local.y·f) scale(f)` comes from CSS custom properties. The copy renders `StoryBody` with `config = setPaths(storyConfig, args)` and the trial's state and shared clock, and it does not call `useClockLoop`. Its `setConfig` drops writes to any path in `args` and passes the rest to the trial. It copies the main `.fg-story__scroll`'s `scrollTop` and `scrollLeft` on the main element's `scroll` event. A reticle with no trial under it sends `set(lensId, null)`, and the slot shows "Nothing under the reticle". `ForgeLoupe` holds the scene in `useState(createLensScene)`, so lenses last for the session and are never persisted. The first version has no `isolate` support: over an isolated trial the slot shows "Live needs a frame for isolated stories", and Task 7 removes that message.
+`LiveCopies` sits inside `StoryTrial`, beside `TrialHost`. For each request on its trial, it portals into `request.slot` a `TrialHost copy={{ id: \`${trialId}~lens-${lensId}\`, globals }}` sized to the main host's `offsetWidth × offsetHeight`, inside a `.fg-lens-copy` wrapper. The wrapper's transform `translate(w/2 - local.x·f, h/2 - local.y·f) scale(f)` comes from CSS custom properties. The copy renders `StoryBody` with `config` being the story config with each `args` entry written at its path (this is config, not a scene node, so no scene op applies; forge has no helper for it today, so the implementer finds the existing config-by-path write or adds one beside `storyConfig`) and the trial's state and shared clock, and it does not call `useClockLoop`. Its `setConfig` drops writes to any path in `args` and passes the rest to the trial. It copies the main `.fg-story__scroll`'s `scrollTop` and `scrollLeft` on the main element's `scroll` event. A reticle with no trial under it sends `set(lensId, null)`, and the slot shows "Nothing under the reticle". `ForgeLoupe` also owns the wiring Task 4 and Task 5 leave to a host: it builds the `LensActionApi<ForgeComparison>` (`current`, `add`, `apply`, `follow`, `sourceAvailable`, `openCompareMenu`), mounts `<LensActions api bodyRef opposite>` and passes `<LensOverlay>` its `sources` and `describe`. It holds the scene in `useState(createLensScene)`, so lenses last for the session and are never persisted. The first version has no `isolate` support: over an isolated trial the slot shows "Live needs a frame for isolated stories", and Task 7 removes that message.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -442,6 +458,8 @@ it('shows the patch under the reticle in a story scrolled inside its host', asyn
 it('keeps a popover opened in the copy inside the lens, in the copy’s mode', async () => { /* open menu in copy; its rect inside the lens interior; computed bg is the dark token */ });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/shell/loupe` and `npx vitest run --project=browser packages/forge/src/shell/loupe/live.browser.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.** `Workshop` adds one `labChrome` entry, `{ id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe … /> }`, and wraps the lab in `LiveLensesContext.Provider`. Re-measure on lab-body `scroll` (capture phase), on `resize`, and on scene change. There is no loop.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
@@ -451,16 +469,19 @@ it('keeps a popover opened in the copy inside the lens, in the copy’s mode', a
 
 **Files:**
 - Create: `packages/forge/src/shell/frameLink.ts`
-- Modify: `packages/forge/src/shell/FrameView.tsx`, `packages/forge/src/shell/storyInstrument.tsx`, `packages/forge/src/shell/loupe/LiveCopies.tsx`
+- Modify: `packages/forge/src/shell/FrameView.tsx`, `packages/forge/src/shell/loupe/LiveCopies.tsx`
 - Test: `packages/forge/src/shell/FrameView.copy.test.tsx`
 
 **Interfaces:**
 - Produces:
-  - `frameLink.ts` holds the parts of `FrameView` that live outside the component: `Link`, `closeLink`, `sendInputs`, `mismatchMessage`, and `useFrameLink(opts): { connect(frame: HTMLIFrameElement): void; link: RefObject<Link | null> }`. This brings `FrameView`'s longest function under 120.
+  - `frameLink.ts` holds the parts of `FrameView` that live outside the component: `Link`, `closeLink`, `sendInputs`, `mismatchMessage`, and `useFrameLink(opts): { connect(frame: HTMLIFrameElement): void; link: RefObject<Link | null> }`. Step 1 measures its effect on `FrameView`'s longest function.
   - `FrameViewProps.copy?: { id: string; globals: Globals; args: Readonly<Record<string, unknown>> }`. In copy mode the view never claims from the pool, never calls `useKeptFrame`, never connects to `TrialFramesContext`, never records answers, ignores `ready` for `onReady`, ignores the `open` message, and sends `storyConfig` with `args` laid over it.
   - Over an isolated trial, `LiveCopies` renders `<FrameView copy>` the way it renders `TrialHost copy` for an in-document story.
 
-- [ ] **Step 1: Move the link logic out unchanged.** Run `npx vitest run --project=forge packages/forge/src/shell/FrameView` and `npx vitest run --project=browser packages/forge/src/shell/FrameView.browser.test.tsx`. Expected: PASS. Run `npm run check:size -- --update` and confirm the `FrameView.tsx` entry dropped or was removed.
+- [ ] **Step 1: Move the link logic out unchanged.** Measure `FrameView`'s longest function after the split with `npm run check:size`; the task is done only when no function exceeds its allow entry. Run `npx vitest run --project=forge packages/forge/src/shell/FrameView` and `npx vitest run --project=browser packages/forge/src/shell/FrameView.browser.test.tsx`. Expected: PASS. Run `npm run check:size -- --update` and confirm the `FrameView.tsx` entry dropped or was removed.
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Write the failing tests**
 
 ```tsx
@@ -535,10 +556,12 @@ it('serves the capture pages under base', async () => { /* GET /base/__forge/cap
 it('renders the story at its playhead, globals and overrides in a box of the payload’s size', async () => {});
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/vite/capture packages/forge/src/frame/capture` and `npx vitest run --project=forge-node packages/forge/src/vite/capture/endpoint.test.ts`. Expected: FAIL.
 - [ ] **Step 3: Implement.** `browser.ts` imports Playwright only through `load`, which defaults to `() => import('playwright')`.
 - [ ] **Step 4: Run to verify the tests pass**, along with `npx vitest run --project=forge-node packages/forge/src/vite/plugin.test.ts`, `npm run check:size -- --update` (the `plugin.ts` entry must drop), and `npm run check:imports`. Expected: PASS.
-- [ ] **Step 5: Do one real capture against the dev server.** This counts only if it actually runs. Run `npm run dev -w apps/forge` (or the repo's forge app script), then `curl -s -X POST localhost:<port>/__forge/capture -d @<payload.json> -o out.png`. Post the PNG with `transom post out.png` (zone `weasel`). If Chromium cannot start here, report the step as unrun.
+- [ ] **Step 5: Do one real capture against the dev server.** This counts only if it actually runs. Run `npm run dev:forge`, then `curl -s -X POST localhost:<port>/__forge/capture -d @<payload.json> -o "$TMPDIR/loupe-capture.png"`. Post the PNG with `transom post "$TMPDIR/loupe-capture.png"` (zone `weasel`), then delete it. If Chromium cannot start here, report the step as unrun.
 - [ ] **Step 6: Commit** with the subject `add a dev-server capture endpoint that renders a story in headless Chromium, with a 64-entry, 64 MB cache`.
 
 ### Task 9: The Pixels source
@@ -575,6 +598,8 @@ it('drops its last image on a revision bump', () => {});
 it('enlarges real pixels nearest-neighbor: a 1px hairline at 8× is an 8px band with hard edges', async () => { /* read lens canvas pixels */ });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/shell/loupe/capturePayload.test.ts packages/forge/src/shell/loupe/pixelsSource.test.ts`. Expected: FAIL.
 - [ ] **Step 3: Implement.** The browser test needs a running endpoint and Playwright inside the browser project's server. If that cannot be set up, it mocks `fetch` with a fixture PNG, says so in the test, and the real path rests on Task 8 Step 5.
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS.
@@ -583,8 +608,8 @@ it('enlarges real pixels nearest-neighbor: a 1px hairline at 8× is an 8px band 
 ### Task 10: Comparisons: Swap, Split, Difference, and opposite mode
 
 **Files:**
-- Create: `packages/labkit/src/loupe/lens/compare.ts`, `packages/labkit/src/loupe/lens/difference.ts`, `packages/forge/src/shell/loupe/conditions.ts`, `packages/forge/src/shell/loupe/CompareMenu.tsx`
-- Modify: `packages/labkit/src/loupe/lens/LensSlot.tsx`, `packages/labkit/src/loupe/lens/lensActions.ts` (adds `loupe.seam`), `packages/forge/src/shell/globals.ts` (`GlobalDeclaration.opposite`), `packages/forge/src/config.ts` (`ShellConfig.loupe?: { modeGlobal?: string }`), `apps/forge/` shell config (declares `opposite` on `mode`)
+- Create: `packages/labkit/src/loupe/lens/compare.ts`, `packages/labkit/src/loupe/lens/difference.ts`, `packages/forge/src/shell/loupe/CompareMenu.tsx`
+- Modify: `packages/forge/src/shell/loupe/conditions.ts` (Task 6 created it), `packages/forge/src/shell/loupe/ForgeLoupe.tsx` (`modeGlobal`, `CompareMenu`, the `resolveComparison` context), `packages/forge/src/shell/Workshop.tsx` (if it touches `modeGlobal`), `packages/labkit/src/loupe/lens/LensActions.tsx` (registers `seamAction`), `packages/labkit/src/loupe/lens/LensSlot.tsx`, `packages/labkit/src/loupe/lens/lensActions.ts` (`loupe.seam` is in `LENS_ACTION_IDS` since Task 4), `packages/forge/src/shell/globals.ts` (`GlobalDeclaration.opposite`), `packages/forge/src/config.ts` (`ShellConfig.loupe?: { modeGlobal?: string }`), `apps/forge/` shell config (declares `opposite` on `mode`)
 - Test: `packages/labkit/src/loupe/lens/compare.test.ts`, `packages/labkit/src/loupe/lens/difference.test.ts`, `packages/forge/src/shell/loupe/conditions.test.ts`
 
 **Interfaces:**
@@ -594,7 +619,7 @@ it('enlarges real pixels nearest-neighbor: a 1px hairline at 8× is an 8px band 
 // labkit
 export function splitRects(interior: LoupeRect, seam: number): { left: LoupeRect; right: LoupeRect; seamX: number };
 export const SEAM_GRAB = 4;   // px either side of the seam
-export function seamAction(api: LensActionApi): Action; // id 'loupe.seam', drag binding, scope 'hotkey', enabled only when the press is within SEAM_GRAB of a split lens's seam; previews locally, commits one createSetDataOp on release; seam clamped to [0.05, 0.95]
+export function seamAction<C>(api: LensActionApi<C>): Action; // id 'loupe.seam', a drag binding; previews locally, commits one createSetDataOp on release; seam clamped to [0.05, 0.95]
 export interface DiffResult { image: ImageData; changed: number }
 export function diffPixels(a: ImageData, b: ImageData, opts?: { tolerance?: number; lit?: readonly [number, number, number]; dim?: number }): DiffResult; // tolerance 0 default (any channel differs), dim 0.25
 // forge
@@ -608,7 +633,7 @@ export function describeComparison(c: ForgeComparison, declarations: GlobalDecla
 opposite?: (value: string, globals: Globals) => string | undefined;
 ```
 
-`resolveComparison` resolves opposite mode when it renders, not when it is chosen, so a lens keeps showing the opposite after the lab's mode flips. It uses the declaration's `opposite`. Without one it swaps `light` and `dark`, resolving `auto` through `prefersDark` and `FOLLOW_APP` through `labMode`. A mode with neither gives a `describeComparison` of "Opposite mode: no opposite for '<value>'", and the lens shows the story unchanged. Swap attaches only the compared request. Split attaches the base request to the left rect and the compared one to the right, with `clip-path` from custom properties. Difference calls `capture()` on the Pixels source for both sides, even on a Live lens, and draws `diffPixels`. When Pixels is unavailable it shows that reason. `CompareMenu` (opened by `loupe.compare.menu`) lists each declared global's options, DPR 1/2/3, and every arg whose schema leaf is a boolean or has `options`.
+The seam is dragged on a hit box of its own: role `lens-seam`, a thin rect (`SEAM_GRAB` either side) at the seam inside a split body, added to `hitBoxesOf` and routed through the lens canvas dispatcher, so it never competes with the body's core `move` drag. `resolveComparison` resolves opposite mode when it renders, not when it is chosen, so a lens keeps showing the opposite after the lab's mode flips. It uses the declaration's `opposite`. Without one it swaps `light` and `dark`, resolving `auto` through `prefersDark` and `FOLLOW_APP` through `labMode`. A mode with neither gives a `describeComparison` of "Opposite mode: no opposite for '<value>'", and the lens shows the story unchanged. Swap attaches only the compared request. Split attaches the base request to the left rect and the compared one to the right, with `clip-path` from custom properties. Difference calls `capture()` on the Pixels source for both sides, even on a Live lens, and draws `diffPixels`. When Pixels is unavailable it shows that reason. `CompareMenu` (opened by `loupe.compare.menu`) lists each declared global's options, DPR 1/2/3, and every arg whose schema leaf is a boolean or has `options`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -620,6 +645,8 @@ it('flips light to dark and resolves auto by the OS scheme', () => {});
 it('keeps showing the opposite after the lab mode changes', () => {});
 it('uses a declaration’s own opposite over the default swap', () => {});
 ```
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
 
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=labkit packages/labkit/src/loupe/lens/compare.test.ts packages/labkit/src/loupe/lens/difference.test.ts` and `npx vitest run --project=forge packages/forge/src/shell/loupe/conditions.test.ts`. Expected: FAIL.
 - [ ] **Step 3: Implement.** `loupe.compare.opposite` sets `compare: { kind: 'opposite-mode' }` through `setLensOps`.
@@ -659,6 +686,8 @@ it('marks a blended pixel between two flat runs, and not the runs', () => {});
 it('reports Contrast unavailable over an element with no text', () => {});
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=weasel-ui packages/paint/src/contrast.test.ts`, `npx vitest run --project=labkit packages/labkit/src/loupe/lens/pixelGrid.test.ts` and `npx vitest run --project=forge packages/forge/src/shell/loupe/readouts.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS. Also run `npm run test:smoke:consumer`, because core's barrel changed.
@@ -694,6 +723,8 @@ it('takes a vars-panel override over the stylesheet', () => {});
 it('opens the CSS vars panel at the token', async () => { revealVar('--wzl-bg'); expect(row('--wzl-bg')).toHaveAttribute('data-revealed'); });
 ```
 
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=browser packages/forge/src/shell/loupe/tokenChain.browser.test.tsx` and `npx vitest run --project=forge packages/forge/src/shell/cssVars/reveal.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run to verify the tests pass.** Expected: PASS. Also run `npm run check:imports`.
@@ -711,16 +742,18 @@ it('opens the CSS vars panel at the token', async () => { revealVar('--wzl-bg');
 - Produces:
   - `describeBinding(spec: GestureSpec): string` gives the chip text for key specs. For the rest it gives `"Wheel"`, `"Hover"`, `"Drag"`, `"Click"` and `"Hold <key>"`.
   - `KEYS_SECTION: LabContribution` (region `aside`, titled "Keys").
-  - `KeysChrome({ onChrome })` mirrors `CssVarsChrome`, with the persisted lab record `fg-keys-shown`, a header toggle `fg-keys-toggle`, and an action `forge.keys.toggle` on `?`.
+  - `KeysChrome({ onChrome })` mirrors `CssVarsChrome`, with the persisted lab record `fg-keys-shown`, a header toggle `fg-keys-toggle`, and an action `forge.keys.toggle` on `Alt+Slash` (`code: 'Slash'`, never plain `?`, which would fire while typing in a story field).
   - The panel lists `registry.list()` grouped by `group`, sorted by label, one row per action: label, then every binding's chip. It re-reads on `registry.subscribe`.
 
 - [ ] **Step 1: Write the failing tests**
 
 ```tsx
-it('lists every lab action with its keys, the loupe’s included', () => { expect(row('Add lens')).toHaveTextContent('L'); expect(row('Magnify (loupe)')).toHaveTextContent('Wheel'); });
+it('lists every lab action with its keys, the loupe’s included', () => { expect(row('Add lens')).toHaveTextContent(formatShortcut({ key: 'l', alt: true })); // the Alt glyph form the label formatter prints, never bare 'L' expect(row('Magnify (loupe)')).toHaveTextContent('Wheel'); });
 it('gives no two lab actions the same key', () => { /* collect key chips across registry.list() in a mounted Workshop with a lens up; expect no duplicates */ });
-it('opens on ?', async () => {});
+it('opens on Alt+Slash', async () => {});
 ```
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
 
 - [ ] **Step 2: Run to verify failure.** Run `npx vitest run --project=forge packages/forge/src/shell/keys/KeysPanel.test.tsx`. Expected: FAIL.
 - [ ] **Step 3: Implement.** If the duplicate test finds a lens key that collides with an existing lab key, change the lens key in `lensActions.ts` and its row in Task 4's table, never the existing key.
@@ -730,10 +763,13 @@ it('opens on ?', async () => {});
 ### Task 14: Docs, changeset, and the full run
 
 **Files:**
-- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass and the later readouts unbuilt), `docs/TODO.md` (one entry for Glass, one for leader-scope rebinding of lens keys, and one for moving lens keys under the leader scope once it lands)
-- Create: `.changeset/forge-loupe.md` (`patch` for `@weasel-js/labkit`, `@weasel-js/forge`, `@weasel-js/paint`, `@weasel-js/svg`; the prose says it is additive)
+- Modify: `packages/labkit/src/loupe/AGENTS.md` (a "Lenses" section: the three nodes, the Glass switch, the hit-box pass-through, the delete override, the source contract), `packages/forge/README.md` (a Loupe section: keys, sources, and the Playwright peer), `docs/superpowers/specs/2026-10-20-forge-loupe-design.md` (status line: first version built, with the date; Glass unbuilt as a user-facing aim; the "Keys" section rewritten to say lens keys are Alt-held until leader scopes land), `docs/TODO.md` (one entry for Glass, and one for moving lens keys under the leader scope once it lands)
+- Create: `.changeset/forge-loupe.md` (`patch` for `@weasel-js/labkit`, `@weasel-js/forge`, `@weasel-js/paint`, `@weasel-js/svg`, and `@weasel-js/core` (Task 11 edits its barrel); the prose says it is additive)
 
 - [ ] **Step 1: Write the docs.** Do a cut pass and show the cut list.
+
+Every test listed asserts the behavior its name states; a body shown as a comment describes the assertions to write, never an empty test.
+
 - [ ] **Step 2: Run the checks.** Run `npm run typecheck`, `npm run check:size`, `npm run check:frame-loops`, `npm run check:imports`, `npm run check:bumps` and `npm run test:gate`. Expected: all pass.
 - [ ] **Step 3: Run the fleet.** Run `npm run test:fleet -- HEAD`. Expected: green, with a `fleet-tree: N changed path(s) match <sha>` line in the log. If a file the branch did not touch hits an OOM or a timeout, report it as contention.
 - [ ] **Step 4: Delete this plan** (`git rm docs/superpowers/plans/2026-10-20-forge-loupe.md`).
@@ -745,3 +781,4 @@ it('opens on ?', async () => {});
 
 - **Delete on a Pinned lens keeps the lens canvas's `delete` override** (Spec correction 2). The core alternative only cascades down from a deleted body, so deleting a selected reticle alone would still strand the body; the override uses the canvas's public `actions` prop and `createDeleteOp`.
 - **Lens keys default to Alt plus the letter** until leader scopes land, so a story's plain keys are never taken.
+- **Lens keys are `KeySpec`s with `key`, `code` and an explicit `shift`**, Alt-held; the key panel opens on `Alt+Slash`; Glass has ops and no action.
