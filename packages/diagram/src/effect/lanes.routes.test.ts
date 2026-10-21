@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createScene, derivedDepOf, effectivePose, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
 import { diagramScene, edgeIdOf, type DiagramSpec } from '../fromData';
-import { portOn, uniqueStages } from './draw';
+import { nestGroups } from '../groupTree';
+import { portOn, uniqueGroups, uniqueStages } from './draw';
 import { SAMPLES } from './lab/samples';
 import { laneId, lanes } from './lanes';
 import { TRACK_GAP } from './lanesRoutes';
@@ -75,7 +76,11 @@ function crosses(a: Pt, b: Pt, box: Box, inset = 0.5): boolean {
 const inside = (a: Box, b: Box) => a.x >= b.x - 1e-6 && a.y >= b.y - 1e-6 && a.x + a.width <= b.x + b.width + 1e-6 && a.y + a.height <= b.y + b.height + 1e-6;
 const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-const CASES: Record<string, EffectPipeline> = { past: PAST, loop: LOOP, ...SAMPLES };
+/** `PAST` with its middle two stages boxed, so `q.no` runs past the box
+ *  and `cut.out` runs into it. */
+const BOXED: EffectPipeline = { ...PAST, groups: [{ id: 'g', label: 'Pair', members: ['a', 'b'] }] };
+
+const CASES: Record<string, EffectPipeline> = { past: PAST, loop: LOOP, boxed: BOXED, ...SAMPLES };
 
 describe('lanes wires', () => {
   let labeled = 0;
@@ -179,6 +184,39 @@ describe('lanes wires', () => {
       }
     });
   }
+
+  for (const [name, p] of Object.entries(CASES)) {
+    it(`keep each group box inside the lanes, and cross none that holds neither of their ends: ${name}`, () => {
+      const { drawn, specs, pose, route } = load(p);
+      const bands = drawn.data.nodes.filter((n) => n.id.startsWith('~lane:')).map((n) => pose(n.id));
+      const top = Math.min(...bands.map((b) => b.y));
+      const bottom = Math.max(...bands.map((b) => b.y + b.height));
+      const boxOf = (id: string) => specs.find((s) => s.id === id)?.pose as Box | undefined;
+      const groups = nestGroups(uniqueGroups(p), (id) => p.stages.some((s) => s.id === id)).flatMap((g) => {
+        const box = boxOf(g.id);
+        return box === undefined ? [] : [{ id: g.id, members: g.members, box }];
+      });
+      for (const g of groups) expect(g.box.y >= top - 1e-6 && g.box.y + g.box.height <= bottom + 1e-6, `${name}: ${g.id} ${JSON.stringify(g.box)}`).toBe(true);
+      for (const edge of specs.filter((s) => (s.data as { diagram?: { from?: unknown } }).diagram?.from !== undefined)) {
+        const ends = edge.dependsOn as unknown as string[];
+        const points = route(edge.id as string);
+        for (const g of groups.filter((g) => !ends.some((e) => g.members.includes(e)))) {
+          const hit = points.slice(1).some((b, i) => crosses(points[i]!, b, g.box));
+          expect(hit, `${name}: ${edge.id as string} crosses ${g.id} at ${JSON.stringify(g.box)}`).toBe(false);
+        }
+      }
+    });
+  }
+
+  it('runs a wire into a group to its port', () => {
+    const { specs, pose, route } = load(BOXED);
+    const edge = specs.find((s) => (s.dependsOn as unknown as string[] | undefined)?.join() === 'cut,a')!;
+    const end = route(edge.id as string).at(-1)!;
+    const a = pose('a');
+    expect(end.x).toBeCloseTo(a.x, 3);
+    expect(end.y).toBeGreaterThan(a.y);
+    expect(end.y).toBeLessThan(a.y + a.height);
+  });
 
   it('had labels to check', () => expect(labeled).toBeGreaterThan(5));
 });

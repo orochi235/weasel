@@ -46,7 +46,9 @@ describe('lanes', () => {
       expect(b.y + b.height, id).toBeLessThan(bottom);
       // More beside an edge wires run along: the top, here, which `q.no` takes past `blur`.
       expect(b.y - top, id).toBeGreaterThanOrEqual(LANE_INSET - 1e-6);
-      expect(bottom - (b.y + b.height), id).toBeCloseTo(LANE_INSET, 6);
+      // `blur` stands in group `g`, whose box keeps the inset in its place.
+      const outer = id === 'blur' ? box('g') : b;
+      expect(bottom - (outer.y + outer.height), id).toBeCloseTo(LANE_INSET, 6);
     }
     const q = box('q');
     expect(q.y).toBeGreaterThan(lane('image').y);
