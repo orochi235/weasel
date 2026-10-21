@@ -1,5 +1,34 @@
 # @weasel-js/theme
 
+## 1.11.1
+
+### Patch Changes
+
+- 44cf2c5: The devtools panel fits a narrow container: below 480 px wide its tabs wrap and the Scene and
+  Registry tabs stack their list above the detail. Its header keeps the canvas picker at the left and
+  the version at the right, a selected tree row is marked in the accent color, and the node detail's
+  values line up.
+  
+  A `<SceneCanvas>` with no `aria-label` or id of its own is listed in devtools by the `aria-label` of
+  its nearest labeled ancestor. labkit's `TrialSceneCanvas` labels its canvas with the trial's title.
+  `Tree` reads the new `--wzl-tree-selected` hook for a selected row's background.
+- 23dbaff: A row's label and its value now share one size on every params surface — `PropertyPanel`,
+  `Prefs`, `SelectionPanel`, `DetailList` and labkit's `ControlPanel`. It comes from a new hook,
+  `--wzl-params-text-size`, which defaults to `--wzl-font-size-sm` and so still moves with density
+  and theme; set it on any ancestor and labels and values follow together. Visible change: text and
+  number field values, radio and menu choices, and `DetailList` values shrink from the body size to
+  the label size, and `SelectionPanel`'s labels take the cased label recipe the other surfaces use.
+  
+  Fields, selects, radios, segmented bars and buttons read a second hook, `--wzl-field-font-size`,
+  before their own size; a params row sets it. A mark smaller than its value on purpose — a unit, a
+  stepper glyph, an input adornment, a hint — carries `data-wzl-subordinate`.
+- Updated dependencies [e30f4df]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [433540d]
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

@@ -1,5 +1,45 @@
 # @weasel-js/prefs
 
+## 1.11.1
+
+### Patch Changes
+
+- e30f4df: `DiagramView` can hold DOM against its nodes, groups and edges, report what the pointer is over, and let a group's members be dragged into a new order. All three are additive.
+  
+  - `overlays` places each `DiagramOverlay` against its target after every paint: centered on it, or beside it through geom's `placeRect`, flipping inside the view. An edge's place is the midpoint along its route. The view now renders a box around its canvas to hold them, and `className` goes on that box rather than on the canvas.
+  - `onHover` reports the node, group or edge under the pointer; `pickEdges` lets a click or a hover land on an edge whatever editing callbacks are set. `rectOf(id)` and `subscribeFrame` on the ref give a target's client rect and when to read it again.
+  - A `DataGroup` with `reorder: 'x' | 'y'` lets `onReorder` drag any member along that axis, carrying everything inside a member that is a group, or step the picked one with Alt and an arrow key. It reports `{ group, order }` and moves nothing. `layered` keeps such a group's members in the order given across every rank instead of sorting them by crossings. `createReorderAction`, `createStepReorderAction`, `reorderBindings` and `reorderContribution` are exported for use outside `DiagramView`.
+  
+  `SceneCanvas` takes `onHover`, called when the topmost pickable node under the pointer changes. `@weasel-js/react` exports `adoptCss`, `adoptCssOnce` and `styleRootOf`, the stylesheet adoption core's canvas and `KitSettingsFromPrefs` now share.
+- 8cd81e7: Adds API: `prefLeafValue(leaf, held, { unset })` in `@weasel-js/prefs` answers what a params surface shows for the value held at a leaf: that value, else the leaf's default. `prefValueAbsent(leaf, held)` says whether a value counts as held: `undefined` and `null` do not, except a paint's `null`, which is "no paint". `PrefsForm`, `PrefControl`, `SelectionPanel`, and labkit's `ControlPanel` and matrix all read a leaf's value through it.
+  
+  Changes what three surfaces show. A value held as `null` now shows the leaf's default in `PrefsForm` and `ControlPanel` (it drew an empty field), and reads as nothing held in `SelectionPanel`, where an `absentIsDefault` leaf shows its default. A clearable leaf holding nothing shows as cleared everywhere: `PrefsForm` drew a clearable number at its default, and `ControlPanel` did too when the config lacked the key.
+- 433540d: A container's unit scope (`ContainerNode.units`) now reaches grid snapping and node property
+  fields. A scope converts what is shown, typed and snapped to; every pose is still stored in world
+  units, and pose composition does not scale by it.
+  
+  - `gridSnapSource({ scopes: { root, spacing? } })` snaps the subject on the pitch of the unit
+    scope its nodes share, so a node inside a millimeter sub-assembly snaps on millimeter spacing.
+    `spacing` is read in that scope's units unless `scopes.spacing` gives a pitch per scope.
+    `scopedGridPitch` answers the pitch for a chain of scopes.
+  - A snap source is told the gesture's subject: `SnapCollect.ids`.
+  - `sceneSharedUnitScopes(scene, ids, root)` is the run of unit scopes every node of `ids` sits in.
+  - A number leaf takes `measure: 'length'` for a length stored in world units.
+    `prefLeafInScopes(leaf, scopes)` gives such a leaf the unit of the scopes it is shown in, built by
+    `scopedPrefUnit(scopes)`: shown in the innermost scope's base unit, with every unit of its system
+    accepted as typed text. The kit's node schemas mark X, Y, W, H and text padding as lengths.
+  - `SelectionPanel` takes `units`, the scene's outermost scope; given it, a length field shows the
+    selected nodes' shared scope.
+- Updated dependencies [e30f4df]
+- Updated dependencies [f819e61]
+- Updated dependencies [433540d]
+  - @weasel-js/react@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/quantity@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+  - @weasel-js/storage@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

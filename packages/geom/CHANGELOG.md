@@ -1,5 +1,69 @@
 # @weasel-js/geom
 
+## 1.11.1
+
+### Patch Changes
+
+- 4d99526: Constraint links now hold through whole-node transforms, preview through every path-edit drag, and have a gesture that makes them.
+  
+  - core: `PathEditExtension.finishTransform(ctx: PathTransformFinishCtx)` answers the other nodes a move, resize, rotate, flip, nudge or transform-again changes along with the ones it transforms — align and distribute too — committed in the same history entry; the `editAnchors` dep runs it as `transformOps(ops, label)`, and those actions now declare `editAnchors`. An extension may refuse a transform by answering null.
+  - core: `pathEditPreview` finishes each frame itself through the new `finishPathEditFrame`, so bend segment and the path-tools drags preview the node's constraints and linked nodes as they will commit. Breaking: its `current` thunk now answers a `PathEditFrame` (`{ path, origins? }`) instead of a bare path.
+  - geom: `PathsEditItem.yields` lets a path the edit left alone give way freely.
+  - path-tools: the constraints extension carries linked nodes through whole-node transforms; `constraintLinkConflictsOf(scene, id)` reports the links tying a node that do not hold; `linkAnchorAction` (in `constraintsPreset`) links an anchor Alt-dragged onto another node's anchor (`coincident`) or segment (`onPath`), with `linkTargetAt` and `linkConstraint` beside it.
+- 13fc67f: An edge label can be dragged along and beside its edge. `diagramLabelDrag({ scene, selected })`
+  returns a layer and a contribution: a drag on a label (`diagram.moveLabel`) stores where it was
+  dropped as a fraction along the route (`at`), an offset from the line (`offset`), and
+  `dodge: false`, so label placement leaves it there and it keeps its spot when the edge reroutes. A
+  click on a label selects its edge, and a double-click edits its text. Locked and hidden labels do
+  not drag. With no `commit` the drag writes the scene in one undoable entry; `DiagramView` reports it
+  through `onMoveLabel` instead. `diagram.resetLabel` (`RESET_LABEL_ACTION_ID`) puts the selected
+  edges' dragged labels back to `LABEL_PLACEMENT`, which the main entry now exports.
+  
+  Geom adds `PathMeasure.nearest`, the arc length along a path nearest a point.
+  
+  All of it is additive. weaselchart adds label dragging and Format › Connector › Reset label.
+- 50da815: The flat math decides "these two directions are one" the same way everywhere. `flatDim`,
+  `closestOnFlat` and `intersectFlats` used to count two directions as distinct down to 1e-9 rad
+  apart, while the solve behind `closestBetweenFlats` called them parallel below 1e-6 rad; the solve
+  also judged a column against the longest one rather than its own length, so a short segment
+  direction in a snap candidate's span could be dropped at a much wider angle. Both now treat
+  directions under 1e-6 rad apart as one, measured against each direction's own length.
+- 0f455dc: `trianglesToPath` unions a mesh by its outline instead of by its triangles. Edges that two
+  triangles share in opposite directions cancel, and what is left is swept once under the nonzero
+  rule, so the sweep no longer splits every interior edge at every other edge crossing it. A stroke
+  whose ribbon overlaps itself all along — `strokeToPath` on 300 tall, narrow humps — used to make
+  polygon-clipping give up ("Infinite loop when passing sweep line over endpoints"); it now
+  outlines, and shorter ones of the same shape take about a third of the time they did.
+- 15efc86: `trianglesToPath` joins a vertex lying on another triangle's edge into that edge before the union, so a mesh whose float32 vertices sit a hair off their neighbors' edges no longer leaves cracks. A stroke ribbon puts a join's pivot on its segments' ends, so `strokeToPath` and `offsetPath` answered hairline slivers beside every curve: `offsetPath` of a square with a round corner, grown by 10, gave six subpaths instead of one, and grown by the corner's radius it ran a spike into the interior. A 2,000-point zigzag stroked 6 wide, which made polygon-clipping throw ("Unable to find segment"), now outlines too.
+- 07b686c: `puppetMap` is smooth across its mesh: points between the solved vertices are placed by a Clough–Tocher interpolant instead of each triangle's affine map, so a puppet-warped outline bends without the small corners it used to pick up where it crossed from one triangle to the next. Pins still land exactly where they are dragged, pins that have not moved leave the shape exactly where it is, and a point off the shape is carried on in a straight line from the outline. Every puppet-warped shape redraws slightly differently.
+- 041bc38: `simplifyPath` and `warpPath` hold their refitted curves within the tolerance everywhere, not
+  only at the points they sample from the original. A refit used to check only that those samples
+  lay near the fitted cubic, and a straight segment is sampled at most eight times, so a cubic
+  fitted across a turn and the start of a long flat could bulge between samples: 0.29 off at
+  tolerance 0.1 on a rounded corner `offsetPath` grows. Each fitted cubic is now also checked
+  against the run it replaces, and split where it strays.
+- 2b267d5: Snap pipeline follow-ups.
+  
+  - kernel3d's `createSnap` takes `kitSettings` and reads its reach from `targets.snapPx` there, as a canvas does (`reachPx` still overrides it).
+  - Two snap sources sharing an id now throw, on a canvas when a gesture begins and in kernel3d's `createSnap`, where before the later one silently replaced the earlier: a `<SceneCanvas snap>` source and a preset's alignment source were the likely pair, and the page box went with it. A source still replaces one of the canvas's defaults (`'rotation'`, `'path-snap'`) by taking its id. Core exports the check as `assertSnapSourceIds`.
+  - The symmetry axis knob and a repeat's step handle turn through a `rotate` session on the `snap` dep: they now snap to quarter turns and other nodes' angles without Shift, Shift keeps the 15° steps, Ctrl suspends snapping, and the angle readout draws. Breaking: `handleChange` takes a `SymmetryHandleSnap` (`{ point, angle }`, new export) in place of its `stepped` flag and point function. Without a `snap` dep the handles do not snap, Shift included.
+  - `resolveSnap` keeps every required candidate past `poolSize`, so Shift's steps can no longer be crowded out by 24 nearer targets, and drops a candidate with a non-finite locus direction instead of treating its line as a point.
+  - A move begins its snap session once the drag passes its threshold, so a click on a selected body reads nothing for snapping, and its `geometry` probe is placed within the canvas's reach rather than a fixed 8px.
+- 8f2c044: `resolveSnap` no longer lists a candidate in `members` when the other members already pin the same move — a line taken before a point on it now reports only the point. Such a candidate still appears in `satisfied`, and it no longer breaks a tie between two equally near combinations on its order.
+- 71d4416: Synthetic-bold text reaches the outline tier. Past the outline threshold, a glyph faked bold from a
+  lighter face used to stay on the distance field; it is now drawn as geometry, its outline grown by
+  the distance the field's threshold shift moves the edge, so it is as heavy on either side of the
+  threshold. A stroked synthetic-bold run, which stayed on the atlas unstroked, is now stroked. A
+  grown glyph's `LaidOutOutlineGlyph.d` holds the grown outline, and its `key` names the growth.
+  
+  `@weasel-js/geom` gains `pathToD`, the inverse of `pathFromD`, also exported from `@weasel-js/core`.
+  `@weasel-js/svg`'s `serializePathD` is now that function.
+- cee04b9: A stroke on synthetic-bold text traces only the glyph's edge. The grown outline overlapped itself where grown parts met and looped at some inside corners, which a fill hides and a stroke drew as stray lines inside the glyph. New in geom: `mergeRegion`, which redraws a nonzero region as its outline alone, cutting contours where they cross and keeping only the pieces with fill on one side, curves kept as curves.
+- e1eeb08: Speed up the crossing check every nonzero fill runs before triangulating: it reads the flattened
+  coordinates without building an edge graph and sorts with a native numeric sort, which takes a
+  64-curve fill from 0.21 ms back to 0.18 ms. The turn bound a thick stroke's flattening applies
+  stops at the first control-polygon leg that exceeds it. Neither changes a mesh's vertices.
+
 ## 1.11.0
 
 ### Patch Changes

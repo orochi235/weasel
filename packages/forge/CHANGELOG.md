@@ -1,5 +1,121 @@
 # @weasel-js/forge
 
+## 1.11.1
+
+### Patch Changes
+
+- 4573b46: `OverlayPortalProvider` takes `contained`: its container stands in for the viewport. A `Dialog` below it covers the
+  container rather than the window, traps focus, and makes inert only what the container holds, leaving the rest of
+  the page usable and its scrolling alone. React Aria's modal hides the whole document and locks its scroll with no
+  way to scope either, so a contained `Dialog` is built from React Aria's public pieces instead.
+  
+  forge's in-page trials are contained, so a story's modal dims its own trial and the workshop stays usable around
+  it. A story now scrolls inside its trial host rather than the host scrolling, so an overlay it portals stays over
+  the trial however far the story has scrolled.
+- aaead9a: The workshop's Accessibility panel outlines the elements a finding names while the pointer or keyboard focus is on
+  it: a whole rule outlines every element it failed, one selector outlines just that element. The frame protocol
+  gains an `a11y.highlight` message carrying the targets to outline; an empty list clears them. An isolated story
+  with the `fullscreen` layout now gets a frame as tall as the viewport, so a child at `height: 100%` fills it.
+- 9f6d0e0: The sidebar's Components view nests a component whose title extends another's in the same library inside that
+  component, ahead of its stories, as the Tree view does: `Primitives/Prefs/Split values` sits under `Prefs` rather
+  than as a top-level `Split values`. A filter that drops the parent leaves the child on its own row.
+- 33cef5b: forge's CSS Vars panel is hidden by default, behind a new toggle in the lab header beside Info. The lab remembers
+  whether it was left on. `cssVars: false` still leaves out the panel, and now the toggle with it.
+- 6336a60: An index page's history now reads `Created <date> (<version>)` and `Modified <date> (<version>)`: the release that shipped the component's first commit joins its created date in place of the separate Since row, and the modified date carries the first release holding the last change, or `unreleased` while none does.
+- 1302429: A story test gives a story's `viewport` to the box the story renders in, as the workshop's stage does, instead of resizing the browser page. The resize was a round trip through Playwright that took 7 to 13 s on a loaded machine, so a story with a viewport, and the story after it, could time out. `RunStoryOptions` loses its `viewport` callback, and the tests forge generates no longer import `vitest/browser`.
+- 11ef039: A story in the workshop document now sees its trial as a size container, so `100cqb` and `100cqi` are the
+  trial's height and width the way `100vh` and `100vw` were a frame's. `LabShell` sizes to the nearest size
+  container before the viewport, so a lab story fills its trial instead of running a window's height past it.
+  Outside any size container a shell is `100cqb`, which falls back to the small viewport height: on a phone,
+  the height with the browser's toolbars shown rather than `100dvh`'s current height.
+- 9267f75: Five new `@weasel-js/ui` entry points reach exports that were only on the root barrel: `@weasel-js/ui/stance` (`useStance` and its types), `@weasel-js/ui/portal-host` (`OverlayPortalProvider`, `useOverlayPortal` and the rest of the overlay portal helpers), `@weasel-js/ui/color` (`oklchToHex`, `chromaAt`, `rampColor`, `colorRamp`), `@weasel-js/ui/paint-gradient-track` (`paintGradientTrack`) and `@weasel-js/ui/kit-settings` (`uiKitSettingsSchema`). The root barrel still exports what it did. forge and labkit now import ui only by subpath, outside labkit's `weasel-ui` passthrough.
+- 2fc887a: labkit and forge import `@weasel-js/ui` through its component subpaths (`@weasel-js/ui/components/<Name>`) instead of the root barrel, wherever a subpath publishes the name. Nothing changes for a consumer: labkit re-exports the same names, and its `weasel-ui` subpath still re-exports the barrel.
+- Updated dependencies [70b12d1]
+- Updated dependencies [162d3a8]
+- Updated dependencies [5b5135c]
+- Updated dependencies [02037a7]
+- Updated dependencies [e6f374a]
+- Updated dependencies [6d94b67]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [4573b46]
+- Updated dependencies [853ce69]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [c89153d]
+- Updated dependencies [f0172e2]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [716561f]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [c497405]
+- Updated dependencies [7865ca5]
+- Updated dependencies [00bfbc7]
+- Updated dependencies [0e24110]
+- Updated dependencies [c2dfd4e]
+- Updated dependencies [66def8d]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [d8dc50f]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [23dbaff]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [2c53843]
+- Updated dependencies [87cded1]
+- Updated dependencies [24267d3]
+- Updated dependencies [683dea0]
+- Updated dependencies [26fdff3]
+- Updated dependencies [7411f6e]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [f819e61]
+- Updated dependencies [6be0cfa]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [bf359a2]
+- Updated dependencies [ac892f8]
+- Updated dependencies [71d4416]
+- Updated dependencies [566e321]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [11ef039]
+- Updated dependencies [849f9e4]
+- Updated dependencies [9267f75]
+- Updated dependencies [2fc887a]
+- Updated dependencies [433540d]
+  - @weasel-js/core@1.11.1
+  - @weasel-js/ui@1.11.1
+  - @weasel-js/labkit@1.11.1
+  - @weasel-js/theme@1.11.1
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

@@ -1,5 +1,40 @@
 # @weasel-js/gestures
 
+## 1.11.1
+
+### Patch Changes
+
+- 411b629: A `carry` spec takes a `target`, matched against what is under the carry the way a click's is: a binding can now say "dropped onto a selected body" or onto an affordance. An immediate action with a target fires only on a release over it; an ongoing one starts on the first step over its target, as the carry comes over or as it moves on. The route grammar reads `carry(lab/*) => selected-body`. A carry's immediate params carry `affordance`, `bodyTarget`, and `bodyKind`.
+  
+  `Action.enabled`'s `carried` argument is now the exported `Carried` type and sees a carry too: `{ items: [], carry: { type, value } }`, so an action can refuse a payload it would not take.
+- 995eac7: A double click, and a multitouch tap, are now timed by when their inputs happened rather than when
+  each was handled, so a long task between a user's two clicks no longer drops the double click.
+  `PointerSample` takes an optional `timeStamp` on the recognizer clock's timeline; the dispatcher
+  passes each pointer event's own `timeStamp`. A sample without one, or with 0, or with one ahead of
+  the clock (jsdom stamps events with `Date.now()`), is timed when it is handled, as before.
+- 716561f: A `hover` spec takes `held`: `'optional'` keeps it firing while a button is down, `true` fires it
+  only then, read the way `mods` reads a modifier. In a route it is `hover ?held` / `hover +held`.
+  The binding still claims nothing, so a drag keeps its moves; a hover's params gain `held`.
+  `useGestureDispatcher`'s `channels.hover` attaches hovers without the rest of the pointer channel,
+  so no press opens a gesture or captures the pointer.
+  
+  The loupe now aims through the dispatcher (`loupe.aim`, `loupe.leave`) rather than listeners of its
+  own, and still follows the pointer through a drag. `useLoupe` alone no longer aims: mount
+  `<LoupeGestures>` with it, as `<TrialLoupe>` does.
+- c497405: Add `KeyDiagram`, which draws a keyboard from a layout and groups its keys into `KeyBank`s the way
+  the keyboard does — function row, main block, navigation cluster, arrows. Given `keys`, it draws only
+  those, in their places, and shrinks to fit them; without a layout it draws them in a row, ungrouped.
+  Keys in `held` light up, `marks` print what a key does under it and tint it, and `linger` hides the
+  diagram until a key is held and for that many seconds after. `useHeldKeys` reads `held` off the
+  keyboard.
+  
+  Layouts name keys by `KeyboardEvent.code`. `ansiLayout(platform)` and `KEYBOARD_LAYOUTS` give each
+  platform's ANSI tenkeyless board, and `placeKeys` works out where a layout's keys sit. Gestures gains
+  `keySpecFromCode`, the platform's legend for a physical key: `MetaLeft` is `⌘` on macOS and `⊞` on
+  Windows.
+- Updated dependencies [c2dfd4e]
+  - @weasel-js/menu@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

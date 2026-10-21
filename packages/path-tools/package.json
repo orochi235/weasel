@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/path-tools",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Path-editing tools for a weasel canvas, as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, corner shape, path effects, warps, and the Girth and Shape Builder tools.",
   "license": "MIT",
   "type": "module",
@@ -44,19 +44,19 @@
     "build": "tsup && cp src/icons.table.json dist/"
   },
   "dependencies": {
-    "@weasel-js/cursor": "1.11.0",
-    "@weasel-js/icons": "1.11.0",
-    "@weasel-js/paint": "1.11.0",
-    "@weasel-js/prefs": "1.11.0",
-    "@weasel-js/react": "1.11.0",
-    "@weasel-js/registry": "1.11.0",
-    "@weasel-js/renderer": "1.11.0",
-    "@weasel-js/routing": "1.11.0",
-    "@weasel-js/stroke": "1.11.0"
+    "@weasel-js/cursor": "1.11.1",
+    "@weasel-js/icons": "1.11.1",
+    "@weasel-js/paint": "1.11.1",
+    "@weasel-js/prefs": "1.11.1",
+    "@weasel-js/react": "1.11.1",
+    "@weasel-js/registry": "1.11.1",
+    "@weasel-js/renderer": "1.11.1",
+    "@weasel-js/routing": "1.11.1",
+    "@weasel-js/stroke": "1.11.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.11.0",
-    "@weasel-js/geom": "1.11.0",
+    "@weasel-js/core": "1.11.1",
+    "@weasel-js/geom": "1.11.1",
     "react": ">=18"
   },
   "publishConfig": {

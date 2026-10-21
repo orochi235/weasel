@@ -1,5 +1,123 @@
 # @weasel-js/routing
 
+## 1.11.1
+
+### Patch Changes
+
+- 70b12d1: An action can carry a settings form: `Action.settings` holds a prefs schema, a `read` that gives
+  the selection's current values (and which fields it disagrees on), and an optional `params` that
+  turns one field's change into the params the action is triggered with. Every surface that lists
+  actions draws such an action as its form instead of a button that triggers it bare: a bar or a
+  panel opens it in a popover under the action's button, a menu shows it as a submenu of its fields,
+  and the command palette opens it in a dialog. Each change is one trigger, so one undo step. The
+  form is disabled while the action's `enabled` says no. `readActionSettings` and
+  `actionSettingsParams` are what the surfaces read it through; `useActionSettings`,
+  `ActionSettingsPopover` and `ActionSettingsDialog` are in `@weasel-js/ui/components/ActionSettings`.
+  `BarActionButton` takes `expanded` for a button that opens a dialog.
+  
+  Warp Settings (`configureWarp`) and Edit Path Effect (`editPathEffect`) carry one each, so Warp
+  Settings on a bar now opens Mode, Rows, Columns, Mapping and Tolerance for the selected warps
+  rather than doing nothing, and both are disabled with nothing they apply to selected.
+  `editPathEffect` takes an optional `kind`, limiting an edit to effects of that kind, and now reads
+  `selection`. The forms are exported as `warpSettingsForm` and `pathEffectSettingsForm`.
+- 411b629: A `carry` spec takes a `target`, matched against what is under the carry the way a click's is: a binding can now say "dropped onto a selected body" or onto an affordance. An immediate action with a target fires only on a release over it; an ongoing one starts on the first step over its target, as the carry comes over or as it moves on. The route grammar reads `carry(lab/*) => selected-body`. A carry's immediate params carry `affordance`, `bodyTarget`, and `bodyKind`.
+  
+  `Action.enabled`'s `carried` argument is now the exported `Carried` type and sees a carry too: `{ items: [], carry: { type, value } }`, so an action can refuse a payload it would not take.
+- 853ce69: A dep source is handed `below`, which reads the source it displaced, in its own scope or one above, so a source can handle part of a dep and pass the rest to the default (`DepSource`, accepted by `useDepSource` and `DepRegistry.register`). A source taking no argument works as before. `useStencilInsert` uses it: a kind no stencil names goes to the `insert` dep beneath it, so core's rect, ellipse and text tools work beside stencils.
+- 5cdc3d0: `BROWSER_RESERVED_CHORDS` adds Mod+Shift+I, J, C and K: Chrome's devtools, console and inspector on Windows and Linux, and Firefox's Browser and Web Console. Bridge and Bridge anchors move off Mod+Shift+J to Alt+J, which is a breaking change for anyone relying on the old default.
+- 8c1861a: Add a devtools hook. Each mounted `<SceneCanvas>` registers a root on `window.__weaselDevtools__`,
+  which serves a panel over a versioned message protocol: the scene tree a level at a time, a node's
+  pose and data, selection, view, tools, probes, the dispatch trace and frame stats, plus select,
+  highlight, set-tool and debug-overlay commands. A dev build installs the hook itself; a production
+  build installs it only when the app imports the new `@weasel-js/core/devtools` subpath, which also
+  exports the protocol types and the in-page and `postMessage` transports. See `docs/devtools.md`.
+  
+  The debug overlay gains a `highlight` feature (`debug={{ highlight: ids }}`), and `<Canvas>` and
+  `<SceneCanvas>` take an `aria-label`.
+  
+  Breaking: the dispatch trace is per canvas now. `window.__weaselDispatchLog__`,
+  `window.__weaselDispatchLive__` and `window.__weaselCoordLog__` are gone, and so are routing's
+  `recordModeSwitch` and `publishLiveDispatch`. A dispatcher records into `DispatcherContext.trace`
+  (`createDispatchTrace`), which `useGestureDispatcher` creates or takes as its `trace` option and
+  publishes as the `dispatchTrace` dep; record a mode switch with
+  `deps.get('dispatchTrace')?.recordModeSwitch(…)`.
+- 2eb0370: The devtools hook serves two more requests, still under protocol 1. `get-registry` describes what a
+  canvas has registered: its tools and preset contributions with their bindings, its actions, the dep
+  names its registry answers, and its node routing kinds. `get-history` hands back the scene's history
+  steps since a cursor — each push, merge, undo, redo or jump, with the ops it carried and where the
+  history stood — from a rolling buffer of 200 that records in dev builds and in production while a
+  panel is connected. `changed` reports both as the new `registry` and `history` areas. See
+  `docs/devtools.md`.
+  
+  `History` gains `observe(listener)`, which hears what each change to the stacks was, and
+  `touchedIdsFromOps` is exported from `@weasel-js/history`. A hand-written `History` implementation
+  must add `observe`. `DepRegistry` gains an optional `list()` naming every dep it answers.
+- 995eac7: A double click, and a multitouch tap, are now timed by when their inputs happened rather than when
+  each was handled, so a long task between a user's two clicks no longer drops the double click.
+  `PointerSample` takes an optional `timeStamp` on the recognizer clock's timeline; the dispatcher
+  passes each pointer event's own `timeStamp`. A sample without one, or with 0, or with one ahead of
+  the clock (jsdom stamps events with `Date.now()`), is timed when it is handled, as before.
+- 716561f: A `hover` spec takes `held`: `'optional'` keeps it firing while a button is down, `true` fires it
+  only then, read the way `mods` reads a modifier. In a route it is `hover ?held` / `hover +held`.
+  The binding still claims nothing, so a drag keeps its moves; a hover's params gain `held`.
+  `useGestureDispatcher`'s `channels.hover` attaches hovers without the rest of the pointer channel,
+  so no press opens a gesture or captures the pointer.
+  
+  The loupe now aims through the dispatcher (`loupe.aim`, `loupe.leave`) rather than listeners of its
+  own, and still follows the pointer through a drag. `useLoupe` alone no longer aims: mount
+  `<LoupeGestures>` with it, as `<TrialLoupe>` does.
+- ee4cf85: A drop or paste now keeps string flavors of any exact MIME a registered content handler names in its `match` or `types`, for as long as it stays registered, so a handler can claim a drag from the app's own UI by a type of its own instead of tagged `text/plain`. Globs and `application/octet-stream` admit nothing. `admitIngestMime(mime)` (routing, re-exported from core's ingestion module) does the same for code outside the handler registry and returns a release. The kit weasel-JSON handler's `application/x-weasel-clipboard+json` flavor now reaches it on paste as well.
+- 0e24110: A key binding can now carry `opts: { over: true }`: it is live while the pointer is over its canvas, whichever canvas holds the keys, and only then. The loupe's peek key uses it, so with two loupes on a page the key peeks the one under the pointer rather than the one last pressed in, or none before anything was pressed. A `<LoupeGestures>` outside a camera now mounts its own input scope, so two of them under one provider no longer stack their actions on one id.
+- c2dfd4e: A menu can hold a line of text edited in place: `MenuTextEntry` (`kind: 'text'`), with the controller's `textValue` and `setText` holding what was typed while the menu stays open. A string leaf in a schema drawn as a menu becomes one when something writes it, and stays a read-only `Name: value` row when it is a `readout` or nothing does. The DOM menu draws a text field that Enter on the row focuses; Enter or blur writes the text and Escape puts it back. The HUD menu has no text entry, so it draws the row's value read-only.
+- ac892f8: `EffectEditor` takes `look`: `'nodeGraph'` (default), `'rack'`, or `'lanes'`, with that look's options. Under rack and lanes, connecting, reconnecting, and deleting work as under node graph, and a stage on the main line drags along it to another place, which rewires the pipeline (`'Reorder'`). Under lanes a lane drags by its label (`'Reorder lanes'`). `editorScene(doc, look, options)` replaces the node-graph-only signature, which is breaking for a caller that passed options second.
+  
+  The effect model gains `chainLinks`, `moveInChain`, and `canMoveInChain`; `EffectDoc.laneOrder` with `setLaneOrder`; `laneTypeOf`; and `order` and `laneOrder` on `EffectLookResult`, which `rack` and `lanes` fill. `@weasel-js/diagram` adds `createSlotReorderAction`, `slotReorderContribution`, and `sequenceSlots`, which drag one item of any drawn sequence along its axis and draw an insertion bar. Core's overlay strokes and routing's `OverlayRole` add the `insert` and `refused` roles that bar draws in.
+- 1bb4752: Tool sets: a `ToolSet` names a group of tool ids and other sets as one unit (`toolSet`, `toolIdsOf`, `withoutTools`, `toolSetHas`). `<SceneCanvas defaultTools>`, a preset's `tools`, and `ToolPalette`'s `include` each take sets. Core exports one per family, `SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`, `PAGE_TOOLS` and `RIG_TOOLS`, with `BUILTIN_TOOLS` over them all; `BUILTIN_TOOL_IDS` is derived from it, and a shape kind's new `family` field says which set names it. `@weasel-js/path-tools` exports `WARP_TOOLS`, `RESHAPE_TOOLS`, `PATH_TOOLS_TOOLS`, and `usePathToolsTools()`, which builds every one of its tools keyed by id.
+- e9404d0: A move, resize or rotate keeps its in-flight poses in one place: the scene's pose overrides.
+  Their handles no longer answer `previewPose`; `previewIds` still names the nodes in flight, and
+  `previewData` still carries what a transform follower previews. The preview ghost
+  (`resolvePreviews`) and the selection chrome resolve a previewed id with no `previewPose` through
+  `effectivePose`, so they read the same pose picking and derived geometry already did. Code that
+  read `previewPose` off one of these handles reads `effectivePose(scene, node)` instead. A
+  transform follower that previews a node at a pose other than its own now publishes that pose to
+  the overrides too; one answering the node's own pose pins nothing, so a derived node keeps
+  deriving.
+- Updated dependencies [411b629]
+- Updated dependencies [312eb35]
+- Updated dependencies [4d99526]
+- Updated dependencies [2eb0370]
+- Updated dependencies [e30f4df]
+- Updated dependencies [13fc67f]
+- Updated dependencies [50da815]
+- Updated dependencies [995eac7]
+- Updated dependencies [716561f]
+- Updated dependencies [c497405]
+- Updated dependencies [c2dfd4e]
+- Updated dependencies [0f455dc]
+- Updated dependencies [15efc86]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [07b686c]
+- Updated dependencies [041bc38]
+- Updated dependencies [f819e61]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [433540d]
+  - @weasel-js/gestures@1.11.1
+  - @weasel-js/history@1.11.1
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/menu@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/quantity@1.11.1
+  - @weasel-js/cursor@1.11.1
+  - @weasel-js/modes@1.11.1
+  - @weasel-js/registry@1.11.1
+  - @weasel-js/select@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

@@ -1,5 +1,51 @@
 # @weasel-js/history
 
+## 1.11.1
+
+### Patch Changes
+
+- 312eb35: Themes can be edited. `forkTheme`, `setThemeValue` (by a `ThemePath` such as
+  `['roles', 'accent', 'fill']` or `['series', 2]`), `addThemeRole`, `renameThemeRole`, and
+  `removeThemeRole` return a new theme and leave the one given alone, so a shipped theme is never
+  changed; `editableTheme` forks a shipped theme and passes a custom one through. `DiagramTheme` takes
+  `roleLabels`, the names of roles beyond the shipped six, and `themeRoles(theme)` lists every role
+  with its name. A removed role's shapes are drawn in the default role. `parseDiagramTheme` and
+  `themeToJson` read and write `.weasel-theme.json` files, and a bad file comes back as errors naming
+  each bad value by its path. `applyDiagramTheme` takes `{ coalesceKey, from }`.
+  
+  Applying a theme whose font size differs from the scene's moves existing text by the step between
+  them: shape rows, titles, and connector labels keep their offset from the body size.
+  `setDiagramFontSize(scene, ids, size)` sets a shape's or connector's text size by hand and records
+  it in the trait's new `ownFont` (`FontField`), which a theme's size change then leaves and choosing
+  a role keeps. A body whose text changes size is laid out again in the same undo entry: it grows
+  to fit its rows and never shrinks. A body built from text rows alone records how it stacks them
+  as `DiagramNode.body`, its rows carrying `bodyRow`; `relayoutBodies` lays such bodies out again,
+  and `rendererMeasure` measures text from the registered font as the renderer draws it.
+  
+  Core's `scene.batch(label, fn, { coalesceKey })` folds a batch into the undo entry before it when
+  that one was recorded under the same key and nothing came between, so a run of batches, such as a
+  color dragged, undoes as one entry back to the state before the first. Unlike an op's own key it
+  needs no `coalesceWindowMs`; `scene.history.seal()` ends the run. `@weasel-js/history`'s
+  `recordEntry` takes the same `coalesceKey`.
+  
+  weaselchart's Format › Theme › Edit Theme… opens a Theme panel: every role's colors, with roles
+  added, renamed, and removed (not the default), the connector, label, container, lane, page, and
+  series colors, and the font. The Style panel gains Text size. The chart recolors as a color is dragged, and one undo takes back the
+  drag. The first edit to a shipped theme copies it into the chart as "<name> (edited)". Import
+  Theme… and Export Theme… move a theme between charts.
+- 2eb0370: The devtools hook serves two more requests, still under protocol 1. `get-registry` describes what a
+  canvas has registered: its tools and preset contributions with their bindings, its actions, the dep
+  names its registry answers, and its node routing kinds. `get-history` hands back the scene's history
+  steps since a cursor — each push, merge, undo, redo or jump, with the ops it carried and where the
+  history stood — from a rolling buffer of 200 that records in dev builds and in production while a
+  panel is connected. `changed` reports both as the new `registry` and `history` areas. See
+  `docs/devtools.md`.
+  
+  `History` gains `observe(listener)`, which hears what each change to the stacks was, and
+  `touchedIdsFromOps` is exported from `@weasel-js/history`. A hand-written `History` implementation
+  must add `observe`. `DepRegistry` gains an optional `list()` naming every dep it answers.
+- @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes
