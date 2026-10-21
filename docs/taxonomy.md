@@ -510,7 +510,9 @@ a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
 during one raw input apply when it ends, and the keymap's verdict on the first
 half decides the second. `<KeymapHint>` (`@weasel-js/ui`) lists the open
 keymap's rows, Escape first, from `useOpenKeymap`; a `MenuShortcut` carries the
-leaders that reach it and `formatShortcut` draws it `Loupe ▸ 2`.
+leaders that reach it. `formatShortcutParts` gives them as `leader` beside the
+key's own chips, `formatShortcut` writes them `Loupe ▸ 2`, and `KeySequence`
+(its `leader` prop) and `ShortcutKeys` draw them as labels before the keycaps.
 
 ### Interaction
 

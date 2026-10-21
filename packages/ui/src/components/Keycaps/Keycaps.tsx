@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import s from './Keycaps.module.css';
-import type { KeyLegend } from '@weasel-js/gestures';
+import { SHORTCUT_LEADER_SEPARATOR, type KeyLegend } from '@weasel-js/gestures';
 import { KeyCap, inferKeycapKind, type KeyCapVariant } from './Keycap';
 
 /** One key in a shortcut. An `optional` key renders inverted. */
@@ -30,12 +30,15 @@ export interface KeySequenceProps {
   /** Forwarded to every `KeyCap` in the sequence. Overrides the design-
    *  system UI font for that chip only. */
   font?: string;
+  /** The keymaps leading to the keys, outermost first, each drawn by its label
+   *  before them: `Loupe ▸ 2`. `formatShortcutParts` gives these. */
+  leader?: readonly { label: string }[];
   className?: string;
 }
 
 /** Renders a shortcut as a row of `KeyCap` chips, one per key. Optional
  *  keys render inverted to distinguish them from required ones. */
-export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'default', font, className }: KeySequenceProps) {
+export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'default', font, leader, className }: KeySequenceProps) {
   if (!keys || keys.length === 0) {
     return <span className={[s.keysEmpty, className].filter(Boolean).join(' ')}>—</span>;
   }
@@ -52,6 +55,12 @@ export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'd
     (joins === 'all' || (joins === 'key' && inferKeycapKind(ordered[i]!.label) !== 'modifier'));
   return (
     <span className={[s.keys, className].filter(Boolean).join(' ')}>
+      {leader?.map((step, i) => (
+        <Fragment key={`leader-${i}`}>
+          <span className={s.leader}>{step.label}</span>
+          <span className={s.leaderSep} aria-hidden="true">{SHORTCUT_LEADER_SEPARATOR.trim()}</span>
+        </Fragment>
+      ))}
       {ordered.map((k, i) => (
         <Fragment key={i}>
           {sepBefore(i) ? <span className={s.sep}>{separator}</span> : null}

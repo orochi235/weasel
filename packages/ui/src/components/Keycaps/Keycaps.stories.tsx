@@ -158,6 +158,16 @@ export const FromShortcut: Story = {
   },
 };
 
+/** A key inside a keymap, after the keymaps that lead to it: `formatShortcutParts`
+ *  gives the `leader` and the `keys`. */
+export const InKeymap: Story = {
+  args: {
+    leader: [{ label: 'View' }, { label: 'Loupe' }],
+    keys: [{ label: '⌘' }, { label: '2' }],
+    joins: 'none',
+  },
+};
+
 /** A `then`-style separator for two-step (chord) sequences. */
 export const CustomSeparator: Story = {
   args: {

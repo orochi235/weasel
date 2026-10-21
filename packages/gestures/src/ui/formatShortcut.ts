@@ -1,6 +1,6 @@
 import type { MenuShortcut } from '@weasel-js/menu';
 import { keySpecsFromShortcut } from './keySpecsFromShortcut';
-import { detectPlatform, type KeySpecsFromModsOptions, type Platform } from './keySpecsFromMods';
+import { detectPlatform, type KeyLegend, type LegendStyle, type Platform } from './keySpecsFromMods';
 
 /** A keyboard shortcut as the formatters read it: `@weasel-js/menu`'s `MenuShortcut`. */
 export type ShortcutInput = MenuShortcut;
@@ -9,21 +9,40 @@ export type ShortcutInput = MenuShortcut;
 export interface FormatShortcutOptions {
   /** Defaults to the detected platform. */
   platform?: Platform;
+  /** {@link formatShortcutParts} only; {@link formatShortcut} picks its own. Defaults to `'auto'`. */
+  legend?: LegendStyle;
 }
 
-const labels = (b: ShortcutInput | undefined, opts: KeySpecsFromModsOptions) =>
-  b ? keySpecsFromShortcut({ ...b, shift: b.shift === true }, opts)?.map((k) => k.label) : undefined;
+/** One keymap on the way to a key: its label, and the chips of the leader that opens it. */
+export interface ShortcutLeaderStep {
+  label: string;
+  keys: readonly KeyLegend[];
+}
 
-/** Format a shortcut as an array of display chips, one per key: the
- *  modifiers, then the key, each as the platform's keyboard prints it, so
- *  `mod` is `⌘` on macOS and `Ctrl` elsewhere. UIs that want a boxed per-key
- *  look render each chip in its own element. `shift: 'optional'` is treated
- *  as falsy. */
+/** A shortcut as display chips: {@link formatShortcutParts}'s result. */
+export interface ShortcutParts {
+  /** The keymaps leading to the key, outermost first; empty for a key outside any keymap. */
+  leader: readonly ShortcutLeaderStep[];
+  /** The key's own chips: the modifiers, then the key. */
+  keys: readonly KeyLegend[];
+}
+
+/** What {@link formatShortcut} writes after each leader step's label: `Loupe ▸ 2`. */
+export const SHORTCUT_LEADER_SEPARATOR = ' ▸ ';
+
+/** Format a shortcut as display chips, one per key: the modifiers, then the
+ *  key, each as the platform's keyboard prints it, so `mod` is `⌘` on macOS
+ *  and `Ctrl` elsewhere, after the keymaps that lead to it (`Loupe ▸ 2`).
+ *  UIs that want a boxed per-key look render each chip in its own element.
+ *  `shift: 'optional'` gives an optional chip. */
 export function formatShortcutParts(
   b: ShortcutInput | undefined,
   opts: FormatShortcutOptions = {},
-): readonly string[] | undefined {
-  return labels(b, opts);
+): ShortcutParts | undefined {
+  const keys = keySpecsFromShortcut(b, opts);
+  if (!b || !keys) return undefined;
+  const leader = (b.leader ?? []).map((l) => ({ label: l.label, keys: keySpecsFromShortcut(l.shortcut, opts) ?? [] }));
+  return { leader, keys };
 }
 
 /** Format a shortcut as a single display string. Order: mod, shift, alt,
@@ -36,9 +55,9 @@ export function formatShortcut(
   opts: FormatShortcutOptions = {},
 ): string | undefined {
   const platform = opts.platform ?? detectPlatform();
-  const keys = platform === 'macos'
-    ? labels(b, { platform })?.join('')
-    : labels(b, { platform, legend: 'text' })?.join('+');
-  if (keys === undefined || !b?.leader?.length) return keys;
-  return [...b.leader.map((l) => `${l.label} ▸ `), keys].join('');
+  const mac = platform === 'macos';
+  const parts = formatShortcutParts(b && { ...b, shift: b.shift === true }, mac ? { platform } : { platform, legend: 'text' });
+  if (!parts) return undefined;
+  const keys = parts.keys.map((k) => k.label).join(mac ? '' : '+');
+  return [...parts.leader.map((l) => `${l.label}${SHORTCUT_LEADER_SEPARATOR}`), keys].join('');
 }
