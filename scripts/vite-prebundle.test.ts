@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { bundledDirs, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import { bundledDirs, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import { relativeImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
 afterAll(() => rmSync(tree, { recursive: true, force: true }));
@@ -91,5 +92,56 @@ describe('bundledDirs', () => {
   it('leaves out the app itself and the packages served from source', () => {
     const dirs = bundledDirs('/repo', ['/repo/apps/draw/src'], ws, new Set(['@weasel-js/ui', '@weasel-js/labkit']));
     expect(dirs).toEqual(['/repo/packages/geom', '/repo/packages/core', '/repo/apps/shared/editor/src']);
+  });
+});
+
+describe('relativeImportsIn', () => {
+  it('finds what a file loads by path, leaving out what is erased', () => {
+    const code = [
+      "import { a } from './a';",
+      "import type { B } from './b';",
+      "import { type C } from './c';",
+      "export { d } from '../d';",
+      "export type { E } from './e';",
+      "import './f.css';",
+      "const g = await import('./g');",
+      "import h from 'h';",
+    ].join('\n');
+    expect(relativeImportsIn(code)).toEqual(['./a', './c', '../d', './f.css', './g']);
+  });
+});
+
+describe('sourcedFromBundled', () => {
+  file('pkg/src/Widget.tsx', "import { shape } from './shape';\nexport const Widget = shape;");
+  file('pkg/src/shape.ts', "import { leaf } from './leaf';\nexport const shape = leaf;");
+  file('pkg/src/leaf.ts', 'export const leaf = 1;');
+  file('pkg/src/types.ts', 'export type T = number;');
+  file('pkg/src/Widget.stories.tsx', "import { shape } from './shape';\nimport type { T } from './types';\nimport { helper } from '../../app/helper';");
+  file('pkg/src/other.ts', 'export const other = 2;');
+  file('app/helper.ts', "import { other } from '../pkg/src/other';\nexport const helper = other;");
+
+  it('takes each bundled module a story reaches by path, and what that module reaches in turn, but not through a tree outside', () => {
+    const sourced = sourcedFromBundled([join(tree, 'pkg/src/Widget.stories.tsx')], [join(tree, 'pkg')]);
+    expect([...sourced].map((f) => f.slice(tree.length + 1)).sort()).toEqual([
+      'pkg/src/Widget.stories.tsx',
+      'pkg/src/leaf.ts',
+      'pkg/src/shape.ts',
+    ]);
+  });
+});
+
+describe('storyServing', () => {
+  it('serves story trees from source by default, so their packages keep HMR', () => {
+    expect(storyServing(['/repo/apps/forge'], ['/repo/packages/ui/src'], {})).toEqual({
+      sourceDirs: ['/repo/apps/forge', '/repo/packages/ui/src'],
+      storyTrees: [],
+    });
+  });
+
+  it('bundles their packages under WEASEL_DEV_BUNDLE_STORIES=1', () => {
+    expect(storyServing(['/repo/apps/forge'], ['/repo/packages/ui/src'], { WEASEL_DEV_BUNDLE_STORIES: '1' })).toEqual({
+      sourceDirs: ['/repo/apps/forge'],
+      storyTrees: ['/repo/packages/ui/src'],
+    });
   });
 });

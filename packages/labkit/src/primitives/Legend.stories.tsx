@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Legend } from './Legend';
+import { Legend } from '@weasel-js/labkit/primitives';
 
 const meta: Meta<typeof Legend> = {
   title: 'labkit/Primitives/Legend',

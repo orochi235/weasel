@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { CodeBlock } from './CodeBlock';
+import { CodeBlock } from '@weasel-js/ui/components/CodeBlock';
 
 const SAMPLE = `// A pref group, as the schema editor exports it.
 const prefs: PrefGroup = {

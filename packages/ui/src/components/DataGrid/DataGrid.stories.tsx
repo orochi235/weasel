@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { DataGrid, type DataGridColumn } from './DataGrid';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import s from './DataGrid.stories.module.css';
 
 const meta: Meta<typeof DataGrid> = {

@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { fraction } from '@weasel-js/quantity';
-import { BandEditor } from './BandEditor';
-import type { Band } from './bands';
+import { BandEditor } from '@weasel-js/ui/components/BandEditor';
+import type { Band } from '@weasel-js/ui/components/BandEditor';
 
 /** Stand-in for the first consumer's payload: the layout a wedge uses. */
 type Slice = { name: string };

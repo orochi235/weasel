@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { AssetEditor } from './AssetEditor';
+import { AssetEditor, workspaceCodec } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DEMO_ACTIONS, DEMO_WORKSPACE } from './AssetEditor.demo';
-import { workspaceCodec } from './workspaceCodec';
 import s from './AssetEditor.stories.module.css';
 
 const meta: Meta<typeof AssetEditor> = {

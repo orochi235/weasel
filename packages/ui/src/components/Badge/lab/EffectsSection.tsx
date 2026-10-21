@@ -1,8 +1,9 @@
 import { useMemo, type PointerEvent } from 'react';
-import { CloseButton } from '../../CloseButton';
-import { DragGrip } from '../../DragGrip';
-import { useReorderDragList } from '../../../useReorderDragList';
-import { EFFECTS, type BadgeEffect } from '../effects';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { DragGrip } from '@weasel-js/ui/components/DragGrip';
+import { useReorderDragList } from '@weasel-js/ui';
+import { type BadgeEffect } from '@weasel-js/ui/components/Badge';
+import { EFFECTS } from '../effects';
 import { EFFECT_KEYS, EFFECT_LAB_CONTROLS } from './controls';
 import { ParamControl } from './ParamControl';
 import type { LabEffect } from './snapshot';

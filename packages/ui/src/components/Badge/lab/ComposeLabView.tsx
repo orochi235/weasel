@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Badge } from '../Badge';
-import type { BadgeBase } from '../bases';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { AppearanceSection } from './AppearanceSection';
 import { BaseParams } from './BaseParams';
 import { BASE_KEYS } from './controls';

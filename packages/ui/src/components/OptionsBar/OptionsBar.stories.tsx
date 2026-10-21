@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { OptionsBar, type OptionsBarItem } from './OptionsBar';
+import { OptionsBar, type OptionsBarItem } from '@weasel-js/ui/components/OptionsBar';
 
 const meta: Meta<typeof OptionsBar> = {
   title: 'ui/Foundations/OptionsBar',

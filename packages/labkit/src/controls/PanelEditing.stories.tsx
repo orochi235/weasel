@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { ControlPanel } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
-import { f } from '../config/builder';
-import { withValueAtPath } from '../config/path';
-import { resolveConfigSchema } from '../config/resolve';
-import { ControlPanel } from './ControlPanel';
 
 const meta: Meta<typeof ControlPanel> = {
   title: 'labkit/Controls/PanelEditing',

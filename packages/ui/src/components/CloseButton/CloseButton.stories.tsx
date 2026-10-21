@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CloseButton } from './CloseButton';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
 import s from './CloseButton.stories.module.css';
 
 const meta: Meta<typeof CloseButton> = {

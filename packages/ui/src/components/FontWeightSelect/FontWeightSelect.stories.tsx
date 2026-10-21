@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { FontWeightSelect } from './FontWeightSelect';
+import { FontWeightSelect } from '@weasel-js/ui/components/FontWeightSelect';
 
 const meta: Meta<typeof FontWeightSelect> = {
   title: 'Primitives/FontWeightSelect',

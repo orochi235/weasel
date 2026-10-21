@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { StatusBar, StatusBarItem, StatusBarSpacer } from './StatusBar';
+import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 
 const meta: Meta<typeof StatusBar> = {
   title: 'ui/StatusBar',

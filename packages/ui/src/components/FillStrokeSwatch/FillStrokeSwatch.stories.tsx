@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Paint } from '@weasel-js/core';
-import type { PaintSlot } from '../GradientEditor';
-import { FillStrokeSwatch, type FillStrokeSwatchProps } from './FillStrokeSwatch';
+import type { PaintSlot } from '@weasel-js/ui/components/GradientEditor';
+import { FillStrokeSwatch, type FillStrokeSwatchProps } from '@weasel-js/ui/components/FillStrokeSwatch';
 
 const meta: Meta<typeof FillStrokeSwatch> = {
   title: 'Primitives/FillStrokeSwatch',

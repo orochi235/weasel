@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { useReorderDragList, type PressModifiers, type ReorderItem } from '../../useReorderDragList';
-import { Button } from '../Button';
-import { ItemList } from './ItemList';
+import { useReorderDragList, type PressModifiers, type ReorderItem } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { ItemList } from '@weasel-js/ui/components/ItemList';
 
 const meta: Meta<typeof ItemList> = {
   title: 'ui/ItemList',

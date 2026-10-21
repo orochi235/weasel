@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ColorInterpolationSpace } from '@weasel-js/core';
-import { oklchToHex, chromaAt, type ChromaCurve } from './oklch';
-import { colorRamp, type ColorRampOptions } from './ramp';
+import { oklchToHex, chromaAt, type ChromaCurve, colorRamp, type ColorRampOptions } from '@weasel-js/ui/color';
 
 const meta: Meta = {
   title: 'ui/Color/ColorRamp',

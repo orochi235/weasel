@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PageTabs, type PageTabItem } from './PageTabs';
+import { PageTabs, type PageTabItem } from '@weasel-js/ui/components/PageTabs';
 import s from './PageTabs.stories.module.css';
 
 const meta: Meta<typeof PageTabs> = {

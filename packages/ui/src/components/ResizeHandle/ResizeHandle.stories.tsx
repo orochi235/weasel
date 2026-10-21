@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ResizeHandle } from './ResizeHandle';
-import { Sidebar } from '../Sidebar';
-import { SidebarPanel } from '../SidebarPanel';
+import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 
 const meta: Meta<typeof ResizeHandle> = {
   title: 'ui/ResizeHandle',

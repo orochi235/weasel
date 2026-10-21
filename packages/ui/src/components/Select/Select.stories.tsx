@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
-import { Select, SelectItem, SelectSection, type SelectProps } from './Select';
+import { Select, SelectItem, SelectSection, type SelectProps } from '@weasel-js/ui/components/Select';
 
 const meta: Meta<typeof Select> = {
   title: 'Primitives/Select',

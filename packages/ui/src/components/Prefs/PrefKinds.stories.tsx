@@ -2,8 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, userEvent, within } from '@weasel-js/forge/play';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefControl } from './PrefControl';
-import { PrefsForm, type PrefsFormProps } from './PrefsForm';
+import { PrefControl, PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefsForm> = {
   title: 'Primitives/Prefs/Compound kinds',

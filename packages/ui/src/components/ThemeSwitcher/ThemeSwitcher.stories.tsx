@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useColorModePreference } from '@weasel-js/theme/react';
-import { ThemeSwitcher, type ThemeSwitcherOption } from './ThemeSwitcher';
+import { ThemeSwitcher, type ThemeSwitcherOption } from '@weasel-js/ui/components/ThemeSwitcher';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
 
 const meta: Meta<typeof ThemeSwitcher> = {
   title: 'ui/Foundations/ThemeSwitcher',

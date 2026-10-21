@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { useState } from 'react';
-import { ToolOptionsBar } from './ToolOptionsBar';
-import { Button } from '../Button';
+import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
+import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof ToolOptionsBar> = {
   title: 'ui/Foundations/ToolOptionsBar',

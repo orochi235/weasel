@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Input } from './Input';
+import { Input } from '@weasel-js/ui/components/Input';
 
 const meta: Meta<typeof Input> = {
   title: 'Primitives/Input',

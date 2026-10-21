@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
 import type { Tool, ToolsApi } from '@weasel-js/core';
+import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ToolPalette> = {

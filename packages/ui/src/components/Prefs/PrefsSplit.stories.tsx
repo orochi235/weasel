@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { openPrefsSync, type PrefGroup, type PrefLocus } from '@weasel-js/prefs';
 import { usePrefsValues } from '@weasel-js/prefs/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { PrefsForm, type PrefsLayout } from './PrefsForm';
+import { PrefsForm, type PrefsLayout } from '@weasel-js/ui/components/Prefs';
 
 const MODE = 'look.mode';
 const DENSITY = 'look.density';

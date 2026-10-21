@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { GestureRoute } from './GestureRoute';
+import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
 import s from './GestureRoute.stories.module.css';
 
 const meta: Meta<typeof GestureRoute> = {

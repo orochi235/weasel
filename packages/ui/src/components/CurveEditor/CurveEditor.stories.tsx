@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CurveEditor, type ControlPoint } from './CurveEditor';
+import { CurveEditor, type ControlPoint } from '@weasel-js/ui/components/CurveEditor';
 
 /**
  * Story wrapper that owns the value state and forwards all visual

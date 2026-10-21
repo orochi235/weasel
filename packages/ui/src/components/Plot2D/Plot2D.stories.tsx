@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef } from 'react';
-import { Plot2D, type Plot2DHandle } from './Plot2D';
+import { Plot2D, type Plot2DHandle } from '@weasel-js/ui/components/Plot2D';
 
 interface DemoProps {
   width: number;

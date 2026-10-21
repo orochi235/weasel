@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Switch } from './Switch';
+import { Switch } from '@weasel-js/ui/components/Switch';
 
 const meta: Meta<typeof Switch> = {
   title: 'Primitives/Switch',

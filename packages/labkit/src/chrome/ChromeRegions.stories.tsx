@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { Lab } from '@weasel-js/labkit';
 import type { ConfigField } from '../controls/types';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
-import { Lab } from '../lab/Lab';
 
 interface DemoConfig extends Record<string, unknown> {
   radius: number;

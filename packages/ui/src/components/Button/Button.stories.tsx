@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Button, type ButtonVariant, type ButtonSize } from './Button';
-import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
-import { BADGE_STATUS_ICONS } from '../Badge/statusIcons';
-import { BUTTON_VARIANT_ICONS } from './variantIcons';
+import { Button, type ButtonVariant, type ButtonSize, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
+import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { BADGE_STATUS_ICONS } from '@weasel-js/ui/components/Badge';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',

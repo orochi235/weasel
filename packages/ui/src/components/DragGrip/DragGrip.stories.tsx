@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { DragGrip } from './DragGrip';
+import { DragGrip } from '@weasel-js/ui/components/DragGrip';
 
 const meta: Meta<typeof DragGrip> = {
   title: 'ui/DragGrip',

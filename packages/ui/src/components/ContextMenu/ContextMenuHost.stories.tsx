@@ -4,8 +4,7 @@ import {
   ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type Action, type MenuDef,
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { ContextMenuHost } from './ContextMenuHost';
-import { useContextMenu } from './useContextMenu';
+import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import s from './ContextMenuHost.stories.module.css';
 
 const meta: Meta = { title: 'ui/ContextMenu' };

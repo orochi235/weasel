@@ -2,9 +2,9 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import { endless, unit } from '@weasel-js/quantity';
-import { Slider, type Thumb } from './Slider';
-import { paintGradientTrack } from '../../paintGradientTrack';
-import { oklchToHex } from '../../color/oklch';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
+import { oklchToHex } from '@weasel-js/ui/color';
 
 const meta: Meta<typeof Slider> = {
   title: 'ui/Foundations/Slider',

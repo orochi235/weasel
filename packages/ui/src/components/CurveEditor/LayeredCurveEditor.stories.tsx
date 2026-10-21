@@ -1,16 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useState, type ReactNode } from 'react';
-import {
-  LayeredCurveEditor,
-  createKeyframeLayer,
-  keyframeLayerState,
-  type KeyframeLayerState,
-  createFunctionLayer,
-  functionLayerState,
-  type ControlPoint,
-  type CurveLayer,
-  type FunctionLayerState,
-} from './';
+import { LayeredCurveEditor, createKeyframeLayer, keyframeLayerState, type KeyframeLayerState, createFunctionLayer, functionLayerState, type ControlPoint, type CurveLayer, type FunctionLayerState } from '@weasel-js/ui/components/CurveEditor';
 
 // ─────────────────────────────────────────────────────────────────────
 // Story 1 — function + numerical derivative (read-only derived layer)

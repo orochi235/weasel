@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type PointerEvent, useState } from 'react';
-import { DragGhost } from './DragGhost';
+import { DragGhost } from '@weasel-js/ui/components/DragGhost';
 
 const meta: Meta<typeof DragGhost> = {
   title: 'ui/DragGhost',

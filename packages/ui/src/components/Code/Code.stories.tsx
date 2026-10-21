@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Code, type CodeStatus } from './Code';
-import { BADGE_STATUS_ICONS } from '../Badge/statusIcons';
-import { CODE_VARIANT_ICONS } from './variantIcons';
+import { Code, type CodeStatus, CODE_VARIANT_ICONS } from '@weasel-js/ui/components/Code';
+import { BADGE_STATUS_ICONS } from '@weasel-js/ui/components/Badge';
 
 const meta: Meta<typeof Code> = {
   title: 'ui/Foundations/Code',

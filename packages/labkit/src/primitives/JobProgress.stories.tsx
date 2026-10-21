@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { JobProgress } from '@weasel-js/labkit/primitives';
 import type { JobHandle } from '../job/types';
-import { JobProgress } from './JobProgress';
 
 const base: JobHandle = {
   status: 'running',

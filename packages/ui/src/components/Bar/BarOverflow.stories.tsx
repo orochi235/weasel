@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, type BarProps } from './Bar';
+import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import s from './BarOverflow.stories.module.css';
 
 const meta: Meta<typeof Bar> = {

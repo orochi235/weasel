@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { RangeSlider } from './RangeSlider';
+import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 
 const meta: Meta<typeof RangeSlider> = {
   title: 'Primitives/RangeSlider',

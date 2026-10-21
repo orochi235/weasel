@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ActionDisabledReason, ActionsProvider, useAction, type Action } from '@weasel-js/core';
-import { Button } from '../Button';
-import { CommandPalette } from './CommandPalette';
+import { Button } from '@weasel-js/ui/components/Button';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 
 const run = (id: string) => () => { console.log(`[CommandPalette story] ${id}`); };
 

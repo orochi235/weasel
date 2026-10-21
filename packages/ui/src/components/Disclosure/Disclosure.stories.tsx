@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Disclosure, DisclosureRow } from './Disclosure';
+import { Disclosure, DisclosureRow } from '@weasel-js/ui/components/Disclosure';
 
 const meta: Meta<typeof Disclosure> = {
   title: 'ui/Disclosure',

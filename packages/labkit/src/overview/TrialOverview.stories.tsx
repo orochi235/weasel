@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { Stage } from '@weasel-js/labkit/canvas';
+import { TrialOverview, type TrialOverviewProps } from '@weasel-js/labkit/overview';
 import { useState } from 'react';
-import { Stage } from '../canvas/Stage';
 import type { ViewTransform } from '../instrument/types';
-import { TrialOverview, type TrialOverviewProps } from './TrialOverview';
 
 const meta: Meta<typeof TrialOverview> = {
   title: 'labkit/Overview/TrialOverview',

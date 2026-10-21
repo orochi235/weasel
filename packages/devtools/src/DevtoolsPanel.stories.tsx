@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
-import { DevtoolsPanel } from './DevtoolsPanel';
-import { createInPagePanelTransport } from './inPageTransport';
+import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
 import s from './DevtoolsPanel.stories.module.css';
 
 type Pose = { x: number; y: number; width: number; height: number };

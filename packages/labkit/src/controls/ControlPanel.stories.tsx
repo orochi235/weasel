@@ -1,14 +1,12 @@
 import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { f, resolveConfigSchema, withValueAtPath } from '@weasel-js/labkit/config';
+import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { type PrefGroup, type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
 import { compact } from '@weasel-js/quantity';
 import { PropertyRow } from '@weasel-js/ui/components/Properties';
 import { useState } from 'react';
-import { f } from '../config/builder';
-import { withValueAtPath } from '../config/path';
-import { resolveConfigSchema } from '../config/resolve';
 import type { ConfigRule } from '../config/types';
-import { ControlPanel, type ControlPanelProps } from './ControlPanel';
 import type { ConfigField } from './types';
 
 const meta: Meta<typeof ControlPanel> = {

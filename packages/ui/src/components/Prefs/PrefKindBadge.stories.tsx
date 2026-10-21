@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PrefKindBadge } from './PrefKindBadge';
+import { PrefKindBadge } from '@weasel-js/ui/components/Prefs';
 import s from './PrefKindBadge.stories.module.css';
 
 const meta: Meta<typeof PrefKindBadge> = {

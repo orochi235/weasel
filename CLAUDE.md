@@ -573,9 +573,13 @@ any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken
 
 **A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
 `scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
-re-bundling on a saved package file in a few seconds. forge keeps ui, labkit, forge, diagram,
-devtools and diagram-elk as source, since its stories import their neighbors by relative path, and
-edits there still hot-update. A stack trace into a bundled package points at
+re-bundling on a saved package file in a few seconds. forge keeps every package holding stories (ui,
+labkit, forge, diagram, devtools, diagram-elk) as source, so edits there still hot-update.
+`WEASEL_DEV_BUNDLE_STORIES=1` bundles ui and labkit, whose stories import through package specifiers:
+on 2026-10-21 a forge load fell from 1,624 requests to 1,270 and, at 20 ms of emulated latency, from
+7.1 s to 4.5 s to network idle, while a ui component edit went from a 0.28 s hot update to a ~3.6 s
+re-bundle and reload. Whatever source imports from a bundled package by relative path is left out of
+the bundle and served from source, so it loads once. A stack trace into a bundled package points at
 `node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
 
 **A perf loop driven by hover events measures vsync.** A hover that changes no state does

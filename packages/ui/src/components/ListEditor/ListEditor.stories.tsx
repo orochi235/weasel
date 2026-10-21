@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyControl } from '../Properties/PropertyField';
-import { ListEditor } from './ListEditor';
+import { PropertyControl } from '@weasel-js/ui/components/Properties';
+import { ListEditor } from '@weasel-js/ui/components/ListEditor';
 
 const meta: Meta<typeof ListEditor> = {
   title: 'ui/ListEditor',

@@ -1,13 +1,12 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { startThresholdDrag } from '@weasel-js/core';
-import { Badge } from '../Badge';
-import { Input } from '../Input';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Input } from '@weasel-js/ui/components/Input';
+import type { TreeDropHandle } from '@weasel-js/ui/components/Tree';
+import { Tree, type TreeNode, filterTree, treeBranchIds } from '@weasel-js/ui/components/Tree';
 import { applyCopy, applyMove, insertAt } from './Tree.fixtures';
-import type { TreeDropHandle } from './useOutsideDrop';
 import css from './Tree.stories.module.css';
-import { Tree, type TreeNode } from './Tree';
-import { filterTree, treeBranchIds } from './treeFilter';
 
 const meta: Meta<typeof Tree> = {
   title: 'ui/Tree',

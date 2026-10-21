@@ -1,7 +1,6 @@
 import type { PrefAlias, PrefGroup } from '@weasel-js/prefs';
-import { actionCatalog } from './actionCatalog';
-import type { EditorAction } from './editorActions';
-import type { Workspace } from './workspace';
+import { actionCatalog } from '@weasel-js/ui/components/PrefSchemaEditor';
+import type { EditorAction, Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 
 const pointer = (of: string): PrefAlias => ({ kind: 'alias', name: '', description: '', default: undefined, of });
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useColorModePreference } from '@weasel-js/theme/react';
-import { ColorModeControl } from './ColorModeControl';
+import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
 
 const meta: Meta<typeof ColorModeControl> = {
   title: 'ui/Foundations/ColorModeControl',

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActionsProvider, defaultNodeProperties, solid, useAction, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 import { icon } from '../../icons.gen';
 

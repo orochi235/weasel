@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState, type ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
-import { BarAction } from './BarAction';
+import { BarAction } from '@weasel-js/ui/components/Bar';
 import s from './Bar.stories.module.css';
 import { icon } from '../../icons.gen';
 

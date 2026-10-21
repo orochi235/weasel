@@ -1,4 +1,4 @@
-import type { BadgeBase } from '../bases';
+import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { BASE_LAB_CONTROLS } from './controls';
 import { OctantSplineEditor } from './OctantSplineEditor';
 import { Field, LabToggle, ParamControl } from './ParamControl';

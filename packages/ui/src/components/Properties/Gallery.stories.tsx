@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
-import { PropertyRow } from './PropertyRow';
 import { decimal } from '@weasel-js/quantity';
+import { PropertyField, PropertyList, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.

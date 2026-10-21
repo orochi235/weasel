@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Button } from '../Button';
-import { PropertyField, PropertyGroup, PropertyList } from '../Properties';
-import { MotifFrame } from './MotifFrame';
-import { notch, plaque, rule, stereo, tab, titlebar } from './motifs';
+import { Button } from '@weasel-js/ui/components/Button';
+import { PropertyField, PropertyGroup, PropertyList } from '@weasel-js/ui/components/Properties';
+import { MotifFrame, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
 import s from './MotifFrame.stories.module.css';
 
 const meta: Meta<typeof MotifFrame> = {

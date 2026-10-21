@@ -5,7 +5,7 @@ import {
   useAction,
   type Action,
 } from '@weasel-js/core';
-import { ActionBar } from './ActionBar';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { icon } from '../../icons.gen';
 
 function Register({ action }: { action: Action }) {

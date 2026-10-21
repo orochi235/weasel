@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ScaleIndicator } from './ScaleIndicator';
+import { ScaleIndicator } from '@weasel-js/labkit/primitives';
 
 const meta: Meta<typeof ScaleIndicator> = {
   title: 'labkit/Primitives/ScaleIndicator',

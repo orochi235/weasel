@@ -2,10 +2,9 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
-import { PrefsDialog } from './PrefsDialog';
-import { Button } from '../Button';
-import { Select } from '../Select';
+import { PrefsForm, type PrefRenderContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Select } from '@weasel-js/ui/components/Select';
 
 const meta: Meta<typeof PrefsForm> = {
   title: 'Primitives/Prefs',

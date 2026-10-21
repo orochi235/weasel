@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type ReactNode, useState } from 'react';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
+import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
 import { compact, decimal, endless, unit, type Display, type Endless } from '@weasel-js/quantity';

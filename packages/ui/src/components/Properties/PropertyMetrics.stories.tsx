@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyList';
-import { PropertyPanel } from './PropertyPanel';
-import { type PropertyAlign, type PropertyDensity } from './metrics';
+import { PropertyField, PropertyList, PropertyPanel, type PropertyAlign, type PropertyDensity } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta = {
   title: 'ui/Properties/Metrics',

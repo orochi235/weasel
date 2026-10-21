@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { DialogRow } from './DialogRow';
-import { PropertyList } from './PropertyList';
+import { DialogRow, PropertyList } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof DialogRow> = {
   title: 'ui/Properties/Rows/DialogRow',

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type CSSProperties, useState } from 'react';
-import { LayerList, type LayerListItem, moveLayers } from './LayerList';
+import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import s from './LayerList.stories.module.css';
 
 const meta: Meta<typeof LayerList> = {
