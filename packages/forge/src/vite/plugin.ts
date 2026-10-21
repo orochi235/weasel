@@ -8,13 +8,14 @@ import { createHistoryReader, type HistoryReader } from './history.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
-import { frameEntry, shellEntry } from './entries.ts';
 import { propControls } from './propControls.ts';
 import type { PropControlsOptions } from './propTypes.ts';
+import type { CaptureEndpoint } from './capture/endpoint.ts';
 import { servePages } from './servePages.ts';
 import { shellTitle } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
+import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
@@ -38,8 +39,6 @@ export interface ForgeOptions {
   propControls?: boolean | PropControlsOptions;
 }
 
-const PREFIX = 'virtual:forge/';
-const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
 const SCRIPT = /\.[cm]?[jt]sx?$/;
 
 /**
@@ -145,22 +144,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     }
   };
 
-  const configModule = (path: string | undefined) =>
-    path ? `export { default } from ${JSON.stringify(resolve(root, path))};\n` : 'export default {};\n';
-
-  const modules: Record<string, () => string> = {
-    'index.js': () => `export default ${JSON.stringify(index())};\n`,
-    'importers.js': () => {
-      const lines = [...files()]
-        .filter(([, entries]) => entries.length > 0)
-        .map(([file]) => `  ${JSON.stringify(file)}: () => import(${JSON.stringify(file)}),`);
-      return `export default {\n${lines.join('\n')}\n};\n`;
-    },
-    'frame-config.js': () => configModule(options.frameConfig),
-    'shell-config.js': () => configModule(options.shellConfig),
-    'shell-entry.js': () => shellEntry(base, options.stories),
-    'frame-entry.js': () => frameEntry((options.frameStyles ?? []).map((path) => resolve(root, path))),
-  };
+  const modules = virtualModules(options, { index, files, root: () => root, base: () => base });
+  let capture: CaptureEndpoint | null = null;
 
   const invalidate = (server: ViteDevServer, names: readonly string[]): void => {
     for (const env of Object.values(server.environments)) {
@@ -296,6 +281,7 @@ export function forge(options: ForgeOptions): Plugin[] {
       },
       hotUpdate({ modules, server }) {
         if (this.environment.name !== 'client') return;
+        capture?.revise();
         for (const file of storiesReaching(modules)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
       },
       configureServer(server) {
@@ -313,8 +299,9 @@ export function forge(options: ForgeOptions): Plugin[] {
             }, logError);
           });
         }
-        servePages(server, base, () => titleUnder(root));
+        capture = servePages(server, base, () => titleUnder(root));
       },
+      closeServer: () => capture?.close(),
     },
   ];
 }

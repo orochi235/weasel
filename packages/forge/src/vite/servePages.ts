@@ -1,10 +1,21 @@
 import type { ViteDevServer } from 'vite';
+import { type CaptureEndpoint, serveCapture } from './capture/endpoint.ts';
+import { CAPTURE_PAGES } from './capture/payload.ts';
 import { html } from './html.ts';
 
-const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
+const PAGES: Record<string, string> = {
+  '/': 'shell-entry.js',
+  '/index.html': 'shell-entry.js',
+  '/frame.html': 'frame-entry.js',
+  [`/${CAPTURE_PAGES.shell}`]: 'capture-entry.js',
+  [`/${CAPTURE_PAGES.frame}`]: 'capture-frame-entry.js',
+};
 
-/** Answers a GET for the workshop page or the frame document, under `base`, with the page built around its entry. */
-export function servePages(server: ViteDevServer, base: string, title: () => string | undefined): void {
+/**
+ * Answers a GET for the workshop page, the frame document or a capture page, under `base`, with the page built
+ * around its entry; and serves the capture endpoint beside them.
+ */
+export function servePages(server: ViteDevServer, base: string, title: () => string | undefined): CaptureEndpoint {
   server.middlewares.use((req, res, next) => {
     const url = req.url ?? '/';
     const path = url.split('?')[0] ?? '/';
@@ -21,4 +32,5 @@ export function servePages(server: ViteDevServer, base: string, title: () => str
       (err: unknown) => next(err),
     );
   });
+  return serveCapture(server, base);
 }

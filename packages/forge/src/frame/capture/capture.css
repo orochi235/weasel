@@ -1,0 +1,11 @@
+/* The capture box is the host's size exactly, whatever else styles a `.fg-story`. An isolated story's frame wrapper
+   measures `100vh` against the page, which the capture sizes to the box. */
+.fg-story[data-fg-capture] {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--fg-capture-w);
+  height: var(--fg-capture-h);
+  overflow: hidden;
+  contain: paint;
+  container-type: size;
+}
