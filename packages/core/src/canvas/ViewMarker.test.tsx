@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef, type RefObject } from 'react';
 import type { DrawCommand } from '@weasel-js/renderer';
+import type { RenderLayer } from 'core/layers/render';
 import { SceneCanvas } from './SceneCanvas';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { ViewMarker } from './ViewMarker';
@@ -29,6 +30,8 @@ const INNER: CanvasViewProps = {
   id: 'inner', parent: 'pip', bounds: { x: 10, y: 10, w: 40, h: 30 }, defaultView: { x: 0, y: 0, scale: { x: 0.1, y: 0.1 } }, paint: false,
 };
 const MARKER: ViewMarkerProps = { id: 'm', source: null, target: 'pip' };
+const PROBE_FILL: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 4, height: 4 }, fill: { paint: { kind: 'solid', color: '#123456' } } };
+const PROBE: RenderLayer<unknown> = { id: 'probe', label: 'Probe', space: 'screen', draw: () => [PROBE_FILL] };
 const MARKER_PATH = { kind: 'path', stroke: { width: 1, dash: [2, 3] } };
 
 const widthDesc = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
@@ -76,15 +79,18 @@ function flat(cmds: readonly DrawCommand[]): DrawCommand[] {
 describe('<ViewMarker>', () => {
   it("paints in its target view, after the view's own layers", () => {
     const api = mount({ marker: true });
-    expect(lastDrawn(add(api, PIP))).toMatchObject(MARKER_PATH);
+    const drawn = flat(add(api, { ...PIP, layers: () => [PROBE] }).draw({}, ROOT, DIMS));
+    const probeAt = drawn.indexOf(PROBE_FILL);
+    expect(probeAt).toBeGreaterThanOrEqual(0);
+    expect(drawn.at(-1)).toMatchObject(MARKER_PATH);
+    expect(drawn.findIndex((c) => c.kind === 'path' && c.stroke?.dash !== undefined)).toBeGreaterThan(probeAt);
   });
 
   it('does not paint in a view nested in its target', () => {
     const api = mount({ marker: true });
     add(api, PIP);
-    const inner = add(api, INNER);
-    const drawn = flat(inner.draw({}, ROOT, DIMS));
-    expect(drawn.length).toBeGreaterThan(0);
+    const drawn = flat(add(api, { ...INNER, layers: () => [PROBE] }).draw({}, ROOT, DIMS));
+    expect(drawn).toContain(PROBE_FILL);
     expect(drawn.filter((c) => c.kind === 'path' && c.stroke?.dash !== undefined)).toEqual([]);
   });
 
