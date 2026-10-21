@@ -133,7 +133,7 @@ export { resolveParams } from './interactions/actions/invoker';
 export { overlaysOf } from './interactions/actions/overlay';
 export { tuneAction } from './interactions/actions/tuning';
 export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
-export { bindingId, resolveBindingOverrides } from './interactions/actions/bindingOverrides';
+export { bindingId, overriddenBindings, resolveBindingOverrides } from './interactions/actions/bindingOverrides';
 export type { BindingOverrides, ResolvedBindingOverrides } from './interactions/actions/bindingOverrides';
 export { roleReader, keysHeld } from './interactions/actions/modifierRoles';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
@@ -186,8 +186,8 @@ export type { AssemblyInputs } from './contributions/assemble';
 export { mergeContributions } from './contributions/merge';
 export { modeShortcuts, modeShortcutSpec } from './contributions/modeShortcuts';
 export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
-export { captureKey, createKeymapStack, describeKeymap, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
-export type { CaptureKeyOptions, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
+export { captureGesture, captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
+export type { CaptureGestureOptions, CaptureKeyOptions, CaptureKind, CapturedSpec, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {

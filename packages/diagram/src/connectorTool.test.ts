@@ -35,7 +35,7 @@ describe('useConnectorTool', () => {
     const { result } = renderHook(() => useConnectorTool<Rect>({ participants: PARTICIPANTS }));
     const tool = result.current;
     expect(tool.id).toBe(CONNECTOR_TOOL_ID);
-    expect(tool.bindings).toEqual([{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID }]);
+    expect(tool.bindings).toEqual([{ spec: { kind: 'drag' }, actionId: CONNECTOR_ACTION_ID, opts: { id: 'diagram.connector.drag' } }]);
     expect(tool.actions?.map((a) => a.id)).toEqual([CONNECTOR_ACTION_ID]);
     expect(tool.presentation?.icon).toBe('core:arrow');
   });

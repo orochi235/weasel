@@ -101,8 +101,8 @@ export const ingestAction: Action & { requires: string[] } = {
   id: 'ingest',
   label: 'Insert external content',
   defaultBinding: [
-    { kind: 'drop', mods: ANY_INGEST_MODS },
-    { kind: 'paste', mods: ANY_INGEST_MODS },
+    { spec: { kind: 'drop', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.drop' } },
+    { spec: { kind: 'paste', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.paste' } },
   ],
   requires: [...INGEST_REQUIRES],
   invoker: {

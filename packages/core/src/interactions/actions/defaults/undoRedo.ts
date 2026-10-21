@@ -14,7 +14,7 @@ export const undoAction: Action & { requires: string[] } = {
   label: 'Undo',
   icon: icon('undo'),
   group: 'history',
-  defaultBinding: { kind: 'key', key: 'z', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'z', mods: { mod: true } }, opts: { id: 'undo.key' } }],
   requires: ['history'],
   invoker: {
     timing: 'immediate',
@@ -33,7 +33,7 @@ export const redoAction: Action & { requires: string[] } = {
   label: 'Redo',
   icon: icon('redo'),
   group: 'history',
-  defaultBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true } }, opts: { id: 'redo.key' } }],
   requires: ['history'],
   invoker: {
     timing: 'immediate',

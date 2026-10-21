@@ -14,7 +14,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
   label: 'Copy',
   icon: icon('copy'),
   group: 'clipboard',
-  defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'c', mods: { mod: true } }, opts: { id: 'clipboard.copy.key' } }],
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
   // selection has nothing to copy. Notably excludes `text-edit`, where Cmd+C
   // must stay the browser's own copy of the caret range.
@@ -40,7 +40,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   label: 'Cut',
   icon: icon('cut'),
   group: 'clipboard',
-  defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'x', mods: { mod: true } }, opts: { id: 'clipboard.cut.key' } }],
   eligible: { capability: 'edits-page' },
   requires: ['clipboard', 'scene', 'selection', 'applyOps'],
   invoker: {
@@ -113,7 +113,7 @@ const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
 export const clipboardPasteEventAction: Action & { requires: string[] } = {
   id: 'clipboard.pasteEvent',
   label: 'Paste copied nodes',
-  defaultBinding: { kind: 'paste', types: ['text/plain'], mods: ANY_INGEST_MODS },
+  defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_INGEST_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],
   requires: [...INGEST_REQUIRES],
   invoker: {
     timing: 'immediate',

@@ -1,7 +1,7 @@
 /** What one canvas has registered — its tools, actions, deps and node kinds — as plain data for `get-registry`. */
 import {
-  actionBindings, buildDepsFromRequires, evaluateActive, evaluateEnabled, routesForSpec,
-  type Action, type ActionSource, type Contribution, type DepRegistry, type GestureBinding,
+  actionBindings, buildDepsFromRequires, evaluateActive, evaluateEnabled, overriddenBindings, routesForSpec,
+  type Action, type ActionSource, type Contribution, type DepRegistry, type GestureBinding, type ResolvedBindingOverrides,
 } from '@weasel-js/routing';
 import type {
   DevtoolsActionEntry, DevtoolsBinding, DevtoolsRegistry, DevtoolsToolEntry,
@@ -16,6 +16,9 @@ export interface RegistryInputs {
   /** The entries a `features` preset brought beside the tools. */
   contributions: readonly Entry[];
   actions: ActionSource | null;
+  /** Binding overrides in force, applied to the entries' bindings; `actions`
+   *  lists its own already overridden. */
+  overrides?: ResolvedBindingOverrides;
   deps: DepRegistry | null;
   routingKinds: readonly string[];
 }
@@ -37,7 +40,7 @@ function bindingOf(binding: GestureBinding): DevtoolsBinding {
   };
 }
 
-function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot']): DevtoolsToolEntry {
+function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot'], overrides: ResolvedBindingOverrides | undefined): DevtoolsToolEntry {
   const p = entry.presentation;
   return {
     id: entry.id,
@@ -50,7 +53,7 @@ function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot']): DevtoolsToolEntr
     hidden: p?.hide === true,
     cursor: serialize(entry.cursor),
     eligibility: serialize(entry.eligibility),
-    bindings: (entry.bindings ?? []).map(bindingOf),
+    bindings: overriddenBindings(entry.bindings ?? [], entry.id, overrides).map(bindingOf),
     actions: (entry.actions ?? []).map((a) => a.id),
     deps: Object.keys(entry.deps ?? {}),
     hasOverlay: entry.overlay !== undefined,
@@ -90,7 +93,7 @@ export function describeRegistry(inputs: RegistryInputs): DevtoolsRegistry {
     for (const e of entries) {
       if (seen.has(e.id)) continue;
       seen.add(e.id);
-      tools.push(toolOf(e, slot));
+      tools.push(toolOf(e, slot, inputs.overrides));
     }
   };
   add(Object.values(inputs.tools.registry), 'tool');

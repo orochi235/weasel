@@ -4,7 +4,7 @@ import { keySpecFromKey, keySpecsFromMods, type KeyLegend, type KeySpecsFromMods
 /**
  * A shortcut as key legends, one per key, as `@weasel-js/ui`'s `KeySequence` draws them: mod, shift, alt, then the
  * key, each in the platform's own legend (`⌘` on macOS, `Ctrl` elsewhere).
- * `formatShortcutParts` is these labels as strings. `shift: 'optional'`
+ * Only the key itself: `formatShortcutParts` adds the keymaps that lead to it. `shift: 'optional'`
  * becomes an optional key; a key list
  * renders its first key. Returns `undefined` for no shortcut.
  *

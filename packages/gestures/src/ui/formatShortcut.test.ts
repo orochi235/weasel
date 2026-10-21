@@ -56,11 +56,54 @@ describe('formatShortcut', () => {
   it('treats an optional shift as absent', () => {
     expect(formatShortcut({ key: 'z', shift: 'optional' }, mac)).toBe('Z');
   });
+
+  it('draws the keymaps leading to a key before it, outermost first', () => {
+    expect(formatShortcut(nested, mac)).toBe('View ▸ Loupe ▸ ⌘2');
+    expect(formatShortcut(nested, { platform: 'windows' })).toBe('View ▸ Loupe ▸ Ctrl+2');
+  });
 });
 
+const nested = {
+  key: '2',
+  mod: true,
+  leader: [
+    { label: 'View', shortcut: { key: 'v', alt: true } },
+    { label: 'Loupe', shortcut: { key: 'l' } },
+  ],
+};
+
 describe('formatShortcutParts', () => {
-  it('gives one chip per key in the platform legend', () => {
-    expect(formatShortcutParts({ key: 'z', mod: true, shift: true }, mac)).toEqual(['⌘', '⇧', 'Z']);
-    expect(formatShortcutParts({ key: 'z', mod: true, alt: true }, { platform: 'windows' })).toEqual(['Ctrl', 'Alt', 'Z']);
+  it('returns undefined for undefined input', () => {
+    expect(formatShortcutParts(undefined)).toBeUndefined();
+  });
+
+  it('gives one chip per key in the platform legend, and no leader for a key outside a keymap', () => {
+    expect(formatShortcutParts({ key: 'z', mod: true, shift: true }, mac)).toEqual({
+      leader: [],
+      keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'Z' }],
+    });
+    expect(formatShortcutParts({ key: 'z', mod: true, alt: true }, { platform: 'windows' })?.keys.map((k) => k.label))
+      .toEqual(['Ctrl', 'Alt', 'Z']);
+  });
+
+  it('marks an optional shift as an optional chip', () => {
+    expect(formatShortcutParts({ key: 'z', shift: 'optional' }, mac)?.keys).toEqual([
+      { label: '⇧', optional: true },
+      { label: 'Z' },
+    ]);
+  });
+
+  it('gives each keymap leading to the key, outermost first, by its label and its leader key', () => {
+    expect(formatShortcutParts(nested, mac)).toEqual({
+      leader: [
+        { label: 'View', keys: [{ label: '⌥' }, { label: 'V' }] },
+        { label: 'Loupe', keys: [{ label: 'L' }] },
+      ],
+      keys: [{ label: '⌘' }, { label: '2' }],
+    });
+  });
+
+  it('spells the keys out in the text legend when asked', () => {
+    expect(formatShortcutParts({ key: 'Escape' }, { platform: 'windows', legend: 'text' })?.keys).toEqual([{ label: 'Esc' }]);
   });
 });

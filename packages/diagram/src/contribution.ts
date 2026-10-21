@@ -115,8 +115,8 @@ export function diagramWaypoints<TPose>(
         grabPortAction(GRAB_WAYPOINT_ACTION_ID),
       ],
       bindings: [
-        { spec: { kind: 'drag', target }, actionId },
-        { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID },
+        { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-waypoints.drag' } },
+        { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID, opts: { id: 'weasel-diagram-waypoints.doubleClick' } },
         ...grabPortBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
       ],
     },
@@ -176,10 +176,10 @@ export function diagramLabelDrag(
         selectLabelEdgeAction(),
       ],
       bindings: [
-        { spec: { kind: 'drag', target }, actionId },
-        { spec: { kind: 'pointerDown', target }, actionId: GRAB_LABEL_ACTION_ID },
-        { spec: { kind: 'click', target, mods: ANY_MODIFIERS }, actionId: SELECT_LABEL_EDGE_ACTION_ID },
-        { spec: { kind: 'doubleClick', target }, actionId: EDIT_EDGE_LABEL_ACTION_ID },
+        { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-label-drag.drag' } },
+        { spec: { kind: 'pointerDown', target }, actionId: GRAB_LABEL_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.pointerDown' } },
+        { spec: { kind: 'click', target, mods: ANY_MODIFIERS }, actionId: SELECT_LABEL_EDGE_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.click' } },
+        { spec: { kind: 'doubleClick', target }, actionId: EDIT_EDGE_LABEL_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.doubleClick' } },
       ],
     },
   };

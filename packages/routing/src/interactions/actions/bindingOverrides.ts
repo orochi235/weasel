@@ -16,10 +16,12 @@ export type ResolvedBindingOverrides = ReadonlyMap<string, GestureSpec | null>;
 
 export const NO_OVERRIDES: ResolvedBindingOverrides = new Map();
 
-/** A binding's id: its declared `opts.id`, else its owner (the entry, or the
- *  action for an action's own binding) and its position there. */
+/** A binding's id: its declared `opts.id`, else its owner and its position
+ *  there — `<entry>#<n>` for an entry's binding (`ownerId`), `<action>@<n>` for
+ *  an action's own (`ownerId` null), so an entry and an action of one id never
+ *  share a derived id. */
 export function bindingId(b: GestureBinding, ownerId: string | null, index: number): string {
-  return b.opts?.id ?? `${ownerId ?? b.actionId}#${index}`;
+  return b.opts?.id ?? (ownerId === null ? `${b.actionId}@${index}` : `${ownerId}#${index}`);
 }
 
 /** Merge override maps into one, a later map winning per id. A route string
@@ -48,6 +50,21 @@ export function overridden(
   if (!overrides.has(id)) return b;
   const spec = overrides.get(id)!;
   return spec === null ? null : { ...b, spec };
+}
+
+/** The bindings `ownerId` declares, each under its override, the unbound ones
+ *  left out: what dispatch routes by. A `null` owner is an action's own. */
+export function overriddenBindings(
+  bindings: readonly GestureBinding[],
+  ownerId: string | null,
+  overrides: ResolvedBindingOverrides = NO_OVERRIDES,
+): GestureBinding[] {
+  const out: GestureBinding[] = [];
+  bindings.forEach((b, i) => {
+    const next = overridden(b, bindingId(b, ownerId, i), overrides);
+    if (next) out.push(next);
+  });
+  return out;
 }
 
 /** `action` with `overrides` applied to its own bindings, each keeping its id,

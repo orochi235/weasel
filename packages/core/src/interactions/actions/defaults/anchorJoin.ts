@@ -37,7 +37,7 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   // a Mac the key reads as another glyph.
   defaultBinding: [{
     spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { mod: true, alt: true, shift: true } },
-    opts: { params: { axis: 'both' } },
+    opts: { id: 'averageAnchors.key', params: { axis: 'both' } },
   }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
@@ -75,7 +75,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   icon: icon('join'),
   tags: pathOperationTags('command'),
   group: 'anchors',
-  defaultBinding: { kind: 'key', key: 'j', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true } }, opts: { id: 'joinAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

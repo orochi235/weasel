@@ -133,11 +133,11 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     },
     actions: [action, grabHandle],
     bindings: [
-      { spec: { kind: 'drag', target: { kindOf: onHandle }, mods: MODS_ANY }, actionId: SYMMETRY_HANDLE_ACTION_ID },
+      { spec: { kind: 'drag', target: { kindOf: onHandle }, mods: MODS_ANY }, actionId: SYMMETRY_HANDLE_ACTION_ID, opts: { id: 'weasel-symmetry.drag' } },
       // A handle's claim bars every other binding for the whole press, so its
       // pointer-down and a click that never becomes a drag need one too.
-      { spec: { kind: 'pointerDown', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID },
-      { spec: { kind: 'click', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID },
+      { spec: { kind: 'pointerDown', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID, opts: { id: 'weasel-symmetry.pointerDown' } },
+      { spec: { kind: 'click', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID, opts: { id: 'weasel-symmetry.click' } },
     ],
     attach: (api) => {
       const off = api.registerLayer(guide);

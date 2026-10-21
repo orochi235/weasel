@@ -80,11 +80,14 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
     // Suppressed while any tool is mid-gesture — accidentally hitting
     // Delete during a drag shouldn't wipe the selection out from under
     // the in-flight handle.
-    defaultBinding: {
-      kind: 'key',
-      key: ['Delete', 'Backspace'],
-      phase: [{ channel: '*', phase: 'initial' }],
-    },
+    defaultBinding: [{
+      spec: {
+        kind: 'key',
+        key: ['Delete', 'Backspace'],
+        phase: [{ channel: '*', phase: 'initial' }],
+      },
+      opts: { id: 'delete.key' },
+    }],
     eligible: { capability: 'edits-page' },
     requires: ['scene', 'selection', 'applyOps'],
     invoker: {

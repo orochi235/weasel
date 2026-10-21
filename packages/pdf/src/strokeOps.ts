@@ -1,10 +1,10 @@
 import type { Path } from '@weasel-js/geom';
-import { type CommandPaint, type CommandStroke, isSolidPaint, type Stroke } from '@weasel-js/paint';
+import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
 import { strokeInsets, strokeToPath } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
-import { num } from './num';
+import { NonFiniteNumber, num } from './num';
 import { pathOps } from './pathOps';
 
 const CAPS = { butt: 0, round: 1, square: 2 } as const;
@@ -25,9 +25,10 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   out.op('J', CAPS[stroke.cap ?? 'butt']);
   out.op('j', JOINS[stroke.join ?? 'miter']);
   out.op('M', stroke.miterLimit ?? 4);
-  // An all-zero dash draws nothing in PDF, and the renderer draws it solid.
-  const dash = stroke.dash ?? [];
-  if (dash.reduce((a, b) => a + b, 0) > 0) out.op('d', `[${dash.map(num).join(' ')}]`, 0);
+  // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
+  const dash = dashPattern(stroke.dash);
+  if (dash === 'non-finite') throw new NonFiniteNumber(`pdf: cannot write non-finite dash ${stroke.dash}`);
+  if (dash !== 'solid') out.op('d', `[${dash.map(num).join(' ')}]`, 0);
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */

@@ -27,13 +27,15 @@ type ZoomKind = 'in' | 'out' | 'reset';
 
 interface KeyBinding {
   spec: { kind: string; key?: string; mods?: { mod?: boolean; shift?: boolean | 'optional' } };
-  opts?: { params?: { kind?: string } };
+  opts?: { id?: string; params?: { kind?: string } };
 }
 
 // Core's zoom with only its keys: the wheel and pinch belong to each trial's
 // own dispatcher. The clamp is left to the camera, which knows its range.
 const BASE = makeViewportZoomAction({ min: 1e-9, max: Number.POSITIVE_INFINITY });
-const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[]).filter((b) => b.spec.kind === 'key');
+const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[])
+  .filter((b) => b.spec.kind === 'key')
+  .map((b) => ({ ...b, opts: { ...b.opts, id: `${ZOOM_ID}.${b.opts?.params?.kind}` } }));
 const BASE_RUN = (BASE.invoker as ImmediateInvoker).run;
 const VARIANTS = [
   { key: 'in', label: 'Zoom in', params: { kind: 'in' } },

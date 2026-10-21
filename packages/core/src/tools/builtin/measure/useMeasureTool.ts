@@ -49,15 +49,15 @@ export function useMeasureTool(options: UseMeasureToolOptions): Tool {
       ms.draft.set(null);
     },
     bindings: [
-      { spec: { kind: 'click' }, actionId: MEASURE_ACTION_IDS.pickAt },
+      { spec: { kind: 'click' }, actionId: MEASURE_ACTION_IDS.pickAt, opts: { id: 'measure.pick' } },
       {
         spec: { kind: 'drag', mods: { shift: 'optional' } },
         actionId: MEASURE_ACTION_IDS.measure,
-        opts: { params: () => (angleStep.current === undefined ? {} : { angleStep: angleStep.current }) },
+        opts: { id: 'measure.drag', params: () => (angleStep.current === undefined ? {} : { angleStep: angleStep.current }) },
       },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: MEASURE_ACTION_IDS.unpick },
-      { spec: { kind: 'key', key: 'Delete' }, actionId: MEASURE_ACTION_IDS.delete },
-      { spec: { kind: 'key', key: 'Backspace' }, actionId: MEASURE_ACTION_IDS.delete },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: MEASURE_ACTION_IDS.unpick, opts: { id: 'measure.unpick' } },
+      { spec: { kind: 'key', key: 'Delete' }, actionId: MEASURE_ACTION_IDS.delete, opts: { id: 'measure.delete' } },
+      { spec: { kind: 'key', key: 'Backspace' }, actionId: MEASURE_ACTION_IDS.delete, opts: { id: 'measure.backspace' } },
     ],
   }), [actions, keybinding, ms, angleStep]);
 }

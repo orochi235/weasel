@@ -169,11 +169,16 @@ function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined):
   return {
     id: PALETTE_DROP_ID,
     label: 'Drop a palette item',
-    defaultBinding: {
-      kind: 'carry',
-      types: [PALETTE_CARRY_TYPE],
-      mods: { alt: ANY, ctrl: ANY, meta: ANY, shift: ANY },
-    },
+    defaultBinding: [
+      {
+        spec: {
+          kind: 'carry',
+          types: [PALETTE_CARRY_TYPE],
+          mods: { alt: ANY, ctrl: ANY, meta: ANY, shift: ANY },
+        },
+        opts: { id: `${PALETTE_DROP_ID}.carry` },
+      },
+    ],
     invoker: {
       timing: 'ongoing',
       start: (ctx) => {

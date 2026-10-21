@@ -414,15 +414,25 @@ predict the drag route" in `docs/concepts.md`.
 A **binding override** replaces or removes one binding by its id, on an action
 or on a contribution alike (`ActionsRegistry.overrideBindings`,
 `<SceneCanvas bindingOverrides>`). A binding's id is its `opts.id`, or its
-owner's id and its position (`bindingId`); a binding a host may persist an
-override for declares one. An override is a route string, a spec (`key('Mod+=')`,
-`held('Space')`), or `unbound()`; it applies to the declared binding, never to
-another override's result, so overrides do not chain, and holders merge with an
-inner scope over an outer and a later one over an earlier. Adding a key beside
+owner and its position (`bindingId`): `<entry>#<n>` for a contribution's binding,
+`<action>@<n>` for an action's own, so the two never collide. Every binding the
+kit ships declares an id, written `<owner>.<role>`: the owner is the action for
+an action's own binding and the tool or entry for a contribution's, and the role
+names what sets the binding apart there — its variant (`nudge.left.big`,
+`reorder.forward.extreme`) or, for a lone binding, its gesture (`undo.key`,
+`rect.drag`). A generated binding takes its role from what generated it
+(`tool.activate.rect`, `keymap.loupe.leader`), and one several owners share keeps
+one id, so one override moves it everywhere. A consumer's binding a host may
+persist an override for should declare one the same way. An override is a route
+string, a spec (`key('Mod+=')`, `held('Space')`), or `unbound()`; it applies
+to the declared binding, never to another override's result, so overrides do
+not chain, and holders merge with an inner scope over an outer and a later one over an earlier. Adding a key beside
 an action's own stays a tuning's job. The registry lays overrides over an
 action's own bindings, so menus, the palette and shortcut chips show the rebound
-key; the dispatcher lays them over contribution bindings. `captureKey` reads the
-next keystroke for a binding editor, and `keySpecRoute` writes it back as the
+key; the dispatcher lays them over contribution bindings. `captureGesture` reads
+the next click, double click, drag, right click or keystroke for a binding editor,
+telling a click from a drag at the dispatcher's drag threshold, and `captureKey`
+is its keystroke-only form. `keySpecRoute` writes a captured key back as the
 route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
 `*`), whose spec is stored as it is.
 
@@ -479,7 +489,9 @@ the same key and it opens mid-gesture too (decided 2026-10-20).
 here that means a modifier combination (`BROWSER_RESERVED_CHORDS`).
 
 Tapping the leader opens the keymap for the next input. Holding it keeps the
-keymap open until the key comes up, through any number of inputs. The keyboard
+keymap open until the key comes up, through any number of inputs. A leader triggered with no key
+(`trigger('keymap.<id>')`, from a palette or a menu) is a tap; with `{ hold: true }` it holds the
+keymap open until Escape (decided 2026-10-20). The keyboard
 channel tells the two apart: a keystroke that opened a level holds it until
 that key's keyup, and the level closes then if any input reached it meanwhile.
 A keymap may bind a leader of its own, so open keymaps form a stack
@@ -506,7 +518,9 @@ a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
 during one raw input apply when it ends, and the keymap's verdict on the first
 half decides the second. `<KeymapHint>` (`@weasel-js/ui`) lists the open
 keymap's rows, Escape first, from `useOpenKeymap`; a `MenuShortcut` carries the
-leaders that reach it and `formatShortcut` draws it `Loupe ▸ 2`.
+leaders that reach it. `formatShortcutParts` gives them as `leader` beside the
+key's own chips, `formatShortcut` writes them `Loupe ▸ 2`, and `KeySequence`
+(its `leader` prop) and `ShortcutKeys` draw them as labels before the keycaps.
 
 ### Interaction
 

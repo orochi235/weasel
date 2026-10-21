@@ -51,11 +51,11 @@ export function groupReorderSlots(deps: ActionDeps, at: Vec2): ReorderSlots | nu
   })));
 }
 
-const STEPS: readonly { key: string; axis: 'x' | 'y'; step: -1 | 1 }[] = [
-  { key: 'ArrowUp', axis: 'y', step: -1 },
-  { key: 'ArrowDown', axis: 'y', step: 1 },
-  { key: 'ArrowLeft', axis: 'x', step: -1 },
-  { key: 'ArrowRight', axis: 'x', step: 1 },
+const STEPS: readonly { key: string; role: string; axis: 'x' | 'y'; step: -1 | 1 }[] = [
+  { key: 'ArrowUp', role: 'up', axis: 'y', step: -1 },
+  { key: 'ArrowDown', role: 'down', axis: 'y', step: 1 },
+  { key: 'ArrowLeft', role: 'left', axis: 'x', step: -1 },
+  { key: 'ArrowRight', role: 'right', axis: 'x', step: 1 },
 ];
 
 /** Steps the selected node's member one place toward the start (`-1`) or the end (`1`). */
@@ -65,9 +65,9 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
     id: STEP_REORDER_ACTION_ID,
     label: 'Move along',
     group: 'diagram',
-    defaultBinding: STEPS.map(({ key, axis, step }) => ({
+    defaultBinding: STEPS.map(({ key, role, axis, step }) => ({
       spec: { kind: 'key' as const, key, mods: { alt: true } },
-      opts: { params: { axis, step } },
+      opts: { id: `${STEP_REORDER_ACTION_ID}.${role}`, params: { axis, step } },
     })),
     requires: ['scene', 'selection'],
     invoker: {

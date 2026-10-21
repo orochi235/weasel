@@ -158,14 +158,14 @@ describe('selectionTransformBindings', () => {
     });
   });
 
-  it('leaves the rotate binding bare with an empty behaviors list', () => {
+  it('gives the rotate binding only its id with an empty behaviors list', () => {
     const rotate = selectionTransformBindings({ rotate: { behaviors: [] as never } })
       .find((b) => b.actionId === 'rotate');
-    expect(rotate?.opts).toBeUndefined();
+    expect(rotate?.opts).toEqual({ id: 'selection.rotate.handle' });
   });
 
-  it('leaves the rotate binding bare with no options', () => {
+  it('gives the rotate binding only its id with no options', () => {
     const rotate = selectionTransformBindings().find((b) => b.actionId === 'rotate');
-    expect(rotate?.opts).toBeUndefined();
+    expect(rotate?.opts).toEqual({ id: 'selection.rotate.handle' });
   });
 });

@@ -311,6 +311,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.pick',
+            opts: { id: 'select.pick' },
           },
           // Release half of the deferred multi-click, modifiers as above. On a node
           // only: a drag leaves a deferral unspent, and a click on empty must clear.
@@ -321,6 +322,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.collapseDeferred',
+            opts: { id: 'select.collapseDeferred' },
           },
           // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
           // target: the ambient bindings that own the handles rank below this
@@ -328,16 +330,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: { kind: 'drag' as const, target: { kindOf: onEmptyCanvas } },
             actionId: 'areaSelect',
+            opts: { id: 'select.marquee' },
           },
           // resize/rotate bind only drag (no click), so a click on either handle
           // (body genuinely empty) would hit target:'empty' and wrongly clear selection.
           {
-            spec: {
-              kind: 'click' as const,
-              target: { kindOf: onEmptyCanvas },
-              mods: {},
-            },
+            spec: { kind: 'click' as const, target: { kindOf: onEmptyCanvas }, mods: {} },
             actionId: 'clearSelection',
+            opts: { id: 'select.clearOnClick' },
           },
         ],
       };

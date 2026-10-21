@@ -1,6 +1,6 @@
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
-import { bindingId, NO_OVERRIDES, overridden, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
+import { NO_OVERRIDES, overriddenBindings, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { liveScope, type EligibilityState } from './eligibility';
 import type { Contribution } from './types';
 
@@ -21,10 +21,9 @@ export function scopeBindings(
   for (const entry of entries) {
     const scope = liveScope(entry.id, entry.eligibility ?? {}, state);
     if (scope === null) continue;
-    (entry.bindings ?? []).forEach((declared, i) => {
-      const binding = overridden(declared, bindingId(declared, entry.id, i), overrides);
-      if (binding) out.push({ binding, scope, ownerId: entry.id });
-    });
+    for (const binding of overriddenBindings(entry.bindings ?? [], entry.id, overrides)) {
+      out.push({ binding, scope, ownerId: entry.id });
+    }
   }
   return out;
 }

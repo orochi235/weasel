@@ -159,5 +159,14 @@ describe('writeStroke', () => {
     const stroked = (dash: number[]) => content([{ kind: 'path', path: line, stroke: { paint: ink, width: 1, dash } }]);
     expect(await stroked([1 / 3, 2])).toContain('[0.3333 2] 0 d\n');
     expect(await stroked([0, 0])).not.toMatch(/ d\n/);
+    expect(await stroked([5, -1])).not.toMatch(/ d\n/);
+  });
+
+  it('drops a stroke whose dash has a non-finite entry, as the renderer draws none', async () => {
+    const { content: c, skipped } = await render([
+      { kind: 'path', path: line, stroke: { paint: ink, width: 1, dash: [4, NaN] } },
+    ]);
+    expect(c).not.toMatch(/\nS\n/);
+    expect(skipped.map((k) => k.kind)).toEqual(['command']);
   });
 });

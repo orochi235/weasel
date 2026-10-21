@@ -86,6 +86,7 @@ export function useCanvasDevtoolsRoot(c: {
     subscribeView: c.viewState.subscribeView,
     registry: () => describeRegistry({
       tools: c.tools, contributions: c.contributions, actions, deps,
+      ...(actions ? { overrides: actions.bindingOverrides() } : {}),
       routingKinds: (c.routing ?? inferredNodeRouting).map((k) => k.name),
     }),
     subscribeRegistry(listener) {

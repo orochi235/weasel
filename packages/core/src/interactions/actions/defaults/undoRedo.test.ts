@@ -9,7 +9,7 @@ describe('undoAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "z", mods: { mod: true } }', () => {
-    expect(undoAction.defaultBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true } });
+    expect(undoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true } }, opts: { id: 'undo.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -24,7 +24,7 @@ describe('redoAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "z", mods: { mod: true, shift: true } }', () => {
-    expect(redoAction.defaultBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true, shift: true } });
+    expect(redoAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true } }, opts: { id: 'redo.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

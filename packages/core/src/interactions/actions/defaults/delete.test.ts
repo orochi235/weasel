@@ -99,11 +99,11 @@ describe('deleteAction (descriptor)', () => {
   });
 
   it('defaultBinding = Delete/Backspace, gated to [*:initial]', () => {
-    expect(deleteAction.defaultBinding).toEqual({
+    expect(deleteAction.defaultBinding).toEqual([{ spec: {
       kind: 'key',
       key: ['Delete', 'Backspace'],
       phase: [{ channel: '*', phase: 'initial' }],
-    });
+    }, opts: { id: 'delete.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

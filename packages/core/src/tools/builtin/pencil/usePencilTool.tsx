@@ -53,7 +53,7 @@ export function usePencilTool(options: InsertToolOptions = {}): Tool {
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
-            opts: { params: { kind: 'pencil' } , ...insertBindingBehaviors(behaviors) },
+            opts: { id: 'pencil.drag', params: { kind: 'pencil' }, ...insertBindingBehaviors(behaviors) },
           },
         ],
       }),

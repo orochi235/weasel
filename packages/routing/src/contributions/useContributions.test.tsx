@@ -22,6 +22,7 @@ import { heldKeySpec } from '../interactions/actions/toolOffhand';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { hitPredicate } from '@weasel-js/gestures';
 import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
+import { createKeymapStack } from '../keymaps/keymapStack';
 
 const rect: Contribution = {
   id: 'rect',
@@ -95,6 +96,25 @@ describe('overlays follow the assembly the dispatcher routes by', () => {
 // a consumer adding a tool without switching tools saw a live, hittable
 // binding with no palette entry and no chrome — the "visible implies hittable"
 // invariant inverted.
+describe('a keymap draws its overlay while it is the innermost one open', () => {
+  it('draws at its position while open and stops when it closes', () => {
+    const stack = createKeymapStack();
+    const loupe: Contribution = { ...withOverlay({ id: 'loupe', eligibility: { keymap: true } }), overlayPosition: 'after-selection' };
+    const { result } = renderHook(() => {
+      useDepSource('keymaps', () => stack);
+      return useContributions({ entries: [loupe], focused: null });
+    }, { wrapper: ({ children }) => <DepRegistryProvider>{wrapper({ children })}</DepRegistryProvider> });
+    const closed = result.current.overlays;
+    expect(closed('after-selection')).toEqual([]);
+    act(() => { stack.push('loupe', 'Loupe'); });
+    expect(result.current.overlays).not.toBe(closed);
+    expect(overlayIds({ overlays: () => result.current.overlays('after-selection') })).toEqual(['loupe']);
+    expect(result.current.overlays('top')).toEqual([]);
+    act(() => { stack.closeAll(); });
+    expect(result.current.overlays('after-selection')).toEqual([]);
+  });
+});
+
 describe('ContributionsApi.entries tracks the entry list', () => {
   const pen: Contribution = {
     id: 'pen',
@@ -189,6 +209,30 @@ describe('route-conflict reporting sees action default bindings', () => {
   });
 });
 
+describe('route-conflict reporting sees binding overrides', () => {
+  const keyed = (id: string, key: string): Contribution => ({
+    id, eligibility: { always: true }, bindings: [{ spec: { kind: 'key', key }, actionId: `${id}.run` }],
+  });
+
+  it('checks again when an override moves a binding onto a taken key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { result } = renderHook(
+      () => {
+        useContributions({ entries: [keyed('a', 'L'), keyed('b', 'M')], focused: null });
+        return useActionsRegistry()!;
+      },
+      { wrapper: ({ children }) => <ActionsProvider><ActiveToolContextProvider>{children}</ActiveToolContextProvider></ActionsProvider> },
+    );
+    const conflicts = () => warn.mock.calls.map((args) => String(args[0])).filter((m) => m.includes('route conflict'));
+    expect(conflicts()).toEqual([]);
+    act(() => { result.current.overrideBindings({ 'b#0': { kind: 'key', key: 'L' } }); });
+    const said = conflicts();
+    warn.mockRestore();
+    expect(said).toHaveLength(1);
+    expect(said[0]).toContain('a, b');
+  });
+});
+
 // Every tool `defineTool` builds declares `focus: true`, and `useTools`'
 // `declareSlot(tool, 'always')` adds `always: true` on top of it. Bucketing on
 // "not focus-eligible" therefore put every ambient tool in the registry
@@ -278,7 +322,7 @@ describe('a declared offhand trigger engages its entry', () => {
     expect(offhands[0].defaultBinding).toEqual([
       {
         spec: { ...heldKeySpec(' '), phase: [{ channel: '*', phase: 'initial' }] },
-        opts: { params: { toolId: 'hand' } },
+        opts: { id: 'tool.offhand.hand', params: { toolId: 'hand' } },
       },
     ]);
   });

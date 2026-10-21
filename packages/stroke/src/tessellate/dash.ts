@@ -1,4 +1,5 @@
 import { anchorParamsBetween, type Polyline } from '@weasel-js/geom/tessellate';
+import { dashPattern } from '@weasel-js/paint';
 
 /** One "on" run being collected: points with their anchor params and, when
  *  the source carries them, widths. */
@@ -48,8 +49,13 @@ function toPolyline(run: Run, closed = false): Polyline {
  * The "off" portions become invisible gaps. Anchor params and per-point
  * widths and offsets are carried through: a dash boundary landing mid-segment takes
  * {@link anchorParamsBetween}'s params and the width interpolated there.
+ * A dash {@link dashPattern} reads as solid returns `pl` whole, and a
+ * non-finite one returns nothing.
  */
-export function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
+export function splitForDash(pl: Polyline, pattern: readonly number[]): Polyline[] {
+  const dash = dashPattern(pattern);
+  if (dash === 'solid') return [pl];
+  if (dash === 'non-finite') return [];
   const out: Polyline[] = [];
   const ptCount = pl.points.length / 2;
   const plA = pl.anchorA ?? new Uint32Array(ptCount);

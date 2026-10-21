@@ -33,8 +33,8 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
         cursor: 'text',
         presentation: PRESENTATION,
         bindings: [
-          { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
-          { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
+          { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'text.drag', params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
+          { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'text.editText' } },
         ],
       }),
     [behaviors],

@@ -19,14 +19,14 @@ describe('useStickyTool', () => {
   it('draws a sticky with a drag, through insert', () => {
     const { result } = renderHook(() => useStickyTool());
     expect(bindingFor(result.current, 'drag')).toEqual({
-      spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
+      spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'sticky.drag', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
     });
   });
 
   it('places a default-size sticky with a click, through place', () => {
     const { result } = renderHook(() => useStickyTool());
     expect(bindingFor(result.current, 'click')).toEqual({
-      spec: { kind: 'click' }, actionId: 'place', opts: { params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, size: STICKY_DEFAULTS.size } },
+      spec: { kind: 'click' }, actionId: 'place', opts: { id: 'sticky.click', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize, size: STICKY_DEFAULTS.size } },
     });
   });
 

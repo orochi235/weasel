@@ -48,12 +48,12 @@ export function useShapeBuilderTool(options: UseShapeBuilderToolOptions = {}): T
     overlay: overlay.layer,
     onDeactivate: built.reset,
     bindings: [
-      { spec: { kind: 'hover', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.hover' },
-      { spec: { kind: 'hover', motion: 'leave', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.leave' },
-      { spec: { kind: 'click', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.click' },
+      { spec: { kind: 'hover', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.hover', opts: { id: 'shapeBuilder.hover' } },
+      { spec: { kind: 'hover', motion: 'leave', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.leave', opts: { id: 'shapeBuilder.leave' } },
+      { spec: { kind: 'click', mods: { alt: 'optional' } }, actionId: 'shapeBuilder.click', opts: { id: 'shapeBuilder.click' } },
       // Alt is read live, so it can be pressed or let go mid-drag.
-      { spec: { kind: 'drag', mods: { alt: 'optional' } }, actionId: 'shapeBuilder', opts: { yields: true } },
-      { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'areaSelect' },
+      { spec: { kind: 'drag', mods: { alt: 'optional' } }, actionId: 'shapeBuilder', opts: { id: 'shapeBuilder.drag', yields: true } },
+      { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'areaSelect', opts: { id: 'shapeBuilder.marquee' } },
     ],
   }), [built, overlay, keybinding]);
 }

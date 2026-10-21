@@ -172,13 +172,13 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
       forceRender();
     },
     bindings: [
-      { spec: { kind: 'click', mods: { shift: 'optional' } }, actionId: 'spiro.placePoint' },
-      { spec: { kind: 'click', mods: { alt: true, shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { params: { kind: 'corner' } } },
-      { spec: { kind: 'click', mods: { mod: true, shift: 'optional' } }, actionId: 'spiro.finish' },
-      { spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'spiro.finish', opts: { params: { viaDoubleClick: true } } },
-      { spec: { kind: 'key', key: 'Enter' }, actionId: 'spiro.finish' },
-      { spec: { kind: 'key', key: 'Backspace' }, actionId: 'spiro.removeLast' },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: 'spiro.cancel' },
+      { spec: { kind: 'click', mods: { shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placePoint' } },
+      { spec: { kind: 'click', mods: { alt: true, shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placeCorner', params: { kind: 'corner' } } },
+      { spec: { kind: 'click', mods: { mod: true, shift: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finishClick' } },
+      { spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finishDoubleClick', params: { viaDoubleClick: true } } },
+      { spec: { kind: 'key', key: 'Enter' }, actionId: 'spiro.finish', opts: { id: 'spiro.finishKey' } },
+      { spec: { kind: 'key', key: 'Backspace' }, actionId: 'spiro.removeLast', opts: { id: 'spiro.removeLast' } },
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'spiro.cancel', opts: { id: 'spiro.cancel' } },
     ],
   }), [actions, overlay]);
 }

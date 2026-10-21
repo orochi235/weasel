@@ -5,6 +5,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef } from 'react';
 import { key } from '@weasel-js/gestures';
 import { ActionsProvider, useActionsRegistry } from '../interactions/actions/ActionsProvider';
+import type { ActionsRegistry } from '../interactions/actions/registry';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 import { DepRegistryProvider } from '../interactions/actions/depRegistry';
 import type { Action } from '../interactions/actions/action';
@@ -16,8 +17,11 @@ import { createDispatcher } from '../interactions/dispatcher/dispatcher';
 import type { InputEvent } from '../interactions/dispatcher/matcher';
 import { makeCtx, makeDepRegistry, makeRegistry } from '../interactions/dispatcher/testing/dispatcherStubs';
 
-function Probe({ def, outside, overrides }: { def: KeymapDef; outside: Action; overrides?: BindingOverrides }) {
+function Probe({ def, outside, overrides, onRegistry }: {
+  def: KeymapDef; outside: Action; overrides?: BindingOverrides; onRegistry?: (r: ActionsRegistry) => void;
+}) {
   const registry = useActionsRegistry()!;
+  onRegistry?.(registry);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const entries = keymapContribution(def);
   useEffect(() => {
@@ -32,6 +36,7 @@ function Probe({ def, outside, overrides }: { def: KeymapDef; outside: Action; o
 function mount(overrides?: BindingOverrides) {
   const inside = vi.fn();
   const outside = vi.fn();
+  let registry: ActionsRegistry | undefined;
   const def: KeymapDef = {
     id: 'loupe',
     label: 'Loupe',
@@ -47,7 +52,7 @@ function mount(overrides?: BindingOverrides) {
     <DepRegistryProvider>
       <ActiveToolContextProvider>
         <ActionsProvider>
-          <Probe def={def} outside={outsideAction} {...(overrides ? { overrides } : {})} />
+          <Probe def={def} outside={outsideAction} onRegistry={(r) => { registry = r; }} {...(overrides ? { overrides } : {})} />
         </ActionsProvider>
       </ActiveToolContextProvider>
     </DepRegistryProvider>,
@@ -56,7 +61,8 @@ function mount(overrides?: BindingOverrides) {
     act(() => { window.dispatchEvent(new KeyboardEvent(type, { key: k, code: `Key${k.toUpperCase()}`, ...init })); });
   };
   const tap = (k: string) => { send('keydown', k); send('keyup', k); };
-  return { inside, outside, send, tap };
+  const trigger = (params?: Record<string, unknown>) => { act(() => { registry!.trigger('keymap.loupe', params); }); };
+  return { inside, outside, send, tap, trigger };
 }
 
 describe('a leader mid-gesture', () => {
@@ -127,6 +133,27 @@ describe('keymapContribution', () => {
     expect(inside).toHaveBeenCalledOnce();
   });
 
+  it('a leader triggered without a key is tapped: it opens the keymap for one input', () => {
+    const { inside, outside, tap, trigger } = mount();
+    trigger();
+    tap('2');
+    tap('2');
+    expect(inside).toHaveBeenCalledOnce();
+    expect(outside).toHaveBeenCalledOnce();
+  });
+
+  it('a leader triggered with `hold` keeps the keymap open until Escape', () => {
+    const { inside, outside, tap, trigger } = mount();
+    trigger({ hold: true });
+    tap('2');
+    tap('2');
+    tap('2');
+    expect(inside).toHaveBeenCalledTimes(3);
+    tap('Escape');
+    tap('2');
+    expect(outside).toHaveBeenCalledOnce();
+  });
+
   it('closes on window blur', () => {
     const { outside, tap } = mount();
     tap('l');
@@ -140,6 +167,14 @@ describe('keymapContribution', () => {
     tap('m');
     tap('2');
     expect(inside).toHaveBeenCalledOnce();
+  });
+
+  it('puts its overlay on the keymap entry, so it draws only while the keymap is open', () => {
+    const [keymap, leader] = keymapContribution({
+      id: 'loupe', label: 'Loupe', leader: key('l'), bindings: [], overlay: 'reticle', overlayPosition: 'after-selection',
+    });
+    expect(keymap).toMatchObject({ overlay: 'reticle', overlayPosition: 'after-selection' });
+    expect(leader!.overlay).toBeUndefined();
   });
 
   it('refuses a keymap that binds Escape', () => {

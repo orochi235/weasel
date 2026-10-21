@@ -30,7 +30,7 @@ describe('useTextTool surface', () => {
       expect.arrayContaining([
         expect.objectContaining({
           actionId: 'insert',
-          opts: { params: { kind: 'text' } },
+          opts: { id: 'text.drag', params: { kind: 'text' } },
         }),
         expect.objectContaining({ actionId: 'enterTextEdit' }),
       ]),

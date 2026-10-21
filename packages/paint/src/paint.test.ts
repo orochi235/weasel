@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   dashForStrokeStyle,
+  dashPattern,
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
 } from './paint';
@@ -37,6 +38,11 @@ describe('stroke dash styles', () => {
     expect(strokeDashStyleOf(undefined, 4)).toBe('solid');
     expect(strokeDashStyleOf([], 4)).toBe('solid');
     expect(strokeDashStyleOf([0, 0], 4)).toBe('solid');
+    expect(strokeDashStyleOf([5, -1], 4)).toBe('solid');
+  });
+
+  it('reads a dash with a non-finite entry as custom', () => {
+    expect(strokeDashStyleOf([NaN, 2], 4)).toBe('custom');
   });
 
   it('reads an array matching no preset as custom', () => {
@@ -57,5 +63,24 @@ describe('stroke dash styles', () => {
     const w = 7 / 3;
     const trimmed = STROKE_DASH_RATIOS.dashed.map((r) => Math.round(r * w * 1000) / 1000);
     expect(strokeDashStyleOf(trimmed, w)).toBe('dashed');
+  });
+});
+
+describe('dashPattern', () => {
+  it('passes a pattern that advances through unchanged', () => {
+    const dash = [4, 0, 1];
+    expect(dashPattern(dash)).toBe(dash);
+  });
+
+  it('reads an absent, empty, all-zero or negative dash as solid', () => {
+    for (const dash of [undefined, [], [0], [0, 0], [5, -1], [-2, -2]]) {
+      expect(dashPattern(dash), JSON.stringify(dash)).toBe('solid');
+    }
+  });
+
+  it('reads any non-finite entry as non-finite, ahead of a negative one', () => {
+    for (const dash of [[NaN], [4, NaN], [Infinity, 1], [-1, -Infinity]]) {
+      expect(dashPattern(dash), String(dash)).toBe('non-finite');
+    }
   });
 });

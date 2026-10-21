@@ -33,8 +33,8 @@ export function measurementsContribution(
     },
     actions: [...measureCommands(ms), measurePickAction(ms), measureDragAction(ms)],
     bindings: [
-      { spec: { kind: 'click', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.pick },
-      { spec: { kind: 'drag', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.drag },
+      { spec: { kind: 'click', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.pick, opts: { id: 'weasel-measure.click' } },
+      { spec: { kind: 'drag', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.drag, opts: { id: 'weasel-measure.drag' } },
     ],
   };
 }

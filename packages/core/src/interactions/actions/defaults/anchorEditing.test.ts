@@ -102,11 +102,11 @@ describe('deleteAnchors', () => {
   });
 
   it('binds Delete and Backspace', () => {
-    expect(deleteAnchorsAction.defaultBinding).toEqual({
+    expect(deleteAnchorsAction.defaultBinding).toEqual([{ spec: {
       kind: 'key',
       key: ['Delete', 'Backspace'],
       phase: [{ channel: '*', phase: 'initial' }],
-    });
+    }, opts: { id: 'deleteAnchors.key' } }]);
   });
 });
 
@@ -129,10 +129,10 @@ describe('cutPathAtAnchor', () => {
   });
 
   it('uses alt+shift so it cannot race insertPathAnchor on alt+click', () => {
-    expect(cutPathAtAnchorAction.defaultBinding).toEqual({
+    expect(cutPathAtAnchorAction.defaultBinding).toEqual([{ spec: {
       kind: 'click',
       mods: { alt: true, shift: true },
-    });
+    }, opts: { id: 'cutPathAtAnchor.click' } }]);
   });
 });
 

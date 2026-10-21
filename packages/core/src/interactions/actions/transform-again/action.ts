@@ -54,7 +54,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   label: LABEL,
   icon: icon('transformAgain'),
   group: 'edit',
-  defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true } }, opts: { id: 'transformAgain.key' } }],
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',

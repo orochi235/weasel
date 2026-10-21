@@ -30,6 +30,10 @@ export function renameGroupContribution(now: () => ReorderSource, rename: (group
       },
     }],
     // Empty space included: an unlabeled group's grip is padding.
-    bindings: [{ spec: { kind: 'doubleClick', target: { kindOf: ANYWHERE } }, actionId: RENAME_GROUP_ACTION_ID }],
+    bindings: [{
+      spec: { kind: 'doubleClick', target: { kindOf: ANYWHERE } },
+      actionId: RENAME_GROUP_ACTION_ID,
+      opts: { id: `${RENAME_GROUP_ACTION_ID}.doubleClick` },
+    }],
   };
 }

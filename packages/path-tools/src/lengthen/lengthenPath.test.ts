@@ -142,6 +142,9 @@ describe('lengthenPathAction', () => {
   });
 
   it('binds a plain drag on an anchor, Shift optional', () => {
-    expect(lengthenPathAction.defaultBinding).toEqual({ kind: 'drag', target: expect.anything(), mods: { shift: 'optional' } });
+    expect(lengthenPathAction.defaultBinding).toEqual([{
+      spec: { kind: 'drag', target: expect.anything(), mods: { shift: 'optional' } },
+      opts: { id: 'lengthenPath.drag' },
+    }]);
   });
 });

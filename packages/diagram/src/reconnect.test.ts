@@ -238,7 +238,11 @@ describe('the edge-end affordance', () => {
     expect(EDGE_END_AFFORDANCE_KIND).toBe('layer:diagram-edge-ends');
     expect(contribution.eligibility).toEqual({ claimed: true });
     expect(contribution.bindings).toEqual(expect.arrayContaining([
-      { spec: { kind: 'drag', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` }, actionId: 'diagram.reconnect' },
+      {
+        spec: { kind: 'drag', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` },
+        actionId: 'diagram.reconnect',
+        opts: { id: 'diagram.reconnect.drag' },
+      },
       expect.objectContaining({ spec: { kind: 'pointerDown', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` } }),
       expect.objectContaining({ spec: { kind: 'click', target: `affordance:${EDGE_END_AFFORDANCE_KIND}` } }),
     ]));

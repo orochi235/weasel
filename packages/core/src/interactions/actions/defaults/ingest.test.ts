@@ -75,7 +75,8 @@ describe('ingestAction', () => {
   });
 
   it('defaultBinding: drop + paste, both with all-optional modifiers', () => {
-    const bindings = ingestAction.defaultBinding as Array<{ kind: string; mods?: Record<string, string> }>;
+    const bindings = (ingestAction.defaultBinding as Array<{ spec: { kind: string; mods?: Record<string, string> } }>)
+      .map((b) => b.spec);
     const kinds = bindings.map((b) => b.kind).sort();
     expect(kinds).toEqual(['drop', 'paste']);
     for (const b of bindings) {
