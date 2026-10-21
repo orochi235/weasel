@@ -980,12 +980,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) The fleet `gate` project skips every ci.yml step after the first build.** It reads only
-  the `check:*`, typecheck and lint steps above `npm run build` (`scripts/ci-checks.gate.ts`), so
-  `check:manifests`, `check:treeshake`, `check:react-free` and both `test:smoke:consumer` runs
-  never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
-  run green. Running them needs a full build of every package and then labkit's, on a tree other
-  jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+- **(P2) The site build fails on `main`: 21 routing keymap exports match no typedoc category.**
+  `npm run build:demo`'s API pass stops with `21 export(s) match no category rule` for
+  `useOpenKeymap`, `captureKey`, `createKeymapStack`, `KeymapStack` and the rest of
+  `packages/routing/src/keymaps/` — found by `test:fleet:postbuild` at `12f2b8ae7` (2026-10-21).
+  The keymaps are not on `origin/main` yet, so CI has not seen it; the next push fails CI's last
+  step and every Pages deploy. Fix: rules for them in `typedoc/categories.mjs`.
 
 - **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
   Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
