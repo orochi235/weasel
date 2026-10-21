@@ -19,6 +19,7 @@ import { appCommandsContribution, type AppCommands } from '../appCommands';
 import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
 import { DRAW_FEATURES } from '../drawFeatures';
 import { useFileCommands } from '../fileCommands';
+import { useDebugCommands } from './devRoutes';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryEntries';
 import s from './RegistryInspector.module.css';
 
@@ -51,6 +52,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     systemLayers: [...DRAW_LAYERS],
     initial: [],
   });
+  useDebugCommands();
   useFileCommands({
     scene, filename: 'probe', paperSize: 'letter', backgroundColor: '#ffffff',
     setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,

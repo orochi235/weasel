@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
 import { CommandBar } from './CommandBar';
+import { DEBUG_MENU, DEV_ROUTES, useDebugCommands } from './dev/devRoutes';
+import { FILE_NEW_MENU } from './fileCommands';
 import { PAPER_SIZES } from './paperSizes';
 
 const newRun = vi.fn();
@@ -16,6 +18,11 @@ function FileStubs() {
   useCommand('file.open', 'Open…', openRun);
   useCommand('file.import', 'Import…', importRun);
   useCommand('file.save', 'Save', saveRun);
+  return null;
+}
+
+function DebugStubs() {
+  useDebugCommands();
   return null;
 }
 
@@ -40,11 +47,15 @@ afterEach(() => {
 });
 
 describe('CommandBar', () => {
-  it('starts a new document at the paper size picked from New', () => {
+  it('draws New from the file.new action, one row per paper size', () => {
+    expect(Object.values(FILE_NEW_MENU.children)).toEqual([expect.objectContaining({ kind: 'action', action: 'file.new' })]);
+  });
+
+  it.each(PAPER_SIZES)('starts a new document at $label when that row is picked from New', ({ key, label }) => {
     renderBar();
     openMenu(/New/);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'A4' }));
-    expect(newRun).toHaveBeenCalledWith({ size: 'a4' });
+    fireEvent.click(screen.getByRole('menuitem', { name: label }));
+    expect(newRun).toHaveBeenCalledWith({ size: key });
   });
 
   it('opens, imports and saves from their own buttons', () => {
@@ -64,11 +75,20 @@ describe('CommandBar', () => {
     expect(row.firstElementChild).toBe(screen.getByRole('menubar', { name: 'Menu bar' }));
   });
 
-  it('opens a debug surface in a new tab', () => {
+  it('draws Debug from the debug.open action, one row per dev route', () => {
+    expect(Object.values(DEBUG_MENU.children)).toEqual([expect.objectContaining({ kind: 'action', action: 'debug.open' })]);
+  });
+
+  it.each(DEV_ROUTES)('opens $label in a new tab from the Debug menu', ({ href, label }) => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    render(<CommandBar />);
+    render(
+      <ActionsProvider>
+        <DebugStubs />
+        <CommandBar />
+      </ActionsProvider>,
+    );
     openMenu(/Debug/);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
-    expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');
+    fireEvent.click(screen.getByRole('menuitem', { name: label }));
+    expect(open).toHaveBeenCalledWith(`${window.location.pathname}${window.location.search}${href}`, '_blank', 'noopener');
   });
 });

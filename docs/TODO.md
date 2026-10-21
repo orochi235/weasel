@@ -760,10 +760,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   structure, view, text, compound, record, and app stay `ActionBar`s in `CommandBar.tsx`, and
   Simplify, Offset, Corner shape, and the paper size are draw's own controls with no pref form: each
   needs a custom pref kind before it can sit in a schema asset.
-- **(P3) New and Debug are not menu assets.** Their rows are not registered actions: New hands a
-  paper size to `onNew`, and Debug opens a dev route in a new tab. A `file.new` action with a
-  variant per paper size would make New an `actions` leaf, with a key binding besides; the debug
-  routes could be `run` leaves.
 - **(P3) A schema bar has no strip of its own to match `ActionBar`'s.** `ActionBar.module.css` draws
   the bordered strip under its buttons, and draw's `SchemaSurfaces.module.css` restates it for a
   `Bar` drawn from a surface asset. `Bar`'s `framed` is a different strip (margin, height). One strip

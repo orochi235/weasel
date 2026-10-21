@@ -6,13 +6,12 @@
  *  `surfaces` slot when they are shown as toolbars or menus. The app's own view toggles, Release compound path, and
  *  Preferences are actions too (`appCommands`), as are Record and Play
  *  (`recording`) and New, Open, Import and Save (`fileCommands`), so a button's shortcut is the
- *  binding that fires it. */
+ *  binding that fires it. The Debug menu's rows are `debug.open`'s variants, one per dev page. */
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
 import { Bar } from '@weasel-js/ui/components/Bar';
-import { MenuButton } from '@weasel-js/ui/components/MenuButton';
-import { DEV_ROUTES } from './dev/devRoutes';
+import { DEBUG_MENU } from './dev/devRoutes';
 import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
@@ -35,12 +34,7 @@ const FILE_BAR = pref.group('', {
 
 const KIT_GROUPS = ['history', 'clipboard', 'edit', 'structure'] as const;
 
-/** The in-repo dev surfaces; each opens in a new tab. */
-const DEBUG_ROUTES = DEV_ROUTES.map((r) => ({ value: r.href, label: r.label }));
-
-function openDebugRoute(hash: string) {
-  window.open(`${window.location.pathname}${window.location.search}${hash}`, '_blank', 'noopener');
-}
+const DEBUG_BAR = pref.group('', { debug: DEBUG_MENU }, { as: 'bar' });
 
 export function CommandBar(p: CommandBarProps) {
   return (
@@ -59,7 +53,7 @@ export function CommandBar(p: CommandBarProps) {
       <div className="wd-commandbar-spacer" />
       <KitActionBar group="record" />
       <div className="wd-commandbar-group">
-        <MenuButton label="Debug" tooltip="Debug surfaces" items={DEBUG_ROUTES} onAction={openDebugRoute} />
+        <Bar schema={DEBUG_BAR} />
       </div>
       <KitActionBar group="app" />
     </div>

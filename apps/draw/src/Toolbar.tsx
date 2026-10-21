@@ -20,6 +20,7 @@ import {
 } from 'react';
 import { CommandBar } from './CommandBar';
 import type { DrawScene } from './drawDocument';
+import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
@@ -98,6 +99,7 @@ export function Toolbar({
     isEmpty: clipboard.isEmpty,
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
+  useDebugCommands();
   useFileCommands({ scene, filename, paperSize, backgroundColor, setFilename, setPaperSize, setBackgroundColor });
 
   return (
