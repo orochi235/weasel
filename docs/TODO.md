@@ -1026,6 +1026,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) The browser project may be capped by sharing one Chromium.** It runs 6 tabs in one headless
+  Chromium (`vitest.config.ts`, `maxWorkers: 6`), and more tabs measured no faster on 14- and 18-core
+  nodes, plausibly because every tab's WebGL goes through one GPU process (inferred, not measured).
+  Splitting the project across 2 or 3 Chromium processes (vitest `--shard` per process) is untested:
+  run the browser project alone at 1, 2 and 3 processes, once each first, on msb-uai and teitou, keeping
+  every run's raw numbers like `scripts/bench-overlap-reserve.mjs` does (2026-10-21).
 - **(P2) `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
   writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
   only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21
