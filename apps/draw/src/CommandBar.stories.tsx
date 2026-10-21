@@ -21,6 +21,7 @@ import {
   type AppCommands,
 } from './appCommands/actions';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
 import './app.css';
 
@@ -60,6 +61,7 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useAction(toggleSymmetryAction);
   useAction(releaseCompoundAction);
   useAction(preferencesAction);
+  useDebugCommands();
   useFileCommands({
     scene: storyScene, filename: 'story', paperSize: 'letter', backgroundColor: '#ffffff',
     setFilename: noop, setPaperSize: noop, setBackgroundColor: noop,
