@@ -95,6 +95,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setLayout(id: string, layout: LayoutStrategy<TPose> | string | null): void;
       /** Move a node to another layer — what a `setLayer` op writes through. */
       setLayer(id: string, layer: TLayer): void;
+      /** Retarget a derived node's sources — what a `setDependsOn` op writes through. */
+      setDependsOn(id: string, dependsOn: readonly string[] | 'children' | undefined): void;
       /** Hide or show a node — what a `setHidden` op writes through. */
       setHidden(id: string, hidden: boolean): void;
       /** Lock or unlock a node — what a `setLocked` op writes through. */

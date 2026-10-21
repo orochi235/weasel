@@ -1,13 +1,14 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import { transformPreview } from '../transformFinish';
 import { pastDragThreshold } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
 import { nextFrame } from './frame';
 import { commitMove } from './commit';
 import { recordTransform } from '../transform-again/memory';
+import { SNAP_ROLES } from 'features/snap/roles';
 export type { ReparentOnDrop };
 
 /**
@@ -35,7 +36,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   // through.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap'],
+  modifierRoles: SNAP_ROLES,
+  requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -45,6 +47,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const { session, readers } = begun;
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
+      const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
       // Where the last move put the pointer, once the drag has passed its
       // threshold; null until then.
       let engaged: { x: number; y: number } | null = null;
@@ -59,7 +62,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
           engaged = moveCtx.world;
           frame = nextFrame(session, readers, moveCtx);
-          hold.set(frame.previews);
+          hold.set(preview.poses());
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
@@ -75,14 +78,14 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               if (committed) recordTransform(session.scene, { kind: 'translate', ...frame.delta }, subject);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
-            session.pathSnap?.snap.release?.();
+            session.snap?.end();
             // After the commit, so no frame can paint the pre-drag pose between
             // the override going away and the document catching up.
             closeGesture({ hold, previews: frame.previews, behaviors: session.behaviors, ctx: session.gestureCtx, lifecycle: session.lifecycle }, committed);
           }
         },
-        previewIds: () => frame.previews.keys(),
-        previewPose: (id: string) => frame.previews.get(id as NodeId) ?? null,
+        previewIds: preview.previewIds,
+        previewData: preview.previewData,
         previewOpaqueIds: () => (frame.opaque.size === 0 ? null : frame.opaque),
       };
     },

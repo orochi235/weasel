@@ -51,13 +51,10 @@ export const CLOSE_HINT_RADIUS_PX = 8;
 
 /** How near the pen's first anchor, in screen px, a click closes the subpath. */
 export const PEN_CLOSE_HIT_PX = 8;
-/** How near another path's anchor, in screen px, a placed anchor lands on it. */
-export const PEN_ANCHOR_SNAP_PX = 8;
 
 /** The pen's reach in screen px: its own option, else the kit setting, else the constant. */
-export const penReachOf = (o: { closeHitRadius?: number; anchorSnapRadius?: number; kitSettings?: KitSettingsStore }) => ({
+export const penReachOf = (o: { closeHitRadius?: number; kitSettings?: KitSettingsStore }) => ({
   close: o.closeHitRadius ?? o.kitSettings?.get('targets.penCloseHitPx') ?? PEN_CLOSE_HIT_PX,
-  anchorSnap: o.anchorSnapRadius ?? o.kitSettings?.get('targets.penAnchorSnapPx') ?? PEN_ANCHOR_SNAP_PX,
 });
 
 const radiiOf = (kit: KitSettingsStore | undefined) => ({

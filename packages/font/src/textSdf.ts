@@ -15,6 +15,7 @@
 import type { FontStyle } from './fontStyle';
 import { getFont } from './registerFont';
 import { PAGE_SIZE, SDF_RADIUS } from './dynamic/dynamicAtlas';
+import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 
 /** `a_paintMode` value for glyphs off an MSDF atlas — the median of R,G,B. */
 export const GLYPH_MODE_MSDF = 1;
@@ -82,4 +83,27 @@ export function glyphFieldScale(
   if (!font) return undefined;
   const range = font.distanceRange ?? DEFAULT_MSDF_RANGE;
   return [font.common.scaleW / range, font.common.scaleH / range];
+}
+
+/**
+ * How far the field threshold drops for a glyph faked bold from a lighter
+ * face. Tuned on Inter: it thickens strokes about a pixel at 16px without
+ * breaking glyph topology.
+ */
+export const SYNTH_BOLD_AMOUNT = 0.08;
+
+/**
+ * How far synthetic bold moves each edge of a glyph outward, in em, for the
+ * atlas that serves it: `SYNTH_BOLD_AMOUNT` of the field's span, which is
+ * `distanceRange` texels in a baked MSDF atlas and `SDF_RADIUS` in a runtime
+ * canvas page, over the atlas's texels per em. `undefined` for an atlas that
+ * is not registered.
+ */
+export function syntheticBoldGrowth(
+  source: 'atlas' | 'canvas', family: string, weight: number, style: FontStyle,
+): number | undefined {
+  if (source === 'canvas') return (SYNTH_BOLD_AMOUNT * SDF_RADIUS) / BAKE_SIZE;
+  const font = getFont(family, weight, style)?.font;
+  if (!font) return undefined;
+  return (SYNTH_BOLD_AMOUNT * (font.distanceRange ?? DEFAULT_MSDF_RANGE)) / font.info.size;
 }

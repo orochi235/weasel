@@ -13,6 +13,7 @@ import type { PointerContextValue } from '@weasel-js/routing/react';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { translateEach } from '../selectionSubtree';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -64,6 +65,7 @@ function alignSelection(
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
+  finish?: TransformFinisher,
 ): void {
   const ids = selection.get();
   const frame = scenePoseFrame(scene);
@@ -77,7 +79,7 @@ function alignSelection(
   );
   if (target === null) return;
   const moves = ids.map((id, i) => ({ id, ...alignDeltaFor(bounds[i], target, edge) }));
-  scene.batch('Align', () => translateEach(scene, frame, geom, moves));
+  scene.batch('Align', () => translateEach(scene, frame, geom, moves, finish, 'Align'));
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +93,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     icon: ICON_FOR[edge],
     group: 'align',
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke'],
+    requires: ['selection', 'scene', 'poseDescriptor', 'pointer', 'view', 'boundsIncludeStroke', 'transformFollowers'],
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {
@@ -102,7 +104,7 @@ function makeAlignAction(edge: AlignEdge): Action {
         if (!selection || !scene) return;
         alignSelection(
           selection, scene, edge, poseDescriptorOf(deps.poseDescriptor),
-          params, deps.pointer, (frame) => drawnBoxes(deps, frame),
+          params, deps.pointer, (frame) => drawnBoxes(deps, frame), transformFinisher(deps),
         );
       },
     } satisfies ImmediateInvoker,

@@ -10,6 +10,7 @@ import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront,
 import { isPackagePage } from './Packages/catalog';
 import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
+import { DevtoolsSplit } from './DevtoolsSplit';
 
 // These are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -19,6 +20,8 @@ const PackagePages = lazy(() => import('./Packages/Packages'));
 const WhatsNew = lazy(() => import('./WhatsNew').then((m) => ({ default: m.WhatsNew })));
 const Releases = lazy(() => import('./Releases').then((m) => ({ default: m.Releases })));
 const GetStarted = lazy(() => import('./FrontPage/GetStarted').then((m) => ({ default: m.GetStarted })));
+// A development aid only: production carries neither the toggle nor the panel.
+const DemoDevtools = import.meta.env.DEV ? lazy(() => import('./DemoDevtools')) : null;
 
 /** Format a git-ISO date as "3d ago" / "2w ago" / "Apr 2024" — close
  *  in time gets a relative phrasing; older falls back to a static
@@ -33,7 +36,10 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-import { ColorModeControl, CommandPalette, InlineMarkdown } from '@weasel-js/ui';
+import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { SiteColorModeContext, useSiteColorMode } from './colorMode';
 import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
 import logoUrl from './assets/weasel-logo.svg';
@@ -98,6 +104,7 @@ export function WeaselDemos() {
           <p><a href="./docs/ui/forge/">UI catalog →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
+          <p><a href="./chart/">WeaselChart →</a></p>
           <ColorModeControl
             className="ckd-sidebar-mode"
             value={colorMode.preference}
@@ -173,6 +180,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
   const current = tabs[activeTab];
   const panelRef = useRef<HTMLDivElement>(null);
   const code = useSourceText(current, useHasBeenNearViewport(panelRef));
+  const [devtools, setDevtools] = useState(false);
 
   const source = (
     <div className="ckd-source">
@@ -209,16 +217,19 @@ function DemoView({ entry }: { entry: DemoEntry }) {
             ))}
           </p>
         )}
+        {DemoDevtools && <Switch isSelected={devtools} onChange={setDevtools}>Devtools</Switch>}
       </header>
 
-      <div className="ckd-canvas-wrap">
-        <Suspense fallback={<div className="ckd-demo-loading" />}>
-          <DemoFrame>
-            <Component />
-          </DemoFrame>
-        </Suspense>
-        {entry.hint && <span className="ckd-hint"><InlineMarkdown text={entry.hint} /></span>}
-      </div>
+      <DevtoolsSplit panel={DemoDevtools && devtools ? <Suspense fallback={null}><DemoDevtools /></Suspense> : null}>
+        <div className="ckd-canvas-wrap">
+          <Suspense fallback={<div className="ckd-demo-loading" />}>
+            <DemoFrame label={entry.title}>
+              <Component />
+            </DemoFrame>
+          </Suspense>
+          {entry.hint && <span className="ckd-hint"><InlineMarkdown text={entry.hint} /></span>}
+        </div>
+      </DevtoolsSplit>
 
       <div className="ckd-code-panel" ref={panelRef}>
         {tabs.length > 1 ? (

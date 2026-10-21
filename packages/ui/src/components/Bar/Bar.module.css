@@ -231,6 +231,7 @@
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
   font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
   white-space: nowrap;
   cursor: default;
 }
@@ -240,7 +241,8 @@
   padding: 0 var(--wzl-space-3);
 }
 
-.action:hover:not([disabled], [aria-disabled='true']) {
+.action:hover:not([disabled], [aria-disabled='true']),
+.action[aria-expanded='true'] {
   background: var(--wzl-border);
 }
 

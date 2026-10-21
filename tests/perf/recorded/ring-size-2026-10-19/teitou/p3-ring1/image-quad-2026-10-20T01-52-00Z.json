@@ -1,0 +1,72 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "image-quad",
+  "git": {
+    "sha": "7ddf3ce93ce639c4edccd6d503bd2b1d004a979a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-20T01:52:00.783Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      3.24,
+      4.79,
+      6.8
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "quads": 20000,
+    "sizePx": 8,
+    "runs": 3,
+    "variants": "renderer/unmerged,renderer/image",
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "renderer/image",
+      "params": {
+        "group": "renderer",
+        "variant": "image"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 0.09,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.09,
+            0.08925,
+            0.0925
+          ]
+        }
+      }
+    },
+    {
+      "id": "renderer/unmerged",
+      "params": {
+        "group": "renderer",
+        "variant": "unmerged"
+      },
+      "metrics": {
+        "perQuad": {
+          "value": 19.67925,
+          "unit": "us",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            19.67925,
+            19.83375,
+            19.34225
+          ]
+        }
+      }
+    }
+  ]
+}

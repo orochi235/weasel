@@ -8,11 +8,13 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  CANVAS_CONTEXT_ATTRIBUTES,
   DEFAULT_ALLOWED_CAPABILITIES,
   WeaselProvider,
   buildRuleCtx,
   createDispatcher,
   createPoseFeed,
+  createSnapOutcomeStore,
   useAction,
   useActionsRegistry,
   useActiveToolContext,
@@ -26,13 +28,17 @@ import {
   type NodeId,
   type Tool,
 } from '@weasel-js/core';
+import { useKitSettings } from '@weasel-js/react';
 import { f } from '../../src/config';
 import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
-import { useTrialOrbit } from '../../src/trial/useTrialOrbit';
+import { useOrbitView } from '../../src/trial/useOrbitView';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import {
+  alignPlaneSource,
+  boxSnapSource,
   collectOverlayBoxes,
   createAreaSelect,
   createCamera,
@@ -40,7 +46,9 @@ import {
   createNodeAtPoint,
   createPoseDescriptor,
   createSnap,
+  groundGridSource,
   pose3,
+  projectSnapMarks,
   screenBoxOf,
   useOrbitTool,
   orbitAction,
@@ -97,9 +105,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // The trial owns the camera: it persists, Clone copies it and Reset puts it
   // back. The wheel reaches it through the trial; the orbit tool below turns
   // and pans it through this viewport's own `camera3d` dep.
-  const trialOrbit = useTrialOrbit();
-  const camera = trialOrbit?.camera ?? HOME;
-  const setCameraRef = useLatest(trialOrbit?.setCamera);
+  const orbitView = useOrbitView();
+  const camera = orbitView.camera ?? HOME;
+  const setCameraRef = useLatest(orbitView.setCamera);
   const [selection, setSelection] = useState<readonly NodeId[]>([]);
 
   const cameraRef = useLatest(camera);
@@ -138,6 +146,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // through the feed instead; this is what drives a frame for the rest.
   useEffect(() => dispatcher.subscribe(repaint), [dispatcher, repaint]);
 
+  // What the snap in flight met, drawn beside the chrome.
+  const snapMarks = useMemo(() => createSnapOutcomeStore<Vec3>(), []);
+  useEffect(() => snapMarks.subscribe(repaint), [snapMarks, repaint]);
+
   // Everything the kernel needs told about this world: the scene, where the
   // camera is, and — because a sphere's box does not widen when it turns — how
   // wide a solid actually is.
@@ -153,7 +165,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   // ── Painting ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!glCanvas) return;
-    const gl = glCanvas.getContext('webgl2', { preserveDrawingBuffer: true });
+    const gl = glCanvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
     if (!gl) return;
 
     const renderer = createRenderer3d(gl);
@@ -208,10 +220,13 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // lab's identity `clientToWorld` leaves as the client rect.
       chrome.push(...collectOverlayBoxes(dispatcher.getInFlightHandles(), originRef.current));
 
+      // Projected without the pane's origin, so they land in the tile as drawn.
+      const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });
+
       renderer.draw(solids, cameraRef.current, device, chrome, {
         width: rect.w,
         height: rect.h,
-      });
+      }, snap);
     });
 
     return () => {
@@ -220,7 +235,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef]);
+  }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef, snapMarks]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
   const selectionApi = useMemo(
@@ -274,12 +289,20 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [scene, viewportSource],
   );
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
-  const snap = useMemo(() => createSnap(), []);
+  const kitSettings = useKitSettings();
+  const snap = useMemo(
+    () => createSnap(world, {
+      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
+      store: snapMarks,
+      kitSettings,
+    }),
+    [world, snapMarks, kitSettings],
+  );
 
   const camera3d = useMemo(
     () => ({
       get: () => cameraRef.current,
-      set: (next: Camera3d) => setCameraRef.current?.(next),
+      set: (next: Camera3d) => setCameraRef.current(next),
       size: () => sizeRef.current,
     }),
     [cameraRef, setCameraRef],
@@ -424,12 +447,12 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
 
   // The trial's camera anchors its dolly in this pane, under the toolbar,
   // where the renderer projects.
-  const viewportRef = trialOrbit?.viewportRef;
+  const viewportRef = orbitView.viewportRef;
   const attachPane = useCallback(
     (el: HTMLDivElement | null) => {
       paneRef.current = el;
       attachTile(el);
-      viewportRef?.(el);
+      viewportRef(el);
     },
     [attachTile, viewportRef],
   );

@@ -44,6 +44,8 @@ export interface PathsEditItem extends ConstrainPathEditOptions {
   /** `before` as the edit left it; `before` itself for a path the edit did not touch. */
   after: PolygonPath;
   constraints: readonly PathConstraint[];
+  /** For a path the edit left alone: its anchors give way as freely as any the edit did not move, rather than only when the edited paths cannot. */
+  yields?: boolean;
 }
 
 /**
@@ -107,7 +109,8 @@ function itemOf(g: number, offsets: readonly number[]): { item: number; anchor: 
  * An edit of constrained paths, finished so their constraints and the links
  * between them hold, as one solve over every anchor: the anchors and handles
  * the edit moved are held, and so are the anchors of a path it left alone
- * (`after === before`), except one held on a segment; `fixed` anchors go
+ * (`after === before`), except one held on a segment or on a path that
+ * `yields`; `fixed` anchors go
  * back to where they were, and the rest move the least they must. A constraint
  * that did not hold before the edit is left out of the solve, and reported.
  * Each item's own `horizontal` and `vertical` read its own `axisAngle`.
@@ -157,7 +160,8 @@ export function constrainPathsEdit(items: readonly PathsEditItem[], links: reado
   const sliding = new Set(kept.flatMap((c) => (c.kind === 'onPath' ? [c.anchor] : [])));
   const still = (i: number) => {
     const { item } = itemOf(i, nowStart);
-    return items.length > 1 && items[item].before === items[item].after && !sliding.has(i);
+    const it = items[item];
+    return items.length > 1 && it.before === it.after && !it.yields && !sliding.has(i);
   };
   const held = nowAll.flatMap((p, i) => {
     const r = reference[i];

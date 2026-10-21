@@ -7,16 +7,12 @@
  *  (`registry-enum`, `data`), and the dev-only "Show hidden" switch.
  */
 import { useMemo, useState } from 'react';
-import {
-  Checkbox,
-  Code,
-  DataGrid,
-  PrefsDialog,
-  Select,
-  Switch,
-  type DataGridColumn,
-  type PrefRenderContext,
-} from '@weasel-js/ui';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { PrefsDialog, type PrefRenderContext } from '@weasel-js/ui/components/Prefs';
+import { Select } from '@weasel-js/ui/components/Select';
+import { Switch } from '@weasel-js/ui/components/Switch';
 import { usePrefsValues } from '@weasel-js/prefs/react';
 import {
   drawPrefs,
@@ -28,6 +24,7 @@ import {
 import type { RegistryEnumSources } from './registry/types';
 import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
 import { SURFACE_ASSETS } from './surfaces/assets';
+import { CHROME_ITEMS, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
 import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
 
@@ -110,17 +107,25 @@ export function DataControl(ctx: PrefRenderContext) {
 
 const SURFACE_NAMES: Record<SurfaceKind, string> = { bar: 'Toolbar', panel: 'Panel', menu: 'Menu' };
 
+/** A row of the editor: a piece of chrome, and its surface asset where it is one. */
+type ChromeRow = ChromeItem & { asset?: SurfaceAsset };
+
+const CHROME_ROWS: readonly ChromeRow[] = CHROME_ITEMS.map((item) => {
+  const asset = SURFACE_ASSETS.find((a) => a.id === item.id);
+  return asset ? { ...item, asset } : item;
+});
+
 export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
   const pref = ctx.pref as WeaselDrawPrefData;
   const surfaces = (ctx.value ?? {}) as SurfacesValue;
   const update = (id: string, patch: SurfacesValue[string]): void => {
     ctx.setValue({ ...surfaces, [id]: { ...surfaces[id], ...patch } });
   };
-  const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<SurfaceAsset> => ({
+  const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<ChromeRow> => ({
     id: field,
     header,
     sortable: false,
-    render: ({ id, label }) => (
+    render: ({ id, label, asset }) => field === 'collapsed' && !asset ? null : (
       <Checkbox
         isSelected={!!surfaces[id]?.[field]}
         onChange={(v) => update(id, { [field]: v })}
@@ -128,13 +133,13 @@ export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
       />
     ),
   });
-  const columns: DataGridColumn<SurfaceAsset>[] = [
+  const columns: DataGridColumn<ChromeRow>[] = [
     { id: 'label', header: 'Name', sortable: false },
     {
       id: 'surface',
       header: 'Shown as',
       sortable: false,
-      render: (asset) => asset.surfaces.length < 2 ? SURFACE_NAMES[asset.defaultSurface] : (
+      render: ({ asset }) => !asset ? null : asset.surfaces.length < 2 ? SURFACE_NAMES[asset.defaultSurface] : (
         <Select<SurfaceKind>
           variant="bare"
           width="fit"
@@ -151,7 +156,7 @@ export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
   return (
     <div className="wd-prefs-panels">
       <div className="wd-prefs-panels-title">{pref.name}</div>
-      <DataGrid<SurfaceAsset> rows={SURFACE_ASSETS} columns={columns} />
+      <DataGrid<ChromeRow> rows={CHROME_ROWS} columns={columns} />
     </div>
   );
 }

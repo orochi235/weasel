@@ -3,12 +3,12 @@ import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from 
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 import type { StaggerBuilder, StaggerDelay, StaggerFactory, StaggerOptions } from './staggerTypes';
 import type {
-  HoldHandle, HoldOptions, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
+  HoldHandle, HoldOptions, HoldRowsOptions, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
 } from './targetTypes';
 
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 export type {
-  HoldHandle, HoldOptions, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
+  HoldHandle, HoldOptions, HoldRowsOptions, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
 };
 export type * from './staggerTypes';
 
@@ -33,7 +33,9 @@ export interface AnimationHandle {
   pause(): void;
   /** Resume this animation's virtual clock. Idempotent. */
   resume(): void;
-  /** Multiply this animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
+  /** Multiply this animation's virtual-clock rate by `scale`. 1 = normal, 0 holds it still, and
+   *  below 0 plays it backward: run back to its start, it ends there holding its start value,
+   *  as it ends holding its destination going forward, and `onDone` runs. */
   setTimeScale(scale: number): void;
   /** This animation's own time scale. 1 once it has finished, since the
    *  animator no longer holds an entry to read. */
@@ -191,6 +193,9 @@ export interface Animator {
   /** Shows a value on a {@link Target} in place of its committed one until canceled or released.
    *  It covers an animation's move to a destination; a coast, push, or `from` offset adds on top. */
   hold<T>(opts: HoldOptions<T>): HoldHandle;
+  /** Holds rows of a target table at values and weights the caller writes into flat arrays: a
+   *  hold on each row, as `hold` would put there, with no function asked for any of them. */
+  holdRows(opts: HoldRowsOptions): RowsHoldHandle;
   /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;
   /** Cancel every animation currently active under `key`. */
@@ -211,7 +216,9 @@ export interface Animator {
   resume(): void;
   /** True iff the animator is currently globally paused. */
   isPaused(): boolean;
-  /** Multiply every animation's virtual-clock rate by `scale`, 0 or above. 1 = normal. */
+  /** Multiply every animation's virtual-clock rate by `scale`. Below 0 plays every one backward,
+   *  as each handle's `setTimeScale` does, while the animator's own clock goes on forward: one
+   *  started meanwhile is at its start already, and ends at once. */
   setTimeScale(scale: number): void;
   /** The global time scale. Per-animation scales multiply on top of it. */
   timeScale(): number;

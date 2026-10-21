@@ -43,6 +43,8 @@ export interface DepSchema {
   activeTool: ActiveToolContextValue;
   /** The menu host of the `ActionsProvider` in scope. */
   menuHost?: import('./menus/menuHost').MenuHost;
+  /** The canvas's dispatch trace, for a dep to record a mode switch into. */
+  dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -104,9 +106,11 @@ export type KernelOverlay = OverlaySchema extends { overlay: infer O } ? O : unk
 
 // ─── actions ──────────────────────────────────────────────────────────────
 export type {
-  Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant,
+  Action, ActionDispatch, ActionPresentation, ActionSource, ActionVariant, Carried,
 } from './interactions/actions/action';
 export { actionItems, actionItemTitle } from './interactions/actions/actionItems';
+export { actionSettingsParams, readActionSettings } from './interactions/actions/actionSettings';
+export type { ActionSettings, ActionSettingsState } from './interactions/actions/actionSettings';
 export type { ActionItem } from './interactions/actions/actionItems';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
@@ -120,7 +124,7 @@ export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEn
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { buildDepsFromRequires } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';
-export type { DepRegistry } from './interactions/actions/depNode';
+export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
 export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
@@ -141,10 +145,10 @@ export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand'
 
 // ─── dispatcher ───────────────────────────────────────────────────────────
 export {
-  multiTouchGestureId, pointerGestureId, recordModeSwitch, createDispatcher,
+  multiTouchGestureId, pointerGestureId, createDispatcher, createDispatchTrace, createTraceRing,
 } from './interactions/dispatcher/dispatcher';
 export type {
-  ModeSwitchLogEntry, TraceLogEntry, DispatcherContext, UiOngoingControl,
+  DispatchTrace, ModeSwitchLogEntry, TraceLogEntry, TraceRing, DispatcherContext, KeyReach, UiOngoingControl,
   ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions, Dispatcher,
 } from './interactions/dispatcher/dispatcher';
 export * from './interactions/dispatcher/dispatchRecord';
@@ -185,6 +189,8 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
+export type { ToolSet, ToolEntry } from './tools/toolSet';
 export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────
@@ -198,7 +204,7 @@ export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } fro
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';
 export {
-  INGEST_STRING_MIMES, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
+  INGEST_STRING_MIMES, admitIngestMime, itemsFromFiles, itemsFromDataTransfer, itemTypesFromDataTransfer, itemsFromClipboardData,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';

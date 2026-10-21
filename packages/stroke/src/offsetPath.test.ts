@@ -1,11 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import {
-  boundsOfPath, cubicPointAt, pathContainsPoint, pathToAnchors, PathBuilder, withCorner, type CornerSpec, type Path,
+  boundsOfPath, cubicPointAt, pathContainsPoint, pathToAnchors, PathBuilder, resolveCorners, withCorner, type CornerSpec, type Path,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { offsetPath } from './offsetPath';
+import { pathToMultiPolygon } from '@weasel-js/geom/booleans';
+import { offsetPath, type OffsetPathOptions } from './offsetPath';
 
 const SQUARE: Path = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
+
+/** Points along every subpath of what `p` draws: its anchors and samples between them. */
+function samples(p: PolygonPath): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const sub of pathToAnchors(resolveCorners(p)).anchors) {
+    for (let i = 0; i < sub.length; i++) {
+      const a = sub[i]!, b = sub[(i + 1) % sub.length]!;
+      for (let k = 0; k < 8; k++) out.push(cubicPointAt(a, a.outHandle ?? a, b.inHandle ?? b, b, k / 8));
+    }
+  }
+  return out;
+}
+
+/** How far `pt` is from the outline of the region `p` draws. */
+function distanceToOutline(p: Path, pt: { x: number; y: number }): number {
+  let best = Infinity;
+  for (const poly of pathToMultiPolygon(p, { tolerance: 0.001 })) {
+    for (const ring of poly) {
+      for (let i = 0; i + 1 < ring.length; i++) {
+        const [ax, ay] = ring[i]!, [bx, by] = ring[i + 1]!;
+        const dx = bx - ax, dy = by - ay;
+        const t = Math.max(0, Math.min(1, ((pt.x - ax) * dx + (pt.y - ay) * dy) / (dx * dx + dy * dy || 1)));
+        best = Math.min(best, Math.hypot(pt.x - ax - t * dx, pt.y - ay - t * dy));
+      }
+    }
+  }
+  return best;
+}
 
 const bounds = (p: Path) => {
   const b = boundsOfPath(p);
@@ -80,6 +109,47 @@ describe('offsetPath', () => {
 
     it('keeps every corner at distance zero', () => {
       expect(specsOf(offsetPath(cornered({ shape: 'bevel', radius: 10 }), 0))).toEqual([{ x: 100, y: 0, shape: 'bevel', radius: 10 }]);
+    });
+  });
+
+  describe('one clean outline at the distance', () => {
+    const rounded = withCorner(SQUARE as PolygonPath, 1, { shape: 'round', radius: 20 });
+    const subpaths = (p: PolygonPath) => pathToAnchors(p).anchors.length;
+    const offsetsOf = (source: Path, distance: number, opts?: OffsetPathOptions) => {
+      const out = offsetPath(source, distance, opts);
+      return { out, distances: samples(out).map((pt) => distanceToOutline(source, pt)) };
+    };
+
+    for (const distance of [10, 20]) {
+      it(`grows a round corner by ${distance} as one outline, nowhere nearer than the distance`, () => {
+        const { out, distances } = offsetsOf(rounded, distance);
+        expect(subpaths(out)).toBe(1);
+        expect(Math.min(...distances)).toBeGreaterThan(distance - 0.2);
+        for (const pt of samples(out)) expect(pathContainsPoint(rounded, pt.x, pt.y)).toBe(false);
+      });
+
+      it(`grows a round corner by ${distance} with round joins, everywhere at the distance`, () => {
+        const { out, distances } = offsetsOf(rounded, distance, { join: 'round' });
+        expect(subpaths(out)).toBe(1);
+        expect(Math.min(...distances)).toBeGreaterThan(distance - 0.2);
+        expect(Math.max(...distances)).toBeLessThan(distance + 0.2);
+      });
+    }
+
+    it('shrinks a round corner as one outline, everywhere at the distance', () => {
+      const { out, distances } = offsetsOf(rounded, -10);
+      expect(subpaths(out)).toBe(1);
+      expect(Math.min(...distances)).toBeGreaterThan(9.8);
+      expect(Math.max(...distances)).toBeLessThan(10.2);
+      for (const pt of samples(out)) expect(pathContainsPoint(rounded, pt.x, pt.y)).toBe(true);
+    });
+
+    it('grows a polygon of lines with round joins, everywhere at the distance', () => {
+      const tri: Path = new PathBuilder().moveTo(0, 0).lineTo(100, 10).lineTo(30, 90).close().build();
+      const { out, distances } = offsetsOf(tri, 10, { join: 'round' });
+      expect(subpaths(out)).toBe(1);
+      expect(Math.min(...distances)).toBeGreaterThan(9.8);
+      expect(Math.max(...distances)).toBeLessThan(10.2);
     });
   });
 });

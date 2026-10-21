@@ -14,8 +14,8 @@ This directory binds that model to a labkit trial and draws it.
 | File | Role |
 |---|---|
 | `types.ts` | `LoupeOptions`, and `resolveLoupe` filling in every default |
-| `useLoupe.ts` | The model over a host element, and pointer aiming |
-| `loupeActions.ts` | `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
+| `useLoupe.ts` | The model over a host element, and the input its actions drive |
+| `loupeActions.ts` | `loupe.aim`, `loupe.leave`, `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
 | `LoupeGestures.tsx` | Registers those, and mounts a dispatcher on the host when no camera has one there |
 | `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
 | `LoupeBubble.tsx` | The circle or square clip, positioned on the lens's center |
@@ -97,11 +97,19 @@ In a trial the loupe's actions join the camera's dispatcher (`CameraInput`).
 `loupe.magnify` sits in the hotkey tier, so while the lens is up it outranks
 the camera's wheel zoom; while it is down its `enabled` returns a disabled
 reason and the dispatcher falls through to the zoom. Outside a camera — the DOM
-`.lk-loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own.
+`.lk-loupe-host` — `<LoupeGestures>` mounts a dispatcher of its own, in an
+input scope of its own so two loupes never stack `loupe.peek` on one id.
 
-**Aiming is a plain listener because a hover is not a gesture.**
-`GESTURE_DESCRIPTORS` names no continuous-motion gesture, so `pointermove` /
-`pointerleave` stay hand-attached in `useLoupe`. Everything else routes.
+**The peek key goes to the loupe under the pointer.** Its binding carries
+`over: true`, so it is live on whichever host the pointer is over when the key
+goes down, not on the canvas last pressed in. A key held before the pointer
+enters raises nothing.
+
+**The aim is a hover that a held button does not stand down.** `loupe.aim`
+binds `{ kind: 'hover', held: 'optional' }`, so the lens follows a drag as it
+follows a plain move, and `loupe.leave` binds `hover(leave)`. The loupe's own
+dispatcher turns on the `hover` channel and leaves `pointer` off, so it never
+opens a gesture on a press or captures the pointer away from the content.
 
 **The model ignores aims while the lens is down.** So a lens that comes up
 under a still pointer — the peek key, or the lens turned on — has had no aim

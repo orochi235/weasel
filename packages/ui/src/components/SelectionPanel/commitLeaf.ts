@@ -1,5 +1,6 @@
 import { asNodeId, type NodeId, type NodePropertiesEntry, type Scene, type SelectionApi } from '@weasel-js/core';
-import { absentValue, nodeValueAt, setAtPath, type AnyNode, type PanelLeaf } from './model';
+import { boundAtNode } from './nodeBounds';
+import { nodeLeafValue, nodeValueAt, setAtPath, type AnyNode, type PanelLeaf } from './model';
 
 type Next = (prev: unknown) => unknown;
 
@@ -21,7 +22,7 @@ function writeLeaf<TData, TLayer extends string, TPose>(
     const node = scene.get(id);
     if (!node) continue;
     const held = nodeValueAt(node as AnyNode, leaf.path);
-    const value = next(held === undefined ? absentValue(leaf.leaf) : held);
+    const value = boundAtNode(leaf.leaf, node as AnyNode, next(nodeLeafValue(leaf.leaf, held)), held);
     // `setAtPath` spreads plain objects/arrays down the schema path;
     // consumer `pose`/`data` are assumed plain-object-shaped along
     // that path (a class instance's prototype would be dropped by

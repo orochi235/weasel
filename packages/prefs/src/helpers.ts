@@ -1,3 +1,4 @@
+import type { Endless } from '@weasel-js/quantity';
 import { matchQuery } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
@@ -13,20 +14,24 @@ import { resolvePrefUnit } from './unit';
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
  * it as a point would scale it wrong. A decreasing conversion swaps which end
- * is the lower one.
+ * is the lower one, and which end is `endless`.
  */
 export function prefDisplayBounds(
   p: PrefNumber,
-): { min?: number; max?: number; step: number } {
-  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1 };
+): { min?: number; max?: number; step: number; endless?: Endless } {
+  const ends = p.endless === undefined ? {} : { endless: p.endless };
+  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends };
   const { toDisplay } = resolvePrefUnit(p.unit);
+  const backward = toDisplay(1) < toDisplay(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
   const flipped = lo !== undefined && hi !== undefined && lo > hi;
   const step = p.step === undefined
     ? 1
     : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
-  return { min: flipped ? hi : lo, max: flipped ? lo : hi, step };
+  const flip = { min: 'max', max: 'min', both: 'both' } as const;
+  const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
+  return { min: flipped ? hi : lo, max: flipped ? lo : hi, step, ...(endless === undefined ? {} : { endless }) };
 }
 
 /** Distinguishes a leaf from a group or a section while walking a schema tree. */

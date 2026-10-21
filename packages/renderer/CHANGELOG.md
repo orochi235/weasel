@@ -1,5 +1,172 @@
 # @weasel-js/renderer
 
+## 1.11.0
+
+### Patch Changes
+
+- b0f392c: `<Canvas retain>` sets how a canvas retains its layers: `minCommands` is the
+  threshold a layer must reach, `budget` the GPU memory retained layers share,
+  and `false` retains no layer on the canvas. `<SceneCanvas>` passes it through.
+  `WeaselRenderer.setRetainBudget` changes the budget after construction. New
+  API; nothing existing changes.
+- 7162a7a: Corner shape: any corner anchor of a path takes a CSS `corner-shape`, and its radius can be changed later. Additive: `PolygonPath` gains `corners`, an optional `CornerSpec` (`{ shape, radius }`) per flat anchor index, where `shape` is one of the six `corner-shape` keywords (`square`, `squircle`, `round`, `bevel`, `scoop`, `notch`) or a finite `superellipse()` parameter, and `radius` is how far along each edge the cut starts. Following CSS Borders 4, every keyword is a point on one parameter, k: `square` is ∞, `squircle` 2, `round` 1, `bevel` 0, `scoop` -1, `notch` -∞. `cornerShapePieces(k, frame)` draws a corner for any k as the quarter superellipse `|u|^n + |v|^n = 1`, `n = 2^|k|`, spanned from the corner's center for k > 0 and from the outer corner for k < 0, fitted with cubics within `CORNER_FIT_TOLERANCE` of the setback and exact at k = 0, ±1, and ±∞. The command stream keeps the bare anchors, and `resolveCorners` expands the specs into plain geometry, each cut clamped so that the two cuts on a segment never overlap; `resolveCornersWithSources` also answers which source anchor each expanded anchor came from, and `remapPerAnchor` carries a per-anchor array across, so the renderer draws `vertexColors` on a cornered path with every point of a cut in its corner's color. Every reader of a path's geometry calls it first: tessellation, `extractPolylines`, the hit tests, `boundsOfPath`, `pathDistanceToPoint`, the booleans, `offsetPath`, the renderer's path draw, and `serializePathD`, which `@weasel-js/svg` now exports. A spec rides on its anchor through `pathToAnchors` / `anchorsToPath` (`PenAnchor.corner`), so anchor inserts and deletes keep it in place, and `transformPath` scales radii with the geometry. Also new: `cornerFrames` and `cornerFrameAt` (where each corner anchor can be cut, and how far), `withCorner`, `cornerAt`, `cornerSpecAt`, `cornerShapeK`, `cornerKeywordOf`, `isCornerShape`, `nextCornerShape`, and `CORNER_KEYWORDS`.
+  
+  `@weasel-js/path-tools` adds `cornerShapePreset` (and `createCornerShapePreset(style)`), which edits corners in path edit. Each corner anchor shows a widget just inside it, a small tile cut in the corner's shape, drawn and pressed as `corner:N` (matched by routing's new `isCornerWidget`) while chrome-caps shows `path-edit.corners`, which is on by default. A drag on one (`editCornerAction`) sets the corner's radius live and commits one undo step; pressing the widget of a selected anchor sets every selected corner. `cycleCornerShapeAction`, in the `anchors` group, steps the selected corners through the keywords, and `setCornersAction` sets their shape or radius from its `shape` and `radius` params, typed for `<SceneCanvas tune>`. `CORNER_CONTROLS`, `cornerControlsState`, `cornerControlsParams`, and the `useCornerControls` hook are a prefs-form panel over the selected corners: the keywords, a curvature slider from -4 to 4, and the radius, mixed where the corners differ.
+  
+  A path-edit extension's part (`PathEditPart`) can carry its own `hitRadiusPx` and a `standoff`, a screen-pixel push along a world-space normal, so it keeps its distance from the path at any zoom.
+  
+  A `PathEditHost` can own the anchor selection too, through optional `selectedAnchors` and `setSelectedAnchors`, so an app seeds which anchors start selected and shows what is selected. Giving a sharp corner a shape, through `setCorners` or `cycleCornerShape`, also gives it a radius: the call's own, or a quarter of the room the corner has.
+- eec8a5b: An `EffectRun` can carry a picture per output: `previews: { [port]: ImageBitmap }` on a stage's entry. A look's `showPreviews` option (on `nodeGraph`, `rack` and `lanes`) keeps a slot per output, `previewSize` big (default `PREVIEW_SIZE`, a 48-unit square, or `{ width, height }`), laid out from the first draw so a run filling it never lays the chart out again. Until a run fills a slot it draws as an empty frame, and it fades with its stage. `paintRun` fills it by a data edit, so a run that hands back the same bitmap writes nothing to the scene and uploads nothing; `EffectChart` frees the texture of a bitmap the next run no longer shows, and of every one it shows when it unmounts. `RunRowOptions` is the shared type of `showValues`, `showPreviews` and `previewSize`, and `previewRowId(port)` names a slot.
+  
+  `bitmapSrc(bitmap)` (renderer, re-exported by core) names an `ImageBitmap` made at runtime as an image `src`, so an image node draws it with no load. The same bitmap always gets the same name; the cache holds it weakly and never drops it to fit its budget, and `releaseImage` frees its textures and retires the name.
+  
+  A body's `slot` row takes a `width`: the body is at least that wide and the slot's box is that wide, centered. In `diagramScene`, a slot with an `id` becomes a scene node of that name, an empty frame, ready to be filled by a data edit. `DiagramSceneData` gains `image`.
+  
+  `lanes` widens a source or sink stretched taller than it measured, so its round ends no longer eat into its rows.
+- 02cbe1d: More of the kit boxes a stroked node by its stroke as drawn, through `drawnBoundsOf`:
+  
+  - The selection overlay takes a `scene`. With it, a pose from `getPose` is outlined on the node's stroke, and a container's union takes its members as drawn. `<SceneCanvas>` passes its scene when a `selectionOverlay` slot supplies its own `poseById`, unless `geometry.boundsIncludeStroke` is `false`.
+  - `composeSelectionPose` takes a `scene` and a `viewScale`, so a selected container's pose reaches its members' strokes.
+  - `useAlign` takes a `scene` and a `viewScale`, and lines up drawn edges when given them.
+  - `<Canvas>` takes `nodes`, and its default bounds then box each node as drawn.
+  - `kit:text` reports a `drawnBounds`: a stroked line that reaches its layout box's edge grows the box by the stroke's reach.
+  
+  A `{ px }` stroke is now measured as the renderer draws it. `drawnBoundsOf`'s `scale` accepts a per-axis view scale, and with one it hands painters `NodeInkCtx.screen`, the map from the node's frame to screen pixels. Rects, ellipses, and text outset each side by the stroke as it lands on screen, and paths, polygons, and stars build the ribbon in the same space the renderer does, so the box is exact under a stretched view and under a skewing or stretching `transform` rather than right only at the mean scale. Chrome, resize, rotate, flip, align, and distribute pass the view's per-axis scale.
+  
+  `@weasel-js/renderer` exports `resolveStrokeLengths`, which resolves a stroke's `{ px }` lengths against a transform and names the spaces each part is built in.
+- a988460: `EffectChart` draws a run of its pipeline.
+  
+  - **`run` prop.** An `EffectRun` sits beside the pipeline, keyed by stage id: each stage's `cost`
+    in milliseconds, a decision's `taken` output, and each output's `values` as text. The chart
+    fades a stage the run never reached and its wires, fades a decision's wires to outputs it did
+    not take, writes each cost above its stage's corner, and fills in value rows. A run edits the
+    scene in place: no new layout, no refit, and only the changed fields are written, so it may
+    change every frame. `paintRun` and `costText` are exported for a chart of your own.
+  - **`showValues`** on `nodeGraph` and `rack` keeps a row per output for a run's value
+    (`valueRowId`, `NO_VALUE`).
+  - **Breaking:** `stageRows(stage, showParams, withPorts)` is now
+    `stageRows(stage, { showParams, withPorts, showValues })`.
+  - **Body rows.** A `label` or `field` row may carry an `id`, which names its scene node
+    `<body id>/<row id>` so it can be found again; and a `field` may carry `room`, a value it is
+    measured at least as wide as.
+  - **`EffectLookResult.exits`** maps the edges that stand in for a decision a look does not draw,
+    such as `rack`'s skip arcs, to the exit each one is, so a run's `taken` reaches them.
+  - **Renderer:** text now honors a solid fill's `opacity`, in its glyphs, its color glyphs (emoji)
+    and its decoration rules. It was ignored, so faded text drew at full strength.
+- 516914b: Curves on the live canvas now flatten against the zoom. `flattenTolerance` on
+  `WeaselRenderer`, `<Canvas>`, and `<SceneCanvas>` accepts `{ px }` in device
+  pixels as well as a world length, and defaults to `{ px: 0.5 }`: each path is
+  flattened to stay within half a device pixel under the transform it draws
+  with, so a curve at 8x no longer shows 4 px facets, and a scene whose world
+  unit is not a pixel no longer needs a tolerance of its own. The tolerance is
+  snapped down to a power of two and fill meshes are cached per tolerance, so a
+  continuous zoom rebuilds a path's mesh once per octave rather than every frame;
+  a fixed world tolerance is now cached too instead of tessellated every frame.
+  `renderSceneToPixels` resolves its `flattenTolerancePx` the same way.
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- 925dde2: A retained group's surface covers only the device pixels its children can
+  paint, clamped to the drawing buffer, and is composited as a quad over just
+  that rect; the multisampled buffer it is drawn in is as large as the largest
+  surface rather than the canvas. A layer's retained memory now follows its
+  content: a small layer on a large canvas holds a small texture. Text, custom
+  shaders and `effects` cannot be bounded yet, so a surface holding them still
+  covers the whole buffer unless a clip around them bounds it. Content wholly
+  off the buffer keeps no texture and composites nothing.
+- a322444: `retainBudget` now counts only the surfaces retained groups keep between
+  frames. The multisampled buffer they are drawn in is transient: it is freed
+  after the first frame that redraws nothing, so a still canvas holds only its
+  surfaces. It used to count against the budget and took 131 MB of the 256 MB
+  default at 4x on a 2560x1600 canvas, leaving room for about 8 canvas-sized
+  surfaces; about 16 now fit. On a frame that redraws a surface, GPU memory can
+  reach the budget plus that buffer, at most one canvas-sized multisampled
+  buffer.
+- 39f86d1: An unchanged layer of a few hundred commands or more is now drawn once into a texture of its own and composited as one quad on later frames, instead of being submitted again every frame.
+  
+  `GroupDrawCommand.retain` names the surface. The renderer keeps the group's pixels while its `children` array and everything it was drawn under hold: the enclosing transform, alpha and color matrix, the view matrix, the drawing size and dpr, and the fonts, textures, paint kinds and programs it serves. Anything else draws it again. A surface is drawn in a multisampled buffer matching the canvas's own, so its edges come out as they would have on the canvas, and it is freed at the end of the first frame that does not draw its id. `WeaselRendererOptions.retainBudget` caps the memory retained surfaces hold together (default `DEFAULT_RETAIN_BUDGET`, 256 MiB, scratch buffer included); a group past it draws straight through. `RenderStats.retained` reports how many groups were composited, redrawn, or declined, and the bytes held.
+  
+  `drawLayers` marks a layer for retaining once its `deps` have held for a frame and, for a world-space layer, the view has too, if it holds at least `DEFAULT_LAYER_RETAIN.minCommands` (250) drawing commands. `RenderLayer.retain: false` opts a layer out and `true` retains it whatever its size. A layer with `effects` is not retained. The new trailing `drawLayers` argument takes another `LayerRetainPolicy`, or `false` to retain nothing.
+- f3398d4: The `@experimental` designation is retired. Everything that carried it is now ordinary public API: the actions registry and its built-in action descriptors and icons, the ambient pointer and selection contexts, `CanvasView`, the canvas extension API, the view resolver and viewport layer, the affordance helpers, path-tools' commands and icons, and `registerEffect`. No signatures changed.
+- e562d4b: An emoji drawn larger than its 48px bake no longer blurs. The renderer asks the dynamic atlas for the cluster baked again at the power of two above its on-screen size, up to 384px, and samples that over the same box once it lands; until then it draws from the sharpest bake it has. These bakes sit on pages of their own (`sharpColorPageTextureId`, `syncSharpColorPageTexture`), which empty alone when they fill, so the base bakes and the field pages are untouched. `sharperColorGlyph` is the lookup, `rasterizeColor` takes the size to draw at, and a color group's `LaidOutQuad` carries its glyph record as `colorGlyph`.
+- 7a31f9d: `textToPath` and `textToPathsByPaint` outline synthetic-bold text instead of throwing. A glyph whose weight is faked from a lighter face grows by the distance the renderer's field shift moves its edge (`SYNTH_BOLD_AMOUNT` of the field's span per texel of the atlas, 0.01 em a side on Inter's), with mitered corners and its curves kept. The `'synthetic-bold'` `TextOutlinesFailure` reason is removed, which breaks code that names it.
+  
+  New in `@weasel-js/geom`: `growRegion(path, distance, { join, miterLimit, tolerance })`, a filled region grown outward without a boolean. Each contour is offset, curves stay curves, and the grown contours overlap where they meet, filling once under `'nonzero'`. New in `@weasel-js/font`: `SYNTH_BOLD_AMOUNT` (moved from the renderer) and `syntheticBoldGrowth(source, family, weight, style)`, the growth in em for the atlas serving a face.
+- d705830: A stroke can be drawn with a broad nib. `Stroke.nib` is `{ angle, ratio }`: the nib's edge in radians counterclockwise on screen, and its thinnest width as a fraction of its widest. The stroke is its full width moving across the nib and `ratio` of that moving along it, an elliptical pen's width in between, and it multiplies `vertexWidths` where both are set. Each side of a corner keeps its own width, so a square drawn with a level nib has thin level sides and full upright ones right up to the joins; a round join's arc runs between the two. `strokeToPath`, the renderer's ribbon cache, and SVG export follow it, and since a nib only ever narrows a stroke, bounds and culling are unchanged. `@weasel-js/stroke` adds `nibWidthScale`, the nib as a `WidthScale`, and `widestStrokeWidth`, which culling, picking, and flattening now share; picking used to ignore `vertexWidths`. Draw's stroke properties gain a Nib switch with its angle and thinnest ratio.
+  
+  A `vertexWidths` entry is a `VertexWidth`: a number, the full width centered on the path as before, or a `{ left, right }` pair giving each edge its own distance from the path, `right` being the side the normal `(−dy, dx)` points to, below a path running in +x on screen. Every reader resolves an entry through `vertexHalfWidths(entry, fallback)` in `@weasel-js/paint`: the tessellator, which carries the difference between the sides as the new `Polyline.offsets` through trimming, dashing, and the nib, and centers caps between the two edges; `strokeToPath`; the inner and outer ribbon; bounds, culling, and picking, through `widestHalfWidth`; and SVG, which writes a pair as `left/right` in `wzl:vertex-widths`. `vertexWidthFromSides` writes equal sides back as a number, and `scaleVertexWidth` scales either form. An entry of zero is now a zero width; it used to take the stroke's `width`.
+  
+  `useGirthTool` (Shift+W), in `@weasel-js/path-tools`, edits `vertexWidths` by dragging the stroke's edges. Hovering near either edge marks the grab point on it and the width point a press there moves: the anchor at that spot, or one inserted between two with `insertAnchorOnSegment`, so the path keeps its shape. The grabbed edge follows the pointer along the path's normal and the other mirrors it, writing a number; dragging inward pinches the stroke, down to zero. Alt-drag moves the grabbed edge alone and writes a pair. The drag moves the edge as drawn, so under a nib the stored width changes by more. Every drag is previewed live and committed as one undo entry. Alt-click on a width point clears it, so it takes the stroke's `width` again. The stroke last touched shows its anchors, with a line across the stroke at each that has a width. `strokeEdgeNear` in `@weasel-js/stroke` is the hit test behind it: the edge of a stroke nearest a point, measured along the path's normal, with each side's distance as drawn.
+  
+  A dashed stroke now keeps its per-vertex widths, which it used to drop. The anchor-parameter rule that trimming and dashing share is `anchorParamsBetween` in `@weasel-js/geom/tessellate`.
+  
+  SVG has no variable width. `serializeSvg` writes a stroke with `vertexWidths` or a `nib` as its outline: the path keeps its stroke attributes at `stroke-width="0"`, which draws nothing, with the real width, the per-vertex widths, the nib, and its markers in the `wzl` namespace, and the outline follows as a filled path in the stroke's paint that draws the marker heads. A node with an opacity wraps both in one group carrying it, so they composite as one layer. Other viewers draw the outline; `parseSvg` drops it and reads the stroke back off the path, and a transform it bakes in scales the per-vertex widths with the width.
+- Updated dependencies [304f53a]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [5338358]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [8374354]
+- Updated dependencies [5adbb76]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [66c7bde]
+- Updated dependencies [fb75358]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [71c079d]
+- Updated dependencies [dcca70c]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [c2048de]
+- Updated dependencies [e562d4b]
+- Updated dependencies [9073669]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [3318cf7]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1faab2d]
+- Updated dependencies [d705830]
+- Updated dependencies [329aa39]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/stroke@1.11.0
+  - @weasel-js/text@1.11.0
+  - @weasel-js/paint@1.11.0
+  - @weasel-js/font@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

@@ -6,7 +6,7 @@ import { PrefLabelLine, PrefRule } from './PrefWords';
 const note: PrefLeaf = { kind: 'label', name: 'Sizes are in world units.', description: 'Zoom does not change them.', default: undefined };
 
 const meta: Meta<typeof PrefLabelLine> = {
-  title: 'Primitives/PrefWords',
+  title: 'Primitives/Prefs/PrefWords',
   component: PrefLabelLine,
   args: { pref: note },
 };

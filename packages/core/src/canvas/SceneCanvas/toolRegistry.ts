@@ -1,6 +1,7 @@
 import type { Tool } from 'tools/overlayBinding';
 import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './features';
 import { isDev } from '@weasel-js/react';
+import { toolIdsOf, type ToolEntry } from '@weasel-js/routing';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 
 /** The patch form of `<SceneCanvas tools>`: per id, `true` mounts that
@@ -12,8 +13,8 @@ export type BuiltinTools = Record<BuiltinToolId, Tool>;
 
 export interface ResolveToolRegistryArgs {
   builtins: BuiltinTools;
-  /** Built-ins asked for by id. */
-  defaultTools?: readonly BuiltinToolId[];
+  /** Built-ins asked for, by id or by set. */
+  defaultTools?: readonly ToolEntry<BuiltinToolId>[];
   /** The presets the canvas runs with, each bringing the tools it names. */
   enabled: EnabledPresets;
   patch: ToolsPatch | null;
@@ -27,10 +28,13 @@ export interface ResolveToolRegistryArgs {
  * Built-ins come first, in `BUILTIN_TOOL_IDS` order whatever order they were
  * asked for in, then the presets' own tools in preset order; a patch tool
  * replaces a mounted one where it stands, and any other is appended in patch
- * order. That order is the palette's.
+ * order. That order is the palette's. Replacing a tool that is mounted only
+ * because a preset implies it is the documented way to restyle it, so only a
+ * patch tool for an id `defaultTools` also names is warned about.
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
-  const { builtins, defaultTools = [], enabled, patch, dev = isDev() } = args;
+  const { builtins, enabled, patch, dev = isDev() } = args;
+  const defaultTools = toolIdsOf(args.defaultTools ?? []);
   const registry: Record<string, Tool> = {};
   const preset = presetBuiltinTools(enabled);
   for (const id of BUILTIN_TOOL_IDS) {
@@ -50,7 +54,7 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
       }
       continue;
     }
-    if (dev && id in registry) {
+    if (dev && id in registry && (defaultTools as string[]).includes(id)) {
       console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
     }
     registry[id] = value;

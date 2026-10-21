@@ -11,14 +11,8 @@ import {
   DEFAULT_BAKE_BUDGET,
 } from '@weasel-js/font';
 import {
-  GLYPH_PAINT_VERT_SRC,
-  GLYPH_PATTERN_FRAG_SRC,
-  GLYPH_GRAD_FRAG_SRC,
-  GLYPH_TEXTURE_FRAG_SRC,
-  GLYPH_PATTERN_UNIFORMS,
-  GLYPH_GRAD_UNIFORMS,
-  GLYPH_TEXTURE_UNIFORMS,
-  GLYPH_PAINT_ATTRIBUTES,
+  GLYPH_PAINT_VERT_SRC, GLYPH_PATTERN_FRAG_SRC, GLYPH_GRAD_FRAG_SRC, GLYPH_TEXTURE_FRAG_SRC,
+  GLYPH_PATTERN_UNIFORMS, GLYPH_GRAD_UNIFORMS, GLYPH_TEXTURE_UNIFORMS, GLYPH_PAINT_ATTRIBUTES,
 } from './shaders/glyphPaint';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
@@ -41,6 +35,7 @@ import {
 import { getProgramSource, type ProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 import { EffectTargets } from './effects/EffectTargets';
 import { RetainedSurfaces } from './retain/RetainedSurfaces';
+import { createWhiteTexture } from './cache/whiteTexture';
 import { paintDrawKindRegistry } from './paintKinds';
 import {
   DEFAULT_RETAIN_BUDGET, type RenderOptions, type RenderSpanStats, type RenderStats,
@@ -136,7 +131,7 @@ export class WeaselRenderer {
    *  which leaves every retained surface drawn by the old one stale. */
   private programEpoch = 0;
   private readonly paintScratch: PaintScratch;
-  private readonly imageMinification: ImageMinification;
+  private imageMinification: ImageMinification;
   private flattenTolerance?: FlattenTolerance;
   private readonly bakeBudget: number;
   private readonly textOutlineMinScreenSize: number;
@@ -249,10 +244,8 @@ export class WeaselRenderer {
     if (this.disposed) return;
     const src = getProgramSource(handle.id);
     if (!src) {
-      throw new Error(
-        `WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. ` +
-        `Call the module-level registerProgram() first.`,
-      );
+      throw new Error(`WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. `
+        + 'Call the module-level registerProgram() first.');
     }
     this.installProgram(handle.id, src, compileCustomProgram(this.gl, src));
   }
@@ -339,28 +332,29 @@ export class WeaselRenderer {
     const oy = this.target?.origin.y ?? 0;
     const x = Math.round(ox * this.dpr);
     const y = Math.round(oy * this.dpr);
-    return {
-      x,
-      y,
-      width: Math.round((ox + this.widthCss) * this.dpr) - x,
-      height: Math.round((oy + this.heightCss) * this.dpr) - y,
-    };
+    const width = Math.round((ox + this.widthCss) * this.dpr) - x;
+    return { x, y, width, height: Math.round((oy + this.heightCss) * this.dpr) - y };
   }
 
   /** Viewport and scissor for this frame. Re-applied inside `render()` because
    *  a co-tenant on the same context moves both between our frames. */
   private applyTarget(): void {
     const gl = this.gl;
-    const { x, y, width, height } = this.deviceRect();
+    const { x, y, width, height } = this.glRect();
+    gl.viewport(x, y, width, height);
     if (!this.target) {
       gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, width, height);
       return;
     }
-    const glY = gl.drawingBufferHeight - y - height;
-    gl.viewport(x, glY, width, height);
-    gl.scissor(x, glY, width, height);
+    gl.scissor(x, y, width, height);
     gl.enable(gl.SCISSOR_TEST);
+  }
+
+  /** This renderer's rect as GL addresses it, from the buffer's bottom left. */
+  private glRect(): { x: number; y: number; width: number; height: number } {
+    const { x, y, width, height } = this.deviceRect();
+    if (!this.target) return { x: 0, y: 0, width, height };
+    return { x, y: this.gl.drawingBufferHeight - y - height, width, height };
   }
 
   /** Confine this renderer to a rect of its drawing buffer, or pass null to
@@ -439,13 +433,9 @@ export class WeaselRenderer {
     this.meshCache.dispose();
     this.paintResources.release();
     for (const lazy of this.lazyPrograms()) lazy.release();
-    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) {
-      gl.deleteProgram(prog.handle);
-    }
+    for (const prog of [this.batchFill, ...this.glyphPaintPrograms.values()]) gl.deleteProgram(prog.handle);
     this.glyphPaintPrograms.clear();
-    for (const prog of this.programRegistry.values()) {
-      gl.deleteProgram(prog.handle);
-    }
+    for (const prog of this.programRegistry.values()) gl.deleteProgram(prog.handle);
     this.programRegistry.clear();
     this.programSources.clear();
     this.textureCache.free();
@@ -540,6 +530,10 @@ export class WeaselRenderer {
       deviceWidth: device.width,
       deviceHeight: device.height,
       restoreTargetRect: () => this.applyTarget(),
+      viewportWithin: (rect) => {
+        const own = this.glRect();
+        gl.viewport(own.x + rect.x, own.y + own.height - rect.y - rect.height, rect.width, rect.height);
+      },
       paintResources: this.paintResources,
       stats: counters,
     };
@@ -587,6 +581,21 @@ export class WeaselRenderer {
     this.flattenTolerance = tolerance;
   }
 
+  /** Change `retainBudget` after construction; `undefined` restores the default. */
+  setRetainBudget(bytes: number | undefined): void {
+    this.retained.setBudget(bytes ?? DEFAULT_RETAIN_BUDGET);
+  }
+
+  /** Change `imageMinification` after construction; `undefined` restores the
+   *  default. A change frees every image texture, and each re-uploads when next drawn. */
+  setImageMinification(mode: ImageMinification | undefined): void {
+    const next = mode ?? 'linear';
+    if (next === this.imageMinification) return;
+    this.imageMinification = next;
+    this.imageCache.dispose();
+    this.imageCache = new GLImageCache(this.gl, next);
+  }
+
   resize(dims: { width: number; height: number; dpr: number }): void {
     this.widthCss = dims.width;
     this.heightCss = dims.height;
@@ -614,23 +623,4 @@ export class WeaselRenderer {
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
   /** @internal */ _dpr(): number { return this.dpr; }
-}
-
-/** The 1x1 opaque white texture a batch flush binds when its run samples no
- *  image. NEAREST both ways: one texel, so there is nothing to filter, and a
- *  mipmap filter on a texture with no mipmaps is incomplete. */
-function createWhiteTexture(gl: WebGL2RenderingContext): WebGLTexture | null {
-  const tex = gl.createTexture();
-  if (!tex) return null;
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(
-    gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-    new Uint8Array([255, 255, 255, 255]),
-  );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.bindTexture(gl.TEXTURE_2D, null);
-  return tex;
 }

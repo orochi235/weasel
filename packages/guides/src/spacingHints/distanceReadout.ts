@@ -1,15 +1,32 @@
-import type { Action, GestureBinding, ModSpec, NodeId, Scene, SurfaceContribution } from '@weasel-js/core';
-import { createGuidesLayer, type GuidesLayerOpts } from '../guides/layer';
+import type { Action, GestureBinding, ModSpec, NodeId, Scene, SnapMark, SnapOutcomeStore, SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 
 
 /** Options for `distanceReadout`. */
-export interface DistanceReadoutOptions extends Pick<GuidesLayerOpts, 'color' | 'gapLabels' | 'lineWidth' | 'ticks'> {
+export interface DistanceReadoutOptions {
   /** The key held to show the readout. Default `'alt'`. */
   modifier?: 'alt' | 'ctrl' | 'meta' | 'shift';
+  /** The color of the marks it writes. Default: the readout layer's. */
+  color?: string;
   /** Contribution id, and the prefix of its action's. Default `'distanceReadout'`. */
   id?: string;
+}
+
+/** The readout as snap marks: a `distance` per gap, a `line` per leader. */
+function marksOf(r: DistanceReadout, color: string | undefined): SnapMark[] {
+  const c = color === undefined ? {} : { color };
+  return [
+    ...r.gaps.map((g): SnapMark => g.axis === 'x'
+      ? { kind: 'distance', from: { x: g.min, y: g.at }, to: { x: g.max, y: g.at }, value: g.max - g.min, ...c }
+      : { kind: 'distance', from: { x: g.at, y: g.min }, to: { x: g.at, y: g.max }, value: g.max - g.min, ...c }),
+    ...r.leaders.flatMap((l): SnapMark[] => {
+      if (l.span === undefined) return [];
+      return [l.axis === 'x'
+        ? { kind: 'line', from: { x: l.offset, y: l.span.min }, to: { x: l.offset, y: l.span.max }, ...c }
+        : { kind: 'line', from: { x: l.span.min, y: l.offset }, to: { x: l.span.max, y: l.offset }, ...c }];
+    }),
+  ];
 }
 
 /** What `distanceReadout` returns: a surface contribution, plus a read of
@@ -40,29 +57,30 @@ function subtreeOf(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[
  * distances from the selection's box to that shape's, on each axis where they
  * separate, measured by `measureDistances` and drawn as labeled gaps. Pass it
  * in `<SceneCanvas ambient>`. It runs on `hover` bindings, so it claims no
- * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`, and
- * `poseDescriptor` deps. A press hides it.
+ * input, and it reads the canvas's `selection`, `scene`, `nodeAtPoint`,
+ * `poseDescriptor`, and `snapReadout` deps. A press hides it.
  */
 export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceReadoutContribution {
   const id = opts.id ?? 'distanceReadout';
   const modifier = opts.modifier ?? 'alt';
   let shown: DistanceReadout = EMPTY;
-  let redraw: (() => void) | null = null;
+  let store: SnapOutcomeStore | null = null;
   const show = (next: DistanceReadout): void => {
     if (next === shown || (next.gaps.length === 0 && shown.gaps.length === 0)) return;
     shown = next;
-    redraw?.();
+    store?.set(marksOf(next, opts.color));
   };
 
   const action: Action = {
     id: `${id}.measure`,
     label: 'Measure distance to the shape under the pointer',
-    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor', 'snapReadout'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
         const p = params as { show?: boolean; worldX?: number; worldY?: number } | undefined;
-        const { selection, scene, nodeAtPoint, poseDescriptor } = deps;
+        const { selection, scene, nodeAtPoint, poseDescriptor, snapReadout } = deps;
+        if (snapReadout !== undefined) store = snapReadout.store;
         const ids = selection?.get() ?? [];
         if (p?.show !== true || p.worldX === undefined || p.worldY === undefined
           || scene === undefined || nodeAtPoint === undefined || ids.length === 0) {
@@ -91,25 +109,14 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
     eligibility: { always: true },
     actions: [action],
     bindings,
-    overlay: createGuidesLayer({
-      id: `${id}.layer`,
-      label: 'Distance readout',
-      getGuides: () => shown.leaders,
-      getGaps: () => shown.gaps,
-      color: opts.color,
-      gapLabels: opts.gapLabels,
-      lineWidth: opts.lineWidth,
-      ticks: opts.ticks,
-    }),
     attach: (api) => {
-      redraw = () => api.requestRedraw();
       const el = api.element;
       const hide = (): void => show(EMPTY);
       el?.addEventListener('pointerdown', hide, true);
       return () => {
         el?.removeEventListener('pointerdown', hide, true);
-        redraw = null;
-        shown = EMPTY;
+        show(EMPTY);
+        store = null;
       };
     },
     read: () => shown,

@@ -1,0 +1,78 @@
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.treePane,
+.detailPane {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: var(--wzl-space-4);
+}
+
+.treePane {
+  border-inline-end: 1px solid var(--wzl-line-subtle);
+  --wzl-tree-selected: color-mix(in srgb, var(--wzl-accent) 28%, transparent);
+}
+
+.facts {
+  display: inline-flex;
+  gap: var(--wzl-space-3);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.kind,
+.layer {
+  white-space: nowrap;
+}
+
+.count {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 3ch;
+  text-align: end;
+}
+
+.flag {
+  color: var(--wzl-warning);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+}
+
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-4);
+}
+
+.heading {
+  margin: var(--wzl-space-4) 0 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.note {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+}
+
+/* Narrow: the list above the detail, each scrolling on its own. */
+@container (width < 480px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .treePane {
+    border-inline-end: none;
+    border-block-end: 1px solid var(--wzl-line-subtle);
+  }
+}

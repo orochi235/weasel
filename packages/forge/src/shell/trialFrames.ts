@@ -1,9 +1,8 @@
 import { createEmitter } from '@weasel-js/registry';
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
-import type { A11yReport, CssVarReport, ToFrame } from '../protocol/messages';
+import type { A11yOutcome, CssVarReport, ToFrame } from '../protocol/messages';
 
-/** What an axe run in the frame came back with. */
-export type A11yOutcome = { ok: true; report: A11yReport } | { ok: false; message: string };
+export type { A11yOutcome };
 
 /** The half of a trial's frame that answers a request: each call is one round trip over the frame's channel. */
 export interface TrialFrameCalls {

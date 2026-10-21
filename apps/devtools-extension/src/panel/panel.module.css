@@ -1,0 +1,5 @@
+.state {
+  margin: 0;
+  padding: var(--wzl-space-3);
+  color: var(--wzl-fg-muted);
+}

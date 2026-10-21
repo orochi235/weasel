@@ -1,7 +1,8 @@
 // Each surface asset's chrome, persisted under the `ui.surfaces` pref so the
-// inline switch, chevron, and × and the Preferences dialog edit the same map.
+// inline switch, chevron, and ×, the View menu, and the Preferences dialog edit the same map.
 
 import { useCallback } from 'react';
+import type { AppCommands } from '../appCommands';
 import { drawPrefs, removeOnceStored, usePref, whenWritable } from '../prefs';
 import { SURFACE_ASSETS } from './assets';
 import type { PanelChrome, SurfaceAsset, SurfaceKind, SurfaceState, SurfacesValue } from './types';
@@ -42,6 +43,16 @@ export function useSurfaces(assets: readonly SurfaceAsset[] = SURFACE_ASSETS): S
       },
     };
   });
+}
+
+/** Whether chrome `id` is hidden, and its toggle, over `ui.surfaces`: what the View menu's rows read and run. */
+export function useChromeCommands(): Pick<AppCommands, 'chromeHidden' | 'toggleChrome'> {
+  const [value, setValue] = usePref('ui.surfaces');
+  const toggleChrome = useCallback(
+    (id: string) => setValue((prev) => ({ ...prev, [id]: { ...prev[id], hidden: !prev[id]?.hidden } })),
+    [setValue],
+  );
+  return { chromeHidden: (id: string) => !!value[id]?.hidden, toggleChrome };
 }
 
 /** Move asset `id` to `surface`, shown again if it was hidden. Stable for the store's life. */

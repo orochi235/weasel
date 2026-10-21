@@ -31,6 +31,8 @@ export interface Entry {
    *  redo. Written on the way past, so it reflects where the user actually
    *  was rather than where the entry's ops left them. */
   selectionAfter?: readonly string[];
+  /** The key a `recordEntry` gave it, which a later one with the same key folds into. */
+  coalesceKey?: string;
 }
 
 /** Wire form of a single op inside a serialized history. The pair
@@ -176,9 +178,8 @@ export function rebuilt(snapshot: SerializedHistory, custom: CustomRebuild | und
  *  - `args.id` (string) — transform, setPath, reparent
  *  - `args.node.id` (string) — insert, delete
  *  - `args.nodes[].id` (string) — an op that takes several nodes at once
- *  Ops that match none of them contribute nothing.
- *  Exported for in-package test use; not part of the published package API. */
-export function touchedIdsFromOps(ops: Op[]): ReadonlySet<string> {
+ *  Ops that match none of them contribute nothing. */
+export function touchedIdsFromOps(ops: readonly Op[]): ReadonlySet<string> {
   const ids = new Set<string>();
   for (const op of ops) {
     if (op.args === null || typeof op.args !== 'object') continue;

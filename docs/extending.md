@@ -50,7 +50,7 @@ app that does not import a preset never loads its code.
 interface FeaturePreset {
   id: string;
   actions?: Action[];                  // standard actions: `actions` and `tune` reach them
-  tools?: (BuiltinToolId | Tool)[];    // mounted in the canvas's registry
+  tools?: (BuiltinToolId | ToolSet | Tool)[]; // mounted in the canvas's registry
   ambient?: (options) => Contribution; // always-live bindings, under a takeover too
   chrome?: ChromeId[];                 // selection chrome drawn only while it is on
   chromeRules?: VisibilityRules;       // default visibility for chrome of its own
@@ -68,6 +68,15 @@ node nudging on the same arrow key. Core's own presets are exported too
 its names through them. `<SceneCanvas>` itself loads every core preset to
 resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
 holds just the presets it was handed.
+
+A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
+a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
+family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
+`PAGE_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
+...omit)` leaves some out, so an app takes "everything but the knife" without
+listing ids that a new built-in would then miss. A set names ids, not tools,
+because a tool is built by a hook holding its state: whatever mounts the set
+supplies each tool, core for its built-ins and a package's own hook for its.
 
 A `PathEditExtension` is how a package adds to path edit without core knowing
 it: `marks` draws on the open path under its anchors, `parts` adds points to
@@ -329,7 +338,8 @@ that names them all — that one wants the `isAnchor` predicate.
 
 A behavior plugs into an action's behavior chain — via `BindingOpts.behaviors`
 on the binding that reaches it, or via the options `<SceneCanvas>` forwards
-(`selectTool.move.behaviors`, `selectTool.snap`, …):
+(`selectTool.move.behaviors`, `selectTool.resize.behaviors`, …). Snapping is
+not a behavior; a custom snap target is a snap source ([snapping.md](./snapping.md)):
 
 ```ts
 interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd = BehaviorEnd> {
@@ -386,7 +396,6 @@ Each action pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `packages/guides/src/behaviors/move/snapToGrid.ts` — pure pose refinement.
 - `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
 - `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
 
@@ -402,8 +411,6 @@ adds itself:
 
 | Behavior | From | What it does | Turned on by |
 |---|---|---|---|
-| `snap(strategy)` | `@weasel-js/core` | Shifts the whole selection so its first node lands where the strategy says. | `selectTool.snap`, or in `behaviors` |
-| `snapToGrid`, `snapToGuides`, `alignMoveBehavior` | `@weasel-js/guides/move` for the first two, `@weasel-js/guides` for `alignMoveBehavior` | Snap to a grid, to ruler guides, or to other nodes' edges and centers. | in `behaviors` |
 | `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
 | `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
@@ -471,20 +478,18 @@ The kit ships:
 - `ROTATED_POSE_DESCRIPTOR` — rect poses carrying a `rotation`.
 - `pathPoseDescriptor` — implementation for `Path`.
 
-For grid snapping on a non-rect pose, also pass an `OriginProjection`:
+A grid or a ruler guide snaps a pose's origin, read through an
+`OriginProjection`. The default reads rects and `Path`s; a pose that is neither
+passes its own:
 
 ```tsx
-import { pathOriginProjection } from '@weasel-js/core';
-import { gridSnapStrategy } from '@weasel-js/guides';
+import { gridSnapSource } from '@weasel-js/guides';
 
 <SceneCanvas
-  selectTool={{ snap: gridSnapStrategy(20, { origin: pathOriginProjection }) }}
+  snap={{ sources: [gridSnapSource({ spacing: 20 })], originProjection: myOriginProjection }}
   …
 />;
 ```
-
-`<SceneCanvas>` folds `selectTool.snap` into the `move` action's behavior
-chain.
 
 Move translates through the same descriptor. It reads the `poseDescriptor` dep
 and applies `translate` when the descriptor defines one, otherwise an origin

@@ -108,7 +108,7 @@ export function Callout(props: CalloutProps) {
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
   const stanced = useStance({ stance, tone });
-  const { anchor: portalAnchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor: portalAnchor, provide, ready } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // An Escape that closes the callout is a dismissal like the close button is.
   // The key alone is not the signal: RAC's overlay stack leaves the callout up
@@ -185,7 +185,7 @@ export function Callout(props: CalloutProps) {
           />,
           document.body,
         )}
-      {ready && (
+      {ready && provide(
         <OverlayTriggerStateContext.Provider value={watched}>
           <RACPopover
             {...rest}
@@ -206,26 +206,25 @@ export function Callout(props: CalloutProps) {
             className={[s.popover, className].filter(Boolean).join(' ')}
             {...stanced}
             data-weasel-overlay=""
-            {...portalProps}
           >
             <OverlayArrow className={s.arrow}>
               <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
                 <path d="M0 0 L6 6 L12 0" />
               </svg>
             </OverlayArrow>
-            <RACDialog
-              role={modal ? 'alertdialog' : 'dialog'}
-              className={s.dialog}
+            <CalloutDialog
+              modal={modal}
               aria-label={ariaLabel}
               aria-labelledby={ariaLabelledby}
-              ref={dialogRef}
+              titleId={title !== undefined ? titleId : undefined}
+              dialogRef={dialogRef}
             >
               {({ close }) => (
                 <>
                   {(title !== undefined || showClose) && (
                     <header className={s.header}>
                       {title !== undefined && (
-                        <Heading id={titleId} slot="title" className={s.title}>
+                        <Heading id={titleId} slot={modal ? 'title' : undefined} className={s.title}>
                           {title}
                         </Heading>
                       )}
@@ -250,10 +249,50 @@ export function Callout(props: CalloutProps) {
                   {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
                 </>
               )}
-            </RACDialog>
+            </CalloutDialog>
           </RACPopover>
         </OverlayTriggerStateContext.Provider>
       )}
     </>
+  );
+}
+
+type CalloutDialogProps = {
+  modal: boolean;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  /** The heading's id, when there is a heading. */
+  titleId?: string;
+  dialogRef: (node: HTMLElement | null) => void;
+  children: (renderProps: { close: () => void }) => ReactNode;
+};
+
+/**
+ * React Aria's Dialog contains focus wherever it is mounted: it flips its overlay's FocusScope to `contain`, which
+ * would make a non-modal callout pull focus back from every input clicked outside it. So only a modal callout gets
+ * one. A non-modal one is a plain `role="dialog"` that, like React Aria's own non-modal popovers, leaves focus where it
+ * was when it opens: a callout that opens because of typing elsewhere must not take the next keystroke.
+ */
+function CalloutDialog({ modal, titleId, dialogRef, children, ...labels }: CalloutDialogProps) {
+  const trigger = useContext(OverlayTriggerStateContext);
+  if (modal) {
+    return (
+      <RACDialog role="alertdialog" className={s.dialog} {...labels} ref={dialogRef}>
+        {children}
+      </RACDialog>
+    );
+  }
+  const labelledby = labels['aria-labelledby'] ?? (labels['aria-label'] === undefined ? titleId : undefined);
+  return (
+    <section
+      role="dialog"
+      tabIndex={-1}
+      className={s.dialog}
+      aria-label={labels['aria-label']}
+      aria-labelledby={labelledby}
+      ref={dialogRef}
+    >
+      {children({ close: () => trigger?.close() })}
+    </section>
   );
 }

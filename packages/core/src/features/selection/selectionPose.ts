@@ -45,7 +45,10 @@ function boxReader<TPose>(
       aabb: (_id, pose) => visualBoundsViaDescriptor(pose, d),
     };
   }
-  const leaves: DrawnBoundsScene = { get: (id) => scene.get(id) };
+  const leaves: DrawnBoundsScene = {
+    get: (id) => scene.get(id),
+    ...(scene.derivedPathOf ? { derivedPathOf: (id: NodeId) => scene.derivedPathOf!(id) } : {}),
+  };
   const opts = (scale: number | Scale2 | undefined) => ({
     descriptor: d as PoseDescriptor<unknown>,
     ...(scale !== undefined ? { scale } : {}),

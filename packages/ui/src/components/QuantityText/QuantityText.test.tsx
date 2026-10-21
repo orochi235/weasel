@@ -75,3 +75,23 @@ it('draws a unit alone as the unit part of a quantity, for one shown beside a fi
   expect(container.textContent).toBe('px');
   expect(container.querySelector('data')).toBeNull();
 });
+
+it('draws a stacked fraction as its MathML form inside its <data value>, with the text form beside it for a copy', () => {
+  const half = tag(1 / 2, fraction({ form: 'stacked' }));
+  const { container } = render(<QuantityText value={half} />);
+  const { form, spoken } = drawn(container);
+  const data = form.querySelector('data')!;
+  expect(data.getAttribute('value')).toBe('0.5');
+  expect(data.querySelector('math mfrac')?.outerHTML).toBe('<mfrac><mn>1</mn><mn>2</mn></mfrac>');
+  expect(data.querySelector('[data-part]')).toBeNull();
+  expect(data.lastElementChild?.textContent).toBe('1/2');
+  expect(form.getAttribute('aria-hidden')).toBe('true');
+  expect(spoken).toBe('1 over 2');
+});
+
+it('keeps the HTML form for a fraction that is not stacked, and for a range of stacked ones', () => {
+  expect(drawn(render(<QuantityText value={tag(1 / 2, fraction())} />).container).form.querySelector('math')).toBeNull();
+  cleanup();
+  const ends = [tag(1 / 4, fraction({ form: 'stacked' })), tag(1 / 2, fraction({ form: 'stacked' }))] as const;
+  expect(drawn(render(<QuantityText range={ends} />).container).form.querySelector('math')).toBeNull();
+});

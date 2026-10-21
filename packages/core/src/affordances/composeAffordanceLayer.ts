@@ -15,6 +15,7 @@ import {
   localToWorld,
   pointRegionAnchor,
   pointRegionFrame,
+  pointRegionLive,
   pointRegionScreenQuad,
   transformOf,
   type TargetTransform,
@@ -62,6 +63,7 @@ export function composeAffordanceLayer(
         if (isVisible && !isVisible(a.id)) continue;
         for (const region of a.regions(state)) {
           const xf = transformOf(state, region.targetId);
+          if (region.shape.kind === 'point' && !pointRegionLive(region.shape, xf, view)) continue;
           if (region.paint) paintRegion(region, xf, view, state, t, out);
           if (debug) recordRegionHitbox(debug, a.id, region, xf, view);
         }

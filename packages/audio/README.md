@@ -20,6 +20,11 @@ to `setTimeout`, and a hidden tab books late again.
 The worker times the pass, but the pass itself runs on the main thread, so a
 stall there longer than the lookahead starts whatever came due late. The
 `onLate(lateMs, when)` option reports each one; if it fires, raise `lookahead`.
+Or pass `synthVoices: 'worklet'`: `playNote` and `playNoise` voices are then
+rendered in an `AudioWorkletProcessor` from events posted when they are played,
+so one played ahead of a stall starts on time. The processor loads from a
+`blob:` URL (CSP: `script-src blob:`); until it has, and where it cannot,
+synth voices play on nodes.
 
 A suspended `AudioContext` is a separate matter: its clock stops, and on resume
 the engine drops what came due meanwhile rather than firing it all at once.
@@ -174,6 +179,27 @@ audio follows over a few fades; `settled()` resolves when it has caught up. The
 fade is `insertFadeMs`, default 15. A move is a splice out and a splice back in,
 so the moved effect drops out for one fade. A removed effect's `dispose` runs
 once it has left the graph.
+
+## Patchable graph
+
+`engine.graph(bus)` returns a graph of nodes feeding that bus's input (the
+first bus by default), which can be edited while it plays. Every structural
+edit crossfades — `add`, `remove`, `replace`, `connect`, `disconnect` — and
+`set` ramps a param. Sources are `createFileSourceNode` (a looping buffer),
+`createOscillatorNode` and `createNoiseNode`; `createGainNode`,
+`createPanNode`, `createMixNode`, `filterNode`, `delayNode`, `reverbNode` and
+`compressorNode` process, and `insertNode` wraps any insert effect. `tap(id)`
+puts an analyser on a node. The graph is disposed with the engine.
+
+```ts
+const g = engine.graph('music');
+g.add('osc', createOscillatorNode(engine.context, { frequency: 220 }));
+g.add('echo', delayNode(engine.context, { time: 300, feedback: 0.4 }));
+g.connect('osc', { node: 'echo', port: 'in' });
+g.connect('echo', { output: true });
+g.start();
+g.replace('osc', createOscillatorNode(engine.context, { wave: 'square', frequency: 220 }));
+```
 
 ## Streaming
 

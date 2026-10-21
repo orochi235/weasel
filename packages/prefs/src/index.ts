@@ -18,6 +18,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
+export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
 export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
@@ -60,6 +61,7 @@ export {
   type PrefScopeAtOptions,
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
+export { prefLeafValue, prefValueAbsent } from './leafValue';
 export { isPrefLocus, locusSelectors as prefLocusSelectors, memberAt as prefLocusMember, type PrefLocus, type PrefSelection, type PrefWeighted, type PrefWeights } from './locus';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
@@ -87,12 +89,14 @@ export type { PrefChange, PrefsStore } from './store';
 export {
   isPrefLinearUnit,
   prefUnit,
+  prefUnitAccepts,
   resolvePrefUnit,
   type PrefFunctionUnit,
   type PrefLinearUnit,
   type PrefNumberUnit,
   type ResolvedPrefUnit,
 } from './unit';
+export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';
 export { pairRuns, type PairRun } from './pair';
 export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {
@@ -109,6 +113,7 @@ export {
   type PrefCustom,
   type PrefEnum,
   type PrefEnumBase,
+  type PrefNumberBase,
   type PrefEnumControl,
   type PrefEnumEncoding,
   type PrefField,

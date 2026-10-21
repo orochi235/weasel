@@ -49,6 +49,12 @@ export interface StubScene {
   setPose(id: NodeId, pose: P): void;
 }
 
+/** Where a move shows `id` mid-drag: the pose it published to the scene's
+ *  overrides, or null. */
+export function heldPose(scene: StubScene, id: string): P | null {
+  return (scene.overrides.read(id as NodeId)?.pose as P | undefined) ?? null;
+}
+
 export function makeScene(
   poses: Record<string, P>,
   parents: Record<string, string | null>,

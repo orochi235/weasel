@@ -130,3 +130,16 @@ describe('nodeGraph', () => {
     expect(specs.filter((s) => s.kind === 'container').map((s) => s.id)).toEqual(['src', 'q', 'blur', 'flag']);
   });
 });
+
+describe('nodeGraph wire ids', () => {
+  it('carries a wire id onto its edge', () => {
+    const pipeline: EffectPipeline = {
+      stages: [
+        { id: 'a', title: 'A', outputs: [{ id: 'out', type: 'image' }] },
+        { id: 'b', title: 'B', inputs: [{ id: 'in', type: 'image' }] },
+      ],
+      wires: [{ id: 'w1', ...w(['a', 'out'], ['b', 'in']) }],
+    };
+    expect(nodeGraph(pipeline).data.edges[0]!.id).toBe('w1');
+  });
+});

@@ -1,4 +1,4 @@
-/** Top action bar for WeaselDraw — buttons that aren't tools.
+/** Top action bar for WeaselDraw — buttons that aren't tools, led by the menu bar on the same row.
  *
  *  Every editing command (history, clipboard, group, create outlines) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
@@ -9,13 +9,17 @@
  *  binding that fires it. */
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
-import { ActionBar as KitActionBar, Bar, MenuButton } from '@weasel-js/ui';
+import { ActionBar as KitActionBar } from '@weasel-js/ui/components/ActionBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { DEV_ROUTES } from './dev/devRoutes';
 import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
 import { CornerShape, type CornerShapeProps } from './ui/CornerShape';
 import { PathCommands } from './ui/PathCommands';
 
 export interface CommandBarProps {
+  /** The app's menu bar, drawn first in the row. */
+  menus?: ReactNode;
   /** What the Corner shape controls read; without it they are left out. */
   corners?: CornerShapeProps;
   /** The surface assets drawn in the strip, after the view toggles. */
@@ -41,6 +45,7 @@ function openDebugRoute(hash: string) {
 export function CommandBar(p: CommandBarProps) {
   return (
     <div className="wd-commandbar" role="toolbar" aria-label="Actions">
+      {p.menus}
       <div className="wd-commandbar-group">
         <Bar schema={FILE_BAR} />
       </div>

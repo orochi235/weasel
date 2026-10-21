@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { adjacentPage, layoutPages, pageAt, pageOfBounds, pagesBounds, type Page } from './pages';
+import { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds, type Page } from './pages';
 import { pagesLayer } from './pagesLayer';
-import { fitViewToPage } from './fitViewToPage';
+import { fitViewToPage, pageInView } from './fitViewToPage';
 
 const A: Page = { id: 'a', width: 100, height: 200 };
 const B: Page = { id: 'b', name: 'Back', width: 300, height: 100 };
@@ -116,5 +116,41 @@ describe('fitViewToPage', () => {
     const view = fitViewToPage(b!, { width: 300, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 0 });
     expect(view.scale).toEqual({ x: 1, y: 1 });
     expect([view.x, view.y]).toEqual([110, 0]);
+  });
+});
+
+describe('pageInView', () => {
+  const pages = layoutPages([A, B], { gap: 10 });
+  it('answers the page the view shows most of', () => {
+    expect(pageInView(pages, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })?.id).toBe('a');
+    expect(pageInView(pages, { x: 60, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 })?.id).toBe('b');
+  });
+
+  it('answers null when the view shows no page', () => {
+    expect(pageInView(pages, { x: -500, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })).toBeNull();
+  });
+});
+
+describe('pageName', () => {
+  it('is the page’s own name, else "Page" and its place', () => {
+    expect(pageName({ name: 'Intro' }, 3)).toBe('Intro');
+    expect(pageName({}, 1)).toBe('Page 2');
+  });
+});
+
+describe('pageHolding', () => {
+  const PAGES = layoutPages([{ id: 'p1', width: 200, height: 100 }, { id: 'p2', width: 200, height: 100 }]);
+  it('is the page a box is on, when it is on one', () => {
+    expect(pageHolding(PAGES, { x: 20, y: 20, width: 40, height: 30 })?.id).toBe('p1');
+  });
+  it('puts a box in the gap on the nearer page', () => {
+    expect(pageHolding(PAGES, { x: 230, y: 20, width: 5, height: 30 })?.id).toBe('p2');
+    expect(pageHolding(PAGES, { x: 203, y: 20, width: 5, height: 30 })?.id).toBe('p1');
+  });
+  it('takes the earlier page when a gap box is equally near both', () => {
+    expect(pageHolding(PAGES, { x: 215, y: 20, width: 10, height: 30 })?.id).toBe('p1');
+  });
+  it('is null with no pages', () => {
+    expect(pageHolding([], { x: 0, y: 0, width: 1, height: 1 })).toBeNull();
   });
 });

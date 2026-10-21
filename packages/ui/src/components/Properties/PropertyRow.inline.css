@@ -81,10 +81,11 @@
 /* Anywhere in a property row, however deep a surface wraps it, a select drops
    its box and reads as its value: a bold word, underlined. A dense row of
    settings reads its choices as words, and 10px of caret is a tenth of a short
-   value's width. The words are set at the label's size, so label and value
-   share a baseline. Set on the row because these hooks inherit. */
+   value's width. Set on the row because these hooks inherit. Every field's
+   text is set at the label's size, which is what puts label and value on one
+   baseline. */
 .row {
-  --wzl-select-font-size: var(--wzl-font-size-sm);
+  --wzl-field-font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   --wzl-select-weight: var(--wzl-font-weight-bold);
   --wzl-select-bg: transparent;
   --wzl-select-border: 1px solid transparent;
@@ -167,7 +168,7 @@
   padding: 0 var(--wzl-field-pad-x);
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size);
+  font-size: var(--wzl-field-font-size);
   line-height: var(--wzl-leading-tight);
 }
 
@@ -212,7 +213,7 @@
   border-radius: var(--wzl-radius-sm);
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size);
+  font-size: var(--wzl-field-font-size);
   line-height: var(--wzl-leading-tight);
   text-align: start;
   cursor: pointer;
@@ -258,7 +259,7 @@
   padding: 0;
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size);
+  font-size: var(--wzl-field-font-size);
   line-height: var(--wzl-leading-tight);
   cursor: pointer;
 }

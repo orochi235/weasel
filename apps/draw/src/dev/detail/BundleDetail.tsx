@@ -1,24 +1,22 @@
-import { Badge, Button, Code, DataGrid, DetailList, DetailRow, KeySequence, keySpecsFromShortcut, type DataGridColumn } from '@weasel-js/ui';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
 import s from '../RegistryInspector.module.css';
 import { collectBundles } from '../registryData';
 import type { BundleEntry, ToolEntry } from '../registryEntries';
-import { BundleBadge, type Props } from './shared';
+import { BundleBadge } from './shared';
 
 export type BundleMemberRow = { id: string; tool: ToolEntry | undefined };
 
-export function bundleMemberColumns(
-  onNavigate: Props['onNavigate'],
-): readonly DataGridColumn<BundleMemberRow>[] {
+export function bundleMemberColumns(): readonly DataGridColumn<BundleMemberRow>[] {
   return [
     {
       id: 'label',
       header: 'Tool',
       accessor: (r) => r.tool?.label ?? r.id,
-      render: (r) => (
-        <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
-          {r.tool?.label ?? r.id}
-        </Button>
-      ),
+      render: (r) => r.tool?.label ?? r.id,
     },
     {
       id: 'id',
@@ -50,11 +48,10 @@ export function bundleMemberColumns(
 }
 
 export function BundleDetail({
-  entry, tools, onNavigate,
+  entry, tools,
 }: {
   entry: BundleEntry;
   tools: readonly ToolEntry[];
-  onNavigate: Props['onNavigate'];
 }) {
   const byId = new Map(tools.map((t) => [t.id, t]));
   const others = collectBundles().filter((b) => b.id !== entry.id);
@@ -79,7 +76,7 @@ export function BundleDetail({
       <h3 className={s.subHeading}>Tools</h3>
       <DataGrid
         rows={entry.tools.map((id) => ({ id, tool: byId.get(id) }))}
-        columns={bundleMemberColumns(onNavigate)}
+        columns={bundleMemberColumns()}
         empty="No tools in this bundle."
       />
       <DetailList title="Diff vs other bundles" className={s.diffSection}>
@@ -93,20 +90,8 @@ export function BundleDetail({
               {added.length === 0 && removed.length === 0
                 ? <span className={s.empty}>(identical)</span>
                 : <>
-                    {added.map((t) => (
-                      <Button
-                        key={`+${t}`}
-                        variant="link"
-                        onClick={() => onNavigate({ kind: 'tool', id: t })}
-                      ><Code status="success">+{t}</Code></Button>
-                    ))}
-                    {removed.map((t) => (
-                      <Button
-                        key={`-${t}`}
-                        variant="link"
-                        onClick={() => onNavigate({ kind: 'tool', id: t })}
-                      ><Code status="danger">−{t}</Code></Button>
-                    ))}
+                    {added.map((t) => <Code key={`+${t}`} status="success">+{t}</Code>)}
+                    {removed.map((t) => <Code key={`-${t}`} status="danger">−{t}</Code>)}
                   </>}
             </DetailRow>
           );

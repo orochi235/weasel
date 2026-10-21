@@ -3,12 +3,15 @@
  * back an edit refused partway, the engine, and the recorder between them.
  */
 import type { Journal } from '@weasel-js/history';
+import type { Op } from 'core/ops/types';
 import { createHistory } from 'core/ops/createHistory';
 import { createAppliedLog } from './appliedLog';
 import type { ArrivalWindow } from './arrivalWindow';
 import type { EditMode } from './editMode';
+import { createEditPasses } from './editPass';
 import { createSceneHistory, type SceneHistoryMethods } from './historyFacade';
 import type { Notifier } from './notifier';
+import type { PoseWriteLog } from './poseWrites';
 import { createOpTable, type OpTable } from './opTable';
 import { createOuterOps } from './outerOps';
 import { createRecorder, type Recorder, type RecorderEnv } from './recorder';
@@ -24,7 +27,10 @@ export interface SceneRecordingEnv {
   lifted<T>(fn: () => T): T;
   selection: Pick<SceneSelection, 'get' | 'set' | 'replace'>;
   arrivals: RecorderEnv['arrivals'] & Pick<ArrivalWindow<unknown>, 'runEdit'>;
+  /** The adapter an edit pass's ops apply through. */
+  passAdapter(): unknown;
   writePose(id: string, pose: unknown): void;
+  poseWrites: Pick<PoseWriteLog<unknown>, 'labeled' | 'replaying'>;
   config: {
     getActiveJournal?: (() => Journal | null) | undefined;
     coalesceWindowMs?: number | undefined;
@@ -39,13 +45,25 @@ export interface SceneRecording {
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
     | 'registerOp' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
-    | 'setActiveJournalAccessor' | 'setHistoryAdapter'
+    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'addEditPass'
   >;
 }
 
 export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
-  const { notifier, mode, stale, lifted, selection, arrivals, config } = env;
+  const { notifier, mode, stale, lifted, selection, arrivals, config, poseWrites } = env;
   const { notify } = notifier;
+  const passes = createEditPasses({ adapter: env.passAdapter, untracked: mode.untracked });
+
+  /** Run an op-driven edit with its arrivals settled and its passes run at
+   *  its end, in the same entry, when this call owns them. */
+  const runEdit = (ops: Op[], run: (ops: Op[]) => void): boolean => arrivals.runEdit(ops, (all) => {
+    if (!passes.open()) return run(all);
+    try {
+      run([...all, passes.op()]);
+    } finally {
+      passes.abandon();
+    }
+  });
 
   const ops = createOpTable({
     driven: mode.open,
@@ -91,8 +109,10 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     makeOp: ops.op,
     log,
     arrivals,
+    passes,
     selection: selection.get,
     writePose: env.writePose,
+    labeled: poseWrites.labeled,
   });
   const { record, engineDriven } = recorder;
 
@@ -100,7 +120,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
    *  journal stepping. The engine inverts whole ops when one throws; this
    *  also reverts the scene writes of the op that threw partway. */
   function replay(step: () => void): void {
-    atomically(() => lifted(() => stale.during(() => engineDriven(step))), () => true);
+    poseWrites.replaying(() => atomically(() => lifted(() => stale.during(() => engineDriven(step))), () => true));
   }
 
   function refuseUntracked(verb: string): void {
@@ -114,7 +134,8 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     replay,
     notify,
     refuseUntracked,
-    runArrivalEdit: arrivals.runEdit,
+    runArrivalEdit: runEdit,
+    labeled: (label, fn) => poseWrites.labeled(label, 'ops', fn),
     activeJournal: outer.activeJournal,
   });
 
@@ -134,7 +155,8 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       },
       applyBatch(batch, label, adapter) {
         refuseUntracked('applyBatch');
-        return arrivals.runEdit(batch, (all) => outer.apply(engine, all, label, adapter));
+        return poseWrites.labeled(label, 'ops', () =>
+          runEdit(batch, (all) => outer.apply(engine, all, label, adapter)));
       },
       history,
       ...methods,
@@ -142,6 +164,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       untracked: recorder.untracked,
       setActiveJournalAccessor: outer.setActiveJournalAccessor,
       setHistoryAdapter: outer.setHistoryAdapter,
+      addEditPass: passes.add,
     },
   };
 }

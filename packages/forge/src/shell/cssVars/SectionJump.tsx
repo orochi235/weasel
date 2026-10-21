@@ -1,5 +1,7 @@
 import type { IconRef } from '@weasel-js/icons';
-import { Icon, TOKEN_CATEGORIES, type TokenCategory, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { TOKEN_CATEGORIES, type TokenCategory } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef, useState } from 'react';
 import { icon } from '../../icons.gen';
 

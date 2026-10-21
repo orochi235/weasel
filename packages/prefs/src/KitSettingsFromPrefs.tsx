@@ -1,6 +1,5 @@
-import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import { adoptCss, KitSettingsProvider, styleRootOf, type KitSettingsOverrides } from '@weasel-js/react';
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
-import { adoptPrefsCss, prefsStyleRootOf } from './adopt';
 import { prefsCss, prefsCssAttributes } from './css';
 import type { PrefGroup } from './groups';
 import { prefValueAtPath } from './helpers';
@@ -37,10 +36,10 @@ export function KitSettingsFromPrefs<S extends PrefGroup>({
   useLayoutEffect(() => {
     const el = anchor.current;
     if (!css || !el) return;
-    const root = prefsStyleRootOf(el);
+    const root = styleRootOf(el);
     const host = 'host' in root ? root.host : root.documentElement;
     const options = { ...kitSettingsCssOptions(at), root: 'host' in root ? ':host' : ':root' };
-    const sheet = adoptPrefsCss(root, prefsCss(store, options));
+    const sheet = adoptCss(root, prefsCss(store, options));
     let set: string[] = [];
     const write = (): void => {
       for (const name of set) host.removeAttribute(name);

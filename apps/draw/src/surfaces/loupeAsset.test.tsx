@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
-import { ContextMenuHost } from '@weasel-js/ui';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import type { LoupeEvents, LoupeSettings } from '../useLoupe';
 import { CommandBar } from '../CommandBar';
 import { LoupeProvider } from '../LoupeProvider';
@@ -100,7 +100,7 @@ describe('the loupe asset', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     renderWithIcons(<App />);
     click(loupeBar().getByRole('switch', { name: 'Loupe' }));
-    expect(loupeBar().getByRole('button', { name: 'Copy' })).toBeDisabled();
+    expect(loupeBar().getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
 
     act(() => { lens.events!.onColorChange('#336699'); });
     expect(loupeBar().getByRole('status', { name: 'Color' }).textContent).toBe('#336699');
@@ -130,5 +130,26 @@ describe('the loupe asset', () => {
     expect(screen.getByRole('menuitemcheckbox', { name: 'Loupe' })).toHaveAttribute('aria-checked', 'true');
     click(screen.getByRole('menuitemcheckbox', { name: 'Vector' }));
     expect(lens.settings?.mode).toBe('vector');
+  });
+
+  it('keeps its magnification and color as a menu, the magnification edited without closing it', () => {
+    renderWithIcons(<App />);
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    act(() => { lens.events!.onColorChange('#336699'); });
+    act(() => { drawPrefs().set('ui.surfaces', { ...drawPrefs().get('ui.surfaces'), loupe: { surface: 'menu' } }); });
+    click(strip().getByRole('button', { name: 'Loupe' }));
+
+    const factor = screen.getByRole('spinbutton', { name: 'Magnification' });
+    expect(screen.getByRole('menuitem', { name: /Magnification/ })).toContainElement(factor);
+    expect(factor).toHaveValue('8');
+    act(() => {
+      fireEvent.change(factor, { target: { value: '12' } });
+      fireEvent.blur(factor);
+    });
+    expect(lens.settings?.factor).toBe(12);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(factor).toHaveValue('12');
+
+    expect(screen.getByRole('menuitem', { name: /^Color\s*#336699$/ })).toHaveAttribute('aria-disabled', 'true');
   });
 });

@@ -11,6 +11,7 @@ import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Scene } from 'core/scene/types';
 import type { BehaviorEnd } from 'interactions/gestures/types';
 import type { NodeId, PoseHold } from 'core/scene/types';
+import type { TransformFinisher } from './transformFinish';
 
 /** The lifecycle options, as a binding's params or the resize policy carry
  *  them. */
@@ -78,7 +79,8 @@ export function readGestureLifecycle(
   };
 }
 
-/** Commit a gesture's ops: untracked when transient, else through the
+/** Commit a gesture's ops, finished by `target.finish` when it has one:
+ *  untracked when transient, else through the
  *  consumer `applyOps` hook when one is wired, else into the scene's history.
  *  Returns whether the commit landed: false when a container refused what
  *  the ops brought it, which the scene reverts. A consumer's `applyOps` may
@@ -88,10 +90,13 @@ export function commitGestureOps(
     scene: Scene<unknown, string, unknown>;
     applyOps?: (ops: Op[], label: string) => void;
     adapter: unknown;
+    finish?: TransformFinisher;
   },
   lifecycle: GestureLifecycle,
-  ops: Op[],
+  given: Op[],
 ): boolean {
+  const ops = target.finish ? target.finish(given, lifecycle.labelFor(given)) : given;
+  if (!ops) return false;
   if (lifecycle.transient) {
     try {
       target.scene.untracked(() => {

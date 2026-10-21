@@ -1,5 +1,6 @@
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
+import { CHROME_ITEMS, chromeActionId } from './surfaces/chrome';
 
 const act = (id: string) => pref.action(id);
 
@@ -37,5 +38,6 @@ export const DRAW_MENU_BAR: PrefGroup = pref.group('Menu bar', {
       grid: 'view.grid', snap: 'view.snap', pathDirection: 'view.pathDirection', symmetry: 'view.symmetry',
     }),
     zoom: run({ in: 'viewport.zoom:in', out: 'viewport.zoom:out', reset: 'viewport.zoom:reset' }),
+    chrome: run(Object.fromEntries(CHROME_ITEMS.map(({ id }) => [id, chromeActionId(id)]))),
   }),
 }, { as: 'bar' });

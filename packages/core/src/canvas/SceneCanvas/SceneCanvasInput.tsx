@@ -1,3 +1,4 @@
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -6,7 +7,10 @@ import type { RuleCtx } from 'features/chrome-caps';
 import type { Affordance } from 'affordances/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import { useEffect, type MutableRefObject, type RefObject } from 'react';
+import { useContext, useEffect, type MutableRefObject, type RefObject } from 'react';
+import { SnapSourceRegistryContext } from 'features/snap/registry';
+import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
+import type { SnapSource } from 'features/snap/types';
 import { dlog } from '../../debug/flag';
 import { useDeviceProfile } from '../../core/device/useDeviceProfile';
 import { useTestHook } from '../../test-hook/useTestHook';
@@ -19,6 +23,7 @@ import type { BridgeAdapter, SceneCanvasProps } from './props';
 import type { NodeAtPoint } from './useNodeAtPoint';
 import type { useSceneCanvasTools } from './useSceneCanvasTools';
 import { useSceneGestureDispatcher } from './useSceneGestureDispatcher';
+import { useCanvasDevtoolsRoot, type CanvasDevtools } from './useCanvasDevtoolsRoot';
 import type { useScenePicking } from './useScenePicking';
 import {
   useSceneStandardActions, type SceneStandardActionsInputs, type StandardActionsProps,
@@ -32,7 +37,7 @@ type Picking = ReturnType<typeof useScenePicking<unknown, string, unknown>>;
 export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   Props,
   | 'selectTool' | 'geometryProjection' | 'enableGestureDispatcher' | 'enableKeybindings'
-  | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick'
+  | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
 >;
 
 /** What `<SceneCanvas>` hands {@link SceneCanvasInput}. */
@@ -42,24 +47,24 @@ export interface SceneCanvasInputProps {
   selection: SelectionApi;
   descriptor: PoseDescriptor<unknown>;
   picking: Pick<
-    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'viewLayerGate' | 'alphaOf'
+    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf'
   > & { adapter: BridgeAdapter };
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
   nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
   tools: ReturnType<typeof useSceneCanvasTools>;
-  rotateOff: boolean;
   viewOn: boolean;
   camera: { viewState: CanvasViewState; viewAnimation: SceneStandardActionsInputs['viewAnimation'] };
   dispatcher: Dispatcher;
   pathEdit: {
     state: SceneStandardActionsInputs['editAnchorsExternalState'];
-    snapper: SceneStandardActionsInputs['pathSnapper'];
   };
   chrome: { getIsVisible: () => (id: string) => boolean; getRuleCtx: () => RuleCtx | undefined };
   /** The selection overlay's rotate badge, and where the dispatcher reports the affordances
    *  it hit-tests, for the slops overlay. */
   overlay: {
     rotationBadge: { distancePx: number; sizePx: number } | null | undefined;
+    /** The resize-handle layout the overlay paints, so the hit-test grabs exactly those. */
+    resizeHandles: ResizeHandleLayout;
     chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
   };
   canvas: {
@@ -68,6 +73,11 @@ export interface SceneCanvasInputProps {
     ready: boolean;
   };
   ingestionClipboard: SceneStandardActionsInputs['ingestionClipboard'];
+  /** The enabled presets' snap sources. */
+  snapSources: readonly SnapSource[];
+  /** The outcome store the canvas's readout layer draws. */
+  snapStore: SnapOutcomeStore;
+  devtools: CanvasDevtools;
 }
 
 /**
@@ -82,19 +92,21 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const { props, scene, selection, picking, chrome, overlay, canvas } = p;
   const { viewState } = p.camera;
   const { selectTool, enableKeybindings = true } = props;
+  const snapRegistry = useContext(SnapSourceRegistryContext);
   useEffect(() => {
     dlog('scene-canvas', 'mount');
     return () => dlog('scene-canvas', 'unmount');
   }, []);
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
   useSceneStandardActions({
-    props, rotateOff: p.rotateOff, viewOn: p.viewOn,
+    props, viewOn: p.viewOn,
     selection, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,
     currentViewRef: viewState.viewRef, onViewChange: viewState.setViewFromInput,
     poseDescriptor: p.descriptor, dispatcher: p.dispatcher,
     pickEvery: picking.pickEvery, layerIsPainted: picking.viewLayerGate, alphaOf: picking.alphaOf,
-    viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state, pathSnapper: p.pathEdit.snapper,
+    viewAnimation: p.camera.viewAnimation, editAnchorsExternalState: p.pathEdit.state,
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
+    snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
   });
 
   // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the
@@ -104,6 +116,10 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const onClick = useHitObserver(props.onClick, p.nodeAtPointRef);
   const selectionRef = useLatest(selection);
   const { targetScale } = useDeviceProfile();
+  const { root, traces } = useCanvasDevtoolsRoot({
+    scene, selection, viewState, tools: p.tools.tools, contributions: p.tools.contributions, routing: props.routing,
+    element: canvas.elementRef, api: canvas.apiRef, devtools: p.devtools,
+  });
   useSceneGestureDispatcher({
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef,
     tools: p.tools.tools, contributions: p.tools.contributions,
@@ -112,9 +128,11 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     selectionRef,
     boundsOf: picking.boundsOf, planeOfNode: picking.planeOfNode,
     pickEvery: picking.pickEvery, pickBest: picking.pickBest, kindOfNode: picking.kindOfNode,
-    viewRef: viewState.viewRef, dispatcher: p.dispatcher,
+    doubleClickNames: picking.doubleClickNames,
+    viewRef: viewState.viewRef, dispatcher: p.dispatcher, traces,
     getIsVisibleForCanvas: chrome.getIsVisible, getRuleCtx: chrome.getRuleCtx,
-    targetScale, handleHitRadius: selectTool?.handleHitRadius,
+    targetScale, handleHitRadius: overlay.resizeHandles.hitRadiusPx,
+    edgeHandles: overlay.resizeHandles.edges,
     rotationBadge: overlay.rotationBadge, chromeAffordancesRef: overlay.chromeAffordancesRef,
     onDoubleClick, onClick, longPress: props.longPress,
   });
@@ -131,6 +149,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     getSelectionIds: () => (selection.current as readonly string[] | undefined) ?? [],
     getView: () => viewState.viewRef.current,
     getActiveToolId: () => p.tools.tools.active ?? null,
+    probes: root.probes,
   });
 
   // Mounted only when passed: an empty default registered with the deps above would land

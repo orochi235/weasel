@@ -8,6 +8,7 @@ import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefSchemaEditor> = {
   title: 'Primitives/PrefSchemaEditor',
+  parameters: { layout: 'fullscreen' },
   component: PrefSchemaEditor,
 };
 export default meta;

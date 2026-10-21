@@ -44,14 +44,18 @@ export function resolveDropTarget(
   // targets (parent = leaf's parent). When the leaf has no parent
   // (top-level under a layer), `newParent === null` and the moved
   // subtree lands at the layer root.
-  if (hitNode.kind === 'container') {
+  if (hitNode.kind === 'container' && session.admits(hit)) {
     return { newParent: hit, newLayer: hitNode.layer, hitSibling: null };
   }
-  return {
-    newParent: hitNode.parent,
-    newLayer: hitNode.layer,
-    hitSibling: hit,
-  };
+  // A container `canDropInto` refuses is a sibling to land beside, inside
+  // the nearest container around it that admits the drop.
+  let newParent = hitNode.parent;
+  let hitSibling: NodeId = hit;
+  while (newParent !== null && !session.admits(newParent)) {
+    hitSibling = newParent;
+    newParent = session.scene.get(newParent)?.parent ?? null;
+  }
+  return { newParent, newLayer: hitNode.layer, hitSibling };
 }
 
 /** Reparent and reposition each moved root as ops, keeping the world pose the

@@ -34,6 +34,14 @@ interface Visible {
   index: number;
 }
 
+/** The row Up, Down, Home and End go to from row `i` of `n`. */
+const STEPS: Partial<Record<string, (i: number, n: number) => number>> = {
+  ArrowDown: (i, n) => Math.min(i + 1, n - 1),
+  ArrowUp: (i) => Math.max(i - 1, 0),
+  Home: () => 0,
+  End: (_, n) => n - 1,
+};
+
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry
  * browser, an outline.
@@ -45,9 +53,11 @@ interface Visible {
  * **Keyboard.** One treeitem is in the tab order: the one last focused, else
  * the first selected, else the first. Up/Down move between visible rows,
  * Home/End go to the first and last. Right opens a closed branch, then moves
- * into it; Left closes an open branch, else moves to the parent. Enter and
- * Space activate, as a click does. Under `selectionMode="multiple"`, Cmd/Ctrl+A
- * selects every visible row. Typing moves to the next row whose text
+ * into it; Left closes an open branch, else moves to the parent. Each of these
+ * moves focus alone, or the selection with it under `selectionFollowsFocus`.
+ * Enter and Space activate, as a click does. Under `selectionMode="multiple"`,
+ * Shift with Up/Down/Home/End extends the selection to the row it reaches, and
+ * Cmd/Ctrl+A selects every visible row. Typing moves to the next row whose text
  * starts with what was typed. With `onMove`, Alt+Up/Down move the focused node
  * (or the selection holding it) among its siblings, and Alt+Left/Right outdent
  * it and indent it under the sibling above; each goes through `canDrop`.
@@ -64,7 +74,7 @@ export const Tree = forwardRef(function Tree(
     nodes, empty, className,
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', hang = false, guides = false,
-    selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
+    selectionMode = 'none', selectionFollowsFocus = false, selectedIds, defaultSelectedIds, onSelectionChange,
     onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
@@ -139,6 +149,15 @@ export const Tree = forwardRef(function Tree(
     commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, eligible));
   };
 
+  /** Focus a row a key reached, and bring the selection along where it follows focus or Shift extends it. */
+  const reach = (id: string | undefined, shift: boolean) => {
+    if (id == null) return;
+    focus(id);
+    if (!selectable || !eligible(id)) return;
+    const extend = shift && selectionMode === 'multiple';
+    if (extend || selectionFollowsFocus) select(id, { shiftKey: extend, ctrlKey: false, metaKey: false, altKey: false });
+  };
+
   const activate = (node: TreeNode, mods: PressModifiers) => {
     if (node.disabled) return;
     toggle(node);
@@ -185,33 +204,23 @@ export const Tree = forwardRef(function Tree(
       selectAll();
       return;
     }
+    const step = STEPS[e.key];
+    if (step) {
+      e.preventDefault();
+      reach(visible[step(i, visible.length)]!.node.id, e.shiftKey);
+      return;
+    }
     switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        focus(visible[Math.min(i + 1, visible.length - 1)].node.id);
-        return;
-      case 'ArrowUp':
-        e.preventDefault();
-        focus(visible[Math.max(i - 1, 0)].node.id);
-        return;
-      case 'Home':
-        e.preventDefault();
-        focus(visible[0].node.id);
-        return;
-      case 'End':
-        e.preventDefault();
-        focus(visible[visible.length - 1].node.id);
-        return;
       case 'ArrowRight':
         if (!node.children) return;
         e.preventDefault();
         if (!open) toggle(node);
-        else focus(node.children[0]?.id);
+        else reach(node.children[0]?.id, false);
         return;
       case 'ArrowLeft':
         e.preventDefault();
         if (open && !node.disabled) toggle(node);
-        else focus(v.parentId ?? undefined);
+        else reach(v.parentId ?? undefined, false);
         return;
       case ' ':
         // Mid-search a space is a typed character: "new f" must not activate at the space.

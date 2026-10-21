@@ -42,8 +42,6 @@ export function commitMove(input: CommitInput): boolean {
         scene: session.scene,
         projection: session.projection,
         startPoses: session.startPoses,
-        carried: session.carried,
-        roots: session.ids,
         label: session.lifecycle.label,
       },
       ops,

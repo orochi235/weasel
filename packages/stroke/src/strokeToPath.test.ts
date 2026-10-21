@@ -107,6 +107,22 @@ describe('strokeToPath', () => {
     expect(boundsOfPath(outer).x).toBeCloseTo(-2, 3);
   });
 
+  it('outlines a long wavy curve whose ribbon overlaps itself', () => {
+    // 300 humps, each rising 30 and falling back over 10: wider than the gap between
+    // its own flanks, so the ribbon overlaps itself all along.
+    const b = new PathBuilder().moveTo(0, 0);
+    for (let i = 0; i < 300; i++) b.curveTo(i * 10 + 3, 40, i * 10 + 7, 40, i * 10 + 10, 0);
+    const out = strokeToPath(b.build(), { paint: PAINT, width: 6, join: 'round' }, { flattenTolerance: 0.05 });
+    const box = boundsOfPath(out);
+    expect(box.x).toBeCloseTo(-3, 0);
+    expect(box.width).toBeCloseTo(3006, 0);
+    expect(pathContainsPoint(out, 1505, 30)).toBe(true);
+    expect(pathContainsPoint(out, 1505, 40)).toBe(false);
+    expect(pathContainsPoint(out, 1505, -10)).toBe(false);
+    // 300 humps is the size that overran the old union's segment limit, and it takes
+    // about 2.5 s alone, so a loaded worker pushes it past the default 5 s.
+  }, 20_000);
+
   it('answers an empty path for a stroke with no width', () => {
     expect(strokeToPath(SQUARE, { paint: PAINT, width: 0 }).commands.length).toBe(0);
   });

@@ -1,4 +1,4 @@
-import { toast } from '@weasel-js/ui';
+import { toast } from '@weasel-js/ui/components/Toast';
 
 export const FIRST_RUN_KEY = 'weaseldraw:first-run-notice-v1';
 

@@ -16,6 +16,7 @@ import {
   storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
 } from './warpTargets';
 import { icon } from '../icons.gen';
+import { warpSettingsForm } from './warpSettingsForm';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -201,6 +202,13 @@ export function createWarpGrabAction(kind: WarpKind): Action {
   };
 }
 
+/** Whether a selected path holds a warp: what both actions below work on. */
+function holdsWarp(deps?: ActionDeps): true | ActionDisabledReason {
+  return selectedPathNodes(deps ?? {}).some(({ node }) => heldPathWarpOf(node.data))
+    ? true
+    : ActionDisabledReason.NotApplicable;
+}
+
 /**
  * Drop the warp from each selected path, keeping the geometry it made: the
  * shape becomes plain geometry that path editing and other warps start from.
@@ -223,16 +231,15 @@ export const expandWarpAction: Action = {
       commitOps(deps, ops, 'Expand Warp');
     },
   } satisfies ImmediateInvoker,
-  enabled: (deps) => (selectedPathNodes(deps).some(({ node }) => heldPathWarpOf(node.data))
-    ? true
-    : ActionDisabledReason.NotApplicable),
+  enabled: holdsWarp,
 };
 
 /**
  * Remake the selection's warps under new settings (`params`, a
  * {@link WarpSettings}, plus an optional `kind` limiting it to one kind of
  * warp): switch a distort between free and perspective, an envelope between
- * its mappings or to a finer grid, or refit at another tolerance. One undo step.
+ * its mappings or to a finer grid, or refit at another tolerance. One undo
+ * step. Its settings form shows what the selection holds.
  */
 export const configureWarpAction: Action = {
   id: 'configureWarp',
@@ -241,6 +248,8 @@ export const configureWarpAction: Action = {
   tags: pathOperationTags('command'),
   group: 'path',
   requires: REQUIRES,
+  settings: warpSettingsForm,
+  enabled: holdsWarp,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {

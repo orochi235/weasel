@@ -1,61 +1,69 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createScene, type ActionDeps, type CanvasExtensionApi, type NodeId } from '@weasel-js/core';
+import { createScene, createSnapOutcomeStore, type ActionDeps, type CanvasExtensionApi, type NodeId } from '@weasel-js/core';
 import { distanceReadout } from './distanceReadout';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function fixture() {
+function fixture(opts?: Parameters<typeof distanceReadout>[0]) {
   const scene = createScene<object, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
   const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 0, width: 10, height: 10 }, data: {} });
+  const c = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 30, y: 40, width: 10, height: 10 }, data: {} });
   let selected: NodeId[] = [a];
-  const nodeAtPoint = vi.fn((p: { x: number }, exclude?: Iterable<NodeId>) => {
+  const nodeAtPoint = vi.fn((p: { x: number; y: number }, exclude?: Iterable<NodeId>) => {
     const ex = new Set(exclude);
+    if (p.x >= 30 && p.y >= 40 && !ex.has(c)) return c;
     if (p.x >= 30 && !ex.has(b)) return b;
     if (p.x < 10 && !ex.has(a)) return a;
     return null;
   });
+  const store = createSnapOutcomeStore();
   const deps = {
     scene,
+    snapReadout: { store },
     nodeAtPoint,
     selection: { get: () => selected },
   } as unknown as ActionDeps;
-  const r = distanceReadout();
-  const redraw = vi.fn();
+  const r = distanceReadout(opts);
+  const heard = vi.fn();
+  store.subscribe(heard);
   const el = document.createElement('div');
-  const detach = r.attach!({ element: el, requestRedraw: redraw } as unknown as CanvasExtensionApi, {} as never);
+  const detach = r.attach!({ element: el } as unknown as CanvasExtensionApi, {} as never);
   const run = (params: Record<string, unknown>) => r.actions![0].invoker!.timing === 'immediate'
     && (r.actions![0].invoker as { run: (d: ActionDeps, p: unknown) => void }).run(deps, params);
-  return { r, run, redraw, el, detach, select: (ids: NodeId[]) => { selected = ids; }, a, b };
+  return { r, run, store, heard, el, detach, select: (ids: NodeId[]) => { selected = ids; }, a, b };
 }
 
 describe('distanceReadout', () => {
   it('shows the distance from the selection to the shape under the pointer while the modifier is held', () => {
-    const { r, run, redraw } = fixture();
+    const { r, run, store, heard } = fixture();
     run({ show: true, worldX: 35, worldY: 5 });
     expect(r.read().gaps).toEqual([{ axis: 'x', min: 10, max: 30, at: 5 }]);
-    expect(redraw).toHaveBeenCalledTimes(1);
+    expect(store.get()).toEqual([{ kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 20 }]);
+    expect(heard).toHaveBeenCalledTimes(1);
     run({ show: false, worldX: 35, worldY: 5 });
     expect(r.read().gaps).toEqual([]);
-    expect(redraw).toHaveBeenCalledTimes(2);
+    expect(store.get()).toEqual([]);
+    expect(heard).toHaveBeenCalledTimes(2);
   });
 
   it('shows nothing over empty canvas, over the selection itself, or with nothing selected', () => {
-    const { r, run, select, redraw } = fixture();
+    const { r, run, select, heard } = fixture();
     run({ show: true, worldX: 20, worldY: 5 });
     run({ show: true, worldX: 5, worldY: 5 });
     expect(r.read().gaps).toEqual([]);
     select([]);
     run({ show: true, worldX: 35, worldY: 5 });
     expect(r.read().gaps).toEqual([]);
-    expect(redraw).not.toHaveBeenCalled();
+    expect(heard).not.toHaveBeenCalled();
   });
 
   it('hides on a press', () => {
-    const { r, run, el } = fixture();
+    const { r, run, el, store } = fixture();
     run({ show: true, worldX: 35, worldY: 5 });
     el.dispatchEvent(new Event('pointerdown'));
     expect(r.read().gaps).toEqual([]);
+    expect(store.get()).toEqual([]);
   });
 
   it('binds a hover with the modifier held, one without it, and the pointer leaving', () => {
@@ -67,12 +75,24 @@ describe('distanceReadout', () => {
     ]);
   });
 
-  it('draws the readout as labeled gaps on its overlay', () => {
-    const { r, run } = fixture();
-    run({ show: true, worldX: 35, worldY: 5 });
-    const layer = Array.isArray(r.overlay) ? r.overlay[0] : r.overlay!;
-    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const cmds = layer.draw(undefined, view as never, { width: 100, height: 100 });
-    expect(cmds.some((c) => c.kind === 'text')).toBe(true);
+  it('mounts no layer of its own', () => {
+    expect(fixture().r.overlay).toBeUndefined();
+  });
+
+  it('writes a leader to a shape it shares no range with as a line mark', () => {
+    const { run, store } = fixture();
+    run({ show: true, worldX: 35, worldY: 45 });
+    expect(store.get()).toEqual([
+      { kind: 'distance', from: { x: 10, y: 5 }, to: { x: 30, y: 5 }, value: 20 },
+      { kind: 'distance', from: { x: 5, y: 10 }, to: { x: 5, y: 40 }, value: 30 },
+      { kind: 'line', from: { x: 30, y: 5 }, to: { x: 30, y: 40 } },
+      { kind: 'line', from: { x: 5, y: 40 }, to: { x: 30, y: 40 } },
+    ]);
+  });
+
+  it('stamps its color on the distance and the leader', () => {
+    const { run, store } = fixture({ color: '#e0397f' });
+    run({ show: true, worldX: 35, worldY: 45 });
+    expect(store.get().map((m) => m.color)).toEqual(Array(4).fill('#e0397f'));
   });
 });

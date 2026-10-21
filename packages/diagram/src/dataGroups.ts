@@ -23,6 +23,9 @@ export interface ResolvedGroup {
   minWidth?: number;
 }
 
+/** The width a group's box needs to hold a title `title` wide, `pad` in from either side. */
+export const groupMinWidth = (title: number, pad: number): number => title + 2 * pad;
+
 /**
  * Settle what each group holds (see `nestGroups`), outer groups ahead of the
  * groups inside them. A group left with no node inside it is dropped. Throws
@@ -57,13 +60,16 @@ export function resolveGroups(
     const inset = { top: pad + (title ? title.height + pad / 2 : 0), right: pad, bottom: pad, left: pad };
     return {
       group, direct: g.direct, members: g.members, inset, pad, title,
-      ...(title ? { minWidth: title.width + 2 * pad } : {}),
+      ...(title ? { minWidth: groupMinWidth(title.width, pad) } : {}),
       ...(g.parent !== undefined ? { parent: g.parent } : {}),
     };
   });
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
+
+/** The node id of a group's title. */
+export const groupLabelIdOf = (id: string): string => `${id}/label`;
 
 /** A label on a wire, as a group box takes it in: the label node's id, and
  *  where it sits when that is known before the scene derives it. */
@@ -148,7 +154,14 @@ export function groupSpecs(
       layer: 'main',
       pose: { x, y, width, height },
       data: {
-        diagram: { outline: 'rect', group: { inset: g.inset, ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}) } },
+        diagram: {
+          outline: 'rect',
+          group: {
+            inset: g.inset,
+            ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
+            ...(g.group.reorder !== undefined ? { reorder: g.group.reorder } : {}),
+          },
+        },
         fill: { paint: { color: style.fill } },
         stroke: {
           paint: { color: style.stroke },
@@ -162,7 +175,7 @@ export function groupSpecs(
     if (g.title === null || !g.group.label) continue;
     const anchor: DiagramAnchor = { at: { u: 0, v: 0 }, offset: { x: g.pad, y: g.pad } };
     specs.push({
-      id: `${g.group.id}/label` as never,
+      id: groupLabelIdOf(g.group.id) as never,
       kind: 'leaf',
       layer: 'main',
       pickable: false,

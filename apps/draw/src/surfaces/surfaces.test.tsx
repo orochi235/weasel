@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
-import { ContextMenuHost } from '@weasel-js/ui';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { CommandBar } from '../CommandBar';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';

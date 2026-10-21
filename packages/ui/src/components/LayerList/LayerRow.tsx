@@ -92,10 +92,10 @@ export function Row({ item, shared, parentId, level, ghosted, selected, open, ch
               aria-label={`Show ${item.label}`}
             />
           ))}
-        <LockToggle item={item} props={props} />
         {item.leading}
         <RowLabel item={item} props={props} renaming={renaming} setRenaming={setRenaming} />
         {item.nonPrinting && <NonPrintingMark />}
+        <LockToggle item={item} props={props} />
         {ghosted ? null : <Remove item={item} shared={shared} />}
       </div>
     </div>

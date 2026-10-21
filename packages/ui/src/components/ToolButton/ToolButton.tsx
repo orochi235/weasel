@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
+import type { DragEvent, MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
+import { Focusable } from '../Tooltip/Focusable';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
 
@@ -23,7 +23,17 @@ export interface ToolButtonProps {
    */
   ariaDisabled?: boolean;
   /** Click handler. */
-  onClick(): void;
+  onClick(e: MouseEvent): void;
+  /** Makes the button a drag source, starting a drag with this. */
+  onDragStart?(e: DragEvent<HTMLButtonElement>): void;
+  /** The button opens a menu: it takes the menu trigger's ref, id and press handler, says
+   *  `aria-haspopup="menu"`, and draws a mark in its corner. */
+  menu?: {
+    ref: RefObject<HTMLButtonElement | null>;
+    id: string;
+    expanded: boolean;
+    onPointerDown(e: PointerEvent): void;
+  };
   /**
    * Tooltip content. Defaults to `label` (plus `shortcut` if provided).
    */
@@ -40,7 +50,7 @@ export interface ToolButtonProps {
 export function ToolButton(props: ToolButtonProps) {
   const {
     icon, label, shortcut, active, disabled, ariaDisabled,
-    onClick, title, className,
+    onClick, onDragStart, title, className, menu,
   } = props;
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
@@ -48,16 +58,24 @@ export function ToolButton(props: ToolButtonProps) {
     <TooltipTrigger isDisabled={disabled}>
       <Focusable isDisabled={disabled}>
         <button
+          ref={menu?.ref}
+          id={menu?.id}
           type="button"
           className={cls}
+          aria-haspopup={menu ? 'menu' : undefined}
+          aria-expanded={menu ? menu.expanded : undefined}
+          onPointerDown={menu?.onPointerDown}
           aria-current={active ? 'true' : undefined}
           aria-disabled={ariaDisabled ? 'true' : undefined}
           disabled={disabled}
           onClick={onClick}
+          draggable={onDragStart ? true : undefined}
+          onDragStart={onDragStart}
         >
           <span className={s.icon} aria-hidden="true">{icon}</span>
           <span className={s.label}>{label}</span>
           {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+          {menu && <span className={s.menuMark} aria-hidden="true" />}
         </button>
       </Focusable>
       <Tooltip>{resolvedTitle}</Tooltip>

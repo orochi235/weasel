@@ -4,6 +4,7 @@
  * boundsOf derived from pose shape. Caller-supplied `pickEvery` / `boundsOf`
  * overrides via the `geometry` arg take precedence.
  */
+import { drawnBoundsScene } from '../derivedPath';
 import { useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
@@ -16,8 +17,6 @@ import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { SnapStrategy } from 'interactions/gestures/types';
-import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -77,10 +76,12 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
    *  (`drawLayers` drops any layer missing from a supplied order), and an
    *  undrawn layer must not claim clicks. */
   layerIsPainted?: (layer: string) => boolean;
+  /** `<SceneCanvas isPointerInteractive>`: a node it rejects is left out of every hit, so
+   *  whatever is beneath it answers instead. */
+  isPointerInteractive?: (id: string) => boolean;
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
-    snap?: SnapStrategy<TPose>;
     /** Override the body-pick used on click/pointerdown. Alt-aware: receives
      *  the live alt state + current selection so consumers can implement
      *  alt-cycling through an overlapping stack. Default: top-most hit
@@ -102,7 +103,7 @@ function chromeBox<TData, TLayer extends string, TPose>(
   pose: TPose,
   scale: { x: number; y: number } | undefined,
 ): Bounds {
-  return drawnBoundsOf(scene as never, asNodeId(id), pose, {
+  return drawnBoundsOf(drawnBoundsScene(scene), asNodeId(id), pose, {
     descriptor: descriptor as PoseDescriptor<unknown>,
     worldPoseOf: (m) => adapter.getWorldPose(m),
     includeStroke,
@@ -135,15 +136,14 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  answers only for a node's own pose. */
   boundsOfPose: (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
     import('core/viewport/fitViewToBounds').Bounds | null;
-  /** `selectTool.move` with `selectTool.snap` folded into its behaviors — what
-   *  the `move` preset's bindings carry. */
+  /** `selectTool.move` — what the `move` preset's bindings carry. */
   moveOptions: UseMoveOptions<TPose>;
 }
 
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted } = args;
+  const { scene, adapter, geometry, selectTool: opts, getView, alphaOf, layerIsPainted, isPointerInteractive } = args;
   const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const pickEveryProp = geometry?.pickEvery;
@@ -156,50 +156,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const pickTolerancePx = geometry?.pickTolerancePx ?? kitPickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const includeStroke = geometry?.boundsIncludeStroke ?? true;
   const moveOptions = opts?.move;
-  const snap = opts?.snap;
+  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
-  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
-    const merged: UseMoveOptions<TPose> = { ...(moveOptions ?? {}) };
-    if (snap) {
-      const existing = merged.behaviors ?? [];
-      merged.behaviors = [snapBehavior(snap), ...existing];
-    }
-    return merged;
-  }, [moveOptions, snap]);
-
-  // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
-  // every node whose pose contains the world point. Order matches the
-  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
-  // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
-  // array form `useSelectTool` expects. `poseContainsRotated` reads
-  // `pose.rotation` directly (the kit's one rotation convention), so rotated
-  // shapes pick against their rendered, rotated body without a per-demo override.
-  const wiredHitBody = useMemo(() => {
-    return (wx: number, wy: number, view?: PickView | null): string[] => {
-      if (pickEveryProp) {
-        const r = pickEveryProp(wx, wy);
-        if (r == null) return [];
-        return Array.isArray(r) ? r : [r];
-      }
-      const asked = view ?? getView?.() ?? null;
-      const viewAlpha = view?.alphaOf ?? alphaOf;
-      const viewLayers = view?.layerIsPainted ?? layerIsPainted;
-      const camera = cameraOf(asked);
-      // Through the adapter, not `n.pose`: an ephemeral override is the pose
-      // the renderer draws, so it has to be the one picking tests. World, not
-      // local, for the same reason — a framed child is drawn in its parent's
-      // frame, not where its own pose says.
-      const src = scenePickSource<TData, TLayer, TPose>(scene, {
-        getPose: (id) => adapter.getWorldPose(id),
-        ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
-        ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
-        ...(camera ? { camera } : {}),
-      });
-      const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
-      return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
-    };
-  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
-      alphaOf, layerIsPainted, d]);
+  const wiredHitBody = usePointPick({
+    scene, adapter, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
+    alphaOf, layerIsPainted, isPointerInteractive,
+  });
 
   // Read through a ref: this is the chrome's bounds source, and a caller's
   // inline `getView` would otherwise rebuild it, and everything keyed on it,
@@ -259,4 +221,63 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
   };
+}
+
+/** Every id under a world point, back-to-front: the caller's `geometry.pickEvery` or the pose
+ *  walk, less whatever `isPointerInteractive` rejects. */
+function usePointPick<TData, TLayer extends string, TPose>(args: {
+  scene: Scene<TData, TLayer, TPose>;
+  adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
+  d: PoseDescriptor<TPose>;
+  pickEveryProp: SceneCanvasGeometry['pickEvery'];
+  shapePicking: boolean;
+  pickTolerancePx: number;
+  getView: UseSceneSelectToolArgs<TData, TLayer, TPose>['getView'];
+  alphaOf: ((id: string) => number) | undefined;
+  layerIsPainted: ((layer: string) => boolean) | undefined;
+  isPointerInteractive: ((id: string) => boolean) | undefined;
+}): (wx: number, wy: number, view?: PickView | null) => string[] {
+  const {
+    scene, adapter, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
+    alphaOf, layerIsPainted, isPointerInteractive,
+  } = args;
+  // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
+  // every node whose pose contains the world point. Order matches the
+  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
+  // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
+  // array form `useSelectTool` expects. `poseContainsRotated` reads
+  // `pose.rotation` directly (the kit's one rotation convention), so rotated
+  // shapes pick against their rendered, rotated body without a per-demo override.
+  const walk = useMemo(() => {
+    return (wx: number, wy: number, view?: PickView | null): string[] => {
+      if (pickEveryProp) {
+        const r = pickEveryProp(wx, wy);
+        if (r == null) return [];
+        return Array.isArray(r) ? r : [r];
+      }
+      const asked = view ?? getView?.() ?? null;
+      const viewAlpha = view?.alphaOf ?? alphaOf;
+      const viewLayers = view?.layerIsPainted ?? layerIsPainted;
+      const camera = cameraOf(asked);
+      // Through the adapter, not `n.pose`: an ephemeral override is the pose
+      // the renderer draws, so it has to be the one picking tests. World, not
+      // local, for the same reason — a framed child is drawn in its parent's
+      // frame, not where its own pose says.
+      const src = scenePickSource<TData, TLayer, TPose>(scene, {
+        getPose: (id) => adapter.getWorldPose(id),
+        ...(viewAlpha ? { alphaOf: viewAlpha } : {}),
+        ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
+        ...(camera ? { camera } : {}),
+      });
+      const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
+      return pickWalk<TPose>(src, pointQuery(wx, wy, asked?.scale ?? { x: 1, y: 1 }));
+    };
+  }, [scene, adapter, pickEveryProp, shapePicking, pickTolerancePx, getView,
+      alphaOf, layerIsPainted, d]);
+  const wiredHitBody = useMemo(() => {
+    if (!isPointerInteractive) return walk;
+    return (wx: number, wy: number, view?: PickView | null): string[] =>
+      walk(wx, wy, view).filter((id) => isPointerInteractive(id) !== false);
+  }, [walk, isPointerInteractive]);
+  return wiredHitBody;
 }

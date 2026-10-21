@@ -1,5 +1,153 @@
 # @weasel-js/svg
 
+## 1.11.0
+
+### Patch Changes
+
+- 7162a7a: Corner shape: any corner anchor of a path takes a CSS `corner-shape`, and its radius can be changed later. Additive: `PolygonPath` gains `corners`, an optional `CornerSpec` (`{ shape, radius }`) per flat anchor index, where `shape` is one of the six `corner-shape` keywords (`square`, `squircle`, `round`, `bevel`, `scoop`, `notch`) or a finite `superellipse()` parameter, and `radius` is how far along each edge the cut starts. Following CSS Borders 4, every keyword is a point on one parameter, k: `square` is ∞, `squircle` 2, `round` 1, `bevel` 0, `scoop` -1, `notch` -∞. `cornerShapePieces(k, frame)` draws a corner for any k as the quarter superellipse `|u|^n + |v|^n = 1`, `n = 2^|k|`, spanned from the corner's center for k > 0 and from the outer corner for k < 0, fitted with cubics within `CORNER_FIT_TOLERANCE` of the setback and exact at k = 0, ±1, and ±∞. The command stream keeps the bare anchors, and `resolveCorners` expands the specs into plain geometry, each cut clamped so that the two cuts on a segment never overlap; `resolveCornersWithSources` also answers which source anchor each expanded anchor came from, and `remapPerAnchor` carries a per-anchor array across, so the renderer draws `vertexColors` on a cornered path with every point of a cut in its corner's color. Every reader of a path's geometry calls it first: tessellation, `extractPolylines`, the hit tests, `boundsOfPath`, `pathDistanceToPoint`, the booleans, `offsetPath`, the renderer's path draw, and `serializePathD`, which `@weasel-js/svg` now exports. A spec rides on its anchor through `pathToAnchors` / `anchorsToPath` (`PenAnchor.corner`), so anchor inserts and deletes keep it in place, and `transformPath` scales radii with the geometry. Also new: `cornerFrames` and `cornerFrameAt` (where each corner anchor can be cut, and how far), `withCorner`, `cornerAt`, `cornerSpecAt`, `cornerShapeK`, `cornerKeywordOf`, `isCornerShape`, `nextCornerShape`, and `CORNER_KEYWORDS`.
+  
+  `@weasel-js/path-tools` adds `cornerShapePreset` (and `createCornerShapePreset(style)`), which edits corners in path edit. Each corner anchor shows a widget just inside it, a small tile cut in the corner's shape, drawn and pressed as `corner:N` (matched by routing's new `isCornerWidget`) while chrome-caps shows `path-edit.corners`, which is on by default. A drag on one (`editCornerAction`) sets the corner's radius live and commits one undo step; pressing the widget of a selected anchor sets every selected corner. `cycleCornerShapeAction`, in the `anchors` group, steps the selected corners through the keywords, and `setCornersAction` sets their shape or radius from its `shape` and `radius` params, typed for `<SceneCanvas tune>`. `CORNER_CONTROLS`, `cornerControlsState`, `cornerControlsParams`, and the `useCornerControls` hook are a prefs-form panel over the selected corners: the keywords, a curvature slider from -4 to 4, and the radius, mixed where the corners differ.
+  
+  A path-edit extension's part (`PathEditPart`) can carry its own `hitRadiusPx` and a `standoff`, a screen-pixel push along a world-space normal, so it keeps its distance from the path at any zoom.
+  
+  A `PathEditHost` can own the anchor selection too, through optional `selectedAnchors` and `setSelectedAnchors`, so an app seeds which anchors start selected and shows what is selected. Giving a sharp corner a shape, through `setCorners` or `cycleCornerShape`, also gives it a radius: the call's own, or a quarter of the room the corner has.
+- 679138c: A scene node can be hidden or locked on its own, not only through its layer. `SceneNode.hidden` keeps a node and its whole subtree from being drawn; `SceneNode.locked` keeps a node and its subtree drawn but out of reach, the way a locked layer's nodes are. Both are set through `scene.setHidden(id, hidden)` and `scene.setLocked(id, locked)`, each one undo step that neither lock blocks, or through the new `createSetHiddenOp` / `createSetLockedOp` against an adapter's `setHidden` / `setLocked`. Both go on `AddNodeSpec`, ride a snapshot, and come back with an undone removal. Additive.
+  
+  `scene.isHidden(id)` is new, and `scene.isLocked(id)` now folds in the node flags. Both answer from `nodeGates`, now exported with `isNodeHidden`, `isNodeLocked` and `hidesSubtree`, which every reader asks: painting, point picking, the marquee and lasso, select-all, path snapping, measurement picking and snapping, sibling spacing guides, the slice and Girth tools, and text editing all pass over a hidden node, and the pickers over a locked one. The selection now drops a hidden node as it drops a locked one, so hiding a layer or a node deselects what it hides.
+  
+  `@weasel-js/svg`: `svgNodesFromKit` writes a node carrying `hidden` with `display="none"`, which `parseSvg(…, { keepHidden: true })` reads back as hidden, and `unpackSvgFiles` now keeps a dropped file's hidden content, inserting it hidden rather than leaving it out.
+- 3eb2abc: A text node can cut its text at its box: `data.overflow: 'clip'` draws the glyphs in a group clipped to the pose box, picks only the lines inside it, cuts the editing overlay to the same box (`TextEditScreenPose.clip`, read through `useSceneTextEdit`'s new `getOverflow`), and exports as an SVG group clipped to the box. Properties offers it as a Clip switch. A node can also carry a minimum size, `data.minSize` (`MinSize`, `minSizeOf`): a resize stops at it whatever the resize policy's constraints, a multi-selection stops where its first member reaches its own, and a scale replayed through transform-again holds to it. An insert or place binding's `minSize` param grows a smaller drag or click to it and is kept on the node. Sticky notes now clip their text and keep a 48 × 48 minimum, both set through `toolOptions.sticky` (`overflow`, `minSize`). An SVG import reads a clipped note back as a clipped group around its text, not as a text node that clips.
+- e554ae5: New: a sticky-note tool. `useStickyTool` is a built-in tool id, so `<SceneCanvas defaultTools={['sticky']}>` mounts it (key S), and `BUILTIN_TOOL_IDS` lists it after `text`. A drag draws a note through `insertAction`; a click places one of `size` through the new `placeAction` (id `place`), which commits a node of its binding's `kind` and `size` centered on the click through the same `insert` dep. Either drops into the new note's caret. The note's look (`background`, `fill`, `padding`, `style`, `verticalAlign`, `size`) is the tool's options and `toolOptions.sticky`; `STICKY_DEFAULTS` holds the rest. `stickyData` builds a note's data and `stickyNodeFactory` is the same as an `InsertNodeFactory`.
+  
+  A note is a plain text node: `kit:text` nodes gain `data.background`, a fill painted over the whole box under the glyphs (and which makes the whole box pickable), and `data.padding`, the inset the text lays out in. `textBoxOf` is that box. `useSceneTextEdit` opens its overlay over the inset box, takes a double-click anywhere in the node's box, and returns `drawOne`, `defaultDrawOne` less the glyphs of the node being edited, for a canvas whose text nodes have a background that should stay painted while the overlay is up. The text properties gain Background and Padding. `svgLeafFromKit` writes a text node with a background as a group of its box and its inset text.
+  
+  `ShapeKindDescriptor` gains `text`, which says a kind's node is text: an insert of it opens its caret, and its properties carry the text groups.
+- f231e4b: `svgNodesToKitDrafts` takes a `keepEmpty` option: an empty group it returns true for is drafted as a container — at its clip's box, or a zero box at the origin — instead of being dropped, and so is any group holding one. Without the option nothing changes.
+- e8f60df: `serializeSvg` takes `textLayout`, a function returning the lines a text node lays out into — core's `layoutTextPose`. With it, each laid-out line is written as a `<tspan x y>` at the layout's own position, sitting on its baseline, so another reader draws wrapped text wrapped; each word of a line the layout justified gets its own `x`; and a line holding a larger run is pitched where the renderer puts it rather than at the node's font size times its line height. `parseSvg` reads such a `<text>` back as the same paragraphs, with its wrap, justification, and line height. `svgNeeds` and `warmSvg` take the same option and then list and load every face the text is set in. Without the option the output is unchanged.
+- d705830: A stroke can be drawn with a broad nib. `Stroke.nib` is `{ angle, ratio }`: the nib's edge in radians counterclockwise on screen, and its thinnest width as a fraction of its widest. The stroke is its full width moving across the nib and `ratio` of that moving along it, an elliptical pen's width in between, and it multiplies `vertexWidths` where both are set. Each side of a corner keeps its own width, so a square drawn with a level nib has thin level sides and full upright ones right up to the joins; a round join's arc runs between the two. `strokeToPath`, the renderer's ribbon cache, and SVG export follow it, and since a nib only ever narrows a stroke, bounds and culling are unchanged. `@weasel-js/stroke` adds `nibWidthScale`, the nib as a `WidthScale`, and `widestStrokeWidth`, which culling, picking, and flattening now share; picking used to ignore `vertexWidths`. Draw's stroke properties gain a Nib switch with its angle and thinnest ratio.
+  
+  A `vertexWidths` entry is a `VertexWidth`: a number, the full width centered on the path as before, or a `{ left, right }` pair giving each edge its own distance from the path, `right` being the side the normal `(−dy, dx)` points to, below a path running in +x on screen. Every reader resolves an entry through `vertexHalfWidths(entry, fallback)` in `@weasel-js/paint`: the tessellator, which carries the difference between the sides as the new `Polyline.offsets` through trimming, dashing, and the nib, and centers caps between the two edges; `strokeToPath`; the inner and outer ribbon; bounds, culling, and picking, through `widestHalfWidth`; and SVG, which writes a pair as `left/right` in `wzl:vertex-widths`. `vertexWidthFromSides` writes equal sides back as a number, and `scaleVertexWidth` scales either form. An entry of zero is now a zero width; it used to take the stroke's `width`.
+  
+  `useGirthTool` (Shift+W), in `@weasel-js/path-tools`, edits `vertexWidths` by dragging the stroke's edges. Hovering near either edge marks the grab point on it and the width point a press there moves: the anchor at that spot, or one inserted between two with `insertAnchorOnSegment`, so the path keeps its shape. The grabbed edge follows the pointer along the path's normal and the other mirrors it, writing a number; dragging inward pinches the stroke, down to zero. Alt-drag moves the grabbed edge alone and writes a pair. The drag moves the edge as drawn, so under a nib the stored width changes by more. Every drag is previewed live and committed as one undo entry. Alt-click on a width point clears it, so it takes the stroke's `width` again. The stroke last touched shows its anchors, with a line across the stroke at each that has a width. `strokeEdgeNear` in `@weasel-js/stroke` is the hit test behind it: the edge of a stroke nearest a point, measured along the path's normal, with each side's distance as drawn.
+  
+  A dashed stroke now keeps its per-vertex widths, which it used to drop. The anchor-parameter rule that trimming and dashing share is `anchorParamsBetween` in `@weasel-js/geom/tessellate`.
+  
+  SVG has no variable width. `serializeSvg` writes a stroke with `vertexWidths` or a `nib` as its outline: the path keeps its stroke attributes at `stroke-width="0"`, which draws nothing, with the real width, the per-vertex widths, the nib, and its markers in the `wzl` namespace, and the outline follows as a filled path in the stroke's paint that draws the marker heads. A node with an opacity wraps both in one group carrying it, so they composite as one layer. Other viewers draw the outline; `parseSvg` drops it and reads the stroke back off the path, and a transform it bakes in scales the per-vertex widths with the width.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [6f839dd]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [0382007]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [e4642bb]
+- Updated dependencies [e901a2b]
+- Updated dependencies [57725cc]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [8775065]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/core@1.11.0
+  - @weasel-js/geom@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

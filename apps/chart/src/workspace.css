@@ -1,0 +1,40 @@
+.wc-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.wc-sidebar {
+  flex-shrink: 0;
+  width: 200px;
+  overflow-y: auto;
+}
+
+.wc-format {
+  width: 260px;
+}
+
+.wc-stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.wc-host {
+  /* The text-edit overlay positions absolutely within it. */
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wc-pages {
+  flex-shrink: 0;
+}
+
+.wc-host canvas {
+  display: block;
+}

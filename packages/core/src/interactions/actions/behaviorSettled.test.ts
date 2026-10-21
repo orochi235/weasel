@@ -159,7 +159,7 @@ describe('resizeAction — onSettled', () => {
         deps: {
           selection: { get: () => [a] as NodeId[] },
           scene,
-          resizePolicy: { constraints: [constraint], pointSnap: [], expandIds: (ids: string[]) => ids, ...more.policy },
+          resizePolicy: { constraints: [constraint], expandIds: (ids: string[]) => ids, ...more.policy },
           ...more.deps,
         },
         drag: {

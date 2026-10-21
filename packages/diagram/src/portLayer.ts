@@ -41,8 +41,10 @@ export interface ParticipantScene<TPose> {
 
 /**
  * Every node in `scene`, at the pose it is **painted** at, marked `hidden` or
- * `locked` where the scene's `nodeGates` says so. The marks keep ports off
- * such a node; the graph reads past them, so a hidden node is still laid out.
+ * `locked` where the scene's `nodeGates` says so, and carrying its `layer` so
+ * a view that does not paint that layer can turn its ports away too. The
+ * marks keep ports off such a node; the graph reads past them, so a hidden
+ * node is still laid out.
  *
  * `effectivePose`, not `node.pose`: an override is what a gesture is currently
  * showing, and a port that answers from the document pose while its node is
@@ -61,6 +63,7 @@ export function sceneParticipants<TPose>(
       yield {
         node: node as GraphNodeLike,
         pose: effectivePose(scene as never, node as never) as TPose,
+        ...(node.layer !== undefined ? { layer: node.layer } : {}),
         ...(hidden ? { hidden } : {}),
         ...(locked ? { locked } : {}),
       };

@@ -290,11 +290,17 @@ A pose move can follow an undo instead: `tweenPose` and `springPose` given
 `rewind: true` travel back to where they began when the move is undone mid-flight,
 and forward again if it is redone on the way.
 
+A time scale below 0 plays an animation back to its start, where it ends as it would at its
+end going forward: a tween on a target commits its start value, and `onDone` runs. The
+motion a redirect gave a spring plays back only as far as the redirect, where blits started
+its clock, and holds there; a loop and a stagger end once what they have in flight is back at
+its start.
+
 What is built on it:
 
 | Value | Its target | Moved by |
 |---|---|---|
-| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over a store with no overrides | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides, momentum |
+| A node's pose | `adapter.poseTarget(id)`: `scenePoseTarget(scene, id)` over a scene, `createWrittenPoseTarget` over a store with no overrides | `tweenPose`, `springPose`, `animateOnSetPose`, reflow glides (`reflowTransition`, and `poseTransition` for any write the scene reports), momentum |
 | The camera | `ViewAnimationApi.viewTarget`; on a `<SceneCanvas>` ref, `camera.target` | `useViewAnimation`, `animateView`; add a shake on the same animator, which the ref hands out as `camera.animator` |
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
@@ -306,9 +312,10 @@ and shows its travel through a pose override. A hand-written adapter's store has
 no overrides, so `createWrittenPoseTarget` writes it the pose on screen each frame
 while the target keeps the committed pose. The values are computed by blits
 (`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
-public. blits clocks the voices and sums them; how a target's holds share it is
-folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
-cover some axes and turn an angle. blits stays a repository of its own, not a
+public. blits clocks the voices and sums them. Holds are not voices: they are folded
+here, in `engine/holdStore.ts`, since blits weighs a voice whole and a hold can
+cover some axes and turn an angle, and a table's rows keep their holds' values and
+weights in flat arrays of the table's, which its pass reads. blits stays a repository of its own, not a
 `@weasel-js` package. A target is moved by one animator at a time.
 
 Thousands of like values go in a **target table**, where a target apiece would
@@ -324,8 +331,16 @@ upload(dots.shown);
 
 A row is a target like any other. Its committed value lives in `table.committed`,
 and the animator fills `table.shown` for every moving row in one pass over flat
-arrays, about 3 ns a row. `shown` is a `Float64Array` unless the table is made with
+arrays, about 5 ns a row. `shown` is a `Float64Array` unless the table is made with
 `shown: Float32Array`, for a painter that uploads it as it stands.
+
+A row's holds fold in the same pass, and so does what they cover of a move behind them: an
+animation with a destination on a row runs its voices on a lane subject of its own, which the
+pass scales by what the row's holds leave showing. A target alone keeps such voices among its
+own, which reads faster while nothing holds it, and takes the covered share off as it is read.
+`animator.holdRows({ table })` holds many rows at once from two flat arrays the caller writes,
+`values` laid out as `committed` and one weight a row, then `touch()`es: a hold on each row,
+mixed with the row's other holds, with no function asked per row.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that
@@ -384,8 +399,8 @@ its joints relative to that node's box, and the nodes under it hold `data.skin`
 or name a `data.joint` to ride whole. `useRigNode` binds from those and binds
 again when they change, keeping its target and what is animating it. When the
 joints themselves change it has a new target, which shows what was animating the
-old one on every joint both name, and `useBoneTool` and `useWeightTool` edit them on the
-canvas, one scene op per edit.
+old one on every joint both name, and `@weasel-js/rig`'s bone and weight tools edit them on
+the canvas, one scene op per edit.
 
 The blend runs on the CPU over the path's own points, and the renderer is handed a
 new path each frame the rig moves. It is not done on the tessellated mesh or in a
@@ -445,6 +460,16 @@ directly against the adapter.
 **Transient** ops apply via `adapter.applyOps(ops)` — no history entry.
 Selection-only changes (e.g. marquee result) are transient by default.
 
+A **scene edit pass** (`scene.addEditPass(pass, { order })`) hears what each
+live edit did — the ids it added, removed, posed, re-parented, and changed the
+data of, and the document-value keys it set — once the edit's own mutations and
+the arrival handler have run, and answers with ops that join the same undo
+entry. Passes run by ascending `order` (default 0), ties in the order they were
+added, and each hears what the passes before it wrote. A pass runs once per
+edit, so its own writes and later passes' never re-trigger it, and undo, redo,
+and history replay never run any. Diagram's obstacle-avoiding routing stores
+its routes this way, at `DIAGRAM_PASS_ORDER.avoid`.
+
 ## Ongoing handle
 
 An action with `invoker.timing: 'ongoing'` opens a gesture: `start(ctx)`
@@ -459,7 +484,7 @@ interface OngoingHandle {
   onMove?(ctx): void;
   onEnd?(ctx, reason: 'commit' | 'cancel'): void;
   previewIds?(): Iterable<string> | null;   // displaced nodes → preview-ghost layer
-  previewPose?(id): unknown | null;
+  previewPose?(id): unknown | null;         // absent: the node's effective pose
   previewData?(id): unknown | null;         // for data-space edits (anchor drag)
   previewHidesSource?: boolean;             // false for clone: original stays put
   overlay?(): OngoingOverlay | null;        // non-ghost chrome (marquee rect, lasso polyline)
@@ -467,7 +492,10 @@ interface OngoingHandle {
 ```
 
 `previewIds` / `previewPose` / `previewData` feed `usePreviewGhostLayer`, which
-assembles a synthetic node per id and draws it through the scene slot.
+assembles a synthetic node per id and draws it through the scene slot. A
+transform — move, resize, rotate — publishes its poses to the scene's pose
+overrides rather than on the handle, so its ghost and its selection chrome read
+them through `effectivePose` like every other reader.
 `overlay()` feeds `useDispatcherOverlayLayer` for gestures that displace
 nothing but still need feedback. Sources compose first-non-null per axis.
 `getActiveAction().kind` is how chrome-visibility rules ask what's in flight.
@@ -497,6 +525,21 @@ See [extending.md](./extending.md) for custom-layer details.
 **Command caching.** A layer may declare `deps?: (data, view, dims) => readonly unknown[]`. When a `LayerCommandCache` is supplied to `drawLayers` (Canvas owns one), a layer whose deps come back `Object.is`-equal to the previous call reuses its previous `DrawCommand[]` instead of calling `draw` again. A layer without `deps` rebuilds every frame. This skips rebuilding the command tree, not GPU dispatch — every layer is still submitted to the renderer each frame regardless of caching.
 
 Returned command trees must be treated as immutable: a cached tree is handed to the renderer again on later frames, so mutating one you previously returned corrupts the cache silently rather than erroring. World-space layers are protected against a stale `view` — `drawLayers` computes the `viewToMat3(view)` group wrap fresh outside the cache — but screen-space (`space: 'screen'`) layers are not; if `draw` reads `view` or `dims`, include them in `deps`. And an `id` must name the same logical layer across frames, since the cache is keyed on it.
+
+## Page
+
+A document's pages are rects in one world space over one scene, so one view, one history, and one selection serve
+all of them (`packages/core/src/core/pages/`). `layoutPages` places a page list in order, `pageOfBounds` says which
+page an object is on (the one it overlaps most; one in the gaps is on none), `pageInView` which one a view mostly
+shows, `pagesLayer` paints the sheets, and `fitViewToPage` frames one.
+
+The page list itself is a document value under `core:pages` (see
+[scene-serialization.md](./scene-serialization.md#document-values)), a `PagesDoc` of pages and their layout options,
+read with `pagesOf` and `placedPagesOf`. `setPages` replaces it and moves each page's root nodes by however far
+their page moved, in one undo entry, so what is on a page stays put on that page; a node that derives from others
+follows them instead. `addPage`, `removePage` (which deletes what is on the page, and what derives from that),
+`movePage`, `resizePage`, and `renamePage` are built on it. `PageTabs` in `@weasel-js/ui` is a strip of tabs over
+any page list; weaselchart uses all of it.
 
 ## Affordance
 
@@ -552,13 +595,13 @@ runs after either, once the document holds the result. `ctx.scratch` is per-gest
 makes a move, resize or rotate commit without a history entry unless
 `transient` is set explicitly. See [extending.md](./extending.md) for writing one.
 
-Built-in behaviors: `snap(strategy)`, `snapToContainer(...)`,
-`snapBackOrDelete(...)` for move; `clampMinSize` and `lockAspectWithModifier`
-for resize; `snapRotationWithModifier` for rotate, which a rotate applies with
-Shift and 15 degree steps unless its binding is given a `behaviors` list. A clone drag takes the move behaviors that only reshape the
-translation (`snap(strategy)`), as `CloneBehavior`. Grid and guide snapping —
-`snapToGrid`, `snapToGuides`, `gridSnapStrategy`, the alignment behaviors —
-are in `@weasel-js/guides`. Marquee area-select is unconditional — it is
+Built-in behaviors: `snapToContainer(...)` and `snapBackOrDelete(...)` for
+move; `clampMinSize` for resize. A clone drag takes the move behaviors that
+only reshape the translation, as `CloneBehavior`. Snapping is not a behavior:
+every snapping action asks the `snap` dep's session, which ranks every snap
+source together, before its behaviors run — see [snapping.md](./snapping.md).
+The grid, guide, alignment and spacing sources are in `@weasel-js/guides`.
+Marquee area-select is unconditional — it is
 `areaSelectAction`'s built-in behavior, not an opt-in one.
 
 ## Action

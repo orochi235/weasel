@@ -14,3 +14,8 @@ html, body, #root {
   font-weight: var(--wzl-font-weight-normal);
   overflow: hidden;
 }
+
+/* The mode is set on a wrapper below body, so body's color resolves outside it. */
+[data-wzl-mode] {
+  color: var(--wzl-fg);
+}

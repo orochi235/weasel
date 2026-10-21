@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { useLatest } from '@weasel-js/react';
 import type { GestureSource, GesturePreviewSource } from './gestureBounds';
+import { useInFlightBounds } from './useInFlightBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
@@ -126,6 +127,9 @@ export interface ViewPoseAdapter<TPose> {
   /** Where the node is drawn, when the adapter composes poses. An adapter
    *  without it stores absolute poses, where the two agree. */
   getWorldPose?(id: string): TPose;
+  /** The node an id names, whose `layer` decides whether a view that hides
+   *  that layer shows its selection chrome. */
+  getNode?(id: string): { layer?: string } | undefined;
 }
 
 export interface UseViewHelpersOpts<TPose> {
@@ -149,6 +153,9 @@ export interface UseViewHelpersOpts<TPose> {
   previewPoseExtra: ((id: string) => unknown) | undefined;
   /** Chrome-caps predicate for this view. Absent means everything is visible. */
   getIsVisible?: (() => (id: string) => boolean) | undefined;
+  /** Whether a scene layer reaches the screen in this view. Absent means
+   *  every layer the scene shows does. */
+  layerIsPainted?: ((layerId: string) => boolean) | undefined;
 }
 
 export interface ViewHelpersBundle<TPose> {
@@ -169,7 +176,7 @@ export function useViewHelpers<TPose>(
 ): ViewHelpersBundle<TPose> {
   const {
     adapter, geometry, boundsOf, boundsOfPose, nodes, getScale, selection, gestureSource,
-    previewPoseExtra, getIsVisible,
+    previewPoseExtra, getIsVisible, layerIsPainted,
   } = opts;
   const getScaleRef = useLatest(getScale);
   const poseBoxOf = useCallback((id: string, pose: TPose): Bounds => {
@@ -212,18 +219,8 @@ export function useViewHelpers<TPose>(
 
   const multiActive = selection.length > 1;
 
-  const previewPoseExtraRef = useLatest(previewPoseExtra);
-
   const effectiveBoundsOf = useMemo(() => boundsOf ?? baseBoundsOf, [boundsOf, baseBoundsOf]);
-
-  const previewPoseOf = useCallback((id: string): TPose | null => {
-    const p = previewPoseExtraRef.current?.(id);
-    return p != null ? (p as TPose) : null;
-  }, [previewPoseExtraRef]);
-  const previewBoundsOf = useCallback((id: string): Bounds | null => {
-    const p = previewPoseOf(id);
-    return p != null ? boxOf(id, p) : null;
-  }, [previewPoseOf, boxOf]);
+  const { previewPoseOf, previewBoundsOf } = useInFlightBounds({ gestureSource, previewPoseExtra, boxOf, committedPoseOf });
 
   /**
    * Bounds for `id` with any in-flight gesture folded in — what the user can
@@ -251,8 +248,10 @@ export function useViewHelpers<TPose>(
         if (pose == null) return true;
         return geometry.supportsRotation(pose);
       },
+      ...(layerIsPainted ? { layerIsPainted } : {}),
+      ...(adapter?.getNode ? { layerOf: (id: string) => adapter.getNode?.(id)?.layer } : {}),
     }),
-    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf],
+    [selection, multiActive, boundsWithPreview, geometry, committedPoseOf, layerIsPainted, adapter],
   );
 
   const helpers: CanvasViewHelpers<TPose> = {

@@ -6,16 +6,18 @@ import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
+import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides } from './poseOverrideTypes';
+import type { SceneChanges } from './sceneChanges';
 import type { SerializedLayer, SerializedNode, SerializedScene } from './serializedTypes';
 import type { UseSceneOptions } from './useSceneOptions';
-
+import type { SceneDocValues } from './docValues';
+import type { SceneEditPasses } from './editPass';
 import type { RectPose } from '../geometry/rectPose';
-export type { RectPose };
+export type { RectPose, UseSceneOptions };
 export type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord };
-export type { UseSceneOptions };
+export type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports };
 export type { LayoutFrame, LayoutMove, PoseHold, PoseOverride, PoseOverrides, SerializedLayer, SerializedNode, SerializedScene };
-
 
 /**
  * # SceneNode — the thing in the scene
@@ -133,15 +135,15 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  Re-evaluated each render; `null` or `[]` draws no copies. */
   copiesFromPose?: CopiesFromPoseFn<TPose, TData, TLayer>;
   /** How this container arranges its children. Whenever the container's
-   *  child set or order changes, or its bounds change size, the scene hands
-   *  the change to the strategy — `depart` for children that left it,
+   *  child set or order changes, its bounds change size, or a child's pose is
+   *  written, the scene hands the change to the strategy — `depart` for children that left it,
    *  `arrive` for children that joined it, `childPoses` otherwise — and records the poses it writes in the same
    *  undo entry as the change. A drag reads it too: it is the layout `move`
    *  reflows and drops against. */
   layout?: LayoutStrategy<TPose>;
-  /** The unit system this container's contents are written in, and what one
-   *  of its base units is worth in the enclosing scope's. It covers the
-   *  children, not the container; `sceneUnitScopes` reads the chain. */
+  /** The units its children are shown, typed and snapped in (their poses stay
+   *  in world units), and what one base unit is worth in the enclosing scope's.
+   *  It covers the children, not the container; `sceneUnitScopes` reads the chain. */
   units?: UnitScope;
 }
 
@@ -223,8 +225,8 @@ export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = s
  * `arrivals` maps each container to the ids that joined it — by an `add`
  * under it or a `move` into it, whatever op or call made them — in the order
  * they arrived. `changed` names every container whose child set or order
- * changed, or whose pose changed size, arrivals included. Both are read once
- * the edit's other mutations have landed.
+ * changed, whose pose changed size, or one of whose children was posed,
+ * arrivals included. Both are read once the edit's other mutations have landed.
  *
  * Return the poses to write, in each node's stored frame; they become part of
  * the same edit, and so of the same undo step. An empty map writes nothing.
@@ -255,7 +257,8 @@ export type SceneArrivalHandler<TPose> = (
  * which the kit never inspects; `TPose` is the transform shape, `RectPose` by
  * default; `TLayer` is the union of layer names.
  */
-export interface Scene<TData, TLayer extends string, TPose = RectPose> {
+export interface Scene<TData, TLayer extends string, TPose = RectPose>
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -471,16 +474,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   redo(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
-  batch<T>(label: string, fn: () => T): T;
+  batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
   /** The layout container `id` declares, or `null` for a leaf or a
    *  container that declares none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
   /** Declare the unit scope of container `id`, or clear it with `null`. */
   setUnits(id: NodeId, units: UnitScope | null): void;
-  /** Called with the poses each live edit's layout pass wrote, after the
-   *  edit lands — never for an undo or redo, which restore poses rather than
-   *  arrange them. What a reflow animation glides from. */
-  onReflow(listener: (moves: readonly LayoutMove<TPose>[]) => void): () => void;
   /** Run `fn` with every mutation applied but none recorded — for writes
    *  that are not edits, such as a simulation stepping poses each frame.
    *  Undo and redo move between recorded states and never restore an
@@ -554,8 +553,4 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  always well-formed. */
   loadState(json: SerializedScene<TData, TLayer, TPose>): void;
 
-  // Subscription (used by useScene; also for non-React observers)
-  subscribe(listener: () => void): () => void;
-  /** Monotonically increasing version. Snapshot for `useSyncExternalStore`. */
-  getVersion(): number;
 }

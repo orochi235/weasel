@@ -1,5 +1,13 @@
-import type { MenuController } from '@weasel-js/menu';
+import { menuNumberText, type MenuController, type MenuRowEntry } from '@weasel-js/menu';
 import type { HudAccessibleNode } from '../widget';
+
+/** A row's name: a value row's label and the value it holds now. */
+function labelOf(c: MenuController, e: MenuRowEntry): string {
+  if (e.kind === 'number') return `${e.label}: ${menuNumberText(c.numberValue(e), e)}`;
+  if (e.kind === 'color') return `${e.label}: ${e.value ?? '—'}`;
+  if (e.kind === 'text') return `${e.label}: ${c.textValue(e) ?? '—'}`;
+  return e.label;
+}
 
 /** One level's rows, with the open submenu nested under the row it hangs from. */
 function level(c: MenuController, at: number): HudAccessibleNode[] {
@@ -12,10 +20,10 @@ function level(c: MenuController, at: number): HudAccessibleNode[] {
     return {
       role: checkable ? 'menuitemcheckbox' : 'menuitem',
       key: e.key,
-      label: e.label,
+      label: labelOf(c, e),
       ...(deepest && stack[at] === i ? { active: true } : {}),
       ...(e.kind === 'item' && e.checked !== undefined ? { checked: e.checked } : {}),
-      ...(e.disabled ? { disabled: true } : {}),
+      ...(e.disabled || e.kind === 'color' || e.kind === 'text' ? { disabled: true } : {}),
       ...(e.kind === 'submenu' ? { expanded: open } : {}),
       ...(open ? { children: [{ role: 'menu', key: 'menu', label: e.label, children: level(c, at + 1) }] } : {}),
     };

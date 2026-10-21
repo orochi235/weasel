@@ -34,6 +34,26 @@ describe('createDepRegistry', () => {
   });
 });
 
+describe('a source reading the one it displaced', () => {
+  it('reads the source beneath it in its own stack, then in the scopes above', () => {
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    const wrap = (tag: string) => ((below: () => unknown) => `${tag}(${String(below())})`) as never;
+    root.registry.register('selection' as DepName, (() => 'base') as never);
+    scope.registry.register('selection' as DepName, wrap('a'));
+    const release = scope.registry.register('selection' as DepName, wrap('b'));
+    expect(scope.registry.get('selection' as DepName)).toBe('b(a(base))');
+    release();
+    expect(scope.registry.get('selection' as DepName)).toBe('a(base)');
+  });
+
+  it('reads undefined below the bottom source', () => {
+    const deps = createDepRegistry();
+    deps.register('selection' as never, ((below: () => unknown) => below() ?? 'none') as never);
+    expect(deps.get('selection' as never)).toBe('none');
+  });
+});
+
 describe('dep registry change notices', () => {
   it('tells subscribers when a source is registered, released, or said to have changed', () => {
     const registry = createDepRegistry();
@@ -61,5 +81,24 @@ describe('dep registry change notices', () => {
     root.registry.subscribe!(heard);
     scope.registry.changed!();
     expect(heard).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('dep registry listing', () => {
+  it('lists each name it answers, how many scopes up its live source sits, and how many are stacked there', () => {
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    root.registry.register('selection' as DepName, (() => 1) as never);
+    root.registry.register('gate' as DepName, (() => 1) as never);
+    scope.registry.register('gate' as DepName, (() => 2) as never);
+    scope.registry.register('gate' as DepName, (() => 3) as never);
+    expect(scope.registry.list!()).toEqual([
+      { name: 'gate', depth: 0, stacked: 2 },
+      { name: 'selection', depth: 1, stacked: 1 },
+    ]);
+    expect(root.registry.list!()).toEqual([
+      { name: 'gate', depth: 0, stacked: 1 },
+      { name: 'selection', depth: 0, stacked: 1 },
+    ]);
   });
 });

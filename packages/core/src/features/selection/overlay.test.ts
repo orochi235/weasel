@@ -375,14 +375,30 @@ describe('createSelectionOutlineLayer', () => {
 });
 
 describe('createSelectionHandlesLayer', () => {
-  it('emits 4 corner handles (fill + outline path each = 8 commands)', () => {
+  it('emits 4 corner and 4 edge handles (fill + outline path each = 16 commands)', () => {
     const layer = createSelectionHandlesLayer<Pose>({
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
-    expect(tree).toHaveLength(8);
+    expect(tree).toHaveLength(16);
     expect(tree.every((c) => c.kind === 'path')).toBe(true);
+  });
+
+  it('leaves the edge handles off a side under six hit radii on screen, or when asked', () => {
+    const draw = (width: number, resizeHandles?: { edges?: boolean; hitRadiusPx?: number }) =>
+      createSelectionHandlesLayer<Pose>({
+        getSelection: () => [asNodeId('a')],
+        getPose: () => ({ x: 0, y: 0, width, height: 100 }),
+        // The paint size never decides: only the hit radius does.
+        handles: { size: 20 },
+        ...(resizeHandles ? { resizeHandles } : {}),
+      }).draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    expect(draw(47)).toHaveLength(8);
+    expect(draw(48)).toHaveLength(16);
+    expect(draw(59, { hitRadiusPx: 10 })).toHaveLength(8);
+    expect(draw(60, { hitRadiusPx: 10 })).toHaveLength(16);
+    expect(draw(100, { edges: false })).toHaveLength(8);
   });
 });
 
@@ -431,8 +447,8 @@ describe('createSelectionOverlayLayer.draw', () => {
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
-    // 1 outline + 4×2 handles = 9
-    expect(tree).toHaveLength(9);
+    // 1 outline + 8×2 handles = 17
+    expect(tree).toHaveLength(17);
   });
 
   it('emits outline only when handles: false', () => {

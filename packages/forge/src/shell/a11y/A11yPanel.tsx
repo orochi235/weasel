@@ -7,12 +7,24 @@ import {
 } from '@weasel-js/labkit';
 import num from '@weasel-js/theme/numeric.module.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { A11yFinding } from '../../protocol/messages';
+import type { A11yFinding, A11yNode } from '../../protocol/messages';
 import { useTrialFrame } from '../trialFrames';
 
-function Finding({ finding }: { finding: A11yFinding }) {
+/** Called with the elements an item names while the pointer or focus is on it, and with null when it leaves. */
+type Point = (nodes: readonly A11yNode[] | null) => void;
+
+/** Handlers pointing at `nodes` while the pointer or focus is inside the element they are spread on. */
+function pointAt(point: Point, nodes: readonly A11yNode[]) {
+  const enter = (event: { stopPropagation(): void }) => {
+    event.stopPropagation();
+    point(nodes);
+  };
+  return { onMouseOver: enter, onFocus: enter, onMouseLeave: () => point(null), onBlur: () => point(null) };
+}
+
+function Finding({ finding, point }: { finding: A11yFinding; point: Point }) {
   return (
-    <li className="fg-a11y__finding">
+    <li className="fg-a11y__finding" {...pointAt(point, finding.nodes)}>
       <p className="fg-a11y__help">
         <a href={finding.helpUrl} target="_blank" rel="noreferrer">
           {finding.help}
@@ -21,7 +33,7 @@ function Finding({ finding }: { finding: A11yFinding }) {
       </p>
       <ul className="fg-a11y__nodes">
         {finding.nodes.map((node) => (
-          <li key={`${finding.id}:${node.target.join(',')}`}>
+          <li key={`${finding.id}:${node.target.join(',')}`} {...pointAt(point, [node])}>
             <code>{node.target.join(' ')}</code>
           </li>
         ))}
@@ -30,7 +42,7 @@ function Finding({ finding }: { finding: A11yFinding }) {
   );
 }
 
-function Findings({ title, findings }: { title: string; findings: readonly A11yFinding[] }) {
+function Findings({ title, findings, point }: { title: string; findings: readonly A11yFinding[]; point: Point }) {
   if (findings.length === 0) return null;
   return (
     <section className="fg-a11y__group">
@@ -39,7 +51,7 @@ function Findings({ title, findings }: { title: string; findings: readonly A11yF
       </h3>
       <ul className="fg-a11y__findings">
         {findings.map((finding) => (
-          <Finding key={finding.id} finding={finding} />
+          <Finding key={finding.id} finding={finding} point={point} />
         ))}
       </ul>
     </section>
@@ -67,6 +79,14 @@ export function A11yPanel() {
     start(audit);
   }, [audit, start]);
 
+  const send = frame.send;
+  const [pointed, setPointed] = useState<readonly A11yNode[] | null>(null);
+  useEffect(() => {
+    if (!send || !pointed) return;
+    send({ type: 'a11y.highlight', targets: pointed.map((node) => node.target) });
+    return () => send({ type: 'a11y.highlight', targets: [] });
+  }, [send, pointed]);
+
   const rerun = () => {
     if (audit) start(audit);
   };
@@ -92,8 +112,8 @@ export function A11yPanel() {
             {outcome.report.violations.length} violations · {outcome.report.incomplete.length} to review ·{' '}
             {outcome.report.passes} passes
           </p>
-          <Findings title="Violations" findings={outcome.report.violations} />
-          <Findings title="Needs review" findings={outcome.report.incomplete} />
+          <Findings title="Violations" findings={outcome.report.violations} point={setPointed} />
+          <Findings title="Needs review" findings={outcome.report.incomplete} point={setPointed} />
         </>
       ) : null}
     </div>

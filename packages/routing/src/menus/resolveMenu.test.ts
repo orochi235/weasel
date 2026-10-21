@@ -211,10 +211,9 @@ describe('resolveSchemaMenu: other leaves', () => {
     const own = resolveSchemaMenu(menu({ g: alias, view: pref.group('V', { grid: pref.boolean('Grid', false) }, { as: 'menu' }) }), valued({ 'view.grid': true }));
     expect(own[0]).toMatchObject({ label: 'Grid', checked: true });
   });
-  it('leaves out number, color, string, and custom leaves', () => {
+  it('leaves out paint, field, compound, and custom leaves', () => {
     const es = resolveSchemaMenu(menu({
-      n: pref.number('N', 1), c: pref.color('C', '#000'), s: pref.string('S', ''),
-      x: { kind: 'mine', name: 'X', description: '', default: 0 }, cut: act('cut'),
+      p: { kind: 'paint', name: 'P', description: '', default: null }, f: { kind: 'field', name: 'F', description: '', default: '' }, x: { kind: 'mine', name: 'X', description: '', default: 0 }, cut: act('cut'),
     }), valued({}));
     expect(labels(es)).toEqual(['Cut']);
   });

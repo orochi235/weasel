@@ -14,6 +14,9 @@
  *
  * One resolver answers both the live preview and the commit, so the preview
  * cannot lie about what releasing will do.
+ *
+ * With `bodies`, a release over a participant's body away from any port lands
+ * on the body (`connectTargets`); with `startFrom: 'body'`, so can the press.
  */
 import {
   type Action,
@@ -25,26 +28,31 @@ import {
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
+import { bodyAt, createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
-import type { DiagramEdge } from './edgeTrait';
-import {
-  PORT_AFFORDANCE_KIND, offersPorts, portScratchOf, type ParticipantSource,
-} from './portAffordance';
-import { portsOf } from './ports';
+import type { DiagramEdge, EdgeEnd } from './edgeTrait';
+import { PORT_AFFORDANCE_KIND, portScratchOf, type ParticipantSource } from './portAffordance';
 import type { DiagramNodeReader } from './trait';
 import type { Port } from './types';
 
 /** The default action id, and what {@link connectBinding} points at. */
 export const CONNECT_ACTION_ID = 'diagram.connect';
 
-/** Whether an edge may run from `from` to `to`. */
-export type CanConnect = (from: Port, to: Port) => boolean;
+/** The edge end a reconnect is carrying: the scene id of the edge, and which end. */
+export interface MovingEnd {
+  edge: string;
+  end: 'from' | 'to';
+}
 
-/** The edge a finished connect describes. Both ends are resolved ports, so a
- *  consumer minting the node has nothing left to look up. */
+/** Whether an edge may run from `from` to `to`. `moving` is the end being
+ *  dragged when the edge already exists, and absent for a new connect. */
+export type CanConnect = (from: ConnectEnd, to: ConnectEnd, moving?: MovingEnd) => boolean;
+
+/** The edge a finished connect describes. Each end is a resolved port, or a
+ *  body whose port the edge picks each time it is routed. */
 export interface PendingEdge {
-  from: Port;
-  to: Port;
+  from: ConnectEnd;
+  to: ConnectEnd;
   /** Registry key for the router the new edge should name. */
   router: string;
 }
@@ -54,9 +62,11 @@ export interface PendingEdge {
  * declare a `type` must declare the same one.
  *
  * A port with no type joins anything. Two different ports on the *same node*
- * may be joined: a self-edge is meaningful in a state machine.
+ * may be joined: a self-edge is meaningful in a state machine. A body is
+ * untyped, and never joins its own node.
  */
 export const defaultCanConnect: CanConnect = (from, to) => {
+  if (isBodyEnd(from) || isBodyEnd(to)) return from.nodeId !== to.nodeId;
   if (from.nodeId === to.nodeId && from.id === to.id) return false;
   if (from.type === undefined || to.type === undefined) return true;
   return from.type === to.type;
@@ -84,13 +94,22 @@ export interface ConnectActionOptions<TPose> {
    *  Default `'straight'`. */
   router?: string;
   routers?: Readonly<Record<string, Router>>;
+  /** A release over a participant's body, with no port in reach, lands on the
+   *  body. Default false. */
+  bodies?: boolean;
+  /** `'body'`: a press that is not on a port starts from the participant
+   *  under it. Default `'port'`, where such a press falls through. */
+  startFrom?: 'port' | 'body';
   /**
-   * Mints and commits the edge. Called once, on release over a valid port.
+   * Mints and commits the edge. Called once, on release over a valid target.
    *
    * Defaults to {@link commitEdgeToScene} against `deps.scene`. Override it to
    * choose the edge node's data, its layer, or its stroke.
    */
   commit?: (edge: PendingEdge, ctx: InvocationCtx) => void;
+  /** What the default commit draws the edge with. Default {@link DEFAULT_EDGE_STROKE}.
+   *  Ignored when `commit` is given. */
+  edgeStroke?: Stroke;
 }
 
 const DEFAULT_SNAP = 16;
@@ -104,7 +123,7 @@ export const DEFAULT_EDGE_STROKE: Stroke = {
 const DEFAULT_ROUTER = 'straight';
 
 interface ConnectScratch {
-  from: Port;
+  from: ConnectEnd;
   current: Vec2;
   open: boolean;
   /** The deps bag as it was at `start`. The dispatcher builds it once, so
@@ -150,11 +169,15 @@ export function grabPortAction(id: string = GRAB_PORT_ACTION_ID): Action {
   };
 }
 
-/** The two bindings that keep a port's claim from dropping the press. */
-export function grabPortBindings(actionId: string = GRAB_PORT_ACTION_ID): GestureBinding[] {
+/** The two bindings that keep a port's claim from dropping the press. `kind`
+ *  names another affordance that claims the press protocol the same way. */
+export function grabPortBindings(
+  actionId: string = GRAB_PORT_ACTION_ID,
+  kind: string = PORT_AFFORDANCE_KIND,
+): GestureBinding[] {
   return [
-    { spec: { kind: 'pointerDown', target: `affordance:${PORT_AFFORDANCE_KIND}` }, actionId },
-    { spec: { kind: 'click', target: `affordance:${PORT_AFFORDANCE_KIND}` }, actionId },
+    { spec: { kind: 'pointerDown', target: `affordance:${kind}` }, actionId },
+    { spec: { kind: 'click', target: `affordance:${kind}` }, actionId },
   ];
 }
 
@@ -164,12 +187,14 @@ export function grabPortBindings(actionId: string = GRAB_PORT_ACTION_ID): Gestur
  *
  * The edge lands on the **source node's** layer rather than the bottom one.
  */
-export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
+export function commitEdgeToScene(
+  edge: PendingEdge, ctx: InvocationCtx, opts: { stroke?: Stroke } = {},
+): void {
   const scene = ctx.deps.scene;
   if (scene === undefined) return;
   const trait: DiagramEdge = {
-    from: { port: edge.from.id },
-    to: { port: edge.to.id },
+    from: edgeEndOf(edge.from),
+    to: edgeEndOf(edge.to),
     router: edge.router,
   };
   const source = scene.get(edge.from.nodeId as never);
@@ -177,13 +202,18 @@ export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
     kind: 'leaf',
     layer: source?.layer ?? scene.layers[0]!.id,
     pose: { x: 0, y: 0, width: 0, height: 0 } as never,
-    data: { diagram: trait, stroke: DEFAULT_EDGE_STROKE } as never,
+    data: { diagram: trait, stroke: opts.stroke ?? DEFAULT_EDGE_STROKE } as never,
     dependsOn: [edge.from.nodeId as never, edge.to.nodeId as never],
     // Without this the edge re-resolves on every dependency move and paints
     // nothing. `EDGE_DERIVE_PATH` rather than a fresh `edgeDerivePath()` so the
     // scene can find its registry key and the edge survives `toJSON`.
     derivePath: EDGE_DERIVE_PATH as never,
   });
+}
+
+/** A body end names no port, so the edge resolves the facing one. */
+export function edgeEndOf(end: ConnectEnd): EdgeEnd {
+  return isBodyEnd(end) ? {} : { port: end.id };
 }
 
 /**
@@ -196,58 +226,38 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
     canConnect = defaultCanConnect,
     snapRadius = DEFAULT_SNAP,
     router: routerKey = DEFAULT_ROUTER,
-    commit = commitEdgeToScene,
   } = opts;
+  const stroke = opts.edgeStroke;
+  const commit = opts.commit
+    ?? ((edge: PendingEdge, ctx: InvocationCtx) => commitEdgeToScene(edge, ctx, stroke ? { stroke } : {}));
   const routers = opts.routers ?? ROUTERS;
-  const portOpts = {
-    ...(opts.geometry ? { geometry: opts.geometry } : {}),
-    ...(opts.read ? { read: opts.read } : {}),
-  };
   const route: Router = routers[routerKey] ?? routers['straight'] ?? ROUTERS['straight']!;
+  const targets = createTargets({ ...opts, canConnect, snapRadius, bodies: opts.bodies ?? false });
 
-  /** The port the pointer is over and may legally land on, or `null`. */
-  function targetPort(from: Port, at: Vec2): Port | null {
-    let best: Port | null = null;
-    let bestD2 = snapRadius * snapRadius;
-    for (const participant of opts.participants()) {
-      if (!offersPorts(participant)) continue;
-      for (const port of portsOf(participant.node, participant.pose, portOpts)) {
-        if (opts.showsPort !== undefined && !opts.showsPort(port)) continue;
-        if (!canConnect(from, port)) continue;
-        const d2 = (port.point.x - at.x) ** 2 + (port.point.y - at.y) ** 2;
-        if (d2 <= bestD2) {
-          bestD2 = d2;
-          best = port;
-        }
-      }
-    }
-    return best;
-  }
-
-  /** The end the edge currently runs to: a snapped port, or the bare pointer.
-   *  A free end is a port with no facing, so a router aims straight at it. */
-  function endAt(from: Port, at: Vec2): { port: Port | null; end: Port } {
-    const port = targetPort(from, at);
-    return {
-      port,
-      end: port ?? { id: '', nodeId: '', point: at, normal: null },
-    };
+  /** What the press starts from: the pressed port, else — with
+   *  `startFrom: 'body'` — the body under the pointer. */
+  function startEnd(ctx: InvocationCtx): ConnectEnd | null {
+    const pressed = portScratchOf(ctx.drag?.affordance);
+    if (pressed !== null) return pressed.port;
+    if (opts.startFrom !== 'body') return null;
+    return bodyAt(opts.participants, ctx.world, { ...opts, view: ctx.deps.view })?.end ?? null;
   }
 
   return {
     id,
     label: 'Connect',
     group: 'diagram',
-    requires: ['scene'],
+    requires: ['scene', 'view'],
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
-        const pressed = portScratchOf(ctx.drag?.affordance);
-        // Not a port press. The binding spec is the gate; this is the backstop,
-        // and an empty handle is how the dispatcher is told to fall through.
-        if (pressed === null) return {};
+        const from = startEnd(ctx);
+        // Nothing to start from. The binding spec is the gate; this is the
+        // backstop, and an empty handle is how the dispatcher is told to fall
+        // through.
+        if (from === null) return {};
         const scratch: ConnectScratch = {
-          from: pressed.port,
+          from,
           current: { x: ctx.world.x, y: ctx.world.y },
           open: true,
           deps: ctx.deps,
@@ -260,8 +270,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           },
           overlay(): OngoingOverlay | null {
             if (!scratch.open) return null;
-            const { end } = endAt(scratch.from, scratch.current);
-            const points = route({ from: scratch.from, to: end, waypoints: [] });
+            const points = targets.preview(route, scratch.from, scratch.current, scratch.deps.view);
             if (points.length < 2) return null;
             // How a connector reads belongs to whatever surface paints the role.
             return { kind: 'polyline', points, role: 'connector' };
@@ -269,11 +278,11 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
           onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             scratch.open = false;
             if (reason === 'cancel') return;
-            const { port } = endAt(scratch.from, { x: endCtx.world.x, y: endCtx.world.y });
-            if (port === null) return;
+            const to = targets.target(scratch.from, { x: endCtx.world.x, y: endCtx.world.y }, scratch.deps.view);
+            if (to === null) return;
             // World and modifiers from the release; deps from the press.
             commit(
-              { from: scratch.from, to: port, router: routerKey },
+              { from: scratch.from, to, router: routerKey },
               { ...endCtx, deps: scratch.deps },
             );
           },

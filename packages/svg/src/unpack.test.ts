@@ -531,6 +531,22 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
     }).map((d) => d.kind)).toEqual(['leaf']);
   });
 
+  it('keeps an empty group options.keepEmpty asks for, and the group holding it', () => {
+    const marked: SvgNode = { kind: 'group', meta: { app: { attrs: { keep: '1' } } }, children: [] };
+    const outer: SvgNode = { kind: 'group', children: [marked] };
+    const keepEmpty = (g: { meta?: SvgNode['meta'] }) => g.meta?.app?.attrs?.keep === '1';
+    expect(svgNodesToKitDrafts([outer, { kind: 'group', children: [] }], seq(), { keepEmpty })).toEqual([
+      { kind: 'container', id: 'd1', parentId: null, pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
+      { kind: 'container', id: 'd2', parentId: 'd1', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {} },
+    ]);
+    expect(svgNodesToKitDrafts([outer], seq())).toEqual([]);
+  });
+
+  it('bounds a kept empty group beside drawn ones by the drawn ones alone', () => {
+    const g: SvgNode = { kind: 'group', children: [{ kind: 'group', children: [] }, rectNode(10, 10, 5, 5)] };
+    expect(svgNodesToKitDrafts([g], seq(), { keepEmpty: () => true })[0].pose).toEqual({ x: 10, y: 10, width: 5, height: 5 });
+  });
+
   it("carries a text's and an image's transform onto the pose", () => {
     const { nodes } = parseSvg(
       '<svg xmlns="http://www.w3.org/2000/svg">'

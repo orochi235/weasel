@@ -1,128 +1,65 @@
 import {
-  dragPanContribution,
   fitViewToBounds,
   SceneCanvas,
+  useDepSource,
   useLatest,
   useScene,
   useSelection,
   WeaselProvider,
-  type Paint,
   type RectPose,
   type CanvasSize,
+  type Scene,
   type SceneCanvasApi,
   type View,
 } from '@weasel-js/core';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
-import type { CanConnect } from './connect';
-import { diagramPorts, type DiagramContributionOptions } from './contribution';
+import { adoptCssOnce } from '@weasel-js/react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
+import { createSpecRouter } from './avoid/specRoutes';
+import { diagramCanDropInto } from './containers/canDropInto';
+import { createSpecHops } from './hops/specHops';
+import { createSpecLabelPlacer } from './labels/specLabels';
+import { useDiagramEditing, withPickableEdges } from './diagramEditing';
+import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
 import { diagramGroupOf } from './group';
-import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
-import type { LayoutFn, LayoutPlanner } from './layout';
-import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
+import type { DiagramSceneData, DiagramSpec } from './fromData';
+import { useLiveLayout, type LiveLayout } from './live';
+import { usePagesView } from './usePagesView';
 import { useMirroredSelection } from './mirrorSelection';
-import { portLayer, sceneParticipants } from './portLayer';
+import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
+import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
-import { useSceneSync, type EdgeRoute, type NodeMove } from './sceneSync';
+import { diagramResizable } from './resizable';
+import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 
-export type { EdgeRoute, NodeMove } from './sceneSync';
+export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
+export type {
+  DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
+} from './diagramViewProps';
+export type { DiagramOverlay } from './overlays';
+export type { ReorderChange } from './groupReorder';
 
-/** Props for `DiagramView`. */
-export interface DiagramViewProps {
-  /** Every spec needs an id, which `diagramScene` gives them. A new array is
-   *  reconciled into the scene the view already holds, so the view, the
-   *  selection and anything moved since stay put unless the new specs change
-   *  them. Pass a new `key` to start over instead. */
-  specs: readonly DiagramSpec[];
-  /** The view opens fitted to the diagram, and fits again when the size or a
-   *  fit option changes or a layout run settles, until the user pans or zooms;
-   *  from then on the view is theirs. Omit both to fill the parent, which
-   *  then needs a size of its own; a resize of the parent is a size change. */
-  width?: number;
-  height?: number;
-  /** A participant id, or null for none. */
-  selected?: string | null;
-  /** Reports what each click leaves picked, `null` for none — a re-click on the
-   *  picked node reports it again. The canvas keeps the pick even if
-   *  `selected` does not follow it; only a change to `selected` is pushed in. */
-  onSelect?: (id: string | null) => void;
-  /** Set to let nodes be dragged. Reports every node a drag or a layout run
-   *  moved, and every edge whose route or ports a layout run rewrote. Store
-   *  each move as the data node's `at` with `pinned: true`, and each route as
-   *  the data edge's `routed` and `routedPorts`, or the next `diagramScene`
-   *  lays them out again. */
-  onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
-  /** Ports are grabbable when this is set, unless `ports` says otherwise. Dragging one port onto another reports the
-   *  edge it describes and draws nothing; add it to the data to keep it. */
-  onConnect?: (edge: DataEdge) => void;
-  /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
-   *  onto another; `'show'` only draws them. Default: `'connect'` when
-   *  `onConnect` is set, else `'none'`. */
-  ports?: 'connect' | 'show' | 'none';
-  /** Whether the canvas's keyboard shortcuts — held Space to pan among them —
-   *  run. They listen page-wide, so a view-only diagram beside other UI would
-   *  claim keys meant for the page. Default: on when `onMove` or `onConnect`
-   *  is set. */
-  enableKeybindings?: boolean;
-  /** Which ports may be joined. Default: a port may not join itself, and two
-   *  typed ports must share a type. */
-  canConnect?: CanConnect;
-  /** How ports look and answer the pointer, and the router a connect's
-   *  preview draws with. */
-  portOptions?: Pick<
-    DiagramContributionOptions<RectPose>,
-    'fill' | 'stroke' | 'shape' | 'sizePx' | 'hitRadiusPx' | 'cursor' | 'shows' | 'showsPort' | 'snapRadius' | 'router'
-  >;
-  /** How a layout run from {@link DiagramViewApi.layout} behaves: its forces,
-   *  how many frames an eased layout takes, its easing, and `onError`, which
-   *  hears a `LayoutPlanner` that failed to answer. */
-  live?: Omit<UseLiveLayoutOptions<RectPose>, 'scene' | 'source' | 'algorithm'>;
-  /** The smallest scale the fit may use. Unset, the whole diagram fits
-   *  however small that makes it; set, it stops here and the rest is a pan away. */
-  minScale?: number;
-  /** The largest scale the fit may use. Default 1, so a small
-   *  diagram opens at its own size rather than blown up. */
-  maxScale?: number;
-  /** Which part of a diagram too big for the box it opens on: its middle
-   *  (default) or its top-left, where a layered flow begins. */
-  anchor?: 'center' | 'start';
-  /** Space kept clear around the diagram by the fit, in CSS pixels.
-   *  Default 16. */
-  fitPadding?: number;
-  /** What the canvas paints behind the diagram. Unset, it is transparent. */
-  background?: Paint;
-  /** The view, controlled. Set it and the fit is skipped; pair it
-   *  with `onViewChange` or panning does nothing. */
-  view?: View;
-  /** Every view change, from a pan, a zoom or a refit. */
-  onViewChange?: (view: View) => void;
-  className?: string;
-}
+/** The view's box holds the canvas and the overlays placed over it, and is as
+ *  big as the canvas: its parent's box on an axis the canvas fills. */
+const VIEW_RULE = ':where([data-wzl-diagram]) { position: relative; width: fit-content; }'
+  + ' :where([data-wzl-diagram~="fill-x"]) { width: 100%; }'
+  + ' :where([data-wzl-diagram~="fill-y"]) { height: 100%; }'
+  + ' :where([data-wzl-diagram]) > canvas { display: block; }'
+  + ' :where([data-wzl-diagram-overlay]) { position: absolute; left: 0; top: 0; }'
+  + ' :where([data-wzl-diagram-overlay][hidden]) { display: none; }';
 
-/** What a `ref` on `DiagramView` holds. */
-export interface DiagramViewApi {
-  /** Lay the diagram out again from where its nodes stand, animated. `'force'`
-   *  (default) relaxes until it settles; any other layout eases to its answer.
-   *  A `LayoutPlanner` is handed the diagram's graph and eased to once it
-   *  answers; a drag, an edit or another `layout` call before then drops the
-   *  answer. What moved is reported to `onMove` once the run settles. */
-  layout(algorithm?: DiagramLayout): void;
-  /** The run `layout` started: stop it where it stands, or cancel it. */
-  live: LiveLayout;
-}
+const adoptViewRule = (el: HTMLElement | null) => {
+  if (el !== null) adoptCssOnce(el, VIEW_RULE);
+};
 
-/** What {@link DiagramViewApi.layout} runs. */
-export type DiagramLayout = 'layered' | 'tree' | 'force' | 'chain' | LayoutFn | LayoutPlanner;
-
-const AMBIENT = [dragPanContribution()];
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const sameView = (a: View, b: View) =>
   a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
-const NO_MARQUEE = { areaSelect: null };
 
 /** A diagram: drag or wheel to pan, zoom, and pick a node; drag nodes with
- *  `onMove`, join ports with `onConnect`. Labels paint only in a registered
+ *  `onMove`, join ports with `onConnect`. Every edit is reported, never
+ *  written: change the specs to keep it. Labels paint only in a registered
  *  font family; `diagramScene` defaults to sans-serif, so call
  *  `registerCanvasFont('sans-serif')` or text renders blank. */
 export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView(props, ref) {
@@ -134,9 +71,21 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
-  minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
+  specs: given, router, labels, hops, width, height, selected, onSelect, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  onReorder, onEditContainer, connectBodies,
+  pickEdges, overlays = NO_OVERLAYS,
+  ambient: extraAmbient, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
+  minScale, maxScale, anchor, fitPadding, background, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
+  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
+  const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
+  const placer = useMemo(() => (labels === 'dodge' ? createSpecLabelPlacer() : null), [labels]);
+  const routed = useMemo(() => {
+    const out = avoid === null ? given : avoid(given);
+    return placer === null ? out : placer(out);
+  }, [avoid, placer, given]);
+  const hopped = useMemo(() => (hops === undefined ? routed : createSpecHops(hops)(routed)), [hops, routed]);
+  const specs = useMemo(() => (edgesPick ? withPickableEdges(hopped) : hopped), [edgesPick, hopped]);
   useEffect(() => {
     const disposers = [registerDiagramShape<RectPose>(), registerMarkShape<RectPose>()];
     return () => disposers.forEach((dispose) => dispose());
@@ -150,7 +99,7 @@ function Inner({
   const selection = useSelection({ scene, mode: 'single' });
   const onClick = useMirroredSelection(selection, selected, onSelect);
 
-  useSceneSync(scene, specs, onMove);
+  useSceneSync(scene, specs, { onMove, onEditContainer });
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
   // Each `layout()` call is a new run: the state change lands the algorithm in
@@ -164,11 +113,12 @@ function Inner({
   // A filling canvas is 0 × 0 until measured, and no box to fit into.
   const unsized = boxWidth === 0 || boxHeight === 0;
   const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
+  const { layers, box: pagesBox } = usePagesView(pages);
   const defaultView = useMemo(
-    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts),
+    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox),
     // A later `specs` keeps the view it has.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding],
+    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding, pagesBox],
   );
   // A settled run's fit holds until the box or a fit option changes.
   const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
@@ -177,7 +127,7 @@ function Inner({
     liveOpts?.onSettle?.(moved);
     if (controlled || moved === 0) return;
     const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
-    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts), over: defaultView });
+    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox), over: defaultView });
   });
   const live = useLiveLayout<RectPose>({
     ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
@@ -185,56 +135,104 @@ function Inner({
   useEffect(() => {
     if (run !== null) live.restart();
   }, [run, live]);
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  useDiagramApi(apiRef, canvasRef, scene, live, setRun);
+
+  const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
+  const editing = useDiagramEditing({
+    scene: scene as never, source, selected: selectedIds, mode: portMode ?? (onConnect !== undefined ? 'connect' : 'none'),
+    onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel, onReorder, onResize, onEditContainer, onMove,
+    connectBodies, canConnect, portOptions, ambient: extraAmbient,
+  });
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const disposers = editing.layers.map((layer) => canvas.registerLayer(layer));
+    return () => disposers.forEach((dispose) => dispose());
+  }, [editing.layers]);
+  const moves = onMove !== undefined || onEditContainer !== undefined;
+  const resizes = onResize !== undefined || onEditContainer !== undefined;
+  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick;
+  const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
+  const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
+
+  useRefit(canvasRef, fit);
+  const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
+  const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
+  return (
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
+      <SceneCanvas
+        ref={canvasRef}
+        scene={scene}
+        selection={selection}
+        features={features}
+        {...(resizes ? { selectTool } : {})}
+        enableKeybindings={enableKeybindings ?? edits}
+        ambient={editing.ambient}
+        actions={editing.actions}
+        onClick={onClick}
+        {...(onHover ? { onHover } : {})}
+        width={width}
+        height={height}
+        {...(fills ? { onResize: setMeasured } : {})}
+        {...(defaultView ? { defaultView } : {})}
+        {...(view ? { view } : {})}
+        {...(onViewChange ? { onViewChange } : {})}
+        {...(background ? { backgroundFill: background } : {})}
+        {...(layers ? { layers } : {})}
+      >
+        <DropRules scene={scene} />
+      </SceneCanvas>
+      {overlays.map((o) => {
+        const key = o.key ?? o.target;
+        return <div key={key} ref={overlayRef(key)} data-wzl-diagram-overlay="">{o.content}</div>;
+      })}
+    </div>
+  );
+}
+
+const NO_OVERLAYS: readonly never[] = [];
+
+/** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */
+function DropRules({ scene }: { scene: Scene<DiagramSceneData, 'main', RectPose> }): null {
+  const canDropInto = useMemo(() => diagramCanDropInto(scene as never), [scene]);
+  useDepSource('canDropInto', () => canDropInto);
+  return null;
+}
+
+/** What a `ref` on the view holds. */
+function useDiagramApi(
+  apiRef: Ref<DiagramViewApi>,
+  canvasRef: RefObject<SceneCanvasApi | null>,
+  scene: Scene<DiagramSceneData, 'main', RectPose>,
+  live: LiveLayout,
+  setRun: (run: { algorithm: DiagramLayout }) => void,
+): void {
   useImperativeHandle(apiRef, () => ({
     layout: (algorithm = 'force') => setRun({ algorithm }),
     live,
-  }), [live]);
-
-  const onConnectRef = useLatest(onConnect);
-  const mode = portMode ?? (onConnect !== undefined ? 'connect' : 'none');
-  const ports = useMemo(() => mode === 'connect'
-    ? diagramPorts<RectPose>({
-        ...portOptions,
-        participants: source,
-        ...(canConnect ? { canConnect } : {}),
-        commit: ({ from, to }) => onConnectRef.current?.({
-          from: from.nodeId, fromPort: from.id, to: to.nodeId, toPort: to.id,
-        }),
-      })
-    : null, [mode, source, canConnect, portOptions, onConnectRef]);
-  // A registered layer with no `hitTest` is painted and claims no press.
-  const shown = useMemo(() => {
-    if (mode !== 'show') return null;
-    const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
-    return paintOnly;
-  }, [mode, source, portOptions]);
-  const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const layer = ports?.layer ?? shown;
-  useEffect(() => (layer ? canvasRef.current?.registerLayer(layer) : undefined), [layer]);
-  const ambient = useMemo(() => (ports ? [...AMBIENT, ports.contribution] : AMBIENT), [ports]);
-
-  useRefit(canvasRef, fit);
-  return (
-    <SceneCanvas
-      ref={canvasRef}
-      scene={scene}
-      selection={selection}
-      features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
-      enableKeybindings={enableKeybindings ?? (onMove !== undefined || onConnect !== undefined)}
-      ambient={ambient}
-      // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
-      actions={NO_MARQUEE}
-      onClick={onClick}
-      width={width}
-      height={height}
-      {...(fills ? { onResize: setMeasured } : {})}
-      className={className}
-      {...(defaultView ? { defaultView } : {})}
-      {...(view ? { view } : {})}
-      {...(onViewChange ? { onViewChange } : {})}
-      {...(background ? { backgroundFill: background } : {})}
-    />
-  );
+    worldAt: (clientX, clientY) => {
+      const [x, y] = canvasRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY];
+      return { x, y };
+    },
+    visible: () => {
+      const canvas = canvasRef.current;
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || r === undefined || r.width === 0 || r.height === 0) return null;
+      const [x0, y0] = canvas.clientToWorld(r.left, r.top);
+      const [x1, y1] = canvas.clientToWorld(r.right, r.bottom);
+      return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+    },
+    rectOf: (id) => {
+      const canvas = canvasRef.current;
+      const world = worldRectOf(scene, id);
+      const r = canvas?.element?.getBoundingClientRect();
+      if (canvas == null || world === null || r === undefined) return null;
+      const rect = screenRectOf(world, canvas.getView());
+      return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
+    },
+    subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
+  }), [canvasRef, live, scene, setRun]);
 }
 
 /** Apply each new fit while the view is still the last one applied. */
@@ -260,14 +258,16 @@ export interface DiagramFit {
 }
 
 /** The view `DiagramView` opens on: every node box and group box in view, never above
- *  `maxScale` (default 1) and never below `minScale`. Takes specs, or a scene's
+ *  `maxScale` (default 1) and never below `minScale`. `extra` is further bounds to take in, such as the pages'. Takes specs, or a scene's
  *  nodes at the poses they are drawn at. */
 export function fitDiagram(
   specs: readonly { kind: string; pose: unknown; data: unknown }[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
+  extra?: { x: number; y: number; width: number; height: number },
 ): View | undefined {
   const boxes = specs.filter((s) => s.kind === 'container' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
+  if (extra !== undefined) boxes.push({ ...extra } as RectPose);
   if (boxes.length === 0) return undefined;
   const x = Math.min(...boxes.map((b) => b.x));
   const y = Math.min(...boxes.map((b) => b.y));

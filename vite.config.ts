@@ -10,9 +10,13 @@ import { changelogs } from './scripts/vite-changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
 import { localWake } from './scripts/vite-wake.ts';
+import { skipWorktrees } from './scripts/vite-watch.ts';
+import { devSourcemaps } from './scripts/vite-sourcemaps.ts';
+import { prebundleWorkspace } from './scripts/vite-prebundle.ts';
 import { watchProbe } from './packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from './scripts/vite-lan.ts';
 
 /**
  * Dev-only middleware: serve the per-package reference `npm run build:api`
@@ -53,6 +57,9 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    skipWorktrees(),
+    devSourcemaps(),
+    prebundleWorkspace(import.meta.dirname, [resolve(import.meta.dirname, 'apps/site'), resolve(import.meta.dirname, 'apps/shared')]),
     serveReferenceInDev(),
     demoTimestamps({ root: import.meta.dirname }),
     demoSources({ root: import.meta.dirname }),
@@ -82,7 +89,7 @@ export default defineConfig({
   server: {
     port: ports.site,
     strictPort: true,
-    host: '::',
+    ...LAN_SERVER,
     proxy: {
       '/weasel/draw': {
         target: `http://localhost:${ports.draw}`,

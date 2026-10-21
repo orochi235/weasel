@@ -12,7 +12,7 @@ import { useMeasureTool } from './useMeasureTool';
 import { createMeasurements, measureIds } from 'features/measure/measurements';
 import { measureEndsOf } from 'features/measure/measurement';
 import { measurementsContribution } from 'features/measure/measureContribution';
-import { nearestMeasureEnd } from 'features/measure/measureHit';
+import { measureEndSource } from 'features/measure/measureHit';
 import { MEASURE_ACTION_IDS } from 'features/measure/actionIds';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
@@ -91,14 +91,11 @@ describe('measurements through <SceneCanvas>', () => {
     const selection = useSelection({ mode: 'multi', scene: s });
     selectionApi = selection;
     const ambient = useMemo(() => [measurementsContribution(s as never, m)], [s, m]);
-    // Measurement ends ahead of anything else: what a consumer's snap rule composes.
-    const toolOptions = useMemo(() => ({
-      snapPoint: (p: { x: number; y: number }) => nearestMeasureEnd(s as never, m, p, 6) ?? p,
-    }), [s, m]);
+    const snap = useMemo(() => ({ sources: [measureEndSource()] }), []);
     return (
       <SceneCanvas
         features={['draw']} scene={s} selection={selection} layers={{}} width={400} height={400}
-        tools={{ measure }} ambient={ambient} toolOptions={toolOptions}
+        tools={{ measure }} ambient={ambient} snap={snap}
       >
         <Probe />
       </SceneCanvas>
@@ -168,7 +165,7 @@ describe('measurements through <SceneCanvas>', () => {
     expect(scene.get(box())!.pose).toMatchObject({ x: 360, y: 380 });
   });
 
-  it('measures from an existing end, which the snap rule offers', () => {
+  it('measures from an existing end, which its snap source offers', () => {
     const canvas = mountWithTwo();
     drag(canvas, [82, 98], [200, 98]);
     const newest = ids().at(-1)!;

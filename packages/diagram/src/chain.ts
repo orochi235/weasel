@@ -4,8 +4,10 @@
  *
  * The signal-chain layout: a rack of effects with their side inputs under
  * them. Each chain node owns a column as long as the widest row hung on it, so
- * two neighbors' hangers never share space. Groups are ignored.
+ * two neighbors' hangers never share space, and each group's members hang in
+ * one stretch of columns with room left for its box (`chainGroups`).
  */
+import { groupHanging, lineGaps } from './chainGroups';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
 import { backEdges, ranksOf } from './layered';
@@ -93,7 +95,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const line = lineOf(graph, opts.chain);
   if (line.length === 0) return { moves: new Map() };
-  const hanging = hangFrom(graph, line);
+  const hanging = groupHanging(graph, line, hangFrom(graph, line));
   const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));
@@ -107,7 +109,11 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   }
   for (const [id, column] of rows) if (column[1]) column[1] = inPortOrder(graph, id, column[1], axes);
   const before = opts.chainSide === 'before';
-  const place = (side: number) => settle(graph, slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank: rankGap, side }, before), opts);
+  const slots = (rank: readonly number[], side: number) => slotsFor(line, rows, levelSize, axes, { node: nodeGap, rank, side }, before);
+  const gaps = graph.groups?.length
+    ? lineGaps(graph, line, hanging, rankGap, axes, slots(line.map(() => 0), nodeGap))
+    : line.map(() => rankGap);
+  const place = (side: number) => settle(graph, slots(gaps, side), opts);
   // Where a side edge turns depends only on positions along the line, which
   // the gap across it does not move, so one trial run counts the tracks.
   let moves = place(nodeGap);
@@ -121,7 +127,7 @@ function slotsFor(
   rows: ReadonlyMap<string, GraphNode[][]>,
   levelSize: readonly number[],
   axes: LayoutAxes,
-  gaps: { node: number; rank: number; side: number },
+  gaps: { node: number; rank: readonly number[]; side: number },
   before: boolean,
 ): Map<string, Slot> {
   const { node: nodeGap, rank: rankGap } = gaps;
@@ -138,7 +144,7 @@ function slotsFor(
 
   const slots = new Map<string, Slot>();
   let cursor = 0;
-  for (const node of line) {
+  line.forEach((node, i) => {
     const column = rows.get(node.id)!;
     const span = Math.max(extent(node.bounds, axes.rank), ...Array.from(column, (row) => (row ? rowSpan(row) : 0)));
     slots.set(node.id, {
@@ -155,7 +161,7 @@ function slotsFor(
         along += extent(hung.bounds, axes.rank) + nodeGap;
       }
     });
-    cursor += span + rankGap;
-  }
+    cursor += span + (rankGap[i] ?? 0);
+  });
   return slots;
 }

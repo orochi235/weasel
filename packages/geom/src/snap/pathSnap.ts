@@ -172,21 +172,30 @@ function nearestOnSeg(s: Seg, p: Point): { x: number; y: number; dist: number } 
 /**
  * The snap target nearest `probe` within `query.radius`, or null when none
  * is in range. Every enabled kind competes on distance, except `nearest`,
- * which answers only when no other target is in range. Tangent and
- * perpendicular targets closer to the origin than the radius are dropped, so
- * a line cannot snap back onto its own start.
+ * which answers only when no other target is in range.
  */
 export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnapQuery): PathSnapHit | null {
+  let best: PathSnapHit | null = null;
+  for (const hit of findPathSnaps(index, probe, query)) if (!best || hit.distance < best.distance) best = hit;
+  return best;
+}
+
+/**
+ * Every snap target within `query.radius` of `probe`, unsorted. `nearest`
+ * hits appear only when no other target is in range. Tangent and perpendicular targets
+ * closer to the origin than the radius are dropped, so a line cannot snap
+ * back onto its own start.
+ */
+export function findPathSnaps(index: PathSnapIndex, probe: Point, query: PathSnapQuery): PathSnapHit[] {
   const kinds = new Set(query.kinds ?? PATH_SNAP_KINDS);
   const r = query.radius;
   const sx = Math.abs(query.scale?.x ?? 1), sy = Math.abs(query.scale?.y ?? 1);
   const metric = (dx: number, dy: number) => Math.hypot(dx * sx, dy * sy);
   const skip = query.skip ?? (() => false);
-  const pick: { best: PathSnapHit | null } = { best: null };
+  const hits: PathSnapHit[] = [];
   const offer = (kind: PathSnapKind, x: number, y: number, paths: readonly number[]) => {
     const distance = metric(x - probe.x, y - probe.y);
-    if (distance > r || (pick.best && distance >= pick.best.distance)) return;
-    pick.best = { kind, x, y, distance, paths };
+    if (distance <= r) hits.push({ kind, x, y, distance, paths });
   };
 
   for (const kind of STATIC_KINDS) {
@@ -216,7 +225,7 @@ export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnap
     });
   }
 
-  if (pick.best || !kinds.has('nearest')) return pick.best;
+  if (hits.length > 0 || !kinds.has('nearest')) return hits;
   index.segments.forEach((segs, path) => {
     if (skip(path)) return;
     for (const s of segs) {
@@ -225,5 +234,5 @@ export function findPathSnap(index: PathSnapIndex, probe: Point, query: PathSnap
       offer('nearest', n.x, n.y, [path]);
     }
   });
-  return pick.best;
+  return hits;
 }

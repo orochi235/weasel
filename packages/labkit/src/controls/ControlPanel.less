@@ -6,6 +6,12 @@
   padding: 0;
 }
 
+// The panel draws on the theme's surface, so its text takes the theme's ink rather than the page's.
+.lk-control-panel,
+.lk-control-panel-frame {
+  color: var(--wzl-fg);
+}
+
 // A cell in a paired row, with the caption naming the knob it holds. Case,
 // tracking, alignment and width come from the --wzl-params-label-* properties,
 // which inherit across the CSS-module boundary that keeps PropertyPanel's row
@@ -20,7 +26,7 @@
 .lk-pair-label {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg-muted);
   text-transform: var(--wzl-params-label-case, uppercase);
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
@@ -30,9 +36,12 @@
 }
 
 // A run of tab groups is a block of rows, not a control: it takes the whole
-// row of the list it sits in. So do a label's text, a separator's rule, and an action's button.
+// row of the list it sits in. So do a label's text, a separator's rule, an action's button, a bar, and a
+// row a renderer drew.
 .lk-control-tabs,
 .lk-control-words,
-.lk-control-actions {
+.lk-control-actions,
+.lk-control-bar,
+.lk-control-custom {
   grid-column: 1 / -1;
 }

@@ -29,6 +29,11 @@ export interface ActiveAnimation extends Waiting {
   anchor: number;
   /** Counts registrations: a frame ticks in this order. */
   seq: number;
+  /** Where its clock starts, in virtual ms: its end, for one started there to play backward.
+   *  Default 0. */
+  startAt?: number;
+  /** Ticked every frame for playing backward, where it would otherwise wait for its `due`. */
+  rewinding: boolean;
   /** Returns true when finished. Called once per frame with the current
    *  virtual-ms timestamp and the effective scale it advanced at this frame. */
   tick(virtualNow: number, scale: number): boolean;
@@ -38,14 +43,16 @@ export interface ActiveAnimation extends Waiting {
   due?: number;
   /** Called when the animation is canceled. Skips onDone. */
   onCancel?(): void;
-  /** Called when its pause state or time scale is set, by handle or by key. */
-  onRate?(paused: boolean, timeScale: number): void;
+  /** Called when its pause state or time scale is set, by handle or by key, and when the
+   *  animator turns direction. `rate` is what its voices play at: 0 while paused, below 0
+   *  backward. */
+  onRate?(paused: boolean, timeScale: number, rate: number): void;
   /** Its velocity, where that is not its one voice's: a spring on a target runs up to two. */
   velocity?(): number[];
 }
 
 export type AnimationSeed =
-  Omit<ActiveAnimation, 'paused' | 'timeScale' | 'base' | 'anchor' | 'seq' | keyof Waiting>
+  Omit<ActiveAnimation, 'paused' | 'timeScale' | 'base' | 'anchor' | 'seq' | 'rewinding' | keyof Waiting>
   & {
     /** Registers under an existing `cancelKey` without canceling whoever
      *  holds it. For an animation re-registering itself — a revived
@@ -58,6 +65,11 @@ export interface AnimationContext {
   readonly codec: Codec;
   readonly targets: TargetBook;
   nextId(): number;
+  /** Whether an animation starting now starts at its end, to play backward: a loop run back
+   *  is starting the pass before. One with no end starts at its start all the same. */
+  atEnd(): boolean;
+  /** Runs `start`, with `atEnd` answering `end` for whatever it starts. */
+  starting<T>(end: boolean, start: () => T): T;
   /** Seeds the codec's clock where `register` seeds a call's, so both charge the same wait. */
   seedClock(): void;
   register(seed: AnimationSeed): AnimationHandle;
@@ -73,6 +85,8 @@ export interface AnimationContext {
   /** Says a voice on `target` reads something that changed outside the frame's own reading. It
    *  is read again once the frame's ticks are done; with `now`, or between frames, at once. */
   touch(target: TargetState, now?: boolean): void;
+  /** Asks for a frame, where one is not running: something it shows has changed. */
+  wake(): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   /** Retires whoever holds `key` as interrupted by `by`, ahead of `by`'s own registration. */

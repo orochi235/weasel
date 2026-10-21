@@ -158,19 +158,38 @@ describe('resolveConfigSchema', () => {
   it('throws on a condition its schema cannot answer, naming each node and what is wrong', () => {
     const bad = f.schema({
       mode: f.enum('row', ['row', 'column']),
-      size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
+      size: f.number(1).showIf({ path: 'mode', is: 'row' }),
       grid: f.group({ color: f.color('#fff').enableIf({ path: 'nowhere' }) }),
+      title: f.string('').showIf({ path: 'mode', is: 3 }),
     });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       expect(() => resolveConfigSchema(bad, [])).toThrow(
         [
-          `[labkit] showIf of "size": "mode" never holds 'diagonal': its options are 'row', 'column'`,
           `[labkit] enableIf of "grid.color": no leaf holds a value at "nowhere"`,
+          `[labkit] showIf of "title": "mode" never holds 3: its options are 'row', 'column'`,
         ].join('\n'),
       );
       expect(() => resolveConfigSchema(schema(), [])).not.toThrow();
       expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('warns of an enum compared with a string none of its options is, and never matches it', () => {
+    const odd = f.schema({
+      mode: f.enum('row', ['row', 'column']),
+      size: f.number(1).showIf({ path: 'mode', is: 'diagonal' }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const r = resolveConfigSchema(odd, []);
+      expect(warn).toHaveBeenCalledWith(
+        `[labkit] showIf of "size": "mode" never holds 'diagonal': its options are 'row', 'column'`,
+      );
+      expect(isLeafVisible(r, 'size', { mode: 'row' })).toBe(false);
+      expect(isLeafVisible(r, 'size', { mode: 'column' })).toBe(false);
     } finally {
       warn.mockRestore();
     }

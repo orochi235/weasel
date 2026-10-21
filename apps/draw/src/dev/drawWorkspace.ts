@@ -1,6 +1,6 @@
 import { defaultNodeProperties } from '@weasel-js/core';
 import type { PrefGroup, PrefGroupAs } from '@weasel-js/prefs';
-import type { Asset, Workspace } from '@weasel-js/ui';
+import type { Asset, Workspace } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { DRAW_MENU_BAR } from '../menuBar';
 import { DRAW_MENUS } from '../menus';
 import { PREFS } from '../prefs';

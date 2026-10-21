@@ -1,2 +1,2 @@
 /* Wide enough for the asset list beside a preview that sets two rows across. */
-.frame { inline-size: 100%; min-inline-size: 1200px; block-size: 640px; }
+.frame { inline-size: 100%; min-inline-size: 1200px; block-size: 100%; min-block-size: 640px; }

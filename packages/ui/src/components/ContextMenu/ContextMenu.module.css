@@ -65,3 +65,33 @@ a.row {
   margin: var(--wzl-space-1) 0;
   background: var(--wzl-border);
 }
+
+/* A number row's field or a color row's swatch, in the shortcut's column. */
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  justify-self: end;
+}
+
+.unit {
+  color: var(--wzl-fg-muted);
+}
+
+/* A text row's field draws no box until it is focused, as a number row's ghost field does. */
+.text {
+  --_frame-h: auto;
+  --_frame-bg: transparent;
+  --_frame-border: 1px solid transparent;
+  --_frame-focus-shadow: none;
+}
+
+.text input {
+  width: 12ch;
+  padding: 1px 0;
+}
+
+.text:focus-within {
+  --_frame-bg: var(--wzl-surface-sunken);
+}

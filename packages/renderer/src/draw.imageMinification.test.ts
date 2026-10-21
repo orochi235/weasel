@@ -83,3 +83,35 @@ describe("imageMinification: 'auto'", () => {
     expect(recorder.calls.map((c) => c.name)).not.toContain('generateMipmap');
   });
 });
+
+describe('setImageMinification', () => {
+  it("switches a 'linear' renderer to 'auto' from the next draw", () => {
+    const recorder = makeGLRecorder();
+    const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1 });
+    const img = bitmap(64);
+    renderer.render([image(img, 8)]);
+    renderer.setImageMinification('auto');
+    renderer.render([image(img, 8)]);
+    expect(recorder.calls.filter((c) => c.name === 'generateMipmap')).toHaveLength(1);
+  });
+
+  it('frees the textures uploaded under the old strategy, and undefined restores the default', () => {
+    const { recorder, renderer, mipmaps } = setup();
+    const img = bitmap(64);
+    renderer.render([image(img, 8)]);
+    const deletes = (): number => recorder.calls.filter((c) => c.name === 'deleteTexture').length;
+    const before = deletes();
+    renderer.setImageMinification(undefined);
+    expect(deletes()).toBe(before + 1);
+    renderer.render([image(img, 8)]);
+    expect(mipmaps()).toBe(1);
+  });
+
+  it('keeps its textures when handed the strategy it already has', () => {
+    const { recorder, renderer } = setup();
+    renderer.render([image(bitmap(64), 8)]);
+    const before = recorder.calls.length;
+    renderer.setImageMinification('auto');
+    expect(recorder.calls.length).toBe(before);
+  });
+});

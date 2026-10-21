@@ -70,7 +70,8 @@ export type LayoutDropTargetMode = 'innermost' | 'topmost' | 'region';
  * never written.
  *
  * `useAnimatedReflow` builds one over the animator. Supply it through
- * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`.
+ * `<SceneCanvas reflowTransition>` or `LayoutDep.reflow`, and through
+ * `<SceneCanvas poseTransition>` to glide other pose writes too.
  */
 export interface ReflowTransition<TPose = unknown> {
   /** Move what `id` shows toward `pose`, in the node's stored frame. A glide
@@ -130,7 +131,7 @@ export interface LayoutDragged<TPose> {
  *
  * Declared on a container node (`ContainerNode.layout`). `childPoses` is the
  * resting arrangement, which the scene re-applies whenever the container's
- * children or size change, `getDropTargets` enumerates where a drag could
+ * children or size change or a child is moved, `getDropTargets` enumerates where a drag could
  * land, `reflowPoses` is the live preview once a target is picked, and
  * `commitDrop` turns the result into ops so the drop is undoable.
  */

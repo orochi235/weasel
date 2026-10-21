@@ -10,6 +10,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { AnchorSet, PointOrigin, PolygonPath, View } from '@weasel-js/geom';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import type { HandleLocks } from 'interactions/actions/edit-anchors/params';
+import type { SnapDep } from 'interactions/actions/snapDep';
 import type { PathRepresentation } from './pathRepresentation';
 
 /** A mark an extension drew that is selected in place of anchors: Delete
@@ -75,6 +76,8 @@ export interface PathEditDragStart extends Omit<PathEditTarget, 'node'> {
   /** The view's world-to-screen scale at the press, to measure in screen
    *  pixels by; absent without a view. */
   scale?: { x: number; y: number };
+  /** The canvas's `snap` dep, to begin a session on; absent without one. */
+  snap?: SnapDep;
 }
 
 /** A handle drag's move, as {@link PathEditDrag.handle} reads it. */
@@ -102,6 +105,8 @@ export interface PathEditDrag {
   /** Overlays to draw while the drag is in flight, for `current`, the path
    *  as the drag has made it. */
   overlays?(current: AnchorSet): readonly OngoingOverlay[];
+  /** The drag is over, committed or canceled. */
+  end?(): void;
 }
 
 /** Another node an edit changes along with the edited one. */
@@ -134,6 +139,17 @@ export interface PathEditFinishCtx {
   path(id: string): PolygonPath | null;
   /** The nodes that list `id` in their `dependsOn`, directly or through others. */
   dependents(id: string): readonly string[];
+}
+
+/**
+ * The scene as {@link PathEditExtension.finishTransform} reads it: `node` and
+ * `path` answer each node as the transform leaves it, `before` as it was.
+ */
+export interface PathTransformFinishCtx extends Omit<PathEditFinishCtx, 'id'> {
+  /** The nodes the transform moves, resizes or turns. */
+  ids: readonly string[];
+  /** A node's committed editable path before the transform, in world space; null when it has none. */
+  before(id: string): PolygonPath | null;
 }
 
 /** One feature's share of path edit. Every member is optional. */
@@ -170,6 +186,14 @@ export interface PathEditExtension {
     origins?: readonly (PointOrigin | null)[],
     ctx?: PathEditFinishCtx,
   ): FinishedPathEdit | null;
+  /**
+   * The other nodes a whole-node transform — a move, resize, rotate, flip or
+   * nudge — changes along with the nodes it transforms, so whatever this
+   * extension keeps true across nodes holds; committed in the transform's
+   * history entry. Null when the transform should not happen. An entry
+   * naming a node the transform itself moves is ignored.
+   */
+  finishTransform?(ctx: PathTransformFinishCtx): readonly PathEditOther[] | null;
   /** How path edit reads and writes the nodes whose `data.representation`
    *  is of its kind. */
   representation?: PathRepresentation;

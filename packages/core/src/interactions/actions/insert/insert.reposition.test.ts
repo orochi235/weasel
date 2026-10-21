@@ -4,20 +4,23 @@ import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
 import type { InsertDep, InsertExtras, InsertLive } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
+import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 
 type Bounds = { x: number; y: number; width: number; height: number };
 
-function scope(snap?: (p: { x: number; y: number }) => { x: number; y: number }) {
+function scope(gridStep?: number) {
   const committed: Array<{ bounds: Bounds; extras: InsertExtras }> = [];
   const insert: InsertDep = {
     commit: (bounds, extras) => { committed.push({ bounds: { ...bounds }, extras }); return 'n' as NodeId; },
   };
   const insertLive: InsertLive = { gesture: null };
+  const snap = gridStep ? sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(gridStep)]) : null;
   const ctx = (x: number, y: number): InvocationCtx => ({
     world: { x, y },
     screen: { x, y },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { insert, insertLive, ...(snap ? { snap: { point: snap } } : {}) },
+    deps: { insert, insertLive, ...(snap ? { snap } : {}) },
   });
   return { committed, insertLive, ctx };
 }
@@ -56,8 +59,7 @@ describe('insert.reposition', () => {
   });
 
   it('keeps a grid-snapped start on the grid', () => {
-    const grid = (p: { x: number; y: number }) => ({ x: Math.round(p.x / 10) * 10, y: Math.round(p.y / 10) * 10 });
-    const s = scope(grid);
+    const s = scope(10);
     const draw$ = draw(s, 'rect', 0, 0);
     draw$.onMove?.(s.ctx(31, 19));
     holdSpace(s);

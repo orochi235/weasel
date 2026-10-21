@@ -16,6 +16,7 @@
  */
 import {
   AUTO_POSE_DESCRIPTOR,
+  PathBuilder,
   polylineFromPoints,
   type DerivedDep,
   type Path,
@@ -23,136 +24,19 @@ import {
   type SceneRegistry,
   type Vec2,
 } from '@weasel-js/core';
-import { portCurvePoints } from '@weasel-js/geom';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
+import { CONTAINER_LAYOUTS } from './containers/layouts';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
+import { DIAGRAM_OFF_PAGE_TAG, OFF_PAGE_TAG_DERIVE_POSE } from './offPage/tag';
 import { portSitesOf, portsOf, type PortsOptions } from './ports';
 import { selfLoop } from './selfLoop';
 import { diagramEdgeOf, type EdgeEnd } from './edgeTrait';
+import { withHops } from './hops/draw';
+import { ROUTERS, straight, type Router } from './routers';
 import type { Port } from './types';
 
-/** What a router is given: the two resolved ends, and the author's waypoints
- *  between them. */
-export interface RouteRequest {
-  from: Port;
-  to: Port;
-  waypoints: readonly Vec2[];
-}
-
-/** A router returns the points the edge runs through, `from.point` first and
- *  `to.point` last. */
-export type Router = (req: RouteRequest) => readonly Vec2[];
-
-/** The straight run between the two ends, through any waypoints. */
-export const straight: Router = (req) => [req.from.point, ...req.waypoints, req.to.point];
-
-/**
- * An axis-aligned route: leave along the departing end's normal and arrive
- * against the receiving one's.
- *
- * A leg is one elbow where the two ends face different axes and two where they
- * face the same one, turning at the midpoint of the axis they share. Arriving
- * along the port's own facing is what makes the arrowhead point *into* the
- * shape.
- */
-export const orthogonal: Router = (req) => {
-  const stops = [req.from.point, ...req.waypoints, req.to.point];
-  const out: Vec2[] = [stops[0]!];
-  for (let i = 1; i < stops.length; i++) {
-    const a = out[out.length - 1]!;
-    const b = stops[i]!;
-    if (a.x === b.x || a.y === b.y) {
-      out.push(b);
-      continue;
-    }
-    // Only the first leg has a port to leave along; later legs follow the
-    // one before them so the route does not alternate for no reason.
-    const leaveHorizontal = i === 1
-      ? isHorizontal(req.from.normal)
-      : out.length > 1 && out[out.length - 2]!.y === a.y;
-    // Likewise only the last leg has a port to arrive against. Without a
-    // facing there is nothing to satisfy, so it keeps the single elbow.
-    const arriving = i === stops.length - 1 ? req.to.normal : null;
-    const arriveHorizontal = arriving == null ? !leaveHorizontal : isHorizontal(arriving);
-    if (leaveHorizontal !== arriveHorizontal) {
-      out.push(leaveHorizontal ? { x: b.x, y: a.y } : { x: a.x, y: b.y });
-      out.push(b);
-      continue;
-    }
-    // Splitting the leg at its midpoint starts back the way the route just
-    // came when the last stop overshot this one; turning at once does not.
-    const prev = out.length > 1 ? out[out.length - 2]! : null;
-    if (leaveHorizontal) {
-      const mid = (a.x + b.x) / 2;
-      if (prev !== null && (mid - a.x) * (a.x - prev.x) < 0) out.push({ x: a.x, y: b.y }, b);
-      else out.push({ x: mid, y: a.y }, { x: mid, y: b.y }, b);
-    } else {
-      const mid = (a.y + b.y) / 2;
-      if (prev !== null && (mid - a.y) * (a.y - prev.y) < 0) out.push({ x: b.x, y: a.y }, b);
-      else out.push({ x: a.x, y: mid }, { x: b.x, y: mid }, b);
-    }
-  }
-  return out;
-};
-
-/** Which axis a port faces. A port with no facing counts as horizontal. */
-function isHorizontal(normal: Vec2 | null | undefined): boolean {
-  return Math.abs(normal?.x ?? 1) >= Math.abs(normal?.y ?? 0);
-}
-
-/**
- * A smooth route, sampled into points.
- *
- * Each leg is a cubic that leaves along the departing end's normal and arrives
- * against the receiving one's, and passes each waypoint without a corner.
- * Sampled rather than emitted as curve commands so every router returns the
- * same thing.
- */
-export const bezier: Router = (req) => {
-  const stops = [req.from.point, ...req.waypoints, req.to.point];
-  const out: Vec2[] = [stops[0]!];
-  for (let i = 1; i < stops.length; i++) {
-    const a = stops[i - 1]!;
-    const b = stops[i]!;
-    const outN = i === 1 ? req.from.normal : through(stops, i - 1);
-    const inN = i === stops.length - 1 ? req.to.normal : negated(through(stops, i));
-    const leg = portCurvePoints(
-      a.x, a.y, b.x, b.y,
-      outN == null ? null : [outN.x, outN.y],
-      inN == null ? null : [inN.x, inN.y],
-      BEZIER_SAMPLES,
-    );
-    for (const [x, y] of leg) out.push({ x, y });
-  }
-  return out;
-};
-
-const BEZIER_SAMPLES = 16;
-
-/**
- * The direction a smooth route passes an interior stop: along the straight run
- * it makes with a neighboring waypoint level with it on one axis, else from
- * the stop before it toward the one after. Two such waypoints are a run the
- * route was meant to hold, the way `layered` lays one through each rank.
- */
-function through(stops: readonly Vec2[], i: number): Vec2 | null {
-  const last = stops.length - 1;
-  const run = (a: number, b: number) => a >= 1 && b <= last - 1 && (stops[a]!.x === stops[b]!.x || stops[a]!.y === stops[b]!.y);
-  const [from, to] = run(i, i + 1) ? [i, i + 1] : run(i - 1, i) ? [i - 1, i] : [i - 1, i + 1];
-  const dx = stops[to]!.x - stops[from]!.x;
-  const dy = stops[to]!.y - stops[from]!.y;
-  const len = Math.hypot(dx, dy);
-  return len === 0 ? null : { x: dx / len, y: dy / len };
-}
-
-const negated = (v: Vec2 | null): Vec2 | null => (v === null ? null : { x: -v.x, y: -v.y });
-
-/** The routers this package ships. A consumer's own go in the same shape. */
-export const ROUTERS: Readonly<Record<string, Router>> = Object.freeze({
-  straight,
-  orthogonal,
-  bezier,
-});
+export { avoid, bezier, orthogonal, ROUTERS, straight } from './routers';
+export type { RouteRequest, Router } from './routers';
 
 /**
  * The port an end resolves to: the one it named, at whichever of its places
@@ -178,6 +62,30 @@ export function resolveEnd<TPose>(
   return facing(allPorts(dep), toward);
 }
 
+/** The point an end aims at when it names none: the center of its bounds. */
+export function boxCenter<TPose>(geometry: PoseDescriptor<TPose>, pose: TPose): Vec2 {
+  const b = geometry.getBounds(pose);
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+}
+
+/**
+ * Where each end of an edge aims as it resolves: the nearest bend of its
+ * stored route, else its nearest authored waypoint, else the other end's
+ * center. Centers are stable while both ends resolve; aiming at the other
+ * *port* would be circular.
+ */
+export function endAims(
+  fromCenter: Vec2,
+  toCenter: Vec2,
+  waypoints: readonly Vec2[],
+  route: readonly Vec2[] = [],
+): { from: Vec2; to: Vec2 } {
+  return {
+    from: route[0] ?? waypoints[0] ?? toCenter,
+    to: route[route.length - 1] ?? waypoints[waypoints.length - 1] ?? fromCenter,
+  };
+}
+
 /** The port pointing at `toward` most directly, tie-broken toward the closer. */
 function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
   let best: Port | undefined;
@@ -199,6 +107,11 @@ function facing(ports: readonly Port[], toward: Vec2): Port | undefined {
   return best;
 }
 
+/** The router an edge is drawn with: the one it names, else `straight`. */
+export function routerOf(edge: { router?: string }, routers: Readonly<Record<string, Router>> = ROUTERS): Router {
+  return (edge.router !== undefined && routers[edge.router]) || straight;
+}
+
 /** Options for {@link edgeDerivePath}. */
 export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
   /** Routers by key. Defaults to {@link ROUTERS}. */
@@ -215,21 +128,70 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
  * sides {@link selfLoop} picks, and where the author set no waypoints the
  * router is handed that rule's point outside the node as one.
  *
+ * An edge carrying `hops` bows over each one that still lies on its route.
+ *
  * Returns `null` — nothing to draw — when the node is not an edge, when either
  * dependency is gone, or when an endpoint offers no ports at all.
  */
 export function edgeDerivePath<TPose>(
   opts: EdgeRouteOptions<TPose> = {},
 ): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => Path | null {
+  const routeOf = edgeRouter(opts);
+  return (node, deps) => {
+    const route = routeOf(node, deps);
+    if (route?.stubs !== undefined) return stubsPath(route.stubs);
+    const points = route?.points;
+    if (points === undefined || points.length < 2) return null;
+    const hops = diagramEdgeOf(node)?.hops;
+    return hops !== undefined && hops.length > 0 ? withHops(points, hops) : polylineFromPoints(points as { x: number; y: number }[]);
+  };
+}
+
+/** An edge's route as {@link edgeDerivePath} draws it, before it becomes a path. */
+export interface ResolvedRoute {
+  /** The two ends, resolved. */
+  from: Port;
+  to: Port;
+  /** What the router was handed between them: the author's waypoints, or a
+   *  self-loop's turning point. */
+  waypoints: readonly Vec2[];
+  /** The router's answer, `from.point` first and `to.point` last. */
+  points: readonly Vec2[];
+  /** Set while the edge is split across pages (`DiagramEdge.offPage`): the
+   *  two runs drawn in place of `points`, one out of `from` to its tag's
+   *  side and one from the other tag's side into `to`. */
+  stubs?: readonly [readonly Vec2[], readonly Vec2[]];
+}
+
+/** How far a split edge's stub runs out of its shape, in world units. */
+export const OFF_PAGE_STUB = 24;
+
+/** The stub end `port` leaves by: along its normal, else toward `toward`. */
+function stubTip(port: Port, toward: Vec2): Vec2 {
+  const n = port.normal ?? unit(toward.x - port.point.x, toward.y - port.point.y);
+  return { x: port.point.x + n.x * OFF_PAGE_STUB, y: port.point.y + n.y * OFF_PAGE_STUB };
+}
+
+function unit(x: number, y: number): Vec2 {
+  const len = Math.hypot(x, y);
+  return len === 0 ? { x: 1, y: 0 } : { x: x / len, y: y / len };
+}
+
+function stubsPath(stubs: readonly (readonly Vec2[])[]): Path {
+  const b = new PathBuilder();
+  for (const run of stubs) run.forEach((p, i) => (i === 0 ? b.moveTo(p.x, p.y) : b.lineTo(p.x, p.y)));
+  return b.build();
+}
+
+/** Routes an edge between its two dependencies the way {@link edgeDerivePath}
+ *  does, answering the route itself; null where that draws nothing. */
+export function edgeRouter<TPose>(
+  opts: EdgeRouteOptions<TPose> = {},
+): (node: { data: unknown }, deps: readonly (DerivedDep<TPose> | undefined)[]) => ResolvedRoute | null {
   const geometry = opts.geometry ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const allPorts = (d: DerivedDep<TPose>): Port[] =>
     portsOf(d.node as never, d.pose, portOpts);
-  const centerOf = (d: DerivedDep<TPose>): Vec2 => {
-    const b = geometry.getBounds(d.pose);
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-  };
-
   const standoffOf = (d: DerivedDep<TPose>): number => {
     const b = geometry.getBounds(d.pose);
     return Math.min(b.width, b.height) / 2;
@@ -244,19 +206,17 @@ export function edgeDerivePath<TPose>(
     const loop = fromDep.node.id === toDep.node.id && edge.from.port === undefined && edge.to.port === undefined
       ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
       : null;
-    // Each end aims at its first waypoint, else at the other's center, which
-    // is stable while both are being resolved — aiming at the other *port*
-    // would be circular.
     const authored = edge.waypoints ?? [];
-    const from = loop?.from ?? resolveEnd(edge.from, fromDep, authored[0] ?? centerOf(toDep), portOpts, allPorts);
-    const to = loop?.to ?? resolveEnd(edge.to, toDep, authored[authored.length - 1] ?? centerOf(fromDep), portOpts, allPorts);
+    const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored, edge.route);
+    const from = loop?.from ?? resolveEnd(edge.from, fromDep, aims.from, portOpts, allPorts);
+    const to = loop?.to ?? resolveEnd(edge.to, toDep, aims.to, portOpts, allPorts);
     if (from === undefined || to === undefined) return null;
 
     const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
-    const routers = opts.routers ?? ROUTERS;
-    const router = (edge.router !== undefined && routers[edge.router]) || straight;
-    const points = router({ from, to, waypoints });
-    return points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
+    const points = routerOf(edge, opts.routers)({ from, to, waypoints, route: edge.route });
+    if (edge.offPage === undefined) return { from, to, waypoints, points };
+    const stubs = [[from.point, stubTip(from, to.point)], [stubTip(to, from.point), to.point]] as const;
+    return { from, to, waypoints, points, stubs };
   };
 }
 
@@ -283,7 +243,12 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
       [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_OFF_PAGE_TAG]: OFF_PAGE_TAG_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
+    },
+    layout: {
+      ...(CONTAINER_LAYOUTS as unknown as NonNullable<SceneRegistry<TPose, TData, TLayer>['layout']>),
+      ...registry.layout,
     },
   };
 }

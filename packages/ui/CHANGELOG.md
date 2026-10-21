@@ -1,5 +1,347 @@
 # @weasel-js/ui
 
+## 1.11.0
+
+### Patch Changes
+
+- 304f53a: Actions and prefs carry `tags`: words they are also found by and gathered under. `Action.tags` and `ActionVariant.tags` (a variant carries its action's and its own, as `ActionItem.tags`); `tags` on every pref leaf, `PrefGroup`, and `PrefSection` (a leaf carries every group's above it). One matcher, `matchQuery` in `@weasel-js/registry`, now serves the command palette's search and `filterPrefSubtree`, so a query matches a tag as it matches a label, and `hasTag` is the exact test. Gathering by tag: `actionsTagged`, `taggedActionItems`, and `matchActionItem` (routing, re-exported by core), and `prefLeavesTagged` / `prefLeafTags` (prefs). `<ActionBar tag="…">` draws a bar from a tag in place of a `group`. A `CommandPalette` row found by a tag and not its label names that tag beside the label. The schema editor edits `tags` on leaves, groups, and sections; its structure, settings, unplaced, and action trees find rows by tag through the same matcher; and an `EditorAction` carries its registered action's tags, shown among what the registry says of the action a pref fires. `flip` is tagged `mirror`. Additive.
+- 3ffe020: An action can say what it would do before it runs. `Action.preview(deps, params)` shows it and returns what takes it down; `ActionsRegistry.preview(id, params)` asks for it under the same `enabled` check and tuned params `trigger` uses, and returns that function. A bar's action button shows its action's preview while it is hovered or focused, and takes it down on leaving or pressing. `<SceneCanvas>` sources a `previewPaths` dep, `show(paths)` over the canvas (`createPreviewPaths`, `usePreviewPathsDepSource`), and every Pathfinder action previews the outlines of the pieces it would make on it. Additive, except for anything implementing `ActionsRegistry` by hand, which now needs `preview`.
+- 652e692: The schema editor's structure tree holds a row under an `actions` pref for each action of its registry group, in the order the bar draws them, so a toolbar's tree shows what it draws. Those rows take no selection or edit: the pref holds none of them. An `actions` row folds like a group, and its fold is kept the same way.
+- 0d6fc26: An `actions` pref's row in the structure tree reads as a grouping: a bolt glyph, its label in a group's weight, and the count of the actions it draws in place of its kind. A group's count adds up the actions its `actions` prefs draw.
+- b882b2e: `<AnchorFields>` shows the anchors selected in path edit as numbers: their X and Y in document units, and for a lone anchor each handle's X and Y, or its angle and length, switched by the panel's Handles toggle (`handleCoords` and `onHandleCoordsChange` hold that choice outside, `defaultHandleCoords` seeds it inside). A field the anchors disagree on reads Mixed. Typing a number moves every selected anchor to it, and `accepts` reads units, so `1in` is 72 points given `{ pt: 1, in: 72 }`. It reads and writes through core's `useAnchorFields()`; pass `fields` to drive it from elsewhere. WeaselDraw shows it at the top of the Properties panel while anchors are selected.
+  
+  `UnitField` and a typed `PropertyField` number take an offset: `+=` or `-=` and an amount, units read. Given `onOffset`, the amount goes there — what a mixed field needs, for each value it stands for to move by its own amount; without it, the offset is added to `value` and commits through `onChange`.
+  
+  `<ActionBar only>` keeps just the named entries of those its `group` or `tag` picks, each an action id or an `id:variant` key.
+  
+  `<SceneCanvas defaultPathEdit={{ id, anchors }}>` opens the canvas with that path in anchor edit and those anchors selected, as though it had been double-clicked; it is read once, at mount, and `id` must be selected. Its type is `PathEditOpening`.
+- 2573527: The schema editor's attributes pane draws the selected node's glyph beside its name and description, as tall as the two rows: a group's for how it is drawn, an `actions` pref's, and the icon of the action an action pref fires. Description now sits directly under Name, with Key after them. The structure tree and the pane read the glyph from one place.
+- 465ccd9: An `action` leaf naming a parametric action by its bare id — `align` rather than `align:left` — draws one button per variant in a bar and one row per variant in a panel, as a menu already did, in place of a dead button whose tooltip said there was no such action. The schema editor no longer marks such a leaf "no action" either. `actionLeafVariants(leaf, actions)` is the expansion both surfaces use.
+- 65be8d3: A group or a section can name a glyph: `icon?: IconRef`, as a pref leaf's `icon` already does. A bar with `lead: 'icon'` (new beside `'label'`) starts its line with that glyph, in `Bar`, `PrefsForm`, `SelectionPanel` and labkit's `ControlPanel`. The button a bar opens a `menu`, `page`, `tab` or `panel` group from draws the glyph before its name, and so does that group's submenu row in a menu built by `resolveSchemaMenu`. `BarMenu` takes an `icon` as `BarPopover` does, and `BarLayout` and `Bar` take an `icon` prop. The schema editor offers `icon` for those groups and `icon` as a lead.
+- 10b67bb: A group or section drawn `as: 'bar'` takes `lead: 'label'`, which starts its line with its name ahead of its cells. `Bar` takes the same as a `lead` prop, over what its schema says, and every surface that draws a bar honors it. The asset editor offers it beside Overflow for a bar. New public API: `PrefBarLead`, `PrefGroup.lead`, `PrefSection.lead`, and `BarProps.lead`.
+- b064816: A `BarMenu` that opened itself gives focus back to its button on close only when focus is in its own menu or one of its submenus. Before, focus in any other menu on the page counted, and closing pulled focus out of that menu.
+- d8c0d51: A group a standalone `Bar` opens draws its nested groups as a `PrefsForm`'s pane does — neighboring `tab` groups as one strip, a `panel` in a box, a `section` under a heading, a `fragment` among the rows — where it drew every nested group as a heading over rows. Its leaves are still the bar's own rows, reading an absent value as unset.
+- 2bf7339: A `Bar`'s action button and a panel's action row read their leaf's `description` as the tooltip, with the shortcut after it, and a group drawn `as: 'menu'` in a `Bar` shows its `description` as the button's tooltip. With no description, the tooltip reads the label as before. Additive.
+- 97a672c: Two glyphs join the icon set's State family. Additive: `ui:broadcast`, a mast with two waves to either side of its tip, and `ui:flag`, a pole with a rippling cloth.
+- 1e3e770: A non-modal `Callout` no longer traps focus or takes it when it opens. React Aria's `Dialog` contains focus wherever it is mounted, so clicking an input elsewhere on the page focused it for an instant and then pulled focus back to the callout's close button, sending typing nowhere. A non-modal callout now renders a plain `role="dialog"` and, like React Aria's own non-modal popovers, leaves focus where it was when it opens, so Escape reaches it once focus is inside. Modal callouts still take and contain focus, and the close button and Escape still call `onDismiss`.
+- 1322a03: `<ContextMenuHost>` draws the open context menu in the DOM: rows with menu roles, shortcut chips, submenus that open beside their row, keyboard navigation and typeahead, and placement that keeps every panel on screen. It closes on a choice, Escape, a press or wheel outside, and window blur, and gives focus back to where it was. Core now re-exports `useMenuHost`, `useMenus` and the menu types (`MenuDef`, `MenuHost`, `OpenMenu`, `MenuOpenRequest`, `MenuHit`).
+  
+  The gesture dispatcher leaves a key pressed inside an element with `role="menu"` to that menu, so menu keys never fire canvas bindings, even from a `keyboard: 'first'` dispatcher.
+  
+  `<LayerList>` takes `onRowContextMenu(id, event)`, called on a right-click on a row, so an app can open a context menu for a layer.
+  
+  `PropertyGroup` and `MotifFrame` take an `onContextMenu` prop.
+  
+  `@weasel-js/ui` exports `actionIcon`, which turns an action's icon name into the node to draw.
+- 4da5998: `ControlPanel` writes a typed number or text once, when the edit settles on Enter or blur, so one typed value is one undo step; Escape writes nothing. This changes what a panel with no `draftConfig` does: it used to write every keystroke. The new `draftConfig` prop takes the values an edit passes through, a typed field's keystrokes and a slider's drag, so an instrument can follow the edit while `setConfig` hears only the settled value. A lab's Settings panel passes one, and still updates as you type.
+  
+  A `.dialog()` row and a compound leaf's dialog now edit a draft: Done writes it once, and the new Cancel button, Escape, or a press outside the dialog drops it. `DialogRow` takes `onOpen`, `onDone`, and `onCancel` for this; given `onCancel`, it draws Cancel beside Done.
+  
+  A `.resettable()` group's reset writes the group's whole value at its own path, once, rather than one write per changed leaf.
+  
+  A number can be cleared: `f.number(4).clearable()` writes `undefined` when its field is emptied and left, and `f.number()` with no default starts unset. `.placeholder()` says what an empty field stands for, and `.min()` and `.max()` bound a number on one side. Underneath, `PrefNumber` gains `clearable`, and the number `PropertyField` and `UnitField` take `onClear`.
+  
+  `PropertyRow`, `PropertyField`, and `DialogRow` take `error`, a validation message drawn under the control as an alert. `ControlPanel` takes `errors`, keyed by path, and a custom row gets its own as `ctx.error`.
+  
+  A `showIf` or `enableIf` comparing an enum with a string none of its options is no longer throws out of `resolveConfigSchema`: it warns in development and never matches. `checkPrefCondition` reports it under a new code, `option`.
+  
+  A section or group whose rows are all hidden no longer draws its heading.
+  
+  A text `PropertyField` drops its draft on Escape and gives `onInput` back the value typing began from.
+- 75d52be: A clearable enum drawn as a select, a menu, or a radio group lists an "Unset" entry first, which clears it. Only the toggle form could be cleared before, so a clearable choice in the schema editor's attributes (Lead, Overflow, Drawn as, and the rest) could be set but never unset again.
+- 0fc9447: A `ui:formActions` glyph joins the settings-form icons: a folder with a solid bolt in it. The schema editor draws an `actions` pref with it, in the structure tree and beside its name in the attributes pane, in place of the plain bolt.
+- c2b951b: A drop in a `PrefsForm` can land beside a fragment (`as: 'fragment'`), which draws no box of its own: the form measures it as the rows inside it. A point within 6px of the fragment's top, on its first row, drops before the fragment, and one within 6px of its bottom, on its last row, drops after it; past those edges a drop lands beside the row as before. An empty fragment still has nothing to measure, so only the editor's structure tree drops into one.
+- 681c3f9: `createHistory`'s `coalesceWindowMs` also takes a function, called at each push, so the window can change after the history is made; a journal the history begins reads the same function. `PrefSchemaEditor` passes one, so a change to the `history.coalesceMs` kit setting reaches an editor that is already open instead of waiting for it to remount.
+- a41d50f: The schema editor's icon picker takes Home and End, to the first and last icon, and PageUp and PageDown, a pane's height of rows at a time. Clicking an icon leaves focus on the grid, so the arrow keys go on working after a click. Across a selection whose icons differ it reads "Mixed" and marks no icon chosen, and a stored name that no registered table holds is marked "Not registered".
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- 5e7ee7b: New `KeyBank` groups keycaps that print their legends at one size, as a
+  keyboard's function row or navigation cluster does. Each `KeyCap` inside picks
+  the spelling of its legend that fits its key best — `Ins` for `Insert`, `Bksp`
+  for `Backspace` — and every single-line legend in the bank then prints at the
+  smallest scale any of them needs, floored at `minScale` (0.6 by default); a
+  function key in a bank drops its smaller default size so it matches Esc. With
+  `wrap`, on the bank or on one `KeyCap`, a key may print a two-line spelling
+  such as `Pg`/`Up` instead of shrinking; that key sizes itself. The spellings
+  table is exported as `KEY_SPELLINGS` and replaced per bank with `spellings`.
+  Only a key whose width its layout sets is fitted — one given a `style` width,
+  a square key, or one marked `fixed`; a key sized by its own legend prints its
+  first spelling at the bank's scale. Keycaps outside a bank render as before.
+- 5a48607: `KeyCap` sets a function key's legend (`F1` to `F24`) at 85% of the usual size, as a real keyboard prints it, and marks the chip `data-fn`. The size is the chip's `--key-font-size` custom property, so a consumer scaling one legend can multiply it rather than restate the token.
+- aa27fa7: `legend: 'symbol'` now draws symbols on Windows and Linux too, where it used to fall back to text for almost every key. Control (and `mod`) is ⎈ and Alt is ⎇, from ISO/IEC 9995-7, Backspace is ⟵, and Esc, Enter, Tab, Space, and Delete take the symbols macOS already used (⎋ ↵ ⇥ ␣ ⌦). The `auto` and `text` legends are unchanged.
+- 620d2db: `KeyCap` draws every symbol legend as an icon instead of a font glyph: the Mac modifiers, ISO/IEC 9995-7's Control and Alt, the editing keys, the arrows, and the navigation keys. A symbol now matches its neighbors whatever font the chip is in, where it used to come from whichever fallback font had it. The icon is 1.25 times the legend's font size, and the symbol's character stays in the chip as visually hidden text, so a screen reader and `textContent` still read it. The 27 glyphs are ui's icons `ui:key*` (`ui:keyCommand`, `ui:keyEscape`, `ui:keyPageUp`, …), drawn at a 2-unit stroke so they hold up at legend sizes.
+- 1c9459d: `keySpecFromKey` knows Home, End, PageUp, PageDown, PrintScreen, Insert, ScrollLock, and Pause. In symbol mode they draw ↖ ↘ ⇞ ⇟ ⎙ ⎀ ⇳ ⎉ on every platform; by default they show the text a key prints (Home, End, PgUp, PgDn, PrtSc, Ins, ScrLk, Pause).
+  
+  A new `labels` option on `keySpecsFromMods`, `keySpecFromKey`, `keySpecsFromShortcut`, and `keySpecsFromChord` replaces any label, by a modifier's logical name (`mod`, `shift`, `alt`, `ctrl`, `meta`) or a key's `KeyboardEvent.key`, up to a whole keyboard's worth. A letter key is found whichever case it is named in. `KeyLabels` is its type.
+- cabeeab: **Breaking:** `KeyCap`'s and `KeySequence`'s variants are renamed. The unfilled chip whose border and legend follow `currentColor`, which was `'minimal'`, is now `'default'`, and is what a chip with no `variant` draws. The filled chip, which was `'default'`, is now `'inverse'`. Pass `variant="inverse"` to keep a chip that relied on the old default filled, and drop `variant="minimal"`. The chip writes `data-variant="inverse"` for the filled one and no attribute for the default. `KEYCAP_VARIANT_ICONS` follows the new names.
+- ce8b295: `@weasel-js/ui/kit-icons` exports `kitIcons`, core's and ui's icon tables in one list, for a registry that should hold every kit glyph without the build plugin. Forge's workshop and story frames register it in place of their own copy of the list. Additive.
+- d32cb70: `@weasel-js/ui`'s components read their timings and target sizes from `<KitSettingsProvider>`, each falling back to its existing default where no provider sets it. A consumer can now set `numberField.repeatDelayMs` / `repeatEveryMs` (a held stepper), `tree.typeaheadMs` / `hoverExpandMs` / `tipRestMs`, `help.focusDelayMs` (a row's help on keyboard focus), `toast.ttlMs` (a toast that sets no `ttlMs` of its own, read by the `ToastRegion` showing it), `history.coalesceMs` (the schema editor's undo window, read when the editor mounts), and `params.form` / `params.panel` / `params.lab`, each with `textWaitMs` and `settles.{number,slider,string,color}` — which controls in a `PrefsForm`, a `SelectionPanel` or `Bar` write only the value an edit settles on. `targets` gains `curveKeyHitPx`, `curveHandleHitPx`, `curveHitPx`, `curveAnchorSnapPx`, `functionCurveHitPx`, `sliderStopSnapPx` and `snapRadiusPx`, read by the curve editor's layers, `Slider`, `BandEditor` and `Timeline`; a keyframe layer's own `snapRadiusPx` still wins.
+  
+  `uiKitSettingsSchema` describes all of these as a prefs group whose paths are their `KitSettings` paths, with units, ranges and the components' defaults. `useParamsPolicy(surface)` answers a surface's resolved `textWaitMs` and `settles`; `prefFieldProps`, `withCommitPolicy` and `withDrafts` take an optional `settles` in place of the surface's defaults. A curve layer's `LayerCtx` carries the editor's `kitSettings` store. `@weasel-js/react` adds `KitTargetSettings`, the interface packages augment to add keys to the shared `targets` area. Additive.
+- d86f89e: Fixes for gaps found moving an app's controls onto labkit's `ControlPanel` and `f`.
+  
+  - `ThemeProvider` takes `selection={{ mode: 'auto' }}` and follows the OS setting, live. Any other axis value the theme lacks still falls back to the axis default, now with a warning in development.
+  - `ControlPanel` and `ControlMatrix` set their own text color, the theme's `--wzl-fg`, so a light page no longer puts dark text on a dark panel.
+  - An `f.action`'s run is told the drawing panel's `config` and `setConfig` beside its `path` (`ConfigActionContext`).
+  - `ControlPanel` takes `changed`, the same set of paths `PrefsForm` takes, and marks those rows as changed. `PropertyField` and `DialogRow` take `changed` as `PropertyRow` does.
+  - Breaking: auto is opt-in. A leaf's label toggles auto only when the leaf says `.auto()` (with or without a resolver) or `.initial(auto)`. `.manual()` is gone; a leaf that never says auto is always pinned.
+  - A renderer's context carries `values`, the whole config or form values, and `changed` for its row, in `ControlPanel` and `PrefsForm` alike. `PrefControl` takes `values` to pass on.
+  - `ControlMatrix`: a row's `summary` says what its cells show, falling back to the leaf's `.dialog` summary; `inherit={false}` makes a plain grid with no fallback column, and `auto` is optional.
+  - `ListEditor` reorders with `reorder`: a handle to drag on each entry, and Alt+Up / Alt+Down anywhere in one. `newEntry` takes a list of `{ label, make }` kinds, which makes the add button a menu.
+  - `EasingPicker` takes `label`, `false` for none, and draws none of its own inside a `PropertyRow`, taking the row's label as its menu's name.
+  - In a paired grid, a row a renderer draws and a group drawn `as('bar')` take the whole width.
+- 2d6bd43: `LayerList` rows can be renamed and locked. `onRename` makes a one-line row's label editable: a double-click on it, or F2 on the focused row, opens a field that Enter or leaving commits and Escape drops. `onLockChange` adds a lock toggle beside the visibility checkbox. A locked row (`LayerListItem.locked`) can still be hidden and unlocked, but not dragged, renamed or removed; `renamable: false` opts one row out of renaming.
+  
+  Breaking: what `LayerListItem.locked` used to mean, a row that cannot be dragged, hidden or removed and selects alone, is now `fixed`, so `locked` can name a layer's lock the way the scene does.
+  
+  `useSceneLayerList` wires both to the scene: every row's checkbox and lock toggle hide and lock its node (`setHidden` / `setLocked` ops), an annotation layer's own row hides and locks the layer, and a `rename` argument, the data a new name writes, makes rows renamable.
+- ef6b6ae: Annotation layers, and measurements kept on them. A layer declared with `annotation: true` (in `systemLayers` or `addLayer`) holds aids rather than content: its nodes draw on the canvas, save with the scene (`toJSON` keeps the flag), and undo with it, while content picking — clicks, marquee, lasso, Select All — passes through them. `isAnnotationLayer`, `isAnnotationNode`, and `annotationLayerIds` are the one question export, picking, and layer lists ask; export code should leave out what they say yes to.
+  
+  A measurement is a leaf on an annotation layer whose `data.measure` holds its two ends in world units (`measureNode(id, layer, start, end)`), drawn by the built-in `kit:measure` painter as a line with a tick across each end. `measurementOf(node)` reads one as a `Measurement` — `start`, `end`, `dx`, `dy`, `distance`, and `angle`, in radians, read like a protractor: counterclockwise-positive on screen, so a line rising up and to the right at 30° reads +30°.
+  
+  `createMeasurements({ layer })` names the layer and holds what is not the document's: which measurement is picked, and the one a measure drag is drawing. Give the same object to:
+  
+  - `useMeasureTool({ measurements, angleStep? })` (key M, icon `core:measure`): a drag adds a measurement, both ends through the `snap` dep and Shift holding the angle to `angleStep` (default 15°), and picks it; a click picks the measurement under it; Escape drops the pick and Delete removes it.
+  - `measurementsContribution(scene, measurements)`, installed with `<SceneCanvas ambient>`: under every tool, a click on a measurement picks it without touching the content selection, a drag on the picked one's end moves that end, and a drag anywhere else on one carries it. Its commands, in the `measure` group: `measure.moveBy` moves the content selection by the current measurement's offset and `measure.rotateBy` turns it about its center the way the line goes, each one undo step Transform Again repeats; `measure.delete` and `measure.clear` remove one or all. The current measurement is the picked one, else the newest.
+  - `<MeasureReadout scene measurements>` in `@weasel-js/ui`: the current measurement's distance, offset, and angle, with Move by, Rotate by, Delete, and Clear all.
+  
+  `@weasel-js/ui`: `useSceneLayerList` leaves annotation layers out unless given `annotations`, when each gets a row holding its nodes, marked not printed: the layer can be hidden from its row, and its nodes picked and removed. `LayerListItem` gains `nonPrinting`, `hideable`, and `removable`. `BarActionButton` takes a `disabledReason`, which keeps a disabled button focusable with its reason in the tooltip and in `aria-description`; `useActionStates` reports the reason an action gives.
+- 09e5589: A `MenuBar` title that underlines an access letter is named by its whole label. The title's flex layout had made the letter a block of its own, so assistive technology read "File" as "F ile" and `getByRole('menuitem', { name: 'File' })` found nothing.
+- 1e47009: New `MenuBar`: a bar of menu groups drawn as titles across the top of an app. Press a title to open its menu, press it again to close it, move onto another title to switch, or press and drag to a row and release to run it. Left and Right walk the titles, Down or Enter opens one, Left or Right inside a menu moves to the next menu, and Escape closes the menu to its title and then gives focus back to where it was. F10 focuses the bar from anywhere in the app, and a title's underlined access letter, pressed with the bar's `accessChord` held (Alt by default; matched by physical key, so macOS Option works), opens its menu. These keys go through the gesture dispatcher ahead of the app's own bindings, a focused text input keeps them, and a disabled title's letter is left to the app. A title follows its group's `showIf` and `enableIf`. Anything at the top level that is not a menu group is drawn after the menubar as `Bar` draws it. This is additive.
+- 90851d1: A schema drawn as a menu keeps its number, color, and string leaves. `resolveSchemaMenu` turns a number leaf into a new `number` menu entry, in the units the leaf shows, and a color leaf into a new `color` entry; a string reads as a disabled `Name: value` row. Both are new `MenuEntry` kinds, so code that switches over every kind needs a case for each.
+  
+  A number row edits in place and the menu stays open. The DOM menu holds a field in the row: Enter on the highlighted row moves focus into it, the arrow keys step it there, and Enter or Escape hands focus back to the menu. The HUD menu draws a minus and a plus chip either side of the value. In both, `+` and `-` step the highlighted row. The menu controller's new `numberValue`, `setNumber`, and `spin` hold what was set while the menu is open, and `menuNumberText` prints a value as a renderer with no field does.
+  
+  A color row shows a swatch and the hex and is read-only in both menus.
+  
+  `clampToBounds`, `snapToStep`, and `spinKey` move from `@weasel-js/ui`'s internals to `@weasel-js/quantity`, where the menu model steps with them too.
+- 797bf34: A number row in a menu drawn from a schema now honors the leaf's `endless` and `infinity`. An endless end sits one step past its bound, as it does on an endless slider, so stepping up from the bound reaches infinity, and an infinity stored there shows as the leaf's word for it, with no unit after it. This holds in the DOM menu and the HUD menu alike. The DOM menu's field also reads typed units now, in any unit the leaf's `unit` accepts.
+  
+  `clampToBounds` and `spinKey` in `@weasel-js/quantity` take an `endless` bound. `endlessAllows`, `endlessAt`, `endlessTrack`, and the `Endless` type have moved there from `@weasel-js/ui`, which still re-exports `Endless`. `UnitField` takes `endless` as well, so a property row's plain number field keeps an infinity typed at an endless end where it used to clamp it to the bound. `prefUnitAccepts` is now exported from `@weasel-js/prefs`, which ui and routing both use. `prefDisplayBounds` returns the leaf's `endless`, with its ends swapped under a unit that runs backward. `MenuNumberEntry` gains `endless`, `infinity`, and `accepts`. `menuNumberText` now takes the entry in place of a suffix and a display.
+- 0f5bd40: The schema editor's preview of a menu asset says why it shows only a button when the menu cannot open: that the menu is empty, and to drag an action from Actions onto it in Structure or add a pref or a group there; or, when it has rows, that no action they name is registered.
+- ce41b60: `MenuBar` closes an open menu when its title turns disabled or hidden, instead of leaving it open under a title that can no longer open it.
+- fb44d45: `MenuButton` opens its list with the context menu's DOM renderer instead of React Aria's `Menu`, so a menu button, a bar's menu and a right-click menu share one controller: the same highlight, type-to-select and Escape. `MenuButtonItem.label` is now a `string` and `textValue` is gone, since the label is what a row is named and typed against. An `EnumControl` option whose label is not text now shows its short form or value in the list.
+- 57725cc: Menus hang under a rect and register commands from callbacks. `placeMenuUnder` in `@weasel-js/menu` is new public API: it places a menu under a rect, flips it above, and right-aligns it at the right edge. `MenuOpenRequest.under` is an additive field, honored by the DOM and WebGL menu renderers, and `BarMenu` passes its button's rect. `BarMenu` takes an additive `defaultOpen` prop: it opens the menu once on mount, without taking focus, retrying as commands register until the menu has rows. `useCommand(id, label, run, options?)` is new public API in `@weasel-js/routing/react` and `@weasel-js/core`; its `icon` option takes an `IconRef`. The asset editor files menu roots under a "Menus" heading and previews them open.
+- 8ad0483: A `minAt` or `maxAt` on a number field of an `object` leaf now bounds it, as it already did a number leaf of its own. `PrefsForm`, and labkit's dialog for an object, read the bound from the values the form holds. `SelectionPanel` draws each such field with the loosest bound across the selected nodes and holds what it writes into each node to that node's own, for every field the edit changed; a field the edit left alone is stored as the node held it.
+- 76f7ecb: A subpanel inside a paired group now spans both of the group's columns, as it already did inside a paired list. It took one column before, and its own two columns then split that again, so a section nested in a paired group drew its rows a quarter of the group wide and their controls spilled past the panel.
+- d4d28ad: The command palette titles a variant with its action's label and its own ("New: A4"), and a search matches that title. A variant whose label already opens with the action's keeps it ("Zoom In"). `actionItemTitle` gives the title; menus and bars still show the variant's own label. `@weasel-js/core` also exports `ActionDisabledReasonValue`.
+- c0d59c6: The path tools gain icons. Smudge brush, Distort, Envelope and Puppet Warp show theirs on the tool and its action; Blend, Bend Along Path, Repeat Along Path, Balance handles and Equalize handles get one each; Expand to Paths and Expand Warp share `path-tools:expand`. All are in the `path-tools` icon namespace. Warp Settings and Edit Path Effect take `core:tune`, and Delete constraint takes `core:delete`.
+- ddbb431: `ToolPalette` takes `include`, a filter over the registered tools, and `ariaLabel`, the toolbar's accessible name (default `"Tools"`). Two palettes over one `tools` with complementary filters split a canvas's tools between two toolbars; WeaselDraw shows path-tools' tools in a strip of their own this way.
+  
+  Envelope mesh's tool key is now Shift+F, beside Distort's F. It was C, which WeaselDraw's crop mode already holds, so the key never reached it there.
+- 67fb8e7: `QuantityText` takes a `unit` alone, drawn as the `unit` part of a quantity with no number beside it. A number field's string `unit` draws through it, in a `PropertyField` and in a slider's editable readout, so it takes the face and dimming a slider readout's unit does. A unit handed as JSX is still drawn as given.
+- 0430dcc: Every type a public signature names is now exported, so the API reference links it. Signatures that named a file-local point alias (`Pt`, `XY`, `Vec`) take geom's `Point`, and ones that named a local `AnyScene` or `AnyNode` say `Scene<unknown, string, unknown>` or the node type outright. Newly exported: core's `AnnotationFlag`, `AnchorEdit`, `JoinPlan`, `PathEditPreview`, `PathStorageKind`, and `ViewPoseAdapter`; diagram's `RoutedScene`; prefs' `UsePrefsStoreOptions`; symmetry's `SymmetryKindDef`; path-tools' `WarpToolOptions`; and ui's `SceneLayerListProps`.
+- 1be2ea9: New `deepEqual(a, b, { undefinedAsAbsent? })` in `@weasel-js/registry`: structural equality over arrays and plain objects from any realm, with every other value — a function, a class instance, a `Date` — equal only to itself. `undefinedAsAbsent` reads a key holding `undefined` as missing. `useCommand`, the schema editor's attribute aggregation, the selection panel's shared value, and text's range styles now all compare with it, in place of four private copies. Two of those copies compared a class instance field by field, and now compare it by identity: `useCommand`'s options and the schema editor's attribute values.
+- f3398d4: The `@experimental` designation is retired. Everything that carried it is now ordinary public API: the actions registry and its built-in action descriptors and icons, the ambient pointer and selection contexts, `CanvasView`, the canvas extension API, the view resolver and viewport layer, the affordance helpers, path-tools' commands and icons, and `registerEffect`. No signatures changed.
+- 17029b0: `PrefSchemaEditor` keeps a catalog for its Actions list, so the reader can sort, group, and edit the host's actions there as `AssetEditor` lets them. Additive: `actionCatalog` starts the list from a catalog the host kept, and `onActionCatalogChange` hands back each edit of it. The catalog is kept in the draft beside the schema with its steps, a draft saved before still opens, and a submission still holds the schema's changes alone.
+  
+  In both editors, a step back over an edit made in the Actions list picks again the rows that were picked there when the edit was made.
+- 9a85264: `PrefSchemaEditor` draws the fields of a list's or a map's object entry as rows under the list in its structure tree. A field picked there edits like any other pref, and its own Shown if and Enabled if offer the entry's other fields first, writing a test that reads from the entry (`{ from: 'item' }`). Renaming or moving a field carries those tests with it, and a condition wrong on a field is marked on the field's row rather than the list's. The export and the draft hold the entry as before.
+- ae77c1c: `SelectionPanel` draws a leaf marked `heading` in its section's title row, as `PrefsForm` and labkit's `ControlPanel` do: named for the section, beside the title rather than inside it, so the title's dimming does not reach the control. It stays a row in a section with no heading (a tab, a bar, a fragment, an unnamed one), where the panel has a renderer of its own for the leaf, and where a pair shares its row.
+- 804e3cf: A typed `PropertyField` (`number` or `string`) now calls `onChange` only once the edit settles: on blur, Enter, or a step. It used to call it on every keystroke when `onChange` was the field's only callback, so typing `150` committed `1`, `15`, and `150`, each its own undo step. A caller that wants each keystroke passes `onInput`. Sliders and color tracks still report every move when given `onChange` alone.
+  
+  `prefFieldProps` still writes where `PARAMS_SETTLES` says a surface follows typing: a lab's numbers and text, and a form's text, write through `onInput` as they are typed. labkit's `ControlPanel` keeps updating as you type, with text debounced by `debounceMs` as before.
+- 7947fdf: The shortcut formatters move from `@weasel-js/ui` to `@weasel-js/gestures`, beside `isApplePlatform`, so chrome that is not React can label a shortcut the same way: `formatShortcut`, `formatShortcutParts`, `keySpecsFromShortcut`, `keySpecsFromMods`, `keySpecFromKey`, `detectPlatform`, `MODIFIER_LABELS` and their types. `@weasel-js/ui` still exports every one of them. In gestures a key's legend is named `KeyLegend`, since `KeySpec` there is the key gesture; ui's `KeySpec` is now that type.
+- 6533d2d: `SidebarPanel` takes `actions`: controls drawn in its header row at the trailing edge, before the close button, and kept while the panel is collapsed.
+- 798e9b0: The Properties W and H fields hold a node to its `data.minSize`, as resize and
+  insert already do: typing a smaller width shows and stores the minimum. With
+  several nodes selected, each is held to its own minimum.
+  
+  A number leaf takes `minAt` and `maxAt`, bounds read from where its value is
+  held, which `prefNumberAt` folds into `min` and `max` for one holder.
+  `SelectionPanel` resolves them per node, `PrefsForm` and labkit's
+  `ControlPanel` against their values. `prefClampNumber` holds a number to a
+  leaf's range.
+- 59b5936: A fraction display takes a third form, `fraction({ form: 'stacked' })`. It writes the same text and HTML that `inline` does. `present` marks its result `stacked: true` next to the `mathml` form, so a renderer that draws MathML draws the numerator over the denominator. `QuantityText` now does that: it draws the MathML inside the value's `<data value>` and puts the text form, hidden, beside it, so copying the value gives `1/2` and not the bare digits. A screen reader still hears the spoken form. Fractions in `inline` and `diagonal` form draw exactly as before.
+- 5ebf7e7: A group or a section can be drawn `as: 'menu'`: on a bar, a button opening its contents as a menu; in a menu, a submenu; in a panel, a titled box as `panel` is. `prefAsBox` answers whether a panel boxes a node drawn `as` a given value.
+  
+  Every leaf holding a value takes `readout: true`, meaning it is drawn showing its value but not editable. The field lives on the new `PrefValueBase`, so an `action`, `alias`, `label`, or `separator` cannot carry it.
+  
+  A new leaf kind, `actions` (`{ kind: 'actions', group }`), stands for every action the host registered in an action group, in registry order, each drawn as an `action` leaf would be. It holds no value: a store neither reads nor writes it, and it has no `PrefPath`. The schema editor offers both new fields and the new kind.
+- b91a818: An `actions` leaf now draws one button per action registered in its group, in registry order and a variant each, the way an `action` leaf naming that action would. In a bar the buttons sit in one cell; in a prefs form, a selection panel, or a labkit panel each is a row of its own. An action registered later appears without the schema changing. `BarActions` and `PrefActionRows` draw them, and `actionsLeafActions` turns the leaf into the `action` leaves it stands for.
+  
+  `ActionBar` is now a `Bar` over one `actions` leaf for its `group`. `tag`, `only`, `icons`, and `labels` have no schema form, so they filter what that leaf expands to; their behavior is unchanged.
+  
+  In a panel an action reads its icon and label once, on a full-width button, with no row label beside it. It takes its disabled state from the registry, keeps a disabled button focusable with the action's reason in its tooltip, and says in its tooltip when its key names nothing registered. An action with `control: 'icon'` keeps its labeled row.
+  
+  A leaf with `readout: true` draws as its value in words, not as a control, in bars and panels alike: an enum's option label, a number in its display with its unit, a flag as On or Off, a color as a swatch beside its hex. Field props carry it as `readOnly`, which `PropertyControl` and `PropertyField` draw through the new `PropertyReadout`, an `<output>` the row's label names.
+  
+  A group drawn `as: 'menu'` in a `Bar`, or in a bar of a prefs form, is now a button that opens the group as the context menu's panels (`BarMenu`), resolved by `resolveSchemaMenu` with the bar's `values`, `onChange`, and `over`: actions as items, flags as checked items, choices as radio rows, nested groups as submenus.
+  
+  `Bar` takes `framed="segmented"`: a compact strip whose buttons sit almost touching, so a run of actions reads as one control. `ActionBar` draws on it, in place of a stylesheet of its own.
+- 1efa251: The drags `@weasel-js/ui` starts through `startThresholdDrag` — reordering a list, dragging a `Tree` row, and picking up a node from the schema editor's palette or its live preview — engage at the `gestures.dragPx` kit setting, as the canvas's own drags already did, instead of always at `DRAG_THRESHOLD_PX`. `useReorderDragList`'s own `threshold` option still wins.
+- 398d71e: A camera animation that names no duration of its own now takes 0ms while the reader's `prefers-reduced-motion` is `reduce`, in place of the `view.animationMs` kit setting or its default, and follows the preference as it changes. `@weasel-js/react` exports `prefersReducedMotion()` and a `usePrefersReducedMotion()` hook that re-renders when the preference changes; the long-press ring and `@weasel-js/ui`'s components now read the preference through it.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [6a53aaa]
+- Updated dependencies [193ba96]
+- Updated dependencies [09c3e5f]
+- Updated dependencies [535aaaa]
+- Updated dependencies [ed0e096]
+- Updated dependencies [65be8d3]
+- Updated dependencies [10b67bb]
+- Updated dependencies [6f839dd]
+- Updated dependencies [95d22f1]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [4da5998]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [0382007]
+- Updated dependencies [4a44657]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [b36ceac]
+- Updated dependencies [34f8b09]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [628c62d]
+- Updated dependencies [ad0b069]
+- Updated dependencies [d32cb70]
+- Updated dependencies [d86f89e]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [e4642bb]
+- Updated dependencies [90851d1]
+- Updated dependencies [797bf34]
+- Updated dependencies [fe20dc4]
+- Updated dependencies [e901a2b]
+- Updated dependencies [da45b33]
+- Updated dependencies [57725cc]
+- Updated dependencies [2f51085]
+- Updated dependencies [c6d61e0]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [8775065]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [e562d4b]
+- Updated dependencies [7947fdf]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [59b5936]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [5ebf7e7]
+- Updated dependencies [f231e4b]
+- Updated dependencies [e8f60df]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/prefs@1.11.0
+  - @weasel-js/core@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/animator@1.11.0
+  - @weasel-js/gestures@1.11.0
+  - @weasel-js/svg@1.11.0
+  - @weasel-js/theme@1.11.0
+  - @weasel-js/icons@1.11.0
+  - @weasel-js/react@1.11.0
+  - @weasel-js/menu@1.11.0
+  - @weasel-js/quantity@1.11.0
+  - @weasel-js/modes@1.11.0
+  - @weasel-js/paint@1.11.0
+  - @weasel-js/font@1.11.0
+  - @weasel-js/select@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

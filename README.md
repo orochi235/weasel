@@ -60,11 +60,12 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
-import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection, type RectPose } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
+import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 
 const W = 800, H = 600;
 const grid = createGridLayer({ spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) });
+const snap = { sources: [gridSnapSource({ spacing: 20 })] };
 
 export function Editor() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
@@ -81,7 +82,7 @@ export function Editor() {
       selection={selection}
       features={['draw']}
       defaultTools={BUILTIN_TOOL_IDS}
-      selectTool={{ snap: gridSnapStrategy<RectPose>(20) }}
+      snap={snap}
       layers={{ grid: { layer: grid } }}
     />
   );
@@ -198,7 +199,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `history` |  | undo/redo with scoped sub-histories |
 | `routing` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
 | `select` |  | selection as a value: which ids a press selects, with toggle, range and anchor rules |
-| `menu` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
+| `menu` |  | the headless model behind context menus: entries, a controller for highlight, submenus, keyboard and typeahead, and placement |
 | `registry` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | keyed registries you can enumerate and subscribe to |
 | `icons` |  | namespaced icon names and the icon registry; no React, no DOM, no glyphs of its own |
 | `icons-plugin` |  | the build plugin that ships only the glyphs a build names, for vite, rollup, rolldown and esbuild |
@@ -206,6 +207,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `paint` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | fills, strokes, gradients and dashes as plain data |
 | `stroke` |  | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
 | `renderer` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
+| `pdf` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | PDF documents from draw commands, with selectable embedded text |
 | `text` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | styled runs, kerned layout, wrapping and measurement |
 | `text-dom` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | in-place text editing: a contenteditable overlay that reads and writes styled runs |
 | `bidi` | <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | the Unicode Bidirectional Algorithm (UAX #9) |
@@ -218,6 +220,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `prefs` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a preferences schema, a store that validates, migrates and persists against it, and React hooks over the store |
 | `diagram` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
 | `diagram-elk` |  | an ELK layout adapter: lays a diagram out once with elkjs, ports, labels and nested groups included |
+| `diagram-formats` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | diagrams to files: one page as an SVG document or a PNG image |
 | `guides` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | WebGL-rendered widgets composited into a canvas |
 | `animator` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"> | tweens, springs, holds, staggers and timelines that combine on targets, on one frame loop; no scene |
@@ -226,12 +229,14 @@ Every package is published under `@weasel-js` and released together at one versi
 | `kernel3d` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
 | `symmetry` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | live symmetry groups: a container whose mirrored, rotated and repeated copies are drawn from its real children, so every edit reaches every copy |
 | `path-tools` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | path-editing tools as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, path effects, and warps |
+| `rig` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | rigging tools: the bone tool, which draws and edits a node's skeleton, and the weight tool, which paints how much each joint moves the paths under it |
 | `cursor` |  | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a magnifier model: where it's aimed, how far it magnifies, what's under it |
 | `audio` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webaudio.svg" width="20" height="20" alt="Plays through Web Audio" title="Plays through Web Audio"><img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | a Web Audio engine: voices, buses, lookahead scheduling, spatialization |
 | `d3` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | d3 data-join and transitions over `useScene` |
 | `theme` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | design tokens as CSS variables and a parallel TypeScript export |
 | `ui` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | React chrome components for weasel apps |
+| `devtools` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a panel that reads and steers every canvas on a page: its scene tree, state, dispatch trace and frame cost |
 | `labkit` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | React widgets for self-contained interactive lab pages |
 | `forge` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a component workshop on labkit: stories in isolated frames, controls and state in lab trials |
 

@@ -126,8 +126,9 @@ export interface StageCapability<TS = unknown, TC = unknown> {
  * 3D sibling of `canvas` and `stage`. The trial owns the camera: it keeps it in
  * the trial's `view` as a kernel3d `Camera3d`, so it persists and Clone copies
  * it, and turns it with the trial's gestures. The instrument's DOM fills the
- * camera's element and reads the camera with `as3DView(ctx.trial.view)`, or
- * `useTrialOrbit()` anywhere in the trial. Not combined with `canvas` or `stage`.
+ * camera's element; whatever draws the scene reads the camera with
+ * `useOrbitView()`, and chrome reads it with `useTrialOrbit()`. Not combined
+ * with `canvas` or `stage`.
  */
 export interface OrbitCapability<TS = unknown, TC = unknown> {
   /** Where the camera opens, and where Reset and the `home` gesture return it:
@@ -141,6 +142,12 @@ export interface OrbitCapability<TS = unknown, TC = unknown> {
   /** As `CanvasCapability.gestures`. A drag turns the camera and Shift+drag
    *  pans its target; the wheel and a pinch dolly; a double click goes home. */
   gestures?: CameraGestures;
+  /** The camera holds still: the trial binds none of its gestures, whatever
+   *  `gestures` or `<Lab gestures>` say. The instrument can still move it with
+   *  `setCamera`, and the lab's zoom chrome still dollies it. A 3D lab that
+   *  wants no camera controls declares this rather than leaving `orbit` out,
+   *  which `useOrbitView` warns of. */
+  fixed?: boolean;
   /** As `StageCapability.overlay`. */
   overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
 }
@@ -228,7 +235,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   deserialize?: (data: unknown, config: TC) => TS;
   canvas?: CanvasCapability<TS, TC>;
   stage?: StageCapability<TS, TC>;
-  orbit?: OrbitCapability<TS, TC>;
+  /** `false` says the instrument draws 3D with a camera of its own, which
+   *  silences the warning a 3D view in a trial with no orbit raises. */
+  orbit?: OrbitCapability<TS, TC> | false;
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;

@@ -73,6 +73,7 @@ export type {
   BodyTarget,
   BodyKind,
   BodyClassification,
+  DoubleClickBody,
   IngestItem,
   KeyEvent,
   KeyHeldEvent,
@@ -120,6 +121,7 @@ export type {
   KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeySpecsFromModsOptions, KeyLabels,
 } from './ui/keySpecsFromMods';
 export { keySpecsFromShortcut } from './ui/keySpecsFromShortcut';
+export { keySpecFromCode } from './ui/keySpecFromCode';
 export { formatShortcut, formatShortcutParts } from './ui/formatShortcut';
 export type { ShortcutInput, FormatShortcutOptions } from './ui/formatShortcut';
 export { fixedSeat, nearestPortalHost } from './ui/fixedSeat';

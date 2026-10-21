@@ -7,8 +7,11 @@
  * measures, and they would make what it does measure harder to read.
  */
 
-import { cameraViewProjection, type Camera3d, type ChromeBox } from '@weasel-js/kernel3d';
+import {
+  cameraViewProjection, type Camera3d, type ChromeBox, type ScreenLine, type ScreenPoint,
+} from '@weasel-js/kernel3d';
 import { compose, identity, multiply, type Mat4 } from '@weasel-js/geom/3d';
+import { cubeData, gridData, sphereData } from './meshes3d';
 import { aabbOfSolid, type Pose3, type SolidKind } from './scene3d';
 
 /** Translucency of an uncommitted pose. The 2D ghost layer uses 0.85; a lit
@@ -24,6 +27,24 @@ const CHROME_COLORS: ReadonlyArray<readonly ['selection' | 'gesture', readonly [
   ['selection', [1, 0.85, 0.3]],
   ['gesture', [0.45, 0.8, 1]],
 ];
+
+/** What the snap in flight met, drawn over the chrome. */
+const SNAP_COLOR = [1, 0.4, 0.65] as const;
+/** Half the side of the square a snapped point is marked with, in CSS px. */
+const SNAP_POINT_HALF = 4;
+
+/** Snap marks in the pane's own CSS px, as `projectSnapMarks` hands them back
+ *  less the pane's origin. */
+export interface SnapDraw {
+  lines: readonly ScreenLine[];
+  points: readonly ScreenPoint[];
+}
+
+type Segment = readonly [number, number, number, number];
+
+function boxSegments(x0: number, y0: number, x1: number, y1: number): Segment[] {
+  return [[x0, y0, x1, y0], [x1, y0, x1, y1], [x1, y1, x0, y1], [x0, y1, x0, y0]];
+}
 
 export interface SolidDraw {
   pose: Pose3;
@@ -51,6 +72,7 @@ export interface Renderer3d {
     rect: DeviceRect,
     chrome: readonly ChromeBox[],
     cssSize: { width: number; height: number },
+    snap?: SnapDraw,
   ): void;
   dispose(): void;
 }
@@ -134,63 +156,6 @@ function link(gl: WebGL2RenderingContext, vertexSrc: string, fragmentSrc: string
   return program;
 }
 
-function cubeData(): { positions: number[]; normals: number[] } {
-  const faces: Array<[number[], number[], number[], number[], number[]]> = [
-    [[0, 0, 1], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]],
-    [[0, 0, -1], [0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, -0.5]],
-    [[1, 0, 0], [0.5, -0.5, 0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5]],
-    [[-1, 0, 0], [-0.5, -0.5, -0.5], [-0.5, -0.5, 0.5], [-0.5, 0.5, 0.5], [-0.5, 0.5, -0.5]],
-    [[0, 1, 0], [-0.5, 0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, -0.5], [-0.5, 0.5, -0.5]],
-    [[0, -1, 0], [-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5]],
-  ];
-  const positions: number[] = [];
-  const normals: number[] = [];
-  for (const [normal, a, b, c, d] of faces) {
-    for (const v of [a, b, c, a, c, d]) {
-      positions.push(...v);
-      normals.push(...normal);
-    }
-  }
-  return { positions, normals };
-}
-
-function sphereData(segments = 24, rings = 16): { positions: number[]; normals: number[] } {
-  const positions: number[] = [];
-  const normals: number[] = [];
-  const at = (ring: number, seg: number): number[] => {
-    const phi = (ring / rings) * Math.PI;
-    const theta = (seg / segments) * Math.PI * 2;
-    return [
-      0.5 * Math.sin(phi) * Math.cos(theta),
-      0.5 * Math.cos(phi),
-      0.5 * Math.sin(phi) * Math.sin(theta),
-    ];
-  };
-  for (let ring = 0; ring < rings; ring++) {
-    for (let seg = 0; seg < segments; seg++) {
-      const a = at(ring, seg);
-      const b = at(ring + 1, seg);
-      const c = at(ring + 1, seg + 1);
-      const d = at(ring, seg + 1);
-      for (const v of [a, c, b, a, d, c]) {
-        positions.push(...v);
-        const len = Math.hypot(v[0], v[1], v[2]) || 1;
-        normals.push(v[0] / len, v[1] / len, v[2] / len);
-      }
-    }
-  }
-  return { positions, normals };
-}
-
-function gridData(half = 8, step = 1): number[] {
-  const lines: number[] = [];
-  for (let i = -half; i <= half; i += step) {
-    lines.push(i, 0, -half, i, 0, half);
-    lines.push(-half, 0, i, half, 0, i);
-  }
-  return lines;
-}
-
 function makeMesh(
   gl: WebGL2RenderingContext,
   positions: number[],
@@ -270,7 +235,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     },
 
-    draw(solids, camera, rect, chrome, cssSize) {
+    draw(solids, camera, rect, chrome, cssSize, snap) {
       if (rect.w <= 0 || rect.h <= 0) return;
 
       gl.enable(gl.SCISSOR_TEST);
@@ -350,32 +315,33 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
         gl.disable(gl.BLEND);
       }
 
-      if (chrome.length > 0) {
-        gl.disable(gl.DEPTH_TEST);
-        gl.useProgram(lineProgram);
-        gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(identity()));
-        gl.bindVertexArray(dynamicLines.vao);
-        gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
-        for (const [tint, rgb] of CHROME_COLORS) {
-          const verts: number[] = [];
-          for (const box of chrome) {
-            if ((box.tint ?? 'selection') !== tint) continue;
-            const x0 = (box.x / cssSize.width) * 2 - 1;
-            const x1 = ((box.x + box.width) / cssSize.width) * 2 - 1;
-            const y0 = 1 - (box.y / cssSize.height) * 2;
-            const y1 = 1 - ((box.y + box.height) / cssSize.height) * 2;
-            const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-            for (let i = 0; i < 4; i++) {
-              const a = corners[i];
-              const b = corners[(i + 1) % 4];
-              verts.push(a[0], a[1], 0, b[0], b[1], 0);
-            }
-          }
-          if (verts.length === 0) continue;
-          gl.uniform3f(lineUniforms.color, rgb[0], rgb[1], rgb[2]);
-          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
-          gl.drawArrays(gl.LINES, 0, verts.length / 3);
-        }
+      // Chrome and snap marks are screen space, over everything.
+      gl.disable(gl.DEPTH_TEST);
+      gl.useProgram(lineProgram);
+      gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(identity()));
+      gl.bindVertexArray(dynamicLines.vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
+      const drawSegments = (segments: readonly Segment[], rgb: readonly [number, number, number]) => {
+        if (segments.length === 0) return;
+        const verts: number[] = [];
+        const x = (v: number) => (v / cssSize.width) * 2 - 1;
+        const y = (v: number) => 1 - (v / cssSize.height) * 2;
+        for (const [ax, ay, bx, by] of segments) verts.push(x(ax), y(ay), 0, x(bx), y(by), 0);
+        gl.uniform3f(lineUniforms.color, rgb[0], rgb[1], rgb[2]);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+        gl.drawArrays(gl.LINES, 0, verts.length / 3);
+      };
+      for (const [tint, rgb] of CHROME_COLORS) {
+        drawSegments(chrome
+          .filter((box) => (box.tint ?? 'selection') === tint)
+          .flatMap((box) => boxSegments(box.x, box.y, box.x + box.width, box.y + box.height)), rgb);
+      }
+      if (snap) {
+        const h = SNAP_POINT_HALF;
+        drawSegments([
+          ...snap.lines.map((l): Segment => [l.from.x, l.from.y, l.to.x, l.to.y]),
+          ...snap.points.flatMap((p) => boxSegments(p.at.x - h, p.at.y - h, p.at.x + h, p.at.y + h)),
+        ], SNAP_COLOR);
       }
 
       gl.bindVertexArray(null);

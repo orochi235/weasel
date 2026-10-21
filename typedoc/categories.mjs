@@ -25,6 +25,7 @@ export const RULES = [
   ['packages/core/src/core/stylus', 'Tools & gestures'],
 
   ['packages/renderer/src', 'Rendering'],
+  ['packages/pdf/src', 'Rendering'],
   ['packages/core/src/canvas', 'Rendering'],
 
   ['packages/core/src/tools', 'Tools & gestures'],
@@ -39,6 +40,7 @@ export const RULES = [
   ['packages/core/src/affordances', 'Selection & actions'],
   ['packages/core/src/animation', 'Rendering'],
   ['packages/core/src/debug', 'Extension points'],
+  ['packages/core/src/devtools', 'Extension points'],
   ['packages/core/src/icons', 'Extension points'],
   ['packages/core/src/iconRegistry', 'Extension points'],
   ['packages/core/src/kitSettings', 'Extension points'],

@@ -1,5 +1,4 @@
 export type { UseRotateOptions } from './options';
-export { DEFAULT_ROTATE_BEHAVIORS, DEFAULT_ROTATION_SNAP_STEP, snapRotationWithModifier } from './behaviors';
 export {
   aabbCenter,
   rotatePoint,

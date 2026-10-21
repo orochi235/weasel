@@ -2,6 +2,7 @@
  * A scene's document state — its nodes, roots, and layers — with the modules
  * that read and write it directly.
  */
+import { createDocStore, type SerializedDoc } from './docValues';
 import { createLayerStack } from './layerStack';
 import { createLockGuard } from './lockGuard';
 import { createNodeFnFields } from './nodeFnFields';
@@ -17,12 +18,14 @@ export function createSceneState<TData, TLayer extends string, TPose>(
   initialLayers: readonly LayerRecord<TLayer>[],
   /** Called when a node is given a layout. */
   layoutDeclared: () => void,
+  initialDoc?: SerializedDoc,
 ) {
   const state = {
     nodes: new Map<NodeId, Node<TData, TLayer, TPose>>(),
     roots: [] as NodeId[],
     layers: [] as LayerRecord<TLayer>[],
     layerIndex: new Map<TLayer, number>(),
+    docValues: new Map<string, unknown>(),
   };
   const order = createRenderOrder(state);
   /** The registry-keyed function fields, each with its key maps. A function
@@ -34,6 +37,8 @@ export function createSceneState<TData, TLayer extends string, TPose>(
   const layers = createLayerStack(state, order.invalidate);
   layers.reset(initialLayers);
   const locks = createLockGuard(state);
+  const docValues = createDocStore(state.docValues);
+  docValues.reset(initialDoc);
 
   const reads: Pick<
     Scene<TData, TLayer, TPose>,
@@ -50,7 +55,7 @@ export function createSceneState<TData, TLayer extends string, TPose>(
       const node = state.nodes.get(id);
       return node?.kind === 'container' ? (node.layout ?? null) : null;
     },
-    toJSON: () => serializeScene(state, fnFields),
+    toJSON: () => serializeScene(state, fnFields, docValues.toJSON()),
   };
 
   return {
@@ -62,9 +67,11 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     store,
     layers,
     reads,
+    docValues,
 
-    /** Empty the document and give it `records` as its layers. */
-    reset(records: readonly LayerRecord<TLayer>[]): void {
+    /** Empty the document and give it `records` as its layers and `values` as its document values. */
+    reset(records: readonly LayerRecord<TLayer>[], values?: SerializedDoc): void {
+      docValues.reset(values);
       store.dependents.clear();
       store.childDerived.clear();
       state.nodes.clear();

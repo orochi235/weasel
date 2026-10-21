@@ -18,7 +18,8 @@ describe('fileDates', () => {
     expect(fileDates(LOG, ['pkg/ui/src/Badge.tsx']).get('pkg/ui/src/Badge.tsx')).toEqual({
       created: '2026-06-01T10:00:00Z',
       modified: '2026-10-01T10:00:00Z',
-      commit: 'c1',
+      createdBy: 'c1',
+      modifiedBy: 'c5',
     });
   });
 
@@ -27,7 +28,8 @@ describe('fileDates', () => {
     expect(dates.get('pkg/ui/src/Chip.tsx')).toEqual({
       created: '2026-09-01T10:00:00Z',
       modified: '2026-09-01T10:00:00Z',
-      commit: 'c4',
+      createdBy: 'c4',
+      modifiedBy: 'c4',
     });
     expect(dates.has('pkg/ui/src/New.tsx')).toBe(false);
   });
@@ -57,7 +59,7 @@ describe('createHistoryReader', () => {
       if (args[0] === 'name-rev') {
         return args
           .filter((arg) => /^c\d$/.test(arg))
-          .map((hash) => (hash === 'c1' ? 'v0.4.0~3' : 'undefined'))
+          .map((hash) => ({ c1: 'v0.4.0~3', c5: 'v0.5.0~1' })[hash] ?? 'undefined')
           .join('\n');
       }
       throw new Error(`unexpected git ${args[0]}`);
@@ -65,12 +67,12 @@ describe('createHistoryReader', () => {
     return { git, calls, state };
   }
 
-  it('keys each history by the source as the vite root names it', async () => {
+  it('keys each history by the source as the vite root names it, with the release of its first and last change', async () => {
     const { git } = repo();
     const history = await createHistoryReader('/nowhere/repo/pkg/forge', git).read(['../ui/src/Badge.tsx', '../ui/src/Chip.tsx']);
     expect(history).toEqual({
-      '../ui/src/Badge.tsx': { created: '2026-06-01T10:00:00Z', modified: '2026-10-01T10:00:00Z', introduced: '0.4.0' },
-      '../ui/src/Chip.tsx': { created: '2026-09-01T10:00:00Z', modified: '2026-09-01T10:00:00Z', introduced: null },
+      '../ui/src/Badge.tsx': { created: '2026-06-01T10:00:00Z', modified: '2026-10-01T10:00:00Z', introduced: '0.4.0', modifiedIn: '0.5.0' },
+      '../ui/src/Chip.tsx': { created: '2026-09-01T10:00:00Z', modified: '2026-09-01T10:00:00Z', introduced: null, modifiedIn: null },
     });
   });
 

@@ -4,6 +4,7 @@ pnpm-lock.yaml
 dist
 dist-demo
 dist-draw
+dist-chart
 dist-forge
 coverage
 .DS_Store
@@ -44,3 +45,6 @@ __pycache__/
 # Written by typedoc/packageOptions.mjs each time the API reference builds
 packages/*/tsconfig.docs.json
 !packages/icons-plugin/src/fixtures/**
+
+# Xcode wrapper the devtools extension's safari script generates
+apps/devtools-extension/safari/

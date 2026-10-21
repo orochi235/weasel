@@ -101,7 +101,7 @@
 }
 
 .item[aria-selected='true'] > .row {
-  background: var(--wzl-border);
+  background: var(--wzl-tree-selected, var(--wzl-border));
 }
 
 .item[data-muted] > .row {

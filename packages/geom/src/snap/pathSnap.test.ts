@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ellipsePath } from '../paths/builder';
 import { pathFromD } from '../paths/pathFromD';
-import { createPathSnapIndex, findPathSnap } from './pathSnap';
+import { createPathSnapIndex, findPathSnap, findPathSnaps } from './pathSnap';
 
 const cross = createPathSnapIndex([pathFromD('M0 0 L100 100'), pathFromD('M0 100 L100 0')]);
 const circle = createPathSnapIndex([ellipsePath({ x: -10, y: -10, width: 20, height: 20 })]);
@@ -70,5 +70,13 @@ describe('anchor and center targets', () => {
     const box = createPathSnapIndex([pathFromD('M0 0 H40 V20 H0 Z')], [{ kind: 'center', x: 20, y: 10, paths: [0] }]);
     expect(findPathSnap(box, { x: 38, y: 2 }, { radius: 4 })).toMatchObject({ kind: 'anchor', x: 40, y: 0 });
     expect(findPathSnap(box, { x: 21, y: 11 }, { radius: 4 })).toMatchObject({ kind: 'center', x: 20, y: 10 });
+  });
+});
+
+describe('findPathSnaps', () => {
+  it('returns every kind in range, and nearest only when none else is', () => {
+    const line = createPathSnapIndex([pathFromD('M0 0 L10 0')]);
+    expect(findPathSnaps(line, { x: 5, y: 1 }, { radius: 6 }).map((h) => h.kind).sort()).toEqual(['anchor', 'anchor', 'midpoint']);
+    expect(findPathSnaps(line, { x: 3, y: 1 }, { radius: 1.5 }).map((h) => h.kind)).toEqual(['nearest']);
   });
 });

@@ -1,12 +1,12 @@
-import type { PropertyListPack, PropertyRowLayout } from '@weasel-js/ui';
+import type { PropertyListPack, PropertyRowLayout } from '@weasel-js/ui/components/Properties';
 import type { SectionSpec } from '../config/types';
 
 /** How a panel packs its rows into the two-column property grid.
  *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colors) sit
  *     two per row; the ones that need the width — text, sliders, segmented
  *     toggles — span it.
- *   - `'pairs'`: every row pairs. A control that needs the full width says so
- *     itself, with `<PropertyRow span>`.
+ *   - `'pairs'`: every built-in row pairs. A row a renderer draws, a bar, and a
+ *     group take the whole width.
  *   - `'one-up'`: one control per row, colors excepted.
  */
 export type ControlPack = 'auto' | 'pairs' | 'one-up';

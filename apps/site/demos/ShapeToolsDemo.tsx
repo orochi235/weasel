@@ -6,7 +6,7 @@ import {
   type ToolsApi,
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
-import { ToolPalette } from '@weasel-js/ui';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;

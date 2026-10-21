@@ -40,6 +40,20 @@ describe('offenders', () => {
     expect(offenders(file('/* .a { text-transform: uppercase; } */\n.b { color: red; }'))).toEqual([]);
   });
 
+  it('passes a row label whose size reads the params property', () => {
+    expect(offenders(file('.row > .rowLabel { font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm)); }'))).toEqual([]);
+  });
+
+  it('catches a row label set at a size of its own', () => {
+    expect(offenders(file('.a { color: red; }\n.rowLabel,\n.lk-pair-label { font-size: var(--wzl-font-size-sm); }'))).toMatchObject([
+      { line: 3, problem: expect.stringContaining('row label font-size: var(--wzl-font-size-sm)') },
+    ]);
+  });
+
+  it('leaves a size alone on what sits inside a row label', () => {
+    expect(offenders(file('.rowLabel .help { font-size: var(--wzl-font-size-2xs); }\n.rowLabelNote { font-size: 9px; }'))).toEqual([]);
+  });
+
   it('reports the line the rule starts on', () => {
     expect(offenders(file('.a { color: red; }\n\n.b {\n  text-transform: none;\n  letter-spacing: 0;\n}'))[0]).toMatchObject({ line: 3 });
   });

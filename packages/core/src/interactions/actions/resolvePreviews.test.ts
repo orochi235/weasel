@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import type { Scene } from 'core/scene/types';
+import { asNodeId, type Scene } from 'core/scene/types';
 import type { GesturePreviewSource } from '../../canvas/gestureBounds';
 import { flattenPreviews, resolvePreviews } from './resolvePreviews';
 
@@ -64,9 +64,12 @@ describe('resolvePreviews', () => {
     expect(entry?.pose).toEqual(AT(3));
   });
 
-  it('skips an id no source has a pose or data for', () => {
+  it('poses an id no source poses where the scene overrides put it', () => {
     const { scene, loose } = makeScene();
-    expect(resolvePreviews([{ previewIds: () => [loose] }], scene)).toEqual([]);
+    scene.overrides.hold().set([[asNodeId(loose), AT(42)]]);
+    const [entry] = resolvePreviews([{ previewIds: () => [loose] }], scene);
+    expect(entry?.pose).toEqual(AT(42));
+    expect(entry?.data).toEqual({ label: 'loose' });
   });
 
   it('skips an id with no node — an insert previews before it has one', () => {

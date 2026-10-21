@@ -13,10 +13,12 @@ import { createCornerWidgetsExtension, type CornerWidgetStyle } from './cornerSh
 import { editCornerAction } from './cornerShape/editCorner';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './constraints/anchorConstraints';
 import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
-import { createConstraintsExtension } from './constraints/constraintsExtension';
+import { createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE } from './constraints/constraintsExtension';
+import { createConstraintLinkMarks } from './constraints/constraintLinkMarks';
+import { linkAnchorAction } from './constraints/linkAnchor';
 import { extendToMeetAction } from './extend/extendToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
-import { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
 import { lengthenPathAction, lengthenToolAction } from './lengthen/lengthenPath';
@@ -32,6 +34,7 @@ import { resamplePathAction } from './resample/resample';
 import {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
 } from './pathEffects/actions';
+import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 import { simplifyBrushAction, simplifyBrushToolAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
 import { spiroPreset } from './spiro/spiroPreset';
@@ -62,11 +65,11 @@ export function createSoftSelectionPreset(options: () => SoftSelectionOptions | 
 
 /**
  * Handle snapping: a dragged control handle's angle snaps to steps and to the
- * line through its anchor's other handle, as `options` says, read every move.
- * Null or undefined from `options` leaves the handle unsnapped.
+ * line through its anchor's other handle, as `options` says. A thunk is read
+ * every move, and null or undefined from it leaves the handle unsnapped.
  */
-export function createHandleSnapPreset(options: () => HandleSnapOptions | null | undefined = () => ({})): FeaturePreset {
-  return { id: 'handleSnap', pathEdit: [createHandleSnapExtension(options)] };
+export function createHandleSnapPreset(options: HandleSnapOptionsInput = {}): FeaturePreset {
+  return { id: 'handleSnap', pathEdit: [createHandleSnapExtension(options)], snapSources: [handleSnapSource(options)] };
 }
 
 /** Handle snapping every 45°, within 6°, and to the opposite handle. */
@@ -145,13 +148,16 @@ export function createBalancePreset(style: PathEditBalanceStyle = {}): FeaturePr
 /** Balance handles with their default look. */
 export const balancePreset: FeaturePreset = createBalancePreset();
 
-/** Path constraints: their actions, their marks in `style`'s colors, and
- *  every edit of a constrained path finished so they hold. */
+/** Path constraints: their actions, Alt-dragging an anchor onto another
+ *  node to link it there, their marks in `style`'s colors, broken links
+ *  marked wherever they are, and every edit of a constrained path finished
+ *  so they hold. */
 export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {}): FeaturePreset {
   return {
     id: 'constraints',
-    actions: [constrainAnchorsAction, unconstrainAnchorsAction, deleteConstraintAction],
+    actions: [constrainAnchorsAction, unconstrainAnchorsAction, deleteConstraintAction, linkAnchorAction],
     pathEdit: [createConstraintsExtension(style)],
+    contributions: [createConstraintLinkMarks({ ...DEFAULT_CONSTRAINT_STYLE, ...style })],
   };
 }
 
@@ -204,10 +210,14 @@ export const segmentTypePreset: FeaturePreset = {
 };
 
 /** Blend, Bend along, and Repeat along, live, and the actions that edit and
- *  expand them. The scene must hold `withPathEffectsRegistry`'s derivations. */
+ *  expand them and set or release a blend's spine. The scene must hold
+ *  `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
   id: 'pathEffects',
-  actions: [blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction],
+  actions: [
+    blendAction, bendAlongAction, repeatAlongAction, editPathEffectAction, expandPathEffectAction,
+    setBlendSpineAction, releaseBlendSpineAction,
+  ],
 };
 
 /** `expandWarp` and `configureWarp`; the warp tools bring their own drags. */

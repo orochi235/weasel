@@ -1,9 +1,14 @@
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { describe, expect, it } from 'vitest';
+import { COMMIT_ENV } from './lib/fleet-tree.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const run = promisify(execFile);
+// A check that starts vitest itself (check:test-projects) would otherwise inherit a branch run's selection.
+const { [COMMIT_ENV]: _selected, ...CHECK_ENV } = process.env;
 const CHECK = /^\s*-\s*run:\s*npm run ((?:check:[\w-]+|audit:[\w-]+|typecheck|lint)\b.*?)\s*$/;
 
 const BUILD = /^\s*-\s*run:\s*npm run build\b/;
@@ -36,9 +41,10 @@ describe('the checks ci.yml runs as steps', () => {
     expect(names.filter((name) => name.startsWith('check:')).length).toBeGreaterThan(10);
   });
 
-  it.each(checks.map((args) => [args.join(' '), args] as const))('npm run %s', (_, args) => {
+  // Concurrent, or typecheck, lint, and check:needs queue behind each other for five minutes.
+  it.concurrent.each(checks.map((args) => [args.join(' '), args] as const))('npm run %s', async (_, args) => {
     try {
-      execFileSync('npm', ['run', '--silent', ...args], { cwd: ROOT, encoding: 'utf8', stdio: 'pipe', maxBuffer: 1 << 26 });
+      await run('npm', ['run', '--silent', ...args], { cwd: ROOT, env: CHECK_ENV, encoding: 'utf8', maxBuffer: 1 << 26 });
     } catch (error) {
       expect.fail(output(error));
     }

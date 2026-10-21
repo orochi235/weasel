@@ -40,7 +40,7 @@ function bar(values: Record<string, unknown>, onChange = vi.fn()) {
 }
 
 describe('Bar menu group', () => {
-  it('opens as a menu: actions as items, a flag checked, a choice as radio rows, a field left out', () => {
+  it('opens as a menu: actions as items, a flag checked, a choice as radio rows, a number as a field', () => {
     bar({ 'view.arrange.snap': true, 'view.arrange.align': 'right' });
     const trigger = screen.getByRole('button', { name: 'Arrange' });
     expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
@@ -49,7 +49,7 @@ describe('Bar menu group', () => {
     expect(screen.getByRole('menuitem', { name: 'Bring to front' })).toBeDefined();
     expect(screen.getByRole('menuitemcheckbox', { name: /Snap/ })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('menuitemcheckbox', { name: /Right/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.queryByText('Gap')).toBeNull();
+    expect(screen.getByRole('menuitem', { name: /Gap/ })).toContainElement(screen.getByRole('spinbutton', { name: 'Gap' }));
   });
 
   it('writes through the bar’s onChange at the bar’s own path', () => {

@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { LabBoundary, TrialIdContext } from '@weasel-js/labkit';
-import { OverlayPortalProvider } from '@weasel-js/ui';
+import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import {
   type ReactNode,
   type RefObject,
@@ -12,7 +12,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { runAxe } from '../frame/a11y';
+import { auditElement } from '../frame/a11y';
+import { createA11yHighlighter } from '../frame/a11yHighlight';
 import { createOverrides, type Overrides, scanCssVars } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
 import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
@@ -21,7 +22,7 @@ import type { CssVarReport, Globals, Layout, ToFrame } from '../protocol/message
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
-import { type A11yOutcome, TrialFramesContext } from './trialFrames';
+import { TrialFramesContext } from './trialFrames';
 
 /** Props for `TrialHost`. */
 export interface TrialHostProps {
@@ -41,6 +42,19 @@ const VARS_SETTLE_MS = 100;
 
 /** A selector matching only the element carrying `id`. */
 const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
+
+/**
+ * The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a document of
+ * its own. Overlays portal to the host, outside the scroller, so they stay put as it scrolls, and a modal takes the
+ * host for its viewport.
+ */
+function StoryContent({ host, children }: { host: HTMLElement; children: ReactNode }) {
+  return (
+    <LabBoundary>
+      <OverlayPortalProvider container={host} contained>{children}</OverlayPortalProvider>
+    </LabBoundary>
+  );
+}
 
 /**
  * One story's box in the workshop document: what a frame document was, as an element. It applies the globals to
@@ -97,18 +111,15 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
           });
     mutations?.observe(host, { subtree: true, childList: true, characterData: true, attributes: true });
 
+    const highlighter = createA11yHighlighter(doc);
     const send = (msg: ToFrame) => {
+      if (msg.type === 'a11y.highlight') highlighter.show(msg.targets);
       if (msg.type !== 'vars.set') return;
       overrides.set(msg.name, msg.value);
       if (lastVars?.some((v) => v.name === msg.name)) scan();
     };
-    const audit = async (): Promise<A11yOutcome> => {
-      let outcome: A11yOutcome;
-      try {
-        outcome = { ok: true, report: await runAxe(host, { page: false }) };
-      } catch (error) {
-        outcome = { ok: false, message: error instanceof Error ? error.message : String(error) };
-      }
+    const audit = async () => {
+      const outcome = await auditElement(host, { page: false });
       if (trialId) frames?.reportA11y(trialId, outcome);
       return outcome;
     };
@@ -116,6 +127,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
 
     return () => {
       disconnect();
+      highlighter.dispose();
       mutations?.disconnect();
       clearTimeout(settleTimer);
       overrides.dispose();
@@ -175,13 +187,9 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       data-fg-layout={layout}
       data-pending={pending || undefined}
     >
-      {host && inView ? (
-        // The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a
-        // document of its own.
-        <LabBoundary>
-          <OverlayPortalProvider container={host}>{children(globals)}</OverlayPortalProvider>
-        </LabBoundary>
-      ) : null}
+      <div className="fg-story__scroll">
+        {host && inView ? <StoryContent host={host}>{children(globals)}</StoryContent> : null}
+      </div>
     </div>
   );
 }

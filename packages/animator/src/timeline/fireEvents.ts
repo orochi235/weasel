@@ -6,6 +6,32 @@ import type { Track } from './types';
  *  With `fromOpen`, an event exactly at `from` fires too. */
 export type FireEvents = (tracks: Track[], from: number, to: number, fromOpen: boolean) => void;
 
+/** Where a timeline has fired its events up to. Events fire only going forward: a move back
+ *  fires nothing, and the next move forward fires from where it stopped. */
+export interface EventCursor {
+  /** Fires the events the playhead crossed going to `to`, and stands there. */
+  to(tracks: Track[], to: number): void;
+  /** Stands at `t`. With `open`, an event exactly at `t` fires on the next move: where a seek
+   *  lands, or a new lap starts. */
+  place(t: number, open: boolean): void;
+}
+
+export function createEventCursor(fire: FireEvents): EventCursor {
+  let at = -Infinity;
+  let open = false;
+  return {
+    to(tracks, to) {
+      fire(tracks, at, to, open);
+      at = to;
+      open = false;
+    },
+    place(t, o) {
+      at = t;
+      open = o;
+    },
+  };
+}
+
 /** `booked` says whether the timeline has a booking clock: an event with `book` on one that has
  *  none warns, once. */
 export function createEventFirer(report: TimelineReport | undefined, booked: boolean): FireEvents {

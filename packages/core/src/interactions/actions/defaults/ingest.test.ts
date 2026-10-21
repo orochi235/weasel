@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ingestAction } from './ingest';
+import { MOVE_NODES_REQUIRES } from '../moveNodes';
 import { registerContentHandler, _resetContentHandlersForTests } from 'features/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 
@@ -52,6 +53,20 @@ describe('ingestAction', () => {
     const ctx = handle.mock.calls[0][1];
     expect(ctx.viewportWorldRect()).toEqual({ x: 0, y: 0, width: 800, height: 600 });
     expect(ctx.resolveSrc).toBe(resolveSrc);
+  });
+
+  it('declares every dep moveNodes reads, so a handler can move what it inserts', () => {
+    for (const name of MOVE_NODES_REQUIRES) expect(ingestAction.requires).toContain(name);
+  });
+
+  it('declares the snap dep and hands it to handlers as ctx.snap', async () => {
+    expect(ingestAction.requires).toContain('snap');
+    const handle = vi.fn();
+    registerContentHandler({ id: 't', match: 'image/*', handle });
+    const snap = { begin: vi.fn() };
+    runIngestAction({ ...deps(), snap }, { items: [png], worldX: 10, worldY: 20 });
+    await vi.waitFor(() => expect(handle).toHaveBeenCalled());
+    expect(handle.mock.calls[0][1].snap).toBe(snap);
   });
 
   it('no-ops without items or without the ingestion dep', () => {

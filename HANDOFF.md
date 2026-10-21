@@ -4,6 +4,76 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Overnight pass, 2026-10-20 (status at 07:20)
+
+For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
+"overnight pass". Nothing is pushed.
+
+**`main` is green at `d910b2ff2`** (full fleet run on teitou: 27923 passed, 0 failed). Twenty-seven
+merges from this pass; the TODO entries it retired are in `git log`.
+
+🔴 **GitHub CI on `main` has been red since 2026-10-19 04:11**, unseen because the fleet runs only
+Node 24 on macOS. The Node 22 leg's cause is fixed here (the icon plugin walks its parse tree
+itself) and passes on Node 22 on the fleet, but CI has not run it: nothing is pushed. Also open
+there, in the P2 "CI tests Node 22 and Linux Chromium": ten Linux-only browser failures last seen
+00:45 with no run since, and Visual Regression failing 7 of 87.
+
+🧨 **API changes made on my rulings**, each one commit plus a `patch` changeset saying so:
+`useLeafAction`'s `reason` is `disabledReason`; `RunStoryOptions.viewport` is gone; move, resize and
+rotate handles drop `previewPose` (read `effectivePose`); `bone` and `weight` left core for a new
+`@weasel-js/rig`; `useLoupe` alone no longer aims (it needs `<LoupeGestures>`); a clearable params
+leaf holding nothing draws cleared. Revert the merge to undo any one.
+
+⚠️ **`@weasel-js/rig` has never been published.** The next release publishes it for the first
+time, and a checkout needs `npm ci` before a dev server there resolves it.
+
+⚠️ **The fleet gate skips every CI step after the build**, both consumer smokes among them; both
+had failed on `main` for a day under green fleet runs. Filed as a P2.
+
+✅ **Engine and UI:**
+- `ToolPalette` grid arrows (`useRovingTabIndex` `columns`), mirrored under right-to-left.
+- `moveNodes` moves ids as a drag commits them; weaselchart's stencil drop is insert-then-move.
+- A disabled bar button says why.
+- `selectTool.rotate: false` decided once, in preset resolution.
+- One node-kind classifier, the routing kind (`routeKind`), for canvas, palette and panel.
+- A transform preview carries pose once, in the scene's overrides.
+- `hover` takes `held`; the loupe aims through it.
+- Grid snapping and length fields read a container's unit scope, inserts included
+  (`SnapBegin.parent`). The document stores world units.
+- Every params surface reads a leaf's value through `prefLeafValue`.
+- A renamed baseline pref keeps its stored key in the schema editor.
+- The double-click window is measured from each event's own time.
+- The HUD's every-frame text makes about 38% less garbage (8.4 ms a frame at 5,000 glyphs, from
+  11.3; the DOM's 6.1 still wins, so its entry stays).
+- Five ui subpaths; nothing but labkit's passthrough imports the barrel.
+
+✅ **Tests that failed only under load, each fixed at its cause:** Rail Filterable (a 6–13 s
+Chromium page resize per story viewport), weaselchart's line jumps (a pixel reader opened the
+canvas's context first, without a stencil; now one shared reader, `CANVAS_CONTEXT_ATTRIBUTES`, and
+a lint rule), the diagram containers double-click (a frame's wait between clicks), and forge's
+"ResizeObserver loop" error on every page (a stale observer in labkit's sidebar). Both consumer
+smokes pass again, and `check:imports` now counts a `testing/` module a manifest exports.
+
+❓ **Should a swapping node take full fleet runs?** forge's timeline file took 88–102 s in the keiei
+runs that failed, 42 s in a keiei full run with 16 GB free, and 20–44 s on the other nodes; that the
+failures coincided with keiei's swap is inferred from `onto status`, not measured inside them. Keeping
+a swapping node out would be an onto setting; nothing was changed. The tests' own faults are fixed:
+the site routing test rendered all 46,000 elements of the real release history to find one heading
+(now a mocked changelog, 1.9–3 s to 0.32 s), and a timed-out timeline test's body leaked a mount into
+the next test (now tied to the test's abort signal). The entry is rewritten in `docs/TODO.md`.
+
+ℹ️ **Weak evidence:** the params absent-value tests were never seen failing (the red run synced the
+fixed tree); the unit-scope grid tests likewise. Nothing tonight was looked at in a browser by a
+person; the list is under "Not seen in a browser". keiei is short on memory and fails two files in
+most full runs (filed P3).
+
+🎫 *Filed: CI's Node 22 and Linux gap (P2), the gate's post-build gap (P2), keiei-only timeouts,
+the drawn grid per unit scope, a rekeyed-then-renamed pref reading as new (all P3).*
+
+🧹 *`main` is far ahead of `origin/main`; nothing pushed. One agent pushed its branch against its
+brief and deleted it at once; it is not on origin and started no CI run. An untracked
+`scripts/time-overlap.sh` in the main checkout is not from this pass.*
+
 ## State
 
 The sixth TODO pass merged on 2026-10-13: fifteen agents, one per `docs/TODO.md` section, took the
@@ -16,6 +86,17 @@ Split values in prefs landed the same day (`packages/prefs/README.md`, "Split va
 value held once per option of an enum leaf, folded by weight when read, and edited in `PrefsForm`.
 `prefsCss` writes such a store as CSS custom properties, and `pref` builds a schema in short
 form. The arc after them is a P2 entry in `docs/TODO.md`: a theme's tokens as a prefs schema.
+
+weaselchart's grid and snapping merged on 2026-10-20. It brings a page grid, snap to grid,
+alignment and spacing snaps, and a prefs schema with a Preferences dialog. Underneath, core's
+`SnapBegin` gained per-gesture `sources` and `omit`, and diagram's route handles now snap through
+core's snap session rather than their own (`docs/snapping.md`). Decisions taken in conversation and
+not visible in the code (2026-10-19):
+- Pipeline mode's route editing takes the same snap change, with no opt-out. That means
+  readout-colored guides, Shift to lock a bend's direction, and Ctrl to turn snapping off.
+- Grid and snapping are chart mode only. Pipeline mode's Look is a pref.
+- kernel3d honors `SnapBegin.omit` but not `sources`. Gesture sources are 2D-typed on purpose, and
+  a 3D host warns once if it is handed any.
 
 ## Menus: done
 
@@ -99,6 +180,12 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - Menus, 2026-10-16: a bar's menu flipping above its button near the viewport bottom, the WebGL
   menu placed under a rect, and a menu asset previewing open in the asset editor without taking
   focus while a row is renamed.
+- weaselchart, 2026-10-20: the grid, snap to grid, alignment and spacing marks on a move, a route
+  bend snapping to the grid with Shift and Ctrl, a stencil dropped beside a shape, and the
+  Preferences dialog (headless browser tests only; the grid screenshot is the one frame seen).
+- Overnight pass, 2026-10-20: a `ToolPalette` grid's arrow keys, a disabled bar button's tooltip,
+  a cleared clearable field in labkit drawing empty, the corner panel's shape row with no shape,
+  the loupe through a real drag, and a scoped container's length fields (no app passes `units` yet).
 - By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence
@@ -108,3 +195,4 @@ Passed its tests and was never looked at. Delete a line when someone has.
 - `fseventsd` on orochi sat at 99% CPU through the night of 2026-10-13 and delivered no directory
   events to `fs.watch`, which made forge's dev server serve stale modules. The cause was not
   found. forge warns at startup when its watcher is silent.
+

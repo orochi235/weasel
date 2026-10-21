@@ -6,13 +6,14 @@
  * the rest through it (and may shrink). One that gained children and whose
  * strategy has `arrive` then places them through it (and may refuse, or
  * grow). Any other changed container — one that reordered children, was
- * resized, or gained or lost children with neither hook — is put back in its
- * resting arrangement, `childPoses`.
+ * resized, had a child moved, or gained or lost children with neither hook —
+ * is put back in its resting arrangement, `childPoses`.
  *
  * `LayoutStrategy` is world-framed, so each pose is composed to world before
  * a strategy sees it and each result is rebased into its node's parent frame
  * after. A child already where the strategy puts it is left out, so a pass
- * that changes nothing writes nothing. A container this pass resizes is
+ * that changes nothing writes nothing. A child the pass moves takes its own
+ * descendants along (`carriedDescendants`). A container this pass resizes is
  * arranged in turn, so nested layouts settle in the same edit.
  */
 import {
@@ -22,6 +23,7 @@ import {
   type PoseComposition,
 } from './composeFrame';
 import type { ContainerBounds, LayoutArrival, LayoutChild, LayoutStrategy } from '../../layout/types';
+import { carriedDescendants } from './carryDescendants';
 import { definesFrame, documentPose, type PoseSource, type PosedNode } from './effectivePose';
 import { asRectPose } from './kitRegistry';
 import { samePoseValue } from './poseSnapshot';
@@ -126,8 +128,27 @@ export function runLayoutPass<TPose>(
     for (const [cid, pose] of result.poses) {
       const id = cid as NodeId;
       if (source.get(id)?.parent !== containerId) continue;
+      const before = frame.bounds(world(id), id);
       write(id, rebaseLocalPose(pa, pose, containerId, compose, decompose));
+      carry(id, before);
     }
+  };
+  /** Moves `id`'s descendants by however far its write just moved it from `before`. */
+  const carry = (id: NodeId, before: ContainerBounds | null): void => {
+    const after = frame.bounds(world(id), id);
+    if (before === null || after === null) return;
+    const dx = after.x - before.x;
+    const dy = after.y - before.y;
+    if (dx === 0 && dy === 0) return;
+    const carried = carriedDescendants(
+      { childrenOf: (cid) => source.childrenOf(cid), poses: pa, composition: source.composition },
+      id,
+      (pose, cid) => {
+        const b = frame.bounds(pose, cid);
+        return b === null ? null : frame.remap(pose, b, { ...b, x: b.x + dx, y: b.y + dy }, cid);
+      },
+    );
+    for (const [cid, pose] of carried) write(cid, pose);
   };
 
   while (queue.length > 0) {

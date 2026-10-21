@@ -16,9 +16,8 @@ import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { ClipboardIngestCtx, InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
-import type { ActionDeps } from '@weasel-js/routing';
-import type { IngestItem } from '@weasel-js/routing';
+import type { ClipboardIngestCtx, InsertDep, SnapDep, SvgIngestOptions } from 'interactions/actions/depSchema';
+import { admitIngestMime, type ActionDeps, type IngestItem } from '@weasel-js/routing';
 
 /** Context handed to every content handler for one ingest event. */
 export interface IngestCtx {
@@ -31,6 +30,10 @@ export interface IngestCtx {
   /** The kit insert dep — id/layer/undoable-op supplied; the canonical way
    *  for a handler to mint a node (`insert.commit(bounds, { kind, ... })`). */
   insert: InsertDep;
+  /** The canvas's snap dep, for a handler that places what it inserts where a
+   *  gesture would: begin a session, take `at()`, `end()`. Its points are ctx
+   *  coordinates: world on a 2D canvas, screen in a 3D host. */
+  snap?: SnapDep;
   /** Raw op commit for handlers that build their own ops. */
   applyOps(ops: Op[], label?: string): void;
   scene: Scene<unknown, string, unknown>;
@@ -66,7 +69,10 @@ export interface ContentHandlerEntry {
   /** Stable identifier — used for unregistration and debugging
    *  (`'kit:image'`, `'app:csv'`). */
   id: string;
-  /** MIME glob(s) (`'image/*'`, `'text/csv'`) or an item predicate. */
+  /** MIME glob(s) (`'image/*'`, `'text/csv'`) or an item predicate. A drop
+   *  or paste keeps string flavors of any exact MIME named here or in
+   *  `types` while the handler is registered, so a handler can claim a drag
+   *  from the app's own UI by a type of its own. */
   match: string | string[] | ((item: IngestItem) => boolean);
   /** For a predicate `match`: the MIME globs it could say yes to. A drag
    *  still in flight shows its MIMEs and no contents, so a predicate cannot be
@@ -80,13 +86,38 @@ export interface ContentHandlerEntry {
 }
 
 const HANDLERS: ContentHandlerEntry[] = [];
+const RELEASES = new Map<ContentHandlerEntry, (() => void)[]>();
+
+/** The exact MIMEs a handler names, for string flavors to be kept. A glob
+ *  names no one flavor, and `application/octet-stream` is what an untyped
+ *  file reports, never a string flavor anyone meant. */
+function namedMimes(entry: ContentHandlerEntry): string[] {
+  const named = [...(typeof entry.match === 'function' ? [] : [entry.match].flat()), ...(entry.types ?? [])];
+  return [...new Set(named)].filter((m) => !m.includes('*') && m !== 'application/octet-stream');
+}
+
+function unregister(entry: ContentHandlerEntry): void {
+  const i = HANDLERS.indexOf(entry);
+  if (i < 0) return;
+  HANDLERS.splice(i, 1);
+  // The same entry may be registered more than once; each registration admitted once.
+  const releases = RELEASES.get(entry);
+  releases?.pop()?.();
+  if (releases?.length === 0) RELEASES.delete(entry);
+}
 
 /** Register a content handler. Returns a disposer that removes it. */
 export function registerContentHandler(entry: ContentHandlerEntry): () => void {
   HANDLERS.push(entry);
+  const admits = namedMimes(entry).map(admitIngestMime);
+  const releases = RELEASES.get(entry) ?? [];
+  releases.push(() => admits.forEach((release) => release()));
+  RELEASES.set(entry, releases);
+  let removed = false;
   return () => {
-    const i = HANDLERS.indexOf(entry);
-    if (i >= 0) HANDLERS.splice(i, 1);
+    if (removed) return;
+    removed = true;
+    unregister(entry);
   };
 }
 
@@ -194,5 +225,5 @@ export async function runIngest(
 
 /** @internal test seam — clear the registry. Not part of the public barrel. */
 export function _resetContentHandlersForTests(): void {
-  HANDLERS.length = 0;
+  while (HANDLERS.length > 0) unregister(HANDLERS[0]!);
 }

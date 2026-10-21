@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from './Focusable';
 import { TooltipTrigger, Tooltip } from './Tooltip';
 
 function Subject(props: { placement?: 'top' | 'bottom' | 'left' | 'right'; children?: ReactNode }) {

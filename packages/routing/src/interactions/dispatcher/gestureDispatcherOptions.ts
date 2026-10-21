@@ -10,6 +10,7 @@ import type { DepSchema } from '../../index';
 import type { AffordanceHit } from '../actions/invoker';
 import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher } from './dispatcherApi';
+import type { DispatchTrace } from './dispatchTrace';
 import type { LongPressOptions } from './longPressState';
 
 /**
@@ -69,6 +70,11 @@ export interface DispatcherChannels {
   /** `pointerdown`, hover `pointermove`, `pointerleave` — press, drag, click,
    *  long-press, multi-touch and the hover-cursor pump. */
   pointer?: boolean;
+  /** `hover` gestures and the hover-cursor pump without the rest of
+   *  `pointer`: no press opens a gesture or captures the pointer, so the
+   *  element's own clicks and drags are left alone. Omitted, it follows
+   *  `pointer`, which carries hovers whenever it is on. */
+  hover?: boolean;
   /** `wheel`. */
   wheel?: boolean;
   /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's
@@ -175,6 +181,10 @@ export interface UseGestureDispatcherOptions {
    * mounter and other consumers (the preview-ghost layer).
    */
   dispatcher?: Dispatcher;
+
+  /** Where every dispatcher this hook drives records its decisions. Absent,
+   *  the hook makes one of its own. Published as the `dispatchTrace` dep. */
+  trace?: DispatchTrace;
 
   /**
    * Converts a client-space pointer position (e.g. `e.clientX`, `e.clientY`)

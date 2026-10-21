@@ -1,8 +1,0 @@
----
-'@weasel-js/ui': patch
-'@weasel-js/react': patch
----
-
-`@weasel-js/ui`'s components read their timings and target sizes from `<KitSettingsProvider>`, each falling back to its existing default where no provider sets it. A consumer can now set `numberField.repeatDelayMs` / `repeatEveryMs` (a held stepper), `tree.typeaheadMs` / `hoverExpandMs` / `tipRestMs`, `help.focusDelayMs` (a row's help on keyboard focus), `toast.ttlMs` (a toast that sets no `ttlMs` of its own, read by the `ToastRegion` showing it), `history.coalesceMs` (the schema editor's undo window, read when the editor mounts), and `params.form` / `params.panel` / `params.lab`, each with `textWaitMs` and `settles.{number,slider,string,color}` — which controls in a `PrefsForm`, a `SelectionPanel` or `Bar` write only the value an edit settles on. `targets` gains `curveKeyHitPx`, `curveHandleHitPx`, `curveHitPx`, `curveAnchorSnapPx`, `functionCurveHitPx`, `sliderStopSnapPx` and `snapRadiusPx`, read by the curve editor's layers, `Slider`, `BandEditor` and `Timeline`; a keyframe layer's own `snapRadiusPx` still wins.
-
-`uiKitSettingsSchema` describes all of these as a prefs group whose paths are their `KitSettings` paths, with units, ranges and the components' defaults. `useParamsPolicy(surface)` answers a surface's resolved `textWaitMs` and `settles`; `prefFieldProps`, `withCommitPolicy` and `withDrafts` take an optional `settles` in place of the surface's defaults. A curve layer's `LayerCtx` carries the editor's `kitSettings` store. `@weasel-js/react` adds `KitTargetSettings`, the interface packages augment to add keys to the shared `targets` area. Additive.

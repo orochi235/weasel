@@ -37,10 +37,11 @@ import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
 import { useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
+import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
+import { useNodeKinds } from './SceneCanvas/useNodeKinds';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
-import { usePathSnapper } from './SceneCanvas/usePathSnapper';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
 export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
@@ -52,13 +53,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose> & { presetSource: PresetSource },
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
-  const { selectTool: selectToolOpts, selectable = true, viewport, modes, debug } = props;
+  const { selectTool: selectToolOpts, selectable = true, viewport, modes } = props;
+  const devtools = useDevtoolsOverride(props.debug), { debug } = devtools;
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
   const scene = useBakedScene(props.scene);
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
   const heldModifiers = useHeldModifiers();
-  const redrawOn = useSceneRedrawSources({ supplied: props.redrawOn, scene, heldModifiers, animator: props.animator, modes });
 
   // Our own refs, so input listeners attach even when the consumer forwards its own ref.
   const internalCanvasRef = useRef<HTMLElement | null>(null);
@@ -70,38 +71,35 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
   const { viewRef } = viewState;
-  const selection = useCanvasSelection({
-    scene, supplied: props.selection, options: props.selectionOptions, selectable, describeKind: props.describeKind,
-  });
-  const enabled = useEnabledFeatures(props.features, props.presetSource.named, viewport !== undefined);
+  const kinds = useNodeKinds(scene, props.routing);
+  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
+  const enabled = useEnabledFeatures(
+    props.features, props.presetSource.named, viewport !== undefined, selectToolOpts?.rotate !== false,
+  );
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
   });
-  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults });
+  const picking = useScenePicking({ scene, selection, descriptor, props, viewRef, selectTool: selectToolWithDefaults, kinds });
   const { adapter, boundsOf, planeOfNode } = picking;
   const getNodeAtPointRef = useLatest(picking.getNodeAtPoint);
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    scene: scene as Scene<unknown, string, unknown>, selection, enabled, presetSource: props.presetSource,
+    enabled, presetSource: props.presetSource,
   });
-
-  // `selectTool.rotate === false` disables rotation: its action is muted by the standard
-  // actions and its handle hidden by `useChromeRules`.
-  const rotateOff = selectToolOpts?.rotate === false;
 
   // The wrapper's `<InputScope>` provides it.
   const actionsRegistry = useActionsRegistry();
   const { dispatcher, gestureSource, previewIdsExtra, previewPoseExtra } = useCanvasDispatcher(actionsRegistry);
 
-  const pathSnapper = usePathSnapper(scene as Scene<unknown, string, unknown>, props.toolOptions?.pathSnap);
   const layered = useSceneCanvasLayers({
     layers: props.layers, targetScale: deviceProfile.targetScale, scene, adapter, poseDescriptor: descriptor,
     alphaFor: props.alphaFor, colorOverrides: props.animator?.colorOverrides, boundsOf, planeOfNode,
-    previewIds: previewIdsExtra, dispatcher, pathSnapper, pathEditState,
+    poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
-    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true,
+    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts,
   });
+  const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
 
   const chrome = useSceneCanvasChrome({
     source: {
@@ -110,20 +108,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       editingAnchors: () => pathEditState.getEditingId() !== '',
       device: deviceProfile,
     },
-    rules: { enabled, selectable, rotateOff, chromeVisibility: props.chromeVisibility },
-    hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef },
+    rules: { enabled, selectable, chromeVisibility: props.chromeVisibility },
+    hover: { canvasApiRef, nodeAtPointRef: getNodeAtPointRef, ...(props.onHover ? { onChange: props.onHover } : {}) },
     selection: selection.current as readonly NodeId[], viewRef, dispatcher,
   });
 
   const { ingest, clipboard: ingestionClipboard } = useCanvasIngestion(adapter, () => actionsRegistry, props.ingestion);
-  const { views: addedViews, addView } = useAddedViews();
+  const { views: addedViews, addView, viewAt } = useAddedViews();
   // The consumer's handle extends the primitive's with `ingest`, which needs the action stack.
   const { handleRef, ready: canvasReady } = useSceneCanvasHandle({
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
-    ingest, viewAnimation, camera, addView,
+    ingest, viewAnimation, camera, addView, viewAt,
   });
-  const viewInputs = useSurfaceViewInputs({
-    picking, descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, selection, rotationBadge: layered.rotationBadge,
+  const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles,
+    descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,
   });
 
   return (
@@ -154,10 +152,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         props={props as SceneCanvasInputOptions} scene={scene as Scene<unknown, string, unknown>}
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
-        tools={tools} rotateOff={rotateOff} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
-        dispatcher={dispatcher} pathEdit={{ state: pathEditState, snapper: pathSnapper }}
-        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard}
-        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }}
+        tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}
+        dispatcher={dispatcher} pathEdit={{ state: pathEditState }}
+        chrome={chrome} overlay={layered} ingestionClipboard={ingestionClipboard} devtools={devtools}
+        canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       {props.views?.map((v, i) => <CanvasView key={v.id} {...v} order={v.order ?? i} />)}
       {contributionEntries(tools.tools).flatMap((e) => e.views ?? []).map((v) => (
@@ -218,7 +216,11 @@ export const SceneCanvas = /* @__PURE__ */ forwardRef(SceneCanvasWrapper) as <
   props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<SceneCanvasApi> },
 ) => ReturnType<typeof SceneCanvasInner>;
 
-export { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
+export { DEFAULT_HANDLE_SIZE, BUILTIN_TOOL_IDS } from './SceneCanvas/props';
+export {
+  BUILTIN_TOOLS, SELECT_TOOLS, VIEW_TOOLS, SHAPE_TOOLS, DRAW_TOOLS, TYPE_TOOLS, PAGE_TOOLS,
+} from './SceneCanvas/builtinToolSets';
+export { mergeLayersWithDefaults } from './SceneCanvas/mergeLayers';
 export type {
   SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress, BuiltinToolId,
 } from './SceneCanvas/props';

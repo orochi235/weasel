@@ -1,0 +1,28 @@
+{
+  // Declaration-only emit for the published package, built against siblings'
+  // published declarations rather than their source. See packages/ui's
+  // tsconfig.build.json for why `paths` is cleared and `incremental` is off.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmitOnError": true,
+    "declarationMap": true,
+    "incremental": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["node"],
+    "paths": {}
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    "**/__tests__/**",
+    "src/testing/**"
+  ]
+}

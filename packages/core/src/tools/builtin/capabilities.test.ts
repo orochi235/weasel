@@ -28,8 +28,6 @@ describe('built-in tool capabilities', () => {
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['slice', () => builtins.useSliceTool(), ['edits-page']],
     ['measure', () => builtins.useMeasureTool({ measurements: createMeasurements({ layer: 'notes' }) }), ['navigation']],
-    ['weight', () => builtins.useWeightTool({ scene: {} as never, rig: () => null }), ['edits-page']],
-    ['bone', () => builtins.useBoneTool({ scene: {} as never, rig: () => null }), ['edits-page']],
     ['text', () => builtins.useTextTool(), ['creates-text']],
     ['sticky', () => builtins.useStickyTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],

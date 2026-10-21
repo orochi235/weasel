@@ -43,6 +43,12 @@ neither stays in core: `usePoseRun` was kept there on 2026-10-11 for this
 reason. The aim is a smaller core, but not at the cost of a cluttered package
 list.
 
+A tool lives in the package that owns the action it binds. A tool is a
+declarative shell over an action, so it leaves core only with its whole action
+family, and only into a package that qualifies above. A package that ships
+tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
+`RESHAPE_TOOLS`) and a hook that builds them all (`usePathToolsTools`).
+
 ## Todo list
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
@@ -250,7 +256,31 @@ the working tree, so from a checkout someone else is editing it tests their half
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
 it on the branch before merging and on `main` after. `onto` keeps one tree per repository on a
 node and every worktree syncs into it, so a run counts only if its log has `fleet-tree: N changed
-path(s) match <sha>` and that gate test passed rather than skipped.
+path(s) match <sha>` and that gate test passed rather than skipped. `scripts/fleet-tree.setup.ts`
+checks each node's tree, so a sharded run (`npm run test:fleet -- HEAD --spread 0`) prints that
+line once per shard. Sharding is not a way to make a run faster: each of its slices starts vitest
+afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-minutes where an
+unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest only on a node with
+15 cores idle (`scripts/vitest-overlap.mjs` prints its reading); anywhere smaller or busier, its chart
+drag tests time out, so the run keeps to one process and takes about twice as long.
+
+**On a branch, a fleet run tests only what the branch reaches.** The test files whose imports lead to
+a changed path run, and the gate always runs whole; `main` and a bare commit run everything, and so
+does `--full`. A change to a manifest, a tsconfig, a setup file, or anything `vitest.config.ts` loads
+runs everything too — the `triggers` list there. A file read at build time rather than imported,
+such as an icon definition a plugin generates from, selects nothing on a branch and is caught only by
+the full run on `main` after the merge. Add such a path to `triggers` once it has slipped through.
+
+**Draw is served from `.claude/worktrees/view`, a detached checkout of `main`**, so edits to the
+main checkout don't reload the browser tab mid-session. A local `pre-push` hook runs
+`scripts/advance-view.mjs` on every push to `main`, moving it to the pushed commit (and running
+`npm ci` and restarting draw when the lockfile changed); `npm run view:advance` does the same by hand.
+
+**`npm run dev:fleet -- draw forge` serves dev servers from a fleet node instead of this machine.**
+It installs into one scratch tree there (`weasel-dev`), runs the apps as an onto service, prints each
+address, and syncs every edit made here until Ctrl-C stops the servers; `--drop` removes the tree. Drive
+it headless from here with chrome-devtools or Playwright by the printed IP: headless Chrome resolves no
+`.local` names. `DRAW_E2E_URL=http://<ip>:33452 npm run test:e2e:draw` runs draw's e2e suite against it.
 
 **The fleet also runs the `gate` project**: the typecheck, lint, and `check:*` steps CI runs,
 read from `ci.yml` by `scripts/ci-checks.gate.ts`, each as a test. CI only runs on a push, so
@@ -512,7 +542,10 @@ Called on a canvas no renderer has opened yet, it creates the context with defau
 attributes, and the renderer's later `getContext('webgl2', { stencil: true, … })`
 gets that same context back without a stencil buffer — every path fill then draws
 nothing, with no error anywhere. A labkit surface clear did this to every
-annotation mark. Only touch a shared context once a tenant has painted into it.
+annotation mark. Only touch a shared context once a tenant has painted into it. A test's
+pixel reader counts: one reading before the app's first paint refuses the canvas
+(`weasel: this canvas cannot be painted: … no stencil buffer` on stderr), so a reader
+asks for `{ preserveDrawingBuffer: true, stencil: true }`.
 
 **A tile repainted before its position commits leaves a ghost after a clear.**
 `<Canvas paintInto>` reads its `x`/`y` from the last render, so a surface painter
@@ -525,6 +558,13 @@ that sets React state and then asks for a redraw can paint the tile where it *wa
 (`scripts/vite-wake.ts`), which keeps one copy of each app per machine and ignores
 `--port`, so a server started from another worktree kills whichever one is running. Start
 any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken over.
+
+**A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
+`scripts/vite-prebundle.ts` bundles every `@weasel-js/*` and `@editor/*` specifier an app imports,
+re-bundling on a saved package file in a few seconds. forge keeps ui, labkit, forge, diagram,
+devtools and diagram-elk as source, since its stories import their neighbors by relative path, and
+edits there still hot-update. A stack trace into a bundled package points at
+`node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
 
 **A perf loop driven by hover events measures vsync.** A hover that changes no state does
 not dirty the surface, so the loop reports zero uploads as though the caches had absorbed

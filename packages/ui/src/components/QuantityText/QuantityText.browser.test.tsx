@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
-import { percent, tag, unit } from '@weasel-js/quantity';
+import { fraction, percent, tag, unit } from '@weasel-js/quantity';
 import { afterEach, expect, it } from 'vitest';
 import { QuantityText } from './QuantityText';
 
@@ -39,4 +39,28 @@ it('keeps the spoken copy of a range out of the line it sits in', () => {
   expect(root.getBoundingClientRect().height).toBeCloseTo(plain.height, 1);
   expect(spoken!.getBoundingClientRect().width).toBeLessThanOrEqual(1);
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(document.documentElement.clientWidth);
+});
+
+it('stacks a stacked fraction numerator over denominator, and keeps its text copy out of the line', () => {
+  const { container } = render(<QuantityText value={tag(1 / 2, fraction({ form: 'stacked' }))} mute />);
+  const root = container.firstElementChild!;
+  const [num, den] = [...root.querySelectorAll('mfrac > mn')].map((el) => el.getBoundingClientRect());
+  expect(num!.bottom).toBeLessThanOrEqual(den!.top + 1);
+  const copy = root.querySelector('data')!.lastElementChild!;
+  expect(copy.textContent).toBe('1/2');
+  expect(copy.getBoundingClientRect().width).toBeLessThanOrEqual(1);
+  expect(root.getBoundingClientRect().width).toBeCloseTo(root.querySelector('math')!.getBoundingClientRect().width, 0);
+});
+
+it('draws a stacked fraction in the UI face with proportional digits, with room between the bar and each digit', () => {
+  const { container } = render(<QuantityText value={tag(1 / 24, fraction({ form: 'stacked' }))} />);
+  const root = container.firstElementChild!;
+  const math = root.querySelector('math')!;
+  const probe = document.createElement('span');
+  probe.style.fontFamily = 'var(--wzl-font-ui)';
+  root.append(probe);
+  expect(getComputedStyle(math).fontFamily).toBe(getComputedStyle(probe).fontFamily);
+  expect(getComputedStyle(math).fontVariantNumeric).toBe('proportional-nums');
+  const [top, bottom] = Array.from(math.querySelector('mfrac')!.children).map((el) => el.getBoundingClientRect());
+  expect(bottom!.top - top!.bottom).toBeGreaterThan(1);
 });

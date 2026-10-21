@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/react';
-import { createLongPressStore, type Dispatcher } from '@weasel-js/routing';
+import { createLongPressStore, type Dispatcher, type DispatchTrace, type TraceRing } from '@weasel-js/routing';
 import { useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
@@ -17,7 +17,7 @@ import { useKitSettingsDepSource } from '../deps/kitSettings';
 import { pathFromPlane } from '../planeClips';
 import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
-import { traceConversion } from './coordTrace';
+import { traceConversion, type CoordTraceEntry } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
 
 /** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
@@ -53,10 +53,14 @@ export interface SceneGestureDispatcherInputs {
    *  `kind:<k>` / `kind:<k>:selected` target forms can match. Absent when
    *  the consumer opted out of routing (`routing={[]}`). */
   kindOfNode?: (id: string) => string | undefined;
+  /** The node a double-click on a hit names (`doubleClickTarget`), for the classification. */
+  doubleClickNames?: (hitId: string) => string;
   viewRef?: React.RefObject<View>;
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
   dispatcher?: Dispatcher;
+  /** Where the dispatcher records its decisions and `clientToWorld` its conversions. */
+  traces: { dispatch: DispatchTrace; coords: TraceRing<CoordTraceEntry> };
   /** Chrome-caps visibility resolver factory. Threaded into
    *  `buildAffordanceAt` so the hit-test pipeline gates corner / rotate /
    *  anchor affordances on the same chrome ids the renderer uses. */
@@ -71,6 +75,8 @@ export interface SceneGestureDispatcherInputs {
   /** Consumer override for the corner-handle grab radius
    *  (`selectTool.handleHitRadius`). Undefined takes the device-scaled size. */
   handleHitRadius?: number;
+  /** `selectTool.resize.edgeHandles`: resize handles at the edge midpoints. Default true. */
+  edgeHandles?: boolean;
   /** The rotate badge the selection overlay paints, grabbable where drawn. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
   /** Receives the affordances this mounter hit-tests, for the slops overlay. */
@@ -88,7 +94,7 @@ export interface SceneGestureDispatcherInputs {
 type AffordanceInputs = Pick<
   SceneGestureDispatcherInputs,
   | 'canvasApiRef' | 'selectionRef' | 'boundsOf' | 'planeOfNode' | 'viewRef' | 'getIsVisibleForCanvas'
-  | 'targetScale' | 'handleHitRadius' | 'rotationBadge' | 'chromeAffordancesRef'
+  | 'targetScale' | 'handleHitRadius' | 'edgeHandles' | 'rotationBadge' | 'chromeAffordancesRef'
 >;
 
 /** What a press on the canvas grabs: a registered layer's widget, else a piece of the
@@ -96,7 +102,7 @@ type AffordanceInputs = Pick<
 function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, viewRegistry: ViewRegistry | null) {
   const {
     canvasApiRef, selectionRef, boundsOf, planeOfNode, viewRef, getIsVisibleForCanvas,
-    targetScale, handleHitRadius, rotationBadge, chromeAffordancesRef,
+    targetScale, handleHitRadius, edgeHandles, rotationBadge, chromeAffordancesRef,
   } = inputs;
   // `getAnchorState` thunk for `buildAffordanceAt` — reads the live
   // `editAnchors` dep from the registry at call time.
@@ -109,7 +115,7 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
-  const affordances = useChromeAffordances({ targetScale, handleHitRadius, rotationBadge, getAnchorState });
+  const affordances = useChromeAffordances({ targetScale, handleHitRadius, edgeHandles, rotationBadge, getAnchorState });
   useInsertionEffect(() => {
     if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
   });
@@ -150,7 +156,7 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
 
 /** Which body a world point lands on, its selection state, and its routing kind. */
 function useClassifyTarget(
-  inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef'>,
+  inputs: Pick<SceneGestureDispatcherInputs, 'selectionRef' | 'pickEvery' | 'pickBest' | 'viewRef' | 'doubleClickNames'>,
   kindOfNodeRef: { readonly current: SceneGestureDispatcherInputs['kindOfNode'] },
 ) {
   const { selectionRef, pickEvery, pickBest, viewRef } = inputs;
@@ -158,6 +164,7 @@ function useClassifyTarget(
   // stable function identities across renders (no need to pass them as deps).
   const pickEveryRef = useLatest(pickEvery);
   const pickBestRef = useLatest(pickBest);
+  const doubleClickNamesRef = useLatest(inputs.doubleClickNames);
   // Build the `classifyTarget` thunk. Takes world coords and delegates to
   // `buildClassifyTarget`.
   return useMemo(() => {
@@ -178,15 +185,16 @@ function useClassifyTarget(
       // second one invented for bindings. `routing={[]}` opts out and leaves
       // every `kind:` target unmatchable.
       (id: string) => kindOfNodeRef.current?.(id),
+      (id: string) => doubleClickNamesRef.current?.(id) ?? id,
     );
-  }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef]);
+  }, [selectionRef, pickEvery, viewRef, pickBestRef, pickEveryRef, kindOfNodeRef, doubleClickNamesRef]);
 }
 
 /** Runs this canvas's gesture dispatcher over its tools, contributions, and chrome. */
 export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs): void {
   const {
     canvasRef, canvasApiRef, tools, contributions, enabled, keyboard, claimKeys, viewRef,
-    kindOfNode, dispatcher, getRuleCtx, onDoubleClick, onClick,
+    kindOfNode, dispatcher, traces, getRuleCtx, onDoubleClick, onClick,
     longPress: { duration: longPressDuration, haptics: longPressHaptics } = {},
   } = inputs;
   const registry = useActionsRegistry();
@@ -214,9 +222,9 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     const api = canvasApiRef.current;
     const [x, y] = api ? api.clientToWorld(clientX, clientY) : [clientX, clientY];
     const world = { x, y };
-    traceConversion(clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
+    traceConversion(traces.coords, clientX, clientY, api ? canvasRef.current : null, viewRef?.current, world);
     return world;
-  }, [canvasRef, canvasApiRef, viewRef]);
+  }, [canvasRef, canvasApiRef, viewRef, traces.coords]);
 
   // Stable callback that asks the canvas to redraw. Reads via ref so the
   // identity stays stable while the underlying API binds after mount.
@@ -253,6 +261,7 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
     affordanceAt: affordanceWithLayers,
     classifyTarget,
     dispatcher,
+    trace: traces.dispatch,
     clientToWorld,
     requestRedraw,
     paintedCursor,

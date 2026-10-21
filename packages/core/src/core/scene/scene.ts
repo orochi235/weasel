@@ -1,7 +1,12 @@
 import { withKitRegistry } from './kitRegistry';
 import { createPoseOverrides } from './poseOverrides';
 import { createArrivalWindow } from './arrivalWindow';
+import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier } from './notifier';
+import type { SerializedDoc } from './docValues';
+import { sceneChanges } from './sceneChanges';
+import { createPoseWriteLog } from './poseWrites';
+import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
@@ -23,6 +28,12 @@ import {
   type UseSceneOptions,
 } from './types';
 
+/** A node still in `scene`, with the pose it is shown at. */
+function shownNode<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, id: NodeId) {
+  const node = scene.get(id);
+  return node && { node, pose: effectivePose(scene, node) };
+}
+
 let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
@@ -33,18 +44,20 @@ const defaultGenerateId = (): NodeId =>
 export function createScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
 ): Scene<TData, TLayer, TPose> {
-  return buildScene(options, (options.systemLayers ?? []).map(systemLayerRecord), () => options.initial);
+  return buildScene(options, (options.systemLayers ?? []).map(systemLayerRecord), () => options.initial, options.doc);
 }
 
 type SceneConfig<TData, TLayer extends string, TPose> =
-  Omit<UseSceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial'>;
+  Omit<UseSceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
-/** A scene holding `layers`, and the nodes `initialNodes` answers with once
- *  it is handed the registry their functions resolve against. */
+/** A scene holding `layers`, the document values `initialDoc`, and the nodes
+ *  `initialNodes` answers with once it is handed the registry their functions
+ *  resolve against. */
 function buildScene<TData, TLayer extends string, TPose>(
   options: SceneConfig<TData, TLayer, TPose>,
   layers: readonly LayerRecord<TLayer>[],
   initialNodes: (registry: SceneRegistry<TPose, TData, TLayer>) => readonly AddNodeSpec<TData, TLayer, TPose>[] | undefined,
+  initialDoc: SerializedDoc | undefined,
 ): Scene<TData, TLayer, TPose> {
   if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
 
@@ -53,11 +66,12 @@ function buildScene<TData, TLayer extends string, TPose>(
   // reloads in any scene, not only one whose consumer registered the key.
   const registry = withKitRegistry(options.registry ?? {});
 
-  const doc = createSceneState<TData, TLayer, TPose>(registry, layers, () => arrivals.layoutDeclared());
+  const doc = createSceneState<TData, TLayer, TPose>(registry, layers, () => arrivals.layoutDeclared(), initialDoc);
   const { state, locks, reads } = doc;
   const notifier = createNotifier();
   const mode = createEditMode();
-  const writePose = (id: string, pose: unknown): void => { scene.setPose(asNodeId(id), pose as TPose); };
+  const poseWrites = createPoseWriteLog({ untracked: mode.untracked, changes: notifier, shown: (id) => shownNode(scene, id) });
+  const writePose = (id: string, pose: unknown): void => poseWrites.layout(() => scene.setPose(asNodeId(id), pose as TPose));
 
   const layoutFrame = resolveLayoutFrame(options.layoutFrame);
   const arrivals = createArrivalWindow<TData, TLayer, TPose>({
@@ -80,11 +94,13 @@ function buildScene<TData, TLayer extends string, TPose>(
   const recording = createSceneRecording({
     notifier,
     mode,
+    passAdapter: () => ({ ...sceneMutators(scene), ...documentReads(scene) }),
     stale: doc.stale,
     lifted: locks.lifted,
     selection,
     arrivals,
     writePose,
+    poseWrites,
     config: options,
   });
 
@@ -95,7 +111,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     layers: doc.layers,
     invalidateOrder: doc.order.invalidate,
     fnFields: doc.fnFields,
-    ops: recording.ops,
+    ops: { ...recording.ops, register: poseWrites.reporting(recording.ops.register) },
     recorder: recording.recorder,
     arrivals,
     layoutFrame,
@@ -123,6 +139,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     setArrivalHandler: arrivals.setHandler,
     onReflow: arrivals.onReflow,
+    onPoseWrite: poseWrites.subscribe,
 
     overrides,
 
@@ -138,20 +155,19 @@ function buildScene<TData, TLayer extends string, TPose>(
       }
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
-      doc.reset(json.systemLayers.map(layerFromSerialized));
+      doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
-      edits.construct(specs);
+      poseWrites.quiet(() => edits.construct(specs));
       selection.replace(locks.reachable(selection.get().filter((id) => state.nodes.has(id))));
       notifier.notify();
     },
 
-    subscribe: notifier.subscribe,
-    getVersion: notifier.version,
+    ...sceneChanges(notifier, selection),
   };
 
   const initial = initialNodes(registry);
   if (initial) {
-    edits.construct(initial);
+    poseWrites.quiet(() => edits.construct(initial));
     notifier.notify();
   }
 
@@ -179,5 +195,6 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     options,
     json.systemLayers.map(layerFromSerialized),
     (registry) => specsFromSerialized(json, registry),
+    json.doc,
   );
 }

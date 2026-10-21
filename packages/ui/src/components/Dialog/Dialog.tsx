@@ -7,7 +7,8 @@ import {
   type ModalOverlayProps,
   type DialogProps as RACDialogProps,
 } from 'react-aria-components';
-import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
+import { ContainedModal } from './ContainedModal';
 import { CloseButton } from '../CloseButton';
 import { type StanceProps, useStance } from '../stance';
 import s from './Dialog.module.css';
@@ -76,7 +77,8 @@ export function Dialog(props: DialogProps) {
   const stanced = useStance({ stance, tone });
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
-  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const containedRoot = useContainedRoot(portalContainer);
   const box = (close: () => void) => (
     <>
       {(title !== undefined || showClose) && (
@@ -103,17 +105,36 @@ export function Dialog(props: DialogProps) {
     );
   }
 
+  if (containedRoot) {
+    return (
+      <ContainedModal
+        root={containedRoot}
+        isOpen={isOpen}
+        defaultOpen={rest.defaultOpen}
+        onOpenChange={onOpenChange}
+        isDismissable={rest.isDismissable}
+        isKeyboardDismissDisabled={rest.isKeyboardDismissDisabled}
+        overlayClassName={s.overlay}
+        modalClassName={[s.modal, className].filter(Boolean).join(' ')}
+        modalProps={stanced}
+      >
+        <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
+          {({ close }) => box(close)}
+        </RACDialog>
+      </ContainedModal>
+    );
+  }
+
   return (
     <>
       {anchor}
-      {ready && (
+      {ready && provide(
         <ModalOverlay
           {...rest}
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           className={s.overlay}
           data-weasel-overlay=""
-          {...portalProps}
         >
           <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
             <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>

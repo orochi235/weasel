@@ -3,13 +3,13 @@ import {
   createMeasurements,
   createScene,
   measureNode,
+  measureEndSource,
   measurementsContribution,
-  nearestMeasureEnd,
   type RectPose,
   solid,
   useMeasureTool,
 } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy, roundToCell } from '@weasel-js/guides';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,
   defineInstrument,
@@ -20,7 +20,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { MeasureReadout } from '@weasel-js/ui';
+import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -37,8 +37,6 @@ type Layer = 'default' | 'annotations';
 type State = SceneTrialState<unknown, Layer, RectPose>;
 
 const ANNOTATIONS: Layer = 'annotations';
-/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
-const END_SNAP_PX = 6;
 
 const shape = (id: string, x: number, y: number, width: number, height: number, color: string) => ({
   id: asNodeId(id),
@@ -74,17 +72,10 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const tools = useMemo(() => ({ measure }), [measure]);
   const ambient = useMemo(() => [measurementsContribution(scene as never, measurements)], [scene, measurements]);
 
-  const selectTool = useMemo(
-    () => ({ snap: snap ? gridSnapStrategy<RectPose>(spacing) : undefined }),
+  // A measurement's ends snap a drawing within reach; past them it takes the grid.
+  const snapTo = useMemo(
+    () => ({ sources: [measureEndSource(), ...(snap ? [gridSnapSource({ spacing })] : [])] }),
     [snap, spacing],
-  );
-  // A measurement's ends snap a drawing or a move first; a drawing then takes the grid.
-  const toolOptions = useMemo(
-    () => ({
-      snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX),
-      ...(snap ? { snapPoint: (p: { x: number; y: number }) => ({ x: roundToCell(p.x, spacing), y: roundToCell(p.y, spacing) }) } : {}),
-    }),
-    [scene, measurements, snap, spacing],
   );
   const layers = useMemo(
     () => ({
@@ -107,8 +98,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         ambient={ambient}
         scene={scene}
         trial={ctx.trial}
-        selectTool={selectTool}
-        toolOptions={toolOptions}
+        snap={snapTo}
         layers={layers}
       />
       <MeasureReadout scene={scene as never} measurements={measurements} />

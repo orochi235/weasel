@@ -1,11 +1,23 @@
-import { Badge, Button, Code, DataGrid, InlineMarkdown, type BadgeProps, type DataGridColumn } from '@weasel-js/ui';
+import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
+import type { GestureSpec } from '@weasel-js/core';
+import { routesForSpec } from '@weasel-js/core/routing';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import { GESTURE_BADGE_PROPS } from '../badgeTokens';
 import type { ActionEntry, GestureEntry, PhaseOutputEntry, ToolEntry } from '../registryEntries';
-import { describeGestureSpec } from './ActionDetail';
-import { EntryLink, type Props } from './shared';
+
+/** Plain-text route notation for a `GestureSpec` — `[*:*] drop`,
+ *  `[initial] drag(left) => * +shift` — one route per arg alternative,
+ *  comma-joined. Falls back to the bare kind for kinds the route grammar
+ *  has no name for. */
+function describeGestureSpec(spec: { kind?: string } | undefined): string {
+  if (!spec || !spec.kind) return '(unknown)';
+  return routesForSpec(spec as GestureSpec).join(', ') || spec.kind;
+}
 
 /** `GestureSpec.kind` → the `GestureChannels` key a tool's surface records
  *  it under. Only the hyphenated kind differs. This used to be two maps
@@ -61,12 +73,11 @@ export function GesturePayloadPanel({ gestureId }: { gestureId: string }) {
 }
 
 export function GestureDetail({
-  entry, tools, actions, onNavigate,
+  entry, tools, actions,
 }: {
   entry: GestureEntry;
   tools: readonly ToolEntry[];
   actions: readonly ActionEntry[];
-  onNavigate: Props['onNavigate'];
 }) {
   const channel = CHANNEL_FOR_KIND[entry.id] ?? entry.id;
   const toolRows = tools.flatMap((t) =>
@@ -96,9 +107,7 @@ export function GestureDetail({
             accessor: (r) => r.actionId,
             render: (r) => {
               const a = actionEntriesById.get(r.actionId);
-              return a
-                ? <EntryLink kind="action" id={a.id} label={a.label ?? a.id} onNavigate={onNavigate} />
-                : <code>{r.actionId}</code>;
+              return <code>{a?.label ?? r.actionId}</code>;
             },
           },
           {
@@ -117,7 +126,7 @@ export function GestureDetail({
       <DataGrid
         rows={toolRows}
         columns={[
-          toolNameColumn(onNavigate),
+          toolNameColumn(),
         ]}
         empty="No tools subscribe via phase grammar."
       />
@@ -126,8 +135,8 @@ export function GestureDetail({
 }
 
 export function PhaseOutputDetail({
-  entry, tools, onNavigate,
-}: { entry: PhaseOutputEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
+  entry, tools,
+}: { entry: PhaseOutputEntry; tools: readonly ToolEntry[] }) {
   const rows = tools.flatMap((t) =>
     t.surface.outputs[entry.id] ? [{ id: t.id, tool: t }] : [],
   );
@@ -149,7 +158,7 @@ export function PhaseOutputDetail({
       <DataGrid
         rows={rows}
         columns={[
-          toolNameColumn(onNavigate),
+          toolNameColumn(),
         ]}
         empty="No tools declare this output."
       />
@@ -160,38 +169,11 @@ export function PhaseOutputDetail({
 /** Shared "Tool" column for inspector DataGrids — renders the tool id as a
  *  clickable EntryLink that navigates to the matching tool entry. Row shape
  *  must carry `id` (DataGrid contract) and a `tool` ref for label lookup. */
-export function toolNameColumn(
-  onNavigate: Props['onNavigate'],
-): DataGridColumn<{ id: string; tool: ToolEntry }> {
+export function toolNameColumn(): DataGridColumn<{ id: string; tool: ToolEntry }> {
   return {
     id: 'tool',
     header: 'Tool',
     accessor: (r) => r.tool.label ?? r.id,
-    render: (r) => (
-      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.id })}>
-        {r.tool.label ?? r.id}
-      </Button>
-    ),
-  };
-}
-
-/** Tool column for tables that emit multiple rows per tool (e.g. one row per
- *  (tool, route) pair). Renders the tool name only on the first row of each
- *  group. Caller must sort/group rows by tool and tag each row with
- *  `isFirstForTool`. The column is non-sortable — re-sorting would break the
- *  merge-cell visual. */
-export function mergedToolColumn(
-  onNavigate: Props['onNavigate'],
-): DataGridColumn<{ id: string; tool: ToolEntry; isFirstForTool: boolean }> {
-  return {
-    id: 'tool',
-    header: 'Tool',
-    sortable: false,
-    accessor: (r) => r.tool.label ?? r.tool.id,
-    render: (r) => r.isFirstForTool ? (
-      <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}>
-        {r.tool.label ?? r.tool.id}
-      </Button>
-    ) : null,
+    render: (r) => r.tool.label ?? r.id,
   };
 }

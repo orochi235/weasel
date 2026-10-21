@@ -1,4 +1,4 @@
-import { CodeBlock, type CodeLanguage } from '@weasel-js/ui';
+import { CodeBlock, type CodeLanguage } from '@weasel-js/ui/components/CodeBlock';
 import type { MarkdownBlock } from '../shared/markdown';
 import s from './Prose.module.css';
 

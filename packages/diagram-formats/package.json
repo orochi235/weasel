@@ -1,0 +1,51 @@
+{
+  "name": "@weasel-js/diagram-formats",
+  "version": "1.11.0",
+  "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and one page as an SVG document or a PNG image.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/diagram-formats"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@weasel-js/pdf": "1.11.0"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.11.0",
+    "@weasel-js/diagram": "1.11.0",
+    "@weasel-js/svg": "1.11.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

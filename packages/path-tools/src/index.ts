@@ -76,9 +76,12 @@ export {
   bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
+export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';
+export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
+export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
 export { DEFAULT_CORNER_SHAPE, editCornerAction } from './cornerShape/editCorner';
 export { cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction } from './cornerShape/cornerCommands';
 
@@ -110,11 +113,18 @@ export {
   balanceCommands, createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle,
 } from './balance/balanceMarks';
 export {
-  CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, selectedConstraintOf, setConstraints,
+  CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
 export {
-  constraintLinkNode, constraintLinkOf, type ConstraintLinkData, type ConstraintLinkNodeOptions,
+  brokenConstraintLink, brokenConstraintLinks, constraintLinkConflictsOf, constraintLinkNode, constraintLinkOf,
+  type BrokenConstraintLink, type ConstraintLinkData, type ConstraintLinkNodeOptions,
 } from './constraints/constraintLinks';
+export {
+  linkAnchorAction, linkConstraint, linkTargetAt, type LinkAnchorParams, type LinkTarget,
+} from './constraints/linkAnchor';
+export {
+  CONSTRAINT_LINK_MARKS_ID, constraintLinkMarks, createConstraintLinkMarks,
+} from './constraints/constraintLinkMarks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
   CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
@@ -125,7 +135,9 @@ export {
 } from './pathStructure/directionMarks';
 
 // ─── Path-edit drags ───────────────────────────────────────────────────────
-export { createHandleSnapExtension, type HandleSnapOptions } from './handleSnap/handleSnap';
+export {
+  createHandleSnapExtension, handleSnapSource, type HandleSnapOptions, type HandleSnapOptionsInput,
+} from './handleSnap/handleSnap';
 export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
@@ -147,3 +159,5 @@ export {
 
 // Carries path-tools' IconName augmentation into the published declarations.
 export type { PathToolsIconName } from './icons.gen';
+
+export { WARP_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools, type PathToolId } from './toolSets';

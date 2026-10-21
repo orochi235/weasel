@@ -70,6 +70,7 @@ describe('<ControlPanel> unit', () => {
   it('stores a typed display value back in the canonical unit', () => {
     const setConfig = angle(f.number(0).input().unit(degrees), Math.PI / 2);
     fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '45' } });
+    fireEvent.blur(screen.getByLabelText('Angle'));
     expect(setConfig.mock.calls[0][0]).toBe('angle');
     expect(setConfig.mock.calls[0][1] as number).toBeCloseTo(Math.PI / 4, 10);
   });
@@ -112,6 +113,7 @@ describe('<ControlPanel> unit', () => {
     // against the stored bounds would cut a legal angle down to π.
     const setConfig = angle(f.number(0).range(0, Math.PI).input().unit(degrees), Math.PI / 2);
     fireEvent.change(screen.getByLabelText('Angle'), { target: { value: '100' } });
+    fireEvent.blur(screen.getByLabelText('Angle'));
     expect(setConfig.mock.calls[0][1] as number).toBeCloseTo((100 * Math.PI) / 180, 10);
   });
 });

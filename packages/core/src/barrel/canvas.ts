@@ -11,6 +11,7 @@
 // configs, etc.) remain exported below because they form part of SceneCanvas's
 // public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
+export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
 export { OVERLAY_ROLE_STROKES } from '../canvas/overlayRoleStrokes';
 export { LeanSceneCanvas, type LeanSceneCanvasProps } from '../canvas/LeanSceneCanvas';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
@@ -49,6 +50,7 @@ export type {
 } from '../canvas/NodeShape';
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
+export { drawnBoundsScene } from '../canvas/derivedPath';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   bitmapSrc,
@@ -66,10 +68,12 @@ export { useSceneAdapter } from '../canvas/useSceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {
   createNodeRouting,
+  routeKind,
   type NodeRoutingEntry,
   type NodeRouting,
+  type RoutedNode,
 } from '../core/scene/NodeRouting';
-export { defaultNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
+export { defaultNodeRouting, groupNodeRouting, inferredNodeRouting } from '../canvas/SceneCanvas/defaultNodeRouting';
 export { createNodeProperties } from '../core/scene/NodeProperties';
 export { minSizeOf, type MinSize } from '../core/scene/minSize';
 export type { NodeProperties, NodePropertiesEntry } from '../core/scene/NodeProperties';
@@ -78,12 +82,12 @@ export {
   inferredNodeProperties,
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
-export type { CanvasProps } from '../canvas/Canvas';
+export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
 export type { ViewPoseAdapter } from '../canvas/useViewHelpers';
 export type { CameraProps, CanvasViewState } from '../canvas/useCanvasView';
 export type { CanvasHelpers, CanvasViewHelpers, CanvasSurfaceHelpers } from '../canvas/useViewHelpers';
 export type { StandardSlotName, CustomLayerEntry } from '../canvas/layerSlots';
-export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi } from '../canvas/canvasExtension';
+export type { CanvasExtensionApi, CanvasViewHandle, SceneCanvasApi, ViewAt } from '../canvas/canvasExtension';
 // The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
 // `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
 // `<Canvas>` consumers can supply their own.
@@ -132,11 +136,15 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
+export { modeTriggers } from '../features/modes/modeTriggers';
+export type { ModeTriggerHandlers } from '../features/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
 export type { CreateChildrenLayerOpts } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';
+export { DevtoolsLabel, useDevtoolsLabel } from '../devtools/label';
+export type { DevtoolsLabelProps } from '../devtools/label';
 
 // ─── Layout: the contract a container's layout strategy implements. The
 // strategies themselves (freeform, tileGrid, snapPoint) are in @weasel-js/guides.

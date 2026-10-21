@@ -7,12 +7,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { decimal, parseAs, qty, type Display } from '@weasel-js/quantity';
+import { decimal, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
-import { endlessTrack } from '../../endless';
 import { UnitField } from '../NumberField';
 import { QuantityText } from '../QuantityText';
-import { spinKey } from '../spin';
 import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
@@ -98,7 +96,11 @@ function useCommitListener(
 
 function unitSuffix(unit: ReactNode, className: string): ReactNode {
   if (unit == null) return null;
-  return typeof unit === 'string' ? <QuantityText unit={unit} className={className} /> : unit;
+  return (
+    <span className={s.unitMark} data-wzl-subordinate="">
+      {typeof unit === 'string' ? <QuantityText unit={unit} className={className} /> : unit}
+    </span>
+  );
 }
 
 export const ignore = (): void => {};
@@ -113,6 +115,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       placeholder={p.mixed ? 'Mixed' : p.placeholder}
       minValue={p.min}
       maxValue={p.max}
+      endless={p.endless}
       step={p.step}
       accepts={p.accepts}
       display={p.display}
@@ -123,6 +126,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       onChange={p.onChange}
       onCancel={p.onCancel}
       onOffset={p.onOffset}
+      onClear={p.onClear}
     />
   );
   if (p.unit == null || (known && !Number.isFinite(p.value))) return input;

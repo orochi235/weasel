@@ -21,7 +21,7 @@ export const NORMAL: ModeDefinition = {
 };
 
 /** Editing the anchors of a path. Scoped to the target, entered by
- *  double-clicking it, left with Escape. */
+ *  double-clicking a `path` or with Enter, left with Escape. */
 export const PATH_EDIT: ModeDefinition = {
   id: 'path-edit',
   label: 'Path Edit',
@@ -30,13 +30,13 @@ export const PATH_EDIT: ModeDefinition = {
   allows: ['edits-anchors'],
   scoping: true,
   workspace: { tint: '#3b82f6', gradient: 'bottom-up', intensity: 0.12 },
-  entry: { trigger: 'double-click-target', shortcut: 'Enter' },
+  entry: { trigger: 'double-click-target', targets: ['path'], shortcut: 'Enter' },
   exit: { shortcut: 'Escape' },
   discard: { shortcut: 'Meta+Escape' },
 };
 
-/** Working inside one subtree with everything outside it dimmed and inert.
- *  Allows the same authoring tools as `NORMAL`, minus page edits. */
+/** Working inside one subtree with everything outside it dimmed and inert,
+ *  entered by double-clicking a `group`. Allows the same authoring tools as `NORMAL`, minus page edits. */
 export const ISOLATION: ModeDefinition = {
   id: 'isolation',
   label: 'Isolation',
@@ -53,7 +53,7 @@ export const ISOLATION: ModeDefinition = {
   ],
   scoping: true,
   workspace: { tint: '#8b5cf6', gradient: 'bottom-up', intensity: 0.12 },
-  entry: { trigger: 'double-click-target' },
+  entry: { trigger: 'double-click-target', targets: ['group'] },
   exit: { shortcut: 'Escape' },
   discard: { shortcut: 'Meta+Escape' },
 };
@@ -74,7 +74,7 @@ export const FREE_TRANSFORM: ModeDefinition = {
 };
 
 /** Editing the text of one node. Entered by double-clicking it, left with
- *  Escape. */
+ *  Escape. It names no targets: the text edit opening is what enters it. */
 export const TEXT_EDIT: ModeDefinition = {
   id: 'text-edit',
   label: 'Text Edit',

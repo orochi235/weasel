@@ -59,6 +59,21 @@ describe('createConnectAction', () => {
     }
   });
 
+  it('never lands on a port on a layer the view it started in does not paint', () => {
+    const onFx = () => PARTICIPANTS().map((p) => (p.node.id === 'b' ? { ...p, layer: 'fx' } : p));
+    for (const [painted, lands] of [[false, 0], [true, 1]] as const) {
+      const commit = vi.fn();
+      const start = ctxAt(100, 20, portPress());
+      (start as { deps: Record<string, unknown> }).deps = {
+        view: { layerIsPainted: (layer: string) => layer !== 'fx' || painted },
+      };
+      const invoker = createConnectAction<Rect>({ participants: onFx, commit }).invoker!;
+      if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+      invoker.start(start).onEnd!(ctxAt(300, 20), 'commit');
+      expect(commit).toHaveBeenCalledTimes(lands);
+    }
+  });
+
   it('declines a press that carries no port', () => {
     const action = createConnectAction<Rect>({ participants: PARTICIPANTS, commit: vi.fn() });
     const invoker = action.invoker!;
@@ -214,5 +229,46 @@ describe('createConnectAction', () => {
     (end as { deps: Record<string, unknown> }).deps = {};
     handle.onEnd!(end, 'commit');
     expect(seen).toEqual([marker]);
+  });
+
+  describe('with `bodies`', () => {
+    it('lands on a participant\'s body when no port is in reach', () => {
+      const commit = vi.fn();
+      const handle = open({ participants: PARTICIPANTS, commit, bodies: true });
+      // `b`'s center: its nearest port, `n`, is 20 away — past the snap radius.
+      handle.onEnd!(ctxAt(350, 20), 'commit');
+      expect(commit).toHaveBeenCalledTimes(1);
+      const edge = commit.mock.calls[0]![0] as PendingEdge;
+      expect(edge.from).toMatchObject({ nodeId: 'a', id: 'e' });
+      expect(edge.to).toEqual({ kind: 'body', nodeId: 'b', point: { x: 350, y: 20 } });
+    });
+
+    it('prefers a port within the snap radius over the body under it', () => {
+      const commit = vi.fn();
+      const handle = open({ participants: PARTICIPANTS, commit, bodies: true });
+      handle.onEnd!(ctxAt(395, 22), 'commit');
+      expect((commit.mock.calls[0]![0] as PendingEdge).to).toMatchObject({ nodeId: 'b', id: 'e' });
+    });
+
+    it('commits nothing when released over open canvas', () => {
+      const commit = vi.fn();
+      const handle = open({ participants: PARTICIPANTS, commit, bodies: true });
+      handle.onEnd!(ctxAt(200, 200), 'commit');
+      expect(commit).not.toHaveBeenCalled();
+    });
+
+    it('commits nothing when released on the source\'s own body', () => {
+      const commit = vi.fn();
+      const handle = open({ participants: PARTICIPANTS, commit, bodies: true });
+      handle.onEnd!(ctxAt(50, 20), 'commit');
+      expect(commit).not.toHaveBeenCalled();
+    });
+
+    it('previews the run to the port the body end will resolve to', () => {
+      const handle = open({ participants: PARTICIPANTS, commit: vi.fn(), bodies: true });
+      handle.onMove!(ctxAt(350, 20));
+      // `b`'s west port faces `a`, which is where the committed edge will end.
+      expect(previewEnd(handle)).toEqual({ x: 300, y: 20 });
+    });
   });
 });

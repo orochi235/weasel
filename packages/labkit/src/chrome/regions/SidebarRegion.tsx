@@ -1,5 +1,5 @@
-import { type StanceProps, useStance } from '@weasel-js/ui';
-import type { ReactNode } from 'react';
+import { type StanceProps, useStance } from '@weasel-js/ui/stance';
+import type { ReactNode, Ref } from 'react';
 import type {
   RegionContribution,
   SidebarSection,
@@ -26,8 +26,10 @@ export function Section({
   children,
   stance,
   tone,
+  barRef,
 }: StanceProps & {
   title: string;
+  barRef?: Ref<HTMLDivElement>;
   actions?: ReactNode;
   fill?: boolean;
   collapsed: boolean;
@@ -41,7 +43,7 @@ export function Section({
       data-fill={fill && !collapsed ? '' : undefined}
       {...useStance({ stance, tone })}
     >
-      <div className="lk-sidebar-section__bar">
+      <div className="lk-sidebar-section__bar" ref={barRef}>
         <button
           type="button"
           className="lk-sidebar-section__head"

@@ -57,6 +57,11 @@ export function layoutPages(pages: readonly Page[], options: PageLayoutOptions =
   });
 }
 
+/** The name page `index` of the page order shows: its own, else "Page" and its place. */
+export function pageName(page: { readonly name?: string | undefined }, index: number): string {
+  return page.name ?? `Page ${index + 1}`;
+}
+
 /** The page under a world point, or `null` between and outside them. A point on an edge is on the page. */
 export function pageAt(
   pages: readonly PlacedPage[],
@@ -84,6 +89,33 @@ export function pageOfBounds(pages: readonly PlacedPage[], bounds: Bounds): Plac
     if (area !== null && area > most) {
       best = page;
       most = area;
+    }
+  }
+  return best;
+}
+
+function gap(page: PlacedPage, b: Bounds): number {
+  const dx = Math.max(page.x - (b.x + b.width), b.x - (page.x + page.width), 0);
+  const dy = Math.max(page.y - (b.y + b.height), b.y - (page.y + page.height), 0);
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * The page a world-space box is held by: the one it is on (`pageOfBounds`),
+ * else the one nearest it by the box-to-box gap, the earlier of two equally
+ * near. `null` only with no pages. Used where every object must land on some
+ * page, such as an export; `pageOfBounds` stays the rule for what is on one.
+ */
+export function pageHolding(pages: readonly PlacedPage[], bounds: Bounds): PlacedPage | null {
+  const on = pageOfBounds(pages, bounds);
+  if (on !== null) return on;
+  let best: PlacedPage | null = null;
+  let least = Infinity;
+  for (const page of pages) {
+    const d = gap(page, bounds);
+    if (d < least) {
+      best = page;
+      least = d;
     }
   }
   return best;

@@ -2,8 +2,11 @@
  *  styled, and the lookups a look does over a pipeline. */
 import type { Row } from '../body';
 import { edgeIdOf, type DataEdge, type DataNode, type DiagramData, type DiagramSceneOptions, type EdgeStyle, type NodeStyle } from '../fromData';
+import { DIAGRAM_THEMES } from '../theme/themes';
+import type { DiagramTheme } from '../theme/types';
 import type { PortSpec } from '../types';
 import { checkPipeline } from './check';
+import { formatParam } from './stageTypes';
 import type { EffectGroup, EffectPipeline, EffectPort, EffectStage, EffectWire } from './types';
 
 /** The color of a value type, for a port or a wire. Answers `undefined`, a
@@ -19,28 +22,52 @@ export interface EffectLookResult {
    *  decision, keyed by edge id: which stage chose, and by which output. A
    *  run reads that stage's `taken` for them. */
   exits?: ReadonlyMap<string, { stage: string; port: string }>;
+  /** The stages on the main line, in the order the look draws them, for a
+   *  reorder to drag along. Looks that place stages freely leave it out. */
+  order?: LookOrder;
+  /** The lanes, top down, where the look draws lanes. */
+  laneOrder?: LookOrder;
+}
+
+/** A sequence a look draws: the scene node ids of its items in order along
+ *  `axis`. `reorder`'s `sequenceSlots` turns it into slots once the items
+ *  have drawn boxes. */
+export interface LookOrder {
+  axis: 'x' | 'y';
+  /** `grip` is where a press picks the item up, in world units; default its drawn box. */
+  items: readonly { id: string; grip?: { x: number; y: number; width: number; height: number } }[];
 }
 
 /** One way of drawing a pipeline. Unparameterized, a look whose options are
  *  not known: any look fits it, and it is called with none. */
 export type EffectLook<TOptions = never> = (pipeline: EffectPipeline, options?: TOptions) => EffectLookResult;
 
-const PALETTE = ['#6fb3ff', '#c58bff', '#f2c14e', '#5ad07f', '#ff8a6b', '#4fd1c5', '#e58fb8', '#b0bec5'];
+/** The theme the shipped looks draw in when their options name none. */
+export const LOOK_THEME: DiagramTheme = DIAGRAM_THEMES.night!;
+
+/** The option every shipped look takes for its colors. */
+export interface LookThemeOptions {
+  /** Stages take its default role, bypassed ones its muted role; value types its `series` in
+   *  turn; groups its container; lanes its lane bodies. Default `night`. */
+  theme?: DiagramTheme;
+}
+
 const UNTYPED = '#8aa2b5';
 /** The color `wireStyle` draws a wire in when `checkPipeline` reported it. */
 export const PROBLEM_COLOR = '#ff5d5d';
 
-const NORMAL: NodeStyle = { fill: '#16222c', stroke: '#3d566b', text: '#dbe7f2', strokeWidth: 1.5 };
-const BYPASSED: NodeStyle = { fill: '#121a21', stroke: '#3d566b', text: '#6d8496', strokeWidth: 1.5, dash: [4, 3] };
+const BYPASSED_DASH = [4, 3];
 
-/** A color per type: the one given, or the next in the palette in the order
+/** A color per type: the one given, or the next in `series` in the order
  *  types first appear on the pipeline's ports. */
-export function typeColors(pipeline: EffectPipeline, given: Readonly<Record<string, string>> = {}): TypeColor {
+export function typeColors(
+  pipeline: EffectPipeline, given: Readonly<Record<string, string>> = {}, series: readonly string[] = LOOK_THEME.series,
+): TypeColor {
   const colors = new Map<string, string>();
   for (const stage of pipeline.stages) {
     for (const port of [...(stage.inputs ?? []), ...(stage.outputs ?? [])]) {
       if (colors.has(port.type)) continue;
-      colors.set(port.type, given[port.type] ?? PALETTE[colors.size % PALETTE.length]!);
+      colors.set(port.type, given[port.type] ?? series[colors.size % series.length]!);
     }
   }
   return (type) => (type === undefined ? UNTYPED : colors.get(type) ?? given[type] ?? UNTYPED);
@@ -51,9 +78,11 @@ export function isControl(pipeline: EffectPipeline, type: string | undefined): b
   return type !== undefined && pipeline.types?.[type]?.control === true;
 }
 
-/** The node style the shipped looks give a stage: dashed and dim when it is bypassed. */
-export function stageStyle(stage: EffectStage): NodeStyle {
-  return stage.bypassed === true ? BYPASSED : NORMAL;
+/** The node style the shipped looks give a stage: the theme's default role, or dashed in its
+ *  muted role when the stage is bypassed. */
+export function stageStyle(stage: EffectStage, theme: DiagramTheme = LOOK_THEME): NodeStyle {
+  const { roles, defaultRole } = theme;
+  return stage.bypassed === true ? { ...(roles.muted ?? roles[defaultRole]!), dash: BYPASSED_DASH } : roles[defaultRole]!;
 }
 
 /** The edge style the shipped looks give a wire: `color`, dashed for a
@@ -124,6 +153,13 @@ export const NO_VALUE = '–';
 /** What a value row is measured as, so most values a run writes fit. */
 const VALUE_ROOM = '00000.000';
 
+/** The ports a run shows values and previews on: a stage's outputs, or for a
+ *  stage with none, such as a sink, its inputs, so the end of a pipeline
+ *  shows what reached it. */
+export function shownPorts(stage: EffectStage): readonly EffectPort[] {
+  return (stage.outputs?.length ?? 0) > 0 ? stage.outputs! : stage.inputs ?? [];
+}
+
 /** The row id of the value row for an output, under its stage's body. */
 export const valueRowId = (port: string): string => `value:${port}`;
 /** The row id of the preview slot for an output, under its stage's body. */
@@ -131,6 +167,9 @@ export const previewRowId = (port: string): string => `preview:${port}`;
 
 /** `RunRowOptions.previewSize`'s default: a 48-unit square. */
 export const PREVIEW_SIZE = 48;
+
+/** Device pixels per preview unit, so a preview stays sharp on a 2× display. */
+export const PREVIEW_DENSITY = 2;
 
 /** The rows a look keeps on each stage for what an `EffectRun` shows there.
  *  Kept from the start, so a run fills them in without the chart laying out
@@ -155,8 +194,9 @@ function runRowsOf(o: RunRowOptions): RunRowOptions {
 }
 
 /** The body rows of an ordinary stage: its title, a row of its ports when
- *  `withPorts` (inputs left, outputs right), then for each output its value
- *  row when `showValues` and its preview slot when `showPreviews`, then its
+ *  `withPorts` (inputs left, outputs right), then for each of its
+ *  `shownPorts` its value row when `showValues` and its preview slot when
+ *  `showPreviews`, then its
  *  params when `showParams`. */
 export function stageRows(
   stage: EffectStage,
@@ -171,7 +211,7 @@ export function stageRows(
   const preview = typeof size === 'number' ? { width: size, height: size } : size;
   // A repeated port id is a problem `checkPipeline` reports; one row for it.
   const seen = new Set<string>();
-  for (const p of stage.outputs ?? []) {
+  for (const p of shownPorts(stage)) {
     if (seen.has(p.id)) continue;
     seen.add(p.id);
     if (opts.showValues === true) {
@@ -179,7 +219,7 @@ export function stageRows(
     }
     if (opts.showPreviews === true) rows.push({ kind: 'slot', id: previewRowId(p.id), ...preview });
   }
-  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.value });
+  if (opts.showParams) for (const p of stage.params ?? []) rows.push({ kind: 'field', label: p.label, value: p.control ? formatParam(p.control) : p.value });
   return rows;
 }
 
@@ -207,29 +247,40 @@ export function boxNode(
 }
 
 /** One edge of a look's data, from port to port. */
-export function wireEdge(from: EffectWire['from'], to: EffectWire['to'], label: string | undefined): DataEdge {
-  return { from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port, ...(label !== undefined ? { label } : {}) };
+export function wireEdge(
+  from: EffectWire['from'],
+  to: EffectWire['to'],
+  label: string | undefined,
+  id?: string,
+): DataEdge {
+  return {
+    ...(id !== undefined ? { id } : {}),
+    from: from.stage, fromPort: from.port, to: to.stage, toPort: to.port,
+    ...(label !== undefined ? { label } : {}),
+  };
 }
 
 /** One edge per drawable wire, from port to port, named by `exitLabel` and
  *  styled by `wireStyle` in its type's color. */
 export function wireEdges(pipeline: EffectPipeline, color: TypeColor): { edge: DataEdge; style: EdgeStyle }[] {
   return drawableWires(pipeline).map((d) => ({
-    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d)),
+    edge: wireEdge(d.wire.from, d.wire.to, exitLabel(d), d.wire.id),
     style: wireStyle(color(d.type), isControl(pipeline, d.type), d.problem),
   }));
 }
 
-/** A look's `nodeStyle` and `edgeStyle`: `stageStyle` for each stage, and for
- *  each edge the style paired with it. */
+/** A look's `nodeStyle`, `edgeStyle`, and `theme`: `stageStyle` for each stage,
+ *  and for each edge the style paired with it. */
 export function sceneStyles(
   stages: readonly EffectStage[],
   edges: readonly { edge: DataEdge; style: EdgeStyle }[],
-): Required<Pick<DiagramSceneOptions, 'nodeStyle' | 'edgeStyle'>> {
-  const nodes = new Map(stages.map((s) => [s.id, stageStyle(s)]));
+  theme: DiagramTheme = LOOK_THEME,
+): Required<Pick<DiagramSceneOptions, 'nodeStyle' | 'edgeStyle' | 'theme'>> {
+  const nodes = new Map(stages.map((s) => [s.id, stageStyle(s, theme)]));
   const wires = new Map(edges.map((e) => [edgeIdOf(e.edge), e.style]));
   return {
-    nodeStyle: (n) => nodes.get(n.id) ?? NORMAL,
+    theme,
+    nodeStyle: (n) => nodes.get(n.id) ?? theme.roles[theme.defaultRole]!,
     edgeStyle: (e) => wires.get(edgeIdOf(e)) ?? wireStyle(UNTYPED, false, false),
   };
 }

@@ -14,8 +14,8 @@ const EPS = 1e-3;
  *  optional page box. Each box contributes up to 3 guides per axis: the two
  *  edges and the center. Overlapping offsets collapse to one candidate, whose
  *  `span` covers every box that produced it.
- *  Poses go through the same descriptor `alignMoveBehavior` matches with, so
- *  a rotated sibling advertises its ink edges rather than its stored box.
+ *  Poses go through `opts.poseDescriptor`, so a rotated sibling advertises
+ *  its ink edges rather than its stored box.
  *  The moving selection is measured with its stroke (`drawnBoundsOf`), so
  *  pass each sibling's `drawnAABBOf` box as its target for the two to agree.
  *  The lines are in the camera's world: a sibling on a parallax layer needs

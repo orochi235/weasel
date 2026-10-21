@@ -1,6 +1,8 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import type { GroupInset } from './cluster';
 import type { Outline } from './outline';
+import type { DiagramContainer } from './containers/trait';
+import type { FontField, StyleField } from './theme/styleField';
 
 /**
  * Where a port sits on its node, in **normalized bounds coordinates**:
@@ -67,9 +69,29 @@ export interface DiagramNode {
    *  itself is never laid out — it derives its pose from its members — but an
    *  edge can attach to it like any participant. */
   group?: DiagramGroup;
+  /** Present on a container, a pool, or a lane: a `ContainerNode` holding
+   *  members (`containers/trait.ts`). */
+  container?: DiagramContainer;
   /** How far past its bounds something drawn with it reaches, on each side —
    *  a built body's port labels. Layout keeps neighbors that far off too. */
   margin?: GroupInset;
+  /** The theme role it is drawn in. Unset, the theme's default role. */
+  style?: string;
+  /** The colors the author set by hand, which a theme leaves as they are. */
+  ownStyle?: readonly StyleField[];
+  /** The parts of its text face the author set by hand, which a theme leaves as they are. */
+  ownFont?: readonly FontField[];
+  /** On a built body whose rows are all text: how it stacks them, so it can be laid out again when
+   *  their text changes size. Each row's text node carries its place as `bodyRow`. */
+  body?: BodyLayout;
+}
+
+/** How a built body stacks its text rows: the `BodySpec` fields its layout reads, and how many rows. */
+export interface BodyLayout {
+  padding: number;
+  gap: number;
+  verticalAlign: 'top' | 'center' | 'bottom';
+  rows: number;
 }
 
 /** The group half of a {@link DiagramNode}. */
@@ -80,6 +102,8 @@ export interface DiagramGroup {
   /** The narrowest the box may be, in world units, as room for its label.
    *  A box its members leave narrower grows evenly on both sides. */
   minWidth?: number;
+  /** The axis its members can be dragged along to change their order. */
+  reorder?: 'x' | 'y';
 }
 
 /** A port resolved against a node's current pose: where it is in world

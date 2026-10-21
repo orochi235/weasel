@@ -1,9 +1,9 @@
 import { asNodeId, type UseSceneTextEditReturn, useLatest, useSceneTextEdit } from '@weasel-js/core';
-import { isCharacterChrome } from '@weasel-js/ui';
+import { isCharacterChrome } from '@weasel-js/ui/components/CharacterOptions';
 import { useEffect, useRef } from 'react';
 import type { DrawScene } from './drawDocument';
 import type { ModeMachine } from './modality';
-import { enterModeOn } from './modality/doubleClickEntry';
+import { enterModeOn } from './modality/enterModeOn';
 
 const TEXT_EDIT = 'text-edit';
 

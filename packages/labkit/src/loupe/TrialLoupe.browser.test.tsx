@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { CANVAS_CONTEXT_ATTRIBUTES } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
@@ -47,7 +48,7 @@ function SourceScene({
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
   useEffect(() => {
     const ctx = ref.current?.getContext('webgl2', {
-      preserveDrawingBuffer: true,
+      ...CANVAS_CONTEXT_ATTRIBUTES,
       antialias: false,
     });
     if (!ctx) throw new Error('no WebGL2');
@@ -145,20 +146,15 @@ function lensMiddle(container: HTMLElement): number[] {
   return [...ctx.getImageData(lens.width / 2, lens.height / 2, 1, 1).data];
 }
 
-test('a source lens peeked over a still pointer opens under it, once its host has been pressed in', async () => {
+test('a source lens peeked over a still pointer opens under it, with no press first', async () => {
   const colors: string[] = [];
   const { container } = render(
     <SourceScene enabled={false} onColorChange={(c) => colors.push(c)} />,
   );
   await frames(2);
-  // Inside the blue band. A hover alone does not give the host the keys.
+  // Inside the blue band. The peek key goes to the loupe under the pointer,
+  // whichever canvas holds the keys.
   move(container, 62, 25);
-  peek(true);
-  await frames(2);
-  expect(lensCenter(container)).toBeNull();
-  peek(false);
-  // A press, then the peek key with no move after it.
-  giveKeys(host(container));
   expect(lensCenter(container)).toBeNull();
   peek(true);
   await waitFor(() => expect(lensCenter(container)).toEqual({ x: 62, y: 25 }));
@@ -177,7 +173,7 @@ test('a source lens turned on under a still pointer opens under it', async () =>
   await waitFor(() => expect(lensMiddle(container)).toEqual([0, 255, 0, 255]));
 });
 
-test('a peek while the pointer is off the host shows nothing until it comes back', async () => {
+test('a peek begun off the host raises nothing when the pointer comes back, and the next one does', async () => {
   const { container } = render(<SourceScene enabled={false} />);
   await frames(2);
   giveKeys(host(container));
@@ -187,7 +183,12 @@ test('a peek while the pointer is off the host shows nothing until it comes back
   peek(true);
   await frames(2);
   expect(lensCenter(container)).toBeNull();
+  // The key went down over no loupe, so it peeks none.
   move(container, 88, 25);
+  await frames(2);
+  expect(lensCenter(container)).toBeNull();
+  peek(false);
+  peek(true);
   await waitFor(() => expect(lensCenter(container)).toEqual({ x: 88, y: 25 }));
   await waitFor(() => expect(lensMiddle(container)).toEqual([255, 255, 255, 255]));
 });

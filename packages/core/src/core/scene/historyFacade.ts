@@ -30,6 +30,8 @@ export interface SceneHistoryEnv {
   refuseUntracked(verb: string): void;
   /** Run an op-driven edit with its arrivals settled into the same batch. */
   runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void;
+  /** Run an edit applying ops, labeled `label` for the pose writes it reports. */
+  labeled<T>(label: string, fn: () => T): T;
   /** The journal `applyBatch` writes to now, or null. Undo and redo step it
    *  instead of the engine, so they take back the edits that went there. */
   activeJournal(): Journal | null;
@@ -51,10 +53,10 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv): Journal {
     targetId: raw.targetId,
     forkedAtEntryId: raw.forkedAtEntryId,
     applyBatch(ops, label) {
-      env.runArrivalEdit(ops, (all) => {
+      env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
         env.applying(() => raw.applyBatch(all.map(env.causing), label));
         notify();
-      });
+      }));
     },
     undo() {
       replay(() => raw.undo());
@@ -142,20 +144,20 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
       refuseUntracked('history.apply');
-      runArrivalEdit([op], (all) => {
+      env.labeled(label ?? op.label ?? '', () => runArrivalEdit([op], (all) => {
         const run = () => (all.length === 1
           ? engine.apply(env.causing(op), label)
           : engine.applyOps(all.map(env.causing), label ?? op.label ?? ''));
         env.applying(run);
         notify();
-      });
+      }));
     },
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
-      runArrivalEdit(ops, (all) => {
+      env.labeled(label, () => runArrivalEdit(ops, (all) => {
         env.applying(() => engine.applyOps(all.map(env.causing), label));
         notify();
-      });
+      }));
     },
     undo: () => { methods.undo(); },
     redo: () => { methods.redo(); },
@@ -190,6 +192,7 @@ export function createSceneHistory(env: SceneHistoryEnv): { history: History; me
     branches: () => engine.branches(),
     getVersion: () => engine.getVersion(),
     subscribe: (listener) => engine.subscribe(listener),
+    observe: (listener) => engine.observe(listener),
     serialize: methods.serializeHistory,
     allForwardOps: () => engine.allForwardOps(),
     seal: () => engine.seal(),

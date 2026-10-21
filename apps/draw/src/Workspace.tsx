@@ -1,8 +1,9 @@
 import {
-  BUILTIN_TOOL_IDS,
+  BUILTIN_TOOLS,
+  withoutTools,
   type Measurements,
   measurementsContribution,
-  nearestMeasureEnd,
+  measureEndSource,
   SceneCanvas,
   type SceneCanvasApi,
   type SelectionApi,
@@ -14,9 +15,11 @@ import {
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
-import { useShapeBuilderTool, useSpiroTool } from '@weasel-js/path-tools';
+import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
-import { MeasureReadout, SceneGradientHandles, ToastRegion } from '@weasel-js/ui';
+import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
+import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
+import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useCallback, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import { PAPER_PRESETS } from './docPersistence';
@@ -28,28 +31,21 @@ import type { UseModalityReturn } from './modality/useModality';
 import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { usePaperLayer } from './pageLayers';
+import { TextEditDepPublisher, usePageFit, usePaperLayer, useSinglePage } from '@editor/index';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
-import { TextEditDepPublisher } from './TextEditDepPublisher';
 import { useColorContext } from './tools/colorContext';
 import { DRAW_FEATURES } from './drawFeatures';
 import { useEditorAmbient } from './useEditorAmbient';
 import { useGrid } from './useGrid';
 import { usePathDirection } from './usePathDirection';
-import { usePathToolsTools } from './usePathToolsTools';
 import { useSymmetry } from './useSymmetry';
-import { usePageFit } from './usePageFit';
 import { useSpacingHints } from './useSpacingHints';
 
-/** Every built-in but the rig tools, since a drawing has no skeletons to edit,
- *  and the sticky tool, whose `background` and `padding` the document's
- *  SVG round trip does not carry. */
-const DRAW_TOOLS = BUILTIN_TOOL_IDS.filter((id) => id !== 'bone' && id !== 'weight' && id !== 'sticky');
-
-/** Screen-px radius within which a drawing tool snaps to a measurement's end. */
-const END_SNAP_PX = 6;
+/** Every built-in but the sticky tool, whose `background` and `padding` the
+ *  document's SVG round trip does not carry. */
+const DRAW_TOOLS = [withoutTools(BUILTIN_TOOLS, 'sticky')];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -89,7 +85,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const hostDims = useCanvasSize(hostRef);
   const recenter = usePageFit(hostDims, props.paperSize, page, onViewChange);
 
-  const paperLayer = usePaperLayer(page, backgroundColor);
+  const paperLayer = usePaperLayer(useSinglePage(page), backgroundColor);
   const grid = useGrid(page, backgroundColor);
   const spacingHints = useSpacingHints();
   const pathDirection = usePathDirection();
@@ -108,7 +104,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const ambient = useEditorAmbient({
     scene,
     selection,
-    modeKeys: modes.keys,
+    modes: modes.ambient,
     grid: grid.commands,
     pathDirection: pathDirection.commands,
     symmetry,
@@ -118,8 +114,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     openPalette: props.openPalette,
   });
   const insertPaint = useInsertPaint();
-  const spiroTool = useSpiroTool();
-  const shapeBuilderTool = useShapeBuilderTool();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
@@ -128,14 +122,13 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [scene, measurements],
   );
   const ambientEntries = useMemo(() => [...ambient, measureEntry], [ambient, measureEntry]);
-  // Measurement ends snap a drawing or a move within a few screen pixels;
-  // past them, a drawing takes the grid.
-  const gridSnap = grid.snapPoint;
-  const perPx = 1 / (view.scale.x || 1);
-  const toolOptions = useMemo(() => ({
-    snapTargets: (p: { x: number; y: number }) => nearestMeasureEnd(scene as never, measurements, p, END_SNAP_PX * perPx),
-    ...(gridSnap ? { snapPoint: gridSnap } : {}),
-  }), [scene, measurements, gridSnap, perPx]);
+  // Measurement ends, and the canvas's default path anchors, snap a gesture
+  // within a few screen pixels; past them it takes the grid.
+  const gridSource = grid.snapSource;
+  const snap = useMemo(
+    () => ({ sources: [...(gridSource ? [gridSource] : []), measureEndSource()] }),
+    [gridSource],
+  );
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -176,6 +169,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       {hostDims.width > 0 && hostDims.height > 0 && (
         <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={[...DRAW_FEATURES, ...(spacingHints ? [spacingHints] : [])]}
           claimKeys
+          aria-label="Drawing"
           ref={props.onCanvas}
           ambient={ambientEntries}
           width={hostDims.width}
@@ -185,7 +179,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           scene={scene}
           selection={selection}
           defaultTools={DRAW_TOOLS}
-          tools={{ ...pathToolsTools, spiro: spiroTool, shapeBuilder: shapeBuilderTool, measure: measureTool, opacityScrub: opacityScrubTool }}
+          tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool }}
           ingestion={DRAW_INGESTION}
           insertPaint={insertPaint}
           // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
@@ -196,8 +190,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           pickHud
           modalityHud
           onToolsCreated={props.onToolsCreated}
-          selectTool={grid.snap ? { snap: grid.snap } : undefined}
-          toolOptions={toolOptions}
+          snap={snap}
           layers={{
             paper: { layer: paperLayer, before: 'grid' },
             ...(grid.layer ? { grid: { layer: grid.layer } } : {}),
@@ -207,7 +200,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           alphaFor={alphaFor}
           redrawOn={redrawOnScoping}
           isPointerInteractive={modality.scopingDim.isPointerInteractive}
-          onDoubleClick={modes.onDoubleClick}
+          isolatedGroup={modes.isolatedGroup}
           modes={machine.registry}
           pathEdit={modes.pathEdit}
           chromeVisibility={pathDirection.chromeVisibility}

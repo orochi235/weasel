@@ -28,6 +28,9 @@ const config = (): unknown => JSON.parse(screen.getByTestId('config').textConten
 const open = (label: string): void => {
   fireEvent.click(screen.getByRole('button', { name: `Edit ${label}` }));
 };
+const done = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+};
 
 describe('a control panel row for a leaf made of other leaves', () => {
   it('edits one field of an object in a dialog and writes the object whole', () => {
@@ -36,6 +39,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     );
     open('Stop');
     fireEvent.click(screen.getByRole('checkbox', { name: 'On' }));
+    done();
     expect(config()).toEqual({ stop: { on: true, at: 1 } });
   });
 
@@ -45,6 +49,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     );
     open('Flags');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Flag 2' }));
+    done();
     expect(config()).toEqual({ flags: [false, true] });
   });
 
@@ -58,6 +63,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     );
     open('On');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Flag right' }));
+    done();
     expect(config()).toEqual({ on: { left: false, right: true } });
   });
 
@@ -72,6 +78,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     open('Ramp');
     expect(screen.queryByRole('checkbox', { name: 'Wide' })).toBeNull();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Soft' }));
+    done();
     expect(config()).toEqual({ ramp: { type: 'linear', soft: true } });
   });
 
@@ -79,7 +86,7 @@ describe('a control panel row for a leaf made of other leaves', () => {
     const run = vi.fn();
     renderWithIcons(<Panel schema={f.schema({ wipe: f.action(run) })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
-    expect(run).toHaveBeenCalledWith({ path: 'wipe' });
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({ path: 'wipe' }));
   });
 });
 

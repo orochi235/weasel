@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { createScene, asNodeId, type DerivedDep, type RectPose } from '@weasel-js/core';
+import { createScene, asNodeId, PATH_L, PATH_M, type DerivedDep, type RectPose } from '@weasel-js/core';
 import {
   DIAGRAM_EDGE,
+  OFF_PAGE_STUB,
   bezier,
   edgeDerivePath,
+  edgeRouter,
+  ROUTERS,
   orthogonal,
+  routerOf,
   straight,
   withDiagramRegistry,
   type Router,
@@ -110,6 +114,16 @@ describe('bezier', () => {
     const between = run.filter((p) => p.y > 80 && p.y < 120);
     expect(between.length).toBeGreaterThan(0);
     for (const p of between) expect(p.x).toBeCloseTo(100, 6);
+  });
+});
+
+describe('routerOf', () => {
+  it('picks the router an edge names, and straight for none or an unknown key', () => {
+    expect(routerOf({ router: 'orthogonal' })).toBe(ROUTERS['orthogonal']);
+    expect(routerOf({})).toBe(straight);
+    expect(routerOf({ router: 'nope' })).toBe(straight);
+    const mine = () => [];
+    expect(routerOf({ router: 'mine' }, { mine })).toBe(mine);
   });
 });
 
@@ -229,6 +243,26 @@ describe('edgeDerivePath', () => {
   it('draws nothing for a node that is not an edge', () => {
     expect(derive({ data: { diagram: { outline: 'rect' } } }, [dep(box(0, 0)), dep(box(200, 0))]))
       .toBeNull();
+  });
+
+  it('draws a split edge as two open stubs along its ports\' normals, each ending where its end marker goes', () => {
+    const split = edgeNode({ from: {}, to: {}, offPage: { ref: 'A', from: 'p1', to: 'p2' } });
+    const path = derive(split, [dep(box(0, 0)), dep(box(200, 0))]) as { commands: Uint8Array; coords: Float32Array };
+    // The start stub leaves the east port and ends at its tag, so its end
+    // marker points out to the tag; the end stub ends on the west port, so its
+    // arrowhead points into the shape.
+    expect([...path.commands]).toEqual([PATH_M, PATH_L, PATH_M, PATH_L]);
+    expect([...path.coords]).toEqual([40, 20, 40 + OFF_PAGE_STUB, 20, 200 - OFF_PAGE_STUB, 20, 200, 20]);
+  });
+
+  it('answers a split edge\'s route with its stubs', () => {
+    const split = edgeNode({ from: {}, to: {}, offPage: { ref: 'A', from: 'p1', to: 'p2' } });
+    const route = edgeRouter<RectPose>()(split, [dep(box(0, 0)), dep(box(200, 0))])!;
+    expect(route.stubs).toEqual([
+      [{ x: 40, y: 20 }, { x: 40 + OFF_PAGE_STUB, y: 20 }],
+      [{ x: 200 - OFF_PAGE_STUB, y: 20 }, { x: 200, y: 20 }],
+    ]);
+    expect(edgeRouter<RectPose>()(edgeNode({ from: {}, to: {} }), [dep(box(0, 0)), dep(box(200, 0))])!.stubs).toBeUndefined();
   });
 });
 

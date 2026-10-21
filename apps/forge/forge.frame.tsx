@@ -4,6 +4,8 @@ import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
 import type { LabMode } from '@weasel-js/labkit';
 import { icons as drawIcons } from '@draw/icons.table';
 import { icons as pathToolsIcons } from '@weasel-js/path-tools/icons';
+import { icons as rigIcons } from '@weasel-js/rig/icons';
+import { devtoolsDock } from './devtools';
 import { fontRule, loadWebFonts } from './fonts';
 import { followScheme } from './mode';
 import { applyTrialTheme } from './themes';
@@ -27,8 +29,8 @@ const applyGlobals = followScheme((globals, { root, scope, style }, mode) => {
 });
 
 export default defineFrameConfig({
-  decorators: [labkitRoot],
-  icons: [pathToolsIcons, drawIcons],
+  decorators: [labkitRoot, devtoolsDock],
+  icons: [pathToolsIcons, rigIcons, drawIcons],
   prepare: async (story) => {
     if (isLabkit(story.title)) LabRoot ??= (await import('@weasel-js/labkit')).LabRoot;
   },

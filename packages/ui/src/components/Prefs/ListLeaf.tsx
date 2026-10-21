@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PrefList, PrefString } from '@weasel-js/prefs';
+import { prefLeafValue, type PrefList, type PrefString } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
 import { entriesDisabled, entryConditions, entryDisabledAt } from './entry';
 import type { PrefRenderContext, PrefRenderer } from './PrefsRow';
@@ -19,7 +19,7 @@ export function prefListTexts(value: unknown): string[] {
 
 /** What an entry of a list reads as: one holding nothing is the item's default, which is what a new entry starts as. */
 export function prefListEntry(pref: PrefList, entry: unknown): unknown {
-  return entry !== undefined ? entry : pref.item.default;
+  return prefLeafValue(pref.item, entry);
 }
 
 /** A `list` leaf: one control per entry, each drawn as the list's `item` leaf, and every edit commits the whole array. */
@@ -63,6 +63,7 @@ export function ListLeaf({
           // An entry is not pinned on its own: it shares the state of its list.
           auto: ctx.auto,
           setAuto: ctx.setAuto,
+          values: ctx.values,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
           ...(ctx.settles ? { settles: ctx.settles } : {}),
         });

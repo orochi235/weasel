@@ -6,16 +6,18 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { PoseComposition } from 'core/scene/composePose';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
-import type { LayoutDep, NodeAtPointDep } from '../depSchema';
+import type { CanDropIntoDep, LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { moveSources } from '../selectionSubtree';
 import { layoutDrop } from './behaviors/layoutDrop';
 import { reparentOnDrop } from './behaviors/reparentOnDrop';
 import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
 import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
-import { captureMovePathSnap, type MovePathSnap } from './pathSnap';
+import type { SnapSession } from '../snapDep';
+import { lazySnapSession } from 'features/snap/lazySession';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -54,15 +56,21 @@ export interface MoveSession {
   readonly adapter: MoveGestureAdapter<unknown>;
   readonly layout: LayoutDep | undefined;
   readonly applyOps?: (ops: Op[], label: string) => void;
+  /** Finishes the committed batch with the other nodes that change with it. */
+  readonly finish?: TransformFinisher;
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
+  /** Whether a container admits the dragged roots; every one does when absent. */
+  readonly admits: (parent: NodeId) => boolean;
   /** Read at release: a binding's params may be a thunk. */
   readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
-  /** Path snapping for the drag's base point; null when the `snap` dep
-   *  snaps to no paths. */
-  readonly pathSnap: MovePathSnap | null;
+  /** The drag's snapping, begun once the drag passes its threshold; null
+   *  with no `snap` dep. */
+  readonly snap: SnapSession | null;
+  /** The press, in the coordinates the drag's delta is measured in. */
+  readonly press: { x: number; y: number };
 }
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
@@ -84,6 +92,15 @@ export interface MoveGesture {
   frame(): MoveFrame;
 }
 
+function admitsOf(
+  canDropInto: CanDropIntoDep | undefined,
+  ids: readonly NodeId[],
+): (parent: NodeId) => boolean {
+  if (canDropInto === undefined) return () => true;
+  const roots = ids as readonly string[];
+  return (parent) => canDropInto(parent as string, roots);
+}
+
 /** Capture a drag at press. Null when there is nothing to move. Runs each
  *  behavior's `onStart`. `frame` reads the drag's latest frame, for the
  *  behaviors appended to the binding's own. */
@@ -98,6 +115,7 @@ export function beginMove(
   const layout = ctx.deps.layout;
   const applyOps = ctx.deps.applyOps;
   const geometryProjection = ctx.deps.geometryProjection;
+  const finish = transformFinisher(ctx.deps);
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
@@ -131,11 +149,12 @@ export function beginMove(
   // A behavior that commits after the gesture has ended, a coast coming to
   // rest, lands its batch the way the gesture's own commit does.
   const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
-    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops), selection.adapterMethods);
+    commitGestureOps({ scene, applyOps, adapter: through, finish }, lifecycle, ops), selection.adapterMethods);
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
+  const press = ctx.drag?.start ?? ctx.world;
   const session: MoveSession = {
     startPoses,
     ids,
@@ -154,12 +173,15 @@ export function beginMove(
     layout,
     pc,
     applyOps,
+    finish,
     geometryProjection,
     lifecycle,
     nodeAtPoint: ctx.deps.nodeAtPoint,
+    admits: admitsOf(ctx.deps.canDropInto, ids),
     reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
     dragThresholdPx,
-    pathSnap: captureMovePathSnap(ctx.deps.snap, ctx.drag?.start ?? ctx.world, [...startPoses.keys()]),
+    snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }),
+    press,
   };
   return { session, readers };
 }

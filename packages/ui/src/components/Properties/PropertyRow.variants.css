@@ -142,7 +142,7 @@
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   font: inherit;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   resize: vertical;
 }
 

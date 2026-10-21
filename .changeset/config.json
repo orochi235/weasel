@@ -18,6 +18,7 @@
       "@weasel-js/simulation",
       "@weasel-js/stroke",
       "@weasel-js/renderer",
+      "@weasel-js/pdf",
       "@weasel-js/storage",
       "@weasel-js/prefs",
       "@weasel-js/select",
@@ -31,6 +32,7 @@
       "@weasel-js/d3",
       "@weasel-js/diagram",
       "@weasel-js/diagram-elk",
+      "@weasel-js/diagram-formats",
       "@weasel-js/guides",
       "@weasel-js/theme",
       "@weasel-js/ui",
@@ -44,8 +46,10 @@
       "@weasel-js/minimap",
       "@weasel-js/symmetry",
       "@weasel-js/path-tools",
+      "@weasel-js/rig",
       "@weasel-js/forge",
-      "@weasel-js/routing"
+      "@weasel-js/routing",
+      "@weasel-js/devtools"
     ]
   ],
   "linked": [],

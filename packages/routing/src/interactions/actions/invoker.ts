@@ -27,6 +27,8 @@ export type Point2 = Point;
  * `kind` is a discriminator string:
  *   - `'handle:top-left'` / `'handle:top-right'` / `'handle:bottom-left'` /
  *     `'handle:bottom-right'` — corner resize handles.
+ *   - `'handle:top'` / `'handle:right'` / `'handle:bottom'` / `'handle:left'` —
+ *     edge resize handles.
  *   - `'rotate-handle'` — the rotation affordance.
  *   - `'anchor:N'` — a path anchor at index N.
  */
@@ -46,8 +48,8 @@ export interface AffordanceHit {
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */
   targetIds?: string[];
-  /** Set only when `kind` matches `'handle:*'`: which corner stays fixed
-   *  during a resize. */
+  /** Set only when `kind` matches `'handle:*'`: which corner or edge stays
+   *  fixed during a resize; `'free'` on the axis an edge handle leaves alone. */
   anchor?: ResizeAnchor;
   /** Cursor to show while the pointer hovers this affordance (no gesture in
    *  flight). Unset falls through to action-cursor prediction, then to the
@@ -208,6 +210,12 @@ export interface BindingOpts {
    */
   yields?: boolean;
   /**
+   * For a key binding: live while the pointer is over the surface, whichever
+   * canvas holds the keys, and only then. For a key that means "here" — a
+   * magnifier's peek — on a page with more than one surface that hears it.
+   */
+  over?: boolean;
+  /**
    * Keys for some of the action's `modifierRoles` on this binding, by role
    * id, over the action's defaults and any tuning's.
    */
@@ -264,8 +272,11 @@ export interface OngoingHandle {
    *
    * `previewIds()` enumerates the displaced node ids; `previewPose(id)`
    * returns the interim pose for one of them (shape opaque — the canvas
-   * casts to its `TPose` parameter). Returning `null`, or omitting the
-   * method, means "no preview this gesture".
+   * casts to its `TPose` parameter). `previewIds` returning `null`, or
+   * omitted, means "no preview this gesture". An id with no `previewPose`
+   * is shown at its effective pose: an action that publishes its poses to
+   * the scene's pose overrides, as move, resize and rotate do, leaves
+   * `previewPose` out rather than answering the same pose twice.
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;

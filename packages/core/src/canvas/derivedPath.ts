@@ -7,15 +7,15 @@
  * `effectivePose` has to be able to reach it.
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
-import { boxToBox, multiply, poseFrameInverseOf, poseFrameOf, transformPath, type Path } from '@weasel-js/geom';
+import { multiply, poseFrameInverseOf, poseFrameOf, type Path } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
-import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composesFrames, composeWorldPose, type PoseAdapter } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
-import { derivedPartsOf, pathFromParts } from 'core/scene/derivedParts';
 import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
+import { carryBoxPath, carryPathBy, pathAsPainted } from 'core/scene/depFrame';
 import type { SceneViewDrawOne } from './NodeShape';
+import type { DrawnBoundsScene } from './drawnBounds';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
 
@@ -40,14 +40,6 @@ export function sceneShownToPose<TData, TLayer extends string, TPose>(
   return (node) => toPose(shownNode(scene, node));
 }
 
-/** `path`, drawn for a node boxed at `from`, as it is drawn for that node boxed at `to`. A
- *  pose that is not a box leaves the path where it is. */
-function carryPath(path: Path, from: unknown, to: unknown): Path {
-  if (!isRectPose(from) || !isRectPose(to)) return path;
-  if (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height) return path;
-  return transformPath(path, boxToBox(from.x, from.y, from.width, from.height, to.x, to.y, to.width, to.height));
-}
-
 /**
  * `(node) => the path its pose override shows it by`, in the frame the reader paints in: as
  * the override has it, or under a `toPose` carried from the box the scene shows the node at
@@ -62,7 +54,7 @@ function sceneOverridePathOf<TData, TLayer extends string, TPose>(
     const path = scene.overrides.read(node.id)?.path;
     if (path === undefined) return undefined;
     const shown = shownNode(scene, node);
-    return carryPath(path, shown.pose, toPose(shown));
+    return carryBoxPath(path, shown.pose, toPose(shown));
   };
 }
 
@@ -110,6 +102,9 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
   if (slot === undefined) return (id) => derivedDepOf(scene, id);
   const ctx: SlotLookup<TPose> = {
     at: scenePaintedPoseOf(scene, toPose) as (node: unknown) => TPose,
+    local: (toPose
+      ? sceneShownToPose(scene, toPose)
+      : (node: Node<TData, TLayer, TPose>) => effectivePose(scene, node)) as (node: unknown) => TPose,
     slot,
     shown: sceneOverridePathOf(scene, toPose) as (node: unknown) => Path | undefined,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
@@ -123,6 +118,8 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
 
 interface SlotLookup<TPose> {
   at: (node: unknown) => TPose;
+  /** The pose the node is shown at in its own frame: the box its override path is drawn in. */
+  local: (node: unknown) => TPose;
   slot: string | NodeMemoScope;
   /** The path a pose override shows a node by, where it has one. */
   shown: (node: unknown) => Path | undefined;
@@ -142,7 +139,9 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
   }
 
   get path(): Path | null {
-    return this.ctx.shown(this.node) ?? resolveDerivedPath(
+    const shown = this.ctx.shown(this.node);
+    if (shown !== undefined) return pathAsPainted(shown, this.ctx.local(this.node), this.pose);
+    return resolveDerivedPath(
       this.node as never, this.ctx.lookup, this.ctx.childrenOf, this.ctx.slot,
     );
   }
@@ -235,17 +234,26 @@ function withoutInheritedFrame(path: Path, painted: unknown, own: unknown): Path
   const box = painted as { x: number; y: number; width: number; height: number };
   const o = own as { rotation?: number; transform?: unknown } | null;
   const redo = poseFrameOf({ x: box.x, y: box.y, width: box.width, height: box.height, rotation: o?.rotation, transform: o?.transform });
-  const m = redo === null ? undo : multiply(undo, redo);
-  // Painted every frame from a memoized path, so the carried copy is kept against it.
-  const key = m.join(',');
-  const held = carried.get(path);
-  if (held?.key === key) return held.path;
-  const parts = derivedPartsOf(path);
-  const out = parts === undefined
-    ? transformPath(path, m)
-    : pathFromParts(parts.map((part) => ({ ...part, path: transformPath(part.path, m) })))!;
-  carried.set(path, { key, path: out });
-  return out;
+  return carryPathBy(path, redo === null ? undo : multiply(undo, redo));
 }
 
-const carried = new WeakMap<Path, { key: string; path: Path }>();
+const drawnScenes = new WeakMap<object, DrawnBoundsScene>();
+
+/** `scene` read as `drawnBoundsOf` reads one, each node that shows a computed
+ *  path answering it. One object per scene, so it can key a memo. */
+export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): DrawnBoundsScene {
+  let held = drawnScenes.get(scene);
+  if (held === undefined) {
+    const pathOf = sceneDerivedPathOf(scene);
+    held = {
+      get: (id) => scene.get(id) as never,
+      childrenOf: (id) => scene.childrenOf(id),
+      derivedPathOf: (id) => {
+        const node = scene.get(id);
+        return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;
+      },
+    };
+    drawnScenes.set(scene, held);
+  }
+  return held;
+}

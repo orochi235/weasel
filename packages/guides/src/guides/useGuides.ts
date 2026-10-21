@@ -7,7 +7,7 @@ export interface UseGuidesReturn {
   /** Live list (state). Re-renders when guides change. */
   guides: Guide[];
   /** Stable getter; reads the latest list without forcing a re-render.
-   *  Pass to `guideSnapStrategy` and `createGuidesLayer`. */
+   *  Pass to `guideSnapSource` and `createGuidesLayer`. */
   getGuides: () => Guide[];
   /** Add a guide. If a guide with the same id already exists it is replaced. */
   addGuide: (guide: Guide) => void;
@@ -19,7 +19,7 @@ export interface UseGuidesReturn {
 
 /**
  * In-memory guide storage. Holds a list of horizontal/vertical world-space
- * lines that callers can pass to `guideSnapStrategy` (snap behavior) and
+ * lines that callers can pass to `guideSnapSource` (snap source) and
  * `createGuidesLayer` (render layer).
  *
  * v1 is intentionally minimal: no undo integration, no persistence, no

@@ -32,7 +32,7 @@ function Picture() {
 function Harness(args: Partial<TrialOverviewProps>) {
   const [view, setView] = useState<ViewTransform>({ zoom: 2, pan: { x: -200, y: -120 } });
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: '100cqi', height: '100cqb' }}>
       <Stage
         size={SIZE}
         view={view}

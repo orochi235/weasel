@@ -21,7 +21,7 @@ interface Entry {
   when: number;
   fire: (when: number) => void;
   key?: string;
-  /** Booked for a time past the lookahead, so a pass has to reach it. */
+  /** Booked for a time past the lookahead, so a pass reaching it late is reported. */
   waited: boolean;
 }
 
@@ -34,8 +34,10 @@ export interface Scheduler {
    *  true time to `source.start()` rather than "now". It runs on the first
    *  pass whose lookahead window reaches it — or, when the window already
    *  covers it and the scheduler is running, at the end of the current task,
-   *  in time order with everything else then due. */
-  schedule(when: number, fire: (when: number) => void, key?: string): void;
+   *  in time order with everything else then due. `reportLate: false` keeps
+   *  it from `onLate`, for a callback whose work no longer depends on when it
+   *  runs. */
+  schedule(when: number, fire: (when: number) => void, key?: string, opts?: { reportLate?: boolean }): void;
   /** Drop queued events with this key. A pass takes its whole batch out of the
    *  queue before firing any of it, so a callback cannot cancel a sibling that
    *  came due alongside it. */
@@ -109,9 +111,9 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
       opts.clearTimer(handle);
       handle = null;
     },
-    schedule(when, fire, key) {
+    schedule(when, fire, key, entryOpts) {
       const waited = when > opts.now() + lookahead;
-      queue.push({ when, fire, key, waited });
+      queue.push({ when, fire, key, waited: waited && entryOpts?.reportLate !== false });
       if (running && !flushQueued && !waited) {
         flushQueued = true;
         queueMicrotask(flush);

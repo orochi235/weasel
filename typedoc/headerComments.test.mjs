@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { headerOnExportList } from './headerComments.mjs';
 
@@ -24,5 +26,26 @@ describe('headerOnExportList', () => {
     expect(check('/** Helpers. */\nexport * from "./a";\n')).toBe(false);
     expect(check('/** Helpers. */\nimport { a } from "./a";\nexport { a };\n')).toBe(false);
     expect(check('/** Clamp a value. */\nexport function clamp() {}\n')).toBe(false);
+  });
+});
+
+describe('package sources', () => {
+  it('open no file with a doc comment on an export list', () => {
+    const packages = join(import.meta.dirname, '../packages');
+    const found = [];
+    for (const name of readdirSync(packages)) {
+      const src = join(packages, name, 'src');
+      let files;
+      try {
+        files = readdirSync(src, { recursive: true });
+      } catch {
+        continue;
+      }
+      for (const file of files) {
+        if (!/\.tsx?$/.test(file) || /\.d\.ts$|\.test\.tsx?$|(^|\/)node_modules\//.test(file)) continue;
+        if (headerOnExportList(file, readFileSync(join(src, file), 'utf8'))) found.push(`packages/${name}/src/${file}`);
+      }
+    }
+    expect(found).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { snapToStep } from '../spin';
+import { snapToStep } from '@weasel-js/quantity';
 import { clamp } from '@weasel-js/geom';
 import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX, attract, usableStops } from './stops';

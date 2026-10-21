@@ -55,7 +55,12 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case undefined:
       return fail(`${parsed.gesture} has no GestureSpec kind`);
     case 'hover':
-      return withMods({ kind, ...(arg === 'leave' ? { motion: 'leave' as const } : {}), ...t });
+      return withMods({
+        kind,
+        ...(arg === 'leave' ? { motion: 'leave' as const } : {}),
+        ...(parsed.held ? { held: parsed.held === 'required' ? (true as const) : ('optional' as const) } : {}),
+        ...t,
+      });
     case 'click':
     case 'pointerDown':
     case 'doubleClick':
@@ -79,8 +84,9 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case 'multiTouchTap':
       if (arg === undefined) return fail(`a ${kind} spec needs concrete fingers`);
       return withMods({ kind, fingers: Number(arg) });
-    case 'drop':
     case 'carry':
+      return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}), ...t });
+    case 'drop':
     case 'paste':
       return withMods({ kind, ...(arg ? { types: arg.split('|') } : {}) });
   }

@@ -80,7 +80,8 @@ export type {
   OutlineStatus,
   OutlineFaceInfo,
 } from './outline/outlineRegistry';
-export type { OutlineFace, OutlineParser } from './outline/OutlineFace';
+export type { OutlineFace, OutlineParser, FaceEmbedding } from './outline/OutlineFace';
+export { fontEmbedding } from './outline/fontEmbedding';
 export { metricsOf } from './glyphMetrics';
 export type { GlyphMetrics } from './glyphMetrics';
 export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
@@ -103,4 +104,6 @@ export {
   GLYPH_MODE_MSDF,
   GLYPH_MODE_R8,
   glyphFieldScale,
+  SYNTH_BOLD_AMOUNT,
+  syntheticBoldGrowth,
 } from './textSdf';

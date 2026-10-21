@@ -72,7 +72,7 @@ describe('resize — a node\'s minimum size', () => {
 
   it('holds with a resize policy that names no constraints', () => {
     const scene = makeScene();
-    const policy = { constraints: [], pointSnap: [], expandIds: (ids: string[]) => ids };
+    const policy = { constraints: [], expandIds: (ids: string[]) => ids };
     drag(scene, [A], BOTTOM_RIGHT, { x: 100, y: 100 }, { x: 10, y: 10 }, policy);
     expectSamePose(scene.get(A)!.pose as RectPose, { x: 0, y: 0, width: 48, height: 48 });
   });

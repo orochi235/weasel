@@ -1,10 +1,11 @@
 /**
  * Path constraints in path edit: their marks on the open path, a click
- * selecting one, Delete removing it, and every edit finished so they hold.
+ * selecting one, Delete removing it, and every edit finished so they hold —
+ * a whole-node transform too, for the links tying the nodes it moves.
  */
 import { pathAnchorPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep, PathEditExtension, PathEditTarget } from '@weasel-js/core';
-import { finishLinkedEdit, registerConstraintLinkShape } from './constraintLinks';
+import { finishLinkedEdit, finishLinkedTransform, registerConstraintLinkShape } from './constraintLinks';
 import { constraintGlyphs, constraintMarkAt, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { conflictsIn, constrainNodeEdit, constraintAxisOf, constraintsOf, solveNodeConstraints } from './pathConstraints';
 
@@ -14,7 +15,8 @@ export const CONSTRAINTS_EXTENSION_ID = 'constraints';
 /** Screen-pixel radius for "this click landed on a constraint mark". */
 const MARK_CLICK_PX = 8;
 
-const DEFAULT_STYLE: ConstraintGlyphStyle = { stroke: '#0e9f8e', conflictStroke: '#e5484d' };
+/** The constraint marks' colors when a preset names none. */
+export const DEFAULT_CONSTRAINT_STYLE: ConstraintGlyphStyle = { stroke: '#0e9f8e', conflictStroke: '#e5484d' };
 
 /** The edited node's world-space polygon, or null when it has none. */
 export function editedPath(dep: EditAnchorsDep): PolygonPath | null {
@@ -64,7 +66,7 @@ const screenPoints = (target: PathEditTarget, toScreen: (p: { x: number; y: numb
 
 /** The constraints extension, its marks drawn in `style`'s colors. */
 export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> = {}): PathEditExtension {
-  const colors = { ...DEFAULT_STYLE, ...style };
+  const colors = { ...DEFAULT_CONSTRAINT_STYLE, ...style };
   registerConstraintLinkShape();
   return {
     id: CONSTRAINTS_EXTENSION_ID,
@@ -101,5 +103,6 @@ export function createConstraintsExtension(style: Partial<ConstraintGlyphStyle> 
         ? { path: done.path }
         : { path: done.path, data: { constraints: done.constraints } };
     },
+    finishTransform: finishLinkedTransform,
   };
 }

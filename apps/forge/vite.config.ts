@@ -8,8 +8,12 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
+import { skipWorktrees } from '../../scripts/vite-watch.ts';
+import { devSourcemaps } from '../../scripts/vite-sourcemaps.ts';
+import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 
@@ -21,6 +25,14 @@ export default defineConfig(({ command, isPreview }) => ({
   define: weaselDefines(repoRoot),
   plugins: [
     react(),
+    skipWorktrees(),
+    devSourcemaps(),
+    // Stories import their components by relative path, so every tree holding stories stays source.
+    prebundleWorkspace(
+      repoRoot,
+      [import.meta.dirname, resolve(repoRoot, 'apps/shared'), ...stories.map((glob) => resolve(repoRoot, glob.split('/**')[0]!))],
+      { stories: true },
+    ),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
     weaselIcons.vite({ mode: 'app' }),
@@ -34,6 +46,6 @@ export default defineConfig(({ command, isPreview }) => ({
     }),
     localWake(),
   ],
-  server: { port: ports.forge, strictPort: true, host: '::' },
+  server: { port: ports.forge, strictPort: true, ...LAN_SERVER },
   build: { outDir: resolve(repoRoot, 'dist-forge'), emptyOutDir: true },
 }));

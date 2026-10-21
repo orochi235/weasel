@@ -7,19 +7,22 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../../..');
 
 // Manual-run e2e suite for WeaselDraw. Not part of `npm test` or
-// `prepublishOnly`; invoke via `npm run test:e2e:draw`.
+// `prepublishOnly`; invoke via `npm run test:e2e:draw`. `DRAW_E2E_URL` aims it
+// at a draw server already running, such as one `npm run dev:fleet` serves.
+const remote = process.env.DRAW_E2E_URL;
+
 export default defineConfig({
   testDir: here,
   testMatch: /\.spec\.ts$/,
   use: {
-    baseURL: `http://localhost:${ports.drawE2e}`,
+    baseURL: remote ?? `http://localhost:${ports.drawE2e}`,
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
-  webServer: {
+  webServer: remote ? undefined : {
     command: `npx vite --config apps/draw/vite.config.ts --port ${ports.drawE2e}`,
     cwd: repoRoot,
     url: `http://localhost:${ports.drawE2e}/weasel/draw/`,

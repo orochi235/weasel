@@ -19,7 +19,7 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
-import { ActionBar } from '@weasel-js/ui';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 

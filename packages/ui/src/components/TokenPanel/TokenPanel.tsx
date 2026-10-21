@@ -1,5 +1,5 @@
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from '../Tooltip/Focusable';
 import { DisclosureRow } from '../Disclosure';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';

@@ -158,10 +158,10 @@ describe('selectionTransformBindings', () => {
     });
   });
 
-  it('passes an empty rotate behaviors list through, which turns the default angle snap off', () => {
+  it('leaves the rotate binding bare with an empty behaviors list', () => {
     const rotate = selectionTransformBindings({ rotate: { behaviors: [] as never } })
       .find((b) => b.actionId === 'rotate');
-    expect(rotate?.opts?.behaviors).toEqual([]);
+    expect(rotate?.opts).toBeUndefined();
   });
 
   it('leaves the rotate binding bare with no options', () => {

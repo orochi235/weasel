@@ -20,57 +20,12 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) Tools have no consistent home, and no way to compose a set of them.** Where a tool lives
-  depends on when it was written:
-  - Core's `tools/builtin/` holds the select, hand, and shape tools, and also bone, weight, slice,
-    eyedropper, measure, and image.
-  - `@weasel-js/path-tools` holds the path-editing family: warp, trim, spiro, smudge, the shape
-    builder, girth, and extend. Some of these are tools and some are path-edit presets.
-  - Guides presets and `apps/draw` bring tools of their own.
-
-  Choosing a set is a hand-picked id list: `BUILTIN_TOOL_IDS` plus `defaultTools`, presets that
-  each add their own tools, and `tools={{ … }}` patches. draw mounts every built-in id except
-  bone and weight. As more tools land, each consumer has to make that cut again, and every new
-  built-in id silently joins whatever list includes "all of them".
-  Needs:
-  - a durable rule for which package a tool lives in, which also answers moving finished tools
-    out of core so they stop sharing its test surface;
-  - a composition unit above single ids (families or sets a consumer opts into whole, with
-    exclusions) that presets, `defaultTools`, and the palette all read.
-
-- **(P1) Guides and snapping, designed as one arc.** Spacing hints (equal-gap markers while
-  moving, Alt-hover distance readouts between the selection and the shape under the pointer) go in
-  as part of a pass over every guide and snap at once, not alone. The pieces today don't share a
-  pipeline: `@weasel-js/guides` has ruler guides, alignment guides, and equal-spacing snaps
-  (`packages/guides/src/guides/alignment/spacing.ts`), and only spacing hints reach draw, as
-  `createSpacingHintsPreset` (`packages/guides/src/spacingHints/`) behind the Spacing hints
-  preference; a move and the drawing tools reach path targets and measurement ends through the
-  `snap` dep (`toolOptions.snapTargets`), but the move's grid is a `gridSnapStrategy` behavior;
-  path snapping just landed with its own `snapPoint` ranking (`packages/core/src/features/paths/pathSnap/`); and
-  each pipeline reads its own reach: guides and spacing hints the `targets.guideSnapPx` kit
-  setting, the pen `targets.penAnchorSnapPx`, and path snap its own `radius` option, else
-  `DEFAULT_PATH_SNAP_RADIUS`, with no kit setting behind it. The arc settles one snap
-  pipeline every gesture uses — which targets compete, how ties are ranked, how a modifier
-  suspends them mid-gesture — and one readout layer for gaps, distances, and guide labels. The
-  spacing hints preset is source material for it: an Alt-hover distance readout drawn on its own
-  overlay, and a move snapping to equal sibling spacing with a marks layer of its own, neither
-  sharing a pipeline with the rest.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too.
   Ruled 2026-10-11: the directory and the taxonomy's term take a new word, and the prop keeps
   `features`; the new word is not chosen yet. That leaves choosing it, then renaming the one path,
   its imports, and the section of the taxonomy.
-
-- **(P3) Nothing reads a mode's `entry.trigger`.** The `'double-click-target'` the definitions
-  in `packages/modes/src/presets/default.ts` declare is unread. A path with anchors is put in
-  path-edit by the kit's `enterPathEdit` binding, through draw's `PathEditHost`
-  (`apps/draw/src/modality/pathEditHost.ts`), and text-edit is entered by the edit itself
-  (`useTextEditSession`). Draw still enters isolation, and path-edit on a path with no anchors (a
-  rect), from `SceneCanvas`'s `onDoubleClick` observer through a kind-to-mode table of its own
-  (`apps/draw/src/modality/doubleClickEntry.ts`). Binding those means a double-click entry beside
-  `enterPathEdit`, and a definition does not say which hits it takes (draw's table does).
 
 - **(P3) External-content ingestion — follow-ups.** The pipeline is in
   `packages/core/src/features/ingestion/` (its README is the map). Left:
@@ -117,6 +72,14 @@ Priority tags:
   a 3D host: its store (`PointerContextValue`) holds one `{ worldX, worldY, viewId }` point and no
   camera.
 
+- **(P3) A 3D move of several roots lands only the first one exactly.** kernel3d's snap session
+  answers in the screen point that `translate` turns back into the snapped world delta for the
+  anchor, the first selected node. `translate` converts a screen delta per node, from that node's
+  own screen center and on the plane at its own height, so every other root, at a different height
+  or place on screen, moves by a slightly different world delta, and a target one of them snapped
+  to is missed. A fix needs either a group-rigid 3D move or a world-delta channel in the pose
+  descriptor that a 3D move could use in place of a screen delta.
+
 - **(P3) Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press, so a `contextMenu` binding runs once. Tested only in jsdom
@@ -131,15 +94,10 @@ Priority tags:
   AltGr: that Chrome and Firefox both report AltGraph for it, and that a plain Ctrl+Alt+letter, for
   which Firefox reports AltGraph too, is still read as a chord.
 
-- **(P3) `BASELINE.md`'s text layout numbers include grouping.**
-  `tests/perf/bench/text-layout.bench.ts` times layout alone now, so they need re-recording.
-
-- **(P3) The Badge lab's Compose view overflows at 1500px.** In the workshop at a 1500px window,
-  the Compose lab's (`packages/ui/src/components/Badge/lab/`) "Type & padding" column and effects
-  panel run past the right edge of the stage. Not compared against the lab before its text moved
-  onto the type scale. Its range inputs (`InlineRange`), effect-card reorder (`useReorderDragList`
-  with `DragGrip`), and `--wzl-*` colors are unchecked in a browser since they replaced the
-  hand-rolled ones.
+- **(P3) Nobody has dragged a Badge lab effect card to reorder it.** The Compose lab's
+  (`packages/ui/src/components/Badge/lab/`) effect cards reorder through `useReorderDragList` with
+  `DragGrip`, which replaced a hand-rolled drag; the cards, their ranges, and their colors were
+  looked at in a browser on 2026-10-18, but no card was dragged.
 
 ### Cursor package follow-ups
 
@@ -153,26 +111,31 @@ Priority tags:
   under this driver, and why is the open question. A finding lands in `bake.ts`.
 
 ---
-- **(P3) Nothing produces `GroupTransform`'s `scale` and `rotate` arms.** A move behavior answers
-  a `translate`, and that is the only way it moves the drag. A resize behavior answers bounds
-  (`ResizeMoveResult.pose`) and a rotate behavior an angle or a pose (`RotateMoveResult`). A `scale`
-  about a pivot cannot say everything bounds can: a constraint that slides the box without resizing
-  it has no pivot. Left to rule: drop the two arms, or have resize and rotate answer a transform.
 
 ## Viewport
 
-- **(P3) Views do not nest.** A view paints and routes the surface's own stack, never another view,
-  and a loupe magnifies the canvas's camera — aimed over a `<CanvasView>` panel it shows and edits
-  the canvas's world, not the panel's. Composing would mean a view's camera derived from the view
-  under its aim, and a resolver that descends rather than picking one rect.
+- **(P3) Some 3D labs still escape labkit's missing-camera check.** A trial with `orbit` undeclared
+  flags a 3D view in the console and with a "no camera" title-bar badge when the instrument calls
+  `useOrbitView()` or a three.js `WebGLRenderer` lands in it (`packages/labkit/src/trial/threeWatch.ts`,
+  2026-10-19); `orbit: false` and `orbit: { fixed: true }` opt out. Not caught: raw WebGL that skips
+  `useOrbitView`, and three's `WebGPURenderer`, which does not announce itself. The three.js check is
+  tested only against a hand-fired announcement, not a real three build, and nobody has looked at the
+  badge in a browser.
+
+- **(P3) A loupe over a view takes that view's camera but not its layers or selection.** A lens
+  aimed over a `<CanvasView>` panel magnifies and edits the panel's world (`SceneCanvasApi.viewAt`),
+  but it paints the canvas's whole stack — a layer the panel hides shows in the lens — and acts on
+  the canvas's selection where the panel owns one. Its view would need to follow the view under its
+  aim the way a `parent` does, without being measured from or cut to that view's rect.
 
 ---
 
 ## Paths & booleans
 
 - **(P3) svg import: absolute and turned glyph positions are not read.** A `<tspan dx>` list is
-  read as letter spacing (`packages/svg/src/glyphShifts.ts`). `rotate`, list-valued per-glyph
-  `x` / `y`, and a `dx` on `<text>` itself are not applied; each warns
+  read as letter spacing (`packages/svg/src/glyphShifts.ts`), and so is a `dx` on a `<text>`
+  holding only text. `rotate`, list-valued per-glyph `x` / `y`, and a `dx` on a `<text>` that
+  holds a `<tspan>` are not applied; each warns
   (`packages/svg/src/tspanLines.ts`). Kerned text exported with an `x` per glyph imports with the
   glyphs run together: turning a position into a letter spacing or a space needs the advance of
   the glyphs before it, which a parse with no face loaded cannot measure.
@@ -181,9 +144,6 @@ Priority tags:
 
 ### Path editing tricks
 
-- **(P3) `renderSceneToPixels` draws annotation layers.** The SVG export leaves them out through
-  `isAnnotationNode`; a headless raster draws whatever the scene holds. Undecided: whether a raster
-  is an export, and so skips them, or a view of the canvas, and so keeps them.
 - **(P1) Rename the path tools the maintainer deferred to the end of the adoption pass.**
   Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. They live in
   `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
@@ -203,7 +163,7 @@ Priority tags:
 - **(P2) Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
 - **(P2) Tune Bridge hands-on, with the maintainer driving.** First-draft default Tension (0.4,
-  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Mod+Shift+J binding
+  `DEFAULT_BRIDGE_TENSION`), how Tension is reached outside the lab, and the Alt+J binding
   it shares with Bridge anchors (`packages/path-tools/src/bridge/bridge.ts`).
 - **(P2) Tune Harmonize curvature hands-on, with the maintainer driving.** First-draft behavior:
   it keeps the product of each anchor's two handle lengths, takes every smooth anchor when none is
@@ -236,12 +196,6 @@ Priority tags:
   panel's curvature slider spans -4 to 4, and the widgets show by default under
   `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-- **(P3) Offset path leaves slivers beside a curve, and spikes where a round corner shrinks to
-  nothing.** `offsetPath` (`packages/stroke/src/offsetPath.ts`) unites the region with its stroke
-  band, and the union keeps thin leftovers of the two meeting along the curve:
-  `offsetPath` of a 100×100 square with a 20-unit round corner, grown by 10, answers six subpaths,
-  five of them slivers. Grown by exactly the corner's radius, the outline also runs a spike into
-  the interior, so that corner cannot be kept as a corner.
 - **(P2) Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `features/pathEffects/`).
@@ -289,8 +243,9 @@ Priority tags:
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change only
   through `configureWarp`, and its tool key, Shift+F beside Distort's F, since draw's crop mode holds C
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft pin falloff (1, so
-  weights go as 1/d², `rigidPuppetMap` in `packages/geom/src/warp/puppet.ts`), that a click on the
+- **(P2) Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
+  400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
+  (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
@@ -321,63 +276,58 @@ Priority tags:
   keys: Shift+W in draw; how near an edge a press must land to grab it; Alt moving one edge alone
   and Alt-click clearing a width point; and whether a press between anchors should insert one
   (`packages/path-tools/src/girth/`).
-- **(P2) Tune path snapping hands-on, with the maintainer driving.** First-draft behavior and
-  keys: an 8px radius with every kind on, `nearest` included; that a path target beats
-  `snapTargets` and `snapPoint`, so in range it wins over measurement ends and the grid, a move's
-  grid behavior included; that a move and an anchor drag snap to targets only, never `snapPoint`; no key or modifier to turn it off mid-gesture;
-  the marker's glyphs, its fixed orange, and where its label sits; and that draw does not turn it
-  on yet (`packages/core/src/features/paths/pathSnap/`, `packages/geom/src/snap/`).
-- **(P2) Two kit key bindings are chords a browser takes first.** `createOutlines` is on
-  Mod+Shift+O (Chrome's bookmark manager) and `averageAnchors` on Mod+Alt+J (Chrome's console),
-  so neither fires there. `browserReservedBindings.test.ts` pins the pair, so a new collision
-  fails it; moving these two is a choice of new keys.
-- **(P3) A path effect that paints nothing is lost through draw's SVG.** A live effect rides on
-  its exported group as `wd:effect` and `wd:depends-on` (`apps/draw/src/svgEffects.ts`), but a
-  blend of no steps, or a repeat with no copies, exports an empty `<g>`, and
-  `svgNodesToKitDrafts` drops empty groups before `svgNodesToSceneDrafts` sees it.
+- **(P2) Tune snapping hands-on, with the maintainer driving.** First-draft behavior: one
+  `targets.snapPx` reach of 8; every canvas snapping point gestures to other nodes' anchors through
+  a default `'path-snap'` source; every path kind on, `nearest` included, once a consumer registers
+  `pathSnapSource()`; the readout's glyphs, its fixed orange, and where a label sits; Ctrl to
+  suspend; and that draw turns on the grid, measurement ends and anchors but not the other path kinds
+  ([`docs/snapping.md`](./snapping.md), `packages/core/src/features/snap/`,
+  `packages/core/src/features/paths/pathSnap/`).
+- **(P3) Equal spacing on a turned resize, and where its alignment marks sit.** Decision for the
+  maintainer (2026-10-18). A resize whose frame turns or skews the box moves no side of its
+  axis-aligned extent alone, so `resizeEdges` (`packages/core/src/features/snap/resizeBox.ts`)
+  answers no edges and `spacingSnapSource` offers nothing; alignment still runs, but its marks span
+  the box at the press rather than where it lands. Open question: should spacing on a turned box
+  measure its extent, its own frame, or stay off?
+- **(P3) Are the snap readout's drawing helpers public API?** Decision for the maintainer
+  (2026-10-18). `tickedSegment`, `pillCommands` and `measuredSegmentCommands` are on
+  `@weasel-js/core`'s barrel because guides' layer draws with them. Either they stay as designed
+  public surface, or they move to an `internal` entry (as `@weasel-js/routing/internal` does),
+  which `audit:jsdoc` treats as a sibling-package surface.
 - **(P3) Roughen, zigzag and pucker/bloat exist only on the `pel-effects-push` branch.** That
   branch stored effects as a `data.effects` list on the path itself, a design main did not take
   (`f082c838e` adopted its push brush as Smudge and left the rest). Its math is in
   `packages/geom/src/effects/` there; carrying the three over means rebuilding each as a derived
   effect node beside blend, bend and repeat. Undecided whether to; the branch is kept until then.
-- **(P3) A dependency that is itself derived reaches a derivation in its own frame.** Under a
-  composing strategy a derivation is handed each dependency's pose in the deriving node's frame
-  (`core/scene/depFrame.ts`), but a dependency's `path` — a blend whose source is another effect —
-  is not carried across, so an effect of an effect in another container reads that path where
-  its own container would put it.
-- **(P3) A blend's spine is fixed when the blend is made.** `BlendEffect` takes a spine as an
-  optional third source (`[from, to, spine]`), and Blend reads it from a third selected shape;
-  nothing adds, swaps, or removes the spine of an existing blend.
 - **(P3) Some path commands have no icons.** `resamplePath`, the anchor selection commands,
-  `setSpiroKind`, `releaseSpiro` and draw's own `view.pathDirection` toggle show as text in draw's
-  bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
+  `setSpiroKind`, `releaseSpiro`, `setBlendSpine`, `releaseBlendSpine` and draw's own
+  `view.pathDirection` toggle show as text in draw's bar. The warp labs' tool lists borrow `ui:fitStretch`, `ui:grid` and `ui:pin` rather than the
   warp tools' own glyphs. `core:retractHandles`, `core:symmetricHandles`, `core:simplifyBrush` and
   `core:harmonize` (`packages/core/icons/anchor.mjs`) and `path-tools:spiro`
   (`packages/path-tools/icons/tools.mjs`) are first drafts, not proofed at high resolution.
-- **(P3) A hard puppet squash folds the warped outline back on itself.** Squash a 100-wide disc
-  (hold (20, 50), drag (80, 50) to (60, 70) and (50, 20) to (40, 30)) or push a bar into an S,
-  and `puppetMap` (`packages/geom/src/warp/puppet.ts`) runs stretches of the outline backward;
-  `warpPath` refits those as loops and spikes. The piecewise-affine map folded at the same places
-  as the smooth one that replaced it, so the fold is in the solved mesh, not the interpolation
-  (inferred). The anchors a bend adds come from the same place: smoothing moved refit anchor
-  counts both ways across 20 bends, and so did a mesh 16 times finer.
-- **(P2) A constraint link has no gesture that makes it, and only path edit keeps it.** A link
-  node (`constraintLinkNode` in `@weasel-js/path-tools`) ties nodes, and every path edit of one
-  solves them all together, but path edit opens one node at a time, so nothing in the UI picks an
-  anchor in one node and a segment in another; a consumer adds the node itself. A whole-node move,
-  resize, or rotate solves no links, and nothing reports one it breaks: `constraintConflictsOf`
-  reads a node's own list. The drags that preview through `pathEditPreview` without finishing each
-  frame — bend segment, corner, Lengthen, Balance, Simplify brush — commit the linked nodes but
-  do not preview them, as they do not preview a node's own constraints.
+- **(P3) A puppet warp's bends add anchors.** `warpPath` refits a puppet-warped outline with more
+  anchors than its shape needs, and a smoother map does not fix it. Measured with `foldCases.ts` at
+  tolerance 0.5 (2026-10-20), the squashed 4-anchor disc refits with 5 anchors under the piecewise-affine
+  map and 6 under the Clough–Tocher one that replaced it (`packages/geom/src/warp/cloughTocher.ts`), and
+  the bar pushed into an S with 21 and 22. Blending vertex Jacobians (a C0 quadratic map) did worse, 6
+  and 23. The extra anchors are in the refit's reading of the warped curve, not the map's smoothness
+  (inferred).
+- **(P3) A puppet warp that folds costs milliseconds a frame.** When the local/global rounds leave
+  a triangle turned over, the injective pass in `packages/geom/src/warp/injective.ts` runs many
+  rounds: measured on the fleet (2026-10-19), the disc squash takes 28 rounds and 5.3 ms a solve
+  on a 547-vertex mesh, the bar S 51 rounds and 6.8 ms on 517. The back-solves are not the bulk of
+  a round: each of its two takes 15 to 33 µs, and a George–Liu starting vertex for the
+  Cuthill–McKee order (`profileCholesky.ts`) left them unchanged. The rest is the per-triangle
+  passes (gradient, flip bound, energy per line-search step, least area); fewer rounds from a
+  better step is the larger lever.
 - **(P3) WeaselDraw binds no constraint action.** It needs keys or a bar group for
   `constrainAnchors` and `unconstrainAnchors`, and icons for them.
 
 ### Pathfinder follow-ups (post-v1)
 
-- **(P3) Create Outlines refuses synthetic-bold text.** `textToPath` answers `reason: 'synthetic-bold'`: emboldening it is a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`, `packages/renderer/src/draw/text.ts`) draws. Read from `glyphCoverage` and `glyphFieldScale` (`packages/font/src/textSdf.ts`) and not measured against pixels: the shift moves the edge out by `SYNTH_BOLD_AMOUNT` of the field's span, which is `distanceRange` texels in a baked atlas and `SDF_RADIUS` in a runtime canvas page, and a texel is `1 / info.size` em, so the outline grows by `SYNTH_BOLD_AMOUNT × span / info.size` em on each side and differs by which tier serves the glyph. What is left: `textToPath` (`packages/text`) has no stroke outliner to call, since `strokeToPath` is in `@weasel-js/stroke`, which text does not depend on; the union flattens every curve of the glyph; and the result has to be compared with the field in a browser.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** The booleans flatten beziers before clipping (`packages/geom/src/booleans/adapter.ts`), so the result is straight-line. Skia/PathKit-style curve-preserving booleans are substantially harder.
-- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas, and the pieces show as outlines rather than in the paint each would take.
+- **(P3) Preview a Boolean operation by holding its key over a path.** Hovering or focusing a Pathfinder button shows the pieces it would make, each in the paint it would wear (`Action.preview`, drawn on the `previewPaths` dep). No Pathfinder action has a key or gesture to hold, so nothing asks for a preview from the canvas; nor does the keymap have a hold-to-preview form (press shows, release fires, Escape cancels) for any action.
 
 ---
 - **(P3) draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
@@ -388,6 +338,14 @@ Priority tags:
   and the file format waits on that.
 
 ## Rendering & paint
+
+- **(P2) A dash whose entries are all zero hangs stroke tessellation.** `splitForDash`
+  (`packages/stroke/src/tessellate/dash.ts`) never advances along a segment when the current dash
+  length is 0, and `tessellateStroke` calls it whenever `dash.length > 0`, so `dash: [0, 0]` loops
+  forever (read from the code, not yet run). It wants a guard that strokes such a dash solid, and a
+  test. `@weasel-js/pdf`'s `strokeStyleOps` already writes it solid, but its comment says the
+  renderer does too; correct that once the guard lands. The same function writes a dash with a
+  `NaN` entry as solid instead of dropping the command as non-finite (2026-10-20).
 
 - **(P3) Pattern fills: no image-upload patterns.** WeaselDraw's picker covers the four built-in
   tiles only, each a paint kind of its own (`{ kind: 'hatch', color }`). A user-supplied bitmap
@@ -412,6 +370,17 @@ Priority tags:
   fixed in tessellation alone: `PolygonPath.coords` is a `Float32Array`, so the grid is already in
   the path before the tessellator reads it. It needs the path itself to carry an origin (or
   double coords), which every reader of `coords` would then honor.
+
+- **(P3) The tessellate rows of `tests/perf/bench/BASELINE.md` predate two deliberate costs.**
+  Bisected on studio (2026-10-19), the node that measured the 2026-09-29 rows, which still
+  reproduces them at the baseline commit, so the node has not drifted. `tessellate` slowed about
+  40% at 2026-10-17's 7cbedd8b0, which checks every nonzero fill for crossings; a faster check
+  (2026-10-19) brought the 64-curve fill from 0.21 ms to 0.18 ms, against 0.15 ms before.
+  `tessellateStroke` slowed at 2026-10-14's ab9ea7afa, which caps a thick stroke's flattening at
+  10° of turn per vertex: the 4-wide benchmark stroke now flattens to 1258 points where the fill
+  takes 474, so 64 curves take 1.44 ms against 0.48 ms, and 512 curves 12.0 ms against 1.65 ms. Left:
+  re-record those rows; and decide whether the cap should still subdivide wiggles smaller than
+  the stroke is wide, which is where the 512-curve case spends its 10034 points.
 
 ---
 
@@ -481,10 +450,6 @@ Priority tags:
 
 ## Scene, adapters & layout
 
-- **(P3) A layer hidden only in one view still shows its diagram ports.** `sceneParticipants`
-  (`packages/diagram/src/portLayer.ts`) gates ports on the scene's own hidden and locked flags
-  through `nodeGates`, but a canvas's `layerVisibility` (read by `pickWalk.ts` and
-  `sceneViewRender.ts`) never reaches the port layer, so ports float over a layer that view hides.
 - **(P3) A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
@@ -502,27 +467,9 @@ Priority tags:
 - **(P3) Wallpaper tilings.** A new kind is a row in `SYMMETRY_KINDS`
   (`packages/symmetry/src/kinds.ts`), but a lattice has no last copy: `copiesFromPose` sees only
   the container's pose, so it would need an extent to tile within, which the spec would carry.
-- **(P3) The angle knob sits on the shapes it turns.** It is fixed 64px out along the axis, where
-  the lab's petal is, and can cover a path-edit handle there.
-
-### Derived geometry follow-ups
-
-- **(P3) The preview channel still carries pose twice.** `move` / `resize` / `rotate` publish each
-  frame to the scene's pose overrides *and* keep their own `previews` map behind `previewIds` /
-  `previewPose`. The overrides are what the scene reads (derived geometry, picking); the map is
-  what the ghost layer and the selection-chrome bounds read. Collapsing them means teaching those
-  two readers to resolve through `effectivePose`, after which the map is redundant for pose. It
-  cannot go entirely: `previewData`, a path-anchor drag's in-flight `data`, has no override
-  equivalent, and `PoseOverride` is `{ pose?, alpha? }`. Decide whether overrides grow a `data`
-  field or the two channels stay split by what they carry rather than by who writes them.
 
 ### `useScene` follow-ups
 
-- **(P3) A scene and its canvas each say how a pose is measured.** A container's layout
-  (`ContainerNode.layout`) is measured by `UseSceneOptions.layoutFrame`, and everything a canvas
-  does by its `poseDescriptor` prop, so a scene whose poses are not rects states it twice. The
-  scene owns composition (`useScene({ composition })`); the descriptor could move there the same
-  way, with the layout frame read from it.
 - **(P3) A scene composes poses only when asked to.** Ruled 2026-10-11: the scene owns
   composition: a child's pose is relative to its container's frame, and moving a container writes
   one pose. The scene owns it now (`useScene({ composition })`, read everywhere as
@@ -554,59 +501,20 @@ Priority tags:
 
 ### Units
 
-- **(P3) Per-subobject scale: nothing in the kit reads a container's unit scope yet.** A container
-  declares one (`ContainerNode.units`), and `sceneUnitScopes(scene, id, root)` answers the chain
-  `resolveScoped` and `formatScoped` take. What is left is the readers. `gridSnapStrategy`,
-  `createGridLayer`, `createCellHighlightLayer`, and `useGridCellHover` in `packages/guides`
-  resolve their spacing against one `unitSystem` option, and a snap strategy is handed a gesture
-  context with an adapter but no scene, so the adapter needs a scope read before a grid inside a
-  millimeter sub-assembly can snap in millimeters. A property field's unit is built from one unit
-  system (`prefUnit` in `packages/prefs/src/unit.ts`), whichever node it is showing. And a scope's
-  `scale` only converts values: `RIGID_POSE_COMPOSITION` does not scale a container's frame by it,
-  so whether a scoped container's children are also stored in its units is undecided.
+- **(P3) The drawn grid ignores a container's unit scope.** Grid snapping reads one
+  (`gridSnapSource({ scopes })`), and so does a node's length field (`SelectionPanel`'s `units`,
+  through `prefLeafInScopes`), but `createGridLayer`, `createCellHighlightLayer`,
+  `useGridCellHover`, and `pointToGridCell` in `packages/guides/src/grid` still draw and hit-test
+  one lattice against one `unitSystem`. Drawing a millimeter lattice inside a millimeter
+  sub-assembly is painting work past the pitch, which `scopedGridPitch` already answers: the
+  layer has no scene to find scoped containers in, the root lattice needs clipping out of each
+  one (an even-odd clip of the view with holes, nested per scope), a rotated container wants its
+  lattice turned with its frame, and a hovered cell has to name the lattice it belongs to. The
+  result needs a human eye on the drawn grid at both zoom extremes.
 
 ---
 
 ## Animation
-
-### Combining animations
-
-Animations combine through targets, described in `docs/concepts.md` ("Animation target").
-
-- **(P3) A target table row is read by itself while an animation is behind a hold on it** —
-  a row is shown by the table's pass over its columns (`fill` in
-  `packages/animator/src/targetTable.ts`) except while a tween or spring with a destination
-  runs under a hold on it, and while something a stopped animation left waits beside a hold:
-  then it is read at a single target's cost. What a hold hides of such a move is worked out
-  per animation and per axis (`hidden` in `packages/animator/src/target.ts`), which the pass
-  has no column for, and blits weighs a voice whole, so the hidden share cannot ride on the
-  animation's own voice.
-- **(P3) A hold whose value is a function costs 0.3 to 0.7 µs a frame, where a tween costs
-  under 0.1** — `node tests/perf/target-reads/run.mjs table 10000 heldfn`. A timeline track, a
-  rig clip, and any `animator.hold` given a function are such holds; a hold of plain values is
-  not. What a function costs, from the CPU profile at 10,000: a quarter is blits running a
-  voice that answers through a function (`rows`, `call`, `foldInto`, `ready`, and a `WeakMap`
-  read per voice); the rest is the hold's own voice reaching, one after another, the group,
-  each member, the function that gives its value, that value, and the committed value. The
-  design left would move it and is not started: holds on a target table's rows could keep
-  their values and weights as rows of the table's own arrays, which adds public API to the
-  table whose shape is not ruled on.
-- **(P2) Take the blits release that makes stopping an animation cheap.** With 100 animations
-  restarted a frame, a cancel cost 5 µs with 1,000 running and 21 with 10,000, because blits'
-  `forget` walked every subject the mix held. blits `b97c8c1` (unreleased, on 0.10.0) stops that:
-  measured inside blits with `node bench/restart.mjs 1000 10000`, a stop went from 15.4–15.7 µs to
-  2.4–2.9 at 10,000 and the frame after from 1.99–2.15 ms to 1.26–1.43. `animator`, `core`, and
-  `labkit` pin `@msb235/blits` at exactly 0.10.0, so nothing reaches weasel until blits releases
-  and the three pins move. blits' changelog holds a breaking change for that release, `loop`
-  defaulting to one pass, so every `cue` here that leaves `loop` out needs reading first
-  (`packages/animator/src/engine/holdVoices.ts` has one). After the bump, rerun
-  `node tests/perf/target-reads/run.mjs churn 1000 10000`, which has not been run against the fix.
-
-- **(P3) Playing an animation backward** — a time scale below 0 is refused where it is set
-  (`timeScaleOf`, `engine/table.ts`). Playing backward needs the animator's clock to keep going
-  forward and hand each voice a rate below 0, which blits 0.9.0 ends where the voice started,
-  and an answer for what a tween run back to its start does: a blits voice past its start
-  reads 0, which for a tween on a target is its destination.
 
 ### Earlier deferrals
 
@@ -637,77 +545,45 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   ears: the `score` demo (`apps/site/demos/ScoreDemo.tsx`) plays each cue with
   its parameters beside the sliders.
 
-- **(P3) AudioWorklet voices** — immune to main-thread jank. What a stall
-  delays is the callback that makes a voice's nodes, which has to run on the
-  main thread, so immunity means synthesizing the voices inside a worklet
-  processor from events posted ahead of time. The synthesis is built:
-  `createNoteKernel` and `createNoiseKernel` (`voiceKernel.ts`) render what
-  `playNote` and `playNoise` play, a block at a time, and
-  `voiceKernel.browser.test.ts` holds them to the node graph. What is left:
-  - a processor that mixes kernels onto a bus from posted events. A worklet
-    cannot import the package's bundle, so the kernel has to reach it as source
-    text, which needs a build step.
-  - the engine's side. A worklet voice's handle, pool slot, steal, pan, and
-    position have to behave as a node voice's do, and `createAudioEngine.ts` is
-    one 611-line function at its size ceiling, so this starts by splitting it.
-  - a browser test that blocks the main thread and hears no gap.
+- **(P3) Edge cases left open in the patchable graph** (`packages/audio/src/graph/`, 2026-10-20).
+  None is reachable from `AudioGraph`'s own calls today, which always start sources at
+  `ctx.currentTime`:
+  - `createFileSourceNode` counts its resume offset from `when`, so a start dated in the future
+    or the past, or a `rate` write before a future start plays, miscounts it. A `rate` write
+    after `stop(later)` doesn't retune the node still sounding, and a ramped rate folds as a step.
+  - A non-looping file that plays to its end rewinds, but its node stays marked running, so
+    `start()` on a graph still playing doesn't restart it; stop then start does.
+  - `replace` during `stop()`'s fade stops the old source a fade after the replace, so a quick
+    `start()` lets under 15 ms of its tail play beneath the fade-in.
+  - `createFader`'s second `close(ms, done)` drops its `done`; the graph never closes one twice.
 
 ---
 
 ## Selection, actions & UI panels
 
-- **(P2) The Properties W and H fields go under a node's `data.minSize`.** The insert and place
-  actions, the resize handles, and a replayed scale all hold a node to it (`core/scene/minSize.ts`,
-  `resize/minimum.ts`); typing a smaller W into the `pose.width` field does not, because a
-  `PrefNumber`'s `min` is one static number for every node, and the field's write sees the pose,
-  not the data the minimum lives in. Needs a per-node bound in `@weasel-js/prefs` that the
-  selection panel resolves against the node.
+- **(P2) The Prefs rail dialog overflows its own box below about 700px wide.** Its pane's fields
+  keep their width, so the Zoom step field and the sliders run past the box's right edge and are
+  cut off: seen 2026-10-20 in `Prefs › Rail In Dialog` in a 698px forge trial, where the box itself
+  fit at 664px. A window that narrow cuts it off the same way. The rail or the pane needs to give
+  way: narrow the rail, or let the field column shrink.
 
-- **(P2) `ThemeProvider` drops a `selection.mode` that is not a concrete mode, with no warning.**
-  blits' site passed `selection={{ mode: 'auto' }}` and got the theme's default, dark, on a light
-  page; it now resolves the mode first with `useResolvedColorMode('auto')`. Either accept `'auto'`
-  there and resolve it, or warn in dev on a mode the theme does not have.
-
-- **(P2) labkit's control panels never set their own text color.** Dimmed labels inherit the
-  page's ink, so a light page puts dark text on a near-black panel — contrast about 1:1 on blits'
-  Patch page. blits works around it with `color: var(--wzl-fg)` on the provider's wrapper (blits
-  `ccda71e`, `site/src/styles/site.css`). The panel root should set `color` itself.
-
-- **(P2) Gaps blits hit moving its playground onto labkit's `ControlPanel` and `f` (1.10.1).** Each
-  is worked around in blits' `apps/playground/src/app/CompositionControls.tsx` (`DraftRow`,
-  `drafted`) and `SpecFields.tsx`; those are the specs for the fixes.
-  - Number and text rows write on every keystroke, so one typed value is many undo steps. Use the
-    ui fields' draft-and-commit-on-blur; the text draft should also cancel on Escape.
-  - `.resettable()` groups write each value through its own `setConfig`: several undo steps, and a
-    stale-state race. Write the group as one change.
-  - `.dialog()` has no cancel; Escape commits.
-  - `showIf` on an enum value that is not among the enum's options throws, which crashed a whole
-    panel. Treat it as never matching.
-  - A number row cannot be cleared to mean unset/default (blank reverts), and `NumberNode` has no
-    min-only bound.
-  - `PropertyRow`/`ControlPanel` have no slot for a row's validation message.
-  - A section whose rows are all hidden still draws its heading.
-  - An `f.action` row repeats the button text as its label, and an action's run cannot reach the
-    panel's props.
-  - No "changed from baseline" marking; `PrefsForm` has one.
-  - `f` boolean and string leaves get the auto-pin toggle on their label unless `.manual()`, which
-    is easy to miss. Either make it opt-in or make the default obvious.
-  - A custom renderer's context does not carry the config.
-  - `ControlMatrix` cannot set a summary for a custom leaf's cell, and first-column inheritance is
-    its only model; there is no plain grid.
-  - `ListEditor` has no reorder and offers one kind of new entry.
-  - `EasingPicker` always renders its own "Easing" label, doubling the row's.
-  - In the two-column grid a bar or custom row takes a half cell unless its section is one-up.
+- **(P3) A baseline pref whose key and then name are both changed in the schema editor reads as
+  new.** The editor calls a node new when the Changes list shows it as an addition. A key edited
+  in the Key field shows as a move while the name stands; rename it afterward and the two can no
+  longer be paired, so it shows as a removal plus an addition, and its key follows the new name.
 
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 
-- **(P3) A schema drawn as a menu drops its number and color leaves.** `leafRows` in
-  `packages/routing/src/menus/resolveMenu.ts` turns actions, booleans, enums, separators, labels,
-  and aliases into rows and answers nothing for any other kind, so the same asset loses controls
-  when it moves from a bar or a panel to a menu. draw's Loupe asset shows this: as a menu it keeps
-  its switch, mode, and Copy, and loses magnification and the picked color. A number row (an inline
-  field, or steps) and a read-only color row would close it.
+- **(P3) A schema drawn as a menu still drops or flattens some leaves.** `leafRows` in
+  `packages/routing/src/menus/resolveMenu.ts` draws a number and a string as rows edited in place
+  and a color as a read-only row. What is left:
+  - A color that is not a `readout` shows read-only; neither menu renderer hosts the kit's color
+    picker. A swatch submenu, or a picker the DOM menu opens beside its row, would make it editable.
+  - The HUD menu draws a text row read-only (`textCommands` in `hud/src/menu/valueRows.ts`): it has
+    no text entry. The DOM menu's text field (`MenuTextValue`) is tested in jsdom and has not been
+    looked at in a browser.
+  - `paint`, `field`, `object`, `list`, `map`, `union`, and app-defined leaves are still left out.
 
 - **(P3) Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
@@ -727,14 +603,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   (it needs nothing else from weasel, so it qualifies, and needs a first publish) or
   `@weasel-js/menu` widened and renamed; the first arc moves the list behavior out of `menu` either way.
 
-- **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer. The guides
-  package's move snaps (`snapToGrid`, `snapToGuides` in `packages/guides/src/behaviors/move`) put
-  the dragged pose's origin on a grid line or guide, so a rect with a centered stroke 10 wide
-  lands with its stroke's outer edge 5 short of the line. Snapping the drawn box instead would put
-  the stroke's edge on it, which is what the selection chrome, resize, and `alignMoveBehavior` now
-  measure — and every stroked shape would land half a stroke from where it lands today. The insert
-  snaps are a different case and stay as they are: they place the point the pointer defines, before
-  the node has a stroke to measure.
+- **(P3) Should grid and guide snaps line up the stroke?** Decision for the maintainer.
+  `gridSnapSource` and `guideSnapSource` (`packages/guides/src/sources/`) snap the subject's
+  `origin` probe, its pose origin, so a rect with a centered stroke 10 wide lands with its stroke's
+  outer edge 5 short of the line. Snapping the drawn box instead would put the stroke's edge on it,
+  which is what the selection chrome, resize, and `alignmentSnapSource` measure, and every stroked
+  shape would land half a stroke from where it lands today. Either answer is now a one-line change
+  to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
+  stay as they are: they snap the pointer, before the node has a stroke to measure.
 
 - **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
   (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page
@@ -768,13 +644,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
 
-- **(P3) apps/site's body text is still the system face.** It loads `@weasel-js/theme/fonts.css`
-  now, but `canvas-kit-demo.css` sets `body { font-family: system-ui, … }`, which beats that
-  file's `:root` rule, so only text naming a `--wzl-font-*` token gets the kit's faces.
-
-- **(P3) `QuantityText` draws no kind's MathML form.** `present` hands back `mathml` for a kind that
-  has one (a fraction's), and `QuantityText` draws only the HTML form. A number field's string unit
-  draws through `QuantityText` now; a unit handed as JSX (`<sup>°</sup>`) is still drawn as given.
+- **(P3) Nobody has looked at apps/site in the kit's UI face.** `canvas-kit-demo.css` stopped
+  setting `body`'s font (2026-10-19), so the site's text inherits `--wzl-font-ui` (Oswald, a
+  condensed face) from `fonts.css`'s `:root` rule. Check in a browser that the sidebar, demo
+  blurbs, and controls still fit and read well, and that Oswald loaded rather than its fallback.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -792,32 +665,12 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `ViewportDemo`, `AudioDemo`, and other demos), a few rules darken with `rgba(0, 0, 0, 0.2)`
   in either mode, and the front page pins its own theme to dark.
 
-- **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
-  Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
-  re-exported by `react-aria-components`, and depending on `react-aria`
-  directly risks a second copy whose context the overlays never read — which
-  fails silently, as an unthemed overlay. Switch `useOverlayPortal`
-  (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
-  The same switch lets a contained `ToastRegion` drop its own region for RAC's,
-  which would make it an F6 landmark again. Still absent from RAC's index at the
-  installed 1.21.1, at 1.22.1 (the latest), and at nightly `3.0.0-nightly-2691598d3-261008`, last
-  checked 2026-10-17.
-
-- **(P3) The loupe's aim is a pair of hand-attached listeners.** `hover` is a gesture
-  (`HoverSpec`; `docs/taxonomy.md`, "Gesture"), and with `motion: 'leave'` it says when the
-  pointer passes out of its target or off the surface. The loupe
-  (`packages/labkit/src/loupe/useLoupe.ts`) still attaches `pointermove` and `pointerleave`
-  itself: its lens follows a pressed pointer too, which a hover stands down for, and
-  `<LoupeGestures>` mounts its own dispatcher with the pointer channel off. Moving it needs a
-  gesture for a pointer's moves pressed or not, or a ruling that the lens holds still through a
-  drag. Only jsdom has run a hover binding.
-
-- **(P3) A `carry` spec takes no `target`.** A carry (`startCarry`, `CarrySpec`)
-  is matched on the surface as a whole, like an OS `drop`, so a binding cannot
-  say "dropped onto a selected body" or onto an affordance: the carry channel
-  (`routing/src/interactions/dispatcher/channels/carry.ts`) classifies nothing
-  under the pointer. Nor does `Action.enabled`'s `carried` argument see a
-  carry's payload; it is typed for ingest items only.
+- **(P3) Holding the peek key and then moving onto a loupe no longer raises it.** Since #40's fix
+  (2026-10-19) the peek binding takes `opts: { over: true }`, so Alt goes to the loupe under the
+  pointer when it goes down and to none if the pointer is over no loupe; nothing re-sends a held key
+  when the pointer arrives. Keeping both behaviors with two loupes on a page needs routing to re-send
+  a held key when the pointer enters a host that binds it. Undecided whether the sweep-on gesture is
+  worth that.
 
 - **(P3) Confirm Safari's trackpad pinch in real Safari.** `useGestureDispatcher`
   dispatches WebKit `gesturechange` as a `pinch` gesture, which `viewport.zoom`
@@ -893,16 +746,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   through `--wzl-field-border`. The systems' own faces are named in the font stacks and not
   bundled; a bundled lookalike needs a face whose license allows it.
 
-- **(P3) What a leaf shows when its value is absent is decided in each params surface.** Which
-  control a leaf draws is one table now (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`, through
-  `prefFieldProps`' `surface` argument). The value handed to it is not: a stored value that is
-  absent is the default in the form (`prefRenderContext`, `Prefs/PrefsRow.tsx`), unset in the
-  panel, and `?? default` in labkit (`controls/rows.tsx`, `panelRows.tsx`, `MatrixCell.tsx`,
-  `MatrixEditor.tsx`), where `null` also reads as absent. Two rows of the table are labkit's alone
-  and were carried over undecided: `enumAsAsked: false` (`radio` draws as segments, `menu` as a
-  select) and `openSlider: false` (a slider needs both bounds). Outside the table:
-  `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and `MatrixEditor`
-  always lists an enum as radios.
+- **(P3) Two control choices are labkit's alone, and two controls draw an enum their own way.**
+  Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
+  of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
+  segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
+  table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
+  `MatrixEditor` always lists an enum as radios. The value a leaf shows is one function
+  (`prefLeafValue`, 2026-10-20), which `Bar` and `MenuBar` do not call: a path their `values` lack
+  draws unset, where a params surface draws the default.
 
 - **(P3) What each group `as` draws differs across the params surfaces.** The run of neighboring
   `tab` groups is collected once (`prefTabRuns`, `@weasel-js/prefs`); what is drawn is not: `panel`
@@ -939,18 +790,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   `Bar` drawn from a surface asset. `Bar`'s `framed` is a different strip (margin, height). One strip
   form on `Bar` would serve both.
 
-- **(P3) Multi-page documents.** A document's pages are rects in one world space over one scene,
-  so one view, history, and selection serve all of them, and an object is on the page it overlaps
-  most. Core has the geometry (`packages/core/src/core/pages/`): `layoutPages` places a page list,
-  `pageAt` and `pageOfBounds` say which page a point or an object is on, `pagesLayer` paints the
-  sheets, and `fitViewToPage` frames one. draw paints its one page through it. Left, in order:
-  1. draw's document holds a page list where it holds `paperSize` (`useDocumentState.ts`,
-     `docPersistence.ts`), and `usePageFit` fits the current page.
-  2. Adding, removing, reordering, and resizing a page are undoable. The page list sits outside
-     the scene, so they need a history entry of their own, and a removed page has to say what
-     happens to the objects on it.
-  3. A page navigator in draw, and `viewport.recenter` on the current page.
-  4. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
+- **(P3) Multi-page documents in draw.** Core has pages end to end (`packages/core/src/core/pages/`, and
+  "Page" in `docs/concepts.md`): the page list is the `core:pages` document value, the edits in
+  `pageEdits.ts` move each page's nodes with it in one undo entry, and `PageTabs` (`@weasel-js/ui`) is
+  the strip. weaselchart uses all of it. draw still paints one page from `paperSize`. Left, in order:
+  1. draw's document keeps its pages under `core:pages` where it keeps `paperSize`
+     (`useDocumentState.ts`, `docPersistence.ts`), and `usePageFit` fits the current page.
+  2. A `PageTabs` strip in draw, and `viewport.recenter` on the current page.
+  3. SVG save and export per page: `svgInterop.ts` keeps one paper size under `wd:`, and
      `svgExport.ts` writes one `viewBox`.
 
 ---
@@ -987,6 +834,39 @@ in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
+
+- **(P2) `timeline.test.tsx`'s "lets only the focused one write t" failed three times in about 380 full
+  fleet runs (2026-10-18 to 20).** The playheads read `[0, 0]` where `[0, 4000]` is expected: after the newer trial's
+  Scrub went to its end and wrote `t=4`, the older trial's End and Home left the *newer* one at 0.
+  Seen on keiei (job d7de8418) and teitou (bf53703d) on 2026-10-20, and on teitou again at `8be76275d`,
+  a commit touching only a ui test, which passed the file three times out of three locally. Everything from the first
+  keypress to the assertion is synchronous, so what varies is how far the newer trial has settled
+  when `until` sees two playheads; three runs each, waiting the minimum or an extra 50 ms, did not
+  reproduce it. Suspects are the older trial's transport reading the newer trial's clock, and the
+  newer trial's `usePersistedPlayhead` seeing a stale `persisted` and requesting the span's start.
+
+- **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
+  first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
+  server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
+  one it last reported. If the page re-fetches the module in that window (its HMR fetch after the
+  first save), the second save never invalidates it. Run 2026-10-19 in a Linux container
+  (`node:26-alpine`, vite 8.3.1): save, wait 25 ms, save again, with a fetch 5 ms after the first
+  `change`. The server kept the first text after 3 s idle. This held for plain vite and for forge,
+  and for both rename-over and in-place writes. With
+  `server.watch.awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 }` it served the
+  second text at 25 ms and at 80 ms gaps, because events that wait for the write to finish skip
+  that throttle. The cost is about 60 ms more latency on every edit. The throttle sits in
+  chokidar's `_emit` (3.6.0, bundled in vite 8.3.1's `chunks/node.js`), which the fsevents handler
+  goes through too, so macOS is likely affected as well: read, not measured. Open: whether to pay
+  the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
+  same reason.
+
+- **(P2) The Accessibility panel blames the workshop for a story taller than its trial.** axe
+  audits the trial host, scroller included, so any story that overflows reports
+  `scrollable-region-focusable` (serious) against forge's own `.fg-story__scroll`: seen
+  2026-10-20 on `ColorRamp › Each Interpolation Space`. Either the scroller takes `tabindex="0"` while
+  it overflows, as a scroll pane should, or `runAxe` audits only the story inside it. The first fixes
+  the workshop's own keyboard access too.
 
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
@@ -1039,14 +919,11 @@ only story runner in the repo.
   now warns when it starts in this state (`watchProbe`, `packages/forge/src/vite/watchProbe.ts`),
   and the one test that needs a real watcher skips. The cause needs the machine in that state.
 
-- **(P2) Confirm in forge that a hot update is no longer followed by a full reload.** wake set a
-  new stamp on every hot update and the page kept the one it loaded with, so about three seconds
-  after forge reloaded a story in place the tab reloaded itself, and every isolated frame polled
-  and reloaded on its own. wake `c9f75c3` sends the stamp to the page with the update and skips the
-  client in a frame whose parent already runs it. Tested in wake against stubbed globals only.
-  To confirm: build wake (`npm run build` there; weasel reads `~/src/wake/dist`), edit a story in
-  forge, and watch that trial state survives past the grace and that `/frame.html` draws no
-  `.wake-badge`.
+- **(P3) One of forge's two idle `/frame.html` frames reloads with every hot update.** Seen
+  2026-10-19 in headless Chrome on the Button story: each edit reached the page in place, with no
+  reload of the page and no `.wake-badge` in either frame past wake's grace, but the second frame's
+  document was replaced at the instant the update arrived, three edits running. The first frame
+  kept its state. Whether that frame is meant to rebuild on an update is not known.
 
 - **(P3) wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
   registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
@@ -1060,6 +937,10 @@ only story runner in the repo.
 ---
 
 ## Demos & visual regression
+
+- **(P3) The site's Releases view mounts every changelog entry: about 46,000 elements** in jsdom
+  (measured 2026-10-20), closed `<details>` included. A test rendering it spent 3 s committing and
+  0.5 s a `getByRole` under fleet load; in a browser the cost is unmeasured.
 
 - **(P3) EffectChart visual baselines are not captured.** `tests/visual/effect-chart.spec.ts`
   names `effect-chart.png` and `effect-chart-rack.png`; the update-baselines workflow has to
@@ -1081,35 +962,16 @@ only story runner in the repo.
   own meets it too: `hud-context-menu`'s first test waited 30s for a canvas, twice on teitou on
   2026-10-15, and passed in 2s on the next try; `--timeout 90000` gets a lone spec through.
 
-- **(P3) Package pages: undescribed exports and unchecked source links.** Every published package
-  has a page at `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and
-  only geom, gestures, and labkit have guides. About 420 exports have no doc comment, so their row
-  in a module's list has no description. A page's "Declared in"
-  line links to GitHub only where TypeDoc found the repository, which it cannot from a git
-  worktree (it looks for a `.git` directory); the deployed build has not been checked for links.
+- **(P3) Package pages: undescribed exports.** Every published package has a page at
+  `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and only geom,
+  gestures, and labkit have guides. About 420 exports have no doc comment, so their row in a
+  module's list has no description.
 
-- **(P3) SVG export writes wrapped text unwrapped.** `data-weasel-wrap` round-trips
-  `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws
-  a wrapped node as one line per hard break. Exporting the laid-out lines needs fonts at serialize
-  time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with
-  `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines
-  need per-word `x` placement too, since `text-anchor` has no justify. The hard-break lines are
-  pitched at the node's font size times its line height (`linesXml` in `tspanLines.ts`), which is
-  where the layout puts them only when no run on the line is larger; a line holding a larger run
-  needs the same fonts. How a browser draws the `<tspan x dy>` lines has not been looked at in one.
-
-- **(P3) The animation wrappers have no canvas seat.** `animateOnSetPose` and `animateLifecycle`
-  wrap an adapter the caller holds. `<SceneCanvas>` builds its own and takes neither, so nothing a
-  tool writes is animated; `apps/site/demos/AnimationDemo.tsx` wraps `useSceneAdapter(scene)` and
-  its buttons write through that. Wrapping the canvas's adapter would animate every op applied
-  through it, a drag's release, a resize, and an undo among them (read from `applyOps` in
-  `canvas/sceneAdapter.ts`, which hands each op the adapter it was called on; not run), so the
-  seat has to say which of those glide. It would still miss a button's `scene.setPose`, which
-  reaches no adapter: animating that needs the scene to report the write, as `onReflow` reports
-  a settle. `<SceneCanvas reflowTransition>` is that shape for layout writes already: the scene
-  hands `useLayoutDepSource` each move with the pose it left, and the transition glides what is
-  shown from there through a pose override, writing nothing. A removal cannot follow it, since
-  the node is gone by the time a report arrives.
+- **(P3) SVG text export: `rtl` and the default lines not seen in a browser.** Headless Chromium
+  drew an export written with `textLayout: layoutTextPose` (Inter from `assets/fonts/inter`) with
+  every glyph inside the cell weasel's layout gives it, for a wrapped, a justified, a centered node
+  and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
+  the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
 
 ---
 
@@ -1127,9 +989,9 @@ only story runner in the repo.
   find a Node binding that provides WebGL2, or host the render in headless Chromium.
 - **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'auto'` on
   `WeaselRenderer` builds an image's mipmaps the first time a frame draws it at half size or
-  smaller, so only an image that is drawn small pays for them. The screen path still builds its
-  renderer with the default `'linear'` (`packages/core/src/canvas/canvasRenderer.ts`), and
-  `<Canvas>` has no prop for it. Making `'auto'` the screen default changes the pixels of every
+  smaller, so only an image that is drawn small pays for them. `<Canvas imageMinification>`
+  (and `<SceneCanvas>` through it) opts a canvas in; the default is still `'linear'`. Making
+  `'auto'` the screen default changes the pixels of every
   minified image, so it needs the visual baselines regenerated and a look at a sprite sheet drawn
   small: trilinear filtering blends neighboring cells at the higher mip levels, which `'linear'`
   does not. The cost of `generateMipmap` on a large sheet is not measured. Never mipmap
@@ -1141,50 +1003,115 @@ only story runner in the repo.
 
 ---
 
+## Devtools
+
+- **(P3) The devtools extension's 16 px icon is the whole site logo shrunk.**
+  `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
+  1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
+  better; that is a call on the mark, not made (2026-10-19).
+
 ## Release-gate & build hygiene
 
-- **(P3) Every vitest start prints vite's `configLoader: 'native'` warning.** The config loads
-  `packages/icons-plugin/src/index.ts` from source, and its relative imports (`./annotate`,
-  `./bundlers`, `./catalog`, …) have no file extension, which vite's planned native loader will
-  not resolve. It repeats several times per start and was most of the ~235 log lines of a one-file
-  browser run (measured 2026-10-17). The package is shipped source, so the fix has to survive
-  tsup's emit: `.js` specifiers resolved to `.ts` by the bundler resolution, not `.ts` ones.
+- **(P2) The fleet `gate` project skips every ci.yml step after the first build.** It reads only
+  the `check:*`, typecheck and lint steps above `npm run build` (`scripts/ci-checks.gate.ts`), so
+  `check:manifests`, `check:treeshake`, `check:react-free` and both `test:smoke:consumer` runs
+  never run before a merge. Both smokes failed on `main` for a day (2026-10-20) with every fleet
+  run green. Running them needs a full build of every package and then labkit's, on a tree other
+  jobs share; a separate fleet job kind for the post-build steps, run before a merge, would close it.
+
+- **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
+  Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
+  `.nvmrc`'s `24`. So a Node 22 failure reaches nobody until CI: icons-plugin's tests threw
+  `Unexpected token 'export'` under vitest's vm pools on Node 22 from 2026-10-19 until the plugin
+  stopped using oxc-parser's `Visitor` (2026-10-20). A Node 22 pass can be run by hand —
+  `onto do --kind test -- npx -y -p node@22 node node_modules/.bin/vitest run …` — but nothing
+  runs one. The `browser` project has the same gap for Linux: CI run 39349499006 (2026-10-20, at
+  `f01d3e010`) failed 10 browser tests the fleet passes — `menus.browser.test.tsx` reads
+  `CutCtrl+X` where it expects `Cut`, `Badge.browser.test.tsx`, `Bar.overflow.browser.test.tsx`
+  and `PropertyList.pairs.browser.test.tsx` measure boxes a fraction of a pixel wider, and
+  `retained.browser.test.ts` counts 2 draws where it allows 1. No later run reached that step, so
+  whether they still fail is unknown. Two fixes, not exclusive: a Node 22 leg in `test:fleet` or
+  the gate, and a Linux node (or container) for the `browser` project.
+  `@weasel-js/icons-plugin` also declares `engines: >=22`, while its `oxc-parser` dependency
+  needs `>=22.12.0`.
+
+- **(P3) Decide whether a swapping node should take full fleet runs.** On 2026-10-20 keiei
+  (8 cores, 24 GB, 7–11 GB of swap) failed `packages/forge/src/timeline/timeline.test.tsx` in five
+  full runs, `main` at `416328e36` among them; msb-uai failed it once. Nothing in the tests waits
+  on a timer or a load that could be cut: the time is the whole workshop mounting, which is React
+  in development mode plus jsdom, and the tests that fail mount it two or three times.
+
+  | keiei, 2026-10-20 | one mount, to the first playhead | the timeline file |
+  |---|---:|---:|
+  | alone | 0.5–0.7 s | 14 s |
+  | full run, 16 GB free | 1.4–2.7 s | 42 s, passed |
+  | full runs that failed | — | 88–102 s |
+
+  teitou, studio and msb-uai run the file in 20–44 s. That the failing runs were the swapping ones
+  is inferred from `onto status` at the time, not measured inside them. Keeping a node that reports swap out of full runs is an onto setting, left unchanged.
+  Of a mount's CPU, 11% is `Element.closest` in jsdom, which `useOverlayPortal` calls through
+  `nearestPortalHost` on every render of every `Tooltip`, and about 4% is axe, which the a11y panel
+  runs on each mount. A timeout no longer leaks: the file's helpers stop once vitest aborts the
+  test's signal, where before a timed-out test could mount into the next one's document.
+
+- **(P3) forge still serves ui and labkit file by file.** A forge load is 2,683 requests, 1,639 of
+  them ui source (measured 2026-10-19). Packages holding stories stay unbundled
+  (`scripts/vite-prebundle.ts`), because each story imports its component by relative path and a
+  bundled copy would sit beside the one it loads. Bundling them needs the stories to reach
+  components only through package specifiers.
+
+- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
+  Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
+  to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug
+  that Node 24.22.0 fixes, and every fleet node's nvm resolves `.nvmrc`'s `24` to 24.22.0 since
+  2026-10-19. The flag stays because the same crash is reported on Node 26.7 and 26.8.1, which ad-hoc
+  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix. The fix is the
+  backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
+  2026-10-19).
+
+- **(P3) A node's shared tree can change under a run already in progress.** onto refuses to *start*
+  a suite in a tree another session synced, but nothing stops a sync landing mid-run. On 2026-10-20
+  the full run of `72fe486f7` on studio had all 241 browser suites fail to import
+  `vitest.browser.setup.ts` with `SyntaxError: Unexpected identifier 'error'`, which no source
+  matches; the same commits passed on the next run. A mid-run sync is inferred, not observed. A
+  check at the end of the run, comparing the tree's stamp with the one it started on, would turn
+  this into a void run rather than 241 failures.
+- **(P3) `AssetsPage`'s first test times out in full fleet runs.** "opens on WeaselDraw
+  preferences, and opens a node property schema picked from the list"
+  (`apps/draw/src/dev/AssetsPage.test.tsx`) hit its 5000ms timeout in the full runs of `a64fe9501`,
+  `72fe486f7` and `69662b198` on studio, and passed in `befd71b6c`'s (2026-10-20). Three in four
+  stops being load noise; it likely needs more than 5 s on a busy node, or waits on something slow.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
-  longer start in a tree another session synced; `scripts/fleet-tree.gate.ts` stays as the check
-  on this side. `--spread` calls `prepare()` once and runs its shards outside the retry, since
+  longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
+  on this side, in every shard. `--spread` calls `prepare()` once and runs its shards outside the retry, since
   retrying would rerun groups already finished. The fix reaches a machine when its `onto` binary
   is rebuilt, and a node's agent refuses a launch against a tree that lost its stamp only after
   `onto push <node>`.
 
-- **(P2) What is left of the `browser` project's fleet failures.** Measured on 2026-10-15 from the
-  logs of 136 fleet runs (2026-10-11 to 10-15) and from runs of the `browser` project alone on
-  teitou, msb-uai and studio. Running it after the other projects (`sequence.groupOrder`) ended the
-  timeouts in Playwright actions: 8 of 18 fleet runs before that change had one; after it only
-  `LabLightbox`, which also builds WebGL contexts, did (3 of 118). The timeouts that followed, from
-  2026-10-13, were the project's own: it failed the same tests alone as in a full run, and sixteen
-  busy cores beside it changed nothing. Its tabs share one Chromium, and on teitou 17 of them took
-  the same 72 to 78 s as six while tests making WebGL contexts ran three to five times as long, so
-  it now runs six (`maxWorkers`). A tab that lost its connection mid-run ("Browser connection was
-  closed while running tests", every file after it left unrun; at six workers too, on
-  `17bd67dea`'s first fleet run) had a renderer full of Mach ports, which a removed test frame
-  holds until a full GC; `vitest.browser.setup.ts` now collects garbage at each file's start.
-  Measured on teitou, one or two workers: before, 11 of 11 runs lost a tab, 36 to 78 files in, and
-  in the 5 runs sampling ports each second its renderer held 14,086 to 16,661 when it went; with a
-  full GC between files, 8 of 8 kept every tab, the 5 sampled peaking at 414 ports, and a lone
-  tab ran all 176 files twice. That the port count is what closes the sockets is inferred from this,
-  not traced inside Chromium: every socket and request of that page closes at once from the
-  browser's side (a net log shows it), the page itself lives on, and no crash is reported. Left
-  open:
+- **(P3) The `browser` project spends about a second per file outside its tests.** Alone on teitou
+  (2026-10-20) it took 89 s on six workers, 534 worker-seconds, of which its 227 files' tests were
+  310 s; the rest is each file's page and module load, and from 35 s on the run is a stream of small
+  files paying it. Splitting the longest files would not help: the tail is the small ones.
+  `--no-isolate`, which would reuse one page, failed every file at about 5 s with its tests skipped.
+  Serving the workspace packages pre-bundled, as `scripts/vite-prebundle.ts` does for the dev
+  servers, is the likely fix (inferred, not tried); tests that import their own package by relative
+  path would then load a second copy of it beside the bundle, splitting module state such as the
+  font registry, the same obstacle the forge entry above names.
+
+- **(P2) What is left of the `browser` project's fleet failures.** The project runs after the
+  others (`sequence.groupOrder`), in six tabs (`maxWorkers`), collects garbage at each file's start
+  so a tab's renderer cannot pile up the Mach ports that closed its sockets, and waits at each
+  file's start until vitest's frame lookup returns that file's own frame (`settleFrame`,
+  `scripts/vitest-browser-commands.ts`); the measurements behind each are in the commits that
+  made them (2026-10-13 to 10-17). On 2026-10-19, 15 runs of the project alone on the fleet, beside
+  other jobs (teitou 12, studio 2, keiei 1), passed all 220 files with no detached frame and no
+  lost tab. Left open:
   - **`text-dom/src/overlayTyping.browser.test.tsx`'s first test failed `frame.evaluate: Frame was
-    detached` under `userEvent.keyboard`**: 8 runs, all at the old worker count. vitest finds the
-    frame a command acts on by name, `page.frame('vitest-iframe')`, and every test file's iframe has
-    that name, so while Playwright still lists the previous file's iframe it can return that one.
-    `vitest.browser.setup.ts` now waits at each file's start (`settleFrame`, in
-    `scripts/vitest-browser-commands.ts`) until the lookup returns the file's own frame. That this
-    lookup is the cause is inferred, never caught in a run; a sighting with the wait in place
-    means it is something else.
+    detached` under `userEvent.keyboard`** in 8 runs before `settleFrame`, all at the old worker
+    count. That the frame lookup was the cause is inferred, never caught in a run; a sighting
+    with the wait in place means it is something else.
   - **A trial's status strip grows 2 px when its numeric face arrives**, which refits the view a
     second time. The strip itself now takes its room on the first layout (`TrialChrome` reads an
     unplaced view as the default), so this is the only refit left; `presentation.browser.test.tsx`
@@ -1194,15 +1121,17 @@ only story runner in the repo.
     rather than 30, which is a look to decide, not a fix to make.
   - `forge/src/vite/plugin.test.ts` has its own entry under "Demos & visual regression".
 
-- **(P2) HUD vs DOM text: what the idle rerun left open.** `tests/perf/hud-vs-dom.spec.ts` prices
-  the HUD against plain DOM, a React overlay, and a DOM layer moved as one element
-  (`tests/perf/README.md`, "HUD text against a DOM overlay").
-  - **The all-threads figures leave out the renderer's worker pool**, which the HUD keeps 1.8–2.4
-    ms a frame busier than the DOM at 5,000 glyphs changing every frame (`HVD_CENSUS=1`, teitou and
-    msb-uai, 2026-10-17; README, "Frame rate"). Rerunning the every-frame half of the sweep with
-    the census on would say whether "off the main thread the HUD is cheaper" survives, and the
-    pool's self times would say what it is doing. The 70 ms frame gap this entry used to ask about
-    no longer reproduces.
+- **(P2) HUD vs DOM text: the HUD's every-frame text keeps a garbage collector busy.**
+  `tests/perf/hud-vs-dom.spec.ts` prices the HUD against plain DOM, a React overlay, and a DOM
+  layer moved as one element (`tests/perf/README.md`, "HUD text against a DOM overlay").
+  - **With the readout changing every frame the DOM is still the cheaper overlay** once the
+    renderer's worker pool is counted: at 5,000 glyphs on a fixed camera 8.41 ms a frame of all
+    threads against 6.12, down from 11.28 (msb-uai, one run of each tree, 2026-10-20; README,
+    "What the HUD allocates"). The garbage is the text re-laid out for every label that changed:
+    6.0 MB a frame, down from 9.7, against the DOM's 0.12. Most of what is left is the layout's
+    own output — `placeLine`'s cells and placed glyphs, `paintRuns`' quads, `measureRuns`'
+    entries — one object per glyph with every number in it boxed. Cutting that means a layout
+    held in typed arrays, or one that a label whose text changed can update rather than rebuild.
   - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main thread against 0.33
     at 5,000 glyphs, because the renderer walks every unchanged text command each frame. A
     layer-level skip for a HUD whose widgets are all unchanged would need `content` painters kept
@@ -1238,20 +1167,36 @@ only story runner in the repo.
     (`clip-cost.spec.ts`). What still ends a run is a sixteenth texture, a ninth color matrix, a
     clip only the stencil expresses, and a paint that draws for itself (a pattern, a shader,
     per-vertex colors).
-  - **What joined the run since is checked in a browser but not timed.** Each is pinned by draw
-    count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium (run
-    2026-10-17):
+  - **What joined the run since is checked in a browser.** Each is pinned
+    by draw count through the GL recorder, and its `*.browser.test.ts` passes in headless Chromium
+    (run 2026-10-17):
     - Synthetic bold: the threshold shift rides a glyph's `a_post` (`syntheticBold.browser.test.ts`).
     - Fifteen textures where a run held seven, fetched through a tree of four compares where the
-      chain took up to seven (`batchSlots.browser.test.ts`). Not timed: the tree per fragment
-      (`fill-rate.spec.ts`), and the wider `u_samplers` and `u_fieldScale` uploads per flush.
+      chain took up to seven (`batchSlots.browser.test.ts`). The tree costs a fragment what the
+      chain's deepest slot did: `fill-rate.spec.ts`'s `batch` came within 1.2% of
+      `batch-chain8-7` on msb-uai (Apple M3 Max) and keiei (Apple M2), two passes each with no
+      other onto job on the node, 2026-10-19; the chain's slot 1 was 2–4% cheaper. The wider
+      `u_samplers` and `u_fieldScale` uploads are under `flush-anatomy`'s noise: dropping them
+      saved 0.06 us a flush on teitou (2026-10-17), and 0.1–1.9 us in four passes on msb-uai
+      (2026-10-19) where a flush cost 31–34 (result files with the ring measurement below).
     - A gradient or an image under any color matrix: each vertex names one of up to eight
       (matrix, group alpha) pairs the run draws under, `u_colorMatrix[i]`, packed into `a_texSlot`
       (`draw/batchMatrices.ts`, `colorMatrixFold.browser.test.ts`). A gradient under a matrix that
-      only scales channels down rides a vertex tint, as an image does. Not timed: the indexed
-      matrix per fragment, and three array uniforms a flush where the matrices changed.
+      only scales channels down rides a vertex tint, as an image does. The program such a run
+      draws with costs each of its fragments 12–13% more than the one-matrix program on msb-uai
+      and 22–23% on keiei (`batch-8-matrices`, the same runs). The matrix uploads are under the
+      same noise as the sampler uploads (`-colormatrix`: 0.08 us on teitou, 0.3–2.2 on msb-uai).
     - Earlier, and in the same state: a solid's or a glyph's color mapped on the CPU
       (`draw/foldColor.ts`), and an image's tint.
+  - **The shipping batch fragment costs three times the spec's stand-in for it.** `fill-rate`'s
+    `batch` variant draws `BATCH_FRAG_SRC` through `BATCH_VERT_SRC` (`tests/perf/lib/batchFragments.ts`);
+    it cost 2.95–2.98 times `split-sample`, the hand-written fragment the spec's older variants
+    price the glyph math and the gradient split against, on both nodes, and 4.7 (M3 Max) and 5.9
+    (M2) times a plain textured fragment. So those variants' percentages are shares of a fragment
+    a third as dear as the real one. What the rest is spent on (the color matrix and clamp,
+    `straightRgb`, the flat varyings) is not broken down. On msb-uai the last two of eight runs
+    ran 2.5–4 times slower in both passes, every variant alike; the spec keeps the fastest run,
+    so they do not reach a figure. Result files: `tests/perf/recorded/fill-rate-batch-2026-10-19/`.
   - **A clip only the stencil can express still flushes on entry and exit**: a polygon, a rect
     turned off the axes, and a rect clip with a slanted item crossing it (`DrawBatch.clipQuad` says
     why a slanted edge cannot be cut). The stencil itself costs about 2.2 us a push and pop around a
@@ -1272,17 +1217,26 @@ only story runner in the repo.
     extra; the rest add 8–16 us, with a run-to-run spread up to 9.7 us, so the spec ranks pairs but
     does not price one.
 
-- **(P2) A ring of buffers measures slower than rewriting one.** `SOLID_RING_SIZE` (64) exists so a
-  flush never writes a buffer a draw is still reading. On teitou (Apple M5 Max, ANGLE Metal),
-  2026-10-06, four passes back to back in ABBA order, a quad that ends its run (`image-quad`,
-  `renderer/unmerged`, 20,000 a frame) cost 22.50 and 21.99 us through a ring of 64 against 17.75
-  and 18.09 through a ring of 1, with no overlap between the sides' samples; `flush-anatomy` did
-  not separate them. Result files: `tests/perf/recorded/ring-size-2026-10-06/`. Only one GPU and
-  backend has been measured, and the ring's own case was made on an M2 Max by the retired block
-  method; D3D and Vulkan backends are where an in-flight buffer write would stall, if anywhere.
-  A single `image-quad` rerun on teitou on 2026-10-17, ring of 64, read `unmerged` at 27.4 us
-  (`tests/perf/recorded/batch-specs-2026-10-17/`), so the 22.5 / 22.0 above has drifted; why is
-  not known.
+- **(P3) `SOLID_RING_SIZE` is measured only on Metal.** The ring (64 slots) exists so a flush never
+  writes a buffer a draw is still reading. On 2026-10-06 a ring of 64 measured 24% slower than a
+  ring of 1 on teitou (`ring-size-2026-10-06/`); on 2026-10-19 it did not reproduce. Eight passes
+  a node in ABBA order, ring of 64 against ring of 1, `image-quad`'s `renderer/unmerged` at 20,000
+  quads of 8 px, us a quad, medians of each pass's 3 runs, each node with no other onto job:
+
+  | Node | ring of 64 | ring of 1 |
+  |---|---|---|
+  | teitou (Apple M5 Max) | 20.79, 22.92, 22.40, 22.09 | 20.89, 19.68, 22.25, 21.42 |
+  | msb-uai (Apple M3 Max) | 34.49, 33.59, 34.30, 34.54 | 33.46, 33.66, 33.68, 33.74 |
+  | keiei (Apple M2) | 66.31, 67.54, 69.17, 65.58 | 65.37, 64.89, 64.97, 65.21 |
+
+  A ring of 1 is 2–5% cheaper on each, with the sides' samples overlapping. `flush-anatomy`'s
+  `bind+draw` (no vertex upload) separates them on two nodes, in opposite directions: a ring of 1
+  costs 0.3 us a flush less on teitou (3.05–3.23 against 3.34–3.79) and 2.8 more on keiei
+  (10.2–11.6 against 7.6–9.1); on msb-uai the samples overlap.
+  So no Apple GPU makes a case for changing the size. The 27.4 us the 2026-10-17 rerun recorded was
+  not drift: it ran `image-quad` at its defaults, 512 quads of 48 px. Left: a D3D or Vulkan
+  backend, where an in-flight buffer write would stall if anywhere; no fleet node has one. Result
+  files: `tests/perf/recorded/ring-size-2026-10-19/`.
 
 - **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run up to
   `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open, and up to
@@ -1348,32 +1302,47 @@ only story runner in the repo.
   draws them only through `WeaselRenderer` (checked 2026-10-17). It is one run on their side, the
   16px / 2,700-command rung with the GL build left off the page, and it could retire the entry.
 
-- **(P3) Retained layer surfaces: what the first arc left.** An unchanged layer of 250 commands or
-  more is now drawn once into its own texture and composited (`GroupDrawCommand.retain`,
-  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`). Memory
-  is bounded by a cap, `WeaselRendererOptions.retainBudget`, not by content: every surface is the
-  size of the drawing buffer, 16 MB at 1280x800 and dpr 2, plus one shared multisampled scratch
-  buffer of 8 bytes a sample (131 MB there at 4x). Left:
+- **(P3) Retained layer surfaces: what is left.** An unchanged layer of 250 commands or more is
+  drawn once into its own texture and composited (`GroupDrawCommand.retain`,
+  `packages/renderer/src/retain/`; the policy is `packages/core/src/core/layers/retain.ts`;
+  `<Canvas retain>` sets the threshold and budget). Each surface covers only the device pixels its
+  layer can paint, but text, custom shaders and `effects` cannot be bounded yet, so a layer holding
+  any of them still gets a canvas-sized surface (16 MB at 1280x800 and dpr 2). Left:
 
-  - **Content-bounded surfaces.** Size each surface to its layer's device bounds, clamped to the
-    viewport, and composite a quad over just that. Less memory and fill than a canvas-sized quad;
-    needs a bounds pass over every command kind and an offset projection inside the surface.
+  - **The budget still caps canvas-sized layers at about 16.** `retainBudget` (256 MB default) counts only
+    kept surfaces; the multisampled scratch buffer they are drawn in is left out and freed after a
+    frame that redraws nothing. A canvas-sized surface is 16 MB, so at 64 layers holding text 48 are
+    still drawn straight through (below). Two things are open: a frame that redraws can hold the
+    budget plus one canvas-sized multisampled buffer (131 MB at 4x), which drawing in tiles would
+    cap; and whether the default should scale with the drawing buffer.
+  - **Bounds for text and custom shaders.** Text needs its laid-out extent plus glyph overhang;
+    a custom shader may read `gl_FragCoord`, which the offset viewport moves.
   - **Retaining through camera motion.** A world layer stops retaining while the view moves, and its
     surface is freed after a frame without it, so a pan resubmits every layer and reallocates on the
     first still frame. An oversized, bounded surface could be translated instead of redrawn.
   - **Layers with `effects`, and layers inside a `LayerGroup` that owns a surface,** are never
     retained: the renderer declines a retained group inside another render target.
-  - **No `Canvas` prop** sets the threshold or the budget, or turns retaining off for a whole canvas;
-    today that is `RenderLayer.retain: false` per layer, or the renderer's own options.
-  - **No timing of the real path yet.** The 250 threshold comes from `tests/perf/layer-dispatch.spec.ts`,
-    which stood in for a retained layer with one canvas-sized image (composite cheaper than submitting
-    from about 130–250 commands a layer, at 4 to 64 layers; 58 ms submit against 5.4 composite at 64
-    layers of 1,000). Its composite side should be rerun through `retain` itself, which adds the
-    resolve blit, and the threshold set from that.
+  - **The threshold.** `tests/perf/layer-dispatch.spec.ts` times the real path (`retained`), each
+    variant on a renderer of its own. On msb-uai (Apple M3 Max, ANGLE Metal, headless Chromium 153),
+    2026-10-18, ms a frame over the control, medians of 3 runs, with the scratch buffer outside the
+    budget:
 
-  Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153), 2026-10-07; one GPU and
-  backend only. Result files: `tests/perf/recorded/layer-dispatch-2026-10-07/` and
-  `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`.
+    | layers | cmds | submit | retained | kept / declined |
+    |---:|---:|---:|---:|---:|
+    |  4 |   30 |  0.240 |  0.510 |  4 /  0 |
+    |  4 |  100 |  1.255 |  0.490 |  4 /  0 |
+    | 16 |   30 |  1.670 |  2.035 | 16 /  0 |
+    | 16 |  100 |  3.785 |  1.705 | 16 /  0 |
+    | 16 |  300 | 11.595 |  1.765 | 16 /  0 |
+    | 64 |  100 |  9.030 |  9.515 | 16 / 48 |
+    | 64 | 1000 | 56.125 | 43.005 | 16 / 48 |
+
+    Where every layer fits the budget, retaining wins by 100 commands a layer and loses at 30, well
+    below the 250 in force. It was left at 250: one GPU, and frame time does not price the memory a
+    lower threshold commits. With the scratch buffer counted, the same node kept 8 of 16 and 8 of
+    64. Result files: `tests/perf/recorded/layer-dispatch-scratch-unbudgeted-msb-uai-m3max-2026-10-18/`
+    (now) and `tests/perf/recorded/layer-dispatch-retained-msb-uai-m3max-2026-10-18/` (scratch
+    counted).
 
 - **(P3) The pull request benchmark job does not fit its time limit, and its comment shows
   seven of fifteen benchmarks.** Its steps ran on keiei (Apple M2, 8 cores, load about 6.9) on
@@ -1391,14 +1360,58 @@ only story runner in the repo.
   - Still unmeasured: whether the base, measured first, reads differently from the head for that
     reason alone. Result files and logs from that run were not kept.
 
-- **(P3) `CanvasInner` is one 422-line function.** It is most of the 720-line `canvas/Canvas.tsx`,
-  after its scene-layer construction, its dev HUDs, and its camera moved to SceneCanvas.
-  `SceneCanvasInner` is under the cap: its mounters are hooks, called from `SceneCanvasInput`, a
-  component kept ahead of the canvas's children because a child's dep or action override has to
-  register after the kit's (`SceneCanvas.registrationOrder.test.tsx`). `CanvasInner` has no mounters
-  to fold, so it needs its own split. `docs/audits/2026-10-12-SceneCanvas.md` lists what belongs to
-  another owner. Left open by the preset table and the rule context, and described in the audit:
-  `selectTool.rotate === false` is still decided in three places that do not agree, and making
-  them one changes behavior three ways the audit lists, each needing a decision. Left open by the selection pass: the kind label published with the selection and the routing
-  kind disagree on every node, and `SelectionPanel` has a third classifier; the command palette's
-  summary prints the label, so making them one needs a decision on what it should say.
+## weaselchart
+
+`apps/chart`, a Visio-style diagram editor with a pipeline mode, built on `@weasel-js/diagram`.
+
+- **(P3) Two wires can't meet at one audio input in pipeline mode.** `livePlan` sums every wire
+  into an input, but the editor lets a wire join only a free input
+  (`packages/diagram/src/effect/editorHandlers.ts`), so Mix is the only way to combine sounds.
+  Decision needed: whether audio inputs accept several wires, as a port-level flag, or Mix stays
+  the way to combine (2026-10-20).
+- **(P3) `useLiveAudioRunner` loops on a `nodes` built in render.** It remakes its runner when
+  `engine`, `bus` or `nodes` change (`packages/diagram/src/effect/audio/useLiveAudioRunner.ts`), so
+  `nodes={{ ...audioStageNodes, mine }}` written inline re-renders forever, and its JSDoc doesn't say
+  to pass a stable one. Read `nodes` through `latest` at creation, as `pipeline` and `sources` are, or
+  document it (2026-10-20).
+- **(P3) Pipeline mode doesn't drag edge labels yet.** `EffectWire`
+  (`packages/diagram/src/effect/types.ts`) has nowhere to store a placement, and the `lanes` look
+  rewrites each label's `labelPlacement` on every build (`packages/diagram/src/effect/lanesRoutes.ts`).
+  Wiring `onMoveLabel` through `EffectEditor` needs a wire field and a rule for which of the two wins.
+  Left open by label drag (2026-10-20).
+- **(P3) A group's inset can overlap an outsider under `rack`.** The chain layout moves an
+  outsider one level past a group's deepest member but leaves only `nodeGap` between levels, so the
+  box's inset clears the outsider only while the inset is smaller than `nodeGap`. That holds at the
+  defaults (12 against 48); a custom `rack` `nodeGap` or a large group inset breaks it.
+  `clearColumns` in `packages/diagram/src/chainGroups.ts` (2026-10-20).
+- **(P3) The `chain` layout ignores a group's `minWidth` on a vertical line.** `lineGaps` in
+  `packages/diagram/src/chainGroups.ts` widens for it only when the line runs horizontally, though
+  `GraphGroup.minWidth`'s doc says a layout leaves room for it (2026-10-20).
+- **(P3) `lanes` doesn't route wires around group boxes.** A wire between two stages outside a
+  group can run straight through the group's box, and a group title's inset reaches into the lane
+  above. `lanesRoutes.ts` knows nothing of group boxes (2026-10-20).
+- **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
+  `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
+  composites against (2026-10-20).
+- **(P3) PDF export misplaces screen-unit paint inside a rasterized group.** In an effects or shader
+  group, `rasterize` places `screen`-unit paint in raster pixels, not page points. The fix needs a
+  renderer option naming a render's screen space (2026-10-20).
+- **(P3) PDF export rasterizes an effects group over the whole page.** At 2×, so a small blurred badge
+  costs a full-page bitmap. The fix needs the renderer to expose each effect's reach, so the raster
+  covers only the group's bounds grown by it (2026-10-20).
+- **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
+  the full face. Subsetting needs the glyphs a document uses collected per face before it is written
+  (2026-10-20).
+- **(P3) `@weasel-js/rig` and `@weasel-js/diagram-formats` are unpublished.** Each needs its first
+  publish by hand, under `--tag pre` at the version the next release cuts, and its trusted-publisher
+  registration (`docs/releasing.md`, "Setting up a new package"); `check:first-publish` fails the
+  release until then. `@weasel-js/pdf` was seeded this way at 1.11.1 (2026-10-20).
+- **(P3) Pipeline mode groups one stage at a time.** Arrange › Group (`EffectEditorApi.group`)
+  takes any ids, but `DiagramView` picks one node (`useSelection` in `'single'` mode, and
+  `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
+  Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
+  groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
+- **(P3) The chart browser tests share no pointer helpers.** `chart.browser.test.tsx`,
+  `containers.browser.test.tsx`, `labelDrag.browser.test.tsx`, `pages/pages.browser.test.tsx`, and
+  `pages/offPage.browser.test.tsx` each define their own pointer and drag helpers; they belong in `apps/chart/src/testing/` beside `mountChartApp`. Left open by
+  containers (2026-10-19) so parallel arc pieces editing those files would not conflict.

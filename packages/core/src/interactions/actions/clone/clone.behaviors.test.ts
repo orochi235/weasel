@@ -4,7 +4,6 @@ import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { CloneBehavior } from '../../gestures/types';
-import { snap } from '../../gestures/shared/snap';
 import { cloneAction } from './action';
 
 const MODS = { alt: true, ctrl: false, meta: false, shift: false };
@@ -36,9 +35,15 @@ describe('cloneAction behaviors', () => {
     expect(f.copies()).toEqual([{ x: 20, y: 0, width: 10, height: 10 }]);
   });
 
-  it('takes a move snap behavior', () => {
-    const grid = snap<RectPose>({ snap: (pose) => ({ ...pose, x: Math.round(pose.x / 10) * 10 }) });
-    const f = fixture(grid as CloneBehavior<RectPose>);
+  it('takes a move behavior', () => {
+    const grid: CloneBehavior<RectPose> = {
+      onMove(ctx, t) {
+        const o = ctx.origin.get(ctx.draggedIds[0]!);
+        if (t.kind !== 'translate' || !o) return;
+        return { transform: { kind: 'translate', dx: Math.round((o.x + t.dx) / 10) * 10 - o.x, dy: t.dy } };
+      },
+    };
+    const f = fixture(grid);
     const handle = f.start();
     handle.onMove!(f.at(13));
     handle.onEnd!(f.at(13), 'commit');

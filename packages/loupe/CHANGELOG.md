@@ -1,5 +1,55 @@
 # @weasel-js/loupe
 
+## 1.11.0
+
+### Patch Changes
+
+- Updated dependencies [304f53a]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [5338358]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [8374354]
+- Updated dependencies [5adbb76]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [fb75358]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [71c079d]
+- Updated dependencies [dcca70c]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [c2048de]
+- Updated dependencies [9073669]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1faab2d]
+- Updated dependencies [d705830]
+- Updated dependencies [329aa39]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/geom@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

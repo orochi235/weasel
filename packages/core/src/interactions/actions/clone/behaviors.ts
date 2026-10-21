@@ -70,10 +70,10 @@ export function startCloneBehaviors(
       for (const b of list) {
         const r: CloneBehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
         if (!r) continue;
-        if (r.transform?.kind === 'translate') transform = r.transform;
+        if (r.transform) transform = r.transform;
         if (r.snap !== undefined) gctx.snap = r.snap;
       }
-      return transform.kind === 'translate' ? { dx: transform.dx, dy: transform.dy } : raw;
+      return { dx: transform.dx, dy: transform.dy };
     },
     end(delta) {
       place(delta);

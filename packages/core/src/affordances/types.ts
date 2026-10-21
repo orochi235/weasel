@@ -74,6 +74,11 @@ export interface AffordanceRegion<TScratch = unknown> {
          *  grabbed. The cut runs along the square's own axes: pair it with
          *  `turned` on a target that can rotate. */
         cornerOf?: { width: number; height: number; outward: { x: -1 | 1; y: -1 | 1 } };
+        /** The body this point is an edge midpoint of: its target-local
+         *  size. While either side spans under `EDGE_HANDLE_MIN_RADII`
+         *  `hitRadiusPx` on screen, the point is neither hit nor painted, so it
+         *  cannot crowd the corners or cover the middle of a small body. */
+        edgeOf?: { width: number; height: number };
       }
     | { kind: 'rect';    x: number; y: number; width: number; height: number }
     | {

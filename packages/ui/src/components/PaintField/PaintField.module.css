@@ -10,7 +10,7 @@
   background: var(--wzl-surface);
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-field-font-size, var(--wzl-font-size-sm));
   cursor: pointer;
 }
 

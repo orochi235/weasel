@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { MenuRow } from './MenuRow';
+import { menuFieldId } from './MenuValue';
 import s from './ContextMenu.module.css';
 
 /** One level of the open menu, positioned in the viewport. */
@@ -43,7 +44,18 @@ export function MenuPanel(props: {
   // reaches the canvas; a key held with Ctrl, Meta or Alt is a command, not typeahead.
   const onKeyDown = (e: KeyboardEvent) => {
     e.stopPropagation();
+    // A key typed into a row's field is the field's; Enter and Escape, which end the edit, give focus back.
+    if (e.target !== e.currentTarget) {
+      if (e.key === 'Enter' || e.key === 'Escape') ref.current?.focus();
+      return;
+    }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const at = highlight == null ? undefined : entries[highlight];
+    if (e.key === 'Enter' && (at?.kind === 'number' || at?.kind === 'text') && !at.disabled) {
+      e.preventDefault();
+      document.getElementById(menuFieldId(`${idBase}-${level}-${highlight}`))?.focus();
+      return;
+    }
     if (c.key(e.key)) e.preventDefault();
   };
 
@@ -65,6 +77,7 @@ export function MenuPanel(props: {
         <MenuRow
           key={entry.key}
           entry={entry}
+          controller={c}
           id={`${idBase}-${level}-${i}`}
           highlighted={highlight === i}
           expanded={highlight === i && props.childOpen}

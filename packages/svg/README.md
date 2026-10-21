@@ -37,6 +37,16 @@ answer, and the alternative is unrepresentable anyway (see above). It only
 shows up on foreign SVG that sets decoration on a group and cancels it on a
 child.
 
+**SVG text does not wrap.** By default a `<text>` is written one line per
+hard break, pitched at the node's font size times its line height, and a
+wrapping or justified node keeps that only in `data-weasel-*` attributes for
+weasel's own reader. Pass `serializeSvg(nodes, { textLayout: layoutTextPose })`
+to write the lines the renderer draws instead: each line is a `<tspan>` at the
+layout's `x` and baseline `y`, each word of a line the layout justified gets
+its own `x`, and a line holding a larger run sits where the renderer puts it.
+The layout measures with the registered fonts, so `await warmSvg(nodes, {
+textLayout })` first; a node no face could measure is written the default way.
+
 ## Paints SVG cannot express
 
 SVG has `<linearGradient>`, `<radialGradient>` and `<pattern>` and nothing
@@ -172,6 +182,14 @@ writes a `kit:image` leaf back as an `SvgImageNode`.
 `preserveAspectRatio` is not modeled. The box is taken literally on the way
 in (a non-`none` value warns) and written back as `none`, so a source file
 that relied on letterboxing imports stretched.
+
+## Writing XML by hand
+
+`escapeAttr(s)` and `escapeText(s)` are the escaping this package writes XML
+with, for a caller writing its own. Both drop the characters XML 1.0 cannot
+hold, even as references, and turn a vertical tab or form feed into a line
+break. `escapeAttr` also writes tabs and line breaks as references, since a
+parser reads a literal one in an attribute as a space.
 
 ## License
 

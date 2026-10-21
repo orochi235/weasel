@@ -153,6 +153,9 @@ export interface LaidOutLineBox {
    * index, and the only source offset a blank line carries.
    */
   srcEnd: number;
+  /** Whether `justify` spread this line's slack across its word gaps — never
+   *  for a line closing its paragraph, or one with no gap or no slack. */
+  justified: boolean;
 }
 
 /** What {@link layoutRuns} returns. Every coordinate is relative to the text's own top-left. */

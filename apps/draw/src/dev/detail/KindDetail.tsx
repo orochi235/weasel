@@ -1,9 +1,11 @@
-import { Button, Code, DetailList, DetailRow, InlineMarkdown } from '@weasel-js/ui';
+import { Code } from '@weasel-js/ui/components/Code';
+import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ToolIcon } from '../../ui/ToolIcon';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
-import type { PropertiesKindEntry, RoutingKindEntry, ShapeKindEntry } from '../registryEntries';
+import type { PropertiesKindEntry, ShapeKindEntry } from '../registryEntries';
 import { findSourceMatch } from '../sourceLookup';
 import { collectOpFactoriesTargeting } from './OpDetail';
 import { Jsdoc, EntryLink, KindBadge, type Props } from './shared';
@@ -30,9 +32,7 @@ export function ShapeKindDetail({
         <DetailRow label="kind"><KindBadge label="shape" /></DetailRow>
         {entry.tool && (
           <DetailRow label="authored by">
-            <Button variant="link" onClick={() => onNavigate({ kind: 'tool', id: entry.tool! })}>
-              {entry.hookName ?? entry.tool}
-            </Button>
+            <Code>{entry.hookName ?? entry.tool}</Code>
           </DetailRow>
         )}
         {opTargets.length > 0 && (
@@ -74,31 +74,6 @@ export function ShapeSchemaPanel({ kindId }: { kindId: string }) {
         Extracted from <code>{schema.source.file}:{schema.source.line}</code>
       </p>
     </>
-  );
-}
-
-export function RoutingKindDetail({
-  entry, onNavigate,
-}: {
-  entry: RoutingKindEntry;
-  onNavigate: Props['onNavigate'];
-}) {
-  return (
-    <div>
-      <div className={s.toolHeader}>
-        <h2 className={s.detailHeading}>{entry.id}</h2>
-      </div>
-      <DetailList>
-        <DetailRow label="trait"><KindBadge label={entry.trait} /></DetailRow>
-        <DetailRow label="kind"><KindBadge label="routing-kind" /></DetailRow>
-        <DetailRow label="source"><KindBadge label={entry.source} /></DetailRow>
-        {entry.shapeKindId && (
-          <DetailRow label="shape kind">
-            <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
-          </DetailRow>
-        )}
-      </DetailList>
-    </div>
   );
 }
 

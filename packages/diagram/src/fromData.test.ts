@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
+import { DIAGRAM_THEMES } from './theme/themes';
+import { NODE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
 import type { DiagramNode } from './types';
+import { createSpecLabelPlacer } from './labels/specLabels';
+import type { DiagramLabel } from './labelTrait';
 
 const DATA: DiagramData = {
   nodes: [
@@ -89,11 +92,13 @@ describe('diagramScene', () => {
       edges: [],
     });
     const box = containers(specs)[0]!;
-    expect(box.data?.diagram).toEqual({ outline: 'diamond', ports, pinned: true });
+    expect(box.data?.diagram).toEqual({
+      outline: 'diamond', ports, pinned: true, body: { padding: 8, gap: 4, verticalAlign: 'center', rows: 1 },
+    });
     expect(box.pose).toMatchObject({ x: 500, y: 40 });
   });
 
-  it('draws rows, bolding a bold row and skipping a slot', () => {
+  it('draws rows, bolding a bold row, centering a label row, and skipping a slot', () => {
     const specs = diagramScene({
       nodes: [{
         id: 'op',
@@ -109,6 +114,7 @@ describe('diagramScene', () => {
     expect(texts.map((t) => t.data?.text)).toEqual(['mix', 'rate: 2']);
     expect(texts[0]!.data?.style?.fontWeight).toBe(700);
     expect(texts[1]!.data?.style?.fontWeight).toBeUndefined();
+    expect(texts.map((t) => t.data?.style?.align)).toEqual(['center', undefined]);
   });
 
   it('gives a slot with an id a scene node of that name, an empty frame in its box', () => {
@@ -198,6 +204,21 @@ describe('diagramScene', () => {
     expect(label.data?.fill).toEqual({ paint: { color: '#222' } });
   });
 
+  it('keeps a dragged label where it was left under layered layout and dodging', () => {
+    const labelUnderCover = (labelPlacement: DiagramLabel) => {
+      const edge = { from: 'a', to: 'b', label: 'w', labelPlacement };
+      const laid = diagramScene({ nodes: DATA.nodes.slice(0, 2), edges: [edge] }, { layout: 'layered' });
+      const [a, b] = ['a', 'b'].map((id) => laid.find((s) => s.id === id)!.pose as { x: number; y: number; width: number; height: number });
+      const top = a!.y + a!.height + 4;
+      // Added after layout, which would otherwise lay the edge out around it.
+      const cover = diagramScene({ nodes: [{ id: 'cover', lines: [], at: { x: a!.x - 40, y: top }, width: a!.width + 80, height: (b!.y - top) / 2 }], edges: [] }, { layout: 'none' });
+      const specs = createSpecLabelPlacer()([...laid, ...cover]);
+      return (specs.find((s) => s.id === `${edgeIdOf(edge)}/label`)!.data?.diagram as { label: unknown }).label;
+    };
+    expect(labelUnderCover({ at: 0.3, offset: 12 })).toHaveProperty('placed');
+    expect(labelUnderCover({ at: 0.3, offset: 12, dodge: false })).toEqual({ at: 0.3, offset: 12, dodge: false });
+  });
+
   it('takes a layout by name, or a function given barycenter under partial layoutOptions', () => {
     let got: unknown;
     diagramScene(DATA, { layout: (_g, o) => ((got = o), new Map()), layoutOptions: { direction: 'right' } });
@@ -246,5 +267,53 @@ describe('diagramScene', () => {
     const own = endsOf({ from: 'a', to: 'b', fromPort: 'e', routedPorts: { from: 's', to: 'n' } });
     expect(own.from).toEqual({ port: 'e' });
     expect(own.to).toEqual({ port: 'n', laidOut: 'n' });
+  });
+});
+
+describe('edgeIdOf with an authored id', () => {
+  it('returns the id when set, and the derived one when not', () => {
+    expect(edgeIdOf({ id: 'w1', from: 'a', to: 'b', label: 'x' })).toBe('w1');
+    expect(edgeIdOf({ from: 'a', to: 'b', label: 'x' })).toBe('edge:a->b:x');
+  });
+});
+
+describe('diagramScene under a theme', () => {
+  const theme = DIAGRAM_THEMES.pastel!;
+  const data: DiagramData = {
+    nodes: [{ id: 'a', lines: ['a'], style: 'warning' }, { id: 'b', lines: ['b'] }],
+    edges: [{ from: 'a', to: 'b', label: 'go' }],
+    groups: [{ id: 'g', members: ['a'], label: 'G' }],
+  };
+  type Painted = { fill?: { paint: { color: string } }; stroke?: { paint: { color: string } }; style?: { fontFamily: string }; diagram?: DiagramNode };
+  const byId = (specs: ReturnType<typeof diagramScene>) => new Map(specs.map((s) => [s.id as string, s.data as Painted]));
+
+  it('draws a node in its role, keeping the role on its trait, and one naming none in the default role', () => {
+    const specs = byId(diagramScene(data, { theme }));
+    expect(specs.get('a')!.fill!.paint.color).toBe(theme.roles.warning!.fill);
+    expect(specs.get('a')!.stroke!.paint.color).toBe(theme.roles.warning!.stroke);
+    expect(specs.get('a')!.diagram!.style).toBe('warning');
+    expect(specs.get('b')!.fill!.paint.color).toBe(theme.roles.default!.fill);
+    expect(specs.get('b')!.diagram!.style).toBeUndefined();
+  });
+
+  it("draws edges, labels, groups, and text in the theme's colors and face", () => {
+    const specs = diagramScene(data, { theme });
+    const map = byId(specs);
+    const edge = edgeIdOf(data.edges[0]!);
+    expect(map.get(edge)!.stroke!.paint.color).toBe(theme.edge.stroke);
+    expect(map.get(`${edge}/label`)!.fill!.paint.color).toBe(theme.label.fill);
+    expect(map.get('g')!.fill!.paint.color).toBe(theme.container.fill);
+    const row = specs.find((s) => s.parent === 'b')!.data as Painted;
+    expect(row.fill!.paint.color).toBe(theme.roles.default!.text);
+    expect(row.style!.fontFamily).toBe(theme.font.family);
+  });
+
+  it('lets nodeStyle win over the role', () => {
+    const style = { fill: '#010101', stroke: '#020202', text: '#030303' };
+    expect(byId(diagramScene(data, { theme, nodeStyle: () => style })).get('a')!.fill!.paint.color).toBe('#010101');
+  });
+
+  it('ignores a role without a theme', () => {
+    expect(byId(diagramScene(data)).get('a')!.fill!.paint.color).toBe(NODE.fill);
   });
 });

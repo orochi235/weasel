@@ -93,7 +93,7 @@ export function DetailRow({ label, children, placeholder = '–', status, values
   const figures = (values ?? listValues) === 'figures';
   return (
     <div className={className ? `${s.row} ${className}` : s.row} data-status={status} data-values={values}>
-      <dt className={s.label}>{label}</dt>
+      <dt className={s.rowLabel}>{label}</dt>
       <dd className={figures ? `${s.value} ${s.figures}` : s.value} data-empty={empty || undefined}>
         {status && <span className={s.dot} aria-hidden="true" />}
         {empty ? placeholder : children}

@@ -11,6 +11,33 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
+  multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
+  falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
+  `Date.now()`). Long-press, pan inertia and the stylus readout cap stay on handling time.
+- 2026-10-20 (overnight pass): `HoverSpec.held` (`true | 'optional'`, the values `mods` takes;
+  `hover ?held` / `hover +held` in a route) keeps reporting a held pointer's moves as hovers marked
+  `held`, without claiming them. Leaving the surface is a leave pressed or not; a target-to-target
+  leave during a press reaches only a `held` binding. A new dispatcher channel, `channels.hover`,
+  attaches hovers without the pointer channel. The loupe aims through `loupe.aim` and
+  `loupe.leave`, so `useLoupe` alone no longer aims; it needs `<LoupeGestures>`.
+- 2026-10-20 (overnight pass): The bone and weight tools left core with their actions for a new
+  `@weasel-js/rig` (`RIG_TOOLS`, `useRigTools`, glyphs `rig:bone` and `rig:weight`), not for
+  animator, which core depends on. Core keeps `animation/rig` (`useRigNode`, `bindRig`,
+  `skinBinding`) as the runtime binding. Rig declares its two kit settings at their old paths.
+  `useRigTools` reads `scene.getSelection()` unless handed one. The rig demo is filed under the rig
+  package rather than Animation.
+- 2026-10-20 (overnight pass): `selectTool.rotate: false` is decided once, in `resolveFeatures`
+  (`selectRotates`): every enabled preset loses its ambient `rotate` bindings and
+  `selection.rotation-handle`, while the `rotate` action stays registered. A tool that binds
+  `rotate` rotates from the handle, a partial `actions.rotate` merges onto the default, and a
+  handle a consumer re-shows with `chromeVisibility` does nothing when dragged and warns nothing.
+- 2026-10-19: A tool lives in the package that owns the action it binds, written into CLAUDE.md's
+  "What gets its own package". `ToolSet` is the composition unit (`defaultTools`, preset `tools`,
+  and `ToolPalette`'s `include` take one); `BUILTIN_TOOL_IDS` is now derived from `BUILTIN_TOOLS`,
+  and a shape kind's `family` decides which set names it. draw's `usePathToolsTools` moved into
+  path-tools and now also builds spiro and the shape builder.
+
 - 2026-10-11: `useHoverTracking`, `useLassoTool`, `usePenTool`, and `TargetPredicate` changed
   signature; `ContributionsApi.scopedBindings()` is gone; a mode-barred tool stops drawing its
   overlay.
@@ -48,9 +75,127 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   memory is per scene and undo does not clear it.
 - 2026-10-14: Shift on a control handle drag keeps its angle; the handle shrinks onto its anchor
   but does not flip through it. Retract and Symmetric have no default shortcut.
+- 2026-10-18: `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'`
+  entry takes (`PATH_EDIT` `['path']`, `ISOLATION` `['group']`, `TEXT_EDIT` none), and core's
+  `modeTriggers(registry, { enter, canEnter })` binds them: ambient tier, so a tool that binds the
+  double-click itself (pen, spiro, slice finishing) now wins where draw's `onDoubleClick` observer
+  used to enter path-edit alongside it.
+- 2026-10-18: `<SceneCanvas isPointerInteractive>` now gates every point hit, not only the
+  `onClick`/`onDoubleClick` observers: a rejected node is left out of the select tool's pick,
+  the dispatcher's `kind:` classification, `hitAt` and `nodeAtPoint`, and whatever is beneath it
+  answers. A click on a node a mode dims no longer selects it.
+- 2026-10-18: Routing entries are handed the node beside its data, and `inferredNodeRouting` (the
+  default when `routing` is unset) leads with `groupNodeRouting`, which routes a container as
+  `'group'` where it was `'unknown'`. `defaultNodeRouting` stays the shape-kind table; a consumer
+  spreads `groupNodeRouting` ahead of it.
+- 2026-10-18: A double-click on a grouped member names its outermost group, stopping below
+  `<SceneCanvas isolatedGroup>`, so repeated double-clicks drill in a group at a time (ruled
+  2026-10-18: a double-click on a group isolates it). Unruled around it: the isolated group
+  reaches the kit as that new prop, since the mode registry holds no target; only a node routed
+  `'group'` is named, so a container routed otherwise is passed over; the `onDoubleClick` observer
+  still reports the node hit, not the group named.
+- 2026-10-18: Whether a single click on a grouped member selects the group is still open. A single
+  click is unchanged and picks the member.
+- 2026-10-18: Create Outlines moved from Mod+Shift+O to Mod+Enter (Affinity's Convert to Curves)
+  and Average Anchors from Mod+Alt+J to Mod+Alt+Shift+J, off chords Chrome takes first.
+- 2026-10-19: Bridge and Bridge anchors moved from Mod+Shift+J, Firefox's Browser Console, to
+  Alt+J, beside the Alt-letter anchor selections.
+- 2026-10-19 (pass 7): A carry's moves are walked, while nothing is in flight, only for `carry`
+  bindings with a `target`: an untargeted ongoing binding is still asked once, as the carry comes
+  over, and one whose `enabled` refused that point does not start later where it would accept.
+  Asking every binding on every move would re-run a declining `start` per move.
+
+- 2026-10-19 (pass 7): `GroupTransform` is only the translate: its `scale` and `rotate` arms are
+  gone, since nothing produced them and resize and rotate behaviors answer bounds and angles of
+  their own, which a pivot scale cannot fully say.
+
+## Snapping
+
+- 2026-10-20 (overnight pass): `SnapBegin` and `SnapCollect` take `parent`, the container a subject
+  not yet in the scene lands in; insert and click-to-place pass it, worked out by `insertParent`,
+  the container check the insert dep already used (a leaf or missing `insertInto` passes none).
+  `gridSnapSource` reads scope from `ids`, else `parent`, else the root. kernel3d passes `parent`
+  through, unlike `sources`.
+The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these calls in it.
+
+- 2026-10-18: Every `<SceneCanvas>` snaps point gestures (pen and spiro clicks, pen handles, anchor
+  drags, line and box insert, click-place, measure ends, the symmetry center) to other nodes'
+  anchors, through a default `'path-snap'` source; move, resize and rotate do not get it.
+  `snap.omit: ['path-snap']` turns it off.
+- 2026-10-18: A rotate snaps to quarter turns and to other nodes' angles without Shift; Shift adds
+  the 15° steps. Near the pivot its reach is capped at 30°. `rotate: { behaviors: [] }` no longer
+  turns rotation snapping off; `snap.omit: ['rotation']` does.
+- 2026-10-18: Shift on a move locks it to the horizontal, vertical or 45° line through the press,
+  and Shift on an anchor drag does the same (both new).
+- 2026-10-18: Shift on a line insert, a measurement or a pen handle puts the end at the pointer's
+  nearest point on the stepped line through the start, rather than keeping the drag's length, and
+  that line meets snap targets.
+- 2026-10-18: Ctrl suspends snapping on every snapping gesture, a pen drag and an anchor drag
+  included; a handle drag keeps Ctrl as its length lock.
+- 2026-10-18: One reach, `targets.snapPx`, default 8, replaces `targets.guideSnapPx` (6) and
+  `targets.penAnchorSnapPx` (8): guides and alignment now reach 2px further.
+- 2026-10-18: A grid is a fallback: alignment or any other target in reach wins its axis, where
+  alignment used to add its delta on top of the grid's. A point target beats a line.
+- 2026-10-18: An anchor drag meets every point-gesture source, a grid included, and a pen anchor
+  joins an open end within `targets.penCloseHitPx` before any snap.
+- 2026-10-18: A multi-root move offers each root's origin to the grid, and the nearest snaps; it
+  used to be the first node's alone.
+- 2026-10-18: Alignment and equal spacing measure siblings by their drawn box, stroke included, as
+  the dragged subject already was.
+- 2026-10-18: A measurement end drag keeps its offset from the press, and no longer snaps to its own
+  measurement's ends.
+- 2026-10-18: A move's behaviors run on the snapped delta and their translate stands, so a
+  container's slot preview wins over a snap target in reach.
+- 2026-10-18: The symmetry axis knob and a repeat's step handle turn through a `rotate` session:
+  they snap to quarter turns and other nodes' angles without Shift (new), Shift keeps the 15°
+  steps, Ctrl suspends, and the angle readout draws. With no `snap` dep they do not snap at all,
+  Shift included.
+- 2026-10-18: Where a move's `geometry` probe sits, the subject's own geometry nearest the press,
+  is looked for within the canvas's reach (`targets.snapPx` or `snap.reachPx`), not a fixed 8px.
+- 2026-10-18: Snap ties break by source order, then by the order a source yields its targets. A
+  point target on the gesture's own `origin` is never offered.
+- 2026-10-18: The snap session factory is test-only (`createSnapSession2dForTests` in
+  `@weasel-js/core/test-seams`); a host without `<SceneCanvas>` builds its own session from
+  `gatherSnapCandidates` and `resolvedSnapMarks`.
+- 2026-10-18: The debug overlay's `snap` feature draws every candidate the resolver weighed each
+  frame, the ones the result meets filled.
+- 2026-10-18: `matchAlignment` and `MOVE_ANCHORS` are removed with the alignment behaviors;
+  `matchSpacing` and `measureGaps` stay, built from the same offers as `spacingSnapSource`.
+- 2026-10-18: `<SceneCanvas snap={{ originProjection }}>` is new, the one place a pose that is
+  neither a rect nor a `Path` says where its origin probe is (it was `gridSnapStrategy`'s `origin`).
+- 2026-10-18: kernel3d's `translate` puts its plane at `up · position`, and its insert builds the
+  footprint from the two drag ends cast onto the ground.
+- 2026-10-18: The site demo `point-snap` is renamed `resize-snap`; links to the old id break.
+- 2026-10-19 (pass 7): `resolveSnap`'s `members` is the smallest set that pins the move: a member
+  the others already imply (a line taken before a point on it) is dropped, and so cannot decide a
+  tie on its order. It still shows in `satisfied`.
 
 ## Scene, move, and history
 
+- 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
+  scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
+  and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
+  scope every subject node shares. Inside a scope a bare `spacing` counts that scope's base units;
+  the grid's origin stays in world space. Only box position, size and text padding are lengths.
+  The drawn grid and an insert gesture's snap still use the root scope (filed under Units).
+- 2026-10-20 (overnight pass): A transform preview carries pose once, in the scene's overrides:
+  `move`, `resize`, and `rotate` handles drop `previewPose` (read `effectivePose(scene, node)`), the
+  ghost resolves through `effectivePose`, and selection chrome boxes an in-flight id at its effective
+  pose (`useInFlightBounds`). `PoseOverride` gained no `data`; `previewData` stays on the handle. A
+  transform follower that previews a node away from its own pose publishes that pose as an
+  override; one answering the node's own pose pins nothing, so a derived edge keeps deriving.
+- 2026-10-20 (overnight pass): A node's kind has one classifier, the routing kind (`routeKind`, new
+  in core; `NodeRouting.classify` calls it). The kind published with the selection is the routing
+  kind, so the command palette says "2 paths selected"; a node the table calls `'unknown'`
+  publishes none, and `describeKind` still overrides. `SelectionPanel` classifies through
+  `routeKind`, passes the node, and has no container case of its own, so a panel given a table
+  without the group entry shows a container as `'unknown'`.
+- 2026-10-20 (overnight pass): `moveNodes(deps, ids, delta, label)` and `moveNodesOps` in core
+  move ids the way a drag commits them, and the move action, nudge, Transform Again, and the
+  measure tool's Move By share its op builder. The delta is in gesture coordinates and the
+  `poseDescriptor` dep maps it, so it is not 2D-only. A zero delta commits nothing (nudge used to
+  write identity ops). `ingest` and paste now declare `poseDescriptor`, `geometryProjection`, and
+  `transformFollowers`. A dropped stencil's undo entry reads "Drop".
 - 2026-10-11: A node with `derivePose` and a `dependsOn` list hands a drag to its dependencies,
   engine-wide. A `momentum` coast is pose overrides until it rests (`MoveAdapter` gained
   `previewPoses`), and an undo mid-coast stops it only if it moves that node. `Scene` gained a
@@ -89,9 +234,32 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `overChildren`, `isOverChildren`, and `splitOverChildren` are new core
   exports; a container's `data.label` draws over its children through them.
 - 2026-10-13 (pass 6): `SceneCanvasApi.ingest` works from first render.
+- 2026-10-19 (pass 7): The symmetry guide's angle knob moves out past the farthest corner of the
+  group's contents, plus twice its hit radius, when they reach past `knobDistancePx`. With a large
+  group that can put it off screen; nothing clamps it to the canvas.
+- 2026-10-19 (pass 7): A canvas's `poseDescriptor` stays on the canvas rather than moving into
+  `useScene` beside `layoutFrame`. They measure different things: `layoutFrame` measures a
+  container in the scene's own coordinates so a layout can run with no view, while a descriptor
+  measures for a view. `Kernel3dDemo` builds its descriptor from the scene and the camera, so it
+  answers with a projected screen rectangle that no scene could own. A 2D scene whose poses are not
+  rects still states both.
 
 ## Rendering, canvas, and paint
 
+- 2026-10-20 (overnight pass): The lint rule against a bare `getContext('webgl2')` also refuses an
+  attributes object with no `stencil: true` and no spread, so `{ ...CANVAS_CONTEXT_ATTRIBUTES, x }`
+  passes. labkit's 3D example and its loupe test open shared buffers with those attributes; whoever
+  paints a shared buffer first sets its attributes for every tenant.
+- 2026-10-20 (overnight pass): `CANVAS_CONTEXT_ATTRIBUTES` is public core API, the one place the
+  renderer's WebGL2 context settings are written, since a consumer sharing a buffer with the renderer
+  needs them. Test pixel reads go through `@weasel-js/core/testing/canvasPixels` (`canvasGl`,
+  `readCanvas`, `pixelAt`), and a lint rule refuses a `getContext('webgl2')` with no attributes in
+  browser tests and `testing/` helpers.
+- 2026-10-20 (overnight pass): `DrawBatch.pushGlyph` (internal) takes its quad and color as
+  objects, since numbers passed to it were boxed. Text layout does not cache a repeated readout
+  string's layout: it would flatter `hud-vs-dom.spec.ts`, whose labels cycle through 100 values, and
+  do nothing for a real readout. `resolveTextStyle`'s defaults stay read in one place, though they
+  cost about 0.2 MB a frame. The allocation profile is `HVD_ALLOC=1` on the existing spec.
 - 2026-10-11: `GlMat3` is `Float32Array | Float64Array`. `PathDrawCommand` takes `CommandFill` /
   `CommandStroke` only. `RectPose.transform` applies to any box pose.
 - 2026-10-12: A `LayerGroup` with alpha fades as a group. The image cache has a 256MB budget. A
@@ -113,6 +281,20 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `bindGradient` measures paint space from the gradient's own start or center,
   and `u_gradP0` is gone; `bindPattern` drops whole tiles from the translation.
 - 2026-10-13 (pass 6): geom's six-number affine type is `Affine`, with no `Mat3` alias left.
+- 2026-10-18: `<Canvas retain>` takes `false` or `{ minCommands, budget }`, with `false` beating a
+  layer's own `retain: true`; `WeaselRenderer.setRetainBudget` is new, and lowering the budget
+  below what is held frees every surface.
+- 2026-10-18: `retainBudget` counts only kept surfaces; the multisampled scratch buffer is left out
+  and freed after a frame that redraws nothing, so a redrawing frame can exceed the budget by one
+  canvas-sized multisampled buffer.
+- 2026-10-18: Views nest: `<CanvasView parent>` measures `bounds` from the parent's rect, hands a
+  thunked `bounds` / `view` the parent's camera and size, cuts the view to the parent, and paints
+  only the layers the parent paints. `SceneCanvasApi.viewAt` (with `ViewAt`) is new, a loupe on a
+  canvas host magnifies the camera of the view under its aim, and `ResolvableView` and
+  `createViewportLayer` take an optional `clip`.
+- 2026-10-19 (pass 7): `renderSceneToPixels` leaves annotation layers out unless passed
+  `annotations: true`, as the SVG export does; `renderDebugSnapshot` defaults it to `true`, since it
+  reproduces the canvas.
 
 ## Text
 
@@ -127,6 +309,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): The text tool's percent unit is data,
   `{ scale: 0.01, precision: 1, suffix: '%' }`, and a linear unit's `fromDisplay` stores a short
   decimal exactly.
+- 2026-10-18: `textToPath` outlines synthetic-bold text instead of refusing it: each glyph grows by
+  the distance the renderer's field shift moves its edge (0.01 em a side on Inter's atlas), corners
+  mitered, curves kept. The `'synthetic-bold'` failure reason is gone. The grown contours overlap
+  where they meet and fill once under `'nonzero'`; they are not merged.
 
 ## SVG and paths
 
@@ -152,9 +338,49 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   joins its two nearest open ends; two paths join into the first selected; three are refused.
   Simplify treats a turn over 40° as a corner and keeps a straight edge 4× its neighbors whole.
   The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
+- 2026-10-18: `svgNodesToKitDrafts` takes `keepEmpty`, which keeps an empty group it is true for
+  (drafted at its clip's box or a zero box) and the groups holding it. Draw keeps an effect's empty
+  group, so a blend of no steps reopens live; one whose sources were not exported opens as nothing.
+- 2026-10-18: `serializeSvg` takes `textLayout` (pass `layoutTextPose`), and `svgNeeds` / `warmSvg`
+  take it too. A laid-out `<text>` drops `dominant-baseline`, carries `data-weasel-layout="lines"`,
+  puts each line on its baseline with a `y`, marks a wrapped line `data-weasel-lines="0"`, and
+  states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
+  writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
+  those are. Draw's exports and clipboard SVG pass it.
+- 2026-10-18: A puppet warp's solve runs five local/global rounds after its two linear steps, then,
+  only when a triangle is left turned over, an injective pass (untangling energy of Garanzha et al.,
+  2021) with the pins held. Every puppet-warped shape redraws differently, and a drag that starts to
+  fold jumps to the injective shape rather than easing into it. The solve is deterministic from the
+  pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
+  last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
+  weights, not cotangent ones, so each system stays the one already factored.
 - 2026-10-18: A puppet warp's map is smooth across its mesh (Clough–Tocher) where it was affine
   per triangle, so every puppet-warped shape, saved ones included, redraws slightly differently:
   its bends lose their small corners.
+- 2026-10-19: Constraint links on whole-node transforms. The transformed nodes are held as
+  transformed and every node a link reaches gives way, its own constraints kept; their own
+  constraints are carried unsolved, as before, and so is a link whose nodes all moved. A link that
+  cannot hold does not stop the transform: it commits alone and `constraintLinkConflictsOf`
+  reports the link. Core's hook is `PathEditExtension.finishTransform`, run as one of the
+  `transformFollowers` dep's followers, which the `editAnchors` dep source adds.
+- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Lengthen,
+  Balance, Simplify brush, spiro insert) shows nothing for a frame its constraints cannot hold,
+  since that frame commits nothing; the anchor drag still holds its last good frame.
+- 2026-10-19: A constraint link is made by Alt-dragging an anchor in path edit (`linkAnchor`): it
+  reads where the anchor was released, nearest anchor within 6 screen px first, then a segment,
+  rather than asking the snap for what it held to, and puts the anchor exactly there. The link
+  goes on the scene's first annotation layer, else on the edited node's.
+- 2026-10-19: Linked nodes follow a move, resize or rotate drag through the drag's preview
+  (`previewIds`/`previewPose`/`previewData`), as path edit's other nodes do, not through the
+  scene's pose overrides, so mid-drag hit-testing and snapping still read them where they were. A
+  frame an extension refuses previews the transform alone. A resize's frame is read from poses
+  only, so a `data.path` node it scales previews its links from the unscaled path; the commit
+  reads the scaled one.
+- 2026-10-19: A broken constraint link is drawn on every canvas with `constraintsPreset`, in or out
+  of path edit, by a screen-space layer of its own (`createConstraintLinkMarks`): the link's
+  constraint mark by the anchor it holds and a dashed line to where the link wants that anchor,
+  both in the conflict red. A link that holds draws nothing there. The layer reads the committed
+  scene, so a drag that breaks or mends a link shows it on release.
 
 ## Animation
 
@@ -202,9 +428,48 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `ClipValue`'s object arm is `object`.
 - 2026-10-13 (pass 6): When a rig's joints change, the new seat takes over the placement and
   committed pose of every joint still named; a renamed joint stops moving.
+- 2026-10-18: `<SceneCanvas poseTransition={{ transition, glides?, enter? }}>` glides what the
+  scene writes through the same kind of transition `reflowTransition` takes, reading the new
+  `scene.onPoseWrite`, which reports each change's net pose per node with an origin (`'call'`,
+  `'ops'`, `'undo'`, `'redo'`, `'layout'`, `'untracked'`) and the edit's label. By default it glides
+  calls, undos and redos, not action commits (`'ops'`); a node another override is showing — a
+  drag's preview, a pose-target animation — is left to it. `enter` grows in added nodes. `onReflow`
+  moved onto a `ScenePoseReports` interface `Scene` extends. AnimationDemo no longer uses
+  `animateOnSetPose` or `animateLifecycle`, which stay exported.
+- 2026-10-18: `scene.onPoseWrite` listeners take a second argument, the nodes the change removed
+  (an undone add among them) as `PoseRemoval`s carrying the node, the pose it was shown at and its
+  descendants. The seat's `exit` sees each off as a ghost — drawn on a `departureGhost` layer just
+  above the scene, never in the scene, so nothing picks, selects or records it — fading to alpha 0
+  through `transition.over(...)`, a new `AnimatedReflow` method; a plain `ReflowTransition` has no
+  `over`, so with one a removal still vanishes. `exits` defaults to every removal but an untracked
+  one. A node that comes back mid-exit returns from where its ghost was, at full opacity.
 
 ## ui, prefs, and theme
 
+- 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
+  `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
+  unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
+  depend on `@weasel-js/text` for `TextDirection`.
+- 2026-10-20 (overnight pass): Every params surface reads a leaf's value through `prefLeafValue`
+  (`@weasel-js/prefs`): the held value, else the default, with `undefined` and `null` both absent,
+  except a paint's `null`, which means no paint. A clearable leaf holding nothing shows cleared,
+  so labkit now draws a clearable number empty where its key is missing. `SelectionPanel` keeps its
+  unset state for a node without the property. `Bar` and `MenuBar` still draw a missing path unset.
+  path-tools' corner panel reports `shape: 'none'` where it passed `null`.
+- 2026-10-20 (overnight pass): In `PrefSchemaEditor`, only a node added in this session takes its
+  key from its name; a baseline pref keeps its key when renamed, and Changes and `onSubmit` carry the
+  name change alone. The Key field stays the way to change a key deliberately.
+- 2026-10-20 (overnight pass): `useLeafAction`'s `reason` is renamed `disabledReason`, the prop
+  `BarActionButton` reads, so a bar button and a panel row explain themselves the same way. A bar
+  button disabled with a reason (ActionBar, BarAction, the loupe) is now focusable and
+  `aria-disabled` rather than natively `disabled`; pressing it still does nothing.
+- 2026-10-20 (overnight pass): `useRovingTabIndex` takes `columns` and `groupSelector`, and
+  `ToolPalette`'s `columns` uses them, each `[role="group"]` starting a row. Left and Right step in
+  reading order and wrap; Up and Down stop at the first and last rows (APG grid) and leave the key
+  to the page; moving into a short row lands on its last item; a disabled target makes Up and Down
+  skip that row; Home and End stay whole-set (toolbar, not APG grid); `orientation` is ignored when
+  `columns` is set. The grid is read from DOM order, not measured layout. `rovingTarget` and
+  `rovingGridTarget` are now exported.
 - 2026-10-11: `label` and `separator` are `PrefKind`s in `@weasel-js/prefs` (`cce05ca5f`), which
   reverses an earlier call that a label was a leaf only the UI knew. `applyTheme` returns a
   release. `isPlainObject` rejects class instances in theme, prefs, labkit, and forge.
@@ -244,6 +509,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Diagram, audio, and labkit
 
+- 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
+  the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
+  node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in
+  `@weasel-js/forge/test`, and inside a story with a viewport `window.innerWidth` and media queries
+  see the test page's default 414×896.
 - 2026-10-11: Diagram groups nest and their boxes take presses; the `orthogonal` router turns at
   once after a waypoint where it would double back. Audio has `onDrop`.
 - 2026-10-12: labkit's `isEntryShown` takes the resolved schema; `DragState` carries `from`; a
@@ -261,10 +531,20 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-18: A locked diagram node shows no ports at all, rather than drawn ports that cannot be
   dragged, matching the kit putting no selection or hover chrome on a locked node. A connect cannot
   land on a hidden or locked node's port either.
+- 2026-10-18: Audio's `synthVoices: 'worklet'` renders `playNote` and `playNoise` in an
+  `AudioWorkletProcessor` from events posted at the call; default `'nodes'`. Until the processor
+  has loaded (`unlock()` waits for it), or where it cannot, synth voices play on nodes rather than
+  being dropped. A worklet voice is never dropped as `stale`.
+- 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
+  `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
 
 ## draw
 
-- 2026-10-11: A double-click on a path inside an isolated group leaves isolation for path edit.
+- 2026-10-11: A double-click on a path inside an isolated group leaves isolation for path edit. Since
+  2026-10-18 only a path in no further group does; inside a nested group the double-click isolates
+  that group.
+- 2026-10-18: Isolation lights and unlocks the isolated group's contents, not only the group node,
+  so its members can be clicked.
 - 2026-10-12: Open replaces the document and Import appends, and Open adopts the file's background
   color. The grid is off by default.
 - 2026-10-13: `App.tsx` is split into `Editor`, `Workspace`, and hooks, and two dev pages were
@@ -273,8 +553,23 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   the text tool and a new insert included. draw no longer strips `lineHeight` from the style it
   exports.
 
+- 2026-10-18: "Snap to grid" also snaps resize corners, inserts and pen clicks, as its description
+  already said.
+
 ## Build
 
+- 2026-10-20 (overnight pass): labkit keeps `@weasel-js/icons` as a types-only dependency (the
+  icon plugin leaves its JS importing nothing from it), and its smoke lists it so. devtools does
+  not declare `@weasel-js/renderer`: the importing helper never ships. The root smoke's own
+  declaration audit is gone; `check:imports` is the one check, and counts a `testing/` module as
+  shipped when the manifest's `exports` names it.
+- 2026-10-20 (overnight pass): `@weasel-js/icons-plugin` walks oxc-parser's tree itself from the
+  public `visitorKeys` (`src/walk.ts`) instead of `Visitor`, whose `require()` of an ES module fails
+  under vitest's vm pool on Node 22 and turned CI's Node 22 leg red from 2026-10-19.
+- 2026-10-20 (overnight pass): Five `@weasel-js/ui` subpaths, named in kebab-case after their
+  source module as `./paint-value` and `./kit-icons` are: `./stance`, `./portal-host`, `./color`
+  (the whole color module, oklch and ramps, from a new `color/index.ts`), `./paint-gradient-track`,
+  and `./kit-settings`. Only labkit's `passthrough/weasel-ui.ts` still imports the barrel.
 - 2026-10-07: `react-hooks/set-state-in-effect` is on.
 - 2026-10-11 (core split): two size allowlist entries went up one line each (`Specimen.tsx`,
   `createKeyframeLayer.tsx`).
@@ -294,3 +589,56 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-10-13 (pass 6): `watchProbe()` is a new export of `@weasel-js/forge/vite`, and the site,
   draw, and theme-editor dev servers load it. An isolated story keeps its iframe through a viewport
   change where `moveBefore` exists.
+- 2026-10-18: icons-plugin's relative imports carry `.ts`, not the `.js` its TODO entry asked for:
+  Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
+  and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
+  on `packages/icons-plugin/src` requires the extension.
+- 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
+  and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
+  publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
+  names are a call not made; labkit's `weasel-ui` passthrough is exempt on purpose.
+
+## weaselchart fourth arc
+
+The arc's design is `docs/superpowers/specs/2026-10-20-chart-fourth-arc-design.md`. These are the
+calls its builds made where the spec was silent.
+
+- 2026-10-20 (arc 4, PDF): Text with neither font bytes nor outlines (the canvas text tier, emoji)
+  is left out of the PDF and reported through `reportFileWarnings`. CFF/OTF faces and faces whose
+  OS/2 `fsType` forbids embedding are drawn as outlines. Spaces are written as glyphs, so copied
+  text keeps them.
+- 2026-10-20 (arc 4, PDF): Effects, shader and custom-paint groups go to an injected `rasterize`
+  hook, which gets a wrapper group carrying the effects and the page view as a fourth argument;
+  without a hook they are skipped. Porter-Duff composites draw source-over and are listed in
+  `skipped`. `writePdf([])` throws. `exportPagesPdf` lives in `@weasel-js/diagram-formats`, so
+  `@weasel-js/pdf` stays free of core.
+- 2026-10-20 (arc 4, PDF): `resolveStrokeLengths` takes `{ quantize: false }`, so `{ px }` stroke
+  widths resolve at the exact scale in a PDF. `markerDrawCommands`, `syntheticBoldOffset` and
+  `emboldenGlyphD` are now exported rather than copied.
+- 2026-10-20 (arc 4, audio graph): `connect` refuses any cycle, delay or not. A connect that closes
+  a cycle only through an edge still fading out is wired once that edge has closed. The graph's
+  output starts at gain 0, so the first `start()` fades in. `apply` validates the whole list first,
+  but a `set` that throws lets the rest apply and then rethrows. `dispose()` fades out over `fadeMs`
+  while sounding. `delayNode`'s `maxTime` defaults to 2000 ms. `impulseResponse` lives in
+  `@weasel-js/audio`, and `reverbNode` builds its impulse from `seconds` (default 2).
+- 2026-10-20 (arc 4, live runner): Audio stage types are prefixed `audio.`, and pipeline mode splits a
+  mixed pipeline so the image runner never sees them. The runner ships from
+  `@weasel-js/diagram/effect-audio`, with `@weasel-js/audio` an optional peer. Stages on a feedback
+  loop get the error "on a feedback loop" and no patch. Two wires into one input are summed (the
+  editor only allows one; see `docs/TODO.md`). The engine is made lazily on Play or Choose Source
+  Audio…. View › Show Spectrum toggles the previews and is off while Show Previews is off.
+- 2026-10-20 (arc 4, label drag): Pipeline mode can't drag labels (filed in `docs/TODO.md`). A
+  click on a label selects its connector; a double-click edits its text. Reset label skips locked
+  and hidden labels and labels on locked edges. Near an outside route corner the dropped label
+  sits on the nearest normal, not exactly under the pointer. The menu item reads "Reset label".
+- 2026-10-20 (arc 4, groups): Under `rack`, a group whose line members are split by an outsider
+  keeps a box over the outsider and can't be dragged; a group with no stage on the main line can't
+  be dragged either. Reordering a group rewires the pipeline under both looks. An untitled group's
+  grip is the top band of its box, and its rename field opens above the box.
+- 2026-10-20 (arc 4, pages): A data-backed diagram reassigns its off-page letters in edge order on
+  every build. Pipeline mode gets Page › Add Page and Delete Page (Delete removes the last page and
+  leaves its stages). Export puts a shape between pages on the nearest page (`pageHolding`, ties to
+  the earlier one) and sends every connector the split splits to `crossPageEdges`. `fitDiagram`
+  takes optional extra bounds. `documentBoundsOf` is a new export of `@weasel-js/diagram`.
+- 2026-10-20 (arc 4): The `browser` vitest project's `testTimeout` is 45 s, because a chart drag
+  test runs 10–24 s on a loaded node; the case rests on one one-process failure on keiei.

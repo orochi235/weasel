@@ -5,6 +5,8 @@ import { CORE_NAMED_PRESETS } from './namedPresets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
+import { toolIdsOf, withoutTools } from '@weasel-js/routing';
+import { BUILTIN_TOOLS, PAGE_TOOLS, SHAPE_TOOLS, TYPE_TOOLS } from './builtinToolSets';
 
 // A kind the resolver has never heard of, so the tests below can only pass by
 // reading the table.
@@ -34,6 +36,24 @@ describe('resolveToolRegistry', () => {
       builtins, enabled: NONE, patch: Object.fromEntries(KIT_SHAPE_KINDS.map((id) => [id, true as const])),
     });
     expect(Object.keys(registry)).toEqual([...KIT_SHAPE_KINDS]);
+  });
+
+  it('mounts the tools a set names, and a set less some of them', () => {
+    const shapes = resolveToolRegistry({ builtins, defaultTools: [SHAPE_TOOLS, 'hand'], enabled: NONE, patch: null });
+    expect(Object.keys(shapes)).toEqual(['hand', 'rect', 'ellipse', 'line', 'polygon', 'star']);
+    const cut = resolveToolRegistry({ builtins, defaultTools: [withoutTools(BUILTIN_TOOLS, PAGE_TOOLS, TYPE_TOOLS)], enabled: NONE, patch: null });
+    expect(Object.keys(cut)).not.toContain('slice');
+    expect(Object.keys(cut)).not.toContain('sticky');
+    expect(Object.keys(cut)).toContain('pen');
+  });
+
+  it('derives the built-in ids from the built-in set', () => {
+    expect(toolIdsOf([BUILTIN_TOOLS])).toEqual([...BUILTIN_TOOL_IDS]);
+  });
+
+  it("mounts the tools a preset names by set", () => {
+    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }], CORE_NAMED_PRESETS);
+    expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['text', 'sticky']);
   });
 
   it('mounts nothing when nothing is asked for', () => {
@@ -74,6 +94,29 @@ describe('resolveToolRegistry', () => {
     expect(Object.keys(registry)).toEqual([...BUILTIN_TOOL_IDS]);
     expect(registry.pen).toBe(mine);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "pen"'));
+  });
+
+  it('replaces a tool a preset implies where it stands, silently', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const hand = tool('hand');
+    const own = tool('own');
+    const mine = tool('own');
+    const enabled = resolveFeatures(['select', 'view', { id: 'mine', tools: [own] }], CORE_NAMED_PRESETS);
+    const registry = resolveToolRegistry({
+      builtins, defaultTools: ['rect' as BuiltinToolId], enabled, patch: { hand, own: mine }, dev: true,
+    });
+    expect(Object.keys(registry)).toEqual(['select', 'hand', 'rect', 'own']);
+    expect(registry.hand).toBe(hand);
+    expect(registry.own).toBe(mine);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('still says so when a preset implies a tool defaultTools also asks for', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    resolveToolRegistry({
+      builtins, defaultTools: ['hand' as BuiltinToolId], enabled: presets('view'), patch: { hand: tool('hand') }, dev: true,
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('overrides bundled "hand"'));
   });
 
   it('appends a tool under an unmounted id after the built-ins, in patch order, silently', () => {

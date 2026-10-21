@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { KIT_SHAPE_KINDS } from '@weasel-js/core';
 import { toIconRef } from '@weasel-js/icons';
-import { Icon } from '@weasel-js/ui';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { icon } from '../../icons.gen';
 import { ToolIcon } from './ToolIcon';

@@ -1,9 +1,9 @@
 > **Scaffolding for work in flight on branch `scene-splits`, 2026-10-12. Not built, and not verified:**
 > a read-only pass wrote this and ran nothing, so each claim is checked against the code before it is
-> acted on. Section B (built-in tool registry assembly) has landed and is deleted from here, and so have
-> A, C, and D except for the items still listed under them, which were checked against the code and are
-> written as found. E, F, G, I, J, and N have landed and are deleted, F except for the item still listed
-> under it, and H has landed except for the item still listed under it. Every other lettered
+> acted on. Sections B (built-in tool registry assembly) and C have landed and are deleted from here,
+> and so have A and D except for the items still listed under them, which were checked against the code
+> and are written as found. E, F, G, H, I, J, and N have landed and are deleted, F except for the item
+> still listed under it. Every other lettered
 > section is unbuilt, and its line numbers predate all of that work.
 > Delete this file when the SceneCanvas.tsx
 > work it lists has merged; `docs/TODO.md` holds what is left.
@@ -40,24 +40,6 @@ shift-click lock all read. `SceneCanvas.pathEditMask.test.tsx` pins it.
   export, but `usePenTool.test.tsx` and `editAnchors.test.tsx` call it without one, and it then makes
   a state of its own.
 
-### C. `selectTool.rotate === false` is still decided three times
-
-The preset table landed: `FEATURE_PRESETS` in `SceneCanvas/features.ts` holds each preset's actions,
-tools, ambient entry, and chrome. What is left is the rotate opt-out, which was pinned and not
-collapsed, because the three sites do not agree and the difference can be observed
-(`SceneCanvas.rotateOff.test.tsx`, run against the code):
-
-- `useSceneStandardActions` mutes the `rotate` action. That also covers a tool that binds `rotate`, and it
-  yields to a consumer's own `actions.rotate`, which stays registered and merged.
-- `chromeRules` hides `selection.rotation-handle`, and a consumer `chromeVisibility` rule can put it back.
-- `useSceneCanvasTools` turns `false` into `undefined` for the rotate binding, and the rotate preset's ambient entry stays installed.
-  With the handle put back, a drag on it resolves the `rotate` binding, finds the action muted, and the
-  dispatcher warns `binding resolved actionId "rotate" which has no registered action`.
-
-Dropping `rotate` from the resolved preset set would remove that warning, register `rotate` again for
-a tool that binds it, and leave a partial `actions.rotate` with no default to merge onto. Each is a
-behavior change that needs a decision.
-
 ### D. Left over from the chrome-caps rule context
 
 The assembly landed: `features/chrome-caps/useChromeCaps.ts` builds the context, derives
@@ -77,28 +59,6 @@ The mirror landed: `SceneCanvas/useCanvasCamera.ts` makes the one camera with `u
 - **`resolvedViewportZoom` and the three `enabled.has('view') ? … : false` props** belong in
   `useViewportActions`, which should take `viewport` and the preset flag. Left because they are
   props of `StandardActionsRegistrar`, which section E replaces.
-
-### H. Two kind classifiers that disagree
-
-The read-only wrapper landed as `core/selection/readOnlySelection.ts`, and the label published with
-the selection moved to `core/selection/usePublishSceneSelection.ts`. The label was not folded into
-the routing kind, because the two answer differently for every node tried
-(`SceneCanvas.selectionKinds.test.tsx`, run against the code) and the difference shows: the command
-palette's selection summary (`ui/CommandPalette/selectionSummary.ts`) prints the label.
-
-| Node | Published label | Routing kind (`inferredNodeRouting`) |
-|---|---|---|
-| leaf, `data.path`, plain box pose | none | `'path'` |
-| leaf, pose carrying a string `kind` | `'path'` | `'unknown'` |
-| leaf, `data.kind: 'rect'`, plain box pose | none | `'unknown'` |
-| leaf, `data.text` | none | `'text'` |
-| leaf, `data.image` | none | `'image'` |
-| leaf matching a consumer `routing` entry | none | the entry's name |
-| container | `'group'` | `'unknown'` |
-
-`describeKind` replaces the label for every node, containers included. A third classifier,
-`classifyKind` in `ui/SelectionPanel/model.ts`, answers `'group'` for a container and the routing
-entry otherwise. Making these one needs a decision on what the palette should print.
 
 ### K. Dead or vestigial (grep-verified)
 

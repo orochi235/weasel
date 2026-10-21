@@ -1,6 +1,6 @@
 import { useRef, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from '../Tooltip/Focusable';
 import { inlineMarkdownText } from '../InlineMarkdown';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { useRowHelp } from './rowHelp';

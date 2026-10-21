@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
+import { Focusable } from './Tooltip/Focusable';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 
 /** The tooltip fields a segmented bar's item carries. */

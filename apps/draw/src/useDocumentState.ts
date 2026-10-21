@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { loadDoc, saveDoc } from './docPersistence';
+import { useAutosave } from '@editor/index';
+import { useMemo, useState } from 'react';
+import { DOC_KEY, loadDoc } from './docPersistence';
 import type { PaperSizeKey } from './paperSizes';
 
 /**
@@ -16,10 +17,8 @@ export function useDocumentState(hasSelection: boolean) {
 
   if (hasSelection && docSelected) setDocSelected(false);
 
-  useEffect(() => {
-    const id = setTimeout(() => saveDoc({ filename, backgroundColor, paperSize }), 300);
-    return () => clearTimeout(id);
-  }, [filename, backgroundColor, paperSize]);
+  const doc = useMemo(() => ({ filename, backgroundColor, paperSize }), [filename, backgroundColor, paperSize]);
+  useAutosave(() => ({ primary: [DOC_KEY, JSON.stringify(doc)] }), { revision: doc });
 
   return {
     paperSize, setPaperSize,

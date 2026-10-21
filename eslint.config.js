@@ -208,6 +208,40 @@ export default [
   },
   {
     /**
+     * The dev server serves every module the root barrel reaches, about 640 of them, so one
+     * import of it from an app costs every page load hundreds of requests.
+     */
+    files: [
+      'apps/draw/**/*.{ts,tsx}',
+      'apps/chart/**/*.{ts,tsx}',
+      'apps/theme-editor/**/*.{ts,tsx}',
+      'apps/site/**/*.{ts,tsx}',
+      'packages/forge/src/**/*.{ts,tsx}',
+      'packages/labkit/src/**/*.{ts,tsx}',
+    ],
+    ignores: [
+      // labkit's `weasel-ui` subpath re-exports the barrel on purpose.
+      'packages/labkit/src/passthrough/weasel-ui.ts',
+    ],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@weasel-js/ui',
+              message:
+                "Import from a subpath (@weasel-js/ui/components/<Name>, or another in ui's package.json exports) instead of the barrel.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    /**
      * The baseline. Rules are enumerated rather than spread from a plugin's
      * `recommended`, because a preset changes what this repo enforces whenever
      * a dependency is upgraded, and the two react-hooks presets in particular
@@ -277,6 +311,22 @@ export default [
     },
   },
   {
+    /**
+     * A context keeps the attributes of whoever opens it first, and the renderer refuses one without a
+     * stencil buffer, so a pixel read that comes before the app's first paint breaks the canvas for good.
+     */
+    files: ['**/*.browser.test.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "CallExpression[callee.property.name='getContext'][arguments.length=1][arguments.0.value='webgl2']",
+        message: "Read a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: a bare getContext('webgl2') can open the context without the stencil buffer the renderer needs.",
+      }, {
+        selector: "CallExpression[callee.property.name='getContext'][arguments.0.value='webgl2'] > ObjectExpression:nth-child(2):not(:has(Property[key.name='stencil'][value.value=true])):not(:has(SpreadElement))",
+        message: "Open a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: attributes without stencil: true can open the context without the stencil buffer the renderer needs.",
+      }],
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     ignores: ['**/*.browser.test.{ts,tsx}', 'vitest.browser.setup.ts'],
     rules: {
@@ -285,6 +335,21 @@ export default [
       'no-restricted-imports': ['error', {
         paths: [{ name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' }],
         patterns: [{ group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' }],
+      }],
+    },
+  },
+  {
+    // The root vite and vitest configs load this from source, and vite's native config loader
+    // resolves a relative specifier only with its extension. The rule replaces the one above.
+    files: ['packages/icons-plugin/src/**/*.ts'],
+    ignores: ['**/*.test.ts', 'packages/icons-plugin/src/fixtures/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{ name: 'vitest/browser', message: 'Only *.browser.test files may import vitest/browser.' }],
+        patterns: [
+          { group: ['@vitest/browser', '@vitest/browser/*'], message: 'Only *.browser.test files may import @vitest/browser.' },
+          { regex: '^\\.\\.?/(?!.*\\.ts$)', message: 'Write the .ts extension on a relative import here.' },
+        ],
       }],
     },
   },

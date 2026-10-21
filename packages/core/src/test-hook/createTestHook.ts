@@ -3,7 +3,7 @@ import type { TestHookRefs, WeaselTestHook } from './types';
 export function createTestHook(refs: TestHookRefs): WeaselTestHook {
   let resolveReady!: () => void;
   const ready = new Promise<void>((r) => { resolveReady = r; });
-  const probes = new Map<string, () => unknown>();
+  const probes = refs.probes ?? new Map<string, () => unknown>();
 
   return {
     ready,

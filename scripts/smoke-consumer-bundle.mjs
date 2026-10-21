@@ -21,10 +21,12 @@
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, readFile, mkdir, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { isShipped } from './check-declared-imports.mjs';
+import { SOURCE, importSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -160,74 +162,7 @@ console.log(
     `${seenDts.size} in types; no alias leaks.`,
 );
 
-// The same undeclared-dependency rule, applied to every published package.
-// Packing cannot catch this on its own: every @weasel-js package lands in the
-// smoke tree whether or not the importer declared it, so a bare specifier
-// resolves either way and the bundle passes.
-{
-  // The clause may wrap across lines but never contains `;` or `*`. Without
-  // that bound the lazy scan walks out of a non-import `export` and on until
-  // it hits a quoted specifier inside a JSDoc `@example`.
-  const IMPORTS = /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
-  const problems = [];
-
-  for (const name of PACKAGES) {
-    const pkgDir = join(repoRoot, 'packages', name);
-    let manifest;
-    try {
-      manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
-    } catch {
-      continue;
-    }
-    const allowed = new Set([
-      ...Object.keys(manifest.dependencies ?? {}),
-      ...Object.keys(manifest.peerDependencies ?? {}),
-    ]);
-
-    const files = [];
-    const walkSrc = async (dir) => {
-      let entries;
-      try {
-        entries = await readdir(dir, { withFileTypes: true });
-      } catch {
-        return;
-      }
-      for (const e of entries) {
-        const child = join(dir, e.name);
-        if (e.isDirectory()) await walkSrc(child);
-        // Tests and stories are not published surface.
-        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
-          files.push(child);
-        }
-      }
-    };
-    await walkSrc(join(pkgDir, 'src'));
-
-    for (const file of files) {
-      const text = await readFile(file, 'utf8');
-      for (const [, , clause, spec] of text.matchAll(IMPORTS)) {
-        const trimmed = clause.trim();
-        if (/^type\b/.test(trimmed)) continue;
-        const named = trimmed.match(/^\{([\s\S]*)\}$/);
-        if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
-          continue;
-        }
-        const pkg = spec.split('/').slice(0, 2).join('/');
-        if (pkg === manifest.name || allowed.has(pkg)) continue;
-        problems.push(`${manifest.name}: imports ${pkg} (${file.slice(repoRoot.length + 1)})`);
-      }
-    }
-  }
-
-  if (problems.length) {
-    fail(
-      'packages import @weasel-js dependencies they do not declare — a clean install\n' +
-        'cannot resolve these, even though the monorepo and this smoke tree both can:',
-      [...new Set(problems)].join('\n'),
-    );
-  }
-  console.log(`[smoke] declaration audit OK — ${PACKAGES.length} packages declare what they import.`);
-}
+// Whether every package declares what its source imports is `npm run check:imports`.
 
 // A @weasel-js peer is a package the consumer must resolve exactly once: it
 // owns something whose identity matters — core's registries, theme's React
@@ -264,18 +199,9 @@ console.log(
       for (const e of entries) {
         const child = join(dir, e.name);
         if (e.isDirectory()) await walkSrc(child);
-        else if (/\.tsx?$/.test(e.name) && !/\.(test|stories|bench)\.tsx?$/.test(e.name)) {
-          const text = await readFile(child, 'utf8');
-          for (const [, , clause, spec] of text.matchAll(
-            /^[ \t]*(import|export)\b([^;*]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm,
-          )) {
-            const trimmed = clause.trim();
-            if (/^type\b/.test(trimmed)) continue;
-            const named = trimmed.match(/^\{([\s\S]*)\}$/);
-            if (named && named[1].split(',').every((x) => !x.trim() || /^type\s/.test(x.trim()))) {
-              continue;
-            }
-            runtime.add(spec.split('/').slice(0, 2).join('/'));
+        else if (SOURCE.test(e.name) && isShipped(relative(repoRoot, child), `packages/${name}`, manifest)) {
+          for (const spec of importSpecifiers(await readFile(child, 'utf8'), child)) {
+            if (spec.startsWith('@weasel-js/')) runtime.add(packageOf(spec));
           }
         }
       }
@@ -376,12 +302,11 @@ await writeFile(
     `import * as menu from '@weasel-js/menu';\n` +
     `import * as select from '@weasel-js/select';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
-    // guides and its per-action subpaths, built on core. Whether core still
-    // exports every name they import is Phase 4's sibling-import check.
+    // guides, built on core. Whether core still exports every name it
+    // imports is Phase 4's sibling-import check.
     `import * as guides from '@weasel-js/guides';\n` +
-    `import * as guidesMove from '@weasel-js/guides/move';\n` +
-    `import * as guidesResize from '@weasel-js/guides/resize';\n` +
-    `import * as guidesInsert from '@weasel-js/guides/insert';\n` +
+    // rig, built on core, ships tools and its own icon table.
+    `import * as rig from '@weasel-js/rig';\n` +
     `import * as theme from '@weasel-js/theme';\n` +
     // ui and hud are built with Vite library mode because they ship assets: ui
     // its bundled stylesheet and hud its data-URI font atlas.
@@ -395,6 +320,13 @@ await writeFile(
     `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
     `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
     `import * as callout from '@weasel-js/ui/components/Callout';\n` +
+    `import * as icon from '@weasel-js/ui/components/Icon';\n` +
+    `import * as paintValue from '@weasel-js/ui/paint-value';\n` +
+    `import * as stance from '@weasel-js/ui/stance';\n` +
+    `import * as portalHost from '@weasel-js/ui/portal-host';\n` +
+    `import * as color from '@weasel-js/ui/color';\n` +
+    `import * as paintGradientTrack from '@weasel-js/ui/paint-gradient-track';\n` +
+    `import * as kitSettings from '@weasel-js/ui/kit-settings';\n` +
     // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
     // that path is only importable if labkit *declares* ui as a runtime
     // dependency.
@@ -403,13 +335,17 @@ await writeFile(
     `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
+    // devtools is a Vite library build with a stylesheet of its own, like ui.
+    `import * as devtools from '@weasel-js/devtools';\n` +
+    `import '@weasel-js/devtools/style.css';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides, guidesMove, guidesResize, guidesInsert,\n` +
-    `  toolPalette, prefs, callout, toastSub };\n` +
+    `  guides, devtools, rig,\n` +
+    `  toolPalette, prefs, callout, icon, paintValue, stance, portalHost, color, paintGradientTrack, kitSettings,\n` +
+    `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
     `  if (Object.keys(m).length === 0) throw new Error('no exports: ' + n);\n` +
@@ -514,6 +450,7 @@ await writeFile(
     // a module with no declarations is TS7016 right here.
     `type _Ui = typeof import('@weasel-js/ui');\n` +
     `type _Hud = typeof import('@weasel-js/hud');\n` +
+    `type _Devtools = typeof import('@weasel-js/devtools');\n` +
     // The subpath must carry types too, not just resolve as JS. The wildcard's
     // `types` condition points into the tsc-emitted tree, which is laid out to
     // mirror the Vite entry keys; if those two ever drift, this is TS7016.
@@ -559,12 +496,13 @@ await writeFile(
     `  foreign: routingDefineTool<number>({ id: 'smoke-foreign', overlay: 1 }),\n` +
     `};\n` +
     // Routing, core and ui each augment `@weasel-js/react`'s `KitSettings`, and
-    // ui and core both add to `KitTargetSettings`. If a merge is lost in the
+    // ui, core and rig all add to `KitTargetSettings`. If a merge is lost in the
     // published .d.ts the path types read `never`, and these fail TS2322.
     `import type { KitSettingAt, KitSettingPath } from '@weasel-js/react';\n` +
+    `import type {} from '@weasel-js/rig';\n` +
     `const _kitTree: KitSettingAt<'tree.typeaheadMs'> = 500;\n` +
     `const _kitGesture: KitSettingAt<'gestures.doubleClickMs'> = 600;\n` +
-    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx'];\n` +
+    `const _kitTargets: KitSettingPath[] = ['targets.handlePx', 'targets.curveKeyHitPx', 'targets.boneJointRadiusPx'];\n` +
     `// @ts-expect-error no such kit setting\n` +
     `const _kitWrong: KitSettingPath = 'tree.nope';\n` +
     `export const _kit = [_kitTree, _kitGesture, _kitTargets, _kitWrong];\n` +

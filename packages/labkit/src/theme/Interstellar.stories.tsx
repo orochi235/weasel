@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { TokenName } from '@weasel-js/theme';
 import { useTheme } from '@weasel-js/theme/react';
-import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui';
+import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import './Interstellar.stories.less';
 import { decimal } from '@weasel-js/quantity';
 
@@ -174,7 +174,7 @@ export const Overview: Story = {
         backgroundColor: 'var(--wzl-surface)',
         backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
-        minHeight: '100vh',
+        minHeight: '100cqb',
       }}
     >
       <h1 style={{ font: '300 2.6rem/1 var(--wzl-font-display)', color: 'var(--wzl-fg)' }}>
@@ -212,7 +212,7 @@ export const Palette: Story = {
         backgroundColor: 'var(--wzl-surface)',
         backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
-        minHeight: '100vh',
+        minHeight: '100cqb',
       }}
     >
       <div className="lk-theme-doc__grid">

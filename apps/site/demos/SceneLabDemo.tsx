@@ -1,5 +1,5 @@
 import { createScene, type RectPose, solid } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy, roundToCell } from '@weasel-js/guides';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,
   defineInstrument,
@@ -43,18 +43,7 @@ function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { snap, spacing } = ctx.config;
 
-  const selectTool = useMemo(
-    () => ({ snap: snap ? gridSnapStrategy<RectPose>(spacing) : undefined }),
-    [snap, spacing],
-  );
-  const toolOptions = useMemo(
-    () => ({
-      snapPoint: snap
-        ? (p: { x: number; y: number }) => ({ x: roundToCell(p.x, spacing), y: roundToCell(p.y, spacing) })
-        : undefined,
-    }),
-    [snap, spacing],
-  );
+  const snapTo = useMemo(() => ({ sources: snap ? [gridSnapSource({ spacing })] : [] }), [snap, spacing]);
   const layers = useMemo(
     () => ({
       grid: {
@@ -73,8 +62,7 @@ function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       defaultTools={['rect', 'pen']}
       scene={scene}
       trial={ctx.trial}
-      selectTool={selectTool}
-      toolOptions={toolOptions}
+      snap={snapTo}
       layers={layers}
     />
   );

@@ -11,7 +11,7 @@ import { actionsNodeOf } from '../actions/ActionsProvider';
 import type { ActionSource } from '../actions/action';
 import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
-import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
+import { createDispatcher, createDispatchTrace, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { attachInput } from './attachInput';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 
@@ -28,11 +28,12 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
   const pointerChannel = channels?.pointer !== false;
+  const hoverChannel = channels?.hover ?? pointerChannel;
   const wheelChannel = channels?.wheel !== false;
   const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
@@ -43,6 +44,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
   const [isMac] = useState(isApplePlatform);
+
+  const [ownTrace] = useState(createDispatchTrace);
+  const trace = traceOpt ?? ownTrace;
+  useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
 
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
@@ -63,6 +68,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     hotkeyStack: activeTool.hotkeyStack,
     entriesById,
     isMac,
+    trace,
   });
 
   // The flat options are view zero.
@@ -119,12 +125,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     }, {
       keyboard,
       pointer: pointerChannel,
+      hover: hoverChannel,
       wheel: wheelChannel,
       pinch: pinchChannel,
       contextMenu: contextMenuChannel,
       ingest: ingestChannel,
       carry: carryChannel,
     });
-  }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
+  }, [enabled, keyboard, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, ctxRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

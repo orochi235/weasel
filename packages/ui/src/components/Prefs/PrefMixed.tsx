@@ -8,7 +8,7 @@ import s from './PrefMixed.module.css';
 export function PrefMixed({ onReplace }: { onReplace?(): void }) {
   return (
     <span className={s.mixed}>
-      <span className={s.word}>Mixed</span>
+      <span className={s.word} data-wzl-subordinate="">Mixed</span>
       {onReplace && <Button variant="ghost" size="sm" onClick={onReplace}>Replace all</Button>}
     </span>
   );

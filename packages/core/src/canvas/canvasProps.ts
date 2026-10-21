@@ -1,7 +1,7 @@
 /** The props `<Canvas>` takes. */
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
-import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
+import type { FlattenTolerance, ImageMinification, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { LayerGroup, RedrawSource, RenderLayer } from 'core/layers/render';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -14,6 +14,16 @@ import type { CanvasLayers } from './layerSlots';
 import type { CanvasViewState } from './useCanvasView';
 import type { SurfaceSizeProps } from './useSurfaceSize';
 import type { CanvasHelpers, ViewPoseAdapter } from './useViewHelpers';
+
+/** How a canvas retains its layers. Unset fields keep their defaults. */
+export interface CanvasRetainOptions {
+  /** Drawing commands a layer must hold to be retained, when it does not say
+   *  for itself. Default `DEFAULT_LAYER_RETAIN.minCommands`. */
+  minCommands?: number;
+  /** GPU memory, in bytes, retained layers may hold together:
+   *  `WeaselRendererOptions.retainBudget`. 0 retains nothing. */
+  budget?: number;
+}
 
 /**
  * Props for `<Canvas>`. Canvas is scene-agnostic: it owns the GL surface, view state, hover
@@ -31,6 +41,19 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  zoom, whatever the scene's world unit. A number holds a fixed world
    *  tolerance instead. */
   flattenTolerance?: FlattenTolerance;
+
+  /** How images drawn smaller than their pixels are filtered, forwarded to
+   *  `WeaselRendererOptions.imageMinification`. Default `'linear'`, one tap,
+   *  which aliases an image drawn at half size or less; `'auto'` builds an
+   *  image's mipmaps the first time a frame draws it that small. Changing it
+   *  re-uploads every image. */
+  imageMinification?: ImageMinification;
+
+  /** Which unchanged layers the renderer keeps as pixels between frames and
+   *  composites as one quad, instead of drawing their commands again — see
+   *  `RenderLayer.retain` and `LayerRetainPolicy`. `false` retains no layer on
+   *  this canvas, whatever the layer asks. */
+  retain?: false | CanvasRetainOptions;
 
   /** The version of whatever content this canvas draws, sampled at paint time
    *  and reported by {@link CanvasExtensionApi.getPaintedVersion}.
@@ -124,6 +147,9 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    *  canvas is focusable. Not applied under `paintInto`: whether the input
    *  element can take focus is the caller's to decide. */
   tabIndex?: number;
+  /** Accessible name of the `<canvas>` this component renders; devtools lists the canvas under it.
+   *  Not applied under `paintInto`. */
+  'aria-label'?: string;
   /** Fired when the element input comes from gains focus: the canvas, or
    *  under `paintInto` the `inputElement`. Called with the DOM event. */
   onFocus?: (event: FocusEvent) => void;

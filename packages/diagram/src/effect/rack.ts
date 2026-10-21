@@ -1,15 +1,16 @@
 import type { PortAnchor, PortSpec } from '../types';
 import { edgeIdOf } from '../fromData';
 import {
-  boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, typeColors, uniqueGroups, uniqueStages,
-  wireEdge, wireStyle, type EffectLook, type RunRowOptions,
+  LOOK_THEME, boxNode, drawableWires, exitLabel, isControl, kindOf, portOn, sceneStyles, stageStyle, typeColors,
+  uniqueGroups, uniqueStages, wireEdge, wireStyle, type EffectLook, type LookThemeOptions, type RunRowOptions,
 } from './draw';
+import { chainLinks } from './chainEdit';
 import { mainChain, skipDecisions, type Skip } from './mainChain';
 import { branchNode, type BranchChoice } from './symbols';
 import type { EffectPipeline, EffectPort, EffectStage } from './types';
 
 /** Options for the `rack` look. */
-export interface RackOptions extends RunRowOptions {
+export interface RackOptions extends RunRowOptions, LookThemeOptions {
   /** The stage ids on the line, in order. Default the longest path over data wires. */
   chain?: readonly string[];
   /** Where what feeds the chain from the side sits. Default `'below'`. */
@@ -32,6 +33,7 @@ const SKIP_IN = '~skip-in';
 
 /** One wire the rack draws: a pipeline wire, or one made by collapsing a decision. */
 interface RackWire {
+  id?: string;
   from: { stage: string; port: string };
   to: { stage: string; port: string };
   type: string | undefined;
@@ -69,7 +71,10 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
   const eaten = new Set<number>(skips.flatMap((s) => [s.into.index, s.through.index, s.skip.index]));
   const wires: RackWire[] = drawableWires(pipeline).filter((d) => !eaten.has(d.index)).map((d) => {
     const label = exitLabel(d);
-    return { from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}) };
+    return {
+      ...(d.wire.id !== undefined ? { id: d.wire.id } : {}),
+      from: d.wire.from, to: d.wire.to, type: d.type, problem: d.problem, ...(label !== undefined ? { label } : {}),
+    };
   });
   for (const s of skips) {
     wires.push({
@@ -89,19 +94,9 @@ function rackWires(pipeline: EffectPipeline, skips: readonly Skip[]): RackWire[]
   return wires;
 }
 
-function lineOf(pipeline: EffectPipeline, chain: readonly string[], wires: readonly RackWire[]): Line {
-  const at = new Map(chain.map((id, i) => [id, i]));
-  const mainIn = new Map<string, string>();
-  const mainOut = new Map<string, string>();
-  for (const wire of wires) {
-    if (wire.arc || isControl(pipeline, wire.type)) continue;
-    const a = at.get(wire.from.stage);
-    const b = at.get(wire.to.stage);
-    if (a === undefined || b !== a + 1) continue;
-    if (!mainOut.has(wire.from.stage)) mainOut.set(wire.from.stage, wire.from.port);
-    if (!mainIn.has(wire.to.stage)) mainIn.set(wire.to.stage, wire.to.port);
-  }
-  return { at, mainIn, mainOut };
+function lineOf(pipeline: EffectPipeline, ordered: readonly string[], chain: readonly string[]): Line {
+  const { mainIn, mainOut } = chainLinks(pipeline, ordered);
+  return { at: new Map(chain.map((id, i) => [id, i])), mainIn, mainOut };
 }
 
 /** `near` and `far` are the `v` of the edge facing the side stages and the one facing away. */
@@ -129,7 +124,8 @@ function portsOf(stage: EffectStage, line: Line, wires: readonly RackWire[], nea
 /** The rack look: the main signal on one straight line with its stages in
  *  order, and whatever feeds a stage from the side hung beside it. */
 export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
-  const color = typeColors(pipeline, options.colors);
+  const theme = options.theme ?? LOOK_THEME;
+  const color = typeColors(pipeline, options.colors, theme.series);
   const below = options.side !== 'above';
   const near = below ? 1 : 0;
   const far = below ? 0 : 1;
@@ -140,12 +136,12 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
   const gone = new Set(skips.map((s) => s.decision.id));
   const chain = ordered.filter((id) => !gone.has(id));
   const wires = rackWires(pipeline, skips);
-  const line = lineOf(pipeline, chain, wires);
+  const line = lineOf(pipeline, ordered, chain);
 
   const kept = stages.filter((s) => !gone.has(s.id));
   const controlSide = below ? 'bottom' : 'top';
   const nodes = kept.map((stage) => {
-    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide }) };
+    if (kindOf(stage) === 'decision') return { id: stage.id, ...branchNode(stage, pipeline, options.branch, { controlSide, style: stageStyle(stage, theme) }) };
     const ports = portsOf(stage, line, wires, near, far);
     const node = boxNode(stage, { showParams: options.showParams !== false, rowPorts: false, ports, run: options });
     const room = roomFor(ports);
@@ -160,7 +156,7 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
       && wire.to.port !== line.mainIn.get(wire.to.stage) && line.at.has(wire.to.stage);
     const label = wire.label ?? (sideInput ? portOn(to, wire.to.port)?.label ?? wire.to.port : undefined);
     return {
-      edge: wireEdge(wire.from, wire.to, label),
+      edge: wireEdge(wire.from, wire.to, label, wire.id),
       style: wireStyle(color(wire.type), wire.arc === true || isControl(pipeline, wire.type), wire.problem),
     };
   });
@@ -181,9 +177,10 @@ export const rack: EffectLook<RackOptions> = (pipeline, options = {}) => {
         ...(options.rankGap !== undefined ? { rankGap: options.rankGap } : {}),
       },
       router: 'bezier',
-      ...sceneStyles(kept, edges),
+      ...sceneStyles(kept, edges, theme),
     },
     color,
+    order: { axis: 'x', items: chain.map((id) => ({ id })) },
     exits: new Map(wires.flatMap((wire, i) => (wire.exit === undefined ? [] : [[edgeIdOf(edges[i]!.edge), wire.exit]]))),
   };
 };

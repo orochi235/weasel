@@ -18,7 +18,7 @@
   font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
   display: grid;
-  grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr);
+  grid-template-columns: minmax(var(--structure-min), var(--structure-w)) auto minmax(var(--attributes-min), var(--attributes-w)) auto minmax(320px, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: var(--wzl-space-3) var(--wzl-space-2);
   min-height: 0;
@@ -53,7 +53,10 @@
 /* Less the field's own 1px border. */
 .structurePane .treeFilter { --wzl-field-pad-x: calc(var(--structure-text-inset) - 1px); }
 .structureHandle { grid-column: 2; grid-row: 2 / -1; }
-.listed { grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr) auto var(--aside-w); }
+.listed {
+  grid-template-columns: minmax(var(--structure-min), var(--structure-w)) auto minmax(var(--attributes-min), var(--attributes-w)) auto
+    minmax(320px, 1fr) auto minmax(var(--aside-min), var(--aside-w));
+}
 /* The sidebar mirrors the structure: the editor's whole height under the bar, at its other edge. */
 .aside { grid-column: 7; grid-row: 2 / -1; }
 .asideHandle { grid-column: 6; grid-row: 2 / -1; }

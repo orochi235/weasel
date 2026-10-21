@@ -38,6 +38,12 @@ const surface = useTiledSurface({
 });
 ```
 
+A tile drawing a 3D scene inside a trial takes its camera from `useOrbitView()`
+and hands the same element to its `viewportRef`, so the trial's orbit gestures
+land on the tile; `examples/3d-lab` composes the two refs. Leave the
+instrument's `orbit` out and the camera cannot move; labkit warns in
+development (`src/canvas/AGENTS.md`, "The orbit").
+
 `onFrame` carries **every** tile's rect, not only the dirty ones — a scissored
 draw has to know where it is drawing relative to a surface that may have resized
 under it. It runs before this frame's painters, and what it invalidates paints
@@ -86,9 +92,12 @@ the same for its buffers, or an expanded tile shows without them.
 
 ## Traps
 
-- **`preserveDrawingBuffer` is the consumer's job and is usually required.** A
-  partial redraw touches one tile; without it the default framebuffer's contents
-  are undefined after the page composites, and every other tile goes black.
+- **Open the context with core's `CANVAS_CONTEXT_ATTRIBUTES`.** labkit never
+  opens it, so whichever tenant paints first fixes the attributes for every
+  tenant of that buffer, and a weasel renderer refuses a context without a
+  stencil buffer. Its `preserveDrawingBuffer` matters too: a partial redraw
+  touches one tile, and without it the default framebuffer's contents are
+  undefined after the page composites, so every other tile goes black.
 - **Gutters lie outside every scissor**, so a tile that moves leaves its old
   picture where nothing will paint over it — a cloned trial strands the whole
   previous layout in the gap. Register a `registerClear(id, fn)` beside the

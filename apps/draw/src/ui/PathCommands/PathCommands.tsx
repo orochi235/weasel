@@ -5,7 +5,8 @@
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { useActionsRegistry, useLatest, useOngoingAction } from '@weasel-js/core';
-import { BarPopover, Slider } from '@weasel-js/ui';
+import { BarPopover } from '@weasel-js/ui/components/Bar';
+import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
 const readout = (t: { value: number }): string => t.value.toFixed(1);

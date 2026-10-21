@@ -78,4 +78,18 @@ describe('@weasel-js/audio public surface', () => {
   it('does not export the test double', () => {
     expect('createFakeAudioContext' in audio).toBe(false);
   });
+
+  it('exports the patchable graph and its node factories', () => {
+    for (const f of [
+      audio.createAudioGraph, audio.createFileSourceNode, audio.createOscillatorNode, audio.createNoiseNode,
+      audio.createGainNode, audio.createPanNode, audio.createMixNode, audio.filterNode, audio.delayNode,
+      audio.reverbNode, audio.compressorNode, audio.insertNode, audio.impulseResponse,
+    ]) expect(typeof f).toBe('function');
+    const patch: audio.GraphPatch = { kind: 'connect', from: 'a', to: { output: true } };
+    const wave: audio.OscillatorWave = 'square';
+    expect([patch.kind, wave]).toEqual(['connect', 'square']);
+    const options: [audio.FileSourceNodeOptions['loop'], audio.OscillatorNodeOptions, audio.NoiseNodeOptions] =
+      [false, { wave }, { color: 'pink' }];
+    expect(options).toHaveLength(3);
+  });
 });

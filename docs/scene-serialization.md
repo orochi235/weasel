@@ -92,6 +92,24 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 | `nodes[i].data` | `TData` | App-defined payload. Must be JSON-serializable. |
 | `nodes[i].parent` | `string?` | Parent container id. Omitted for root nodes. |
 | `nodes[i].clipFromPoseKey` | `string?` | Registry key for the clip-path factory. Containers only; omitted when no clip. |
+| `doc` | `Record<string, unknown>?` | The scene's document values (below). Omitted when it has none, so a snapshot written before they existed reads the same. |
+
+## Document values
+
+Document state that is not a node, such as a document's pages or its theme, lives in `scene.doc`, a set of named
+JSON values beside the tree. Keys are namespaced by their owner: `core:pages`, `diagram:theme`.
+
+```ts
+scene.doc.set('core:pages', { pages: [{ id: 'page-1', width: 816, height: 1056 }] });
+scene.doc.get<PagesDoc>('core:pages');
+scene.doc.set('core:pages', undefined); // removes the key
+```
+
+A `set` is a scene edit like any other: it is undoable, joins an enclosing `scene.batch` as part of one entry, is
+skipped when the new value is deep-equal to the current one, and notifies `subscribe`. Values are JSON and are not
+to be mutated once set. `toJSON()` writes them under `doc`; `sceneFromJSON` and `loadState` read them back, and
+`createScene` or `useScene` take `doc` for the values a scene starts with, outside history. An app that loads node
+specs itself reads a snapshot's values with `docFromSnapshot` (`apps/shared/editor`).
 
 ## Function fields and the registry
 

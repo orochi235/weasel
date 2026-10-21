@@ -29,7 +29,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import { downloadBlob, pickFile } from './fileIO';
+import { downloadBlob, pickFile } from '@editor/index';
 import { isPaperSize, type PaperSizeKey } from './paperSizes';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';
@@ -287,7 +287,11 @@ export function svgNodesToSceneDrafts(
     if (effect !== null) effects.set(id, effect);
     return id;
   };
-  const drafts = svgNodesToKitDrafts('nodes' in input ? { ...input, nodes } : nodes, idOf, { leaf: kitLeafToObj });
+  const drafts = svgNodesToKitDrafts('nodes' in input ? { ...input, nodes } : nodes, idOf, {
+    leaf: kitLeafToObj,
+    // A blend of no steps or a repeat of no copies exports an empty group.
+    keepEmpty: (g) => decodeEffectAttrs(g.meta?.wd?.attrs) !== null,
+  });
   return drafts.map((d): SceneDraft => {
     const hidden = d.hidden ? { hidden: true as const } : {};
     if (d.kind === 'leaf') return { kind: 'leaf', id: d.id, parentId: d.parentId, obj: d.data, ...hidden };

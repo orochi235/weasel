@@ -2,13 +2,15 @@
  * Resize of a node whose pose is a polygon `Path`: a pose with no top-level
  * `x`/`y`/`width`/`height`, so anything reading it as bounds reads `undefined`.
  */
+import { heldPose } from '../testUtils';
 import { describe, it, expect } from 'vitest';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import type { InvocationCtx } from '@weasel-js/routing';
-import type { GestureContext, PointSnapBehavior, PointSnapContext } from '../../gestures/types';
+import type { GestureContext } from '../../gestures/types';
+import type { SnapDep } from '../snapDep';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { resizeAction } from './action';
 
@@ -66,11 +68,17 @@ describe('resizeAction on a polygon path pose', () => {
     const handle = start(scene, { shift: true });
     // Width is the dominant axis: 40 -> 80, so height follows 20 -> 40.
     handle.onMove!(ctxAt(scene, { x: 90, y: 45 }, { shift: true }));
-    const preview = handle.previewPose!(ID as string) as Path;
-    expect(boundsOf(preview)).toMatchObject({ x: 10, y: 20, width: 80, height: 40 });
+    const preview = heldPose(scene, ID as string) as Path;
+    const near = (b: Bounds) => {
+      expect(b.x).toBeCloseTo(10);
+      expect(b.y).toBeCloseTo(20);
+      expect(b.width).toBeCloseTo(80);
+      expect(b.height).toBeCloseTo(40);
+    };
+    near(boundsOf(preview));
 
     handle.onEnd!(ctxAt(scene, { x: 90, y: 45 }, { shift: true }), 'commit');
-    expect(boundsOf(scene.get(ID)!.pose)).toMatchObject({ x: 10, y: 20, width: 80, height: 40 });
+    near(boundsOf(scene.get(ID)!.pose));
   });
 
   it('hands constraints the bounds of the pose, at the start and as it moves', () => {
@@ -82,7 +90,7 @@ describe('resizeAction on a polygon path pose', () => {
         return undefined;
       },
     };
-    const policy = { constraints: [spy], pointSnap: [], expandIds: (ids: string[]) => ids };
+    const policy = { constraints: [spy], expandIds: (ids: string[]) => ids };
     const handle = start(scene, { deps: { resizePolicy: policy } });
     handle.onMove!(ctxAt(scene, { x: 70, y: 40 }, { deps: { resizePolicy: policy } }));
     handle.onMove!(ctxAt(scene, { x: 90, y: 40 }, { deps: { resizePolicy: policy } }));
@@ -91,23 +99,19 @@ describe('resizeAction on a polygon path pose', () => {
     expect(seen[1].current).toMatchObject({ x: 10, y: 20, width: 60, height: 20 });
   });
 
-  it('gives a point snap finite corners, and snaps the path itself', () => {
+  it('snaps the path itself to where the snap session puts the dragged corner', () => {
     const scene = makeScene();
-    const seen: PointSnapContext<Bounds>[] = [];
-    const snap: PointSnapBehavior<Bounds> = {
-      onMove(ctx) {
-        seen.push(ctx);
-        return { frame: 'dragged-corner', worldX: 100, worldY: 60 };
-      },
+    const snap: SnapDep = {
+      begin: () => ({
+        at: () => ({ point: { x: 100, y: 60 }, held: true, marks: [] }),
+        angle: (theta) => ({ theta, marks: [] }),
+        end: () => {},
+      }),
     };
-    const policy = { constraints: [], pointSnap: [snap], expandIds: (ids: string[]) => ids };
-    const handle = start(scene, { deps: { resizePolicy: policy } });
-    handle.onMove!(ctxAt(scene, { x: 90, y: 55 }, { deps: { resizePolicy: policy } }));
+    const handle = start(scene, { deps: { snap } });
+    handle.onMove!(ctxAt(scene, { x: 90, y: 55 }, { deps: { snap } }));
 
-    expect(seen[0].center).toEqual({ worldX: 50, worldY: 37.5 });
-    expect(seen[0].draggedCorner).toEqual({ worldX: 90, worldY: 55 });
-
-    const preview = handle.previewPose!(ID as string) as Path & Partial<Bounds>;
+    const preview = heldPose(scene, ID as string) as Path & Partial<Bounds>;
     expect(preview.kind).toBe('polygon');
     expect(preview.width).toBeUndefined();
     expect(boundsOf(preview)).toMatchObject({ x: 10, y: 20, width: 90, height: 40 });

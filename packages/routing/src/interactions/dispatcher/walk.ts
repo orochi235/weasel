@@ -4,7 +4,7 @@
  * runs the first that passes or names it as the predicted winner.
  */
 import type { Action, ActionSource } from '../actions/action';
-import { actionBindings } from '../actions/binding';
+import { actionBindings, type GestureBinding } from '../actions/binding';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
@@ -14,7 +14,7 @@ import { carriedBy, worldPointOf } from './inputFacts';
 import type { BindingScope, InputEvent, MatchResult, ScopedBinding } from './matcher';
 import { matchSortedWithBarred, specificity } from './matcher';
 import {
-  describeEligible, isEligible, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
+  describeEligible, isEligible, liveForKeys, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
   type Ranking, type Walked,
 } from './ranking';
 
@@ -35,20 +35,27 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
     ...(allowedCapabilities ? { allowedCapabilities } : {}),
   });
   const view = ctx.viewId ?? null;
+  const live = (b: GestureBinding): boolean => liveInView(b, view) && liveForKeys(b, ctx.keyReach);
   const result: ScopedBinding[] = scopeBindings(ordered, state)
-    .filter((sb) => liveInView(sb.binding, view));
+    .filter((sb) => live(sb.binding));
 
   // Actions have no owning tool — `'&'`-channel phase atoms on their
   // bindings won't match.
   for (const action of ctx.actions.list()) {
     const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
     for (const binding of actionBindings(action)) {
-      if (!liveInView(binding, view)) continue;
+      if (!live(binding)) continue;
       result.push({ binding, scope: targetScope, ownerId: null });
     }
   }
 
   return result;
+}
+
+/** Whether any live binding's spec passes `test`. Asks no `enabled`, and needs
+ *  no event, so nothing is hit-tested to answer it. */
+export function anyBinding(ctx: DispatcherContext, test: (spec: GestureBinding['spec']) => boolean): boolean {
+  return assembleScopedBindings(ctx).some((sb) => test(sb.binding.spec));
 }
 
 function buildActionMap(registry: ActionSource): Map<string, Action> {

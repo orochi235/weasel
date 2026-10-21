@@ -1,3 +1,6 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import v8 from 'node:v8';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
@@ -15,6 +18,11 @@ import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
+import { selection } from './scripts/lib/fleet-tree.mjs';
+
+// Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
+// Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
+v8.setFlagsFromString('--no-sparkplug');
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
@@ -46,8 +54,34 @@ const VITE_SERVER_TESTS = [
   'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
+// A branch's fleet run seeds vitest's `related` with what the branch changes, so only the test files
+// importing it run. Every path seeded counts as affected, which is how the gate project always runs.
+const related = selection(import.meta.dirname, process.env, {
+  always: readdirSync(join(import.meta.dirname, 'scripts')).filter((f) => f.endsWith('.gate.ts')).map((f) => `scripts/${f}`),
+  // Changes that reach tests with no import edge to follow, this config and what it loads among them:
+  // any of these runs everything.
+  triggers: [
+    '**/package.json',
+    'package-lock.json',
+    '**/tsconfig*.json',
+    '.onto/tests',
+    '**/{vitest,vite}.config.*',
+    'vitest.*setup.ts',
+    'packages/labkit/src/test-setup.ts',
+    'scripts/{vite,vitest}-*.ts',
+    'scripts/lib/**',
+    'apps/draw/vite-plugin-*.ts',
+    'apps/forge/viteShared.ts',
+    'packages/forge/src/vite/**',
+    'packages/icons-plugin/**',
+  ],
+});
+
 export default defineConfig({
   test: {
+    globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
+    fsModuleCache: true,
+    ...(related && { related }),
     projects: [
       {
         ...shared,
@@ -198,7 +232,9 @@ export default defineConfig({
           // jsdom environment, and no third config to keep in sync.
           include: [
             'apps/draw/**/*.test.{ts,tsx}',
-        'apps/theme-editor/**/*.test.{ts,tsx}',
+            'apps/chart/**/*.test.{ts,tsx}',
+            'apps/theme-editor/**/*.test.{ts,tsx}',
+            'apps/devtools-extension/**/*.test.{ts,tsx}',
             'apps/shared/**/*.test.{ts,tsx}',
             'scripts/**/*.test.ts',
           ],
@@ -214,6 +250,10 @@ export default defineConfig({
           environment: 'node',
           pool: 'threads',
           testTimeout: 900_000,
+          // The browser project starts only once this group ends, so a serial gate held it back by a
+          // minute. Uncached, lint and check:needs beside typecheck slowed labkit's storyArgs.test.tsx
+          // past its timeout; cached, typecheck is the only heavy check left.
+          maxConcurrency: 3,
           include: ['scripts/**/*.gate.ts'],
         },
       },
@@ -236,9 +276,13 @@ export default defineConfig({
           // The default second is not enough on a fleet node running eight other projects: a smooth
           // scroll or a dialog's close outlasts it there, and a poll that is going to pass costs nothing.
           expect: { poll: { timeout: 5000 } },
+          // Browser mode's default is 15 s. A chart test drawing its shapes through the canvas takes 3.5 s
+          // alone, passed at up to 14 s in full fleet runs, and was cut off at 15 s in the busiest ones.
+          testTimeout: 45_000,
           setupFiles: [BROWSER_SETUP],
-          // After every other project, not beside them: a browser test's clicks and screenshots
-          // stall when the node's cores are taken, and time out.
+          // After every other project in one process: a browser test's clicks and screenshots stall
+          // when the node's cores are taken, and time out. `npm test` and the fleet run it beside
+          // them instead, with the rest held to fewer workers (scripts/vitest-overlap.mjs).
           sequence: { groupOrder: 1 },
           // Every tab shares one Chromium. Past six, the project took no less wall time on 14- and
           // 18-core nodes, and a test making WebGL contexts ran three to five times as long.

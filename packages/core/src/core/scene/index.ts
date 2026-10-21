@@ -23,9 +23,14 @@ export type {
   PoseOverride,
   PoseHold,
   PoseOverrides,
+  PoseRemoval,
+  PoseWrite,
+  PoseWriteOrigin,
   RegisteredOp,
+  RemovedNode,
   Scene,
   SceneArrivalHandler,
+  ScenePoseReports,
   SceneRegistry,
   SerializedNode,
   SerializedLayer,
@@ -37,10 +42,12 @@ export type {
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
 export { reconcileSpecs } from './reconcileSpecs';
-export { sceneUnitScopes } from './unitScopes';
+export { sceneSharedUnitScopes, sceneUnitScopes } from './unitScopes';
 export type { ScopedScene } from './unitScopes';
 export { SceneArrivalRefused } from './arrivals';
-export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
+export type { SceneEditPass, SceneEditPassOptions, SceneEditSummary } from './editPass';
+export type { SceneBatchOptions } from './recorder';
+export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
 export type { FeedDelta, FeedNode, PoseFeed } from './poseFeed';
 export { resolveDerivedPath } from './derivedPath';

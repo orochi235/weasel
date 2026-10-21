@@ -122,3 +122,67 @@ describe('a blend inside a container that composes frames', () => {
     expect(pose).toMatchObject({ x: 20, y: 10, width: 60, height: 30 });
   });
 });
+
+describe('an effect whose source is an effect in another frame', () => {
+  const C = asNodeId('c');
+  const H = asNodeId('h');
+  const FX2 = asNodeId('fx2');
+
+  /** Copies of `c` along the blend's steps. */
+  const along = (parent?: string): Spec => ({
+    ...pathEffectNode({ kind: 'repeatAlong', count: 4, orient: false }, [C, FX], 'main', PATH_EFFECT_DERIVATIONS),
+    id: FX2,
+    ...(parent ? { parent: asNodeId(parent) } : {}),
+  });
+
+  /** The same two effects with every pose written on the page, under no
+   *  composition: what the composed scene has to agree with. */
+  function flat() {
+    const turned = (x: number, y: number): RectPose => ({ x, y, width: 20, height: 10, rotation: Math.PI / 2 });
+    return createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withPathEffectsRegistry(),
+      initial: [
+        // a's and b's middles, (295,110) and (255,190) on the page.
+        leaf('a', turned(285, 105), '#ff0000'),
+        leaf('b', turned(245, 185), '#0000ff'),
+        blend(),
+        leaf('c', { x: 0, y: 0, width: 4, height: 4 }, '#00ff00'),
+        along(),
+      ],
+    });
+  }
+
+  function onPage() {
+    const scene = flat();
+    return round(effectivePose(scene, scene.get(FX2)!));
+  }
+
+  function round(p: RectPose) {
+    return { x: Math.round(p.x), y: Math.round(p.y), width: Math.round(p.width), height: Math.round(p.height) };
+  }
+
+  it('reads the effect where it paints, from outside its container', () => {
+    const scene = framed();
+    scene.add(leaf('c', { x: 0, y: 0, width: 4, height: 4 }, '#00ff00'));
+    scene.add(along());
+    expect(round(effectivePose(scene, scene.get(FX2)!))).toEqual(onPage());
+  });
+
+  it('reads it in its own frame, from inside a second container', () => {
+    const scene = framed();
+    scene.add({ id: H, kind: 'container', layer: 'main', pose: { x: 500, y: 40, width: 50, height: 50 }, data: {} });
+    scene.add(leaf('c', { x: -500, y: -40, width: 4, height: 4 }, '#00ff00', 'h'));
+    scene.add(along('h'));
+    const local = effectivePose(scene, scene.get(FX2)!);
+    expect(round({ ...local, x: local.x + 500, y: local.y + 40 })).toEqual(onPage());
+  });
+
+  it('reads an effect at the root whose own sources are inside a container', () => {
+    const scene = framed();
+    scene.move(FX, null);
+    scene.add(leaf('c', { x: 0, y: 0, width: 4, height: 4 }, '#00ff00'));
+    scene.add(along());
+    expect(round(effectivePose(scene, scene.get(FX2)!))).toEqual(onPage());
+  });
+});

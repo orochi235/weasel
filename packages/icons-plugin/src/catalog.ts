@@ -1,8 +1,8 @@
 import type { IconTable } from '@weasel-js/icons';
 // Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
-import { splitIconRef } from '../../icons/src/names';
-import { declaredTable, tableBeside } from './tables';
-import { USED, admits, subset, type VariantFilter } from './virtual';
+import { splitIconRef } from '../../icons/src/names.ts';
+import { declaredTable, tableBeside } from './tables.ts';
+import { USED, admits, subset, type VariantFilter } from './virtual.ts';
 
 /** What one transformed module read. */
 export interface ModuleUse {

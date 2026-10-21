@@ -99,4 +99,14 @@ describe('MeasureLabDemo', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Select/ }));
     expect(measurements()).toHaveLength(3);
   });
+
+  it("starts a measurement on another measurement's end in reach, ahead of the grid", async () => {
+    const canvas = await mount();
+    await userEvent.click(screen.getByRole('button', { name: /^Measure/ }));
+    // Just past the rising line's far end, out of its pick radius.
+    drag(canvas, [533, 246], [598, 303]);
+    const { start, end } = (measurements().at(-1)!.data as { measure: { start: object; end: object } }).measure;
+    expect(start).toEqual({ x: expect.closeTo(440 + 100 * Math.cos(Math.PI / 6), 9), y: expect.closeTo(250, 9) });
+    expect(end).toEqual({ x: 600, y: 300 });
+  });
 });

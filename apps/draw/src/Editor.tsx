@@ -5,10 +5,18 @@ import {
   type SelectionApi,
   type Tool,
   type ToolsApi,
+  toolSetHas,
   useActionsRegistry,
   type View
 } from '@weasel-js/core';
-import { CharacterOptions, CommandPalette, ContextMenuHost, MenuBar, ResizeHandle, Sidebar, ToolPalette } from '@weasel-js/ui';
+import { RESHAPE_TOOLS } from '@weasel-js/path-tools';
+import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { MenuBar } from '@weasel-js/ui/components/MenuBar';
+import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
+import { Sidebar } from '@weasel-js/ui/components/Sidebar';
+import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
@@ -23,18 +31,20 @@ import { useLoupeSource } from './pageLayers';
 import { PreferencesModal } from './PreferencesModal';
 import { toolEnumSources } from './registry/toolEnumSource';
 import { RightSidebar } from './RightSidebar';
+import { FIXED_CHROME, ShowChrome } from './surfaces/chrome';
 import { Toolbar } from './Toolbar';
 import { useDocumentState } from './useDocumentState';
 import { useLastTool } from './useLastTool';
 import { useMachineFontOutlines } from './useMachineFontOutlines';
 import { useRightSidebarWidth } from './useRightSidebarWidth';
-import { isPathTool } from './usePathToolsTools';
 import { useTextEditSession } from './useTextEditSession';
 import { Workspace } from './Workspace';
 
-const isCoreTool = (tool: Tool): boolean => !isPathTool(tool);
+const isCoreTool = (tool: Tool): boolean => !toolSetHas(RESHAPE_TOOLS, tool.id);
 /** The path palette's groups: the Girth tool, the stroke tools, then the warps. */
 const PATH_TOOL_GROUPS = ['shape', 'path', 'warp'] as const;
+const CORE_TOOL_STACKS = [['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil']];
+const PATH_TOOL_STACKS = [['trim', 'extend'], ['distort', 'envelope', 'puppet']];
 
 export interface EditorProps {
   scene: DrawScene;
@@ -42,7 +52,7 @@ export interface EditorProps {
   modality: UseModalityReturn;
 }
 
-/** The editor's chrome around the workspace: the menu bar, the command bar, the tool-options strip, the two
+/** The editor's chrome around the workspace: the command bar led by the menu bar, the tool-options strip, the two
  *  sidebars, and the status bar. */
 export function Editor({ scene, selection, modality }: EditorProps): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
@@ -84,8 +94,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
     <ActiveToolContextProvider>
       <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
         <div className="wd-app">
-          <MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />
           <Toolbar
+            menus={<MenuBar schema={DRAW_MENU_BAR} label="Menu bar" className="wd-menubar" />}
             scene={scene}
             selection={selection}
             paperSize={doc.paperSize}
@@ -104,31 +114,37 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               caret. Empty until a text edit is in progress. */}
           <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
           <div className="wd-body">
-            <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
-              {tools && (
-                <ToolPalette
-                  tools={tools}
-                  include={isCoreTool}
-                  orientation="vertical"
-                  lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                  modeRegistry={modality.machine.registry}
-                />
-              )}
-              <ActiveSwatches />
-            </Sidebar>
-            <Sidebar side="left" className="wd-sidebar left path" ariaLabel="Path tools">
-              {tools && (
-                <ToolPalette
-                  tools={tools}
-                  include={isPathTool}
-                  ariaLabel="Path tools"
-                  groupOrder={PATH_TOOL_GROUPS}
-                  orientation="vertical"
-                  lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
-                  modeRegistry={modality.machine.registry}
-                />
-              )}
-            </Sidebar>
+            <ShowChrome id={FIXED_CHROME.tools.id}>
+              <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
+                {tools && (
+                  <ToolPalette
+                    tools={tools}
+                    include={isCoreTool}
+                    stacks={CORE_TOOL_STACKS}
+                    orientation="vertical"
+                    lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                    modeRegistry={modality.machine.registry}
+                  />
+                )}
+                <ActiveSwatches />
+              </Sidebar>
+            </ShowChrome>
+            <ShowChrome id={FIXED_CHROME.pathTools.id}>
+              <Sidebar side="left" className="wd-sidebar left path" ariaLabel={FIXED_CHROME.pathTools.label}>
+                {tools && (
+                  <ToolPalette
+                    tools={tools}
+                    include={RESHAPE_TOOLS}
+                    ariaLabel={FIXED_CHROME.pathTools.label}
+                    groupOrder={PATH_TOOL_GROUPS}
+                    stacks={PATH_TOOL_STACKS}
+                    orientation="vertical"
+                    lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+                    modeRegistry={modality.machine.registry}
+                  />
+                )}
+              </Sidebar>
+            </ShowChrome>
             <Workspace
               scene={scene}
               selection={selection}
@@ -177,7 +193,9 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
               />
             </Sidebar>
           </div>
-          <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
+          <ShowChrome id={FIXED_CHROME.statusBar.id}>
+            <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
+          </ShowChrome>
         </div>
       </LoupeProvider>
     </ActiveToolContextProvider>

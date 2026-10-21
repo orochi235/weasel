@@ -12,22 +12,30 @@ import { useDepSource } from '@weasel-js/routing/react';
 declare module '@weasel-js/routing' {
   interface DepSchema {
     /** What the dispatcher classifies a world point as: empty, or a body that
-     *  is or is not selected, with its routing kind and id. Sourced by
-     *  `<SceneCanvas>`; absent when it has no selection or picker to classify with. */
-    hitAt?: (world: { x: number; y: number }) => { bodyTarget: BodyTarget; bodyKind?: string; id?: string };
+     *  is or is not selected, with its routing kind and id, and `doubleClick`,
+     *  the same for the node a double-click there names where that is another
+     *  (a hit member's group). Sourced by `<SceneCanvas>`; absent when it has
+     *  no selection or picker to classify with. */
+    hitAt?: (world: { x: number; y: number }) => HitAt & { doubleClick?: HitAt };
     /** A node's routing kind (`'rect'`, `'text'`), as `kind:` targets read it.
      *  Sourced by `<SceneCanvas>`; absent under `routing={[]}`. */
     kindOfNode?: (id: string) => string | undefined;
   }
 }
 
+/** One classified body, as `hitAt` reports it. */
+export interface HitAt { bodyTarget: BodyTarget; bodyKind?: string; id?: string }
+
 type Classify = (world: { x: number; y: number }) => BodyClassification;
+
+const hitOf = (c: { body: BodyTarget; kind?: string; id?: string }): HitAt =>
+  ({ bodyTarget: c.body, bodyKind: c.kind, ...(c.id !== undefined ? { id: c.id } : {}) });
 
 /** The `hitAt` answer for one view: its own classifier's verdict on a point. */
 export function hitAtOf(classifyTarget: Classify): NonNullable<DepSchema['hitAt']> {
   return (world) => {
     const c = classifyTarget(world);
-    return { bodyTarget: c.body, bodyKind: c.kind, ...(c.id !== undefined ? { id: c.id } : {}) };
+    return { ...hitOf(c), ...(c.doubleClick ? { doubleClick: hitOf(c.doubleClick) } : {}) };
   };
 }
 

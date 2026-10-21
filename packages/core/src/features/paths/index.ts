@@ -69,6 +69,7 @@ export {
   flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
   pathFromD,
+  pathToD,
   composePath,
   decomposePath,
   splitSubpaths,
@@ -168,12 +169,7 @@ export {
   createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery,
 } from '@weasel-js/geom';
-export {
-  createPathSnapper, DEFAULT_PATH_SNAP_RADIUS, type PathSnapMark, type PathSnapOptions, type PathSnapper,
-} from './pathSnap/pathSnapper';
-export {
-  createPathSnapMarkerLayer, pathSnapGlyph, PATH_SNAP_LABELS, type PathSnapMarkerStyle,
-} from './pathSnap/pathSnapMarkerLayer';
+export { pathSnapGlyph, PATH_SNAP_LABELS } from './pathSnap/glyphs';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
@@ -195,6 +191,7 @@ export {
   type PathEditDragStart,
   type PathEditExtension,
   type PathEditFinishCtx,
+  type PathTransformFinishCtx,
   type PathEditHandleMove,
   type PathEditMark,
   type PathEditMarksCtx,

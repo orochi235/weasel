@@ -53,8 +53,9 @@ export { splitSubpaths } from './paths/splitSubpaths';
 export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
 export { pathFromD } from './paths/pathFromD';
+export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
-export { measurePath, type MeasurePathOptions, type PathMeasure } from './paths/pathMeasure';
+export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';
@@ -68,7 +69,7 @@ export { intersectSegments, type SegmentCrossing } from './intersect/segmentInte
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
 export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
 export {
-  createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,
+  createPathSnapIndex, findPathSnap, findPathSnaps, PATH_SNAP_KINDS,
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
   type StaticPathSnapKind,
 } from './snap/pathSnap';
@@ -85,6 +86,8 @@ export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
 export { schneiderFit, fitCubicWithTangents } from './paths/schneiderFit';
 export { simplifyPath, simplifySpan, simplifySubpath, type SimplifyPathOptions } from './paths/simplifyPath';
+export { growRegion, type GrowRegionOptions } from './paths/growRegion';
+export { mergeRegion, type MergeRegionOptions } from './paths/mergeRegion';
 export { simplifyAnchorsAt } from './paths/simplifyAnchors';
 export { resamplePath, type ResamplePathOptions } from './paths/resamplePath';
 export { addExtremaAnchors, segmentExtremaTs } from './paths/extremaAnchors';
@@ -157,10 +160,7 @@ export {
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
-export {
-  handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles, snapHandleAngle,
-  type HandleAngleSnap, type HandleAngleSnapOptions,
-} from './paths/handleEdits';
+export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export {
   measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
   type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,

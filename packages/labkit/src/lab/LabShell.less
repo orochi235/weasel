@@ -3,9 +3,11 @@
   flex-direction: column;
   width: 100%;
   // Fills a container of definite height. Where the container has none, the
-  // percentage drops out and the shell takes the viewport's height instead.
+  // percentage drops out and the shell takes the height of the nearest size
+  // container, or of the viewport when there is none.
   height: 100vh;
   height: 100dvh;
+  height: 100cqb;
   max-height: 100%;
   background: var(--wzl-surface);
 }

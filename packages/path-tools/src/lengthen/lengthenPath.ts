@@ -87,7 +87,7 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
       const press = ctx.drag?.start ?? ctx.world;
       let distance = 0;
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
-      const preview = pathEditPreview(dep, id, () => current?.path ?? null);
+      const preview = pathEditPreview(dep, id, () => current);
       if (!preview) return {};
 
       return {

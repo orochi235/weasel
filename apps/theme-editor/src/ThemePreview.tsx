@@ -1,6 +1,12 @@
 import { themeAxes, type Selection, type Theme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
-import { Button, Checkbox, Input, SidebarPanel, Slider, Switch, ToggleBar, type Thumb } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Input } from '@weasel-js/ui/components/Input';
+import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { Switch } from '@weasel-js/ui/components/Switch';
+import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { useState, type MouseEvent, type SyntheticEvent } from 'react';
 import styles from './ThemeEditor.module.css';
 

@@ -1,6 +1,8 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
 import type { IconRef } from '@weasel-js/icons';
-import { Button, Callout, Icon } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Callout } from '@weasel-js/ui/components/Callout';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';

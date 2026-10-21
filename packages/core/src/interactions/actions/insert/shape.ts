@@ -1,6 +1,6 @@
 import type { DragSample } from '@weasel-js/routing';
 import type { InsertPoint } from '../../gestures/types';
-import type { InsertExtras } from '../depSchema';
+import type { InsertEnds, InsertExtras } from '../depSchema';
 import { applyUserRotation, buildExtras } from './extras';
 import { computeBounds, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
@@ -58,6 +58,8 @@ export interface InsertShape {
   extras: InsertExtras;
   /** Where the drag started, after the endpoints were resolved. */
   start: InsertPoint;
+  /** The drag `bounds` came from. */
+  ends: InsertEnds;
 }
 
 /** The shape an insert has at `frame`. The live overlay and the commit both
@@ -85,7 +87,12 @@ export function insertShape(
   applyUserRotation(extras, userRotation);
   // The node keeps the minimum it was drawn to, whatever its kind's extras hold.
   if (min) (extras as { minSize?: MinSize }).minSize = min;
-  return { bounds, extras, start };
+  const drag: InsertEnds = {
+    start: { x: start.x, y: start.y },
+    end: { x: current.x, y: current.y },
+    ...(mode === 'center' ? { fromCenter: true } : {}),
+  };
+  return { bounds, extras, start, ends: drag };
 }
 
 /** Whether a drag produced enough extent to be worth committing. The test

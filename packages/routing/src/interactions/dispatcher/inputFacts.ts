@@ -1,5 +1,5 @@
 /** What the dispatcher reads straight off an input event. */
-import type { IngestItem } from '@weasel-js/gestures';
+import type { Carried } from '../actions/action';
 import type { InputEvent } from './matcher';
 
 /**
@@ -35,9 +35,10 @@ export function worldPointOf(event: InputEvent): { x: number; y: number } | unde
   }
 }
 
-/** What a drop or a paste brings, for `Action.enabled`'s `carried` argument.
- *  Undefined for every other event. */
-export function carriedBy(event: InputEvent): { items: readonly IngestItem[] } | undefined {
+/** What a drop, a paste or a carry brings, for `Action.enabled`'s `carried`
+ *  argument. Undefined for every other event. */
+export function carriedBy(event: InputEvent): Carried | undefined {
+  if (event.kind === 'carry') return { items: [], carry: { type: event.type, value: event.value } };
   return event.kind === 'drop' || event.kind === 'paste' ? { items: event.items } : undefined;
 }
 
@@ -103,6 +104,7 @@ export function immediateParams(
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         mods: modifiersOf(event),
+        held: event.held === true,
         ...resolved,
       };
     case 'carry':
@@ -110,6 +112,9 @@ export function immediateParams(
         worldX: event.x, worldY: event.y,
         clientX: event.clientX, clientY: event.clientY,
         carry: { type: event.type, value: event.value },
+        affordance: event.affordance,
+        bodyTarget: event.bodyTarget,
+        bodyKind: event.bodyKind,
         mods: modifiersOf(event),
         ...resolved,
       };

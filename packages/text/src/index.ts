@@ -105,6 +105,7 @@ export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
 
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
+export { syntheticBoldOffset, emboldenGlyphD } from './syntheticBold';
 export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
 export type {
   TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,

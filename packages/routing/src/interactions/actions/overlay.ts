@@ -18,10 +18,12 @@ export type OverlayRole =
   | 'connector'
   /** The stretch of a path a soft-selection drag reaches. */
   | 'falloff'
-  /** A line a dragged point has snapped to. */
-  | 'snap'
   /** What a lock holds a dragged point to — a line, a circle. */
   | 'lock'
+  /** Where a dragged item would land: a reorder's insertion bar. */
+  | 'insert'
+  /** Where a dragged item is over and cannot land. */
+  | 'refused'
   | (string & {});
 
 /**

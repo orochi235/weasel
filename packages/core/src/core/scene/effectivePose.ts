@@ -8,7 +8,7 @@
  */
 import { deriveRecorded, emptyDepRecord, sameDeps, type DepRecord } from './depMemo';
 import type { PoseComposition } from './composeFrame';
-import { depFrameRebase } from './depFrame';
+import { carryDepPath, depFrameRebase, pathAsPainted } from './depFrame';
 import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
@@ -155,6 +155,13 @@ export function derivedDepOf<TPose>(
   return reader === undefined ? depIn(source, id, 'effective') : depsAsRead(source, reader, 'effective')(id);
 }
 
+/** `id` as {@link derivedDepOf} answers it, but at the pose and path the
+ *  document holds: no override anywhere down its dependencies counts. For a
+ *  reader that must not see an in-flight gesture, such as an edit pass. */
+export function documentDepOf<TPose>(source: PoseSource<TPose>, id: NodeId): DerivedDep<TPose> | undefined {
+  return depIn(source, id, 'document');
+}
+
 /** `(id) => that dependency as `reader`'s derivation is handed it`: its pose
  *  in `reader`'s frame where the scene composes frames. A `'children'`
  *  dependent shares its children's frame, so it reads them as they are. */
@@ -180,8 +187,23 @@ function depsAsRead<TPose>(
     const dep = plain(id);
     if (dep === undefined) return undefined;
     const pose = rebase(id, dep.pose);
-    return pose === dep.pose ? dep : { node: dep.node, pose, get path() { return dep.path; } };
+    return pose === dep.pose ? dep : new RebasedDep(dep, pose);
   };
+}
+
+/** A dependency read from another frame: its pose rebased, and its path
+ *  carried by the same frame change when asked for. */
+class RebasedDep<TPose> implements DerivedDep<TPose> {
+  readonly node: Node<unknown, string, TPose>;
+
+  constructor(private readonly dep: DerivedDep<TPose>, readonly pose: TPose) {
+    this.node = dep.node;
+  }
+
+  get path(): Path | null {
+    const path = this.dep.path;
+    return path === null ? null : carryDepPath(path, this.dep.pose, this.pose);
+  }
 }
 
 function depIn<TPose>(
@@ -216,11 +238,11 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   }
 
   get path(): Path | null {
-    if (this.shown !== undefined) return this.shown;
+    if (this.shown !== undefined) return pathAsPainted(this.shown, this.pose, this.pose);
     const { source, reading } = this;
     return resolveDerivedPath(
       this.posed,
-      (depId) => depIn(source, depId, reading),
+      depsAsRead(source, this.posed, reading),
       (depId) => source.childrenOf(depId),
       PATH_SLOT[reading],
     );

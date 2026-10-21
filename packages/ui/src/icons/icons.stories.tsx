@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
 import { toIconRef, type IconRef, type IconTable } from '@weasel-js/icons';
 import { icons as coreIcons } from '@weasel-js/core/icons';
+import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { ICON_GROUPS, icon } from '../icons.gen';
 import { icons as uiIcons } from '../icons.table';
 import s from './icons.stories.module.css';
@@ -40,7 +41,7 @@ function Sheet({ table = uiIcons, size, proof }: { table?: IconTable; size: numb
   );
 }
 
-const MARKED = [icon('formPage'), icon('formSection'), icon('core:tune'), icon('layers'), icon('shapeHexagon')];
+const MARKED = [icon('formPage'), icon('formSection'), icon('core:tune'), icon('layers'), icon('shape:hexagon')];
 const MARKS = ICON_GROUPS.find((g) => g.label === 'Marks')?.names.map((n) => icon(n)) ?? [];
 
 function MarkedSheet({ size, proof }: { size: number; proof?: boolean }) {
@@ -76,6 +77,11 @@ export const CoreAtChromeSize: StoryObj = { render: () => <Sheet table={coreIcon
 
 export const CoreAtProofSize: StoryObj = { render: () => <Sheet table={coreIcons} size={160} proof /> };
 
+/** The plain shapes `@weasel-js/icons` draws, which every package may name. */
+export const ShapesAtChromeSize: StoryObj = { render: () => <Sheet table={shapeIcons} size={20} /> };
+
+export const ShapesAtProofSize: StoryObj = { render: () => <Sheet table={shapeIcons} size={160} proof /> };
+
 /**
  * Both theme modes at once.
  *
@@ -90,10 +96,12 @@ export const BothModes: StoryObj = {
       <div data-wzl-mode="light" className={s.modePanel}>
         <Sheet size={20} />
         <Sheet table={coreIcons} size={20} />
+        <Sheet table={shapeIcons} size={20} />
       </div>
       <div data-wzl-mode="dark" className={s.modePanel}>
         <Sheet size={20} />
         <Sheet table={coreIcons} size={20} />
+        <Sheet table={shapeIcons} size={20} />
       </div>
     </>
   ),

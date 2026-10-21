@@ -24,6 +24,8 @@ export {
 } from 'core/scene/composePose';
 export type { PoseAdapter, PoseComposition, PoseClosure } from 'core/scene/composePose';
 export { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
+export { carriedDescendants, sceneCarrySource } from 'core/scene/carryDescendants';
+export type { CarrySource } from 'core/scene/carryDescendants';
 export { nestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
@@ -53,6 +55,7 @@ export type {
   HistoryLogger,
   HistorySelection,
   HistoryBranch,
+  HistoryStep,
   RecordEntryOptions,
   Op,
   Journal,
@@ -68,8 +71,8 @@ export * from '../core/adapters/types';
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, SCENE_HISTORY_FORM,
-  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneUnitScopes,
+  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose,
+  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
 } from '../core/scene';
 export type { PoseSource, PosedNode, ScopedScene } from '../core/scene';
 export type {
@@ -94,9 +97,18 @@ export type {
   PoseOverride,
   PoseHold,
   PoseOverrides,
+  PoseRemoval,
+  PoseWrite,
+  PoseWriteOrigin,
   RegisteredOp,
+  RemovedNode,
   Scene,
   SceneArrivalHandler,
+  SceneBatchOptions,
+  SceneEditPass,
+  SceneEditPassOptions,
+  SceneEditSummary,
+  ScenePoseReports,
   SceneRegistry,
   SerializedLayer,
   SerializedNode,
@@ -107,6 +119,7 @@ export type {
   UserLayerRecord,
   UseSceneOptions,
 } from '../core/scene';
+export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
 
 // ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {

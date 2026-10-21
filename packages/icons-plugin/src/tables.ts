@@ -15,12 +15,17 @@ export function namespaceIn(genFile: string): string | undefined {
   return /scopedIcon<[^>]*>\(\s*['"]([^'"]+)['"]\s*\)/.exec(readFileSync(genFile, 'utf8'))?.[1];
 }
 
-/** The table a package directory declares through its `weaselIcons.table` field. */
+/**
+ * The table a package directory declares through its `weaselIcons.table` field, or, for a
+ * workspace package not yet built, the source table beside its icons.gen.
+ */
 export function declaredTable(pkgDir: string): IconTable | undefined {
   const pkgFile = join(pkgDir, 'package.json');
   if (!existsSync(pkgFile)) return undefined;
   const table = (JSON.parse(readFileSync(pkgFile, 'utf8')) as { weaselIcons?: { table?: string } }).weaselIcons?.table;
-  return table && existsSync(join(pkgDir, table)) ? read(join(pkgDir, table)) : undefined;
+  if (!table) return undefined;
+  if (existsSync(join(pkgDir, table))) return read(join(pkgDir, table));
+  return sourceTablesUnder(join(pkgDir, 'src'))[0];
 }
 
 // A manifest with no name, such as a `dist/package.json` holding only `type`, does not root a package.

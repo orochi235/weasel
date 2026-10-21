@@ -1,4 +1,4 @@
-import type { A11yFinding, A11yReport } from '../protocol/messages';
+import type { A11yFinding, A11yOutcome, A11yReport } from '../protocol/messages';
 
 /** The shape of `axe.run`'s answer this module reads. */
 interface AxeResult {
@@ -80,4 +80,13 @@ export async function runAxe(element: Element, { page = true }: RunAxeOptions = 
     passes: result.passes.length,
     inapplicable: result.inapplicable.length,
   };
+}
+
+/** `runAxe`, with a failure to run reported as an outcome rather than thrown. */
+export async function auditElement(element: Element, options?: RunAxeOptions): Promise<A11yOutcome> {
+  try {
+    return { ok: true, report: await runAxe(element, options) };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) };
+  }
 }

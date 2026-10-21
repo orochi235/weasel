@@ -59,6 +59,9 @@ export interface A11yReport {
   inapplicable: number;
 }
 
+/** What an axe run in the frame came back with. */
+export type A11yOutcome = { ok: true; report: A11yReport } | { ok: false; message: string };
+
 /** A message the workshop sends a story's frame. */
 export type ToFrame =
   | { type: 'init'; config: unknown; state: unknown; globals: Globals }
@@ -67,7 +70,9 @@ export type ToFrame =
   | { type: 'globals'; globals: Globals }
   | { type: 'vars.set'; name: string; value: string | null }
   /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
-  | { type: 'a11y.run'; id: string };
+  | { type: 'a11y.run'; id: string }
+  /** Outlines the elements each `A11yNode.target` reaches, in place of the last ones; an empty list clears. */
+  | { type: 'a11y.highlight'; targets: readonly (readonly string[])[] };
 
 /** A message a story's frame sends the workshop. */
 export type FromFrame =
@@ -80,8 +85,7 @@ export type FromFrame =
   | { type: 'vars'; vars: CssVarReport[] }
   /** Asks the shell to show story `id` in this frame's trial in place of what it shows now. */
   | { type: 'open'; id: string }
-  | { type: 'a11y'; id: string; ok: true; report: A11yReport }
-  | { type: 'a11y'; id: string; ok: false; message: string }
+  | ({ type: 'a11y'; id: string } & A11yOutcome)
   /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
   | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 

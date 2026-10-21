@@ -1,0 +1,32 @@
+/* The process example from the Graphviz gallery, trimmed and dressed. */
+digraph G {
+  label = "Process";
+  rankdir = LR;
+  fontname = "Helvetica";
+  node [shape = box, style = filled, fillcolor = "#eeeeee"];
+
+  subgraph cluster_0 {
+    style = filled;
+    color = lightgrey;
+    node [style = filled, color = white];
+    a0 -> a1 -> a2 -> a3;
+    label = "process #1";
+  }
+
+  subgraph cluster_1 {
+    node [style = filled];
+    b0 -> b1 -> b2 -> b3;
+    label = "process #2";
+    color = blue
+  }
+  start -> a0;
+  start -> b0;
+  a1 -> b3;
+  b2 -> a3;
+  a3 -> a0 [label = "loop", color = "#cc0000", style = dashed];
+  a3 -> end;
+  b3 -> end;
+
+  start [shape = diamond, label = "Start\nhere"];
+  end [shape = Msquare];
+}

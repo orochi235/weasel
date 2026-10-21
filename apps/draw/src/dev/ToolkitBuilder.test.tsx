@@ -36,7 +36,7 @@ describe('ToolkitBuilder', () => {
     expect(await countIn('Actions')).toBeGreaterThan(0);
     expect(await countIn('Resolution')).toBeGreaterThan(0);
     await countIn('Conflicts');
-    await countIn('Dispatch');
+    expect(await screen.findByText(/^\d+ records?$/)).toBeTruthy();
   });
 
   it("mounts path-tools' tools and actions while its switch is on", async () => {

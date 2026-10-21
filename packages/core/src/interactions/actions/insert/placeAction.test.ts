@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
+import { gridSource, sessionDep } from 'features/snap/testing/sessionDep';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { insertAction } from './action';
 import { placeAction } from './placeAction';
@@ -60,9 +62,29 @@ describe('placeAction', () => {
 
   it('snaps the center through the snap dep', () => {
     const insert = makeInsertDep();
-    const snap: SnapDep = { point: (p) => ({ x: Math.round(p.x / 25) * 25, y: Math.round(p.y / 25) * 25 }) };
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
     click({ kind: 'sticky', size: { width: 40, height: 20 } }, { insert, snap }, { x: 103, y: 48 });
     expect(insert.calls[0].bounds).toEqual({ x: 80, y: 40, width: 40, height: 20 });
+  });
+
+  it('tells the snap session the container the node lands in', () => {
+    const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({ kind: 'container', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
+    const told: Array<string | undefined> = [];
+    const spy = { id: 'spy', roles: ['pointer'], *collect(q: { parent?: string }) { told.push(q.parent); } };
+    const snap: SnapDep = sessionDep(scene as never, [spy as never]);
+    click({ kind: 'sticky', size: { width: 40, height: 20 } }, { insert: makeInsertDep(), snap, scene, insertInto: { get: () => g } } as never);
+    expect(told).toEqual([g]);
+  });
+
+  it('leaves the center on the click while Ctrl suspends snapping, and keeps the click\'s modifiers out of the extras', () => {
+    const insert = makeInsertDep();
+    const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
+    const mods = { alt: false, ctrl: true, meta: false, shift: false };
+    click({ kind: 'sticky', size: { width: 40, height: 20 }, mods }, { insert, snap }, { x: 103, y: 48 });
+    expect(insert.calls[0].bounds).toEqual({ x: 83, y: 38, width: 40, height: 20 });
+    expect(insert.calls[0].extras).toEqual({ kind: 'sticky' });
+    expect(placeAction.modifierRoles).toHaveProperty(['snap.suspend']);
   });
 
   it('places nothing with no size, which a click cannot draw', () => {

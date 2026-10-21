@@ -1,5 +1,15 @@
 # @weasel-js/modes
 
+## 1.11.0
+
+### Patch Changes
+
+- 3f89d6b: A mode's double-click entry is now read. `ModeDefinition.entry.targets` names the routing kinds a `'double-click-target'` trigger takes — `PATH_EDIT` takes `'path'`, `ISOLATION` takes `'group'`, and `TEXT_EDIT` none, since its edit enters it — and `modeTriggers(registry, { enter, canEnter })` in `@weasel-js/core` turns them into an ambient contribution: a double-click on a node of one of those kinds enters the mode on it, unless `canEnter` refuses and the double-click falls through. Additive.
+- Updated dependencies [304f53a]
+- Updated dependencies [63b310c]
+- Updated dependencies [1be2ea9]
+  - @weasel-js/registry@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

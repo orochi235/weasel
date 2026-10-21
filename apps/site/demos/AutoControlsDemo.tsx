@@ -27,10 +27,10 @@ const WORDS = [
 const grid = defineInstrument({
   name: 'Grid',
   config: f.schema({
-    // The driver the other two resolve from, and manual for the same reason
+    // The driver the other two resolve from, and never auto for the same reason
     // `tint` is: every line below divides by it, so there is no picture to draw
     // without one.
-    width: f.number(640).range(240, 900).step(10).suffix('px').manual().label('Width'),
+    width: f.number(640).range(240, 900).step(10).suffix('px').label('Width'),
 
     // The two fields the width drives. Auto until someone pins them, and what
     // the resolver returns is what the ghosted slider draws.
@@ -58,9 +58,9 @@ const grid = defineInstrument({
       .placeholder('caption…')
       .label('Caption'),
 
-    // Straight into a fill, which cannot take `undefined` — so it is never auto
-    // and takes no pin dot.
-    tint: f.color('#8e4ec6').manual().label('Tint'),
+    // Straight into a fill, which cannot take `undefined` — so it never says
+    // `.auto()` and takes no pin dot.
+    tint: f.color('#8e4ec6').label('Tint'),
   }),
   initialState: () => ({}),
   render: () => null,

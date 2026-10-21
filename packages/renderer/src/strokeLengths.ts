@@ -24,7 +24,7 @@ const WORLD: StrokeSpaces = {};
 /**
  * `cmd` with its `{ px }` lengths — the stroke width, any marker size, and on a
  * `{ px }` stroke its dashes — resolved against the accumulated transform's
- * quantized scale, so everything downstream (the ribbon cache key, the insets,
+ * quantized scale (the exact scale with `quantize: false`), so everything downstream (the ribbon cache key, the insets,
  * the heads) sees plain numbers.
  *
  * Under a transform that stretches one direction more than another, each
@@ -32,7 +32,12 @@ const WORLD: StrokeSpaces = {};
  * measure as they do on screen, so it is exact across, down and on every
  * diagonal rather than right only on average. World-sized parts stay in world.
  */
-export function resolveStrokeLengths(transform: GlMat3, cmd: StrokedPathCommand): ResolvedStrokeCommand {
+export function resolveStrokeLengths(
+  transform: GlMat3,
+  cmd: StrokedPathCommand,
+  opts: { quantize?: boolean } = {},
+): ResolvedStrokeCommand {
+  const snap = opts.quantize === false ? (_px: number, scale: number) => scale : quantizeStrokeScale;
   const stroke = cmd.stroke;
   const { markerStart, markerMid, markerEnd } = stroke;
   if (typeof stroke.width !== 'object' && !isPxMarker(markerStart)
@@ -45,7 +50,7 @@ export function resolveStrokeLengths(transform: GlMat3, cmd: StrokedPathCommand)
     metric === null ? undefined : { metric, pxPerUnit };
   let ribbon: ScreenSpace | undefined;
   if (typeof stroke.width === 'object') {
-    const pxPerUnit = quantizeStrokeScale(stroke.width.px, scale);
+    const pxPerUnit = snap(stroke.width.px, scale);
     resolved.width = resolveStrokeWidth(stroke.width, pxPerUnit);
     if (stroke.dash && pxPerUnit > 0) resolved.dash = stroke.dash.map((d) => d / pxPerUnit);
     ribbon = screen(pxPerUnit);
@@ -53,12 +58,12 @@ export function resolveStrokeLengths(transform: GlMat3, cmd: StrokedPathCommand)
   const head = (ref: MarkerRef | undefined): ScreenSpace | undefined => {
     if (ref === undefined || typeof ref === 'string' || ref.size === undefined) return ribbon;
     if (typeof ref.size === 'number') return undefined;
-    return screen(quantizeStrokeScale(ref.size.px, scale));
+    return screen(snap(ref.size.px, scale));
   };
   const spaces = { ribbon, start: head(markerStart), mid: head(markerMid), end: head(markerEnd) };
-  if (isPxMarker(markerStart)) resolved.markerStart = resolvedMarker(markerStart, scale);
-  if (isPxMarker(markerMid)) resolved.markerMid = resolvedMarker(markerMid, scale);
-  if (isPxMarker(markerEnd)) resolved.markerEnd = resolvedMarker(markerEnd, scale);
+  if (isPxMarker(markerStart)) resolved.markerStart = resolvedMarker(markerStart, scale, snap);
+  if (isPxMarker(markerMid)) resolved.markerMid = resolvedMarker(markerMid, scale, snap);
+  if (isPxMarker(markerEnd)) resolved.markerEnd = resolvedMarker(markerEnd, scale, snap);
   return { cmd: { ...cmd, stroke: resolved }, spaces };
 }
 
@@ -68,6 +73,6 @@ function isPxMarker(ref: MarkerRef | undefined): ref is PxMarker {
   return typeof ref === 'object' && typeof ref.size === 'object';
 }
 
-function resolvedMarker(ref: PxMarker, scale: number): MarkerRef {
-  return { ...ref, size: resolveMarkerSize(ref, 0, quantizeStrokeScale(ref.size.px, scale)) };
+function resolvedMarker(ref: PxMarker, scale: number, snap: (px: number, scale: number) => number): MarkerRef {
+  return { ...ref, size: resolveMarkerSize(ref, 0, snap(ref.size.px, scale)) };
 }

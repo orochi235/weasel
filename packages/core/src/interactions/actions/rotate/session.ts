@@ -1,5 +1,6 @@
 import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
+import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { sceneGestureFrames } from '../gestureFrames';
 import { resolveParams } from '@weasel-js/routing';
 import { unionAABB } from 'core/geometry/unionBounds';
@@ -10,7 +11,6 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior } from '../../gestures/types';
 import { readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
-import { DEFAULT_ROTATE_BEHAVIORS } from './behaviors';
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -18,6 +18,9 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import type { PoseDescriptor } from '../resize/geometry';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { shapeSources } from '../selectionSubtree';
+import type { SnapBegin, SnapSession } from '../snapDep';
+import { inputSession } from 'features/snap/session2d';
+import { SNAP_ANGLE_STEP } from 'features/snap/roles';
 
 /** One rotated node as the press found it, in the plane the pointer's angle
  *  is read in. */
@@ -51,10 +54,17 @@ export interface RotateSession {
   readonly originPoses: ReadonlyMap<NodeId, unknown>;
   /** Pointer angle around the pivot at press. */
   readonly startPointerAngle: number;
+  /** The first rotated node's rotation at press: the angle that snaps. */
+  readonly theta0: number;
+  /** The drag's snapping: the `snap` dep's session, else one that only
+   *  steps while `snap.constrain` is held. */
+  readonly snap: SnapSession;
   readonly behaviors: readonly RotateBehavior<unknown>[];
   /** Reused across the drag; behaviors mutate its `scratch`. */
   readonly gestureCtx: GestureContext<unknown>;
   readonly applyOps?: (ops: Op[], label: string) => void;
+  /** Finishes the committed batch with the other nodes that change with it. */
+  readonly finish?: TransformFinisher;
   readonly selectionMethods: SelectionApi['adapterMethods'] | undefined;
   readonly lifecycle: GestureLifecycle;
 }
@@ -153,6 +163,15 @@ export function captureTurn(
   };
 }
 
+/** The drag's snap session: the first rotated node's angle about the pivot,
+ *  stepping by `SNAP_ANGLE_STEP` while `snap.constrain` is held. */
+function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: number; y: number }, theta0: number): SnapSession {
+  const req: SnapBegin = {
+    gesture: 'rotate', ids, press: ctx.world, pivot, theta0, constrain: { step: SNAP_ANGLE_STEP },
+  };
+  return ctx.deps.snap?.begin(req) ?? inputSession(req);
+}
+
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each
  *  behavior's `onStart`. */
 export function beginRotate(
@@ -162,7 +181,7 @@ export function beginRotate(
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
   const params = resolveParams(opts?.params);
-  const behaviors = (opts?.behaviors ?? DEFAULT_ROTATE_BEHAVIORS) as readonly RotateBehavior<unknown>[];
+  const behaviors = (opts?.behaviors ?? []) as readonly RotateBehavior<unknown>[];
 
   if (!selection || !scene) return null;
 
@@ -177,6 +196,7 @@ export function beginRotate(
   const readers = gestureReaders(ctx.deps);
   const gestureCtx = buildGestureContext(ctx, scene, origins, readers, selection.adapterMethods);
   for (const b of behaviors) b.onStart?.(gestureCtx);
+  const theta0 = origins.values().next().value?.rotation ?? 0;
 
   const session: RotateSession = {
     scene,
@@ -186,9 +206,12 @@ export function beginRotate(
     view: ctx.deps.view,
     originPoses,
     startPointerAngle: Math.atan2(ctx.world.y - pivot.y, ctx.world.x - pivot.x),
+    theta0,
+    snap: beginSnap(ctx, [...new Set([...selection.get(), ...ids])], pivot, theta0),
     behaviors,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
+    finish: transformFinisher(ctx.deps),
     selectionMethods: selection.adapterMethods,
     lifecycle: readGestureLifecycle(params, 'Rotate', behaviors),
   };

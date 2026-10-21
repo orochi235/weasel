@@ -1,5 +1,319 @@
 # @weasel-js/diagram
 
+## 1.11.0
+
+### Patch Changes
+
+- 4447e67: A canvas host given no `width`/`height` fills its parent and follows it as it resizes: `Canvas`,
+  `SceneCanvas`, `LeanSceneCanvas`, `DrawCanvas`, `SceneViewCanvas` and `MinimapCanvas`, each with a new
+  `onResize` reporting every size. Nothing paints until the first measure. On a resize the view keeps
+  its transform, so more or less of the world shows; `DiagramView` and `EffectChart` refit until the
+  user pans or zooms, and `MinimapCanvas` refits its overview. `DrawCanvas`'s `draw(size)` gets the
+  measured size. Core exports `SurfaceSizeProps` and `viewportWorldRect`; labkit's
+  `TrialSceneCanvas` fills through `SceneCanvas` instead of measuring its own trial.
+  
+  `createGridLayer`'s `bounds` is now optional and receives the paint's view and canvas size. Omitted,
+  the grid covers whatever the canvas shows, its lines held on world multiples of `spacing` as the view
+  pans, and any set of lines that would sit closer than 4px on screen is left out.
+- e3637c9: EffectChart fixes and additions:
+  
+  - `rack` widens a stage on its line so the side ports along its top or bottom sit at least `SIDE_PORT_GAP` (24) apart, however many there are.
+  - Branch symbols take `{ controlSide, style, tints }`. `rack` passes `controlSide: 'bottom'` with `side: 'below'`, so a control wire comes straight up from the stage driving it; a symbol's title then moves above it, and a diamond takes control in by its lower-left edge, keeping its bottom vertex for the second exit. A symbol's lines, dots and ticks take the `text` color of `style` (default `stageStyle(stage)`), so a bypassed decision draws dim and a look can restyle it; a bar's bands take `tints`.
+  - `EffectLook`'s options parameter defaults to `never` rather than `unknown`, so `[nodeGraph, rack]` is an `EffectLook[]` without a cast. Breaking for code that called a plain `EffectLook` with options: give it the options type, `EffectLook<MyOptions>`.
+  - `EffectChart` takes `minScale`, default `EFFECT_MIN_SCALE` (0.5), so a large chart opens readable at its start instead of fitted whole and tiny.
+  - Under a run, a `switch` symbol is thrown to the output the decision took, and `EffectChart` fades the port dots of stages the run never reached.
+  - `edgeIdOf` escapes `.`, `>`, `:`, `/` and `\` in an edge's ends, ports and label with a backslash, so two different edges never share an id. Breaking for code that built an edge id by hand for ids, ports or labels holding those characters; use `edgeIdOf`.
+- 29a90e3: `edgeIdOf` tells an empty-string port or label apart from none: `{ from: 'a', fromPort: '', to: 'b' }` is `edge:a.->b`, no longer `edge:a->b`, and an empty label adds a trailing `:`. Two such edges used to share an id, so `diagramScene` drew only the first.
+- 9c24f2b: `onMove`'s `EdgeRoute` now carries `ports`, the ports a layout run named, and an edge is reported
+  when only its ports change. Store them as the new `DataEdge.routedPorts`, which `edgeIdOf` does not
+  read, so storing them no longer renames and replaces the edge. Breaking for code that builds an
+  `EdgeRoute` or assumes a reported route always has new waypoints.
+  
+  A live run eases routes for every layout, `force` included, and each eased frame draws an edge
+  through the ports the run will commit, so an edge that changes faces no longer jumps on arrival. An
+  edge to a group reads the group's box from the same frame.
+  
+  `layered` holds far more pins: a pin's band slides or deepens to cover it, the gaps toward other
+  pinned ranks shrink together, a node with no room between two pins moves past one, and a group's
+  column moves or widens as one so no outsider lands in its box. `LayeredPlan.unheld` is left for
+  pins no arrangement can reach.
+  
+  `chain` routes an edge between a chain node and a node hung beside it on a track of its own, orders
+  the hung row by the ports it connects to, and grows the gap to keep tracks 12 apart, so a fan of
+  side stages into one `rack` stage never crosses. `rack`'s spread side ports face straight out.
+  
+  The `lanes` look routes a wire around the stages in its lane, each wire in a shared corridor on its
+  own track, places labels clear of every stage, and keeps a decision's title and cut values inside
+  its lanes and column. `EffectChart` picks only stages, so clicking a lane or group box no longer
+  leaves it highlighted.
+  
+  A perimeter port can carry a `label` (`PortSpec.label`, or `portLabels` by port id on a `BodySpec` or
+  `DataNode`), drawn outside the node beside its wire. Layout lays each node out at its bounds grown by
+  the room its labels take (`DiagramNode.margin`, `GraphNode.margin`), and a group's box takes it in.
+  A port's alternative `sites` may carry their own `normal` (`PortSite`).
+  
+  `diagramLayoutOf(specs)` reads where a `diagramScene` build's layout put each unpinned node, and the
+  routes and ports it wrote, in `onMove`'s shapes, so a host can keep a diagram still across edits.
+  
+  Under `layered`, an edge between two nodes that pins leave level along the rank axis runs straight
+  between their facing sides, or around past both when a node sits between them, instead of looping
+  round.
+- 72a0ea2: `layered` reads a port where `portsOf` puts it on the node's outline rather than at its anchor, and reads a port with several places at the one nearest where the wire's other end falls among the node's wires on that side, while ordering, rather than at their mean. `GraphNode` carries the node's `outline`.
+  
+  The compass ports `diagramScene` names under `layered` are marked as layout's: an `EdgeEnd` records the port layout named as `laidOut` (`layoutOwnsPort`), and `LayoutPlan.ports`, which `layeredPlan` now fills, carries them to `routesOf` and `routeWrites`. A later layout names an end again while it names no port or still names that one, so an edit that turns which way an edge runs no longer leaves it leaving by the old face. A live `layered` run or the layout action now names ports on a hand-built scene's edges that name none, as `diagramScene` does.
+  
+  Breaking: `DiagramLabel`'s `at: { waypoint: k }` is replaced by `at: { near: { x, y } }`, which stations a label where its route passes nearest that point, so a bend added or removed before it leaves it on its stretch. `LayoutPlan.labels`, `LayeredPlan.labels` and `LayeredRoute.labelAt` carry that point instead of a waypoint index.
+  
+  A group box `diagramScene` makes depends on the labels of the wires with both ends inside it, so a long label no longer spills out of it.
+  
+  A live eased run eases each route it will write along with its nodes, published as the edge's path on the override channel, rather than drawing long edges through their old bends until it arrives.
+  
+  Core: `moveSources` and `shapeSources` no longer hand back a node that derives only its path when they reach it through a derived node, so moving or turning a group box that depends on a wire's label does not write the wire's placeholder pose.
+- 4f7c861: A live layout and `DiagramView`'s `layout()` take a `LayoutPlanner`: an object whose `plan(graph, opts)` answers with a whole `LayoutPlan`, now or as a promise. The run asks it once, with the graph as it stands, and eases to the answer as it eases to `layered`'s, with the same route easing and the same moves, routes and ports reported to `onMove`. While the answer is pending, a newer request, `cancel`, `stop`, or a graph that moved or changed drops it, and `isRunning()` is true. A change of shape mid-run asks the planner again. A planner that rejects starts no run and reports the reason to the new `onError` option (`DiagramView`'s `live.onError`), or to `console.error` when that is unset; it is never left an unhandled rejection. `plannerPlan` lays a planner's graph out by footprint the way `planOf` does, and `DiagramLayout` names what `layout()` takes. `DiagramView` now fits again once a layout run settles, while the view is still its fit. `@weasel-js/diagram-elk` adds `elkPlanner(opts)`, ELK as a `LayoutPlanner`. Additive.
+- b919c0d: `EffectChart` has two more looks, both in `EFFECT_LOOKS`. `lanes` gives each value type a horizontal lane and stands each stage across the lanes of the types it reads and writes, as tall as they are, with each port in its own type's lane; lanes grow until what stands in them fits (`lanes`, `laneHeight`, `rankGap`, `router`, `colors`, `showParams`, `showValues`, `branch`, `measure`; `laneId`, `LANE_INSET`). `compact` draws each stage on one line with no ports drawn and one line between two stages however many wires join them, a decision as a one-line hexagon by default with a line per exit (`router`, `nodeGap`, `rankGap`, `colors`, `branch`; `COMPACT_PADDING`). It shows no params or value rows.
+  
+  Five more branch symbols: `'hexagon'`, `'step'`, `'comparator'`, `'crossover'` and `'fork'`, a bare dot whose conditions sit on its wires. `'step'` and `'crossover'` need a sound `split` and `'comparator'` exactly two outputs; each draws a diamond otherwise. `wireEdges(pipeline, color)` builds the port-to-port edges `nodeGraph` and `lanes` draw. Additive.
+- ffd8829: A hidden or locked node shows no ports. `sceneParticipants` marks each participant `hidden` or `locked` from the scene's `nodeGates`, and the port layer neither draws nor hits a marked participant's ports, and a connect never lands on one. A node is hidden by its own flag, an ancestor's, or a hidden layer; locked by its own lock, an ancestor's, or a locked layer. `ParticipantPose` gains the two optional fields, so a hand-written participant source can set them too. The graph still reads every participant, so layout places a hidden node as before.
+- 14b7551: Chrome now stays off a layer the view hides with `layerVisibility` or leaves out of `layerOrder`, not only off a layer the scene itself hides. In a `<CanvasView>` panel that hides a layer, a node on it that is selected on the surface shows no outline, resize or rotate handles, path anchors, or warp handles there, and none of them can be grabbed there. A diagram's ports are not drawn on such a layer, a press there does not grab one, and a connect drag started in that view does not land on one.
+  
+  To make that possible, `ChromeState` carries `layerIsPainted(layerId)` for the view it was built for, the same answer `ViewApi.layerIsPainted` gives, and its `selection` leaves out ids on a layer that view does not paint (`multiActive` and `unionBounds` follow). `buildChromeState` takes `layerIsPainted` and `layerOf` for this, and a view reads each id's layer through its adapter's `getNode`. `paintsLayer(gate, layer)` is the one test every piece of chrome uses: `gate` is a `ChromeState` or a `ViewApi`. In the diagram package, `sceneParticipants` reports each participant's `layer`, and `offersPorts` takes the view as a second argument. Additive.
+- eec8a5b: An `EffectRun` can carry a picture per output: `previews: { [port]: ImageBitmap }` on a stage's entry. A look's `showPreviews` option (on `nodeGraph`, `rack` and `lanes`) keeps a slot per output, `previewSize` big (default `PREVIEW_SIZE`, a 48-unit square, or `{ width, height }`), laid out from the first draw so a run filling it never lays the chart out again. Until a run fills a slot it draws as an empty frame, and it fades with its stage. `paintRun` fills it by a data edit, so a run that hands back the same bitmap writes nothing to the scene and uploads nothing; `EffectChart` frees the texture of a bitmap the next run no longer shows, and of every one it shows when it unmounts. `RunRowOptions` is the shared type of `showValues`, `showPreviews` and `previewSize`, and `previewRowId(port)` names a slot.
+  
+  `bitmapSrc(bitmap)` (renderer, re-exported by core) names an `ImageBitmap` made at runtime as an image `src`, so an image node draws it with no load. The same bitmap always gets the same name; the cache holds it weakly and never drops it to fit its budget, and `releaseImage` frees its textures and retires the name.
+  
+  A body's `slot` row takes a `width`: the body is at least that wide and the slot's box is that wide, centered. In `diagramScene`, a slot with an `id` becomes a scene node of that name, an empty frame, ready to be filled by a data edit. `DiagramSceneData` gains `image`.
+  
+  `lanes` widens a source or sink stretched taller than it measured, so its round ends no longer eat into its rows.
+- 16b7ad7: A custom `Path` outline is drawn in a unit square and stretched over its node's box, as a mark's path data is, so it follows its node when layout or a drag moves it. Breaking: a `Path` outline built in world coordinates now has to be rebuilt in the unit square.
+  
+  `diagramScene` parses each drawn mark's `d` as it builds the scene and throws on path data that does not parse or draws nothing, naming the node and the mark's index, rather than painting a truncated path or nothing at first paint.
+  
+  `DiagramView` fits its view again when `width`, `height` or a fit option (`minScale`, `maxScale`, `anchor`, `fitPadding`) changes, as long as the view is still the fit it last applied; once the user pans or zooms, a resize leaves the view where they put it. The refit reaches `onViewChange`.
+  
+  `DiagramView`'s `onMove` takes a second argument: every edge whose route a layout run rewrote, as `EdgeRoute` (`{ id, waypoints }`, with `id` the edge's `edgeIdOf` and `waypoints` empty when the run left it straight). Stored as the data edge's new `routed` field, a route survives the data being laid into a scene again and stays layout's to replace; `waypoints` still means the author's own route.
+- a988460: `EffectChart` draws a run of its pipeline.
+  
+  - **`run` prop.** An `EffectRun` sits beside the pipeline, keyed by stage id: each stage's `cost`
+    in milliseconds, a decision's `taken` output, and each output's `values` as text. The chart
+    fades a stage the run never reached and its wires, fades a decision's wires to outputs it did
+    not take, writes each cost above its stage's corner, and fills in value rows. A run edits the
+    scene in place: no new layout, no refit, and only the changed fields are written, so it may
+    change every frame. `paintRun` and `costText` are exported for a chart of your own.
+  - **`showValues`** on `nodeGraph` and `rack` keeps a row per output for a run's value
+    (`valueRowId`, `NO_VALUE`).
+  - **Breaking:** `stageRows(stage, showParams, withPorts)` is now
+    `stageRows(stage, { showParams, withPorts, showValues })`.
+  - **Body rows.** A `label` or `field` row may carry an `id`, which names its scene node
+    `<body id>/<row id>` so it can be found again; and a `field` may carry `room`, a value it is
+    measured at least as wide as.
+  - **`EffectLookResult.exits`** maps the edges that stand in for a decision a look does not draw,
+    such as `rack`'s skip arcs, to the exit each one is, so a run's `taken` reaches them.
+  - **Renderer:** text now honors a solid fill's `opacity`, in its glyphs, its color glyphs (emoji)
+    and its decoration rules. It was ignored, so faded text drew at full strength.
+- a083eaf: `@weasel-js/diagram/effect` is new: `EffectChart` draws an effects pipeline given as plain data, with stages, the typed ports each reads and writes, the wires between them, and groups. How the pipeline is drawn is a look, a function from a pipeline to what `diagramScene` takes; `nodeGraph` gives every port a named row and `rack` runs the main signal along one line with the rest hung beside it. `EffectChart` takes the pipeline, which it compares by content, a look, the look's options, a size, a `background` paint, and the usual `selected` / `onSelect`, and reports `checkPipeline`'s findings through `onProblems`. A stage that sends the signal one of several ways draws as a branch symbol (`diamond`, `bar`, `demux`, `switch`), and one with `split` draws its cut values as ticks on a bar. `checkPipeline` reports a wire that names a missing stage or port, runs the wrong way, or joins two types, a repeated stage, port or group id (`duplicate-group` for a group whose id repeats another's or a stage's), and the other ways a pipeline can be wrong.
+  
+  For writing a look, the entry also exports what the shipped looks are built from: `uniqueStages`, `uniqueGroups`, `drawableWires` and its `DrawableWire` type, `stageRows`, `exitLabel`, `stageStyle`, `wireStyle`, `isControl`, `kindOf`, `portOn` and `PROBLEM_COLOR`.
+  
+  The rest is additive in `@weasel-js/diagram` itself, and nothing existing changes:
+  
+  - `DiagramView` takes `ports="show"`, to draw ports with nothing to connect.
+  - `portOptions.fill` may be a function of the port.
+  - `portOptions.shape` may be `'circle'`.
+  - `portOptions.showsPort` picks which of a node's ports show; `createPortAffordance` takes the same option, and `createConnectAction` takes it to keep a connect from landing on a hidden port.
+  - `'trapezoid'` is an outline.
+  - A data node takes `marks`: shapes in a unit square stretched over its box, and text pinned to a point on it. `diagramMarkOf`, `markShape`, `registerMarkShape` and the `DataMark` and `DiagramMark` types are exported.
+  - `chain` is a layout, exported and accepted by name as `layout: 'chain'` in `diagramScene`, `layout('chain')` on a `DiagramView` and `algorithm: 'chain'` in `createLayoutAction`. It stands one run of nodes on a line and hangs the rest beside it; the `chain` and `chainSide` layout options pick the run and the side, and the run is the longest path when `chain` is unset or names no node.
+- 4af4627: `layered` builds the layout around every pinned node, not only the first. Each pin after the first
+  keeps its place across its rank, with the rest of the rank pushed clear of it, and the gap on the
+  first pin's side of its rank stretches or shrinks to reach it, so a long edge no longer runs through
+  a second pin and a re-run moves nothing. A pin it cannot reach — one that would shrink a gap below a
+  quarter of `rankGap`, or that has too little room beside another pin in its rank — is laid out
+  around as before and named in the new `LayeredPlan.unheld`.
+- 6812344: `layered` routes long edges and leaves labels room on a live scene too.
+  
+  - **Under `order: 'seeded'`.** An edge spanning ranks now stands in each rank it crosses and a
+    labeled edge gets a rank of its own, as under `'barycenter'`. An edge keeps its place in a rank
+    the way a node does, from where its route crosses that rank now (`GraphEdge.waypoints`, which
+    `buildGraph` fills in), so a second run still moves nothing. This changes where a seeded layout
+    puts nodes in any graph with a long or labeled edge.
+  - **Written to the scene.** The layout action and a live `layered` run write each long edge's
+    waypoints, and station its label in the room left for it, in the same undo entry as the moves.
+    `buildGraph` reads a scene label's size as its edge's label room.
+  - **Whose route it is.** `DiagramEdge.laidOut` records the waypoints layout wrote, and layout
+    rewrites a route only while the edge's waypoints still match them (`layoutOwnsRoute`). An edge
+    someone has bent, and the label on it, are left alone, and get no room in the ranks the edge
+    crosses (`GraphEdge.authored`); so is a label put at `'start'`, `'end'` or a fraction.
+    `diagramScene` marks the routes it lays out the same way. A layout that routes nothing
+    (`tree`, `force`, `chain`) takes layered's routes back off.
+  - **`diagramScene`.** A label whose edge sets `labelPlacement` at `'mid'` now gets room beside
+    its wire like an unplaced one, at that placement's offset. Routes come from any layout with a
+    `plan`, not only `layered`.
+  - **Locked layers.** `applyLayout` skips a node, edge or label on a locked layer instead of
+    throwing.
+  - **New surface.** `LayoutFn` may carry a `plan` returning `LayoutPlan` (`moves`, `waypoints`,
+    `labels`); `layered.plan` is `layeredPlan`, and `planOf` reads any layout's. `routesOf` and
+    `routeWrites` turn a plan into scene edits, and `applyLayout` takes them as `routes`.
+    `usePoseRun` takes `commitWith`, writes of the caller's own made inside the commit's batch.
+  - `expand`'s `placeholders` and `labels` options are gone; it always adds both.
+- 89229df: `layered` reads ports and leaves labels room.
+  
+  - **Ports.** The layout graph carries each node's ports (`GraphNode.ports`) and the ports an edge
+    names (`GraphEdge.fromPort`, `toPort`); `buildGraph` and `diagramScene` fill them in. Ordering
+    reads each wire at the port it joins, so wires into one node arrive in the order of its ports,
+    and placement lines up the two ports a wire joins rather than the two centers.
+  - **Port places.** A `PortSpec` may list other places it can sit in `sites`. An edge meeting the
+    port takes whichever place faces its next point; `portSitesOf` resolves them all. The decision
+    diamond's second exit may now leave by its top vertex as well as its bottom.
+  - **Label room.** Under `order: 'barycenter'`, an edge whose `GraphEdge.label` gives its label's
+    size gets a rank of its own between its ends, with room beside its wire. `layeredPlan` reports
+    where (`labels`), and `diagramScene` sets each label there unless its edge sets
+    `labelPlacement`. `DiagramLabel.at` takes `{ waypoint }`, a place between two of the edge's
+    waypoints.
+  
+  Behavior changes: a diagram with labeled edges laid out by `diagramScene` is taller (or wider)
+  than before, and lands in a different place. Inside a group, `layered` keeps each member where
+  placement lined it up instead of centering each rank in the group's column. An edge end with no named port now aims at the
+  edge's first or last waypoint, not the other node, when it has waypoints. A smooth (`bezier`)
+  route passes two waypoints level on one axis along that axis.
+- 298b28b: `layered` lays diagrams out differently, so a diagram laid out before this lands somewhere else
+  after it. Ranks keep edges as short as they can (network simplex, exported as `ranksByLength`),
+  so a node with no inputs sits beside what it feeds instead of in the first rank, and nodes are
+  lined up with their neighbors across ranks (Brandes–Köpf) instead of packed and centered. Under
+  `order: 'barycenter'`, which `diagramScene` uses, an edge spanning ranks stands in each rank it
+  crosses, so ordering counts its crossings and placement leaves it room; ordering also swaps
+  neighbors to clear crossings and keeps the best order it finds. An edge closing a cycle is turned
+  around for layout, so it gets a route too.
+  
+  New `layeredPlan(graph, opts)` returns the moves with each node's rank and each spanning edge's
+  waypoints; `diagramScene` draws those edges through them. `LayeredRouteInput` changes shape: it
+  takes `ranks` and `waypoints` from a plan in place of `graph`, `boxes` and `clearance`.
+  `GraphEdge` gains an optional `origin`, the edge as drawn, on edges `expandGroupEdges` made for
+  an edge to or from a group.
+- 36eca7a: Breaking: `useAnimator` moved to `@weasel-js/animator/react`; the root entry has no React. `@weasel-js/core/math` no longer reaches routing or animator in its types. geom exports `FramedBox`. New `@weasel-js/font/metrics` entry carries `parseBmFont`, the face-metric readers and `cssFamilyName` with no DOM in its types, and `@weasel-js/diagram/layout` measures through it, so neither it nor `@weasel-js/diagram-elk` needs a browser. `faceMetricsOf` takes any value with `entry` and `outlineFace`, a `ResolveResult` included.
+- 0430dcc: Every type a public signature names is now exported, so the API reference links it. Signatures that named a file-local point alias (`Pt`, `XY`, `Vec`) take geom's `Point`, and ones that named a local `AnyScene` or `AnyNode` say `Scene<unknown, string, unknown>` or the node type outright. Newly exported: core's `AnnotationFlag`, `AnchorEdit`, `JoinPlan`, `PathEditPreview`, `PathStorageKind`, and `ViewPoseAdapter`; diagram's `RoutedScene`; prefs' `UsePrefsStoreOptions`; symmetry's `SymmetryKindDef`; path-tools' `WarpToolOptions`; and ui's `SceneLayerListProps`.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [6a53aaa]
+- Updated dependencies [193ba96]
+- Updated dependencies [09c3e5f]
+- Updated dependencies [535aaaa]
+- Updated dependencies [ed0e096]
+- Updated dependencies [6f839dd]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [0382007]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [e4642bb]
+- Updated dependencies [e901a2b]
+- Updated dependencies [57725cc]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [8775065]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [e562d4b]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/core@1.11.0
+  - @weasel-js/geom@1.11.0
+  - @weasel-js/animator@1.11.0
+  - @weasel-js/font@1.11.0
+  - @weasel-js/simulation@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

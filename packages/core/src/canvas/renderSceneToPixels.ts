@@ -35,6 +35,9 @@ import { warmFonts, type FontRequest } from '@weasel-js/font';
 import { isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
 import { renderNeeds } from './renderNeeds';
 import { straightTopDown } from './rasterReadback';
+import { annotationLayerIds } from 'core/scene/annotation';
+import { sceneLayerKey } from './sceneLayerPaint';
+import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,
  *  data }), deliberately free of printer/dpi/physical-unit concepts. */
@@ -97,6 +100,10 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  output's top-left, one unit per output pixel. Annotations, watermarks,
    *  and `renderDebugSnapshot`'s overlay ride here. */
   overlay?: readonly DrawCommand[];
+  /** Draw the scene's annotation layers (`isAnnotationLayer`). Default
+   *  `false`: a raster is an export, which leaves them out as the SVG export
+   *  does. Pass `true` to reproduce the canvas as it looked. */
+  annotations?: boolean;
 }
 
 /** The result of planning a headless render: how big the output is, the view
@@ -156,8 +163,11 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { paint: { kind: 'solid', color: args.background } },
     });
   }
+  const layers = args.annotations ? undefined : {
+    layerVisibility: Object.fromEntries([...annotationLayerIds(args.scene.layers)].map((id) => [sceneLayerKey(id), false])),
+  };
   commands.push(...buildSceneViewCommands(
-    args.scene, view, drawOne, undefined, args.alphaFor, undefined, args.colorOverrides,
+    args.scene, view, drawOne, undefined, args.alphaFor, layers, args.colorOverrides,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
@@ -230,8 +240,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
         canvas = (options.createCanvas ?? defaultCreateCanvas)(width, height);
         canvas.width = width;
         canvas.height = height;
-        // Same context attributes as the screen path (Canvas.tsx).
-        gl = (canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext | null) ?? undefined;
+        gl = (canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES) as WebGL2RenderingContext | null) ?? undefined;
       } else {
         if (canvas.width < width) canvas.width = width;
         if (canvas.height < height) canvas.height = height;

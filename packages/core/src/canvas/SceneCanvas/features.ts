@@ -13,7 +13,7 @@
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
-import type { Action } from '@weasel-js/routing';
+import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'features/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'features/chrome-caps/types';
 import type { MoveBehavior } from 'interactions/gestures/types';
@@ -21,6 +21,7 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { Contribution, Tool } from 'tools/overlayBinding';
 import type { PathEditExtension } from 'features/paths/pathEditExtension';
+import type { SnapSource } from 'features/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { BuiltinToolId } from './props';
 
@@ -72,8 +73,8 @@ export interface FeaturePreset {
    *  are standard actions: `<SceneCanvas actions>` overrides and mutes them,
    *  and `tune` reaches them. */
   readonly actions?: readonly Action[];
-  /** Tools it mounts: a built-in by id, or a tool of its own. */
-  readonly tools?: readonly (BuiltinToolId | Tool)[];
+  /** Tools it mounts: a built-in by id or a set of them, or a tool of its own. */
+  readonly tools?: readonly (ToolEntry<BuiltinToolId> | Tool)[];
   /** Its ambient bindings: an always-live entry routing a gesture to its
    *  actions under any tool that does not claim the gesture itself. */
   readonly ambient?: (options: FeatureBindingOptions) => Contribution;
@@ -81,6 +82,9 @@ export interface FeaturePreset {
    *  after the select tool's own: a snap, a readout of the drag. They reach
    *  only a move some enabled preset binds, `move` or `draw`'s. */
   readonly moveBehaviors?: readonly MoveBehavior<unknown>[];
+  /** Snap sources every snap session on the canvas asks, after
+   *  `<SceneCanvas snap.sources>` and the presets before it. */
+  readonly snapSources?: readonly SnapSource[];
   /** The selection chrome that is drawn, and can be grabbed, only while it is on. */
   readonly chrome?: readonly ChromeId[];
   /** Default chrome-caps rules for chrome of its own, under the consumer's
@@ -124,6 +128,8 @@ export interface EnabledPresets {
   readonly presets: readonly FeaturePreset[];
   /** Their path-edit extensions, in order. */
   readonly pathEdit: readonly PathEditExtension[];
+  /** Their snap sources, in order. */
+  readonly snapSources: readonly SnapSource[];
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -133,11 +139,15 @@ export interface EnabledPresets {
  * preset once, and every one placed ahead of the presets it `refines`. Ties
  * keep the order given. Where names resolve, a `viewport` config turns on the
  * `view` preset, since that prop only configures what `view` turns on.
+ *
+ * `selectRotates: false` is `selectTool.rotate === false`: every preset keeps
+ * its actions, but loses its ambient `rotate` bindings and the rotation handle
+ * from its chrome, which hides the handle unless a consumer rule shows it.
  */
 export function resolveFeatures(
   features: readonly FeatureEntry[] | undefined,
   named: NamedPresets | null,
-  opts: { viewport?: boolean } = {},
+  opts: { viewport?: boolean; selectRotates?: boolean } = {},
 ): EnabledPresets {
   const listed: FeaturePreset[] = [];
   const byId = new Map<string, FeaturePreset>();
@@ -166,7 +176,31 @@ export function resolveFeatures(
     ordered.push(p);
   };
   for (const p of listed) place(p);
-  return { presets: ordered, pathEdit: ordered.flatMap((p) => p.pathEdit ?? []), has: (id) => byId.has(id) };
+  const presets = opts.selectRotates === false ? ordered.map(withoutSelectRotate) : ordered;
+  return {
+    presets,
+    pathEdit: presets.flatMap((p) => p.pathEdit ?? []),
+    snapSources: presets.flatMap((p) => p.snapSources ?? []),
+    has: (id) => byId.has(id),
+  };
+}
+
+const ROTATION_HANDLE: ChromeId = 'selection.rotation-handle';
+
+/** `p` without its ambient `rotate` bindings or the rotation handle. */
+function withoutSelectRotate(p: FeaturePreset): FeaturePreset {
+  const { ambient, chrome } = p;
+  if (!ambient && !chrome?.includes(ROTATION_HANDLE)) return p;
+  return {
+    ...p,
+    ...(ambient ? {
+      ambient: (o: FeatureBindingOptions): Contribution => {
+        const c = ambient(o);
+        return c.bindings ? { ...c, bindings: c.bindings.filter((b) => b.actionId !== 'rotate') } : c;
+      },
+    } : {}),
+    ...(chrome ? { chrome: chrome.filter((id) => id !== ROTATION_HANDLE) } : {}),
+  };
 }
 
 /** The actions the given presets register, in registration order. */
@@ -174,17 +208,23 @@ export function presetActions(enabled: EnabledPresets): Action[] {
   return enabled.presets.flatMap((p) => p.actions ?? []);
 }
 
+/** Whether a preset's `tools` entry names built-ins, by id or set, rather than being a tool of its own. */
+const namesBuiltins = (t: ToolEntry<BuiltinToolId> | Tool): t is ToolEntry<BuiltinToolId> =>
+  typeof t === 'string' || 'members' in t;
+
 /** The built-in tool ids the given presets mount. */
 export function presetBuiltinTools(enabled: EnabledPresets): Set<BuiltinToolId> {
   const ids = new Set<BuiltinToolId>();
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t === 'string') ids.add(t);
+  for (const p of enabled.presets) {
+    for (const id of toolIdsOf((p.tools ?? []).filter(namesBuiltins))) ids.add(id);
+  }
   return ids;
 }
 
 /** The tools of their own the given presets mount, by id. */
 export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
   const out: Record<string, Tool> = {};
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (typeof t !== 'string') out[t.id] = t;
+  for (const p of enabled.presets) for (const t of p.tools ?? []) if (!namesBuiltins(t)) out[t.id] = t;
   return out;
 }
 

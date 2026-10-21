@@ -10,7 +10,6 @@ html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 body {
   background: var(--wzl-surface);
   color: var(--wzl-fg);
-  font-family: system-ui, -apple-system, sans-serif;
 }
 
 a { color: var(--wzl-accent-fg); text-decoration: none; }
@@ -328,6 +327,17 @@ a:hover { text-decoration: underline; }
   display: block;
   touch-action: none;
   cursor: crosshair;
+}
+
+/* DOM a diagram holds against a node (DiagramOverlaysDemo). */
+.ckd-overlay-card {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 4px;
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
 }
 
 .ckd-hint {

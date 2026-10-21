@@ -1,7 +1,7 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
-import { commitOps } from '../defaultCommitAdapter';
+import { commitTransformOps, transformApplyOps } from '../transformFinish';
 import { DUPLICATE_OFFSET, duplicateSelection } from '../defaults/duplicate';
 import { translateSelection } from '../defaults/nudge';
 import { requiresSelection } from '../defaults/requiresSelection';
@@ -17,9 +17,7 @@ const LABEL = 'Transform Again';
 const FIRST: RepeatableTransform = { kind: 'duplicate', dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
 
 function commit(deps: ActionDeps, ops: Op[]): boolean {
-  if (ops.length === 0) return false;
-  commitOps(deps, ops, LABEL);
-  return true;
+  return commitTransformOps(deps, ops, LABEL);
 }
 
 /** Apply `t` to the selection as one undo entry. Returns the ids selected
@@ -32,7 +30,7 @@ function replay(deps: ActionDeps, scene: Scene<unknown, string, unknown>, t: Rep
       return duplicateSelection(deps, t.dx, t.dy, LABEL);
     case 'translate':
       return translateSelection(
-        selection, scene, t.dx, t.dy, deps.applyOps, deps.geometryProjection,
+        selection, scene, t.dx, t.dy, transformApplyOps(deps), deps.geometryProjection,
         poseDescriptorOf(deps.poseDescriptor), LABEL,
       ) ? selected : null;
     case 'rotate':
@@ -60,7 +58,7 @@ export const transformAgainAction: Action & { requires: string[] } = {
   eligible: { capability: 'transforms-selection' },
   requires: [
     'scene', 'selection', 'applyOps', 'poseDescriptor', 'geometryProjection', 'resizePolicy', 'view',
-    'boundsIncludeStroke',
+    'boundsIncludeStroke', 'transformFollowers',
   ],
   invoker: {
     timing: 'immediate',

@@ -35,9 +35,13 @@ accents alone and then to nothing.
 **Tagged values require `unitSystem` to be supplied** — passing a tagged
 spacing without one is a configuration error, not a silent fallback.
 
+These layers draw one lattice, read against one `unitSystem`. `gridSnapSource`
+alone reads a container's unit scope (`scopes`, through `scopedGridPitch`);
+drawing a scope's lattice inside its container is still open in `docs/TODO.md`.
+
 ## Related
 
-Cell snapping during gestures lives in the snap strategy
-(`../strategies/grid.ts`), not here — this module owns drawing and hover.
-`useGridCellHover` calls into `pointToGridCell` from there, so the two agree on
-where cell boundaries are.
+Snapping to the grid during gestures is `gridSnapSource`
+(`../sources/grid.ts`), not here — this module owns drawing and hover, and
+`pointToGridCell`, which `useGridCellHover` uses to find the cell under the
+pointer.

@@ -1,4 +1,4 @@
-import { historyKey } from '@weasel-js/core';
+import { DevtoolsLabel, historyKey } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
@@ -26,6 +26,7 @@ import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { editsText } from './editsText';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
+import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
 import { useTrialKeys } from './useTrialKeys';
 import { useTrialWrites } from './useTrialWrites';
@@ -84,6 +85,15 @@ const noSubscribe = (): (() => void) => NO_OP;
  *  when the trial holds something else — an orbit, say. An unplaced view reads as the default
  *  its canvas paints, so the status strip is in before the first fit. */
 const chromeView = (view: unknown) => as2DView(view) ?? (view === null ? DEFAULT_VIEW : null);
+
+/** The trial body's content class: flush for an instrument that draws its own canvas or stage. */
+const contentClassOf = (instrument: Instrument, presented: boolean): string | undefined =>
+  [
+    instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : '',
+    presented ? 'lk-trial__stage' : '',
+  ]
+    .filter(Boolean)
+    .join(' ') || undefined;
 
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
@@ -281,14 +291,7 @@ export function TrialChrome({
         <TrialBody
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
-          contentClassName={
-            [
-              instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : '',
-              presented ? 'lk-trial__stage' : '',
-            ]
-              .filter(Boolean)
-              .join(' ') || undefined
-          }
+          contentClassName={contentClassOf(instrument, presented)}
           sidebar={
             inRegion('sidebar').length === 0 ? null : (
               <>
@@ -302,7 +305,7 @@ export function TrialChrome({
             )
           }
         >
-          {children}
+          <Titled title={title}>{children}</Titled>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
         </TrialBody>
       </div>
@@ -311,5 +314,14 @@ export function TrialChrome({
         <StatusRegion contributions={inRegion('status')} ctx={ctx} />
       </div>
     </section>
+  );
+}
+
+/** The trial's title, to what it renders and to a devtools panel listing its canvases. */
+function Titled({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <TrialTitleContext.Provider value={title}>
+      <DevtoolsLabel value={title}>{children}</DevtoolsLabel>
+    </TrialTitleContext.Provider>
   );
 }

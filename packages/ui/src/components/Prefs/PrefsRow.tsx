@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import {
   prefAliasName,
+  prefLeafValue,
   prefValueAtPath,
   type PrefAction,
   type PrefActions,
@@ -21,6 +22,7 @@ import { rowWidthOf } from './compound';
 import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
+import { leafAtValues } from './leafAtValues';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
@@ -42,8 +44,13 @@ export interface PrefRenderContext {
   path: string;
   /** The schema node. App renderers narrow this to their own kind shape. */
   pref: PrefLeaf;
-  /** Current value — `values` at `path`, falling back to `pref.default`. */
+  /** Current value: `values` at `path` as `prefLeafValue` shows it. */
   value: unknown;
+  /** Everything the surface edits, from its root: a form's `values`, a control panel's `config`. What a row
+   *  reads of another setting. */
+  values?: unknown;
+  /** The surface marks this leaf's row as changed: a renderer drawing its whole row passes it to `PropertyRow`. */
+  changed?: boolean;
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
@@ -71,6 +78,9 @@ export interface PrefRenderContext {
   /** Which live controls write only the value an edit settles on, as the form's kit settings have it. Absent, the
    *  form's defaults. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** What is wrong with the value, where the surface has a message for this leaf. A renderer drawing its own
+   *  `<PropertyRow>` hands it to the row's `error`. */
+  error?: ReactNode;
 }
 
 /**
@@ -171,8 +181,10 @@ export function prefRenderContext(
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const renderCtx: PrefRenderContext = {
     path,
-    pref,
-    value: mixed ? undefined : stored !== undefined ? stored : pref.default,
+    pref: leafAtValues(pref, ctx.values),
+    value: mixed ? undefined : prefLeafValue(pref, stored),
+    values: ctx.values,
+    ...(ctx.changed?.has(path) ? { changed: true } : {}),
     mixed,
     setValue: (v) => ctx.onChange(path, v),
     mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),

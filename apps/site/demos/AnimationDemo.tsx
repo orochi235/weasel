@@ -1,21 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  animateLifecycle,
-  animateOnSetPose,
   asNodeId,
   createTransformOp,
   easeInOutSine,
   momentum,
   SceneCanvas,
   WeaselProvider,
+  useAnimatedReflow,
   useScene,
-  useSceneAdapter,
   useSelection,
   useVelocityTracker,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createGridLayer } from '@weasel-js/guides';
-import type { Dims, MoveBehavior } from '@weasel-js/core';
+import type { Dims, MoveBehavior, PoseTransitionSeat } from '@weasel-js/core';
 import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
@@ -33,6 +31,9 @@ const INITIAL: Card[] = [
   { id: 'b', x: 220, y: 100, width: 80, height: 60, color: ACCENT_FILLS[1] },
   { id: 'c', x: 340, y: 100, width: 80, height: 60, color: ACCENT_FILLS[2] },
 ];
+
+/** A card collapsed to a point at its center: where one grows from and shrinks into. */
+const toCenter = (p: Card): Card => ({ ...p, x: p.x + p.width / 2, y: p.y + p.height / 2, width: 0, height: 0 });
 
 // Flick-snap panel: a second canvas below the cards, showing decay → snap.
 const FLICK_W = 600, FLICK_H = 160;
@@ -88,22 +89,14 @@ export function AnimationCards({ animator }: { animator: Animator }) {
     else { animator.pause(); setPausedState(true); }
   };
 
-  // The scene's own adapter, wrapped so a pose written through it glides and
-  // a node inserted through it grows in. The canvas below builds its own, so
-  // what a drag writes is not animated.
-  const sceneAdapter = useSceneAdapter(scene);
-  const adapter = useMemo(
-    () =>
-      animateLifecycle(
-        animateOnSetPose(sceneAdapter, animator, { ms: 250 }),
-        animator,
-        {
-          enterFrom: (p) => ({ ...p, width: 0, height: 0 }),
-          exitTo: (p) => ({ ...p, width: 0, height: 0 }),
-          ms: 250,
-        },
-      ),
-    [sceneAdapter, animator],
+  // A pose the scene is handed — a button's setPose, an undo or redo — glides
+  // there on screen, a card the scene adds grows from its center, and one it
+  // removes shrinks into it, fading. The document takes each write at once;
+  // only what is shown travels.
+  const glide = useAnimatedReflow(scene, animator, { ms: 250, label: 'glide' });
+  const poseTransition = useMemo<PoseTransitionSeat<Card> | null>(
+    () => glide && { transition: glide, enter: toCenter, exit: toCenter },
+    [glide],
   );
 
   const selectToolOpts = useMemo(() => ({
@@ -119,13 +112,18 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   }), [animator, size]);
 
   const insertCard = (card: Card) => {
-    adapter.insertNode({ id: asNodeId(card.id), kind: 'leaf', layer: 'default', pose: card, data: card, parent: null });
+    scene.add({ id: asNodeId(card.id), kind: 'leaf', layer: 'default', pose: card, data: card });
   };
 
   const tweenTo = (id: string, x: number, y: number) => {
     const node = scene.get(asNodeId(id));
     if (!node) return;
-    adapter.setPose(id, { ...node.pose, x, y });
+    scene.setPose(node.id, { ...node.pose, x, y });
+  };
+
+  const removeSelected = () => {
+    const ids = selection.current;
+    scene.batch('Remove', () => ids.forEach((id) => scene.remove(asNodeId(id))));
   };
 
   const addCard = () => {
@@ -172,8 +170,9 @@ export function AnimationCards({ animator }: { animator: Animator }) {
       newIds.push(id);
       // Seed alpha at 0.3 so the stagger has somewhere to start from.
       effects.current.set(id, { scale: 1, alpha: 0.3 });
-      insertCard({ id, x: 60 + i * 100, y: 320, width: 60, height: 50, color: CARD_FILL });
     }
+    scene.batch('Add 5', () => newIds.forEach((id, i) =>
+      insertCard({ id, x: 60 + i * 100, y: 320, width: 60, height: 50, color: CARD_FILL })));
     animator.stagger(newIds, 50).tween<number>({
       from: 0.3,
       to: 1,
@@ -192,6 +191,9 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         <button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</button>
         <button onClick={addCard}>Add card</button>
         <button onClick={addBatch}>Add 5 (staggered fade-in)</button>
+        <button onClick={removeSelected} disabled={selection.current.length === 0}>Remove selected</button>
+        <button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</button>
+        <button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</button>
       </div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</button>
@@ -215,6 +217,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
           scene={scene}
           selection={selection}
           selectTool={selectToolOpts}
+          poseTransition={poseTransition}
           redrawOn={redrawOn}
           layers={{
             scene: {

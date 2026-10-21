@@ -1,5 +1,7 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { DisclosureMark } from '@weasel-js/ui/components/Disclosure';
+import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { type FocusEvent, type KeyboardEvent, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';

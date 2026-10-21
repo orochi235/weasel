@@ -27,6 +27,7 @@ import {
 } from './index';
 import { drawPrefs } from '../prefs';
 import { createAnchorSelection, type AnchorSelection } from './anchorSelection';
+import { modeScopeIds } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -86,13 +87,10 @@ export function useModality(
     () =>
       createScopingDim({
         registry: machine.registry,
-        getTargetIds: () => {
-          const tid = machine.getActiveTargetId();
-          return tid ? new Set([tid]) : new Set<string>();
-        },
+        getTargetIds: () => modeScopeIds(machine, scene),
       }),
     // machine.registry is stable; machine is stable (memoized from history).
-    [machine],
+    [machine, scene],
   );
 
   // No path-edit anchor painter here on purpose. The kit's

@@ -1,8 +1,10 @@
+/* A field's text is set at its row label's size. */
 .root {
   display: flex;
   flex-direction: column;
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
+  --wzl-field-font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
 }
 
 .header {
@@ -47,8 +49,8 @@
   margin: 0 0 var(--wzl-space-3);
   font-size: var(--wzl-font-size-xs);
   font-weight: var(--wzl-font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
   opacity: 0.55;
 }
 
@@ -66,7 +68,13 @@
 }
 
 .rowLabel {
-  opacity: 0.75;
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
+  font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
+  line-height: var(--wzl-leading-snug);
+  color: var(--wzl-fg-muted);
+  text-transform: var(--wzl-params-label-case, uppercase);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
 }
 
 .rowControls {
@@ -131,11 +139,6 @@
    even split would fling one-letter segments to the margins. */
 .rowControls > .flagToggle {
   flex: 0 0 auto;
-}
-
-.number :global(input),
-.select {
-  font-size: var(--wzl-font-size-sm);
 }
 
 .unrenderable {

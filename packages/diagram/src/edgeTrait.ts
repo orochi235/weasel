@@ -4,6 +4,9 @@
  * so layout can read an edge without reaching the scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import type { EdgeHop } from './hops/types';
+import type { OffPageSplit } from './offPage/trait';
+import type { StyleField } from './theme/styleField';
 
 /** Where an edge attaches at one end. */
 export interface EdgeEnd {
@@ -36,6 +39,20 @@ export interface DiagramEdge {
    *  them, layout owns the route and rewrites it on its next run; once anyone
    *  edits them, they are the author's and layout leaves them alone. */
   laidOut?: readonly Vec2[];
+  /** The bends between the ends that the obstacle-avoiding router last
+   *  computed, kept so the edge draws without rerouting. The router owns it,
+   *  and while it is here each end aims at its nearest bend. */
+  route?: readonly Vec2[];
+  /** Where it bows over the connectors drawn before it, as the line-jump
+   *  pass last computed. Literal, so any reader draws them. */
+  hops?: readonly EdgeHop[];
+  /** Set while its ends sit on different pages, when it draws as two stubs
+   *  ending at off-page tags. The off-page pass owns it (`installOffPageMarkers`). */
+  offPage?: OffPageSplit;
+  /** The theme role it is drawn in. Unset, the theme's own connector style. */
+  style?: string;
+  /** The colors the author set by hand, which a theme leaves as they are. */
+  ownStyle?: readonly StyleField[];
 }
 
 /** Whether layout may rewrite this edge's route: it has no waypoints, or only
@@ -44,6 +61,12 @@ export function layoutOwnsRoute(edge: DiagramEdge): boolean {
   const points = edge.waypoints ?? [];
   if (points.length === 0) return true;
   return edge.laidOut !== undefined && samePoints(points, edge.laidOut);
+}
+
+/** Whether layout writes this edge's waypoints: it owns the route, and the
+ *  edge is not routed around obstacles, whose bends are never stops. */
+export function layoutWritesRoute(edge: DiagramEdge): boolean {
+  return edge.router !== 'avoid' && layoutOwnsRoute(edge);
 }
 
 /** Two point lists the same, point for point. */

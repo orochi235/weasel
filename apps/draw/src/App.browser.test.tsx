@@ -100,13 +100,20 @@ const editor = (): Element | null => document.querySelector('.wd-canvas-host [co
 
 const statusText = (): string => document.querySelector('.wd-statusbar')?.textContent ?? '';
 
-/** The menu bar strip sits at the top, wholly above the command bar, and the page neither grows nor scrolls. */
-function expectStripAboveCommandBar(): void {
-  const strip = document.querySelector('[role="menubar"]')!.closest('.wd-menubar')!.getBoundingClientRect();
+/** The menu bar leads the command bar's first line, the command bar is the top row, and the page neither grows
+ *  nor scrolls. */
+function expectMenuBarLeadsCommandBar(): void {
+  const menus = document.querySelector('[role="menubar"]')!.getBoundingClientRect();
   const commands = document.querySelector('.wd-commandbar')!.getBoundingClientRect();
-  expect(strip.top).toBe(0);
-  expect(strip.height).toBeGreaterThan(0);
-  expect(strip.bottom).toBeLessThanOrEqual(commands.top + 0.5);
+  const file = document.querySelector('.wd-commandbar-group')!.getBoundingClientRect();
+  expect(commands.top).toBe(0);
+  expect(menus.height).toBeGreaterThan(0);
+  expect(menus.top).toBeGreaterThanOrEqual(commands.top);
+  expect(menus.bottom).toBeLessThanOrEqual(commands.bottom + 0.5);
+  // On the first line, beside the File buttons rather than above them.
+  expect(menus.right).toBeLessThanOrEqual(file.left + 0.5);
+  expect(menus.bottom).toBeGreaterThan(file.top);
+  expect(menus.top).toBeLessThan(file.bottom);
   expect(document.querySelector('.wd-app')!.getBoundingClientRect().height).toBe(window.innerHeight);
   expect(document.documentElement.scrollHeight).toBeLessThanOrEqual(window.innerHeight);
   window.scrollTo(0, 5000);
@@ -117,15 +124,15 @@ const menuRows = (): string[] =>
   [...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((el) => el.textContent ?? '');
 
 describe('WeaselDraw', () => {
-  it('draws the menu bar as a strip of its own above the command bar, and the page does not scroll', async () => {
+  it('draws the menu bar at the start of the command bar, on one row, and the page does not scroll', async () => {
     await mountApp();
-    expectStripAboveCommandBar();
+    expectMenuBarLeadsCommandBar();
   });
 
-  it('keeps the strip above the command bar at 640px wide', async () => {
+  it('keeps the menu bar leading the command bar at 640px wide', async () => {
     await page.viewport(640, 800);
     await mountApp();
-    expectStripAboveCommandBar();
+    expectMenuBarLeadsCommandBar();
   });
 
   it('opens File from its title, with Save showing its shortcut', async () => {

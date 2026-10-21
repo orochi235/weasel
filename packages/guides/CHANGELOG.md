@@ -1,5 +1,201 @@
 # @weasel-js/guides
 
+## 1.11.0
+
+### Patch Changes
+
+- 4447e67: A canvas host given no `width`/`height` fills its parent and follows it as it resizes: `Canvas`,
+  `SceneCanvas`, `LeanSceneCanvas`, `DrawCanvas`, `SceneViewCanvas` and `MinimapCanvas`, each with a new
+  `onResize` reporting every size. Nothing paints until the first measure. On a resize the view keeps
+  its transform, so more or less of the world shows; `DiagramView` and `EffectChart` refit until the
+  user pans or zooms, and `MinimapCanvas` refits its overview. `DrawCanvas`'s `draw(size)` gets the
+  measured size. Core exports `SurfaceSizeProps` and `viewportWorldRect`; labkit's
+  `TrialSceneCanvas` fills through `SceneCanvas` instead of measuring its own trial.
+  
+  `createGridLayer`'s `bounds` is now optional and receives the paint's view and canvas size. Omitted,
+  the grid covers whatever the canvas shows, its lines held on world multiples of `spacing` as the view
+  pans, and any set of lines that would sit closer than 4px on screen is left out.
+- 679138c: A scene node can be hidden or locked on its own, not only through its layer. `SceneNode.hidden` keeps a node and its whole subtree from being drawn; `SceneNode.locked` keeps a node and its subtree drawn but out of reach, the way a locked layer's nodes are. Both are set through `scene.setHidden(id, hidden)` and `scene.setLocked(id, locked)`, each one undo step that neither lock blocks, or through the new `createSetHiddenOp` / `createSetLockedOp` against an adapter's `setHidden` / `setLocked`. Both go on `AddNodeSpec`, ride a snapshot, and come back with an undone removal. Additive.
+  
+  `scene.isHidden(id)` is new, and `scene.isLocked(id)` now folds in the node flags. Both answer from `nodeGates`, now exported with `isNodeHidden`, `isNodeLocked` and `hidesSubtree`, which every reader asks: painting, point picking, the marquee and lasso, select-all, path snapping, measurement picking and snapping, sibling spacing guides, the slice and Girth tools, and text editing all pass over a hidden node, and the pickers over a locked one. The selection now drops a hidden node as it drops a locked one, so hiding a layer or a node deselects what it hides.
+  
+  `@weasel-js/svg`: `svgNodesFromKit` writes a node carrying `hidden` with `display="none"`, which `parseSvg(…, { keepHidden: true })` reads back as hidden, and `unpackSvgFiles` now keeps a dropped file's hidden content, inserting it hidden rather than leaving it out.
+- db8c16e: One snap pipeline for every gesture. Move, resize, rotate, insert (drag and click-place), pen and spiro placement, pen handles, anchor and handle drags in path edit, measure, and the symmetry center all begin a session on the `snap` dep at press and ask it each frame where their point lands. Every kind of target is a snap source, and one resolver ranks all of their candidates together: a point beats a line, a real target beats a fallback such as the grid, then the smaller move on screen wins, then source order. One readout layer draws what the result met. `docs/snapping.md` is the reference.
+  
+  **Breaking: removed APIs, with their replacements.**
+  
+  - `SnapDep.point` is gone: the `snap` dep is `begin(req)`, which returns a `SnapSession` (`at`, `angle`, `end`).
+  - `<SceneCanvas toolOptions={{ snapPoint }}>` is gone: register a source in `<SceneCanvas snap={{ sources }}>`, `gridSnapSource` for a grid.
+  - `selectTool.snap`, `SnapStrategy`, and core's `snap()` behavior adapter are gone: a grid is `gridSnapSource({ spacing, origin?, unitSystem? })`, ruler guides `guideSnapSource(getGuides)`. A pose that is neither a rect nor a `Path` passes its `OriginProjection` as `snap={{ originProjection }}`. Moving from `selectTool.snap: gridSnapStrategy(…)` to `gridSnapSource` also snaps resize corners, inserts and pen clicks to the grid, not only a move's origin.
+  - `@weasel-js/guides`: `gridSnapStrategy`, `guideSnapStrategy`, `GuideSnapOptions`, `DEFAULT_GUIDE_TOLERANCE_PX`, and `pointSnapToGrid` are gone, and so are the `@weasel-js/guides/move`, `/resize` and `/insert` subpaths with their `snapToGrid`, `snapToGuides`, `SnapToGuidesMoveArgs`, `SnapToGuidesResizeArgs` and `SnapToGuidesInsertArgs`: use `gridSnapSource` and `guideSnapSource`. An import of `snapToGrid` from `@weasel-js/core/move` (a subpath that no longer had it) becomes `gridSnapSource` from `@weasel-js/guides`.
+  - `@weasel-js/guides`: `alignMoveBehavior`, `alignInsertBehavior`, `alignResizeBehavior`, `AlignMoveArgs`, `AlignmentBehaviorBase`, `matchAlignment`, `MOVE_ANCHORS`, `AlignAnchor` and `AlignMatchResult` are gone: `alignmentSnapSource(opts)` snaps to siblings' edges and centers and `spacingSnapSource(opts)` to equal gaps, on move, resize and insert alike. `matchSpacing` and `measureGaps` stay.
+  - `PointSnapBehavior`, `PointSnapContext`, `PointSnapResult`, `PointSnapFrame`, `ResizePolicy.pointSnap`, `useResizePolicy`'s `pointSnap`, and the resize option `pointSnapBehaviors` are gone: a resize snaps its dragged corner or edges through the session, so any source snaps it.
+  - `lockAspectWithModifier` (with its `{ key }` option) and `DEFAULT_RESIZE_BEHAVIORS` are gone from `@weasel-js/core/resize`: Shift's aspect lock is the resize's `snap.constrain` role.
+  - `snapRotationWithModifier`, `DEFAULT_ROTATION_SNAP_STEP` and `DEFAULT_ROTATE_BEHAVIORS` are gone: rotation snaps through `rotationSnapSource`, which every canvas asks, and the `snap.constrain` role (Shift) adds the 15° steps. `rotate: { behaviors: [] }` no longer turns rotation snapping off; `<SceneCanvas snap={{ omit: ['rotation'] }}>` does, and a source with the id `'rotation'` replaces the default.
+  - `constrainTo45` is gone from `@weasel-js/core`: the pen's handle Shift is the session's angle step.
+  - `usePenTool`'s `snapPoint` and `anchorSnapRadius` options are gone, and `useDragRect`'s and `useDragRadial`'s `snapPoint`: the pen and the drag gestures snap through the `snap` dep (`pathSnapSource` for anchors, `gridSnapSource` for a grid). A pen anchor joins an open end within `targets.penCloseHitPx` of the press before any snap.
+  - kernel3d's `createSnap()` took nothing and snapped nothing; `createSnap(world, { sources?, reachPx?, store? })` takes the world and snaps.
+  
+  **New.**
+  
+  - `<SceneCanvas snap={{ sources, omit, reachPx, originProjection, readout, readoutStyle }}>` (`SceneCanvasSnap`), a feature preset's `snapSources`, and `useSnapSource(source)`.
+  - One reach for every source that sets none, the kit setting `targets.snapPx` (8 screen px; `DEFAULT_SNAP_PX`).
+  - The snap source contract: `SnapSource`, `SnapCollect`, `SourceCandidate`, `Locus`, `SnapProbeAt`, `SnapGesture` (with `'handle'`), `SnapEdge`, `SnapEdges`, `AngleCollect`, `AngleCandidate`, `SnapMark` and `SnapMarks`; the session types `SnapBegin` (with `reachRad` and `theta0`), `SnapConstrain`, `SnapMods`, `SnapOutcome`, `SnapResizeBox`, `SnapSession`.
+  - Sources: `pathSnapSource` with `PathSnapSourceOptions` (and `only`), `measureEndSource` with `MeasureEndSourceOptions` (`reachPx`), and `rotationSnapSource` in core; `gridSnapSource`, `guideSnapSource`, `alignmentSnapSource` and `spacingSnapSource` in guides; `handleSnapSource` and `HandleSnapOptionsInput` in path-tools (`createHandleSnapPreset` and `createHandleSnapExtension` take options or a thunk of them, and the preset registers the source); `boxSnapSource`, `alignPlaneSource`, `groundGridSource` and `GroundGridSourceOptions` in kernel3d.
+  - The modifier roles `snap.suspend` (Ctrl) and `snap.constrain` (Shift), declared by every snapping action: `SNAP_ROLES`, `snapMods`, `SNAP_ANGLE_STEP` (the one 15° step for a line insert, a measurement, a rotate and the symmetry axis), `SNAP_AXIS_STEP`, and `stepAngles`.
+  - The readout: `createSnapReadoutLayer`, `SnapReadoutStyle`, `createSnapOutcomeStore`, the `snapReadout` dep (`SnapReadoutDep`), and the drawing helpers `tickedSegment`, `pillCommands` and `measuredSegmentCommands`. The debug overlay's `snap` feature draws every candidate the resolver weighed.
+  - Building blocks for a host's own session: `resolveSnap` and its types in `@weasel-js/geom/nd`, with `stepLine` and the flat math under it (`Flat`, `Vec`, `flatDim`, `closestOnFlat`, `closestBetweenFlats`, `intersectFlats`); `gatherSnapCandidates`, `resolvedSnapMarks`, `snapSourcesFor`, `GatherSnapOptions`, `SnapCandidateMark` and `SnapGeometry` in core; `pointSnap`/`PointSnap` for a tool placing points.
+  - `@weasel-js/geom/3d` gains `vec3`, `distance`, `lerp`, `pointOnRay`, `aabbOfPoints`, `closestPointOnLine`, `closestPointOnSegment` and `closestPointsRayLine`.
+  - `@weasel-js/core/test-seams` gains `createSnapSession2dForTests` (with `SnapSession2dOptions`), a 2D session for tests outside core; it is not public API.
+  - kernel3d: `projectSnapMarks` with `ScreenLine` and `ScreenPoint`, `projectPoint`, and `Snap3dOptions`.
+  - `InsertDep.commit` and `InsertDep.build` take an optional `ends: InsertEnds` (the drag's start, end and `fromCenter`); click-place passes them too. kernel3d's `createInsert` builds its footprint from the two ends cast onto the ground, so a 3D click-place centers its footprint on the snapped ground point.
+  - path edit: `PathEditDragStart.snap`, `PathEditDrag.end`, `SnapMods.hold`.
+  
+  **Behavior changes.**
+  
+  - Every `<SceneCanvas>` snaps point gestures to other nodes' anchors — rect and text corners, ellipse quadrants, path anchors — through a default source with `pathSnapSource`'s id, `'path-snap'`: pen placement and handle tips, spiro points, anchor drags, line and box insert, click-place, measure ends and the measurement end drag, and the symmetry center; not move, resize or rotate. `snap={{ omit: ['path-snap'] }}` drops it, and a consumer's own `pathSnapSource()` replaces it rather than doubling. A point target on the gesture's own `origin` is never offered, so a handle tip does not stick to its anchor.
+  - A grid gives way to a target in reach on its axis, where alignment used to add its delta on top of the grid's. Guides and alignment reach 8px, not 6.
+  - Ties between equally good results break by source order, then by the order a source yields its targets.
+  - Ctrl suspends snapping on every snapping gesture, a pen drag and an anchor drag included; a handle drag keeps Ctrl as its length lock.
+  - A rotate snaps to quarter turns and to other nodes' angles without Shift (new); near the pivot its reach is capped at 30°.
+  - Shift on a move locks it to the horizontal, vertical or 45° line through the press (new), and so does Shift on an anchor drag (new).
+  - Shift on a line insert, a measurement or a pen handle puts the end at the pointer's nearest point on the stepped line through the start (it used to keep the drag's length), and that line meets snap targets.
+  - An anchor drag meets every point-gesture source, a grid included.
+  - A multi-root move snaps each root's origin, the nearest winning, not only the first node's.
+  - A move's behaviors run on the snapped delta, and a behavior's translate stands, so a container's slot preview wins over a snap target in reach.
+  - A measurement end drag keeps its offset from the press (it used to jump the end to the pointer), and no longer snaps to its own measurement's ends.
+  - kernel3d's `translate` puts its plane at `up · position`, the same as before for +y up.
+- e287da2: Spacing hints, as one preset. `createSpacingHintsPreset()` is a `<SceneCanvas features>` entry: a move snaps the selection so its gap to a neighbor equals one already between its siblings and marks the equal gaps, and holding Alt over a shape measures its distance from the selection. Options turn off the spacing snap or the readout, add snapping to siblings' edges and centers, and set the snap distance and color. Turning it off is leaving it out of `features`.
+  
+  A `FeaturePreset` can now carry `moveBehaviors`, folded into every move the presets' ambient bindings run, after the select tool's own.
+  
+  The pieces are exported too. `measureDistances(from, to)` returns the gaps between two boxes on each axis where they separate, or from an inner box to the edges of the one holding it, as `SpacingGap`s, with leader lines where a gap runs past its target. `distanceReadout()`, which the preset brings, is a surface contribution for `<SceneCanvas ambient>`: while Alt (or the `modifier` given) is held over a shape, it draws the distances from the selection to that shape. `siblingBounds`, `worldBoundsOf`, and `worldUnionOf` read world boxes off a scene; `siblingBounds` is the boxes equal spacing measures while some ids move.
+  
+  A modifier going down or up over a resting pointer now dispatches a `hover`, with the new modifiers, so a hover binding that needs a key held answers it without waiting for the pointer to move.
+  
+  Core exports `scenePoseFrame` and `PoseFrame`: world reads and local writes over a scene's own composition.
+- 70fe7cc: A stroked shape's box now includes its stroke as drawn, engine-wide. The selection outline and handles sit on the stroke's outer edge (align, joins, markers, variable widths, and screen-pixel widths at the view's scale all counted), and a group's box reaches as far as its members' strokes. Resizing moves that box and keeps the stroke's width, so the stroke's outer edge lands under the pointer: a 100×100 rect with a centered stroke 10 wide shows a 110×110 box at (−5, −5), and dragging its right handle to x = 205 leaves the rect 200 wide. Resize constraints see the box with the stroke. Rotate turns a selection about the center of that box, and flip, align, distribute, and alignment snapping measure it too. Stored geometry is unchanged: a group's derived pose, booleans, outlines, and export still read the pose box.
+  
+  This changes behavior for any stroked shape. `<SceneCanvas geometry={{ boundsIncludeStroke: false }}>` restores geometric boxes; actions read it as the new `boundsIncludeStroke` dep.
+  
+  New in core: `drawnBoundsOf`, `drawnAABBOf`, and `inkExtentsOf` answer the box for any scene node, and `NodeShapeEntry.drawnBounds` lets a painter report its own (the built-in shape and path painters measure miter joins and markers on polygons, stars, and paths). `GestureFrames.drawnBounds` hands that box to gesture behaviors. `SceneCanvasGeometry` names the `geometry` prop's type. A variable-width stroke's picking reach now uses its widest vertex.
+  
+  `@weasel-js/guides`: pass `drawnAABBOf` boxes to `deriveAlignmentGuides` so siblings are measured the same way as the dragged selection.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [ed0e096]
+- Updated dependencies [6f839dd]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [6072e93]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies
+- Updated dependencies [8374354]
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [0382007]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [ebb8804]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [e4642bb]
+- Updated dependencies [e901a2b]
+- Updated dependencies [57725cc]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [7cbedd8]
+- Updated dependencies [c17c978]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [a4c99c1]
+- Updated dependencies [c53b0ae]
+- Updated dependencies [8775065]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [71c079d]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [e021579]
+- Updated dependencies [5f12888]
+- Updated dependencies [d18df3e]
+- Updated dependencies [46c731d]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies [4df0749]
+- Updated dependencies
+- Updated dependencies [365ab72]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [7a31f9d]
+- Updated dependencies [4cec295]
+- Updated dependencies [1efa251]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [329aa39]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/core@1.11.0
+  - @weasel-js/geom@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

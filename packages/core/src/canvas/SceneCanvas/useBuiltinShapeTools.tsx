@@ -22,10 +22,6 @@ import type { Tool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
-import type { PathSnapOptions } from 'features/paths/pathSnap/pathSnapper';
-import type { SnapQuery } from 'interactions/actions/snapDep';
-import type { NodeId } from 'core/scene/types';
-import type { RigEditState } from 'tools/builtin/bone/rigEditState';
 
 /** Per-tool option overrides for the built-in tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
@@ -37,40 +33,11 @@ export interface BuiltinToolOptions {
    *  binding's `opts.behaviors`, the way `selectTool.move.behaviors` do for
    *  move. */
   insert?: InsertToolOptions;
-  /** Snap world-space points to the active grid (or any other snap target).
-   *
-   *  Registered as the `snap` dep, which `insertAction` applies to the
-   *  drag start and current point — so the live preview and the committed
-   *  geometry agree — and which the pen tool reads for its own anchor
-   *  placement. Covers every drag-to-insert tool (rect / ellipse / line /
-   *  polygon / star / text); freehand pencil samples are deliberately left
-   *  unsnapped. A path target in range (`pathSnap`) wins over it. */
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
-  /** Snap to the geometry of the scene's paths: crossings, tangent and
-   *  perpendicular points from where the line being drawn starts, segment
-   *  midpoints, curve extremes and quadrant points, and the nearest point on
-   *  a stroke. Applies to the drawing tools as `snapPoint` does, and also to
-   *  a move's base point and to a dragged anchor. Absent, off. */
-  pathSnap?: PathSnapOptions;
-  /** Points to lock to that are in no path — a measurement's ends, say
-   *  (`nearestMeasureEnd`): the nearest within reach of `p`, or null. They
-   *  apply wherever a path target does, a move and an anchor drag included,
-   *  and a path target in range wins over them. `at` is the asking gesture's
-   *  query; its `exclude` names what that gesture is moving. */
-  snapTargets?: (p: { x: number; y: number }, at?: SnapQuery) => { x: number; y: number } | null;
   /** The look of the notes the sticky tool makes: paper, ink, padding,
    *  typography, and the size a click places. */
   sticky?: StickyStyle;
   /** The knife: screen px around the first point within which a click closes the cut. */
   slice?: { closeHitRadius?: number };
-  /** The bone and weight tools. `rig` names the node they edit; by default the one
-   *  selected node, or the nearest ancestor of it holding `data.skeleton`. `state` is the
-   *  joint they share, which a canvas otherwise makes for itself; pass the one handed to
-   *  `useRigNode` as `painting` so a stroke shows as it is painted. `reach` is the screen
-   *  px around a joint within which a press takes it. */
-  rig?: { rig?: () => NodeId | null; state?: RigEditState; reach?: number };
-  /** The weight tool's brush radius, in screen px. */
-  weight?: { radius?: number };
 }
 
 // `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` derive from the `core/shapeKinds`
@@ -102,7 +69,6 @@ export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): Built
   const polygon = usePolygonTool(insert);
   const star = useStarTool(insert);
   const pencil = usePencilTool(insert);
-  // The pen reads `snapPoint` and `pathSnap` through the `snap` dep.
   const pen = usePenTool();
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);

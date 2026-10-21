@@ -18,9 +18,9 @@ function* walk(dir: string): Generator<string> {
 const QUARANTINE = ['/components/Toast/', '/overlays/portalHost.tsx'];
 
 describe('RAC unstable containment', () => {
-  it('UNSTABLE_ imports appear only in the quarantined modules', () => {
+  it('UNSTABLE_ and UNSAFE_ imports appear only in the quarantined modules', () => {
     const offenders = [...walk(uiSrc)].filter(
-      (f) => !QUARANTINE.some((q) => f.includes(q)) && readFileSync(f, 'utf8').includes('UNSTABLE_'),
+      (f) => !QUARANTINE.some((q) => f.includes(q)) && /\bUN(STABLE|SAFE)_/.test(readFileSync(f, 'utf8')),
     );
     expect(offenders).toEqual([]);
   });

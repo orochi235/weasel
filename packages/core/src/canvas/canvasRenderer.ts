@@ -7,12 +7,13 @@
  * the element's one context. Release frees only what that renderer created;
  * the context itself is never lost.
  */
-import { WeaselRenderer, type FlattenTolerance, type RenderOptions } from '@weasel-js/renderer';
+import { WeaselRenderer, type FlattenTolerance, type ImageMinification, type RenderOptions } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { ShaderProgramHandle } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import { createEmitter } from '@weasel-js/registry';
+import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
 /** The live renderers painting into each element, across every lease. */
 const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
@@ -44,6 +45,10 @@ export interface CanvasPaintOptions {
   tile?: { x: number; y: number } | null;
   /** `WeaselRendererOptions.flattenTolerance`, applied from this paint on. */
   flattenTolerance?: FlattenTolerance;
+  /** `WeaselRendererOptions.retainBudget`, applied from this paint on. */
+  retainBudget?: number;
+  /** `WeaselRendererOptions.imageMinification`, applied from this paint on. */
+  imageMinification?: ImageMinification;
   /** Custom programs to compile on the renderer. Compiled when the renderer
    *  is created, and again when the set of ids changes. */
   shaders?: readonly ShaderProgramHandle[];
@@ -68,7 +73,8 @@ export interface CanvasRendererLease {
     options?: CanvasRenderOptions,
   ): boolean;
   /** The renderer that paints `canvas` at `size`, ready to render: created on
-   *  first use, resized, and given this paint's tile, tolerance, and shaders.
+   *  first use, resized, and given this paint's tile, tolerance, retain
+   *  budget, and shaders.
    *  Frees the previous renderer first if the surface moved to another
    *  element, or between owning it whole and painting a tile of it. `null`
    *  where no WebGL2 context is available (jsdom, a failed context creation,
@@ -96,6 +102,8 @@ interface Held {
   tileX: number | null;
   tileY: number | null;
   flattenTolerance: FlattenTolerance | undefined;
+  retainBudget: number | undefined;
+  imageMinification: ImageMinification | undefined;
   shaderKey: string;
 }
 
@@ -139,7 +147,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
     }
     if (!held) {
       if (REFUSED.has(canvas)) return null;
-      const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+      const gl = canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
       let renderer: WeaselRenderer;
       try {
@@ -148,6 +156,8 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
           ...(shared ? {} : { canvas }),
           width, height, dpr,
           flattenTolerance: options.flattenTolerance,
+          retainBudget: options.retainBudget,
+          imageMinification: options.imageMinification,
         });
       } catch (e) {
         // A lost context fails to compile and may yet come back; anything
@@ -162,7 +172,8 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       // a renderer that has already recompiled.
       const mine: Held = held = {
         canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
-        flattenTolerance: options.flattenTolerance, shaderKey: '',
+        flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget,
+        imageMinification: options.imageMinification, shaderKey: '',
         lost: false,
         onLost: () => { mine.lost = true; },
         onRestored: () => {
@@ -190,6 +201,14 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       if (held.flattenTolerance !== options.flattenTolerance) {
         held.renderer.setFlattenTolerance(options.flattenTolerance);
         held.flattenTolerance = options.flattenTolerance;
+      }
+      if (held.retainBudget !== options.retainBudget) {
+        held.renderer.setRetainBudget(options.retainBudget);
+        held.retainBudget = options.retainBudget;
+      }
+      if (held.imageMinification !== options.imageMinification) {
+        held.renderer.setImageMinification(options.imageMinification);
+        held.imageMinification = options.imageMinification;
       }
     }
 

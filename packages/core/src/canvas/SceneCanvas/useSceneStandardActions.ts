@@ -1,4 +1,4 @@
-import type { Action, ActionsProp } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
@@ -9,9 +9,13 @@ import type { View } from 'core/viewport/view';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
+import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
 import type { ReflowTransition } from '../../layout/types';
+import type { SnapOutcomeStore } from 'features/snap/outcomeStore';
+import type { SnapSourceRegistry } from 'features/snap/registry';
+import type { SnapSource } from 'features/snap/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import {
   useAreaSelectDepSource,
@@ -31,10 +35,9 @@ import {
   useSurfaceDepSources,
   useTextEditDepSource,
   useViewDepSource,
-  type SnapSources,
 } from '../deps';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
-import { actionsMuting, useActionsPropResolver } from './useActionsPropResolver';
+import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings } from './useActionTunings';
 import { useViewportActions, viewportZoomOption } from './useViewportActions';
 
@@ -42,14 +45,12 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'toolOptions' | 'ingestion'
+  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'ingestion' | 'snap'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
 export interface SceneStandardActionsInputs {
   props: StandardActionsProps;
-  /** `selectTool.rotate === false`, which mutes the rotate action. */
-  rotateOff: boolean;
   /** Whether the `view` preset is on; without it the viewport actions are off. */
   viewOn: boolean;
   selection: SelectionApi;
@@ -80,10 +81,8 @@ export interface SceneStandardActionsInputs {
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('../deps/editAnchors').EditAnchorsStateSource;
-  /** The canvas's path snapper, which the `snap` dep composes with
-   *  `toolOptions.snapPoint` and `toolOptions.snapTargets` for the drawing
-   *  and dragging actions. */
-  pathSnapper: SnapSources['paths'];
+  /** The snap sources a session asks: the prop's and the presets', then the registry's. */
+  snap: { sources: readonly SnapSource[]; registry: SnapSourceRegistry | null; store: SnapOutcomeStore };
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -105,17 +104,13 @@ export interface SceneStandardActionsInputs {
  */
 export function useSceneStandardActions(inputs: SceneStandardActionsInputs): void {
   const {
-    props, rotateOff, viewOn, selection, scene, adapter, standardActions, currentViewRef,
+    props, viewOn, selection, scene, adapter, standardActions, currentViewRef,
     onViewChange, poseDescriptor, dispatcher, pickEvery, layerIsPainted, alphaOf, viewAnimation,
-    editAnchorsExternalState, pathSnapper, canvasRef, canvasApiRef, ingestionClipboard,
+    editAnchorsExternalState, snap, canvasRef, canvasApiRef, ingestionClipboard,
   } = inputs;
-  const { tune, viewport, toolOptions, ingestion } = props;
+  const { tune, viewport, ingestion } = props;
   const boundsIncludeStroke = props.geometry?.boundsIncludeStroke ?? true;
   const reflowTransition = props.reflowTransition as ReflowTransition<unknown> | null | undefined;
-  const actions = useMemo<ActionsProp | undefined>(
-    () => (rotateOff ? actionsMuting(props.actions, 'rotate') : props.actions),
-    [props.actions, rotateOff],
-  );
   const viewportZoom = useMemo(
     () => viewportZoomOption(viewport?.zoom, viewport?.animatedZoom),
     [viewport?.zoom, viewport?.animatedZoom],
@@ -175,8 +170,17 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(
-    { snapPoint: toolOptions?.snapPoint, targets: toolOptions?.snapTargets, paths: pathSnapper },
     currentViewRef,
+    {
+      scene, boxes: () => drawnBoxes({ scene, poseDescriptor, view, boundsIncludeStroke }), sources: snap.sources,
+      ...(snap.registry ? { registry: snap.registry } : {}),
+      ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
+      ...(props.snap?.omit ? { omit: props.snap.omit } : {}),
+      ...(props.snap?.originProjection ? { originProjection: props.snap.originProjection } : {}),
+      poseDescriptor,
+      debug: () => canvasApiRef.current?.getDebug(),
+    },
+    snap.store,
   );
   useDebugDepSource(canvasApiRef);
   usePreviewPathsDepSource(canvasApiRef);
@@ -191,6 +195,6 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Keyed on the set too: a re-registration of it would otherwise land over
   // the overrides applied on top of it.
-  useActionsPropResolver(actions, standardActions.map((a) => a.id).join('|'));
+  useActionsPropResolver(props.actions, standardActions.map((a) => a.id).join('|'));
   useActionTunings(tune);
 }

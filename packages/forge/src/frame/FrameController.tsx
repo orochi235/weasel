@@ -12,7 +12,8 @@ import {
 } from '../protocol/messages';
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
-import { runAxe } from './a11y';
+import { auditElement } from './a11y';
+import { createA11yHighlighter } from './a11yHighlight';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
@@ -82,6 +83,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
 
   const overrides = createOverrides(document, setup.cssVarsScope);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
+  const highlighter = createA11yHighlighter(document);
   let lastVars: CssVarReport[] | null = null;
   let reported: string | null = null;
   const publishVars = (vars: CssVarReport[]) => {
@@ -174,13 +176,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     void fonts.ready.then(afterPaint, afterPaint);
   };
 
-  const audit = async (id: string) => {
-    try {
-      send({ type: 'a11y', id, ok: true, report: await runAxe(wrapper) });
-    } catch (error) {
-      send({ type: 'a11y', id, ok: false, message: error instanceof Error ? error.message : String(error) });
-    }
-  };
+  const audit = async (id: string) => send({ type: 'a11y', id, ...(await auditElement(wrapper)) });
 
   const off = channel.on((msg) => {
     switch (msg.type) {
@@ -225,6 +221,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       case 'a11y.run':
         void audit(msg.id);
         break;
+      case 'a11y.highlight':
+        highlighter.show(msg.targets);
+        break;
     }
   });
 
@@ -234,6 +233,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     clearTimeout(settleTimer);
     overrides.dispose();
     globalsTarget.dispose();
+    highlighter.dispose();
     root.unmount();
     wrapper.remove();
   };

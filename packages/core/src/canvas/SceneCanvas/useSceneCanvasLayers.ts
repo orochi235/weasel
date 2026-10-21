@@ -1,4 +1,4 @@
-import { useMemo, useRef, type MutableRefObject } from 'react';
+import { useMemo, useRef, useState, type MutableRefObject } from 'react';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { Affordance } from 'affordances/types';
@@ -14,20 +14,27 @@ import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { useTargetBasePx } from 'core/device/useTargetBasePx';
-import { mergeLayersWithDefaults, type SceneCanvasLayers } from './props';
+import { targetSizesPx } from 'core/device/targets';
+import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
+import { mergeLayersWithDefaults } from './mergeLayers';
+import type { SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
+import { useDepartureGhostLayer } from './useDepartureGhostLayer';
+import type { Departures } from '../../animation/departures';
+import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
-import type { DrawnBoundsScene } from '../drawnBounds';
-import type { PathSnapper } from 'features/paths/pathSnap/pathSnapper';
-import { createPathSnapMarkerLayer } from 'features/paths/pathSnap/pathSnapMarkerLayer';
+import { drawnBoundsScene } from '../derivedPath';
+import { createSnapOutcomeStore, type SnapOutcomeStore } from 'features/snap/outcomeStore';
+import { createSnapReadoutLayer } from 'features/snap/readoutLayer';
+import type { SnapReadoutStyle } from 'features/snap/types';
 
 /**
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
  * the kit defaults, with the scene and selection-overlay slots built, and the
- * canvas's own layers anchored around them. The preview ghost sits above the
- * scene, the dispatcher's overlay (marquee, lasso) above the ghost, and the
+ * canvas's own layers anchored around them. Removed nodes leave just above
+ * the scene, the preview ghost above them, the dispatcher's overlay (marquee, lasso) above the ghost, and the
  * anchor overlay above the selection chrome.
  */
 export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: {
@@ -42,25 +49,37 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   colorOverrides: ColorOverrideRegistry | undefined;
   boundsOf: (id: string) => Bounds | null;
   planeOfNode: (id: string, view: View) => PlaneMap | null;
+  /** `<SceneCanvas poseTransition>`, whose ghosts of removed nodes this draws. */
+  poseTransition: PoseTransitionSeat<TPose> | null | undefined;
   /** Ids an in-flight gesture is ghosting. */
   previewIds: () => Iterable<string> | null;
   dispatcher: Dispatcher;
-  /** Whose mark the snap-marker layer draws. */
-  pathSnapper: PathSnapper;
+  /** Whether to mount the snap readout layer. */
+  snapReadout: boolean;
+  snapReadoutStyle?: SnapReadoutStyle;
   pathEditState: PathEditState;
   /** `debug.slops`: paint the hit regions of the chrome affordances. */
   slops: boolean;
   /** `geometry.boundsIncludeStroke`: whether chrome sits on the stroke. */
   boundsIncludeStroke: boolean;
+  /** `selectTool`'s `handleHitRadius` and `resize.edgeHandles`, resolved here into
+   *  the one {@link ResizeHandleLayout} the overlay paints and the hit-test reads. */
+  selectTool?: { handleHitRadius?: number; resize?: { edgeHandles?: boolean } };
 }): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
   rotationBadge: ReturnType<typeof rotationBadgeOf>;
+  /** Which resize handles exist and their hit radius, for every hit-test of this canvas. */
+  resizeHandles: ResizeHandleLayout;
   /** The affordances the gesture mounter hit-tests, which it publishes here
    *  so the slops halos are the hit regions rather than a copy of them. */
   chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
+  /** The marks the readout layer draws; the canvas's snap dep writes them. */
+  snapStore: SnapOutcomeStore;
+  /** The removed nodes the seat is seeing off. */
+  departures: Departures<TPose, Node<TData, TLayer, TPose>>;
 } {
-  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale, pathSnapper } = args;
+  const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
 
   const baseSizes = useTargetBasePx();
   const merged = useMemo(
@@ -79,7 +98,13 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   });
   // Takes the scene-wired slot, so a ghosted derived node still resolves its path.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({ scene, sceneSlot, dispatcher });
+  const departures = usePoseTransition(scene, args.poseTransition);
+  const departureLayer = useDepartureGhostLayer({ scene, sceneSlot, departures });
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
+
+  const hitRadiusPx = args.selectTool?.handleHitRadius ?? targetSizesPx(targetScale, baseSizes).handle;
+  const edges = args.selectTool?.resize?.edgeHandles ?? true;
+  const resizeHandles = useMemo<ResizeHandleLayout>(() => ({ edges, hitRadiusPx }), [edges, hitRadiusPx]);
 
   const chromeAffordancesRef = useRef<readonly Affordance[]>([]);
   const slopsLayer = useMemo(
@@ -87,9 +112,17 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     [],
   );
 
-  const snapMarkerLayer = useMemo(() => createPathSnapMarkerLayer(pathSnapper), [pathSnapper]);
+  const [snapStore] = useState(() => createSnapOutcomeStore());
+  // Keyed on the style's values, so an inline `readoutStyle` literal keeps the layer.
+  const { color, gapColor, lineWidth } = args.snapReadoutStyle ?? {};
+  const snapReadoutLayer = useMemo(() => createSnapReadoutLayer(snapStore, {
+    ...(color !== undefined ? { color } : {}),
+    ...(gapColor !== undefined ? { gapColor } : {}),
+    ...(lineWidth !== undefined ? { lineWidth } : {}),
+  }), [snapStore, color, gapColor, lineWidth]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
+  const overlayAnchor = overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay';
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
@@ -99,24 +132,26 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     merged.selectionOverlay,
     pathEditState.getEditingIds,
     poseDescriptor,
-    args.boundsIncludeStroke ? (scene as unknown as DrawnBoundsScene) : undefined,
+    args.boundsIncludeStroke ? drawnBoundsScene(scene) : undefined,
+    resizeHandles,
   );
 
   const layers = useMemo<CanvasLayers>(() => ({
     ...builtLayersOf(merged),
     scene: sceneLayers,
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
-    previewGhost: { layer: previewLayer, after: 'scene' },
+    departureGhost: { layer: departureLayer, after: 'scene' },
+    previewGhost: { layer: previewLayer, after: 'departureGhost' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    pathSnapMarker: { layer: snapMarkerLayer, after: overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay' },
-    ...(slops ? { slopsDebug: { layer: slopsLayer, after: 'pathSnapMarker' } } : {}),
+    ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: overlayAnchor } } : {}),
+    ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : overlayAnchor } } : {}),
   }), [
-    merged, sceneLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot,
-    snapMarkerLayer, slops, slopsLayer,
+    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor,
+    snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, chromeAffordancesRef };
+  return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures };
 }

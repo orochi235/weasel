@@ -1,4 +1,4 @@
-import type { QualifiedIconName } from './index';
+import type { QualifiedIconName } from './index.ts';
 
 declare const brand: unique symbol;
 

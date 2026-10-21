@@ -71,11 +71,6 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
   scratch: Record<string, unknown>;
 }
 
-/** Pluggable per-gesture snap rule; receives the proposed pose and returns a snapped pose or `null` to skip. */
-export interface SnapStrategy<TPose> {
-  snap(pose: TPose, ctx: GestureContext<TPose, { id: string }>): TPose | null;
-}
-
 /**
  * Generalized base behavior. Each hook defines an alias that pins the
  * proposed-pose shape (TProposed) and the onMove return shape (TMoveResult).
@@ -125,14 +120,12 @@ export interface BehaviorEnd {
 // ----- move -----
 
 /**
- * Uniform group transform proposed by a gesture and shaped by behaviors.
- * Applied identically to every dragged id so a multi-select gesture cannot
- * drift apart. Only `'translate'` is wired end-to-end.
+ * The translation a drag proposes and its behaviors shape, applied identically
+ * to every dragged id so a multi-select gesture cannot drift apart. Resize and
+ * rotate behaviors answer in their own terms (`ResizeMoveResult`,
+ * `RotateMoveResult`), not through this.
  */
-export type GroupTransform =
-  | { kind: 'translate'; dx: number; dy: number }
-  | { kind: 'scale';     pivot: { x: number; y: number }; sx: number; sy: number }
-  | { kind: 'rotate';    pivot: { x: number; y: number }; angle: number };
+export type GroupTransform = { kind: 'translate'; dx: number; dy: number };
 
 /**
  * Per-frame result a `MoveBehavior.onMove` can return. `snap` announces a
@@ -171,8 +164,8 @@ export interface MoveEnd extends BehaviorEnd {
 }
 
 /** A behavior on a move — shapes the proposed transform during a drag.
- *  Behaviors receive a `GroupTransform` (currently always `'translate'`) and
- *  return a `BehaviorResult` shaping it. */
+ *  Behaviors receive a `GroupTransform` and return a `BehaviorResult` shaping
+ *  it. */
 export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>, MoveEnd>;
 
 // ----- resize -----
@@ -332,39 +325,6 @@ export interface LassoSelectOverlay {
   vertices: ReadonlyArray<{ x: number; y: number }>;
   current: { worldX: number; worldY: number };
   shiftHeld: boolean;
-}
-
-// ----- point-snap -----
-
-/** Frames a point-snap behavior can return for the resize to back-solve. */
-export type PointSnapFrame = 'dragged-corner' | 'fixed-corner' | 'center' | 'origin';
-
-/** Per-frame world-space context handed to `PointSnapBehavior.onMove`.
- *  `draggedCorner` and `fixedCorner` are `null` for edge drags
- *  (`anchor.x === 'free'` or `anchor.y === 'free'`). `center` and
- *  `origin` are always present. */
-export interface PointSnapContext<TPose extends Bounds> {
-  draggedCorner: { worldX: number; worldY: number } | null;
-  fixedCorner: { worldX: number; worldY: number } | null;
-  center: { worldX: number; worldY: number };
-  origin: { worldX: number; worldY: number };
-  rotation: number;
-  anchor: ResizeAnchor;
-  proposed: TPose;
-  modifiers: ModifierState;
-}
-
-/** Per-frame snap result. A behavior returns at most one. */
-export interface PointSnapResult {
-  frame: PointSnapFrame;
-  worldX: number;
-  worldY: number;
-}
-
-/** A point-snap behavior, plugged into `ResizePolicy.pointSnap`. */
-export interface PointSnapBehavior<TPose extends Bounds> {
-  id?: string;
-  onMove(ctx: PointSnapContext<TPose>): PointSnapResult | null | undefined;
 }
 
 // ----- clone -----

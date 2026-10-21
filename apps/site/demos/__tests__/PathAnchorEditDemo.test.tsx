@@ -39,9 +39,10 @@ function worldPath(id: string): { commands: ArrayLike<number>; coords: ArrayLike
 function kiteCoords(): number[] {
   return Array.from(worldPath('kite').coords);
 }
+/** The actions the newest canvas's dispatcher fired, read from its devtools root. */
 function fired(): string[] {
-  const log = (window as unknown as { __weaselDispatchLog__?: { kind: string; fired?: string | null }[] })
-    .__weaselDispatchLog__ ?? [];
+  const hook = window.__weaselDevtools__!;
+  const log = hook.root(hook.roots().at(-1)!.id)!.source.trace.since(0).entries;
   return log.flatMap((e) => (e.kind === 'dispatch' && e.fired ? [e.fired] : []));
 }
 

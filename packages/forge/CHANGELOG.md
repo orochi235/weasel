@@ -1,5 +1,198 @@
 # @weasel-js/forge
 
+## 1.11.0
+
+### Patch Changes
+
+- 6d766b0: The CSS Vars panel's Story tab lists only the variables the story uses: those read by a rule that matches an element in it or by its inline styles, and every variable those read in turn through a definition that reaches it. Before, it listed every `var()` in every stylesheet the document had loaded, the whole of weasel-ui's included. A checkbox, "Show variables the story doesn't use", brings the rest back. Each `CssVarReport` carries the answer as `used`.
+- d7e093e: The workshop's globals are also a Globals menu on the lab's menu bar; the header toolbar keeps its selects.
+- 9aeddfc: Get Info's ⌘I is the Info command's own key rather than a window listener. Ctrl+I on a Mac no longer opens Info: Mod is Meta there, as for every other lab key.
+- 63b310c: Icons are named, not drawn, by the code that uses them. This is breaking.
+  
+  `@weasel-js/icons` is new. An icon is a qualified name, `namespace:name` (`core:undo`, `ui:close`, `path-tools:reversePath`), held as an `IconRef`. Each package's `icon()` makes one and qualifies its own bare names: in core, `icon('undo')` is `core:undo`. A registry supplies the glyphs: mount `<IconRegistryProvider icons variants>` from `@weasel-js/core` at the app root, or give `<WeaselProvider>` its new `icons` and `iconVariants` props. Core, ui and path-tools each publish their table at `./icons` (`import { icons } from '@weasel-js/ui/icons'`). A name no registered table holds draws a placeholder and warns in development, and draws nothing in production.
+  
+  `@weasel-js/icons-plugin` is new too. Its build plugin, `weaselIcons`, ships only the glyphs a build names. In an app's vite, rollup or rolldown build, `weaselIcons.vite({ mode: 'app' })` serves `virtual:weasel-icons`, holding the glyphs named by the app and by the weasel packages it imports, and fails the build on a name no table holds. `virtual:weasel-icons/all`, `/<namespace>` and custom variants each load as their own chunk, asked for with `useIconVariant(name)`. Types for the virtual modules are at `@weasel-js/icons-plugin/virtual`. The plugin is its own package so that installing `@weasel-js/icons` does not install a native parser. Core's and ui's `dist` is no longer minified, so the `@icon` annotations the plugin reads survive; a consumer's bundler minifies.
+  
+  What breaks:
+  
+  - routing: `Action.icon`, `ActionVariant.icon`, `ActionItem.icon` and `ToolPresentation.icon` take an `IconRef` from `icon()`, not a React node. So does `useCommand`'s `icon` option, which no longer takes a function read each time the command shows.
+  - prefs: `PrefBase.icon` and an enum option's `icon` take an `IconRef`, not a free string. A schema saved with bare names, such as `"icon": "close"`, now draws nothing for them and warns in development; write `"ui:close"`.
+  - core, ui and path-tools: the `…Icon` components are removed; draw `<Icon name={icon('core:rect')} />` instead. `NudgeAnchorsIcon` and its `dir` prop become four glyphs, `core:nudgeAnchors` (pointing right), `core:nudgeAnchorsUp`, `core:nudgeAnchorsDown` and `core:nudgeAnchorsLeft`. Core's `PaintKindEntry.icon` and `PaintKindFamily.icon` take an `IconRef`. Core's `ACTION_GLYPHS`, `IconProps` and `ActionGlyphProps` are gone, and so are ui's `ICON_PATHS`, `ICON_FILLS`, `ICON_GROUPS`, `MARK_ICONS`, `IconName`, `MarkIconName`, `FillableIconName` and `ActionIconSource`.
+  - ui: `<Icon name>` and `mark`, `actionIcon` and `ActionBar`'s `icons` take `IconRef`s, and `isFillable` takes a glyph. `resolveIcon` draws a ref, or a qualified string read from data. `iconFromData(value)` reads a name from data as a ref, warning once in development about a bare one.
+  - labkit: `CommandItem`, `ToolItem`, `ViewportControl` and `TrialTool` take an `IconRef` as `icon`, and so does `ConfigOption.icon`. `IconComponent`, the nine ui icon components labkit re-exported, and its `ICON_PATHS` and `IconName` are gone.
+  - forge: `GlobalDeclaration.icon` takes an `IconRef`. `FrameSetup.icons` registers an app's own tables in every frame. A story's `control.icons` argTypes option takes qualified names (`'ui:statusSuccess'`); a bare `'statusSuccess'` now draws nothing.
+  
+  `@weasel-js/registry` exports `isDev()`, which `@weasel-js/react` re-exports. It reads `process.env.NODE_ENV`, which a production bundle folds to `false`, and the development diagnostics in core, routing, ui, labkit, renderer and animator all read it.
+- ce8b295: `@weasel-js/ui/kit-icons` exports `kitIcons`, core's and ui's icon tables in one list, for a registry that should hold every kit glyph without the build plugin. Forge's workshop and story frames register it in place of their own copy of the list. Additive.
+- Updated dependencies [304f53a]
+- Updated dependencies [3ffe020]
+- Updated dependencies [652e692]
+- Updated dependencies [0d6fc26]
+- Updated dependencies [b882b2e]
+- Updated dependencies [60d8e39]
+- Updated dependencies [2573527]
+- Updated dependencies [ed0e096]
+- Updated dependencies [465ccd9]
+- Updated dependencies [65be8d3]
+- Updated dependencies [10b67bb]
+- Updated dependencies [b064816]
+- Updated dependencies [d8c0d51]
+- Updated dependencies [2bf7339]
+- Updated dependencies [6f839dd]
+- Updated dependencies [327fb63]
+- Updated dependencies [5338358]
+- Updated dependencies [97a672c]
+- Updated dependencies [7116c36]
+- Updated dependencies [1c76897]
+- Updated dependencies [1e3e770]
+- Updated dependencies [4447e67]
+- Updated dependencies [84dd318]
+- Updated dependencies [e0608bf]
+- Updated dependencies [b0f392c]
+- Updated dependencies [cf7b009]
+- Updated dependencies [53ba41a]
+- Updated dependencies [1322a03]
+- Updated dependencies [4da5998]
+- Updated dependencies [7162a7a]
+- Updated dependencies [765cd31]
+- Updated dependencies [89271a6]
+- Updated dependencies [72a0ea2]
+- Updated dependencies [14b7551]
+- Updated dependencies [eec8a5b]
+- Updated dependencies [1774dc4]
+- Updated dependencies [8ff3b4b]
+- Updated dependencies [02cbe1d]
+- Updated dependencies [d2749ce]
+- Updated dependencies [75d52be]
+- Updated dependencies
+- Updated dependencies [5b20cca]
+- Updated dependencies [516914b]
+- Updated dependencies [0fc9447]
+- Updated dependencies [c2b951b]
+- Updated dependencies [6525caa]
+- Updated dependencies [f4dd2ff]
+- Updated dependencies [5adbb76]
+- Updated dependencies [681c3f9]
+- Updated dependencies [0382007]
+- Updated dependencies [4a44657]
+- Updated dependencies [a41d50f]
+- Updated dependencies [d0daf94]
+- Updated dependencies [63b310c]
+- Updated dependencies [b36ceac]
+- Updated dependencies [34f8b09]
+- Updated dependencies [5e7ee7b]
+- Updated dependencies [5a48607]
+- Updated dependencies [aa27fa7]
+- Updated dependencies [620d2db]
+- Updated dependencies [1c9459d]
+- Updated dependencies [cabeeab]
+- Updated dependencies [ce8b295]
+- Updated dependencies [c6a0a52]
+- Updated dependencies [e74bb61]
+- Updated dependencies [628c62d]
+- Updated dependencies [d32cb70]
+- Updated dependencies [7ffb8c1]
+- Updated dependencies [4057097]
+- Updated dependencies [50396d5]
+- Updated dependencies [9aeddfc]
+- Updated dependencies [10308d2]
+- Updated dependencies [80fcaa1]
+- Updated dependencies [98870f1]
+- Updated dependencies [d86f89e]
+- Updated dependencies [2d6bd43]
+- Updated dependencies [6812344]
+- Updated dependencies [fb75358]
+- Updated dependencies [ef6b6ae]
+- Updated dependencies [09e5589]
+- Updated dependencies [1e47009]
+- Updated dependencies [e4642bb]
+- Updated dependencies [90851d1]
+- Updated dependencies [797bf34]
+- Updated dependencies [0f5bd40]
+- Updated dependencies [e901a2b]
+- Updated dependencies [ce41b60]
+- Updated dependencies [fb44d45]
+- Updated dependencies [57725cc]
+- Updated dependencies [2f51085]
+- Updated dependencies [c6d61e0]
+- Updated dependencies [3f89d6b]
+- Updated dependencies [86725ed]
+- Updated dependencies [f34b290]
+- Updated dependencies [679138c]
+- Updated dependencies [a2dcbfb]
+- Updated dependencies [8ad0483]
+- Updated dependencies [e34bfb5]
+- Updated dependencies [8775065]
+- Updated dependencies [76f7ecb]
+- Updated dependencies [d4d28ad]
+- Updated dependencies [ad8f48a]
+- Updated dependencies [5274f79]
+- Updated dependencies [c4840ed]
+- Updated dependencies [616a4b2]
+- Updated dependencies [0677769]
+- Updated dependencies [974682d]
+- Updated dependencies [66e3696]
+- Updated dependencies [5973184]
+- Updated dependencies [7afe8cd]
+- Updated dependencies [3378ade]
+- Updated dependencies [c0d59c6]
+- Updated dependencies [f426089]
+- Updated dependencies [ddbb431]
+- Updated dependencies [dcca70c]
+- Updated dependencies [420e4b2]
+- Updated dependencies [bfb566c]
+- Updated dependencies [d019f44]
+- Updated dependencies [79b65f5]
+- Updated dependencies [cc54285]
+- Updated dependencies [67fb8e7]
+- Updated dependencies [e021579]
+- Updated dependencies [36eca7a]
+- Updated dependencies [cc11671]
+- Updated dependencies [c1680fd]
+- Updated dependencies [0430dcc]
+- Updated dependencies [1be2ea9]
+- Updated dependencies [0156ca5]
+- Updated dependencies [39f86d1]
+- Updated dependencies [f3398d4]
+- Updated dependencies [17029b0]
+- Updated dependencies [9a85264]
+- Updated dependencies [ae77c1c]
+- Updated dependencies [804e3cf]
+- Updated dependencies [86a5ec7]
+- Updated dependencies [c2048de]
+- Updated dependencies [7947fdf]
+- Updated dependencies [6533d2d]
+- Updated dependencies [9073669]
+- Updated dependencies [798e9b0]
+- Updated dependencies [f082c83]
+- Updated dependencies [db8c16e]
+- Updated dependencies [e287da2]
+- Updated dependencies
+- Updated dependencies [59b5936]
+- Updated dependencies [3eb2abc]
+- Updated dependencies [e554ae5]
+- Updated dependencies [70fe7cc]
+- Updated dependencies [c4e499e]
+- Updated dependencies [5ebf7e7]
+- Updated dependencies [b91a818]
+- Updated dependencies [ecdf4d0]
+- Updated dependencies [1efa251]
+- Updated dependencies [146c859]
+- Updated dependencies [1faab2d]
+- Updated dependencies [15fbffb]
+- Updated dependencies [d705830]
+- Updated dependencies [398d71e]
+- Updated dependencies [ebc9858]
+- Updated dependencies [06d23a3]
+- Updated dependencies [d8160be]
+  - @weasel-js/registry@1.11.0
+  - @weasel-js/prefs@1.11.0
+  - @weasel-js/core@1.11.0
+  - @weasel-js/ui@1.11.0
+  - @weasel-js/labkit@1.11.0
+  - @weasel-js/theme@1.11.0
+  - @weasel-js/icons@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes

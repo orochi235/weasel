@@ -3,7 +3,7 @@
  * `useScene` document, saved to local storage 300 ms after each change.
  */
 import { DEFAULT_STROKE_COLOR, useScene, useSelection } from '@weasel-js/core';
-import { createRecentColorsStore, RecentColorsProvider } from '@weasel-js/ui';
+import { createRecentColorsStore, RecentColorsProvider } from '@weasel-js/ui/components/RecentColors';
 import { type ReactElement, useState } from 'react';
 import type { ActivePaint } from './ActiveSwatches';
 import './app.css';

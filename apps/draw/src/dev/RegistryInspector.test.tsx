@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { act, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 import { renderWithIcons } from '../testIcons';
@@ -62,42 +62,25 @@ describe('RegistryInspector', () => {
       .toHaveAttribute('aria-current', 'page');
   });
 
-  it('renders all category nodes in the tree', async () => {
+  it('renders draw\'s static catalog, leaving the live tools and actions to the devtools panel', async () => {
     renderInspector();
     await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());
-    expect(screen.getByText('Tools')).toBeTruthy();
-    expect(screen.getByText('Actions')).toBeTruthy();
-    // Shape nests under the Traits group, which is collapsed by default
-    // — assert the group's heading instead, and expand it to confirm
-    // the child categories surface.
-    expect(screen.getByText('Traits')).toBeTruthy();
+    expect(screen.getByText('Gestures')).toBeTruthy();
+    expect(screen.getByText('Icons')).toBeTruthy();
+    expect(screen.queryByText('Tools')).toBeNull();
+    expect(screen.queryByText('Actions')).toBeNull();
+    // Shape nests under the Traits group, which is collapsed by default.
     fireEvent.click(screen.getByText('Traits'));
     expect(screen.getByText('Shape')).toBeTruthy();
-    expect(screen.getByText('Routing')).toBeTruthy();
-    expect(screen.getByText('Icons')).toBeTruthy();
-  });
-
-  it('bundle dropdown narrows the tools list to bundle members', async () => {
-    renderInspector();
-    await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());
-    fireEvent.click(screen.getByText('Tools'));
-    // Tool tree leaves render the presentation label (e.g. 'Rectangle' for
-    // rect, 'Hand' for hand), not the bare tool id.
-    await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
-
-    act(() => { fireEvent.click(screen.getByRole('button', { name: /bundle.*all bundles|all bundles.*bundle/i })); });
-    fireEvent.click(screen.getByRole('option', { name: 'Minimal' }));
-    await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
-    // 'Select' is the always-present member of the minimal bundle; the hand
-    // tool only registers when viewport is initialized, which jsdom may skip.
-    expect(screen.getAllByText('Select').length).toBeGreaterThan(0);
+    expect(screen.getByText('Properties')).toBeTruthy();
+    expect(screen.queryByText('Routing')).toBeNull();
   });
 
   it('selects a deep-linked entry once it appears, and drops it when the filter excludes it', async () => {
-    window.history.replaceState(null, '', '/#/dev/registry?kind=tool&id=rect');
+    window.history.replaceState(null, '', '/#/dev/registry?kind=bundle&id=minimal');
     renderInspector();
-    await waitFor(() => expect(screen.getByRole('treeitem', { name: 'Rectangle' })).toHaveAttribute('aria-selected', 'true'));
-    expect(window.location.hash).toBe('#/dev/registry?kind=tool&id=rect');
+    await waitFor(() => expect(screen.getByRole('treeitem', { name: /^Minimal/ })).toHaveAttribute('aria-selected', 'true'));
+    expect(window.location.hash).toBe('#/dev/registry?kind=bundle&id=minimal');
     fireEvent.change(screen.getByLabelText('Filter registry'), { target: { value: 'zzz' } });
     await waitFor(() => expect(window.location.hash).toBe('#/dev/registry'));
   });

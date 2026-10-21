@@ -19,6 +19,7 @@ body {
 }
 
 .fg-frame--fullscreen {
+  height: 100vh;
   padding: 0;
 }
 

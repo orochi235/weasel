@@ -202,7 +202,7 @@ describe('DetailList styles', () => {
   });
 
   it('inherits the params label recipe', () => {
-    const body = rule('.label');
+    const body = rule('.rowLabel');
     expect(body).toMatch(/text-transform:\s*var\(--wzl-params-label-case,\s*uppercase\)/);
     expect(body).toMatch(/letter-spacing:\s*var\(--wzl-params-label-tracking,\s*var\(--wzl-tracking-wide\)\)/);
     expect(body).toMatch(/justify-content:\s*var\(--wzl-params-label-align,\s*start\)/);

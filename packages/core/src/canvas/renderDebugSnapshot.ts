@@ -24,6 +24,8 @@ export interface RenderDebugSnapshotArgs<TData, TLayer extends string, TPose>
   /** Which overlay features to draw, as on `<Canvas debug>`. The frame panel
    *  shows the recorded paint cost but no rate: a still image has no frames. */
   config: DebugConfig;
+  /** Draw the scene's annotation layers. Default `true`, as the canvas did. */
+  annotations?: boolean;
 }
 
 /**
@@ -49,6 +51,7 @@ export function debugSnapshotArgs<TData, TLayer extends string, TPose>(
   const width = size.width / Math.abs(view.scale.x);
   const height = size.height / Math.abs(view.scale.y);
   return {
+    annotations: true,
     ...rest,
     sourceRect: {
       x: view.scale.x < 0 ? view.x - width : view.x,

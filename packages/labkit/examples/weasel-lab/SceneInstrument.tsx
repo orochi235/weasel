@@ -1,6 +1,6 @@
 import { createScene, solid } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, RectPose, UnitSystem } from '@weasel-js/core';
-import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
+import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import { useMemo } from 'react';
 import {
   type ConfigOf,
@@ -59,8 +59,8 @@ function SceneBody({ ctx }: { ctx: RenderContext<SceneState, SceneConfig> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { showGrid, cellSize } = ctx.config;
 
-  const selectTool = useMemo(
-    () => ({ snap: gridSnapStrategy<Pose>({ value: cellSize, unit: 'px' }, UNITS) }),
+  const snap = useMemo(
+    () => ({ sources: [gridSnapSource({ spacing: { value: cellSize, unit: 'px' }, unitSystem: UNITS })] }),
     [cellSize],
   );
 
@@ -85,7 +85,7 @@ function SceneBody({ ctx }: { ctx: RenderContext<SceneState, SceneConfig> }) {
       features={['pick', 'move', 'transform']}
       scene={scene}
       trial={ctx.trial}
-      selectTool={selectTool}
+      snap={snap}
       layers={layers}
     />
   );

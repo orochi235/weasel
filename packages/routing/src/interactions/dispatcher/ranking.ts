@@ -7,7 +7,7 @@ import type { GestureSpec } from '@weasel-js/gestures';
 import type { Action } from '../actions/action';
 import type { GestureBinding } from '../actions/binding';
 import { describeRule, evaluate, type Condition, type Rule, type RuleCtx } from '../../eligibility';
-import type { DispatcherContext } from './dispatcherApi';
+import type { DispatcherContext, KeyReach } from './dispatcherApi';
 import type { PlacedBy, SpecificityPart, WalkStep } from './dispatchRecord';
 import { specificity, type MatchResult } from './matcher';
 
@@ -15,6 +15,13 @@ import { specificity, type MatchResult } from './matcher';
 export function liveInView(binding: GestureBinding, view: string | null): boolean {
   const views = binding.opts?.views;
   return views === undefined || views.includes(view);
+}
+
+/** Whether `binding` is live for a key that reached `reach`. See
+ *  `BindingOpts.over`. */
+export function liveForKeys(binding: GestureBinding, reach: KeyReach | undefined): boolean {
+  if (reach === undefined) return true;
+  return binding.opts?.over ? reach.over : reach.held;
 }
 
 /** Stable partition: matches whose binding names `view` first. See

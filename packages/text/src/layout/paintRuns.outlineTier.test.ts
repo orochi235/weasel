@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetBakeBudget, registerFontOutlines, glyphOutline, setFontFallbackPolicy } from '@weasel-js/font';
+import {
+  resetBakeBudget, registerFontOutlines, glyphOutline, setFontFallbackPolicy, syntheticBoldGrowth,
+} from '@weasel-js/font';
+import { boundsOfPath, pathFromD } from '@weasel-js/geom';
 import {
   _resetFontRegistryForTests,
   _resetFallbackForTests,
@@ -275,16 +278,57 @@ describe('layoutRuns — outline tier', () => {
       .toEqual(step(atlas.groups[0].quads.map((q) => q.x0)));
   });
 
-  it('declines outlines for a synthetically emboldened run', async () => {
-    // The regular atlas is thickened by an SDF threshold shift; a path has no
-    // threshold, so painting the real outline would make text get *lighter*
-    // above the tier boundary.
+  it('draws a synthetically emboldened run on the outline tier, grown as the field draws it', async () => {
+    // The atlas thickens a faked bold by a threshold shift, so the face's own
+    // outline would get lighter past the threshold: the tier grows it first.
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
     const out = layoutAndPaint([RUN_BOLD('A')], OPTS_OUT);
-    expect(out.groups[0].source).toBe('atlas');
+    expect(out.groups.map((g) => g.source)).toEqual(['outline']);
     expect(out.groups[0].synthetic.bold).toBe(true);
+    const glyph = out.groups[0].glyphs[0];
+    const growth = syntheticBoldGrowth('atlas', 'inter', 400, 'normal')!;
+    expect(growth).toBeGreaterThan(0);
+    // The stub's base runs along the baseline, so a grown edge sits `growth` below it.
+    const b = boundsOfPath(pathFromD(glyph.d));
+    expect(b.y + b.height).toBeCloseTo(growth, 9);
+    // Placement is the regular glyph's: growing paints, it does not move.
+    const regular = layoutAndPaint([RUN_PLAIN('A')], OPTS_OUT).groups[0].glyphs[0];
+    expect([glyph.x, glyph.baselineY, glyph.scale]).toEqual([regular.x, regular.baselineY, regular.scale]);
+  });
+
+  it('keys a grown glyph apart from the face\'s own, so neither tessellation serves the other', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const bold = layoutAndPaint([RUN_BOLD('A')], OPTS_OUT).groups[0].glyphs[0];
+    const regular = layoutAndPaint([RUN_PLAIN('A')], OPTS_OUT).groups[0].glyphs[0];
+    expect(bold.key).not.toBe(regular.key);
+    expect(bold.key.startsWith('inter|400|normal|65|')).toBe(true);
+  });
+
+  it('keeps a synthetically emboldened run below the threshold on the SDF tier', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutAndPaint([{ ...RUN_BOLD('A'), fontSize: 10 }], OPTS_OUT);
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+  });
+
+  it('strokes a synthetically emboldened run on the outline tier at any size', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const stroked: ResolvedRun = {
+      ...RUN_BOLD('A'),
+      fontSize: 10,
+      stroke: { paint: { kind: 'solid', color: '#f00' }, width: 2 },
+    };
+    const out = layoutAndPaint([stroked], OPTS_OUT);
+    expect(out.groups.map((g) => g.source)).toEqual(['outline']);
+    expect(out.groups[0].stroke).toMatchObject({ width: 2 });
+    expect(out.groups[0].glyphs[0].d).toBe(layoutAndPaint([RUN_BOLD('A')], OPTS_OUT).groups[0].glyphs[0].d);
   });
 
   it('accepts outlines for a synthetically obliqued run — a shear is exact', async () => {

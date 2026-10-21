@@ -1,0 +1,54 @@
+.value {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-height: 1.5em;
+  white-space: nowrap;
+}
+
+.children {
+  padding-inline-start: var(--wzl-space-8);
+}
+
+.key {
+  color: var(--wzl-fg-muted);
+}
+
+.key::after {
+  content: ':';
+}
+
+.muted {
+  color: var(--wzl-fg-muted);
+  font-style: italic;
+}
+
+.keyword {
+  color: var(--wzl-accent-fg);
+}
+
+.number {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-accent-fg);
+}
+
+.string {
+  color: var(--wzl-success);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fn {
+  color: var(--wzl-warning);
+}
+
+.tag {
+  color: var(--wzl-fg);
+}

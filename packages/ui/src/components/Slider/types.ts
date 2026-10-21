@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Display, Quantity } from '@weasel-js/quantity';
-import type { Endless } from '../../endless';
+import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 
 /**
  * Passed to a custom thumb renderer: the thumb box in CSS px as it is laid

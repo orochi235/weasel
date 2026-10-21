@@ -17,6 +17,11 @@ describe('guideHandles', () => {
     expect(knob).toEqual({ handle: 'angle', at: { x: 164, y: 100 } });
   });
 
+  it('moves the knob out past the contents\' reach, measured on screen, with room for its hit circle', () => {
+    const [knob] = guideHandles(spec({ kind: 'mirror', angle: HORIZONTAL_AXIS }), C, VIEW, 64, 40, 9);
+    expect(knob).toEqual({ handle: 'angle', at: { x: 100 + 80 + 18, y: 100 } });
+  });
+
   it('gives a radial kind only its center, since turning it changes nothing', () => {
     expect(guideHandles(spec({ kind: 'radial' }), C, VIEW, 64).map((h) => h.handle)).toEqual(['center']);
   });
@@ -44,22 +49,23 @@ describe('symmetryGuideLayer', () => {
 });
 
 describe('handleChange', () => {
-  const id = (p: { x: number; y: number }) => p;
+  const id = { point: (p: { x: number; y: number }) => p, angle: (theta: number) => theta };
   const press = (handle: SymmetryHandlePress['handle']): SymmetryHandlePress => ({ handle, group: 'g' });
 
   it('moves the center by the drag, through the snap', () => {
-    const snap = (p: { x: number; y: number }) => ({ x: Math.round(p.x / 10) * 10, y: p.y });
-    expect(handleChange(press('center'), { center: C }, { x: 0, y: 0 }, { x: 14, y: 3 }, false, snap))
+    const snap = { ...id, point: (p: { x: number; y: number }) => ({ x: Math.round(p.x / 10) * 10, y: p.y }) };
+    expect(handleChange(press('center'), { center: C }, { x: 0, y: 0 }, { x: 14, y: 3 }, snap))
       .toEqual({ center: { x: 60, y: 53 } });
   });
 
-  it('turns the axis to point at the pointer, in 15 degree steps under shift', () => {
-    const turned = handleChange(press('angle'), { center: C }, C, { x: 60, y: 51 }, true, id);
-    expect(turned.spec!.angle).toBeCloseTo(0);
+  it('turns the axis to point at the pointer, through the snap', () => {
+    const step = { ...id, angle: (theta: number) => Math.round(theta / (Math.PI / 12)) * (Math.PI / 12) };
+    expect(handleChange(press('angle'), { center: C }, C, { x: 60, y: 51 }, id).spec!.angle).toBeCloseTo(Math.atan2(1, 10));
+    expect(handleChange(press('angle'), { center: C }, C, { x: 60, y: 51 }, step).spec!.angle).toBeCloseTo(0);
   });
 
   it('sets a repeat\'s direction and spacing from its step handle', () => {
-    const out = handleChange(press('step'), { center: C }, C, { x: 50, y: 90 }, false, id);
+    const out = handleChange(press('step'), { center: C }, C, { x: 50, y: 90 }, id);
     expect(out.spec!.angle).toBeCloseTo(Math.PI / 2);
     expect(out.spec!.spacing).toBeCloseTo(40);
   });

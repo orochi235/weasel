@@ -60,7 +60,7 @@ flowchart TB
 
   subgraph ST["Strategies"]
     direction TB
-    Sn["Snap strategy"]
+    Sn["Snap source"]
     La["Layout strategy"]
   end
 
@@ -81,7 +81,7 @@ flowchart TB
   To -. defines .-> Af
   L -. fills .-> Sl
   A -. consults .-> Se
-  Sn -. refines pose via .-> B
+  Sn -. answers the snap session of .-> A
   La -. arranges children in .-> Ad
   V -. projects coords for .-> L
   CS -. derived from .-> Se
@@ -314,15 +314,29 @@ Crossing from one target to another is therefore a leave for a binding that
 targets the first, and nothing for one that targets neither or both. A press is
 not a leave.
 
+A `hover` spec with `held` keeps reporting while a button is down, read the way
+`mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires
+pressed or not, `held: true` (`hover +held`) only pressed, and without it a held
+pointer's moves are not hovers. It still claims nothing, so the drag keeps its
+moves and every such binding runs beside it; its params say which moves were
+held. It applies to a leave from one target to another as to a move, but
+leaving the surface is a leave whether or not a button is down. The loupe's aim
+is one. A dispatcher that wants hovers and nothing else turns on its `hover`
+channel with `pointer` off, so no press opens a gesture or captures the pointer.
+
 Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
 input arrives; an action is *what to do* with it. The same gesture (a rectangular
 drag) can power different actions (insert a rect, marquee-select, area-erase); the
 same action (`delete`) can be invoked by different gestures (a keystroke, a button
 click, a swipe). See [Interaction](#interaction) for the composition.
 
+Snapping is not a gesture: an action that snaps begins a session on the `snap`
+dep at press and asks it each frame where its point lands. The model — loci,
+probes, ranking, sources, the modifier roles — is in [snapping.md](./snapping.md).
+
 Source layout: `packages/core/src/interactions/gestures/` holds the input primitives — per-primitive
 subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, plus the shared `shared/`
-snap helpers and `types.ts` carrying the cross-system base types (`ModifierState`,
+helpers (origin projections, screen tolerance) and `types.ts` carrying the cross-system base types (`ModifierState`,
 `GestureContext`, `ActionBehavior`, etc.). Drag-based actions (`move/`, `resize/`,
 `rotate/`, `clone/`, `lasso-select/`, `insert/`) live alongside the one-shot actions
 under `packages/core/src/interactions/actions/`.
@@ -419,7 +433,10 @@ goes to the canvas last pressed or scrolled in, across every root on the page,
 and to no canvas before the first such interaction, so a canvas in a side panel
 takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them
 on mount, for an app whose canvas is the page. A dispatcher with no canvas
-element, an app's own shortcuts, still follows the active scope.
+element, an app's own shortcuts, still follows the active scope. A key binding
+with `opts: { over: true }` goes the other way: it is live while the pointer is
+over its canvas, whichever canvas holds the keys, and only then — for a key
+that means "here", such as a loupe's peek.
 
 A canvas with no yoke keeps its own tool; a new scope starts on the tool in
 effect around it. Shared *state* — a selection two canvases should agree on —
@@ -503,19 +520,17 @@ Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
 which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` for the
 `ActionBehavior` interface.
 
-### Snap strategy
+### Snap source
 
-`SnapStrategy<TPose>` — a pluggable point-snap policy with one method:
-`snap(pose, ctx): TPose | null`. Returns the snapped pose or `null` to skip.
-Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`).
-World-space point snapping for insertion
-is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Core
-owns the contract and `OriginProjection`, which adapts non-rect poses (e.g.
-`Path`) so a strategy can read and write the correct origin — see
-`packages/core/src/interactions/gestures/shared/originProjection.ts`. The
-strategies themselves are in `@weasel-js/guides`: `gridSnapStrategy(spacing)`
-snaps the pose origin to the nearest grid multiple, `guideSnapStrategy` to the
-nearest guide line.
+`SnapSource` — one kind of snap target: a grid, ruler guides, sibling edges,
+path anchors, angle steps. A gesture's snap session asks every source each
+frame for the loci its probes may land on, and one resolver ranks them all,
+so no source wins by running first. Sources go in `<SceneCanvas snap={{ sources }}>`,
+a preset's `snapSources`, or `useSnapSource`; core ships `pathSnapSource`,
+`measureEndSource` and `rotationSnapSource`, `@weasel-js/guides` the grid,
+guide, alignment and spacing sources, kernel3d the 3D ones.
+`OriginProjection` (`packages/core/src/interactions/gestures/shared/originProjection.ts`)
+says where a non-rect pose's `origin` probe is. See [snapping.md](./snapping.md).
 
 ### Layout strategy
 
@@ -733,7 +748,7 @@ the kit's rect-driven machinery. Required methods: `getBounds(pose) → Bounds`
 scale), `fromBounds(bounds, template) → TPose`. Optional: `translate`, `lerp`, `getRotation`. Used by
 `resizeAction`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for rect poses), `ROTATED_POSE_DESCRIPTOR`,
-`pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
+`pathPoseDescriptor`. Distinct from [OriginProjection](#snap-source) which handles
 snap-point extraction for non-rect poses. See `packages/core/src/core/geometry/poseDescriptor.ts`.
 
 ### Scene

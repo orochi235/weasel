@@ -32,6 +32,12 @@ const entries: Record<string, string> = {
   index: resolve(import.meta.dirname, 'src/index.ts'),
   'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
   kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
+  'components/paintValue': resolve(import.meta.dirname, 'src/components/paintValue.ts'),
+  'components/stance': resolve(import.meta.dirname, 'src/components/stance.ts'),
+  'overlays/portalHost': resolve(import.meta.dirname, 'src/overlays/portalHost.tsx'),
+  'color/index': resolve(import.meta.dirname, 'src/color/index.ts'),
+  paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),
+  kitSettings: resolve(import.meta.dirname, 'src/kitSettings.ts'),
 };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;

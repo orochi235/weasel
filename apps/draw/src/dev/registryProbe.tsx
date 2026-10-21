@@ -9,13 +9,12 @@ import {
   useActionsRegistry,
   useScene,
   type NodePropertiesEntry,
-  type NodeRoutingEntry,
   type ToolDef,
   type ToolsApi,
   BUILTIN_TOOL_IDS,
 } from '@weasel-js/core';
 import { routesForSpec } from '@weasel-js/core/routing';
-import { actionIcon } from '@weasel-js/ui';
+import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
 import { DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
 import { DRAW_FEATURES } from '../drawFeatures';
@@ -26,7 +25,6 @@ import s from './RegistryInspector.module.css';
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
   readonly actions: readonly ActionEntry[];
-  readonly routing: readonly NodeRoutingEntry[];
   readonly properties: readonly NodePropertiesEntry[];
 }
 
@@ -41,6 +39,7 @@ const IDLE_COMMANDS: AppCommands = {
   gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop,
   pathDirection: false, togglePathDirection: noop, symmetryOn: false, toggleSymmetry: noop,
   canReleaseCompound: false, releaseCompound: noop, openPrefs: noop, openPalette: noop,
+  chromeHidden: () => false, toggleChrome: noop,
 };
 const AMBIENT = [appCommandsContribution(() => IDLE_COMMANDS)];
 
@@ -160,12 +159,13 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries, routing: defaultNodeRouting, properties: defaultNodeProperties });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, properties: defaultNodeProperties });
   });
 
   return (
     <div aria-hidden="true" className={s.hidden}>
       <SceneCanvas
+        aria-label="Registry probe"
         scene={scene}
         width={200}
         height={200}

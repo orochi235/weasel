@@ -63,6 +63,10 @@ export interface SvgNodesToKitDraftsOptions<TData> {
    *  the node it came from — for data shaped other than the kit painters', or
    *  metadata the document carries. `null` leaves it out. */
   leaf?(id: string, draft: { pose: SvgDraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
+  /** Keep a group that draws nothing, which is otherwise dropped — for one
+   *  whose metadata means something with no children under it. It is drafted
+   *  with its clip's box, or a zero box at the origin. */
+  keepEmpty?(source: SvgGroupNode): boolean;
 }
 
 /** `File.text()` via FileReader: jsdom ships `FileReader` but not `Blob.text`. */
@@ -148,7 +152,8 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
  * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
  * {@link SvgSceneDraft}s. Each `<g>` becomes a container whose pose is the
  * union AABB of its descendants, or its clip's box when it has one; leaves
- * carry kit-painter-native data. Empty groups are dropped.
+ * carry kit-painter-native data. Empty groups are dropped unless
+ * `options.keepEmpty` keeps them, and so is a group holding only those.
  *
  * Handed a whole `ParseResult`, it also registers the document's markers
  * (`parsed.markers`), without which the strokes naming them draw bare.
@@ -193,9 +198,13 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         ...(n.hidden ? { hidden: true } : {}),
       };
       drafts.push(draft);
+      const at = drafts.length - 1;
       const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k)));
       if (!acc) {
-        drafts.splice(drafts.indexOf(draft), 1);
+        // Nothing beneath has a box, so any draft beneath is a kept empty group.
+        const kept = drafts.length > at + 1 || (options.keepEmpty?.(n) ?? false);
+        if (!kept) drafts.splice(at, 1);
+        else if (n.clip) draft.pose = boxOfPath(n.clip);
         return null;
       }
       draft.pose = n.clip ? boxOfPath(n.clip) : acc;

@@ -1,17 +1,14 @@
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { Affine } from '@weasel-js/geom';
-import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
-import { translatePoseViaDescriptor } from '../resize/geometry';
-import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
+import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from './requiresSelection';
-import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import { scenePoseFrame } from '../poseFrame';
-import { moveSources, storedDelta, translateTargets } from '../selectionSubtree';
+import type { GeometryProjection } from '../geometryProjection';
+import { moveNodesOps } from '../moveNodes';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 import { recordTransform } from '../transform-again/memory';
 
@@ -32,33 +29,7 @@ export function translateSelection(
   d: PoseDescriptor<unknown>,
   label = 'Nudge',
 ): boolean {
-  const descriptorOf = nodeDescriptors(scene, d);
-  const frame = scenePoseFrame(scene);
-  const ids = translateTargets(scene, frame, moveSources(scene, selection.get()));
-  if (ids.length === 0) return false;
-
-  const ops: Op[] = [];
-  for (const id of ids) {
-    const node = scene.get(id);
-    if (!node) continue;
-    const l = storedDelta(frame, descriptorOf(id), id, dx, dy);
-    // Pushed alongside each transform op so a wired geometryProjection moves
-    // the node's data-held geometry too.
-    const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
-    ops.push(createTransformOp<unknown>({
-      id: id as string,
-      from: node.pose,
-      to: translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id)),
-      label,
-    }));
-    const dataOp = geometryDataOp(
-      geometryProjection,
-      { id: id as string, data: node.data, pose: node.pose },
-      m,
-      label,
-    );
-    if (dataOp) ops.push(dataOp);
-  }
+  const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, { poseDescriptor: d, geometryProjection }, label);
   if (ops.length === 0) return false;
 
   if (applyOps) applyOps(ops, label);
@@ -80,14 +51,14 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'transformFollowers'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selection = deps.selection;
         const scene = deps.scene;
-        const applyOps = deps.applyOps;
+        const applyOps = transformApplyOps(deps);
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
         if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {

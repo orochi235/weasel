@@ -81,6 +81,7 @@ export * from './components/Input';
 export * from './components/Checkbox';
 export * from './components/Switch';
 export * from './components/Tabs';
+export * from './components/PageTabs';
 export * from './components/QuantityText';
 export * from './components/Tree';
 export * from './components/RadioGroup';
@@ -121,8 +122,8 @@ export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './us
 export { useReorderDragList } from './useReorderDragList';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';
-export { useRovingTabIndex } from './useRovingTabIndex';
-export type { RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
+export { rovingGridTarget, rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
+export type { RovingDirection, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

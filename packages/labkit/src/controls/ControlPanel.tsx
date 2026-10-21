@@ -7,8 +7,8 @@ import {
   type PropertyListPack,
   PropertyPanel,
   type PropertyRowLayout,
-  type StanceProps,
-} from '@weasel-js/ui';
+} from '@weasel-js/ui/components/Properties';
+import type { StanceProps } from '@weasel-js/ui/stance';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
@@ -29,8 +29,20 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   fields?: ConfigField[];
   config: TC;
   /** Writes one value. The path is dotted for a leaf inside an `f.group`, and
-   *  the bare key for one at the root. */
+   *  the bare key for one at the root. A `.resettable()` group's reset is one
+   *  write too, of the group's whole value at the group's own path. */
   setConfig: (path: string, value: unknown) => void;
+  /**
+   * Writes a value an edit is passing through: each keystroke of a typed
+   * number or text, each move of a slider's drag. Given, the instrument can
+   * follow the edit while `setConfig` hears only the value it settles on,
+   * once, which is one undo step. Omitted, a typed field writes only on Enter
+   * or blur, and Escape writes nothing; a slider writes as it moves.
+   */
+  draftConfig?: (path: string, value: unknown) => void;
+  /** What is wrong with a value, by its path: each shows under its row, as an alert, and a custom row is
+   *  handed its own as `error`. A paired row shows its cells'. */
+  errors?: Readonly<Record<string, ReactNode>>;
   /**
    * Control overrides and app-defined kinds, PrefsForm-style. Keys are config
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
@@ -85,6 +97,10 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
+  /** Paths whose rows are marked as changed, as `PrefsForm`'s `changed` marks them: what differs from a
+   *  default, or from what was last saved, is the caller's to say. A paired row is marked when any of its
+   *  cells is named, and an alias row when the leaf it shows is. */
+  changed?: ReadonlySet<string>;
   /** Heads the panel. With `title`, `stance` or `tone` given, or with the panel
    *  made to fold, the rows sit in a `<PropertyPanel>` carrying them; with
    *  none, they are the bare list. */
@@ -140,6 +156,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   fields,
   config,
   setConfig,
+  draftConfig,
+  errors,
   renderers,
   over,
   pack = 'pairs',
@@ -154,6 +172,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   twisty,
   auto: given,
   showHidden = false,
+  changed,
   title,
   stance,
   tone,
@@ -195,6 +214,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     config,
     shown,
     setConfig,
+    draftConfig,
+    errors,
     renderers,
     over,
     showHidden,
@@ -202,6 +223,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     align,
     auto,
     setRowAuto,
+    changed,
     fold,
   });
 
@@ -225,6 +247,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       list
     ) : (
       <PropertyPanel
+        className="lk-control-panel-frame"
         title={title}
         actions={titled.control}
         stance={stance}

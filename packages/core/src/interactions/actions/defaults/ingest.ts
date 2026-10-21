@@ -27,13 +27,15 @@ import {
 } from 'features/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { MOVE_NODES_REQUIRES } from '../moveNodes';
 
 export const ANY_INGEST_MODS = {
   alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional',
 } as const;
 
-/** The deps {@link ingestFromEvent} reads; an action calling it declares these. */
-export const INGEST_REQUIRES = ['scene', 'selection', 'insert', 'applyOps', 'ingestion'] as const;
+/** The deps {@link ingestFromEvent} reads, and the ones `IngestCtx.deps` carries for a handler
+ *  that moves what it inserts with `moveNodes`; an action calling it declares these. */
+export const INGEST_REQUIRES = ['insert', 'ingestion', 'snap', ...MOVE_NODES_REQUIRES] as const;
 
 /**
  * Route one drop or paste event's dispatcher params through the content
@@ -76,6 +78,7 @@ export function ingestFromEvent(
     resolveSrc: ingestion.resolveSrc,
     svg: ingestion.svg,
     clipboard: ingestion.clipboard,
+    ...(deps.snap ? { snap: deps.snap } : {}),
     deps,
   };
   // Fire-and-forget: handler errors are caught inside runIngest, but a

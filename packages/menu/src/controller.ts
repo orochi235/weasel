@@ -1,4 +1,6 @@
-import { entriesAt, isRow, type MenuEntry } from './entries';
+import { createNumberValues } from './numberValues';
+import { createTextValues } from './textValues';
+import { entriesAt, isRow, type MenuEntry, type MenuNumberEntry, type MenuTextEntry } from './entries';
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, planKey } from './keyPlan';
 import type { Point, Rect } from './placement';
@@ -50,6 +52,16 @@ export interface MenuController {
   press(level: number, index: number): void;
   /** Where `level`'s panel is, for the diagonal allowance. */
   setPanel(level: number, rect: Rect): void;
+  /** What a number row holds now: the last value set while the menu is open, else the one it opened with. */
+  numberValue(e: MenuNumberEntry): number | undefined;
+  /** Write a number row, held within its bounds. The menu stays open; subscribers hear it. */
+  setNumber(e: MenuNumberEntry, value: number): void;
+  /** Move a number row by a spin-button key: an arrow, Page Up or Down, Home or End. False for any other key. */
+  spin(e: MenuNumberEntry, key: string): boolean;
+  /** What a text row holds now: the last value set while the menu is open, else the one it opened with. */
+  textValue(e: MenuTextEntry): string | undefined;
+  /** Write a text row. The menu stays open; subscribers hear it. */
+  setText(e: MenuTextEntry, value: string): void;
   subscribe(fn: () => void): () => void;
   dispose(): void;
 }
@@ -67,11 +79,12 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   let deferred: { level: number; index: number | null } | null = null;
   let typed: TypeaheadBuffer = EMPTY_TYPEAHEAD;
   let closed = false;
-
+  const notify = () => { for (const fn of listeners) fn(); };
+  const numbers = createNumberValues(notify, () => closed);
   const set = (next: MenuStack) => {
     stack = next;
     for (const level of [...panels.keys()]) if (level >= next.length) panels.delete(level);
-    for (const fn of listeners) fn();
+    notify();
   };
   const cancel = () => { pending?.(); pending = null; pendingKind = null; };
   const later = (kind: 'open' | 'diagonal', fn: () => void, ms: number) => {
@@ -84,7 +97,6 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
     const e = entryAt(level, index);
     return e !== undefined && isRow(e);
   };
-
   const finish = () => { closed = true; cancel(); onClose(); };
   const choose = (level: number, index: number) => {
     const e = entryAt(level, index);
@@ -132,6 +144,10 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       if (effect.kind === 'choose') choose(effect.level, effect.index);
       else if (effect.kind === 'close') finish();
       else if (effect.kind === 'edge') opts.onEdge?.(effect.dir);
+      else if (effect.kind === 'step') {
+        const e = entryAt(effect.level, effect.index);
+        if (e?.kind === 'number') numbers.spin(e, effect.dir > 0 ? 'ArrowUp' : 'ArrowDown');
+      }
       return true;
     },
     hover(level, index, point) {
@@ -158,6 +174,8 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
       else openAt(level, index);
     },
     setPanel(level, rect) { panels.set(level, rect); },
+    ...numbers,
+    ...createTextValues(notify, () => closed),
     subscribe(fn) {
       listeners.add(fn);
       return () => { listeners.delete(fn); };

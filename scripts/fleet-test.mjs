@@ -10,6 +10,10 @@
  *   npm run test:fleet                 # HEAD
  *   npm run test:fleet -- <commit>     # any commit
  *   npm run test:fleet -- HEAD --node studio    # the rest goes to `onto test`
+ *   npm run test:fleet -- --full       # every test, on a branch too
+ *
+ * On a branch other than main, the test projects run only the files whose imports reach what the
+ * branch changes; the gate project always runs whole. main runs everything.
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -35,10 +39,12 @@ const ontoTest = (args) =>
     child.on('close', (status) => done({ status: status ?? 1, stderr }));
   });
 
-const [first, ...rest] = process.argv.slice(2);
+const argv = process.argv.slice(2).filter((arg) => arg !== '--full');
+const full = argv.length < process.argv.length - 2;
+const [first, ...rest] = argv;
 const named = first && !first.startsWith('-');
 const commit = git('rev-parse', '--verify', `${named ? first : 'HEAD'}^{commit}`);
-const ontoArgs = named ? rest : process.argv.slice(2);
+const ontoArgs = named ? rest : argv;
 
 /** The local branch `ref` names, or '' for a commit, a tag, or a detached HEAD. */
 const branchOf = (ref) => {
@@ -58,6 +64,17 @@ const main = git('worktree', 'list', '--porcelain').split('\n')[0].replace(/^wor
 mkdirSync(join(main, '.worktrees'), { recursive: true });
 const tree = mkdtempSync(join(main, '.worktrees', 'fleet-'));
 git('worktree', 'add', '--detach', '--force', tree, commit);
+const dropTree = () => {
+  git('worktree', 'remove', '--force', tree);
+  rmSync(tree, { recursive: true, force: true });
+};
+// `finally` never runs when a signal kills the process, and a killed run otherwise leaves its tree.
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.once(signal, () => {
+    dropTree();
+    process.exit(128 + { SIGHUP: 1, SIGINT: 2, SIGTERM: 15 }[signal]);
+  });
+}
 
 let status = 1;
 try {
@@ -66,8 +83,14 @@ try {
   // onto's own check that the tree is still the one it synced cannot tell two sessions on this
   // machine apart, so the suite checks the tree itself: `scripts/fleet-tree.gate.ts`.
   const files = changedFiles(git('diff', '--raw', '--no-renames', '--no-abbrev', '-z', base, commit));
-  armTree(tree, { commit, files });
+  const select = Boolean(branch) && branch !== 'main' && !full;
+  armTree(tree, { commit, files, select });
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
+  console.log(
+    select
+      ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of vitest.config.ts's triggers; --full runs them all"
+      : 'fleet-test: running every test',
+  );
   // A node runs one job per tree, so a run started while another session's is on the chosen node is
   // refused. Wait for it rather than fail: the refusal comes before anything has run.
   for (let attempt = 1; ; attempt++) {
@@ -78,7 +101,6 @@ try {
     spawnSync('sleep', [String(BUSY_WAIT_S)]);
   }
 } finally {
-  git('worktree', 'remove', '--force', tree);
-  rmSync(tree, { recursive: true, force: true });
+  dropTree();
 }
 process.exit(status);

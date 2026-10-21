@@ -195,7 +195,7 @@
   font-size: var(--wzl-font-size-xs);
 }
 
-/* The lock column, beside the checkbox column. */
+/* The lock column, at the row's end. */
 .lockToggle {
   display: inline-flex;
   align-items: center;
@@ -212,6 +212,19 @@
 
 .lockToggle[aria-pressed='true'] {
   color: var(--wzl-fg);
+}
+
+/* An unlocked layer's padlock shows only on a hovered row, or once focused.
+   Hidden by opacity, so it keeps its column and its place in the tab order. */
+@media (hover: hover) {
+  .lockToggle[aria-pressed='false'] {
+    opacity: 0;
+  }
+
+  .row:hover .lockToggle,
+  .lockToggle:focus-visible {
+    opacity: 1;
+  }
 }
 
 /* The field a rename opens in place of the label. */

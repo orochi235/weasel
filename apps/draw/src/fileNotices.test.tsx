@@ -1,9 +1,9 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { defaultToastQueue, ToastRegion } from '@weasel-js/ui';
+import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { describeSvgWarnings, reportSessionSave, reportSvgWarnings } from './fileNotices';
+import { reportSessionSave, reportSvgWarnings } from './fileNotices';
 import { importSvgFile, openSvgFile } from './openSvg';
 import { saveSvgFile } from './saveSvg';
 import * as svgExport from './svgExport';
@@ -21,22 +21,6 @@ afterEach(() => {
 
 const newScene = () =>
   createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
-
-describe('describeSvgWarnings', () => {
-  it('counts one warning in the singular and quotes it', () => {
-    expect(describeSvgWarnings('Opened', ['<foreignObject> is not supported'])).toEqual({
-      title: 'Opened with 1 warning',
-      description: '<foreignObject> is not supported',
-    });
-  });
-
-  it('gives a repeated warning once, and counts what it does not quote', () => {
-    expect(describeSvgWarnings('Saved', ['a', 'b', 'a', 'c', 'd', 'e'])).toEqual({
-      title: 'Saved with 5 warnings',
-      description: 'a; b; c; and 2 more',
-    });
-  });
-});
 
 describe('reportSvgWarnings', () => {
   it('shows nothing when there is nothing to warn about', () => {

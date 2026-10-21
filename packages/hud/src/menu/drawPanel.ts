@@ -2,12 +2,13 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
-import type { MenuEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuNumberEntry } from '@weasel-js/menu';
 import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
 import { toIconRef, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { glyphCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
+import { colorCommands, numberCommands, textCommands, valueRowWidth } from './valueRows';
 
 /** Sizes of a HUD menu panel, in CSS pixels. */
 export interface MenuMetrics {
@@ -48,6 +49,8 @@ export function panelSize(
   const last = rows.at(-1);
   const rowWidth = (e: MenuEntry) => {
     if (e.kind === 'separator') return 0;
+    const value = valueRowWidth(e, m, measure);
+    if (value !== undefined) return measure(e.label, m.fontSize) + value;
     const chip = shortcutOf(e);
     return measure(e.label, m.fontSize) + Math.max(m.rowHeight, chip ? m.padX + measure(chip, m.fontSize) : 0);
   };
@@ -92,10 +95,11 @@ const ICON_SIZE = 16;
 const PANEL_SHADOW = 'var(--wzl-bevel-raised, 0 8px 24px var(--wzl-shadow))';
 
 /** One panel's commands: its rounded face and the DOM panel's box shadow, a highlight behind row
- *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. */
+ *  `highlight`, and every row, with the glyph `icons` holds for each row's icon. A number row shows what
+ *  `shown` says it holds, by default what it opened with. */
 export function drawPanel(
   ctx: HudDrawCtx, b: WidgetBounds, entries: readonly MenuEntry[], highlight: number | null, m: MenuMetrics,
-  icons?: MenuIcons,
+  icons?: MenuIcons, shown: (e: MenuNumberEntry) => number | undefined = (e) => e.value,
 ): DrawCommand[] {
   const t = ctx.tokens;
   const fg = t['--wzl-fg'];
@@ -118,7 +122,8 @@ export function drawPanel(
       return;
     }
     if (i === highlight) out.push(rect(b.x + 2, b.y + r.y, b.w - 4, r.h, t['--wzl-surface-hover']));
-    const color = e.disabled ? muted : fg;
+    // Nothing here edits a color or a text row, so each reads as a disabled one does.
+    const color = e.disabled || e.kind === 'color' || e.kind === 'text' ? muted : fg;
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
@@ -126,7 +131,7 @@ export function drawPanel(
     ));
     const iconX = b.x + m.padX + m.rowHeight / 2;
     const iconY = b.y + r.y + r.h / 2;
-    const ref = typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
+    const ref = e.kind !== 'color' && typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
     const glyph = ref ? icons?.get(ref) : undefined;
     if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
     else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
@@ -137,6 +142,10 @@ export function drawPanel(
         { ...font, align: 'right' }, undefined, r.h, 'center', undefined, b.w - m.padX * 2,
       ));
     }
+    const ink = { fg, muted, border: t['--wzl-border'], font };
+    if (e.kind === 'number') out.push(...numberCommands(b, r, e, shown(e), m, ink));
+    if (e.kind === 'color') out.push(...colorCommands(b, r, e, m, ink));
+    if (e.kind === 'text') out.push(...textCommands(b, r, e.value, m, ink));
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });
   return out;

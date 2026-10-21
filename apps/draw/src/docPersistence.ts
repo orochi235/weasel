@@ -1,3 +1,4 @@
+import { readStored } from '@editor/index';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
 
 export { PAPER_PRESETS };
@@ -13,24 +14,17 @@ export interface PersistedDoc {
   paperSize: PaperSizeKey;
 }
 
+const DEFAULT_DOC: PersistedDoc = { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR, paperSize: DEFAULT_PAPER_SIZE };
+
 export function loadDoc(): PersistedDoc {
-  try {
-    const raw = localStorage.getItem(DOC_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<PersistedDoc>;
-      return {
-        filename: typeof parsed.filename === 'string' && parsed.filename ? parsed.filename : DEFAULT_FILENAME,
-        backgroundColor: typeof parsed.backgroundColor === 'string' && parsed.backgroundColor ? parsed.backgroundColor : DEFAULT_BG_COLOR,
-        paperSize: isPaperSize(parsed.paperSize) ? parsed.paperSize : DEFAULT_PAPER_SIZE,
-      };
-    }
-  } catch { /* fall through */ }
-  return { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR, paperSize: DEFAULT_PAPER_SIZE };
+  return readStored(DOC_KEY, parseDoc, () => DEFAULT_DOC);
 }
 
-/** Best-effort: a full or unavailable store leaves the last saved document. */
-export function saveDoc(doc: PersistedDoc): void {
-  try {
-    localStorage.setItem(DOC_KEY, JSON.stringify(doc));
-  } catch { /* best-effort */ }
+function parseDoc(raw: string): PersistedDoc {
+  const parsed = JSON.parse(raw) as Partial<PersistedDoc>;
+  return {
+    filename: typeof parsed.filename === 'string' && parsed.filename ? parsed.filename : DEFAULT_FILENAME,
+    backgroundColor: typeof parsed.backgroundColor === 'string' && parsed.backgroundColor ? parsed.backgroundColor : DEFAULT_BG_COLOR,
+    paperSize: isPaperSize(parsed.paperSize) ? parsed.paperSize : DEFAULT_PAPER_SIZE,
+  };
 }

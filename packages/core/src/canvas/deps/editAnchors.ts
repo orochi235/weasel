@@ -19,18 +19,16 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'features/paths/anchorData';
-import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf, storeEditablePath } from 'features/paths/editablePath';
+import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'features/paths/editablePath';
 import { representationOf } from 'features/paths/pathRepresentation';
-import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
+import type { PathEditExtension } from 'features/paths/pathEditExtension';
 import {
-  withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther,
-} from 'features/paths/pathEditExtension';
+  finishCtx, finishEdit, otherOps, pathEditFollower, reshapeOps, type EditableNode,
+} from './pathEditCommits';
+import { useTransformFollower } from './transformFollowers';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'features/paths/pathEditState';
-import { recordModeSwitch, resolveParams, type ActionTunings } from '@weasel-js/routing';
+import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
-import { createTransformOp } from 'core/ops/transform';
-import { createSetDataOp } from 'core/ops/setData';
-import { createDeleteOp } from 'core/ops/delete';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -91,7 +89,7 @@ export function useEditAnchorsDepSource(
       setEditingId(id: string | null) {
         const next = id ?? '';
         if (effectiveId !== next) {
-          recordModeSwitch(
+          registry.get('dispatchTrace')?.recordModeSwitch(
             'editAnchors.editingId',
             effectiveId || null,
             next || null,
@@ -136,82 +134,7 @@ export function useEditAnchorsDepSource(
       ...pathAccess(sc, ad, state.getExtensions()),
     };
   });
-}
-
-/** What {@link finish} answers: the edited path, the data set beside it, and the other nodes it changes, by id. */
-interface Finished {
-  path: PolygonPath;
-  data: Record<string, unknown> | null;
-  others: Map<string, PathEditOther>;
-}
-
-/** The scene as an extension's `finishEdit` reads it. */
-function finishCtx(
-  sc: Scene<unknown, string, unknown>,
-  id: string,
-  extensions: readonly PathEditExtension[],
-): PathEditFinishCtx {
-  return {
-    id,
-    node(nid) {
-      const node = sc.get(nid as NodeId);
-      return node ? { pose: node.pose, data: node.data, dependsOn: node.dependsOn } : null;
-    },
-    path(nid) {
-      return pathEditPathOf(sc.get(nid as NodeId) as EditableNode | undefined, extensions);
-    },
-    dependents(nid) {
-      if (!sc.get(nid as NodeId)) return [];
-      return sc.removalClosure([nid as NodeId]).filter((d) => d !== nid && !sc.ancestorsOf(d).includes(nid as NodeId));
-    },
-  };
-}
-
-/** `worldPath` finished by each of `extensions` in turn, the data they set
- *  beside it, and the other nodes they change; null when one cannot finish it. */
-function finish(
-  extensions: readonly PathEditExtension[],
-  node: EditableNode,
-  worldPath: PolygonPath,
-  origins: readonly (PointOrigin | null)[] | undefined,
-  ctx: PathEditFinishCtx,
-): Finished | null {
-  let path = worldPath;
-  let data: Record<string, unknown> | null = null;
-  const others = new Map<string, PathEditOther>();
-  for (const ext of extensions) {
-    if (!ext.finishEdit) continue;
-    const done = ext.finishEdit(node, path, origins, ctx);
-    if (!done) return null;
-    path = done.path;
-    if (done.data) data = { ...(data ?? {}), ...done.data };
-    for (const o of done.others ?? []) {
-      const had = others.get(o.id);
-      others.set(o.id, {
-        id: o.id,
-        path: o.path ?? had?.path,
-        data: o.data || had?.data ? { ...had?.data, ...o.data } : undefined,
-        remove: o.remove || had?.remove,
-      });
-    }
-  }
-  return { path, data, others };
-}
-
-/** The ops that commit the other nodes `done` changes. */
-function otherOps(
-  sc: Scene<unknown, string, unknown>,
-  done: Finished,
-  label: string,
-  extensions: readonly PathEditExtension[],
-): Op[] {
-  return [...done.others.values()].flatMap((o) => {
-    const node = sc.get(o.id as NodeId) as EditableNode | undefined;
-    if (!node) return [];
-    if (o.remove) return [createDeleteOp({ node: sc.get(o.id as NodeId)!, label })];
-    if (o.path) return reshapeOps(o.id, node, o.path, label, o.data ?? null, extensions);
-    return o.data ? [createSetDataOp({ id: o.id, from: node.data, to: { ...(node.data as object), ...o.data }, label })] : [];
-  });
+  useTransformFollower(() => pathEditFollower(sceneRef.current, stateRef.current.getExtensions()));
 }
 
 /** The members of the dep that read the scene and commit to it. */
@@ -221,19 +144,20 @@ function pathAccess(
   extensions: readonly PathEditExtension[],
 ): Pick<
   EditAnchorsDep,
-  'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit' | 'store'
+  | 'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit'
+  | 'store'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = sc.get(id as NodeId) as EditableNode | undefined;
     if (!node) return [];
-    const done = finish(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
+    const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
     if (!done) return [];
     // A form's origins number the anchors of its edit path, not data.path's.
     const before = origins && !representationOf(extensions, node.data) ? resolveEditablePathOf(node) : null;
     const patch = { ...(before && origins ? anchorDataPatch(node.data, before, done.path, origins) : {}), ...done.data };
     return [
       ...reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null, extensions),
-      ...otherOps(sc, done, label, extensions),
+      ...otherOps(sc, done.others, label, extensions),
     ];
   };
   return {
@@ -262,7 +186,7 @@ function pathAccess(
     finishEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
       const node = sc.get(id as NodeId) as EditableNode | undefined;
       if (!node) return { path: worldPath, others: [] };
-      const done = finish(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
+      const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
       if (!done) return null;
       const others = [...done.others.values()].flatMap((o) => (o.path && !o.remove ? [{ id: o.id, path: o.path }] : []));
       return { path: done.path, others };
@@ -273,28 +197,4 @@ function pathAccess(
       if (ops.length > 0) ad.applyOps(ops, label);
     },
   };
-}
-
-type EditableNode = { pose: unknown; data: unknown };
-
-/** The ops that store `worldPath` where `node` keeps its polygon, with `patch` laid over its data. */
-function reshapeOps(
-  id: string,
-  node: EditableNode,
-  worldPath: PolygonPath,
-  label: string,
-  patch: Record<string, unknown> | null,
-  extensions: readonly PathEditExtension[],
-): Op[] {
-  const next = storeEditablePath(node, worldPath, extensions);
-  if (!next) return [];
-  const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
-  // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
-  // Its skin and constraints stay, renumbered by the caller's patch where it has one, and the
-  // form it was drawn from as storing it left it.
-  const data = withoutGeometryBoundData(
-    next.data === node.data ? node.data : withoutShapeGenerator(next.data), ['skin', 'constraints', 'representation'],
-  );
-  if (data === node.data && !patch) return [reshape];
-  return [reshape, createSetDataOp({ id, from: node.data, to: { ...(data as object), ...patch }, label })];
 }

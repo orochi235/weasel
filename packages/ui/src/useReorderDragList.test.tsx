@@ -23,6 +23,7 @@ function Harness(props: {
   onReorder: (ids: string[], targetIndex: number) => void;
   onPress?: (id: string, mods: PressModifiers) => void;
   onRowClick?: (id: string) => void;
+  axis?: 'x' | 'y';
 }) {
   const drag = useReorderDragList(props);
   latest = drag.state;
@@ -452,5 +453,26 @@ describe('useReorderDragList nudge', () => {
     expect(abandoned.onPress).not.toHaveBeenCalled();
     expect(committed.onReorder).toHaveBeenCalledWith(['c'], 0);
     expect(committed.onPress).toHaveBeenCalledWith('b', expect.anything());
+  });
+});
+
+describe('useReorderDragList — a row of items', () => {
+  it('measures the drop along x with axis x', () => {
+    const onReorder = vi.fn();
+    const view = render(<Harness items={ITEMS} selectedIds={[]} onReorder={onReorder} axis="x" />);
+    const list = view.getByTestId('list');
+    list.setPointerCapture = vi.fn();
+    list.releasePointerCapture = vi.fn();
+    (Array.from(list.children) as HTMLElement[]).forEach((el, i) => {
+      Object.defineProperty(el, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ x: i * 80, y: 0, top: 0, left: i * 80, right: (i + 1) * 80, bottom: 30, width: 80, height: 30 } as DOMRect),
+      });
+    });
+    fireEvent.pointerDown(view.getByTestId('row-a'), { pointerId: 1, button: 0, clientX: 40, clientY: 15 });
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 200, clientY: 15 });
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 290, clientY: 15 });
+    fireEvent.pointerUp(document, { pointerId: 1, clientX: 290, clientY: 15 });
+    expect(onReorder).toHaveBeenCalledWith(['a'], 4);
   });
 });

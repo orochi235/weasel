@@ -6,10 +6,10 @@ import { useSpacingHints } from './useSpacingHints';
 beforeEach(() => act(() => drawPrefs().reset()));
 
 describe('useSpacingHints', () => {
-  it('turns the spacing hints preset on, with its readout, by default', () => {
+  it('turns the spacing hints preset on, with its equal-spacing snap and readout, by default', () => {
     const { result } = renderHook(() => useSpacingHints());
     expect(result.current?.id).toBe('spacingHints');
-    expect(result.current?.moveBehaviors).toHaveLength(1);
+    expect(result.current?.snapSources?.map((s) => s.id)).toEqual(['spacing']);
     expect(result.current?.contributions?.map((c) => c.id)).toContain('distanceReadout');
   });
 

@@ -1,6 +1,5 @@
 import { useMemo, type ReactElement } from 'react';
-import { qty, type Quantity } from '@weasel-js/quantity';
-import { endlessTrack } from '../../endless';
+import { endlessTrack, qty, type Quantity } from '@weasel-js/quantity';
 import { QuantityText } from '../QuantityText';
 import { SliderBody } from './SliderBody';
 import { READOUT } from './stops';

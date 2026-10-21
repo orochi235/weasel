@@ -1,27 +1,9 @@
-import { defaultToastQueue, toast } from '@weasel-js/ui';
+import { defaultToastQueue, toast } from '@weasel-js/ui/components/Toast';
+import { reportFileWarnings } from '@editor/index';
 
-/** How many distinct warnings a toast quotes before it counts the rest. */
-const QUOTED = 3;
-
-/** What a toast says about what an SVG could not carry: how many, and the first few once each. */
-export function describeSvgWarnings(
-  did: 'Opened' | 'Imported' | 'Saved',
-  warnings: readonly string[],
-): { title: string; description: string } {
-  const distinct = [...new Set(warnings)];
-  const quoted = distinct.slice(0, QUOTED);
-  const rest = distinct.length - quoted.length;
-  return {
-    title: distinct.length === 1 ? `${did} with 1 warning` : `${did} with ${distinct.length} warnings`,
-    description: [...quoted, ...(rest > 0 ? [`and ${rest} more`] : [])].join('; '),
-  };
-}
-
-/** Tells the user what an Open, Import, or Save left out. One toast: the next one replaces it. */
+/** Tells the user what an SVG Open, Import, or Save left out. One toast: the next one replaces it. */
 export function reportSvgWarnings(did: 'Opened' | 'Imported' | 'Saved', warnings: readonly string[]): void {
-  if (warnings.length === 0) return;
-  const { title, description } = describeSvgWarnings(did, warnings);
-  toast.warning(title, { id: 'svg-warnings', description });
+  reportFileWarnings(did, warnings, 'svg-warnings');
 }
 
 /** Tells the user a Save produced no file. */

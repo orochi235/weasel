@@ -71,4 +71,23 @@ describe('constrainPathsEdit', () => {
     ], [link]);
     expect(r2.links[0].constraint).toBeNull();
   });
+  it('lets a path the edit left alone give way in full when it yields', () => {
+    const sq = square();
+    const moved = poly([10, 20], [110, 20], [110, 120], [10, 120]);
+    const other = poly([0, 0], [-50, 0], [-50, -50]);
+    // The square's anchor 0 and the other path's anchor 0 meet: link anchors 0 and 4.
+    const link: PathLink = { constraint: { kind: 'coincident', anchors: [0, 4] }, paths: [0, 1] };
+    const r = constrainPathsEdit([
+      { before: sq, after: moved, constraints: [] },
+      { before: other, after: other, constraints: [], yields: true },
+    ], [link]);
+    expect(r.converged).toBe(true);
+    const [a] = pathAnchorPoints(r.items[0].path);
+    expect(a.x).toBeCloseTo(10, 2);
+    expect(a.y).toBeCloseTo(20, 2);
+    const [b, c] = pathAnchorPoints(r.items[1].path);
+    expect(b.x).toBeCloseTo(10, 2);
+    expect(b.y).toBeCloseTo(20, 2);
+    expect(c).toEqual({ x: -50, y: 0 });
+  });
 });

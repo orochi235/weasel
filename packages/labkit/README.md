@@ -203,20 +203,21 @@ const config = f.schema({
   width: f.number(432),
   gap: f.number(12).auto((c) => (c.width as number) / 24),
   cols: f.number(3).initial(auto),
-  seed: f.number(1).manual(),
+  seed: f.number(1),
+  scale: f.number(1).auto(),
 });
 
 setConfig('gap', auto);
 addTrial('demo', { gap: auto });
 ```
 
-`.auto(fn)` attaches a resolver: the instrument reads the computed value rather
-than writing `?? compute()` itself, and the ghosted control has a real number to
-draw. Without one, an auto field simply reads `undefined`. `.initial(auto)`
-opens the field auto instead of pinned at its default. `.manual()`
-opts a field out entirely, no dot and no gesture,
-which is what you want for a value the instrument cannot receive as `undefined`,
-like a color going straight to a uniform.
+A field can be auto only if it says so. `.auto()` opts it in, and an auto field
+reads `undefined`. `.auto(fn)` also attaches a resolver: the instrument reads the
+computed value rather than writing `?? compute()` itself, and the ghosted control
+has a real number to draw. `.initial(auto)` opts in and opens the field auto
+instead of pinned at its default. A field that says none of these, like `seed`,
+has no dot and no gesture: the default for a value the instrument cannot
+receive as `undefined`, like a color going straight to a uniform.
 
 Nothing stores the sentinel. It is normalized at every boundary into the
 trial's set of unpinned paths, and the pinned value stays in the config
@@ -322,6 +323,7 @@ over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
 import { createScene } from '@weasel-js/core';
+import { gridSnapSource } from '@weasel-js/guides';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
   type ConfigOf, defineInstrument, f, type RenderContext, type SceneTrialState,
@@ -332,10 +334,10 @@ const config = f.schema({ snap: f.boolean(true).label('Snap to grid') });
 
 function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof config>> }) {
   const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
-  const toolOptions = useMemo(() => ({ snapPoint: ctx.config.snap ? toGrid : undefined }), [ctx.config.snap]);
+  const snap = useMemo(() => ({ sources: ctx.config.snap ? [gridSnapSource({ spacing: 20 })] : [] }), [ctx.config.snap]);
   return (
     <TrialSceneCanvas features={['draw']} defaultTools={['rect', 'pen']}
-      scene={scene} trial={ctx.trial} toolOptions={toolOptions} />
+      scene={scene} trial={ctx.trial} snap={snap} />
   );
 }
 
@@ -515,9 +517,14 @@ the focus. `zoom` in a render context is that camera's magnification — a 2D
 view's zoom, or an orbit's opening distance over its distance now.
 
 An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
-fov, near, far }`, plain numbers in radians and scene units. Read it with
-`useTrialOrbit()` anywhere in the trial, or `as3DView(ctx.trial.view)` in
-`render`, and project it with kernel3d's `cameraViewProjection`:
+fov, near, far }`, plain numbers in radians and scene units. Whatever draws
+the scene reads it with `useOrbitView()`, and projects it with kernel3d's
+`cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
+An instrument that draws 3D — through `useOrbitView()`, or a three.js
+renderer in its DOM — without declaring `orbit` has a camera labkit cannot
+move, and in development it warns and marks the trial's title bar. Declare
+`orbit: { fixed: true }` for a camera that holds still, or `orbit: false` when
+the instrument keeps a camera of its own:
 
 ```tsx
 orbit: {
@@ -529,7 +536,7 @@ orbit: {
 A drag turns it, Shift+drag pans its target, the wheel and a pinch dolly
 about the point under the pointer — as a 2D camera zooms about it — and a
 double click goes home. When the instrument draws in a pane rather than its
-whole body, it hands that pane to `useTrialOrbit().viewportRef`: gestures land
+whole body, it hands that pane to `useOrbitView().viewportRef`: gestures land
 there, and the dolly anchors there. An instrument running a dispatcher of its
 own over the pane — tools that select or draw in 3D — keeps the press for them
 with `gestures: { drag: false, home: false, pinch: 'trackpad' }` and moves the

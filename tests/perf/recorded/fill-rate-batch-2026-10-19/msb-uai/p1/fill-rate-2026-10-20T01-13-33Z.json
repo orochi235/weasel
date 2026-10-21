@@ -1,0 +1,248 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "fill-rate",
+  "git": {
+    "sha": "f01d3e01071054794c94252e9f92ff2e00a53b4a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-20T01:13:33.370Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M3 Max",
+    "cores": 14,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.8.1",
+    "loadavg": [
+      5.31,
+      3.95,
+      4.43
+    ]
+  },
+  "params": {
+    "viewport": "1200x900",
+    "layers": 400,
+    "samples": 20,
+    "runs": 8,
+    "warmupRuns": 3
+  },
+  "items": [
+    {
+      "id": "plain",
+      "metrics": {
+        "perFrame": {
+          "value": 2.8999998569488525,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.8999998569488525,
+            3.055000066757202,
+            3.0399999618530273,
+            7.424999713897705,
+            7.380000114440918
+          ]
+        },
+        "perFragment": {
+          "value": 0.0067129626318260475,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 156.03448552268878,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "glyph-math",
+      "metrics": {
+        "perFrame": {
+          "value": 4.09499979019165,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.09499979019165,
+            4.150000095367432,
+            4.210000038146973,
+            10.954999685287476,
+            11.275000095367432
+          ]
+        },
+        "perFragment": {
+          "value": 0.00947916618099919,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 175.33579177154851,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "gradient-uv",
+      "metrics": {
+        "perFrame": {
+          "value": 6.144999980926514,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.144999980926514,
+            6.234999895095825,
+            6.275000095367432,
+            22.389999866485596,
+            23.734999895095825
+          ]
+        },
+        "perFragment": {
+          "value": 0.014224536992885449,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 286.24898240467,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "split-sample",
+      "metrics": {
+        "perFrame": {
+          "value": 4.5849997997283936,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.5849997997283936,
+            4.619999885559082,
+            4.634999990463257,
+            20.28000020980835,
+            20.365000009536743
+          ]
+        },
+        "perFragment": {
+          "value": 0.010613425462334245,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 344.16577751526023,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "batch",
+      "metrics": {
+        "perFrame": {
+          "value": 13.554999828338623,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            13.554999828338623,
+            13.675000190734863,
+            13.864999771118164,
+            51.584999799728394,
+            51.81500005722046
+          ]
+        },
+        "perFragment": {
+          "value": 0.031377314417450515,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 282.2574748314932,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "batch-chain8-1",
+      "metrics": {
+        "perFrame": {
+          "value": 13.295000076293945,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            13.295000076293945,
+            13.394999980926514,
+            13.450000047683716,
+            47.03500008583069,
+            51.235000133514404
+          ]
+        },
+        "perFragment": {
+          "value": 0.030775463139569317,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 285.3704388078232,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "batch-chain8-7",
+      "metrics": {
+        "perFrame": {
+          "value": 13.56000018119812,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            13.56000018119812,
+            13.754999876022339,
+            13.605000257492065,
+            35.75999999046326,
+            44.84500002861023
+          ]
+        },
+        "perFragment": {
+          "value": 0.031388889308328984,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 230.71533502478067,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    },
+    {
+      "id": "batch-8-matrices",
+      "metrics": {
+        "perFrame": {
+          "value": 15.370000123977661,
+          "unit": "ms",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            15.370000123977661,
+            15.380000114440918,
+            15.449999809265137,
+            36.30999994277954,
+            42.88499999046326
+          ]
+        },
+        "perFragment": {
+          "value": 0.03557870399068903,
+          "unit": "ns",
+          "stat": "min of 5 runs after 3 warmup runs; each the median of 20 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)"
+        },
+        "spread": {
+          "value": 179.01756437569165,
+          "unit": "%",
+          "stat": "(max - min) / min over the same samples"
+        }
+      }
+    }
+  ]
+}

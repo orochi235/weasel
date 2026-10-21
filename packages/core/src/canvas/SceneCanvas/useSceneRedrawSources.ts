@@ -9,14 +9,19 @@ import type { RedrawSource } from '../../core/layers/render';
  * `animator.colorOverrides`.
  */
 export function useSceneRedrawSources(args: {
-  /** `<SceneCanvas redrawOn>`. */
-  supplied: readonly RedrawSource[] | undefined;
+  /** `<SceneCanvas>`'s own `redrawOn`, `animator` and `modes`. */
+  props: {
+    redrawOn?: readonly RedrawSource[];
+    animator?: { onTick(listener: () => void): () => void };
+    modes?: RedrawSource;
+  };
   scene: RedrawSource & { overrides: RedrawSource };
   heldModifiers: RedrawSource;
-  animator: { onTick(listener: () => void): () => void } | undefined;
-  modes: RedrawSource | undefined;
+  /** The ghosts `poseTransition` shows leaving, which move each frame. */
+  departures: RedrawSource;
 }): readonly RedrawSource[] {
-  const { supplied, scene, heldModifiers, animator, modes } = args;
+  const { scene, heldModifiers, departures } = args;
+  const { redrawOn: supplied, animator, modes } = args.props;
   return useMemo((): readonly RedrawSource[] => [
     ...(supplied ?? []),
     scene,
@@ -24,5 +29,6 @@ export function useSceneRedrawSources(args: {
     heldModifiers,
     ...(animator ? [{ subscribe: (repaint: () => void) => animator.onTick(repaint) }] : []),
     ...(modes ? [modes] : []),
-  ], [scene, heldModifiers, animator, modes, supplied]);
+    departures,
+  ], [scene, heldModifiers, animator, modes, supplied, departures]);
 }

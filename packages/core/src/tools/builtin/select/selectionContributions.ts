@@ -128,7 +128,7 @@ export function selectionRotateBindings<TPose>(
   if (rotate.pivot) params.pivot = rotate.pivot;
   const opts: BindingOpts = {
     ...(Object.keys(params).length > 0 ? { params } : {}),
-    ...(rotate.behaviors !== undefined ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
+    ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
   };
   return [{
     spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },

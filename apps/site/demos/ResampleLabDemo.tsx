@@ -10,7 +10,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { Button } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo } from 'react';
 import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
 import { PathLabStage } from './pathLab/pathLab';

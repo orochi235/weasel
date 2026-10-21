@@ -73,6 +73,15 @@ a 0–100% limit is off at 100, and a scale with no such end takes `endless`,
 which adds a stop one step past the range that stores `Infinity` and reads the
 leaf's `infinity` word.
 
+A bound that depends on where the value is held takes `minAt` or `maxAt`: a
+function handed a reader of the values beside it, by the paths a condition
+there would name, returning the bound or `undefined`. It is taken with `min`
+or `max`, the tighter winning, and `prefNumberAt(leaf, read)` folds it in for
+one holder. A box's width that may not go under its node's own minimum reads
+`data.minSize` this way: `SelectionPanel` resolves it against each node and
+holds each write to that node's bound, and `PrefsForm` and labkit's
+`ControlPanel` resolve it against their values.
+
 ## Split values
 
 A leaf that lists `splitBy` may hold its value once per option of another

@@ -12,6 +12,7 @@ import {
 } from 'core/geometry/targetFrame';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { CursorSpec } from '@weasel-js/cursor';
+import { edgeHandlesFit } from 'interactions/actions/resize/cornerHandles';
 
 /** What the walk found: the region, plus the ids needed to describe it. */
 export interface AffordanceRegionHit {
@@ -143,6 +144,13 @@ export function pointRegionFrame(
   return { x: a.x, y: a.y, angle, half, u, v };
 }
 
+/** Whether a point region is live in `view`: false for an edge handle whose
+ *  body is too small on screen to have room for one (`edgeOf`). A region that
+ *  is not live is neither hit nor painted. */
+export function pointRegionLive(shape: PointShape, xf: TargetTransform, view: View): boolean {
+  return !shape.edgeOf || edgeHandlesFit(shape.edgeOf, xf, view.scale, shape.hitRadiusPx);
+}
+
 /** A body under this many hit radii across gives up the inward half of each
  *  corner's hit square, so there is somewhere on it that is not a handle. */
 const SMALL_BODY_RADII = 4;
@@ -211,6 +219,7 @@ function hitRegion(
     //
     // Compared in screen space: testing it in the target's local frame would
     // stretch it under non-uniform zoom.
+    if (!pointRegionLive(region.shape, xf, view)) return false;
     const f = pointRegionFrame(region.shape, xf, view);
     const d = scaleDelta(wx - f.x, wy - f.y, view.scale);
     const c = Math.cos(f.angle), sn = Math.sin(f.angle);

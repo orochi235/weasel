@@ -19,6 +19,8 @@ vi.mock('features/paths/penPreviewLayer', async (importOriginal) => {
   return { ...actual, createPenPreviewLayer: vi.fn(actual.createPenPreviewLayer) };
 });
 
+const DEG = Math.PI / 180;
+
 describe('usePenTool', () => {
   it('click on empty space (Idle) → places a corner anchor and enters Drawing', () => {
     const p = setup();
@@ -63,6 +65,16 @@ describe('usePenTool', () => {
     const out = p.scratch.current!.anchors[0].outHandle!;
     expect(out.y).toBeCloseTo(0);
     expect(out.x).toBeGreaterThan(0);
+  });
+
+  it('Shift puts a handle dragged at 40° on the 45° line, at the nearest point to the pointer', () => {
+    const p = setup();
+    const r = 100;
+    p.drag({ x: 0, y: 0 }, { x: r * Math.cos(40 * DEG), y: r * Math.sin(40 * DEG) }, { shift: true });
+    const out = p.scratch.current!.anchors[0].outHandle!;
+    const along = r * Math.cos(5 * DEG) / Math.SQRT2;
+    expect(out.x).toBeCloseTo(along, 9);
+    expect(out.y).toBeCloseTo(along, 9);
   });
 
   it('a cancelled drag takes back the anchor it placed', () => {

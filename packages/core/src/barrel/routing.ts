@@ -13,7 +13,7 @@ export { contextMenuAction, openContextMenu } from '../interactions/actions/defa
 
 // --- Action types -----------------------------------------------------------
 export { ActionDisabledReason } from '@weasel-js/routing';
-export type { ActionDisabledReasonValue, ActionVariant } from '@weasel-js/routing';
+export type { ActionDisabledReasonValue, ActionVariant, Carried } from '@weasel-js/routing';
 
 // --- Actions registry -----------------------------------------------------
 export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
@@ -24,7 +24,8 @@ export type { MenuDef, MenuHit, MenuHost, MenuOpenRequest, MenuSources, OpenMenu
 export { resolveSchemaMenu } from '@weasel-js/routing';
 export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from '@weasel-js/routing';
 export { actionCursor } from '@weasel-js/routing';
-export type { Action, ActionDispatch, ActionPresentation } from '@weasel-js/routing';
+export type { Action, ActionDispatch, ActionPresentation, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
+export { actionSettingsParams, readActionSettings } from '@weasel-js/routing';
 export { actionBindings, actionItems, actionItemTitle, actionsTagged, taggedActionItems, matchActionItem } from '@weasel-js/routing';
 export { PATH_GESTURE_TAGS, pathOperationTags, type PathGestureFamily } from '../interactions/actions/pathGestureTags';
 export { heldKeySpec } from '@weasel-js/routing';
@@ -42,7 +43,7 @@ export { actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
 export type { ActionShortcut } from '@weasel-js/routing';
 export { moveAction } from '../interactions/actions/move/action';
 export { flipAction } from '../interactions/actions/flip/action';
-export { resizeAction } from '../interactions/actions/resize/action';
+export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { insertAction } from '../interactions/actions/insert/action';
@@ -76,6 +77,9 @@ export {
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
+  commitDeleteToScene, createDeleteAction, deleteAction, type DeleteActionOptions,
+} from '../interactions/actions/defaults/delete';
+export {
   pinchZoomAction,
   makePinchZoomAction,
   type PinchZoomOptions,
@@ -106,7 +110,7 @@ export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@we
 // ─── Dep registry ───
 export { DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource } from '@weasel-js/routing/react';
 export { createDepRegistry } from '@weasel-js/routing';
-export type { DepName, DepRegistry } from '@weasel-js/routing';
+export type { DepName, DepRegistry, DepListing, DepSource } from '@weasel-js/routing';
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
@@ -116,17 +120,20 @@ export type {
   ClipboardIngestCtx,
   EditAnchorsDep,
   FinishedEditFrame,
+  TransformFollower,
+  TransformPreviewNode,
   IngestionDep,
   InsertDep,
+  InsertEnds,
   InsertIntoDep,
   PathSymmetryDep,
   InsertLive,
   SnapDep,
-  SnapQuery,
   SnapGeometry,
   InsertExtras,
   LassoSelectDep,
   LayoutDep,
+  CanDropIntoDep,
   NodeAtPointDep,
   ResizePolicy,
   SvgIngestOptions,
@@ -139,8 +146,12 @@ export {
   type UseResizePolicyOptions,
 } from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
-export { CORNER_ANCHORS, cornerPoint } from '../interactions/actions/resize/cornerHandles';
-export type { CornerAnchor, CornerEdge } from '../interactions/actions/resize/cornerHandles';
+export {
+  CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, cornerPoint, handlePoint, isCornerHandle, resizeHandlesFor,
+} from '../interactions/actions/resize/cornerHandles';
+export type {
+  CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
+} from '../interactions/actions/resize/cornerHandles';
 export { useSliceDep, useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
@@ -157,7 +168,7 @@ export { createDispatcher, // The precedence rule itself, so reflection surfaces
   // binding outranks another instead of re-deriving the tuple.
   specificity } from '@weasel-js/routing';
 export { useGestureDispatcher } from '@weasel-js/routing/react';
-export type { Dispatcher, DispatcherContext, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
+export type { Dispatcher, DispatcherContext, KeyReach, InputEvent, BindingScope, ScopedBinding, MatchResult, ResolveOnlyResult, ResolvedCandidate, ResolveAllOptions } from '@weasel-js/routing';
 export type {
   DispatchRecord, DispatchRecordInput, RecordCandidate, DroppedCandidate,
   RankedCandidate, PlacedBy, WalkStep, SpecificityPart,
@@ -176,7 +187,6 @@ export type {
   PointerState,
   GestureContext,
   GestureFrames,
-  SnapStrategy,
   ActionBehavior,
   BehaviorResult,
   GroupTransform,
@@ -201,10 +211,6 @@ export type {
   LassoSelectMoveResult,
   LassoSelectBehavior,
   LassoSelectOverlay,
-  PointSnapFrame,
-  PointSnapContext,
-  PointSnapResult,
-  PointSnapBehavior,
   BehaviorEnd,
   MoveEnd,
 } from '../interactions/gestures/types';

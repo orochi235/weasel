@@ -20,7 +20,7 @@ function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) 
   const live = useLatest(ctx.config);
   const features = useMemo(() => ['pick', 'move', 'paths', createHandleSnapPreset(() => {
     const { snap, step, tolerance, opposite } = live.current;
-    return snap ? { stepDeg: Number(step), toleranceDeg: tolerance, opposite } : null;
+    return snap ? { stepDeg: Number(step), reachDeg: tolerance, opposite } : null;
   })] as const, [live]);
 
   return (

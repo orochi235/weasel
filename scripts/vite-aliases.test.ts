@@ -42,7 +42,7 @@ function viaPaths(paths: Record<string, string[]>, specifier: string): string | 
 }
 
 const SOURCE = /\.(ts|tsx|mts|mjs|css|less)$/;
-const SKIPPED = new Set(['node_modules', 'dist', 'dist-demo', 'dist-draw', 'dist-forge', 'dist-theme-editor']);
+const SKIPPED = new Set(['node_modules', 'dist', 'dist-demo', 'dist-draw', 'dist-chart', 'dist-forge', 'dist-theme-editor']);
 /** A specifier in a position that resolves it: an import, an export, a mock, or a stylesheet `@import`. */
 const IMPORTED = /(?:\bfrom|\bimport|\bmock|\bimportActual|\bimportOriginal|@import)\s*\(?\s*['"](@weasel-js\/[\w./-]+)['"?]/g;
 
@@ -88,7 +88,7 @@ describe('weaselAliases', () => {
 
   it('resolves every weasel specifier the repo imports to a file that exists', () => {
     // Only a build produces these.
-    const built = new Set(['@weasel-js/ui/style.css', '@weasel-js/core/style.css']);
+    const built = new Set(['@weasel-js/ui/style.css', '@weasel-js/core/style.css', '@weasel-js/devtools/style.css']);
     const broken: string[] = [];
     for (const [specifier, file] of importedSpecifiers()) {
       if (built.has(specifier)) continue;

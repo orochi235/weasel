@@ -15,6 +15,7 @@ export {
   pathCommandCoordCount,
   PathBuilder,
   pathFromD,
+  pathToD,
   polygonFromPoints,
   polylineFromPoints,
   rectPath,
@@ -129,11 +130,8 @@ export {
   createPathSnapIndex,
   findPathSnap,
   PATH_SNAP_KINDS,
-  createPathSnapper,
-  createPathSnapMarkerLayer,
   pathSnapGlyph,
   PATH_SNAP_LABELS,
-  DEFAULT_PATH_SNAP_RADIUS,
 } from '../features/paths';
 export { hasEditablePath } from '../features/paths/editablePath';
 export type {
@@ -153,6 +151,7 @@ export type {
   PathEditDragStart,
   PathEditExtension,
   PathEditFinishCtx,
+  PathTransformFinishCtx,
   PathEditHandleMove,
   PathEditMark,
   PathEditMarksCtx,
@@ -194,10 +193,6 @@ export type {
   PathSnapIndex,
   PathSnapKind,
   PathSnapQuery,
-  PathSnapMark,
-  PathSnapOptions,
-  PathSnapper,
-  PathSnapMarkerStyle,
 } from '../features/paths';
 export {
   SHAPE_COUNT_RANGE,
@@ -242,7 +237,9 @@ export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interac
 export { joinSelectedAnchors, type AnchorEdit } from '../interactions/actions/defaults/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';
-export { pathEditPreview, type PathEditPreview, type PathStorageKind } from '../interactions/actions/edit-anchors/preview';
+export {
+  finishPathEditFrame, pathEditPreview, type PathEditFrame, type PathEditPreview, type PathStorageKind,
+} from '../interactions/actions/edit-anchors/preview';
 export { editedPathSymmetries } from '../interactions/actions/edit-anchors/symmetry';
 export { HANDLE_LOCK_ROLES, locksInForce } from '../interactions/actions/edit-anchors/handleDrag';
 export {
@@ -308,9 +305,6 @@ export type {
   CurveRepresentation,
   Discriminator,
 } from '@weasel-js/geom/curves';
-
-// ─── Utility: 45° axis constraint ───────────────────────────────────────────
-export { constrainTo45 } from '../util/constrainTo45';
 
 // ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
 export {

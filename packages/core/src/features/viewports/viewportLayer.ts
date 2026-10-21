@@ -54,6 +54,10 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
   /** Where on the outer canvas this viewport is painted, in screen-space
    *  CSS pixels. Recomputed every frame. */
   bounds: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
+  /** The part of the outer canvas the viewport shows through, in the same
+   *  space as `bounds` and recomputed with it — the rect of a viewport it is
+   *  nested in. Omit to show all of `bounds`. */
+  clip?: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
   /** Optional opaque background painted before the source layers. */
   background?: string;
 }
@@ -79,7 +83,7 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
 export function createViewportLayer<TData, TSource = TData>(
   opts: CreateViewportLayerOpts<TData, TSource>,
 ): ViewportLayer<TData> {
-  const { id, label, source, view, bounds, background, data: sourceData } = opts;
+  const { id, label, source, view, bounds, clip: clipAt, background, data: sourceData } = opts;
   const fixedView = typeof view === 'function' ? null : normalizeView(view);
   const viewAt = (outer: View, dims: Dims): View =>
     fixedView ?? normalizeView((view as (outer: View, dims: Dims) => View)(outer, dims));
@@ -90,7 +94,10 @@ export function createViewportLayer<TData, TSource = TData>(
     space: 'screen',
     subscribe: subscribeToSources(sourceAt),
     resolvable(outer, dims) {
-      return { id, view: viewAt(outer, dims), rect: bounds(outer, dims) };
+      const rect = bounds(outer, dims);
+      return clipAt
+        ? { id, view: viewAt(outer, dims), rect, clip: clipAt(outer, dims) }
+        : { id, view: viewAt(outer, dims), rect };
     },
     draw: (data, outerView, dims): DrawCommand[] => {
       const b = bounds(outerView, dims);
@@ -111,10 +118,21 @@ export function createViewportLayer<TData, TSource = TData>(
       const group: GroupDrawCommand = {
         kind: 'group',
         transform,
-        clip: { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
+        clip: clipAt ? clipWithin(b, clipAt(outerView, dims)) : { kind: 'rect', x: 0, y: 0, width: b.w, height: b.h },
         children,
       };
       return [group];
     },
   };
+}
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+/** `clip` cut to `b`, measured from `b`'s top-left. */
+function clipWithin(b: Rect, clip: Rect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
+  const x0 = Math.max(b.x, clip.x);
+  const y0 = Math.max(b.y, clip.y);
+  const x1 = Math.min(b.x + b.w, clip.x + clip.w);
+  const y1 = Math.min(b.y + b.h, clip.y + clip.h);
+  return { kind: 'rect', x: x0 - b.x, y: y0 - b.y, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }

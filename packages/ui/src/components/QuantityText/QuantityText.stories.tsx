@@ -18,6 +18,9 @@ export const Range: Story = { args: { range: [tag(2, unit('ft')), tag(5, unit('f
 /** Ends whose spoken form is not their text: a screen reader hears "1 over 64 to 1 over 2". */
 export const SpokenRange: Story = { args: { range: [tag(1 / 64, fraction()), tag(1 / 2, fraction())] } };
 
+/** A fraction drawn as MathML, numerator over denominator. A copy still reads `3/4`. */
+export const Stacked: Story = { args: { value: tag(3 / 4, fraction({ form: 'stacked' })) } };
+
 /** Members under a fallback display, each after its label. */
 export const Vector: Story = { args: { vector: [120, 48.5], labels: ['x', 'y'], display: decimal() } };
 

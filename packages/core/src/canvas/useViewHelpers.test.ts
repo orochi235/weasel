@@ -63,6 +63,38 @@ describe('useViewHelpers preview bounds', () => {
   });
 });
 
+describe('useViewHelpers in-flight bounds', () => {
+  // A move publishes its poses to the scene's overrides and names its ids
+  // without a preview pose; the adapter's pose is the effective one. A
+  // consumer `boundsOf` answers for the document pose only, so in flight the
+  // chrome boxes the effective pose instead.
+  const shown = { x: 200, y: 0, width: 10, height: 10 };
+  const gestureSource = {
+    ids: () => ['a'],
+    bounds: () => [],
+    subscribe: () => () => {},
+    getVersion: () => 1,
+    previewSources: () => [],
+    overlays: () => [],
+  };
+  const helpers = () => renderHook(() => useViewHelpers({
+    adapter: { getPose: () => shown },
+    geometry: RECT_POSE_DESCRIPTOR,
+    boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+    selection: [asNodeId('a')],
+    gestureSource,
+    previewPoseExtra: () => null,
+  })).result.current.helpers;
+
+  it('boxes the chrome at the effective pose', () => {
+    expect(helpers().getEffectiveBounds('a')).toEqual(shown);
+  });
+
+  it('counts the id in the gesture bounds', () => {
+    expect(helpers().getGestureBounds()).toEqual(shown);
+  });
+});
+
 describe('useViewHelpers over nodes', () => {
   const pose = { x: 0, y: 0, width: 100, height: 100 };
   const node = {

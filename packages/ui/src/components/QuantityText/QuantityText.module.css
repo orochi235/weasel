@@ -10,7 +10,33 @@
   color: var(--wzl-fg-muted);
 }
 
-.spoken {
+/* A copy takes the hidden text form instead of the MathML's bare digits. */
+.math {
+  user-select: none;
+}
+
+/* The UI face with proportional digits, not the browser's math font. Equal-width digits align a column
+ * but tilt a fraction: a narrow 1 sits off center in a wide 6's slot. Only a math font carries the gap
+ * between a fraction's bar and its digits, so without one the gap is set here. */
+.math math {
+  font-family: var(--wzl-font-ui);
+  font-variant-numeric: proportional-nums;
+}
+
+/* The bar runs past the digits by the same amount on each side. */
+.math mfrac > * {
+  padding-inline: 0.1em;
+}
+
+.math mfrac > :first-child {
+  padding-block-end: 0.12em;
+}
+
+.math mfrac > :last-child {
+  padding-block-start: 0.12em;
+}
+
+.hidden {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;

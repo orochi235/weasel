@@ -12,6 +12,12 @@ import '../FrontPage/GetStarted';
 import '../Shell';
 import { renderWithIcons } from '../testIcons';
 
+// The real history renders ~46,000 elements, which a `getByRole` then walks; under a loaded
+// fleet run that alone outlasted the 5 s wait. Routing needs only the heading.
+vi.mock('virtual:changelogs', () => ({
+  default: [{ version: '1.0.0', date: '2026-08-12T00:00:00Z', entries: [{ id: 'a', packages: ['core'], titleHtml: 'a change', bodyHtml: '', level: 'patch' }] }],
+}));
+
 // jsdom has no IntersectionObserver, and `WeaselDemos` builds one to defer
 // work until a demo scrolls into view. Without this the page boundary catches
 // the ReferenceError and every assertion below reads an error screen.

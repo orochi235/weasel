@@ -3,7 +3,7 @@
  * pump events each becomes.
  */
 import type {
-  BodyKind, BodyTarget, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
+  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
 } from '../ui/inputEvent';
 import { stylusOf } from '../ui/stylus';
 import type { Point } from './multiTouch';
@@ -16,6 +16,13 @@ export interface PointerSample extends EventModifiers, PointerSampleStylus {
   clientY: number;
   /** What the originating event was aimed at. */
   target?: unknown;
+  /**
+   * When the input happened, on the recognizer clock's timeline: a DOM event's
+   * `timeStamp` beside `performance.now()`. The windows between two inputs are
+   * measured on it, so a long task that delays an event's handling does not
+   * widen them. Read as the clock's `now()` when absent, 0, or ahead of it.
+   */
+  timeStamp?: number;
 }
 
 /** A pointer going down, with what the host found under it. */
@@ -28,6 +35,8 @@ export interface PressSample extends PointerSample {
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
+  /** What a double click this press completes lands on, where not the body hit. */
+  doubleClickBody?: DoubleClickBody;
 }
 
 export function modifiersOf(e: EventModifiers): EventModifiers {
@@ -43,6 +52,7 @@ export function pressFactsOf(s: PressSample): PressFacts {
     worldY: s.y,
     ...modifiersOf(s),
     ...pressedOn(s),
+    ...(s.doubleClickBody !== undefined ? { doubleClickBody: s.doubleClickBody } : {}),
   };
 }
 

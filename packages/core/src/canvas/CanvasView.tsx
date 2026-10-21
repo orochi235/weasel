@@ -6,19 +6,16 @@
  * surface's `views` prop, which renders one of these per descriptor.
  */
 import {
-  useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState,
-  type Ref,
+  useCallback, useEffect, useImperativeHandle, useInsertionEffect, useLayoutEffect, useMemo, useRef,
 } from 'react';
-import type { CanvasViewCamera } from './canvasExtension';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
+import { useSelection } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
@@ -34,7 +31,9 @@ import {
   createDispatcherPreviewSources,
 } from './SceneCanvas/dispatcherGestureBounds';
 import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } from './viewInputs';
-import { createSceneLayerGate, viewPaintedLayers } from './sceneLayerPaint';
+import type { CanvasViewProps, ViewRect } from './canvasViewProps';
+export type { CanvasViewProps, ViewRect } from './canvasViewProps';
+import { NO_RECT, useViewNesting } from './useViewNesting';
 import {
   useOptionalViewRegistry,
   surfaceLocal,
@@ -42,82 +41,6 @@ import {
   UNMEASURED_DIMS,
   type ViewRegistration,
 } from './viewRegistry';
-
-/** A rect on the surface, in CSS pixels from the canvas top-left. */
-export interface ViewRect { x: number; y: number; w: number; h: number }
-
-/** Props for `<CanvasView>`. */
-export interface CanvasViewProps {
-  /** Identifies the view to the surface and to input routing. Must be unique
-   *  among the views on one canvas. */
-  id: string;
-  /** Where this view paints, recomputed every frame so the rect can track the
-   *  outer camera. A plain rect is accepted for a fixed panel. */
-  bounds: ViewRect | ((outer: View, dims: Dims) => ViewRect);
-  /** Camera. Supply this to control it; otherwise the view keeps its own,
-   *  seeded from `defaultView`. `onViewChange` fires either way.
-   *
-   *  A thunk is a camera derived from the canvas's — a loupe following the
-   *  pointer — read fresh at every paint and every event, so the two cannot
-   *  disagree mid-gesture. It is controlled: a pan inside the view reaches
-   *  only `onViewChange`. */
-  view?: View | ((outer: View, dims: Dims) => View);
-  defaultView?: View;
-  onViewChange?: (v: View) => void;
-  /** Pan limits, applied to every camera change the same way `<Canvas>`
-   *  applies its own. */
-  viewBounds?: Bounds;
-  /** Receives this view's camera, to read, drive, and watch from outside it. */
-  cameraRef?: Ref<CanvasViewCamera>;
-  /** Which of the surface's layers this view paints. Defaults to all of them —
-   *  the same content through a second camera. */
-  layers?: (surface: readonly RenderLayer<unknown>[]) => readonly RenderLayer<unknown>[];
-  /**
-   * Show or hide layers in this view only, by id — the map `<Canvas>` takes,
-   * applied after `layers` narrows the stack. A scene layer paints as
-   * `scene:<layerId>`; one hidden here neither paints nor picks in this view,
-   * and a marquee or Cmd+A routed here passes over it. The surface and every
-   * other view are unaffected.
-   */
-  layerVisibility?: Record<string, boolean>;
-  /** Draw order for this view, by layer id, bottom first. A listed order is
-   *  the whole list, so a layer left out of it is neither painted nor picked
-   *  here. */
-  layerOrder?: string[];
-  /** Opaque ground painted before the source layers, so the surface does not
-   *  show through where the inner camera sees nothing. */
-  background?: string;
-  /** Paint and hit order. Defaults to `Infinity` — after every view the
-   *  surface declared as a prop. */
-  order?: number;
-  /** Label for debug overlays. Defaults to the id. */
-  label?: string;
-  /**
-   * Whether input over the view resolves through its camera. Default `true`:
-   * a press selects what the view shows, and a drag moves it in the view's
-   * world units. `false` paints only, and input over it reaches the canvas
-   * beneath as though the view were not there.
-   *
-   * Views do not nest. A view paints and routes the surface's own stack,
-   * never another view; overlapping views are hit in paint order.
-   */
-  interactive?: boolean;
-  /**
-   * Whether the surface paints the view. Default `true`. `false` is for a
-   * host that draws the view inside chrome of its own — a HUD window's
-   * interior — through `SceneCanvasApi.addView`'s `draw`, so it lands in
-   * that chrome's z-order rather than the surface's.
-   */
-  paint?: boolean;
-  /** A selection of this view's own, which actions dispatched inside it read
-   *  and write instead of the surface's. Omit both this and
-   *  `selectionOptions` and the view shares the surface's selection — the
-   *  default, so undo restores one selection rather than N. */
-  selection?: SelectionApi;
-  /** Opts this view into owning a selection, configured thus. Ignored when
-   *  `selection` is supplied. */
-  selectionOptions?: UseSelectionOptions;
-}
 
 /** What a view builds its helpers from outside a surface: nothing but the
  *  default geometry, which answers `null` for every lookup. */
@@ -135,6 +58,7 @@ const sizeOf = (rect: ViewRect): Dims => ({ width: rect.w, height: rect.h });
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
+
 /**
  * One view on a shared canvas. Owns a camera, contributes the viewport node
  * that paints it, and registers the dispatch record that sends gestures inside
@@ -145,7 +69,7 @@ const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<un
  */
 export function CanvasView(props: CanvasViewProps): null {
   const {
-    id, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
+    id, parent, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
     layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
     selection: selectionProp, selectionOptions, interactive = true, paint = true,
   } = props;
@@ -168,13 +92,10 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    bounds, layers, layerVisibility, layerOrder, viewProp, viewSelection, selection,
+    parent, bounds, layers, layerVisibility, layerOrder, viewProp, viewSelection, selection,
   });
 
-  const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
-    const b = live.current.bounds;
-    return typeof b === 'function' ? b(outer, dims) : b;
-  }, [live]);
+  const { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted } = useViewNesting(registry, live);
 
   /** The rect for the surface's current frame — what a client point and a
    *  clamp are measured against outside a draw call. */
@@ -190,7 +111,7 @@ export function CanvasView(props: CanvasViewProps): null {
     view: typeof viewProp === 'function'
       ? () => {
         const surface = registry?.surface();
-        return viewProp(surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
+        return derivedAt(viewProp, surface?.view() ?? IDENTITY_VIEW, surface?.dims() ?? UNMEASURED_DIMS);
       }
       : viewProp,
     defaultView,
@@ -208,19 +129,8 @@ export function CanvasView(props: CanvasViewProps): null {
    *  that frame; any other is the same whatever the surface is doing. */
   const cameraAt = useCallback((outer: View, dims: Dims): View => {
     const v = live.current.viewProp;
-    return typeof v === 'function' ? normalizeView(v(outer, dims)) : camera();
-  }, [live, camera]);
-
-  /** The surface's layers this view draws, in the order it draws them. */
-  const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => (
-    viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current)
-  ), [registry, live]);
-
-  const [sceneLayerGate] = useState(createSceneLayerGate);
-  /** What this view's picks, marquees and select-alls ask of a scene layer. */
-  const layerIsPainted = useCallback((layerId: string): boolean => (
-    sceneLayerGate(registry?.surface()?.layers() ?? [], live.current)(layerId)
-  ), [registry, sceneLayerGate, live]);
+    return typeof v === 'function' ? normalizeView(derivedAt(v, outer, dims)) : camera();
+  }, [live, camera, derivedAt]);
 
   const viewApi = useMemo<ViewApi>(() => ({
     get: camera,
@@ -286,8 +196,8 @@ export function CanvasView(props: CanvasViewProps): null {
     boundsOfPose,
     ...own,
     selection: selection.current,
-    getIsVisible: () =>
-      inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
+    layerIsPainted,
+    getIsVisible: () => inputsRef.current?.chromeCaps?.isVisible(ruleInputs()) ?? ALWAYS_VISIBLE,
   });
   const helpersRef = useLatest(helpers);
 
@@ -315,7 +225,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: camera,
       targetScale,
-      rotationBadge,
+      rotationBadge, handleHitRadius: inputs?.resizeHandles?.hitRadiusPx, edgeHandles: inputs?.resizeHandles?.edges,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
@@ -328,28 +238,27 @@ export function CanvasView(props: CanvasViewProps): null {
       );
       return extra ? layerAffordance(extra.layerId, extra.hit) : inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, helpersRef]);
+  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, helpersRef]);
 
-  const classifyTarget = useMemo(() => {
-    const inner = buildClassifyTarget(
-      () => live.current.selection.get(),
-      (wx, wy) => {
-        const i = inputsRef.current;
-        // This view's camera: the dispatcher converted with `clientToWorldHere`,
-        // and a screen-pixel tolerance needs the scale that produced it. The
-        // layer gate is this view's too, never the surface's.
-        const frame = { ...camera(), layerIsPainted };
-        if (i?.pickBest) return i.pickBest(wx, wy, frame);
-        const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
-        return ids.length > 0 ? ids[ids.length - 1]! : null;
-      },
-      (id) => inputsRef.current?.kindOfNode?.(id),
-    );
-    return (world: { x: number; y: number }) => inner(world);
-  }, [camera, layerIsPainted, live, inputsRef]);
+  const classifyTarget = useMemo(() => buildClassifyTarget(
+    () => live.current.selection.get(),
+    (wx, wy) => {
+      const i = inputsRef.current;
+      // This view's camera: the dispatcher converted with `clientToWorldHere`,
+      // and a screen-pixel tolerance needs the scale that produced it. The
+      // layer gate is this view's too, never the surface's.
+      const frame = { ...camera(), layerIsPainted };
+      if (i?.pickBest) return i.pickBest(wx, wy, frame);
+      const ids = i?.pickEvery?.(wx, wy, frame) ?? [];
+      return ids.length > 0 ? ids[ids.length - 1]! : null;
+    },
+    (id) => inputsRef.current?.kindOfNode?.(id),
+    (id) => inputsRef.current?.doubleClickNames?.(id) ?? id,
+  ), [camera, layerIsPainted, live, inputsRef]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
+    ...(parent !== undefined ? { parent } : {}),
     order,
     interactive,
     paint,
@@ -359,6 +268,7 @@ export function CanvasView(props: CanvasViewProps): null {
       source: drawnLayers,
       view: cameraAt,
       bounds: (outer, dims) => rectAt(outer, dims),
+      ...(parent !== undefined ? { clip: (outer: View, dims: Dims) => frameIn(outer, dims)?.clip ?? NO_RECT } : {}),
       // The surface half of the envelope passes through; the view half is
       // this view's, so its layers paint its chrome rather than the
       // surface's.
@@ -366,6 +276,7 @@ export function CanvasView(props: CanvasViewProps): null {
       ...(background !== undefined ? { background } : {}),
     }),
     layerIsPainted,
+    drawnLayers,
     target: {
       dispatcher: dispatcherRef.current!,
       affordanceAt,
@@ -384,9 +295,9 @@ export function CanvasView(props: CanvasViewProps): null {
       // another.
       getRuleCtx: () => inputsRef.current?.chromeCaps?.ruleCtx(ruleInputs()),
     },
-  }), [id, order, interactive, paint, label, background, rectAt, cameraAt, viewApi,
+  }), [id, parent, order, interactive, paint, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, live, inputsRef, helpersRef]);
+       layerIsPainted, live, inputsRef, helpersRef, frameIn]);
 
   useEffect(() => {
     if (!registry) return;

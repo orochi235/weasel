@@ -7,6 +7,7 @@ import { formatShortcut } from '@weasel-js/gestures';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
 import { useRegisteredActions } from './registeredActions';
+import { useActionSettings, type ActionSettingsForm } from '../ActionSettings/useActionSettings';
 
 /** What an action leaf's button is and does, on whatever surface draws it. */
 export interface LeafAction {
@@ -18,13 +19,15 @@ export interface LeafAction {
   /** It cannot be pressed now: the action says so, a `run` is still going, or the leaf is disabled. */
   disabled: boolean;
   /** Why the action says it cannot run, in words, when it says. */
-  reason: string | undefined;
+  disabledReason: string | undefined;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
   missing: string | undefined;
   /** Show what pressing would do; absent for an action with no `preview`. */
   preview?: () => () => void;
+  /** The form the action carries, which pressing opens in place of triggering it; `null` for none. */
+  settings: ActionSettingsForm | null;
 }
 
 const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
@@ -46,6 +49,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
   const item = key === undefined ? undefined : all.flatMap(actionItems).find((i) => i.key === key);
 
   const shown = useActionStates(item ? [item] : NO_ITEMS)[0] ?? { enabled: true, active: undefined };
+  const settings = useActionSettings(item);
 
   const [pending, setPending] = useState(false);
   const mounted = useRef(true);
@@ -68,9 +72,10 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       icon,
       shortcut: item ? (item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
-      reason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
+      disabledReason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
       active: shown.active,
       missing: item ? undefined : key,
+      settings,
       ...(item?.action.preview && registry
         ? { preview: () => registry.preview(item.action.id, item.params) }
         : {}),
@@ -90,8 +95,9 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
     icon,
     shortcut: undefined,
     disabled: disabled || pending,
-    reason: undefined,
+    disabledReason: undefined,
     active: undefined,
     missing: undefined,
+    settings: null,
   };
 }

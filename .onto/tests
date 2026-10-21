@@ -1,7 +1,8 @@
 enlist: 6
 plugin: node
-# The test script as vitest's own binary: npm does not pass onto's reporter fd 3.
+# The test script, run by node rather than npm: npm does not pass onto's reporter fd 3. The launcher runs
+# the browser project in a vitest process beside the rest, and merges both into one bar.
 # The projects are package.json's `test` plus `gate`, the typecheck, lint, and check:* steps CI runs.
 # Start a run with `npm run test:fleet`, which tests a commit and not the working tree.
-run: node_modules/.bin/vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke --project=browser --project=gate
+run: node scripts/vitest-overlap.mjs run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke --project=browser --project=forge-stories --project=gate
 runner: vitest

@@ -7,7 +7,7 @@ import type { DepName, DepSchema } from '../../index';
 import { clientToCanvas } from '../../viewport/clientToCanvas';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
-import type { Dispatcher, DispatcherContext } from './dispatcherApi';
+import type { Dispatcher, DispatcherContext, KeyReach } from './dispatcherApi';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import type { InputEvent } from './matcher';
 
@@ -33,11 +33,15 @@ export interface DispatchCore {
   toCanvasLocal(clientX: number, clientY: number): { x: number; y: number };
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
    *  belongs to the one an earlier event ran on. */
-  dispatch(ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled';
+  dispatch(ev: InputEvent, on?: Dispatcher, reach?: KeyReach): 'handled' | 'unhandled';
   /** Whether a key or a paste that reached the page is this dispatcher's to
    *  handle: its canvas was the last one pressed or scrolled in, or it has no
    *  canvas and its input scope is the active one. */
   holdsKeys(): boolean;
+  /** Whether the pointer is over the canvas, as its enter, move and leave
+   *  report it. Always false with no canvas. */
+  pointerOver(): boolean;
+  setPointerOver(over: boolean): void;
   /** Make this canvas's input scope the active one. */
   activate(): void;
   /** Whether the hook's effect has been torn down. */
@@ -75,6 +79,7 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
   // An id rather than a record: the record is rebuilt every render, so holding
   // one across events would dispatch through last render's lookups.
   let routedId: string | null = null;
+  let over = false;
 
   const target = (): DispatcherViewTarget => {
     if (routedId === null) return src.root();
@@ -114,12 +119,14 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
       const [x, y] = clientToCanvas(canvas, cx, cy);
       return { x, y };
     },
-    dispatch: (ev, on) => {
+    dispatch: (ev, on, reach) => {
       const d = on ?? dispatcherNow();
       src.uses(d);
-      return d.handleInput(ev, ctxNow());
+      return d.handleInput(ev, reach ? { ...ctxNow(), keyReach: reach } : ctxNow());
     },
     holdsKeys: () => (canvas ? src.actions().holdsKeys() : src.actions().isActive()),
+    pointerOver: () => over,
+    setPointerOver: (next) => { over = canvas !== null && next; },
     activate: () => src.actions().activate(),
     disposed: src.disposed,
   };

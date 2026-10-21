@@ -1,27 +1,30 @@
-import type { MenuEntry, MenuItemEntry } from '@weasel-js/menu';
+import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefIsEnabled, prefIsShown, prefLeafAt,
-  type PrefAction, type PrefBoolean, type PrefConditionReader, type PrefEnum, type PrefGroup,
-  type PrefGroupAs, type PrefLeaf,
+  isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefDisplayBounds, prefIsEnabled, prefIsShown, prefLeafAt,
+  prefNumberAt, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
+  type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
+  type PrefGroupAs, type PrefLeaf, type PrefNumber, type PrefString,
 } from '@weasel-js/prefs';
 import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
+import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
+import { endlessAllows } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/react';
 import type { MenuDef } from './types';
 import type { Point } from '@weasel-js/geom';
 
 /** What resolving reads: the registered actions, each one's deps, how to run
- *  one, and the values behind the schema's boolean and enum leaves. */
+ *  one, and the values behind the schema's value leaves. */
 export interface MenuSources {
   actions(): readonly Action[];
   depsFor(action: Action): ActionDeps | undefined;
   trigger(id: string, params?: Record<string, unknown>): boolean;
-  /** The value at a leaf's dotted path. Booleans and enums are left out of a
-   *  menu without both this and `onChange`, and `showIf`/`enableIf` are
-   *  checked only with it. */
+  /** The value at a leaf's dotted path. Booleans, enums, and numbers are left
+   *  out of a menu without both this and `onChange`, colors and strings without
+   *  this, and `showIf`/`enableIf` are checked only with it. */
   values?(path: string): unknown;
   onChange?(path: string, value: unknown): void;
   /** The schema an `alias` leaf's `of` is read in. Default: the menu's own. */
@@ -42,9 +45,10 @@ const noop = () => {};
 const withAccess = (access?: string): { access?: string } => (access ? { access } : {});
 const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
-function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuItemEntry {
+function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
   const point = ctx.at ? { worldX: ctx.at.x, worldY: ctx.at.y } : {};
+  if (it.action.settings) return settingsOf(ctx, it, key, label, off || !evaluateEnabled(it.action, deps, ctx.at).enabled, access);
   return {
     kind: 'item',
     key,
@@ -55,6 +59,35 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     disabled: off || !evaluateEnabled(it.action, deps, ctx.at).enabled,
     checked: evaluateActive(it.action, deps),
     run: () => { ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...point }); },
+  };
+}
+
+/** An action carrying settings as a submenu of its form's rows, read when the
+ *  menu resolves; each change triggers the action with the params it makes. */
+function settingsOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
+  const settings = it.action.settings!;
+  const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
+  const mixed = new Set(state?.mixed ?? []);
+  const values = (path: string): unknown => (mixed.has(path) ? undefined : prefValueAtPath(state?.values, path));
+  const onChange = (path: string, value: unknown): void => {
+    const params = actionSettingsParams(settings, path, value);
+    if (params) ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...params });
+  };
+  const form: Ctx = {
+    ...ctx,
+    src: { ...ctx.src, values, onChange, over: settings.schema },
+    root: settings.schema,
+    read: (path, from) => (from === 'item' ? undefined : values(path)),
+  };
+  const entries = state ? tidy(groupRows(form, settings.schema, '', false)) : [];
+  return {
+    kind: 'submenu',
+    key,
+    label,
+    ...(it.icon ? { icon: it.icon } : {}),
+    ...withAccess(access),
+    ...(entries.length === 0 ? { disabled: true } : {}),
+    entries,
   };
 }
 
@@ -120,6 +153,63 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
   ];
 }
 
+/** A number row, in the units the leaf shows: its value, bounds, and step convert from the stored unit, and
+ *  what is set converts back. An infinity is a value only where an `endless` end stands for it. */
+function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
+  const { values, onChange } = ctx.src;
+  if (!values || !onChange) return [];
+  const leaf = prefNumberAt(given, values);
+  const unit = leaf.unit && resolvePrefUnit(leaf.unit);
+  const stored = values(path);
+  const { min, max, step, endless } = prefDisplayBounds(leaf);
+  const disabled = off || leaf.readout === true;
+  return [{
+    kind: 'number', key, label: leaf.name, ...withAccess(leaf.access),
+    ...(leaf.icon ? { icon: leaf.icon } : {}),
+    ...(disabled ? { disabled } : {}),
+    value: typeof stored === 'number' && (Number.isFinite(stored) || endlessAllows(leaf.endless, stored))
+      ? (unit ? unit.toDisplay(stored) : stored)
+      : undefined,
+    ...(min === undefined ? {} : { min }),
+    ...(max === undefined ? {} : { max }),
+    step,
+    ...(unit?.suffix === undefined ? {} : { suffix: unit.suffix }),
+    ...(leaf.display ? { display: leaf.display } : {}),
+    ...(endless ? { endless } : {}),
+    ...(leaf.infinity === undefined ? {} : { infinity: leaf.infinity }),
+    ...(unit ? { accepts: prefUnitAccepts(unit) } : {}),
+    set: (shown) => onChange(path, unit ? unit.fromDisplay(shown) : shown),
+  }];
+}
+
+const textAt = (ctx: Ctx, path: string): string | undefined => {
+  const v = ctx.src.values?.(path);
+  return typeof v === 'string' && v !== '' ? v : undefined;
+};
+
+/** A color row: read-only, whether or not the leaf is a readout. */
+function colorRows(ctx: Ctx, leaf: PrefColor, key: string, path: string, off: boolean): MenuEntry[] {
+  if (!ctx.src.values) return [];
+  return [{ kind: 'color', key, label: leaf.name, ...withAccess(leaf.access), ...(off ? { disabled: true } : {}), value: textAt(ctx, path) }];
+}
+
+/** A string row is edited in place; a readout, or one nothing writes, reads as its name and value, as an enum readout does. */
+function stringRows(ctx: Ctx, leaf: PrefString, key: string, path: string, off: boolean): MenuEntry[] {
+  const { values, onChange } = ctx.src;
+  if (!values) return [];
+  if (leaf.readout || !onChange) {
+    return [{ kind: 'item', key, label: `${leaf.name}: ${textAt(ctx, path) ?? '—'}`, ...withAccess(leaf.access), disabled: true, run: noop }];
+  }
+  const stored = values(path);
+  return [{
+    kind: 'text', key, label: leaf.name, ...withAccess(leaf.access),
+    ...(leaf.icon ? { icon: leaf.icon } : {}),
+    ...(off ? { disabled: true } : {}),
+    value: typeof stored === 'string' ? stored : undefined,
+    set: (text) => onChange(path, text),
+  }];
+}
+
 /** `key` names the row; `path` is where its value lives, which differs from
  *  `key` only for a leaf reached through an alias. */
 function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolean): MenuEntry[] {
@@ -133,6 +223,9 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
     }
     case 'boolean': return booleanRows(ctx, leaf as PrefBoolean, key, path, off);
     case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
+    case 'number': return numberRows(ctx, leaf as PrefNumber, key, path, off);
+    case 'color': return colorRows(ctx, leaf as PrefColor, key, path, off);
+    case 'string': return stringRows(ctx, leaf as PrefString, key, path, off);
     case 'separator': return [sep(key)];
     case 'label':
       return [{ kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), disabled: true, run: noop }];
@@ -179,10 +272,12 @@ function tidy(entries: MenuEntry[]): MenuEntry[] {
 /**
  * Draw a prefs schema as menu entries. Action leaves become items from the
  * registry (one per variant for a parametric action), an `actions` leaf one
- * item per action in its group, a boolean a checked item and an enum radio
- * rows (both through `src.values`/`src.onChange`); a group drawn `as` a
+ * item per action in its group, a boolean a checked item, an enum radio
+ * rows, and a number and a string a row edited in place (all through `src.values`/`src.onChange`);
+ * a color shows as a swatch, read-only, and so does a string as a disabled row when it is a readout
+ * or nothing writes it. A group drawn `as` a
  * `menu`, `page`, `tab`, or `panel` is a submenu, and any other group's rows
- * sit inline between separators. Leaves a menu cannot edit are left out.
+ * sit inline between separators. Paint, field, compound, and app-defined leaves are left out.
  * `at` is the world point the menu was opened at and reaches `enabled` and
  * every action's params; `params` go to every action, under its own.
  */

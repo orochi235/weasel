@@ -8,3 +8,5 @@ export { createGridLayer } from './layer';
 export type { GridLayerOpts } from './layer';
 export { createCellHighlightLayer } from './cellHighlight';
 export type { CellHighlightLayerOpts } from './cellHighlight';
+export { pointToGridCell } from './pointToGridCell';
+export { scopedGridPitch, type GridScopes } from './scopedPitch';

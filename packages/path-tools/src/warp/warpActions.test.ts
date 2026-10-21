@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
 import { splitByWarp } from './warpTargets';
+import { readWarpSettings, warpSettingsParams } from './warpSettingsForm';
 import {
   configureWarpAction, createAddPinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
 } from './warpActions';
@@ -177,7 +178,8 @@ describe('puppet', () => {
     dragControl(scene, 'puppet', { warpId: held.id, index: 1 }, { x: 100, y: 100 }, { x: 140, y: 60 });
     const anchors = anchorsOf(scene);
     // The bent edges may gain anchors; the pinned corners stay anchors, where their pins are.
-    expect(anchors[0]).toEqual({ x: 0, y: 0 });
+    // `toEqual` tells -0 from 0, and the barycentric sum can land on either.
+    expect(anchors[0].x === 0 && anchors[0].y === 0).toBe(true);
     expect(anchors).toContainEqual({ x: 140, y: 60 });
   });
 });
@@ -240,5 +242,44 @@ describe('paths warped together', () => {
     expect(boundsOfPath(resolveEditablePathOf(scene.get(asNodeId('b')) as never) as PolygonPath).y).toBeLessThan(0);
     // The parting is written down once a parted warp is edited.
     expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)!.id).toBe(ids.get('b'));
+  });
+});
+
+describe('Warp Settings form', () => {
+  it('is disabled until a selected path holds a warp', () => {
+    const scene = makeScene();
+    expect(configureWarpAction.enabled?.(depsOf(scene))).not.toBe(true);
+    dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });
+    expect(configureWarpAction.enabled?.(depsOf(scene))).toBe(true);
+  });
+
+  it('reads the held distort, and a Mode change reaches it as one undo step', () => {
+    const scene = makeScene();
+    dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });
+    expect(readWarpSettings(depsOf(scene))).toEqual({
+      values: { distorts: 1, envelopes: 0, distort: { mode: 'free' }, tolerance: 0.5 },
+      mixed: [],
+    });
+    const params = warpSettingsParams('distort.mode', 'perspective')!;
+    expect(params).toEqual({ kind: 'distort', mode: 'perspective' });
+    (configureWarpAction.invoker as ImmediateInvoker).run(depsOf(scene), params);
+    const held = heldPathWarpOf(scene.get(asNodeId('a'))!.data);
+    expect(held?.warp.kind === 'distort' && held.warp.mode).toBe('perspective');
+    scene.undo();
+    const back = heldPathWarpOf(scene.get(asNodeId('a'))!.data);
+    expect(back?.warp.kind === 'distort' && back.warp.mode).toBe('free');
+  });
+
+  it('reads an envelope\'s grid and mapping', () => {
+    const scene = makeScene();
+    dragControl(scene, 'envelope', { warpId: null, index: 1 }, { x: 50, y: 0 }, { x: 50, y: -30 }, { rows: 2, cols: 2 });
+    expect(readWarpSettings(depsOf(scene)).values).toMatchObject({
+      distorts: 0, envelopes: 1, envelope: { rows: 2, cols: 2, mapping: 'bicubic' },
+    });
+  });
+
+  it('turns a field nobody owns into no params', () => {
+    expect(warpSettingsParams('distorts', 3)).toBeNull();
+    expect(warpSettingsParams('tolerance', 1)).toEqual({ tolerance: 1 });
   });
 });

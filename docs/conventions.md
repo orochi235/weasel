@@ -276,14 +276,15 @@ stylesheet or in script, at or above the lowest rung.
 
 ### Panel labels
 
-Labels on the params surfaces — `PropertyPanel`, `Prefs` and labkit's
-`ControlPanel` — take their case, tracking, alignment and width from
-custom properties. Set any of them on an ancestor and every label beneath
+Labels on the params surfaces — `PropertyPanel`, `Prefs`, `SelectionPanel` and
+labkit's `ControlPanel` — take their size, case, tracking, alignment and width
+from custom properties. Set any of them on an ancestor and every label beneath
 follows; nothing needs outranking, because no rule declares them — each label
 reads its default as a `var()` fallback.
 
 | Property | Default | Reaches |
 |---|---|---|
+| `--wzl-params-text-size` | `--wzl-font-size-sm` | row labels, and every value in the row |
 | `--wzl-params-label-case` | `uppercase` | every label and title |
 | `--wzl-params-label-tracking` | `--wzl-tracking-wide` on rows, `-wider` on titles | every label and title |
 | `--wzl-params-label-align` | `start` | row labels |
@@ -294,7 +295,18 @@ exactly as wide as its text. Give a panel a width and its labels form one
 column. A stacked row with a readout on its label line keeps the label at the
 start whatever the alignment, because the readout holds the end.
 
-`DetailList`, the read-only label/value list, reads all four too: its label
+A row's label and its value are set at one size, and `--wzl-params-text-size`
+is the only place that size comes from. A row sets `--wzl-field-font-size` from
+it, and every control that draws text — a field's frame, a select, a radio, a
+segmented bar, a button — reads that hook before its own size, so a value
+cannot differ from its label wherever it is drawn. Left unset, the size follows
+the type scale's `--wzl-font-size-sm`, which density and theme move. A mark
+smaller than the value on purpose — a unit, a stepper's glyph, an adornment, a
+hint — carries `data-wzl-subordinate`, and the browser tests that hold the rule
+(`paramsTextSize.browser.test.tsx` in ui, `ControlPanel.textSize.browser.test.tsx`
+in labkit) skip it by that attribute.
+
+`DetailList`, the read-only label/value list, reads all five too: its label
 column is `--wzl-params-label-width` wide, so one declaration lines its labels
 up with a property panel's inline rows. labkit's `Readout` is a `DetailList`,
 so a lab's measurements line up with its `ControlPanel` the same way.
@@ -302,7 +314,7 @@ so a lab's measurements line up with its `ControlPanel` the same way.
 Custom properties are the mechanism because they inherit across the CSS-module
 boundary: labkit's Less cannot name `PropertyPanel`'s label class.
 `npm run check:labels` fails on a label in
-those surfaces that sets its case or tracking any other way.
+those surfaces that sets its size, case or tracking any other way.
 
 ### Numeric text
 

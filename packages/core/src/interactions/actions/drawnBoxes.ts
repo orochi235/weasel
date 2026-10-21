@@ -1,5 +1,6 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import { drawnBoundsOf, inkExtentsOf, type DrawnBoundsOptions, type DrawnBoundsScene } from 'canvas/drawnBounds';
+import { drawnBoundsScene } from 'canvas/derivedPath';
 import type { InkExtents } from 'core/geometry/inkExtents';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import type { NodeId } from 'core/scene/types';
@@ -26,7 +27,7 @@ export function drawnBoxes(
   deps: Pick<ActionDeps, 'scene' | 'poseDescriptor' | 'view' | 'boundsIncludeStroke'>,
   frame?: PoseFrame<unknown>,
 ): DrawnBoxes {
-  const scene: DrawnBoundsScene = deps.scene ?? NO_SCENE;
+  const scene: DrawnBoundsScene = deps.scene ? drawnBoundsScene(deps.scene) : NO_SCENE;
   const descriptor = poseDescriptorOf(deps.poseDescriptor);
   const view = deps.view?.get();
   let worlds = frame;

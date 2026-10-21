@@ -3,6 +3,7 @@ import 'windease/styles.css';
 import '../styles.less';
 import './LabLightbox.browser.test.less';
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
@@ -47,8 +48,8 @@ function Solid() {
   useEffect(
     () =>
       surface.registerPainter(id, (rect, frame) => {
-        const gl = canvas?.getContext('webgl2', { preserveDrawingBuffer: true });
-        if (!gl) return;
+        if (!canvas) return;
+        const gl = canvasGl(canvas);
         const v = toDeviceRect(rect, frame.size.height, frame.dpr);
         const px = (n: number) => Math.round(n * frame.dpr);
         gl.enable(gl.SCISSOR_TEST);
@@ -65,7 +66,7 @@ function Solid() {
 /** The under buffer's own pixel at a viewport point, read back from GL. */
 function underPixelAt(x: number, y: number): [number, number, number] {
   const canvas = document.querySelector('.lk-lab__layer--under canvas') as HTMLCanvasElement;
-  const gl = canvas.getContext('webgl2') as WebGL2RenderingContext;
+  const gl = canvasGl(canvas);
   const box = canvas.getBoundingClientRect();
   const dpr = canvas.width / box.width;
   const out = new Uint8Array(4);

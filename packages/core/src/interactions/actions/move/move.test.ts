@@ -1,6 +1,6 @@
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect } from 'vitest';
-import { stubDeps } from '../testUtils';
+import { stubDeps, heldPose } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { moveAction } from './action';
 import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
@@ -348,7 +348,7 @@ describe('moveAction descriptor', () => {
     expect(moveAction.enabled!()).toBe(true);
   });
 
-  it('previewIds/previewPose expose in-flight buffered poses and clear on commit', () => {
+  it('previewIds names the in-flight ids; their poses live only in the scene overrides', () => {
     const invoker = getOngoingInvoker(moveAction);
     const { scene, ...ctx } = makeCtx({
       selectionIds: ['a'],
@@ -366,12 +366,14 @@ describe('moveAction descriptor', () => {
     handle.onMove!(moveCtx);
 
     expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
-    expect(handle.previewPose!('a')).toEqual({ x: 17, y: 23, width: 50, height: 50 });
+    expect(handle.previewPose).toBeUndefined();
+    expect(scene.overrides.read(asNodeId('a'))?.pose).toEqual({ x: 17, y: 23, width: 50, height: 50 });
     // Scene not yet mutated.
     expect(scene.poses.get('a')).toEqual({ x: 10, y: 20, width: 50, height: 50 });
 
     handle.onEnd!(moveCtx, 'commit');
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    expect(scene.overrides.read(asNodeId('a'))).toBeUndefined();
     expect(scene.poses.get('a')).toEqual({ x: 17, y: 23, width: 50, height: 50 });
   });
 
@@ -414,8 +416,8 @@ describe('moveAction descriptor', () => {
     });
     const ids = Array.from(handle.previewIds!() ?? []).sort();
     expect(ids).toEqual(['child', 'parent']);
-    expect(handle.previewPose!('parent')).toMatchObject({ x: 5, y: 5 });
-    expect(handle.previewPose!('child')).toMatchObject({ x: 15, y: 15 });
+    expect(heldPose(scene, 'parent')).toMatchObject({ x: 5, y: 5 });
+    expect(heldPose(scene, 'child')).toMatchObject({ x: 15, y: 15 });
 
     handle.onEnd!(ctx, 'commit');
     // Both the parent (root) AND its cascaded child get rewritten — under

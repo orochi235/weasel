@@ -1,6 +1,6 @@
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composePose';
 import { describe, it, expect, vi } from 'vitest';
-import { stubDeps } from '../testUtils';
+import { stubDeps, heldPose } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { Op } from 'core/ops/types';
 import { resizeAction } from './action';
@@ -209,7 +209,7 @@ describe('resizeAction descriptor', () => {
     const pose = scene.poses.get('a') as RectPose;
     expect(pose).toEqual({ x: 0, y: 0, width: 100, height: 100 });
 
-    const preview = handle.previewPose!('a') as RectPose;
+    const preview = heldPose(ctx.deps.scene, 'a') as RectPose;
     expect(preview.x).toBeCloseTo(0);
     expect(preview.y).toBeCloseTo(0);
     expect(preview.width).toBeCloseTo(120);
@@ -243,7 +243,7 @@ describe('resizeAction descriptor', () => {
     });
 
     // Preview pose reflects top-left drag right+down by (10,10).
-    const preview = handle.previewPose!('a') as RectPose;
+    const preview = heldPose(ctx.deps.scene, 'a') as RectPose;
     expect(preview.x).toBeCloseTo(10);
     expect(preview.y).toBeCloseTo(10);
     expect(preview.width).toBeCloseTo(90);
@@ -371,7 +371,7 @@ describe('resizeAction descriptor', () => {
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 
-  describe('default aspect lock (no resizePolicy dep)', () => {
+  describe('aspect lock with no resizePolicy or snap dep', () => {
     const startPose: RectPose = { x: 0, y: 0, width: 100, height: 50 };
 
     function dragCorner(shift: boolean): RectPose {
@@ -387,7 +387,7 @@ describe('resizeAction descriptor', () => {
           delta: { x: 20, y: 40 },
         },
       });
-      return handle.previewPose!('a') as RectPose;
+      return heldPose(ctx.deps.scene, 'a') as RectPose;
     }
 
     it('shift-drag on a corner keeps the start pose aspect ratio', () => {

@@ -15,6 +15,7 @@ import {
   fillHasInk, paintKey, strokeHasInk, strokeKey, type Fill, type Stroke,
 } from '@weasel-js/paint';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import { emboldenGlyphD } from '../syntheticBold';
 import { lineDecorations, type DecorationKind } from './decorationMetrics';
 import type { LaidOutRuns, PlacedGlyph } from './layoutRuns';
 
@@ -33,9 +34,10 @@ export interface LaidOutQuad {
  * One glyph the renderer should tessellate rather than sample.
  *
  * `d` is em-space SVG path data — 1 unit is 1 em, y grows down, origin on the
- * baseline at the pen. Placing it is therefore a uniform scale by `scale`
+ * baseline at the pen — with any synthetic bold already grown into it. Placing it is therefore a uniform scale by `scale`
  * followed by a translate to `(x, baselineY)`. `key` identifies the cached
- * tessellation — face identity plus codepoint.
+ * tessellation — face identity plus codepoint, plus the growth of a synthetic
+ * bold.
  */
 export interface LaidOutOutlineGlyph {
   d: string;
@@ -61,7 +63,8 @@ export interface LaidOutGroup {
   /** Resolved variant — matches the registered atlas and the texture-cache key. */
   weight: number;
   style: FontStyle;
-  /** Gap between the request and the resolved match, for the renderer to fake. */
+  /** Gap between the request and the resolved match, for the renderer to fake.
+   *  An `'outline'` group's bold is already grown into its glyphs. */
   synthetic: { bold: boolean; italic: boolean };
   /** Which glyph source this group binds: a baked MSDF atlas, the runtime
    *  canvas-SDF dynamic atlas, tessellated font outlines, or the dynamic
@@ -78,7 +81,7 @@ export interface LaidOutGroup {
   /** Outline painted over the glyphs. Only ever set on an `'outline'` group —
    *  the SDF tiers have no geometry to stroke, which is why a stroke pulls its
    *  run onto the outline tier at any size. A run the tier cannot serve at all
-   *  (no registered outlines, synthetic bold) stays on the atlas, unstroked. */
+   *  (no registered outlines) stays on the atlas, unstroked. */
   stroke?: Stroke;
   /** Textured glyph quads. Always empty for an `'outline'` group. */
   quads: LaidOutQuad[];
@@ -119,29 +122,45 @@ export interface PaintedRuns {
 }
 
 /**
- * Em-space outline for `g`, or `null` to leave it on its SDF tier. Decided per
- * glyph, so a face the resolver reports as atlas or canvas can still serve it.
+ * Em-space outline for `g` and the key its tessellation is cached by, or
+ * `null` to leave it on its SDF tier. Decided per glyph, so a face the
+ * resolver reports as atlas or canvas can still serve it.
  */
-export function glyphOutlineD(g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined): string | null {
-  if (g.glyph?.color) return null;
-  const { family, weight, style } = g.resolved.resolved;
+export function glyphOutlineD(
+  g: PlacedGlyph, run: ResolvedRun, minSize: number | undefined,
+): { d: string; key: string } | null {
   // An outline-only run has no atlas behind it. Every gate below trades one
   // rendering for another; here there is no other, so gating would paint
   // nothing at all.
-  if (g.resolved.source === 'outline') return glyphOutline(family, weight, style, g.cp);
-  // A slot the layout left empty has no width to draw in: an outline there
-  // would land on top of its neighbor.
-  if (g.glyph === null) return null;
-  if (minSize === undefined) return null;
-  // A stroked run ignores the size gate: the SDF tiers have no geometry to
-  // stroke, so leaving it below the threshold drops the outline asked for.
-  // Gated on the run's size, so a small-caps word is not split across tiers.
-  if (run.fontSize < minSize && !strokeHasInk(run.stroke)) return null;
-  // Synthetic bold is an SDF threshold shift, and a path has no threshold.
-  // Painting the regular weight instead would make text get *lighter* as
-  // you zoom past the threshold. Synthetic italic is a shear, exact on
-  // geometry, and the renderer applies it.
-  if (g.resolved.synthetic.bold) return null;
+  const outlineOnly = g.resolved.source === 'outline';
+  if (!outlineOnly) {
+    if (minSize === undefined) return null;
+    // A stroked run ignores the size gate: the SDF tiers have no geometry to
+    // stroke, so leaving it below the threshold drops the outline asked for.
+    // Gated on the run's size, so a small-caps word is not split across tiers.
+    if (run.fontSize < minSize && !strokeHasInk(run.stroke)) return null;
+  }
+  const d = faceOutlineD(g);
+  if (d === null) return null;
+  const { family, weight, style } = g.resolved.resolved;
+  const key = `${family}|${weight}|${style}|${g.cp}`;
+  // Synthetic italic is a shear, exact on geometry, and the renderer applies
+  // it. Synthetic bold is an SDF threshold shift, so the face's own outline
+  // would be lighter: it is grown by the distance the shift moves the edge.
+  if (outlineOnly || !g.resolved.synthetic.bold) return { d, key };
+  const bold = emboldenGlyphD(d, g.resolved);
+  return bold && { d: bold.d, key: `${key}|${bold.tag}` };
+}
+
+/**
+ * Em-space outline of `g` in the face it resolved to, whichever tier draws it,
+ * or `null` when it has none: a color glyph, or a slot the layout left empty,
+ * which has no width to draw in and would land on top of its neighbor.
+ */
+export function faceOutlineD(g: PlacedGlyph): string | null {
+  if (g.glyph?.color) return null;
+  const { family, weight, style } = g.resolved.resolved;
+  if (g.resolved.source !== 'outline' && g.glyph === null) return null;
   return glyphOutline(family, weight, style, g.cp);
 }
 
@@ -174,15 +193,30 @@ export function runFaces(runs: readonly ResolvedRun[]): (run: number) => FaceMet
   return (run) => faces[run];
 }
 
+/** The group the previous glyph joined, and every input its key was built from. */
+interface LastGroup {
+  group: LaidOutGroup | null;
+  run: number; family: string; weight: number; style: FontStyle;
+  bold: boolean; italic: boolean; source: LaidOutGroup['source']; page: number;
+}
+
 function groupFor(
   groups: Map<string, LaidOutGroup>,
   g: PlacedGlyph,
   run: ResolvedRun,
   source: LaidOutGroup['source'],
+  last: LastGroup,
 ): LaidOutGroup {
   const { family, weight, style } = g.resolved.resolved;
   const { synthetic } = g.resolved;
   const page = source === 'outline' ? 0 : g.glyph!.page;
+  // A glyph keyed like the one before it joins that group without building the
+  // key, which, a string per glyph, was the largest allocation in painting text.
+  if (last.group !== null && last.run === g.run && last.source === source && last.page === page
+    && last.family === family && last.weight === weight && last.style === style
+    && last.bold === synthetic.bold && last.italic === synthetic.italic) {
+    return last.group;
+  }
   // Only the outline tier can paint a stroke; an SDF group carrying one would
   // be a promise the renderer cannot keep.
   const stroke = source === 'outline' && strokeHasInk(run.stroke) ? run.stroke : undefined;
@@ -198,6 +232,9 @@ function groupFor(
     };
     groups.set(key, group);
   }
+  last.group = group;
+  last.run = g.run; last.family = family; last.weight = weight; last.style = style;
+  last.bold = synthetic.bold; last.italic = synthetic.italic; last.source = source; last.page = page;
   return group;
 }
 
@@ -211,6 +248,9 @@ export function paintRuns(
   opts: PaintRunsOpts = {},
 ): PaintedRuns {
   const groups = new Map<string, LaidOutGroup>();
+  const last: LastGroup = {
+    group: null, run: -1, family: '', weight: 0, style: 'normal', bold: false, italic: false, source: 'atlas', page: 0,
+  };
   const decorations: LaidOutDecoration[] = [];
   const faceOf = runFaces(runs);
   // A rule is a solid rect with only a fill to paint it.
@@ -222,23 +262,21 @@ export function paintRuns(
       const run = runs[g.run];
       // Asked before the quad: a dynamic glyph still waiting for its bake has
       // no atlas rect, but its outline is available right now.
-      const d = glyphOutlineD(g, run, opts.outlineMinSize);
+      const outline = glyphOutlineD(g, run, opts.outlineMinSize);
       // An unfilled run paints through its stroke, and only tessellated
       // geometry can carry one. An atlas quad would paint the fill that was
       // refused, so it gets none.
-      if (!fillHasInk(run.fill) && !(d !== null && strokeHasInk(run.stroke))) continue;
-      if (d !== null) {
-        const { family, weight, style } = g.resolved.resolved;
-        groupFor(groups, g, run, 'outline').glyphs.push({
-          d, key: `${family}|${weight}|${style}|${g.cp}`,
-          x: g.x, baselineY: g.baselineY, scale: g.fontSize,
+      if (!fillHasInk(run.fill) && !(outline !== null && strokeHasInk(run.stroke))) continue;
+      if (outline !== null) {
+        groupFor(groups, g, run, 'outline', last).glyphs.push({
+          ...outline, x: g.x, baselineY: g.baselineY, scale: g.fontSize,
         });
         continue;
       }
       const quad = glyphQuad(g);
       if (!quad) continue;
-      if (g.glyph?.color) groupFor(groups, g, run, 'color').quads.push({ ...quad, colorGlyph: g.glyph });
-      else groupFor(groups, g, run, g.resolved.source).quads.push(quad);
+      if (g.glyph?.color) groupFor(groups, g, run, 'color', last).quads.push({ ...quad, colorGlyph: g.glyph });
+      else groupFor(groups, g, run, g.resolved.source, last).quads.push(quad);
     }
     for (const rule of lineDecorations(line.glyphs, runs, faceOf, rulePaint)) {
       const { run, ...rect } = rule;

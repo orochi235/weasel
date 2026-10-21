@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { decimal, parseAs, parseNumber, qty, type Display, type UnitTable } from '@weasel-js/quantity';
-import { clampToBounds, spinKey } from '../spin';
+import { type RefObject, useEffect, useRef, useState } from 'react';
+import {
+  clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
+} from '@weasel-js/quantity';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';
@@ -28,8 +29,14 @@ export interface UnitFieldProps {
    *  starting value back, and alone when the field began at NaN, which is no
    *  value to send. */
   onCancel?: () => void;
+  /** The field was emptied and left, by blur or Enter: the value is to be unset. Without it an emptied field
+   *  puts its value back, as it does for any text it cannot read. Not called on Escape, nor for a field that
+   *  showed no value to begin with. */
+  onClear?: () => void;
   minValue?: number;
   maxValue?: number;
+  /** The ends that stand for infinity: typed, or stepped to one step past the bound, the field holds it. */
+  endless?: Endless;
   /** What an arrow key, a stepper or a wheel notch adds or takes away; Page Up
    *  and Page Down move ten. Defaults to 1. */
   step?: number;
@@ -62,6 +69,12 @@ export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
+/** What a step starts from: the text as typed where it reads as a value the field can hold, else the value. */
+function stepStart(typed: number, value: number, endless: Endless | undefined): number {
+  const holds = (n: number) => Number.isFinite(n) || endlessAllows(endless, n);
+  return holds(typed) ? typed : holds(value) ? value : 0;
+}
+
 /**
  * A number typed as text, so it can carry a unit: `12mm` in a field showing
  * centimeters commits `1.2`. Commits on blur or Enter, reverts on Escape or on
@@ -76,8 +89,10 @@ export function UnitField({
   onInput,
   onCancel,
   onOffset,
+  onClear,
   minValue,
   maxValue,
+  endless,
   step = 1,
   accepts,
   display = FULL_PRECISION,
@@ -103,13 +118,9 @@ export function UnitField({
     const n = accepts ? parseNumber(typed, accepts) : Number.NaN;
     return Number.isNaN(n) ? parseAs(typed, display) : n;
   };
-  const bounds = { step, min: minValue, max: maxValue };
+  const bounds = { step, min: minValue, max: maxValue, endless };
 
-  // What a step starts from: the text as typed where it reads, else the value.
-  const from = (): number => {
-    const typed = draft === null ? value : read(draft);
-    return Number.isFinite(typed) ? typed : Number.isFinite(value) ? value : 0;
-  };
+  const from = (): number => stepStart(draft === null ? value : read(draft), value, endless);
   const stepTo = (next: number) => {
     setDraft(null);
     typing.current = null;
@@ -145,19 +156,7 @@ export function UnitField({
     latestSpent.current = spent;
   });
 
-  // The wheel steps only a focused field, so scrolling past one changes nothing.
-  // Not passive, so it can keep the page from scrolling under it.
-  useEffect(() => {
-    const el = input.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      if (document.activeElement !== el || e.deltaY === 0) return;
-      e.preventDefault();
-      latestSpin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+  useWheelSteps(input, latestSpin);
 
   const repeat = useStepRepeat(latestSpin, latestSpent);
   const stepper = (key: 'ArrowUp' | 'ArrowDown', label: string, glyph: string, atBound: boolean) => (
@@ -213,7 +212,8 @@ export function UnitField({
           onBlur={() => {
             const typedText = canceled.current ? null : draft;
             const by = typedText === null ? null : offsetIn(typedText, read);
-            if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
+            if (typedText?.trim() === '' && known && onClear) onClear();
+            else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
             else commit(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText));
             typing.current = null;
             setDraft(null);
@@ -240,6 +240,25 @@ export function UnitField({
   );
 }
 
+/** The wheel steps only a focused field, so scrolling past one changes nothing.
+ *  Not passive, so it can keep the page from scrolling under it. */
+function useWheelSteps(
+  input: RefObject<HTMLInputElement | null>,
+  spin: RefObject<(key: string) => boolean>,
+): void {
+  useEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (document.activeElement !== el || e.deltaY === 0) return;
+      e.preventDefault();
+      spin.current(e.deltaY < 0 ? 'ArrowUp' : 'ArrowDown');
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [input, spin]);
+}
+
 /** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN
  *  when the number does not read, and null for text that is no offset. */
 function offsetIn(typed: string, read: (text: string) => number): number | null {
@@ -263,6 +282,7 @@ function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperPr
     <button
       type="button"
       className={s.stepper}
+      data-wzl-subordinate=""
       aria-label={label}
       tabIndex={-1}
       disabled={disabled}

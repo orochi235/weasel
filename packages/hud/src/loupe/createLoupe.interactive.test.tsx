@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useScene } from '@weasel-js/core';
 import type { NodeId, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '../react';
@@ -41,10 +41,20 @@ interface Mounted {
   api: SceneCanvasApi;
   hud: Hud;
   selection: () => readonly NodeId[];
-  pose: () => Pose;
+  pose: (id?: string) => Pose;
 }
 
-async function mount(): Promise<Mounted> {
+/**
+ * A panel over canvas (250..400, 250..400) looking at world (1000, 1000) at
+ * 2×. The aim, canvas (300, 300), is panel-local (50, 50): world (1025, 1025).
+ * Through the panel the lens magnifies 2 × 4 = 8×, so its camera is
+ * `{ x: 1012, y: 1014.375, scale: 8 }`, and the press lands on world
+ * (1016.25, 1021.25) — on `p`.
+ */
+const PANEL = { x: 250, y: 250, w: 150, h: 150 };
+const PANEL_VIEW = { x: 1000, y: 1000, scale: { x: 2, y: 2 } };
+
+async function mount(opts: { panel?: boolean } = {}): Promise<Mounted> {
   let hud!: Hud;
   let scene!: ReturnType<typeof useScene<Data, string, Pose>>;
   const ref = React.createRef<SceneCanvasApi>();
@@ -62,10 +72,16 @@ async function mount(): Promise<Mounted> {
           id: 'under' as never, kind: 'leaf', layer: 'default',
           pose: { x: 54, y: 93, width: 20, height: 20 }, data: { kind: 'rect' },
         },
+        {
+          id: 'p' as never, kind: 'leaf', layer: 'default',
+          pose: { x: 1015, y: 1020, width: 4, height: 4 }, data: { kind: 'rect' },
+        },
       ],
     });
     return (
-      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]} />
+      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
+        {opts.panel ? <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW} /> : null}
+      </SceneCanvas>
     );
   }
   const r = render(<Harness />);
@@ -75,7 +91,7 @@ async function mount(): Promise<Mounted> {
     api: ref.current!,
     hud,
     selection: () => scene.getSelection(),
-    pose: () => scene.nodes.get('n' as NodeId)!.pose,
+    pose: (id = 'n') => scene.nodes.get(id as NodeId)!.pose,
   };
 }
 
@@ -169,6 +185,27 @@ describe('an interactive loupe', () => {
     await act(async () => { loupe.dispose(); });
     await press(m.canvas, [['pointerdown', PRESS.x, PRESS.y], ['pointerup', PRESS.x, PRESS.y]]);
     expect(m.selection()).toEqual(['under']);
+  });
+});
+
+describe('a loupe aimed over a view', () => {
+  it('selects what the view shows, magnified', async () => {
+    const m = await mount({ panel: true });
+    await openLoupe(m, 'interactive');
+    await press(m.canvas, [['pointerdown', PRESS.x, PRESS.y], ['pointerup', PRESS.x, PRESS.y]]);
+    expect(m.selection()).toEqual(['p']);
+  });
+
+  it('drags in the view’s world over the lens factor: 40px at 8× is 5', async () => {
+    const m = await mount({ panel: true });
+    await openLoupe(m, 'interactive');
+    await press(m.canvas, [
+      ['pointerdown', PRESS.x, PRESS.y],
+      ['pointermove', PRESS.x + 20, PRESS.y],
+      ['pointermove', PRESS.x + 40, PRESS.y],
+      ['pointerup', PRESS.x + 40, PRESS.y],
+    ]);
+    expect(m.pose('p')).toMatchObject({ x: 1020, y: 1020 });
   });
 });
 

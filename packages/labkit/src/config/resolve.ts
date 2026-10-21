@@ -2,8 +2,10 @@ import {
   checkPrefConditions,
   type PrefGroup,
   type PrefLeaf,
+  type PrefSchemaConditionProblem,
   type PrefSection,
 } from '@weasel-js/prefs';
+import { isDev } from '@weasel-js/react';
 import { isConfigBranch } from './builder';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
@@ -62,14 +64,14 @@ export function resolveConfigSchema<TC>(
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
+  const said = ({ field, at, problem }: PrefSchemaConditionProblem) =>
+    `[labkit] ${field} of "${at}": ${problem}`;
   const problems = checkPrefConditions(group, over);
-  if (problems.length > 0) {
-    throw new Error(
-      problems
-        .map(({ field, at, problem }) => `[labkit] ${field} of "${at}": ${problem}`)
-        .join('\n'),
-    );
-  }
+  // An enum's options can change under a condition written against them; a test of one it no
+  // longer has never matches, and is no reason to take the whole panel down.
+  const faults = problems.filter((p) => p.code !== 'option');
+  if (faults.length > 0) throw new Error(faults.map(said).join('\n'));
+  if (isDev()) for (const p of problems) if (p.code === 'option') console.warn(said(p));
   return {
     group,
     sections: sink.sections,
@@ -137,11 +139,6 @@ function resolveEntry(
     const { name: _name, ...said } = entry.annotations;
     return { ...group, ...defined(said) } as PrefGroup;
   }
-  if (entry.options.manual && entry.options.unpinned) {
-    throw new Error(
-      `[labkit] "${path}" is both .manual() and .initial(auto) — a field that can never be auto cannot start auto`,
-    );
-  }
   const seed: LeafPatch = defined({
     ...entry.annotations,
     ...(entry.kind === null ? {} : { kind: entry.kind }),
@@ -152,7 +149,7 @@ function resolveEntry(
       `[labkit] "${path}" is an f.value whose kind cannot be inferred from its default (${String(entry.default)}) — declare it with a typed builder, or f.custom(kind, default) for a value with no row`,
     );
   }
-  const { autoResolve, unpinned, manual } = entry.options;
+  const { autoResolve, unpinned, autoable } = entry.options;
   return {
     ...patch,
     default: entry.default,
@@ -160,6 +157,6 @@ function resolveEntry(
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
     ...(unpinned === undefined ? {} : { unpinned }),
-    ...(manual === undefined ? {} : { manual }),
+    ...(autoable || unpinned ? { autoable: true } : {}),
   } as PrefLeaf;
 }
