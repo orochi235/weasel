@@ -4,7 +4,6 @@ import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
 import { LENS_REST_MS } from './lensTypes';
 import { drawPixelGrid, readBitmap, softEdgeMask } from './pixelGrid';
 
-
 interface Read {
   capture: LensCapture;
   mask: Uint8Array | null;

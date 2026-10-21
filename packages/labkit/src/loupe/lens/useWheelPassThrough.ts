@@ -7,7 +7,9 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
   useEffect(() => {
     if (!input || !layer) return;
     const onWheel = (e: WheelEvent): void => {
-      const beneath = probeUnderLens(layer, 'beneath', () => document.elementFromPoint(e.clientX, e.clientY));
+      const beneath = probeUnderLens(layer, 'beneath', () =>
+        document.elementFromPoint(e.clientX, e.clientY),
+      );
       if (!beneath || layer.contains(beneath)) return;
       e.stopPropagation();
       const copy = new WheelEvent('wheel', {

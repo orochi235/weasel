@@ -17,7 +17,8 @@ export function useSurfaceCanvas(layer: SurfaceLayer = 'over'): HTMLCanvasElemen
   const canvases = useContext(SurfaceCanvasContext);
   // Only `top` is made on demand: asking for it is what brings it into being.
   const claim = layer === 'top' ? canvases.claimTop : undefined;
-  const unoffered = layer === 'top' && !claim && (canvases.over !== null || canvases.under !== null);
+  const unoffered =
+    layer === 'top' && !claim && (canvases.over !== null || canvases.under !== null);
   useEffect(() => {
     if (unoffered && isDev()) console.warn(TOP_UNOFFERED);
   }, [unoffered]);

@@ -78,9 +78,9 @@ export {
   LENS_REST_MS,
   RETICLE_SIZE,
 } from './lens/lensTypes';
+export { readBitmap } from './lens/pixelGrid';
 export type { LensProbe } from './lens/probeUnderLens';
 export { probeUnderLens } from './lens/probeUnderLens';
-export { readBitmap } from './lens/pixelGrid';
 export type { LoupeInputApi } from './loupeActions';
 export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { SourceLoupeProps } from './SourceLoupe';

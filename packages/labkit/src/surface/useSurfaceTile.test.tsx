@@ -1,7 +1,13 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SurfaceCanvasContext, type SurfaceCanvases, SurfaceContext } from './SurfaceContext';
-import { TOP_UNOFFERED, useSurface, useSurfaceCanvas, useSurfaceOptional, useSurfaceTile } from './useSurfaceTile';
+import {
+  TOP_UNOFFERED,
+  useSurface,
+  useSurfaceCanvas,
+  useSurfaceOptional,
+  useSurfaceTile,
+} from './useSurfaceTile';
 import type { SurfaceHandle } from './useTiledSurface';
 
 function fakeHandle(): SurfaceHandle {
@@ -88,7 +94,10 @@ describe("useSurfaceCanvas('top')", () => {
   it('warns when the owner above publishes buffers but offers no top, which would leave the tenant painting nothing', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
-      mountUnder({ over: document.createElement('canvas'), under: document.createElement('canvas') });
+      mountUnder({
+        over: document.createElement('canvas'),
+        under: document.createElement('canvas'),
+      });
       expect(warn).toHaveBeenCalledWith(TOP_UNOFFERED);
     } finally {
       warn.mockRestore();
@@ -100,7 +109,12 @@ describe("useSurfaceCanvas('top')", () => {
     const release = vi.fn();
     const claimTop = vi.fn(() => release);
     try {
-      const { unmount } = mountUnder({ over: document.createElement('canvas'), under: null, top: null, claimTop });
+      const { unmount } = mountUnder({
+        over: document.createElement('canvas'),
+        under: null,
+        top: null,
+        claimTop,
+      });
       expect(claimTop).toHaveBeenCalledTimes(1);
       unmount();
       expect(release).toHaveBeenCalledTimes(1);

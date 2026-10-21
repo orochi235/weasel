@@ -51,13 +51,19 @@ describe('lens scene', () => {
   });
 
   it('moves a pinned reticle on its own: dragging it writes the reticle, not the body', () => {
-    expect(dragRight('a:reticle')).toEqual({ body: { x: 300, y: 200 }, reticle: { x: 110, y: 100 } });
+    expect(dragRight('a:reticle')).toEqual({
+      body: { x: 300, y: 200 },
+      reticle: { x: 110, y: 100 },
+    });
   });
 
   it('makes Glass two kit calls: the reticle sits at the body’s center, dragging it moves the body, and undo restores Pinned', () => {
     apply(setAimOps(scene, 'a', 'glass'));
     expect(centerOf(poseOf('a:reticle'))).toEqual({ x: 300, y: 200 });
-    expect(dragRight('a:reticle')).toEqual({ body: { x: 310, y: 200 }, reticle: { x: 310, y: 200 } });
+    expect(dragRight('a:reticle')).toEqual({
+      body: { x: 310, y: 200 },
+      reticle: { x: 310, y: 200 },
+    });
     scene.history.undo();
     expect(settingsOf(scene, 'a')!.aim).toBe('glass');
     scene.history.undo();
