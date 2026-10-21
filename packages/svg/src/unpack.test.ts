@@ -467,6 +467,13 @@ describe('svgNodesToKitDrafts — opacity', () => {
   };
   const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
+  it("gives the children of a <g fill> that set none the group's fill, text included", () => {
+    const svg = doc('<g fill="#ff0000" stroke="#0000ff"><rect width="10" height="10"/><text x="0" y="20">hi</text></g>');
+    expect(leafOf(svg, 0).fill).toEqual({ paint: { color: '#ff0000' } });
+    expect((leafOf(svg, 0).stroke as { paint: unknown }).paint).toEqual({ color: '#0000ff' });
+    expect((leafOf(svg, 1).fill as { paint: { color: string } }).paint.color).toBe('#ff0000');
+  });
+
   it('keeps fill-opacity on a solid fill', () => {
     const data = leafOf(doc('<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5"/>'));
     expect(data.fill).toEqual({ paint: { color: '#ff0000', opacity: 0.5 } });

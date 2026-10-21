@@ -1,27 +1,27 @@
 import type { Action } from '@weasel-js/routing';
 import type { Paint, Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
-import { paintWithColor, strokeOf, strokeWith, DEFAULT_STROKE_COLOR } from '../../../util/paint';
+import { paintWithColor, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 /** `setStroke`'s gesture state — `setFill`'s, against a stroke. */
 interface SetStrokeState {
   /** May be 6- or 8-char hex. Ignored while `paint` is set. */
   color: string;
-  /** `null` is an explicit no-stroke, distinct from `undefined`, which means
-   *  this gesture carries no paint and the color applies. */
+  /** `null` is None, distinct from `undefined`, which means this gesture
+   *  carries no paint and the color applies. */
   paint?: Paint | null;
 }
 
 /** Repaint a node's stroke, keeping its width, cap, join, dash and align, so
- *  picking a paint does not discard the rest of the stroke. A node with no
- *  stroke yet gets a hairline one. */
-function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke | null {
-  // A stroke whose paint is none paints nothing, so the whole stroke goes
-  // rather than being kept as a widthful thing that draws no ink.
-  if (state.paint === null) return null;
-  if (state.paint) return prev ? { ...prev, paint: state.paint } : strokeWith(state.paint);
-  if (!prev) return strokeOf(state.color);
-  return { ...prev, paint: paintWithColor(prev.paint, state.color) };
+ *  picking a paint does not discard the rest of the stroke, and None keeps
+ *  them for the next paint. A node with no stroke yet gets a hairline one. */
+function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke {
+  if (state.paint === null) {
+    const { paint: _dropped, ...rest } = prev ?? {};
+    return rest;
+  }
+  const base = prev?.paint == null && prev?.width === undefined ? { ...prev, width: 1 } : prev;
+  return { ...base, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
 }
 
 /**

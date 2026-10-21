@@ -8,16 +8,18 @@ import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 interface SetFillState {
   /** May be 6- or 8-char hex. Ignored while `paint` is set. */
   color: string;
-  /** `null` is an explicit no-fill, distinct from `undefined`, which means
-   *  this gesture carries no paint and the color applies. */
+  /** `null` is None, distinct from `undefined`, which means this gesture
+   *  carries no paint and the color applies. */
   paint?: Paint | null;
 }
 
-/** Repaint a node's fill, keeping whatever else the fill carries. */
-function repaint(prev: Fill | null | undefined, state: SetFillState): Fill | null {
-  // `??` would read an explicit no-fill as "no paint given" and repaint the
-  // node with the state's color, so absence has to be tested for.
-  if (state.paint === null) return null;
+/** Repaint a node's fill, keeping whatever else the fill carries. None is
+ *  that record without its `paint`. */
+function repaint(prev: Fill | null | undefined, state: SetFillState): Fill {
+  if (state.paint === null) {
+    const { paint: _dropped, ...rest } = prev ?? {};
+    return rest;
+  }
   return { ...prev, paint: state.paint ?? paintWithColor(prev?.paint, state.color) };
 }
 

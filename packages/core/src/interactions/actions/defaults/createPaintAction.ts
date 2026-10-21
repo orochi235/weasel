@@ -91,8 +91,9 @@ export function createPaintAction<TState, TValue, K extends string>(
         if (ids.length === 0) return {};
 
         const fallback = opts?.params as Params;
+        // `??` would lose a `paint: null`, which is None, not "no paint given".
         const pick = (<T>(key: string) =>
-          (ctx.params?.[key] ?? fallback?.[key]) as T | undefined) as PickParam;
+          (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]) as T | undefined) as PickParam;
 
         const startData = new Map<NodeId, Data>();
         for (const id of ids) {

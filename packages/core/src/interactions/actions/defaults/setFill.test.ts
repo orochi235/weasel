@@ -206,4 +206,12 @@ describe('setFillAction — non-solid paints', () => {
     // whole; its own opacity (absent here) is what carries over.
     expect(scene.updates[0].data).toMatchObject({ fill: { paint: { color: '#ff0000' } } });
   });
+
+  it('writes None as a fill record with no paint', () => {
+    const scene = makeScene({ a: { fill: { paint: solid('#ff0000') } } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: null } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toEqual({ fill: {} });
+  });
 });
