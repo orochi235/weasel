@@ -595,6 +595,17 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) No gradient painter for a curved track.** `paintGradientTrack` paints straight tracks only and
   draws nothing on a curve; a curved painter strokes the `TrackCtx.shape` run with sampled stops.
 
+- **(P3) Gaps left in controls along a curve.**
+  - `Jog` stays straight inside an `Along`: its buttons and readout have no curved layout yet.
+  - `thicknessOf` in `sliderGeometry.ts` reads `--rp-track-height` as px only, so a rem or `calc()` height
+    is misread.
+  - `Along` measures its box with the client rect, so a CSS scale on an ancestor shrinks its arc.
+  - `BarSideContext` leaks through portals into popovers nested in a curved bar's popover.
+  - A separator on a curved bar keeps `aria-orientation="horizontal"`.
+  - A curved bar's menu opens above only for side `'top'`; `'left'` and `'right'` fall back to below,
+    because `above` is a boolean where a side is meant.
+  - `ReadoutsAlong` has no ResizeObserver, so a font load does not restack its rows.
+
 - **(P3) No `path` track shape.** `TrackShape` has `lineShape` and `arcShape`; a shape over any path
   would build on geom's `measurePath` and `nearestOnPath`, and needs no change to the interface.
 
