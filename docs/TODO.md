@@ -980,12 +980,9 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) The site build fails on `main`: 21 routing keymap exports match no typedoc category.**
-  `npm run build:demo`'s API pass stops with `21 export(s) match no category rule` for
-  `useOpenKeymap`, `captureKey`, `createKeymapStack`, `KeymapStack` and the rest of
-  `packages/routing/src/keymaps/` — found by `test:fleet:postbuild` at `12f2b8ae7` (2026-10-21).
-  The keymaps are not on `origin/main` yet, so CI has not seen it; the next push fails CI's last
-  step and every Pages deploy. Fix: rules for them in `typedoc/categories.mjs`.
+- **(P3) `npm ci` aborted once with code 134 inside labkit's `prepare` build.** Seen in the first
+  `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
+  on the same node and on the rerun. Not looked at.
 
 - **(P2) CI tests Node 22 and Linux Chromium; the fleet tests neither.** `ci.yml`'s matrix runs
   Node 22 beside 24 on `ubuntu-latest`, while every fleet node is a Mac whose nvm resolves
