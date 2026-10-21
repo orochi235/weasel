@@ -48,7 +48,9 @@ The reticle's pose is the patch the body shows: the body's box divided by the
 factor (`patchAt`), drawn in the body's shape. So it is never resized directly
 and takes no handles. A new factor resizes it in `setLensOps`, and a resized
 body resizes it in the same undo entry through `reticleFollower`, a core
-transform follower.
+transform follower. A body takes handles at its corners only, and a corner
+drag can make a round body an ellipse, so its view is clipped to an ellipse
+inside the rim (`--lk-lens-rim-in`, half of `RIM_PX`).
 
 The reticle's aim is `pinned`, `follow` or `glass`. Glass is the reticle's pose
 derived from the body (`GLASS_POSE_KEY`), so `setAimOps` switches to it by

@@ -1,4 +1,4 @@
-import { hslToSrgb } from './colorSpaces';
+import { hslToSrgb, linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
 import { parseHexBytes } from './hex';
 
 /**
@@ -13,8 +13,9 @@ import { parseHexBytes } from './hex';
  *     unitless in the modern syntax); same alpha rules and separator rules
  *     as `rgb()`
  *   - The 148 CSS named colors plus `transparent`
+ *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, clamped into sRGB
  *
- * Not supported: `oklch()`, `lab()`, `color()`, `currentColor`, system
+ * Not supported: `lab()`, `lch()`, other `color()` spaces, `currentColor`, system
  * colors. Throws on anything unrecognized.
  *
  * Results are cached by input-string identity. Callers MUST treat the
@@ -47,6 +48,14 @@ function parseColorUncached(input: string): [number, number, number, number] {
   }
   if (lower.startsWith('hsl')) {
     const parsed = parseHslFunction(lower);
+    if (parsed) return parsed;
+  }
+  if (lower.startsWith('color(')) {
+    const parsed = parseColorFunction(lower);
+    if (parsed) return parsed;
+  }
+  if (lower.startsWith('ok')) {
+    const parsed = parseOkFunction(lower);
     if (parsed) return parsed;
   }
 
@@ -208,7 +217,41 @@ function parseHslFunction(s: string): [number, number, number, number] | null {
   return [r, g, b, parseAlpha(channels.alpha)];
 }
 
-/** Parse a hue token: `<number>`, `<number>deg`, `<number>rad`, `<number>grad`, `<number>turn`. Returns degrees 0..360 (modulo). */
+/** `color(srgb …)` or `color(srgb-linear …)`, channels as numbers 0..1 or percents. */
+function parseColorFunction(s: string): [number, number, number, number] | null {
+  const body = unwrapFn(s, 'color');
+  const space = body?.match(/^(srgb-linear|srgb)\s+/);
+  if (!body || !space || body.includes(',')) return null;
+  const channels = splitChannels(body.slice(space[0].length));
+  if (!channels) return null;
+  const rgb = channels.rgb.map((tok) => parseChannel(tok, 1));
+  if (rgb.some((c) => c === null)) return null;
+  const [r, g, b] = (space[1] === 'srgb' ? rgb : rgb.map((c) => linearToSrgb(c as number))) as number[];
+  return [clamp01(r as number), clamp01(g as number), clamp01(b as number), parseAlpha(channels.alpha)];
+}
+
+/** `oklab(L a b)` or `oklch(L C h)`, clamped into sRGB. L is 0..1 or a percent; a, b and C are numbers. */
+function parseOkFunction(s: string): [number, number, number, number] | null {
+  const lch = unwrapFn(s, 'oklch');
+  const body = lch ?? unwrapFn(s, 'oklab');
+  if (body === null || body.includes(',')) return null;
+  const channels = splitChannels(body);
+  if (!channels) return null;
+  const L = parsePercentOrNumber(channels.rgb[0]);
+  const second = Number(channels.rgb[1]);
+  if (L === null || !Number.isFinite(second)) return null;
+  let A = second;
+  let B = Number(channels.rgb[2]);
+  if (lch !== null) {
+    const h = parseHue(channels.rgb[2]);
+    if (h === null) return null;
+    [, A, B] = oklchToOklab(L, second, h * (Math.PI / 180));
+  } else if (!Number.isFinite(B)) return null;
+  const [r, g, b] = oklabToLinearSrgb(L, A, B).map((c) => clamp01(linearToSrgb(c)));
+  return [r as number, g as number, b as number, parseAlpha(channels.alpha)];
+}
+
+/** Parse a hue token:`<number>`, `<number>deg`, `<number>rad`, `<number>grad`, `<number>turn`. Returns degrees 0..360 (modulo). */
 function parseHue(tok: string): number | null {
   let n: number;
   if (tok.endsWith('deg')) n = Number(tok.slice(0, -3));

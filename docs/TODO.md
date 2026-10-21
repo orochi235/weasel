@@ -808,6 +808,10 @@ only story runner in the repo.
   `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
   paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
   undoes) or upstream in react-aria.
+- **(P2) A Pixels lens cannot capture a component's index page** (2026-10-21). It says "Pixels unavailable: this
+  trial shows no story to capture": `trialPayload` (`shell/loupe/capturePayload.ts`) builds a capture from the
+  trial's story entry, and an index page's trial has none. Live shows the page; Pixels and Difference need the capture
+  route to render an index page as it renders a story.
 - **(P2) A lens on a scrolled isolated story shows a different patch than the one under its reticle**
   (found 2026-10-21). The story's scroll lives inside the frame document, and no protocol message reports it to the
   shell. So a Live lens's copy frame loads at its own scroll position, where an in-document copy follows its trial's

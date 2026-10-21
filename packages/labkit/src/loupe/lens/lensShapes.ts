@@ -2,7 +2,8 @@ import { ellipsePath, type NodeShapeEntry, type RectPose, rectPath } from '@weas
 import { lensShapeOf } from './lensScene';
 import type { LensNodeData, LensScene, LensSettings } from './lensTypes';
 
-const RIM_PX = 2;
+/** The rim's stroke width, drawn centered on a body's edge. */
+export const RIM_PX = 2;
 
 /** The lens canvas's colors, read from the theme the lab is in. */
 export interface LensColors {

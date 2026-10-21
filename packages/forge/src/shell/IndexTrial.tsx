@@ -6,6 +6,7 @@ import { type IndexEnv, IndexPage } from '../frame/index/IndexPage';
 import type { Globals } from '../protocol/messages';
 import type { IndexRender, LoadedStory } from '../story/types';
 import { DependenciesContext } from './dependencies';
+import { LiveCopies } from './loupe/LiveCopies';
 import { TrialHost } from './TrialHost';
 import { setRoute } from './useRoute';
 
@@ -61,8 +62,13 @@ export function IndexTrial({ bundle, setup, config }: IndexTrialProps) {
     return <IndexPage env={env} render={bundle.render} />;
   };
   return (
-    <TrialHost layout="fullscreen" setup={setup} config={config}>
-      {render}
-    </TrialHost>
+    <>
+      <TrialHost layout="fullscreen" setup={setup} config={config}>
+        {render}
+      </TrialHost>
+      <LiveCopies trialId={trialId} layout="fullscreen" setup={setup} trialConfig={config}>
+        {render}
+      </LiveCopies>
+    </>
   );
 }

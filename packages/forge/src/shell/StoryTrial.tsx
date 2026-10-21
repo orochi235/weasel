@@ -10,7 +10,7 @@ import { TrialClocksContext } from '../timeline/trialClocks';
 import { useClockLoop } from '../timeline/useClockLoop';
 import { usePersistedPlayhead } from '../timeline/usePersistedPlayhead';
 import { isForgePath, PLAYHEAD_KEY, storyConfig } from './globals';
-import { LiveCopies } from './loupe/LiveCopies';
+import { LiveCopies, StoryCopy } from './loupe/LiveCopies';
 import { StoryBody } from './StoryBody';
 import { TrialHost } from './TrialHost';
 
@@ -102,7 +102,9 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
       >
         {render}
       </TrialHost>
-      <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config} clock={clock} body={body} />
+      <LiveCopies trialId={trialId} layout={story.layout} setup={setup} trialConfig={ctx.config}>
+        {(globals, args) => <StoryCopy body={body} clock={clock} globals={globals} args={args} />}
+      </LiveCopies>
     </>
   );
 }

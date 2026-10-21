@@ -49,9 +49,14 @@
   pointer-events: auto;
 }
 
-// A round lens shows only what lies inside its rim.
+// A lens shows only what lies inside its rim, which the canvas beneath draws centered on the body's edge: the clip
+// stops at the rim's inner edge so the view never covers it. A resized round body is an ellipse, not a circle.
+.lk-lens-slot {
+  clip-path: inset(var(--lk-lens-rim-in));
+}
+
 .lk-lens-interior[data-shape='circle'] .lk-lens-slot {
-  clip-path: circle(50%);
+  clip-path: ellipse(calc(50% - var(--lk-lens-rim-in)) calc(50% - var(--lk-lens-rim-in)));
 }
 
 .lk-lens-slot {

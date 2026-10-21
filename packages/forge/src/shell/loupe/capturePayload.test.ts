@@ -46,6 +46,13 @@ describe('capturePayload', () => {
     expect(CONFIG_UNSENDABLE).toBe("this story's config cannot be sent to a capture");
   });
 
+  it('sends a config whose unset args are undefined, without them', () => {
+    // Every argType with no default is in the config as undefined, which a story reads as it reads a missing arg.
+    const got = capturePayload({ ...input, config: { label: 'Stop', href: undefined, nested: { a: 1, b: undefined } } });
+    expect(got).toMatchObject({ config: { label: 'Stop', nested: { a: 1 } } });
+    expect(Object.keys((got as { config: object }).config)).toEqual(['label', 'nested']);
+  });
+
   it("reads where the story's scroller stands in its host", () => {
     const scrolled = host(320, 180);
     const scroller = document.createElement('div');

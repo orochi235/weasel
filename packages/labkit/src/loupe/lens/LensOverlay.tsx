@@ -30,7 +30,7 @@ import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
-import { type LensColors, lensShapes } from './lensShapes';
+import { type LensColors, lensShapes, RIM_PX } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 import { reticleFollower } from './reticleFollower';
@@ -137,7 +137,11 @@ function LensInterior<C>({
       className="lk-lens-interior"
       data-lens={lens.lensId}
       data-shape={settings.shape}
-      style={{ ...boxStyle(rect), ['--lk-lens-slop' as string]: `${HANDLE_SLOP}px` }}
+      style={{
+        ...boxStyle(rect),
+        ['--lk-lens-slop' as string]: `${HANDLE_SLOP}px`,
+        ['--lk-lens-rim-in' as string]: `${RIM_PX / 2}px`,
+      }}
     >
       <LensSlot {...props} />
       {renderReadouts && settings.readouts.length > 0 ? (
@@ -230,7 +234,10 @@ function useLensCanvas<C>(scene: LensScene<C>) {
   // A reticle's size is its lens's patch, which the body and the factor set, so only a body takes resize handles.
   const selectTool = useMemo(
     () => ({
-      resize: { resizable: (id: string) => scene.get(id as NodeId)?.data.role === 'lens-body' },
+      resize: {
+        resizable: (id: string) => scene.get(id as NodeId)?.data.role === 'lens-body',
+        edgeHandles: false,
+      },
     }),
     [scene],
   );

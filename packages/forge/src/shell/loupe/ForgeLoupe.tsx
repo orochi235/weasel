@@ -157,9 +157,14 @@ export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement
     };
     body.addEventListener('scroll', remeasure, { capture: true, passive: true });
     window.addEventListener('resize', resize);
+    // A host takes no pointer while `data-pending`, so a hit test skips it; a new story's host is only found once that
+    // attribute goes, after the trials have already changed.
+    const unveiled = typeof MutationObserver === 'undefined' ? null : new MutationObserver(remeasure);
+    unveiled?.observe(body, { subtree: true, attributes: true, attributeFilter: ['data-pending'] });
     return () => {
       body.removeEventListener('scroll', remeasure, { capture: true });
       window.removeEventListener('resize', resize);
+      unveiled?.disconnect();
     };
   }, [sources, body, rerender]);
 }

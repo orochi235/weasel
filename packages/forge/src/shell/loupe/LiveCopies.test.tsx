@@ -10,6 +10,7 @@ import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import { createAnswerBook } from '../answers';
 import { FrameView } from '../FrameView';
+import { type IndexBundle, IndexTrial } from '../IndexTrial';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
 import { type Ready, readyKey } from '../readyKey';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
@@ -228,6 +229,32 @@ describe('LiveCopies', () => {
     expect(lenses.forTrial('t1').map((r) => r.lensId).sort()).toEqual(['a', 'a~compared']);
     act(() => compared.detach());
     other.remove();
+  });
+
+  it('renders a copy of a component’s index page, under the comparison’s globals', async () => {
+    const bundle: IndexBundle = {
+      title: 'Test/Live',
+      library: 'test',
+      galleries: [],
+      stories: [],
+      descriptions: {},
+      render: ({ globals }) => <output data-testid="index-mode">{String(globals.mode)}</output>,
+    };
+    renderWithIcons(
+      <LabContext.Provider value={{ instruments: [] } as unknown as LabContextValue}>
+        <LiveLensesContext.Provider value={lenses}>
+          <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
+            <TrialIdContext.Provider value="t1">
+              <IndexTrial bundle={bundle} setup={{}} config={{}} />
+            </TrialIdContext.Provider>
+          </StoryGlobalsContext.Provider>
+        </LiveLensesContext.Provider>
+      </LabContext.Provider>,
+    );
+    expect((await main().findByTestId('index-mode')).textContent).toBe('light');
+    attach({ x: 100, y: 100 });
+    expect((await inSlot().findByTestId('index-mode')).textContent).toBe('dark');
+    expect(slot.querySelector('[data-fg-host="t1~lens-a~compared"]')?.hasAttribute('data-fg-copy')).toBe(true);
   });
 
   it('keeps a trial’s pin on a global the comparison leaves alone', async () => {

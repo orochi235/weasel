@@ -67,4 +67,22 @@ describe('the workshop’s re-measuring', () => {
     rerender();
     expect(remeasure.mock.calls.length).toBe(before + 1);
   });
+
+  it('looks again when a new story’s host stops being pending, which a hit test skips until then', async () => {
+    const live = { remeasure: vi.fn() } as unknown as LiveSource;
+    const remeasure = live.remeasure as ReturnType<typeof vi.fn>;
+    const body = document.body.appendChild(document.createElement('div'));
+    const host = body.appendChild(document.createElement('div'));
+    host.setAttribute('data-pending', '');
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <LabContext.Provider value={{ trials: [], mode: 'light' } as unknown as LabContextValue}>{children}</LabContext.Provider>
+    );
+    const sources = [live];
+    renderHook(() => useRemeasure(sources, body, () => {}), { wrapper });
+    const before = remeasure.mock.calls.length;
+    host.removeAttribute('data-pending');
+    await act(async () => {});
+    expect(remeasure.mock.calls.length).toBe(before + 1);
+    body.remove();
+  });
 });

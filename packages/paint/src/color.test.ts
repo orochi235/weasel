@@ -162,13 +162,38 @@ describe('parseColor', () => {
 
   it('throws on unrecognized input', () => {
     expect(() => parseColor('not-a-color')).toThrow();
-    expect(() => parseColor('oklch(0.7 0.15 200)')).toThrow();
+    expect(() => parseColor('lab(50 20 30)')).toThrow();
   });
 
   it('caches results: identical input returns identical reference', () => {
     const a = parseColor('#abcdef');
     const b = parseColor('#abcdef');
     expect(a).toBe(b);
+  });
+});
+
+describe('parseColor: color() and the OK spaces', () => {
+  const close = (got: readonly number[], want: readonly number[]) => {
+    for (let k = 0; k < 4; k++) expect(got[k]).toBeCloseTo(want[k] as number, 3);
+  };
+
+  it('reads color(srgb …), the form a browser computes color-mix() to', () => {
+    close(parseColor('color(srgb 0.901961 0.905882 0.913725 / 0.7)'), [0.901961, 0.905882, 0.913725, 0.7]);
+    close(parseColor('color(srgb 100% 0% 50%)'), [1, 0, 0.5, 1]);
+  });
+
+  it('reads color(srgb-linear …) through the sRGB transfer', () => {
+    close(parseColor('color(srgb-linear 0.214041 0 1)'), [0.5, 0, 1, 1]);
+  });
+
+  it('reads oklab() and oklch()', () => {
+    close(parseColor('oklab(1 0 0)'), [1, 1, 1, 1]);
+    close(parseColor('oklch(0 0 0 / 50%)'), [0, 0, 0, 0.5]);
+    close(parseColor('oklch(62.796% 0.25768 29.2339deg)'), [1, 0, 0, 1]);
+  });
+
+  it('still rejects a color space it does not convert', () => {
+    expect(() => parseColor('color(display-p3 1 0 0)')).toThrow();
   });
 });
 

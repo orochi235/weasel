@@ -22,17 +22,35 @@ import { resolveComparison, withArgs } from './conditions';
 import { type LiveLenses, LiveLensesContext, type LiveRequest } from './liveLenses';
 import { scrollerOf } from './trialAt';
 
-/** Props for `LiveCopies`: what a trial renders its own story with, which every copy of it shares. */
+/** Props for `LiveCopies`: what a trial renders its own content with, which every copy of it shares. */
 export interface LiveCopiesProps {
   trialId: string | null;
   layout: Layout;
   setup: FrameSetup;
   /** The trial's whole config, read for its `$globals` pins. */
   trialConfig: unknown;
-  /** The trial's clock; a copy reads it and never drives it. */
-  clock: Clock | null;
+  /** One copy's content, under the copy's globals and with the lens's args to write over the trial's config. */
+  children: (globals: Globals, args: Readonly<Record<string, unknown>>) => ReactNode;
+}
+
+/** Props for `StoryCopy`. */
+export interface StoryCopyProps {
   /** The story's own body props; a copy replaces `config`, `setConfig` and `globals`. */
   body: Omit<StoryBodyProps, 'globals'>;
+  /** The trial's clock; a copy reads it and never drives it. */
+  clock: Clock | null;
+  globals: Globals;
+  args: Readonly<Record<string, unknown>>;
+}
+
+/** A story trial's copy: its body under the copy's globals, with the lens's args written over its config. */
+export function StoryCopy({ body, clock, globals, args }: StoryCopyProps) {
+  const { config, setConfig } = useCopyConfig(body.config, body.setConfig, args);
+  return (
+    <ClockContext.Provider value={clock}>
+      <StoryBody {...body} config={config} setConfig={setConfig} globals={globals} />
+    </ClockContext.Provider>
+  );
 }
 
 /** Whether a write to `path` would land on, inside or over the arg at `arg`. */
@@ -110,11 +128,10 @@ function useRequests(lenses: LiveLenses, trialId: string): readonly LiveRequest[
   return useSyncExternalStore(lenses.subscribe, forTrial);
 }
 
-function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
+function LensCopy({ request, trialId, layout, setup, trialConfig, children }: LiveCopiesProps & { request: LiveRequest; trialId: string }) {
   const globals = useCopyGlobals(request, trialConfig);
   const id = copyId(trialId, request);
   const copy = useMemo(() => ({ id, globals }), [id, globals]);
-  const { config, setConfig } = useCopyConfig(body.config, body.setConfig, request.args);
 
   const main = request.hit.host;
   const { slot } = request;
@@ -139,10 +156,10 @@ function LensCopy({ request, trialId, layout, setup, trialConfig, clock, body }:
           store for the magnification it mounted under. */}
       <TrialHost key={request.factor} layout={layout} setup={setup} config={trialConfig} copy={copy}>
         {(g) => (
-          <ClockContext.Provider value={clock}>
-            <StoryBody {...body} config={config} setConfig={setConfig} globals={g} />
+          <>
+            {children(g, request.args)}
             <AfterCommit sync={sync} />
-          </ClockContext.Provider>
+          </>
         )}
       </TrialHost>
     </LensPortal>
@@ -157,8 +174,8 @@ function Copies({ lenses, trialId, ...props }: LiveCopiesProps & { lenses: LiveL
 }
 
 /**
- * The trial's copies for the Live lenses over it: each a second render of the story, portaled into its lens, under
- * the lens's globals and args, reading the trial's state and clock and following its scroll.
+ * The trial's copies for the Live lenses over it: each a second render of its content, portaled into its lens, under
+ * the lens's globals and args, following its scroll.
  */
 export function LiveCopies(props: LiveCopiesProps) {
   const lenses = useContext(LiveLensesContext);

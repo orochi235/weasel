@@ -61,7 +61,16 @@ function sendable(state: unknown): boolean {
   }
 }
 
-const clampDpr = (dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
+/** `value` without its plain objects' undefined entries, which JSON drops and a story reads as unset either way. */
+function withoutUndefined(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutUndefined);
+  if (!isPlainObject(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, v]) => (v === undefined ? [] : [[key, withoutUndefined(v)]])),
+  );
+}
+
+const clampDpr =(dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
 
 /**
  * The payload a capture of the trial takes, or why it cannot be sent: a capture renders the story in another
@@ -71,7 +80,7 @@ const clampDpr = (dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
 export function capturePayload(input: CapturePayloadInput): CapturePayload | { unavailable: string } {
   const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab, colorScheme } = input;
   if (!sendable(state)) return { unavailable: STATE_UNSENDABLE };
-  const sent = withArgs(storyConfig(config), resolved.args);
+  const sent = withoutUndefined(withArgs(storyConfig(config), resolved.args));
   if (!sendable(sent)) return { unavailable: CONFIG_UNSENDABLE };
   const box = { width: host.offsetWidth, height: host.offsetHeight };
   if (!(box.width > 0 && box.height > 0)) return { unavailable: NO_BOX };
