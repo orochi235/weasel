@@ -1,5 +1,6 @@
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
+import { bindingId, NO_OVERRIDES, overridden, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { liveScope, type EligibilityState } from './eligibility';
 import type { Contribution } from './types';
 
@@ -14,14 +15,16 @@ import type { Contribution } from './types';
 export function scopeBindings(
   entries: Iterable<Contribution<unknown>>,
   state: EligibilityState,
+  overrides: ResolvedBindingOverrides = NO_OVERRIDES,
 ): ScopedBinding[] {
   const out: ScopedBinding[] = [];
   for (const entry of entries) {
     const scope = liveScope(entry.id, entry.eligibility ?? {}, state);
     if (scope === null) continue;
-    for (const binding of entry.bindings ?? []) {
-      out.push({ binding, scope, ownerId: entry.id });
-    }
+    (entry.bindings ?? []).forEach((declared, i) => {
+      const binding = overridden(declared, bindingId(declared, entry.id, i), overrides);
+      if (binding) out.push({ binding, scope, ownerId: entry.id });
+    });
   }
   return out;
 }
@@ -34,6 +37,8 @@ export interface AssemblyInputs {
   /** The capability tags the active mode allows. Omitted: no mode system, so
    *  every entry is allowed. */
   allowedCapabilities?: ReadonlySet<CapabilityTag>;
+  /** The innermost open keymap's id, if one is open. */
+  openKeymap?: string | null;
 }
 
 /**
@@ -65,6 +70,7 @@ export function assembleEntries<T extends Contribution<unknown>>(
     state: {
       focusedId: inputs.focusedId,
       engagedIds: new Set(inputs.hotkeyStack),
+      ...(inputs.openKeymap ? { openKeymap: inputs.openKeymap } : {}),
       ...(allowed ? { allows: (tags: readonly CapabilityTag[]) => capabilitiesAllowed(allowed, tags) } : {}),
     },
   };

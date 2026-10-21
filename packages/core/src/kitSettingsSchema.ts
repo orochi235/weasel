@@ -30,6 +30,10 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     longPressMs: msLeaf('Long-press hold', LONG_PRESS_MS),
     tapPx: pxLeaf('Tap travel', TAP_THRESHOLD_PX),
     dragPx: pxLeaf('Drag threshold', DRAG_THRESHOLD_PX),
+    keymapUnbound: pref.enum('Keys a keymap does not bind', 'modal', [
+      { value: 'modal', label: 'Ignore them' },
+      { value: 'cascade', label: 'Close it and pass them on' },
+    ]),
   }),
   targets: pref.group('Targets', {
     handlePx: pxLeaf('Selection handle', HANDLE_BASE_PX),

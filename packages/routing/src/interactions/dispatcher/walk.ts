@@ -5,6 +5,7 @@
  */
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings, type GestureBinding } from '../actions/binding';
+import { NO_OVERRIDES } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
@@ -29,23 +30,27 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
   // `allowedCapabilities` is absent for a consumer with no mode system, who
   // supplies no `getRuleCtx`, and then every entry is permitted.
   const allowedCapabilities = ctx.getRuleCtx?.()?.allowedCapabilities;
+  const openKeymap = ctx.keymapPass === 'none' ? null : ctx.keymaps?.innermost()?.id ?? null;
   const { ordered, state } = assembleEntries(ctx.entriesById.values(), {
     focusedId: ctx.activeToolId,
     hotkeyStack: ctx.hotkeyStack,
     ...(allowedCapabilities ? { allowedCapabilities } : {}),
+    ...(openKeymap ? { openKeymap } : {}),
   });
   const view = ctx.viewId ?? null;
   const live = (b: GestureBinding): boolean => liveInView(b, view) && liveForKeys(b, ctx.keyReach);
-  const result: ScopedBinding[] = scopeBindings(ordered, state)
+  const overrides = ctx.bindingOverrides?.() ?? NO_OVERRIDES;
+  const result: ScopedBinding[] = scopeBindings(ordered, state, overrides)
     .filter((sb) => live(sb.binding));
+  if (ctx.keymapPass === 'only') return result.filter((sb) => sb.ownerId === openKeymap);
 
   // Actions have no owning tool — `'&'`-channel phase atoms on their
   // bindings won't match.
   for (const action of ctx.actions.list()) {
     const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
+    // The registry has already laid binding overrides over an action's own.
     for (const binding of actionBindings(action)) {
-      if (!live(binding)) continue;
-      result.push({ binding, scope: targetScope, ownerId: null });
+      if (live(binding)) result.push({ binding, scope: targetScope, ownerId: null });
     }
   }
 

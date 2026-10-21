@@ -45,6 +45,8 @@ export interface DepSchema {
   menuHost?: import('./menus/menuHost').MenuHost;
   /** The canvas's dispatch trace, for a dep to record a mode switch into. */
   dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
+  /** The keymaps open on the canvas: what a leader opens and a hint reads. */
+  keymaps?: import('./keymaps/keymapStack').KeymapStack;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
@@ -131,6 +133,8 @@ export { resolveParams } from './interactions/actions/invoker';
 export { overlaysOf } from './interactions/actions/overlay';
 export { tuneAction } from './interactions/actions/tuning';
 export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
+export { bindingId, resolveBindingOverrides } from './interactions/actions/bindingOverrides';
+export type { BindingOverrides, ResolvedBindingOverrides } from './interactions/actions/bindingOverrides';
 export { roleReader, keysHeld } from './interactions/actions/modifierRoles';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
@@ -182,6 +186,8 @@ export type { AssemblyInputs } from './contributions/assemble';
 export { mergeContributions } from './contributions/merge';
 export { modeShortcuts, modeShortcutSpec } from './contributions/modeShortcuts';
 export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
+export { captureKey, createKeymapStack, describeKeymap, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
+export type { CaptureKeyOptions, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {

@@ -10,6 +10,9 @@ export interface MenuShortcut {
   alt?: boolean;
   /** `'optional'` matches held or not, and draws as an optional key. */
   shift?: boolean | 'optional';
+  /** For a key inside a keymap: the keymaps that lead to it, outermost first,
+   *  each by its label and its leader's shortcut. Drawn `Loupe ▸ 2`. */
+  leader?: readonly { label: string; shortcut: Omit<MenuShortcut, 'leader'> }[];
 }
 
 /** A row that runs something when chosen. */

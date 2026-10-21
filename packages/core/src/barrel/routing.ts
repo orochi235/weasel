@@ -16,7 +16,7 @@ export { ActionDisabledReason } from '@weasel-js/routing';
 export type { ActionDisabledReasonValue, ActionVariant, Carried } from '@weasel-js/routing';
 
 // --- Actions registry -----------------------------------------------------
-export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
+export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction, useOpenKeymap } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export { useMenuHost, useMenus } from '@weasel-js/routing/react';
@@ -33,6 +33,8 @@ export type { ActionItem } from '@weasel-js/routing';
 export type { QueryMatch } from '@weasel-js/registry';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
 export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routing';
+export { bindingId, resolveBindingOverrides } from '@weasel-js/routing';
+export type { BindingOverrides, ResolvedBindingOverrides } from '@weasel-js/routing';
 export { tuneAction } from '@weasel-js/routing';
 export { roleReader, keysHeld } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';

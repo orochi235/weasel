@@ -27,6 +27,7 @@ import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
+import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { isDev } from '@weasel-js/react';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
@@ -58,6 +59,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private readonly actions = new Map<string, Action[]>();
   private readonly muted = new Map<string, number>();
   private readonly tunings = new Map<string, ActionTuning[]>();
+  private readonly overrides: BindingOverrides[] = [];
+  private overrideCache: { version: number; resolved: ResolvedBindingOverrides } | null = null;
   private readonly dispatchers: Dispatcher[] = [];
   private cache: { version: number; leaf: ActionsNode; list: readonly Action[] } | null = null;
   private host: MenuHost | null = null;
@@ -95,7 +98,18 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   /** `a` under every tuning for its id from the root down to here. */
   private tuned(a: Action): Action {
     const tunings = this.tuningsOf(a.id);
-    return tunings.length ? tuneAction(a, tunings) : a;
+    return overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere());
+  }
+
+  /** Every binding override from the root down to here, read into specs. */
+  private overridesHere(): ResolvedBindingOverrides {
+    const cached = this.overrideCache;
+    if (cached && cached.version === this.tree.version) return cached.resolved;
+    const maps: BindingOverrides[] = [];
+    for (const n of this.chain()) maps.unshift(...n.overrides);
+    const resolved = resolveBindingOverrides(maps);
+    this.overrideCache = { version: this.tree.version, resolved };
+    return resolved;
   }
 
   private snapshot(): readonly Action[] {
@@ -226,6 +240,18 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       };
     },
     paramsOf: (id: string, given?: Record<string, unknown>) => tunedParams(this.tuningsOf(id), given),
+    overrideBindings: (overrides: BindingOverrides) => {
+      const release = pushOwner(this.overrides, overrides);
+      this.changed();
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        release();
+        this.changed();
+      };
+    },
+    bindingOverrides: () => this.start().overridesHere(),
     list: () => this.snapshot(),
     trigger: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();

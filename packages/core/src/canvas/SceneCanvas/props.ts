@@ -3,7 +3,7 @@ import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
-import type { ActionsProp, ActionTunings } from '@weasel-js/routing';
+import type { SceneCanvasActionProps } from './actionProps';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
@@ -382,21 +382,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     viewport?: SceneCanvasViewport;
 
     /**
-     * Tune actions on this canvas without restating them, keyed by action id:
-     * `params` every invocation starts from, and `bindings` added beside the
-     * action's own. A tuning applies to whichever descriptor holds the id, a
-     * preset's or a tool's. Pass a stable object; a params thunk is read on
-     * every call. See the core README ("Tuning an action").
-     */
-    tune?: ActionTunings;
-
-    /**
-     * Replace, add or mute whole action descriptors. Pass `null` to disable
-     * all defaults. To change a built-in's params or add a key, use `tune`.
-     */
-    actions?: ActionsProp;
-
-    /**
      * Given a scene node, return a short human-readable "kind" label (e.g. `'rectangle'`,
      * `'sticky note'`), which the kit publishes per id into any surrounding
      * `<SelectionContextProvider>`. Return `undefined` to skip an entry. When omitted,
@@ -528,4 +513,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps;
+  } & SceneCanvasPointerProps & SceneCanvasActionProps;

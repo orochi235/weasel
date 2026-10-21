@@ -22,6 +22,7 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     longPressMs: LONG_PRESS_MS,
     tapPx: TAP_THRESHOLD_PX,
     dragPx: DRAG_THRESHOLD_PX,
+    keymapUnbound: 'modal',
   },
   targets: {
     handlePx: HANDLE_BASE_PX,

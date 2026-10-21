@@ -4,6 +4,7 @@
  */
 
 import type {} from '@weasel-js/react';
+import type { KeymapUnbound } from './keymaps/keymapStack';
 
 /** Pointer gesture timings and travel; each falls back to its constant in `@weasel-js/gestures`. */
 export interface GestureKitSettings {
@@ -17,6 +18,9 @@ export interface GestureKitSettings {
   tapPx: number;
   /** Travel that makes a press a drag, in CSS px. */
   dragPx: number;
+  /** What a key an open keymap does not bind does: `'modal'` swallows it,
+   *  `'cascade'` closes the keymap and lets it through. */
+  keymapUnbound: KeymapUnbound;
 }
 
 declare module '@weasel-js/react' {

@@ -8,6 +8,8 @@ import type { Contribution } from '../../contributions/types';
 import type { RuleCtx } from '../../eligibility';
 import type { Action, ActionSource } from '../actions/action';
 import type { GestureBinding } from '../actions/binding';
+import type { ResolvedBindingOverrides } from '../actions/bindingOverrides';
+import type { KeymapStack, KeymapUnbound } from '../../keymaps/keymapStack';
 import type { DepRegistry } from '../actions/depNode';
 import type { ActionDeps, OngoingHandle } from '../actions/invoker';
 import type { DispatchRecord } from './dispatchRecord';
@@ -52,6 +54,17 @@ export interface DispatcherContext {
    * is, the rest only while it holds them. Absent, every binding is live.
    */
   keyReach?: KeyReach;
+  /** The keymaps open on this surface. Absent: none can open. */
+  keymaps?: KeymapStack;
+  /** Which bindings this pass of an input reaches while a keymap is open:
+   *  `'only'` the innermost keymap's, `'none'` everything but it. Absent: both. */
+  keymapPass?: 'only' | 'none';
+  /** What a key no open keymap binds does, unless the keymap says: the
+   *  `gestures.keymapUnbound` kit setting. Default `'modal'`. */
+  leaderUnbound?: KeymapUnbound;
+  /** The binding overrides in force, read per input, for contribution bindings;
+   *  the registry lays them over actions' own. Absent overrides nothing. */
+  bindingOverrides?: () => ResolvedBindingOverrides;
   /** Where the dispatcher records how it resolved each input. Absent records nothing. */
   trace?: DispatchTrace;
 }

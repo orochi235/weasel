@@ -13,6 +13,7 @@ import { useDepRegistry } from '../actions/depRegistry';
 import { useToolLifecycle } from '../../tools/useToolLifecycle';
 import { createDispatcher, createDispatchTrace, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { attachInput } from './attachInput';
+import { createKeymapStack } from '../../keymaps/keymapStack';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 
 export type {
@@ -45,6 +46,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const depRegistry = useDepRegistry();
   const [isMac] = useState(isApplePlatform);
 
+  const [keymaps] = useState(createKeymapStack);
+  useEffect(() => depRegistry.register('keymaps', () => keymaps), [depRegistry, keymaps]);
+  const kitSettings = useKitSettings();
+
   const [ownTrace] = useState(createDispatchTrace);
   const trace = traceOpt ?? ownTrace;
   useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
@@ -69,6 +74,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     entriesById,
     isMac,
     trace,
+    bindingOverrides: () => registryRef.current.bindingOverrides(),
+    keymaps,
+    leaderUnbound: kitSettings.get('gestures.keymapUnbound'),
   });
 
   // The flat options are view zero.
@@ -87,7 +95,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const requestRedrawRef = useLatest(requestRedraw);
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
-  const kitSettingsRef = useLatest(useKitSettings());
+  const kitSettingsRef = useLatest(kitSettings);
 
   // Held here rather than in the effect: a re-bind of the listeners between
   // two clicks would otherwise drop the double click.

@@ -33,6 +33,7 @@ import { createInFlightGestures } from './inFlightGestures';
 import { createUiOngoing } from './uiOngoing';
 import { explain, resolveAll, resolveOnly } from './predict';
 import { rank, walk, type Attempt } from './walk';
+import { routeThroughKeymap } from './keymapRoute';
 
 import type { Dispatcher, DispatcherContext } from './dispatcherApi';
 
@@ -83,6 +84,14 @@ export function createDispatcher(opts?: {
 
     if (event.kind === 'hover') return hover(event, ctx);
 
+    return routeThroughKeymap(event, ctx, {
+      run: (pass, ev) => route(ev, { ...ctx, keymapPass: pass }),
+      binds: (ev) => rank(ev, { ...ctx, keymapPass: 'only' }, inFlight.engagedOwners(), false).ordered.length > 0,
+    }) ?? route(event, ctx);
+  }
+
+  /** Rank and walk an input no gesture in flight took. */
+  function route(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
     const trace = ctx.trace?.recording() ? ctx.trace : null;
     const r = rank(event, ctx, inFlight.engagedOwners(), trace !== null);
     const walked = walk(r, event, ctx, invoking(event), false);

@@ -10,6 +10,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher, DispatcherContext, KeyReach } from './dispatcherApi';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import type { InputEvent } from './matcher';
+import type { KeymapStack } from '../../keymaps/keymapStack';
 
 /** What a channel reads and calls. Every member is a closure over the
  *  hook's effect, so a channel may destructure it. */
@@ -34,6 +35,11 @@ export interface DispatchCore {
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
    *  belongs to the one an earlier event ran on. */
   dispatch(ev: InputEvent, on?: Dispatcher, reach?: KeyReach): 'handled' | 'unhandled';
+  /** Run `fn`'s dispatches as one raw input — the `key` and `key-held` forms
+   *  of one keystroke — so a keymap rules on them together. */
+  batch<T>(fn: () => T): T;
+  /** The keymaps open on this surface, if it has any. */
+  keymaps(): KeymapStack | undefined;
   /** Whether a key or a paste that reached the page is this dispatcher's to
    *  handle: its canvas was the last one pressed or scrolled in, or it has no
    *  canvas and its input scope is the active one. */
@@ -90,6 +96,10 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
   const routedDeps = withViewDeps(() => src.context().depRegistry, () => target().deps?.());
   const routedRuleCtx = (): ReturnType<NonNullable<DispatcherViewTarget['getRuleCtx']>> =>
     target().getRuleCtx?.();
+  const batch = <T,>(fn: () => T): T => {
+    const keymaps = src.context().keymaps;
+    return keymaps ? keymaps.batch(fn) : fn();
+  };
   const ctxNow = (): DispatcherContext => ({
     ...src.context(), depRegistry: routedDeps, getRuleCtx: routedRuleCtx, viewId: target().id,
   });
@@ -119,11 +129,13 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
       const [x, y] = clientToCanvas(canvas, cx, cy);
       return { x, y };
     },
-    dispatch: (ev, on, reach) => {
+    dispatch: (ev, on, reach) => batch(() => {
       const d = on ?? dispatcherNow();
       src.uses(d);
       return d.handleInput(ev, reach ? { ...ctxNow(), keyReach: reach } : ctxNow());
-    },
+    }),
+    batch,
+    keymaps: () => src.context().keymaps,
     holdsKeys: () => (canvas ? src.actions().holdsKeys() : src.actions().isActive()),
     pointerOver: () => over,
     setPointerOver: (next) => { over = canvas !== null && next; },

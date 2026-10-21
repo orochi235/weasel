@@ -1,5 +1,5 @@
 import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
-import type { KeySpec, ModSpec } from '@weasel-js/gestures';
+import { key, type KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { Rule } from '../eligibility';
 import type { Contribution } from './types';
@@ -30,29 +30,12 @@ const VERB: Record<Role | 'entry', string> = {
   entry: 'Enter', exit: 'Exit', discard: 'Discard', commit: 'Commit', cancel: 'Cancel',
 };
 
-const MODIFIERS: Record<string, keyof ModSpec> = {
-  meta: 'meta', cmd: 'meta', command: 'meta',
-  ctrl: 'ctrl', control: 'ctrl',
-  alt: 'alt', option: 'alt',
-  shift: 'shift',
-  mod: 'mod',
-};
-
 /**
  * A `ModeDefinition` shortcut chord — `'Escape'`, `'Meta+T'` — as a key spec.
  * Modifier names are case-insensitive; the last segment is the key.
  */
 export function modeShortcutSpec(shortcut: string): KeySpec {
-  const parts = shortcut.split('+');
-  const key = parts.pop();
-  if (!key) throw new Error(`mode shortcut "${shortcut}" names no key`);
-  const mods: ModSpec = {};
-  for (const part of parts) {
-    const mod = MODIFIERS[part.toLowerCase()];
-    if (!mod) throw new Error(`mode shortcut "${shortcut}": unknown modifier "${part}"`);
-    mods[mod] = true;
-  }
-  return Object.keys(mods).length > 0 ? { kind: 'key', key, mods } : { kind: 'key', key };
+  return key(shortcut);
 }
 
 /**

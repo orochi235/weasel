@@ -62,7 +62,8 @@ export function actionShortcuts(
   return out;
 }
 
-function paramsMatch(bound: unknown, wanted: Readonly<Record<string, unknown>>): boolean {
+/** Whether `bound` (a binding's `opts.params`) carries every value in `wanted`. */
+export function paramsMatch(bound: unknown, wanted: Readonly<Record<string, unknown>>): boolean {
   if (typeof bound !== 'object' || bound === null) return false;
   return Object.entries(wanted).every(([k, v]) => (bound as Record<string, unknown>)[k] === v);
 }

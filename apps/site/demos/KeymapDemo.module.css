@@ -1,0 +1,6 @@
+.hint {
+  position: absolute;
+  top: var(--wzl-space-4);
+  right: var(--wzl-space-4);
+  pointer-events: none;
+}

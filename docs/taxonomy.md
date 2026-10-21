@@ -127,6 +127,8 @@ several at once — the hand tool is palette-selectable and space-held:
 - `always` — live regardless of what is focused.
 - `claimed` — live only for input this entry's own affordances produced.
 - `capabilities` — modality filter, applied wherever it would otherwise be live.
+- `keymap` — live only while it is the innermost [keymap](#keymap-and-leader) open,
+  at the hotkey tier.
 
 The scope tier a binding matches at is *derived* from whichever condition is
 live (`liveScope`), ordered to match the dispatcher's own hotkey > active >
@@ -409,6 +411,21 @@ predicts the route via `Dispatcher.resolveOnly` (the same match walk a real
 pointerdown takes), so hint and behavior can't drift. See "Hover cursors
 predict the drag route" in `docs/concepts.md`.
 
+A **binding override** replaces or removes one binding by its id, on an action
+or on a contribution alike (`ActionsRegistry.overrideBindings`,
+`<SceneCanvas bindingOverrides>`). A binding's id is its `opts.id`, or its
+owner's id and its position (`bindingId`); a binding a host may persist an
+override for declares one. An override is a route string, a spec (`key('Mod+=')`,
+`held('Space')`), or `unbound()`; it applies to the declared binding, never to
+another override's result, so overrides do not chain, and holders merge with an
+inner scope over an outer and a later one over an earlier. Adding a key beside
+an action's own stays a tuning's job. The registry lays overrides over an
+action's own bindings, so menus, the palette and shortcut chips show the rebound
+key; the dispatcher lays them over contribution bindings. `captureKey` reads the
+next keystroke for a binding editor, and `keySpecRoute` writes it back as the
+route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
+`*`), whose spec is stored as it is.
+
 ### Input scope and yoke
 
 Every canvas's input lives in its own **input scope** (`<InputScope>`): an
@@ -450,6 +467,46 @@ action from the tier it is called on.
 
 Not a [`BindingScope`](#contribution) — that names the tier a binding matches
 at (hotkey / active / ambient), which this has nothing to do with.
+
+### Keymap and leader
+
+A **keymap** is an entry whose bindings are live only while it is open: a set
+of keys, clicks or drags reached through one key first, `Loupe ▸ 2`. A
+**leader** is the binding that opens it, on an action of its own,
+`keymap.<id>`, at the hotkey tier, so it outranks what the active tool binds to
+the same key and it opens mid-gesture too (decided 2026-10-20).
+`keymapContribution` builds both from one definition. "Chord" is not the word:
+here that means a modifier combination (`BROWSER_RESERVED_CHORDS`).
+
+Tapping the leader opens the keymap for the next input. Holding it keeps the
+keymap open until the key comes up, through any number of inputs. The keyboard
+channel tells the two apart: a keystroke that opened a level holds it until
+that key's keyup, and the level closes then if any input reached it meanwhile.
+A keymap may bind a leader of its own, so open keymaps form a stack
+(`KeymapStack`, one per surface, the `keymaps` dep); only the innermost is live.
+
+While one is open, an input is routed against the innermost keymap's bindings
+alone first (`routeThroughKeymap`). Then:
+
+| Input | What happens |
+|---|---|
+| Escape | Closes the innermost keymap. A keymap cannot bind it. |
+| One of its bindings | Runs; a tapped keymap closes, a held one stays open |
+| A key it does not bind | `'modal'` (default): swallowed, keymap stays open. `'cascade'`: closes it and routes as usual |
+| A click or other pointer gesture it does not bind | Routes as usual and closes a tapped keymap; a held one stays open |
+| A press it may yet take as a click | Kept from the drag a tool would start on it |
+| A bare modifier, a Ctrl or Cmd chord, Tab, a wheel, a drag already in flight | Routes as usual and closes nothing |
+
+A keymap closes when its entry is uninstalled or the mode disallows it, and keys
+a surface hears only because the pointer is over it are not the keymap's. A
+leader held with Cmd is released by Cmd's keyup, since macOS sends none for a
+key let go while Cmd is down. `'modal'` against `'cascade'` is the `gestures.keymapUnbound` kit setting, which
+a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
+`key` and `key-held` halves of one keystroke are ruled on together: closes made
+during one raw input apply when it ends, and the keymap's verdict on the first
+half decides the second. `<KeymapHint>` (`@weasel-js/ui`) lists the open
+keymap's rows, Escape first, from `useOpenKeymap`; a `MenuShortcut` carries the
+leaders that reach it and `formatShortcut` draws it `Loupe ▸ 2`.
 
 ### Interaction
 
