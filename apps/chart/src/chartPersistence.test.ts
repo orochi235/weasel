@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PAGES_DOC_KEY, commitOps, createScene, pagesOf, type ActionDeps } from '@weasel-js/core';
-import { EDGE_DERIVE_PATH, FLOWCHART_STENCILS, stencilBuild } from '@weasel-js/diagram';
+import { DIAGRAM_THEME_KEY, DIAGRAM_THEMES, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, stencilBuild } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { chartFromJson, chartToJson, replaceChart } from './chartPersistence';
 
@@ -58,6 +58,15 @@ describe('chart persistence', () => {
     const pages = { pages: [{ id: 'p', name: 'Cover', width: 816, height: 1056 }, { id: 'q', width: 100, height: 100 }] };
     scene.doc.set(PAGES_DOC_KEY, pages);
     expect(chartFromJson(chartToJson(scene)).doc[PAGES_DOC_KEY]).toEqual(pages);
+  });
+
+  it('saves and loads the theme, and the colors it wrote', () => {
+    const { scene, ids } = twoBodiesAndAnEdge();
+    applyDiagramTheme(scene, DIAGRAM_THEMES.night!);
+    const loaded = chartFromJson(chartToJson(scene));
+    expect(loaded.doc[DIAGRAM_THEME_KEY]).toEqual(scene.doc.get(DIAGRAM_THEME_KEY));
+    const fill = loaded.specs.find((s) => s.id === ids[0])?.data.fill?.paint.color;
+    expect(fill).toBe(DIAGRAM_THEMES.night!.roles.default!.fill);
   });
 
   it('replaces the nodes and the document values as one undo entry', () => {
