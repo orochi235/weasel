@@ -1,4 +1,5 @@
-import { act, forwardRef, useImperativeHandle, useRef } from 'react';
+import { act } from '@testing-library/react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { registerCanvasFont } from '@weasel-js/font';

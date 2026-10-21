@@ -40,7 +40,7 @@ async function mount() {
 }
 
 const scrubTo = (index: number) =>
-  act(() => { fireEvent.change(screen.getByRole('slider', { name: 'Step of the solve' }), { target: { value: String(index) } }); });
+  fireEvent.change(screen.getByRole('slider', { name: 'Step of the solve' }), { target: { value: String(index) } });
 
 test('the squashed disc paints its fold magenta at step 2, none once untangled, and the gentle bend none', async () => {
   const { canvas } = await mount();

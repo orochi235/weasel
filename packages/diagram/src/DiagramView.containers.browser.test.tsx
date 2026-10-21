@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act } from '@testing-library/react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DiagramView, type ContainerEdit, type EdgeRoute, type NodeMove } from './DiagramView';
