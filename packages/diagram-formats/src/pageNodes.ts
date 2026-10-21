@@ -6,6 +6,8 @@ import {
   boundsOfPath,
   derivedDepOf,
   derivedPartsOf,
+  INHERIT,
+  resolvePartPaint,
   effectivePose,
   isAnnotationLayer,
   type DrawCommand,
@@ -73,12 +75,11 @@ function diagramPainted(painters: readonly NodeShapeEntry<unknown, RectPose>[], 
 
 /** A derived path's parts, each painted as the derived-node painter paints it. */
 function derivedNodes(path: Path, data: SvgKitLeafData): SvgNode[] {
-  const parts = derivedPartsOf(path) ?? [{ path }];
-  return parts.flatMap((part) => svgLeafFromKit({
-    path: part.path,
-    ...(part.fill !== undefined ? { fill: part.fill } : data.fill !== undefined ? { fill: data.fill } : {}),
-    stroke: part.stroke !== undefined ? part.stroke : data.stroke,
-  }, boundsOfPath(part.path)) ?? []);
+  const parts = derivedPartsOf(path) ?? [{ path, fill: INHERIT, stroke: INHERIT }];
+  return parts.flatMap((part) => svgLeafFromKit(
+    { path: part.path, ...resolvePartPaint(part, data) },
+    boundsOfPath(part.path),
+  ) ?? []);
 }
 
 const one = (nodes: SvgNode[]): SvgNode | null =>

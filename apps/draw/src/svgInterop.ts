@@ -171,7 +171,7 @@ export function objToSvgNode(o: Obj): SvgNode {
       ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
       ...(o.runs && o.runs.length > 0 ? { runs: o.runs } : {}),
       ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
-      ...(o.fill !== undefined ? { fill: o.fill } : {}),
+      fill: o.fill === undefined ? DEFAULT_IMPORT_FILL : o.fill,
       ...(o.stroke ? { stroke: o.stroke } : {}),
     }, o) as SvgTextNode;
     const wdAttrs = encodeWdAttrs(o);
@@ -336,7 +336,7 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
   });
 }
 
-/** SVG's initial `fill`, for a path that names none. */
+/** SVG's initial `fill`, for a path or text that names none. */
 const DEFAULT_IMPORT_FILL: Fill = { paint: { color: '#000000' } };
 
 /** Trigger a browser download of `svg` as a file named `filename`. */

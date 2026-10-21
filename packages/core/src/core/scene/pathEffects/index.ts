@@ -22,4 +22,4 @@ export {
   type RepeatAlongEffect,
 } from './effects';
 export type { EffectSource, EffectSourceReader } from './source';
-export { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';
+export { derivedPartsOf, pathFromParts, resolvePartPaint, type DerivedPart } from '../derivedParts';

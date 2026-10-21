@@ -4,7 +4,7 @@ import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { derivedPartsOf, type DerivedPart } from 'core/scene/derivedParts';
+import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import { strokedBounds } from './strokedBounds';
 import { inkReach, withAnimatedVertexColors } from './nodePaint';
@@ -37,11 +37,10 @@ export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | u
   return path == null || stroke === null ? null : strokedBounds(path, stroke, ctx?.scale ?? 1, ctx?.screen);
 }
 
-/** One part's command: its own paint where it names one, else the node's. */
+/** One part's command, in its own paint; `INHERIT` takes the node's. */
 function partCommand(part: DerivedPart, d: PaintData | null): DrawCommand {
-  const strokeSpec = resolveStroke(part.stroke === undefined ? d?.stroke : part.stroke);
-  const declared = resolveFill(part.fill === undefined ? d?.fill : part.fill);
-  return pathCommand(part.path, declared, strokeSpec, undefined);
+  const { fill, stroke } = resolvePartPaint(part, d);
+  return pathCommand(part.path, fill, stroke, undefined);
 }
 
 /**
@@ -62,8 +61,8 @@ function partCommand(part: DerivedPart, d: PaintData | null): DrawCommand {
  * Rotation still comes from the pose — `wrapNodeOutput` turns the output about
  * the pose AABB's center, which for a zero-sized pose is its origin.
  *
- * A path made by `pathFromParts` paints one command per part, each with the
- * part's own fill and stroke where it names them.
+ * A path made by `pathFromParts` paints one command per part, each in the
+ * part's own fill and stroke.
  */
 export const DERIVED_PAINTER: NodeShapeEntry = {
   id: 'kit:derived',

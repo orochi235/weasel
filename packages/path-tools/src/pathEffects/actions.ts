@@ -5,7 +5,7 @@
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
+  commitOps, createSetDataOp, deleteNode, derivedDepOf, insertAt, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
 } from '@weasel-js/core';
 import { EFFECT_DEFAULTS, withEffectSettings } from './params';
 import { icon } from '../icons.gen';
@@ -211,11 +211,8 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
         ops.push(deleteNode(scene, node, EXPAND_LABEL));
         parts.forEach((part, k) => {
           const { pose, path } = worldEditToStorage({ x: 0, y: 0, width: 0, height: 0 }, part.path);
-          const data = {
-            path,
-            ...(part.fill === undefined ? {} : { fill: part.fill }),
-            ...(part.stroke === undefined ? {} : { stroke: part.stroke }),
-          };
+          const { fill, stroke } = resolvePartPaint(part, node.data as Parameters<typeof resolvePartPaint>[1]);
+          const data = { path, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
           const copy = { id: scene.mintId(), kind: 'leaf', layer: node.layer, parent: node.parent, pose, data } as AnyNode;
           ops.push(insertAt(copy, at < 0 ? at : at + k, EXPAND_LABEL));
           made.push(copy.id);
