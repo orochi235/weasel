@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
+import type { TrackShape } from '@weasel-js/geom';
 import { applyPrefConditions, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import type { RunAlign } from '../Along/alongContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -59,6 +61,12 @@ export interface BarProps {
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
+  /** A track shape to lay the items along, each centered on its spot and tipped to it. On a curve every leaf but
+   *  an action opens from a button, and `'menu'` puts the More button at the run's reading end. A line keeps the
+   *  bar's flex line. Default: the nearest `Along`'s shape, else none. */
+  shape?: TrackShape;
+  /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
+  align?: RunAlign;
   className?: string;
 }
 
@@ -88,6 +96,8 @@ export function Bar(props: BarProps) {
       framed={framed}
       overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
+      shape={props.shape}
+      align={props.align}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}

@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
-import { resolveIcon } from '../../icons/resolveIcon';
-import { BarMenu, type BarMenuSources } from './BarMenu';
-import { barMenuRoot } from './barMenuRoot';
+import type { TrackShape } from '@weasel-js/geom';
+import { useTrackShape, type RunAlign } from '../Along/alongContext';
+import type { BarMenuSources } from './BarMenu';
+import { BarAlong } from './BarAlong';
+import { barItems, barLead, drawBarItem, splitBarItems } from './barItems';
 import { BarOverflow } from './BarOverflow';
-import { BarPopover } from './BarPopover';
-import { BAR_ITEM, BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
+import { BAR_LEAD, BAR_MORE, useBarOverflow } from './useBarOverflow';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -92,102 +93,42 @@ export interface BarLayoutProps {
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
+  /** A track shape to lay the items along. A curved one places each item on it, tipped, and opens every leaf
+   *  but an action from a button; a line keeps the flex line. Default: the nearest `Along`'s shape, else none. */
+  shape?: TrackShape;
+  /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
+  align?: RunAlign;
   className?: string;
 }
-
-type Item = ({ divider: true } | { divider?: false; path: string; leaf: boolean; content: ReactNode }) & { key: string };
-type Drawn = { divider: true } | { divider?: false; path: string; leaf: boolean; content: ReactNode };
 
 /**
  * The line a bar's contents sit on, whatever surface drew them: cells in
  * order, a divider on each side of a run, and a button for each group that
  * opens. `Bar` draws a schema through it; a form and a panel draw a group
- * `as: 'bar'` through it with cells of their own.
+ * `as: 'bar'` through it with cells of their own. Given a curved shape, or
+ * inside an `Along`, its items lie along that shape instead.
  *
  * Focus keeps plain tab order. A bar of number boxes and selects has to
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
+  const along = useTrackShape();
+  const shape = props.shape ?? along?.shape;
+  if (shape !== undefined && shape.kind !== 'line') return <BarAlong {...props} shape={shape} align={props.align ?? along?.align ?? 'center'} />;
+  return <BarLine {...props} />;
+}
+
+function BarLine(props: BarLayoutProps) {
   const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, lead, icon, framed, className } = props;
   const { overflow = 'scroll', overflowLabel = 'More' } = props;
   const vertical = orientation === 'vertical';
-  const items: Drawn[] = [];
-
-  const walk = (list: readonly BarNode[]): void => {
-    let pending: BarLeafNode[] = [];
-    const flush = (): void => {
-      // A vertical bar has no room beside a field, so only a button stays on it.
-      const drawn = vertical
-        ? pending.flatMap((node): readonly BarCell[] => {
-            if (node.leaf.kind === 'action' || node.leaf.kind === 'actions') return cells([node]);
-            const body = row(node);
-            if (body == null) return [];
-            return [{ path: node.path, content: <BarPopover label={barLeafName(node.leaf)}>{body}</BarPopover> }];
-          })
-        : cells(pending);
-      for (const cell of drawn) items.push({ path: cell.path, leaf: true, content: cell.content });
-      pending = [];
-    };
-    for (const node of list) {
-      if (node.kind === 'leaf' && node.leaf.kind === 'separator') {
-        flush();
-        const rule = <span className={s.rule} role="separator" aria-orientation={vertical ? 'horizontal' : 'vertical'} />;
-        items.push({ path: node.path, leaf: true, content: rule });
-        continue;
-      }
-      if (node.kind === 'leaf') {
-        pending.push(node);
-        continue;
-      }
-      flush();
-      if (node.kind === 'cell') {
-        items.push({ path: node.path, leaf: true, content: node.content });
-        continue;
-      }
-      if (node.kind === 'opens') {
-        items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name} icon={resolveIcon(node.icon)}>{node.body()}</BarPopover> });
-        continue;
-      }
-      if (node.kind === 'menu') {
-        const menu = (
-          <BarMenu label={node.name} icon={resolveIcon(node.group.icon)} description={node.group.description} schema={barMenuRoot(node.group, node.path)} {...node.sources} />
-        );
-        items.push({ path: node.path, leaf: false, content: menu });
-        continue;
-      }
-      items.push({ divider: true });
-      walk(node.nodes);
-      items.push({ divider: true });
-    }
-    flush();
-  };
-  walk(nodes);
-
-  // A divider sets two things apart, so none opens or closes the bar and no two meet.
-  const shown: Item[] = items
-    .filter((item, i) => !item.divider || (i > 0 && i < items.length - 1 && !items[i - 1]!.divider))
-    .map((item, i) => ({ ...item, key: item.divider ? `divider:${i}` : item.path }));
-  while (shown.at(-1)?.divider) shown.pop();
-
-  const leading = lead === 'label' ? label : lead === 'icon' ? resolveIcon(icon) : undefined;
+  // A vertical bar has no room beside a field, so only a button stays on it.
+  const shown = barItems(nodes, { popLeaves: vertical, cells, row });
+  const leading = barLead(lead, label, icon);
 
   const menu = overflow === 'menu';
   const { bar, kept } = useBarOverflow(menu, shown.map((item) => item.key), vertical);
-  const line = shown.slice(0, kept);
-  while (line.at(-1)?.divider) line.pop();
-  const rest = shown.slice(kept);
-  while (rest[0]?.divider) rest.shift();
-
-  const draw = (list: readonly Item[], across: boolean): ReactNode =>
-    list.map((item) =>
-      item.divider ? (
-        <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={s.divider} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} />
-      ) : (
-        <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={s.cell} {...attrs?.(item.path, item.leaf)}>
-          {item.content}
-        </span>
-      ),
-    );
+  const { line, rest } = splitBarItems(shown, kept);
 
   return (
     <div
@@ -201,10 +142,10 @@ export function BarLayout(props: BarLayoutProps) {
       aria-orientation={label === undefined ? undefined : orientation}
     >
       {leading && <span className={s.lead} aria-hidden="true" {...{ [BAR_LEAD]: '' }}>{leading}</span>}
-      {draw(line, vertical)}
+      {line.map((item) => drawBarItem(item, vertical, attrs))}
       {rest.length > 0 && (
         <span className={s.cell} {...{ [BAR_MORE]: '' }}>
-          <BarOverflow label={overflowLabel}>{draw(rest, true)}</BarOverflow>
+          <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(item, true, attrs))}</BarOverflow>
         </span>
       )}
     </div>

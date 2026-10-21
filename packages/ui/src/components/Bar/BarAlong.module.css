@@ -1,0 +1,26 @@
+/* A bar laid along a track shape: the shape's coordinates are this box's, and only the items take input. */
+.root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  column-gap: var(--bar-gap, var(--wzl-space-3));
+}
+
+.item {
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  inline-size: max-content;
+  transform: translate(-50%, -50%) rotate(var(--at-angle));
+  pointer-events: auto;
+}
+
+.item[data-clipped='part'] {
+  opacity: 0.4;
+}
+
+/* No line to stretch along, so a divider takes a line's height. */
+.root > .item[role='separator'] {
+  block-size: 1lh;
+  margin-block: 0;
+}
