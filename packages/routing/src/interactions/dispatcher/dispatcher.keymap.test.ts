@@ -151,7 +151,7 @@ describe('the dispatcher with a keymap open', () => {
   });
 
   it('stays open through a click while its leader is held', () => {
-    stack.push('loupe', 'Loupe', 'leader');
+    stack.push('loupe', 'Loupe', { heldBy: 'leader' });
     const d = createDispatcher();
     stack.batch(() => d.handleInput(click, ctxFor()));
     expect(outsideClick.run).toHaveBeenCalledOnce();

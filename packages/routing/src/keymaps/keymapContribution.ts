@@ -34,6 +34,14 @@ export const keymapLeaderId = (id: string): string => `keymap.${id}`;
 export const keymapLeaderBindingId = (id: string, index = 0): string =>
   index === 0 ? `${keymapLeaderId(id)}.leader` : `${keymapLeaderId(id)}.leader#${index}`;
 
+/** The leader keystrokes of `def` as its leader action binds them, each with its binding id. */
+export function leaderBindings(def: Pick<KeymapDef, 'id' | 'leader'>): BoundGesture[] {
+  return [def.leader].flat().map((spec, i) => ({
+    spec: spec.kind === 'key-held' ? { ...spec, kind: 'key' } : spec,
+    opts: { id: keymapLeaderBindingId(def.id, i) },
+  }));
+}
+
 const isPlainEscape = (spec: GestureSpec): boolean =>
   spec.kind === 'key' && [spec.key].flat().includes('Escape') && Object.values(spec.mods ?? {}).every((m) => m !== true);
 
@@ -43,18 +51,14 @@ export function keymapContribution(def: KeymapDef): Contribution<never>[] {
   if (def.bindings.some((b) => isPlainEscape(b.spec))) {
     throw new Error(`keymap "${def.id}" binds Escape, which always closes a keymap`);
   }
-  const leaderBindings: BoundGesture[] = [def.leader].flat().map((spec, i) => ({
-    spec: spec.kind === 'key-held' ? { ...spec, kind: 'key' } : spec,
-    opts: { id: keymapLeaderBindingId(def.id, i) },
-  }));
   const open: Action = {
     id: keymapLeaderId(def.id),
     label: `Open ${def.label} keys`,
     scope: 'hotkey',
-    defaultBinding: leaderBindings,
+    defaultBinding: leaderBindings(def),
     requires: ['keymaps'],
     enabled: (deps) => (deps?.keymaps ? true : ActionDisabledReason.NotApplicable),
-    invoker: { timing: 'immediate', run: (deps) => { deps.keymaps?.push(def.id, def.label); } },
+    invoker: { timing: 'immediate', run: (deps) => { deps.keymaps?.push(def.id, def.label, { bindings: def.bindings }); } },
   };
   return [
     {

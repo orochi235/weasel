@@ -5,6 +5,7 @@
  * `key-held` forms of a keystroke both see the keymap they arrived to.
  */
 import { createEmitter } from '@weasel-js/registry';
+import type { GestureBinding } from '../interactions/actions/binding';
 
 /** What a key no open keymap binds does: `'modal'` swallows it and leaves the
  *  keymap open; `'cascade'` closes the keymap and dispatches it as if none were. */
@@ -13,6 +14,8 @@ export type KeymapUnbound = 'modal' | 'cascade';
 export interface OpenKeymap {
   readonly id: string;
   readonly label: string;
+  /** The keymap's bindings as declared, for a hint to list. */
+  readonly bindings: readonly GestureBinding[];
   /** The gesture id of the leader holding this level open, while it is held. */
   readonly heldBy?: string;
   /** Whether input arrived while the leader was held, so its release closes the level. */
@@ -27,8 +30,8 @@ export interface KeymapStack {
   /** Every open level, outermost first. */
   open(): readonly OpenKeymap[];
   innermost(): OpenKeymap | null;
-  /** Open a level; `heldBy` names the leader gesture that holds it. */
-  push(id: string, label: string, heldBy?: string): void;
+  /** Open a level. `heldBy` names what holds it open; `bindings` are what a hint lists. */
+  push(id: string, label: string, opts?: { heldBy?: string; bindings?: readonly GestureBinding[] }): void;
   /** Mark the levels the last raw input opened as held by `heldBy`: the key
    *  that opened them is still down. False when it opened none. */
   holdOpened(heldBy: string): boolean;
@@ -56,6 +59,7 @@ export interface KeymapStack {
 interface Level {
   id: string;
   label: string;
+  bindings: readonly GestureBinding[];
   heldBy?: string;
   usedWhileHeld: boolean;
   openedIn: number;
@@ -95,8 +99,10 @@ export function createKeymapStack(): KeymapStack {
   return {
     open: () => snapshot,
     innermost: () => snapshot.at(-1) ?? null,
-    push: (id, label, heldBy) => {
-      levels = [...levels, { id, label, ...(heldBy !== undefined ? { heldBy } : {}), usedWhileHeld: false, openedIn: serial }];
+    push: (id, label, opts) => {
+      const heldBy = opts?.heldBy;
+      const bindings = opts?.bindings ?? [];
+      levels = [...levels, { id, label, bindings, ...(heldBy !== undefined ? { heldBy } : {}), usedWhileHeld: false, openedIn: serial }];
       if (depth > 0) verdict = 'taken';
       notify();
     },

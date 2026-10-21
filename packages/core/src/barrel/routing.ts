@@ -16,7 +16,7 @@ export { ActionDisabledReason } from '@weasel-js/routing';
 export type { ActionDisabledReasonValue, ActionVariant, Carried } from '@weasel-js/routing';
 
 // --- Actions registry -----------------------------------------------------
-export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction } from '@weasel-js/routing/react';
+export { ActionsProvider, InputScope, useYoke, Yoke, useActionsRegistry, useAction, useOngoingAction, useOpenKeymap } from '@weasel-js/routing/react';
 export { useLatest } from '@weasel-js/react';
 export type { OngoingAction } from '@weasel-js/routing/react';
 export { useMenuHost, useMenus } from '@weasel-js/routing/react';

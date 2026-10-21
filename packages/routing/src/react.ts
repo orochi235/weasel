@@ -21,6 +21,7 @@ export { useMenuHost, useMenus } from './menus/MenuHostContext';
 export { InputScope, useYoke, Yoke } from './interactions/actions/inputScope';
 export type { InputScopeProps, YokeProps } from './interactions/actions/inputScope';
 export { useOngoingAction } from './interactions/actions/useOngoingAction';
+export { useOpenKeymap } from './keymaps/useOpenKeymap';
 export type { OngoingAction } from './interactions/actions/useOngoingAction';
 export {
   DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,

@@ -27,7 +27,7 @@ export function formatShortcutParts(
 }
 
 /** Format a shortcut as a single display string. Order: mod, shift, alt,
- *  key. On macOS the glyphs run together (`⌘⇧Z`); elsewhere the keys are
+ *  key, after each keymap that leads to it (`Loupe ▸ ⌘2`). On macOS the glyphs run together (`⌘⇧Z`); elsewhere the keys are
  *  spelled out and joined with `+` (`Ctrl+Shift+Z`). Returns `undefined` for
  *  `undefined` input so callers can `??` a fallback. When `key` is an array,
  *  the first element is used. `shift: 'optional'` is treated as falsy. */
@@ -36,7 +36,9 @@ export function formatShortcut(
   opts: FormatShortcutOptions = {},
 ): string | undefined {
   const platform = opts.platform ?? detectPlatform();
-  return platform === 'macos'
+  const keys = platform === 'macos'
     ? labels(b, { platform })?.join('')
     : labels(b, { platform, legend: 'text' })?.join('+');
+  if (keys === undefined || !b?.leader?.length) return keys;
+  return [...b.leader.map((l) => `${l.label} ▸ `), keys].join('');
 }

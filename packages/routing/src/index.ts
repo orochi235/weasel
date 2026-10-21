@@ -186,8 +186,8 @@ export type { AssemblyInputs } from './contributions/assemble';
 export { mergeContributions } from './contributions/merge';
 export { modeShortcuts, modeShortcutSpec } from './contributions/modeShortcuts';
 export type { ModeShortcutHandlers } from './contributions/modeShortcuts';
-export { createKeymapStack, keymapContribution, keymapLeaderBindingId, keymapLeaderId } from './keymaps';
-export type { KeymapDef, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
+export { createKeymapStack, describeKeymap, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from './keymaps';
+export type { KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './keymaps';
 
 // ─── tools ────────────────────────────────────────────────────────────────
 export type {

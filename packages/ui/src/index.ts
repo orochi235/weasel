@@ -20,6 +20,7 @@ export * from './components/DragGrip';
 export * from './components/Keycaps';
 export * from './components/LayerList';
 export * from './components/MeasureReadout';
+export * from './components/KeymapHint';
 export * from './components/Slider';
 export * from './components/ItemList';
 export * from './components/ListEditor';
