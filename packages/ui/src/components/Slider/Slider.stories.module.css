@@ -1,0 +1,7 @@
+.lens {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border: 1px solid var(--wzl-border-strong);
+  border-radius: 50%;
+}

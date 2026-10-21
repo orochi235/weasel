@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import { endless, unit } from '@weasel-js/quantity';
+import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { oklchToHex } from '@weasel-js/ui/color';
+import st from './Slider.stories.module.css';
 
 const meta: Meta<typeof Slider> = {
   title: 'ui/Foundations/Slider',
@@ -255,6 +257,34 @@ export const NotchedThumbs: Story = {
       initial={[{ value: 0.2, shape: 'notched' }, { value: 0.8, shape: 'notched' }]}
     />
   ),
+};
+
+const ZOOM_STOPS = [2, 4, 8, 16].map((v) => ({ value: v, label: `${v}×` }));
+
+function ZoomAlongALensRimStory() {
+  const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
+  return (
+    <div className={st.lens}>
+      <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
+        <Slider
+          min={2}
+          max={16}
+          stops={ZOOM_STOPS}
+          spacing="even"
+          snap="strict"
+          readoutPlacement="below-thumb"
+          renderReadout={(t) => `${t.value}×`}
+          thumbs={thumbs}
+          onInput={setThumbs}
+        />
+      </Along>
+    </div>
+  );
+}
+
+/** A lens's zoom along its bottom rim: detents at 2×, 4×, 8× and 16×, the labels hanging outside the circle. */
+export const ZoomAlongALensRim: Story = {
+  render: () => <ZoomAlongALensRimStory />,
 };
 
 function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
