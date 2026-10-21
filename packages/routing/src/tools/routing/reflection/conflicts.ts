@@ -199,7 +199,10 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     (a.eligible !== undefined ? gatedActions : ungated).push(actionAsEntry(a));
   }
   const modes = scopes.modes ?? KIT_MODES;
-  const ambient = [...(scopes.ambient ?? []), ...ungated];
+  // A keymap is live only while it is the one open, so it can collide with nothing but itself.
+  const isKeymap = (e: Contribution<unknown>): boolean => e.eligibility?.keymap !== undefined;
+  const keymaps = (scopes.ambient ?? []).filter(isKeymap);
+  const ambient = [...(scopes.ambient ?? []).filter((e) => !isKeymap(e)), ...ungated];
 
   const out: Conflict[] = [];
   const seen = new Set<string>();
@@ -214,7 +217,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
 
   // Self-collisions: every entry, actions included. The group passes below
   // need more than one member, so a lone action is checked by nothing else.
-  for (const tool of [...registry, ...ambient, ...gatedActions, ...hotkeyActions]) {
+  for (const tool of [...registry, ...ambient, ...keymaps, ...gatedActions, ...hotkeyActions]) {
     add(findConflictsKeyed([tool], rules, modes));
   }
   // Ambient tools and ungated ambient actions are all live together.
