@@ -48,7 +48,7 @@ describe('rack', () => {
     expect(edge('src', 'blur')).toHaveLength(1);
     const [arc] = edge('src', 'mix');
     expect(arc).toMatchObject({ fromPort: '~skip-out', toPort: '~skip-in', label: 'high quality?: no' });
-    expect(scene.edgeStyle!(arc!).dash).toEqual([5, 4]);
+    expect(scene.edgeStyle!(arc!)!.dash).toEqual([5, 4]);
   });
 
   it('draws a collapsed skip in the warning color where a wire it replaces was flagged', () => {
@@ -56,7 +56,7 @@ describe('rack', () => {
     const strokes = (p: EffectPipeline) => {
       expect(skipDecisions(p, mainChain(p)).map((s) => s.decision.id)).toEqual(['q']);
       const { data, scene } = rack(p);
-      return ['blur', 'mix'].map((to) => scene.edgeStyle!(data.edges.find((e) => e.from === 'src' && e.to === to)!).stroke);
+      return ['blur', 'mix'].map((to) => scene.edgeStyle!(data.edges.find((e) => e.from === 'src' && e.to === to)!)!.stroke);
     };
     const skipFlagged = withQ({ outputs: [{ id: 'yes', type: 'image' }, { id: 'no', type: 'mask' }] });
     expect(strokes(skipFlagged).map((c) => c === PROBLEM_COLOR)).toEqual([false, true]);

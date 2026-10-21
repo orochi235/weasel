@@ -1,5 +1,4 @@
 import {
-  fitViewToBounds,
   SceneCanvas,
   useDepSource,
   useLatest,
@@ -10,7 +9,6 @@ import {
   type CanvasSize,
   type Scene,
   type SceneCanvasApi,
-  type View,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref, type RefObject } from 'react';
@@ -21,10 +19,10 @@ import { createSpecLabelPlacer } from './labels/specLabels';
 import { useDiagramEditing, withPickableEdges } from './diagramEditing';
 import type { DiagramLayout, DiagramViewApi, DiagramViewProps } from './diagramViewProps';
 import { withDiagramRegistry } from './edge';
-import { diagramGroupOf } from './group';
 import type { DiagramSceneData, DiagramSpec } from './fromData';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
+import { useDiagramFit } from './diagramFit';
 import { useMirroredSelection } from './mirrorSelection';
 import { screenRectOf, useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -38,6 +36,7 @@ export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
 export type { DiagramOverlay } from './overlays';
+export { fitDiagram, type DiagramFit } from './diagramFit';
 export type { ReorderChange } from './groupReorder';
 
 /** The view's box holds the canvas and the overlays placed over it, and is as
@@ -52,10 +51,6 @@ const VIEW_RULE = ':where([data-wzl-diagram]) { position: relative; width: fit-c
 const adoptViewRule = (el: HTMLElement | null) => {
   if (el !== null) adoptCssOnce(el, VIEW_RULE);
 };
-
-const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const sameView = (a: View, b: View) =>
-  a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y;
 
 /** A diagram: drag or wheel to pan, zoom, and pick a node; drag nodes with
  *  `onMove`, join ports with `onConnect`. Every edit is reported, never
@@ -108,26 +103,18 @@ function Inner({
   const controlled = view !== undefined;
   const fills = width === undefined || height === undefined;
   const [measured, setMeasured] = useState<CanvasSize | null>(null);
-  const boxWidth = width ?? measured?.width ?? 0;
-  const boxHeight = height ?? measured?.height ?? 0;
-  // A filling canvas is 0 × 0 until measured, and no box to fit into.
-  const unsized = boxWidth === 0 || boxHeight === 0;
-  const fitOpts = { minScale, maxScale, anchor, padding: fitPadding };
   const { layers, box: pagesBox } = usePagesView(pages);
-  const defaultView = useMemo(
-    () => controlled || unsized ? undefined : fitDiagram(specs, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox),
-    // A later `specs` keeps the view it has.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [controlled, unsized, boxWidth, boxHeight, minScale, maxScale, anchor, fitPadding, pagesBox],
-  );
-  // A settled run's fit holds until the box or a fit option changes.
-  const [settledFit, setSettledFit] = useState<{ view: View | undefined; over: View | undefined } | null>(null);
-  const fit = settledFit !== null && settledFit.over === defaultView ? settledFit.view : defaultView;
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  const current = useCallback(() => Array.from(source(), ({ node, pose }) => ({ ...node, pose })), [source]);
+  const fitting = useDiagramFit({
+    canvasRef, specs, current, controlled,
+    size: { width: width ?? measured?.width ?? 0, height: height ?? measured?.height ?? 0 },
+    fit: { minScale, maxScale, anchor, padding: fitPadding }, extra: pagesBox,
+  });
+  const { defaultView } = fitting;
   const settled = useLatest((moved: number) => {
     liveOpts?.onSettle?.(moved);
-    if (controlled || moved === 0) return;
-    const boxes = Array.from(source(), ({ node, pose }) => ({ ...node, pose }));
-    setSettledFit({ view: fitDiagram(boxes, { width: boxWidth, height: boxHeight }, fitOpts, pagesBox), over: defaultView });
+    if (moved !== 0) fitting.settle();
   });
   const live = useLiveLayout<RectPose>({
     ...liveOpts, scene, source, algorithm: run?.algorithm ?? 'force', onSettle: (moved) => settled.current(moved),
@@ -135,8 +122,7 @@ function Inner({
   useEffect(() => {
     if (run !== null) live.restart();
   }, [run, live]);
-  const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useDiagramApi(apiRef, canvasRef, scene, live, setRun);
+  useDiagramApi(apiRef, canvasRef, scene, live, setRun, fitting.fitNow);
 
   const selectedIds = useCallback(() => selection.get() as readonly string[], [selection]);
   const editing = useDiagramEditing({
@@ -156,7 +142,6 @@ function Inner({
   const features = useMemo(() => ['view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : [])] as const, [moves, resizes]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
-  useRefit(canvasRef, fit);
   const overlayRef = useOverlayPlacement(canvasRef, scene, overlays);
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
@@ -207,9 +192,11 @@ function useDiagramApi(
   scene: Scene<DiagramSceneData, 'main', RectPose>,
   live: LiveLayout,
   setRun: (run: { algorithm: DiagramLayout }) => void,
+  fitNow: () => void,
 ): void {
   useImperativeHandle(apiRef, () => ({
     layout: (algorithm = 'force') => setRun({ algorithm }),
+    fit: fitNow,
     live,
     worldAt: (clientX, clientY) => {
       const [x, y] = canvasRef.current?.clientToWorld(clientX, clientY) ?? [clientX, clientY];
@@ -232,55 +219,7 @@ function useDiagramApi(
       return { ...rect, x: rect.x + r.left, y: rect.y + r.top };
     },
     subscribeFrame: (fn) => canvasRef.current?.subscribeFrame(() => fn()) ?? (() => {}),
-  }), [canvasRef, live, scene, setRun]);
+  }), [canvasRef, live, scene, setRun, fitNow]);
 }
 
-/** Apply each new fit while the view is still the last one applied. */
-function useRefit(canvasRef: RefObject<SceneCanvasApi | null>, fit: View | undefined): void {
-  const fitted = useRef(fit);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const was = fitted.current;
-    if (canvas === null || fit === undefined || was === fit) return;
-    // A view the user has panned or zoomed off its fit is theirs to keep.
-    if (!sameView(canvas.getView(), was ?? IDENTITY)) return;
-    fitted.current = fit;
-    canvas.setView(fit);
-  }, [canvasRef, fit]);
-}
 
-/** How `fitDiagram` frames a diagram in its box. */
-export interface DiagramFit {
-  minScale?: number;
-  maxScale?: number;
-  anchor?: 'center' | 'start';
-  padding?: number;
-}
-
-/** The view `DiagramView` opens on: every node box and group box in view, never above
- *  `maxScale` (default 1) and never below `minScale`. `extra` is further bounds to take in, such as the pages'. Takes specs, or a scene's
- *  nodes at the poses they are drawn at. */
-export function fitDiagram(
-  specs: readonly { kind: string; pose: unknown; data: unknown }[],
-  size: { width: number; height: number },
-  fit: DiagramFit = {},
-  extra?: { x: number; y: number; width: number; height: number },
-): View | undefined {
-  const boxes = specs.filter((s) => s.kind === 'container' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
-  if (extra !== undefined) boxes.push({ ...extra } as RectPose);
-  if (boxes.length === 0) return undefined;
-  const x = Math.min(...boxes.map((b) => b.x));
-  const y = Math.min(...boxes.map((b) => b.y));
-  const bounds = {
-    x,
-    y,
-    width: Math.max(...boxes.map((b) => b.x + b.width)) - x,
-    height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
-  };
-  return fitViewToBounds(bounds, size, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
-    maxScale: fit.maxScale ?? 1,
-    ...(fit.minScale !== undefined ? { minScale: fit.minScale } : {}),
-    ...(fit.anchor !== undefined ? { anchor: fit.anchor } : {}),
-    ...(fit.padding !== undefined ? { padding: fit.padding } : {}),
-  });
-}

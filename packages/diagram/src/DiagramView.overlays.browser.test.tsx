@@ -48,6 +48,19 @@ it('holds an overlay beside its node, and moves it with the view', async () => {
   await expect.poll(() => rectOfEl(el).left).toBeCloseTo(before + 50, 0);
 });
 
+it('keeps a side overlay inside the view when neither side has room for it', async () => {
+  const wide = <div data-testid="wide" className="wide">settings</div>;
+  const { host } = await mount({
+    view: { x: -120, y: -100, scale: { x: 1, y: 1 } },
+    overlays: [{ target: 'a', placement: { side: 'right', align: 'start' }, offset: 8, content: wide }],
+  });
+  const el = host.querySelector<HTMLElement>('[data-testid="wide"]')!;
+  el.style.width = '300px';
+  const canvas = host.querySelector('canvas')!.getBoundingClientRect();
+  await expect.poll(() => rectOfEl(el).right).toBeLessThanOrEqual(canvas.right + 0.5);
+  expect(rectOfEl(el).left).toBeGreaterThanOrEqual(canvas.left - 0.5);
+});
+
 it('centers an edge overlay on the midpoint along its route', async () => {
   const { host, api } = await mount({ overlays: [{ target: 'ab', content: <button type="button">+</button> }] });
   const el = host.querySelector('button')!;

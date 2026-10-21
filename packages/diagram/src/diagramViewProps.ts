@@ -64,7 +64,8 @@ export interface DiagramViewProps {
    *  the specs and never reported. */
   hops?: number;
   /** The view opens fitted to the diagram, and fits again when the size or a
-   *  fit option changes or a layout run settles, until the user pans or zooms;
+   *  fit option changes, a layout run settles, or new specs run past what the
+   *  view shows, until the user pans or zooms;
    *  from then on the view is theirs. Omit both to fill the parent, which
    *  then needs a size of its own; a resize of the parent is a size change. */
   width?: number;
@@ -197,6 +198,9 @@ export interface DiagramViewApi {
    *  answers; a drag, an edit or another `layout` call before then drops the
    *  answer. What moved is reported to `onMove` once the run settles. */
   layout(algorithm?: DiagramLayout): void;
+  /** Fit the diagram into the view as it stands now, even after the user has
+   *  panned or zoomed; later fits follow it again until they do. */
+  fit(): void;
   /** The run `layout` started: stop it where it stands, or cancel it. */
   live: LiveLayout;
   /** The world point under a client point: where a drop from outside the canvas lands. */

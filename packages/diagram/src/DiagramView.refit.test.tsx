@@ -68,6 +68,49 @@ describe('DiagramView refit', () => {
   });
 });
 
+describe('DiagramView refit on new specs', () => {
+  const withB = (x: number) =>
+    diagramScene({ ...DATA, nodes: DATA.nodes.map((n) => (n.id === 'b' ? { ...n, at: { x, y: 0 } } : n)) }, { layout: 'none' });
+  const wheel = (container: HTMLElement) =>
+    container.querySelector('canvas')!.dispatchEvent(new WheelEvent('wheel', { deltaX: 40, deltaY: 30, bubbles: true, cancelable: true }));
+
+  it('fits again when new specs run past what the view shows, unless the user moved it', async () => {
+    for (const panned of [false, true]) {
+      const views: View[] = [];
+      const onViewChange = (v: View) => views.push(v);
+      const { rerender, container, unmount } = render(<DiagramView specs={SPECS} width={800} height={300} onViewChange={onViewChange} />);
+      if (panned) await act(async () => { wheel(container); });
+      const before = views.at(-1);
+      await act(async () => {
+        rerender(<DiagramView specs={withB(2000)} width={800} height={300} onViewChange={onViewChange} />);
+      });
+      expect(views.at(-1)).toEqual(panned ? before : fitDiagram(withB(2000), { width: 800, height: 300 }));
+      unmount();
+    }
+  });
+
+  it('keeps the view when new specs still fit in it', async () => {
+    const views: View[] = [];
+    const onViewChange = (v: View) => views.push(v);
+    const { rerender } = render(<DiagramView specs={SPECS} width={800} height={300} onViewChange={onViewChange} />);
+    const count = views.length;
+    await act(async () => {
+      rerender(<DiagramView specs={withB(500)} width={800} height={300} onViewChange={onViewChange} />);
+    });
+    expect(views.length).toBe(count);
+  });
+
+  it('fits on fit(), even after the user moved the view', async () => {
+    const views: View[] = [];
+    const api = createRef<DiagramViewApi>();
+    const { container } = render(<DiagramView ref={api} specs={SPECS} width={800} height={300} onViewChange={(v) => views.push(v)} />);
+    await act(async () => { wheel(container); });
+    expect(views.at(-1)).not.toEqual(fitDiagram(SPECS, { width: 800, height: 300 }));
+    await act(async () => { api.current!.fit(); });
+    expect(views.at(-1)).toEqual(fitDiagram(SPECS, { width: 800, height: 300 }));
+  });
+});
+
 describe('DiagramView with no width or height', () => {
   /** jsdom lays nothing out: the canvas's box and its resize reports are stubbed. */
   function stubMeasurement(start: { width: number; height: number }) {

@@ -190,7 +190,7 @@ export interface NodeStyle {
 }
 
 /** What a node is drawn with when nothing says otherwise. */
-export const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
+export const DEFAULT_NODE_STYLE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 /** A node's or region's outline width when its style gives none. */
 export const NODE_STROKE_WIDTH = 2;
 /** A lane's outline width, which its style does not change. */
@@ -261,12 +261,15 @@ export interface DiagramSceneOptions<TLayer extends string = 'main'> {
   minWidth?: number;
   /** Where edge labels sit. Default `{ at: 'mid', offset: 9 }`. */
   labelPlacement?: DiagramLabel;
-  nodeStyle?: (node: DataNode) => NodeStyle;
+  /** A node's look; `undefined` keeps the theme's, else {@link DEFAULT_NODE_STYLE}. */
+  nodeStyle?: (node: DataNode) => NodeStyle | undefined;
   /** Default 12. */
   groupPadding?: number;
-  /** A group's box and label. `text` colors the label. */
-  groupStyle?: (group: DataGroup) => NodeStyle;
-  edgeStyle?: (edge: DataEdge) => EdgeStyle;
+  /** A group's box and label. `text` colors the label. `undefined` keeps the theme's
+   *  container, else `DEFAULT_GROUP_STYLE`. */
+  groupStyle?: (group: DataGroup) => NodeStyle | undefined;
+  /** An edge's look; `undefined` keeps the theme's, else `DEFAULT_EDGE_STYLE`. */
+  edgeStyle?: (edge: DataEdge) => EdgeStyle | undefined;
   /** Styles nodes by their `style` role, and edges, groups and text by the theme, where the
    *  functions above leave them; and its face is the default `font`. */
   theme?: DiagramTheme;

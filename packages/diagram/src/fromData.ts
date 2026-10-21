@@ -19,7 +19,7 @@ import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
 import { edgeSpecs, wireLabels } from './dataEdges';
 import {
-  NODE, NODE_STROKE_WIDTH,
+  DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH,
   type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramSceneData, type DiagramSceneOptions, type DiagramSpec,
   type NodeStyle,
 } from './dataTypes';
@@ -40,7 +40,7 @@ import { tree } from './tree';
 import type { Vec2 } from '@weasel-js/core/math';
 
 export type { DiagramTextStyle };
-export { NODE };
+export { DEFAULT_NODE_STYLE };
 export type {
   DataEdge, DataGroup, DataNode, DiagramData, DiagramRouter, DiagramSceneData, DiagramSceneOptions, DiagramSpec, EdgeStyle, NodeStyle,
 } from './dataTypes';
@@ -48,7 +48,8 @@ export type {
 /** The frame an empty slot with an id draws, in the unit square a mark is drawn in. */
 export const SLOT_FRAME = 'M0 0H1V1H0Z';
 
-const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
+/** What a group is drawn with when there is no theme and nothing says otherwise. */
+export const DEFAULT_GROUP_STYLE: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 export { LABEL_PLACEMENT };
 const LINE = 1.4;
 const MIN_WIDTH = 64;
@@ -200,7 +201,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const routes = laid.plan === null ? null
     : authoredOver(edges.filter((e) => !laid.remapped.has(e)).map((e) => ({ ...e, id: edgeIdOf(e) })), laid.plan);
   const edgeCtx = { idOf: edgeIdOf, font, labelFont, measure, labelPlacement: LABEL_PLACEMENT, routes, opts, ...(theme ? { theme } : {}) };
-  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? GROUP, text: styleOf(titleStyle) });
+  const groupLook = (g: DataGroup) => ({ style: opts.groupStyle?.(g) ?? theme?.container ?? DEFAULT_GROUP_STYLE, text: styleOf(titleStyle) });
   const footprints = new Map([...placedAt, ...seeds.map((s) => [s.id, grownBy(placedAt.get(s.id)!, s.margin)] as const)]);
   // Regions and group boxes first, so a box never paints over what it holds.
   specs.push(...containerSpecs(regions, placedAt, theme, font.fontFamily));

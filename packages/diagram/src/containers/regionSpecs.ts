@@ -4,7 +4,7 @@
  * from.
  */
 import type { AddNodeSpec, NodeId, RectPose } from '@weasel-js/core';
-import { LANE_STROKE_WIDTH, NODE, NODE_STROKE_WIDTH, type DiagramSceneData, type NodeStyle } from '../dataTypes';
+import { LANE_STROKE_WIDTH, DEFAULT_NODE_STYLE, NODE_STROKE_WIDTH, type DiagramSceneData, type NodeStyle } from '../dataTypes';
 import { DEFAULT_FONT } from '../edgeLabel';
 import { CONTAINER_LAYOUTS, containerShape } from './layouts';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -63,7 +63,7 @@ const titleData = (text: string, style: NodeStyle, fontFamily = DEFAULT_FONT.fon
 export function regionSpecs<TLayer extends string>(
   role: ContainerRole, axis: 'x' | 'y', pose: RectPose, title: string | null, opts: RegionOptions<TLayer>,
 ): RegionSpec<TLayer>[] {
-  const style = opts.style ?? NODE;
+  const style = opts.style ?? DEFAULT_NODE_STYLE;
   const { layout, header } = containerShape(role, axis);
   const region: RegionSpec<TLayer> = {
     id: opts.id as NodeId, kind: 'container', layer: opts.layer, pose, parent: (opts.parent ?? null) as NodeId | null,

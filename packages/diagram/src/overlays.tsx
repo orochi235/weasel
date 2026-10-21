@@ -16,7 +16,7 @@ import {
   type View,
 } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
-import { placeRect, type Placement } from '@weasel-js/geom';
+import { clampRectWithin, placeRect, type Placement } from '@weasel-js/geom';
 import { useCallback, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { diagramEdgeOf } from './edgeTrait';
 import type { DiagramSceneData } from './fromData';
@@ -26,9 +26,9 @@ export interface DiagramOverlay {
   /** The node, group or edge it is held against. While no such id is in the
    *  diagram it is not shown. */
   target: string;
-  /** Beside the target's box, kept inside the view and flipped to the far
-   *  side when the near one has no room; or `'center'`, centered on it.
-   *  Default `'center'`. */
+  /** Beside the target's box, flipped to the far side when the near one has
+   *  no room, and kept inside the view, over the target when neither side has
+   *  room; or `'center'`, centered on it. Default `'center'`. */
   placement?: Placement | 'center';
   /** Gap between the target's box and the overlay, in CSS pixels. Default 0. */
   offset?: number;
@@ -64,15 +64,14 @@ export function screenRectOf(rect: Bounds, view: View): Bounds {
 
 const CENTER = 'center';
 
-/** Place `el` against `anchor` inside a `width` × `height` view. */
-function place(el: HTMLElement, overlay: DiagramOverlay, anchor: Bounds, width: number, height: number): void {
+/** Place `el` against `anchor` inside `view`. */
+function place(el: HTMLElement, overlay: DiagramOverlay, anchor: Bounds, view: Bounds): void {
   const size = { width: el.offsetWidth, height: el.offsetHeight };
   const placement = overlay.placement ?? CENTER;
   const at = placement === CENTER
     ? { x: anchor.x + (anchor.width - size.width) / 2, y: anchor.y + (anchor.height - size.height) / 2 }
-    : placeRect({
-        anchor, overlay: size, boundary: { x: 0, y: 0, width, height }, placement, offset: overlay.offset ?? 0,
-      }).rect;
+    // With no room on either side, placeRect leaves it overflowing; the view keeps it inside, over its target if it must.
+    : clampRectWithin(placeRect({ anchor, overlay: size, boundary: view, placement, offset: overlay.offset ?? 0 }).rect, view);
   el.style.transform = `translate(${Math.round(at.x)}px, ${Math.round(at.y)}px)`;
 }
 
@@ -101,7 +100,9 @@ export function useOverlayPlacement(
       if (world === null) continue;
       const rect = screenRectOf(world, view);
       const anchor = { ...rect, x: rect.x + surface.offsetLeft, y: rect.y + surface.offsetTop };
-      place(el, overlay, anchor, surface.offsetWidth, surface.offsetHeight);
+      place(el, overlay, anchor, {
+        x: surface.offsetLeft, y: surface.offsetTop, width: surface.offsetWidth, height: surface.offsetHeight,
+      });
     }
   }, [canvasRef, scene, current]);
 

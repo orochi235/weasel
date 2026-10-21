@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react';
 import { commitOps, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
-import { NODE } from './fromData';
+import { DEFAULT_NODE_STYLE } from './fromData';
 import { CONTAINER_STENCILS, lanesOf } from './containers/containerStencils';
 import { useStencilInsert, useStencilTool, type StencilInsertOptions } from './stencilTool';
 
@@ -76,13 +76,13 @@ describe('stencilBuild', () => {
   });
 
   it("colors the body and its text with diagramScene's node style, or the style it is given", () => {
-    const colors = (style?: typeof NODE) => {
+    const colors = (style?: typeof DEFAULT_NODE_STYLE) => {
       const [box, text] = insertedNodes(stencilBuild(byId('process'), { x: 0, y: 0, width: 0, height: 0 }, {
         layer: 'main', newId: idMinter(), ...(style ? { style } : {}),
       }).ops as never);
       return [box!.data.fill?.paint.color, box!.data.stroke?.paint.color, box!.data.stroke?.width, text!.data.fill?.paint.color];
     };
-    expect(colors()).toEqual([NODE.fill, NODE.stroke, 2, NODE.text]);
+    expect(colors()).toEqual([DEFAULT_NODE_STYLE.fill, DEFAULT_NODE_STYLE.stroke, 2, DEFAULT_NODE_STYLE.text]);
     expect(colors({ fill: '#fff', stroke: '#333', text: '#111', strokeWidth: 1.5 })).toEqual(['#fff', '#333', 1.5, '#111']);
   });
 

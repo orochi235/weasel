@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
 import { DIAGRAM_THEMES } from './theme/themes';
-import { NODE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
+import { DEFAULT_NODE_STYLE, diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
 import type { DiagramNode } from './types';
 import { createSpecLabelPlacer } from './labels/specLabels';
@@ -56,6 +56,19 @@ describe('diagramScene', () => {
     expect(containers(specs)[0]!.data?.stroke).toEqual({ paint: { color: '#ff0000' }, width: 3 });
     const edge = specs.find((s) => s.id === (edgeIdOf(DATA.edges[1]!) as never));
     expect(edge?.data?.stroke).toMatchObject({ paint: { color: '#00ff00' }, width: 1 });
+  });
+
+  it('keeps the default style where a style callback answers undefined', () => {
+    const plain = diagramScene(DATA);
+    const some = diagramScene(DATA, {
+      nodeStyle: (n) => (n.id === 'a' ? { ...DEFAULT_NODE_STYLE, fill: '#333333' } : undefined),
+      edgeStyle: () => undefined,
+    });
+    const fillOf = (specs: typeof plain, id: string) => specs.find((s) => s.id === id)!.data?.fill;
+    expect(fillOf(some, 'a')).toEqual({ paint: { color: '#333333' } });
+    expect(fillOf(some, 'b')).toEqual(fillOf(plain, 'b'));
+    const edge = (specs: typeof plain) => specs.find((s) => s.id === (edgeIdOf(DATA.edges[1]!) as never))!.data?.stroke;
+    expect(edge(some)).toEqual(edge(plain));
   });
 
   it('handles one node and no edges', () => {
@@ -314,6 +327,6 @@ describe('diagramScene under a theme', () => {
   });
 
   it('ignores a role without a theme', () => {
-    expect(byId(diagramScene(data)).get('a')!.fill!.paint.color).toBe(NODE.fill);
+    expect(byId(diagramScene(data)).get('a')!.fill!.paint.color).toBe(DEFAULT_NODE_STYLE.fill);
   });
 });
