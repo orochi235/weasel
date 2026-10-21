@@ -17,6 +17,15 @@ function typedWithAltGraph(e: KeyboardEvent): boolean {
   return base === undefined || base.toLowerCase() !== e.key.toLowerCase();
 }
 
+/** The `key` and `key-held` down events one keydown dispatches as, with `mods` for its Alt and Ctrl. */
+function keystrokeEvents(e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }): { keyEv: InputEvent; heldEv: InputEvent } {
+  const common = { key: e.key, ...(e.code ? { code: e.code } : {}), ...mods, metaKey: e.metaKey, shiftKey: e.shiftKey };
+  return {
+    keyEv: { kind: 'key', ...common, repeat: e.repeat },
+    heldEv: { kind: 'key-held', ...common, phase: 'down' },
+  };
+}
+
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
@@ -68,30 +77,13 @@ export function keyboardInput(core: DispatchCore): {
     // different GestureSpec kind. The dispatcher returns 'unhandled' when no
     // binding matches the alternate form, so there's no double-fire risk.
 
-    const keyEv: InputEvent = {
-      kind: 'key',
-      key: e.key,
-      ...codeOf(e),
-      ...mods,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
-      repeat: e.repeat,
-    };
+    const { keyEv, heldEv } = keystrokeEvents(e, mods);
     const keyResult = dispatch(keyEv, undefined, reach);
 
     // Always dispatch key-held DOWN, even on autorepeat. The dispatcher's
     // own defense returns 'handled' (no-op) when a handle is already in
     // flight for this gestureId, which both prevents start() re-invocation
     // and lets us preventDefault the repeat so the page doesn't react.
-    const heldEv: InputEvent = {
-      kind: 'key-held',
-      key: e.key,
-      ...codeOf(e),
-      phase: 'down',
-      ...mods,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
-    };
     const heldOn = dispatcherNow();
     const heldResult = dispatch(heldEv, heldOn, reach);
 
