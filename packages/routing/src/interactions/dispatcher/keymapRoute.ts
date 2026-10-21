@@ -58,7 +58,10 @@ export function routeThroughKeymap(
     if (MODIFIER_KEYS.has(event.key)) return passes.run('none', event);
     const entry = ctx.entriesById.get(open.id)?.eligibility.keymap;
     const own = typeof entry === 'object' ? entry.unbound : undefined;
-    if ((own ?? ctx.leaderUnbound ?? 'modal') === 'modal') return 'handled';
+    if ((own ?? ctx.leaderUnbound ?? 'modal') === 'modal') {
+      stack.swallowed();
+      return 'handled';
+    }
     stack.cascaded();
     return passes.run('none', event);
   }

@@ -32,6 +32,8 @@ export function keyboardInput(core: DispatchCore): {
   // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
   // dispatcher that took the down, which hover may have routed away from.
   const heldKeys = new Map<string, { key: string; code?: string; on: Dispatcher }>();
+  // Keys whose keystroke opened a keymap, so their keyup can release it.
+  const leaderKeys = new Set<string>();
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
@@ -48,7 +50,7 @@ export function keyboardInput(core: DispatchCore): {
     // streamed an 'unhandled' immediate-`key` trace entry per repeat.
     // Autorepeat for a key that ISN'T held still dispatches normally,
     // so things like Cmd+= step-zoom keep auto-repeating.
-    if (e.repeat && heldKeys.has(physicalKey(e))) {
+    if (e.repeat && (heldKeys.has(physicalKey(e)) || leaderKeys.has(physicalKey(e)))) {
       e.preventDefault();
       return;
     }
@@ -56,6 +58,7 @@ export function keyboardInput(core: DispatchCore): {
     // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it.
     core.batch(() => press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach)
       || (typedWithAltGraph(e) && press(e, { altKey: false, ctrlKey: false }, reach)));
+    if (core.keymaps()?.holdOpened(`key:${physicalKey(e)}`)) leaderKeys.add(physicalKey(e));
   };
 
   /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */
@@ -103,6 +106,7 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyUp = (e: KeyboardEvent) => {
     const physical = physicalKey(e);
+    if (leaderKeys.delete(physical)) core.keymaps()?.release(`key:${physical}`);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
     const ev: InputEvent = {
@@ -120,6 +124,7 @@ export function keyboardInput(core: DispatchCore): {
   };
 
   const releaseAll = (): void => {
+    leaderKeys.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
     for (const { key, code, on } of releasing) {

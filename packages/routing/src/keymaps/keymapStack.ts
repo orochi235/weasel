@@ -29,6 +29,9 @@ export interface KeymapStack {
   innermost(): OpenKeymap | null;
   /** Open a level; `heldBy` names the leader gesture that holds it. */
   push(id: string, label: string, heldBy?: string): void;
+  /** Mark the levels the last raw input opened as held by `heldBy`: the key
+   *  that opened them is still down. False when it opened none. */
+  holdOpened(heldBy: string): boolean;
   /** The leader `heldBy` came up: close its level and those above it if
    *  input arrived meanwhile, else leave it open for one more input. */
   release(heldBy: string): void;
@@ -37,6 +40,8 @@ export interface KeymapStack {
   /** One of the keymaps took this input, or a pointer gesture went past them.
    *  Marks held levels used and closes once-levels down to the innermost held one. */
   inputSeen(): void;
+  /** A key no keymap binds was swallowed: held levels count it as input, and nothing closes. */
+  swallowed(): void;
   /** This input went on past the keymaps: as `inputSeen`, remembered as a cascade. */
   cascaded(): void;
   /** What the keymaps made of the input in progress. */
@@ -95,6 +100,16 @@ export function createKeymapStack(): KeymapStack {
       if (depth > 0) verdict = 'taken';
       notify();
     },
+    holdOpened: (heldBy) => {
+      let held = false;
+      levels = levels.map((l) => {
+        if (l.openedIn !== serial || l.heldBy !== undefined) return l;
+        held = true;
+        return { ...l, heldBy };
+      });
+      if (held) notify();
+      return held;
+    },
     release: (heldBy) => {
       const i = levels.findIndex((l) => l.heldBy === heldBy);
       if (i === -1) return;
@@ -118,6 +133,9 @@ export function createKeymapStack(): KeymapStack {
     cascaded: () => {
       if (depth > 0) verdict = 'cascaded';
       later(settle);
+    },
+    swallowed: () => {
+      for (const l of levels) if (l.heldBy !== undefined) l.usedWhileHeld = true;
     },
     verdict: () => verdict,
     closeAll: () => {
