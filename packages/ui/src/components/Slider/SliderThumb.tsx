@@ -32,7 +32,7 @@ export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactEleme
       ref={p.elRef}
       role="slider"
       tabIndex={0}
-      aria-orientation="horizontal"
+      aria-orientation={p.geometry.curved ? undefined : 'horizontal'}
       aria-valuemin={p.min}
       aria-valuemax={p.max}
       aria-valuenow={thumb.value}

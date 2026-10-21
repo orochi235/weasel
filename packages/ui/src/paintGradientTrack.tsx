@@ -30,11 +30,14 @@ const DEFAULT_HATCH = { angleDeg: 135, stripe: 2, gap: 4, dim: 75 };
  * Builds a `Slider` `renderTrack` function that paints the track as a
  * sampled color gradient, optionally dimming and hatching the portions
  * outside an active range.
+ *
+ * It paints a straight track only: on a curved shape it draws nothing.
  */
 export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => ReactNode {
   const { gradient, samples = 16, activeRange, hatch } = opts;
 
   return (ctx: TrackCtx) => {
+    if (ctx.shape.kind !== 'line') return null;
     const stops: string[] = [];
     for (let i = 0; i <= samples; i++) {
       const t = i / samples;

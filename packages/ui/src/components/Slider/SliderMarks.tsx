@@ -35,7 +35,8 @@ export function labeledStopsOf(stopList: readonly SliderStop[], mode: NonNullabl
 }
 
 /** The labels under their stops. Inside the track so it shares the track's width, not the row's: an inline
- *  readout beside the track would otherwise shift every label off its stop. */
+ *  readout beside the track would otherwise shift every label off its stop. On a curve an end label is not
+ *  held to the track's edge, which a curve does not have. */
 export function SliderStopLabels({ labeled, last, selected, valueToFraction, geometry }: {
   labeled: readonly LabeledStop[];
   last: number;
@@ -51,7 +52,7 @@ export function SliderStopLabels({ labeled, last, selected, valueToFraction, geo
           className={s.stopLabel}
           data-slider-stop-label
           data-selected={selected.includes(stop.value) ? 'true' : undefined}
-          data-edge={i === 0 ? 'start' : i === last ? 'end' : undefined}
+          data-edge={geometry.curved ? undefined : i === 0 ? 'start' : i === last ? 'end' : undefined}
           style={geometry.place(valueToFraction(stop.value))}
         >
           {stop.label}

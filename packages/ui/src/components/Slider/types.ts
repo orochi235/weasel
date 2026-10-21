@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { TrackShape } from '@weasel-js/geom';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 
 /**
@@ -60,8 +61,14 @@ export type BoundsCtx = {
  * that span. A painter places everything that must line up with the thumbs
  * through `fractionToPosition`: under `thumbFit: 'inside'` the span stops half
  * a thumb short of each end of the track.
+ *
+ * `shape` is the value span as a shape in the painted layer's px, in reading
+ * order: `shape.at(valueToFraction(v))` is where a thumb at `v` sits, on a
+ * line or a curve. On a curve `trackWidth` is the run's length, and
+ * `fractionToPosition` means nothing; a painter there draws through `shape`.
  */
 export type TrackCtx = {
+  shape: TrackShape;
   trackWidth: number;
   valueToFraction: (v: number) => number;
   fractionToPosition: (f: number) => string;
@@ -135,6 +142,10 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
   allowShiftAll?: boolean;
   renderTrack?: (ctx: TrackCtx) => ReactNode;
   thumbFit?: 'inside' | 'overhang';
+  /** The track to lie along, in the coordinates of the slider's containing
+   *  block; it wins over an enclosing `Along`'s. A line keeps the straight
+   *  layout, and its coordinates are not read. */
+  shape?: TrackShape;
   trackHeight?: number;
   /** `'slim'` drives the track and thumb from the kit's slider tokens, so a
    *  Slider matches the property rows. `trackHeight` still wins if given. */

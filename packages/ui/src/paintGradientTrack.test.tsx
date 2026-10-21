@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import type { CSSProperties, ReactElement } from 'react';
 import { paintGradientTrack } from './paintGradientTrack';
+import { arcShape, lineShape, trackRun } from '@weasel-js/geom';
 import type { TrackCtx } from './components/Slider';
 
 const ctx: TrackCtx = {
+  shape: trackRun(lineShape({ x: 0, y: 12 }, { x: 200, y: 12 })),
   trackWidth: 200,
   valueToFraction: (v: number) => v,
   fractionToPosition: (f: number) => `${(f * 100).toFixed(1)}%`,
@@ -69,5 +71,10 @@ describe('paintGradientTrack', () => {
     const { container } = render(<>{renderTrack(ctx)}</>);
     const div = container.querySelector('div')!;
     expect((div as HTMLElement).style.background).not.toContain('repeating-linear-gradient');
+  });
+
+  it('paints nothing on a curved shape', () => {
+    const curved: TrackCtx = { ...ctx, shape: trackRun(arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })) };
+    expect(paintGradientTrack({ gradient: () => '#888' })(curved)).toBeNull();
   });
 });

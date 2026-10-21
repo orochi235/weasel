@@ -49,7 +49,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     onChange?.(next);
   };
 
-  const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const onTrackPointerDown = (e: ReactPointerEvent<Element>) => {
     if (typeof e.button === 'number' && e.button > 0) return;
     const trackClick = props.trackClick ?? (thumbs.length === 1 ? 'move-nearest' : 'none');
     const wantsMove = trackClick === 'move-nearest' && thumbs.length > 0;

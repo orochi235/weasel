@@ -234,3 +234,83 @@
   color: var(--wzl-fg);
   font-weight: var(--wzl-font-weight-medium);
 }
+
+/* On a curve the root fills its containing block, and every part sits at its
+ * place along the shape (`--at-x`, `--at-y`), tipped to it (`--at-angle`).
+ * Only the band's stroke and the thumbs take pointers. */
+.curved {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bandSlop,
+.bandEdge,
+.bandFace {
+  fill: none;
+}
+
+.bandSlop {
+  stroke: transparent;
+  stroke-width: calc(var(--rp-track-height, 24px) + 2 * var(--wzl-slider-track-slop));
+  pointer-events: stroke;
+  cursor: var(--rp-track-cursor, crosshair);
+}
+
+.bandEdge {
+  stroke: var(--wzl-border);
+  stroke-width: calc(var(--rp-track-height, 24px) + 2px);
+}
+
+.bandFace {
+  stroke: var(--wzl-surface-sunken);
+  stroke-width: var(--rp-track-height, 24px);
+}
+
+.paintLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.curved .thumb,
+.curved .tick,
+.curved .stopLabel {
+  left: var(--at-x);
+  top: var(--at-y);
+  bottom: auto;
+  margin-left: 0;
+  transform: translate(-50%, -50%) rotate(var(--at-angle));
+}
+
+.curved .thumb {
+  height: calc(var(--rp-track-height, 24px) + 4px);
+  pointer-events: auto;
+}
+
+.curved.slim .thumb {
+  height: var(--rp-thumb-size);
+}
+
+.curved .tick {
+  height: calc(var(--rp-track-height, 24px) * 0.6);
+}
+
+.curved .stopLabels {
+  top: 0;
+  bottom: 0;
+  height: auto;
+}
+
+/* Down the run's normal, past the band: outside the circle on a bottom arc. */
+.curved .stopLabel {
+  transform: translate(-50%, -50%) rotate(var(--at-angle)) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + 0.5lh));
+}

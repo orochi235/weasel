@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
+import { arcShape } from '@weasel-js/geom';
 import { DetentSlider } from './DetentSlider';
 
 const RATES = [0.25, 0.5, 1, 2, 4];
@@ -222,5 +223,13 @@ describe('DetentSlider degenerate input', () => {
     const { container } = render(<DetentSlider items={[]} value={1} onChange={() => {}} />);
     expect(container.querySelector('[role="slider"]')).toBeNull();
     expect(ticks(container)).toHaveLength(0);
+  });
+});
+
+describe('DetentSlider on a curve', () => {
+  it('a shape reaches its slider', () => {
+    const top = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });
+    const { thumb } = renderRate({ shape: top });
+    expect(thumb.hasAttribute('aria-orientation')).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { TrackShape } from '@weasel-js/geom';
 import { Button } from '../Button';
 import { Slider } from '../Slider/Slider';
 import s from './Jog.module.css';
@@ -21,6 +22,8 @@ export interface JogProps {
   unit?: string;
   /** Drawn after the readout — a beat's caption, a snapshot's date. */
   caption?: ReactNode;
+  /** The track the scrubber lies along; see `SliderProps.shape`. */
+  shape?: TrackShape;
   className?: string;
 }
 
@@ -81,6 +84,7 @@ export function Jog(props: JogProps) {
           step={1}
           snap="strict"
           density="slim"
+          shape={props.shape}
           ariaLabel={unit}
           thumbs={[{ value: at, valueText: spoken }]}
           onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}

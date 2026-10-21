@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
+import type { TrackShape } from '@weasel-js/geom';
 import { Slider, type SliderStop, type Thumb } from '../Slider/Slider';
 import s from './DetentSlider.module.css';
 
@@ -34,6 +35,8 @@ export type DetentSliderProps<V extends DetentValue = number> = {
   formatLabel?: (value: V, index: number) => ReactNode;
   labels?: 'all' | 'ends' | 'none';
   trackHeight?: number;
+  /** The track to lie along; see `SliderProps.shape`. */
+  shape?: TrackShape;
   ariaLabel?: string;
   className?: string;
 };
@@ -133,6 +136,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         stopLabels={props.labels ?? 'all'}
         trackClick="move-nearest"
         trackHeight={props.trackHeight ?? 8}
+        shape={props.shape}
         ariaLabel={ariaLabel}
         thumbs={thumbs}
         onInput={handleInput}
