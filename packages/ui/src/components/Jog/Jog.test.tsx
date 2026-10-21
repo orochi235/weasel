@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
+import { Along } from '../Along';
 import { Jog } from './Jog';
 
 const props = {
@@ -69,5 +70,14 @@ describe('Jog', () => {
   it('holds an out-of-range index at the end rather than reporting past it', () => {
     renderWithIcons(<Jog {...props} index={99} count={24} onScrub={() => {}} />);
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', 'Step 24 of 24');
+  });
+
+  it('keeps its scrubber straight inside an Along', () => {
+    renderWithIcons(
+      <Along>
+        <Jog {...props} onScrub={() => {}} />
+      </Along>,
+    );
+    expect(screen.getByRole('slider').closest('[data-shape]')).toBeNull();
   });
 });
