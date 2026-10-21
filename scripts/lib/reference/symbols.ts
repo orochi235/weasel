@@ -57,9 +57,15 @@ export function readSymbol(child: Child, name: string, links: Links): ReferenceS
   }
 }
 
-/** The comment an export's summary is read from. A function documents itself on its signatures, so it is the first one's. */
+/**
+ * The comment an export's summary is read from. A function documents itself on its signatures, so it is the
+ * first one's unless the declaration's own has a summary: core's categorizer gives every function a
+ * declaration comment holding only `@category`.
+ */
 export function commentOf(child: Child): JSONOutput.Comment | undefined {
-  return child.comment ?? (child.kind === Kind.Function ? (child as Declaration).signatures?.[0]?.comment : undefined);
+  const own = child.comment;
+  if (child.kind !== Kind.Function || (own && own.summary.length > 0)) return own;
+  return (child as Declaration).signatures?.[0]?.comment ?? own;
 }
 
 /** `class Box<T> extends Shape implements Sized`. */

@@ -117,6 +117,9 @@ None of them is written for the site; each is read from the package:
 | Reference | TypeDoc's JSON, split per package by `scripts/build-reference.ts` | Edit the doc comments. `npm run build:api` rebuilds it; until that has run, a dev server shows "has not been built". |
 | Demos | The demos whose source, or a file their code panel shows, imports `@weasel-js/<name>` | Import the package in the demo. There is no list to add it to. |
 
+An export's row shows the first sentence of its doc comment, and `npm run check:undescribed`
+lists every export whose row has none.
+
 A subpath entry's description is its file's opening doc comment, which must carry
 `@packageDocumentation`. Without it TypeDoc hands that comment to every name the file's
 first `export { … }` lists, and `npm run build:api` fails rather than let it.

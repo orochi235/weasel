@@ -71,6 +71,7 @@
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
     "check:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs --check",
     "check:size": "node scripts/check-size.mjs",
+    "check:undescribed": "tsx scripts/undescribed-exports.ts",
     "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:spacing": "tsx scripts/check-spacing.ts",
     "check:numeric": "tsx scripts/check-numeric.ts",

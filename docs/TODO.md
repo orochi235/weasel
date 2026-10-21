@@ -917,11 +917,6 @@ only story runner in the repo.
   7 of 26 tests in one run on 2026-10-13, and polls now; whether a checkout loses them too is not
   measured.
 
-- **(P3) Package pages: undescribed exports.** Every published package has a page at
-  `#pkg/<name>` (how each tab is fed is in `CONTRIBUTING.md`, "Package pages"), and only geom,
-  gestures, and labkit have guides. About 420 exports have no doc comment, so their row in a
-  module's list has no description.
-
 - **(P3) SVG text export: lines written without a layout sit half the leading off.** Without
   `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
   ascent on the box top, where weasel's layout first puts half the leading. Every line is off by the

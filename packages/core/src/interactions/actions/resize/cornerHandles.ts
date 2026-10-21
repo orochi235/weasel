@@ -129,7 +129,8 @@ export function handlePoint(
 
 const EDGE_FRACTION: Record<HandleEdge, number> = { min: 0, mid: 0.5, max: 1 };
 
-/** @deprecated Use {@link handlePoint}, which also places edge handles. */
+/** A corner handle's position for the given bounds, in the bounds' frame.
+ *  @deprecated Use {@link handlePoint}, which also places edge handles. */
 export const cornerPoint: (
   bounds: Bounds,
   entry: Pick<CornerAnchor, 'xEdge' | 'yEdge'>,
