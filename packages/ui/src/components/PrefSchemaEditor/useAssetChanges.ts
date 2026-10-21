@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { trackOrigins } from './nodeOrigins';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import type { PrefTypes } from './types';
 import { assetOf, shownAssets, type Asset, type Workspace } from './workspace';
@@ -30,6 +31,9 @@ export interface WorkspaceChanges {
   text: string;
   /** What a submission hands over. */
   sent(types?: PrefTypes): SentAsset[];
+  /** Follow every node from `before` to what it became in `after`, an edit made in one step, so it stays paired with
+   *  its baseline whatever the later steps make of its key and its name. */
+  follow(before: Workspace, after: Workspace): void;
 }
 
 function changesText(workspace: Workspace, each: readonly AssetChanges[]): string {
@@ -50,8 +54,12 @@ export function useAssetChanges(
   const [held, setHeld] = useState(workspace);
   const current = held === workspace || same(held, workspace) ? held : workspace;
   if (current !== held) setHeld(current);
+  const [tracked, setTracked] = useState(() => ({ base, origins: trackOrigins(base) }));
+  const track = tracked.base === base ? tracked : { base, origins: trackOrigins(base) };
+  if (track !== tracked) setTracked(track);
+  const { origins } = track;
   const changes = useMemo<WorkspaceChanges>(() => {
-    const each = workspaceChanges(base, current);
+    const each = workspaceChanges(base, current, origins);
     const by = new Map(each.map((c) => [c.id, c.changes]));
     return {
       ids: new Set(by.keys()),
@@ -62,8 +70,9 @@ export function useAssetChanges(
         const asset = assetOf(current, id)!;
         return { id, kind: asset.kind, changes, literal: printSchema(asset.root, types) };
       }),
+      follow: origins.follow,
     };
-  }, [base, current]);
+  }, [base, current, origins]);
   const reported = useLatest(report);
   const { ids } = changes;
   useEffect(() => reported.current?.(ids), [ids, reported]);

@@ -563,11 +563,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) A baseline pref whose key and then name are both changed in the schema editor reads as
-  new.** The editor calls a node new when the Changes list shows it as an addition. A key edited
-  in the Key field shows as a move while the name stands; rename it afterward and the two can no
-  longer be paired, so it shows as a removal plus an addition, and its key follows the new name.
-
 - **(P3) The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
 

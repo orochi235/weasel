@@ -96,6 +96,28 @@ describe('PrefSchemaEditor: the key follows the name', () => {
     expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid', 'snap']);
   });
 
+  it('keeps pairing a baseline pref with its baseline after its key and then its name change', () => {
+    function Sent() {
+      const [schema, setSchema] = useState(BASE);
+      latest = schema;
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} original={BASE} />;
+    }
+    renderWithIcons(<Sent />);
+    select('snap');
+    const key = keyField();
+    act(() => key.focus());
+    fireEvent.change(key, { target: { value: 'snapping' } });
+    act(() => keyField().blur());
+    rename('Snap to grid');
+    expect(keyField()).toHaveValue('snapping');
+    expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid', 'snapping']);
+    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
+    const listed = screen.getByRole('tabpanel', { name: 'Changes' }).textContent ?? '';
+    expect(listed).toMatch(/↕ view\/snap → view\/snapping/);
+    expect(listed).toMatch(/~ view\/snapping\.name/);
+    expect(listed).not.toMatch(/[+−] /);
+  });
+
   it('hands over a renamed baseline pref as a change of name alone', async () => {
     const onSubmit = vi.fn<SubmitChanges>(async () => {});
     function Sent() {

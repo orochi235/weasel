@@ -1,3 +1,4 @@
+import type { NodeOrigins } from './nodeOrigins';
 import { diffSchemas, type SchemaChange } from './schemaExport';
 import { assetOf, shownAssets, type Workspace } from './workspace';
 
@@ -7,11 +8,12 @@ export interface AssetChanges {
   changes: SchemaChange[];
 }
 
-/** What changed from `base` to `workspace`, asset by asset in the workspace's order, leaving out those that did not. */
-export function workspaceChanges(base: Workspace, workspace: Workspace): AssetChanges[] {
+/** What changed from `base` to `workspace`, asset by asset in the workspace's order, leaving out those that did not.
+ *  A node `origins` followed from the baseline is paired with where it sat there. */
+export function workspaceChanges(base: Workspace, workspace: Workspace, origins?: NodeOrigins): AssetChanges[] {
   return workspace.assets.flatMap((asset) => {
     const was = assetOf(base, asset.id);
-    const changes = was && was.root !== asset.root ? diffSchemas(was.root, asset.root) : [];
+    const changes = was && was.root !== asset.root ? diffSchemas(was.root, asset.root, origins?.of(asset.id)) : [];
     return changes.length === 0 ? [] : [{ id: asset.id, changes }];
   });
 }
