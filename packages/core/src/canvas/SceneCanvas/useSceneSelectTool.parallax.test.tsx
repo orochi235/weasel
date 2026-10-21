@@ -103,7 +103,7 @@ describe('useSceneSelectTool — a container and its child on different planes',
       const scene = useScene<unknown, 'sky' | 'main', Pose>({
         systemLayers: [{ id: 'main' }, { id: 'sky', parallax: { pan: 1, zoom: 0 } }],
         initial: [
-          { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+          { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, clipFromPose: (p: Pose) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }), data: {} },
           { id: asNodeId('kid'), kind: 'leaf', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
         ],
       });

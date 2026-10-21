@@ -17,7 +17,7 @@ import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 
 beforeAll(() => {
@@ -58,7 +58,7 @@ function MachineHarness({
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     s.add({
       id: asNodeId('path-1'), kind: 'leaf', layer: 'main',
-      data: { path: pathFromD('M 0 0 L 40 0 L 40 40 L 0 40 Z') as PolygonPath },
+      data: { path: pathFromD('M 0 0 L 40 0 L 40 40 L 0 40 Z') as PolygonPath, fill: { paint: solid('#888') } },
       pose: { x: 0, y: 0, width: 40, height: 40 },
     });
     return s as unknown as DrawScene;

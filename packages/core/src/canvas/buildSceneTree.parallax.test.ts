@@ -86,7 +86,7 @@ describe('buildSceneTree — a container and its child on different planes', () 
     const scene = createScene<unknown, 'sky' | 'main', Pose>({
       systemLayers: [{ id: 'main' }, { id: 'sky', parallax: STILL }],
       initial: [
-        { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, data: {} },
+        { id: asNodeId('box'), kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 }, clipFromPose: (p: Pose) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }), data: {} },
         { id: asNodeId('kid'), kind: 'leaf', layer: 'sky', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
       ],
     });
@@ -101,7 +101,7 @@ describe('buildSceneTree — a container and its child on different planes', () 
     const scene = createScene<unknown, 'sky' | 'main', Pose>({
       systemLayers: [{ id: 'sky', parallax: STILL }, { id: 'main' }],
       initial: [
-        { id: asNodeId('box'), kind: 'container', layer: 'sky', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} },
+        { id: asNodeId('box'), kind: 'container', layer: 'sky', pose: { x: 0, y: 0, width: 100, height: 100 }, clipFromPose: (p: Pose) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }), data: {} },
         { id: asNodeId('kid'), kind: 'leaf', layer: 'main', parent: asNodeId('box'), pose: { x: 0, y: 0, width: 200, height: 200 }, data: {} },
       ],
     });

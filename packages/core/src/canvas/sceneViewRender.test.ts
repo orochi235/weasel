@@ -205,6 +205,7 @@ function makeNestedScene(): {
       data: { color: '#ccc' },
       layer: 'main',
       pose: { x: 100, y: 100, width: 200, height: 200 },
+      clipFromPose: (p: P) => ({ kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height }),
     });
     childId = s.add({
       kind: 'leaf',
@@ -280,7 +281,7 @@ describe('buildSceneViewCommands — scene-tree fidelity', () => {
       .toContain('#00f');
   });
 
-  it("clips a container's child by the container silhouette", () => {
+  it("clips a container's child by the container's clip", () => {
     const { scene } = makeNestedScene();
 
     const clips = clipsIn(buildSceneViewCommands(scene, identityView, nestedDrawOne));

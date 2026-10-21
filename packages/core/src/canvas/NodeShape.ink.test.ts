@@ -53,18 +53,17 @@ describe('findShapeInk', () => {
       .toMatchObject({ outset: 0, inset: 0 });
   });
 
-  it('falls back to a fill when neither fill nor stroke is declared', () => {
-    expect(findShapeInk(pathNode({}), POSE)).toEqual({ filled: true, outset: 0, inset: 0 });
+  it('reports no fill when neither fill nor stroke is declared', () => {
+    expect(findShapeInk(pathNode({}), POSE)).toEqual({ filled: false, outset: 0, inset: 0 });
   });
 
-  it('reports kit:shape as filled unless it declares fill: null', () => {
+  it('reports kit:shape as filled only when it declares a fill', () => {
     const star = (data: Record<string, unknown>) => ({
       id: asNodeId('s'), kind: 'leaf', layer: 'main', pose: POSE,
       data: { shape: 'star', points: 5, stroke: strokeOf('#000', 6), ...data },
     } as unknown as Node<unknown, string, RectPose>);
-    // No fill declared: the painter emits its default one, so the interior
-    // is grabbable.
-    expect(findShapeInk(star({}), POSE)).toEqual({ filled: true, outset: 3, inset: 3 });
+    expect(findShapeInk(star({}), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
+    expect(findShapeInk(star({ fill: { paint: solid('#f00') } }), POSE)).toEqual({ filled: true, outset: 3, inset: 3 });
     expect(findShapeInk(star({ fill: null }), POSE)).toEqual({ filled: false, outset: 3, inset: 3 });
   });
 });
