@@ -866,13 +866,6 @@ only story runner in the repo.
   the latency everywhere, and whether forge's plugin or each app's vite config sets it. `replacedFile.test.ts` rewrites until served for the
   same reason.
 
-- **(P2) The Accessibility panel blames the workshop for a story taller than its trial.** axe
-  audits the trial host, scroller included, so any story that overflows reports
-  `scrollable-region-focusable` (serious) against forge's own `.fg-story__scroll`: seen
-  2026-10-20 on `ColorRamp › Each Interpolation Space`. Either the scroller takes `tabindex="0"` while
-  it overflows, as a scroll pane should, or `runAxe` audits only the story inside it. The first fixes
-  the workshop's own keyboard access too.
-
 - **(P3) A story whose `render` takes no args has no controls.** forge reads a
   control for each prop of the meta's `component` (`packages/forge/src/vite/propTypes.ts`),
   and leaves them off a story whose `render` declares no parameter, since nothing
