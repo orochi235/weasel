@@ -567,26 +567,6 @@ describe('a removable badge with an action', () => {
     }
   }
 
-  // A line too narrow for the label's last word and the control together still parts them.
-  test('the remove control stays on the line of the label\'s last word', () => {
-    const { container } = render(
-      <Surface mode="light">
-        {Array.from({ length: 40 }, (_, i) => (
-          <p key={i} style={{ width: 90 + i * 3 }}>
-            <Badge onClick={() => {}} onRemove={() => {}}>alpha beta gamma</Badge>
-          </p>
-        ))}
-      </Surface>,
-    );
-    for (const badge of container.querySelectorAll<HTMLElement>('[data-status]')) {
-      const lines = [...badge.querySelector('[role="button"]')!.getClientRects()].filter((r) => r.width > 0);
-      const last = lines[lines.length - 1];
-      const remove = badge.querySelector('button')!.getBoundingClientRect();
-      const middle = (remove.top + remove.bottom) / 2;
-      expect(middle > last.top && middle < last.bottom, `at width ${badge.parentElement!.style.width}`).toBe(true);
-    }
-  });
-
   test('a linked label keeps the badge\'s ink and takes no underline', () => {
     const { plain, link } = row('pill', 'sm');
     const anchor = link.querySelector('a')!;

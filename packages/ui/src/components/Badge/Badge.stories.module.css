@@ -56,3 +56,14 @@
   gap: 24px;
   align-items: baseline;
 }
+
+.resizable {
+  width: 240px;
+  resize: horizontal;
+  overflow: hidden;
+  line-height: 1.7;
+}
+
+.resizable > p {
+  margin: 0 0 8px;
+}

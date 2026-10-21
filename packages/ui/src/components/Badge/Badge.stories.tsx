@@ -232,6 +232,26 @@ export const InlineWrapping: Story = {
   ),
 };
 
+/** Drag the box's corner: the remove control keeps to the line of the label's last word. */
+export const RemovableWrapping: Story = {
+  name: 'Edge case: removable, wrapped',
+  render: (_args) => (
+    <div className={st.resizable}>
+      <p>
+        xx <Badge status="accent" onRemove={() => {}}>alpha beta gamma</Badge> yy
+      </p>
+      <p>
+        xx <Badge shape="plain" status="info" onClick={() => {}} onRemove={() => {}}>alpha beta gamma</Badge> yy
+      </p>
+      <div className={st.row}>
+        <Badge status="accent" onRemove={() => {}}>two words</Badge>
+        <Badge shape="plain" status="info" onRemove={() => {}}>two words</Badge>
+        <span>after</span>
+      </div>
+    </div>
+  ),
+};
+
 export const ComposeShowcase: Story = {
   tags: ['gallery'],
   name: 'Compose: base + effects',
