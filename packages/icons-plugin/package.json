@@ -17,7 +17,7 @@
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": { "type": "git", "url": "git+https://github.com/orochi235/weasel.git", "directory": "packages/icons-plugin" },
   "bugs": { "url": "https://github.com/orochi235/weasel/issues" },
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=22.12.0" },
   "files": ["dist", "virtual.d.ts", "README.md", "LICENSE"],
   "scripts": { "build": "tsup" },
   "dependencies": { "@weasel-js/icons": "1.11.1", "magic-string": "1.4.3", "oxc-parser": "0.154.0", "unplugin": "3.4.0" },
