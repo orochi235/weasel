@@ -114,7 +114,8 @@ export type SchemaChange =
 
 const kindOf = (n: SchemaNode) => (isPrefLeaf(n) ? n.kind : isPrefSection(n) ? 'section' : 'group');
 
-function flatten(root: SchemaRoot): Map<string, SchemaNode> {
+/** Every node under `root`, by its path. */
+export function flatten(root: SchemaRoot): Map<string, SchemaNode> {
   const out = new Map<string, SchemaNode>();
   const walk = (node: SchemaNode, path: string | null) => {
     for (const [k, child] of Object.entries(childrenOf(node) ?? {})) {
@@ -143,16 +144,29 @@ function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[]
   return out;
 }
 
+/** Where a node sat in the schema a diff is measured from, when something has followed it there; `undefined` when nothing has. */
+export type OriginOf = (node: SchemaNode) => string | undefined;
+
+/** How the nodes of `before` match those of `after`, by path. */
+export interface NodePairs {
+  /** Every node on both sides: its path in `before`, then in `after`. */
+  pairs: Array<[string, string]>;
+  /** Each node that left its path, shallowest first, and where it went: none where it was removed. A moved node's
+   *  descendants, which travel with it, are not among them. */
+  left: Array<[string, string | undefined]>;
+  /** The paths of the nodes only `after` holds. */
+  added: string[];
+}
+
 /**
- * What changed from `before` to `after`. Nodes match by path; a node that left one path and a node with the same
- * kind and name that arrived at another are taken as one node moved, and a moved node's descendants travel with
- * it unreported. Reordering a node's children is one `reorder` for that node (`''` is the root).
+ * The nodes of `before` matched with those of `after`, as `diffSchemas` matches them. A node `originOf` places at a
+ * path `before` holds and `after` does not is paired with it before any is matched by name.
  */
-export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange[] {
+export function pairNodes(before: SchemaRoot, after: SchemaRoot, originOf?: OriginOf): NodePairs {
   const a = flatten(before);
   const b = flatten(after);
-  const out: SchemaChange[] = [];
   const pairs: Array<[string, string]> = [];
+  const left: Array<[string, string | undefined]> = [];
   const gone = [...a.keys()].filter((p) => !b.has(p));
   const added = new Set([...b.keys()].filter((p) => !a.has(p)));
   const moved = new Map<string, string>();
@@ -163,15 +177,30 @@ export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange
       if (added.has(to)) { added.delete(to); pairs.push([from, to]); continue; }
     }
     const node = a.get(from)!;
-    const to = [...added].find((p) => kindOf(b.get(p)!) === kindOf(node) && b.get(p)!.name === node.name);
-    if (to === undefined) { out.push({ op: 'remove', path: from, kind: kindOf(node) }); continue; }
+    const to = [...added].find((p) => originOf?.(b.get(p)!) === from)
+      ?? [...added].find((p) => kindOf(b.get(p)!) === kindOf(node) && b.get(p)!.name === node.name);
+    left.push([from, to]);
+    if (to === undefined) continue;
     added.delete(to);
     moved.set(from, to);
-    out.push({ op: 'move', from, to });
     pairs.push([from, to]);
   }
-  for (const p of added) out.push({ op: 'add', path: p, kind: kindOf(b.get(p)!) });
   for (const p of a.keys()) if (b.has(p)) pairs.push([p, p]);
+  return { pairs, left, added: [...added] };
+}
+
+/**
+ * What changed from `before` to `after`. Nodes match by path; a node that left one path and a node with the same
+ * kind and name that arrived at another are taken as one node moved, and a moved node's descendants travel with
+ * it unreported. Reordering a node's children is one `reorder` for that node (`''` is the root). A node `originOf`
+ * says sat at a path that `after` no longer holds is that node, whatever its name is now.
+ */
+export function diffSchemas(before: SchemaRoot, after: SchemaRoot, originOf?: OriginOf): SchemaChange[] {
+  const a = flatten(before);
+  const b = flatten(after);
+  const { pairs, left, added } = pairNodes(before, after, originOf);
+  const out: SchemaChange[] = left.map(([from, to]) => (to === undefined ? { op: 'remove', path: from, kind: kindOf(a.get(from)!) } : { op: 'move', from, to }));
+  for (const p of added) out.push({ op: 'add', path: p, kind: kindOf(b.get(p)!) });
   for (const [from, to] of pairs) out.push(...attrChanges(to, a.get(from)!, b.get(to)!));
   // Only keys present on both sides count, so a child arriving or leaving is not a reorder.
   const keysAt = (root: SchemaRoot, map: Map<string, SchemaNode>, path: string) =>

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { trackOrigins, type NodeOrigins } from './nodeOrigins';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import type { PrefTypes } from './types';
 import { assetOf, shownAssets, type Asset, type Workspace } from './workspace';
@@ -50,8 +51,13 @@ export function useAssetChanges(
   const [held, setHeld] = useState(workspace);
   const current = held === workspace || same(held, workspace) ? held : workspace;
   if (current !== held) setHeld(current);
+  const tracked = useRef<{ base: Workspace; last: Workspace; origins: NodeOrigins } | null>(null);
   const changes = useMemo<WorkspaceChanges>(() => {
-    const each = workspaceChanges(base, current);
+    let track = tracked.current;
+    if (track?.base !== base) track = { base, last: base, origins: trackOrigins(base) };
+    track.origins.follow(track.last, current);
+    tracked.current = { ...track, last: current };
+    const each = workspaceChanges(base, current, track.origins);
     const by = new Map(each.map((c) => [c.id, c.changes]));
     return {
       ids: new Set(by.keys()),
