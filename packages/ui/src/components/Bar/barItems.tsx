@@ -6,6 +6,7 @@ import { BarMenu } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
 import { BarSideContext, type BarSide } from './barSide';
+import type { RunSpot } from './runPlaces';
 import { BAR_ITEM } from './useBarOverflow';
 import { barLeafName, type BarCell, type BarLayoutProps, type BarLeafNode, type BarNode } from './BarLayout';
 import s from './Bar.module.css';
@@ -103,7 +104,7 @@ export function barLead(lead: PrefBarLead | undefined, label: string | undefined
 export interface BarItemPlace {
   className: string;
   style: CSSProperties;
-  clipped?: string;
+  clipped?: RunSpot['clipped'];
   /** The side its popovers and menus open on. */
   side?: BarSide;
 }
@@ -112,7 +113,7 @@ export interface BarItemPlace {
 export function drawBarItem(item: BarItem, across: boolean, attrs: BarLayoutProps['attrs'], place?: BarItemPlace): ReactElement {
   const own = (base: string | undefined): string | undefined => (place ? `${base} ${place.className}` : base);
   return item.divider ? (
-    <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} style={place?.style} />
+    <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.divider)} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} style={place?.style} data-clipped={place?.clipped} />
   ) : (
     <span key={item.key} {...{ [BAR_ITEM]: item.key }} className={own(s.cell)} {...attrs?.(item.path!, item.leaf!)} style={place?.style} data-clipped={place?.clipped}>
       {place?.side ? <BarSideContext.Provider value={place.side}>{item.content}</BarSideContext.Provider> : item.content}

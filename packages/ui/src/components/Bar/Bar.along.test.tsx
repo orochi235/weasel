@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { arcShape, lineShape, trackRun, type TrackShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
@@ -125,5 +125,44 @@ describe('Bar along a curve: popovers open away from the center', () => {
     expect(trackRun(shape).flipped).toBe(true);
     render(<Bar schema={width} values={{ width: 4 }} shape={shape} label="Tools" />);
     expect(sideOfItem()).toBe('bottom');
+  });
+});
+
+describe('Bar along a curve: scroll mode', () => {
+  // 157 px of arc holding seven 40 px items: a to d, a divider, then e and f.
+  const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
+  const schema: PrefGroup = { name: 'Tools', children: { ...actions('a', 'b', 'c', 'd').children, more: actions('e', 'f') } };
+  const marks = () => Array.from(screen.getByRole('toolbar').querySelectorAll('[data-more-past]')).map((el) => el.getAttribute('data-more-past'));
+  const turn = (at: string) => Number.parseFloat((screen.getByRole('toolbar').querySelector(`[data-more-past='${at}']`) as HTMLElement).style.getPropertyValue('--at-angle'));
+
+  test('items past the end are marked past, dividers included, and a chevron points out of that end', () => {
+    render(<Bar schema={schema} shape={shape} label="Tools" />);
+    const divider = screen.getByRole('toolbar').querySelector(':scope > [role="separator"]')!;
+    expect(divider).toHaveAttribute('data-clipped', 'past');
+    expect(items().at(-1)).toHaveAttribute('data-clipped', 'past');
+    expect(marks()).toEqual(['end']);
+    expect(turn('end')).toBeCloseTo(trackRun(shape).at(1).angle - 90);
+  });
+
+  test('the wheel scrolls the run, moving the chevron to the start', () => {
+    render(<Bar schema={schema} shape={shape} label="Tools" />);
+    fireEvent.wheel(screen.getByRole('toolbar'), { deltaY: 1000 });
+    expect(items()[0]).toHaveAttribute('data-clipped', 'past');
+    expect(items().at(-1)).toHaveAttribute('data-clipped', 'none');
+    expect(marks()).toEqual(['start']);
+    expect(turn('start')).toBeCloseTo(trackRun(shape).at(0).angle + 90);
+  });
+
+  test('Tab reaching an item past the end brings it into view', () => {
+    render(<Bar schema={schema} shape={shape} label="Tools" />);
+    const f = screen.getByRole('button', { name: 'f' });
+    act(() => f.focus());
+    expect(f.closest('[data-bar-item]')).toHaveAttribute('data-clipped', 'none');
+  });
+
+  test('menu mode draws no band and no chevrons', () => {
+    render(<Bar schema={schema} shape={shape} overflow="menu" label="Tools" />);
+    expect(marks()).toEqual([]);
+    expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
   });
 });

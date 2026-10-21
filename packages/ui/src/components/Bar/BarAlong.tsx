@@ -1,13 +1,16 @@
-import { useMemo, useRef, type ReactElement } from 'react';
-import { trackRun, type TrackShape } from '@weasel-js/geom';
+import { useMemo, useRef, type CSSProperties, type ReactElement } from 'react';
+import { trackRun, trackShapeD, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { icon } from '../../icons.gen';
+import { Icon } from '../../icons/Icon';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { sideAtRun } from './barSide';
 import { barItems, barLead, drawBarItem, splitBarItems, type BarItem } from './barItems';
 import type { BarLayoutProps } from './BarLayout';
 import { BarOverflow } from './BarOverflow';
-import { placeAlong, runLength, runPlaces } from './runPlaces';
+import { placeAlong, runLength, runPlaces, type RunSpot } from './runPlaces';
 import { BAR_LEAD, BAR_MORE, fitting } from './useBarOverflow';
 import { useItemLengths, useRunGap } from './useItemLengths';
+import { useRunScroll } from './useRunScroll';
 import b from './Bar.module.css';
 import s from './BarAlong.module.css';
 
@@ -20,7 +23,7 @@ export interface BarAlongProps extends BarLayoutProps {
 /**
  * A bar whose items lie along a curved track shape, each centered on its spot and tipped to it, in reading order
  * after any flip. Every leaf but an action opens from a button. In `'menu'` mode what does not fit along the
- * run opens from the More button at its reading end.
+ * run opens from the More button at its reading end; in `'scroll'` mode the run scrolls along itself.
  */
 export function BarAlong(props: BarAlongProps): ReactElement {
   const { nodes, cells, row, attrs, rootAttrs, label, className, shape, align } = props;
@@ -39,14 +42,24 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   const { line, rest } = splitBarItems(items, kept);
 
   const order = [...(leading != null ? [BAR_LEAD] : []), ...line.map((item) => item.key), ...(rest.length > 0 ? [BAR_MORE] : [])];
-  const spots = alongSpots(order.map((key) => lengths.get(key) ?? 0), gap, run.length, align, menu);
+  const orderLengths = order.map((key) => lengths.get(key) ?? 0);
+  const total = menu ? 0 : runLength(orderLengths, gap);
+  let spots: RunSpot[] = [];
+  const scroll = useRunScroll({ root, run, total, spots: () => spots, lengths: orderLengths });
+  spots = alongSpots(orderLengths, gap, run.length, align, menu, scroll.offset);
   const place = (i: number) => ({ className: s.item!, style: placeAlong(run, spots[i]!.center), clipped: menu ? undefined : spots[i]!.clipped, side: sideAtRun(run, spots[i]!.center / run.length) });
   const first = leading != null ? 1 : 0;
+  const scrolls = total > run.length;
 
   return (
-    <div {...rootAttrs} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label}>
+    <div {...rootAttrs} ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} data-overflow={menu ? 'menu' : undefined} role={label === undefined ? undefined : 'toolbar'} aria-label={label} onPointerDownCapture={scroll.onPointerDownCapture} onFocusCapture={scroll.onFocusCapture}>
+      {scrolls && (
+        <svg className={s.band} aria-hidden="true">
+          <path className={s.bandPath} d={trackShapeD(shape)} />
+        </svg>
+      )}
       <AlongContext.Provider value={null}>
-        {leading != null && <span className={`${b.lead} ${s.item}`} aria-hidden="true" {...{ [BAR_LEAD]: '' }} style={place(0).style}>{leading}</span>}
+        {leading != null && <span className={`${b.lead} ${s.item}`} aria-hidden="true" {...{ [BAR_LEAD]: '' }} style={place(0).style} data-clipped={place(0).clipped}>{leading}</span>}
         {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
         {rest.length > 0 && (
           <span className={`${b.cell} ${s.item}`} {...{ [BAR_MORE]: '' }} style={place(order.length - 1).style}>
@@ -54,6 +67,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
           </span>
         )}
       </AlongContext.Provider>
+      {scrolls && <MorePast run={run} start={scroll.offset > 0} end={total - scroll.offset > run.length} />}
     </div>
   );
 }
@@ -63,7 +77,28 @@ function drawnKeys(items: readonly BarItem[], lead: boolean): string[] {
   return [...(lead ? [BAR_LEAD] : []), ...items.map((item) => item.key)];
 }
 
-/** Where a curved bar's run falls: as `runPlaces` lays it, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. */
-function alongSpots(lengths: readonly number[], gap: number, room: number, align: RunAlign, menu: boolean) {
-  return runPlaces(lengths, gap, room, align, menu ? Math.max(0, (runLength(lengths, gap) - room) / 2) : 0);
+/** Where a curved bar's run falls: as `runPlaces` lays it back by `offset`, except that a `'menu'` run too long for its room, which only the More button and the lead can make, sits centered. */
+function alongSpots(lengths: readonly number[], gap: number, room: number, align: RunAlign, menu: boolean, offset: number) {
+  return runPlaces(lengths, gap, room, align, menu ? Math.max(0, (runLength(lengths, gap) - room) / 2) : offset);
+}
+
+/** A chevron at each end of a scrolled run that has items past it, pointing out along the run. */
+function MorePast({ run, start, end }: { run: TrackRun; start: boolean; end: boolean }): ReactElement {
+  // The chevron glyph points down, a quarter turn clockwise from the reading direction `angle` tips to.
+  const mark = (at: 'start' | 'end') => {
+    const { point, angle } = run.at(at === 'start' ? 0 : 1);
+    const turn = at === 'start' ? angle + 90 : angle - 90;
+    const style = { '--at-x': `${point.x}px`, '--at-y': `${point.y}px`, '--at-angle': `${turn}deg` } as CSSProperties;
+    return (
+      <span className={s.morePast} data-more-past={at} aria-hidden="true" style={style}>
+        <Icon name={icon('chevron')} size={14} />
+      </span>
+    );
+  };
+  return (
+    <>
+      {start && mark('start')}
+      {end && mark('end')}
+    </>
+  );
 }

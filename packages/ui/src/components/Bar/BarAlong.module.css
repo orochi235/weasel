@@ -24,3 +24,41 @@
   block-size: 1lh;
   margin-block: 0;
 }
+
+/* Past either end of a scrolled run: kept focusable, so Tab reaches it and focus brings it into view. */
+.item[data-clipped='past'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The lead names the bar and has nothing to press. */
+.item[data-bar-lead] {
+  pointer-events: none;
+}
+
+/* The run itself, as wide as the bar, so a press between items still drags the run along. */
+.band {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bandPath {
+  fill: none;
+  stroke: transparent;
+  stroke-width: var(--wzl-tb-height);
+  pointer-events: stroke;
+}
+
+.morePast {
+  position: absolute;
+  left: var(--at-x);
+  top: var(--at-y);
+  display: flex;
+  transform: translate(-50%, -50%) rotate(var(--at-angle));
+  pointer-events: none;
+  opacity: 0.7;
+}
