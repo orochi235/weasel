@@ -64,7 +64,7 @@ const started = Date.now();
 // Streamed rather than captured: an install runs for minutes, and onto names the node it picked as it goes.
 const ran = await new Promise((done) => {
   const child = spawn('onto', ['do', '--ref', base, '--in', tree, '--kind', 'build', '--icon', 'hammer', '--task', `${tree}-install`,
-    '--about', 'Installs dependencies in the scratch tree fleet-dev serves dev servers from.',
+    '--about', 'Installs dependencies in the scratch tree fleet-dev serves dev servers from.', '--expect', '5m',
     ...(pinned ? ['--node', pinned] : []), '--', 'sh', '-c', install], { cwd: ROOT, stdio: ['inherit', 'pipe', 'pipe'] });
   let text = '';
   for (const [from, to] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {

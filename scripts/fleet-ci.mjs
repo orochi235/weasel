@@ -39,14 +39,14 @@ const onMajor = (major) =>
 
 const MODES = {
   postbuild: () => [{
-    label: 'post-build steps', tree: 'weasel-postbuild', kind: 'build', icon: 'hammer', task: 'postbuild',
+    label: 'post-build steps', tree: 'weasel-postbuild', kind: 'build', icon: 'hammer', task: 'postbuild', expect: '10m',
     about: "Builds every package as ci.yml does and runs its post-build checks: manifests, tree-shaking, React-free subpaths, both consumer smokes, the site builds.",
     shell: `${NVM} && nvm use >/dev/null && exec node scripts/ci-run.mjs built`,
   }],
   matrix: (tree) => {
     const { nodes } = readCi(readFileSync(join(tree, '.github/workflows/ci.yml'), 'utf8'));
     return offFleetNodes(nodes, readFileSync(join(tree, '.nvmrc'), 'utf8')).map((major) => ({
-      label: `Node ${major}`, tree: `weasel-node${major}`, kind: 'test', icon: 'checklist', task: `node${major}`,
+      label: `Node ${major}`, tree: `weasel-node${major}`, kind: 'test', icon: 'checklist', task: `node${major}`, expect: '20m',
       about: `Runs every step of ci.yml's job under Node ${major}, which ci.yml's matrix tests and no fleet node runs by default.`,
       shell: onMajor(major),
     }));
@@ -75,7 +75,7 @@ try {
     const result = await ontoWhenFree(
       ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
         '--env', `${COMMIT_ENV}=${commit}`, '--task', `${job.task}-${branch || commit.slice(0, 9)}`, '--about', job.about,
-        ...ontoArgs, '--', 'bash', '-c', job.shell],
+        '--expect', job.expect, ...ontoArgs, '--', 'bash', '-c', job.shell],
       { cwd: tree, say },
     );
     say(`${job.label} ${result === 0 ? 'passed' : 'failed'} in ${((Date.now() - started) / 60000).toFixed(1)} min wall`);
