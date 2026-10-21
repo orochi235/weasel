@@ -26,10 +26,11 @@ server this session started from the main checkout) served the site shell, not t
 forge with `npm run dev:forge` or `npm run dev:fleet -- forge` and open
 `#/labkit-canvas-canvasstack--default`; add a lens with Alt+L then l.
 
-**Also in flight:** a subagent in its own worktree is making `scripts/ci-run.mjs`
-(`test:fleet:postbuild`) declare a seconds-weighted plan to onto so `onto jobs` shows a moving bar;
-Mike asked for it to be pushed when done. Mike also approved, as a follow-up, onto drawing a
-time-based bar for any job that declares nothing (onto repo; not started).
+**Landed:** `scripts/ci-run.mjs` (`test:fleet:postbuild`) declares a seconds-weighted plan to onto
+(91cf0385f, pushed); weights in `scripts/ci-run.weights.json` describe a slower node than teitou
+(steps ran 0.59–0.81× of plan), and matrix mode's steps are mostly unweighted — recalibrate with
+`node scripts/ci-run.mjs --calibrate <log>` from a matrix run. Not started: onto drawing a
+time-based bar for any job that declares nothing (onto repo; Mike approved it).
 
 **Open questions:** Mike says icons for the package pages were specced — gray and blue React icons,
 an orange window, and three others — but nothing in this repo or in either account's weasel
