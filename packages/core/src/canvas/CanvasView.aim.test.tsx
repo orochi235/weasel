@@ -125,6 +125,19 @@ describe('<CanvasView aim>', () => {
     expect(h.camera.current!.getView()).toEqual({ x: 30, y: 40, scale: { x: 0.5, y: 0.5 } });
   });
 
+  it('refuses an aim on a controlled camera with no onViewChange, as the write goes nowhere', () => {
+    const h = mount({ view: at(0) });
+    expect(h.registry.setAim('panel', rectAim('panel', { x: 30, y: 40, width: 200, height: 100 }))).toBe(false);
+    expect(h.camera.current!.getView()).toEqual(at(0));
+  });
+
+  it('takes an aim on a controlled camera that reports to onViewChange', () => {
+    const onViewChange = vi.fn();
+    const h = mount({ view: at(0), onViewChange });
+    expect(h.registry.setAim('panel', rectAim('panel', { x: 30, y: 40, width: 200, height: 100 }))).toBe(true);
+    expect(onViewChange).toHaveBeenLastCalledWith(at(30, 40));
+  });
+
   it('refuses an aim it cannot read', () => {
     const h = mount({});
     expect(h.registry.setAim('panel', { ...rectAim('panel', { x: 0, y: 0, width: 1, height: 1 }), kind: 'frustum' })).toBe(false);

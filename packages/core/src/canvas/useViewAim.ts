@@ -48,7 +48,7 @@ export function useViewAim(args: {
   const { props, id, registry, derivedAt, rectAt, rectNow } = args;
   const { view, defaultView, onViewChange, viewBounds, aim: aimProp, onAimChange } = props;
   const held = aimProp !== undefined ? 'aim' : 'camera';
-  const live = useLatest({ view, aimProp, onAimChange });
+  const live = useLatest({ view, onViewChange, aimProp, onAimChange });
 
   /** The rect an aim-held view holds, for a surface frame. */
   const heldAt = useCallback((outer: View, dims: Dims): Bounds | undefined => {
@@ -99,8 +99,9 @@ export function useViewAim(args: {
 
   const setAim = useCallback((next: ViewAim): boolean => {
     if (!isRectAim(next)) return false;
-    const { aimProp: a, onAimChange: report } = live.current;
+    const { view: v, onViewChange: onView, aimProp: a, onAimChange: report } = live.current;
     if (a === undefined) {
+      if (v !== undefined && !onView) return false;
       setViewFromInput(viewForAim(next.extent, sizeOf(rectNow()), 'exact'));
       return true;
     }
