@@ -1,7 +1,7 @@
 import { useLatest, useVisibleRaf, watchDevicePixelRatio } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { measureTiles, sameRects } from './measureTiles';
+import { measureTiles, type SurfaceScope, sameRects, sameScope, scopeHolds } from './measureTiles';
 import type { Box, Rect } from './rect';
 
 /** What a surface owner is handed once per animation frame. `rects` carries every
@@ -53,11 +53,12 @@ export interface SurfaceHandle {
   /** The element tile rects are measured against, and so the one a tile's own
    *  chrome positions itself inside. Null before the owner attaches it. */
   getContainer: () => HTMLElement | null;
-  /** Narrow the surface to the tiles inside `el`, or widen it back with
-   *  `null`. A tile outside drops out of the frame's `rects` and is not
-   *  painted, and the frame is retiled so the buffer is cleared of it — what
-   *  an expanded tile needs, with the buffers lifted over the rest. */
-  scope: (el: HTMLElement | null) => void;
+  /** Narrow the surface to the tiles inside `el` (or inside any of a list),
+   *  or widen it back with `null`. A tile outside drops out of the frame's
+   *  `rects` and is not painted, and the frame is retiled so the buffer is
+   *  cleared of it — what an expanded tile needs, with the buffers lifted over
+   *  the rest. */
+  scope: (el: SurfaceScope) => void;
   /** Whether the tile is inside the current scope. Everything is, unscoped. */
   inScope: (id: string) => boolean;
   /** Called whenever the scope changes. Returns the unsubscribe. */
@@ -97,7 +98,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const tileLeft = useRef(false);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
-  const scopeEl = useRef<HTMLElement | null>(null);
+  const scopeEl = useRef<SurfaceScope>(null);
   const scopeChanged = useRef(createEmitter());
 
   // Held in a ref so a caller passing an inline closure does not re-create every
@@ -260,8 +261,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const getContainer = useCallback(() => container.current, []);
 
   const scope = useCallback(
-    (el: HTMLElement | null) => {
-      if (scopeEl.current === el) return;
+    (el: SurfaceScope) => {
+      if (sameScope(scopeEl.current, el)) return;
       scopeEl.current = el;
       needsMeasure.current = true;
       schedule();
@@ -272,7 +273,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 
   const inScope = useCallback((id: string) => {
     const tile = tiles.current.get(id);
-    return !scopeEl.current || (tile !== undefined && scopeEl.current.contains(tile));
+    return !scopeEl.current || (tile !== undefined && scopeHolds(scopeEl.current, tile));
   }, []);
 
   const subscribeScope = useCallback((listener: () => void) => {

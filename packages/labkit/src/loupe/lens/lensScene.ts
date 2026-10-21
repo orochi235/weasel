@@ -116,6 +116,8 @@ export function addLensOps<C>(
         id: ids.leader,
         pose: { x: 0, y: 0, width: 0, height: 0 },
         data: { role: 'lens-leader', lensId },
+        // It ends on the reticle's center, so a press there would take it.
+        pickable: false,
         dependsOn: [ids.body, ids.reticle],
         derivePath: leaderPath,
       },

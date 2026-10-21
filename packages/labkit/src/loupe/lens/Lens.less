@@ -1,0 +1,39 @@
+// The lens canvas's layer: the whole surface container, taking no input
+// itself. Above the over buffer, which it paints into.
+.lk-lens-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+// The dispatcher's element. It covers the layer so its points are layer px,
+// and still takes no input: only the hit boxes inside it do, and a press on
+// one bubbles here.
+.lk-lens-input {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  outline: none;
+}
+
+.lk-lens-hit,
+.lk-lens-interior {
+  position: absolute;
+  left: var(--lk-lens-x);
+  top: var(--lk-lens-y);
+  width: var(--lk-lens-w);
+  height: var(--lk-lens-h);
+}
+
+.lk-lens-hit {
+  pointer-events: auto;
+
+  &[data-round] {
+    border-radius: 50%;
+  }
+}
+
+.lk-lens-interior {
+  pointer-events: none;
+}

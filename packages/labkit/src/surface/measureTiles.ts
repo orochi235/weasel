@@ -9,16 +9,34 @@ export interface TileGeometry {
   visible: Map<string, Rect>;
 }
 
+/** What a surface is narrowed to: the tiles inside an element, or inside any
+ *  of several. Null is every tile. */
+export type SurfaceScope = HTMLElement | readonly HTMLElement[] | null;
+
+/** Whether `tile` is inside `scope`. */
+export function scopeHolds(scope: SurfaceScope, tile: Node): boolean {
+  if (!scope) return true;
+  if (!Array.isArray(scope)) return (scope as HTMLElement).contains(tile);
+  return scope.some((el) => el.contains(tile));
+}
+
+/** Whether two scopes name the same elements, in the same order. */
+export function sameScope(a: SurfaceScope, b: SurfaceScope): boolean {
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  return a.length === b.length && a.every((el, i) => el === b[i]);
+}
+
 /** Measure every tile inside `scope` (all of them, with none) against `container`. */
 export function measureTiles(
   container: HTMLElement,
   tiles: ReadonlyMap<string, HTMLElement>,
-  scope: HTMLElement | null,
+  scope: SurfaceScope,
 ): TileGeometry {
   const boxes = new Map<string, Box>();
   const shown = new Map<string, Box>();
   for (const [id, tile] of tiles) {
-    if (scope && !scope.contains(tile)) continue;
+    if (!scopeHolds(scope, tile)) continue;
     const box = tile.getBoundingClientRect();
     boxes.set(id, box);
     shown.set(id, clipToAncestors(tile, box));

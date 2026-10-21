@@ -1,4 +1,6 @@
 import { type ReactNode, useCallback, useInsertionEffect, useMemo, useRef, useState } from 'react';
+import type { LabContribution } from '../chrome/labTypes';
+import { OverlayRegion } from '../chrome/regions/OverlayRegion';
 import { LightboxLayers } from '../lightbox/LightboxLayers';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
@@ -9,6 +11,9 @@ export interface LabSurfaceProps {
   /** Receives the lab body, which the surface's layers cover. */
   bodyRef: (el: HTMLDivElement | null) => void;
   children: ReactNode;
+  /** The lab's contributions; the `overlay` ones render after `children`,
+   *  inside the surface. */
+  contributions?: readonly LabContribution[];
 }
 
 /**
@@ -25,7 +30,7 @@ export interface LabSurfaceProps {
  * A host that already owns a surface keeps it: a lab embedded in a larger
  * shared-surface app must not open a second GL tenancy.
  */
-export function LabSurface({ bodyRef, children }: LabSurfaceProps) {
+export function LabSurface({ bodyRef, children, contributions }: LabSurfaceProps) {
   const outerSurface = useSurfaceOptional();
   const outerOver = useSurfaceCanvas('over');
   const outerUnder = useSurfaceCanvas('under');
@@ -100,6 +105,7 @@ export function LabSurface({ bodyRef, children }: LabSurfaceProps) {
         </div>
       )}
       {children}
+      {contributions ? <OverlayRegion contributions={contributions} /> : null}
       {outerSurface ? null : (
         <div className="lk-lab__layer lk-lab__layer--over" ref={overLayerRef}>
           <canvas

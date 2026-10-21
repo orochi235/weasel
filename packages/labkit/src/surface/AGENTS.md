@@ -85,8 +85,9 @@ from under the buffers. So the lab declares its two buffer layers with
 under layer, then itself, then the over layer — the same stacking as before,
 each covering the window. The over layer is the surface container, so the
 surface re-measures against the window and the buffers resize. The lightbox
-also calls `scope(el)`: tiles outside it leave `rects`, are not painted, and
-the retile clears them; `useTileInScope` tells a tenant's own chrome on the
+also scopes the surface to everything it lifted — itself and those layers: tiles
+outside all of them leave `rects`, are not painted, and the retile clears them,
+while a tile inside a lifted layer (the lab's lens canvas) stays; `useTileInScope` tells a tenant's own chrome on the
 surface (the annotation input box) to hide. A host owning its own surface does
 the same for its buffers, or an expanded tile shows without them.
 
