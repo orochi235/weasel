@@ -145,11 +145,23 @@ export interface PrebundleOptions {
   /** Read `*.stories.*` files under `sourceDirs` for specifiers, for a server that loads stories. */
   readonly stories?: boolean;
   /**
-   * Trees whose `*.stories.*` files are served from source while their package stays bundled. A story reaches
-   * its subject through package specifiers; whatever it still imports by relative path is left out of the
-   * bundles and served from source too.
+   * Trees holding stories that reach their subject through package specifiers. By default each is served from
+   * source like `sourceDirs`, keeping HMR for its package. With `WEASEL_DEV_BUNDLE_STORIES=1` only its
+   * `*.stories.*` files are served from source and its package is bundled; whatever a story still imports by
+   * relative path is left out of the bundles and served from source too.
    */
   readonly storyTrees?: readonly string[];
+}
+
+/** The trees served from source and the story trees whose packages are bundled, as `env` asks. */
+export function storyServing(
+  sourceDirs: readonly string[],
+  storyTrees: readonly string[],
+  env: Record<string, string | undefined> = process.env,
+): { sourceDirs: string[]; storyTrees: string[] } {
+  return env.WEASEL_DEV_BUNDLE_STORIES === '1'
+    ? { sourceDirs: [...sourceDirs], storyTrees: [...storyTrees] }
+    : { sourceDirs: [...sourceDirs, ...storyTrees], storyTrees: [] };
 }
 
 /**
@@ -163,9 +175,9 @@ export interface PrebundleOptions {
  * A saved package file re-bundles and reloads the page, in a few seconds rather than an HMR
  * patch. `WEASEL_DEV_SOURCE=1` serves the packages file by file again, with HMR.
  */
-export function prebundleWorkspace(repoRoot: string, sourceDirs: string[], options: PrebundleOptions = {}): Plugin {
+export function prebundleWorkspace(repoRoot: string, ownDirs: string[], options: PrebundleOptions = {}): Plugin {
   const off = process.env.WEASEL_DEV_SOURCE === '1';
-  const storyTrees = options.storyTrees ?? [];
+  const { sourceDirs, storyTrees } = storyServing(ownDirs, options.storyTrees ?? []);
   const read = sourceFilter((options.stories ?? false) || storyTrees.length > 0);
   const ws = readWorkspace(repoRoot);
   const source = sourcePackages(ws, sourceDirs);

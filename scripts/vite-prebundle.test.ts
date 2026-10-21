@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { bundledDirs, sourcedFromBundled, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
+import { bundledDirs, sourcedFromBundled, storyServing, sourcePackages, specifiersIn, specifiersUnder, type Workspace } from './vite-prebundle';
 import { relativeImportsIn } from './vite-prebundle-reach';
 
 const tree = mkdtempSync(join(tmpdir(), 'vite-prebundle-'));
@@ -127,5 +127,21 @@ describe('sourcedFromBundled', () => {
       'pkg/src/leaf.ts',
       'pkg/src/shape.ts',
     ]);
+  });
+});
+
+describe('storyServing', () => {
+  it('serves story trees from source by default, so their packages keep HMR', () => {
+    expect(storyServing(['/repo/apps/forge'], ['/repo/packages/ui/src'], {})).toEqual({
+      sourceDirs: ['/repo/apps/forge', '/repo/packages/ui/src'],
+      storyTrees: [],
+    });
+  });
+
+  it('bundles their packages under WEASEL_DEV_BUNDLE_STORIES=1', () => {
+    expect(storyServing(['/repo/apps/forge'], ['/repo/packages/ui/src'], { WEASEL_DEV_BUNDLE_STORIES: '1' })).toEqual({
+      sourceDirs: ['/repo/apps/forge'],
+      storyTrees: ['/repo/packages/ui/src'],
+    });
   });
 });

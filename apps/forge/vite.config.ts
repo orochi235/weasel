@@ -17,7 +17,7 @@ import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 const storyTrees = stories.map((glob) => glob.split('/**')[0]!);
-/** Story trees whose package is bundled: their stories reach it through package specifiers. */
+/** Story trees whose stories reach their package through specifiers, so `WEASEL_DEV_BUNDLE_STORIES=1` can bundle it. */
 const BUNDLED_STORIES = ['packages/ui/src', 'packages/labkit/src'];
 
 export default defineConfig(({ command, isPreview }) => ({

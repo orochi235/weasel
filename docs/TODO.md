@@ -995,12 +995,14 @@ only story runner in the repo.
   runs on each mount. A timeout no longer leaks: the file's helpers stop once vitest aborts the
   test's signal, where before a timed-out test could mount into the next one's document.
 
-- **(P3) Every forge load fetches Badge's internals file by file.** The Badge story and its `lab/`
-  import `shapes/`, `bases/` and `effects/`, which ui does not export, so `scripts/vite-prebundle.ts`
-  leaves those modules out of ui's bundle and serves them from source to keep one copy. Each of
-  forge's three documents loads them, 159 of a load's 1,269 requests (2026-10-21); 262 more are ui's
-  CSS modules, which a bundle never holds. Removing the 159 needs the story to reach them through a
-  published subpath, which is a decision about ui's public surface.
+- **(P3) forge serves ui and labkit file by file unless `WEASEL_DEV_BUNDLE_STORIES=1`.** Their
+  stories import through package specifiers, so the flag bundles both (`scripts/vite-prebundle.ts`).
+  Measured 2026-10-21: a forge load falls from 1,624 requests to 1,270, and at 20 ms of emulated
+  latency from 7.1 s to 4.5 s to network idle; a ui component edit goes from a 0.28 s hot update to
+  a ~3.6 s re-bundle and reload. Whether to make it the default is the open decision. Under the flag,
+  159 of the 1,270 requests are Badge's `shapes/`, `bases/` and `effects/`, which the Badge story and
+  its `lab/` import by path because ui does not export them; removing those needs a published
+  subpath.
 
 - **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
   Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
