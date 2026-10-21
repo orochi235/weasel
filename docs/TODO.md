@@ -597,12 +597,14 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   to the two sources' `roles` (`'origin'` to `'box'`). Insert and the pen are a different case and
   stay as they are: they snap the pointer, before the node has a stroke to measure.
 
-- **(P3) Nobody has looked at a theme's prefs schema in a form.** `themePrefsSchema`
-  (`@weasel-js/theme/prefs`) is drawn in `PrefsForm` at `apps/theme-editor`'s `#/prefs` page
-  (`ThemePrefs.tsx`, "Theme prefs" in the lab menu): a rail page per token group, a color that
-  differs by mode split into a member per mode, and a preview of the pinned theme beside it. Built
-  and tested in jsdom, not yet looked at in a browser. Nothing drives `applyTheme`'s `weights` from
-  an animator either, which is the same gap as the selector weights under "What the split rows in
+- **(P3) The theme prefs form: long token names, and references shown raw.** `apps/theme-editor`'s
+  `#/prefs` page (`ThemePrefs.tsx`) was looked at in Chromium (2026-10-21): the rail pages, a
+  per-mode split color (setting `accent`'s Light member recolors only the light preview), and the
+  preview all work. Left, both seen on the Button page: a long token name such as
+  `BUTTON-PRESSED-SURFACE` wraps mid-name, and its "from theme" tag sits at the label column's right
+  edge, away from the name; and a token whose value refers to another shows the reference as raw
+  text, `var(--btn-glass)`, in a text field. Nothing drives `applyTheme`'s `weights` from an
+  animator either, which is the same gap as the selector weights under "What the split rows in
   `PrefsForm` left".
 
 - **(P3) What the split rows in `PrefsForm` left.** The marks a split leaf draws in a group's
@@ -620,11 +622,6 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`:
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
   cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
   disabled.
-
-- **(P3) Nobody has looked at apps/site in the kit's UI face.** `canvas-kit-demo.css` stopped
-  setting `body`'s font (2026-10-19), so the site's text inherits `--wzl-font-ui` (Oswald, a
-  condensed face) from `fonts.css`'s `:root` rule. Check in a browser that the sidebar, demo
-  blurbs, and controls still fit and read well, and that Oswald loaded rather than its fallback.
 
 - **(P3) labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -935,11 +932,14 @@ only story runner in the repo.
   gestures, and labkit have guides. About 420 exports have no doc comment, so their row in a
   module's list has no description.
 
-- **(P3) SVG text export: `rtl` and the default lines not seen in a browser.** Headless Chromium
-  drew an export written with `textLayout: layoutTextPose` (Inter from `assets/fonts/inter`) with
-  every glyph inside the cell weasel's layout gives it, for a wrapped, a justified, a centered node
-  and a line holding a larger run (2026-10-18). Not yet seen: an `rtl` node, whose anchor is
-  the right edge of each chunk, and the `<tspan x dy>` lines written without a layout.
+- **(P3) SVG text export: lines written without a layout sit half the leading off.** Without
+  `textLayout`, `serializeSvg` writes `dominant-baseline="text-before-edge"`, which puts the face's
+  ascent on the box top, where weasel's layout first puts half the leading. Every line is off by the
+  same amount: in Chromium, Inter at 24px sits 2.28 up at line height 1.4 and 2.52 down at 1.0,
+  every glyph at its laid-out x (`laidLines.browser.test.ts`, 2026-10-21). Closing it needs the
+  face's ascent and descent, which this path lacks when it is the fallback for a face nothing
+  measured; given them, a `dy` on the `<text>` would move the drawing and leave weasel's reader,
+  which reads only `y`, where it is. Undecided whether this path should reach for the metrics.
 
 ---
 

@@ -55,7 +55,8 @@ test('the active nav link sets its text in the color made for an accent fill', (
 test('running text is set in the body face, and headings and chrome in Oswald', () => {
   el = document.createElement('div');
   el.innerHTML = '<aside class="ckd-sidebar"><a>Scene</a></aside>'
-    + '<main class="ckd-main"><h2>Title</h2><p>Prose.</p><div class="ckd-canvas-wrap"><span class="ckd-hint">Hint</span></div></main>';
+    + '<main class="ckd-main"><h2>Title</h2><p>Prose.</p><div class="ckd-canvas-wrap"><span class="ckd-hint">Hint</span>'
+    + '<button>Undo</button><select><option>fit</option></select></div></main>';
   document.body.append(el);
   const face = (selector: string) => getComputedStyle(el!.querySelector(selector)!).fontFamily.split(',')[0];
   expect(face('main p')).toBe('Inter');
@@ -63,4 +64,7 @@ test('running text is set in the body face, and headings and chrome in Oswald', 
   expect(face('main h2')).toBe('Oswald');
   expect(face('.ckd-sidebar a')).toBe('Oswald');
   expect(face('.ckd-canvas-wrap')).toBe('Oswald');
+  // A demo's bare controls, which the browser would otherwise set in its own UI face.
+  expect(face('.ckd-canvas-wrap button')).toBe('Oswald');
+  expect(face('.ckd-canvas-wrap select')).toBe('Oswald');
 });
