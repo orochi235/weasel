@@ -1,5 +1,5 @@
 import type { Affine, Point } from '@weasel-js/geom';
-import type { AddNodeSpec, CopiesFromPoseFn, NodeId, Scene, SceneRegistry } from '@weasel-js/core';
+import { clipNothing, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry } from '@weasel-js/core';
 import { DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetrySpec } from './kinds';
 
 /** What a symmetry group keeps in its `data`. Its center is its pose. */
@@ -36,12 +36,10 @@ export function specOfData(data: unknown): SymmetrySpec {
 export const symmetryCopies: CopiesFromPoseFn<unknown> = (pose, node) =>
   symmetryTransforms(specOfData(node.data), centerOfPose(pose));
 
-/** A group draws its copies wherever they land, so it clips nothing. */
-const drawEverywhere = (): null => null;
-
 /** The registry key a group's `copiesFromPose` is saved under. */
 export const SYMMETRY_COPIES_KEY = 'weasel-symmetry:copies';
-/** The registry key a group's `clipFromPose`, which clips nothing, is saved under. */
+/** The registry key a group's `clipFromPose`, core's `clipNothing`, is saved
+ *  under: a group draws its copies wherever they land. */
 export const SYMMETRY_CLIP_KEY = 'weasel-symmetry:no-clip';
 
 /**
@@ -51,7 +49,7 @@ export const SYMMETRY_CLIP_KEY = 'weasel-symmetry:no-clip';
  */
 export const symmetryRegistry: SceneRegistry<unknown> = {
   copiesFromPose: { [SYMMETRY_COPIES_KEY]: symmetryCopies },
-  clipFromPose: { [SYMMETRY_CLIP_KEY]: drawEverywhere },
+  clipFromPose: { [SYMMETRY_CLIP_KEY]: clipNothing },
 };
 
 /** What {@link symmetryGroupSpec} builds a group from. */
@@ -73,7 +71,7 @@ export function symmetryGroupSpec<TLayer extends string>(
     layer: opts.layer,
     pose: poseAtCenter(opts.center),
     data: { symmetry: { ...DEFAULT_SYMMETRY, ...opts.symmetry } },
-    clipFromPose: drawEverywhere,
+    clipFromPose: clipNothing,
     copiesFromPose: symmetryCopies as CopiesFromPoseFn<SymmetryPose, SymmetryGroupData, TLayer>,
     ...(opts.id !== undefined ? { id: opts.id } : {}),
     ...(opts.parent !== undefined ? { parent: opts.parent } : {}),

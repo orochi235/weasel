@@ -3,7 +3,8 @@
  * is drawn — a `buildBody` body whose rows are ordinary text nodes.
  */
 import { createInsertOp, type Op, type RectPose } from '@weasel-js/core';
-import { buildBody, type MeasureRowText, type Row } from './body';
+import type { MeasureRowText, Row } from './body';
+import { buildBody } from './buildBody';
 import { bodyLayoutOf } from './bodyRelayout';
 import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './fromData';

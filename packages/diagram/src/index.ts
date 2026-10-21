@@ -11,7 +11,6 @@
 export {
   bodyOutline,
   bodyTrait,
-  buildBody,
   canvasMeasure,
   layoutBody,
   layoutRowPorts,
@@ -20,17 +19,16 @@ export {
 } from './body';
 export type {
   BodyFloor,
-  BodyNodeSpec,
   BodySpec,
-  BuildBodyOptions,
   MeasureRowText,
   Row,
   RowBox,
-  RowNodeData,
   RowPort,
   RowPortBox,
   RowTextStyle,
 } from './body';
+export { buildBody } from './buildBody';
+export type { BodyNodeSpec, BuildBodyOptions, RowNodeData } from './buildBody';
 export { PORT_LABEL_GAP, marginOf, portLabelBox, portLabelsOf } from './portLabels';
 export type { PerimeterPortLabelBox, PortLabelPlacement } from './portLabels';
 export { footprintNode } from './footprint';

@@ -72,7 +72,7 @@ export * from '../core/adapters/types';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
+  CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, reconcileSpecs, sceneSharedUnitScopes, sceneUnitScopes,
 } from '../core/scene';
 export type { PoseSource, PosedNode, ScopedScene } from '../core/scene';
 export type {

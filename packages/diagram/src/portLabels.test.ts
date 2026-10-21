@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bodyTrait, buildBody, type BodySpec, type MeasureRowText } from './body';
+import { bodyTrait, type BodySpec, type MeasureRowText } from './body';
+import { buildBody } from './buildBody';
 import { createScene, effectivePose, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DiagramData, type DiagramSpec } from './fromData';

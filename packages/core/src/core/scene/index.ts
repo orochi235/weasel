@@ -54,3 +54,4 @@ export { resolveDerivedPath } from './derivedPath';
 export type { PathDerivingNode } from './derivedPath';
 export type { PoseSource, PosedNode } from './effectivePose';
 export { UNION_OF_CHILDREN, unionOfChildren } from './kitRegistry';
+export { CLIP_NOTHING, clipNothing } from './clipNothing';

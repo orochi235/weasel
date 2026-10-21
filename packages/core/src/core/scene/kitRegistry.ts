@@ -9,6 +9,7 @@
  */
 import { unionAABB } from '../geometry/unionBounds';
 import type { RectPose, SceneRegistry } from './types';
+import { CLIP_NOTHING, clipNothing } from './clipNothing';
 
 /** Registry key for {@link unionOfChildren}. */
 export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
@@ -60,6 +61,10 @@ export function withKitRegistry<TPose, TData = unknown, TLayer extends string = 
 ): SceneRegistry<TPose, TData, TLayer> {
   return {
     ...registry,
+    clipFromPose: {
+      [CLIP_NOTHING]: clipNothing,
+      ...registry.clipFromPose,
+    },
     derivePose: {
       [UNION_OF_CHILDREN]: unionOfChildren as NonNullable<
         SceneRegistry<TPose, TData, TLayer>['derivePose']
