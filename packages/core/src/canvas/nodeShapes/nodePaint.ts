@@ -1,4 +1,4 @@
-import type { Paint, Stroke, Fill } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';

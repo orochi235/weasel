@@ -2,6 +2,7 @@ import type { Fill, Paint, Stroke } from './paint';
 
 /** A fill or stroke field holding this takes its holder's source's, whole. */
 export const INHERIT = 'inherit';
+/** The type of {@link INHERIT}. */
 export type Inherit = typeof INHERIT;
 
 /** A fill that paints. */

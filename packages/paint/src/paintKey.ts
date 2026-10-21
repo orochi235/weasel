@@ -51,8 +51,9 @@ export function fillHasInk(fill: Fill | null | undefined): fill is PaintedFill {
 /** Whether a stroke puts ink down: it does not when it is absent, holds no
  *  paint, or has no width. */
 export function strokeHasInk(stroke: Stroke | null | undefined): stroke is PaintedStroke {
-  if (resolveStroke(stroke) === null) return false;
-  const width = stroke.width ?? 1;
+  const painted = resolveStroke(stroke);
+  if (painted === null) return false;
+  const width = painted.width ?? 1;
   return (typeof width === 'number' ? width : width.px) > 0;
 }
 
