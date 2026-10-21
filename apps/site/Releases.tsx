@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
-
-/** Matches the `UNRELEASED` label the changelogs plugin stamps on pending
- *  changesets. */
-const UNRELEASED = 'Unreleased';
-
-/** Chips beyond this collapse into a "+N" counter. */
-const MAX_CHIPS = 3;
+import { ReleaseSection } from './ReleaseSection';
 
 /** The filter lives in the query string, not the hash: the hash is the app's
  *  router and it rewrites itself to the bare view id on every change. */
 const PARAM = 'pkg';
+/** A version to open and scroll to, e.g. `?v=1.9.4#__releases`. */
+const VERSION_PARAM = 'v';
 
 function readParam(): string[] {
   const raw = new URLSearchParams(window.location.search).get(PARAM);
@@ -30,6 +26,7 @@ function writeParam(names: readonly string[]): void {
  *  across the fixed version group so each change is stated once. */
 export function Releases() {
   const [selected, setSelected] = useState<string[]>(readParam);
+  const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
 
   useEffect(() => {
     const onPop = () => setSelected(readParam());
@@ -129,98 +126,16 @@ export function Releases() {
         <p className="ckd-desc">No changes name those packages.</p>
       ) : (
         shown.map((release, i) => (
-          <details
+          <ReleaseSection
             key={release.version}
-            className={`ckd-release${release.version === UNRELEASED ? ' is-unreleased' : ''}`}
-            open={i === 0}
-          >
-            <summary className="ckd-release-summary">
-              <h3 className={`ckd-release-version ${num.numeric}`}>{release.version}</h3>
-              {release.date ? (
-                <time className={`ckd-release-date ${num.numeric}`} dateTime={release.date}>
-                  {formatDate(release.date)}
-                </time>
-              ) : release.version === UNRELEASED ? (
-                <span className="ckd-release-date">merged, not yet published</span>
-              ) : null}
-              <span className="ckd-release-count">
-                {release.entries.length} {release.entries.length === 1 ? 'change' : 'changes'}
-              </span>
-            </summary>
-
-            <ul className="ckd-release-entries">
-              {release.entries.map((entry) => (
-                <li key={entry.id} className="ckd-release-entry">
-                  <Packages names={entry.packages} selected={selected} onToggle={toggle} />
-                  {entry.titleHtml && entry.bodyHtml ? (
-                    <details className="ckd-release-change">
-                      <summary className="ckd-release-title">
-                        <span dangerouslySetInnerHTML={{ __html: entry.titleHtml }} />
-                      </summary>
-                      <div
-                        className="ckd-release-body"
-                        dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
-                      />
-                    </details>
-                  ) : (
-                    <>
-                      {entry.titleHtml ? (
-                        <p
-                          className="ckd-release-title"
-                          dangerouslySetInnerHTML={{ __html: entry.titleHtml }}
-                        />
-                      ) : null}
-                      {entry.bodyHtml ? (
-                        <div
-                          className="ckd-release-body"
-                          dangerouslySetInnerHTML={{ __html: entry.bodyHtml }}
-                        />
-                      ) : null}
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </details>
+            release={release}
+            lead={i === 0}
+            target={release.version === linked}
+            selected={selected}
+            onToggle={toggle}
+          />
         ))
       )}
     </article>
   );
-}
-
-function Packages({
-  names,
-  selected,
-  onToggle,
-}: {
-  names: readonly string[];
-  selected: readonly string[];
-  onToggle: (name: string) => void;
-}) {
-  const shown = names.length <= MAX_CHIPS + 1 ? names : names.slice(0, MAX_CHIPS);
-  const hidden = names.length - shown.length;
-  return (
-    <div className="ckd-release-pkgs" title={names.join(', ')}>
-      {shown.map((name) => (
-        <button
-          key={name}
-          type="button"
-          className={`ckd-release-pkg is-filter${selected.includes(name) ? ' is-on' : ''}`}
-          aria-pressed={selected.includes(name)}
-          onClick={() => onToggle(name)}
-        >
-          {name}
-        </button>
-      ))}
-      {hidden > 0 ? <span className="ckd-release-pkg is-more">+{hidden}</span> : null}
-    </div>
-  );
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }

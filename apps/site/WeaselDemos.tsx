@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { DEMOS, DEMOS_BY_ID, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
@@ -77,8 +77,9 @@ export function WeaselDemos() {
   }, [activeId]);
 
   // The main pane is what scrolls, so a new page starts at its top, not where the last one was left.
+  // A layout effect, so it lands before a page's own effects can scroll to a deep link.
   const mainRef = useRef<HTMLElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   }, [activeId]);
 
