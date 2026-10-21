@@ -1,4 +1,5 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
+import { type BindingOverrides, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,12 +14,27 @@ installResizeObserver();
 const entry: IndexEntry = { id: 'x--a', title: 'X', name: 'A', exportName: 'A', file: '/x.stories.tsx' };
 
 afterEach(() => {
+  registry = null;
   history.replaceState(null, '', '/');
 });
 
+let registry: ActionsRegistry | null = null;
+function GrabRegistry() {
+  const here = useActionsRegistry();
+  registry ??= here;
+  return null;
+}
+const grab = { id: 'grab-registry', region: 'header', render: () => <GrabRegistry /> } as const;
+const rebind = (overrides: BindingOverrides) => act(() => void registry!.overrideBindings(overrides));
+const altKey = (key: string) => ({ kind: 'key', key, mods: { alt: true } }) as const;
+const live = () => screen.getByRole('group', { name: 'Keys' });
+const chipsOf = (_panel: HTMLElement, label: string) => rowOf(live(), label)?.querySelector('.fg-keys__chips')?.textContent;
+
 async function mount() {
   location.hash = '#/x--a';
-  const view = renderWithIcons(<Workshop index={[entry]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+  const view = renderWithIcons(
+    <Workshop index={[entry]} frameUrl="/frame.html" storage={createMemoryAdapter()} config={{ labChrome: [grab] }} />,
+  );
   await screen.findByRole('region', { name: /^Trial / });
   return { ...view, body: view.container.querySelector('.lk-lab__body')! };
 }
@@ -79,5 +95,26 @@ describe('the keys panel', () => {
     await screen.findByRole('group', { name: 'Keys' });
     tap(body, { code: 'Slash', key: '/' });
     expect(screen.getByRole('group', { name: 'Keys' })).toBeInTheDocument();
+  });
+
+  it('shows a plain action’s rebound key, and nothing for a removed one', async () => {
+    await mount();
+    const panel = await openPanel();
+    expect(chipsOf(panel, 'Toggle the keys panel')).toMatch(/\//);
+    rebind({ 'forge.keys.toggle': altKey('k') });
+    await waitFor(() => expect(chipsOf(panel, 'Toggle the keys panel')).toMatch(/K/));
+    expect(chipsOf(panel, 'Toggle the keys panel')).not.toMatch(/\//);
+    rebind({ 'forge.keys.toggle': null });
+    await waitFor(() => expect(rowOf(live(), 'Toggle the keys panel')).toBeUndefined());
+  });
+
+  it('shows a keymap key’s rebound key behind its leader, and a rebound leader on its own row', async () => {
+    await mount();
+    const panel = await openPanel();
+    await waitFor(() => expect(chipsOf(panel, 'Add lens')).toMatch(/^Loupe ▸ L$/));
+    rebind({ 'loupe.add': { kind: 'key', key: 'a' }, 'keymap.loupe.leader': altKey('j') });
+    await waitFor(() => expect(chipsOf(panel, 'Add lens')).toMatch(/^Loupe ▸ A$/));
+    expect(chipsOf(panel, 'Open Loupe keys')).toMatch(/J/);
+    expect(chipsOf(panel, 'Open Loupe keys')).not.toMatch(/L/);
   });
 });

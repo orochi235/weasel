@@ -22,9 +22,9 @@ export function useKeyRows(): readonly KeyRow[] {
 
 function KeysPanel() {
   const rows = useKeyRows();
+  if (rows.length === 0) return <p className="fg-keys__empty">No key bindings.</p>;
   const groups = new Map<string, KeyRow[]>();
   for (const row of rows) groups.set(row.group, [...(groups.get(row.group) ?? []), row]);
-  if (rows.length === 0) return <p className="fg-keys__empty">No key bindings.</p>;
   return (
     <div className="fg-keys">
       {[...groups].map(([group, members]) => (
