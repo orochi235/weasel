@@ -59,6 +59,23 @@ describe('lens scene', () => {
     expect(centerOf(poseOf('a:reticle'))).toEqual({ x: 300, y: 200 });
   });
 
+  it('undoes each aim change as its own step, restoring the previous aim and reticle pose', () => {
+    const state = () => ({ aim: settingsOf(scene, 'a')!.aim, reticle: poseOf('a:reticle') });
+    const pinned = state();
+    apply(setAimOps(scene, 'a', 'glass'));
+    const glass = state();
+    apply(setAimOps(scene, 'a', 'pinned'));
+    const planted = state();
+    apply(setAimOps(scene, 'a', 'glass'));
+
+    scene.history.undo();
+    expect(state()).toEqual(planted);
+    scene.history.undo();
+    expect(state()).toEqual(glass);
+    scene.history.undo();
+    expect(state()).toEqual(pinned);
+  });
+
   it('writes settings patches to the body and undoes them', () => {
     apply(setLensOps(scene, 'a', { factor: 8, view: 'split' }));
     expect(settingsOf(scene, 'a')).toMatchObject({ factor: 8, view: 'split', aim: 'pinned' });

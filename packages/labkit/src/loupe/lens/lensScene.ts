@@ -195,7 +195,6 @@ export function setAimOps<C>(scene: LensScene<C>, lensId: string, to: LensAim): 
         from: reticle.pose,
         to: effectivePose(scene, reticle),
         label,
-        coalesceKey: `lens-aim:${lensId}`,
       }));
     }
     ops.push(createSetDependsOnOp({ id: ids.reticle, from: [ids.body], to: undefined, label }));
