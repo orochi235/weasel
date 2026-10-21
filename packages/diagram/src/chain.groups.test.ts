@@ -4,7 +4,7 @@ import { rack } from './effect/rack';
 import { io, w } from './effect/skipFixture';
 import type { EffectPipeline } from './effect/types';
 import { diagramScene } from './fromData';
-import { graphOf, overlaps, type Rect } from './groupFixture';
+import { boxOf, graphOf, overlaps, placed, type Rect } from './groupFixture';
 import type { LayoutResult } from './layout';
 
 // `graphOf` seeds node i at (i, i), 100 by 40.
@@ -51,6 +51,28 @@ describe('chain with groups', () => {
     // b's box is 100 + 2 * 12 = 124 wide, so it grows 138 on each side.
     expect(gap(grouped, 'a', 'b')).toBe(gap(plain, 'a', 'b') + 12 + 138);
     expect(gap(grouped, 'b', 'c')).toBe(gap(plain, 'b', 'c') + 12 + 138);
+  });
+
+  it('keeps an outsider clear of a group inset wider than the node gap', () => {
+    const graph = graphOf([...IDS, 'ma'], [...EDGES, ['ma', 'a']], { g: ['a', 'ma'] }, 30);
+    const at = placed(graph, chain, { ...OPTS, nodeGap: 8 });
+    const box = boxOf(at, ['a', 'ma'], 30);
+    expect(overlaps(box, at.get('sa')!)).toBe(false);
+    expect(at.get('sa')!.y - (box.y + box.height)).toBe(8);
+
+    const above = placed(graph, chain, { ...OPTS, nodeGap: 8, chainSide: 'before' });
+    const sa = above.get('sa')!;
+    expect(boxOf(above, ['a', 'ma'], 30).y - (sa.y + sa.height)).toBe(8);
+  });
+
+  it('leaves room beside a vertical line for a box widened to its minWidth', () => {
+    const base = graphOf([...IDS, 'sb'], [...EDGES, ['sb', 'b']], { g: ['b'] }, 12);
+    const wide = { ...base, groups: base.groups!.map((g) => ({ ...g, minWidth: 400 })) };
+    const at = placed(wide, chain, { ...OPTS, direction: 'down' });
+    const inner = boxOf(at, ['b'], 12);
+    // Widened evenly about what it holds, as the scene draws it.
+    const box = { ...inner, x: inner.x - (400 - inner.width) / 2, width: 400 };
+    expect(overlaps(box, at.get('sb')!)).toBe(false);
   });
 
   it('lays out a group whose line members a non-member splits', () => {
