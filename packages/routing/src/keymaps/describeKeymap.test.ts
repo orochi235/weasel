@@ -32,6 +32,18 @@ describe('describeKeymap', () => {
     expect(d.rows[3]!.gesture).toBe('Hold Space');
   });
 
+  it("names a binding that picks a variant by the variant's label", () => {
+    const flip: Action = { id: 'flip', label: 'Flip', variants: [
+      { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },
+      { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
+    ] };
+    const d = describeKeymap({ ...level, bindings: [
+      { spec: key('H'), actionId: 'flip', opts: { params: { axis: 'x' } } },
+      { spec: key('V'), actionId: 'flip', opts: { params: { axis: 'y', pivot: 'pointer' } } },
+    ] }, [flip]);
+    expect(d.rows.map((r) => r.label)).toEqual(['Close', 'Flip Horizontal', 'Flip Vertical']);
+  });
+
   it('shows a binding where its override moved it, and drops one it unbound', () => {
     const d = describeKeymap(level, actions, resolveBindingOverrides([{ 'loupe#0': key('='), 'loupe#1': null }]));
     expect(d.rows.map((r) => r.label)).toEqual(['Close', 'Zoom in', 'Peek']);

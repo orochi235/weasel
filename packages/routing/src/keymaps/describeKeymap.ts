@@ -5,8 +5,9 @@
 import { formatShortcut, type GestureSpec } from '@weasel-js/gestures';
 import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from '../interactions/actions/action';
-import { actionBindings } from '../interactions/actions/binding';
-import { keySpecShortcut } from '../interactions/actions/actionShortcuts';
+import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
+import { keySpecShortcut, paramsMatch } from '../interactions/actions/actionShortcuts';
+import { resolveParams } from '../interactions/actions/invoker';
 import { bindingId, NO_OVERRIDES, overridden, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { keymapLeaderId, leaderBindings, type KeymapDef } from './keymapContribution';
 import type { OpenKeymap } from './keymapStack';
@@ -56,12 +57,19 @@ export function describeKeymap(
   actions: readonly Action[],
   overrides: ResolvedBindingOverrides = NO_OVERRIDES,
 ): KeymapDescription {
-  const labels = new Map(actions.map((a) => [a.id, a.label]));
+  const byId = new Map(actions.map((a) => [a.id, a]));
+  // A binding that picks a variant by its params is listed by the variant's label: Flip Horizontal.
+  const labelOf = (b: GestureBinding): string => {
+    const action = byId.get(b.actionId);
+    const params = resolveParams(b.opts?.params);
+    const variant = params && action?.variants?.find((v) => paramsMatch(params, v.params));
+    return variant ? variant.label : action?.label ?? b.actionId;
+  };
   const rows: KeymapRow[] = [ESCAPE];
   level.bindings.forEach((declared, i) => {
     const b = overridden(declared, bindingId(declared, level.id, i), overrides);
     if (!b) return;
-    const label = labels.get(b.actionId) ?? b.actionId;
+    const label = labelOf(b);
     const shortcut = b.spec.kind === 'key' ? keySpecShortcut(b.spec) : undefined;
     if (shortcut) rows.push({ shortcut, label });
     else {
