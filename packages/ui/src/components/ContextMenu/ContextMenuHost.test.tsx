@@ -105,7 +105,7 @@ describe('ContextMenuHost', () => {
     }
   });
 
-  it('closes on Escape and returns focus where it was (Review Focus 5)', () => {
+  it('closes on Escape and returns focus where it was', () => {
     render(<ActionsProvider><button>canvas</button><Setup /></ActionsProvider>);
     const before = screen.getByRole('button', { name: 'canvas' });
     before.focus();
@@ -190,14 +190,14 @@ describe('ContextMenuHost', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('a second open replaces the first (Review Focus 3)', () => {
+  it('a second open replaces the first', () => {
     render(<ActionsProvider><Setup /></ActionsProvider>);
     openAt(10, 10);
     openAt(50, 50);
     expect(screen.getAllByRole('menu')).toHaveLength(1);
   });
 
-  it('an item disabled since opening does nothing when chosen (Review Focus 4)', () => {
+  it('an item disabled since opening does nothing when chosen', () => {
     ran.length = 0;
     let allowed = true;
     function Gate() {
