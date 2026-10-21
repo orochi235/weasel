@@ -17,7 +17,10 @@ function el(html: string): Element {
   return document.body.querySelector('[data-aim]') as Element;
 }
 
+const originalElementsFromPoint = document.elementsFromPoint;
+
 afterEach(() => {
+  document.elementsFromPoint = originalElementsFromPoint;
   document.body.replaceChildren();
   pixels.image = null;
 });
@@ -46,6 +49,17 @@ describe('contrastAt over a Live source', () => {
   it('says so when no ancestor has an opaque background to read against', () => {
     const aim = el('<p data-aim style="color: black">Hi</p>');
     expect(contrastAt('live', at(aim))).toEqual({ unavailable: 'No opaque background behind the text' });
+  });
+
+  it('says it cannot read a color paint does not parse, rather than that there is no text', () => {
+    const aim = el('<div style="background-color: white"><p data-aim style="color: oklch(0.5 0.1 20)">Hi</p></div>');
+    const got = contrastAt('live', at(aim));
+    expect(got).toEqual({ unavailable: expect.stringMatching(/^Cannot read the color/) });
+  });
+
+  it('says it cannot read an unparseable background instead of calling it opaque', () => {
+    const aim = el('<div style="background-color: color(srgb 1 1 1)"><p data-aim style="color: black">Hi</p></div>');
+    expect(contrastAt('live', at(aim))).not.toHaveProperty('ratio');
   });
 
   it('counts 24px text, and 18.66px bold text, as large', () => {
@@ -152,6 +166,23 @@ describe('ContrastReadout', () => {
     expect(await screen.findByText(/21\.00:1/)).toBeTruthy();
     expect(screen.getByText(/AA pass/)).toBeTruthy();
     expect(screen.getByText(/AAA pass/)).toBeTruthy();
+  });
+
+  it('reads a lens with a comparison from its own compared copy, not the main story', async () => {
+    const main = document.createElement('div');
+    main.dataset.fgHost = 't1';
+    main.innerHTML = '<div style="background-color: white"><p style="color: black">Hi</p></div>';
+    const interior = document.createElement('div');
+    interior.className = 'lk-lens-interior';
+    interior.dataset.lens = 'a';
+    interior.innerHTML =
+      '<div data-fg-copy data-fg-host="t1~lens-a"><div style="background-color: black"><p style="color: rgb(119, 119, 119)">Hi</p></div></div>';
+    document.body.append(main, interior);
+    const copyText = interior.querySelector('p') as Element;
+    document.elementsFromPoint = () => [copyText, main.querySelector('p') as Element];
+    mount({ compare: { kind: 'opposite-mode' } }, { live: liveSource() });
+    // #777 on black is 4.69:1; the main story's black on white would read 21.00:1.
+    expect(await screen.findByText(/4\.69:1/)).toBeTruthy();
   });
 
   it('says why it has nothing when the aim is over no text', async () => {

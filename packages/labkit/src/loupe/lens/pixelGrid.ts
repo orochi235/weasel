@@ -19,14 +19,19 @@ export function gridFits(shown: LensSourceKind | null, factor: number, dpr: numb
   return shown === 'pixels' && factor / dpr >= GRID_MIN_FACTOR;
 }
 
-/** `bitmap`'s own pixels, or null where there is no canvas to read them with. */
-export function readBitmap(bitmap: ImageBitmap): ImageData | null {
-  const canvas = document.createElement('canvas');
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
+/** `bitmap`'s pixels, drawn nearest-neighbor at `size` (its own by default), or null where there is no canvas to read them with. */
+export function readBitmap(
+  bitmap: ImageBitmap,
+  size: { width: number; height: number } = bitmap,
+  doc: Document = document,
+): ImageData | null {
+  const canvas = doc.createElement('canvas');
+  canvas.width = Math.max(1, size.width);
+  canvas.height = Math.max(1, size.height);
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return null;
-  ctx.drawImage(bitmap, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 

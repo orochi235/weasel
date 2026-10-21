@@ -1,4 +1,4 @@
-import { contrastRatio, useLatest, wcagLevels } from '@weasel-js/core';
+import { contrastRatio, parseColor, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
   type LensSlotProps,
@@ -12,6 +12,7 @@ import type { ForgeComparison } from './conditions';
 
 export const NO_TEXT = 'No text under the aim';
 export const NO_BACKGROUND = 'No opaque background behind the text';
+export const unreadable = (color: string) => `Cannot read the color "${color}"`;
 export const NO_CAPTURE = 'No capture to read';
 export const OUTSIDE = 'The aim is outside the capture';
 
@@ -22,20 +23,16 @@ export type ContrastReading =
 /** Pixels either side of the aim that a Pixels reading looks at: a 5×5 neighborhood. */
 const REACH = 2;
 
-function parsedAlpha(color: string): number | null {
-  const m = /^rgba?\(([^)]*)\)$/i.exec(color.trim());
-  if (m) {
-    const parts = (m[1] as string).split(/[\s,/]+/).filter(Boolean);
-    return parts.length > 3 ? Number.parseFloat(parts[3] as string) : 1;
-  }
-  return color.trim() === '' || color.trim() === 'transparent' ? 0 : 1;
-}
-
-/** The first opaque `background-color` from `el` up, or null when none of them is. */
-function backgroundOf(el: Element): string | null {
+/** The first opaque `background-color` from `el` up; null when none is, or the unreadable color that stopped the walk. */
+function backgroundOf(el: Element): { color: string } | { unreadable: string } | null {
   for (let at: Element | null = el; at; at = at.parentElement) {
     const color = getComputedStyle(at).backgroundColor;
-    if (parsedAlpha(color) === 1) return color;
+    if (color.trim() === '') continue;
+    try {
+      if (parseColor(color)[3] === 1) return { color };
+    } catch {
+      return { unreadable: color };
+    }
   }
   return null;
 }
@@ -92,8 +89,9 @@ export function contrastAt(
   const style = getComputedStyle(el);
   const background = backgroundOf(el);
   if (background === null) return { unavailable: NO_BACKGROUND };
-  const ratio = contrastRatio(style.color, background);
-  if (ratio === null) return { unavailable: NO_TEXT };
+  if ('unreadable' in background) return { unavailable: unreadable(background.unreadable) };
+  const ratio = contrastRatio(style.color, background.color);
+  if (ratio === null) return { unavailable: unreadable(style.color) };
   const large = isLarge(style);
   return { ratio, ...wcagLevels(ratio, large), large };
 }
@@ -105,6 +103,35 @@ function elementAt(client: LoupePoint): Element | undefined {
     if (host && !host.hasAttribute('data-fg-copy')) return el;
   }
   return undefined;
+}
+
+const interiorOf = (lensId: string) =>
+  Array.from(document.querySelectorAll<HTMLElement>('.lk-lens-interior')).find((el) => el.dataset.lens === lensId);
+
+/**
+ * The topmost element under a client point inside a lens's own compared copy, or undefined. A Split lens holds
+ * the compared render beside the base one, so the `~compared` copy is preferred.
+ */
+function elementInCopy(lensId: string, client: LoupePoint): Element | undefined {
+  const copies = Array.from(interiorOf(lensId)?.querySelectorAll('[data-fg-copy]') ?? []);
+  const copy = copies.find((c) => (c.getAttribute('data-fg-host') ?? '').endsWith('~compared')) ?? copies[0];
+  if (!copy) return undefined;
+  return (document.elementsFromPoint?.(client.x, client.y) ?? []).find((el) => copy.contains(el));
+}
+
+/** Where a lens's compared render sits at its aim, in client px: the interior's center, or the compared half's in Split. */
+function comparedAim(lensId: string, split: boolean, seam: number): LoupePoint | null {
+  const box = interiorOf(lensId)?.getBoundingClientRect();
+  if (!box) return null;
+  const seamX = Math.round(box.width * seam);
+  return { x: box.left + (split ? (seamX + box.width) / 2 : box.width / 2), y: box.top + box.height / 2 };
+}
+
+/** What a Live lens reads: its compared copy at its aim when it has a comparison, else the main story at the reticle. */
+function liveAim(lensId: string, settings: LensSlotProps<ForgeComparison>['settings'], reticle: LoupePoint) {
+  if (settings.compare === null) return { element: elementAt(reticle), point: reticle };
+  const point = comparedAim(lensId, settings.view === 'split', settings.seam) ?? reticle;
+  return { element: elementInCopy(lensId, point), point };
 }
 
 const verdict = (pass: boolean) => (pass ? 'pass' : 'fail');
@@ -122,7 +149,7 @@ export function ContrastReadout({ lens, settings, sources, reticle, size }: Lens
   const subscribe = useCallback((fn: () => void) => source?.subscribe(fn) ?? (() => {}), [source]);
   // A Live reading is of the page as it stands, read each render and again whenever the source says a story changed.
   const live = useSyncExternalStore(subscribe, () =>
-    kind === 'live' ? textOf(contrastAt('live', { element: elementAt(reticle), point: reticle })) : null,
+    kind === 'live' ? textOf(contrastAt('live', liveAim(lens.lensId, settings, reticle))) : null,
   );
   const [pixels, setPixels] = useState<ContrastReading | null>(null);
   const [tick, setTick] = useState(0);

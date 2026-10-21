@@ -3,6 +3,7 @@
  * draws that enlarged about its reticle.
  */
 import type { LensCapture } from './lensSource';
+import { readBitmap } from './pixelGrid';
 
 export interface DiffResult {
   image: ImageData;
@@ -52,14 +53,11 @@ export function diffPixels(a: ImageData, b: ImageData, opts: DiffOptions = {}): 
 
 /** `capture`'s pixels at `dpr` px per host px, enlarged nearest-neighbor when it was taken at fewer. */
 function pixelsOf(doc: Document, capture: LensCapture, dpr: number): ImageData | null {
-  const canvas = doc.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(capture.box.width * dpr));
-  canvas.height = Math.max(1, Math.round(capture.box.height * dpr));
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(capture.bitmap, 0, 0, canvas.width, canvas.height);
-  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return readBitmap(
+    capture.bitmap,
+    { width: Math.round(capture.box.width * dpr), height: Math.round(capture.box.height * dpr) },
+    doc,
+  );
 }
 
 /** Where a lens draws, and how far it enlarges. */
