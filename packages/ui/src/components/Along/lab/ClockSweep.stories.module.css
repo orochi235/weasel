@@ -1,0 +1,40 @@
+.lab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  height: 100%;
+  padding: var(--wzl-space-6);
+  box-sizing: border-box;
+  overflow: auto;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+}
+
+.dials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-4);
+}
+
+.cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+/* A dial: the box both Alongs lay their arcs in, with the circle they share drawn faintly. */
+.dial {
+  position: relative;
+  width: var(--dial-size);
+  height: var(--dial-size);
+  border: 1px dashed var(--wzl-border);
+  border-radius: 50%;
+}
+
+.caption {
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--wzl-fg-muted);
+}
