@@ -16,6 +16,9 @@ import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
+const storyTrees = stories.map((glob) => glob.split('/**')[0]!);
+/** Story trees whose package is bundled: their stories reach it through package specifiers. */
+const BUNDLED_STORIES = ['packages/ui/src', 'packages/labkit/src'];
 
 export default defineConfig(({ command, isPreview }) => ({
   root: repoRoot,
@@ -27,11 +30,11 @@ export default defineConfig(({ command, isPreview }) => ({
     react(),
     skipWorktrees(),
     devSourcemaps(),
-    // Stories import their components by relative path, so every tree holding stories stays source.
+    // Every other tree holding stories stays source, with its package.
     prebundleWorkspace(
       repoRoot,
-      [import.meta.dirname, resolve(repoRoot, 'apps/shared'), ...stories.map((glob) => resolve(repoRoot, glob.split('/**')[0]!))],
-      { stories: true },
+      [import.meta.dirname, resolve(repoRoot, 'apps/shared'), ...storyTrees.filter((tree) => !BUNDLED_STORIES.includes(tree)).map((tree) => resolve(repoRoot, tree))],
+      { stories: true, storyTrees: BUNDLED_STORIES.map((tree) => resolve(repoRoot, tree)) },
     ),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
