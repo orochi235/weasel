@@ -76,6 +76,9 @@ export interface DrawContext {
    *  Only `units: 'world'` gradients read it; absent, they fall back to
    *  screen space. See `WeaselRenderer.render`. */
   viewMatrix?: GlMat3;
+  /** The frame's screen space → CSS pixels, when the caller named one; absent,
+   *  screen space is CSS pixels. See `RenderOptions.screen`. */
+  screenMatrix?: GlMat3;
   /** Offscreen buffers for group effects. Absent when a caller drives
    *  `dispatch` without a renderer behind it, in which case a group's
    *  `effects` are skipped and its children draw straight through — the same

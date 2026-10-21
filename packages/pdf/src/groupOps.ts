@@ -92,7 +92,7 @@ async function rasterGroup(ctx: PageCtx, cmd: GroupDrawCommand, state: DrawState
     effects: cmd.effects,
     children: cmd.children,
   };
-  const box = commandsBounds([wrapper], mat3.identity(), ctx);
+  const box = commandsBounds([wrapper], mat3.identity(), ctx, RASTER_SCALE);
   const grouped: DrawState = {
     transform: state.transform,
     alpha: state.alpha * (cmd.alpha ?? 1),

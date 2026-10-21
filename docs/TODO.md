@@ -1348,12 +1348,9 @@ only story runner in the repo.
 - **(P3) PDF export draws Porter-Duff composites source-over.** `@weasel-js/pdf` reports each one in
   `skipped`. Exact output needs a backdrop-aware `rasterize` hook, one that is handed what the group
   composites against (2026-10-20).
-- **(P3) PDF export misplaces screen-unit paint inside a rasterized group.** In an effects or shader
-  group, `rasterize` places `screen`-unit paint in raster pixels, not page points. The fix needs a
-  renderer option naming a render's screen space (2026-10-20).
-- **(P3) PDF export rasterizes an effects group over the whole page.** At 2×, so a small blurred badge
-  costs a full-page bitmap. The fix needs the renderer to expose each effect's reach, so the raster
-  covers only the group's bounds grown by it (2026-10-20).
+- **(P3) `cullDrawCommands` keeps every group with effects.** `contentBounds` already bounds one by
+  `effectsReach`, but that is device pixels and the cull rect is CSS pixels with no pixel ratio to
+  convert by, so culling one needs `cullDrawCommands` to take that ratio (2026-10-21).
 - **(P3) PDF export embeds each font face whole.** There is no subsetting, so a one-line page carries
   the full face. Subsetting needs the glyphs a document uses collected per face before it is written
   (2026-10-20).

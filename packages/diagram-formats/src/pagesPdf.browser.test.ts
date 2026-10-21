@@ -143,13 +143,17 @@ describe('exportPagesPdf', () => {
 });
 
 describe('the raster hook', () => {
-  it('draws a world-unit gradient where the vector path puts it', async () => {
+  // The view puts world 150..190 on page points 112.5..142.5, which is where a screen-unit ramp is measured.
+  it.each([
+    ['world', { x: 150, y: 0 }, { x: 190, y: 0 }],
+    ['screen', { x: 112.5, y: 0 }, { x: 142.5, y: 0 }],
+  ] as const)('draws a %s-unit gradient where the vector path puts it', async (units, from, to) => {
     const view = { x: 0, y: 0, scale: { x: 0.75, y: 0.75 } };
     const ground: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 150, height: 75 }, fill: { paint: { color: '#ffffff' } } };
     const ramp: DrawCommand = {
       kind: 'path',
       path: { kind: 'rect', x: 112.5, y: 7.5, width: 30, height: 22.5 },
-      fill: { paint: { kind: 'linear-gradient', units: 'world', from: { x: 150, y: 0 }, to: { x: 190, y: 0 }, stops: STOPS } },
+      fill: { paint: { kind: 'linear-gradient', units, from, to, stops: STOPS } },
     };
     const page = (effects: boolean) => ({
       width: 150, height: 75, view: viewToMat3(view),
@@ -171,6 +175,35 @@ describe('the raster hook', () => {
         expect(want).toBeLessThan(215);
         expect(Math.abs(rgb(raster, x, 38)[1]! - want)).toBeLessThanOrEqual(25);
       }
+    } finally {
+      session.dispose();
+    }
+  });
+  it('blurs the same pixels into a raster cropped to the blur\'s reach as into the whole page', async () => {
+    const blob: DrawCommand = {
+      kind: 'group', effects: blur({ radius: 6 }),
+      children: [{ kind: 'path', path: { kind: 'rect', x: 50, y: 30, width: 20, height: 10 }, fill: { paint: { color: '#ff0000' } } }],
+    };
+    const session = createRasterSession();
+    try {
+      const rasterize = pageRasterizer(session);
+      const whole = await rasterize([blob], { x: 0, y: 0, width: 150, height: 75 }, 2, undefined);
+      // The rect writePdf asks for: 12 raster pixels of reach are 6 points, and a point of slack.
+      const crop = { x: 43, y: 23, width: 34, height: 24 };
+      const part = await rasterize([blob], crop, 2, undefined);
+      expect([part.width, part.height]).toEqual([68, 48]);
+      let worst = 0;
+      let painted = 0;
+      for (let y = 0; y < part.height; y++) {
+        for (let x = 0; x < part.width; x++) {
+          const a = (y * part.width + x) * 4;
+          const b = ((y + crop.y * 2) * whole.width + x + crop.x * 2) * 4;
+          if (part.data[a + 3]! > 0) painted++;
+          for (let c = 0; c < 4; c++) worst = Math.max(worst, Math.abs(part.data[a + c]! - whole.data[b + c]!));
+        }
+      }
+      expect(painted).toBeGreaterThan(20 * 10 * 4);
+      expect(worst).toBeLessThanOrEqual(2);
     } finally {
       session.dispose();
     }

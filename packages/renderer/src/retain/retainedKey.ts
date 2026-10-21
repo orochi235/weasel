@@ -9,6 +9,7 @@ export interface RetainedKey {
   alpha: number;
   colorMatrix: Float32Array;
   viewMatrix: GlMat3 | undefined;
+  screenMatrix?: GlMat3;
   /** Every clip enclosing the group, outermost first, its own last. */
   clips: readonly RetainedClip[];
 }
@@ -26,6 +27,7 @@ export function keepKey(key: RetainedKey): RetainedKey {
     transform: key.transform.slice(),
     colorMatrix: key.colorMatrix.slice(),
     viewMatrix: key.viewMatrix?.slice(),
+    screenMatrix: key.screenMatrix?.slice(),
     clips: key.clips.map((c) => ({ path: c.path, transform: c.transform.slice() })),
   };
 }
@@ -33,9 +35,12 @@ export function keepKey(key: RetainedKey): RetainedKey {
 export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
   return a.children === b.children && a.alpha === b.alpha
     && sameFloats(a.transform, b.transform) && sameFloats(a.colorMatrix, b.colorMatrix)
-    && (a.viewMatrix === undefined ? b.viewMatrix === undefined
-      : b.viewMatrix !== undefined && sameFloats(a.viewMatrix, b.viewMatrix))
+    && sameMatrix(a.viewMatrix, b.viewMatrix) && sameMatrix(a.screenMatrix, b.screenMatrix)
     && sameClips(a.clips, b.clips);
+}
+
+function sameMatrix(a: GlMat3 | undefined, b: GlMat3 | undefined): boolean {
+  return a === undefined ? b === undefined : b !== undefined && sameFloats(a, b);
 }
 
 function sameClips(a: readonly RetainedClip[], b: readonly RetainedClip[]): boolean {

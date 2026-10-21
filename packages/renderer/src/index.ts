@@ -67,7 +67,7 @@ export {
 export {
   registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
 } from './textures/registerTexture';
-export { registerEffect, type Effect } from './effects/types';
+export { registerEffect, effectsReach, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';
 export { isOwnComposite } from './effects/compositeOp';

@@ -65,9 +65,11 @@ const VIGNETTE = registerEffect('weasel:vignette', VIGNETTE_FRAG);
  * one. Two passes at O(9) beat one at O(81) and look the same.
  */
 export function blur({ radius }: { radius: number }): Effect[] {
+  // The outermost tap samples linearly, so it reads the texel past its offset too.
+  const reach = Math.ceil(Math.abs(radius));
   return [
-    { program: BLUR, uniforms: { u_direction: [1, 0], u_radius: radius } },
-    { program: BLUR, uniforms: { u_direction: [0, 1], u_radius: radius } },
+    { program: BLUR, uniforms: { u_direction: [1, 0], u_radius: radius }, reach },
+    { program: BLUR, uniforms: { u_direction: [0, 1], u_radius: radius }, reach },
   ];
 }
 

@@ -1,5 +1,5 @@
 import { PATH_L, PATH_M, PATH_Z, type Path } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { blur, type DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { composeMatrix, foldColor, foldPixels } from './color';
 import { latin1 } from './latin1';
@@ -95,6 +95,15 @@ describe('writeGroup', () => {
     expect(cmds[0]).toMatchObject({ kind: 'group', children });
     expect(s).toContain('/Subtype /Image');
     expect(content).toMatch(/100 0 0 -100 0 100 cm\n\/Im1 Do\n/);
+  });
+
+  it('rasterizes a blurred group over its bounds grown by the blur, not the whole page', async () => {
+    const rasterize = vi.fn(async () => pixels());
+    const { content } = await render([{ kind: 'group', effects: blur({ radius: 4 }), children: [red] }], { rasterize });
+    const box = (rasterize.mock.calls[0] as unknown[])[1];
+    // Two passes of 4 raster pixels each are 4 points at a scale of 2, plus a point of slack.
+    expect(box).toEqual({ x: 5, y: 15, width: 40, height: 50 });
+    expect(content).toMatch(/40 0 0 -50 5 65 cm\n\/Im1 Do\n/);
   });
 
   it('hands the hook the page view', async () => {

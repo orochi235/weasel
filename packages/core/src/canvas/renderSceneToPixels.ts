@@ -24,7 +24,7 @@
  *   output px).
  */
 import { WeaselRenderer } from '@weasel-js/renderer';
-import { viewToMat3 } from '@weasel-js/geom';
+import { viewToMat3, type GlMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
@@ -104,6 +104,9 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  `false`: a raster is an export, which leaves them out as the SVG export
    *  does. Pass `true` to reproduce the canvas as it looked. */
   annotations?: boolean;
+  /** Screen space → output pixels, which `'screen'`-unit paint is measured in. Default: output pixels. A
+   *  raster standing in for part of a larger surface, such as an export's page, names the whole here. */
+  screen?: GlMat3;
 }
 
 /** The result of planning a headless render: how big the output is, the view
@@ -287,7 +290,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
         renderer.resize({ width, height, dpr: 1 });
         renderer.setFlattenTolerance(flattenTolerance);
       }
-      renderer.render(plan.commands, viewToMat3(plan.view));
+      renderer.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
       if (isLost(ctx)) {
         throw new Error('raster session: the WebGL2 context was lost during render');
       }

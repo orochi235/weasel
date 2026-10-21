@@ -522,7 +522,7 @@ export class WeaselRenderer {
       clipStack: [],
       flattenTolerance: inCssPixels(this.flattenTolerance, this.dpr),
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
-      viewMatrix,
+      viewMatrix, screenMatrix: opts?.screen,
       effectTargets: this.effectTargets,
       retained: this.retained,
       paintScratch: this.paintScratch,

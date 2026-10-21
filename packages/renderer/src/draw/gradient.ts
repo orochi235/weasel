@@ -161,7 +161,7 @@ export function rampVertices(
 export function gradientSpaceInverse(ctx: DrawContext, units: PaintUnits | undefined): GlMat3 | null {
   if (units === 'local') return mat3.invert(ctx.state.transform);
   if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
-  return mat3.identity();
+  return ctx.screenMatrix ? mat3.invert(ctx.screenMatrix) : mat3.identity();
 }
 
 /** The paint space `units` names → device pixels: the forward transform
