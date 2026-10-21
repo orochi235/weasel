@@ -179,6 +179,11 @@ const HOME_ID = 'camera.home';
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
 const CHANNELS_WITH_MENU = { ingest: false } as const;
+// A trial pans on a plain drag; the kit action binds none of its own.
+const DRAG_PAN = {
+  ...viewportDragPanAction,
+  defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: `${viewportDragPanAction.id}.drag` } }],
+} as Action;
 
 /** Props for `<CameraInput>`. */
 export interface CameraInputProps {
@@ -286,11 +291,7 @@ function CameraDispatch({
     };
     return [
       ...(labMenu ? [contextMenuAction] : []),
-      // A trial pans on a plain drag; the kit action binds none of its own.
-      ...(drag ? [{
-        ...viewportDragPanAction,
-        defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: `${viewportDragPanAction.id}.drag` } }],
-      } as Action] : []),
+      ...(drag ? [DRAG_PAN] : []),
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),

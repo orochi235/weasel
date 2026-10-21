@@ -197,7 +197,10 @@ function orbitActions({
   // The trackpad's pinch: ctrl+wheel, and WebKit's gesture events.
   const padPinch = trackpadPinch
     ? [
-        { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: { id: 'camera.dolly.trackpadPinch' } },
+        {
+          spec: { kind: 'wheel', mods: { ctrl: true } },
+          opts: { id: 'camera.dolly.trackpadPinch' },
+        },
         { spec: { kind: 'pinch' }, opts: { id: 'camera.dolly.pinch' } },
       ]
     : [];
@@ -206,8 +209,16 @@ function orbitActions({
     ...(menu ? [contextMenuAction] : []),
     ...(drag
       ? [
-          { ...orbitAction, defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'camera.orbit.drag' } }] } as Action,
-          { ...panAction, defaultBinding: [{ spec: { kind: 'drag', mods: { shift: true } }, opts: { id: 'camera.pan.drag' } }] } as Action,
+          {
+            ...orbitAction,
+            defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'camera.orbit.drag' } }],
+          } as Action,
+          {
+            ...panAction,
+            defaultBinding: [
+              { spec: { kind: 'drag', mods: { shift: true } }, opts: { id: 'camera.pan.drag' } },
+            ],
+          } as Action,
         ]
       : []),
     ...(dollyBindings.length > 0

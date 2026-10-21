@@ -120,11 +120,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           // Wheel-during-drag → adjust side count. Phase-gated to
           // `engaged` so wheel while the tool is idle still falls
           // through to ambient viewport.pan / viewport.zoom.
-          {
-            spec: { kind: 'wheel', phase: 'engaged' },
-            actionId: 'polygon.adjustSides',
-            opts: { id: 'polygon.wheelSides' },
-          },
+          { spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'polygon.adjustSides', opts: { id: 'polygon.wheelSides' } },
           // Shift+wheel during engaged drag → rotate the in-flight
           // shape in place. Strict modifier matching means this
           // doesn't conflict with the unmodified wheel binding above.

@@ -335,11 +335,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // resize/rotate bind only drag (no click), so a click on either handle
           // (body genuinely empty) would hit target:'empty' and wrongly clear selection.
           {
-            spec: {
-              kind: 'click' as const,
-              target: { kindOf: onEmptyCanvas },
-              mods: {},
-            },
+            spec: { kind: 'click' as const, target: { kindOf: onEmptyCanvas }, mods: {} },
             actionId: 'clearSelection',
             opts: { id: 'select.clearOnClick' },
           },

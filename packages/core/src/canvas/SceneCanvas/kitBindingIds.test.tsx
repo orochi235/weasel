@@ -109,6 +109,7 @@ function signature(b: GestureBinding): string {
 
 function sweepKit(): Sweep {
   const s = new Sweep();
+  const scene = createScene({ systemLayers: [{ id: 'main' }] }) as never;
   s.module(routing as unknown as Record<string, unknown>, 'routing');
   s.module(core as unknown as Record<string, unknown>, 'core');
   s.module(pathTools as unknown as Record<string, unknown>, 'path-tools');
@@ -145,7 +146,7 @@ function sweepKit(): Sweep {
     { toolId: 'rect', keyOpts: { key: 'R' } }, { toolId: 'rect', keyOpts: { key: 'M' } },
     { toolId: 'hand', keyOpts: { key: 'H' } },
   ])), 'tool.activate');
-  s.value(makeToolResetToDefaultAction(() => {}), 'tool.resetToDefault');
+  s.value(makeToolResetToDefaultAction(() => null), 'tool.resetToDefault');
   s.value(routing.makeToolOffhandAction(routing.buildToolOffhandBindings([
     { toolId: 'hand', trigger: { key: 'Space' } },
   ] as never)), 'tool.offhand');
@@ -155,7 +156,7 @@ function sweepKit(): Sweep {
   s.value(core.selectionRotateContribution(), 'selectionRotateContribution');
   s.value(core.areaSelectContribution(), 'areaSelectContribution');
   s.value(core.dragPanContribution(), 'dragPanContribution');
-  s.value(measurementsContribution(createMeasurements({ layer: 'notes' })), 'measurementsContribution');
+  s.value(measurementsContribution(scene, createMeasurements({ layer: 'notes' })), 'measurementsContribution');
   const modes = createModeRegistry({
     initial: 'object',
     modes: [
@@ -181,7 +182,7 @@ function sweepKit(): Sweep {
   s.value(hud.createHudContribution(), 'hud.createHudContribution');
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');
-  s.value(symmetry.createSymmetry(createScene({ systemLayers: [{ id: 'main' }] }) as never), 'symmetry.createSymmetry');
+  s.value(symmetry.createSymmetry(scene), 'symmetry.createSymmetry');
   s.value(diagram.createDiagramContribution({} as never), 'diagram.createDiagramContribution');
   s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
   s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');

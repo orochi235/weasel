@@ -67,7 +67,9 @@ export function createLoupeActions(
     // Every modifier optional: the lens claims the wheel whenever it is up,
     // which is what the hand-rolled capture-phase listener did. A bare spec
     // would forbid modifiers and hand Cmd+wheel back to the lab mid-peek.
-    defaultBinding: [{ spec: { kind: 'wheel', mods: ANY_MODS }, opts: { id: `${LOUPE_MAGNIFY_ID}.wheel` } }],
+    defaultBinding: [
+      { spec: { kind: 'wheel', mods: ANY_MODS }, opts: { id: `${LOUPE_MAGNIFY_ID}.wheel` } },
+    ],
     enabled: () => (input.shown() ? true : 'not-applicable'),
     invoker: {
       timing: 'immediate',
@@ -83,7 +85,12 @@ export function createLoupeActions(
     id: LOUPE_AIM_ID,
     label: 'Aim (loupe)',
     group: 'loupe',
-    defaultBinding: [{ spec: { kind: 'hover', held: 'optional', mods: ANY_MODS }, opts: { id: `${LOUPE_AIM_ID}.hover` } }],
+    defaultBinding: [
+      {
+        spec: { kind: 'hover', held: 'optional', mods: ANY_MODS },
+        opts: { id: `${LOUPE_AIM_ID}.hover` },
+      },
+    ],
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
@@ -96,7 +103,12 @@ export function createLoupeActions(
     id: LOUPE_LEAVE_ID,
     label: 'Put away (loupe)',
     group: 'loupe',
-    defaultBinding: [{ spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS }, opts: { id: `${LOUPE_LEAVE_ID}.hover` } }],
+    defaultBinding: [
+      {
+        spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS },
+        opts: { id: `${LOUPE_LEAVE_ID}.hover` },
+      },
+    ],
     invoker: {
       timing: 'immediate',
       run() {
@@ -115,7 +127,9 @@ export function createLoupeActions(
     // the same key, the way every other held-key trigger does. `over`: the
     // key peeks the loupe under the pointer, not the one last pressed in.
     scope: 'hotkey',
-    defaultBinding: [{ spec: heldKeySpec(peekKey), opts: { id: `${LOUPE_PEEK_ID}.held`, over: true } }],
+    defaultBinding: [
+      { spec: heldKeySpec(peekKey), opts: { id: `${LOUPE_PEEK_ID}.held`, over: true } },
+    ],
     invoker: {
       timing: 'ongoing',
       start() {
