@@ -1,13 +1,17 @@
-import { useCallback, useContext, useSyncExternalStore } from 'react';
+import { useCallback, useContext, useEffect, useSyncExternalStore } from 'react';
 import { TrialIdContext } from '../state/context';
 import { SurfaceCanvasContext, SurfaceContext, type SurfaceLayer } from './SurfaceContext';
 import type { SurfaceHandle } from './useTiledSurface';
 
-/** One of the surface's two shared buffers, or null where nothing paints one.
+/** One of the surface's shared buffers, or null where nothing paints one.
  *  What a tile hands to `paintInto`. See {@link SurfaceLayer} for which to ask
  *  for; the default is the one over the trial DOM. */
 export function useSurfaceCanvas(layer: SurfaceLayer = 'over'): HTMLCanvasElement | null {
-  return useContext(SurfaceCanvasContext)[layer];
+  const canvases = useContext(SurfaceCanvasContext);
+  // Only `top` is made on demand: asking for it is what brings it into being.
+  const claim = layer === 'top' ? canvases.claimTop : undefined;
+  useEffect(() => claim?.(), [claim]);
+  return canvases[layer] ?? null;
 }
 
 /** The surface above, or null. Use this where a surface is genuinely optional. */

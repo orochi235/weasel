@@ -48,6 +48,11 @@ describe('hitBoxesOf', () => {
     expect(hitBoxesOf(scene, new Set(['a:reticle']))[1]?.rect.w).toBe(RETICLE_SIZE);
   });
 
+  it('squares a selected round body’s box, so the handles on its corners stay reachable', () => {
+    expect(hitBoxesOf(scene, new Set())[0]?.round).toBe(true);
+    expect(hitBoxesOf(scene, new Set(['a:body']))[0]?.round).toBe(false);
+  });
+
   it('marks a square lens’s body box as not round', () => {
     scene = createLensScene<string>();
     apply(

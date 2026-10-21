@@ -89,7 +89,11 @@ const settleFrame: BrowserCommand<[]> = async (ctx) => {
 
 /** One step of a real mouse: a move to a client point of the test's frame, a
  *  press, or a release of the primary button. */
-export type PointerStep = { to: [x: number, y: number] } | { down: true } | { up: true };
+export type PointerStep =
+  | { to: [x: number, y: number] }
+  | { down: true }
+  | { up: true }
+  | { wheel: [dx: number, dy: number] };
 
 type CommandContext = Parameters<BrowserCommand<[]>>[0];
 
@@ -118,6 +122,7 @@ const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
   for (const step of steps) {
     if ('to' in step) await ctx.page.mouse.move(...toPage(step.to));
     else if ('down' in step) await ctx.page.mouse.down();
+    else if ('wheel' in step) await ctx.page.mouse.wheel(...step.wheel);
     else await ctx.page.mouse.up();
   }
 };

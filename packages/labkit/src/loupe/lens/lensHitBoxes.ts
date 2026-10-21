@@ -37,7 +37,8 @@ export function hitBoxesOf<C>(
       h: p.height * view.scale.y,
     };
     const body = data.role === 'lens-body';
-    if (body && selected.has(node.id)) {
+    const grown = body && selected.has(node.id);
+    if (grown) {
       rect = {
         x: rect.x - HANDLE_SLOP,
         y: rect.y - HANDLE_SLOP,
@@ -45,7 +46,10 @@ export function hitBoxesOf<C>(
         h: rect.h + 2 * HANDLE_SLOP,
       };
     }
-    out.push({ nodeId: node.id, role: data.role, rect, round: !body || data.shape === 'circle' });
+    // A selected body's handles sit on its bounding box's corners, outside a
+    // round body, so its box goes square to keep them reachable.
+    const round = body ? !grown && data.shape === 'circle' : true;
+    out.push({ nodeId: node.id, role: data.role, rect, round });
   }
   return out;
 }

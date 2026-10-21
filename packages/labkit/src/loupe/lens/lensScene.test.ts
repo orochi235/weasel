@@ -1,4 +1,10 @@
-import { effectivePose, moveSources, type Op, type RectPose, sceneToAdapter } from '@weasel-js/core';
+import {
+  effectivePose,
+  moveSources,
+  type Op,
+  type RectPose,
+  sceneToAdapter,
+} from '@weasel-js/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addLensOps,
@@ -26,7 +32,9 @@ beforeEach(() => {
 
 describe('lens scene', () => {
   it('adds a lens as a body, a pinned reticle and a leader joining them', () => {
-    expect(lensesOf(scene)).toEqual([{ lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:leader' }]);
+    expect(lensesOf(scene)).toEqual([
+      { lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:leader' },
+    ]);
     expect(scene.get('a:reticle' as never)!.dependsOn).toBeUndefined();
     expect(scene.get('a:leader' as never)!.dependsOn).toEqual(['a:body', 'a:reticle']);
     expect(settingsOf(scene, 'a')).toMatchObject({ aim: 'pinned', source: 'live', factor: 4 });
@@ -107,7 +115,12 @@ describe('lens scene', () => {
     apply(addLensOps(scene, 'b', { body: { x: 600, y: 200 }, reticle: { x: 500, y: 100 } }));
     expect(lensClosure(scene, ['a:reticle']).sort()).toEqual(['a:body', 'a:leader', 'a:reticle']);
     expect(lensClosure(scene, ['a:body', 'b:leader']).sort()).toEqual([
-      'a:body', 'a:leader', 'a:reticle', 'b:body', 'b:leader', 'b:reticle',
+      'a:body',
+      'a:leader',
+      'a:reticle',
+      'b:body',
+      'b:leader',
+      'b:reticle',
     ]);
   });
 
@@ -122,8 +135,12 @@ describe('lens scene', () => {
     for (const id of ['a:body', 'a:reticle'] as const) {
       expect(effectivePose(restored, restored.get(id as never)!)).toEqual(poseOf(id));
     }
-    expect(restored.toJSON().nodes.find((n) => n.id === 'a:reticle')).toMatchObject({ derivePoseKey: GLASS_POSE_KEY });
-    expect(restored.toJSON().nodes.find((n) => n.id === 'a:leader')).toMatchObject({ derivePathKey: LEADER_PATH_KEY });
+    expect(restored.toJSON().nodes.find((n) => n.id === 'a:reticle')).toMatchObject({
+      derivePoseKey: GLASS_POSE_KEY,
+    });
+    expect(restored.toJSON().nodes.find((n) => n.id === 'a:leader')).toMatchObject({
+      derivePathKey: LEADER_PATH_KEY,
+    });
 
     restored.history.undo();
     expect(restored.get('a:reticle' as never)!.dependsOn).toBeUndefined();
@@ -132,6 +149,9 @@ describe('lens scene', () => {
     restored.history.redo();
     restored.history.redo();
     expect(restored.get('a:reticle' as never)!.dependsOn).toEqual(['a:body']);
-    expect(centerOf(effectivePose(restored, restored.get('a:reticle' as never)!))).toEqual({ x: 300, y: 200 });
+    expect(centerOf(effectivePose(restored, restored.get('a:reticle' as never)!))).toEqual({
+      x: 300,
+      y: 200,
+    });
   });
 });

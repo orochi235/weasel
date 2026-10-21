@@ -16,7 +16,7 @@ export type SurfaceScope = HTMLElement | readonly HTMLElement[] | null;
 /** Whether `tile` is inside `scope`. */
 export function scopeHolds(scope: SurfaceScope, tile: Node): boolean {
   if (!scope) return true;
-  if (!Array.isArray(scope)) return (scope as HTMLElement).contains(tile);
+  if ('contains' in scope) return scope.contains(tile);
   return scope.some((el) => el.contains(tile));
 }
 

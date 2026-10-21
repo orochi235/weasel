@@ -25,13 +25,16 @@ import {
 } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
-import { hitBoxesOf, type LensHitBox } from './lensHitBoxes';
+import { HANDLE_SLOP, hitBoxesOf, type LensHitBox } from './lensHitBoxes';
 import { lensClosure, lensesOf, lensIdsOf } from './lensScene';
 import type { LensIds, LensNodeData, LensScene } from './lensTypes';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */
 export interface LensAttachment {
+  /** A cached snapshot: the same object until the view changes, and a new one
+   *  when it does. It is read as a `useSyncExternalStore` snapshot, so a fresh
+   *  object on every call re-renders forever. */
   view(): View;
   subscribe(listener: () => void): () => void;
 }
@@ -135,6 +138,51 @@ function LensInterior({
   );
 }
 
+/** A body's own rect: its hit box without the slop a selected one grows by. */
+function interiorOf(box: LensHitBox, selected: ReadonlySet<string>): LensHitBox['rect'] {
+  if (!selected.has(box.nodeId)) return box.rect;
+  const { x, y, w, h } = box.rect;
+  return { x: x + HANDLE_SLOP, y: y + HANDLE_SLOP, w: w - 2 * HANDLE_SLOP, h: h - 2 * HANDLE_SLOP };
+}
+
+/** Hands a wheel over a hit box to whatever lies beneath the lens layer, so a
+ *  trial's camera still zooms under a lens. The lens itself binds no wheel. */
+function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElement | null) {
+  useEffect(() => {
+    if (!input || !layer) return;
+    const onWheel = (e: WheelEvent): void => {
+      // Hit boxes are the only part of the layer that takes input; with them
+      // stood down for one hit-test, the point lands on what is beneath.
+      layer.dataset.probe = '';
+      const beneath = document.elementFromPoint(e.clientX, e.clientY);
+      delete layer.dataset.probe;
+      if (!beneath || layer.contains(beneath)) return;
+      e.stopPropagation();
+      const copy = new WheelEvent('wheel', {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        deltaX: e.deltaX,
+        deltaY: e.deltaY,
+        deltaZ: e.deltaZ,
+        deltaMode: e.deltaMode,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        screenX: e.screenX,
+        screenY: e.screenY,
+        buttons: e.buttons,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        altKey: e.altKey,
+        metaKey: e.metaKey,
+      });
+      if (!beneath.dispatchEvent(copy)) e.preventDefault();
+    };
+    input.addEventListener('wheel', onWheel, { passive: false });
+    return () => input.removeEventListener('wheel', onWheel);
+  }, [input, layer]);
+}
+
 /** Registers the lens tile on the layer and keeps the layer's size, which is
  *  the canvas's, current with every frame the surface paints. */
 function useLensTile(layer: HTMLElement | null, redraw: () => void) {
@@ -160,7 +208,7 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
 }
 
 /**
- * The lab's lenses: a scene painted into the surface's `over` buffer, on a
+ * The lab's lenses: a scene painted into the surface's `top` buffer, on a
  * layer covering the whole surface container. The layer and its input element
  * take no input; each body and reticle has a hit box inside the input element
  * that does, so a press on a lens bubbles to the dispatcher and a press
@@ -172,7 +220,7 @@ export function LensOverlay<C>({
   children,
   onFocusLens,
 }: LensOverlayProps<C>) {
-  const canvas = useSurfaceCanvas('over');
+  const canvas = useSurfaceCanvas('top');
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
   const [colors, setColors] = useState<LensColors | null>(null);
@@ -206,8 +254,9 @@ export function LensOverlay<C>({
   const view = useSyncExternalStore(attachment.subscribe, attachment.view);
   useEffect(() => attachment.subscribe(redraw), [attachment, redraw]);
   const selection = scene.getSelection();
-  const boxes = hitBoxesOf(scene, new Set(selection), view);
-  const bodies = hitBoxesOf(scene, new Set(), view).filter((b) => b.role === 'lens-body');
+  const selected = new Set(selection);
+  const boxes = hitBoxesOf(scene, selected, view);
+  useWheelPassThrough(input, layer);
 
   const focusRef = useLatest(onFocusLens);
   const focused =
@@ -230,10 +279,10 @@ export function LensOverlay<C>({
   return createPortal(
     <div ref={attachLayer} className="lk-lens-layer">
       {children
-        ? bodies.map((b) => {
-            const lens = lenses.find((l) => l.body === b.nodeId);
+        ? boxes.map((b) => {
+            const lens = b.role === 'lens-body' && lenses.find((l) => l.body === b.nodeId);
             return lens ? (
-              <LensInterior key={lens.lensId} lens={lens} rect={b.rect}>
+              <LensInterior key={lens.lensId} lens={lens} rect={interiorOf(b, selected)}>
                 {children as NonNullable<LensOverlayProps<unknown>['children']>}
               </LensInterior>
             ) : null;

@@ -5,9 +5,9 @@ import {
   createSetDataOp,
   createSetDependsOnOp,
   createTransformOp,
-  effectivePose,
   type DerivePathFn,
   type DerivePoseFn,
+  effectivePose,
   type Op,
   type RectPose,
 } from '@weasel-js/core';
@@ -17,7 +17,6 @@ import {
   GLASS_POSE_KEY,
   LEADER_PATH_KEY,
   LENS_DEFAULTS,
-  RETICLE_SIZE,
   type LensAim,
   type LensBodyData,
   type LensIds,
@@ -25,6 +24,7 @@ import {
   type LensScene,
   type LensSettings,
   type LoupePoint,
+  RETICLE_SIZE,
 } from './lensTypes';
 
 const center = (p: RectPose): LoupePoint => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
@@ -186,18 +186,22 @@ export function setAimOps<C>(scene: LensScene<C>, lensId: string, to: LensAim): 
   if (from === null || from.aim === to) return [];
   const label = 'set lens aim';
   const ids = idsFor(lensId);
-  const ops: Op[] = [createSetDataOp<LensNodeData<C>>({ id: ids.body, from, to: { ...from, aim: to }, label })];
+  const ops: Op[] = [
+    createSetDataOp<LensNodeData<C>>({ id: ids.body, from, to: { ...from, aim: to }, label }),
+  ];
   if (to === 'glass') {
     ops.push(createSetDependsOnOp({ id: ids.reticle, from: undefined, to: [ids.body], label }));
   } else if (from.aim === 'glass') {
     const reticle = scene.get(ids.reticle);
     if (reticle !== undefined) {
-      ops.push(createTransformOp({
-        id: ids.reticle,
-        from: reticle.pose,
-        to: effectivePose(scene, reticle),
-        label,
-      }));
+      ops.push(
+        createTransformOp({
+          id: ids.reticle,
+          from: reticle.pose,
+          to: effectivePose(scene, reticle),
+          label,
+        }),
+      );
     }
     ops.push(createSetDependsOnOp({ id: ids.reticle, from: [ids.body], to: undefined, label }));
   }

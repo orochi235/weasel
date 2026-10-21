@@ -1,5 +1,5 @@
 // The lens canvas's layer: the whole surface container, taking no input
-// itself. Above the over buffer, which it paints into.
+// itself. Above the top buffer, which it paints into.
 .lk-lens-layer {
   position: absolute;
   inset: 0;
@@ -32,6 +32,11 @@
   &[data-round] {
     border-radius: 50%;
   }
+}
+
+// Stood down for the one hit-test that finds what a wheel over a lens lands on.
+.lk-lens-layer[data-probe] .lk-lens-hit {
+  pointer-events: none;
 }
 
 .lk-lens-interior {
