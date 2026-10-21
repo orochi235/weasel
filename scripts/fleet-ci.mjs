@@ -74,7 +74,7 @@ try {
     const started = Date.now();
     const result = await ontoWhenFree(
       ['do', '--kind', job.kind, '--icon', job.icon, '--in', job.tree, '--ref', base, '--timeout', '90m',
-        '--env', `${COMMIT_ENV}=${commit}`, '--task', `${job.task}-${branch || commit.slice(0, 9)}`, '--about', job.about,
+        '--env', `${COMMIT_ENV}=${commit}`, '--task', `${job.task}-${(branch || commit.slice(0, 9)).replace(/[^A-Za-z0-9.-]/g, '-')}`, '--about', job.about,
         '--expect', job.expect, ...ontoArgs, '--', 'bash', '-c', job.shell],
       { cwd: tree, say },
     );
