@@ -1,7 +1,7 @@
 import type { Path } from '@weasel-js/geom';
 import { type CommandPaint, type CommandStroke, dashPattern, isSolidPaint, type Stroke } from '@weasel-js/paint';
 import { markerDrawCommands, resolveStrokeLengths } from '@weasel-js/renderer';
-import { strokeInsets, strokeToPath } from '@weasel-js/stroke';
+import { dashLength, strokeInsets, strokeToPath } from '@weasel-js/stroke';
 import { solidColor } from './color';
 import { type DrawState, type PageCtx, skip, writeCommands } from './drawCommands';
 import { NonFiniteNumber, num } from './num';
@@ -18,15 +18,19 @@ export function isNative(stroke: CommandStroke, width: number): boolean {
   return start === 0 && end === 0;
 }
 
-/** The line style operators for a native stroke; the caller sets its color. */
-export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number): void {
+/**
+ * The line style operators for a native stroke; the caller sets its color.
+ * `length` is the stroked path's, from `dashLength`, so a dash too fine for
+ * it goes solid here as it does in the renderer.
+ */
+export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: number, length?: number): void {
   const { out } = ctx;
   out.op('w', width);
   out.op('J', CAPS[stroke.cap ?? 'butt']);
   out.op('j', JOINS[stroke.join ?? 'miter']);
   out.op('M', stroke.miterLimit ?? 4);
   // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
-  const dash = dashPattern(stroke.dash);
+  const dash = dashPattern(stroke.dash, length);
   if (dash === 'non-finite') throw new NonFiniteNumber(`pdf: cannot write non-finite dash ${stroke.dash}`);
   if (dash !== 'solid') out.op('d', `[${dash.map(num).join(' ')}]`, 0);
 }
@@ -49,7 +53,7 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   out.op('q');
   out.op('gs', `/${ctx.resources.extGState(alpha, alpha)}`);
   out.op('RG', ...rgb);
-  strokeStyleOps(ctx, stroke, width);
+  strokeStyleOps(ctx, stroke, width, stroke.dash ? dashLength(path) : undefined);
   pathOps(out, path, 'all');
   out.op('S');
   out.op('Q');

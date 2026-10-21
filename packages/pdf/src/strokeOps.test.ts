@@ -160,6 +160,7 @@ describe('writeStroke', () => {
     expect(await stroked([1 / 3, 2])).toContain('[0.3333 2] 0 d\n');
     expect(await stroked([0, 0])).not.toMatch(/ d\n/);
     expect(await stroked([5, -1])).not.toMatch(/ d\n/);
+    expect(await stroked([1e-9, 1e-9])).not.toMatch(/ d\n/);
   });
 
   it('drops a stroke whose dash has a non-finite entry, as the renderer draws none', async () => {

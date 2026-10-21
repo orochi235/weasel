@@ -206,6 +206,20 @@ describe('tessellateStroke dash patterns', () => {
     }
   });
 
+  // Without the bound this makes 1e11 runs; see the timeout note above.
+  it('strokes a dash too fine for its line solid', { timeout: 2000 }, () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0, 0, 10, 1e-7, 10]),
+      fillRule: 'nonzero',
+    };
+    const solid = tessellateStroke(path, { paint: { color: '#000' }, width: 4 });
+    const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash: [1e-9, 1e-9] });
+    expect(Array.from(mesh.indices)).toEqual(Array.from(solid.indices));
+    expect(Array.from(mesh.vertices)).toEqual(Array.from(solid.vertices));
+  });
+
   it('draws no stroke for a dash with a non-finite entry', { timeout: 2000 }, () => {
     const path: PolygonPath = {
       kind: 'polygon',

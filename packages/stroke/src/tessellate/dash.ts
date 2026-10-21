@@ -1,4 +1,5 @@
-import { anchorParamsBetween, type Polyline } from '@weasel-js/geom/tessellate';
+import type { Path } from '@weasel-js/geom';
+import { anchorParamsBetween, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPattern } from '@weasel-js/paint';
 
 /** One "on" run being collected: points with their anchor params and, when
@@ -44,16 +45,50 @@ function toPolyline(run: Run, closed = false): Polyline {
 }
 
 /**
+ * The dashed runs of every polyline of one path. Whether the pattern is too
+ * fine to dash is decided once for the whole path, as a PDF reader's own
+ * stroke operator would, so no subpath goes solid while its neighbor dashes.
+ */
+export function dashPolylines(polylines: readonly Polyline[], pattern: readonly number[] | undefined): Polyline[] {
+  const dash = dashPattern(pattern, totalLength(polylines));
+  if (dash === 'solid') return [...polylines];
+  if (dash === 'non-finite') return [];
+  return polylines.flatMap((pl) => splitForDash(pl, dash));
+}
+
+/**
+ * The length a dash pattern runs along `path`, every subpath included: what a
+ * writer handing the dash to another stroker passes to `dashPattern`.
+ */
+export function dashLength(path: Path): number {
+  return totalLength(extractPolylines(path));
+}
+
+function totalLength(polylines: readonly Polyline[]): number {
+  return polylines.reduce((sum, pl) => sum + polylineLength(pl), 0);
+}
+
+/** The length `splitForDash` walks, the closing segment included. */
+function polylineLength(pl: Polyline): number {
+  const p = pl.points;
+  const n = p.length / 2;
+  let len = 0;
+  for (let i = 1; i < n; i++) len += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]);
+  if (pl.closed && n > 1) len += Math.hypot(p[0] - p[n * 2 - 2], p[1] - p[n * 2 - 1]);
+  return len;
+}
+
+/**
  * Split a polyline into open sub-polylines for the "on" portions of a dash
  * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
  * The "off" portions become invisible gaps. Anchor params and per-point
  * widths and offsets are carried through: a dash boundary landing mid-segment takes
  * {@link anchorParamsBetween}'s params and the width interpolated there.
- * A dash {@link dashPattern} reads as solid returns `pl` whole, and a
- * non-finite one returns nothing.
+ * A dash {@link dashPattern} reads as solid along `pl` returns `pl` whole,
+ * and a non-finite one returns nothing.
  */
 export function splitForDash(pl: Polyline, pattern: readonly number[]): Polyline[] {
-  const dash = dashPattern(pattern);
+  const dash = dashPattern(pattern, polylineLength(pl));
   if (dash === 'solid') return [pl];
   if (dash === 'non-finite') return [];
   const out: Polyline[] = [];
