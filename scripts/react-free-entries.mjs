@@ -19,6 +19,10 @@ export const REACT_FREE_ENTRIES = [
     why: 'the geometry and simulation half, for a server with no DOM',
   },
   {
+    spec: '@weasel-js/core/json',
+    why: "stableStringify, which forge's dev-server capture endpoint keys its cache with in Node",
+  },
+  {
     spec: '@weasel-js/font/metrics',
     why: 'atlas and face metrics and CSS family names, which diagram/layout measures with',
   },

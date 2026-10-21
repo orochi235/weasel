@@ -31,6 +31,7 @@ import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { GlobalsMenus } from './globalsMenu';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { LAB_DENSITY } from './labDensity';
 import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
@@ -188,7 +189,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
             <LiveLensesContext.Provider value={liveLenses}>
               <Lab
                 title={title}
-                density="roomy"
+                density={LAB_DENSITY}
                 {...(labTheme ? { theme: labTheme } : {})}
                 instruments={instruments}
                 defaultInstrument={readRoute() ?? first.id}

@@ -1,9 +1,13 @@
 import './capture.css';
 import { useLatest, useVisibleRaf } from '@weasel-js/core';
-import { LabRoot } from '@weasel-js/labkit';
+import { interstellarTheme, LabRoot } from '@weasel-js/labkit';
+import type { Theme } from '@weasel-js/theme';
+import { ThemeProvider } from '@weasel-js/theme/react';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useHostConditions } from '../../shell/hostConditions';
+import { LAB_DENSITY } from '../../shell/labDensity';
+import type { Globals } from '../../protocol/messages';
 import type { LoadedStory, StoryContext } from '../../story/types';
 import { ClockContext } from '../../timeline/context';
 import { useStoryClock } from '../../timeline/StoryClock';
@@ -16,6 +20,8 @@ export interface CaptureViewProps {
   story: LoadedStory;
   payload: CapturePayload;
   setup: FrameSetup;
+  /** The shell config's `labTheme`, which the workshop's lab is themed by. */
+  labTheme?: ((globals: Globals) => Theme) | undefined;
   /** Called once the story has painted with its fonts, so a screenshot taken then shows it settled. */
   onRendered: () => void;
 }
@@ -30,9 +36,10 @@ const boxStyle = ({ width, height }: CapturePayload['box']): CSSProperties =>
 /**
  * One story rendered from a capture payload, still: its clock stands at the payload's playhead and nothing plays
  * it, and nothing it writes to its config or state goes anywhere. A story that would be in the workshop document
- * sits under a lab root, as it does there; an isolated one sits in the frame document's own wrapper.
+ * sits under a lab root themed as the lab is, as it does there; an isolated one sits in the frame document's own
+ * wrapper.
  */
-export function CaptureView({ story, payload, setup, onRendered }: CaptureViewProps) {
+export function CaptureView({ story, payload, setup, labTheme, onRendered }: CaptureViewProps) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   useHostConditions(host, { hostId: HOST_ID, globals: payload.globals, overrides: payload.overrides, setup });
 
@@ -107,5 +114,13 @@ export function CaptureView({ story, payload, setup, onRendered }: CaptureViewPr
       )}
     </div>
   );
-  return payload.isolate ? box : <LabRoot>{box}</LabRoot>;
+  if (payload.isolate) return box;
+  return (
+    <ThemeProvider
+      theme={labTheme?.(payload.lab.globals) ?? interstellarTheme}
+      selection={{ mode: payload.lab.mode, density: LAB_DENSITY }}
+    >
+      <LabRoot>{box}</LabRoot>
+    </ThemeProvider>
+  );
 }

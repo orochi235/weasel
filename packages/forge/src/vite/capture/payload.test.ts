@@ -12,6 +12,7 @@ const valid: CapturePayload = {
   box: { width: 320, height: 200 },
   layout: 'centered',
   dpr: 2,
+  lab: { globals: { theme: 'chrome' }, mode: 'dark' },
 };
 
 describe('parsePayload', () => {
@@ -36,6 +37,8 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, overrides: { '--x': 1 } })).toEqual({ error: expect.stringContaining('overrides') });
     expect(parsePayload({ ...valid, playhead: 'soon' })).toEqual({ error: expect.stringContaining('playhead') });
     expect(parsePayload({ ...valid, globals: [] })).toEqual({ error: expect.stringContaining('globals') });
+    expect(parsePayload({ ...valid, lab: { globals: {}, mode: 'auto' } })).toEqual({ error: expect.stringContaining('lab') });
+    expect(parsePayload({ ...valid, lab: undefined })).toEqual({ error: expect.stringContaining('lab') });
   });
 
   it('drops fields the payload does not define', () => {

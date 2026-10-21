@@ -44,6 +44,7 @@
       "@weasel-js/core/resize": ["./packages/core/src/import-shims/resize.ts"],
       "@weasel-js/core/clipboard": ["./packages/core/src/import-shims/clipboard.ts"],
       "@weasel-js/core/clone": ["./packages/core/src/import-shims/clone.ts"],
+      "@weasel-js/core/json": ["./packages/core/src/import-shims/json.ts"],
       "@weasel-js/core/devtools": ["./packages/core/src/import-shims/devtools.ts"],
       "@weasel-js/core/devtools-protocol": ["./packages/core/src/import-shims/devtools-protocol.ts"],
       "@weasel-js/core/patterns-builtin": ["./packages/core/src/import-shims/patterns-builtin.ts"],

@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { stableStringify } from '@weasel-js/core/json';
 import type { ViteDevServer } from 'vite';
-import { type CaptureBrowser, launchCaptureBrowser, QUEUE_FULL } from './browser.ts';
+import { type CaptureBrowser, captureAvailability, launchCaptureBrowser, QUEUE_FULL } from './browser.ts';
 import { createCaptureCache } from './cache.ts';
 import { CAPTURE_PAGES, CAPTURE_PATH, type CapturePayload, parsePayload } from './payload.ts';
 
@@ -17,16 +18,36 @@ const MAX_BODY = 16 * 1024 * 1024;
 
 type Launched = CaptureBrowser | { unavailable: string };
 
-// The same canonical JSON as core's `stableStringify`, which this realm cannot import: core's barrel pulls in
-// component stylesheets that Node cannot load.
-const stable = (value: unknown): string =>
-  JSON.stringify(value, (_key, v: unknown) =>
-    v && typeof v === 'object' && !Array.isArray(v)
-      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)))
-      : v,
-  );
+const keyOf = (payload: CapturePayload) => createHash('sha1').update(stableStringify(payload)).digest('hex');
 
-const keyOf = (payload: CapturePayload) => createHash('sha1').update(stable(payload)).digest('hex');
+const hostOf = (address: string) => {
+  const v4 = address.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/, '');
+  return v4.includes(':') ? `[${v4}]` : v4;
+};
+
+/**
+ * The origin the request arrived on, read from its socket. Never from its `Host` header, which the client writes:
+ * the capture page is loaded from here, and a forged host would have Chromium screenshot someone else's page.
+ */
+const socketOrigin = (req: IncomingMessage, protocol: string) =>
+  `${protocol}://${hostOf(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`;
+
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/** Whether a browser's `Origin` names this server: the address the request came in on, a loopback name for its
+ *  port, or one of the URLs vite printed for it. */
+function ownOrigin(origin: string, req: IncomingMessage, protocol: string, server: ViteDevServer): boolean {
+  let url: URL;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (url.origin === socketOrigin(req, protocol)) return true;
+  if (url.protocol === `${protocol}:` && LOOPBACK.has(url.hostname) && url.port === String(req.socket.localPort)) return true;
+  const printed = [...(server.resolvedUrls?.local ?? []), ...(server.resolvedUrls?.network ?? [])];
+  return printed.some((u) => new URL(u).origin === url.origin);
+}
 
 const json = (res: ServerResponse, status: number, body: unknown) => {
   res.statusCode = status;
@@ -50,7 +71,7 @@ function readBody(req: IncomingMessage): Promise<string | null> {
 /**
  * Answers `<base>__forge/capture`: a GET says whether Pixels is available, and a POST of a `CapturePayload` answers
  * with a PNG of the story rendered from it, from the cache when the same payload was captured since the last
- * `revise()`. Chromium starts on the first request that needs it.
+ * `revise()`. Chromium starts on the first POST that is not served from the cache.
  */
 export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoint {
   const cache = createCaptureCache();
@@ -70,7 +91,15 @@ export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoi
     return launched;
   };
 
+  const protocol = server.config.server.https ? 'https' : 'http';
+
   const capture = async (req: IncomingMessage, res: ServerResponse) => {
+    const origin = req.headers.origin;
+    if (origin !== undefined && !ownOrigin(origin, req, protocol, server)) {
+      return json(res, 403, { error: 'a capture is only taken for this server’s own pages' });
+    }
+    const type = (req.headers['content-type'] ?? '').split(';')[0]?.trim().toLowerCase();
+    if (type !== 'application/json') return json(res, 415, { error: 'a capture payload is sent as application/json' });
     const body = await readBody(req);
     if (body === null) return json(res, 413, { error: 'capture payload is too large' });
     let parsed: unknown;
@@ -87,7 +116,7 @@ export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoi
     if (!png) {
       const result = await browser();
       if ('unavailable' in result) return json(res, 503, { available: false, reason: result.unavailable });
-      const page = `http://${req.headers.host ?? 'localhost'}${base}${payload.isolate ? CAPTURE_PAGES.frame : CAPTURE_PAGES.shell}`;
+      const page = `${socketOrigin(req, protocol)}${base}${payload.isolate ? CAPTURE_PAGES.frame : CAPTURE_PAGES.shell}`;
       const at = revision;
       try {
         png = await result.capture(page, payload);
@@ -103,8 +132,9 @@ export function serveCapture(server: ViteDevServer, base: string): CaptureEndpoi
     res.end(png);
   };
 
+  /** Answered without starting Chromium; a launch failure surfaces on the first POST instead. */
   const status = async (res: ServerResponse) => {
-    const result = await browser();
+    const result = await captureAvailability();
     json(res, 200, 'unavailable' in result ? { available: false, reason: result.unavailable } : { available: true });
   };
 

@@ -1,6 +1,16 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { type CaptureBrowser, IDLE_CLOSE_MS, INSTALL_PLAYWRIGHT, launchCaptureBrowser, QUEUE_CAP, QUEUE_FULL } from './browser';
+import {
+  type CaptureBrowser,
+  captureAvailability,
+  IDLE_CLOSE_MS,
+  INSTALL_CHROMIUM,
+  INSTALL_PLAYWRIGHT,
+  launchCaptureBrowser,
+  QUEUE_CAP,
+  QUEUE_FULL,
+  SHOT_DEADLINE_MS,
+} from './browser';
 import type { CapturePayload } from './payload';
 
 const payload: CapturePayload = {
@@ -14,11 +24,15 @@ const payload: CapturePayload = {
   box: { width: 100.5, height: 50 },
   layout: 'padded',
   dpr: 2,
+  lab: { globals: {}, mode: 'light' },
 };
 
-/** A stand-in for Playwright recording what forge asks of it. `hold` keeps each screenshot pending until released. */
-function fakePlaywright({ hold = false } = {}) {
+/** A stand-in for Playwright recording what forge asks of it. `hold` keeps each screenshot pending until released;
+ *  the first `hang` renders never settle. */
+function fakePlaywright({ hold = false, hang = 0 } = {}) {
+  let hangs = hang;
   const launches: { closed: boolean }[] = [];
+  const pagesClosed: number[] = [];
   const contexts: number[] = [];
   const viewports: unknown[] = [];
   const pending: (() => void)[] = [];
@@ -28,14 +42,16 @@ function fakePlaywright({ hold = false } = {}) {
     },
     goto: async () => null,
     waitForFunction: async () => null,
-    evaluate: async () => undefined,
+    evaluate: () => (hangs-- > 0 ? new Promise(() => {}) : Promise.resolve(undefined)),
     locator: () => ({
       screenshot: () =>
         hold
           ? new Promise<Buffer>((resolve) => pending.push(() => resolve(Buffer.from('png'))))
           : Promise.resolve(Buffer.from('png')),
     }),
-    close: async () => {},
+    close: async () => {
+      pagesClosed.push(1);
+    },
   };
   const playwright = {
     chromium: {
@@ -54,7 +70,7 @@ function fakePlaywright({ hold = false } = {}) {
       },
     },
   };
-  return { load: async () => playwright as never, launches, contexts, viewports, pending };
+  return { load: async () => playwright as never, launches, contexts, viewports, pending, pagesClosed };
 }
 
 const launched = async (load: () => Promise<never>): Promise<CaptureBrowser> => {
@@ -64,6 +80,24 @@ const launched = async (load: () => Promise<never>): Promise<CaptureBrowser> => 
 };
 
 afterEach(() => vi.useRealTimers());
+
+describe('captureAvailability', () => {
+  const withExecutable = (path: string) => async () => ({ chromium: { executablePath: () => path } }) as never;
+
+  it('says Pixels is available when Playwright loads and its Chromium is installed, launching nothing', async () => {
+    expect(await captureAvailability(withExecutable(process.execPath))).toEqual({ available: true });
+  });
+
+  it('asks for Playwright when it cannot be loaded', async () => {
+    expect(await captureAvailability(() => Promise.reject(new Error('Cannot find package')))).toEqual({
+      unavailable: INSTALL_PLAYWRIGHT,
+    });
+  });
+
+  it('asks for Chromium when Playwright has none installed', async () => {
+    expect(await captureAvailability(withExecutable('/no/such/chromium'))).toEqual({ unavailable: INSTALL_CHROMIUM });
+  });
+});
 
 describe('launchCaptureBrowser', () => {
   it('reports "install playwright" when Playwright cannot be loaded', async () => {
@@ -104,6 +138,20 @@ describe('launchCaptureBrowser', () => {
     expect(fake.launches[1]!.closed).toBe(false);
     await browser.close();
     expect(fake.launches[1]!.closed).toBe(true);
+  });
+
+  it('fails a capture that has not finished in 20 s, closes its page, and takes the next', async () => {
+    vi.useFakeTimers();
+    const fake = fakePlaywright({ hang: 1 });
+    const browser = await launched(fake.load);
+    const stuck = browser.capture('http://x/', payload);
+    const failed = expect(stuck).rejects.toThrow('capture took longer than 20 s');
+    await vi.advanceTimersByTimeAsync(SHOT_DEADLINE_MS);
+    await failed;
+    expect(fake.pagesClosed.length).toBeGreaterThan(0);
+
+    await expect(browser.capture('http://x/', payload)).resolves.toEqual(Buffer.from('png'));
+    await browser.close();
   });
 
   it('refuses a capture past eight outstanding, and takes captures one at a time', async () => {

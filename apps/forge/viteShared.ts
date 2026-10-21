@@ -24,3 +24,6 @@ export function forgeAliases(repoRoot: string): ViteAlias[] {
     },
   ]);
 }
+
+/** A forge capture page, which wake leaves alone: its badge would sit over the story in every capture. */
+export const skipWake = (path: string): boolean => path.split('?')[0]!.includes('/__forge/');

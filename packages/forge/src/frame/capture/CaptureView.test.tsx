@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { interstellarTheme } from '@weasel-js/labkit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { LoadedStory, StoryContext } from '../../story/types';
@@ -46,6 +47,7 @@ const payload: CapturePayload = {
   box: { width: 320, height: 200 },
   layout: 'padded',
   dpr: 2,
+  lab: { globals: { theme: 'chrome' }, mode: 'light' },
 };
 
 describe('CaptureView', () => {
@@ -69,5 +71,21 @@ describe('CaptureView', () => {
     expect(rules.find((r) => r.includes('[data-fg-host="capture"]'))).toContain('--wzl-accent: red;');
 
     await waitFor(() => expect(onRendered).toHaveBeenCalledTimes(1));
+  });
+
+  it('renders the story under the lab’s theme, at the lab’s mode', async () => {
+    const theme = { ...interstellarTheme, name: 'chrome-test' };
+    const labTheme = vi.fn(() => theme);
+    const onRendered = vi.fn();
+    const dark = { ...payload, lab: { globals: { theme: 'chrome' }, mode: 'dark' as const } };
+    const { container } = render(<CaptureView story={story} payload={dark} setup={{}} labTheme={labTheme} onRendered={onRendered} />);
+    const box = container.querySelector<HTMLElement>('[data-fg-capture]')!;
+    const themed = box.closest<HTMLElement>('[data-wzl-theme]');
+    expect(themed?.dataset.wzlTheme).toBe('chrome-test');
+    expect(themed?.dataset.wzlMode).toBe('dark');
+    expect(themed?.dataset.wzlDensity).toBe('roomy');
+    expect(box.closest('.lk-root')).not.toBeNull();
+    expect(labTheme).toHaveBeenCalledWith({ theme: 'chrome' });
+    await waitFor(() => expect(onRendered).toHaveBeenCalled());
   });
 });

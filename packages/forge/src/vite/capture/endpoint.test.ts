@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer as createHttpServer, type Server } from 'node:http';
+import { createServer as createHttpServer, request, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,11 +11,12 @@ import type { CaptureBrowser } from './browser';
 import type { CapturePayload } from './payload';
 
 const launch = vi.hoisted(() => vi.fn());
+const availability = vi.hoisted(() => vi.fn());
 vi.mock('./browser', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./browser')>();
-  return { ...actual, launchCaptureBrowser: launch };
+  return { ...actual, launchCaptureBrowser: launch, captureAvailability: availability };
 });
-const { launchCaptureBrowser: realLaunch } = await vi.importActual<typeof import('./browser')>('./browser');
+const real = await vi.importActual<typeof import('./browser')>('./browser');
 
 const POLLED = { usePolling: true, interval: 50 };
 
@@ -40,15 +41,20 @@ const payload: CapturePayload = {
   box: { width: 100, height: 50 },
   layout: 'padded',
   dpr: 1,
+  lab: { globals: {}, mode: 'light' },
 };
 
 /** A real PNG signature followed by a counter, so each capture's bytes are its own. */
 const pngNumbered = (n: number) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from([n])]);
 
+const fakeBrowser = (capture = vi.fn(async () => pngNumbered(1))) =>
+  ({ capture, close: vi.fn(async () => {}) }) satisfies CaptureBrowser;
+
 describe('capture endpoint', () => {
   let root: string;
   let server: ViteDevServer;
   let http: Server;
+  let port: number;
   let url: string;
 
   const start = async (base = '/') => {
@@ -65,13 +71,32 @@ describe('capture endpoint', () => {
       logLevel: 'silent',
     });
     http = createHttpServer(server.middlewares);
-    await new Promise<void>((done) => http.listen(0, 'localhost', done));
-    url = `http://localhost:${(http.address() as AddressInfo).port}${base}`;
+    await new Promise<void>((done) => http.listen(0, '127.0.0.1', done));
+    port = (http.address() as AddressInfo).port;
+    url = `http://127.0.0.1:${port}${base}`;
   };
-  const post = (body: unknown) =>
-    fetch(`${url}__forge/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const post = (body: unknown, headers: Record<string, string> = {}) =>
+    fetch(`${url}__forge/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
+    });
+  /** A POST with headers `fetch` will not let a caller write, `Host` among them. */
+  const rawPost = (body: unknown, headers: Record<string, string>) =>
+    new Promise<number>((resolve, reject) => {
+      const req = request(`${url}__forge/capture`, { method: 'POST', headers }, (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      });
+      req.on('error', reject);
+      req.end(JSON.stringify(body));
+    });
 
-  beforeEach(() => launch.mockReset());
+  beforeEach(() => {
+    launch.mockReset();
+    availability.mockReset();
+    availability.mockResolvedValue({ available: true });
+  });
   afterEach(async () => {
     await new Promise((done) => http?.close(done));
     await server?.close();
@@ -79,7 +104,9 @@ describe('capture endpoint', () => {
   });
 
   it('reports itself unavailable without playwright, and answers a POST with 503', async () => {
-    launch.mockImplementation(() => realLaunch(() => Promise.reject(new Error("Cannot find package 'playwright'"))));
+    const missing = () => Promise.reject(new Error("Cannot find package 'playwright'"));
+    availability.mockImplementation(() => real.captureAvailability(missing));
+    launch.mockImplementation(() => real.launchCaptureBrowser(missing));
     await start();
     const status = await fetch(`${url}__forge/capture`);
     expect(status.status).toBe(200);
@@ -90,19 +117,55 @@ describe('capture endpoint', () => {
     expect(await res.json()).toEqual({ available: false, reason: 'install playwright' });
   });
 
+  it('answers a GET without launching Chromium, and reports a launch failure on the first POST', async () => {
+    launch.mockResolvedValue({ unavailable: 'Executable doesn’t exist' });
+    await start();
+    expect(await (await fetch(`${url}__forge/capture`)).json()).toEqual({ available: true });
+    expect(launch).not.toHaveBeenCalled();
+
+    const res = await post(payload);
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ available: false, reason: 'Executable doesn’t exist' });
+  });
+
   it('answers a malformed payload with 400, naming the field', async () => {
-    launch.mockResolvedValue({ capture: vi.fn(), close: vi.fn(async () => {}) } satisfies CaptureBrowser);
+    launch.mockResolvedValue(fakeBrowser());
     await start();
     const res = await post({ ...payload, dpr: 9 });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: expect.stringContaining('dpr') });
   });
 
+  it('loads the capture page from its own socket, whatever Host the request names', async () => {
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
+    await start();
+    const status = await rawPost(payload, { 'Content-Type': 'application/json', Host: '203.0.113.5:1234' });
+    expect(status).toBe(200);
+    expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload);
+  });
+
+  it('refuses a POST that is not JSON with 415', async () => {
+    launch.mockResolvedValue(fakeBrowser());
+    await start();
+    const res = await post(payload, { 'Content-Type': 'text/plain' });
+    expect(res.status).toBe(415);
+  });
+
+  it('refuses a POST from another origin with 403, and takes one from its own', async () => {
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
+    await start();
+    expect((await post(payload, { Origin: 'http://203.0.113.5:8080' })).status).toBe(403);
+    expect(browser.capture).not.toHaveBeenCalled();
+    expect((await post(payload, { Origin: `http://localhost:${port}` })).status).toBe(200);
+    expect((await post(payload, { Origin: `http://127.0.0.1:${port}` })).status).toBe(200);
+  });
+
   it('serves a cached capture without launching again, and captures afresh after a story edit', async () => {
     let n = 0;
-    const capture = vi.fn(async () => pngNumbered((n += 1)));
-    const close = vi.fn(async () => {});
-    launch.mockResolvedValue({ capture, close } satisfies CaptureBrowser);
+    const browser = fakeBrowser(vi.fn(async () => pngNumbered((n += 1))));
+    launch.mockResolvedValue(browser);
     await start();
 
     const first = await post(payload);
@@ -110,11 +173,11 @@ describe('capture endpoint', () => {
     expect(first.headers.get('content-type')).toBe('image/png');
     const firstBytes = Buffer.from(await first.arrayBuffer());
     expect(firstBytes).toEqual(pngNumbered(1));
-    expect(capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload);
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload);
 
     const again = await post(payload);
     expect(Buffer.from(await again.arrayBuffer())).toEqual(firstBytes);
-    expect(capture).toHaveBeenCalledTimes(1);
+    expect(browser.capture).toHaveBeenCalledTimes(1);
     expect(launch).toHaveBeenCalledTimes(1);
 
     // The client graph has to hold the story for vite to hand the edit to `hotUpdate`.
@@ -127,23 +190,23 @@ describe('capture endpoint', () => {
       },
       { timeout: 15_000, interval: 100 },
     );
-    expect(capture).toHaveBeenCalledTimes(2);
+    expect(browser.capture).toHaveBeenCalledTimes(2);
     expect(launch).toHaveBeenCalledTimes(1);
 
     await server.close();
-    expect(close).toHaveBeenCalledTimes(1);
+    expect(browser.close).toHaveBeenCalledTimes(1);
   });
 
   it('captures an isolated story on the frame page', async () => {
-    const capture = vi.fn(async () => pngNumbered(1));
-    launch.mockResolvedValue({ capture, close: vi.fn(async () => {}) } satisfies CaptureBrowser);
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
     await start();
     await post({ ...payload, isolate: true });
-    expect(capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true });
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true });
   });
 
   it('serves the capture pages under base', async () => {
-    launch.mockResolvedValue({ capture: vi.fn(), close: vi.fn(async () => {}) } satisfies CaptureBrowser);
+    launch.mockResolvedValue(fakeBrowser());
     await start('/base/');
     const shell = await fetch(`${url}__forge/capture.html`);
     expect(shell.status).toBe(200);

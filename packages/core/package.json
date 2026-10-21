@@ -75,6 +75,10 @@
       "import": "./dist/clone.js",
       "types": "./dist/clone.d.ts"
     },
+    "./json": {
+      "import": "./dist/json.js",
+      "types": "./dist/json.d.ts"
+    },
     "./devtools": {
       "import": "./dist/devtools.js",
       "types": "./dist/devtools.d.ts"
