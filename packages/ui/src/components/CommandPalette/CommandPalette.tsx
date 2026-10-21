@@ -92,7 +92,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
     <ul ref={listRef} id={id} className={styles.list} role="listbox" aria-label="Actions">
       {items.filtered.map((item, idx) => {
         const { enabled, reason: code } = items.enabledOf(item);
-        const reason = code ? reasonLabels[code] : undefined;
+        const reason = code ? (reasonLabels[code] ?? code) : undefined;
         const tag = items.tagOf(item);
         const cls = [
           styles.row,

@@ -14,3 +14,14 @@ describe('evaluateEnabled with a point', () => {
     expect(evaluateEnabled(action).enabled).toBe(false);
   });
 });
+
+describe('evaluateEnabled with a reason written as text', () => {
+  it('surfaces the text as the reason', () => {
+    const action: Action = {
+      id: 'full',
+      label: 'Full',
+      enabled: () => 'At most 8 at once',
+    };
+    expect(evaluateEnabled(action)).toEqual({ enabled: false, reason: 'At most 8 at once' });
+  });
+});

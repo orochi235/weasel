@@ -119,7 +119,7 @@ export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
-export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
+export type { ActionDisabledReason as ActionDisabledReasonValue, ActionUnavailable } from './interactions/actions/action';
 export { actionBindings } from './interactions/actions/binding';
 export type { GestureBinding, BoundGesture, BindingSource } from './interactions/actions/binding';
 export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';

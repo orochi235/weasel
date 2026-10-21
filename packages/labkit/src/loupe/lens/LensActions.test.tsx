@@ -9,7 +9,7 @@ import {
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../../instrument/defineInstrument';
 import { Lab } from '../../lab/Lab';
@@ -33,6 +33,7 @@ const Story = defineInstrument<Record<string, never>, Record<string, never>>({
 
 let api: ReturnType<typeof lensApiFixture>;
 let registry: ActionsRegistry;
+let hide: () => void;
 
 function Loupe({ overrides }: { overrides?: BindingOverrides }) {
   const bodyRef = useRef<HTMLElement | null>(null);
@@ -42,9 +43,11 @@ function Loupe({ overrides }: { overrides?: BindingOverrides }) {
   }, []);
   registry = useActionsRegistry() as ActionsRegistry;
   useEffect(() => (overrides ? registry.overrideBindings(overrides) : undefined), [overrides]);
+  const [shown, setShown] = useState(true);
+  hide = () => setShown(false);
   return (
     <>
-      <LensActions api={api} bodyRef={bodyRef} opposite={() => 'dark'} />
+      {shown ? <LensActions api={api} bodyRef={bodyRef} opposite={() => 'dark'} /> : null}
       <KeymapHint />
     </>
   );
@@ -110,6 +113,28 @@ describe('<LensActions>', () => {
     expect(api.scene.history.undoDepth()).toBe(lengthBefore + 2);
     expect(api.scene.overrides.has('l0:reticle' as never)).toBe(false);
     expect(settingsOf(api.scene, 'l0')!.aim).toBe('pinned');
+  });
+
+  it('drops a Follow reticle’s held pose when its lens closes', async () => {
+    const body = await mount();
+    act(() => void registry.trigger(LENS_ACTION_IDS.add));
+    act(() => void registry.trigger(LENS_ACTION_IDS.follow));
+    act(() => {
+      fireEvent.pointerMove(body, { clientX: 50, clientY: 60 });
+    });
+    expect(api.scene.overrides.has('l0:reticle' as never)).toBe(true);
+    act(() => void registry.trigger(LENS_ACTION_IDS.close));
+    expect(api.scene.overrides.has('l0:reticle' as never)).toBe(false);
+  });
+
+  it('uninstalls the keymap and its actions when it unmounts', async () => {
+    const body = await mount();
+    await act(async () => hide());
+    expect(registry.list().some((a) => a.id.startsWith('loupe.') || a.id === 'keymap.loupe')).toBe(false);
+    tap(body, LEADER);
+    expect(hint()).toBeNull();
+    tap(body, { code: 'KeyL', key: 'l' });
+    expect(lensesOf(api.scene)).toHaveLength(0);
   });
 
   it('leaves a pinned reticle where it is when the pointer moves', async () => {

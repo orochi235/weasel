@@ -21,9 +21,10 @@ export interface Carried {
 }
 
 /**
- * Closed enum of reasons an action might report itself as disabled. The
- * consumer (palette, menu, etc.) maps these symbolic values to display
- * strings via its own label map.
+ * The kit's symbolic reasons an action might report itself as disabled. The
+ * consumer (palette, menu, etc.) maps these to display strings via its own
+ * label map. An action may also answer with any other string, which is
+ * display text and shown as is — see {@link ActionUnavailable}.
  */
 export const ActionDisabledReason = {
   SelectionRequired: 'selection-required',
@@ -35,6 +36,10 @@ export const ActionDisabledReason = {
 /** Why an action is unavailable right now. */
 export type ActionDisabledReason =
   (typeof ActionDisabledReason)[keyof typeof ActionDisabledReason];
+
+/** What `enabled` answers with when the action cannot run: one of the
+ *  symbolic {@link ActionDisabledReason}s, or a sentence to show as it is. */
+export type ActionUnavailable = ActionDisabledReason | (string & {});
 
 /**
  * What a palette, menu or toolbar renders for an action. No part of this is
@@ -110,7 +115,8 @@ export interface ActionDispatch extends BindingSource {
   scope?: 'hotkey';
   /**
    * Optional predicate saying whether the action can run right now. Return
-   * `true` when it can, or an `ActionDisabledReason` when it cannot. The
+   * `true` when it can, or an `ActionDisabledReason` or a sentence of display
+   * text when it cannot. The
    * command palette greys out a disabled row, skips it in keyboard nav,
    * ignores clicks, and shows the reason next to the label. The dispatcher
    * skips a disabled action too, on a key as on a pointer, and falls through
@@ -147,7 +153,7 @@ export interface ActionDispatch extends BindingSource {
     deps?: ActionDeps,
     at?: { x: number; y: number },
     carried?: Carried,
-  ) => true | ActionDisabledReason;
+  ) => true | ActionUnavailable;
   /**
    * Whether the action reads as held down right now: bold on the selected
    * text, snapping switched on. A toolbar button draws it as pressed.

@@ -19,7 +19,12 @@ import {
 import { useLatest } from '@weasel-js/react';
 import { type RefObject, useMemo } from 'react';
 import { useLabAmbient } from '../../lab/labAmbient';
-import { createLensActions, createLoupeKeymap, type LensActionApi } from './lensActionDefs';
+import {
+  createLensActions,
+  createLoupeKeymap,
+  LENS_ACTION_IDS,
+  type LensActionApi,
+} from './lensActionDefs';
 
 /** Props for `<LensActions>`. */
 export interface LensActionsProps<C> {
@@ -47,13 +52,20 @@ function FollowDispatch({
   bodyRef: RefObject<HTMLElement | null>;
   registry: ActionsRegistry;
 }) {
+  // It hears `loupe.follow` alone, so no other hover binding on the lab fires from it.
+  const followOnly = useMemo<ActionsRegistry>(
+    () => ({
+      ...registry,
+      list: () => registry.list().filter((a) => a.id === LENS_ACTION_IDS.followMove),
+    }),
+    [registry],
+  );
   useGestureDispatcher({
     canvasRef: bodyRef,
-    actions: registry,
+    actions: followOnly,
     entriesById: NO_TOOLS,
     channels: CHANNELS,
     keyboard: false,
-    hears: 'own',
   });
   return null;
 }

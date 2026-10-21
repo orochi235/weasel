@@ -130,6 +130,33 @@ describe('CommandPalette', () => {
     expect(row.textContent).toContain('Selection required');
   });
 
+  it('shows a reason written as text as it is', () => {
+    function Full() {
+      useAction({
+        id: 'full',
+        label: 'Add another',
+        enabled: () => 'At most 8 at once',
+        invoker: { timing: 'immediate' as const, run: () => {} },
+      });
+      return null;
+    }
+    function FullHarness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <ActionsProvider>
+          <Full />
+          <button type="button" onClick={() => setOpen(true)}>open</button>
+          <CommandPalette open={open} onClose={() => setOpen(false)} />
+        </ActionsProvider>
+      );
+    }
+    renderWithIcons(<FullHarness />);
+    fireEvent.click(screen.getByText('open'));
+    const row = options().find((o) => o.textContent?.includes('Add another'))!;
+    expect(row.getAttribute('aria-disabled')).toBe('true');
+    expect(row.textContent).toContain('At most 8 at once');
+  });
+
   it('opens on the first enabled row, so Enter runs something', async () => {
     const run = vi.fn();
     function DisabledFirst() {

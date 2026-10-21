@@ -4,7 +4,7 @@
  * contract the predicate's JSDoc states — no throwing, under 4ms in dev.
  */
 import type { ActionDeps } from './invoker';
-import { ActionDisabledReason, type Action } from './action';
+import { ActionDisabledReason, type Action, type ActionUnavailable } from './action';
 import { isDev } from '@weasel-js/react';
 
 /**
@@ -12,7 +12,7 @@ import { isDev } from '@weasel-js/react';
  */
 export interface ActionEnabledResult {
   enabled: boolean;
-  reason?: ActionDisabledReason;
+  reason?: ActionUnavailable;
 }
 
 const enabledSlowWarned = new Set<string>();

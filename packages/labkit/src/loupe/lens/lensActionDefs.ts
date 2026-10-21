@@ -114,11 +114,6 @@ function nextDprs(dprs: readonly number[]): readonly number[] {
   return DPR_CYCLE[(at + 1) % DPR_CYCLE.length] as readonly number[];
 }
 
-/** A reason an action is unavailable, written for the person reading it.
- *  `enabled`'s type names only the kit's codes, but the dispatcher and the
- *  palette carry any string through to where it is shown. */
-const because = (text: string) => text as ActionDisabledReason;
-
 /** One immediate action on the current lens, given its id and settings. */
 type Run<C> = (lensId: string, settings: LensSettings<C>) => void;
 type Patch<C> = (s: LensSettings<C>) => Partial<Omit<LensSettings<C>, 'aim'>>;
@@ -138,8 +133,7 @@ function lensActionFactory<C>(api: LensActionApi<C>) {
     enabled: () => {
       const up = lensUp();
       if (up !== true) return up;
-      const ok = enabled();
-      return ok === true ? true : because(ok);
+      return enabled();
     },
     invoker: {
       timing: 'immediate',
@@ -213,14 +207,17 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     label: 'Add lens',
     group: 'loupe',
     enabled: () =>
-      lensesOf(scene).length >= MAX_LENSES ? because(`At most ${MAX_LENSES} lenses at once`) : true,
+      lensesOf(scene).length >= MAX_LENSES ? `At most ${MAX_LENSES} lenses at once` : true,
     invoker: { timing: 'immediate', run: () => void api.add() },
   };
-  const close = on(LENS_ACTION_IDS.close, 'Close lens', (lensId) => {
+  const close = on(LENS_ACTION_IDS.close, 'Close lens', (lensId, s) => {
+    const reticleId = lensIdsOf(scene, `${lensId}:body`)?.reticle;
     // Leader first: it depends on both of the others.
     const ids = lensClosure(scene, [`${lensId}:body`]).reverse();
     const nodes = ids.flatMap((id) => scene.get(id as NodeId) ?? []);
     api.apply(nodes.map((node) => createDeleteOp({ node, label: 'close lens' })));
+    // A Follow reticle's held pose would otherwise outlive the node.
+    if (s.aim === 'follow' && reticleId !== undefined) scene.overrides.clear(reticleId);
   });
   const pinned = on(LENS_ACTION_IDS.pinned, 'Aim: pinned', (lensId, s) => {
     api.apply(pinOps(scene, lensId, s));
