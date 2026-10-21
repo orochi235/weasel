@@ -158,6 +158,23 @@ describe('lens scene', () => {
     // 95 from the body's center: past its rim, but the reticle's rim reaches back inside it.
     scene.setPose('a:reticle' as never, { x: 185, y: 180, width: 40, height: 40 });
     expect(bounds()).toBeNull();
+
+    // Resized to 320 × 80, the body is an ellipse and its patch one of 80 × 20: straight above, each rim is half
+    // its height from its center, not half its width.
+    scene.setPose('a:body' as never, { x: 140, y: 160, width: 320, height: 80 });
+    scene.setPose('a:reticle' as never, { x: 260, y: 0, width: 80, height: 20 });
+    const above = bounds()!;
+    expect([...above.coords.slice(0, 4)].map((v) => Math.round(v * 1000) / 1000)).toEqual([
+      300, 160, 300, 20,
+    ]);
+
+    // A square body of the same box meets a reticle out to its right on its side, half its width out.
+    apply(setLensOps(scene, 'a', { shape: 'square' }));
+    scene.setPose('a:reticle' as never, { x: 600, y: 190, width: 80, height: 20 });
+    const right = bounds()!;
+    expect([...right.coords.slice(0, 4)].map((v) => Math.round(v * 1000) / 1000)).toEqual([
+      460, 200, 600, 200,
+    ]);
   });
 
   it('closes over whole lenses from any one of their nodes', () => {

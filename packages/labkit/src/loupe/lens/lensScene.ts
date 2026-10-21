@@ -48,6 +48,14 @@ const glassPose: DerivePoseFn<RectPose, unknown, string> = (_node, deps) => {
   return body === undefined ? null : patchAt(body.pose, factorOf(body.node), center(body.pose));
 };
 
+/** How far from its center `pose`'s rim lies along the unit direction `(ux, uy)`: on the ellipse or the rect its
+ *  box holds, so a resized body and its patch are met where they are drawn. */
+function rimReach(square: boolean, pose: RectPose, ux: number, uy: number): number {
+  const a = Math.abs(ux) / (pose.width / 2);
+  const b = Math.abs(uy) / (pose.height / 2);
+  return 1 / (square ? Math.max(a, b) : Math.hypot(a, b));
+}
+
 /** Joins the body's rim to the reticle's, or nothing while they overlap. */
 const leaderPath: DerivePathFn<RectPose, unknown, string> = (_node, deps) => {
   const [body, reticle] = deps;
@@ -56,17 +64,17 @@ const leaderPath: DerivePathFn<RectPose, unknown, string> = (_node, deps) => {
   const to = center(reticle.pose);
   const dx = to.x - from.x;
   const dy = to.y - from.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return null;
+  const [ux, uy] = [dx / distance, dy / distance];
   const data = body.node.data as LensNodeData<unknown> | undefined;
   const square = data?.role === 'lens-body' && data.shape === 'square';
-  const reach = square ? Math.max(Math.abs(dx), Math.abs(dy)) : Math.hypot(dx, dy);
-  const half = body.pose.width / 2;
-  const patchHalf = reticle.pose.width / 2;
-  if (reach <= half + patchHalf) return null;
-  const k = half / reach;
-  const j = patchHalf / reach;
+  const k = rimReach(square, body.pose, ux, uy);
+  const j = rimReach(square, reticle.pose, ux, uy);
+  if (distance <= k + j) return null;
   return linePath(
-    { x: from.x + dx * k, y: from.y + dy * k },
-    { x: to.x - dx * j, y: to.y - dy * j },
+    { x: from.x + ux * k, y: from.y + uy * k },
+    { x: to.x - ux * j, y: to.y - uy * j },
   );
 };
 
