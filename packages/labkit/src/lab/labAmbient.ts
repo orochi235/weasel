@@ -13,6 +13,14 @@ export interface LabAmbient {
 
 export const LabAmbientContext = createContext<LabAmbient | null>(null);
 
+/** The ambient entries installed below the lab, by id; empty outside one. */
+export const LabEntriesContext = createContext<ReadonlyMap<string, Contribution<never>>>(new Map());
+
+/** What `useLabAmbient` has installed on the lab: its keymaps among them. */
+export function useLabEntries(): ReadonlyMap<string, Contribution<never>> {
+  return useContext(LabEntriesContext);
+}
+
 /** The installed entries by id, and the installer that changes them. */
 export function useLabAmbientHost(): {
   entriesById: ReadonlyMap<string, Contribution<never>>;

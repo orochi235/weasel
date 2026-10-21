@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { createContext, type ReactNode, useContext } from 'react';
-import { LabAmbientContext, useLabAmbientHost } from './labAmbient';
+import { LabAmbientContext, LabEntriesContext, useLabAmbientHost } from './labAmbient';
 import { LabContextMenusContext } from './labContextMenus';
 
 const CHANNELS = { contextMenu: false, ingest: false } as const;
@@ -67,7 +67,11 @@ function LabKeys({ children }: { children: ReactNode }) {
     keyboard: 'first',
     hears: 'own',
   });
-  return <LabAmbientContext.Provider value={host}>{children}</LabAmbientContext.Provider>;
+  return (
+    <LabAmbientContext.Provider value={host}>
+      <LabEntriesContext.Provider value={entriesById}>{children}</LabEntriesContext.Provider>
+    </LabAmbientContext.Provider>
+  );
 }
 
 /** Declares the lab's context menus on its root's host and draws whichever one opens. */

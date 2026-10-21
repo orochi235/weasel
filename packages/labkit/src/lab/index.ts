@@ -1,5 +1,6 @@
 export { Lab } from './Lab';
 export { LabBoundary, type LabBoundaryProps } from './LabBoundary';
+export { useLabEntries } from './labAmbient';
 export type { LabCommands, LabContextValue } from './LabContext';
 export { LabCommandsContext, LabContext, useLabCommands, useLabContext } from './LabContext';
 export type { LabPaletteProps } from './LabPalette';

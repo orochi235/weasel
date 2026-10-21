@@ -18,6 +18,7 @@ import { DependenciesContext } from './dependencies';
 import { missingInstrument } from './documentInstrument';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CssVarsChrome } from './cssVars/cssVarsChrome';
+import { KeysChrome } from './keys/keysChrome';
 import { infoItem } from './info/infoItem';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
@@ -168,11 +169,13 @@ export function Workshop(props: WorkshopProps) {
   const showsCssVars = config?.cssVars !== false;
   const modeGlobal = config?.loupe?.modeGlobal ?? 'mode';
   const [cssVarsChrome, setCssVarsChrome] = useState<readonly LabContribution[]>([]);
+  const [keysChrome, setKeysChrome] = useState<readonly LabContribution[]>([]);
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
       ...(showsCssVars ? cssVarsChrome : []),
       A11Y_SECTION,
+      ...keysChrome,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
@@ -180,7 +183,7 @@ export function Workshop(props: WorkshopProps) {
       { id: 'fg-loupe', region: 'overlay', render: () => <ForgeLoupe declarations={declarations} modeGlobal={modeGlobal} /> },
       ...(config?.labChrome ?? []),
     ],
-    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, config?.labChrome, modeGlobal],
+    [index, infoCommand, declarations, showsCssVars, cssVarsChrome, keysChrome, config?.labChrome, modeGlobal],
   );
   const [menus, setMenus] = useState<LabMenus>();
   const first = index[0];
@@ -220,6 +223,7 @@ export function Workshop(props: WorkshopProps) {
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />
                 <GlobalsMenus declarations={declarations} onMenus={setMenus} />
                 {showsCssVars ? <CssVarsChrome onChrome={setCssVarsChrome} /> : null}
+                <KeysChrome onChrome={setKeysChrome} />
               </Lab>
             </LoupeProvider>
             </TrialClocksContext.Provider>
