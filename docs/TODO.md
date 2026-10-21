@@ -22,18 +22,11 @@ Priority tags:
 
 - **(P3) Keymap follow-ups.** Keymaps and leaders shipped 2026-10-20 (`docs/taxonomy.md`, "Keymap
   and leader"). Left:
-  (a) `captureKey` reads keystrokes only; a binding editor cannot yet capture a click or a drag.
-  (b) `formatShortcut` draws a key's leader path (`Loupe ▸ 2`), but `formatShortcutParts` and the
-  keycap components draw only the inner key.
-  (c) A keymap's `overlay` never draws: `useContributions` tiers entries without the open keymap.
   (d) forge's loupe ships its controls on plain default keys and is to move them under a keymap
   (`docs/superpowers/specs/2026-10-20-forge-loupe-design.md`, "Keys").
-  (e) A held leader only stays held while its key is down on the keyboard: a leader opened from
-  the palette (`trigger('keymap.<id>')`) is always a tapped one.
   (f) No kit-shipped binding declares an `opts.id`, so an override can only name one by owner and
   position (`select#3`), and `withoutSelectRotate` moves those positions when rotation is off.
   Entry and action derived ids also share one `<id>#n` namespace. Give the kit's bindings ids.
-  (g) Route-conflict reporting and devtools read contribution bindings without their overrides.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
