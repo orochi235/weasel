@@ -64,12 +64,20 @@ export function tapWrapper(ctx: BaseAudioContext, w: NodeWrapper, opts?: Analyse
 }
 
 export function startWrapper(w: NodeWrapper, when: number): void {
-  if (w.running || !w.def.start) return;
+  const { def } = w;
+  if (w.running || !def.start) return;
   w.running = true;
-  w.def.start(when);
+  def.start(when, () => {
+    if (w.def === def) w.running = false;
+  });
 }
 
+/** Stops the def and any a `replace` is still fading out. */
 export function stopWrapper(w: NodeWrapper, when: number): void {
+  for (const o of w.outgoing) {
+    if (o.running) o.def.stop?.(when);
+    o.running = false;
+  }
   if (!w.running) return;
   w.running = false;
   w.def.stop?.(when);

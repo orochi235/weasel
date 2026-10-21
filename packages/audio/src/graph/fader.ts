@@ -5,7 +5,8 @@ export interface Fader {
   readonly gain: GainNode;
   /** Ramp to 1 over `ms`. */
   open(ms: number): void;
-  /** Ramp to 0 over `ms`, then disconnect both ends and call `done`. Idempotent. */
+  /** Ramp to 0 over `ms`, then disconnect both ends and call `done`. A close already
+   *  under way keeps its length, and each distinct `done` runs once when it lands. */
   close(ms: number, done?: () => void): void;
   /** Disconnect now, canceling any pending close. */
   cut(): void;
@@ -25,7 +26,9 @@ export function createFader(
 
   let cancel: (() => void) | null = null;
   let closing = false;
+  let closed = false;
   let cutDone = false;
+  const dones = new Set<() => void>();
 
   const cut = (): void => {
     cancel?.();
@@ -42,14 +45,20 @@ export function createFader(
       writeParam(ctx, gain.gain, 1, ms);
     },
     close(ms, done) {
-      if (closing || cutDone) return;
+      if (closed) done?.();
+      if (closed || cutDone) return;
+      if (done) dones.add(done);
+      if (closing) return;
       closing = true;
       const length = ctx.state === 'running' ? ms : 0;
       writeParam(ctx, gain.gain, 0, length);
       cancel = atAudioTime(ctx, timers, ctx.currentTime + length / 1000, () => {
         cancel = null;
         cut();
-        done?.();
+        closed = true;
+        const all = [...dones];
+        dones.clear();
+        for (const d of all) d();
       });
     },
     cut,
