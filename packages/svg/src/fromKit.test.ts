@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  boundsOfPath as boundsOf, createScene, DEFAULT_SHAPE_FILL, getMarker, pathFromD, registerMarker, solid,
+  boundsOfPath as boundsOf, createScene, getMarker, pathFromD, registerMarker, solid,
   type Paint, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
@@ -131,7 +131,7 @@ describe('svgStrokeFromKit', () => {
 describe('svgLeafFromKit', () => {
   it('draws an absent path fill the way kit:path does', () => {
     const bare = svgLeafFromKit({ path: rect }, BOX) as SvgPathNode;
-    expect(bare.fill).toEqual(svgPaintFromKit(DEFAULT_SHAPE_FILL.paint, BOX));
+    expect(bare.fill).toEqual({ kind: 'none' });
     const stroked = svgLeafFromKit({ path: rect, stroke: { paint: solid('#000'), width: 1 } }, BOX) as SvgPathNode;
     expect(stroked.fill).toEqual({ kind: 'none' });
   });

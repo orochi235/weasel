@@ -137,7 +137,6 @@ export type { Polyline } from '@weasel-js/geom/tessellate';
 export {
   DEFAULT_FILL_COLOR,
   DEFAULT_STROKE_COLOR,
-  DEFAULT_SHAPE_FILL,
   DEFAULT_PALETTE,
   cycleFill,
   GHOST_STROKE,

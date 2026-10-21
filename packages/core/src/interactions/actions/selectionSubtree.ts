@@ -10,21 +10,35 @@ type AnyScene = Scene<unknown, string, unknown>;
 
 /** True when any ancestor of `id` is also in `set` — acting on that ancestor
  *  already reaches this node, so acting on it again would double it. */
-export function hasSelectedAncestor(scene: AnyScene, id: NodeId, set: ReadonlySet<string>): boolean {
-  let parent = scene.get(id)?.parent ?? null;
+export function hasSelectedAncestor(
+  parentOf: (id: string) => string | null,
+  id: string,
+  set: ReadonlySet<string>,
+): boolean {
+  return selectedAncestor(parentOf, id, set) !== null;
+}
+
+/** The nearest ancestor of `id` that is in `set`, or `null`. */
+export function selectedAncestor(
+  parentOf: (id: string) => string | null,
+  id: string,
+  set: ReadonlySet<string>,
+): string | null {
+  let parent = parentOf(id);
   while (parent != null) {
-    if (set.has(parent)) return true;
-    parent = scene.get(parent)?.parent ?? null;
+    if (set.has(parent)) return parent;
+    parent = parentOf(parent);
   }
-  return false;
+  return null;
 }
 
 /** The ids in `ids` that are in the scene and have no selected ancestor. */
 export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[] {
   const set = new Set<string>(ids);
+  const parentOf = (id: string) => scene.get(asNodeId(id))?.parent ?? null;
   return ids
     .map((id) => asNodeId(id))
-    .filter((id) => scene.get(id) !== undefined && !hasSelectedAncestor(scene, id, set));
+    .filter((id) => scene.get(id) !== undefined && !hasSelectedAncestor(parentOf, id, set));
 }
 
 /** Whether `id` draws a path derived from other nodes. Its pose is a

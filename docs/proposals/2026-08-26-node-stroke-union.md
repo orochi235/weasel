@@ -13,10 +13,11 @@ data: { path, fill: solid('#7fb069'), stroke: strokeOf('#1c1c1c', 2) }
 ```
 
 `data.fill` is a `FillStyle` and `data.stroke` is a `Stroke` — paint, width,
-cap, join, dash, miter limit, align. `null` on either is an explicit "no
-paint"; `undefined` takes the painter's fallback, which for a fill is
-`DEFAULT_SHAPE_FILL` except on a path that already has a stroke (the pencil
-case, where a default fill would be wrong). `solid()` and `strokeOf()` are the
+cap, join, dash, miter limit, align. `null` and `undefined` on either both
+mean "no paint": a node paints only what it declares. (Until 2026-10-21 an
+undeclared fill painted `DEFAULT_SHAPE_FILL`, gray, which put a gray box behind
+every group.) A container paints nothing, a fill it declares included
+(2026-10-21): a group is SVG's `<g>`, not a box. `solid()` and `strokeOf()` are the
 authoring helpers — `resolveNodeFill` and `resolveNodeStroke` in `NodeShape.ts`
 are the only readers.
 

@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, useSelection, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScopeIds } from './modeScope';
@@ -38,10 +38,10 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
     const s = createScene({ systemLayers: [{ id: 'main' }] });
     const leaf = (id: string, x: number, data: unknown) =>
       s.add({ id: asNodeId(id), kind: 'leaf', layer: 'main', data, pose: square(x) } as never);
-    leaf('anchored', AT.anchored, { path: pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath });
+    leaf('anchored', AT.anchored, { path: pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath, fill: { paint: solid('#888') } });
     // Routed as a `path`, drawn and picked as its commands, and of a kind path edit cannot open.
     const outline = pathFromD('M 0 0 L 30 0 L 30 30 L 0 30 Z') as PolygonPath;
-    leaf('anchorless', AT.anchorless, { path: { ...outline, kind: 'spiro' } });
+    leaf('anchorless', AT.anchorless, { path: { ...outline, kind: 'spiro' }, fill: { paint: solid('#888') } });
     leaf('text', AT.text, { text: 'hello' });
     const container = (id: string, parent: string | undefined, x: number, width: number) => s.add({
       id: asNodeId(id), kind: 'container', layer: 'main', data: {}, pose: { ...square(x), width },
@@ -49,7 +49,7 @@ function Harness({ machine }: { machine: ModeMachine }): ReactElement {
     } as never);
     const member = (id: string, parent: string, x: number) => s.add({
       id: asNodeId(id), kind: 'leaf', layer: 'main', parent: asNodeId(parent),
-      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath }, pose: square(x),
+      data: { path: pathFromD('M 0 0 L 30 0 L 30 30 Z') as PolygonPath, fill: { paint: solid('#888') } }, pose: square(x),
     } as never);
     container('group', undefined, AT.member, 70);
     member('member', 'group', AT.member);

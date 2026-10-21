@@ -138,7 +138,7 @@ describe('picking', () => {
   });
 
   it('narrows to the painted shape through the same transform', () => {
-    const node = { id: 'a', kind: 'leaf', layer: 'main', pose: STRETCHED, data: { shape: 'ellipse' } };
+    const node = { id: 'a', kind: 'leaf', layer: 'main', pose: STRETCHED, data: { shape: 'ellipse', fill: { paint: { color: '#888' } } } };
     expect(shapeCoversPoint(node as never, STRETCHED, 90, 6)).toBe(true);
     // The stretched ellipse's corner region is bare.
     expect(shapeCoversPoint(node as never, STRETCHED, 98, 0.5)).toBe(false);

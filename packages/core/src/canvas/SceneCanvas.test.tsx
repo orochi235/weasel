@@ -152,26 +152,24 @@ describe('SceneCanvas defaults', () => {
       ]);
     });
 
-    it('falls back to gray when data has no fill', () => {
+    it('paints no fill when data has no fill', () => {
       const node = {
         id: 'a', kind: 'leaf' as const, layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: {}, parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
-      const fill = (cmds[0] as { fill: { paint: { color: string } } }).fill.paint;
-      expect(fill.color).toBe('#888');
+      expect((cmds[0] as { fill?: unknown }).fill).toBeUndefined();
     });
 
-    it('falls back to gray when data is null', () => {
+    it('paints no fill when data is null', () => {
       const node = {
         id: 'a', kind: 'leaf' as const, layer: 'default',
         pose: { x: 0, y: 0, width: 10, height: 10 },
         data: null as never, parent: null,
       };
       const cmds = defaultDrawOne(node as never, node.pose);
-      const fill = (cmds[0] as { fill: { paint: { color: string } } }).fill.paint;
-      expect(fill.color).toBe('#888');
+      expect((cmds[0] as { fill?: unknown }).fill).toBeUndefined();
     });
   });
 

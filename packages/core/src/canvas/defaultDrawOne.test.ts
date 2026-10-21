@@ -31,10 +31,10 @@ describe('defaultDrawOne', () => {
     expect(cmd.fill).toEqual({ paint: { color: '#abc' } });
   });
 
-  it('rect fallback: uses neutral gray when data.fill is missing', () => {
+  it('rect fallback: paints no fill when data.fill is missing', () => {
     const cmds = defaultDrawOne(node({}), POSE);
     const cmd = cmds[0] as PathDrawCommand;
-    expect(cmd.fill).toEqual({ paint: { color: '#888' } });
+    expect(cmd.fill).toBeUndefined();
   });
 
   it('adds a top-left label overlay when data.label is present', () => {

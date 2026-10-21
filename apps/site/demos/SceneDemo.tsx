@@ -4,7 +4,7 @@ import type { SerializedScene, Fill } from '@weasel-js/core';
 import sceneJson from './data/scene.scene.json';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { fill: Fill; label?: string }
+interface NodeData { fill?: Fill; label?: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
 export function SceneDemo() {

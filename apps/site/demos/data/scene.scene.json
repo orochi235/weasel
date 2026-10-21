@@ -20,7 +20,15 @@
       "kind": "container",
       "layer": "structures",
       "pose": { "x": 60, "y": 80, "width": 160, "height": 100 },
-      "data": { "fill": { "paint": { "color": "#d4a574" } }, "label": "Planter" }
+      "data": { "label": "Planter" }
+    },
+    {
+      "id": "planter-1-soil",
+      "parent": "planter-1",
+      "kind": "leaf",
+      "layer": "structures",
+      "pose": { "x": 60, "y": 80, "width": 160, "height": 100 },
+      "data": { "fill": { "paint": { "color": "#d4a574" } } }
     },
     {
       "id": "plant-a",

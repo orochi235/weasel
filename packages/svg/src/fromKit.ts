@@ -6,7 +6,6 @@
  * the canvas shows.
  */
 import {
-  DEFAULT_SHAPE_FILL,
   fillInPoseFrame,
   pathInPoseFrame,
   pathThroughPoseFrame,
@@ -152,7 +151,7 @@ export function svgLeafFromKit(
   }
   if (!data.path) return null;
   const stroke = svgStrokeFromKit(data.stroke, pose);
-  const fill = data.fill !== undefined ? data.fill : stroke ? null : DEFAULT_SHAPE_FILL;
+  const fill = data.fill;
   const node: SvgPathNode = {
     kind: 'path',
     path: pathInPoseFrame(data.path, pose),

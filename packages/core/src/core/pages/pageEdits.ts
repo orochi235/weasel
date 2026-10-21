@@ -7,7 +7,7 @@ import {
   RECT_POSE_DESCRIPTOR, poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor,
 } from '../geometry/poseDescriptor';
 import { carriedDescendants, sceneCarrySource } from '../scene/carryDescendants';
-import { effectivePose } from '../scene/effectivePose';
+import { effectivePose, isEnvelope } from '../scene/effectivePose';
 import type { NodeId, Scene } from '../scene/types';
 import { layoutPages, pageOfBounds, type Page, type PageLayoutOptions, type PlacedPage } from './pages';
 
@@ -80,10 +80,9 @@ export function pageMembers<TData, TLayer extends string, TPose>(
   return out;
 }
 
-/** Whether a node's pose derives from its children, so moving them moves it. */
 function derivesPose(scene: AnyScene, id: NodeId): boolean {
   const node = scene.get(id);
-  return node?.dependsOn === 'children' && node.derivePose !== undefined;
+  return node !== undefined && isEnvelope(node);
 }
 
 /** The stored poses that move root `id` and what it carries by `dx`, `dy`: the

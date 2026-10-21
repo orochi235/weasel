@@ -299,5 +299,11 @@ export function effectivePose<TPose>(
  * frame — and the composition fold passes over it.
  */
 export function definesFrame(node: { dependsOn?: unknown; derivePose?: unknown }): boolean {
-  return !(node.dependsOn === 'children' && node.derivePose !== undefined);
+  return !isEnvelope(node);
+}
+
+/** Whether `node` derives its pose from its children: a group that is its
+ *  members, so moving them moves it. */
+export function isEnvelope(node: { dependsOn?: unknown; derivePose?: unknown }): boolean {
+  return node.dependsOn === 'children' && node.derivePose !== undefined;
 }
