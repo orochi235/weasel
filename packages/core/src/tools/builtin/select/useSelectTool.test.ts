@@ -127,6 +127,26 @@ describe('useSelectTool', () => {
     expect(sel.applyClick).not.toHaveBeenCalled();
   });
 
+  it('pressing a member of a selected group defers, so a drag moves the group and a click selects the member', () => {
+    const parents: Record<string, string | null> = { g: null, inner: 'g', m: 'inner' };
+    const adapter = { ...minimalAdapter, getParent: (id: string) => parents[id] ?? null } as any;
+    const { result } = renderHook(() => useSelectTool(adapter, { pickEvery: () => ['m'] } as any));
+    const sel = selectionStub(['g']);
+    press(result.current, sel.api);
+    expect(sel.applyClick).not.toHaveBeenCalled();
+    expect(release(result.current, sel.api)).toBe('ran');
+    expect(sel.applyClick).toHaveBeenCalledWith('m', NO_MODS);
+  });
+
+  it('shift-pressing a member of a selected group extends on the press, as any extend does', () => {
+    const parents: Record<string, string | null> = { g: null, m: 'g' };
+    const adapter = { ...minimalAdapter, getParent: (id: string) => parents[id] ?? null } as any;
+    const { result } = renderHook(() => useSelectTool(adapter, { pickEvery: () => ['m'] } as any));
+    const sel = selectionStub(['g']);
+    press(result.current, sel.api, { mods: { shift: true } });
+    expect(sel.applyClick).toHaveBeenCalledWith('m', { ...NO_MODS, shift: true });
+  });
+
   it('a sub-threshold release after a deferred press collapses to the pressed id', () => {
     const tool = mount({ pickEvery: () => ['a'] });
     const sel = selectionStub(['a', 'b', 'c']);

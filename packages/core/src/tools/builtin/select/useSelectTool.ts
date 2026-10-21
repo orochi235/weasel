@@ -11,6 +11,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
+import { hasSelectedAncestor } from '../../../interactions/actions/selectionSubtree';
 import { adapterPointQuery } from './adapterPointQuery';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -114,11 +115,11 @@ export type SelectAdapter<TNode extends { id: string }, TPose> =
  */
 interface PressClassification {
   /**
-   * Set when the press hit an already-selected node inside a multi-selection
-   * with no extend modifier.
+   * Set when a press with no extend modifier hit an already-selected node
+   * inside a multi-selection, or a node inside a selected group.
    *
    * The selection is deliberately NOT collapsed on the press: the user may be
-   * starting a drag of the whole set. If the gesture turns out to be a click,
+   * starting a drag of the whole set, or of the group. If the gesture turns out to be a click,
    * `select.collapseDeferred` collapses to this id on release.
    */
   deferredClickId: string | null;
@@ -208,12 +209,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         }
 
         const hitAlreadySelected = sel.includes(top as NodeId);
+        const insideSelected = !hitAlreadySelected
+          && hasSelectedAncestor((id) => adapterRef.current.getParent(id), top, new Set<string>(sel));
         const isExtend = mods.shift || mods.meta;
         // See `extendClickLocked`. An option rather than `Action.enabled`
         // because it only applies to *extend* presses, and `enabled` is
         // evaluated without the event's modifiers.
         const extendLocked = isExtend && opts.extendClickLocked?.() === true;
-        const deferClick = hitAlreadySelected && sel.length > 1 && !isExtend;
+        const deferClick = ((hitAlreadySelected && sel.length > 1) || insideSelected) && !isExtend;
         if (!deferClick && !extendLocked) {
           selection.applyClick(top as NodeId, mods);
         }
