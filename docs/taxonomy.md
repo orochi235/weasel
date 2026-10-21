@@ -479,7 +479,9 @@ the same key and it opens mid-gesture too (decided 2026-10-20).
 here that means a modifier combination (`BROWSER_RESERVED_CHORDS`).
 
 Tapping the leader opens the keymap for the next input. Holding it keeps the
-keymap open until the key comes up, through any number of inputs. The keyboard
+keymap open until the key comes up, through any number of inputs. A leader triggered with no key
+(`trigger('keymap.<id>')`, from a palette or a menu) is a tap; with `{ hold: true }` it holds the
+keymap open until Escape (decided 2026-10-20). The keyboard
 channel tells the two apart: a keystroke that opened a level holds it until
 that key's keyup, and the level closes then if any input reached it meanwhile.
 A keymap may bind a leader of its own, so open keymaps form a stack

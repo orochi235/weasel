@@ -8,7 +8,7 @@ import type { GestureSpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { BoundGesture, GestureBinding } from '../interactions/actions/binding';
 import type { Contribution } from '../contributions/types';
-import type { KeymapUnbound } from './keymapStack';
+import { KEYMAP_HOLD, type KeymapUnbound } from './keymapStack';
 
 /** What {@link keymapContribution} builds a keymap and its leader from. */
 export interface KeymapDef {
@@ -46,7 +46,9 @@ export function leaderBindings(def: Pick<KeymapDef, 'id' | 'leader'>): BoundGest
 const isPlainEscape = (spec: GestureSpec): boolean =>
   spec.kind === 'key' && [spec.key].flat().includes('Escape') && Object.values(spec.mods ?? {}).every((m) => m !== true);
 
-/** `[keymap entry, leader entry]`. Install both, with `<SceneCanvas ambient>`
+/** `[keymap entry, leader entry]`. Triggered without a key, the leader opens
+ *  its keymap tapped; `trigger('keymap.<id>', { hold: true })` holds it open
+ *  until Escape. Install both, with `<SceneCanvas ambient>`
  *  or `useTools`'s `ambient`; the leader entry carries the actions. */
 export function keymapContribution(def: KeymapDef): Contribution<never>[] {
   if (def.bindings.some((b) => isPlainEscape(b.spec))) {
@@ -59,7 +61,12 @@ export function keymapContribution(def: KeymapDef): Contribution<never>[] {
     defaultBinding: leaderBindings(def),
     requires: ['keymaps'],
     enabled: (deps) => (deps?.keymaps ? true : ActionDisabledReason.NotApplicable),
-    invoker: { timing: 'immediate', run: (deps) => { deps.keymaps?.push(def.id, def.label, { bindings: def.bindings }); } },
+    invoker: {
+      timing: 'immediate',
+      run: (deps, params) => {
+        deps.keymaps?.push(def.id, def.label, { bindings: def.bindings, ...(params?.hold === true ? { heldBy: KEYMAP_HOLD } : {}) });
+      },
+    },
   };
   return [
     {

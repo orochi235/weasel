@@ -11,13 +11,17 @@ import type { GestureBinding } from '../interactions/actions/binding';
  *  keymap open; `'cascade'` closes the keymap and dispatches it as if none were. */
 export type KeymapUnbound = 'modal' | 'cascade';
 
+/** What holds a level opened with `{ hold: true }` open: no key releases it, so it closes on Escape. */
+export const KEYMAP_HOLD = 'hold';
+
 /** One open level of a {@link KeymapStack}. */
 export interface OpenKeymap {
   readonly id: string;
   readonly label: string;
   /** The keymap's bindings as declared, for a hint to list. */
   readonly bindings: readonly GestureBinding[];
-  /** The gesture id of the leader holding this level open, while it is held. */
+  /** The gesture id of the leader holding this level open, while it is held,
+   *  or {@link KEYMAP_HOLD}. */
   readonly heldBy?: string;
   /** Whether input arrived while the leader was held, so its release closes the level. */
   readonly usedWhileHeld: boolean;

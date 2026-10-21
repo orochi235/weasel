@@ -173,7 +173,7 @@ export type { ContributionDeps } from '@weasel-js/routing';
 export { assembleEntries, liveScope, scopeBindings, modeShortcuts, modeShortcutSpec } from '@weasel-js/routing';
 export type { AssemblyInputs } from '@weasel-js/routing';
 export type { ModeShortcutHandlers } from '@weasel-js/routing';
-export { captureKey, createKeymapStack, describeKeymap, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';
+export { captureKey, createKeymapStack, describeKeymap, KEYMAP_HOLD, keymapContribution, keymapLeaderBindingId, keymapLeaderId, keymapShortcuts } from '@weasel-js/routing';
 export type { CaptureKeyOptions, KeymapDef, KeymapDescription, KeymapRow, KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from '@weasel-js/routing';
 export { bindingSpec, held, key, keySpecRoute, unbound } from '@weasel-js/gestures';
 export type { BindingOverrideInput } from '@weasel-js/gestures';
