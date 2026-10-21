@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
 
@@ -24,7 +25,7 @@ export function ReadoutsAlong({ readouts, place, length }: {
   return (
     <div ref={ref} className={s.readoutsAlong}>
       {readouts.map((r, i) => (
-        <span key={i} data-readout="below" className={s.readoutAlong} style={place(r.g)}>
+        <span key={i} data-readout="below" className={`${s.readoutAlong} ${on.onRun}`} style={place(r.g)}>
           {r.content}
         </span>
       ))}

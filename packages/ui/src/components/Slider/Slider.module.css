@@ -323,12 +323,14 @@
 
 .readoutAlong {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  composes: onRun from '../Along/onRun.module.css';
   font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
   line-height: var(--wzl-leading-tight);
   color: var(--wzl-fg-muted);
   white-space: nowrap;
-  /* Below the stop labels' line, one row per step of --row. */
+}
+
+/* Below the stop labels' line, one row per step of --row. */
+.readoutsAlong > .readoutAlong {
   transform: var(--on-run) translateY(calc(var(--rp-track-height, 24px) / 2 + var(--wzl-space-xs) + (var(--row, 0) + 1.5) * 1lh));
 }

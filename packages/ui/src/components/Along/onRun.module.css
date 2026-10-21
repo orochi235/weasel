@@ -1,5 +1,5 @@
-/* A part placed by `placeOnRun`: centered on its spot and tipped to the run.
- * A rule that moves it further writes `transform: var(--on-run) …`. */
+/* A part placed by `placeOnRun`: centered on its spot and tipped to the run. A rule that moves it further
+ * writes `transform: var(--on-run) …` and must outrank this one: where this sheet loads is not fixed. */
 .onRun {
   --on-run: translate(-50%, -50%) rotate(var(--at-angle));
   position: absolute;
