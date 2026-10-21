@@ -118,6 +118,19 @@ describe('FrameView copy', () => {
     expect(setConfig.mock.calls).toEqual([['size', 3]]);
   });
 
+  it('reports neither its vars nor its audits to the trial’s frame registry', async () => {
+    const report = vi.spyOn(frames, 'report');
+    const reportA11y = vi.spyOn(frames, 'reportA11y');
+    const { frame } = await mountCopy();
+    frame.send({ type: 'vars', vars: [] });
+    frame.send({ type: 'a11y', id: 'a11y-1', ok: false, message: 'nope' });
+    await flush();
+    expect(report).not.toHaveBeenCalled();
+    expect(reportA11y).not.toHaveBeenCalled();
+    expect(frames.get('t1').vars).toEqual([]);
+    expect(frames.get('t1').a11y).toBeNull();
+  });
+
   it('records no answers in the story’s answer book', async () => {
     const record = vi.spyOn(answers, 'record');
     const { frame } = await mountCopy();

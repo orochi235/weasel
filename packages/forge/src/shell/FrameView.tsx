@@ -38,7 +38,7 @@ interface FrameMount {
   src: string;
   slotRef: RefObject<HTMLDivElement | null>;
   iframeRef: RefObject<HTMLIFrameElement | null>;
-  latest: { readonly current: { pool: { claim(): HTMLIFrameElement | null } | null; title: string; copy?: unknown } };
+  latest: { readonly current: { pool: { claim(): HTMLIFrameElement | null } | null; title: string; copy?: FrameViewProps['copy'] } };
   connect: { readonly current: (frame: HTMLIFrameElement) => void };
   link: RefObject<Link | null>;
   handedOn: () => boolean;

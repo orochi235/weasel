@@ -17,7 +17,8 @@
 }
 
 /* Painted in the copy's own mode, so a transparent story does not show the lab through the lens. */
-.fg-lens-copy > .fg-story {
+.fg-lens-copy > .fg-story,
+.fg-lens-copy > .fg-frame-host {
   background: var(--wzl-bg);
 }
 

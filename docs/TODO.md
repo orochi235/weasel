@@ -805,6 +805,13 @@ only story runner in the repo.
   `zoom` instead places the trigger the same and the popover at y 303 too. The lens clips the popover, so nothing
   paints over the lab, but it is out of sight. A fix lies in ui's overlay positioning (a container whose scale it
   undoes) or upstream in react-aria.
+- **(P2) A Live lens on a scrolled isolated story shows a different patch than the one under its reticle**
+  (found 2026-10-21). The lens's copy frame loads at its own scroll position, because the story's scroll lives
+  inside the frame document and no protocol message reports it to the shell; an in-document copy follows its
+  trial's `.fg-story__scroll` (`LensCopy` in `shell/loupe/LiveCopies.tsx`), a frame copy cannot. The fix: the
+  frame reports its scroll to the shell (a new `FromFrame` message), and the shell forwards it to each copy frame of
+  that trial (a new `ToFrame` message that the frame applies to its scroller).
+
 - **(P3) On Linux, a second save within 50 ms of the first can leave the dev server serving the
   first until the next save.** This is chokidar inside vite, not forge, so it hits every vite
   server in the repo. chokidar drops, rather than defers, a `change` that lands within 50 ms of the
