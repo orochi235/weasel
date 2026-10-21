@@ -347,19 +347,19 @@ test('hands a wheel over a lens to whatever is beneath it', async () => {
   await waitFor(() => expect(wheels).toEqual([120]));
 });
 
-test('resizes a body from its bottom handles with its chrome strip drawn, and the reticle with it', async () => {
+test('resizes a body from a bottom corner with its chrome strip drawn, and the reticle with it', async () => {
   await mount({ sources: { live: liveSource } });
   await click(BODY_AT);
   await waitFor(() => expect(scene.getSelection()).toEqual(['a:body']));
   const before = pose('a:body');
-  // The bottom edge's middle handle: the strip hangs below the body, and must not cover it.
-  const [x, y] = client({ x: before.x + before.width / 2, y: before.y + before.height });
+  // A body takes corner handles only. The strip hangs below the body, and must not cover them.
+  const [x, y] = client({ x: before.x + before.width, y: before.y + before.height });
   expect((document.elementFromPoint(x, y) as HTMLElement).dataset.role).toBe('lens-body');
   await commands.pointer([
     { to: [x, y] },
     { down: true },
-    { to: [x, y + 20] },
-    { to: [x, y + 40] },
+    { to: [x + 20, y + 20] },
+    { to: [x + 40, y + 40] },
     { up: true },
   ]);
   await waitFor(() => expect(pose('a:body').height).toBeGreaterThan(BODY_SIZE + 30));

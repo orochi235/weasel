@@ -75,7 +75,7 @@ describe('contrastRatio', () => {
 
   it('is null for a color it cannot parse', () => {
     expect(contrastRatio('papayawhipped', '#fff')).toBeNull();
-    expect(contrastRatio('#000', 'oklch(0.5 0.1 20)')).toBeNull();
+    expect(contrastRatio('#000', 'lab(50 20 30)')).toBeNull();
   });
 });
 

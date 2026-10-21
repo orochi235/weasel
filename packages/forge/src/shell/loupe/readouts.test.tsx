@@ -82,13 +82,13 @@ describe('contrastAt over a Live source', () => {
   });
 
   it('says it cannot read a color paint does not parse, rather than that there is no text', () => {
-    const aim = el('<div style="background-color: white"><p data-aim style="color: oklch(0.5 0.1 20)">Hi</p></div>');
+    const aim = el('<div style="background-color: white"><p data-aim style="color: lab(50 20 30)">Hi</p></div>');
     const got = contrastAt('live', at(aim));
     expect(got).toEqual({ unavailable: expect.stringMatching(/^Cannot read the color/) });
   });
 
   it('says it cannot read an unparseable background instead of calling it opaque', () => {
-    const aim = el('<div style="background-color: color(srgb 1 1 1)"><p data-aim style="color: black">Hi</p></div>');
+    const aim = el('<div style="background-color: lab(100 0 0)"><p data-aim style="color: black">Hi</p></div>');
     expect(contrastAt('live', at(aim))).not.toHaveProperty('ratio');
   });
 
