@@ -122,28 +122,27 @@ const pointer: BrowserCommand<[steps: PointerStep[]]> = async (ctx, steps) => {
   }
 };
 
-/** Two clicks at a client point of the test's frame, the second sent while the
- *  page's main thread is busy for `stallMs`: it happens on time and is handled
- *  once the stall ends. */
+/** Two clicks at a client point of the test's frame, the first release's
+ *  handling followed by a `stallMs` long task: the second click happens on time
+ *  and is handled once the stall ends. */
 const clickAcrossStall: BrowserCommand<[at: [number, number], stallMs: number]> = async (ctx, at, stallMs) => {
   const [x, y] = (await frameToPage(ctx))(at);
   const frame = await ctx.frame();
   const cdp = await ctx.page.context().newCDPSession(ctx.page);
   try {
-    await ctx.page.mouse.click(x, y);
     await frame.evaluate((ms) => {
-      setTimeout(() => {
+      window.addEventListener('pointerup', () => {
         const end = performance.now() + ms;
         while (performance.now() < end) { /* the long task */ }
-      }, 0);
+      }, { once: true });
     }, stallMs);
-    await new Promise((r) => setTimeout(r, 50));
-    // Sent together rather than each once the last is handled, so both queue behind the stall.
-    const button = { x, y, button: 'left', clickCount: 1 } as const;
-    await Promise.all([
-      cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', buttons: 1, ...button }),
-      cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', buttons: 0, ...button }),
-    ]);
+    // All four sent in one burst: a round trip between the clicks would put
+    // the second outside the window whenever the runner is slow.
+    const press = (clickCount: number) => [
+      cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount }),
+      cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount }),
+    ];
+    await Promise.all([...press(1), ...press(2)]);
   } finally {
     await cdp.detach();
   }

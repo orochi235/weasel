@@ -890,12 +890,6 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) `doubleClickStall.browser.test.tsx` failed once in a full fleet run.** "composes a double
-  click whose second click is handled after a long task"
-  (`packages/routing/src/interactions/dispatcher/doubleClickStall.browser.test.tsx`) failed at 4382 ms
-  on studio (onto job e567c1fb, 2026-10-21) in a run of a branch touching only the Prefs schema
-  editor. The test times a stall on purpose, so a loaded node is the first suspect; not looked at.
-
 - **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" once saved no typed text.** In
   Linux CI on 179f2409d (2026-10-21, run 39523286313) `savedBody().row.data.text` stayed `''` past
   the poll after Escape, so the six typed `M`s presumably went somewhere other than the open editor
