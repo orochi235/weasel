@@ -14,13 +14,13 @@ import {
 } from 'react';
 import { auditElement } from '../frame/a11y';
 import { createA11yHighlighter } from '../frame/a11yHighlight';
-import { createOverrides, type Overrides, scanCssVars } from '../frame/cssVars';
+import { scanCssVars } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
 import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
-import { createGlobalsTarget } from '../frame/globalsTarget';
 import type { CssVarReport, Globals, Layout, ToFrame } from '../protocol/messages';
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
+import { useHostConditions } from './hostConditions';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { StoryScroller } from './StoryScroller';
 import { TrialFramesContext } from './trialFrames';
@@ -37,12 +37,14 @@ export interface TrialHostProps {
   hostRef?: RefObject<HTMLElement | null>;
   /** Called once the children's first commit has painted. */
   onRendered?: () => void;
+  /**
+   * Makes this host a second copy of the trial's story: it takes `id` as its host id and `globals` in place of the
+   * computed ones, carries `data-fg-copy`, and stays out of the frame registry, the a11y highlighter and `onRendered`.
+   */
+  copy?: { id: string; globals: Globals };
 }
 
 const VARS_SETTLE_MS = 100;
-
-/** A selector matching only the element carrying `id`. */
-const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
 
 /**
  * The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a document of
@@ -62,30 +64,29 @@ function StoryContent({ host, children }: { host: HTMLElement; children: ReactNo
  * itself, keeps its CSS variable overrides on itself, contains fixed-position descendants and portals, reports its
  * vars and audits to the trial's frame registry, and unmounts its content while out of view.
  */
-export function TrialHost({ layout, setup, config, children, hostRef, onRendered }: TrialHostProps) {
+export function TrialHost({ layout, setup, config, children, hostRef, onRendered, copy }: TrialHostProps) {
   const trialId = useContext(TrialIdContext);
   const frames = useContext(TrialFramesContext);
   const labGlobals = useContext(StoryGlobalsContext);
   const pins = (config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY];
-  const globals = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
+  const computed = useMemo(() => effectiveGlobals(labGlobals, pins), [labGlobals, pins]);
+  const globals = copy?.globals ?? computed;
   const [persisted] = useCssOverrides();
   const reactId = useId();
-  const hostId = trialId ?? reactId;
+  const hostId = copy?.id ?? trialId ?? reactId;
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
   const inView = useNearViewport(elementRef, IN_VIEW_MARGIN);
   const [pending, setPending] = useState(true);
-  const overridesRef = useRef<Overrides | null>(null);
-  const latest = useLatest({ setup, onRendered });
+  const latest = useLatest({ onRendered: copy ? undefined : onRendered });
 
-  // Everything the host owns for its lifetime: the globals target, the overrides rule, the registry connection.
+  const overridesRef = useHostConditions(host, { hostId, globals, overrides: persisted, setup });
+
+  // The registry connection: the host's vars and audits, reported to the trial. A copy has none.
   useLayoutEffect(() => {
-    if (!host) return;
+    const overrides = overridesRef.current;
+    if (!host || !overrides || copy) return;
     const doc = host.ownerDocument;
-    const scope = scopeOf(hostId);
-    const { cssVarsScope } = latest.current.setup;
-    const overrides = createOverrides(doc, cssVarsScope ? `${scope}, ${scope} :is(${cssVarsScope})` : scope);
-    overridesRef.current = overrides;
     let lastVars: CssVarReport[] | null = null;
     let reported: string | null = null;
     const publish = (vars: CssVarReport[]) => {
@@ -131,27 +132,8 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       highlighter.dispose();
       mutations?.disconnect();
       clearTimeout(settleTimer);
-      overrides.dispose();
-      overridesRef.current = null;
     };
-  }, [host, hostId, trialId, frames, latest]);
-
-  // The overrides the trial persisted, put back on every mount and kept in step with the panel's edits.
-  const applied = useRef<Record<string, string>>({});
-  useLayoutEffect(() => {
-    const overrides = overridesRef.current;
-    if (!overrides) return;
-    for (const name of Object.keys(applied.current)) if (!(name in persisted)) overrides.set(name, null);
-    for (const [name, value] of Object.entries(persisted)) overrides.set(name, value);
-    applied.current = { ...persisted };
-  }, [host, persisted]);
-
-  useLayoutEffect(() => {
-    if (!host) return;
-    const target = createGlobalsTarget(host, scopeOf(hostId));
-    latest.current.setup.applyGlobals?.(globals, target);
-    return () => target.dispose();
-  }, [host, hostId, globals, latest]);
+  }, [host, hostId, trialId, frames, copy, overridesRef]);
 
   // The host is hidden until its first commit has painted with its fonts, so a new trial never shows a jump.
   const announced = useRef(false);
@@ -185,6 +167,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       }}
       className="fg-story"
       data-fg-host={hostId}
+      data-fg-copy={copy ? '' : undefined}
       data-fg-layout={layout}
       data-pending={pending || undefined}
     >
