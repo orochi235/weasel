@@ -18,6 +18,7 @@ import { ActionBar } from './ActionBar';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { renderWithIcons } from '../../testing/withIcons';
+import barStyles from '../Bar/Bar.module.css';
 
 /**
  * Test harness: registers a set of `Action` descriptors on mount via
@@ -283,6 +284,13 @@ describe('ActionBar', () => {
     );
     const root = container.querySelector('[role="toolbar"]') as HTMLElement;
     expect(root.classList.contains('custom-cls')).toBe(true);
+  });
+
+  it("sits on Bar's segmented strip, not a framed one", () => {
+    renderWithIcons(<ActionBar group="demo" />);
+    const toolbar = screen.getByRole('toolbar');
+    expect(toolbar).toHaveClass(barStyles.segmented);
+    expect(toolbar).not.toHaveClass(barStyles.framed);
   });
 
   it('renders nothing (empty toolbar) when no ActionsProvider is in scope', () => {
