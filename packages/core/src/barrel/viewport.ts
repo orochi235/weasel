@@ -113,10 +113,13 @@ export type { CanvasViewProps, ViewRect } from '../canvas/CanvasView';
 export type { CanvasViewCamera } from '../canvas/canvasExtension';
 // `<ViewMarker>` outlines one view's aim inside another's frame.
 export { ViewMarker } from '../canvas/ViewMarker';
-export { createViewMarkerLayer, VIEW_MARKER_DEFAULT_STYLE } from '../features/viewports/viewMarker';
-export type {
-  ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource,
+export {
+  createViewMarkerLayer, grabViewMarker, VIEW_MARKER_DEFAULT_STYLE, VIEW_MARKER_HIT_SLOP_PX,
 } from '../features/viewports/viewMarker';
+export type {
+  ViewMarkerProps, ViewMarkerStyle, ViewMarkerHost, AimSource, ViewMarkerGrab,
+} from '../features/viewports/viewMarker';
+export { VIEW_MARKER_DRAG, viewMarkerDragAction } from '../features/viewports/viewMarkerDrag';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a

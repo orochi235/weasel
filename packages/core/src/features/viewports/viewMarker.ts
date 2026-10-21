@@ -1,7 +1,7 @@
-import { polygonFromPoints } from '@weasel-js/geom';
+import { pointInPolygon, pointSegmentDist2, polygonFromPoints } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { aimSpace2d, type ViewAim } from './aim';
+import { aimSpace2d, type AimOutline, type AimSpace, type ViewAim } from './aim';
 
 /** An aim handed in by value (another surface's view, a 3D pane), with the writer that moves it. */
 export interface AimSource {
@@ -69,4 +69,54 @@ export function createViewMarkerLayer(props: () => ViewMarkerProps, host: ViewMa
       }];
     },
   };
+}
+
+/** A press on a marker, held for the drag: where it started, and the aim it started from. */
+export interface ViewMarkerGrab {
+  readonly markerId: string;
+  /** Pan the source so the world point under the press ends up under `world`, a point in the target's world. */
+  moveTo(world: { x: number; y: number }): void;
+}
+
+/** A press this many screen px outside the outline still counts. */
+export const VIEW_MARKER_HIT_SLOP_PX = 4;
+
+/**
+ * The grab for a press at frame px `at` in `space`, the marker's target, or
+ * `null` when the marker is not interactive, its source has no writer or no
+ * aim, or `at` is not on its outline or within {@link VIEW_MARKER_HIT_SLOP_PX} of it.
+ */
+export function grabViewMarker(
+  props: ViewMarkerProps,
+  host: ViewMarkerHost,
+  space: AimSpace,
+  at: { x: number; y: number },
+): ViewMarkerGrab | null {
+  const { id, source, target, interactive } = props;
+  if (interactive === false || source === target) return null;
+  const write = source === null || typeof source === 'string'
+    ? (aim: ViewAim) => { host.setAim(source, aim); }
+    : source.setAim?.bind(source);
+  if (!write) return null;
+  const startAim = markerSourceAim(source, host);
+  const outline = startAim?.outlineIn(space);
+  if (!startAim || !outline || !outlineHolds(outline, at, VIEW_MARKER_HIT_SLOP_PX)) return null;
+  return {
+    markerId: id,
+    moveTo: (world) => {
+      const to = space.project(world);
+      const next = to && startAim.pannedIn(space, at, to);
+      if (next) write(next);
+    },
+  };
+}
+
+function outlineHolds(outline: AimOutline, p: { x: number; y: number }, slop: number): boolean {
+  if (pointInPolygon(outline.flatMap((q) => [q.x, q.y]), p.x, p.y)) return true;
+  for (let i = 0; i < outline.length; i++) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % outline.length]!;
+    if (pointSegmentDist2(p.x, p.y, a.x, a.y, b.x, b.y) <= slop * slop) return true;
+  }
+  return false;
 }

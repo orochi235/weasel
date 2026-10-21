@@ -7,6 +7,7 @@ import { render, act } from '@testing-library/react';
 import { createRef, type RefObject } from 'react';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
+import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { ViewMarker } from './ViewMarker';
 import { createScene } from 'core/scene/scene';
 import { mergeContributions, type SurfaceContribution } from './surfaceContribution';
@@ -104,5 +105,19 @@ describe('<ViewMarker>', () => {
       [{ id: 'a', eligibility: { always: true }, markers: [m] }],
       [{ id: 'b', eligibility: { always: true }, markers: [m] }],
     )).toThrow(/marker "m"/);
+  });
+
+  // Ruling I: a press routes to a marker by id, so two live markers may not share one.
+  it('refuses to register a marker id already live on the surface', () => {
+    let registry: ViewRegistry | null = null;
+    function Probe() {
+      registry = useOptionalViewRegistry();
+      return null;
+    }
+    render(<ViewRegistryProvider><Probe /></ViewRegistryProvider>);
+    const off = registry!.registerMarker(() => MARKER);
+    expect(() => registry!.registerMarker(() => ({ ...MARKER, target: null }))).toThrow(/marker "m" is already on this surface/);
+    off();
+    expect(() => registry!.registerMarker(() => MARKER)).not.toThrow();
   });
 });

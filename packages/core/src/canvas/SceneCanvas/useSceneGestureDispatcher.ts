@@ -149,9 +149,11 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
       // widgets to its own action instead of the active tool.
       const extra = canvasApiRef.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
       if (extra) return layerAffordance(extra.layerId, extra.hit);
+      const marker = viewRegistry?.markerAt(null, worldPoint);
+      if (marker) return marker;
       return affordanceAt ? affordanceAt(worldPoint) : null;
     };
-  }, [affordanceAt, canvasApiRef]);
+  }, [affordanceAt, canvasApiRef, viewRegistry]);
 }
 
 /** Which body a world point lands on, its selection state, and its routing kind. */

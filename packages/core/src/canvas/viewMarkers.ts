@@ -1,0 +1,80 @@
+/**
+ * The marker half of a surface's view registry: which markers are live, the
+ * layers they draw, and which one a press lands on.
+ */
+import type { Dims, RenderLayer } from 'core/layers/render';
+import type { AffordanceHit } from '@weasel-js/routing';
+import { aimSpace2d, type AimSpace } from 'features/viewports/aim';
+import type { ResolvableView } from 'features/viewports/viewResolver';
+import type { View } from 'core/viewport/view';
+import {
+  createViewMarkerLayer, grabViewMarker, type ViewMarkerHost, type ViewMarkerProps,
+} from 'features/viewports/viewMarker';
+import { layerAffordance } from './affordanceAt';
+
+/** @internal Composed into `ViewRegistry`. */
+export interface ViewMarkerRegistry {
+  /** Returns an unregister. `props` is read at every draw. Throws on an id
+   *  already live on the surface. */
+  registerMarker(props: () => ViewMarkerProps): () => void;
+  /** The layers of the markers drawn in `target`'s frame, in mount order. */
+  markerLayers(target: string | null): readonly RenderLayer<unknown>[];
+  /** The topmost interactive marker drawn in `target` under `world` (a point
+   *  in `target`'s world), as the affordance a press there routes. */
+  markerAt(target: string | null, world: { x: number; y: number }): AffordanceHit | null;
+}
+
+/** What the marker half reads off the rest of the registry. */
+export interface ViewMarkerRegistryDeps {
+  host: ViewMarkerHost;
+  /** The surface's camera and size, or `null` before one attaches. */
+  surface(): { view(): View; dims(): Dims } | null;
+  /** View `id` resolved against the surface, or `undefined` while there is none. */
+  resolve(id: string, outer: View, dims: Dims): ResolvableView | undefined;
+  changed(): void;
+}
+
+/** @internal */
+export function createViewMarkerRegistry(
+  markers: Map<() => ViewMarkerProps, RenderLayer<unknown>>,
+  deps: ViewMarkerRegistryDeps,
+): ViewMarkerRegistry {
+  const targetSpace = (target: string | null): AimSpace | null => {
+    const surface = deps.surface();
+    if (!surface) return null;
+    if (target === null) return aimSpace2d(null, surface.view(), surface.dims());
+    const v = deps.resolve(target, surface.view(), surface.dims());
+    return v ? aimSpace2d(target, v.view, { width: v.rect.w, height: v.rect.h }) : null;
+  };
+  return {
+    registerMarker: (props) => {
+      const { id } = props();
+      for (const live of markers.keys()) {
+        if (live().id === id) {
+          throw new Error(`registerMarker: marker "${id}" is already on this surface. Marker ids are unique per surface; rename one.`);
+        }
+      }
+      markers.set(props, createViewMarkerLayer(props, deps.host));
+      deps.changed();
+      return () => { markers.delete(props); deps.changed(); };
+    },
+    markerLayers: (target) => {
+      const out: RenderLayer<unknown>[] = [];
+      for (const [props, layer] of markers) if (props().target === target) out.push(layer);
+      return out;
+    },
+    markerAt: (target, world) => {
+      const space = targetSpace(target);
+      const at = space?.project(world);
+      if (!space || !at) return null;
+      const live = [...markers.keys()];
+      for (let i = live.length - 1; i >= 0; i--) {
+        const props = live[i]!();
+        if (props.target !== target) continue;
+        const grab = grabViewMarker(props, deps.host, space, at);
+        if (grab) return layerAffordance(`view-marker:${props.id}`, { initialScratch: grab });
+      }
+      return null;
+    },
+  };
+}

@@ -215,9 +215,9 @@ export function CanvasView(props: CanvasViewProps): null {
       const extra = registry?.surface()?.hitTestExtras(
         world.x, world.y, camera(), sizeOf(rectNow()), helpersRef.current, drawnLayers(),
       );
-      return extra ? layerAffordance(extra.layerId, extra.hit) : inner(world);
+      return extra ? layerAffordance(extra.layerId, extra.hit) : registry?.markerAt(id, world) ?? inner(world);
     };
-  }, [getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, helpersRef]);
+  }, [id, getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, helpersRef]);
 
   const classifyTarget = useMemo(() => buildClassifyTarget(
     () => live.current.selection.get(),

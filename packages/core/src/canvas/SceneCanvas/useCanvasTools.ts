@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Action } from '@weasel-js/routing';
 import { createLongPressFeedbackContribution } from '../../features/longPress/longPressFeedback';
+import { createViewMarkerContribution } from '../../features/viewports/viewMarkerDrag';
 import { useTools, type Contribution, type Tool, type ToolsApi } from '../../tools/overlayBinding';
 import {
   presetActions,
@@ -92,9 +93,10 @@ export function useCanvasTools(args: {
   const defaultPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = args.pressFeedback ?? true;
   const pressFeedback = feedbackOpt === true ? defaultPressFeedback : feedbackOpt || null;
+  const markerDrag = useMemo(() => createViewMarkerContribution(), []);
   const mergedAmbient = useMemo(
-    () => [...presetContributions(enabled), ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : [])],
-    [enabled, ambient, pressFeedback],
+    () => [...presetContributions(enabled), ...(ambient ?? []), ...(pressFeedback ? [pressFeedback] : []), markerDrag],
+    [enabled, ambient, pressFeedback, markerDrag],
   );
 
   const internal = useTools({

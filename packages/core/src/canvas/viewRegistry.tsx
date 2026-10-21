@@ -19,7 +19,8 @@ import { createEmitter } from '@weasel-js/registry';
 import type { ViewAt } from './canvasExtension';
 import { isRectAim, rectAim, viewForAim, type ViewAim } from 'features/viewports/aim';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { createViewMarkerLayer, type ViewMarkerProps } from 'features/viewports/viewMarker';
+import type { ViewMarkerProps } from 'features/viewports/viewMarker';
+import { createViewMarkerRegistry, type ViewMarkerRegistry } from './viewMarkers';
 
 /**
  * What a view needs from the surface hosting it.
@@ -123,7 +124,7 @@ export interface ViewRegistration {
 
 
 /** @internal */
-export interface ViewRegistry {
+export interface ViewRegistry extends ViewMarkerRegistry {
   /** Returns an unregister. */
   register(reg: ViewRegistration): () => void;
   /** Live registrations in paint order, each nested view after the view it
@@ -138,10 +139,6 @@ export interface ViewRegistry {
   aimOf(id: string | null): ViewAim | null;
   /** Point view `id` at `aim`; `false` when it cannot. */
   setAim(id: string | null, aim: ViewAim): boolean;
-  /** Returns an unregister. `props` is read at every draw. */
-  registerMarker(props: () => ViewMarkerProps): () => void;
-  /** The layers of the markers drawn in `target`'s frame, in mount order. */
-  markerLayers(target: string | null): readonly RenderLayer<unknown>[];
   /** Bumped whenever the list changes. Pair with {@link ViewRegistry.subscribe}
    *  for `useSyncExternalStore`. */
   getVersion(): number;
@@ -235,16 +232,12 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
         surface.setView(viewForAim(aim.extent, surface.dims(), 'exact'));
         return true;
       },
-      registerMarker: (props) => {
-        markersRef.current.set(props, createViewMarkerLayer(props, registry));
-        changed();
-        return () => { markersRef.current.delete(props); changed(); };
-      },
-      markerLayers: (target) => {
-        const out: RenderLayer<unknown>[] = [];
-        for (const [props, layer] of markersRef.current) if (props().target === target) out.push(layer);
-        return out;
-      },
+      ...createViewMarkerRegistry(markersRef.current, {
+        host: { aimOf: (id) => registry.aimOf(id), setAim: (id, aim) => registry.setAim(id, aim) },
+        surface: () => surfaceRef.current,
+        resolve: (id, outer, dims) => get(id)?.layer.resolvable(outer, dims),
+        changed,
+      }),
       getVersion: () => versionRef.current,
       subscribe: listeners.subscribe,
       surface: () => surfaceRef.current,
