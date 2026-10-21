@@ -7,11 +7,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { registerCanvasFont } from '@weasel-js/font';
 import '@weasel-js/theme/tokens.css';
-import { CHART_PAGE } from './chartDocument';
 import { CHART_SCENE_KEY } from './chartPersistence';
 import { chartPrefs } from './prefs';
 import { STENCIL_MIME } from './stencilDrop';
+import { at } from './testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from './testing/mountChartApp';
+import { click, drag } from './testing/pointer';
 
 registerCanvasFont('sans-serif');
 
@@ -43,45 +44,6 @@ const role = (r: string) => saved().filter((n) => n.data.diagram?.container?.rol
 const bodies = () => saved().filter((n) => n.kind === 'container' && n.data.diagram?.outline && !n.data.diagram.container);
 const byId = (id: string) => saved().find((n) => n.id === id)!;
 const lanesInOrder = () => role('lane').sort((a, b) => a.pose.y - b.pose.y);
-
-/** Client point of a world point: the page is fitted to the workspace with 24px of padding. */
-function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
-  const box = host.getBoundingClientRect();
-  const scale = Math.min((box.width - 48) / CHART_PAGE.width, (box.height - 48) / CHART_PAGE.height);
-  return {
-    x: box.left + box.width / 2 + (x - CHART_PAGE.width / 2) * scale,
-    y: box.top + box.height / 2 + (y - CHART_PAGE.height / 2) * scale,
-  };
-}
-
-function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
-  el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: 0, buttons: type === 'pointerup' ? 0 : buttons, clientX: p.x, clientY: p.y,
-  }));
-}
-
-const frame = () => new Promise((r) => requestAnimationFrame(r));
-
-async function drag(el: Element, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointermove', from, 0);
-  pointer(el, 'pointerdown', from);
-  for (let i = 1; i <= 8; i++) {
-    pointer(el, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
-    await frame();
-  }
-  pointer(el, 'pointerup', to);
-  await frame();
-}
-
-async function click(el: Element, p: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointermove', p, 0);
-  await frame();
-  pointer(el, 'pointerdown', p);
-  pointer(el, 'pointerup', p);
-  el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: p.x, clientY: p.y }));
-  await frame();
-}
 
 const shapes = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Shapes' }).getByRole('button', { name, exact: true }));
 const useSelect = () => userEvent.click(page.getByRole('toolbar').getByRole('button', { name: /^Select/ }));

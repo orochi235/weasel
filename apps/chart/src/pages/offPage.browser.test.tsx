@@ -11,6 +11,7 @@ import '@weasel-js/theme/tokens.css';
 import { CHART_SCENE_KEY } from '../chartPersistence';
 import { readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
+import { doubleClick, drag } from '../testing/pointer';
 import { PAGE_FIT_PADDING } from './useChartPages';
 
 registerCanvasFont('sans-serif');
@@ -42,32 +43,6 @@ function at(host: HTMLElement, x: number, y: number, fitted = 0): { x: number; y
   const placed = layoutPages(PAGES)[fitted]!;
   const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING });
   return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
-}
-
-function pointer(el: Element, type: string, p: { x: number; y: number }, buttons = 1): void {
-  el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: 0, buttons: type === 'pointerup' ? 0 : buttons, clientX: p.x, clientY: p.y,
-  }));
-}
-
-async function drag(el: Element, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
-  pointer(el, 'pointermove', from, 0);
-  pointer(el, 'pointerdown', from);
-  for (let i = 1; i <= 8; i++) {
-    pointer(el, 'pointermove', { x: from.x + ((to.x - from.x) * i) / 8, y: from.y + ((to.y - from.y) * i) / 8 });
-    await new Promise((r) => requestAnimationFrame(r));
-  }
-  pointer(el, 'pointerup', to);
-}
-
-function doubleClick(el: Element, p: { x: number; y: number }): void {
-  for (let i = 1; i <= 2; i++) {
-    pointer(el, 'pointerdown', p);
-    pointer(el, 'pointerup', p);
-    el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: p.x, clientY: p.y, detail: i }));
-  }
-  el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: p.x, clientY: p.y, detail: 2 }));
 }
 
 const useTool = (name: string) => userEvent.click(page.getByRole('toolbar', { name: 'Tools' }).getByRole('button', { name: new RegExp(`^${name}`) }));
