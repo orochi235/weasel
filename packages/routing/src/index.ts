@@ -45,6 +45,8 @@ export interface DepSchema {
   menuHost?: import('./menus/menuHost').MenuHost;
   /** The canvas's dispatch trace, for a dep to record a mode switch into. */
   dispatchTrace?: import('./interactions/dispatcher/dispatchTrace').DispatchTrace;
+  /** The keymaps open on the canvas: what a leader opens and a hint reads. */
+  keymaps?: import('./keymaps/keymapStack').KeymapStack;
 }
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */

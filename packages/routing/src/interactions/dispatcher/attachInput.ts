@@ -83,6 +83,7 @@ export function attachInput(
     pinch.end();
     pointer.cancelHeld();
     keys.releaseAll();
+    src.context().keymaps?.closeAll();
   };
 
   const listeners = listenerSet();
@@ -153,5 +154,6 @@ export function attachInput(
     held?.release();
     redraw.stop();
     for (const d of src.dispatchers()) d.cancelAll('cancel');
+    src.context().keymaps?.closeAll();
   };
 }

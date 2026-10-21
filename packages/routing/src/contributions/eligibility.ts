@@ -11,6 +11,8 @@ export interface EligibilityState {
   engagedIds?: ReadonlySet<string>;
   /** Whether the active mode allows these capability tags. Omitted → allow. */
   allows?: (tags: readonly CapabilityTag[]) => boolean;
+  /** The innermost open keymap's id: the one keymap entry that is live. */
+  openKeymap?: string | null;
 }
 
 /**
@@ -24,6 +26,7 @@ export function liveScope(
 ): BindingScope | null {
   const tags = eligibility.capabilities;
   if (tags && state.allows && !state.allows(tags)) return null;
+  if (eligibility.keymap) return state.openKeymap === id ? 'hotkey' : null;
   if (state.engagedIds?.has(id)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
   if (eligibility.always || eligibility.claimed) return 'ambient';

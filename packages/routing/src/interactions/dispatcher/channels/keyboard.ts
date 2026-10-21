@@ -53,9 +53,9 @@ export function keyboardInput(core: DispatchCore): {
       return;
     }
 
-    if (press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach)) return;
     // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it.
-    if (typedWithAltGraph(e)) press(e, { altKey: false, ctrlKey: false }, reach);
+    core.batch(() => press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach)
+      || (typedWithAltGraph(e) && press(e, { altKey: false, ctrlKey: false }, reach)));
   };
 
   /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */

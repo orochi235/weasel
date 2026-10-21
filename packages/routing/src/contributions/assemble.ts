@@ -37,6 +37,8 @@ export interface AssemblyInputs {
   /** The capability tags the active mode allows. Omitted: no mode system, so
    *  every entry is allowed. */
   allowedCapabilities?: ReadonlySet<CapabilityTag>;
+  /** The innermost open keymap's id, if one is open. */
+  openKeymap?: string | null;
 }
 
 /**
@@ -68,6 +70,7 @@ export function assembleEntries<T extends Contribution<unknown>>(
     state: {
       focusedId: inputs.focusedId,
       engagedIds: new Set(inputs.hotkeyStack),
+      ...(inputs.openKeymap ? { openKeymap: inputs.openKeymap } : {}),
       ...(allowed ? { allows: (tags: readonly CapabilityTag[]) => capabilitiesAllowed(allowed, tags) } : {}),
     },
   };

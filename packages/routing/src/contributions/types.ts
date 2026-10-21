@@ -2,6 +2,7 @@ import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/action';
 import type { MenuDef } from '../menus/types';
 import type { CapabilityTag } from '@weasel-js/modes';
+import type { KeymapUnbound } from '../keymaps/keymapStack';
 import type { DepName, DepSchema, KernelOverlay } from '../index';
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
@@ -52,6 +53,10 @@ export interface Eligibility {
   claimed?: boolean;
   /** Modality filter, applied wherever it would otherwise be live. */
   capabilities?: CapabilityTag[];
+  /** A keymap: live only while it is the innermost one open, at the hotkey
+   *  tier. `unbound` overrides the `gestures.keymapUnbound` kit setting for
+   *  this keymap. Open one with a leader (`keymapContribution`). */
+  keymap?: true | { unbound?: KeymapUnbound };
 }
 
 /**
