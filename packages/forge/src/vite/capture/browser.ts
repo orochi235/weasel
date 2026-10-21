@@ -45,6 +45,44 @@ export async function captureAvailability(load: Load = loadPlaywright): Promise<
   return existsSync(executable) ? { available: true } : { unavailable: INSTALL_CHROMIUM };
 }
 
+/** A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's
+ *  context ignores certificate errors. */
+async function passThrough(route: Route, fetchImpl: typeof fetch): Promise<void> {
+  const request = route.request();
+  try {
+    const response = await fetchImpl(request.url(), { method: request.method(), headers: request.headers() });
+    await route.fulfill({
+      status: response.status,
+      headers: Object.fromEntries(response.headers),
+      body: Buffer.from(await response.arrayBuffer()),
+    });
+  } catch {
+    await route.abort();
+  }
+}
+
+/**
+ * Lets `page` reach nothing but the server `url` came from and the origins in `allow`, whatever a story or an
+ * override asks it to load, and open no WebSocket but that server's own.
+ */
+async function guard(page: Page, url: string, allow: readonly string[], fetchImpl: typeof fetch): Promise<void> {
+  const own = new URL(url);
+  const secure = own.protocol === 'https:';
+  const reach = new Set(allow);
+  await page.route('**/*', (route) => {
+    const origin = new URL(route.request().url()).origin;
+    if (origin === own.origin) return route.continue();
+    if (!reach.has(origin)) return route.abort();
+    return secure ? passThrough(route, fetchImpl) : route.continue();
+  });
+  // Only vite's own client socket connects: closing it would have the client reload the page mid-capture.
+  const ownSocket = `${secure ? 'wss:' : 'ws:'}//${own.host}`;
+  await page.routeWebSocket(
+    (u) => `${u.protocol}//${u.host}` !== ownSocket,
+    (ws) => ws.close(),
+  );
+}
+
 /**
  * Loads Playwright and starts Chromium, or says why it cannot. Chromium closes after `IDLE_CLOSE_MS` with nothing
  * to capture and starts again for the next capture, so there is never more than one.
@@ -112,39 +150,8 @@ export async function launchCaptureBrowser(
     }
     return context;
   };
-  /** A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's
-   *  context ignores certificate errors. */
-  const passThrough = async (route: Route): Promise<void> => {
-    const request = route.request();
-    try {
-      const response = await fetchImpl(request.url(), { method: request.method(), headers: request.headers() });
-      await route.fulfill({
-        status: response.status,
-        headers: Object.fromEntries(response.headers),
-        body: Buffer.from(await response.arrayBuffer()),
-      });
-    } catch {
-      await route.abort();
-    }
-  };
   const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[]): Promise<Buffer> => {
-    // The page reaches nothing but the server it came from and the origins the shell config lists, whatever a story
-    // or an override asks it to load.
-    const own = new URL(url);
-    const secure = own.protocol === 'https:';
-    const reach = new Set(allow);
-    await page.route('**/*', (route) => {
-      const origin = new URL(route.request().url()).origin;
-      if (origin === own.origin) return route.continue();
-      if (!reach.has(origin)) return route.abort();
-      return secure ? passThrough(route) : route.continue();
-    });
-    // Only vite's own client socket connects: closing it would have the client reload the page mid-capture.
-    const ownSocket = `${secure ? 'wss:' : 'ws:'}//${own.host}`;
-    await page.routeWebSocket(
-      (u) => `${u.protocol}//${u.host}` !== ownSocket,
-      (ws) => ws.close(),
-    );
+    await guard(page, url, allow, fetchImpl);
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
     await page.emulateMedia({ colorScheme: payload.colorScheme });
     await page.goto(url);
