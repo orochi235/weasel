@@ -22,6 +22,7 @@ import { heldKeySpec } from '../interactions/actions/toolOffhand';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { hitPredicate } from '@weasel-js/gestures';
 import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
+import { createKeymapStack } from '../keymaps/keymapStack';
 
 const rect: Contribution = {
   id: 'rect',
@@ -95,6 +96,25 @@ describe('overlays follow the assembly the dispatcher routes by', () => {
 // a consumer adding a tool without switching tools saw a live, hittable
 // binding with no palette entry and no chrome — the "visible implies hittable"
 // invariant inverted.
+describe('a keymap draws its overlay while it is the innermost one open', () => {
+  it('draws at its position while open and stops when it closes', () => {
+    const stack = createKeymapStack();
+    const loupe: Contribution = { ...withOverlay({ id: 'loupe', eligibility: { keymap: true } }), overlayPosition: 'after-selection' };
+    const { result } = renderHook(() => {
+      useDepSource('keymaps', () => stack);
+      return useContributions({ entries: [loupe], focused: null });
+    }, { wrapper: ({ children }) => <DepRegistryProvider>{wrapper({ children })}</DepRegistryProvider> });
+    const closed = result.current.overlays;
+    expect(closed('after-selection')).toEqual([]);
+    act(() => { stack.push('loupe', 'Loupe'); });
+    expect(result.current.overlays).not.toBe(closed);
+    expect(overlayIds({ overlays: () => result.current.overlays('after-selection') })).toEqual(['loupe']);
+    expect(result.current.overlays('top')).toEqual([]);
+    act(() => { stack.closeAll(); });
+    expect(result.current.overlays('after-selection')).toEqual([]);
+  });
+});
+
 describe('ContributionsApi.entries tracks the entry list', () => {
   const pen: Contribution = {
     id: 'pen',

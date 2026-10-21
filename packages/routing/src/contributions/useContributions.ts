@@ -13,6 +13,7 @@ import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import type { HotkeyTrigger } from './types';
 import { assembleEntries } from './assemble';
 import { liveScope } from './eligibility';
+import { useInnermostKeymap } from '../keymaps/useInnermostKeymap';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
@@ -99,13 +100,15 @@ export function useContributions<TOverlay = KernelOverlay>(
     modes ? modes.subscribe : NO_MODES,
     () => modes?.getVersion() ?? 0,
   );
+  const openKeymap = useInnermostKeymap()?.id ?? null;
   const snapshot = useCallback(() => assembleEntries(entries, {
     focusedId: focused,
     hotkeyStack: engaged,
+    openKeymap,
     ...(modes ? { allowedCapabilities: activeModeOf(modes.current()).allowedCapabilities } : {}),
     // The version is what changes; `modes` is one object for the registry's life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [entries, focused, engaged, modes, modeVersion]);
+  }), [entries, focused, engaged, openKeymap, modes, modeVersion]);
 
   const overlays = useCallback((position: OverlayPosition = 'top'): TOverlay[] => {
     const { ordered, state } = snapshot();
