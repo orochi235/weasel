@@ -251,6 +251,15 @@ stays clean. A one-commit side request can still go straight to `main`, committe
 only its own test files; nothing checked the combination, and a fleet run of `main` failed on
 another session's uncommitted stylesheet.
 
+**Small low-risk fixes share one merge gate.** Deciding when this applies is the agent's job, not
+Mike's: on a `docs/TODO.md` pass, or whenever several quick fixes line up, group the ones that
+qualify without being asked, and say which went in the batch. Commit each to a `batch/<date>` branch in a
+worktree of its own, one commit per fix, and run `test:fleet`, `test:gate` and
+`test:fleet:postbuild` once on the tip before merging. The branch run covers the whole batch,
+since it selects tests from the diff against the merge-base. When it fails, fix the commit at fault
+or drop it from the batch, then rerun. A fix that touches a `triggers` path, dependencies or build
+tooling goes through the normal path instead, because it forces a full run anyway.
+
 **A fleet run tests a commit: `npm run test:fleet`, never a bare `onto test`.** `onto test` ships
 the working tree, so from a checkout someone else is editing it tests their half-finished files
 and blames the commit. `test:fleet` checks the commit out into a throwaway worktree first. Run
