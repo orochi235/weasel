@@ -7,7 +7,7 @@ import { applyPathWarp, puppetMap } from '@weasel-js/geom/warp';
 
 describe('package exports', () => {
   it('core barrel exposes the tiers', () => {
-    for (const name of ['cross', 'boxToBox', 'pointInPolygon', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin', 'quadraticEvalAt', 'splitCubicAt', 'splitQuadraticAt', 'splitLineAt', 'nearestOnLine', 'nearestOnQuadratic', 'nearestOnCubic', 'nearestOnPath', 'rectPath', 'pathFromD', 'boundsOfPath', 'transformPath', 'pointAlongPath', 'schneiderFit', 'resolveEasing', 'easeOutBack']) {
+    for (const name of ['cross', 'boxToBox', 'pointInPolygon', 'transformCoords', 'cubicBounds', 'forEachSegment', 'placeRect', 'clampRectWithin', 'quadraticEvalAt', 'splitCubicAt', 'splitQuadraticAt', 'splitLineAt', 'nearestOnLine', 'nearestOnQuadratic', 'nearestOnCubic', 'nearestOnPath', 'lineShape', 'arcShape', 'rectPath', 'pathFromD', 'boundsOfPath', 'transformPath', 'pointAlongPath', 'schneiderFit', 'resolveEasing', 'easeOutBack']) {
       expect(typeof (core as Record<string, unknown>)[name]).toBe('function');
     }
   });

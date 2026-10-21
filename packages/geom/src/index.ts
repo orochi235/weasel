@@ -15,6 +15,8 @@ export {
   type LineCoords, type QuadraticCoords, type CubicCoords,
 } from './curve';
 export { nearestOnLine, nearestOnQuadratic, nearestOnCubic, nearestOnPath, type CurveNearest, type PathNearest } from './nearest';
+export { lineShape, type TrackShape, type TrackShapeKind, type TrackStation, type TrackNearest } from './track/shape';
+export { arcShape, type ArcTrackSpec } from './track/arc';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
 export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,
