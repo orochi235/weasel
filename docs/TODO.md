@@ -881,10 +881,6 @@ only story runner in the repo.
   module load reads the same as a dead one. That is what a fresh site server showed until
   a598e6b2d (2026-10-20) took the demo timestamps' per-file `git log` out of its first load.
 
-- **(P3) The site's `virtual:demo-timestamps` plugin still runs `git log` synchronously while
-  loading.** One pass, about 95 ms on 2026-10-21, where the old per-file pass froze the server for a
-  minute; it grows with the demos' history and blocks every other request while it runs.
-
 ---
 
 ## Demos & visual regression

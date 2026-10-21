@@ -1,5 +1,73 @@
-import { describe, expect, it } from 'vitest';
-import { timestampsFromLog } from './vite-demo-timestamps.ts';
+import { execSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join, resolve } from 'node:path';
+import type { Plugin } from 'vite';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { demoTimestamps, timestampsFromLog } from './vite-demo-timestamps.ts';
+
+const root = resolve(import.meta.dirname, '..');
+const RESOLVED_ID = '\0virtual:demo-timestamps';
+
+function plugin() {
+  const p = demoTimestamps({ root }) as Plugin;
+  const call = (hook: unknown, ...args: unknown[]) => (hook as (...a: unknown[]) => unknown).call({}, ...args);
+  return {
+    buildStart: () => call(p.buildStart),
+    load: () => call(p.load, RESOLVED_ID) as Promise<string>,
+  };
+}
+
+const loaded = async (code: Promise<string>) => JSON.parse((await code).replace(/^export default |;$/g, ''));
+
+describe('demoTimestamps', () => {
+  // A `git` ahead of the real one on PATH, counting each spawn before handing over.
+  let shim: string;
+  let path: string | undefined;
+  const spawns = () => readFileSync(join(shim, 'spawns'), 'utf8').length;
+  beforeEach(() => {
+    shim = mkdtempSync(join(tmpdir(), 'demo-timestamps-'));
+    const git = execSync('command -v git', { encoding: 'utf8' }).trim();
+    writeFileSync(join(shim, 'spawns'), '');
+    writeFileSync(join(shim, 'git'), `#!/bin/sh\nprintf x >> '${join(shim, 'spawns')}'\nexec '${git}' "$@"\n`);
+    chmodSync(join(shim, 'git'), 0o755);
+    path = process.env.PATH;
+    process.env.PATH = `${shim}${delimiter}${path}`;
+  });
+  afterEach(() => {
+    process.env.PATH = path;
+    rmSync(shim, { recursive: true, force: true });
+  });
+
+  it('dates the real demos as the synchronous log of the same pass did', async () => {
+    const log = execSync('git log -M --cc --name-status --format=%x00%aI -- apps/site/demos demo', {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 1 << 28,
+    });
+    const files = readdirSync(resolve(root, 'apps/site/demos'), { recursive: true, encoding: 'utf8' })
+      .filter((f) => /\.tsx?$/.test(f))
+      .map((f) => `apps/site/demos/${f.replace(/\\/g, '/')}`);
+    const expected = timestampsFromLog(log, files);
+    expect(Object.keys(expected).length).toBeGreaterThan(0);
+    expect(await loaded(plugin().load())).toEqual(expected);
+  });
+
+  it('runs git once per build, however many loads await it', async () => {
+    const p = plugin();
+    p.buildStart();
+    const [a, b] = await Promise.all([p.load(), p.load()]);
+    expect(await p.load()).toBe(a);
+    expect(b).toBe(a);
+    expect(spawns()).toBe(1);
+  });
+
+  it('starts the log on first load when no build started it', async () => {
+    const p = plugin();
+    await Promise.all([p.load(), p.load()]);
+    expect(spawns()).toBe(1);
+  });
+});
 
 /** `git log --name-status --format=%x00%aI` text, commits newest first. */
 const log = (...commits: [date: string, ...entries: string[]][]) =>
