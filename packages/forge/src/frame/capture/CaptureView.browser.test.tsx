@@ -43,6 +43,7 @@ const payload: CapturePayload = {
   dpr: 1,
   scroll: { left: 40, top: 300 },
   lab: { globals: {}, mode: 'light' },
+  colorScheme: 'light',
 };
 
 it("renders the patch the screen's scroller stood at, not the story's top", async () => {

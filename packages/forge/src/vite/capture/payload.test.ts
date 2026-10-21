@@ -14,6 +14,7 @@ const valid: CapturePayload = {
   dpr: 2,
   scroll: { left: 0, top: 0 },
   lab: { globals: { theme: 'chrome' }, mode: 'dark' },
+  colorScheme: 'light',
 };
 
 describe('parsePayload', () => {
@@ -41,6 +42,9 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, globals: [] })).toEqual({ error: expect.stringContaining('globals') });
     expect(parsePayload({ ...valid, lab: { globals: {}, mode: 'auto' } })).toEqual({ error: expect.stringContaining('lab') });
     expect(parsePayload({ ...valid, lab: undefined })).toEqual({ error: expect.stringContaining('lab') });
+    for (const colorScheme of [undefined, 'auto', 'no-preference', 1]) {
+      expect(parsePayload({ ...valid, colorScheme })).toEqual({ error: expect.stringContaining('colorScheme') });
+    }
     for (const scroll of [undefined, { left: 0 }, { left: Number.NaN, top: 0 }, { left: 0, top: '3' }]) {
       expect(parsePayload({ ...valid, scroll })).toEqual({ error: expect.stringContaining('scroll') });
     }

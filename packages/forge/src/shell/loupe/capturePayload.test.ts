@@ -22,6 +22,7 @@ const input: CapturePayloadInput = {
   dpr: 2,
   resolved: { globals: { mode: 'light', theme: 'paper' }, args: { label: 'Stop' }, dpr: null },
   lab: { globals: { mode: 'light', theme: 'paper' }, mode: 'light' },
+  colorScheme: 'light',
 };
 
 describe('capturePayload', () => {
@@ -70,6 +71,7 @@ describe('capturePayload', () => {
       dpr: 2,
       scroll: { left: 0, top: 0 },
       lab: { globals: { mode: 'light', theme: 'paper' }, mode: 'light' },
+      colorScheme: 'light',
     });
     expect(capturePayload({ ...input, config: { label: 'Go' } })).toMatchObject({ playhead: null });
   });
@@ -138,6 +140,13 @@ describe('trialPayload', () => {
     prefersDark(false);
     expect(trialPayload(trial, lab, hit(), 1, null)).toMatchObject({ lab: { mode: 'light' } });
     expect(trialPayload(trial, { ...lab, mode: 'dark' }, hit(), 1, null)).toMatchObject({ lab: { mode: 'dark' } });
+  });
+
+  it('carries the OS color scheme, whatever mode the lab is in, for the capture page to emulate', () => {
+    prefersDark(true);
+    expect(trialPayload(trial, { ...lab, mode: 'light' }, hit(), 1, null)).toMatchObject({ colorScheme: 'dark' });
+    prefersDark(false);
+    expect(trialPayload(trial, { ...lab, mode: 'dark' }, hit(), 1, null)).toMatchObject({ colorScheme: 'light' });
   });
 
   it('says a trial that published nothing shows no story', () => {

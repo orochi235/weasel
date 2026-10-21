@@ -31,6 +31,7 @@ export const payload = (story: string): CapturePayload => ({
   dpr: 1,
   scroll: { left: 0, top: 0 },
   lab: { globals: {}, mode: 'light' },
+  colorScheme: 'light',
 });
 
 /** Two trial hosts side by side, each 100 px wide, found by the x of a client point. */

@@ -62,9 +62,13 @@ function readBody(req: IncomingMessage): Promise<string | null> {
     let size = 0;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
-      if (size <= MAX_BODY) chunks.push(chunk);
+      if (size <= MAX_BODY) return void chunks.push(chunk);
+      // Stop reading rather than drain the rest; the 413 goes out before the socket closes.
+      req.pause();
+      req.removeAllListeners('data');
+      resolve(null);
     });
-    req.on('end', () => resolve(size > MAX_BODY ? null : Buffer.concat(chunks).toString('utf8')));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
 }
@@ -107,7 +111,11 @@ export function serveCapture(
     const type = (req.headers['content-type'] ?? '').split(';')[0]?.trim().toLowerCase();
     if (type !== 'application/json') return json(res, 415, { error: 'a capture payload is sent as application/json' });
     const body = await readBody(req);
-    if (body === null) return json(res, 413, { error: 'capture payload is too large' });
+    if (body === null) {
+      res.setHeader('Connection', 'close');
+      json(res, 413, { error: 'capture payload is too large' });
+      return void res.once('finish', () => req.destroy());
+    }
     let parsed: unknown;
     try {
       parsed = JSON.parse(body);

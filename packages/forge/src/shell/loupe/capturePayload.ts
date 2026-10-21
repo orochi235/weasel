@@ -35,6 +35,7 @@ export interface CapturePayloadInput {
   /** The comparison, whose args are laid over the config and whose DPR, if any, replaces `dpr`. */
   resolved: ResolvedConditions;
   lab: CapturePayload['lab'];
+  colorScheme: CapturePayload['colorScheme'];
 }
 
 /** Whether `round`, `value` sent through JSON, is `value` again: nothing dropped, nothing turned into something else. */
@@ -68,7 +69,7 @@ const clampDpr = (dpr: number) => Math.min(Math.max(dpr, MIN_DPR), MAX_DPR);
  * different story.
  */
 export function capturePayload(input: CapturePayloadInput): CapturePayload | { unavailable: string } {
-  const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab } = input;
+  const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab, colorScheme } = input;
   if (!sendable(state)) return { unavailable: STATE_UNSENDABLE };
   const sent = withArgs(storyConfig(config), resolved.args);
   if (!sendable(sent)) return { unavailable: CONFIG_UNSENDABLE };
@@ -90,6 +91,7 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
     dpr: clampDpr(resolved.dpr ?? dpr),
     scroll: { left: scroller?.scrollLeft ?? 0, top: scroller?.scrollTop ?? 0 },
     lab,
+    colorScheme,
   };
 }
 
@@ -108,13 +110,14 @@ export function trialPayload(
   const ctx = resolveContextOf(lab);
   const own = effectiveGlobals(lab.labValues, (trial.config as Record<string, unknown> | null | undefined)?.[GLOBALS_KEY]);
   const resolved = resolveComparison(c, own, ctx);
-  const mode = lab.mode === 'auto' ? (ctx.prefersDark ? 'dark' : 'light') : lab.mode;
+  const colorScheme = ctx.prefersDark ? 'dark' : 'light';
   return capturePayload({
     ...trial,
     globals: resolved.globals,
     host: hit.host,
     dpr,
     resolved,
-    lab: { globals: lab.labValues, mode },
+    lab: { globals: lab.labValues, mode: lab.mode === 'auto' ? colorScheme : lab.mode },
+    colorScheme,
   });
 }

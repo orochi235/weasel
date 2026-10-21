@@ -20,6 +20,7 @@ const payload: CapturePayload = {
   dpr: 1,
   scroll: { left: 0, top: 0 },
   lab: { globals: {}, mode: 'light' },
+  colorScheme: 'light',
 };
 
 function mount(setup: FrameSetup = {}) {

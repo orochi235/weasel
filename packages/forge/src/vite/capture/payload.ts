@@ -26,6 +26,9 @@ export interface CapturePayload {
   /** The workshop lab's theme as the screen shows it: the lab's globals, which the shell config's `labTheme` reads,
    *  and its resolved color mode. An isolated story's document has no lab, and ignores it. */
   lab: { globals: Globals; mode: 'light' | 'dark' };
+  /** The OS color scheme the screen sees, which the capture page emulates: a story or a lab in `auto` mode follows
+   *  `prefers-color-scheme`, and headless Chromium would otherwise answer light. */
+  colorScheme: 'light' | 'dark';
 }
 
 /** Where the endpoint answers, under the dev server's base. */
@@ -48,7 +51,7 @@ const positive = (n: unknown): n is number => finite(n) && n > 0;
 /** Reads a request body as a payload, or names the first field it rejects. */
 export function parsePayload(body: unknown): CapturePayload | { error: string } {
   if (!isRecord(body)) return { error: 'a capture payload is an object' };
-  const { story, isolate, config, state, globals, overrides, playhead, box, layout, dpr, scroll, lab } = body;
+  const { story, isolate, config, state, globals, overrides, playhead, box, layout, dpr, scroll, lab, colorScheme } = body;
   if (typeof story !== 'string' || story === '') return { error: 'story must be an index id' };
   if (typeof isolate !== 'boolean') return { error: 'isolate must be a boolean' };
   if (!isRecord(globals)) return { error: 'globals must be an object' };
@@ -69,6 +72,7 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
   if (!isRecord(lab) || !isRecord(lab.globals) || (lab.mode !== 'light' && lab.mode !== 'dark')) {
     return { error: 'lab must hold globals and a mode of light or dark' };
   }
+  if (colorScheme !== 'light' && colorScheme !== 'dark') return { error: 'colorScheme must be light or dark' };
   return {
     story,
     isolate,
@@ -82,5 +86,6 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
     dpr,
     scroll: { left: scroll.left, top: scroll.top },
     lab: { globals: lab.globals, mode: lab.mode },
+    colorScheme,
   };
 }

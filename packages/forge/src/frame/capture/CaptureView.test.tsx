@@ -49,6 +49,7 @@ const payload: CapturePayload = {
   dpr: 2,
   scroll: { left: 0, top: 0 },
   lab: { globals: { theme: 'chrome' }, mode: 'light' },
+  colorScheme: 'light',
 };
 
 describe('CaptureView', () => {

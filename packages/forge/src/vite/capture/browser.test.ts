@@ -26,24 +26,29 @@ const payload: CapturePayload = {
   dpr: 2,
   scroll: { left: 0, top: 0 },
   lab: { globals: {}, mode: 'light' },
+  colorScheme: 'light',
 };
 
 interface FakeRoute {
-  request(): { url(): string };
+  request(): { url(): string; method(): string; headers(): Record<string, string> };
   continue(): Promise<void>;
   abort(): Promise<void>;
+  fulfill(response: unknown): Promise<void>;
 }
 
 /** What a route handler decided for a request to `url`. */
-async function decide(handler: (route: FakeRoute) => unknown, url: string): Promise<'continue' | 'abort'> {
-  let decision: 'continue' | 'abort' | null = null;
+async function decide(handler: (route: FakeRoute) => unknown, url: string): Promise<'continue' | 'abort' | 'fulfill'> {
+  let decision: 'continue' | 'abort' | 'fulfill' | null = null;
   await handler({
-    request: () => ({ url: () => url }),
+    request: () => ({ url: () => url, method: () => 'GET', headers: () => ({}) }),
     continue: async () => {
       decision = 'continue';
     },
     abort: async () => {
       decision = 'abort';
+    },
+    fulfill: async () => {
+      decision = 'fulfill';
     },
   });
   if (decision === null) throw new Error(`no decision for ${url}`);
@@ -58,16 +63,30 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
   const pagesClosed: number[] = [];
   const contexts: number[] = [];
   const viewports: unknown[] = [];
+  const media: unknown[] = [];
+  const calls: string[] = [];
   const pending: (() => void)[] = [];
   const routes: ((route: FakeRoute) => unknown)[] = [];
+  const sockets: ((url: URL) => boolean)[] = [];
+  const contextOptions: unknown[] = [];
   const page = {
     route: async (_pattern: string, handler: (route: FakeRoute) => unknown) => {
       routes.push(handler);
     },
+    routeWebSocket: async (match: (url: URL) => boolean) => {
+      sockets.push(match);
+    },
     setViewportSize: async (size: unknown) => {
       viewports.push(size);
     },
-    goto: async () => null,
+    emulateMedia: async (options: unknown) => {
+      media.push(options);
+      calls.push('emulateMedia');
+    },
+    goto: async () => {
+      calls.push('goto');
+      return null;
+    },
     waitForFunction: async () => null,
     evaluate: () => (hangs-- > 0 ? new Promise(() => {}) : Promise.resolve(undefined)),
     locator: () => ({
@@ -86,8 +105,9 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
         const record = { closed: false };
         launches.push(record);
         return {
-          newContext: async ({ deviceScaleFactor }: { deviceScaleFactor: number }) => {
-            contexts.push(deviceScaleFactor);
+          newContext: async (options: { deviceScaleFactor: number }) => {
+            contexts.push(options.deviceScaleFactor);
+            contextOptions.push(options);
             return { newPage: async () => page };
           },
           close: async () => {
@@ -97,11 +117,23 @@ function fakePlaywright({ hold = false, hang = 0 } = {}) {
       },
     },
   };
-  return { load: async () => playwright as never, launches, contexts, viewports, pending, pagesClosed, routes };
+  return {
+    load: async () => playwright as never,
+    launches,
+    contexts,
+    contextOptions,
+    viewports,
+    media,
+    calls,
+    pending,
+    pagesClosed,
+    routes,
+    sockets,
+  };
 }
 
-const launched = async (load: () => Promise<never>): Promise<CaptureBrowser> => {
-  const result = await launchCaptureBrowser(load);
+const launched = async (load: () => Promise<never>, fetchImpl?: typeof fetch): Promise<CaptureBrowser> => {
+  const result = await launchCaptureBrowser(load, fetchImpl);
   if ('unavailable' in result) throw new Error(result.unavailable);
   return result;
 };
@@ -147,6 +179,16 @@ describe('launchCaptureBrowser', () => {
     expect(fake.contexts).toEqual([2, 1]);
     expect(fake.viewports[0]).toEqual({ width: 101, height: 50 });
     expect(fake.launches).toHaveLength(1);
+    await browser.close();
+  });
+
+  it("emulates the payload's color scheme before the page loads", async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://x/', { ...payload, colorScheme: 'dark' });
+    await browser.capture('http://x/', payload);
+    expect(fake.media).toEqual([{ colorScheme: 'dark' }, { colorScheme: 'light' }]);
+    expect(fake.calls.slice(0, 2)).toEqual(['emulateMedia', 'goto']);
     await browser.close();
   });
 
@@ -204,6 +246,47 @@ describe('launchCaptureBrowser', () => {
     expect(await decide(handler!, 'http://127.0.0.1:5173/@id/virtual:forge/index.js')).toBe('continue');
     expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
     expect(await decide(handler!, 'http://fonts.gstatic.com/s/face.woff2')).toBe('abort');
+    await browser.close();
+  });
+
+  it('blocks service workers, and ignores certificate errors only for a dev server served over https', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload);
+    expect(fake.contextOptions).toEqual([
+      { deviceScaleFactor: 2, ignoreHTTPSErrors: false, serviceWorkers: 'block' },
+      { deviceScaleFactor: 2, ignoreHTTPSErrors: true, serviceWorkers: 'block' },
+    ]);
+    await browser.close();
+  });
+
+  it("closes every WebSocket but the dev server's own", async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload);
+    const [denied] = fake.sockets;
+    expect(denied!(new URL('ws://127.0.0.1:5173/?token=x'))).toBe(false);
+    expect(denied!(new URL('ws://10.0.0.1:5173/'))).toBe(true);
+    expect(denied!(new URL('ws://127.0.0.1:8080/'))).toBe(true);
+    expect(denied!(new URL('wss://fonts.googleapis.com/'))).toBe(true);
+    await browser.close();
+  });
+
+  it('fetches an allowlisted origin from Node under an https dev server, so its certificate is still checked', async () => {
+    const fake = fakePlaywright();
+    const fetched: string[] = [];
+    const fetchImpl = (async (input: string) => {
+      fetched.push(input);
+      return new Response('font');
+    }) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.gstatic.com']);
+    const [handler] = fake.routes;
+    expect(await decide(handler!, 'https://fonts.gstatic.com/s/face.woff2')).toBe('fulfill');
+    expect(fetched).toEqual(['https://fonts.gstatic.com/s/face.woff2']);
+    expect(await decide(handler!, 'https://127.0.0.1:5173/@vite/client')).toBe('continue');
+    expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
     await browser.close();
   });
 

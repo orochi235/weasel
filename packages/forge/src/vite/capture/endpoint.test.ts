@@ -44,6 +44,7 @@ const payload: CapturePayload = {
   dpr: 1,
   scroll: { left: 0, top: 0 },
   lab: { globals: {}, mode: 'light' },
+  colorScheme: 'light',
 };
 
 /** A real PNG signature followed by a counter, so each capture's bytes are its own. */
@@ -162,6 +163,22 @@ describe('capture endpoint', () => {
     await start();
     const res = await post(payload, { 'Content-Type': 'text/plain' });
     expect(res.status).toBe(415);
+  });
+
+  it('answers 413 once a body passes 16 MB, without reading the rest of it', async () => {
+    launch.mockResolvedValue(fakeBrowser());
+    await start();
+    const status = await new Promise<number>((resolve, reject) => {
+      const req = request(`${url}__forge/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' } }, (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      });
+      req.on('error', (err: NodeJS.ErrnoException) => (err.code === 'ECONNRESET' || err.code === 'EPIPE' ? undefined : reject(err)));
+      // The request is never ended: a server reading to the end of the body would never answer.
+      req.write(Buffer.alloc(16 * 1024 * 1024 + 1, 0x20));
+    });
+    expect(status).toBe(413);
+    expect(launch).not.toHaveBeenCalled();
   });
 
   it('refuses a POST from another origin with 403, and takes one from its own', async () => {

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import type { Browser, BrowserContext, Page } from 'playwright';
+import type { Browser, BrowserContext, Page, Route } from 'playwright';
 import type { CapturePayload } from './payload.ts';
 
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
@@ -53,6 +53,7 @@ export async function captureAvailability(load: Load = loadPlaywright): Promise<
  */
 export async function launchCaptureBrowser(
   load: Load = loadPlaywright,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<CaptureBrowser | { unavailable: string }> {
   let playwright: Playwright;
   try {
@@ -67,7 +68,7 @@ export async function launchCaptureBrowser(
     return { unavailable: messageOf(err) };
   }
 
-  const contexts = new Map<number, Promise<BrowserContext>>();
+  const contexts = new Map<string, Promise<BrowserContext>>();
   let idle: ReturnType<typeof setTimeout> | undefined;
   let outstanding = 0;
   let tail: Promise<unknown> = Promise.resolve();
@@ -94,25 +95,60 @@ export async function launchCaptureBrowser(
     }
     return chromium;
   };
-  /** One context per device pixel ratio, since a context's scale factor is fixed when it is made. */
-  const contextFor = (dpr: number): Promise<BrowserContext> => {
-    let context = contexts.get(dpr);
+  /**
+   * One context per device pixel ratio, since a context's scale factor is fixed when it is made, and per whether the
+   * dev server is served over https: only then are certificate errors ignored, for its self-signed certificate.
+   */
+  const contextFor = (dpr: number, secure: boolean): Promise<BrowserContext> => {
+    const key = `${dpr}:${secure}`;
+    let context = contexts.get(key);
     if (!context) {
-      const making = browser().then((b) => b.newContext({ deviceScaleFactor: dpr, ignoreHTTPSErrors: true }));
+      const making = browser().then((b) =>
+        b.newContext({ deviceScaleFactor: dpr, ignoreHTTPSErrors: secure, serviceWorkers: 'block' }),
+      );
       context = making;
-      contexts.set(dpr, making);
+      contexts.set(key, making);
       making.catch(() => {
-        if (contexts.get(dpr) === making) contexts.delete(dpr);
+        if (contexts.get(key) === making) contexts.delete(key);
       });
     }
     return context;
   };
+  /** A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's
+   *  context ignores certificate errors. */
+  const passThrough = async (route: Route): Promise<void> => {
+    const request = route.request();
+    try {
+      const response = await fetchImpl(request.url(), { method: request.method(), headers: request.headers() });
+      await route.fulfill({
+        status: response.status,
+        headers: Object.fromEntries(response.headers),
+        body: Buffer.from(await response.arrayBuffer()),
+      });
+    } catch {
+      await route.abort();
+    }
+  };
   const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[]): Promise<Buffer> => {
     // The page reaches nothing but the server it came from and the origins the shell config lists, whatever a story
     // or an override asks it to load.
-    const reach = new Set([new URL(url).origin, ...allow]);
-    await page.route('**/*', (route) => (reach.has(new URL(route.request().url()).origin) ? route.continue() : route.abort()));
+    const own = new URL(url);
+    const secure = own.protocol === 'https:';
+    const reach = new Set(allow);
+    await page.route('**/*', (route) => {
+      const origin = new URL(route.request().url()).origin;
+      if (origin === own.origin) return route.continue();
+      if (!reach.has(origin)) return route.abort();
+      return secure ? passThrough(route) : route.continue();
+    });
+    // Only vite's own client socket connects: closing it would have the client reload the page mid-capture.
+    const ownSocket = `${secure ? 'wss:' : 'ws:'}//${own.host}`;
+    await page.routeWebSocket(
+      (u) => `${u.protocol}//${u.host}` !== ownSocket,
+      (ws) => ws.close(),
+    );
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
+    await page.emulateMedia({ colorScheme: payload.colorScheme });
     await page.goto(url);
     await page.waitForFunction(() => (window as CaptureWindow).__forgeCapture !== undefined);
     await page.evaluate((p) => (window as CaptureWindow).__forgeCapture!.render(p), payload);
@@ -128,7 +164,7 @@ export async function launchCaptureBrowser(
       timer = setTimeout(() => reject(new Error(`capture took longer than ${SHOT_DEADLINE_MS / 1000} s`)), SHOT_DEADLINE_MS);
     });
     const work = (async () => {
-      const opened = await (await contextFor(payload.dpr)).newPage();
+      const opened = await (await contextFor(payload.dpr, url.startsWith('https:'))).newPage();
       page = opened;
       if (late) throw new Error('capture timed out');
       return render(opened, payload, url, allow);
