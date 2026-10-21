@@ -6,3 +6,5 @@ export { describeKeymap, keymapShortcuts } from './describeKeymap';
 export type { KeymapDescription, KeymapRow } from './describeKeymap';
 export { captureKey } from './captureKey';
 export type { CaptureKeyOptions } from './captureKey';
+export { captureGesture } from './captureGesture';
+export type { CaptureGestureOptions, CaptureKind, CapturedSpec } from './captureGesture';

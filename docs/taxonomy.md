@@ -421,8 +421,10 @@ another override's result, so overrides do not chain, and holders merge with an
 inner scope over an outer and a later one over an earlier. Adding a key beside
 an action's own stays a tuning's job. The registry lays overrides over an
 action's own bindings, so menus, the palette and shortcut chips show the rebound
-key; the dispatcher lays them over contribution bindings. `captureKey` reads the
-next keystroke for a binding editor, and `keySpecRoute` writes it back as the
+key; the dispatcher lays them over contribution bindings. `captureGesture` reads
+the next click, double click, drag, right click or keystroke for a binding editor,
+telling a click from a drag at the dispatcher's drag threshold, and `captureKey`
+is its keystroke-only form. `keySpecRoute` writes a captured key back as the
 route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
 `*`), whose spec is stored as it is.
 
