@@ -246,8 +246,9 @@ export interface SceneCanvasApi extends CanvasExtensionApi {
   viewAt(at: { x: number; y: number }, opts?: { except?: string }): ViewAt;
   /** What view `id` shows (`null`: the canvas's own camera), or `null` while no such view is mounted. */
   aimOf(id: string | null): ViewAim | null;
-  /** Point view `id` at `aim`. A camera-held view moves its camera; an aim-held one reports the aim through
-   *  `onAimChange`. `false` when there is no such view, the aim is not one it can read, or the canvas has no
-   *  camera writer. */
+  /** Point view `id` at `aim`. A camera-held view moves its camera to show the aim exactly, per axis, so a
+   *  rect of another shape stretches it; for a uniform zoom-to-fit, use `fitViewToBounds` or `animateView`.
+   *  An aim-held view reports the aim through `onAimChange`. `false` when there is no such view, the aim is
+   *  not one it can read, or the write goes nowhere: no camera writer, or a controlled view with no handler. */
   setAim(id: string | null, aim: ViewAim): boolean;
 }
