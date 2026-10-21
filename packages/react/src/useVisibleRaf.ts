@@ -55,6 +55,9 @@ const resolveTarget = (target: VisibleRafTarget | undefined): Element | null =>
   typeof target === 'function' ? target() : (target?.current ?? null);
 
 /**
+ * A `requestAnimationFrame` loop that runs only while someone can see it: never while the document is hidden,
+ * and, given a `target`, never while that element is outside the viewport. Nothing runs until `request()`.
+ *
  * @param frame Runs on the frame, with the timestamp the clock supplied and the
  *   loop's own handle. A continuous loop calls `loop.request()` from inside it;
  *   a one-shot loop does not.

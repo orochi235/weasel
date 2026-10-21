@@ -32,6 +32,11 @@ export function createDefaultStorage(
   };
 }
 
+const pageDefault = createDefaultStorage(indexedDbAdapter, 'IndexedDB');
+
 /** IndexedDB under the default database, 'weasel', or localStorage where it
  *  will not open. Resolved once per page. */
-export const { defaultStorage, resetDefaultStorage } = createDefaultStorage(indexedDbAdapter, 'IndexedDB');
+export const defaultStorage: () => Promise<StorageAdapter> = pageDefault.defaultStorage;
+
+/** Forget the adapter {@link defaultStorage} chose, so its next call chooses again. For tests. */
+export const resetDefaultStorage: () => void = pageDefault.resetDefaultStorage;

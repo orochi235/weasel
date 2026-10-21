@@ -358,6 +358,8 @@ const core = {
       variant: 'declaration',
       kind: 64,
       flags: {},
+      // What `typedoc/plugin.mjs` leaves on a function it categorizes: a comment holding only the tag.
+      comment: { summary: [], blockTags: [{ tag: '@category', content: [{ kind: 'text', text: 'Viewport' }] }] },
       signatures: [
         {
           id: 211,
