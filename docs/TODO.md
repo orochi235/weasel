@@ -1329,6 +1329,3 @@ only story runner in the repo.
   `selected`/`onSelect` carry one id), so the app can only hand it the picked stage or group.
   Grouping several at once needs `DiagramView` to pick and report a set. Left open by pipeline
   groups (2026-10-20): it changes `DiagramView`'s selection props for every host.
-- **(P3) `theme/theme.browser.test.tsx` keeps its own `doubleClick`.** The other chart browser tests
-  take theirs from `apps/chart/src/testing/pointer.ts`; this one was left out (2026-10-21) because
-  another branch was editing the file. Its copy omits `pointerType` and the clicks' `detail`.

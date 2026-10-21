@@ -8,6 +8,7 @@ import { CHART_SCENE_KEY } from '../chartPersistence';
 import { STENCIL_MIME } from '../stencilDrop';
 import { at, colorAt, readClientPixels } from '../testing/canvasPixels';
 import { mountChartApp, unmountChartApp } from '../testing/mountChartApp';
+import { doubleClick } from '../testing/pointer';
 
 registerCanvasFont('sans-serif');
 
@@ -105,17 +106,6 @@ function ink(host: HTMLElement, canvas: HTMLCanvasElement, x0: number, y0: numbe
   let n = 0;
   for (let i = 0; i < px.length; i += 4) if (px[i]! < 128 && px[i + 1]! < 128 && px[i + 2]! < 128) n++;
   return n;
-}
-
-/** Double-clicks the canvas at world (x, y), as a pointer does. */
-function doubleClick(canvas: HTMLCanvasElement, p: { x: number; y: number }): void {
-  const at = { bubbles: true, clientX: p.x, clientY: p.y };
-  for (let i = 0; i < 2; i++) {
-    canvas.dispatchEvent(new PointerEvent('pointerdown', { ...at, pointerId: 1, isPrimary: true, button: 0, buttons: 1 }));
-    canvas.dispatchEvent(new PointerEvent('pointerup', { ...at, pointerId: 1, isPrimary: true, button: 0, buttons: 0 }));
-    canvas.dispatchEvent(new MouseEvent('click', at));
-  }
-  canvas.dispatchEvent(new MouseEvent('dblclick', { ...at, detail: 2 }));
 }
 
 describe('the theme Size field', () => {
