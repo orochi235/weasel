@@ -10,21 +10,16 @@ The forge loupe merged to `main` (fb370f72c, pushed); its design of record is
 `packages/labkit/src/loupe/AGENTS.md` ("Lenses"), `packages/forge/README.md` ("Loupe"), and the
 unbuilt half in `docs/superpowers/specs/2026-10-20-forge-loupe-design.md`.
 
-**In progress: three bugs Mike reported on the CanvasStack story** (`labkit/Canvas/CanvasStack`,
-`packages/labkit/src/canvas/CanvasStack.stories.tsx`), not yet reproduced:
-1. The lens does not zoom in properly on the blue square.
-2. The source area (the reticle) is a square while the lens body is a circle — Mike's ruling: they
-   must match. My reading, unverified: the reticle is a fixed `RETICLE_SIZE` (16px) box, but it
-   should mark the patch the lens shows — the body's size divided by the factor, in the body's
-   shape.
-3. Handles or other chrome drawn around a lens (core's transform handles on a selected body, the
-   chrome strip) must take pointer events — Mike: "we can't draw them and just ignore them".
-   (Related, filed in TODO: the chrome strip swallows wheels/drags at a body's bottom edge.)
-Reproduce in headless Chrome first (systematic debugging). Where Mike ran forge is unknown: no
-forge dev server was listening; `http://localhost:33451/weasel/docs/ui/forge/` (the site dev
-server this session started from the main checkout) served the site shell, not the workshop. Start
-forge with `npm run dev:forge` or `npm run dev:fleet -- forge` and open
-`#/labkit-canvas-canvasstack--default`; add a lens with Alt+L then l.
+**Landed, not yet seen by Mike: the three CanvasStack lens bugs** (merged from `loupe-fixes`, not
+pushed). Each was reproduced in headless Chrome before the fix and checked there after.
+1. Zoom: the Live copy kept its own `useState` view, so a canvas zoom never reached it; the story
+   now keeps its view in an arg. Its canvas was also sized from a client rect the lens's ×4 had
+   inflated, then enlarged; `<CanvasStack>` now puts an ancestor's scale into its backing density.
+2. The reticle's pose is the patch the lens shows (body ÷ factor, the body's shape), resized with
+   the factor and, through a transform follower, with the body.
+3. The chrome strip covered the bottom handles; it now hangs below their reach.
+Calls made on my own read (2026-10-21): a reticle takes no resize handles (its size follows the
+factor); `RETICLE_SIZE` is removed rather than kept unused.
 
 **Landed:** `scripts/ci-run.mjs` (`test:fleet:postbuild`) declares a seconds-weighted plan to onto
 (91cf0385f, pushed); weights in `scripts/ci-run.weights.json` describe a slower node than teitou
