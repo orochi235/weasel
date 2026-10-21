@@ -210,13 +210,26 @@ test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewpor
   if (fixture === 'floating') {
     await userEvent.click(await screen.findByRole('button', { name: 'Undock Floater' }));
   }
-  await waitFor(
-    () => {
-      const problems = fitProblems(fixture, viewport);
-      if (problems.length > 0) throw new Error(problems.join('; '));
-    },
-    { timeout: 2000 },
-  );
+  // Each distinct set of problems and when it was seen. An onto log keeps only stdout, which
+  // has neither vitest's failure report nor a console.error, so a failure logs this there.
+  const t0 = performance.now();
+  const seen: string[] = [];
+  let last: string | undefined;
+  try {
+    await waitFor(
+      () => {
+        const problems = fitProblems(fixture, viewport).join('; ');
+        if (problems !== last) seen.push(`${Math.round(performance.now() - t0)} ms: ${problems}`);
+        last = problems;
+        if (problems) throw new Error(problems);
+      },
+      { timeout: 2000 },
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console -- stdout is the only stream an onto log keeps
+    console.log(`LabFit ${fixture} ${viewport}, fonts ${document.fonts.status}:\n  ${seen.join('\n  ')}`);
+    throw error;
+  }
   expect(fitProblems(fixture, viewport)).toEqual([]);
   if (fixture === 'fullscreen' && viewport === 'wide') {
     // Overwritten each run, under the gitignored screenshot directory.

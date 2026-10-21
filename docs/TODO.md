@@ -890,8 +890,15 @@ only story runner in the repo.
 
 - **(P3) `LabFit.browser.test.tsx`'s "sidebar fits a medium viewport" failed once in a full fleet
   run.** At 5aad5f94b on 2026-10-21 (onto job fe292e77, 2791 ms) the browser project failed it; the
-  same file passed 15 of 15 in three runs alone on the fleet at the same commit. The log keeps only
-  the test's name, not its assertion. Not looked at.
+  same file passed 15 of 15 in three runs alone on the fleet at the same commit. 2791 ms is the
+  test's 2 s `waitFor` running out, so whatever was wrong held for 2 s. Its assertion is lost
+  because `onto logs` keeps only stdout, and vitest's failure report goes to stderr (checked
+  2026-10-21 with a test failing on purpose); the test now prints to stdout each problem it saw
+  and when, plus `document.fonts.status`, so the next sighting names the cause. Ruled out on
+  2026-10-21, on teitou: CPU slowness — the sidebar fixture settled within 412 ms at every
+  viewport under 20× CDP CPU throttling (36 runs) — and six tabs of contention, where 12 copies
+  of the file at 4× throttling settled all 540 cases within 321 ms. The lab has no `storageKey`
+  here, so no persisted sidebar width carries between tests or files.
 
 - **(P2) `theme.browser.test.tsx`'s "grows a shape with its text" once saved no typed text.** In
   Linux CI on 179f2409d (2026-10-21, run 39523286313) `savedBody().row.data.text` stayed `''` past
