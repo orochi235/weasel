@@ -1,4 +1,6 @@
 [
   "@weasel-js/devtools",
-  "@weasel-js/pdf"
+  "@weasel-js/diagram-formats",
+  "@weasel-js/pdf",
+  "@weasel-js/rig"
 ]
