@@ -30,6 +30,10 @@ Priority tags:
   (`docs/superpowers/specs/2026-10-20-forge-loupe-design.md`, "Keys").
   (e) A held leader only stays held while its key is down on the keyboard: a leader opened from
   the palette (`trigger('keymap.<id>')`) is always a tapped one.
+  (f) No kit-shipped binding declares an `opts.id`, so an override can only name one by owner and
+  position (`select#3`), and `withoutSelectRotate` moves those positions when rotation is off.
+  Entry and action derived ids also share one `<id>#n` namespace. Give the kit's bindings ids.
+  (g) Route-conflict reporting and devtools read contribution bindings without their overrides.
 
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory

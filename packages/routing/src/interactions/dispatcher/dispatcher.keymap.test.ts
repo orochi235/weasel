@@ -157,4 +157,45 @@ describe('the dispatcher with a keymap open', () => {
     expect(outsideClick.run).toHaveBeenCalledOnce();
     expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
   });
+
+  it('keeps a press from the drag outside it when it binds a click, and takes the click', () => {
+    stack.push('loupe', 'Loupe');
+    const dragStart = vi.fn().mockReturnValue({ onEnd: vi.fn() });
+    const drag: Action = { id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' }, invoker: { timing: 'ongoing', start: dragStart } };
+    const pin = act('pin');
+    const entry: Contribution<never> = { id: 'loupe', eligibility: { keymap: true }, bindings: [{ spec: { kind: 'click' }, actionId: 'pin' }] };
+    const ctx = makeCtx({ actions: makeRegistry([drag, pin]), entriesById: new Map([['loupe', entry]]), keymaps: stack });
+    const d = createDispatcher();
+    const p = { pointerId: 1, pointerType: 'mouse' as const, button: 0, buttons: 1, x: 0, y: 0, clientX: 0, clientY: 0, ...mods };
+    stack.batch(() => d.handleInput({ kind: 'pointerdown', ...p } as InputEvent, ctx));
+    expect(dragStart).not.toHaveBeenCalled();
+    stack.batch(() => d.handleInput(click, ctx));
+    expect(pin.run).toHaveBeenCalledOnce();
+  });
+
+  it('closes, and swallows nothing, once its entry is gone', () => {
+    stack.push('loupe', 'Loupe');
+    const d = createDispatcher();
+    keystroke(d, { ...ctxFor(), entriesById: new Map() }, '3');
+    expect(outside.run).toHaveBeenCalledOnce();
+    expect(stack.open()).toEqual([]);
+  });
+
+  it('leaves a key alone on a surface that hears it only because the pointer is over it', () => {
+    stack.push('loupe', 'Loupe');
+    const d = createDispatcher();
+    expect(keystroke(d, ctxFor({ keyReach: { held: false, over: true } }), '2')).toEqual(['unhandled', 'unhandled']);
+    expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
+  });
+
+  it('lets a Ctrl or Cmd chord through under modal, and stays open', () => {
+    stack.push('loupe', 'Loupe');
+    const d = createDispatcher();
+    const copy = act('copy');
+    copy.defaultBinding = { kind: 'key', key: 'c', mods: { ctrl: true } };
+    const ctx = makeCtx({ ...ctxFor(), actions: makeRegistry([inside, copy]) });
+    stack.batch(() => d.handleInput({ kind: 'key', key: 'c', ...mods, ctrlKey: true }, ctx));
+    expect(copy.run).toHaveBeenCalledOnce();
+    expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
+  });
 });

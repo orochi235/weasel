@@ -6,6 +6,8 @@
  */
 import type { InputEvent } from './matcher';
 import type { DispatcherContext } from './dispatcherApi';
+import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
+import { liveScope } from '../../contributions/eligibility';
 
 type Outcome = 'handled' | 'unhandled';
 
@@ -27,6 +29,18 @@ const STROKES: ReadonlySet<InputEvent['kind']> = new Set([
 const isPlainEscape = (e: InputEvent): boolean =>
   e.kind === 'key' && e.key === 'Escape' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
 
+/** What a press may yet become, and a keymap may bind, once the recognizer settles it. */
+const SETTLES_INTO: readonly InputEvent['kind'][] = ['click', 'doubleclick', 'longpress', 'contextmenu'];
+
+/** Whether the keymap `id` names is still installed and allowed by the active mode. */
+function stillLive(id: string, ctx: DispatcherContext): boolean {
+  const entry = ctx.entriesById.get(id);
+  if (!entry) return false;
+  const allowed = ctx.getRuleCtx?.()?.allowedCapabilities;
+  const allows = allowed ? (tags: readonly CapabilityTag[]) => capabilitiesAllowed(allowed, tags) : undefined;
+  return liveScope(id, entry.eligibility, { focusedId: null, openKeymap: id, ...(allows ? { allows } : {}) }) !== null;
+}
+
 /** Route `event` through the open keymaps, or `undefined` when none is open. */
 export function routeThroughKeymap(
   event: InputEvent,
@@ -36,6 +50,13 @@ export function routeThroughKeymap(
   const stack = ctx.keymaps;
   const open = stack?.innermost();
   if (!stack || !open || event.kind === 'hover') return undefined;
+  const isKey = event.kind === 'key' || event.kind === 'key-held';
+  // A key this surface hears only because the pointer is over it belongs to whoever holds the keys.
+  if (isKey && ctx.keyReach && !ctx.keyReach.held) return undefined;
+  if (!stillLive(open.id, ctx)) {
+    stack.closeAll();
+    return undefined;
+  }
 
   // The other half of a keystroke the keymap already ruled on.
   const verdict = stack.verdict();
@@ -52,10 +73,14 @@ export function routeThroughKeymap(
     return 'handled';
   }
 
-  if (event.kind === 'key' || event.kind === 'key-held') {
+  if (isKey) {
     // A keymap that binds only the held form takes the keystroke on its twin.
     if (event.kind === 'key' && passes.binds({ ...event, kind: 'key-held', phase: 'down' })) return 'unhandled';
-    if (MODIFIER_KEYS.has(event.key)) return passes.run('none', event);
+    // A bare modifier, a Ctrl or Cmd chord, and Tab go on as usual and close nothing:
+    // a keymap is no reason to lose copy, paste or focus.
+    if (MODIFIER_KEYS.has(event.key) || event.ctrlKey || event.metaKey || event.key === 'Tab') {
+      return passes.run('none', event);
+    }
     const entry = ctx.entriesById.get(open.id)?.eligibility.keymap;
     const own = typeof entry === 'object' ? entry.unbound : undefined;
     if ((own ?? ctx.leaderUnbound ?? 'modal') === 'modal') {
@@ -64,6 +89,11 @@ export function routeThroughKeymap(
     }
     stack.cascaded();
     return passes.run('none', event);
+  }
+
+  // A press the keymap may yet take as a click is kept from the drag a tool would start on it.
+  if (event.kind === 'pointerdown' && SETTLES_INTO.some((kind) => passes.binds({ ...event, kind } as InputEvent))) {
+    return 'unhandled';
   }
 
   const outcome = passes.run('none', event);

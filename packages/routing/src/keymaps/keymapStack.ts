@@ -37,8 +37,9 @@ export interface KeymapStack {
   /** Mark the levels the last raw input opened as held by `heldBy`: the key
    *  that opened them is still down. False when it opened none. */
   holdOpened(heldBy: string): boolean;
-  /** The leader `heldBy` came up: close its level and those above it if
-   *  input arrived meanwhile, else leave it open for one more input. */
+  /** The leader `heldBy` came up: close its level, those above it and the
+   *  tapped ones beneath it if input arrived meanwhile, else leave it open
+   *  for one more input. */
   release(heldBy: string): void;
   /** Close the innermost level: Escape. */
   closeInnermost(): void;
@@ -105,6 +106,9 @@ export function createKeymapStack(): KeymapStack {
     push: (id, label, opts) => {
       const heldBy = opts?.heldBy;
       const bindings = opts?.bindings ?? [];
+      // Opening a keymap that is already open starts it over rather than stacking a copy.
+      const open = levels.findIndex((l) => l.id === id);
+      if (open !== -1) levels = levels.slice(0, open);
       levels = [...levels, { id, label, bindings, ...(heldBy !== undefined ? { heldBy } : {}), usedWhileHeld: false, openedIn: serial }];
       if (depth > 0) verdict = 'taken';
       notify();
@@ -123,8 +127,11 @@ export function createKeymapStack(): KeymapStack {
       const i = levels.findIndex((l) => l.heldBy === heldBy);
       if (i === -1) return;
       const level = levels[i]!;
-      if (level.usedWhileHeld) levels = levels.slice(0, i);
-      else levels = levels.map((l) => (l === level ? { ...l, heldBy: undefined } : l)).map(dropUndefinedHeld);
+      if (level.usedWhileHeld) {
+        // The input it was held for was the next input of the tapped levels beneath it too.
+        levels = levels.slice(0, i);
+        while (levels.length > 0 && levels.at(-1)!.heldBy === undefined) levels = levels.slice(0, -1);
+      } else levels = levels.map((l) => (l === level ? { ...l, heldBy: undefined } : l)).map(dropUndefinedHeld);
       notify();
     },
     closeInnermost: () => {

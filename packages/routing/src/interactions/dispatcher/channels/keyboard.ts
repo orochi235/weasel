@@ -3,6 +3,7 @@ import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
 import type { Dispatcher, KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
+import { keymapKeys } from './keymapKeys';
 
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
@@ -41,8 +42,7 @@ export function keyboardInput(core: DispatchCore): {
   // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
   // dispatcher that took the down, which hover may have routed away from.
   const heldKeys = new Map<string, { key: string; code?: string; on: Dispatcher }>();
-  // Keys whose keystroke opened a keymap, so their keyup can release it.
-  const leaderKeys = new Set<string>();
+  const keymaps = keymapKeys(core.keymaps);
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
@@ -59,15 +59,18 @@ export function keyboardInput(core: DispatchCore): {
     // streamed an 'unhandled' immediate-`key` trace entry per repeat.
     // Autorepeat for a key that ISN'T held still dispatches normally,
     // so things like Cmd+= step-zoom keep auto-repeating.
-    if (e.repeat && (heldKeys.has(physicalKey(e)) || leaderKeys.has(physicalKey(e)))) {
+    if (e.repeat && (heldKeys.has(physicalKey(e)) || keymaps.quiet(physicalKey(e)))) {
       e.preventDefault();
       return;
     }
 
-    // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it.
-    core.batch(() => press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach)
-      || (typedWithAltGraph(e) && press(e, { altKey: false, ctrlKey: false }, reach)));
-    if (core.keymaps()?.holdOpened(`key:${physicalKey(e)}`)) leaderKeys.add(physicalKey(e));
+    // The chord as reported comes first, so a binding that names Ctrl+Alt keeps it —
+    // except in an open keymap, which would swallow it before the character typed could try.
+    const altGr = typedWithAltGraph(e);
+    const typed = { altKey: false, ctrlKey: false };
+    keymaps.press(e, physicalKey(e), () => core.batch(() => (altGr && core.keymaps()?.innermost()
+      ? press(e, typed, reach)
+      : press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach) || (altGr && press(e, typed, reach)))));
   };
 
   /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */
@@ -98,7 +101,7 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyUp = (e: KeyboardEvent) => {
     const physical = physicalKey(e);
-    if (leaderKeys.delete(physical)) core.keymaps()?.release(`key:${physical}`);
+    keymaps.up(e, physical);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
     const ev: InputEvent = {
@@ -116,7 +119,7 @@ export function keyboardInput(core: DispatchCore): {
   };
 
   const releaseAll = (): void => {
-    leaderKeys.clear();
+    keymaps.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
     for (const { key, code, on } of releasing) {

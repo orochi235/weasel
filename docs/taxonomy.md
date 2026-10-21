@@ -419,8 +419,12 @@ override for declares one. An override is a route string, a spec (`key('Mod+=')`
 `held('Space')`), or `unbound()`; it applies to the declared binding, never to
 another override's result, so overrides do not chain, and holders merge with an
 inner scope over an outer and a later one over an earlier. Adding a key beside
-an action's own stays a tuning's job. `captureKey` reads the next keystroke for
-a binding editor, and `keySpecRoute` writes it back as the route string to store.
+an action's own stays a tuning's job. The registry lays overrides over an
+action's own bindings, so menus, the palette and shortcut chips show the rebound
+key; the dispatcher lays them over contribution bindings. `captureKey` reads the
+next keystroke for a binding editor, and `keySpecRoute` writes it back as the
+route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
+`*`), whose spec is stored as it is.
 
 ### Input scope and yoke
 
@@ -490,9 +494,13 @@ alone first (`routeThroughKeymap`). Then:
 | One of its bindings | Runs; a tapped keymap closes, a held one stays open |
 | A key it does not bind | `'modal'` (default): swallowed, keymap stays open. `'cascade'`: closes it and routes as usual |
 | A click or other pointer gesture it does not bind | Routes as usual and closes a tapped keymap; a held one stays open |
-| A bare modifier, a wheel, a drag already in flight | Routes as usual and closes nothing |
+| A press it may yet take as a click | Kept from the drag a tool would start on it |
+| A bare modifier, a Ctrl or Cmd chord, Tab, a wheel, a drag already in flight | Routes as usual and closes nothing |
 
-`'modal'` against `'cascade'` is the `gestures.keymapUnbound` kit setting, which
+A keymap closes when its entry is uninstalled or the mode disallows it, and keys
+a surface hears only because the pointer is over it are not the keymap's. A
+leader held with Cmd is released by Cmd's keyup, since macOS sends none for a
+key let go while Cmd is down. `'modal'` against `'cascade'` is the `gestures.keymapUnbound` kit setting, which
 a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
 `key` and `key-held` halves of one keystroke are ruled on together: closes made
 during one raw input apply when it ends, and the keymap's verdict on the first

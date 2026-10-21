@@ -64,12 +64,24 @@ export function bindingSpec(input: BindingOverrideInput): GestureSpec | null {
 const MOD_ORDER: readonly (keyof ModSpec)[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** A key spec as its route string — what `bindingSpec` reads back to an
- *  equal spec. A key list is written as its first key. */
-export function keySpecRoute(spec: KeySpec | KeyHeldSpec): string {
+ *  equal spec — or `null` for a key the route grammar cannot spell (`?`,
+ *  `)`, `*`). A spec is plain JSON, so store that one as it is. A key list is
+ *  written as its first key. */
+export function keySpecRoute(spec: KeySpec | KeyHeldSpec): string | null {
   const k = Array.isArray(spec.key) ? spec.key[0]! : spec.key;
   const optional = MOD_ORDER.filter((m) => spec.mods?.[m] === 'optional');
   const required = MOD_ORDER.filter((m) => spec.mods?.[m] === true);
   const arg = [k, ...optional].join('?');
   const gesture = spec.kind === 'key' ? 'keyDown' : 'keyHeld';
-  return [`[*:*] ${gesture}(${arg})`, ...required.map((m) => `+${m}`)].join(' ');
+  const route = [`[*:*] ${gesture}(${arg})`, ...required.map((m) => `+${m}`)].join(' ');
+  return spellsKey(route, k) ? route : null;
+}
+
+function spellsKey(route: string, k: string): boolean {
+  try {
+    const back = bindingSpec(route);
+    return back !== null && (back.kind === 'key' || back.kind === 'key-held') && back.key === k;
+  } catch {
+    return false;
+  }
 }

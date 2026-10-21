@@ -98,4 +98,23 @@ describe('createKeymapStack', () => {
     });
     expect(ids(s)).toEqual([]);
   });
+
+  it('starts a keymap over when its leader opens it again, rather than stacking a copy', () => {
+    const s = createKeymapStack();
+    s.push('loupe', 'Loupe');
+    s.batch(() => {
+      s.cascaded();
+      s.push('loupe', 'Loupe', { heldBy: 'g1' });
+    });
+    expect(s.open().map((k) => [k.id, k.heldBy ?? null])).toEqual([['loupe', 'g1']]);
+  });
+
+  it('releasing a used nested leader also closes the tapped keymap it was opened from', () => {
+    const s = createKeymapStack();
+    s.push('outer', 'Outer');
+    s.batch(() => s.push('inner', 'Inner', { heldBy: 'g2' }));
+    s.batch(() => s.inputSeen());
+    s.release('g2');
+    expect(ids(s)).toEqual([]);
+  });
 });

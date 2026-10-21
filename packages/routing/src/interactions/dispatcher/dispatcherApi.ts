@@ -62,7 +62,8 @@ export interface DispatcherContext {
   /** What a key no open keymap binds does, unless the keymap says: the
    *  `gestures.keymapUnbound` kit setting. Default `'modal'`. */
   leaderUnbound?: KeymapUnbound;
-  /** The binding overrides in force, read per input. Absent overrides nothing. */
+  /** The binding overrides in force, read per input, for contribution bindings;
+   *  the registry lays them over actions' own. Absent overrides nothing. */
   bindingOverrides?: () => ResolvedBindingOverrides;
   /** Where the dispatcher records how it resolved each input. Absent records nothing. */
   trace?: DispatchTrace;

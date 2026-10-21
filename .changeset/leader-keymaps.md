@@ -17,5 +17,8 @@ Bindings can now be rebound or removed by id, on actions and contributions alike
 with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
 binding editor.
 
+`modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+the key it says; before, either matched nothing.
+
 Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
 registry must implement them.

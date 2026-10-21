@@ -5,7 +5,7 @@
  */
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings, type GestureBinding } from '../actions/binding';
-import { bindingId, NO_OVERRIDES, overridden } from '../actions/bindingOverrides';
+import { NO_OVERRIDES } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
@@ -48,10 +48,10 @@ function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
   // bindings won't match.
   for (const action of ctx.actions.list()) {
     const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
-    actionBindings(action).forEach((declared, i) => {
-      const binding = overridden(declared, bindingId(declared, null, i), overrides);
-      if (binding && live(binding)) result.push({ binding, scope: targetScope, ownerId: null });
-    });
+    // The registry has already laid binding overrides over an action's own.
+    for (const binding of actionBindings(action)) {
+      if (live(binding)) result.push({ binding, scope: targetScope, ownerId: null });
+    }
   }
 
   return result;

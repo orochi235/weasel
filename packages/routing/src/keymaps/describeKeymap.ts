@@ -43,7 +43,7 @@ const MOD_WORDS: readonly [keyof NonNullable<GestureSpec['mods']>, string][] = [
 function gestureWords(spec: GestureSpec): string | undefined {
   if (spec.kind === 'key-held') {
     const chip = keySpecShortcut(spec);
-    return chip ? `Hold ${formatShortcut(chip, { platform: 'windows' })}` : undefined;
+    return chip ? `Hold ${formatShortcut(chip)}` : undefined;
   }
   const word = GESTURE_WORDS[spec.kind];
   if (!word) return undefined;

@@ -5,7 +5,8 @@
  * `tune`'s job.
  */
 import { bindingSpec, type BindingOverrideInput, type GestureSpec } from '@weasel-js/gestures';
-import type { GestureBinding } from './binding';
+import type { Action } from './action';
+import { actionBindings, type BoundGesture, type GestureBinding } from './binding';
 
 /** Overrides by binding id: a route string or spec to bind instead, or `null` to unbind. */
 export type BindingOverrides = Readonly<Record<string, BindingOverrideInput>>;
@@ -21,12 +22,19 @@ export function bindingId(b: GestureBinding, ownerId: string | null, index: numb
   return b.opts?.id ?? `${ownerId ?? b.actionId}#${index}`;
 }
 
-/** Merge override maps into one, a later map winning per id. */
+/** Merge override maps into one, a later map winning per id. A route string
+ *  that does not parse is skipped with a warning, leaving the binding as it was. */
 export function resolveBindingOverrides(maps: readonly BindingOverrides[]): ResolvedBindingOverrides {
   if (maps.length === 0) return NO_OVERRIDES;
   const out = new Map<string, GestureSpec | null>();
   for (const map of maps) {
-    for (const [id, input] of Object.entries(map)) out.set(id, bindingSpec(input));
+    for (const [id, input] of Object.entries(map)) {
+      try {
+        out.set(id, bindingSpec(input));
+      } catch (err) {
+        console.warn(`weasel: binding override "${id}" is not a route: ${(err as Error).message}`);
+      }
+    }
   }
   return out;
 }
@@ -40,4 +48,19 @@ export function overridden(
   if (!overrides.has(id)) return b;
   const spec = overrides.get(id)!;
   return spec === null ? null : { ...b, spec };
+}
+
+/** `action` with `overrides` applied to its own bindings, each keeping its id,
+ *  so every reader of `defaultBinding` — dispatch, menus, chips — sees the same keys. */
+export function overrideActionBindings(action: Action, overrides: ResolvedBindingOverrides): Action {
+  if (overrides.size === 0 || action.defaultBinding === undefined) return action;
+  const declared = actionBindings(action);
+  if (!declared.some((b, i) => overrides.has(bindingId(b, null, i)))) return action;
+  const kept: BoundGesture[] = [];
+  declared.forEach((b, i) => {
+    const id = bindingId(b, null, i);
+    const next = overridden(b, id, overrides);
+    if (next) kept.push({ spec: next.spec, opts: { ...next.opts, id } });
+  });
+  return { ...action, defaultBinding: kept };
 }

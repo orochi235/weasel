@@ -51,8 +51,12 @@ describe('bindingSpec', () => {
 
 describe('keySpecRoute', () => {
   it.each(['Alt+2', 'Mod+Shift+K', 'Space', 'Escape', 'Ctrl+Meta+ArrowLeft'])('round-trips %s', (s) => {
-    expect(bindingSpec(keySpecRoute(key(s)))).toEqual(key(s));
-    expect(bindingSpec(keySpecRoute(held(s)))).toEqual(held(s));
+    expect(bindingSpec(keySpecRoute(key(s))!)).toEqual(key(s));
+    expect(bindingSpec(keySpecRoute(held(s))!)).toEqual(held(s));
+  });
+
+  it.each(['?', ')', '*'])('gives null for %s, which a route cannot spell', (k) => {
+    expect(keySpecRoute(key(k))).toBeNull();
   });
 
   it('writes an optional modifier into the key slot', () => {

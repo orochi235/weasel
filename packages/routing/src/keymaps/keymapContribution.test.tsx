@@ -35,8 +35,8 @@ function mount(overrides?: BindingOverrides) {
   const def: KeymapDef = {
     id: 'loupe',
     label: 'Loupe',
-    leader: key('l'),
-    bindings: [{ spec: key('2'), actionId: 'zoom' }],
+    leader: [key('l'), key('Meta+j')],
+    bindings: [{ spec: key('2'), actionId: 'zoom' }, { spec: key('@'), actionId: 'zoom' }],
     actions: [{ id: 'zoom', label: 'Zoom', invoker: { timing: 'immediate', run: inside } }],
   };
   const outsideAction: Action = {
@@ -146,5 +146,34 @@ describe('keymapContribution', () => {
     expect(() => keymapContribution({
       id: 'k', label: 'K', leader: key('k'), bindings: [{ spec: key('Escape'), actionId: 'x' }],
     })).toThrow(/binds Escape/);
+  });
+
+  it('releases a Cmd leader when Cmd comes up, since macOS sends no keyup for the key', () => {
+    const { inside, outside, send, tap } = mount();
+    send('keydown', 'Meta', { metaKey: true, code: 'MetaLeft' });
+    send('keydown', 'j', { metaKey: true });
+    send('keyup', 'Meta', { code: 'MetaLeft' });
+    tap('2');
+    tap('2');
+    expect(inside).toHaveBeenCalledOnce();
+    expect(outside).toHaveBeenCalledOnce();
+  });
+
+  it('drops the autorepeat of a key that closed the keymap, rather than handing it outside', () => {
+    const { inside, outside, send } = mount();
+    send('keydown', 'l');
+    send('keyup', 'l');
+    send('keydown', '2');
+    send('keydown', '2', { repeat: true });
+    send('keyup', '2');
+    expect(inside).toHaveBeenCalledOnce();
+    expect(outside).not.toHaveBeenCalled();
+  });
+
+  it('takes a character typed through AltGr', () => {
+    const { inside, tap, send } = mount();
+    tap('l');
+    send('keydown', '@', { code: 'KeyQ', ctrlKey: true, altKey: true, modifierAltGraph: true } as KeyboardEventInit);
+    expect(inside).toHaveBeenCalledOnce();
   });
 });
