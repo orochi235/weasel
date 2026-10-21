@@ -79,7 +79,7 @@
   left: var(--lk-lens-seam);
   width: 2px;
   margin-inline-start: -1px;
-  background: var(--wzl-accent, #4c8dff);
+  background: var(--wzl-accent);
 }
 
 .lk-lens-difference {
@@ -109,12 +109,12 @@
   max-width: calc(100% - 8px);
   transform: translateX(-50%);
   pointer-events: none;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
+  font-size: var(--wzl-font-size-2xs);
+  .numeric();
   text-align: center;
-  color: var(--wzl-fg, #fff);
-  background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
-  padding: 1px 4px;
+  color: var(--wzl-fg);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
+  padding: 1px var(--wzl-space-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -145,10 +145,10 @@
   left: 0;
   right: 0;
   z-index: 1;
-  padding: 2px 4px;
-  font-size: 11px;
-  color: var(--wzl-fg, #fff);
-  background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  font-size: var(--wzl-font-size-2xs);
+  color: var(--wzl-fg);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
 }
 
 // Directly below the body, as wide as it, above the hit boxes, which are later
@@ -163,22 +163,22 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  font-size: 11px;
-  background: color-mix(in srgb, var(--wzl-bg, #000) 80%, transparent);
-  color: var(--wzl-fg, #fff);
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  font-size: var(--wzl-font-size-2xs);
+  background: color-mix(in srgb, var(--wzl-surface) 80%, transparent);
+  color: var(--wzl-fg);
 }
 
 .lk-lens-chrome__toggles {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: var(--wzl-space-1);
   min-width: 0;
   max-width: 100%;
   margin-inline-start: auto;
 }
 
 .lk-lens-chrome__toggle[aria-pressed='true'] {
-  font-weight: 600;
+  font-weight: var(--wzl-font-weight-bold);
 }

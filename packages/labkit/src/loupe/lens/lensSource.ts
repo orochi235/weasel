@@ -4,6 +4,7 @@ import type { LensIds, LensSettings, LensSourceKind, LoupePoint } from './lensTy
  *  shape, shared with the lens actions' `sourceAvailable`. */
 export type LensSourceStatus = true | string;
 
+/** What a lens asks its source to show, sent on attach and on every change. */
 export interface LensSourceRequest<C> {
   lensId: string;
   /** In client px. */
@@ -16,6 +17,7 @@ export interface LensSourceRequest<C> {
   dpr: number;
 }
 
+/** A pixels source's capture of a lens's patch. */
 export interface LensCapture {
   bitmap: ImageBitmap;
   dpr: number;
@@ -24,11 +26,13 @@ export interface LensCapture {
   at: LoupePoint;
 }
 
+/** A source attached to one lens cell: takes each new request, and lets go of the cell on `detach`. */
 export interface LensSourceHandle<C> {
   update(request: LensSourceRequest<C>): void;
   detach(): void;
 }
 
+/** What renders a lens's patch: a Live render into the interior, or pixels captured elsewhere. */
 export interface LensSource<C> {
   readonly kind: LensSourceKind;
   readonly produces: 'dom' | 'pixels';
@@ -41,8 +45,10 @@ export interface LensSource<C> {
   capture?(request: LensSourceRequest<C>): Promise<LensCapture | { reason: string }>;
 }
 
+/** The sources a host offers its lenses, by kind. */
 export type LensSources<C> = Partial<Record<LensSourceKind, LensSource<C>>>;
 
+/** What a lens's interior is drawn from: its ids, settings, the host's sources, where it aims and its size. */
 export interface LensSlotProps<C> {
   lens: LensIds;
   settings: LensSettings<C>;
@@ -61,6 +67,7 @@ export interface LensDescribeContext {
   source: LensSourceKind | null;
 }
 
+/** Every source kind, in the order a lens falls back through them. */
 export const LENS_SOURCE_KINDS: readonly LensSourceKind[] = [
   'live',
   'pixels',
@@ -87,6 +94,7 @@ export interface LensResolution<C> {
   reason: string | null;
 }
 
+/** The source `wanted` names when it answers, else the first that does, with why `wanted` did not. */
 export function resolveSource<C>(
   wanted: LensSourceKind,
   sources: LensSources<C>,
@@ -107,8 +115,12 @@ export function resolveSource<C>(
 /** What a lens shows: the source its settings resolve to, except that Difference
  *  compares two Pixels captures whatever the lens's source, so it shows Pixels
  *  or why Pixels cannot answer. */
-export function shownSource<C>(settings: LensSettings<C>, sources: LensSources<C>): LensResolution<C> {
-  if (settings.compare === null || settings.view !== 'difference') return resolveSource(settings.source, sources);
+export function shownSource<C>(
+  settings: LensSettings<C>,
+  sources: LensSources<C>,
+): LensResolution<C> {
+  if (settings.compare === null || settings.view !== 'difference')
+    return resolveSource(settings.source, sources);
   const pixels = sources.pixels;
   const status = pixels ? pixels.status() : 'not provided';
   if (status === true) return { source: pixels ?? null, reason: null };

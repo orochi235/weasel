@@ -11,7 +11,9 @@ import type { LensScene, LensSettings } from './lensTypes';
 
 /** How far either side of the seam a press takes it, in screen px. */
 export const SEAM_GRAB = 4;
+/** How near the left edge a split seam can go, as a fraction of the lens width. */
 export const SEAM_MIN = 0.05;
+/** How near the right edge a split seam can go, as a fraction of the lens width. */
 export const SEAM_MAX = 0.95;
 /** The lens canvas layer that claims a press on a seam; the drag routes as `affordance:layer:<id>`. */
 export const SEAM_LAYER_ID = 'labkit-lens-seam';
@@ -34,6 +36,7 @@ export function splitRects(
 /** Which renders a lens shows: the story as it is, the compared one, or both either side of the seam. */
 export type LensSide = 'base' | 'compared';
 
+/** The sides a lens shows: the story alone with no comparison, both in Split, else the compared one. */
 export function lensSides<C>(settings: LensSettings<C>): readonly LensSide[] {
   if (settings.compare === null) return ['base'];
   return settings.view === 'split' ? ['base', 'compared'] : ['compared'];
@@ -52,6 +55,7 @@ export interface SeamPreview {
   version(): number;
 }
 
+/** An empty seam preview, which a seam drag writes to until it commits. */
 export function createSeamPreview(): SeamPreview {
   const seams = new Map<string, number>();
   const listeners = new Set<() => void>();
@@ -74,8 +78,11 @@ export function createSeamPreview(): SeamPreview {
 }
 
 /** A lens's seam as it shows now: the drag's preview while one is under way, else its setting. */
-export const seamOf = <C>(settings: LensSettings<C>, preview: SeamPreview | undefined, lensId: string) =>
-  preview?.get(lensId) ?? settings.seam;
+export const seamOf = <C>(
+  settings: LensSettings<C>,
+  preview: SeamPreview | undefined,
+  lensId: string,
+) => preview?.get(lensId) ?? settings.seam;
 
 /** The lens whose seam lies at the world point, within `SEAM_GRAB` screen px at
  *  `scale`. Only the topmost body under the point counts: a press on a lens over
@@ -113,7 +120,12 @@ export function seamLayer<C>(scene: LensScene<C>, preview: SeamPreview): RenderL
     hitTest: (wx, wy, _data, view): LayerHit | null => {
       const hit = seamHit(scene, preview, wx, wy, view.scale.x);
       return hit
-        ? { initialScratch: hit, strength: 'exclusive', claimedKinds: ['pointer'], cursor: 'ew-resize' }
+        ? {
+            initialScratch: hit,
+            strength: 'exclusive',
+            claimedKinds: ['pointer'],
+            cursor: 'ew-resize',
+          }
         : null;
     },
   };

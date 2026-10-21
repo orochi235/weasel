@@ -70,6 +70,7 @@ function FollowDispatch({
   return null;
 }
 
+/** Installs the Loupe keymap, with every lens action, in the lab's ambient contributions. Renders nothing. */
 export function LensActions<C>({ api, bodyRef, opposite }: LensActionsProps<C>) {
   const registry = useActionsRegistry();
   const oppositeRef = useLatest(opposite);

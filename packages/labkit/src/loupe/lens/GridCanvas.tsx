@@ -32,7 +32,13 @@ function colorOf(el: Element, name: string, fallback: string): string {
  * neighbors. It asks the source for the same capture the cell shows, so it
  * lines up with it.
  */
-export function GridCanvas<C>({ source, request }: { source: LensSource<C>; request: LensSourceRequest<C> }) {
+export function GridCanvas<C>({
+  source,
+  request,
+}: {
+  source: LensSource<C>;
+  request: LensSourceRequest<C>;
+}) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const [read, setRead] = useState<Read | null>(null);
   const [tick, setTick] = useState(0);
@@ -41,6 +47,7 @@ export function GridCanvas<C>({ source, request }: { source: LensSource<C>; requ
   const { reticle, factor, size, conditions, dpr } = request;
   const { width: w, height: h } = size;
   useEffect(() => source.subscribe(() => setTick((n) => n + 1)), [source]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
     let live = true;
     const timer = setTimeout(

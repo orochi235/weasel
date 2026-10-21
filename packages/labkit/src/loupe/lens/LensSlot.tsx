@@ -1,8 +1,17 @@
 import { useLatest } from '@weasel-js/react';
-import { type CSSProperties, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { type LensSide, lensSides, splitRects } from './compare';
 import { paintDifference } from './difference';
+import { GridCanvas } from './GridCanvas';
 import {
+  LENS_SOURCE_KINDS,
   type LensCapture,
   type LensResolution,
   type LensSlotProps,
@@ -10,14 +19,12 @@ import {
   type LensSourceHandle,
   type LensSourceRequest,
   type LensSources,
-  LENS_SOURCE_KINDS,
   requestsOf,
   resolveSource,
   shownSource,
   unavailableText,
 } from './lensSource';
 import type { LensSettings, LensSourceKind } from './lensTypes';
-import { GridCanvas } from './GridCanvas';
 import { gridFits } from './pixelGrid';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
@@ -43,7 +50,10 @@ export function useLensResolution<C>(
 }
 
 /** What a lens shows (`shownSource`), re-resolved whenever any source's availability changes. */
-export function useShownSource<C>(settings: LensSettings<C>, sources: LensSources<C>): LensResolution<C> {
+export function useShownSource<C>(
+  settings: LensSettings<C>,
+  sources: LensSources<C>,
+): LensResolution<C> {
   useLensResolution(settings.source, sources);
   return shownSource(settings, sources);
 }
@@ -72,7 +82,7 @@ function LensCell<C>({
     };
   }, [source, latest]);
   const { reticle, factor, size, conditions, dpr } = request;
-  // `request` is a new object every render, so the effect runs on its fields.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `request` is a new object every render, so its fields are the signal; the effect reads `latest`
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -116,11 +126,19 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
   const dpr = settings.dprs[0] ?? 1;
   const { compare, factor } = settings;
   const { lensId } = lens;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the reticle, the size and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
     const el = canvas.current;
     if (status !== true || !pixels?.capture || !el) return;
     const { reticle: at, size: box } = latest.current;
-    const base: LensSourceRequest<C> = { lensId, reticle: at, factor, size: box, conditions: null, dpr };
+    const base: LensSourceRequest<C> = {
+      lensId,
+      reticle: at,
+      factor,
+      size: box,
+      conditions: null,
+      dpr,
+    };
     const capture = pixels.capture.bind(pixels);
     let live = true;
     const run = () =>
@@ -145,7 +163,20 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
       live = false;
       clearTimeout(timer);
     };
-  }, [pixels, status, lensId, reticle.x, reticle.y, size.width, size.height, factor, compare, dpr, tick, latest]);
+  }, [
+    pixels,
+    status,
+    lensId,
+    reticle.x,
+    reticle.y,
+    size.width,
+    size.height,
+    factor,
+    compare,
+    dpr,
+    tick,
+    latest,
+  ]);
   const reason = status === true ? said : unavailableText('pixels', status);
   // A message stands in for the image: what was drawn before it no longer answers.
   useEffect(() => {
@@ -169,7 +200,8 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
 export function LensSlot<C>(props: LensSlotProps<C>) {
   const { lens, settings, sources, reticle, size } = props;
   const { source, reason } = useLensResolution(settings.source, sources);
-  if (settings.compare !== null && settings.view === 'difference') return <LensDifference {...props} />;
+  if (settings.compare !== null && settings.view === 'difference')
+    return <LensDifference {...props} />;
   const requests = requestsOf(source, lens, settings, reticle, size);
   const sides = lensSides(settings);
   const wantsGrid = settings.readouts.includes('grid');

@@ -11,8 +11,8 @@ import { page } from 'vitest/browser';
 import { defineInstrument } from '../../instrument/defineInstrument';
 import { Lab } from '../../lab/Lab';
 import { LensOverlay } from './LensOverlay';
-import type { LensSource } from './lensSource';
 import { addLensOps, createLensScene, setLensOps } from './lensScene';
+import type { LensSource } from './lensSource';
 import type { LensScene } from './lensTypes';
 
 // Whether a round lens shows anything outside its rim, and where its chrome
@@ -62,7 +62,13 @@ async function mount(readouts?: () => ReactNode): Promise<HTMLElement> {
           {
             id: 'loupe',
             region: 'overlay',
-            render: () => <LensOverlay scene={scene} sources={{ live: red }} {...(readouts ? { renderReadouts: readouts } : {})} />,
+            render: () => (
+              <LensOverlay
+                scene={scene}
+                sources={{ live: red }}
+                {...(readouts ? { renderReadouts: readouts } : {})}
+              />
+            ),
           },
         ]}
       />
@@ -121,7 +127,9 @@ test('keeps the chrome within the body’s width, directly below it', async () =
 
 test('keeps a readout inside a round lens’s circle, however long its text', async () => {
   sceneToAdapter(scene).applyOps(setLensOps(scene, 'a', { readouts: ['contrast'] }), 'readout');
-  const interior = await mount(() => <span>12.34:1 · AA pass · AAA pass · large text · and more besides</span>);
+  const interior = await mount(() => (
+    <span>12.34:1 · AA pass · AAA pass · large text · and more besides</span>
+  ));
   const readout = await waitFor(() => {
     const el = interior.querySelector<HTMLElement>('.lk-lens-readouts');
     if (!el?.textContent) throw new Error('no readout');
@@ -131,7 +139,12 @@ test('keeps a readout inside a round lens’s circle, however long its text', as
   const r = readout.getBoundingClientRect();
   const cx = body.left + body.width / 2;
   const cy = body.top + body.height / 2;
-  for (const [x, y] of [[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]] as const) {
+  for (const [x, y] of [
+    [r.left, r.top],
+    [r.right, r.top],
+    [r.left, r.bottom],
+    [r.right, r.bottom],
+  ] as const) {
     expect(Math.hypot(x - cx, y - cy)).toBeLessThanOrEqual(body.width / 2 + 0.5);
   }
 });

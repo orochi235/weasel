@@ -4,12 +4,7 @@ import { StrictMode, useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
-import {
-  type LensSource,
-  type LensSourceRequest,
-  type LensSources,
-  type LensSourceStatus,
-} from './lensSource';
+import type { LensSource, LensSourceRequest, LensSourceStatus, LensSources } from './lensSource';
 import { LENS_DEFAULTS, type LensIds, type LensSettings, type LoupePoint } from './lensTypes';
 
 const IDS = { lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:leader' } as LensIds;
@@ -128,7 +123,10 @@ describe('LensSlot and LensChrome', () => {
   it('attaches one pixels source per DPR side by side', () => {
     const pixels = fakeSource('pixels', { label: (r) => `Pixels ${r.dpr}×` });
     render(
-      <Both settings={settings({ source: 'pixels', dprs: [1, 2] })} sources={{ pixels: pixels.source }} />,
+      <Both
+        settings={settings({ source: 'pixels', dprs: [1, 2] })}
+        sources={{ pixels: pixels.source }}
+      />,
     );
     expect(pixels.attach).toHaveBeenCalledTimes(2);
     expect(pixels.attach.mock.calls.map(([, r]) => r.dpr)).toEqual([1, 2]);
@@ -295,7 +293,9 @@ describe('LensSlot comparisons', () => {
 
   it('attaches only the compared request in Swap', () => {
     const live = fakeSource('live');
-    render(<Both settings={settings({ compare: 'b', view: 'swap' })} sources={{ live: live.source }} />);
+    render(
+      <Both settings={settings({ compare: 'b', view: 'swap' })} sources={{ live: live.source }} />,
+    );
     expect(conditionsOf(live.attach)).toEqual(['b']);
   });
 
@@ -311,16 +311,23 @@ describe('LensSlot comparisons', () => {
     const slot = screen.getByTestId('slot').querySelector<HTMLElement>('.lk-lens-slot')!;
     expect(slot.dataset.view).toBe('split');
     expect(slot.style.getPropertyValue('--lk-lens-seam')).toBe(`${SIZE.width * 0.25}px`);
-    const sides = [...slot.querySelectorAll<HTMLElement>('.lk-lens-side')].map((s) => s.dataset.side);
+    const sides = [...slot.querySelectorAll<HTMLElement>('.lk-lens-side')].map(
+      (s) => s.dataset.side,
+    );
     expect(sides).toEqual(['base', 'compared']);
   });
 
   it('says why Difference cannot show, with no Pixels source', () => {
     const live = fakeSource('live');
     render(
-      <Both settings={settings({ compare: 'b', view: 'difference' })} sources={{ live: live.source }} />,
+      <Both
+        settings={settings({ compare: 'b', view: 'difference' })}
+        sources={{ live: live.source }}
+      />,
     );
-    expect(within(screen.getByTestId('slot')).getByText('Pixels unavailable: not provided')).toBeTruthy();
+    expect(
+      within(screen.getByTestId('slot')).getByText('Pixels unavailable: not provided'),
+    ).toBeTruthy();
     expect(live.attach).not.toHaveBeenCalled();
   });
 
@@ -340,7 +347,9 @@ describe('LensSlot comparisons', () => {
   it('captures both sides from Pixels for Difference, even on a Live lens', async () => {
     const live = fakeSource('live');
     const pixels = fakeSource('pixels');
-    const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({ reason: 'Nothing under the reticle' }));
+    const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({
+      reason: 'Nothing under the reticle',
+    }));
     pixels.source.capture = capture;
     render(
       <Both
@@ -402,8 +411,14 @@ describe('LensSlot comparisons', () => {
     };
     render(
       <>
-        <LensChrome {...shared} settings={settings({ source: 'live', compare: 'b', view: 'swap' })} />
-        <LensChrome {...shared} settings={settings({ source: 'live', compare: 'c', view: 'difference' })} />
+        <LensChrome
+          {...shared}
+          settings={settings({ source: 'live', compare: 'b', view: 'swap' })}
+        />
+        <LensChrome
+          {...shared}
+          settings={settings({ source: 'live', compare: 'c', view: 'difference' })}
+        />
       </>,
     );
     expect(new Set(seen)).toEqual(new Set(['b:live', 'c:pixels']));

@@ -19,8 +19,8 @@ import {
   useTileId,
 } from '../../surface/useSurfaceTile';
 import { LensOverlay, type LensOverlayProps } from './LensOverlay';
-import type { LensSource } from './lensSource';
 import { addLensOps, createLensScene, lensesOf, setLensOps, settingsOf } from './lensScene';
+import type { LensSource } from './lensSource';
 import { BODY_SIZE, type LensScene } from './lensTypes';
 
 // The lens canvas covers the whole lab body, but takes input only on its hit
@@ -219,13 +219,16 @@ test('drags a split lens’s seam rather than its body, and clips each side to i
   await mount({ sources: { live: liveSource } });
   const before = pose('a:body');
   const [x, y] = client(BODY_AT);
-  const steps = Array.from({ length: 8 }, (_, i) => ({ to: [x + (40 * (i + 1)) / 8, y] as [number, number] }));
+  const steps = Array.from({ length: 8 }, (_, i) => ({
+    to: [x + (40 * (i + 1)) / 8, y] as [number, number],
+  }));
   await commands.pointer([{ to: [x, y] }, { down: true }, ...steps, { up: true }]);
   await waitFor(() => expect(settingsOf(scene, 'a')?.seam).toBeCloseTo(0.5 + 40 / BODY_SIZE, 2));
   expect(pose('a:body')).toEqual(before);
   const seamPx = Math.round(BODY_SIZE * (0.5 + 40 / BODY_SIZE));
   const clip = (side: string) =>
-    getComputedStyle(document.querySelector(`.lk-lens-side[data-side="${side}"]`) as HTMLElement).clipPath;
+    getComputedStyle(document.querySelector(`.lk-lens-side[data-side="${side}"]`) as HTMLElement)
+      .clipPath;
   await waitFor(() => expect(clip('compared')).toBe(`inset(0px 0px 0px ${seamPx}px)`));
   expect(clip('base')).toContain(`${seamPx}px`);
   // One commit, so one undo puts it back.

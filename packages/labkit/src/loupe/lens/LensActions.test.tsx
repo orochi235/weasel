@@ -130,7 +130,9 @@ describe('<LensActions>', () => {
   it('uninstalls the keymap and its actions when it unmounts', async () => {
     const body = await mount();
     await act(async () => hide());
-    expect(registry.list().some((a) => a.id.startsWith('loupe.') || a.id === 'keymap.loupe')).toBe(false);
+    expect(registry.list().some((a) => a.id.startsWith('loupe.') || a.id === 'keymap.loupe')).toBe(
+      false,
+    );
     tap(body, LEADER);
     expect(hint()).toBeNull();
     tap(body, { code: 'KeyL', key: 'l' });

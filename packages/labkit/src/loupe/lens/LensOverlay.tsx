@@ -9,8 +9,8 @@ import {
   rectPath,
   registerNodeShape,
   SceneCanvas,
-  sceneToAdapter,
   type SceneCanvasApi,
+  sceneToAdapter,
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
@@ -28,13 +28,13 @@ import {
 import { createPortal, flushSync } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
 import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
-import { hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
-import { useWheelPassThrough } from './useWheelPassThrough';
+import { hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
 import { lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
+import { useWheelPassThrough } from './useWheelPassThrough';
 
 /** The camera a lens scene is drawn and picked through, in the px of the
  *  layer the lens canvas covers. */
@@ -196,7 +196,6 @@ function reticleClient<C>(
     y: origin.top + (p.y + p.height / 2 - view.y) * view.scale.y,
   };
 }
-
 
 /** Registers the lens tile on the layer and keeps the layer's size, which is
  *  the canvas's, current with every frame the surface paints. */

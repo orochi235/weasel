@@ -16,20 +16,30 @@ async function capture(last: readonly [number, number, number]): Promise<LensCap
   for (let i = 0; i < 4; i += 1) data.set([100, 100, 100, 255], i * 4);
   data.set([...last, 255], 12);
   ctx.putImageData(new ImageData(data, 2, 2), 0, 0);
-  return { bitmap: await createImageBitmap(c), dpr: 1, box: { width: 2, height: 2 }, at: { x: 1, y: 1 } };
+  return {
+    bitmap: await createImageBitmap(c),
+    dpr: 1,
+    box: { width: 2, height: 2 },
+    at: { x: 1, y: 1 },
+  };
 }
 
 test('lights the pixel that differs and dims the rest, enlarged about the reticle', async () => {
   const base = await capture([100, 100, 100]);
   const compared = await capture([200, 100, 100]);
   const canvas = document.createElement('canvas');
-  const changed = paintDifference(canvas, base, compared, { size: { width: 40, height: 40 }, factor: 10 });
+  const changed = paintDifference(canvas, base, compared, {
+    size: { width: 40, height: 40 },
+    factor: 10,
+  });
   expect(changed).toBe(1);
   const ctx = canvas.getContext('2d')!;
   const sd = canvas.width / 40;
   // The reticle, at the capture's center, lands on the canvas's center; each
   // capture pixel is 10 CSS px wide either side of it.
-  const at = (x: number, y: number) => [...ctx.getImageData(Math.round(x * sd), Math.round(y * sd), 1, 1).data];
+  const at = (x: number, y: number) => [
+    ...ctx.getImageData(Math.round(x * sd), Math.round(y * sd), 1, 1).data,
+  ];
   expect(at(25, 25)).toEqual([255, 0, 255, 255]);
   const dimmed = at(15, 15);
   // The canvas keeps colors premultiplied, so a translucent one comes back within a step or two.

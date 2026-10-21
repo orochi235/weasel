@@ -39,12 +39,30 @@ describe('softEdgeMask', () => {
   });
 
   it('marks a blend between two colors that share a channel', () => {
-    const img = image(3, 1, (x) => [[0, 255, 0], [128, 128, 0], [255, 0, 0]][x] as Rgb);
+    const img = image(
+      3,
+      1,
+      (x) =>
+        [
+          [0, 255, 0],
+          [128, 128, 0],
+          [255, 0, 0],
+        ][x] as Rgb,
+    );
     expect(Array.from(softEdgeMask(img))).toEqual([0, 1, 0]);
   });
 
   it('does not mark a pixel that overshoots its neighbors in one channel', () => {
-    const img = image(3, 1, (x) => [[0, 0, 0], [128, 255, 0], [255, 128, 0]][x] as Rgb);
+    const img = image(
+      3,
+      1,
+      (x) =>
+        [
+          [0, 0, 0],
+          [128, 255, 0],
+          [255, 128, 0],
+        ][x] as Rgb,
+    );
     expect(Array.from(softEdgeMask(img))).toEqual([0, 0, 0]);
   });
 
@@ -90,18 +108,29 @@ function recorder() {
 }
 
 const COLORS = { line: 'black', tint: 'red' };
-const verticals = (calls: Call[]) => calls.filter((c) => c[0] === 'moveTo' && c[2] === 0).map((c) => c[1]);
+const verticals = (calls: Call[]) =>
+  calls.filter((c) => c[0] === 'moveTo' && c[2] === 0).map((c) => c[1]);
 
 describe('drawPixelGrid', () => {
   it('draws one vertical line per pixel boundary across the area, from where pixel 0 begins', () => {
     const { ctx, calls } = recorder();
-    drawPixelGrid(ctx, { factor: 8, dpr: 1, origin: { x: 3, y: 5 }, columns: 100, size: { width: 30, height: 16 } }, null, COLORS);
+    drawPixelGrid(
+      ctx,
+      { factor: 8, dpr: 1, origin: { x: 3, y: 5 }, columns: 100, size: { width: 30, height: 16 } },
+      null,
+      COLORS,
+    );
     expect(verticals(calls)).toEqual([3, 11, 19, 27]);
   });
 
   it('spaces lines factor over dpr apart', () => {
     const { ctx, calls } = recorder();
-    drawPixelGrid(ctx, { factor: 16, dpr: 2, origin: { x: 0, y: 3 }, columns: 100, size: { width: 17, height: 8 } }, null, COLORS);
+    drawPixelGrid(
+      ctx,
+      { factor: 16, dpr: 2, origin: { x: 0, y: 3 }, columns: 100, size: { width: 17, height: 8 } },
+      null,
+      COLORS,
+    );
     expect(verticals(calls)).toEqual([0, 8, 16]);
   });
 
@@ -109,13 +138,23 @@ describe('drawPixelGrid', () => {
     const { ctx, calls } = recorder();
     const mask = new Uint8Array(4 * 2);
     mask[1 * 4 + 2] = 1;
-    drawPixelGrid(ctx, { factor: 8, dpr: 1, origin: { x: 0, y: 0 }, columns: 4, size: { width: 32, height: 16 } }, mask, COLORS);
+    drawPixelGrid(
+      ctx,
+      { factor: 8, dpr: 1, origin: { x: 0, y: 0 }, columns: 4, size: { width: 32, height: 16 } },
+      mask,
+      COLORS,
+    );
     expect(calls.filter((c) => c[0] === 'fillRect')).toEqual([['fillRect', 16, 8, 8, 8]]);
   });
 
   it('draws nothing below the smallest factor', () => {
     const { ctx, calls } = recorder();
-    drawPixelGrid(ctx, { factor: 4, dpr: 1, origin: { x: 0, y: 0 }, columns: 4, size: { width: 32, height: 16 } }, null, COLORS);
+    drawPixelGrid(
+      ctx,
+      { factor: 4, dpr: 1, origin: { x: 0, y: 0 }, columns: 4, size: { width: 32, height: 16 } },
+      null,
+      COLORS,
+    );
     expect(calls).toEqual([['clearRect', 0, 0, 32, 16]]);
   });
 });

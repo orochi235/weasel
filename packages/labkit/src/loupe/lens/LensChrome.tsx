@@ -1,7 +1,7 @@
 import { useActionsRegistry } from '@weasel-js/core';
+import { useLensResolution, useShownSource } from './LensSlot';
 import { LENS_ACTION_IDS } from './lensActionDefs';
 import { type LensSlotProps, requestsOf } from './lensSource';
-import { useLensResolution, useShownSource } from './LensSlot';
 import type { LensReadout, LensSourceKind, LensView } from './lensTypes';
 import { GRID_NEEDS, gridFits } from './pixelGrid';
 
@@ -49,7 +49,10 @@ export function LensChrome<C>({
   const labelled = difference ? shownRequests.slice(0, 1) : shownRequests;
   const labels = labelled.map((r) => shown.source?.label(r) ?? '');
   // The grid has no meaning over a render of the DOM, or below 8× a captured pixel.
-  const gridOk = shownRequests.length > 0 && shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) && !difference;
+  const gridOk =
+    shownRequests.length > 0 &&
+    shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) &&
+    !difference;
   const at = { lensId: lens.lensId, reticle, source: shown.source?.kind ?? null };
   const trigger = (id: string) => () => {
     onFocus?.(lens.lensId);

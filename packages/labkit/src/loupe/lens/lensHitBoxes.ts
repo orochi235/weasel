@@ -20,7 +20,12 @@ export interface LensHitBox {
 /** A body's own rect, given its hit box: without the slop it grows by while selected. */
 export function interiorOf(rect: LoupeRect, grown: boolean): LoupeRect {
   if (!grown) return rect;
-  return { x: rect.x + HANDLE_SLOP, y: rect.y + HANDLE_SLOP, w: rect.w - 2 * HANDLE_SLOP, h: rect.h - 2 * HANDLE_SLOP };
+  return {
+    x: rect.x + HANDLE_SLOP,
+    y: rect.y + HANDLE_SLOP,
+    w: rect.w - 2 * HANDLE_SLOP,
+    h: rect.h - 2 * HANDLE_SLOP,
+  };
 }
 
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

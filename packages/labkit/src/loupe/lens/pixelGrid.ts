@@ -109,10 +109,20 @@ export function drawPixelGrid(
     const rows = Math.floor(mask.length / columns);
     ctx.globalAlpha = TINT_ALPHA;
     ctx.fillStyle = colors.tint;
-    const last = (to: number, at: number, n: number) => Math.min(n - 1, Math.floor((to - at) / step));
-    for (let j = Math.max(0, Math.floor(-origin.y / step)); j <= last(size.height, origin.y, rows); j += 1) {
-      for (let i = Math.max(0, Math.floor(-origin.x / step)); i <= last(size.width, origin.x, columns); i += 1) {
-        if (mask[j * columns + i]) ctx.fillRect(origin.x + i * step, origin.y + j * step, step, step);
+    const last = (to: number, at: number, n: number) =>
+      Math.min(n - 1, Math.floor((to - at) / step));
+    for (
+      let j = Math.max(0, Math.floor(-origin.y / step));
+      j <= last(size.height, origin.y, rows);
+      j += 1
+    ) {
+      for (
+        let i = Math.max(0, Math.floor(-origin.x / step));
+        i <= last(size.width, origin.x, columns);
+        i += 1
+      ) {
+        if (mask[j * columns + i])
+          ctx.fillRect(origin.x + i * step, origin.y + j * step, step, step);
       }
     }
   }

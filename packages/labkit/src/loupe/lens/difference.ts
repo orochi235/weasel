@@ -5,12 +5,14 @@
 import type { LensCapture } from './lensSource';
 import { readBitmap } from './pixelGrid';
 
+/** What `diffPixels` produces. */
 export interface DiffResult {
   image: ImageData;
   /** How many pixels differ. */
   changed: number;
 }
 
+/** How `diffPixels` decides and draws a difference. */
 export interface DiffOptions {
   /** The largest difference in any one channel still counted as the same. Default 0. */
   tolerance?: number;
@@ -33,7 +35,8 @@ export function diffPixels(a: ImageData, b: ImageData, opts: DiffOptions = {}): 
   for (let i = 0; i < out.length; i += 4) {
     let differs = false;
     for (let c = 0; c < 4; c += 1) {
-      if (Math.abs((a.data[i + c] as number) - (b.data[i + c] as number)) > tolerance) differs = true;
+      if (Math.abs((a.data[i + c] as number) - (b.data[i + c] as number)) > tolerance)
+        differs = true;
     }
     if (differs) {
       changed += 1;

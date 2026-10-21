@@ -10,7 +10,9 @@ const IDS = { lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:lead
 const SIZE = { width: 160, height: 160 };
 
 function source(kind: 'live' | 'pixels') {
-  const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({ reason: 'Nothing under the reticle' }));
+  const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({
+    reason: 'Nothing under the reticle',
+  }));
   const s: LensSource<string> = {
     kind,
     produces: kind === 'pixels' ? 'pixels' : 'dom',
@@ -54,7 +56,11 @@ describe('the Pixel grid canvas', () => {
     await settle();
     expect(grids()).toHaveLength(1);
     expect(pixels.capture).toHaveBeenCalledTimes(1);
-    expect(pixels.capture.mock.calls[0]?.[0]).toMatchObject({ factor: 8, dpr: 1, conditions: null });
+    expect(pixels.capture.mock.calls[0]?.[0]).toMatchObject({
+      factor: 8,
+      dpr: 1,
+      conditions: null,
+    });
   });
 
   it('is not mounted until the lens has switched it on', () => {
@@ -63,7 +69,10 @@ describe('the Pixel grid canvas', () => {
   });
 
   it('is not mounted below 8× a captured pixel, however high the factor over a denser capture', () => {
-    mount({ source: 'pixels', factor: 12, dprs: [2], readouts: ['grid'] }, { pixels: source('pixels').s });
+    mount(
+      { source: 'pixels', factor: 12, dprs: [2], readouts: ['grid'] },
+      { pixels: source('pixels').s },
+    );
     expect(grids()).toHaveLength(0);
   });
 
@@ -81,7 +90,9 @@ describe('the Pixel grid canvas', () => {
   it('keeps its plain label while it draws, and while it is off', () => {
     mount({ source: 'pixels', factor: 8, readouts: ['grid'] }, { pixels: source('pixels').s });
     expect(screen.getByRole('button', { name: 'Grid' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Contrast' }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Contrast' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
     expect(screen.getByTestId('chrome').textContent).not.toContain(GRID_NEEDS);
   });
 });

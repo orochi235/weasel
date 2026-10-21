@@ -63,6 +63,7 @@ export const LENS_REGISTRY = {
   derivePath: { [LEADER_PATH_KEY]: leaderPath },
 };
 
+/** An empty lens scene, with its `lenses` layer and the registry its derived poses and paths resolve through. */
 export function createLensScene<C>(): LensScene<C> {
   return createScene<LensNodeData<C>, 'lenses', RectPose>({
     systemLayers: [{ id: 'lenses' }],
@@ -125,11 +126,13 @@ export function addLensOps<C>(
   ];
 }
 
+/** The ids of the lens a node belongs to, or null when it is not a lens node. */
 export function lensIdsOf<C>(scene: LensScene<C>, nodeId: string): LensIds | null {
   const data = scene.get(asNodeId(nodeId))?.data;
   return data === undefined ? null : idsFor(data.lensId);
 }
 
+/** Every lens in the scene, in render order. */
 export function lensesOf<C>(scene: LensScene<C>): readonly LensIds[] {
   const out: LensIds[] = [];
   for (const node of scene.renderOrderNodes()) {
@@ -153,6 +156,7 @@ function bodyOf<C>(scene: LensScene<C>, lensId: string): LensBodyData<C> | null 
   return data?.role === 'lens-body' ? data : null;
 }
 
+/** A lens's settings, read off its body; null when no such lens is up. */
 export function settingsOf<C>(scene: LensScene<C>, lensId: string): LensSettings<C> | null {
   const data = bodyOf(scene, lensId);
   if (data === null) return null;

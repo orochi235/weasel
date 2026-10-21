@@ -45,6 +45,7 @@ export interface LensActionApi<C> {
 /** Each Live lens is a whole second render, so the count is capped. */
 export const MAX_LENSES = 8;
 
+/** Every lens action's id, by short name. */
 export const LENS_ACTION_IDS = {
   add: 'loupe.add',
   close: 'loupe.close',
@@ -249,6 +250,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
   return [add, close, pinned, follow, followMove];
 }
 
+/** The lens actions over `api`; `comparisons.opposite` is what the opposite-mode preset compares against. */
 export function createLensActions<C>(
   api: LensActionApi<C>,
   comparisons: { opposite: () => C },
