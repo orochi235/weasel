@@ -1,5 +1,11 @@
 # @weasel-js/cursor
 
+## 1.11.1
+
+### Patch Changes
+
+- @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

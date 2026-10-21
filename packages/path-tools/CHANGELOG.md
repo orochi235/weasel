@@ -1,5 +1,125 @@
 # @weasel-js/path-tools
 
+## 1.11.1
+
+### Patch Changes
+
+- 70b12d1: An action can carry a settings form: `Action.settings` holds a prefs schema, a `read` that gives
+  the selection's current values (and which fields it disagrees on), and an optional `params` that
+  turns one field's change into the params the action is triggered with. Every surface that lists
+  actions draws such an action as its form instead of a button that triggers it bare: a bar or a
+  panel opens it in a popover under the action's button, a menu shows it as a submenu of its fields,
+  and the command palette opens it in a dialog. Each change is one trigger, so one undo step. The
+  form is disabled while the action's `enabled` says no. `readActionSettings` and
+  `actionSettingsParams` are what the surfaces read it through; `useActionSettings`,
+  `ActionSettingsPopover` and `ActionSettingsDialog` are in `@weasel-js/ui/components/ActionSettings`.
+  `BarActionButton` takes `expanded` for a button that opens a dialog.
+  
+  Warp Settings (`configureWarp`) and Edit Path Effect (`editPathEffect`) carry one each, so Warp
+  Settings on a bar now opens Mode, Rows, Columns, Mapping and Tolerance for the selected warps
+  rather than doing nothing, and both are disabled with nothing they apply to selected.
+  `editPathEffect` takes an optional `kind`, limiting an edit to effects of that kind, and now reads
+  `selection`. The forms are exported as `warpSettingsForm` and `pathEffectSettingsForm`.
+- 3b5750f: Set, swap, or release the spine of a blend that already exists. `setBlendSpineAction`
+  (`setBlendSpine`) lays the selected blend along the other selected path, in either selection order,
+  replacing any spine it had; `releaseBlendSpineAction` (`releaseBlendSpine`) puts each selected
+  blend back on a straight run between its two shapes and selects the spines, ordinary paths where
+  they were. Both are in `pathEffectsPreset` and the `pathEffects` group, and each is one undo step.
+  
+  Core adds `createSetDependsOnOp`, an undoable retarget of a derived node's `dependsOn`, and the
+  `setDependsOn` write it goes through on `SceneMutators` and the scene-backed adapter.
+- 25a112b: Constraint links follow whole-node drags live, and broken ones are drawn.
+  
+  - core: move, resize and rotate preview the nodes a constraint link ties as they will commit, every frame, through the same finishing the commit runs, and `transformPreviewFields` gives a drag its preview fields with them added.
+  - path-tools: `createConstraintLinkMarks(style)` is a screen-space layer, carried by `constraintsPreset`, that draws every broken link: its constraint's mark by the anchor it holds and a dashed line to where it wants that anchor, in the conflict color. `brokenConstraintLink(scene, id)` and `brokenConstraintLinks(scene)` read the links that do not hold, `constraintLinkMarks` draws a list of them, and `DEFAULT_CONSTRAINT_STYLE` is exported.
+- 4d99526: Constraint links now hold through whole-node transforms, preview through every path-edit drag, and have a gesture that makes them.
+  
+  - core: `PathEditExtension.finishTransform(ctx: PathTransformFinishCtx)` answers the other nodes a move, resize, rotate, flip, nudge or transform-again changes along with the ones it transforms — align and distribute too — committed in the same history entry; the `editAnchors` dep runs it as `transformOps(ops, label)`, and those actions now declare `editAnchors`. An extension may refuse a transform by answering null.
+  - core: `pathEditPreview` finishes each frame itself through the new `finishPathEditFrame`, so bend segment and the path-tools drags preview the node's constraints and linked nodes as they will commit. Breaking: its `current` thunk now answers a `PathEditFrame` (`{ path, origins? }`) instead of a bare path.
+  - geom: `PathsEditItem.yields` lets a path the edit left alone give way freely.
+  - path-tools: the constraints extension carries linked nodes through whole-node transforms; `constraintLinkConflictsOf(scene, id)` reports the links tying a node that do not hold; `linkAnchorAction` (in `constraintsPreset`) links an anchor Alt-dragged onto another node's anchor (`coincident`) or segment (`onPath`), with `linkTargetAt` and `linkConstraint` beside it.
+- 6875e54: `cornerControlsState` reports a corner with no keyword (a parameter between them, or a sharp corner) as `shape: 'none'` rather than `null`. A prefs form now reads a `null` value as absent and shows the leaf's default, which would have pressed `round`; `'none'` is a held value the shape leaf's encoding reads as no option.
+- 5cdc3d0: `BROWSER_RESERVED_CHORDS` adds Mod+Shift+I, J, C and K: Chrome's devtools, console and inspector on Windows and Linux, and Firefox's Browser and Web Console. Bridge and Bridge anchors move off Mod+Shift+J to Alt+J, which is a breaking change for anyone relying on the old default.
+- 1bb4752: Tool sets: a `ToolSet` names a group of tool ids and other sets as one unit (`toolSet`, `toolIdsOf`, `withoutTools`, `toolSetHas`). `<SceneCanvas defaultTools>`, a preset's `tools`, and `ToolPalette`'s `include` each take sets. Core exports one per family, `SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`, `PAGE_TOOLS` and `RIG_TOOLS`, with `BUILTIN_TOOLS` over them all; `BUILTIN_TOOL_IDS` is derived from it, and a shape kind's new `family` field says which set names it. `@weasel-js/path-tools` exports `WARP_TOOLS`, `RESHAPE_TOOLS`, `PATH_TOOLS_TOOLS`, and `usePathToolsTools()`, which builds every one of its tools keyed by id.
+- Updated dependencies [70b12d1]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [853ce69]
+- Updated dependencies [5cdc3d0]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [995eac7]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [716561f]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [0e24110]
+- Updated dependencies [c2dfd4e]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [c29ac84]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [f819e61]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [ac892f8]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [f148f50]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [433540d]
+  - @weasel-js/routing@1.11.1
+  - @weasel-js/core@1.11.1
+  - @weasel-js/renderer@1.11.1
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/stroke@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/cursor@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

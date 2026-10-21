@@ -1,5 +1,97 @@
 # @weasel-js/svg
 
+## 1.11.1
+
+### Patch Changes
+
+- 455a34f: `@weasel-js/diagram-formats` reads and writes draw-style XML as `DRAW_XML`, listed in
+  `DIAGRAM_FORMATS`. It is the format that keeps a chart laid out: one `<diagram>` per page, each a
+  graph model of cells with a style string and a geometry. Reading takes pages written out or
+  compressed (base64 of raw deflate of the URI-encoded model), and a bare graph model as one page.
+  It keeps places and sizes, outlines (rhombus, ellipse, hexagon, parallelogram, trapezoid, and a
+  rounded rect of arc size 50 or more as a stadium), fill, stroke, and font colors, font size,
+  family, and bold, HTML text with its tags stripped and its breaks kept, containers, swimlane pools
+  of lanes, groups, routers, waypoints, exit and entry points as the nearest compass port, edge
+  labels and where along the edge they sit, and arrowheads. A shape it does not know becomes a rect,
+  with a warning, as do edges with a loose end and merged layers. Writing spells out every color
+  under the document's theme, lays out a page whose nodes have no place, writes an avoiding
+  connector as orthogonal along its route, and leaves out edges between pages, with a warning.
+  
+  `@weasel-js/diagram` exports `NODE_STROKE_WIDTH`, `LANE_STROKE_WIDTH`, and `EDGE_STROKE_WIDTH`,
+  the outline widths it draws with when a style gives none. `@weasel-js/svg` exports `escapeAttr`
+  and `escapeText`, the escaping it writes XML with.
+- af18142: The opening doc comments of `@weasel-js/devtools`'s entry and of `@weasel-js/svg`'s `serializePathD` module are marked `@packageDocumentation`, so the API reference reads them as the module's description instead of handing them to every name the file exports. No code changed.
+- 3db0ab0: SVG import reads a `dx` list on a `<text>` that holds only text, as it already read one on a `<tspan>`: each shift becomes letter spacing on the glyph before it, and a leading shift moves the text. A `dx` on a `<text>` holding a `<tspan>` still warns and is not read.
+- 71d4416: Synthetic-bold text reaches the outline tier. Past the outline threshold, a glyph faked bold from a
+  lighter face used to stay on the distance field; it is now drawn as geometry, its outline grown by
+  the distance the field's threshold shift moves the edge, so it is as heavy on either side of the
+  threshold. A stroked synthetic-bold run, which stayed on the atlas unstroked, is now stroked. A
+  grown glyph's `LaidOutOutlineGlyph.d` holds the grown outline, and its `key` names the growth.
+  
+  `@weasel-js/geom` gains `pathToD`, the inverse of `pathFromD`, also exported from `@weasel-js/core`.
+  `@weasel-js/svg`'s `serializePathD` is now that function.
+- Updated dependencies [70b12d1]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [853ce69]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [0e24110]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [ac892f8]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [433540d]
+  - @weasel-js/core@1.11.1
+  - @weasel-js/geom@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

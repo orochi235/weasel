@@ -1,5 +1,28 @@
 # @weasel-js/animator
 
+## 1.11.1
+
+### Patch Changes
+
+- 768be71: Depend on `@msb235/blits` 0.11.0, where stopping an animation no longer costs time in step with how many are running. blits' `loop` now defaults to one pass; no voice weasel cues depends on it, since each is either a motion (a tween or a spring) or a patch with no duration, and blits ignores `loop` for both.
+- Updated dependencies [4d99526]
+- Updated dependencies [e30f4df]
+- Updated dependencies [13fc67f]
+- Updated dependencies [50da815]
+- Updated dependencies [0f455dc]
+- Updated dependencies [15efc86]
+- Updated dependencies [07b686c]
+- Updated dependencies [041bc38]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

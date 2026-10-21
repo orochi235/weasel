@@ -1,5 +1,384 @@
 # @weasel-js/diagram
 
+## 1.11.1
+
+### Patch Changes
+
+- 267d5e4: Connectors can route around shapes. The `avoid` router draws a connector orthogonal, with few bends,
+  clear of every shape, and with parallel runs spread apart. Its route is computed when the scene is
+  edited and stored on the edge as `diagram.route`, so a saved file draws it without rerouting and
+  undo restores it exactly; a stored route that no longer fits its ends draws as `orthogonal`.
+  `useAvoidRouting(scene)` (or `installAvoidRouting` outside React) reroutes whatever each edit
+  disturbed in that edit's own undo entry, and reroutes the connectors near a dragged shape every
+  frame. Containers, pools, and group boxes are in the way only of connectors with neither end inside
+  them; lane bodies never are; headers always are. Dragging a segment of an `avoid` connector pins
+  only that segment. `DiagramView` takes `router="avoid"`, and `createAvoidRouter` — the search alone,
+  over plain boxes and ports — is in `@weasel-js/diagram/layout`. New commands set the selected
+  connectors' router (`SET_ROUTER_ACTION_IDS`), and layout no longer writes waypoints to an `avoid`
+  connector.
+  
+  Core adds scene edit passes: `scene.addEditPass(pass)` hears each live edit's added, removed,
+  posed, re-parented, and data-changed ids once its own mutations and the arrival handler have run,
+  and its ops join the same undo entry. Passes never re-trigger on their own writes, and undo, redo,
+  and history replay never run them. While any pass is added, a bare scene call runs as an edit of
+  its own.
+  
+  weaselchart's connector tool draws connectors that route around shapes, and Format › Connector
+  picks Around shapes, Orthogonal, Straight, or Curved for the selected connectors. Charts saved
+  before keep the router they have.
+- 922cddf: Diagrams get containers and swimlane pools, and core's layouts and drops carry and filter nested nodes.
+  
+  - core: a layout pass that moves a child container now takes that container's descendants along, under absolute poses, in the same edit; so does a layout drop that shifts siblings, in its preview and its commit. `carriedDescendants(source, root, translate)` and `sceneCarrySource(scene)` are the helper behind both. A new optional `canDropInto(parent, ids)` dep (`CanDropIntoDep`) decides which containers a move may drop into: reparent-on-drop passes over a refused container, the layout drop skips it, and a child leaving its layout container does not land in it.
+  - diagram: `CONTAINER_STENCILS` offers Container, Pool (rows), and Pool (columns). A container is a titled box whose members move with it and stay put when it is resized; a pool stacks lanes that reorder by their headers, resize by the boundary after each (`diagram.resizeLane`), and grow by the button past the stack (`diagram.addLane`). `diagram.releaseMembers` removes a container and keeps what it holds. `diagramCanDropInto(scene)` is the drop filter, `diagramContainers` returns the lane layer and the contribution, and `diagramContainerLayout` and `laneStackLayout` register through `withDiagramRegistry`. `useStencilInsert` takes `containers`, and a stencil drawn inside a container or a lane becomes its member. Lanes take no connectors, and `diagramResizable` refuses them.
+  - core: a container with a layout is arranged again whenever one of its children's poses is written — a nudge, an align, a panel edit — not only when its children or its size change, in the same undo entry as the write.
+- d5a4102: Breaking at the type level for custom `commit` and `canConnect` callbacks: the ends of a `PendingEdge` and the arguments of `CanConnect` are now a `ConnectEnd`, which is a port or a shape's body, where they were always a port.
+  
+  `@weasel-js/diagram` gains editing surface. Edges connect onto a shape's body (`connectBodies`, the `bodies` option, and a connector tool), and a selected edge's ends reconnect by dragging a handle. A label action (`editEdgeLabelAction`, `edgeLabelSpec`, `labelSize`) creates and edits an edge's label. Stencils (`FLOWCHART_STENCILS`) come with `useStencilInsert` and `useStencilTool`. `DiagramView` takes `onReconnect`, `onDelete`, `onEditLabel`, `connectBodies` and `ambient`, and its ref has `worldAt`. `diagramResizable` keeps resize handles off edges and labels. `DataEdge` and `EffectWire` take an optional `id`, and the `ellipse` outline is new. For effect pipelines there is an edit model, stage types with typed params, and `EffectEditor`, an editable node graph.
+  
+  `@weasel-js/core` exports `createDeleteAction` and `commitDeleteToScene`, so a consumer can swap how a delete commits.
+- 9cd12f7: Edge labels are obstacles, and they dodge. An `avoid` connector now routes around every other
+  connector's label, 4 world units clear (`labelClearance`), and never around its own; within one
+  commit a label is restationed on its connector's new route before the next connector routes.
+  `AvoidEdge.label` carries it, filled from the scene and from `DiagramView`'s specs. An obstacle's
+  `kind` may now be `'label'`.
+  
+  After any edit, `useLabelPlacement(scene)` (or `installLabelPlacement` outside React) moves a label
+  that sits on a shape, another label, or another connector along its own connector, or across it,
+  to the nearest clear station, in that edit's own undo entry, and sizes a label to the text an edit
+  gives it. The chosen station is stored on the label trait as `placed`, which `labelDerivePose`
+  reads before `at` and `offset`; `dodge: false` opts a label out. Labels hold still during a drag
+  and settle on release. `DiagramView` takes `labels="dodge"`, `createSpecLabelPlacer` is that step
+  on its own, and `placeLabels` — the placement alone, over plain boxes and routes — is in
+  `@weasel-js/diagram/layout` with `labelCenter`.
+  
+  Core adds `documentDepOf(scene, id)`: a dependency at the pose and path the document holds, with
+  no override counted, for a reader such as an edit pass.
+  
+  weaselchart places edge labels, so a shape dropped on a label moves the label off it on release.
+- e5ba382: Connectors can jump each other. While a scene's `HOPS_DOC_KEY` document value is set, wherever two
+  connectors cross, the one later in render order bows over the other in a half circle of the value's
+  `size`. A hop bulges toward −y on a horizontal run and toward −x on a vertical one, whichever way the
+  connector travels, and to the left of travel on a diagonal. Crossings near either connector's ends
+  or a bend, and collinear overlaps, make no hop, and hops closer than twice their radius merge into
+  one longer hop. A connector split across pages neither hops nor is hopped over. Each connector stores its hops as `diagram.hops`, so a saved file draws them with no
+  pass running, and a hop no longer on its connector's route does not draw.
+  
+  `useHops(scene)` (or `installHops` outside React) recomputes the hops an edit disturbed in that
+  edit's own undo entry, and turning the value on or off recomputes or clears them all in the one
+  entry that sets it. While a drag is in progress, the connectors it moves, and those hopping over
+  them, draw without hops until release. `diagramWaypoints` carries a Line jumps toggle
+  (`SET_HOPS_ACTION_ID`), `DiagramView` takes `hops`, a radius, and `edgeHops`, the crossing finder
+  over plain polylines, is in `@weasel-js/diagram/layout`.
+  
+  Core's `TransformFollower.preview` gets a second argument: the data the followers before it
+  previewed, by id, so a follower can build on a route an earlier one previewed. A follower that
+  calls `preview` itself now passes it. `useAvoidRouting`'s drag preview reads the waypoints a
+  `waypointFollower` registered before it carried, rather than carrying them itself, so without one
+  the preview leaves waypoints where the commit will.
+  
+  weaselchart adds Format › Connector › Line jumps.
+- 8e317f5: Off-page reference markers. On a scene with pages, a connector whose two shapes sit on different
+  pages no longer draws across the gap: each end draws a short stub out of its shape, ending at a tag
+  that reads the other page's name and a reference letter, such as "Page 2 · A".
+  `useOffPageMarkers` (or `installOffPageMarkers` without React) splits and joins connectors as edits
+  move their ends or change the pages, in that edit's own undo entry, and writes
+  `DiagramEdge.offPage`. The tags are text nodes with a background (`offPageTagSpec`, registry key
+  `diagram:offPageTag`), colored by the theme. `diagramOffPage()` binds a double-click on a tag to
+  selecting the shape at the far end and fitting the view to its page. `offPageSplits` is the split
+  rule as arithmetic, and `offPageOps` runs the pass over named connectors.
+  
+  A split connector's `ResolvedRoute` carries its two `stubs`, it shows no route handles, and the
+  `avoid` router leaves it out until it joins again. An edge label on a path with several subpaths
+  sits on the first (`subpathOf`).
+  
+  `pageName` (core) is the name a page shows, its own or "Page" and its place, and `PageTabs` uses it.
+- d3787a4: An effect pipeline can be run, not only drawn. `runPipeline` evaluates it in `runOrder` with an
+  `EffectEvaluator` per stage type and an `EffectValueKind` per value type, filling each stage's cost,
+  values, and previews; a stage nothing reaches is skipped, a bypassed stage passes its input through,
+  a throwing evaluator records its `error`, and stages on a cycle never run. A stage with no outputs
+  shows and previews what reached its inputs (`shownPorts`), so a sink shows the finished result. `createEffectRunner` runs
+  one pipeline whole, a stage at a time (the run's new `at`), or every frame while playing, and closes
+  the previews of runs that are off screen; `useEffectRunner` plays it through `useVisibleRaf`.
+  `IMAGE_STAGE_TYPES`, `imageEvaluators`, `imageValueKinds`, and `testCard` run image pipelines on
+  `OffscreenCanvas`. `paintRun` outlines the stage a run is `at` and writes a stage's `error` where its
+  cost goes, and `EffectEditor` takes a `run`, fading the port dots of unreached stages as
+  `EffectChart` does.
+  
+  weaselchart's pipeline mode has a Run menu (Run, Step, Play, Pause, Reset, and Choose Source
+  Image…) and View › Show Values and Show Previews; its stage palette is now `IMAGE_STAGE_TYPES`.
+- 312eb35: Themes can be edited. `forkTheme`, `setThemeValue` (by a `ThemePath` such as
+  `['roles', 'accent', 'fill']` or `['series', 2]`), `addThemeRole`, `renameThemeRole`, and
+  `removeThemeRole` return a new theme and leave the one given alone, so a shipped theme is never
+  changed; `editableTheme` forks a shipped theme and passes a custom one through. `DiagramTheme` takes
+  `roleLabels`, the names of roles beyond the shipped six, and `themeRoles(theme)` lists every role
+  with its name. A removed role's shapes are drawn in the default role. `parseDiagramTheme` and
+  `themeToJson` read and write `.weasel-theme.json` files, and a bad file comes back as errors naming
+  each bad value by its path. `applyDiagramTheme` takes `{ coalesceKey, from }`.
+  
+  Applying a theme whose font size differs from the scene's moves existing text by the step between
+  them: shape rows, titles, and connector labels keep their offset from the body size.
+  `setDiagramFontSize(scene, ids, size)` sets a shape's or connector's text size by hand and records
+  it in the trait's new `ownFont` (`FontField`), which a theme's size change then leaves and choosing
+  a role keeps. A body whose text changes size is laid out again in the same undo entry: it grows
+  to fit its rows and never shrinks. A body built from text rows alone records how it stacks them
+  as `DiagramNode.body`, its rows carrying `bodyRow`; `relayoutBodies` lays such bodies out again,
+  and `rendererMeasure` measures text from the registered font as the renderer draws it.
+  
+  Core's `scene.batch(label, fn, { coalesceKey })` folds a batch into the undo entry before it when
+  that one was recorded under the same key and nothing came between, so a run of batches, such as a
+  color dragged, undoes as one entry back to the state before the first. Unlike an op's own key it
+  needs no `coalesceWindowMs`; `scene.history.seal()` ends the run. `@weasel-js/history`'s
+  `recordEntry` takes the same `coalesceKey`.
+  
+  weaselchart's Format › Theme › Edit Theme… opens a Theme panel: every role's colors, with roles
+  added, renamed, and removed (not the default), the connector, label, container, lane, page, and
+  series colors, and the font. The Style panel gains Text size. The chart recolors as a color is dragged, and one undo takes back the
+  drag. The first edit to a shipped theme copies it into the chart as "<name> (edited)". Import
+  Theme… and Export Theme… move a theme between charts.
+- 7ffc196: Connector routes are editable, and whole-node transforms carry other nodes along through one dep.
+  
+  - core: a `transformFollowers` dep holds every `TransformFollower`, `{ preview(frame), finish(ops, label) }`, and each whole-node transform (move, resize, rotate, flip, align, distribute, nudge, transform again) finishes its batch and previews its frame through all of them in order. `useTransformFollower` adds one. Path edit's constraint links are now one of them, so `EditAnchorsDep.transformOps` and `EditAnchorsDep.transformPreview` are gone; that is breaking for anyone who called them. `writtenBy(scene, ops)` reads the pose and data a batch leaves each node it writes.
+  - diagram: a selected edge shows handles along its route. Under `straight` and `bezier`, a dot on each waypoint moves it and a hollow dot in each leg inserts one; under `orthogonal`, a bar slides its segment, jogging where it touches a port. A double-click removes a waypoint or straightens a jog. Drags snap into line with neighboring stops and port axes. `diagramWaypoints` returns the handle layer and a contribution carrying the drag, the double-click, and the `diagram.resetRoute` command; the math is exported on its own (`routeHandles`, `dragSegment`, `simplifyStops`, and the rest). `waypointFollower(scene)` carries waypoints along with a move of both ends. `DiagramView` takes `onEditRoute`, and `EffectEditor` keeps wire routes in `EffectDoc.routes` (`setWireRoute`). `edgeRouter` answers an edge's resolved route, as `edgeDerivePath` draws it.
+- 11e1ecb: The container stencils carry palette glyphs. `ContainerStencil` takes an `icon`, and
+  `CONTAINER_STENCILS` sets one on each: a box with a title band for Container, a box with a left
+  header and two stacked lanes for Pool (rows), and a box with a top header and two lanes side by
+  side for Pool (columns). The glyphs are diagram's own `diagram` icon namespace, published as
+  `@weasel-js/diagram/icons` and found by the icons build plugin through the package's
+  `weaselIcons` field; an app that registers tables by hand adds this one beside the kit's.
+- 853ce69: A dep source is handed `below`, which reads the source it displaced, in its own scope or one above, so a source can handle part of a dep and pass the rest to the default (`DepSource`, accepted by `useDepSource` and `DepRegistry.register`). A source taking no argument works as before. `useStencilInsert` uses it: a kind no stencil names goes to the `insert` dep beneath it, so core's rect, ellipse and text tools work beside stencils.
+- 10da7a0: A body's label rows are centered in their row (`rowTextStyle`, used by `diagramScene` and by stencils alike); field rows stay left-aligned. `formatParam` shows a number to as many places as its control's `step` has, and never prints `-0.0`. `EffectEditor` pins every stage where it shows on a drag, as adding a stage already did, so layout no longer moves the stages nobody placed, and a delete clears its picked wire. `dropEmptyEdgeLabel` removes an edge label whose edit ended with no text; pass it as a text edit's `onEnd`.
+  
+  `CanConnect` takes a third argument, `moving`: the edge and end a reconnect is carrying, absent for a new connect. A connect or reconnect no longer lands on the body of a shape with no ports, which left an edge with nothing to route to. A reconnect's preview aims its fixed end the way the committed edge will, at the first waypoint when there is one, through `endAims`, the one rule both now share.
+- 1729b01: `DiagramData` takes containers and pools. `containers` lists regions by id, each a container with
+  `members` or a pool with `lanes`; `diagramScene` builds each as a scene container holding its
+  members, outer regions first. A container with a `box` is laid out as one node of that size and its
+  members ride along with it, a member with no `at` seeded inside it in rows; one with no `box` is laid
+  out as a group and fits its members. A pool always has a box, and its lanes stack at their `size` or
+  share what the box leaves. An edge with an end inside a boxed region ranks against the outermost one.
+  Under `theme`, regions take the theme's container and lane colors, or a `style` role's, and their
+  titles the theme's face. A node named by both a group and a region is refused: `diagramScene` throws.
+  
+  `DiagramView` takes `onEditContainer`, which reports a region moved or resized (`box`), a lane
+  boundary dragged, a lane reordered by its header, or a lane added (`lanes`), a header
+  double-clicked (`title`), and Release members (`release`), keeping none of them until the specs
+  follow. `NodeMove` carries `parent` when a drop changed the region a node is in, `onDelete` reports a
+  deleted region with everything inside it, and the view lets shapes drop only into containers and
+  lanes. `router="avoid"` routes around regions and their headers as the scene router does, and
+  `diagramLayoutOf` also returns the boxes layout gave containers and pools.
+  
+  `regionSpecs` and `firstLanes` are exported, so stencils and data build regions one way, and
+  `editContainerTitleAction` reports a double-click on a header. The data types moved to their own
+  module; every import path is unchanged.
+- 06f7bca: `DiagramData` takes `pages`: `diagramScene` splits a connector between pages into stubs with off-page tags, as chart mode's edit pass does.
+- 455a34f: `@weasel-js/diagram-formats` reads and writes draw-style XML as `DRAW_XML`, listed in
+  `DIAGRAM_FORMATS`. It is the format that keeps a chart laid out: one `<diagram>` per page, each a
+  graph model of cells with a style string and a geometry. Reading takes pages written out or
+  compressed (base64 of raw deflate of the URI-encoded model), and a bare graph model as one page.
+  It keeps places and sizes, outlines (rhombus, ellipse, hexagon, parallelogram, trapezoid, and a
+  rounded rect of arc size 50 or more as a stadium), fill, stroke, and font colors, font size,
+  family, and bold, HTML text with its tags stripped and its breaks kept, containers, swimlane pools
+  of lanes, groups, routers, waypoints, exit and entry points as the nearest compass port, edge
+  labels and where along the edge they sit, and arrowheads. A shape it does not know becomes a rect,
+  with a warning, as do edges with a loose end and merged layers. Writing spells out every color
+  under the document's theme, lays out a page whose nodes have no place, writes an avoiding
+  connector as orthogonal along its route, and leaves out edges between pages, with a warning.
+  
+  `@weasel-js/diagram` exports `NODE_STROKE_WIDTH`, `LANE_STROKE_WIDTH`, and `EDGE_STROKE_WIDTH`,
+  the outline widths it draws with when a style gives none. `@weasel-js/svg` exports `escapeAttr`
+  and `escapeText`, the escaping it writes XML with.
+- 46224b6: Groups now work under the `rack` and `lanes` looks. Layouts that have groups change: the `chain`
+  layout keeps each group's members together and moves stages outside a group out of its columns,
+  and the `lanes` look gives each group columns of its own. `EffectEditor` reorders a group by
+  dragging its title and renames it by double-clicking the title under both looks, moves a run of
+  stages along the chain as one, and refuses a stage drop that would split a group. In
+  `ReorderItem`, `grip` accepts `null` for an item that has gaps but can't be picked up, and a
+  `'bar'` drag now moves everything an item `carries`.
+- ef71bf5: `@weasel-js/diagram-formats` gains the interchange document every diagram format reads and writes.
+  A `DiagramDocument` is a list of pages, each a sheet size and a `DiagramData` in coordinates from
+  the page's corner, plus the edges that run between pages and the theme. `documentFromScene(scene)`
+  reads a diagram scene into one, keeping only the colors the scene's theme would not give;
+  `documentSpecs(doc, { layer, theme, measure })` turns one back into scene specs and the
+  `core:pages` and `diagram:theme` document values, laying out once any page whose nodes are not all
+  placed. A `DiagramFormat` has `detect`, and `read` and `write`, each returning its warnings;
+  `DIAGRAM_FORMATS` lists them, `detectFormat` picks one by content and then by extension, and
+  `readDocument` reads a file with it. `DIAGRAM_JSON` is the first format: the document as JSON.
+  
+  In `@weasel-js/diagram`, a `DataNode`, `DataEdge`, `DataContainer`, and `DataLane` take `colors`
+  of their own, which `diagramScene` draws over the theme and lists in the trait's `ownStyle`, so a
+  theme change leaves them. A `DataEdge` takes a theme role in `style`. `diagramScene` takes a
+  `layer`. `dataNodeStyle`, `dataEdgeStyle`, and `dataRegionStyle` give the style each data item is
+  drawn in.
+- 4a74f67: One reorder drag: `createReorderAction` carries an item of any drawn sequence and takes a `show`
+  option, `'bar'` (the default) for an insertion bar or `'slide'` to slide the other items into place.
+  `DiagramView`'s `onReorder` is now built on it through `groupReorderSlots`, and the pipeline editor's
+  stage and lane reorders use it too; `onReorder` behaves as before.
+  
+  Breaking: `createSlotReorderAction`, `slotReorderContribution`, `slotReorderBinding`,
+  `SLOT_REORDER_ACTION_ID`, and `reorderBindings` are gone. Use `createReorderAction`,
+  `reorderContribution`, `reorderBinding`, and `REORDER_ACTION_ID` (`'diagram.reorder'`), whose
+  `slots` now also hears the press point. `createReorderAction` no longer takes a report callback;
+  `groupReorderContribution(report)` is what `onReorder` installs. A move's `commit` hears `order`
+  beside `id`, `from`, and `to`, and an item lands in the gap nearest its middle rather than the
+  pointer.
+- e30f4df: `DiagramView` can hold DOM against its nodes, groups and edges, report what the pointer is over, and let a group's members be dragged into a new order. All three are additive.
+  
+  - `overlays` places each `DiagramOverlay` against its target after every paint: centered on it, or beside it through geom's `placeRect`, flipping inside the view. An edge's place is the midpoint along its route. The view now renders a box around its canvas to hold them, and `className` goes on that box rather than on the canvas.
+  - `onHover` reports the node, group or edge under the pointer; `pickEdges` lets a click or a hover land on an edge whatever editing callbacks are set. `rectOf(id)` and `subscribeFrame` on the ref give a target's client rect and when to read it again.
+  - A `DataGroup` with `reorder: 'x' | 'y'` lets `onReorder` drag any member along that axis, carrying everything inside a member that is a group, or step the picked one with Alt and an arrow key. It reports `{ group, order }` and moves nothing. `layered` keeps such a group's members in the order given across every rank instead of sorting them by crossings. `createReorderAction`, `createStepReorderAction`, `reorderBindings` and `reorderContribution` are exported for use outside `DiagramView`.
+  
+  `SceneCanvas` takes `onHover`, called when the topmost pickable node under the pointer changes. `@weasel-js/react` exports `adoptCss`, `adoptCssOnce` and `styleRootOf`, the stylesheet adoption core's canvas and `KitSettingsFromPrefs` now share.
+- e7ba51a: Diagram themes. A `DiagramTheme` holds a style per role (`DIAGRAM_ROLES`: default, accent, muted, positive, warning, negative), connector and label colors, container and lane looks, a page color, a font, and a color series. `DIAGRAM_THEMES` ships `paper`, `night`, `blueprint`, `pastel`, and `mono`, and `diagramThemeFromTokens(read)` builds one from resolved `--wzl-*` values.
+  
+  - A theme writes literal colors into the scene. `applyDiagramTheme(scene, theme)` recolors every shape, text row, group, connector, and label and saves the theme as the `diagram:theme` document value, as one undo entry; `themeWrites` is its pure half, and `diagramThemeOf` reads the value back.
+  - `DiagramNode` and `DiagramEdge` gain `style` (a role id) and `ownStyle` (the colors set by hand, which a theme leaves). `setDiagramStyle` names a role and recolors in it; `setDiagramColor` sets a fill, stroke, or text color by hand. `diagramStyleOf` reads either back.
+  - `DiagramSceneOptions.theme` draws each `DataNode` in its new `style` role, and edges, groups, labels, and text in the theme. `stencilBuild` and `useStencilInsert` take `font`. `roleStyle`, `roleEdgeStyle`, `themeEdgeStroke`, `themeFont`, `themeLabelFont`, and `themeLabelStyle` turn a theme into what the insert paths take.
+  - The effect looks take `theme` in their options (`LookThemeOptions`; default `night`, `LOOK_THEME`), reading stage styles, lane bodies, and type colors from it. Under `night` they draw exactly as before. `typeColors` takes the series and `stageStyle` and `sceneStyles` the theme, as optional last arguments.
+- 8c2a9a9: `DiagramView` takes `onResize`. With it set, a selected node shows resize handles; the box resizes
+  live under the drag, and on release the view reports `{ id, x, y, width, height }` for each resized
+  node and changes nothing until the specs follow. Store the box as the data node's `width`, `height`,
+  and `at`; the size is a minimum, so a box dragged smaller than its rows grows back to them.
+  `diagramResizable` now refuses a group's box, whose size comes from its members.
+  
+  Core adds `createResizeAction({ commit })`, the resize action with its commit swapped: `commit` is
+  handed each resized node's pose at release, and the scene is left as it was.
+- 13fc67f: An edge label can be dragged along and beside its edge. `diagramLabelDrag({ scene, selected })`
+  returns a layer and a contribution: a drag on a label (`diagram.moveLabel`) stores where it was
+  dropped as a fraction along the route (`at`), an offset from the line (`offset`), and
+  `dodge: false`, so label placement leaves it there and it keeps its spot when the edge reroutes. A
+  click on a label selects its edge, and a double-click edits its text. Locked and hidden labels do
+  not drag. With no `commit` the drag writes the scene in one undoable entry; `DiagramView` reports it
+  through `onMoveLabel` instead. `diagram.resetLabel` (`RESET_LABEL_ACTION_ID`) puts the selected
+  edges' dragged labels back to `LABEL_PLACEMENT`, which the main entry now exports.
+  
+  Geom adds `PathMeasure.nearest`, the arc length along a path nearest a point.
+  
+  All of it is additive. weaselchart adds label dragging and Format › Connector › Reset label.
+- adadf5e: Scene edit passes now compose. `scene.addEditPass(pass, { order })` runs passes by ascending
+  `order` (default 0), ties in the order they were added, and each pass hears the edit's own changes
+  plus every write the passes before it made; it still runs once per edit, and undo, redo, and
+  history replay still run none. This changes what a second pass hears: it used to miss the first
+  pass's writes. `SceneEditSummary.docChanged` lists the document-value keys an edit set.
+  
+  Diagram exports `DIAGRAM_PASS_ORDER`, where each of its passes runs, and avoid routing installs its
+  pass at `DIAGRAM_PASS_ORDER.avoid`. The routers (`straight`, `orthogonal`, `bezier`, `avoid`,
+  `ROUTERS`) moved to their own module; the package exports them as before.
+- d863c74: `EffectEditor` edits wire routes under the `rack` and `lanes` looks as well as `nodeGraph`. A
+  selected wire shows its route handles, and a drag reports `'Edit route'` with the route in the new
+  `EffectDoc.lookRoutes`, kept by look and by wire together with where the wire's two ports were drawn.
+  Since these looks move stages on every reorder or added stage, a route is drawn only while both
+  ports are still there, and otherwise the look routes the wire itself. Reset route gives the wire
+  back to the look. `setLookRoute`, `applyLookRoutes`, `pruneLookRoutes`, and `wireEnds` are exported
+  from `@weasel-js/diagram/effect`, and so is `setWireRoute`, which the README already named.
+  
+  A reorder now drops the routes, under every look, of the wires it rewires or removes, so a new wire
+  that takes a freed id starts unrouted. Removing a wire or a stage drops its routes under every look.
+  Files saved before have no `lookRoutes` and load unchanged.
+  
+  weaselchart's pipeline mode gains Format › Connector › Reset route.
+- b3aa7cb: `documentFromScene` exports a shape sitting in the gap between pages on the nearest page rather
+  than the first, and marks a connector cross-page exactly when the scene's off-page split does. A
+  connector from a gap shape to another page stays whole, keeping its waypoints in world
+  coordinates. core gains `pageHolding`, the page a box is on, else the nearest one.
+  diagram gains `documentBoundsOf`, the box a node has in document space, which off-page splitting and
+  export now both read.
+- cf036c2: Add `@weasel-js/diagram/effect-audio`, which plays an audio pipeline through a patchable `@weasel-js/audio` graph. `createLiveAudioRunner` (and the `useLiveAudioRunner` hook, or `useFollowAudioRunner` for a runner the caller makes later) edits the graph as the pipeline changes, so a delay keeps its tail when another stage is tweaked. `AUDIO_STAGE_TYPES` is the palette, `audioStageNodes` maps each stage to its graph node, and `drawScope` and `drawSpectrum` draw a stage's output into its preview. `@weasel-js/audio` is an optional peer dependency.
+- 672d5cd: `EffectEditor` edits a pipeline's groups. Under `nodeGraph` each group is a titled container: drag
+  a stage into or out of it, drag the box to carry what it holds (the stages, the boxes inside it,
+  and the routes of wires between them, as one `'Move'`), resize it (`'Resize group'`), or
+  double-click its title to rename it in place (`'Rename group'`). A resized box is stored in the new
+  `EffectDoc.groupBoxes`; a group with none fits its members, so older docs load unchanged. Under
+  `rack` and `lanes` groups draw as before. `selectedGroup` and `onSelectGroup` pick a group under
+  every look, and the ref gains `group`, `ungroup`, and `renameGroup`.
+  
+  The edits are plain functions in `@weasel-js/diagram/effect`: `groupStages`, `ungroup`,
+  `renameGroup`, `moveToGroup`, `setGroupBox`, `moveGroup`, `groupContents`, and `nextGroupId`.
+  `removeStages` drops the box of a group it leaves empty, and no longer drops a group that was
+  empty before it ran. `EditorScene` gains `groupOf`.
+  
+  `EffectEditor` now reports a drag's moves a microtask after `DiagramView` does, so that a group
+  box's move and the stage moves it carried arrive as one edit.
+- b85addf: Route-handle drags now snap through the canvas's `snap` dep instead of a private snapper: a dragged bend or segment still lines up with the stops beside it and with a port's axis within `snapPx`, and now also with the canvas's other sources, such as a grid. Ctrl suspends snapping, Shift holds a dragged bend to the axes and diagonals, and the alignment marks are drawn by the canvas's snap readout rather than as the action's own guide overlay. The edited edge offers no targets, and the canvas's default anchor snapping (`'path-snap'`) is left out for these drags. `snapPoint`, `portTarget` and `stopTarget`, and their types `SnapTarget` and `Snapped`, are removed.
+- f819e61: Breaking for anyone naming ui's shape glyphs: the plain shapes move out of `@weasel-js/ui` into `@weasel-js/icons`, under a namespace of their own, so `ui:shapeHexagon` is now `shape:hexagon`, and every package may name them without depending on ui. Their table is `@weasel-js/icons/shapes`, and ui's `kitIcons` includes it. There is one new glyph, `shape:trapezoidSide`, a trapezoid on its side with its narrow end west.
+  
+  `ToolPalette` takes `columns`, which lays each group out as a grid that many buttons across, and `onToolDragStart`, which makes each button a drag source. `ToolGroup` takes `columns`, and `ToolButton` takes `onDragStart`.
+  
+  A `DiagramStencil` takes an `icon`, its tool's palette glyph, and each of `FLOWCHART_STENCILS` has one.
+  
+  `@weasel-js/icons-plugin` reads a workspace package's source table when the table its manifest declares is not built yet.
+- ac892f8: `EffectEditor` takes `look`: `'nodeGraph'` (default), `'rack'`, or `'lanes'`, with that look's options. Under rack and lanes, connecting, reconnecting, and deleting work as under node graph, and a stage on the main line drags along it to another place, which rewires the pipeline (`'Reorder'`). Under lanes a lane drags by its label (`'Reorder lanes'`). `editorScene(doc, look, options)` replaces the node-graph-only signature, which is breaking for a caller that passed options second.
+  
+  The effect model gains `chainLinks`, `moveInChain`, and `canMoveInChain`; `EffectDoc.laneOrder` with `setLaneOrder`; `laneTypeOf`; and `order` and `laneOrder` on `EffectLookResult`, which `rack` and `lanes` fill. `@weasel-js/diagram` adds `createSlotReorderAction`, `slotReorderContribution`, and `sequenceSlots`, which drag one item of any drawn sequence along its axis and draw an insertion bar. Core's overlay strokes and routing's `OverlayRole` add the `insert` and `refused` roles that bar draws in.
+- Updated dependencies [70b12d1]
+- Updated dependencies [ca1f524]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [853ce69]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [0e24110]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [c29ac84]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [f819e61]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [ac892f8]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [433540d]
+  - @weasel-js/core@1.11.1
+  - @weasel-js/audio@1.11.1
+  - @weasel-js/animator@1.11.1
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/font@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/simulation@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

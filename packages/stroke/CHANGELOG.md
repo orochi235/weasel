@@ -1,5 +1,26 @@
 # @weasel-js/stroke
 
+## 1.11.1
+
+### Patch Changes
+
+- 15efc86: `trianglesToPath` joins a vertex lying on another triangle's edge into that edge before the union, so a mesh whose float32 vertices sit a hair off their neighbors' edges no longer leaves cracks. A stroke ribbon puts a join's pivot on its segments' ends, so `strokeToPath` and `offsetPath` answered hairline slivers beside every curve: `offsetPath` of a square with a round corner, grown by 10, gave six subpaths instead of one, and grown by the corner's radius it ran a spike into the interior. A 2,000-point zigzag stroked 6 wide, which made polygon-clipping throw ("Unable to find segment"), now outlines too.
+- Updated dependencies [4d99526]
+- Updated dependencies [13fc67f]
+- Updated dependencies [50da815]
+- Updated dependencies [0f455dc]
+- Updated dependencies [15efc86]
+- Updated dependencies [07b686c]
+- Updated dependencies [041bc38]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

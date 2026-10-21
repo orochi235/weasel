@@ -1,5 +1,100 @@
 # @weasel-js/guides
 
+## 1.11.1
+
+### Patch Changes
+
+- 4027123: `alignmentSnapSource`, `spacingSnapSource` and `createSpacingHintsPreset` take a `filter` that decides which nodes offer lines or gaps; a node it rejects is never a snap target. Its type is exported as `TargetFilter`. It narrows the default siblings and does not apply to `getCandidates` or `getTargets`.
+- 5f4ef48: Snap targets no longer build node gates for a gesture with a subject, whose siblings are already
+  filtered for hidden nodes.
+- 1a1bb83: Drawing or click-placing a node into a container with a unit scope now snaps on that scope's grid
+  pitch, not the root's.
+  
+  - `SnapBegin` and `SnapCollect` take `parent`: the container a subject not yet in the scene lands
+    in. `insertAction` and `placeAction` pass the container the `insertInto` dep names, the same one
+    the `insert` dep puts the node in; an id naming no container passes nothing.
+  - `gridSnapSource({ scopes })` reads the scope from `ids` when the gesture has a subject, else from
+    `parent`, else the root.
+  - kernel3d's `createSnap` passes `parent` on to its sources, as it does `ids`.
+  - `placeAction` now requires the `insertInto` and `scene` deps, both optional.
+- 433540d: A container's unit scope (`ContainerNode.units`) now reaches grid snapping and node property
+  fields. A scope converts what is shown, typed and snapped to; every pose is still stored in world
+  units, and pose composition does not scale by it.
+  
+  - `gridSnapSource({ scopes: { root, spacing? } })` snaps the subject on the pitch of the unit
+    scope its nodes share, so a node inside a millimeter sub-assembly snaps on millimeter spacing.
+    `spacing` is read in that scope's units unless `scopes.spacing` gives a pitch per scope.
+    `scopedGridPitch` answers the pitch for a chain of scopes.
+  - A snap source is told the gesture's subject: `SnapCollect.ids`.
+  - `sceneSharedUnitScopes(scene, ids, root)` is the run of unit scopes every node of `ids` sits in.
+  - A number leaf takes `measure: 'length'` for a length stored in world units.
+    `prefLeafInScopes(leaf, scopes)` gives such a leaf the unit of the scopes it is shown in, built by
+    `scopedPrefUnit(scopes)`: shown in the innermost scope's base unit, with every unit of its system
+    accepted as typed text. The kit's node schemas mark X, Y, W, H and text padding as lengths.
+  - `SelectionPanel` takes `units`, the scene's outermost scope; given it, a length field shows the
+    selected nodes' shared scope.
+- Updated dependencies [70b12d1]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [853ce69]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [0e24110]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [ac892f8]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [433540d]
+  - @weasel-js/core@1.11.1
+  - @weasel-js/geom@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

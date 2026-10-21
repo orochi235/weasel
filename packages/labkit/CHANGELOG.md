@@ -1,5 +1,167 @@
 # @weasel-js/labkit
 
+## 1.11.1
+
+### Patch Changes
+
+- 768be71: Depend on `@msb235/blits` 0.11.0, where stopping an animation no longer costs time in step with how many are running. blits' `loop` now defaults to one pass; no voice weasel cues depends on it, since each is either a motion (a tween or a spring) or a patch with no duration, and blits ignores `loop` for both.
+- 6440997: Add `<DevtoolsLabel value>`, which names the canvases beneath it in a devtools panel ahead of any
+  labeled element nearer to them. A labkit trial wraps its content in one with its title, so a plain
+  `<SceneCanvas>` in a trial, a forge story's included, is listed by the trial's title rather than as
+  "Content", the pane it sits in.
+- 44cf2c5: The devtools panel fits a narrow container: below 480 px wide its tabs wrap and the Scene and
+  Registry tabs stack their list above the detail. Its header keeps the canvas picker at the left and
+  the version at the right, a selected tree row is marked in the accent color, and the node detail's
+  values line up.
+  
+  A `<SceneCanvas>` with no `aria-label` or id of its own is listed in devtools by the `aria-label` of
+  its nearest labeled ancestor. labkit's `TrialSceneCanvas` labels its canvas with the trial's title.
+  `Tree` reads the new `--wzl-tree-selected` hook for a selected row's background.
+- c89153d: `Focusable` is now the kit's own, built on React Aria's `useFocusable`, and every kit tooltip on a native element goes through it. React Aria's `<Focusable>` warned "child must be focusable" for a trigger that mounted hidden — in a collapsed box, or a story still mounting — because its check asks whether the element is visible. The kit's check reads the element's markup alone, so a hidden native button no longer warns, while a child that can never take focus, or has no interactive role, still does. `@weasel-js/ui` now depends on `react-aria` directly.
+- 716561f: A `hover` spec takes `held`: `'optional'` keeps it firing while a button is down, `true` fires it
+  only then, read the way `mods` reads a modifier. In a route it is `hover ?held` / `hover +held`.
+  The binding still claims nothing, so a drag keeps its moves; a hover's params gain `held`.
+  `useGestureDispatcher`'s `channels.hover` attaches hovers without the rest of the pointer channel,
+  so no press opens a gesture or captures the pointer.
+  
+  The loupe now aims through the dispatcher (`loupe.aim`, `loupe.leave`) rather than listeners of its
+  own, and still follows the pointer through a drag. `useLoupe` alone no longer aims: mount
+  `<LoupeGestures>` with it, as `<TrialLoupe>` does.
+- 7865ca5: A trial now notices when it draws a 3D view with no camera. A 3D view draws through `useOrbitView()`, which returns the trial's orbit camera with a `viewportRef` for the pane the scene is drawn in; a three.js `WebGLRenderer` whose canvas sits in the trial's DOM counts too, found through three's `__THREE_DEVTOOLS__` announcement. If the instrument declares no `orbit`, so nothing labkit owns can turn, dolly, pan, or home that camera, the trial warns in development, once per instrument, and its title bar shows "no camera". Declaring `orbit` in any form ends it: `orbit: { fixed: true }` keeps the trial's camera but binds none of its gestures, and `orbit: false` says the instrument keeps a camera of its own. `useTrialOrbit()` is unchanged, and remains the reader for chrome.
+- 0e24110: A key binding can now carry `opts: { over: true }`: it is live while the pointer is over its canvas, whichever canvas holds the keys, and only then. The loupe's peek key uses it, so with two loupes on a page the key peeks the one under the pointer rather than the one last pressed in, or none before anything was pressed. A `<LoupeGestures>` outside a camera now mounts its own input scope, so two of them under one provider no longer stack their actions on one id.
+- d8dc50f: Overlays now choose their portal container through React Aria's portal provider instead of the deprecated `UNSTABLE_portalContainer` prop. `useOverlayPortal` returns `provide`, a function that wraps the React Aria overlay, in place of `portalProps` — a breaking change for code that spread `portalProps` onto its own overlay. Wrap that overlay in `provide(...)` instead. An overlay given `portalContainer={null}` now reaches the body even from inside another overlay.
+  
+  A `ToastRegion` given a container now renders React Aria's own region inside it, so it is an F6 landmark like an uncontained one. Both regions also now register as landmarks when their first toast arrives after mount, which the fixed "Notifications" label had prevented: the region now carries React Aria's localized label, which counts the toasts ("2 notifications.").
+  
+  `@weasel-js/ui` pins `react-aria` and `react-aria-components` to exact versions, `react-aria` at the one `react-aria-components` pins, so the two cannot resolve to separate copies. A second copy would leave every overlay in the body, outside its theme, with no error.
+- 8cd81e7: Adds API: `prefLeafValue(leaf, held, { unset })` in `@weasel-js/prefs` answers what a params surface shows for the value held at a leaf: that value, else the leaf's default. `prefValueAbsent(leaf, held)` says whether a value counts as held: `undefined` and `null` do not, except a paint's `null`, which is "no paint". `PrefsForm`, `PrefControl`, `SelectionPanel`, and labkit's `ControlPanel` and matrix all read a leaf's value through it.
+  
+  Changes what three surfaces show. A value held as `null` now shows the leaf's default in `PrefsForm` and `ControlPanel` (it drew an empty field), and reads as nothing held in `SelectionPanel`, where an `absentIsDefault` leaf shows its default. A clearable leaf holding nothing shows as cleared everywhere: `PrefsForm` drew a clearable number at its default, and `ControlPanel` did too when the config lacked the key.
+- 23dbaff: A row's label and its value now share one size on every params surface — `PropertyPanel`,
+  `Prefs`, `SelectionPanel`, `DetailList` and labkit's `ControlPanel`. It comes from a new hook,
+  `--wzl-params-text-size`, which defaults to `--wzl-font-size-sm` and so still moves with density
+  and theme; set it on any ancestor and labels and values follow together. Visible change: text and
+  number field values, radio and menu choices, and `DetailList` values shrink from the body size to
+  the label size, and `SelectionPanel`'s labels take the cased label recipe the other surfaces use.
+  
+  Fields, selects, radios, segmented bars and buttons read a second hook, `--wzl-field-font-size`,
+  before their own size; a params row sets it. A mark smaller than its value on purpose — a unit, a
+  stepper glyph, an input adornment, a hint — carries `data-wzl-subordinate`.
+- 6be0cfa: A lab with sidebar sections no longer raises "ResizeObserver loop completed with undelivered
+  notifications" as it loads. The sidebar watched one section bar for its height and kept watching
+  it after windease remounted the panel holding it; each bar is now watched from mount to removal.
+- 11ef039: A story in the workshop document now sees its trial as a size container, so `100cqb` and `100cqi` are the
+  trial's height and width the way `100vh` and `100vw` were a frame's. `LabShell` sizes to the nearest size
+  container before the viewport, so a lab story fills its trial instead of running a window's height past it.
+  Outside any size container a shell is `100cqb`, which falls back to the small viewport height: on a phone,
+  the height with the browser's toolbars shown rather than `100dvh`'s current height.
+- 9267f75: Five new `@weasel-js/ui` entry points reach exports that were only on the root barrel: `@weasel-js/ui/stance` (`useStance` and its types), `@weasel-js/ui/portal-host` (`OverlayPortalProvider`, `useOverlayPortal` and the rest of the overlay portal helpers), `@weasel-js/ui/color` (`oklchToHex`, `chromaAt`, `rampColor`, `colorRamp`), `@weasel-js/ui/paint-gradient-track` (`paintGradientTrack`) and `@weasel-js/ui/kit-settings` (`uiKitSettingsSchema`). The root barrel still exports what it did. forge and labkit now import ui only by subpath, outside labkit's `weasel-ui` passthrough.
+- 2fc887a: labkit and forge import `@weasel-js/ui` through its component subpaths (`@weasel-js/ui/components/<Name>`) instead of the root barrel, wherever a subpath publishes the name. Nothing changes for a consumer: labkit re-exports the same names, and its `weasel-ui` subpath still re-exports the barrel.
+- Updated dependencies [70b12d1]
+- Updated dependencies [162d3a8]
+- Updated dependencies [5b5135c]
+- Updated dependencies [02037a7]
+- Updated dependencies [e6f374a]
+- Updated dependencies [6d94b67]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [4573b46]
+- Updated dependencies [853ce69]
+- Updated dependencies [5cdc3d0]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [455a34f]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [c89153d]
+- Updated dependencies [f0172e2]
+- Updated dependencies [995eac7]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [716561f]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [c497405]
+- Updated dependencies [00bfbc7]
+- Updated dependencies [0e24110]
+- Updated dependencies [c2dfd4e]
+- Updated dependencies [66def8d]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [d8dc50f]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [23dbaff]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [2c53843]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [af18142]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [26fdff3]
+- Updated dependencies [7411f6e]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [f819e61]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [bf359a2]
+- Updated dependencies [ac892f8]
+- Updated dependencies [3db0ab0]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [566e321]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [849f9e4]
+- Updated dependencies [9267f75]
+- Updated dependencies [433540d]
+  - @weasel-js/routing@1.11.1
+  - @weasel-js/core@1.11.1
+  - @weasel-js/ui@1.11.1
+  - @weasel-js/animator@1.11.1
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/theme@1.11.1
+  - @weasel-js/svg@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/kernel3d@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/quantity@1.11.1
+  - @weasel-js/minimap@1.11.1
+  - @weasel-js/loupe@1.11.1
+  - @weasel-js/registry@1.11.1
+  - @weasel-js/storage@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

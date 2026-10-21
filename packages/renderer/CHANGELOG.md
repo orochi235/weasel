@@ -1,5 +1,33 @@
 # @weasel-js/renderer
 
+## 1.11.1
+
+### Patch Changes
+
+- 1dd65f5: `<Canvas>` and `<SceneCanvas>` take an `imageMinification` prop, forwarded to the renderer: `'auto'` builds an image's mipmaps the first time a frame draws it at half size or smaller, so a large bitmap drawn small stops aliasing. The default stays `'linear'`. `WeaselRenderer.setImageMinification` changes the strategy after construction; a change frees every image texture, and each re-uploads when next drawn.
+- c29ac84: New package, `@weasel-js/pdf`: `writePdf` turns draw commands into a PDF document — vector paths, gradient shadings, images, and fonts embedded whole so text can be selected and copied. `@weasel-js/font` adds `fontEmbedding` and the `FaceEmbedding` type, and a custom outline parser can supply one through the new optional `OutlineFace.embedding`; the built-in parser offers none for a WOFF file. `@weasel-js/renderer` exports `markerDrawCommands`, `commandsBounds`, `isOwnComposite`, `applyColorMatrix` and `composeColorMatrix`, and `resolveStrokeLengths` takes `{ quantize: false }`; `@weasel-js/text` exports `syntheticBoldOffset` and `emboldenGlyphD`; `@weasel-js/diagram-formats` adds `exportPagesPdf`, every page of a diagram as one PDF.
+- f148f50: Laying out and drawing text that changes every frame makes about 40% less garbage: 6.0 MB a frame against 9.7 for 5,000 glyphs of HUD readout. `paintRuns` no longer builds a group key string for a glyph keyed like the one before it, `lineDecorations` no longer builds a paint key for undecorated text, `measureRuns` makes one entry object a code point instead of two, and the renderer passes each glyph quad to its batch as an object rather than as fifteen numbers V8 had to box.
+- Updated dependencies [4d99526]
+- Updated dependencies [13fc67f]
+- Updated dependencies [50da815]
+- Updated dependencies [0f455dc]
+- Updated dependencies [15efc86]
+- Updated dependencies [c29ac84]
+- Updated dependencies [07b686c]
+- Updated dependencies [041bc38]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [f148f50]
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/stroke@1.11.1
+  - @weasel-js/font@1.11.1
+  - @weasel-js/text@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes

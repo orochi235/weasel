@@ -1,5 +1,261 @@
 # @weasel-js/ui
 
+## 1.11.1
+
+### Patch Changes
+
+- 70b12d1: An action can carry a settings form: `Action.settings` holds a prefs schema, a `read` that gives
+  the selection's current values (and which fields it disagrees on), and an optional `params` that
+  turns one field's change into the params the action is triggered with. Every surface that lists
+  actions draws such an action as its form instead of a button that triggers it bare: a bar or a
+  panel opens it in a popover under the action's button, a menu shows it as a submenu of its fields,
+  and the command palette opens it in a dialog. Each change is one trigger, so one undo step. The
+  form is disabled while the action's `enabled` says no. `readActionSettings` and
+  `actionSettingsParams` are what the surfaces read it through; `useActionSettings`,
+  `ActionSettingsPopover` and `ActionSettingsDialog` are in `@weasel-js/ui/components/ActionSettings`.
+  `BarActionButton` takes `expanded` for a button that opens a dialog.
+  
+  Warp Settings (`configureWarp`) and Edit Path Effect (`editPathEffect`) carry one each, so Warp
+  Settings on a bar now opens Mode, Rows, Columns, Mapping and Tolerance for the selected warps
+  rather than doing nothing, and both are disabled with nothing they apply to selected.
+  `editPathEffect` takes an optional `kind`, limiting an edit to effects of that kind, and now reads
+  `selection`. The forms are exported as `warpSettingsForm` and `pathEffectSettingsForm`.
+- 162d3a8: `Tree` takes `selectionFollowsFocus`: Up, Down, Home and End then select the row they reach, for a
+  tree whose selection drives something drawn beside it. Under `selectionMode="multiple"`, Shift with
+  those keys now extends the selection.
+  
+  The asset editor and `PrefSchemaEditor` turn it on for the structure, unplaced and actions trees, so
+  walking a tree with the arrow keys walks the attributes with it. Removing a node selects the row
+  that takes its place, the next one where there is one, rather than its parent, so the selection
+  lands where keyboard focus does. Add pref's dialog calls the key "Key", as the attributes pane does.
+  The panes narrow toward their smallest sizes before the editor runs past the window's edge.
+  
+  A `PrefsForm` with two rows across stacks them in one column once half its width is too narrow for
+  a row, where the rows' labels and fields used to run into each other. A `CodeBlock` can be focused,
+  so the keyboard can scroll it, and a select in a `DataGrid` cell is set at the cell's text size.
+- 5b5135c: A stacked fraction is drawn in the UI face with proportional digits, so a 1 over a single digit sits centered
+  rather than leaning in an equal-width slot, and its bar runs a little past the digits on the right. The
+  BandEditor ruler centers each label on its tick's middle rather than its left edge, and sets labels 3px clear of
+  the notches instead of 1px; the ruler is 2px taller to keep them inside it.
+- 02037a7: `BandEditor`'s ruler no longer lets its tick labels run into each other. Where two labels would come
+  within 4px, one gives way and its notch is drawn unlabeled: the range's end labels always stay, then
+  a tick of lower `level` (a new optional field on a tick, 0 by default) outlasts a higher one, then the
+  rounder value outlasts the less round one — 1/3 before 1/12, 50 before 40 — then the leftmost. The
+  ruler rechecks when it is resized. `BandTick` names a tick's type.
+  
+  A `fraction()` display with no `form` of its own is drawn stacked on the ruler, numerator over
+  denominator, at about half the width of `1/12` written inline; the ruler grows to 28px tall to hold
+  it. Pass `fraction({ form: 'inline' })` to keep the inline form.
+- e6f374a: A bar's action button now says why it is disabled: given a reason by its action, it stays
+  focusable, keeps its tooltip, and carries the reason as its `aria-description`, as a panel's row
+  already did. Breaking for direct callers of `useLeafAction`: its `reason` field is renamed
+  `disabledReason`, the name `BarActionButton` reads, so its result spreads straight in.
+- 6d94b67: `PrefSchemaEditor` no longer rekeys a pref from the baseline when its name changes, even one whose key was its old name in camelCase, since values may be stored under that key. Renaming one now shows in Changes, and reaches `onSubmit`, as a change of its `name` alone. A node added since the baseline still takes its key from its name, and the Key field still changes any node's key on purpose.
+- 8e317f5: Off-page reference markers. On a scene with pages, a connector whose two shapes sit on different
+  pages no longer draws across the gap: each end draws a short stub out of its shape, ending at a tag
+  that reads the other page's name and a reference letter, such as "Page 2 · A".
+  `useOffPageMarkers` (or `installOffPageMarkers` without React) splits and joins connectors as edits
+  move their ends or change the pages, in that edit's own undo entry, and writes
+  `DiagramEdge.offPage`. The tags are text nodes with a background (`offPageTagSpec`, registry key
+  `diagram:offPageTag`), colored by the theme. `diagramOffPage()` binds a double-click on a tag to
+  selecting the shape at the far end and fitting the view to its page. `offPageSplits` is the split
+  rule as arithmetic, and `offPageOps` runs the pass over named connectors.
+  
+  A split connector's `ResolvedRoute` carries its two `stubs`, it shows no route handles, and the
+  `avoid` router leaves it out until it joins again. An edge label on a path with several subpaths
+  sits on the first (`subpathOf`).
+  
+  `pageName` (core) is the name a page shows, its own or "Page" and its place, and `PageTabs` uses it.
+- abf41a7: Scenes hold document values, and a document's pages are one of them.
+  
+  - core: `scene.doc` holds named JSON values beside the tree (`get`, `set`, `keys`). A `set` is undoable, joins an enclosing `batch`, is skipped when the value is deep-equal, and notifies subscribers. `SerializedScene.doc` carries them, `sceneFromJSON` and `loadState` read them back, and `createScene` and `useScene` take `doc` for the starting values. The field is additive: a snapshot without it loads as before. New types: `SceneDoc`, `SceneDocValues`, `SerializedDoc`.
+  - core: the page list is the `core:pages` document value (`PAGES_DOC_KEY`, `PagesDoc`, `pagesOf`, `placedPagesOf`). `setPages` replaces it and moves each page's root nodes, with their descendants, by however far their page moved, in one undo entry; `addPage`, `removePage` (which deletes what is on the page and what derives from that), `movePage`, `resizePage`, and `renamePage` are built on it, with `pageMembers` and `nextPageId` beside them. `pageInView` answers the page a view shows most of.
+  - ui: `PageTabs` is a strip of tabs over any page list, built on `Tabs`: press to go to a page, press twice to rename, drag or Alt+arrow to reorder, + to add, and a right-click reported for a context menu. `useReorderDragList` takes `axis: 'x'` for a row of items, and `TabList` takes a `ref`.
+- 4573b46: `OverlayPortalProvider` takes `contained`: its container stands in for the viewport. A `Dialog` below it covers the
+  container rather than the window, traps focus, and makes inert only what the container holds, leaving the rest of
+  the page usable and its scrolling alone. React Aria's modal hides the whole document and locks its scroll with no
+  way to scope either, so a contained `Dialog` is built from React Aria's public pieces instead.
+  
+  forge's in-page trials are contained, so a story's modal dims its own trial and the workshop stays usable around
+  it. A story now scrolls inside its trial host rather than the host scrolling, so an overlay it portals stays over
+  the trial however far the story has scrolled.
+- 44cf2c5: The devtools panel fits a narrow container: below 480 px wide its tabs wrap and the Scene and
+  Registry tabs stack their list above the detail. Its header keeps the canvas picker at the left and
+  the version at the right, a selected tree row is marked in the accent color, and the node detail's
+  values line up.
+  
+  A `<SceneCanvas>` with no `aria-label` or id of its own is listed in devtools by the `aria-label` of
+  its nearest labeled ancestor. labkit's `TrialSceneCanvas` labels its canvas with the trial's title.
+  `Tree` reads the new `--wzl-tree-selected` hook for a selected row's background.
+- c89153d: `Focusable` is now the kit's own, built on React Aria's `useFocusable`, and every kit tooltip on a native element goes through it. React Aria's `<Focusable>` warned "child must be focusable" for a trigger that mounted hidden — in a collapsed box, or a story still mounting — because its check asks whether the element is visible. The kit's check reads the element's markup alone, so a hidden native button no longer warns, while a child that can never take focus, or has no interactive role, still does. `@weasel-js/ui` now depends on `react-aria` directly.
+- f0172e2: A stacked fraction's bar reaches past its digits by the same amount on each side, rather than further on the
+  right, so on the BandEditor ruler the bar and both rows of digits center on the tick. A browser test reads the
+  ruler's pixels to hold that, since the bar has no box of its own to measure.
+- c497405: Add `KeyDiagram`, which draws a keyboard from a layout and groups its keys into `KeyBank`s the way
+  the keyboard does — function row, main block, navigation cluster, arrows. Given `keys`, it draws only
+  those, in their places, and shrinks to fit them; without a layout it draws them in a row, ungrouped.
+  Keys in `held` light up, `marks` print what a key does under it and tint it, and `linger` hides the
+  diagram until a key is held and for that many seconds after. `useHeldKeys` reads `held` off the
+  keyboard.
+  
+  Layouts name keys by `KeyboardEvent.code`. `ansiLayout(platform)` and `KEYBOARD_LAYOUTS` give each
+  platform's ANSI tenkeyless board, and `placeKeys` works out where a layout's keys sit. Gestures gains
+  `keySpecFromCode`, the platform's legend for a physical key: `MetaLeft` is `⌘` on macOS and `⊞` on
+  Windows.
+- 00bfbc7: `LayerList` puts a row's lock toggle at the row's end, after the label, and shows an unlocked layer's padlock only while the row is hovered or the toggle has focus. On a device with no hover it stays visible.
+- c2dfd4e: A menu can hold a line of text edited in place: `MenuTextEntry` (`kind: 'text'`), with the controller's `textValue` and `setText` holding what was typed while the menu stays open. A string leaf in a schema drawn as a menu becomes one when something writes it, and stays a read-only `Name: value` row when it is a `readout` or nothing does. The DOM menu draws a text field that Enter on the row focuses; Enter or blur writes the text and Escape puts it back. The HUD menu has no text entry, so it draws the row's value read-only.
+- 66def8d: `MenuBar` titles set their own color and type instead of inheriting them from the page: the theme's foreground, and the UI font at the small size and bold weight, matching `Bar`'s labeled buttons. On a page whose text color came from the other mode, the titles had read as disabled. `Bar`'s buttons now state that weight too, where before they took the browser's button default.
+- fe2a8c5: A node's kind has one answer: its routing kind. `<SceneCanvas>` now publishes each selected node's
+  routing kind with the selection, so the command palette says "3 rects selected" or "2 groups
+  selected"; a node its routing table calls `'unknown'` publishes no kind, and the palette says
+  "objects". Before, the default label read `'group'` for a container, `'path'` for a pose carrying a
+  `kind`, and nothing for anything else. `describeKind` still replaces the label outright.
+  
+  `SelectionPanel`'s `classifyKind` classifies through the new `routeKind` export, the function behind
+  `NodeRouting.classify`, and hands each routing entry the node beside its data. It no longer calls a
+  container `'group'` on its own: pass a table carrying `groupNodeRouting`, as `inferredNodeRouting`
+  does, for that. This changes behavior for a panel given a table without it, such as
+  `defaultNodeRouting` alone.
+- d8dc50f: Overlays now choose their portal container through React Aria's portal provider instead of the deprecated `UNSTABLE_portalContainer` prop. `useOverlayPortal` returns `provide`, a function that wraps the React Aria overlay, in place of `portalProps` — a breaking change for code that spread `portalProps` onto its own overlay. Wrap that overlay in `provide(...)` instead. An overlay given `portalContainer={null}` now reaches the body even from inside another overlay.
+  
+  A `ToastRegion` given a container now renders React Aria's own region inside it, so it is an F6 landmark like an uncontained one. Both regions also now register as landmarks when their first toast arrives after mount, which the fixed "Notifications" label had prevented: the region now carries React Aria's localized label, which counts the toasts ("2 notifications.").
+  
+  `@weasel-js/ui` pins `react-aria` and `react-aria-components` to exact versions, `react-aria` at the one `react-aria-components` pins, so the two cannot resolve to separate copies. A second copy would leave every overlay in the body, outside its theme, with no error.
+- 8cd81e7: Adds API: `prefLeafValue(leaf, held, { unset })` in `@weasel-js/prefs` answers what a params surface shows for the value held at a leaf: that value, else the leaf's default. `prefValueAbsent(leaf, held)` says whether a value counts as held: `undefined` and `null` do not, except a paint's `null`, which is "no paint". `PrefsForm`, `PrefControl`, `SelectionPanel`, and labkit's `ControlPanel` and matrix all read a leaf's value through it.
+  
+  Changes what three surfaces show. A value held as `null` now shows the leaf's default in `PrefsForm` and `ControlPanel` (it drew an empty field), and reads as nothing held in `SelectionPanel`, where an `absentIsDefault` leaf shows its default. A clearable leaf holding nothing shows as cleared everywhere: `PrefsForm` drew a clearable number at its default, and `ControlPanel` did too when the config lacked the key.
+- 23dbaff: A row's label and its value now share one size on every params surface — `PropertyPanel`,
+  `Prefs`, `SelectionPanel`, `DetailList` and labkit's `ControlPanel`. It comes from a new hook,
+  `--wzl-params-text-size`, which defaults to `--wzl-font-size-sm` and so still moves with density
+  and theme; set it on any ancestor and labels and values follow together. Visible change: text and
+  number field values, radio and menu choices, and `DetailList` values shrink from the body size to
+  the label size, and `SelectionPanel`'s labels take the cased label recipe the other surfaces use.
+  
+  Fields, selects, radios, segmented bars and buttons read a second hook, `--wzl-field-font-size`,
+  before their own size; a params row sets it. A mark smaller than its value on purpose — a unit, a
+  stepper glyph, an input adornment, a hint — carries `data-wzl-subordinate`.
+- 2c53843: A pinned slider row's label can be clicked back to auto again. A stacked slider row pulls its track up under its label, and once the row was pinned the track sat over the label's auto toggle and took the click — visibly so at `density="tight"`. The toggle now draws above the track.
+- 26fdff3: `useRovingTabIndex` takes `columns`, which lays its items out as a grid: Left and Right step through them in reading order, wrapping at the ends, and Up and Down move a row, keeping the column. Down into a row too short to have that column lands on the row's last item, and Up and Down stop at the first and last rows. `groupSelector` starts each matching element's items on a row of their own. The pure `rovingGridTarget` and `rovingTarget` are exported beside it.
+  
+  `ToolPalette` with `columns` uses it, so Up and Down in a palette laid out as a grid move a row of the group rather than one button.
+- 7411f6e: `useRovingTabIndex` mirrors Left and Right under right-to-left, in its linear and grid modes alike: Left steps forward and Right back, while Up, Down, Home and End are unchanged. It reads the container's computed `direction` at each keypress, so a `dir` attribute anywhere above it counts; the new `dir` option overrides that. `rovingTarget` and `rovingGridTarget` take the direction as a trailing argument, defaulting to `'ltr'`, and `RovingDirection` is exported.
+- f819e61: Breaking for anyone naming ui's shape glyphs: the plain shapes move out of `@weasel-js/ui` into `@weasel-js/icons`, under a namespace of their own, so `ui:shapeHexagon` is now `shape:hexagon`, and every package may name them without depending on ui. Their table is `@weasel-js/icons/shapes`, and ui's `kitIcons` includes it. There is one new glyph, `shape:trapezoidSide`, a trapezoid on its side with its narrow end west.
+  
+  `ToolPalette` takes `columns`, which lays each group out as a grid that many buttons across, and `onToolDragStart`, which makes each button a drag source. `ToolGroup` takes `columns`, and `ToolButton` takes `onDragStart`.
+  
+  A `DiagramStencil` takes an `icon`, its tool's palette glyph, and each of `FLOWCHART_STENCILS` has one.
+  
+  `@weasel-js/icons-plugin` reads a workspace package's source table when the table its manifest declares is not built yet.
+- bf359a2: A stacked fraction in `QuantityText` is drawn in the theme's numeric face, as its other numbers are, rather
+  than the browser's math font, with a small gap set on each side of its bar since only a math font carries one.
+  The BandEditor ruler's fractions read in the UI's numerals as a result.
+- 566e321: `ToolPalette` takes `stacks`: lists of tool ids that share one button. The button shows the stack's tool in use, or the one last used from it, with a mark in its corner. A click opens a menu of the stack, and a click with `stackCycle` held (Alt by default) makes the next tool in it active instead. `ToolButton` gains a `menu` prop for buttons that open a menu, and its `onClick` now receives the click event.
+- 1bb4752: Tool sets: a `ToolSet` names a group of tool ids and other sets as one unit (`toolSet`, `toolIdsOf`, `withoutTools`, `toolSetHas`). `<SceneCanvas defaultTools>`, a preset's `tools`, and `ToolPalette`'s `include` each take sets. Core exports one per family, `SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`, `PAGE_TOOLS` and `RIG_TOOLS`, with `BUILTIN_TOOLS` over them all; `BUILTIN_TOOL_IDS` is derived from it, and a shape kind's new `family` field says which set names it. `@weasel-js/path-tools` exports `WARP_TOOLS`, `RESHAPE_TOOLS`, `PATH_TOOLS_TOOLS`, and `usePathToolsTools()`, which builds every one of its tools keyed by id.
+- 849f9e4: Two new entry points let a consumer reach the last root-only exports without importing the whole package: `@weasel-js/ui/components/Icon` exports `Icon`, `IconProps`, `isFillable`, `actionIcon`, `iconFromData`, `resolveIcon`, and the `UiIconName` type, and `@weasel-js/ui/paint-value` exports `solidColorOf`, `strokeColorOf`, and `isPaint`. The root barrel still exports what it did.
+- 9267f75: Five new `@weasel-js/ui` entry points reach exports that were only on the root barrel: `@weasel-js/ui/stance` (`useStance` and its types), `@weasel-js/ui/portal-host` (`OverlayPortalProvider`, `useOverlayPortal` and the rest of the overlay portal helpers), `@weasel-js/ui/color` (`oklchToHex`, `chromaAt`, `rampColor`, `colorRamp`), `@weasel-js/ui/paint-gradient-track` (`paintGradientTrack`) and `@weasel-js/ui/kit-settings` (`uiKitSettingsSchema`). The root barrel still exports what it did. forge and labkit now import ui only by subpath, outside labkit's `weasel-ui` passthrough.
+- 433540d: A container's unit scope (`ContainerNode.units`) now reaches grid snapping and node property
+  fields. A scope converts what is shown, typed and snapped to; every pose is still stored in world
+  units, and pose composition does not scale by it.
+  
+  - `gridSnapSource({ scopes: { root, spacing? } })` snaps the subject on the pitch of the unit
+    scope its nodes share, so a node inside a millimeter sub-assembly snaps on millimeter spacing.
+    `spacing` is read in that scope's units unless `scopes.spacing` gives a pitch per scope.
+    `scopedGridPitch` answers the pitch for a chain of scopes.
+  - A snap source is told the gesture's subject: `SnapCollect.ids`.
+  - `sceneSharedUnitScopes(scene, ids, root)` is the run of unit scopes every node of `ids` sits in.
+  - A number leaf takes `measure: 'length'` for a length stored in world units.
+    `prefLeafInScopes(leaf, scopes)` gives such a leaf the unit of the scopes it is shown in, built by
+    `scopedPrefUnit(scopes)`: shown in the innermost scope's base unit, with every unit of its system
+    accepted as typed text. The kit's node schemas mark X, Y, W, H and text padding as lengths.
+  - `SelectionPanel` takes `units`, the scene's outermost scope; given it, a length field shows the
+    selected nodes' shared scope.
+- Updated dependencies [70b12d1]
+- Updated dependencies [3b5750f]
+- Updated dependencies [768be71]
+- Updated dependencies [9390be4]
+- Updated dependencies [1dd65f5]
+- Updated dependencies [411b629]
+- Updated dependencies [267d5e4]
+- Updated dependencies [922cddf]
+- Updated dependencies [d5a4102]
+- Updated dependencies [9cd12f7]
+- Updated dependencies [e5ba382]
+- Updated dependencies [8e317f5]
+- Updated dependencies [abf41a7]
+- Updated dependencies [312eb35]
+- Updated dependencies [7ffc196]
+- Updated dependencies [25a112b]
+- Updated dependencies [4d99526]
+- Updated dependencies [853ce69]
+- Updated dependencies [8c1861a]
+- Updated dependencies [6440997]
+- Updated dependencies [44cf2c5]
+- Updated dependencies [8ff750f]
+- Updated dependencies [161c9c4]
+- Updated dependencies [33fa471]
+- Updated dependencies [2eb0370]
+- Updated dependencies [c726003]
+- Updated dependencies [455a34f]
+- Updated dependencies [e30f4df]
+- Updated dependencies [8c2a9a9]
+- Updated dependencies [1156d63]
+- Updated dependencies [13fc67f]
+- Updated dependencies [adadf5e]
+- Updated dependencies [b3aa7cb]
+- Updated dependencies [50da815]
+- Updated dependencies [995eac7]
+- Updated dependencies [ee2f0fc]
+- Updated dependencies [716561f]
+- Updated dependencies [ee4cf85]
+- Updated dependencies [d892435]
+- Updated dependencies [1a1bb83]
+- Updated dependencies [c497405]
+- Updated dependencies [0e24110]
+- Updated dependencies [c2dfd4e]
+- Updated dependencies [0f455dc]
+- Updated dependencies [4bf5dec]
+- Updated dependencies [15efc86]
+- Updated dependencies [fe2a8c5]
+- Updated dependencies [8cd81e7]
+- Updated dependencies [23dbaff]
+- Updated dependencies [b7e6edc]
+- Updated dependencies [c29ac84]
+- Updated dependencies [87cded1]
+- Updated dependencies [07b686c]
+- Updated dependencies [24267d3]
+- Updated dependencies [af18142]
+- Updated dependencies [041bc38]
+- Updated dependencies [683dea0]
+- Updated dependencies [61e7b0c]
+- Updated dependencies [f819e61]
+- Updated dependencies [5053f5b]
+- Updated dependencies [2b267d5]
+- Updated dependencies [8f2c044]
+- Updated dependencies [ac892f8]
+- Updated dependencies [3db0ab0]
+- Updated dependencies [71d4416]
+- Updated dependencies [cee04b9]
+- Updated dependencies [e1eeb08]
+- Updated dependencies [1bb4752]
+- Updated dependencies [e9404d0]
+- Updated dependencies [433540d]
+  - @weasel-js/core@1.11.1
+  - @weasel-js/animator@1.11.1
+  - @weasel-js/gestures@1.11.1
+  - @weasel-js/geom@1.11.1
+  - @weasel-js/theme@1.11.1
+  - @weasel-js/svg@1.11.1
+  - @weasel-js/react@1.11.1
+  - @weasel-js/prefs@1.11.1
+  - @weasel-js/menu@1.11.1
+  - @weasel-js/font@1.11.1
+  - @weasel-js/icons@1.11.1
+  - @weasel-js/quantity@1.11.1
+  - @weasel-js/modes@1.11.1
+  - @weasel-js/paint@1.11.1
+  - @weasel-js/registry@1.11.1
+  - @weasel-js/select@1.11.1
+
 ## 1.11.0
 
 ### Patch Changes
