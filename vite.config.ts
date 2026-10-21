@@ -77,8 +77,11 @@ export default defineConfig({
   // d3-force is the main offender (forceMany/Link/Collide/Center pull in
   // d3-quadtree, d3-dispatch, etc.); listing the root entry forces vite to
   // walk the tree once at startup.
+  // earcut and polygon-clipping are geom's: tests/visual/batch-pixels.spec.ts imports the
+  // renderer from source, past the workspace bundles, and a cold optimizer meeting either there
+  // reloads the page out from under the test.
   optimizeDeps: {
-    include: ['d3-force'],
+    include: ['d3-force', 'earcut', 'polygon-clipping'],
   },
   // Proxy `/weasel/draw/*` to the WeaselDraw dev server (`npm run dev:draw`,
   // `ports.draw`) so a single site origin mirrors the production Pages
