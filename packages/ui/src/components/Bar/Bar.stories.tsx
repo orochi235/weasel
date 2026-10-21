@@ -3,6 +3,8 @@ import { useState, type ReactNode } from 'react';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
+import { Along } from '@weasel-js/ui/components/Along';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import s from './Bar.stories.module.css';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
@@ -254,4 +256,46 @@ export const OpensNestedGroups: Story = {
       </div>
     );
   },
+};
+
+const LENS_ACTIONS: Action[] = [
+  { id: 'lens.undo', label: 'Undo', icon: icon('core:undo'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.redo', label: 'Redo', icon: icon('core:redo'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.flipX', label: 'Flip across', icon: icon('core:flipX'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.flipY', label: 'Flip down', icon: icon('core:flipY'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.front', label: 'Bring to front', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'lens.back', label: 'Send to back', icon: icon('core:sendToBack'), invoker: { timing: 'immediate', run: () => {} } },
+];
+const LENS: PrefGroup = {
+  name: 'Lens',
+  children: Object.fromEntries(LENS_ACTIONS.map((a) => [a.id.slice('lens.'.length), action(a.label, a.id, a.icon)])),
+};
+const ZOOM_STOPS = [2, 4, 8, 16].map((v) => ({ value: v, label: `${v}×` }));
+
+function LensStory({ overflow }: Pick<BarProps, 'overflow'>) {
+  const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
+  return (
+    <ActionsProvider>
+      {LENS_ACTIONS.map((a) => (
+        <Register key={a.id} action={a} />
+      ))}
+      <div className={s.lens}>
+        <button type="button" className={s.lensImage}>Image</button>
+        <Along arc={{ start: 300, end: 60, inset: 18 }}>
+          <Bar label="Lens" schema={LENS} overflow={overflow} />
+        </Along>
+        <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
+          <Slider min={2} max={16} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={thumbs} onInput={setThumbs} />
+        </Along>
+      </div>
+    </ActionsProvider>
+  );
+}
+
+/** Two `Along` wrappers over one lens: a Bar of six actions along its top rim, and the zoom Slider along its
+ *  bottom rim. A press in the middle reaches the image beneath. `overflow` switches the bar between scrolling
+ *  its run and opening the rest from More. */
+export const ActionsAlongALensTop: Story = {
+  args: { overflow: 'scroll' },
+  render: (args) => <LensStory overflow={args.overflow} />,
 };
