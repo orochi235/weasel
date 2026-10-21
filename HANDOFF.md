@@ -4,6 +4,42 @@ For the session picking this up: what is in flight, what is next, and what has n
 Open work is `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and
 traps from finished arcs are `docs/retained.md`.
 
+## Forge loupe follow-ups, 2026-10-21
+
+The forge loupe merged to `main` (fb370f72c, pushed); its design of record is
+`packages/labkit/src/loupe/AGENTS.md` ("Lenses"), `packages/forge/README.md` ("Loupe"), and the
+unbuilt half in `docs/superpowers/specs/2026-10-20-forge-loupe-design.md`.
+
+**In progress: three bugs Mike reported on the CanvasStack story** (`labkit/Canvas/CanvasStack`,
+`packages/labkit/src/canvas/CanvasStack.stories.tsx`), not yet reproduced:
+1. The lens does not zoom in properly on the blue square.
+2. The source area (the reticle) is a square while the lens body is a circle — Mike's ruling: they
+   must match. My reading, unverified: the reticle is a fixed `RETICLE_SIZE` (16px) box, but it
+   should mark the patch the lens shows — the body's size divided by the factor, in the body's
+   shape.
+3. Handles or other chrome drawn around a lens (core's transform handles on a selected body, the
+   chrome strip) must take pointer events — Mike: "we can't draw them and just ignore them".
+   (Related, filed in TODO: the chrome strip swallows wheels/drags at a body's bottom edge.)
+Reproduce in headless Chrome first (systematic debugging). Where Mike ran forge is unknown: no
+forge dev server was listening; `http://localhost:33451/weasel/docs/ui/forge/` (the site dev
+server this session started from the main checkout) served the site shell, not the workshop. Start
+forge with `npm run dev:forge` or `npm run dev:fleet -- forge` and open
+`#/labkit-canvas-canvasstack--default`; add a lens with Alt+L then l.
+
+**Also in flight:** a subagent in its own worktree is making `scripts/ci-run.mjs`
+(`test:fleet:postbuild`) declare a seconds-weighted plan to onto so `onto jobs` shows a moving bar;
+Mike asked for it to be pushed when done. Mike also approved, as a follow-up, onto drawing a
+time-based bar for any job that declares nothing (onto repo; not started).
+
+**Open questions:** Mike says icons for the package pages were specced — gray and blue React icons,
+an orange window, and three others — but nothing in this repo or in either account's weasel
+transcripts found so far mentions them; a search of all transcripts was still running. Ask him
+where the spec lives before drawing anything.
+
+**Traps:** every checkout needs core rebuilt (`npm run build -w @weasel-js/core`) before
+`dev:forge` loads, because the capture endpoint imports `@weasel-js/core/json` from core's `dist`.
+Nothing heavy runs on Mike's machine: tests, typecheck, lint and builds go to the fleet.
+
 ## Overnight pass, 2026-10-20 (status at 07:20)
 
 For Mike in the morning. Every ruling is in `docs/unruled.md`, dated 2026-10-20 and marked
