@@ -147,11 +147,13 @@
     "@biomejs/biome": "^2.4.12",
     "@msb235/blits": "0.11.0",
     "@testing-library/jest-dom": "^7.0.1",
+    "@types/three": "^0.186.0",
     "@weasel-js/guides": "1.11.1",
     "@weasel-js/history": "1.11.1",
     "@weasel-js/modes": "1.11.1",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
+    "three": "^0.186.1",
     "tsx": "^4.19.0"
   },
   "publishConfig": {
