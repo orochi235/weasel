@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import type { PluginOption } from 'vite';
@@ -19,24 +19,30 @@ export function demoTimestamps(opts: { root?: string } = {}): PluginOption {
   const RESOLVED_ID = '\0' + VIRTUAL_ID;
   const root = opts.root ?? process.cwd();
   const demosDir = resolve(root, 'apps/site/demos');
+  let log: Promise<string> | undefined;
 
   return {
     name: 'demo-timestamps',
+    buildStart() {
+      log = readDemoLog(root);
+    },
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
       return null;
     },
-    load(id) {
+    async load(id) {
       if (id !== RESOLVED_ID) return null;
       if (!existsSync(demosDir)) return 'export default {};';
       const files = walkFiles(demosDir).map((file) => relative(root, file).replace(/\\/g, '/'));
-      return `export default ${JSON.stringify(timestampsFromLog(readDemoLog(root), files), null, 2)};`;
+      log ??= readDemoLog(root);
+      return `export default ${JSON.stringify(timestampsFromLog(await log, files), null, 2)};`;
     },
     configureServer(server) {
       // Invalidate the virtual module when any demo file changes so dev
       // sessions stay current with new commits / file moves.
       server.watcher.on('change', (file) => {
         if (!file.startsWith(demosDir)) return;
+        log = undefined;
         const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
         if (mod) server.moduleGraph.invalidateModule(mod);
       });
@@ -59,18 +65,16 @@ function walkFiles(dir: string): string[] {
  * each, and the site's 277 demo files made that the cost of every test run and dev start.
  * `demo/` is where the demos lived before `apps/site/`, so renames out of it are followed.
  */
-function readDemoLog(cwd: string): string {
-  try {
+function readDemoLog(cwd: string): Promise<string> {
+  return new Promise((done) => {
     // `--cc` lists a merge that changed a file itself, as `git log -- <file>` counts it.
-    return execSync('git log -M --cc --name-status --format=%x00%aI -- apps/site/demos demo', {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      maxBuffer: 1 << 28,
-    });
-  } catch {
-    return '';
-  }
+    execFile(
+      'git',
+      ['log', '-M', '--cc', '--name-status', '--format=%x00%aI', '--', 'apps/site/demos', 'demo'],
+      { cwd, encoding: 'utf8', maxBuffer: 1 << 28 },
+      (error, stdout) => done(error ? '' : stdout),
+    );
+  });
 }
 
 /**

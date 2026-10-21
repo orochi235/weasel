@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           # Full history: the demo "created / last modified" stamps come from
-          # `git log` per file (scripts/vite-demo-timestamps.ts). The default
+          # `git log` (scripts/vite-demo-timestamps.ts). The default
           # depth-1 clone grafts every file onto HEAD, stamping every demo
           # with the deploy commit's date.
           fetch-depth: 0
