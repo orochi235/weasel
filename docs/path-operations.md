@@ -98,6 +98,7 @@ Tag: `path-command`
 | Blend | `blend` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
+| Text along a path | `textAlong` | Lays a text's glyphs along another shape's outline, hiding both sources | Alt+Shift+X | main | path-tools |
 | Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
 | Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |
