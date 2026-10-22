@@ -111,4 +111,21 @@ describe('useSceneTextEdit — drafts', () => {
     scene.undo();
     expect(scene.get(T)!.data.text).toBe('hello!');
   });
+
+  it('keeps edits of one node by two hook instances apart', () => {
+    const { scene, container, hook } = setup();
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    const second = renderHook(() => useSceneTextEdit(scene, other));
+    const before = scene.historyEntries().length;
+    for (const [h, c, ch] of [[hook, container, '!'], [second, other, '?']] as const) {
+      act(() => h.result.current.startEdit('t'));
+      type(c, ch);
+      act(() => h.result.current.commit());
+    }
+    expect(scene.get(T)!.data.text).toBe('hello!?');
+    expect(scene.historyEntries()).toHaveLength(before + 2);
+    scene.undo();
+    expect(scene.get(T)!.data.text).toBe('hello!');
+  });
 });

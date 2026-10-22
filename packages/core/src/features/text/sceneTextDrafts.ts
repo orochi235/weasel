@@ -21,6 +21,9 @@ export function editedData<TData extends DefaultTextData>(
   return next;
 }
 
+// Shared by every instance, so two editors of one node never fold their edits together.
+let nextSession = 0;
+
 /** Where an edit's writes go. Each `draft` is written through when something derives from the node; the `commit`
  *  writes the result; `end` closes the edit, first putting back the data the drafts replaced when no commit came. All
  *  the writes of one edit fold into one undo entry, so a commit undoes to the text before the first draft, and a
@@ -34,7 +37,7 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
   end: (id: string) => void;
 } {
   let from: { id: string; data: TData } | null = null;
-  let session = 0;
+  let session = nextSession++;
   const write = (id: string, data: TData): void => {
     const scene = sceneRef.current;
     scene.batch('Edit text', () => scene.update(asNodeId(id), { data }), { coalesceKey: `text-edit:${id}:${session}` });
@@ -56,7 +59,7 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
       const held = from;
       from = null;
       if (held?.id === id && sceneRef.current.get(asNodeId(id))) write(id, held.data);
-      session++;
+      session = nextSession++;
     },
   };
 }
