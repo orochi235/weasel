@@ -77,6 +77,17 @@ describe('placeAlongRun', () => {
     close(p!.point, { x: 0, y: -100 });
     expect(p!.angle).toBeCloseTo(0);
   });
+  test('wrap is a no-op on an open run', () => {
+    const opts = { align: 'start', at: 0, gap: 3 } as const;
+    expect(placeAlongRun(run, [60, 60, 60], { ...opts, wrap: true })).toEqual(placeAlongRun(run, [60, 60, 60], opts));
+  });
+  test('a zero-length run gives finite places', () => {
+    const dot = trackRun(lineShape(C, C));
+    for (const p of placeAlongRun(dot, [10, 10], { gap: 2 })) {
+      expect(Number.isFinite(p.point.x)).toBe(true);
+      expect(Number.isFinite(p.point.y)).toBe(true);
+    }
+  });
   describe('wrap carries items round a closed run', () => {
     const circle = trackRun(arcShape({ center: C, radius: 100, start: 0, end: 0 }));
     const L = circle.length;
@@ -84,6 +95,10 @@ describe('placeAlongRun', () => {
       const places = placeAlongRun(circle, [L / 4, L / 4], { align: 'start', at: 0.9 * L, wrap: true });
       close(places[1]!.point, circle.at(((0.9 * L + (3 * L) / 8) % L) / L).point);
       expect(places.map((p) => p.clipped)).toEqual(['none', 'none']);
+    });
+    test("with past: 'hold', a past item on a closed run lands at the first item's start", () => {
+      const held = placeAlongRun(circle, [L / 2, L / 2, L / 2], { align: 'start', at: 0.9 * L, wrap: true, past: 'hold' });
+      close(held[2]!.point, circle.at(0.9).point);
     });
     test('an item a full lap on from the first is past', () => {
       const places = placeAlongRun(circle, [L / 2, L / 2, L / 2], { align: 'start', at: 0.9 * L, wrap: true });

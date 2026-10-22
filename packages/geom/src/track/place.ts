@@ -82,7 +82,7 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
   const { gap = 0, align = 'center', offset = 0, at, shift = 0, wrap = false, past = 'extend' } = options;
   const { length } = run;
   const spots = runPlaces(lengths, gap, length, align, offset, at);
-  const lap = wrap && spots.length > 0 ? wrapWindow(spots[0]!, lengths[0]!, length) : null;
+  const lap = wrap && run.closed && spots.length > 0 ? wrapWindow(spots[0]!, lengths[0]!, length) : null;
   return spots.map((spot, i) => {
     const half = lengths[i]! / 2;
     const clipped = lap ? clipOf(spot.center - half, spot.center + half, lap.start, lap.end, lap.hair) : spot.clipped;
