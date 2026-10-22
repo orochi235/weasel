@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createBvh, type BoxN, type HalfSpace } from './bvh';
+import { bvhMaxDepth, createBvh, type BoxN, type HalfSpace } from './bvh';
 
 /** mulberry32 — a small deterministic PRNG so failures reproduce. */
 function rng(seed: number): () => number {
@@ -255,5 +255,54 @@ describe('createBvh', () => {
     });
     expect(outer).toBe(50);
     expect(inner.length).toBe(50);
+  });
+
+  describe('depth stays bounded under adversarial insert orders', () => {
+    // After any insert a leaf is at most 2*ceil(log2 n) deep; removals can
+    // leave the limit of the peak size, at most twice n, which adds 2.
+    const bound = (n: number) => 2 * Math.ceil(Math.log2(n)) + 2;
+    const N = 10_000;
+
+    function check(make: (i: number) => number[]) {
+      const tree = createBvh<number>(2);
+      const boxes = new Map<number, number[]>();
+      for (let i = 0; i < N; i++) {
+        const b = make(i);
+        boxes.set(i, b);
+        tree.insert(i, b);
+        if ((i + 1) % 1000 === 0) expect(bvhMaxDepth(tree)).toBeLessThanOrEqual(bound(i + 1));
+      }
+      const r = rng(3);
+      for (let q = 0; q < 50; q++) {
+        const box = randomBox(r, 2, N, 300);
+        expect(collect<number>((v) => tree.queryBox(box, v))).toEqual(brute(boxes, (b) => overlaps(b, box, 2)));
+      }
+      for (let i = 0; i < N; i++) if (i % 4 !== 0) { tree.remove(i); boxes.delete(i); }
+      expect(bvhMaxDepth(tree)).toBeLessThanOrEqual(bound(tree.size));
+      const all = [-1, -1, N + 10, N + 10];
+      expect(collect<number>((v) => tree.queryBox(all, v))).toEqual([...boxes.keys()].sort());
+    }
+
+    it('sorted boxes inserted one by one', () => check((i) => [i, 0, i + 0.5, 1]));
+    it('coincident boxes inserted one by one', () => check(() => [5, 5, 6, 6]));
+  });
+
+  it('raycast survives a denormal direction component', () => {
+    const tree = createBvh<string>(2, [['a', [0, 0, 10, 10]], ['b', [20, 0, 30, 10]]]);
+    const got: [string, number][] = [];
+    tree.raycast([0, -10], [5e-324, 1], (k, t) => { got.push([k, t]); });
+    expect(got).toEqual([['a', 10]]);
+  });
+
+  it('inserting an existing key acts as update', () => {
+    const tree = createBvh<string>(2, [['a', [0, 0, 1, 1]]]);
+    expect(tree.insert('a', [50, 50, 51, 51])).toBe(true);
+    expect(tree.size).toBe(1);
+    expect(collect<string>((v) => tree.queryPoint([0.5, 0.5], v))).toEqual([]);
+    expect(collect<string>((v) => tree.queryPoint([50.5, 50.5], v))).toEqual(['a']);
+  });
+
+  it('createBvh throws RangeError on a bad dim', () => {
+    for (const dim of [0, -1, 1.5, NaN, Infinity]) expect(() => createBvh(dim)).toThrow(RangeError);
   });
 });

@@ -31,6 +31,23 @@ export interface Bvh<K> {
   queryHalfSpaces(planes: readonly HalfSpace[], visit: (key: K) => boolean | void): void;
 }
 
+/** Weight balance past which a subtree counts as lopsided. Below
+ *  `1/sqrt(2)`, so an unbalanced ancestor exists on any path deeper than
+ *  `depthLimit`: an item at depth h sits under at most `ALPHA^h * n` items. */
+const ALPHA = 0.7;
+
+/** Deepest a leaf may sit after an insert. */
+function depthLimit(n: number): number {
+  return 2 * Math.ceil(Math.log2(Math.max(n, 2)));
+}
+
+/** Leaf depth of a median-split build over `m` items. */
+function balancedHeight(m: number): number {
+  let h = 0;
+  for (; m > LEAF_SIZE; m = Math.ceil(m / 2)) h++;
+  return h;
+}
+
 function validBox(box: BoxN, dim: number): boolean {
   if (box.length < 2 * dim) return false;
   for (let j = 0; j < dim; j++) {
@@ -46,6 +63,8 @@ class BvhImpl<K> implements Bvh<K> {
   private readonly tree: BvhTree<K>;
   private readonly items = new Map<K, number>();
   private readonly scratch = new Scratch();
+  /** Largest size since the last whole rebuild; shrinking to half of it rebuilds again. */
+  private peakSize = 0;
 
   constructor(dim: number) {
     this.dim = dim;
@@ -61,7 +80,7 @@ class BvhImpl<K> implements Bvh<K> {
       const old = this.items.get(key);
       if (old !== undefined) { this.tree.writeItemBox(old, box); continue; }
       const it = this.tree.allocItem(key, box);
-      this.tree.itemLeaf[it] = 0;
+      this.tree.itemLeaf[it] = 0; // marks it live for build()
       this.items.set(key, it);
     }
   }
@@ -71,6 +90,7 @@ class BvhImpl<K> implements Bvh<K> {
     if (this.items.has(key)) return this.update(key, box);
     const it = this.tree.allocItem(key, box);
     this.items.set(key, it);
+    if (this.items.size > this.peakSize) this.peakSize = this.items.size;
     this.place(it);
     return true;
   }
@@ -96,22 +116,50 @@ class BvhImpl<K> implements Bvh<K> {
     this.detach(it);
     this.items.delete(key);
     this.tree.freeItem(it);
+    if (this.items.size < this.peakSize >> 1) this.rebuild();
     return true;
   }
 
   refit(): void {
     const t = this.tree;
     if (t.root === -1) return;
-    // Children are pushed after their parent, so the reversed order is bottom-up.
-    const order: number[] = [t.root];
-    for (let i = 0; i < order.length; i++) {
-      const n = order[i];
-      if (t.left[n] !== -1) order.push(t.left[n], t.right[n]);
+    const sc = this.scratch.take();
+    try {
+      // Children land after their parent, so the reversed order is bottom-up.
+      let order = sc.stackAt(0);
+      order[0] = t.root;
+      let len = 1;
+      for (let i = 0; i < len; i++) {
+        const n = order[i];
+        if (t.left[n] === -1) continue;
+        order = sc.stackAt(len + 1);
+        order[len++] = t.left[n];
+        order[len++] = t.right[n];
+      }
+      for (let i = len - 1; i >= 0; i--) t.computeBox(order[i]);
+    } finally {
+      sc.release();
     }
-    for (let i = order.length - 1; i >= 0; i--) t.computeBox(order[i]);
   }
 
-  rebuild(): void { this.tree.build(); }
+  rebuild(): void {
+    this.tree.build();
+    this.peakSize = this.items.size;
+  }
+
+  /** Deepest leaf, counting the root as depth 0. */
+  maxDepth(): number {
+    const t = this.tree;
+    if (t.root === -1) return 0;
+    let deepest = 0;
+    const stack: [number, number][] = [[t.root, 0]];
+    while (stack.length > 0) {
+      const [n, d] = stack.pop()!;
+      if (t.left[n] === -1) deepest = Math.max(deepest, d);
+      else stack.push([t.left[n], d + 1], [t.right[n], d + 1]);
+    }
+    return deepest;
+  }
 
   queryBox(box: BoxN, visit: (key: K) => boolean | void): void {
     queryOverlap(this.tree, this.scratch, box, 0, this.dim, visit);
@@ -147,16 +195,35 @@ class BvhImpl<K> implements Bvh<K> {
       return;
     }
     let n = t.root;
+    let depth = 0;
     while (t.left[n] !== -1) {
       const l = t.left[n];
       const r = t.right[n];
       const el = this.enlargement(l, it);
       const er = this.enlargement(r, it);
-      n = el < er || (el === er && this.margin(l) <= this.margin(r)) ? l : r;
+      n = el < er || (el === er && t.count[l] <= t.count[r]) ? l : r;
+      depth++;
     }
     if (t.leafCount[n] < LEAF_SIZE) t.placeInLeaf(n, it);
-    else t.splitLeaf(n, it);
+    else { t.splitLeaf(n, it); depth++; }
     t.refitUp(n);
+    if (depth > depthLimit(this.items.size)) this.rebalance(t.itemLeaf[it], depth);
+  }
+
+  /** Least enlargement alone lets sorted or coincident inserts grow one
+   *  spine. Rebuild the lowest ancestor whose balanced rebuild brings this
+   *  leaf back within the limit, preferring a weight-unbalanced one. */
+  private rebalance(leaf: number, depth: number): void {
+    const t = this.tree;
+    const limit = depthLimit(this.items.size);
+    let fit = -1;
+    for (let c = leaf, a = t.parent[leaf], d = depth - 1; a !== -1; c = a, a = t.parent[a], d--) {
+      if (d + balancedHeight(t.count[a]) > limit) continue;
+      if (t.count[c] > ALPHA * t.count[a]) { t.rebuildSubtree(a); return; }
+      if (fit === -1) fit = a;
+    }
+    if (fit !== -1) t.rebuildSubtree(fit);
+    else this.rebuild();
   }
 
   /** Margin (sum of extents) a node would gain by covering item `it`. Margin
@@ -174,15 +241,6 @@ class BvhImpl<K> implements Bvh<K> {
       grow += hi - lo - (nb[o + d + j] - nb[o + j]);
     }
     return grow;
-  }
-
-  private margin(n: number): number {
-    const d = this.dim;
-    const nb = this.tree.nodeBox;
-    const o = n * 2 * d;
-    let m = 0;
-    for (let j = 0; j < d; j++) m += nb[o + d + j] - nb[o + j];
-    return m;
   }
 
   /** Take `it` out of its leaf, collapsing the leaf into its sibling when it empties. */
@@ -211,6 +269,12 @@ class BvhImpl<K> implements Bvh<K> {
     t.freeNode(p);
     t.refitUp(g);
   }
+}
+
+/** Deepest leaf of a tree `createBvh` made, root at depth 0. Tests use it;
+ *  the `./nd` barrel does not export it. */
+export function bvhMaxDepth(bvh: Bvh<unknown>): number {
+  return (bvh as BvhImpl<unknown>).maxDepth();
 }
 
 export function createBvh<K>(dim: number, entries?: Iterable<readonly [K, BoxN]>): Bvh<K> {

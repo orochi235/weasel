@@ -4,7 +4,8 @@
 export const LEAF_SIZE = 4;
 
 /** Node and item storage. A node with `left[n] === -1` is a leaf holding
- *  `leafCount[n]` item indices at `leafItems[n * LEAF_SIZE]`. */
+ *  `leafCount[n]` item indices at `leafItems[n * LEAF_SIZE]`; `count[n]` is
+ *  the number of items under `n`. */
 export class BvhTree<K> {
   readonly dim: number;
   root = -1;
@@ -14,6 +15,7 @@ export class BvhTree<K> {
   parent: Int32Array;
   leafCount: Int32Array;
   leafItems: Int32Array;
+  count: Int32Array;
   private nodeCap = 0;
   private nodeTop = 0;
   private freeNodes: number[] = [];
@@ -28,7 +30,7 @@ export class BvhTree<K> {
   constructor(dim: number) {
     this.dim = dim;
     this.nodeBox = new Float64Array(0);
-    this.left = this.right = this.parent = this.leafCount = this.leafItems = new Int32Array(0);
+    this.left = this.right = this.parent = this.leafCount = this.leafItems = this.count = new Int32Array(0);
     this.itemBox = new Float64Array(0);
     this.itemLeaf = new Int32Array(0);
     this.growNodes(16);
@@ -43,6 +45,7 @@ export class BvhTree<K> {
     this.parent = grow(this.parent, cap);
     this.leafCount = grow(this.leafCount, cap);
     this.leafItems = grow(this.leafItems, cap * LEAF_SIZE);
+    this.count = grow(this.count, cap);
     this.nodeCap = cap;
   }
 
@@ -91,7 +94,7 @@ export class BvhTree<K> {
     for (let j = 0; j < s; j++) this.itemBox[i * s + j] = box[j];
   }
 
-  /** Recompute `n`'s box from its children or items. */
+  /** Recompute `n`'s box and count from its children or items. */
   computeBox(n: number): void {
     const d = this.dim;
     const s = 2 * d;
@@ -101,8 +104,10 @@ export class BvhTree<K> {
     if (this.left[n] !== -1) {
       unionInto(nb, o, nb, this.left[n] * s, d);
       unionInto(nb, o, nb, this.right[n] * s, d);
+      this.count[n] = this.count[this.left[n]] + this.count[this.right[n]];
       return;
     }
+    this.count[n] = this.leafCount[n];
     const base = n * LEAF_SIZE;
     for (let k = 0; k < this.leafCount[n]; k++) unionInto(nb, o, this.itemBox, this.leafItems[base + k] * s, d);
   }
@@ -122,6 +127,25 @@ export class BvhTree<K> {
     if (this.nodeCap < 2 * live.length) this.growNodes(2 * live.length);
     const idx = Int32Array.from(live);
     this.root = this.buildRange(idx, 0, idx.length, -1);
+  }
+
+  /** Rebuild the subtree under `n` balanced, in its place. */
+  rebuildSubtree(n: number): void {
+    const p = this.parent[n];
+    const wasLeft = p !== -1 && this.left[p] === n;
+    const items = new Int32Array(this.count[n]);
+    const nodes = [n];
+    let m = 0;
+    while (nodes.length > 0) {
+      const c = nodes.pop()!;
+      if (this.left[c] !== -1) nodes.push(this.left[c], this.right[c]);
+      else for (let k = 0; k < this.leafCount[c]; k++) items[m++] = this.leafItems[c * LEAF_SIZE + k];
+      this.freeNode(c);
+    }
+    const r = this.buildRange(items, 0, m, p);
+    if (p === -1) this.root = r;
+    else if (wasLeft) this.left[p] = r;
+    else this.right[p] = r;
   }
 
   private buildRange(idx: Int32Array, lo: number, hi: number, parent: number): number {

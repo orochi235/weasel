@@ -2,7 +2,7 @@
  *  so a query allocates nothing unless a visit re-enters the tree. */
 import { LEAF_SIZE, type BvhTree } from './bvhTree';
 
-export interface HalfSpace { normal: ArrayLike<number>; offset: number }
+export interface HalfSpace { normal: ArrayLike<number>; offset: number } // inside: dot(normal, x) + offset >= 0
 
 type Visit<K> = (key: K) => boolean | void;
 
@@ -161,12 +161,12 @@ function entry(arr: Float64Array, o: number, d: number, org: ArrayLike<number>, 
   for (let j = 0; j < d; j++) {
     const lo = arr[o + j];
     const hi = arr[o + d + j];
-    const dj = dir[j];
-    if (dj === 0) {
+    const inv = 1 / dir[j];
+    // A denormal component overflows `inv`, and 0 * Infinity is NaN.
+    if (!Number.isFinite(inv)) {
       if (org[j] < lo || org[j] > hi) return -1;
       continue;
     }
-    const inv = 1 / dj;
     const t1 = (lo - org[j]) * inv;
     const t2 = (hi - org[j]) * inv;
     if (t1 < t2) { if (t1 > near) near = t1; if (t2 < far) far = t2; }
