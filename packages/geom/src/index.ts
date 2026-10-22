@@ -21,6 +21,10 @@ export { ellipseShape, type EllipseTrackSpec, type EllipseTrackShape } from './t
 export { pathShape, type PathTrackShape } from './track/path';
 export { trackRun, type TrackRun, type TrackPlace, type TrackSide, type TrackRunOptions } from './track/run';
 export { trackShapeD } from './track/pathData';
+export {
+  placeAlongRun, runLength, runPlaces, runStationAt,
+  type PlaceAlongRunOptions, type RunAlign, type RunPlace, type RunSpot,
+} from './track/place';
 export { PORT_REACH, portControls, portCurvePoints } from './portCurve2';
 export {
   DEFAULT_FLATTEN_TOLERANCE, flattenCubic, flattenQuadratic,
