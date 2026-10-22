@@ -3,7 +3,7 @@
 "@weasel-js/ui": patch
 "@weasel-js/text": patch
 "@weasel-js/text-dom": patch
-"@weasel-js/core": patch
+"@weasel-js/core": minor
 "@weasel-js/path-tools": patch
 ---
 
@@ -18,3 +18,5 @@ hidden source is edited through its effect, and Delete, Cut and Expand now remov
 it. A committed in-place text edit is labeled "Edit text" in history.
 `@weasel-js/path-tools` adds Text Along Path (Alt+Shift+X), Release and Set Path. `useTextEdit` in
 `@weasel-js/text-dom` gains `onDraft`.
+
+<!-- bump-approved: minor: maintainer — 1.12.0 release requested 2026-10-22 -->
