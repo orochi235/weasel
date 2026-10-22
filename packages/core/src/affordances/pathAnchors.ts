@@ -73,12 +73,12 @@ export function createPathAnchorAffordances(
 ): Affordance[] {
   const { hitRadius = 8, cursor = 'pointer' } = opts;
 
-  /** Selected polygon paths, paired with their node id. */
+  /** Selected polygon paths, and the one being edited, paired with their node id. */
   const editablePaths = (state: ChromeState): Array<{ id: string; path: PolygonPath }> => {
     const anchorState = getAnchorState();
     if (!anchorState) return [];
     const out: Array<{ id: string; path: PolygonPath }> = [];
-    for (const id of state.selection) {
+    for (const id of withEdited(state.selection, anchorState.editingId)) {
       const pose = anchorState.getPose(id);
       if (!pose || (pose as { kind?: string }).kind !== 'polygon') continue;
       out.push({ id, path: pose as PolygonPath });
@@ -181,8 +181,8 @@ export function createPathAnchorAffordances(
   return [segments, extensionParts(getAnchorState, hitRadius, cursor), anchors, controls];
 }
 
-/** The parts path-edit extensions add to the path in edit mode while it is
- *  selected, each pressed as its own `hitKind`. */
+/** The parts path-edit extensions add to the path in edit mode, each pressed
+ *  as its own `hitKind`. */
 function extensionParts(
   getAnchorState: () => AnchorState | null,
   hitRadius: number,
@@ -190,12 +190,11 @@ function extensionParts(
 ): Affordance {
   return {
     id: PATH_ANCHOR_CHROME_ID,
-    regions(state) {
+    regions() {
       const anchorState = getAnchorState();
       const editingId = anchorState?.editingId ?? null;
       const extensions = anchorState?.extensions?.filter((e) => e.parts) ?? [];
       if (editingId === null || extensions.length === 0) return [];
-      if (!(state.selection as readonly string[]).includes(editingId)) return [];
       const pose = anchorState!.getPose(editingId);
       const node = anchorState!.getNode?.(editingId);
       if (!node || !pose || (pose as { kind?: string }).kind !== 'polygon') return [];
@@ -216,4 +215,10 @@ function extensionParts(
       })));
     },
   };
+}
+
+/** `selection`, and the path being edited after it when the selection does not hold it: a path edited through the
+ *  effect that hides it is edited while the effect is what is selected. */
+function withEdited(selection: readonly string[], editingId: string | null): readonly string[] {
+  return editingId === null || selection.includes(editingId) ? selection : [...selection, editingId];
 }
