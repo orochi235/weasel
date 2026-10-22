@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { applyToPoint, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { applyToPoint, boundsOfPath, pathIntersectsRect, type Affine } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -134,20 +134,22 @@ function walkArea(
 ): NodeId[] {
   const regionQuery = (r: SelectRegion): PickQuery<unknown> => ({
     includeContainers: query.includeContainers === true,
-    clipAdmits: (clip, node, pose) => {
+    clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
-      return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
+      return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
         && pathIntersectsRect(clip, r.bounds);
     },
-    hits: (node, pose, _derived, inherited) => {
+    hits: (node, placeholder, derived, inherited) => {
+      // A derived node's pose is a placeholder; its path is what is painted.
+      const pose = derived ?? placeholder;
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
-      const b = regionBoundsOf(node as object, pose, g);
+      const b = derived ? boundsOfPath(derived) : regionBoundsOf(node as object, pose, g);
       let ink: boolean | undefined;
       const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
-        asInked(filled, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)), filled);
+        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionQuery(regionInPlane(r, m)),
     inCopy: (m) => regionQuery(regionInCopy(r, m)),
