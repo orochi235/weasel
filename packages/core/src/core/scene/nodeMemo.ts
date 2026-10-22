@@ -23,6 +23,8 @@ interface MemoSlot {
   pose: unknown;
   /** Reference-compared against `node.data` at call time. */
   data: unknown;
+  /** Reference-compared against the caller's `also` argument. */
+  also: unknown;
   value: unknown;
 }
 
@@ -69,8 +71,8 @@ type MemoizableNode = { data?: unknown };
 
 /**
  * Return the value `derive` produces for `node`, recomputing only when the
- * node's `data` reference, the given `pose` reference, or the global
- * generation has changed since the last call for this `slot`.
+ * node's `data` reference, the given `pose` reference, the `also` reference,
+ * or the global generation has changed since the last call for this `slot`.
  *
  * `slot` names the derivation, so a node's several derived values do not
  * overwrite each other.
@@ -79,14 +81,19 @@ type MemoizableNode = { data?: unknown };
  * legitimately derive against a pose that isn't `node.pose`: a preview or
  * ghost pose mid-drag. Pass `undefined` for derivations that don't depend on
  * the pose at all, leaving `data` as the only key.
+ *
+ * `also` is for an input that lives outside the node, such as the paint a
+ * node inherits from its container. It must be a reference its owner keeps
+ * while the input is unchanged.
  */
 export function nodeMemo<T>(
   node: MemoizableNode,
   slot: string | NodeMemoScope,
   pose: unknown,
   derive: () => T,
+  also?: unknown,
 ): T {
-  if (typeof slot !== 'string') return scopedNodeMemo(node, slot, pose, derive);
+  if (typeof slot !== 'string') return scopedNodeMemo(node, slot, pose, derive, also);
   let record = MEMO.get(node);
   if (record === undefined) {
     record = { generation, slots: new Map(), drops: 0 };
@@ -98,7 +105,7 @@ export function nodeMemo<T>(
 
   const data = node.data;
   const hit = record.slots.get(slot);
-  if (hit !== undefined && hit.pose === pose && hit.data === data) {
+  if (hit !== undefined && hit.pose === pose && hit.data === data && hit.also === also) {
     return hit.value as T;
   }
 
@@ -108,9 +115,10 @@ export function nodeMemo<T>(
   if (hit !== undefined) {
     hit.pose = pose;
     hit.data = data;
+    hit.also = also;
     hit.value = value;
   } else {
-    record.slots.set(slot, { pose, data, value });
+    record.slots.set(slot, { pose, data, also, value });
   }
   return value;
 }
@@ -120,6 +128,7 @@ function scopedNodeMemo<T>(
   scope: NodeMemoScope,
   pose: unknown,
   derive: () => T,
+  also: unknown,
 ): T {
   const entries = scope as unknown as WeakMap<object, ScopedSlot>;
   const data = node.data;
@@ -127,7 +136,7 @@ function scopedNodeMemo<T>(
   const hit = entries.get(node);
   if (
     hit !== undefined && hit.generation === generation && hit.pose === pose && hit.data === data
-    && (pose === undefined || hit.drops === drops)
+    && hit.also === also    && (pose === undefined || hit.drops === drops)
   ) {
     return hit.value as T;
   }
@@ -137,11 +146,12 @@ function scopedNodeMemo<T>(
   if (hit !== undefined) {
     hit.pose = pose;
     hit.data = data;
+    hit.also = also;
     hit.value = value;
     hit.generation = generation;
     hit.drops = dropsNow;
   } else {
-    entries.set(node, { pose, data, value, generation, drops: dropsNow });
+    entries.set(node, { pose, data, also, value, generation, drops: dropsNow });
   }
   return value;
 }

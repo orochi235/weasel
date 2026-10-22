@@ -7,6 +7,7 @@
  * this one does not read; the newest registration wins, and a canvas child
  * registers after the canvas's own.
  */
+import { sceneInheritedPaintOf } from 'canvas/inheritedPaints';
 import { useMemo } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -63,7 +64,9 @@ export function useBooleansAdapterSource(
       },
       getPaint: (id) => {
         const leaf = leafOf(id);
-        return leaf ? pathPaintOf(leaf.node.data as Parameters<typeof pathPaintOf>[0]) : undefined;
+        return leaf
+          ? pathPaintOf(leaf.node.data as Parameters<typeof pathPaintOf>[0], sceneInheritedPaintOf(sceneRef.current)(leaf.node))
+          : undefined;
       },
       compareZ: (a, b) => {
         const order = [...sceneRef.current.renderOrder()];

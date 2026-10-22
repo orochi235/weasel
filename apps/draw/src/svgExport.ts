@@ -16,6 +16,8 @@ import {
   derivedDepOf,
   documentPose,
   embedWeaselMetadataInSvg,
+  inheritedPaintIn,
+  withInheritedPaint,
   fillInPoseFrame,
   isAnnotationNode,
   layoutTextPose,
@@ -48,6 +50,9 @@ import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 
+/** A node's data with its `'inherit'` paint resolved, as export writes it. */
+type ShownDrawData = ReturnType<typeof withInheritedPaint<WeaselDrawData>>;
+
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 
 /** A polygon's or a star's generator as the `tool` and `params` the `wd:` namespace carries. */
@@ -59,7 +64,7 @@ function toolOfGenerator(g: ShapeGenerator): { tool: 'polygon' | 'star'; params:
 
 /** Lower a leaf node's `{data, pose}` to an `Obj`, or `null` for a leaf with
  *  no drawable data. */
-function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
+function leafToObj(id: string, data: ShownDrawData, pose: WeaselDrawPose): Obj | null {
   if (data.image) {
     const o: ImageObj = {
       id, tool: 'image', x: pose.x, y: pose.y, width: pose.width, height: pose.height, image: data.image,
@@ -124,7 +129,7 @@ function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string
   const deps = dependsOn.map((d) => derivedDepOf(scene, d as never, node));
   const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
     const { x, y, width, height } = boundsOfPath(part.path);
-    const { fill, stroke } = resolvePartPaint(part, node.data as WeaselDrawData);
+    const { fill, stroke } = resolvePartPaint(part, node.data as WeaselDrawData, inheritedPaintIn(scene, node));
     return pathObj(`${id}-${k}`, part.path, { x, y, width, height }, fill, stroke);
   });
   return { id, effect: pathEffectOf(node)!, dependsOn, parts };
@@ -195,7 +200,7 @@ function sceneSourceOf<TLayer extends string>(
       const node = scene.get(id as never);
       if (!node || node.kind !== 'leaf') return undefined;
       if (pathEffectOf(node) !== null) return effectToObj(scene, id);
-      return leafToObj(id, node.data, poseOf(id)!) ?? undefined;
+      return leafToObj(id, withInheritedPaint(node.data, inheritedPaintIn(scene, node)), poseOf(id)!) ?? undefined;
     },
   };
 }

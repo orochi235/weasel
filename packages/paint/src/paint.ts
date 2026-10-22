@@ -134,6 +134,11 @@ export function resolveScreenLength(value: ScreenLength, scale: number): number 
  * whatever makes a node writes the paint it wants. A paint with alpha 0 or
  * the color `transparent` is a paint, invisible but still grabbable.
  * `resolveFill` and `resolveStroke` are the one reading of a field.
+ *
+ * A node's own fill or stroke inherits from its nearest enclosing container's,
+ * walking on past a container that inherits too, and is none at the root.
+ * Inheritance happens only where a field says `'inherit'`, never because one
+ * is absent.
  */
 export interface Fill {
   /** Omitted, the fill paints nothing. */

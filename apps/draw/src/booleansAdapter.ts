@@ -10,6 +10,8 @@ import {
   pathPaintOf,
   type SelectionApi,
   type TextNodeSource,
+  inheritedPaintIn,
+  withInheritedPaint,
 } from '@weasel-js/core';
 import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 
@@ -17,7 +19,7 @@ import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer,
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
   const node = scene.get(asNodeId(id));
   if (!node || node.kind !== 'leaf') return undefined;
-  const { text, runs, style, verticalAlign, path, fill, stroke } = node.data;
+  const { text, runs, style, verticalAlign, path, fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
   if (text === undefined || path) return undefined;
   return { data: { text, runs, style, verticalAlign, fill, stroke }, pose: node.pose };
 }

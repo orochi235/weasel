@@ -13,6 +13,7 @@ import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { sceneToAdapter } from './sceneAdapter';
+import { withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -141,7 +142,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
    *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
   cull?: SceneViewCull<TData, TLayer, TPose>,
 ): DrawCommand[] {
-  const derivedOnly = withDerivedPaths(scene, drawOne);
+  const derivedOnly = withDerivedPaths(scene, withInheritedPaints(scene, drawOne));
   const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
   const derivedPathOf = sceneDerivedPathOf(scene);
   const wrappedDrawOne = (

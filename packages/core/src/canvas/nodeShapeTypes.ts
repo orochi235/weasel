@@ -3,6 +3,7 @@ import type { Path } from '@weasel-js/geom';
 import type { VertexColorChannel } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
+import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 
@@ -33,6 +34,10 @@ export interface NodePaintCtx {
     channel: VertexColorChannel,
     base: readonly number[] | undefined,
   ) => readonly number[] | undefined;
+  /** What the node's `'inherit'` fill and stroke resolve to, looked up from
+   *  its containers by the scene's `drawOne` wrapper. **Absent** for a node
+   *  that inherits nothing. Hand it to `resolveFill` / `resolveStroke`. */
+  inherited?: InheritedPaint;
 }
 
 /**
@@ -154,4 +159,7 @@ export interface NodeInkCtx {
   /** The path the node shows in place of its pose's, already where it is
    *  drawn: its box is measured from this, not from the placeholder pose. */
   derivedPath?: Path | null;
+  /** As {@link NodePaintCtx.inherited}: a stroke or fill the node inherits
+   *  inks it as its own does. */
+  inherited?: InheritedPaint;
 }

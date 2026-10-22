@@ -30,6 +30,7 @@ import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
 import { TEXT_PAINTER } from './nodeShapes/textPainter';
 import type { NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
 export type { NodePaintCtx, SceneViewDrawOne, NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
+export type { InheritedPaint } from 'core/scene/inheritedPaint';
 
 /** What a painter that declares no `ink` is assumed to do. */
 export const DEFAULT_INK: Readonly<NodeInk> = Object.freeze({ filled: true, outset: 0, inset: 0 });
@@ -196,6 +197,9 @@ export interface ShapeCoversPointOptions {
    *  everywhere, which degrades picking to the caller's AABB: for an edge,
    *  a zero-sized pose. */
   derivedPath?: Path | null;
+  /** See {@link NodeInkCtx.inherited}. Without it an `'inherit'` field is
+   *  read as none. */
+  inherited?: NodeInkCtx['inherited'];
 }
 
 /**
@@ -218,7 +222,7 @@ export function shapeCoversPoint<TData, TPose>(
 ): boolean {
   const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath });
   if (sil === null) return true;
-  const ink = findShapeInk(node, pose, { scale: opts.scale }) ?? DEFAULT_INK;
+  const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited }) ?? DEFAULT_INK;
   const inside = pathContainsPoint(sil, x, y);
   if (ink.filled && inside) return true;
   // The stroke reaches a different distance on each side, so which side the point is on

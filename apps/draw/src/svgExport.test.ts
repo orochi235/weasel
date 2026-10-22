@@ -13,7 +13,7 @@ import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type T
 import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
-import { asPaint, createScene, measureNode, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
+import { asPaint, createScene, measureNode, registerPaintKindLoader, resolveFill, solid, strokeOf } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import type { Stroke, StyledRun, Fill } from '@weasel-js/core';
 import {
@@ -553,7 +553,7 @@ describe('gradient fills', () => {
     const leaf = drafts.find((d) => d.kind === 'leaf');
     if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
     if (!('path' in leaf.obj)) throw new Error('expected a path draft');
-    const fill = leaf.obj.fill?.paint as {
+    const fill = resolveFill(leaf.obj.fill)?.paint as {
       kind: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
     };
     expect(fill.kind).toBe('linear-gradient');

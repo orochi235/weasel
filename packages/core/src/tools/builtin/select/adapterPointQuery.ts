@@ -24,7 +24,7 @@ export function adapterPointQuery<TPose>(
   preciseLeaves: boolean,
 ): (px: number, py: number, t: number) => PickQuery<TPose> {
   const pointQuery = (px: number, py: number, t: number): PickQuery<TPose> => ({
-    hits: (node, pose, derived) => {
+    hits: (node, pose, derived, inherited) => {
       const b = derived ? boundsOfPath(derived) : poseDescriptorForNode(d, node).getBounds(pose);
       if (node.kind !== 'container') {
         const slop = preciseLeaves || derived ? t : 0;
@@ -34,7 +34,7 @@ export function adapterPointQuery<TPose>(
         }
         if (!preciseLeaves) return true;
         return shapeCoversPoint(
-          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived },
+          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived, inherited },
         );
       }
       // A container's own clip *is* its hit shape — it is picked where it

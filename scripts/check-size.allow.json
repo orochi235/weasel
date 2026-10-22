@@ -202,9 +202,6 @@
   "packages/svg/src/gradients.ts": {
     "lines": 624
   },
-  "packages/svg/src/parse.ts": {
-    "longestFunction": 129
-  },
   "packages/text-dom/src/domRuns.ts": {
     "lines": 474
   },
@@ -265,9 +262,6 @@
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
     "longestFunction": 156
-  },
-  "packages/ui/src/components/PaintInput/PaintInput.tsx": {
-    "longestFunction": 138
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
     "longestFunction": 221

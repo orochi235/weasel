@@ -22,6 +22,7 @@ import type { ClipFromPoseFn, CopiesFromPoseFn, DerivedDep, Node, NodeId, Scene 
 import { asNodeId } from 'core/scene/types';
 import { annotationLayerIds } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
+import { inheritedPaintOf, inheritsPaint, type InheritedPaint } from 'core/scene/inheritedPaint';
 import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf, showsComputedPath } from './derivedPath';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
@@ -40,6 +41,8 @@ export interface PickCandidate<TPose> {
   pose: TPose;
   /** `false` makes the node transparent to the walk — see `SceneNode.pickable`. */
   pickable?: boolean;
+  /** Read for an `'inherit'` fill or stroke, which takes its containers'. */
+  data?: unknown;
   clipFromPose?: ClipFromPoseFn<TPose>;
   copiesFromPose?: CopiesFromPoseFn<TPose>;
 }
@@ -90,8 +93,10 @@ export interface PickQuery<TPose> {
   /** Does this node, drawn at this pose, cover the query region? `derived`
    *  is the node's resolved path when it has one — a derived node's pose is a
    *  placeholder, so a region test that reads only the pose answers for the
-   *  wrong box. */
-  hits(node: PickCandidate<TPose>, pose: TPose, derived?: Path | null): boolean;
+   *  wrong box. `inherited` is what its `'inherit'` fields take from its
+   *  containers, for the ink it is tested against; absent when it inherits
+   *  nothing. */
+  hits(node: PickCandidate<TPose>, pose: TPose, derived?: Path | null, inherited?: InheritedPaint): boolean;
   /**
    * Does an ancestor's clip leave anything of `node` for this query to hit?
    *
@@ -203,7 +208,8 @@ export function pickWalk<TPose>(
     if (query === null) continue;
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
-    if (!reaches(node, pose, derived, query, () => src.parentsOf(node), copying, { clipOf, copiesOf, carry })) continue;
+    const inherited = inheritsPaint(node) ? inheritedPaintOf(node, src.parentsOf(node)) : undefined;
+    if (!reaches(node, pose, derived, inherited, query, () => src.parentsOf(node), copying, { clipOf, copiesOf, carry })) continue;
     out.push(node.id);
   }
 

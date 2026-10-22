@@ -1,14 +1,16 @@
 /**
  * What the scene slot needs from the `Scene` that `<Canvas>` cannot see.
  *
- * `<Canvas>` is scene-agnostic: it walks an adapter. Three things a node is
+ * `<Canvas>` is scene-agnostic: it walks an adapter. Four things a node is
  * painted with are therefore invisible to it — an ephemeral override's alpha, a
- * derived path, which needs other nodes' poses to resolve, and animated vertex
- * colors, which live in an animator. `<SceneCanvas>` folds them into the slot
+ * derived path, which needs other nodes' poses to resolve, the paint an
+ * `'inherit'` field takes from its containers, and animated vertex colors,
+ * which live in an animator. `<SceneCanvas>` folds them into the slot
  * here; `buildSceneViewCommands` does the same for the headless walk.
  */
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
+import { withInheritedPaints } from './inheritedPaints';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '@weasel-js/animator';
@@ -35,7 +37,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   alphaFor?: (id: string) => number,
   colorOverrides?: ColorOverrideRegistry,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
-  const derived = withDerivedPaths(scene, slot.drawOne, slot.toPose);
+  const derived = withDerivedPaths(scene, withInheritedPaints(scene, slot.drawOne), slot.toPose);
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   return {
     ...slot,

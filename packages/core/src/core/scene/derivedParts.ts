@@ -8,6 +8,7 @@
  * painter, handed the path, can paint each part as itself. The parts live as
  * long as the path does — in the derivation's memo.
  */
+import type { InheritedPaint } from './inheritedPaint';
 import { pathToCubicContours, cubicContoursToPath, type Path, type PolygonPath } from '@weasel-js/geom';
 import {
   resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
@@ -23,14 +24,16 @@ export interface DerivedPart {
   stroke?: Stroke | Inherit | null;
 }
 
-/** What `part` paints, its `INHERIT` taken from `own`, the deriving node's data. */
+/** What `part` paints, its `INHERIT` taken from `own`, the deriving node's
+ *  data — whose own `INHERIT` takes `inherited`, its container's. */
 export function resolvePartPaint(
   part: DerivedPart,
-  own: { fill?: Fill | null; stroke?: Stroke | null } | null | undefined,
+  own: { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null } | null | undefined,
+  inherited?: InheritedPaint,
 ): { fill: PaintedFill | null; stroke: PaintedStroke | null } {
   return {
-    fill: resolveFill(part.fill, resolveFill(own?.fill)),
-    stroke: resolveStroke(part.stroke, resolveStroke(own?.stroke)),
+    fill: resolveFill(part.fill, resolveFill(own?.fill, inherited?.fill)),
+    stroke: resolveStroke(part.stroke, resolveStroke(own?.stroke, inherited?.stroke)),
   };
 }
 

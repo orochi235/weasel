@@ -11,6 +11,7 @@
  */
 
 import type { Fill, TextStyle } from '@weasel-js/core';
+import { resolveFill, resolveStroke } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -189,9 +190,9 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: svgPaintFromKit(o.fill?.paint ?? null, o),
+    fill: svgPaintFromKit(resolveFill(o.fill)?.paint ?? null, o),
   };
-  const stroke = svgStrokeFromKit(o.stroke, o);
+  const stroke = svgStrokeFromKit(resolveStroke(o.stroke), o);
   if (stroke) node.stroke = stroke;
   node.meta = { wd: { attrs: { ...encodeWdAttrs(o), ...cornerAttrs(o.path) } } };
   if (o.rotation) node.rotation = o.rotation;

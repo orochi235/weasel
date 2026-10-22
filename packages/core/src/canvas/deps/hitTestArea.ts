@@ -139,13 +139,13 @@ function walkArea(
       return pathIntersectsRect(clip, visualBoundsViaDescriptor(pose, g))
         && pathIntersectsRect(clip, r.bounds);
     },
-    hits: (node, pose) => {
+    hits: (node, pose, _derived, inherited) => {
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
       const b = regionBoundsOf(node as object, pose, g);
       let ink: boolean | undefined;
-      const filled = (): boolean => ink ??= findShapeInk(node as never, pose)?.filled !== false;
+      const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
         asInked(filled, findShapeSilhouette(node as never, pose) ?? poseOutline(pose, b)), filled);
     },

@@ -1,4 +1,4 @@
-import type { Fill } from '@weasel-js/paint';
+import type { Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { RectPose } from 'core/scene/types';
 import { commandFill } from '@weasel-js/renderer';
@@ -14,10 +14,10 @@ export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // this one never fire (or unregister it explicitly).
   id: 'kit:rect-fallback',
   matches: (node) => node.kind !== 'container' && paintsPose(node.pose),
-  paint: (node, pose) => {
-    const d = node.data as { fill?: Fill | null } | null;
+  paint: (node, pose, ctx) => {
+    const d = node.data as { fill?: Fill | Inherit | null } | null;
     const p = pose;
-    const declared = resolveFill(d?.fill);
+    const declared = resolveFill(d?.fill, ctx?.inherited?.fill);
     const fill = declared && commandFill(declared, p);
     return [{
       kind: 'path',

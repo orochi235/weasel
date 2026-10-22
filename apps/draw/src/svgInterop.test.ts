@@ -12,7 +12,7 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { getMarker, solid, strokeOf } from '@weasel-js/core';
+import { getMarker, resolveStroke, solid, strokeOf } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 import type { Stroke, Fill } from '@weasel-js/core';
 import {
@@ -650,7 +650,7 @@ describe('svgNodesToSceneDrafts — what the kit import gives it', () => {
     const parsed = parseSvg(svg);
     const leaf = svgNodesToSceneDrafts(parsed, ids()).find((d) => d.kind === 'leaf')!;
     if (leaf.kind !== 'leaf' || !('path' in leaf.obj)) throw new Error('expected a path leaf');
-    const key = leaf.obj.stroke?.markerEnd;
+    const key = resolveStroke(leaf.obj.stroke)?.markerEnd;
     expect(key).toBe(parsed.markers![0].id);
     expect(getMarker(key as string)).toBeDefined();
   });

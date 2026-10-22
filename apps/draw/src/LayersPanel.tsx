@@ -3,8 +3,10 @@ import {
   isTilePaint,
   type Measurements,
   measurementOf,
+  inheritedPaintIn,
   type Paint,
   resolveFill,
+  withInheritedPaint,
   sampleGradientStops,
   type SelectionApi,
 } from '@weasel-js/core';
@@ -35,7 +37,7 @@ export function LayerSwatch({ color }: { color: string | undefined }): ReactElem
   return <span className="wd-layer-swatch" style={{ '--wd-swatch': color } as CSSProperties} aria-hidden="true" />;
 }
 
-export function layerSwatch(data: WeaselDrawData): string | undefined {
+export function layerSwatch(data: Pick<WeaselDrawData, 'fill'>): string | undefined {
   const fill = resolveFill(data.fill);
   return fill ? paintChipColor(fill.paint) : undefined;
 }
@@ -80,7 +82,8 @@ export function LayersPanel(props: LayersPanelProps): ReactElement {
       const m = measurementOf(node);
       if (m) return { label: node.data.label ?? `Measurement ${qty(m.distance, AT).text}` };
       const data = node.data;
-      return { label: data.label ?? data.text ?? node.id, leading: <LayerSwatch color={layerSwatch(data)} /> };
+      const shown = withInheritedPaint(data, inheritedPaintIn(scene, node));
+      return { label: data.label ?? data.text ?? node.id, leading: <LayerSwatch color={layerSwatch(shown)} /> };
     },
     rename: (node, label) => ({ ...node.data, label }),
     ...(showAnnotations

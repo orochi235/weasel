@@ -1,5 +1,6 @@
 import type { Affine, Path } from '@weasel-js/geom';
 import type { PickCandidate, PickQuery } from './pickWalk';
+import type { InheritedPaint } from 'core/scene/inheritedPaint';
 
 /** What {@link reaches} needs from the walk, each memoized per walk there. */
 export interface ReachLookups<TPose> {
@@ -28,6 +29,7 @@ export function reaches<TPose>(
   node: PickCandidate<TPose>,
   pose: TPose,
   derived: Path | null | undefined,
+  inherited: InheritedPaint | undefined,
   q: PickQuery<TPose>,
   parentsOf: () => readonly PickCandidate<TPose>[],
   copying: boolean,
@@ -41,13 +43,13 @@ export function reaches<TPose>(
 
   const parents = copying && q.inCopy !== undefined ? parentsOf() : null;
   if (parents === null || !parents.some((a) => look.copiesOf(a).length > 0)) {
-    if (!q.hits(node, pose, derived)) return false;
+    if (!q.hits(node, pose, derived, inherited)) return false;
     return (parents ?? parentsOf()).every((a) => admits(q, a));
   }
 
   const outermostFirst = [...parents].reverse();
   const from = (i: number, query: PickQuery<TPose>): boolean => {
-    if (i === outermostFirst.length) return query.hits(node, pose, derived);
+    if (i === outermostFirst.length) return query.hits(node, pose, derived, inherited);
     const ancestor = outermostFirst[i];
     if (admits(query, ancestor) && from(i + 1, query)) return true;
     for (const m of look.copiesOf(ancestor)) {

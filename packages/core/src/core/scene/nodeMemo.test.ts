@@ -211,3 +211,27 @@ describe('nodeMemo in a scope', () => {
     expect(derive).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('nodeMemo — the extra key', () => {
+  it('re-derives when the extra key changes reference, and hits while it holds', () => {
+    const node = makeNode({ a: 1 });
+    const derive = vi.fn(() => ({}));
+    const first = {};
+    nodeMemo(node, 'extra', POSE, derive, first);
+    nodeMemo(node, 'extra', POSE, derive, first);
+    expect(derive).toHaveBeenCalledTimes(1);
+    nodeMemo(node, 'extra', POSE, derive, {});
+    expect(derive).toHaveBeenCalledTimes(2);
+  });
+
+  it('does the same through a scope', () => {
+    const node = makeNode({ a: 1 });
+    const scope = createNodeMemoScope();
+    const derive = vi.fn(() => ({}));
+    const first = {};
+    nodeMemo(node, scope, POSE, derive, first);
+    nodeMemo(node, scope, POSE, derive, first);
+    nodeMemo(node, scope, POSE, derive, {});
+    expect(derive).toHaveBeenCalledTimes(2);
+  });
+});

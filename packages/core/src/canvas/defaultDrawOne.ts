@@ -13,6 +13,7 @@ import { textCommandFromRuns } from '@weasel-js/renderer';
 import { findNodeShape, findShapeBounds, type NodePaintCtx } from './NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { overChildren } from './overChildren';
+import { INHERIT } from '@weasel-js/paint';
 
 function pixelScaleOf(view: View): number {
   const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
@@ -80,8 +81,10 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   pose: TPose,
   view: View,
 ): Bounds | null {
-  const data = node.data as { label?: string; text?: string } | null;
+  const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
   if (data?.label && data.text == null) return null;
+  // No scene here to say what an inherited stroke reaches.
+  if (data?.stroke === INHERIT) return null;
   const sx = Math.abs(view.scale.x), sy = Math.abs(view.scale.y);
   return findShapeBounds(node, pose, { scale: Math.sqrt(sx * sy), leastScale: Math.min(sx, sy) });
 }

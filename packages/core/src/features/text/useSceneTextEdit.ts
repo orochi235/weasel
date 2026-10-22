@@ -17,8 +17,10 @@ import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
-import type { Stroke, Fill } from '@weasel-js/paint';
+import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
+import { inheritedPaintIn } from '../../canvas/inheritedPaints';
+import { withInheritedPaint } from '../../core/scene/inheritedPaint';
 import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
@@ -35,8 +37,8 @@ export interface DefaultTextData {
   text?: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
-  fill?: Fill | null;
-  stroke?: Stroke | null;
+  fill?: Fill | Inherit | null;
+  stroke?: Stroke | Inherit | null;
   verticalAlign?: TextVerticalAlign;
   padding?: number;
   overflow?: TextOverflow;
@@ -215,7 +217,7 @@ export function useSceneTextEdit<
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return undefined;
       const get = optsRef.current.getPaint;
-      return get ? get(node.data) : { fill: node.data.fill, stroke: node.data.stroke };
+      return get ? get(node.data) : shownTextPaint(sceneRef.current, node);
     },
     getScreenPose: (id) => {
       const scene = sceneRef.current;
@@ -342,4 +344,13 @@ function frameLinearOf(pose: unknown, stretch: number): TextEditScreenPose['fram
   if (!m && stretch === 1) return undefined;
   const [a, b, c, d] = m ?? [1, 0, 0, 1];
   return [a, b * stretch, c, d * stretch];
+}
+
+/** A text node's paint as the canvas paints it: an inherited one is its container's. */
+function shownTextPaint<TData extends DefaultTextData>(
+  scene: Scene<TData, string, unknown>,
+  node: NonNullable<ReturnType<Scene<TData, string, unknown>['get']>>,
+): TextPaint {
+  const { fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
+  return { fill, stroke };
 }

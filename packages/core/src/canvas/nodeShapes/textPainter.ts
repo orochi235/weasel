@@ -5,7 +5,7 @@ import {
   type PolygonPath,
   type Rect,
 } from '@weasel-js/geom';
-import type { Stroke, Fill } from '@weasel-js/paint';
+import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { StyledRun, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
@@ -14,7 +14,8 @@ import type { RectPose } from 'core/scene/types';
 import { commandFill, textCommandFromPose, type DrawCommand } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
 import { inkReach, strokeOutsetPerAxis } from './nodePaint';
-import { resolveFill, resolveStroke } from '@weasel-js/paint';
+import { INHERIT, resolveFill, resolveStroke } from '@weasel-js/paint';
+import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { paintsPose } from './poseBox';
 
 /** The `data` a `kit:text` node carries. */
@@ -22,8 +23,8 @@ export interface TextNodeData {
   text: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
-  fill?: Fill | null;
-  stroke?: Stroke | null;
+  fill?: Fill | Inherit | null;
+  stroke?: Stroke | Inherit | null;
   verticalAlign?: TextVerticalAlign;
   /** Paint for the whole pose box, drawn under the glyphs. `fill` is the
    *  glyphs' own paint, so a box behind them needs a key of its own. */
@@ -67,14 +68,14 @@ export function textBoxOf(
  *  {@link textBoxOf} insets. The stroke goes through the same resolver every
  *  other node kind's does, so one carrying no paint is dropped here rather
  *  than throwing in the renderer. */
-export function textPoseOf(d: TextNodeData, p: RectPose): TextPose {
+export function textPoseOf(d: TextNodeData, p: RectPose, inherited?: InheritedPaint): TextPose {
   return {
     ...textBoxOf(d, p),
     text: d.text,
     runs: d.runs as StyledRun[] | undefined,
     style: d.style,
-    fill: d.fill,
-    stroke: resolveStroke(d.stroke) ?? undefined,
+    fill: d.fill === INHERIT ? resolveFill(d.fill, inherited?.fill) : d.fill,
+    stroke: resolveStroke(d.stroke, inherited?.stroke) ?? undefined,
     verticalAlign: d.verticalAlign,
   };
 }
@@ -93,9 +94,9 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // the whole key. See PAINT_SLOT.
   //
   // `y` is the top of the first line box, not a baseline — see `TextDrawCommand.y`.
-  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, (): DrawCommand[] => {
+  paint: (node, pose, ctx) => nodeMemo(node, PAINT_SLOT, pose, (): DrawCommand[] => {
     const d = node.data as TextNodeData;
-    const laid = textCommandFromPose(textPoseOf(d, pose));
+    const laid = textCommandFromPose(textPoseOf(d, pose, ctx?.inherited));
     const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
     const bg = resolveFill(d.background);
     if (!bg) return [text];
@@ -104,7 +105,7 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       { kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) },
       text,
     ];
-  }),
+  }, ctx?.inherited),
   // The pose is a layout box, not a bounding box: the union of the line boxes is what
   // the node actually covers, so picking, lasso, and clipping stop grabbing blank space.
   //
@@ -128,13 +129,13 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // boxes, not glyph ink, so reporting outline-only text as unfilled would leave it
   // grabbable within a stroke width of a box edge and nowhere near the letters.
   ink: (node, _pose, ctx) => {
-    const d = node.data as { stroke?: Stroke | null };
-    return { filled: true, ...inkReach(resolveStroke(d.stroke), ctx?.scale) };
+    const d = node.data as TextNodeData;
+    return { filled: true, ...inkReach(resolveStroke(d.stroke, ctx?.inherited?.stroke), ctx?.scale) };
   },
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    const stroke = resolveStroke(d.stroke);
-    return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose)), strokeOutsetPerAxis(stroke, ctx)) : null;
+    const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
+    return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited)), strokeOutsetPerAxis(stroke, ctx)) : null;
   },
 };
 

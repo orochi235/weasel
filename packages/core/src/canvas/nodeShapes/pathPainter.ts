@@ -1,7 +1,7 @@
 import type {
   Path
 } from '@weasel-js/geom';
-import type { Stroke, Fill } from '@weasel-js/paint';
+import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
@@ -10,10 +10,12 @@ import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
-import { inkReach, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
+import { CONTAINER_INK, inkReach, pathPaintOf, withAnimatedVertexColors } from './nodePaint';
 import { resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { strokedPoseBox } from './strokedBounds';
+
+type PathData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
@@ -26,18 +28,14 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
   // allocates on every call but the identity (`kind: 'rect'`) branch. See
   // PAINT_SLOT.
-  paint: (node, pose, ctx) => ctx?.derivedPath != null
+  // As `kit:shape`, a container paints nothing of its own.
+  paint: (node, pose, ctx) => node.kind === 'container' ? [] : ctx?.derivedPath != null
     // A pose override's path stands in for `data.path`, already where it is drawn.
     ? DERIVED_PAINTER.paint(node, pose, ctx)
     : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as {
-      path: Path;
-      fill?: Fill | null;
-      stroke?: Stroke | null;
-      vertexColors?: number[];
-    };
+    const d = node.data as PathData & { path: Path };
     const projected = pathInPoseFrame(d.path, pose);
-    const { fill: declared, stroke: strokeSpec } = pathPaintOf(d);
+    const { fill: declared, stroke: strokeSpec } = pathPaintOf(d, ctx?.inherited);
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
@@ -51,26 +49,23 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
       ...(stroke ? { stroke } : {}),
     };
     return [cmd];
-  }), ctx),
+  }, ctx?.inherited), ctx),
   silhouette: (node, pose, ctx) => {
     if (ctx?.derivedPath != null) return ctx.derivedPath;
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose);
   },
   ink: (node, _pose, ctx) => {
-    const d = node.data as {
-      fill?: Fill | null;
-      stroke?: Stroke | null;
-    };
-    const { fill, stroke } = pathPaintOf(d);
+    if (node.kind === 'container') return CONTAINER_INK;
+    const { fill, stroke } = pathPaintOf(node.data as PathData, ctx?.inherited);
     return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale) };
   },
   // `pathInPoseFrame` fits the path's own bounds to the pose box.
   bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
+    poseBoxBounds(pose, resolveStroke((node.data as PathData).stroke, ctx?.inherited?.stroke), ctx),
   drawnBounds: (node, pose, ctx) => {
     if (ctx?.derivedPath != null) return derivedDrawnBounds(node, ctx);
-    const d = node.data as { path: Path; stroke?: Stroke | null };
-    return strokedPoseBox(node, pose, resolveStroke(d.stroke), ctx, (at) => pathInPoseFrame(d.path, at));
+    const d = node.data as PathData & { path: Path };
+    return strokedPoseBox(node, pose, resolveStroke(d.stroke, ctx?.inherited?.stroke), ctx, (at) => pathInPoseFrame(d.path, at));
   },
 };

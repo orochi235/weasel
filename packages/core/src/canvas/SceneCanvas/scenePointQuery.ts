@@ -20,12 +20,12 @@ export function scenePointQuery<TPose>(
     const scale = meanScale(s);
     const tolerance = { px: pickTolerancePx, scale: s };
     return {
-      hits: (n, pose, derived) => {
+      hits: (n, pose, derived, inherited) => {
         // The pre-filter has to be at least as generous as the refinement
         // that follows it, or it rejects points the refinement would have
         // claimed. A stroke reaches past the pose box by `outset` — a whole
         // stroke width for an outer align — on top of the pointer slop.
-        const ink = shapePicking ? findShapeInk(n as never, pose, { scale }) : null;
+        const ink = shapePicking ? findShapeInk(n as never, pose, { scale, inherited }) : null;
         // A derived node's pose is a placeholder — typically zero-sized at
         // the origin — so its own box rejects every point the path covers.
         // The path is the region to test instead, and `poseContains` already
@@ -40,7 +40,7 @@ export function scenePointQuery<TPose>(
         // so nothing becomes unpickable).
         return !shapePicking
           || shapeCoversPoint(n as never, pose, px, py, {
-            tolerance, scale, derivedPath: derived,
+            tolerance, scale, derivedPath: derived, inherited,
           });
       },
       clipAdmits: (clip) => pathContainsPoint(clip, px, py),

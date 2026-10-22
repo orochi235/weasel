@@ -6,6 +6,7 @@ import type {
   TextStyle,
   TextVerticalAlign,
   Fill,
+  Inherit,
   PathEffect,
   Scene,
   SceneRegistry,
@@ -42,10 +43,10 @@ export interface WeaselDrawData {
    *  painter and the editor, edited beside the Paragraph group. */
   verticalAlign?: TextVerticalAlign;
   /** The node's paint — solid, gradient or pattern. Absent and `null` are
-   *  no fill, as `Fill` says. */
-  fill?: Fill | null;
+   *  no fill, as `Fill` says; `'inherit'` takes the enclosing group's. */
+  fill?: Fill | Inherit | null;
   /** The whole stroke — paint, width, dash, cap, join, align. */
-  stroke?: Stroke | null;
+  stroke?: Stroke | Inherit | null;
   /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —
    *  what the `kit:image` painter draws. */
   image?: ImageNodeData['image'];

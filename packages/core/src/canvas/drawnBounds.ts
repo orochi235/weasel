@@ -4,6 +4,7 @@
  * store geometry (a group's derived pose, booleans, export) keep reading the
  * pose box through `framedBounds`.
  */
+import { inheritedPaintIn } from './inheritedPaints';
 import { framedBounds, poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import {
   inkExtentsBetween,
@@ -76,7 +77,7 @@ export function inkExtentsOf(
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
   const members = node.kind === 'container' ? scene.childrenOf?.(id) ?? [] : [];
   if (members.length > 0) return membersExtents(scene, members, own, opts);
-  const drawn = findShapeDrawnBounds(node, pose, inkCtx(opts.scale, own));
+  const drawn = findShapeDrawnBounds(node, pose, withInherited(scene, node, inkCtx(opts.scale, own)));
   return drawn === null ? NO_INK_EXTENTS : inkExtentsBetween(normalized(unframed), drawn);
 }
 
@@ -87,7 +88,7 @@ function derivedBoundsOf(scene: DrawnBoundsScene, id: NodeId, pose: unknown, pat
   const own = { x, y, width, height };
   const node = scene.get(id);
   if (opts.includeStroke === false || !node) return own;
-  const ctx = { ...inkCtx(opts.scale, { x: 0, y: 0, width: 0, height: 0 }), derivedPath: path };
+  const ctx = { ...withInherited(scene, node, inkCtx(opts.scale, { x: 0, y: 0, width: 0, height: 0 })), derivedPath: path };
   const drawn = findShapeDrawnBounds(node, pose, ctx);
   return drawn === null ? own : unionBounds([own, drawn]) ?? own;
 }
@@ -150,6 +151,15 @@ function inkCtx(scale: number | Scale2 | undefined, own: Bounds): NodeInkCtx | u
   const xf = targetTransformOf(own);
   const [a, b, c, d] = xf.identity ? [1, 0, 0, 1] : xf.toWorld;
   return { scale: meanScale(scale), screen: [scale.x * a, scale.y * b, scale.x * c, scale.y * d] };
+}
+
+function withInherited(
+  scene: DrawnBoundsScene,
+  node: Node<unknown, string, unknown>,
+  ctx: NodeInkCtx | undefined,
+): NodeInkCtx | undefined {
+  const inherited = inheritedPaintIn(scene, node);
+  return inherited === undefined ? ctx : { ...ctx, inherited };
 }
 
 function normalized(b: Bounds): Bounds {

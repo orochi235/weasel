@@ -1,4 +1,4 @@
-import type { Stroke, Fill } from '@weasel-js/paint';
+import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
@@ -7,10 +7,14 @@ import { resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
+import type { InheritedPaint } from 'core/scene/inheritedPaint';
 
 // The painters memoize a node's paint and resolve a fill's frame inside the
 // memo, so the kind set is ambient state that memo cannot see change.
 paintDrawKindRegistry.subscribe(bumpNodeMemoGeneration);
+
+/** How a container's silhouette is inked: not at all, since it paints nothing. */
+export const CONTAINER_INK: Readonly<NodeInk> = Object.freeze({ filled: false, outset: 0, inset: 0 });
 
 /** Per-side grab reach for a resolved stroke: world units for what the
  *  renderer builds in world, screen pixels for what it builds on screen — a
@@ -100,9 +104,12 @@ export interface PathPaint {
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and
  *  `data.stroke`, as the built-in path painter draws it: a stroke or a fill
- *  with no `paint` is none. */
-export function pathPaintOf(data: { fill?: Fill | null; stroke?: Stroke | null }): PathPaint {
-  const stroke = resolveStroke(data.stroke);
-  const fill = resolveFill(data.fill);
+ *  with no `paint` is none, and an `'inherit'` one is `inherited`'s. */
+export function pathPaintOf(
+  data: { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null },
+  inherited?: InheritedPaint,
+): PathPaint {
+  const stroke = resolveStroke(data.stroke, inherited?.stroke);
+  const fill = resolveFill(data.fill, inherited?.fill);
   return stroke !== null ? { fill, stroke } : { fill };
 }

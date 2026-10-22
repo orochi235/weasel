@@ -46,9 +46,12 @@ export type {
   NodeSilhouetteCtx,
   RegisterNodeShapeOptions,
   NodePaintCtx,
+  InheritedPaint,
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
+export { inheritedPaintIn, paintAbove, withInheritedPaints } from '../canvas/inheritedPaints';
+export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
 export { drawnBoundsScene } from '../canvas/derivedPath';
 export type { InkExtents } from '../core/geometry/inkExtents';
