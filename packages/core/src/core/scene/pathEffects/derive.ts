@@ -11,6 +11,7 @@
  */
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { derivedPartsOf, pathFromParts, type DerivedPart } from '../derivedParts';
+import { fontGeneration, noteFontRead, withFontReads } from '../fontReads';
 import { samePoseValue, snapshotPose } from '../poseSnapshot';
 import type { DerivedDep, NodeId } from '../types';
 import { effectParts, type PathEffect } from './effects';
@@ -41,6 +42,9 @@ interface Derived {
   poses: unknown[];
   paths: (Path | null)[];
   path: Path | null;
+  /** The glyph generation it was worked out under, or `null` when it read no
+   *  glyph outlines. */
+  glyphs: number | null;
 }
 
 /** The derivations of a path effect whose sources `read` reads. */
@@ -54,9 +58,10 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
     const held = results.get(node);
     if (held !== undefined && current(held, node, deps)) return held;
     const effect = pathEffectOf(node);
-    const parts = effect === null
+    const generation = fontGeneration();
+    const { value: parts, fonts } = withFontReads(() => (effect === null
       ? null
-      : effectParts(effect, deps.map((d) => (d === undefined ? null : read(d))));
+      : effectParts(effect, deps.map((d) => (d === undefined ? null : read(d))))));
     const result: Derived = {
       data: node.data,
       nodes: deps.map((d) => d?.node),
@@ -64,6 +69,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
       poses: deps.map((d) => (d === undefined ? undefined : snapshotPose(d.pose))),
       paths: deps.map((d) => d?.path ?? null),
       path: parts === null ? null : pathFromParts(parts),
+      glyphs: fonts ? generation : null,
     };
     results.set(node, result);
     return result;
@@ -81,6 +87,7 @@ export function createPathEffectDerivations(read: EffectSourceReader): PathEffec
 
 function current(held: Derived, node: { data?: unknown }, deps: readonly (DerivedDep<unknown> | undefined)[]): boolean {
   if (held.data !== node.data || held.nodes.length !== deps.length) return false;
+  if (held.glyphs !== null && held.glyphs !== fontGeneration()) return false;
   for (let i = 0; i < deps.length; i++) {
     const d = deps[i];
     if (held.nodes[i] !== d?.node) return false;
@@ -88,6 +95,8 @@ function current(held: Derived, node: { data?: unknown }, deps: readonly (Derive
     if (held.depData[i] !== d.node.data || !samePoseValue(held.poses[i], d.pose)) return false;
     if (held.paths[i] !== d.path) return false;
   }
+  // A hit is still a read, for the scene memo enclosing this one.
+  if (held.glyphs !== null) noteFontRead();
   return true;
 }
 

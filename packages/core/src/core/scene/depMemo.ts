@@ -11,9 +11,12 @@
  * What is recorded is what a derivation may read of a dependency: its node (an
  * identity), its pose (by value), its `data` (a reference, which every edit
  * replaces), its `layer`, and its path where the derivation read it. Anything
- * else on the node — its parent, its children — still needs a push.
+ * else on the node — its parent, its children — still needs a push. A
+ * derivation that read glyph outlines also records the glyph generation, since
+ * a face landing changes its result with nothing in the scene changed.
  */
 import type { Path } from '@weasel-js/geom';
+import { fontGeneration, noteFontRead, withFontReads } from './fontReads';
 import { samePoseValue, snapshotPose } from './poseSnapshot';
 import type { DerivedDep, Node, NodeId } from './types';
 
@@ -26,10 +29,13 @@ export interface DepRecord<TPose> {
   data: unknown[];
   layers: (string | undefined)[];
   paths: (Path | null | undefined)[];
+  /** The glyph generation it was derived under, or `null` when it read no
+   *  glyph outlines. */
+  glyphs: number | null;
 }
 
 export function emptyDepRecord<TPose>(): DepRecord<TPose> {
-  return { nodes: [], poses: [], data: [], layers: [], paths: [] };
+  return { nodes: [], poses: [], data: [], layers: [], paths: [], glyphs: null };
 }
 
 /** A dependency as the derivation is handed it, noting a read of its path. A
@@ -72,7 +78,10 @@ export function deriveRecorded<TPose, T>(
     into.paths.push(undefined);
     return dep === undefined ? undefined : new RecordedDep(dep, into.paths, i);
   });
-  return derive(handed);
+  const generation = fontGeneration();
+  const { value, fonts } = withFontReads(() => derive(handed));
+  into.glyphs = fonts ? generation : null;
+  return value;
 }
 
 /** Whether the dependencies still resolve to what the record was taken from.
@@ -84,6 +93,7 @@ export function sameDeps<TPose>(
   depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
 ): boolean {
   if (record.nodes.length !== ids.length) return false;
+  if (record.glyphs !== null && record.glyphs !== fontGeneration()) return false;
   for (let i = 0; i < ids.length; i++) {
     const dep = depOf(ids[i]);
     if (record.nodes[i] !== (dep === undefined ? undefined : dep.node)) return false;
@@ -93,5 +103,7 @@ export function sameDeps<TPose>(
     const path = record.paths[i];
     if (path !== undefined && path !== dep.path) return false;
   }
+  // A hit is still a read, for any derivation enclosing this one.
+  if (record.glyphs !== null) noteFontRead();
   return true;
 }

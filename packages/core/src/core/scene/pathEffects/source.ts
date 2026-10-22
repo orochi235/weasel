@@ -6,7 +6,19 @@
  */
 import type { Path } from '@weasel-js/geom';
 import type { Fill, Stroke } from '@weasel-js/paint';
+import type { DerivedPart } from '../derivedParts';
 import type { DerivedDep } from '../types';
+
+/** One rigid piece an effect lays along a path, in its own frame: x from 0 at its leading edge to `length`, y down,
+ *  its anchor line (a glyph's baseline) at y = 0. */
+export interface EffectItem {
+  /** How much of the path it takes. */
+  length: number;
+  /** Height above the anchor line of the line it centers on — a glyph's x-height middle. */
+  middle: number;
+  /** What it paints; empty for a piece that only takes room, such as a space. */
+  parts: readonly DerivedPart[];
+}
 
 /** A source shape. */
 export interface EffectSource {
@@ -24,6 +36,9 @@ export interface EffectSource {
    *  a real "none". */
   fill: Fill | null;
   stroke: Stroke | null;
+  /** The pieces it lays one by one along a path — a text node's grapheme
+   *  clusters. Called only by an effect that lays items. */
+  items?: () => readonly EffectItem[];
 }
 
 /** Reads one dependency as a source; `null` when it has no outline. */
