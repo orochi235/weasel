@@ -1,5 +1,14 @@
 # @weasel-js/d3
 
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [cbb16ca]
+- Updated dependencies [8c39126]
+  - @weasel-js/core@1.12.1
+  - @weasel-js/animator@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

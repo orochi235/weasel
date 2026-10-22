@@ -1,5 +1,22 @@
 # @weasel-js/forge
 
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [8c39126]
+- Updated dependencies [a1b479a]
+  - @weasel-js/ui@1.12.1
+  - @weasel-js/core@1.12.1
+  - @weasel-js/labkit@1.12.1
+  - @weasel-js/svg@1.12.1
+  - @weasel-js/icons@1.12.1
+  - @weasel-js/prefs@1.12.1
+  - @weasel-js/registry@1.12.1
+  - @weasel-js/theme@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

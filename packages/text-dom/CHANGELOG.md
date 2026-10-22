@@ -1,5 +1,14 @@
 # @weasel-js/text-dom
 
+## 1.12.1
+
+### Patch Changes
+
+- @weasel-js/text@1.12.1
+  - @weasel-js/font@1.12.1
+  - @weasel-js/paint@1.12.1
+  - @weasel-js/react@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

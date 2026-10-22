@@ -1,5 +1,15 @@
 # @weasel-js/stroke
 
+## 1.12.1
+
+### Patch Changes
+
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [8c39126]
+  - @weasel-js/geom@1.12.1
+  - @weasel-js/paint@1.12.1
+  - @weasel-js/registry@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes

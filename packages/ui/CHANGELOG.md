@@ -1,5 +1,35 @@
 # @weasel-js/ui
 
+## 1.12.1
+
+### Patch Changes
+
+- 7e5f9e3: A curved `Bar` scrolls smoothly. An item sliding off either end of its run now carries on along the curve, round the arc's circle rather than straight out along the end, and fades by how much of it is still on the run, instead of dimming to 40% and then vanishing. Wheel and focus moves glide to where they send the run over about 60 ms; a drag still follows the pointer, and a reader who prefers reduced motion gets every move at once. The chevrons that mark more past an end sit 10 px out past it, clear of the item fading there.
+  
+  `Along`'s `arc` can be given by where its middle faces and how far it reaches: `{ at: 0, span: '120deg' }`, or `{ at: 0, span: '180px' }`, which keeps the arc 180 px long however large its box grows. `spanDegrees` and the `ArcSpan`, `ArcEnds`, `ArcAround` and `AlongArcPlace` types are exported beside it.
+  
+  In geom, a track shape's `at(f, { open: true })` carries a station past 0 and 1 along the shape itself — a line and an open path straight on, an arc and an ellipse round themselves, a closed path round its contour — and `runStationAt` and `placeAlongRun` take `past: 'follow'` to lay places that way. `placeAlongRun`'s `past: 'hold'` now follows the shape with an item part past an end, where it used to carry it on straight, before holding it at the end once it is wholly past.
+- a1b479a: `ToolOptionsBar` renders nothing when it has neither a `schema` nor children, where it used to draw an empty strip; a `label` alone no longer keeps it. So `CharacterOptions` outside a text edit renders nothing unless it has children. A host that relied on the row holding its height while empty, so the canvas below it does not move as an edit opens, now reserves that height itself, for example with a `min-height` of `var(--wzl-tb-height)` on a wrapper. This changes rendered output.
+- Updated dependencies [7e5f9e3]
+- Updated dependencies [cbb16ca]
+- Updated dependencies [8c39126]
+  - @weasel-js/geom@1.12.1
+  - @weasel-js/core@1.12.1
+  - @weasel-js/animator@1.12.1
+  - @weasel-js/svg@1.12.1
+  - @weasel-js/font@1.12.1
+  - @weasel-js/gestures@1.12.1
+  - @weasel-js/icons@1.12.1
+  - @weasel-js/menu@1.12.1
+  - @weasel-js/modes@1.12.1
+  - @weasel-js/paint@1.12.1
+  - @weasel-js/prefs@1.12.1
+  - @weasel-js/quantity@1.12.1
+  - @weasel-js/react@1.12.1
+  - @weasel-js/registry@1.12.1
+  - @weasel-js/select@1.12.1
+  - @weasel-js/theme@1.12.1
+
 ## 1.12.0
 
 ### Patch Changes
