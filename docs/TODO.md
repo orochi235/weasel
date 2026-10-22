@@ -1258,6 +1258,15 @@ only story runner in the repo.
   backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
   2026-10-19).
 
+- **(P3) A fleet run on teitou can stop partway with exit 1 and no summary, failure or error.**
+  `npm run test:fleet -- main` at d7e74ede1 (2026-10-22) printed passing files up to 19,141 of
+  29,368 tests, then only the `vitest-overlap.mjs ... exited 1 on teitou` line: no vitest summary,
+  no failed test, no signal or crash text in the log. The same commit passed whole on keiei
+  (`--node keiei`, 3,393 files) straight after. teitou was also running the `weasel-dev` service
+  and had shown 0 of 18 cores free earlier that day. The first thing to find is how the run died:
+  read the node's job log (`onto logs <job>`) or macOS crash reports for a vitest worker the next
+  time it happens, and check it against the V8 crash in the entry above.
+
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
   longer start in a tree another session synced; `scripts/fleet-tree.setup.ts` stays as the check
