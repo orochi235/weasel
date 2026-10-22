@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import { parseSvg } from './parse';
-import { DEFAULT_TEXT_FILL, getMarker, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_FILL, getMarker, INHERIT, type IngestCtx, type Op } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
@@ -467,11 +467,13 @@ describe('svgNodesToKitDrafts — opacity', () => {
   };
   const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
-  it("gives the children of a <g fill> that set none the group's fill, text included", () => {
+  it("gives a <g>'s fill and stroke to its container, and its children that set none inherit, text included", () => {
     const svg = doc('<g fill="#ff0000" stroke="#0000ff"><rect width="10" height="10"/><text x="0" y="20">hi</text></g>');
-    expect(leafOf(svg, 0).fill).toEqual({ paint: { color: '#ff0000' } });
-    expect((leafOf(svg, 0).stroke as { paint: unknown }).paint).toEqual({ color: '#0000ff' });
-    expect((leafOf(svg, 1).fill as { paint: { color: string } }).paint.color).toBe('#ff0000');
+    const group = svgNodesToKitDrafts(parseSvg(svg).nodes, seq()).find((x) => x.kind === 'container')!;
+    expect(group.data.fill).toEqual({ paint: { color: '#ff0000' } });
+    expect((group.data.stroke as { paint: unknown }).paint).toEqual({ color: '#0000ff' });
+    expect(leafOf(svg, 0)).toMatchObject({ fill: INHERIT, stroke: INHERIT });
+    expect(leafOf(svg, 1)).toMatchObject({ fill: INHERIT, stroke: INHERIT });
   });
 
   it('keeps fill-opacity on a solid fill', () => {

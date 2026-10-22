@@ -105,6 +105,18 @@ export interface SvgStroke {
 }
 
 /**
+ * Which of a node's paints its own element sets none of, so that it takes the
+ * paint of the enclosing `<g>` that does. Its `fill` and `stroke` still hold
+ * what that resolves to.
+ */
+export interface SvgInherits {
+  fill?: true;
+  /** Set only when the element sets no `stroke-*` or `marker-*` property
+   *  either: the stroke is taken whole. */
+  stroke?: true;
+}
+
+/**
  * Leaf node: a path geometry plus fill/stroke. Other shapes (`<rect>`,
  * `<ellipse>`, etc.) are lowered to this on parse.
  */
@@ -113,6 +125,7 @@ export interface SvgPathNode {
   path: Path;
   fill: SvgPaint;
   stroke?: SvgStroke;
+  inherits?: SvgInherits;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
   /** Element-level rotation in **radians**, pivoting around the AABB
@@ -143,6 +156,12 @@ export interface SvgGroupNode {
    *  unions them and a `Path` holds one outline. */
   clip?: Path;
   opacity?: number;
+  /** The fill its children take when they set none — written as the group's
+   *  own `fill`. Absent when neither it nor an enclosing group sets one. */
+  fill?: SvgPaint;
+  /** As `fill`, for the stroke; absent too when the one in effect is none. */
+  stroke?: SvgStroke;
+  inherits?: SvgInherits;
   /** Kept by `ParseOptions.keepHidden` from content SVG does not render:
    *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
    *  back as `display="none"`. */
@@ -190,6 +209,7 @@ export interface SvgTextNode {
    */
   fill?: Fill | null;
   stroke?: Stroke;
+  inherits?: SvgInherits;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
   /** Element-level rotation in **radians**, pivoting around the unrotated

@@ -15,6 +15,7 @@ import { mapFillPaint } from './fillPaint';
 import type { SvgKitLeafData } from './fromKit';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
+import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import {
   boundsOfPath,
   createInsertOp,
@@ -22,6 +23,7 @@ import {
   dwarn,
   fillToBoundsFrame,
   getMarker,
+  INHERIT,
   registerMarker,
   solid,
   unionAABB,
@@ -185,9 +187,11 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 
   // Returns the pose `n` was drafted with, so a parent container can union
   // its children's axis-aligned boxes; null for empty groups. `inherited` is
-  // the product of the enclosing groups' opacities.
-  const visit = (n: SvgNode, parentId: string | null, inherited: number): SvgDraftPose | null => {
+  // the product of the enclosing groups' opacities, and `from` what a child
+  // that sets no paint can take from its container as `'inherit'`.
+  const visit = (n: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null => {
     const k = inherited * (n.opacity ?? 1);
+    const takes = takesOf(n, from, k);
     if (n.kind === 'group') {
       const draft: Extract<SvgSceneDraft<TData>, { kind: 'container' }> = {
         kind: 'container',
@@ -199,7 +203,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       };
       drafts.push(draft);
       const at = drafts.length - 1;
-      const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k)));
+      const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k, groupTakes(n, takes, k))));
       if (!acc) {
         // Nothing beneath has a box, so any draft beneath is a kept empty group.
         const kept = drafts.length > at + 1 || (options.keepEmpty?.(n) ?? false);
@@ -208,6 +212,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         return null;
       }
       draft.pose = n.clip ? boxOfPath(n.clip) : acc;
+      Object.assign(draft.data, containerPaint(n, takes, draft.pose, k));
       return draft.pose;
     }
 
@@ -228,8 +233,9 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         ...(n.verticalAlign ? { verticalAlign: n.verticalAlign } : {}),
         ...(n.runs ? { runs: n.runs.map((r) => fadeRun(runInBoxFrame(r, box), k)) } : {}),
         // `null` is the document saying `fill="none"`.
-        fill: fill && mapFillPaint(fill, (p) => fadeFill(fillInBoxFrame(p, box), k)),
-        ...(n.stroke !== undefined ? { stroke: fadeStroke(strokeInBoxFrame(n.stroke, box), k) } : {}),
+        ...(takes.fill ? { fill: INHERIT } : { fill: fill && mapFillPaint(fill, (p) => fadeFill(fillInBoxFrame(p, box), k)) }),
+        ...(takes.stroke ? { stroke: INHERIT }
+          : n.stroke !== undefined ? { stroke: fadeStroke(strokeInBoxFrame(n.stroke, box), k) } : {}),
       });
     }
 
@@ -255,13 +261,26 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const strokeFromSvg = strokeDataFromSvg(n.stroke, b);
     return pushLeaf(n, parentId, pose, {
       path: n.path,
-      ...(fill !== undefined ? { fill: fill && { paint: fadeFill(fill, k) } } : {}),
-      ...(strokeFromSvg !== undefined ? { stroke: fadeStroke(strokeFromSvg, k) } : {}),
+      ...(takes.fill ? { fill: INHERIT } : fill !== undefined ? { fill: fill && { paint: fadeFill(fill, k) } } : {}),
+      ...(takes.stroke ? { stroke: INHERIT }
+        : strokeFromSvg !== undefined ? { stroke: fadeStroke(strokeFromSvg, k) } : {}),
     });
   };
 
-  for (const n of nodes) visit(n, null, 1);
+  for (const n of nodes) visit(n, null, 1, NO_TAKES);
   return drafts;
+}
+
+/** A group's paint as its container's `data`, which its children's `'inherit'` reads. */
+function containerPaint(
+  n: SvgGroupNode, takes: { fill: boolean; stroke: boolean }, box: SvgDraftBounds, k: number,
+): SvgKitLeafData {
+  const fill = fillDataFromSvg(n.fill, box);
+  const stroke = strokeDataFromSvg(n.stroke, box);
+  return {
+    ...(takes.fill ? { fill: INHERIT } : fill ? { fill: { paint: fadeFill(fill, k) } } : {}),
+    ...(takes.stroke ? { stroke: INHERIT } : stroke ? { stroke: fadeStroke(stroke, k) } : {}),
+  };
 }
 
 function boxOfPath(path: Path): SvgDraftBounds {

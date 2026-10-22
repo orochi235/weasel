@@ -22,6 +22,9 @@ import {
   type TextStyle,
   type TextVerticalAlign,
   type Fill,
+  type Inherit,
+  INHERIT,
+  isSolidPaint,
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
 import type {
@@ -46,8 +49,9 @@ export interface SvgKitPose {
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
-  fill?: Fill | null;
-  stroke?: Stroke | null;
+  /** `'inherit'` takes the enclosing container's. */
+  fill?: Fill | Inherit | null;
+  stroke?: Stroke | Inherit | null;
   text?: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];
@@ -134,6 +138,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
  * draws. A text node with a `background` is a group: the box, then the text.
  * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
+ * An `'inherit'` fill or stroke is none here, with no container to read;
+ * {@link svgNodesFromKit} resolves it first.
+ *
  * A fill or stroke that paints nothing is written `none`. Under a pose
  * `transform` a stroke's width takes the uniform part of the stretch, as
  * `parseSvg` reads a stroke under a skewed element.
@@ -152,7 +159,7 @@ export function svgLeafFromKit(
     return { kind: 'group', children: [box, text], ...clip };
   }
   if (!data.path) return null;
-  const stroke = svgStrokeFromKit(data.stroke, pose);
+  const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);
   const node: SvgPathNode = {
     kind: 'path',
     path: pathInPoseFrame(data.path, pose),
@@ -215,8 +222,11 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
   roots?: readonly TId[];
   /** `false` leaves a node out, with everything under it — a hidden layer. */
   include?(id: TId): boolean;
-  /** Lower a leaf yourself; `null` leaves it out. Defaults to {@link svgLeafFromKit}. */
-  leaf?(id: TId, node: SvgKitTreeNode): SvgNode | null;
+  /** Lower a leaf yourself; `null` leaves it out. Defaults to {@link svgLeafFromKit}.
+   *  `inherited` is what the leaf's `'inherit'` fields resolve to; write those
+   *  as these, and the walk marks the result as inheriting where SVG's
+   *  cascade can carry them. */
+  leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null;
   /** Decorate the group written for a container, e.g. with `meta`. */
   group?(id: TId, group: SvgGroupNode): SvgGroupNode;
 }
@@ -232,18 +242,23 @@ export function svgNodesFromKit<TId extends string>(
   options: SvgNodesFromKitOptions<TId> = {},
 ): SvgNode[] {
   const { include, leaf, group } = options;
-  const emit = (id: TId): SvgNode | null => {
+  const emit = (id: TId, up: UpPaint): SvgNode | null => {
     const node = tree.get(id);
-    const out = node && (!include || include(id)) ? lower(id, node) : null;
+    const out = node && (!include || include(id)) ? lower(id, node, up) : null;
     return out && node?.hidden === true ? { ...out, hidden: true } : out;
   };
-  const lower = (id: TId, node: SvgKitTreeNode): SvgNode | null => {
+  const lower = (id: TId, node: SvgKitTreeNode, up: UpPaint): SvgNode | null => {
     if (node.kind === 'container') {
+      const own = node.data as SvgKitLeafData | null;
+      const below: UpPaint = {
+        fill: own?.fill === INHERIT ? up.fill : resolveFill(own?.fill),
+        stroke: own?.stroke === INHERIT ? up.stroke : resolveStroke(own?.stroke),
+      };
       // Emitted afresh for each copy: a node object is never shared by two groups.
       const emitChildren = (): SvgNode[] => {
         const children: SvgNode[] = [];
         for (const c of tree.childrenOf(id)) {
-          const child = emit(c);
+          const child = emit(c, below);
           if (child) children.push(child);
         }
         return children;
@@ -253,7 +268,7 @@ export function svgNodesFromKit<TId extends string>(
       const clip = path ? pathThroughPoseFrame(pathInPoseFrame(path, node.pose), node.pose) : undefined;
       const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
       const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
-      let g = content();
+      let g: SvgGroupNode = { ...content(), ...groupPaintFromKit(own, below, node.pose) };
       if (copies.length > 0) {
         // The clip travels with each copy, so it goes inside the transform.
         g = {
@@ -263,12 +278,59 @@ export function svgNodesFromKit<TId extends string>(
       }
       return group ? group(id, g) : g;
     }
-    return leaf ? leaf(id, node) : svgLeafFromKit(node.data as SvgKitLeafData, node.pose);
+    const data = (node.data ?? {}) as SvgKitLeafData;
+    return markInherits(leaf ? leaf(id, node, up) : svgLeafFromKit(resolvedData(data, up), node.pose), data, up);
   };
   const out: SvgNode[] = [];
   for (const id of options.roots ?? tree.roots) {
-    const n = emit(id);
+    const n = emit(id, NO_UP_PAINT);
     if (n) out.push(n);
   }
+  return out;
+}
+
+/** What a leaf's `'inherit'` fill and stroke resolve to — its nearest
+ *  enclosing container's; `null` for none. */
+export interface SvgKitInherited {
+  fill: Fill | null;
+  stroke: Stroke | null;
+}
+type UpPaint = SvgKitInherited;
+const NO_UP_PAINT: UpPaint = { fill: null, stroke: null };
+
+/** Whether SVG's cascade can carry `p` to a child as is: a box-relative
+ *  paint resolves against the group's box there, and the kit's against the child's. */
+const carries = (p: { paint?: unknown } | null): boolean => p != null && isSolidPaint(p.paint as never);
+
+/** A container's paint as its group's: its own where it has one, marked
+ *  inherited where it takes it from above. */
+function groupPaintFromKit(own: SvgKitLeafData | null, below: UpPaint, pose: SvgKitPose): Partial<SvgGroupNode> {
+  const out: Partial<SvgGroupNode> = {};
+  if (below.fill?.paint) out.fill = svgPaintFromKit(below.fill.paint, pose);
+  const stroke = svgStrokeFromKit(below.stroke, pose);
+  if (stroke) out.stroke = stroke;
+  const fill = own?.fill === INHERIT && carries(below.fill);
+  const strokes = own?.stroke === INHERIT && carries(below.stroke);
+  if (fill || strokes) out.inherits = { ...(fill ? { fill: true } : {}), ...(strokes ? { stroke: true } : {}) };
+  return out;
+}
+
+/** `data` with its `'inherit'` fields replaced by what they resolve to. */
+function resolvedData(data: SvgKitLeafData, up: UpPaint): SvgKitLeafData {
+  if (data.fill !== INHERIT && data.stroke !== INHERIT) return data;
+  return {
+    ...data,
+    ...(data.fill === INHERIT ? { fill: up.fill } : {}),
+    ...(data.stroke === INHERIT ? { stroke: up.stroke } : {}),
+  };
+}
+
+/** `out` marked as taking from its group what `data` inherits, where SVG's
+ *  cascade carries it as it is, so the serializer leaves it to the group. */
+function markInherits(out: SvgNode | null, data: SvgKitLeafData, up: UpPaint): SvgNode | null {
+  if (out === null || (out.kind !== 'path' && out.kind !== 'text')) return out;
+  const fill = data.fill === INHERIT && carries(up.fill);
+  const stroke = data.stroke === INHERIT && carries(up.stroke);
+  if (fill || stroke) out.inherits = { ...(fill ? { fill: true } : {}), ...(stroke ? { stroke: true } : {}) };
   return out;
 }

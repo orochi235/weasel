@@ -34,6 +34,7 @@ import { isStrokeOutline, unwrapStrokeGroup, withVariableWidth } from './variabl
 import { parseImageElement, parseCroppedImage } from './readImage';
 import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
+import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
@@ -78,7 +79,7 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
+  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, NO_GROUP_PAINT, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
   const markers = ingestMarkers(root, nodes, gradients, onWarn);
 
   const result: ParseResult = { nodes, warnings };
@@ -223,6 +224,7 @@ function parseChildren(
   parent: Element,
   ctm: Matrix,
   style: StyleContext,
+  from: GroupPaintFrom,
   gradients: GradientTable,
   clips: ClipTable,
   onWarn: (m: string) => void,
@@ -238,7 +240,7 @@ function parseChildren(
     if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el)) continue;
     const hidden = isHiddenElement(el, style);
     if (hidden && !keepHidden) continue;
-    const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, gradients, clips, onWarn, uriToPrefix, keepHidden));
+    const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
     if (!node) continue;
     const parsed = Array.isArray(node) ? node : [node];
     if (hidden) for (const n of parsed) n.hidden = true;
@@ -251,6 +253,7 @@ function parseElement(
   el: Element,
   ctm: Matrix,
   style: StyleContext,
+  from: GroupPaintFrom,
   gradients: GradientTable,
   clips: ClipTable,
   onWarn: (m: string) => void,
@@ -271,20 +274,7 @@ function parseElement(
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
     onWarn(`clip-path on <${tag}> is not modeled; only a <g> clips, so it is drawn unclipped`);
   }
-  if (tag === 'g') {
-    const local = parseTransform(el.getAttribute('transform'), onWarn);
-    const childCtm = multiply(ctm, local);
-    const childStyle = deriveStyle(style, el);
-    const children = parseChildren(el, childCtm, childStyle, gradients, clips, onWarn, uriToPrefix, keepHidden);
-    const opacity = ownValue(el, 'opacity');
-    const group: SvgNode = { kind: 'group', children };
-    const clip = clipFor(el, childCtm, clips, onWarn);
-    if (clip) group.clip = clip;
-    if (opacity != null) group.opacity = opacity;
-    const meta = collectElementMeta(el, uriToPrefix);
-    if (meta) group.meta = meta;
-    return group;
-  }
+  if (tag === 'g') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
     // Nested <svg> — a transparent group that establishes a viewport at
     // (x, y). Inheritance flows through it; clipping does not exist here.
@@ -295,13 +285,14 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, clips, onWarn, uriToPrefix, keepHidden);
+    return parseChildren(el, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
   }
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
     if (textNode && !Array.isArray(textNode) && textNode.kind === 'text') {
       const meta = collectElementMeta(el, uriToPrefix);
       if (meta) textNode.meta = meta;
+      Object.assign(textNode, inheritsFrom(el, from));
     }
     return textNode;
   }
@@ -367,6 +358,7 @@ function parseElement(
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;
   if (rotation != null) node.rotation = rotation;
+  Object.assign(node, inheritsFrom(el, from));
   // Lines are stroke-only by SVG convention; force fill=none if neither the
   // line nor an ancestor group specifies a fill.
   if (tag === 'line' && (leafStyle['fill'] ?? null) == null) {
@@ -375,6 +367,24 @@ function parseElement(
   const meta = collectElementMeta(el, uriToPrefix);
   if (meta) node.meta = meta;
   return node;
+}
+
+function parseGroup(
+  el: Element, ctm: Matrix, style: StyleContext, from: GroupPaintFrom, gradients: GradientTable,
+  clips: ClipTable, onWarn: (m: string) => void, uriToPrefix: Map<string, string>, keepHidden: boolean,
+): SvgNode {
+  const childCtm = multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn));
+  const childStyle = deriveStyle(style, el);
+  const paint = groupPaint(el, from, childStyle, childCtm, gradients, onWarn);
+  const children = parseChildren(el, childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);
+  const opacity = ownValue(el, 'opacity');
+  const group: SvgNode = { kind: 'group', children, ...paint.paint };
+  const clip = clipFor(el, childCtm, clips, onWarn);
+  if (clip) group.clip = clip;
+  if (opacity != null) group.opacity = opacity;
+  const meta = collectElementMeta(el, uriToPrefix);
+  if (meta) group.meta = meta;
+  return group;
 }
 
 /** Whether SVG leaves `el` undrawn: `display="none"` on it, or a leaf whose

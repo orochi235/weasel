@@ -15,6 +15,9 @@ import { serializePathD } from './path-serializer';
 import { pathAsSvgDraws } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
+import { attrNames, fitLeafXml, groupPaintAttrs } from './groupPaintXml';
+
+const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
@@ -84,6 +87,8 @@ export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintS
   for (const n of nodes) {
     if (n.kind === 'group') {
       if (n.clip) registry.clipId(n.clip);
+      if (n.fill?.kind === 'gradient' && !n.inherits?.fill) registry.register(n.fill.paint);
+      if (n.stroke?.paint.kind === 'gradient' && !n.inherits?.stroke) registry.register(n.stroke.paint.paint);
       registerPaintServers(n.children, registry);
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
@@ -125,8 +130,10 @@ type LayoutOf = SerializeOptions['textLayout'];
 
 function nodeXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
+  painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
-  const xml = kindXml(node, registry, namespaces, warn, layoutOf);
+  const kind = kindXml(node, registry, namespaces, warn, layoutOf, painted);
+  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, node.inherits, painted) : kind;
   if (!node.hidden) return xml;
   // A variable-width stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
@@ -135,13 +142,14 @@ function nodeXml(
 
 function kindXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
+  painted: ReadonlySet<string>,
 ): string {
-  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf);
+  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
   if (node.kind === 'text') return textXml(node, registry, namespaces, warn, layoutOf?.(node));
   if (node.kind === 'image') return imageXml(node, namespaces);
   const drawn = pathAsSvgDraws(node);
   return drawn.kind === 'group'
-    ? groupXml(drawn, registry, namespaces, warn, layoutOf)
+    ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
     : pathXml(drawn, registry, namespaces, warn);
 }
 
@@ -192,8 +200,12 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>): strin
 
 function groupXml(
   node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
+  painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
   const attrs: string[] = [];
+  const paint = groupPaintAttrs(node, registry, warn);
+  for (const a of paint) attrs.push(a);
+  const below = paint.length === 0 ? painted : new Set([...painted, ...attrNames(paint)]);
   if (node.transform) {
     const m = formatMatrix(node.transform);
     if (m) attrs.push(`transform="${m}"`);
@@ -208,7 +220,7 @@ function groupXml(
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`
     : `<g${metaAttrs}>`;
-  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn, layoutOf)).join('');
+  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn, layoutOf, below)).join('');
   return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 
