@@ -1,6 +1,5 @@
 import { clamp } from '../scalar';
 import type { TrackPlace, TrackRun } from './run';
-import type { TrackAtOptions } from './shape';
 
 /** Where a sequence sits along a run: against its reading start, its middle, or its reading end. */
 export type RunAlign = 'start' | 'center' | 'end';
@@ -49,7 +48,7 @@ export function runLength(lengths: readonly number[], gap: number): number {
 }
 
 /** How {@link runStationAt} carries a place past either end of its run: straight along that end, tipped as it is there
- *  (`'extend'`), or on along the run's shape itself (`'follow'`), as {@link TrackAtOptions} `open` reads it. */
+ *  (`'extend'`), or on along the run's shape itself (`'follow'`), as a shape's `at` reads `open`. */
 export type RunPast = 'extend' | 'follow';
 
 /** The place `distance` along `run`, carried past either end as `past` says (default `'extend'`). The point then moves
