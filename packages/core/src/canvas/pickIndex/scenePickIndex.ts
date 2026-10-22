@@ -152,7 +152,8 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
     return hit.index;
   }
   const index = build(scene, descriptor);
-  perScene.set(descriptor, { version, overrides, memo, markers, index });
+  // Read again: the first painter lookup registers the built-ins, which bumps it mid-build.
+  perScene.set(descriptor, { version, overrides, memo: nodeMemoGeneration(), markers, index });
   return index;
 }
 

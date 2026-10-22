@@ -90,7 +90,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
 
   // The index boxes nodes at the scene's painted poses; a custom `getPose` must be shown to agree first.
-  const index = getPose ? undefined : opts.index;
+  // A partial stand-in has no versions for it to key on.
+  const index = getPose || typeof scene.getVersion !== 'function' ? undefined : opts.index;
   return {
     ...(planeOf ? { planeOf } : {}),
     ...(index ? {

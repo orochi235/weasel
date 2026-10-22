@@ -132,7 +132,8 @@ function walkArea(
   descriptor: PoseDescriptor<unknown>,
   query: RegionQueryOptions,
 ): NodeId[] {
-  return pickWalk<unknown>(scenePickSource(scene, opts), regionPickQuery(region, mode, descriptor, query)) as NodeId[];
+  const src = scenePickSource(scene, { ...opts, index: { descriptor } });
+  return pickWalk<unknown>(src, regionPickQuery(region, mode, descriptor, query)) as NodeId[];
 }
 
 /** The query a marquee or a lasso over `r` asks of each node. */
@@ -144,6 +145,7 @@ export function regionPickQuery(
 ): PickQuery<unknown> {
   return {
     includeContainers: query.includeContainers === true,
+    broad: { box: r.bounds },
     clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
       return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
@@ -161,7 +163,8 @@ export function regionPickQuery(
         asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? derived ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionPickQuery(regionInPlane(r, m), mode, descriptor, query),
-    inCopy: (m) => regionPickQuery(regionInCopy(r, m), mode, descriptor, query),
+    // A copy is tested by every walk, so the query carried into one asks no index.
+    inCopy: (m) => ({ ...regionPickQuery(regionInCopy(r, m), mode, descriptor, query), broad: undefined }),
   };
 }
 

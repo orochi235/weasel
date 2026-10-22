@@ -1,5 +1,5 @@
 import { applyToPoint, meanScale, pathContainsPoint } from '@weasel-js/geom';
-import type { PickQuery } from 'canvas/pickWalk';
+import type { PickBroad, PickQuery } from 'canvas/pickWalk';
 import { findShapeInk, shapeCoversPoint } from 'canvas/NodeShape';
 import { toPlane } from 'core/viewport/parallax';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -16,7 +16,10 @@ export function scenePointQuery<TPose>(
   // `s` makes the slop a screen distance, so the grab zone stays the same
   // apparent thickness at any zoom and on every axis. A `{ px }` stroke's
   // reach is on screen too, and joins the slop there.
-  const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
+  const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> =>
+    ({ ...bareQuery(px, py, s), broad: pointBroad(px, py, s, pickTolerancePx) });
+  // A copy is tested by every walk, so the query carried into one asks no index.
+  const bareQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
     const scale = meanScale(s);
     const tolerance = { px: pickTolerancePx, scale: s };
     return {
@@ -51,9 +54,16 @@ export function scenePointQuery<TPose>(
       inCopy: (m) => {
         const [x, y] = applyToPoint(m, px, py);
         const k = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
-        return pointQuery(x, y, { x: s.x / k, y: s.y / k });
+        return bareQuery(x, y, { x: s.x / k, y: s.y / k });
       },
     };
   };
   return pointQuery;
+}
+
+/** The world box the point query's slop reaches, on the least-scaled axis. */
+function pointBroad(px: number, py: number, s: { x: number; y: number }, tolerancePx: number): PickBroad {
+  const least = Math.min(Math.abs(s.x), Math.abs(s.y));
+  const r = tolerancePx / least;
+  return { box: { x: px - r, y: py - r, width: 2 * r, height: 2 * r }, pxPerWorld: least };
 }
