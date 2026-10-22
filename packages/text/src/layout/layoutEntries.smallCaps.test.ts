@@ -3,7 +3,7 @@ import { setFontFallbackPolicy } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns } from '../runs/resolveRuns';
-import { resolveTextStyle } from '../textStyle';
+import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
 import { stubFetch, registerFixture } from './testing/fontFixtures';
 
 beforeEach(() => {
@@ -16,7 +16,7 @@ describe('layoutRuns — small caps', () => {
   // The fixture atlas states no heights, so small caps takes the default.
   const K = 0.7;
   const lay = (runs: Parameters<typeof resolveRuns>[0]) =>
-    layoutAndPaint(resolveRuns(runs, resolveTextStyle({ fontFamily: 'inter', fontSize: 32 })), OPTS);
+    layoutAndPaint(resolveRuns(runs, resolveTextStyle({ fontFamily: 'inter', fontSize: 32 }, { fill: DEFAULT_TEXT_FILL })), OPTS);
 
   beforeEach(async () => {
     await registerFixture('inter', [{}]);

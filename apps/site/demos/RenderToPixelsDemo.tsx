@@ -65,11 +65,11 @@ export function RenderToPixelsDemo() {
       // bottom of the box instead of the (legacy default) top.
       { id: 'd' as never, kind: 'leaf', layer: 'default',
         pose: { x: 10, y: 202, width: 460, height: 36 },
-        data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom' } },
+        data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom', fill: { paint: solid('#000') } } },
       // Dynamic canvas-SDF text (see registerCanvasFont above).
       { id: 'e' as never, kind: 'leaf', layer: 'default',
         pose: { x: 10, y: 4, width: 460, height: 32 },
-        data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 } } },
+        data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 }, fill: { paint: solid('#000') } } },
       // Bottom band: rotation and per-node alpha, neither of which `drawOne`
       // knows about.
       { id: 'spun' as never, kind: 'leaf', layer: 'default',

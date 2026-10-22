@@ -99,6 +99,15 @@ describe('text export', () => {
     expect(n.stroke).toEqual({ paint: { kind: 'solid', color: '#c0392b' }, width: 3 });
   });
 
+  it('writes text with no fill, which paints no glyphs, as fill="none"', async () => {
+    const scene = fakeScene({
+      t: { kind: 'leaf', pose: { x: 5, y: 6, width: 120, height: 40 }, data: { text: 'Hi' } },
+    }, ['t']);
+    const n = parseSvg(await selectionToSvgString(scene, ['t'])).nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.fill).toBeNull();
+  });
+
   it('keeps unfilled text unfilled through scene → SVG → parse → import drafts', async () => {
     const scene = fakeScene({
       t: {

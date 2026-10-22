@@ -5,6 +5,7 @@
  * undoable batch; the replacement takes the node's slot.
  */
 import { textToPathsByPaint, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { replaceWithPaths, type PaintedPath } from './replaceWithPaths';
@@ -60,14 +61,15 @@ export function applyOutlineStroke(
       const paths: PaintedPath[] = [];
       let outlined = false;
       for (const { path, fill, stroke } of paintedPaths(adapter, id)) {
-        const outline = stroke?.paint == null ? null : strokeRegion(path, stroke, frame, opts);
+        const painted = resolveStroke(stroke);
+        const outline = painted === null ? null : strokeRegion(path, painted, frame, opts);
         if (!outline || outline.commands.length === 0) {
           paths.push(stroke ? { path, fill, stroke } : { path, fill });
           continue;
         }
         outlined = true;
-        if (fill !== null) paths.push({ path, fill });
-        paths.push({ path: outline, fill: { paint: stroke!.paint! } });
+        if (resolveFill(fill) !== null) paths.push({ path, fill });
+        paths.push({ path: outline, fill: { paint: painted!.paint } });
       }
       if (outlined) converted.push({ id, paths });
     }

@@ -155,13 +155,18 @@ describe('opacity scrub', () => {
     expect(t.api().scene.historyIndex()).toBe(before + 1);
   });
 
-  it('scrubs text that paints by default from the black it shows', () => {
+  it('opens no session over text with no fill, which paints no glyphs', () => {
     const t = setup({ data: { text: 'hi' } });
     t.key('keydown');
-    expect(t.api().percent).toBe(100);
+    expect(t.api().percent).toBe(null);
     t.wheel();
-    expect((t.api().scene.get(ID)!.data as D).fill).toMatchObject({ paint: { color: '#000', opacity: 0.95 } });
-    expect('stroke' in (t.api().scene.get(ID)!.data as object)).toBe(false);
+    expect(t.api().scene.get(ID)!.data).toEqual({ text: 'hi' });
+  });
+
+  it('opens no session over a fill that carries no paint', () => {
+    const t = setup({ data: { fill: {} } });
+    t.key('keydown');
+    expect(t.api().percent).toBe(null);
   });
 
   it('opens no session over a node with no paint to scale', () => {

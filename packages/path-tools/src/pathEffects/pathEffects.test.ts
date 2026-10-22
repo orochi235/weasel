@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, type Scene, sceneFromJSON, withPathEffectsRegistry,
+  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
@@ -69,7 +69,7 @@ describe('blend', () => {
     // The middle step sits halfway, turned halfway, and is violet-ish.
     const mid = boundsOfPath(parts[1]!.path);
     expect(mid.x + mid.width / 2).toBeCloseTo(110, 3);
-    expect((parts[1]!.fill?.paint as { color: string }).color).not.toBe('#ff0000');
+    expect((resolveFill(parts[1]!.fill)?.paint as { color: string }).color).not.toBe('#ff0000');
 
     // Moving a source moves the steps.
     scene.setPose('b' as NodeId, { x: 400, y: 0, width: 20, height: 20, rotation: Math.PI / 2 });

@@ -12,6 +12,7 @@ describe('stickyData', () => {
       verticalAlign: STICKY_DEFAULTS.verticalAlign,
       overflow: 'clip',
       minSize: STICKY_DEFAULTS.minSize,
+      fill: { paint: { kind: 'solid', color: '#000' } },
     });
   });
 
@@ -35,7 +36,7 @@ describe('stickyData', () => {
 
   it('carries none of the insert bookkeeping onto the node', () => {
     const data = stickyData({ kind: 'sticky', originMode: 'corner', size: { width: 1, height: 1 } } as never);
-    expect(Object.keys(data).sort()).toEqual(['background', 'minSize', 'overflow', 'padding', 'style', 'text', 'verticalAlign']);
+    expect(Object.keys(data).sort()).toEqual(['background', 'fill', 'minSize', 'overflow', 'padding', 'style', 'text', 'verticalAlign']);
   });
 });
 

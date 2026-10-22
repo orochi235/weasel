@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import { parseSvg } from './parse';
-import { DEFAULT_TEXT_STYLE, getMarker, type IngestCtx, type Op } from '@weasel-js/core';
+import { DEFAULT_TEXT_FILL, getMarker, type IngestCtx, type Op } from '@weasel-js/core';
 import { _resetMarkersForTests } from '@weasel-js/core/test-seams';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
@@ -112,6 +112,15 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.data.fill).toEqual({ paint: { kind: 'solid', color: '#ff00ff' } });
     expect(d.data.stroke).toEqual({ paint: { kind: 'solid', color: '#0000ff' }, width: 2 });
     expect(d.data.runs).toEqual([{ text: 'hi ' }, { text: 'there', bold: true }]);
+  });
+
+  it('writes black onto a text node that sets no fill, which SVG paints black', () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi',
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
   });
 
   it("keeps a text node's fill=none as an explicit null", () => {
@@ -458,6 +467,13 @@ describe('svgNodesToKitDrafts — opacity', () => {
   };
   const doc = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 
+  it("gives the children of a <g fill> that set none the group's fill, text included", () => {
+    const svg = doc('<g fill="#ff0000" stroke="#0000ff"><rect width="10" height="10"/><text x="0" y="20">hi</text></g>');
+    expect(leafOf(svg, 0).fill).toEqual({ paint: { color: '#ff0000' } });
+    expect((leafOf(svg, 0).stroke as { paint: unknown }).paint).toEqual({ color: '#0000ff' });
+    expect((leafOf(svg, 1).fill as { paint: { color: string } }).paint.color).toBe('#ff0000');
+  });
+
   it('keeps fill-opacity on a solid fill', () => {
     const data = leafOf(doc('<rect width="10" height="10" fill="#ff0000" fill-opacity="0.5"/>'));
     expect(data.fill).toEqual({ paint: { color: '#ff0000', opacity: 0.5 } });
@@ -482,7 +498,7 @@ describe('svgNodesToKitDrafts — opacity', () => {
 
   it("gives text with an element opacity the default fill at that opacity", () => {
     const data = leafOf(doc('<text x="0" y="20" opacity="0.5">hi</text>'));
-    expect(data.fill).toEqual({ paint: { ...DEFAULT_TEXT_STYLE.fill!.paint, opacity: 0.5 } });
+    expect(data.fill).toEqual({ paint: { ...DEFAULT_TEXT_FILL.paint, opacity: 0.5 } });
   });
 
   it("leaves text with fill=none unfilled under an element opacity", () => {

@@ -1,3 +1,4 @@
+import type { Paint } from '@weasel-js/core';
 import { withDrafts } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
@@ -43,15 +44,21 @@ function drafting(state: PrefFieldState, drafts: NonNullable<PropertyRenderConte
 }
 
 /**
- * A paint that is a field of an object: absent from an object the node holds,
- * it is no paint, and None removes the field.
+ * What a paint that is a field of an object shows, as a `Fill` or `Stroke`
+ * holds one: the paint, `null` for None, or `undefined` when mixed. Absent,
+ * from the object or with no object at all, it is None, never unset.
  */
+export function nestedPaintValue(ctx: Pick<PropertyRenderContext, 'value' | 'mixed'>): Paint | null | undefined {
+  if (ctx.mixed) return undefined;
+  return ctx.value === undefined || ctx.value === null ? null : ctx.value as Paint;
+}
+
+/** {@link nestedPaintValue} as a control: None removes the field. */
 function nestedPaint(ctx: PropertyRenderContext, field: PropertyPaintFieldProps): PropertyPaintFieldProps {
-  const held = ctx.eachSiblings !== undefined && ctx.eachSiblings.every((o) => o !== undefined);
-  const none = held && !ctx.mixed && ctx.value === undefined;
   return {
     ...field,
-    ...(none ? { value: null, unset: false } : {}),
+    value: nestedPaintValue(ctx),
+    unset: false,
     onChange: (paint) => ctx.setValue(paint ?? undefined),
   };
 }

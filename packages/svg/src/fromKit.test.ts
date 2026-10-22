@@ -157,6 +157,11 @@ describe('svgLeafFromKit', () => {
     expect(node.runs?.[0].fill).toMatchObject({ paint: { from: { x: 10, y: 20 }, units: 'local' } });
   });
 
+  it('writes a text leaf with no fill, or one with no paint, as fill="none"', () => {
+    expect((svgLeafFromKit({ text: 'hi' }, BOX) as SvgTextNode).fill).toBeNull();
+    expect((svgLeafFromKit({ text: 'hi', fill: {} }, BOX) as SvgTextNode).fill).toBeNull();
+  });
+
   it('writes a text leaf with a background as its box under its text, inset by its padding', () => {
     const node = svgLeafFromKit({ text: 'hi', background: { paint: solid('#ffee00') }, padding: 5 }, BOX) as SvgGroupNode;
     expect(node.kind).toBe('group');
@@ -290,7 +295,7 @@ describe('svgImageFromKit', () => {
     const original = parseSvg(
       '<svg xmlns="http://www.w3.org/2000/svg">'
       + '<image transform="skewX(45)" width="20" height="10" href="a.png"/>'
-      + '<text transform="scale(4 1)" x="0" y="10" font-size="10" data-weasel-width="40" data-weasel-height="12">Hi</text></svg>',
+      + '<text transform="scale(4 1)" fill="#000" x="0" y="10" font-size="10" data-weasel-width="40" data-weasel-height="12">Hi</text></svg>',
     ).nodes;
     const [image, text] = svgNodesToKitDrafts(original, () => 'i');
     if (image.kind !== 'leaf' || text.kind !== 'leaf') throw new Error('expected leaves');

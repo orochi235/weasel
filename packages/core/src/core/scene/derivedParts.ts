@@ -9,16 +9,29 @@
  * long as the path does — in the derivation's memo.
  */
 import { pathToCubicContours, cubicContoursToPath, type Path, type PolygonPath } from '@weasel-js/geom';
-import type { Fill, Stroke } from '@weasel-js/paint';
+import {
+  resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
+} from '@weasel-js/paint';
 
 /** One painted piece of a derived path. */
 export interface DerivedPart {
   path: Path;
-  /** The part's fill. Absent, the node's own `data.fill` paints it; `null`
-   *  paints none. */
-  fill?: Fill | null;
+  /** The part's fill, read as a node's is: absent paints none, and
+   *  `INHERIT` takes the node's own `data.fill`. */
+  fill?: Fill | Inherit | null;
   /** The part's stroke, on the same terms as `fill`. */
-  stroke?: Stroke | null;
+  stroke?: Stroke | Inherit | null;
+}
+
+/** What `part` paints, its `INHERIT` taken from `own`, the deriving node's data. */
+export function resolvePartPaint(
+  part: DerivedPart,
+  own: { fill?: Fill | null; stroke?: Stroke | null } | null | undefined,
+): { fill: PaintedFill | null; stroke: PaintedStroke | null } {
+  return {
+    fill: resolveFill(part.fill, resolveFill(own?.fill)),
+    stroke: resolveStroke(part.stroke, resolveStroke(own?.stroke)),
+  };
 }
 
 const PARTS = new WeakMap<Path, readonly DerivedPart[]>();

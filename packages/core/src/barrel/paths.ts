@@ -258,6 +258,7 @@ export {
   registeredPathEffects,
   derivedPartsOf,
   pathFromParts,
+  resolvePartPaint,
 } from '../core/scene/pathEffects';
 export type {
   BendAlongEffect,

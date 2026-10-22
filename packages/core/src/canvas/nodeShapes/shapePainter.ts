@@ -10,7 +10,8 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke } from './nodePaint';
+import { inkReach, withAnimatedVertexColors } from './nodePaint';
+import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { outsetPoseBox, strokedPoseBox } from './strokedBounds';
 
@@ -32,9 +33,9 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; fill?: Fill | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
-    const declaredFill = resolveNodeFill(d.fill);
+    const declaredFill = resolveFill(d.fill);
     const shapeFill = declaredFill && commandFill(declaredFill, pose);
-    const strokeSpec = resolveNodeStroke(d.stroke);
+    const strokeSpec = resolveStroke(d.stroke);
     const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     return [{
       kind: 'path',
@@ -50,18 +51,18 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   ink: (node, _pose, ctx) => {
     const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
     return {
-      filled: resolveNodeFill(d.fill) !== null,
-      ...inkReach(resolveNodeStroke(d.stroke), ctx?.scale),
+      filled: resolveFill(d.fill) !== null,
+      ...inkReach(resolveStroke(d.stroke), ctx?.scale),
     };
   },
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
+    poseBoxBounds(pose, resolveStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
   // A rect's or an ellipse's stroke reaches its box evenly; a polygon's or a
   // star's corners are sharper than a right angle, so their miters are measured.
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as { shape: string; stroke?: Stroke | null; sides?: number; points?: number };
-    const stroke = resolveNodeStroke(d.stroke);
+    const stroke = resolveStroke(d.stroke);
     return d.shape === 'polygon' || d.shape === 'star'
       ? strokedPoseBox(node, pose, stroke, ctx, (at) => pathForShape(d, at))
       : outsetPoseBox(pose, stroke, ctx);

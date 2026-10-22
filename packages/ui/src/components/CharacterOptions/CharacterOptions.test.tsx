@@ -229,6 +229,12 @@ describe('CharacterOptions — no fill', () => {
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('lights it, unmixed, for a fill that carries no paint', () => {
+    const { container } = renderWithIcons(<CharacterOptions style={{ fill: {} }} onPatch={vi.fn()} />);
+    expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'true');
+    expect(container.querySelector('[data-mixed]')).toBeNull();
+  });
+
   it('leaves it unlit over a filled range, a mixed one included', () => {
     const { rerender } = renderWithIcons(<CharacterOptions style={{ fill: { paint: { color: '#ff0000ff' } } }} onPatch={vi.fn()} />);
     expect(toggle('No fill')).toHaveAttribute('aria-pressed', 'false');

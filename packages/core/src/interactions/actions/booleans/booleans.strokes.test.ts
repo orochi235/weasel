@@ -65,6 +65,13 @@ describe('applyBooleanOp on stroked operands', () => {
     });
   }
 
+  it('unfilled: reads a fill with no paint as unfilled, so the line is its stroke', () => {
+    const blank: Source = { ...line, paint: { fill: {}, stroke: { paint: RED, width: 10 } } };
+    const h = harness([box, blank]);
+    applyBooleanOp(h.adapter, 'subtract', { strokes: 'unfilled' });
+    expect(pointInPath(h.made[0]!.path, 50, 50)).toBe(false);
+  });
+
   it('unfilled: a filled operand gives its fill alone, and the result\'s paint is left to the adapter', () => {
     const h = harness([far, framed]);
     applyBooleanOp(h.adapter, 'union', { strokes: 'unfilled' });

@@ -3,7 +3,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
-import { resolveTextStyle } from '../textStyle';
+import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
 import { stubFetch, registerFixture, RUN_PLAIN } from './testing/fontFixtures';
 
 beforeEach(() => {
@@ -173,7 +173,7 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('reaches layout through resolveRuns (run value wins, style value inherited)', async () => {
     await registerFixture('inter', [{}]);
-    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 });
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 }, { fill: DEFAULT_TEXT_FILL });
     const fromStyle = layoutAndPaint(resolveRuns([{ text: 'AB' }], style), OPTS);
     const fromRun = layoutAndPaint(
       resolveRuns([{ text: 'AB', letterSpacing: 10 }], style),

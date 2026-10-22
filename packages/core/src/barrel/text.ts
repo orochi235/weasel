@@ -26,6 +26,7 @@ export {
   markdownToRuns,
   MARKDOWN_RUN_GRAMMAR,
   DEFAULT_TEXT_STYLE,
+  DEFAULT_TEXT_FILL,
   resolveTextStyle,
   resolveAlign,
   fontString,

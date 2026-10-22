@@ -4,12 +4,11 @@ import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { derivedPartsOf, type DerivedPart } from 'core/scene/derivedParts';
+import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import { strokedBounds } from './strokedBounds';
-import {
-  inkReach, withAnimatedVertexColors, resolveNodeFill, resolveNodeStroke, type PaintedFill, type PaintedStroke,
-} from './nodePaint';
+import { inkReach, withAnimatedVertexColors } from './nodePaint';
+import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from '@weasel-js/paint';
 
 type PaintData = { fill?: Fill | null; stroke?: Stroke | null; vertexColors?: number[] };
 
@@ -34,15 +33,14 @@ function pathCommand(
 /** The stroked box of the path on `ctx`, or `null` with no path or no stroke. */
 export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | undefined): Bounds | null {
   const path = ctx?.derivedPath;
-  const stroke = resolveNodeStroke((node.data as PaintData | null)?.stroke);
+  const stroke = resolveStroke((node.data as PaintData | null)?.stroke);
   return path == null || stroke === null ? null : strokedBounds(path, stroke, ctx?.scale ?? 1, ctx?.screen);
 }
 
-/** One part's command: its own paint where it names one, else the node's. */
+/** One part's command, in its own paint; `INHERIT` takes the node's. */
 function partCommand(part: DerivedPart, d: PaintData | null): DrawCommand {
-  const strokeSpec = resolveNodeStroke(part.stroke === undefined ? d?.stroke : part.stroke);
-  const declared = resolveNodeFill(part.fill === undefined ? d?.fill : part.fill);
-  return pathCommand(part.path, declared, strokeSpec, undefined);
+  const { fill, stroke } = resolvePartPaint(part, d);
+  return pathCommand(part.path, fill, stroke, undefined);
 }
 
 /**
@@ -63,8 +61,8 @@ function partCommand(part: DerivedPart, d: PaintData | null): DrawCommand {
  * Rotation still comes from the pose — `wrapNodeOutput` turns the output about
  * the pose AABB's center, which for a zero-sized pose is its origin.
  *
- * A path made by `pathFromParts` paints one command per part, each with the
- * part's own fill and stroke where it names them.
+ * A path made by `pathFromParts` paints one command per part, each in the
+ * part's own fill and stroke.
  */
 export const DERIVED_PAINTER: NodeShapeEntry = {
   id: 'kit:derived',
@@ -79,8 +77,8 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     const d = node.data as PaintData | null;
     const parts = derivedPartsOf(path);
     if (parts !== undefined) return parts.map((part) => partCommand(part, d));
-    const strokeSpec = resolveNodeStroke(d?.stroke);
-    const declared = resolveNodeFill(d?.fill);
+    const strokeSpec = resolveStroke(d?.stroke);
+    const declared = resolveFill(d?.fill);
     return withAnimatedVertexColors([pathCommand(path, declared, strokeSpec, d?.vertexColors)], ctx);
   },
   // The derived path *is* the silhouette, and it is already absolute — the
@@ -91,9 +89,9 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
   drawnBounds: (node, _pose, ctx) => derivedDrawnBounds(node, ctx),
   ink: (node, _pose, ctx) => {
     const d = node.data as { fill?: Fill | null; stroke?: Stroke | null } | null;
-    const stroke = resolveNodeStroke(d?.stroke);
+    const stroke = resolveStroke(d?.stroke);
     return {
-      filled: resolveNodeFill(d?.fill) !== null,
+      filled: resolveFill(d?.fill) !== null,
       ...inkReach(stroke, ctx?.scale),
     };
   },

@@ -91,10 +91,19 @@ describe('SelectionPanel — a paint nested in an object', () => {
     expect(none(kindBars()[1])).toBeChecked();
   });
 
-  it('does not read None for a node that holds no object at all', () => {
-    // No `data.fill` is not a fill with no paint: the painter falls back to a default there.
+  it('reads None for a node that holds no object, or null, as it paints none', () => {
     renderPanel(sceneOf({}));
-    for (const bar of kindBars()) expect(none(bar)).not.toBeChecked();
+    for (const bar of kindBars()) expect(none(bar)).toBeChecked();
+  });
+
+  it('reads None for a fill or stroke that is null', () => {
+    renderPanel(sceneOf({ fill: null, stroke: null }));
+    for (const bar of kindBars()) expect(none(bar)).toBeChecked();
+  });
+
+  it('reads Mixed, not None, across a selection where one node paints and one does not', () => {
+    renderPanel(sceneOf({}, { fill: { paint: { kind: 'solid', color: '#ff0000ff' } } }), ['n0', 'n1']);
+    expect(none(kindBars()[0])).not.toBeChecked();
   });
 
   it('paints a cleared stroke again from None', () => {

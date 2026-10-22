@@ -26,6 +26,7 @@ const STYLE = { fontFamily: 'inter', fontSize: SIZE };
 const RUNS = [{ text: 'A' }, { text: 'B', fontSize: 64 }];
 const POSE: TextPose = {
   x: 100, y: 50, width: 400, height: 200, text: 'AB', runs: RUNS, style: STYLE,
+  fill: { paint: { kind: 'solid', color: '#000' } },
 };
 
 beforeEach(async () => {
@@ -52,7 +53,7 @@ beforeEach(async () => {
  *  every text painter uses. */
 function command(): TextDrawCommand {
   return textCommandFromRuns(
-    POSE.x, POSE.y, RUNS, STYLE, POSE.width, POSE.height,
+    POSE.x, POSE.y, RUNS, STYLE, POSE.width, POSE.height, undefined, { fill: POSE.fill },
   ) as TextDrawCommand;
 }
 

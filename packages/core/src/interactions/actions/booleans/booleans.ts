@@ -6,6 +6,7 @@
 import type { Affine, Path } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
+import { resolveFill } from '@weasel-js/paint';
 import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
@@ -165,7 +166,7 @@ function planBooleanOp(
   const fillKey = (i: number): unknown => {
     const { id, operand } = entries[i]!;
     const paint = operand.paint ?? adapter.getPaint?.(id);
-    return paint ? JSON.stringify(paint.fill ?? null) : i;
+    return paint ? JSON.stringify(resolveFill(paint.fill)) : i;
   };
   const pieces = booleanPieces(op, entries.map((e) => e.operand.path), fillKey);
   if (pieces.length === 0) return { kind: 'noop', reason: 'empty-result' };

@@ -355,21 +355,11 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P1) Settle what each kind of "no paint" means, once, for every reader** (2026-10-21). A fill or a
-  stroke can be absent, `null`, a record with no `paint`, a paint with alpha 0, or the color
-  `transparent`, and nothing states which of those are the same thing. The painters now treat the first
-  three as "none" (2026-10-21; until then an absent fill painted gray), but the other readers each decide
-  for themselves:
-  - picking: `ink().filled` decides whether a node's interior is grabbable, so an alpha-0 fill is
-    clickable and an absent one is not;
-  - a derived part's `fill: undefined` means "inherit the node's", not "none";
-  - a container never paints its own `data.fill` (decided 2026-10-21), but whether its members
-    inherit it, as an SVG `<g fill>`'s children do, is open;
-  - the property panel shows unset, None and mixed as three states over these values;
-  - SVG import writes black for an element with no `fill`, as SVG does, and export writes `none`.
-
-  Decide which of these are distinct states, give each one spelling, and make every reader resolve
-  through one function.
+- **(P1) Let a node's fill or stroke inherit its container's** (2026-10-21). A field is a paint, none or
+  `INHERIT` (`Fill` in `paint/src/paint.ts`), but only a derived part may say `INHERIT` today. A node's
+  `data.fill` / `data.stroke` taking its enclosing container's, the property panel's Inherit choice, and SVG
+  import reading a `<g fill>` as inherit are still to build; until then import resolves the SVG cascade and
+  writes each child's fill on it.
 
 - **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
   (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`

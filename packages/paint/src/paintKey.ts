@@ -5,6 +5,7 @@
 
 import { isSolidPaint } from './commandPaint';
 import type { Fill, Paint, Stroke } from './paint';
+import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
 
 /** `value` as JSON with every object's keys sorted and its `undefined`
  *  fields dropped, so field order and an explicit `undefined` cannot tell
@@ -43,15 +44,16 @@ export function paintKey(paint: Paint | null | undefined): string {
 }
 
 /** Whether a fill puts ink down: it does not when it is absent or holds no paint. */
-export function fillHasInk(fill: Fill | null | undefined): fill is Fill & { paint: Paint } {
-  return fill?.paint !== undefined;
+export function fillHasInk(fill: Fill | null | undefined): fill is PaintedFill {
+  return resolveFill(fill) !== null;
 }
 
 /** Whether a stroke puts ink down: it does not when it is absent, holds no
  *  paint, or has no width. */
-export function strokeHasInk(stroke: Stroke | null | undefined): stroke is Stroke & { paint: Paint } {
-  if (stroke?.paint === undefined) return false;
-  const width = stroke.width ?? 1;
+export function strokeHasInk(stroke: Stroke | null | undefined): stroke is PaintedStroke {
+  const painted = resolveStroke(stroke);
+  if (painted === null) return false;
+  const width = painted.width ?? 1;
   return (typeof width === 'number' ? width : width.px) > 0;
 }
 

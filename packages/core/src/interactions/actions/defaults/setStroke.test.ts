@@ -224,6 +224,16 @@ describe('setStrokeAction — non-solid paints', () => {
     expect(scene.updates[0].data).toMatchObject({ stroke: { paint: { color: '#ff0000' }, width: 2 } });
   });
 
+  it('writes None as a stroke with no paint, keeping its width and dash', () => {
+    const scene = makeScene({ a: { stroke: { ...strokeOf('#000000ff', 3), dash: [4, 2] } } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: null } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    const stroke = (scene.updates[0].data as { stroke: Stroke }).stroke;
+    expect(stroke).not.toHaveProperty('paint');
+    expect(stroke).toMatchObject({ width: 3, dash: [4, 2] });
+  });
+
   it('seeds a width when a paint lands on a node with no stroke', () => {
     const scene = makeScene({ a: {} });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });

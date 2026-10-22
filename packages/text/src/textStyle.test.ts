@@ -9,6 +9,7 @@ import {
   resolveTextStyle,
   fontString,
   DEFAULT_TEXT_STYLE,
+  DEFAULT_TEXT_FILL,
   type TextPaint,
 } from './textStyle';
 
@@ -91,6 +92,18 @@ describe('resolveTextStyle', () => {
   it('keeps an explicit `fill: null` rather than defaulting it to black', () => {
     expect(resolveTextStyle({}, { fill: null }).fill).toBeNull();
     expect(resolveTextStyle(undefined, { fill: null }).fill).toBeNull();
+  });
+
+  it('reads an absent fill, or one with no paint, as none rather than black', () => {
+    expect(resolveTextStyle().fill).toBeNull();
+    expect(resolveTextStyle({}).fill).toBeNull();
+    expect(resolveTextStyle({}, {}).fill).toBeNull();
+    expect(resolveTextStyle(undefined, { fill: {} }).fill).toBeNull();
+    expect(resolveTextStyle({}).caretColor).toBe('#000');
+  });
+
+  it('DEFAULT_TEXT_FILL is the black a text creator writes', () => {
+    expect(DEFAULT_TEXT_FILL).toEqual({ paint: { kind: 'solid', color: '#000' } });
   });
 
   it('caretColor falls back to #000 when there is no fill to derive it from', () => {

@@ -11,7 +11,7 @@ import { registerFont, registerFontOutlines, glyphOutline, FIXTURE_FONT } from '
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns } from '../runs/resolveRuns';
-import { resolveTextStyle } from '../textStyle';
+import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
 import { createMarkdownRenderer } from '../markdownText';
 import type { StyledRun } from '../runs';
 
@@ -53,7 +53,7 @@ const RUNS: StyledRun[] = [
 ];
 
 function lay(fontFamily: string) {
-  const runs = resolveRuns(RUNS, resolveTextStyle({ fontFamily, fontSize: 40 }));
+  const runs = resolveRuns(RUNS, resolveTextStyle({ fontFamily, fontSize: 40 }, { fill: DEFAULT_TEXT_FILL }));
   const laid = layoutAndPaint(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
   return { runs, laid };
 }
@@ -99,7 +99,7 @@ describe('face metrics across tiers', () => {
     ];
     createMarkdownRenderer(ctx, runs, 40, Infinity, { family: 'inter-atlas' }).renderer(ctx, '', 0, 0);
     const gl = layoutAndPaint(
-      resolveRuns([runs[0]], resolveTextStyle({ fontFamily: 'inter-atlas', fontSize: 40 })),
+      resolveRuns([runs[0]], resolveTextStyle({ fontFamily: 'inter-atlas', fontSize: 40 }, { fill: DEFAULT_TEXT_FILL })),
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
     const baseline = gl.lines[0].baselineY;
@@ -119,7 +119,7 @@ describe('face metrics across tiers', () => {
 
   it("sizes small caps identically on both tiers, at the face's x-height over its cap height", () => {
     const sizes = (fontFamily: string) =>
-      resolveRuns([{ text: 'Hx', fontVariantCaps: 'small-caps' }], resolveTextStyle({ fontFamily, fontSize: 40 }))[0].sizeMap;
+      resolveRuns([{ text: 'Hx', fontVariantCaps: 'small-caps' }], resolveTextStyle({ fontFamily, fontSize: 40 }, { fill: DEFAULT_TEXT_FILL }))[0].sizeMap;
     expect(sizes('inter-outline')).toEqual(sizes('inter-atlas'));
     // Inter: OS/2.sxHeight 1118 and sCapHeight 1490.
     const [cap, small] = sizes('inter-atlas')!;

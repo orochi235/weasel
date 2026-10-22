@@ -21,6 +21,9 @@ import {
   layoutTextPose,
   pathEffectOf,
   pathEffectParts,
+  resolveFill,
+  resolvePartPaint,
+  resolveStroke,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -74,8 +77,9 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     const style = data.style;
     if (style && Object.keys(style).length > 0) o.style = style;
     if (data.runs && data.runs.length > 0) o.runs = data.runs;
-    if (data.fill !== undefined) o.fill = data.fill;
-    if (data.stroke) o.stroke = data.stroke;
+    o.fill = resolveFill(data.fill);
+    const stroke = resolveStroke(data.stroke);
+    if (stroke) o.stroke = stroke;
     if (data.verticalAlign) o.verticalAlign = data.verticalAlign;
     if (pose.rotation) o.rotation = pose.rotation;
     return o;
@@ -96,6 +100,7 @@ function pathObj(
   fill: Fill | null | undefined,
   stroke: Stroke | null | undefined,
 ): PathObj {
+  const painted = { fill: resolveFill(fill), stroke: resolveStroke(stroke) };
   const o: PathObj = {
     id,
     tool: 'imported',
@@ -104,9 +109,8 @@ function pathObj(
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose.
-    fill: fill?.paint == null ? null : { ...fill, paint: fillInPoseFrame(fill.paint, pose) },
-    // A stroke with no paint draws nothing, and exports as no stroke.
-    stroke: stroke?.paint == null ? null : { ...stroke, paint: fillInPoseFrame(stroke.paint, pose) },
+    fill: painted.fill && { ...painted.fill, paint: fillInPoseFrame(painted.fill.paint, pose) },
+    stroke: painted.stroke && { ...painted.stroke, paint: fillInPoseFrame(painted.stroke.paint, pose) },
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;
@@ -120,12 +124,8 @@ function effectToObj<TLayer extends string>(scene: DrawScene<TLayer>, id: string
   const deps = dependsOn.map((d) => derivedDepOf(scene, d as never, node));
   const parts = (pathEffectParts(node, deps) ?? []).map((part, k) => {
     const { x, y, width, height } = boundsOfPath(part.path);
-    const own = node.data as WeaselDrawData;
-    return pathObj(
-      `${id}-${k}`, part.path, { x, y, width, height },
-      part.fill === undefined ? own.fill : part.fill,
-      part.stroke === undefined ? own.stroke : part.stroke,
-    );
+    const { fill, stroke } = resolvePartPaint(part, node.data as WeaselDrawData);
+    return pathObj(`${id}-${k}`, part.path, { x, y, width, height }, fill, stroke);
   });
   return { id, effect: pathEffectOf(node)!, dependsOn, parts };
 }
