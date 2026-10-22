@@ -1253,23 +1253,22 @@ only story runner in the repo.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
 
-- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once Node 26 is shown free of the crash it avoids.**
-  Five vitest runs died with a worker-thread SIGSEGV in V8's GC (teitou, studio, msb-uai, 2026-10-15
-  to 10-19), all under nvm's Node 24.21.0. The crash reports match nodejs/node#62393, a Sparkplug bug
-  that Node 24.22.0 fixes, and every fleet node's nvm resolves `.nvmrc`'s `24` to 24.22.0 since
-  2026-10-19. The flag stays because the same crash is reported on Node 26.7 and 26.8.1, which ad-hoc
-  `onto run`s and local runs use; remove it once a 26 release carries the V8 fix. The fix is the
-  backport `fb0d0ca289` (nodejs/node#65753); no Node 26 changelog through 26.12.0 lists it (checked
-  2026-10-19).
-
-- **(P3) A fleet run on teitou can stop partway with exit 1 and no summary, failure or error.**
-  `npm run test:fleet -- main` at d7e74ede1 (2026-10-22) printed passing files up to 19,141 of
-  29,368 tests, then only the `vitest-overlap.mjs ... exited 1 on teitou` line: no vitest summary,
-  no failed test, no signal or crash text in the log. The same commit passed whole on keiei
-  (`--node keiei`, 3,393 files) straight after. teitou was also running the `weasel-dev` service
-  and had shown 0 of 18 cores free earlier that day. The first thing to find is how the run died:
-  read the node's job log (`onto logs <job>`) or macOS crash reports for a vitest worker the next
-  time it happens, and check it against the V8 crash in the entry above.
+- **(P2) Fleet suite runs still die partway from a V8 segfault in a vitest worker, on Node 24.22.0
+  with `--no-sparkplug` set.** The run stops at 40–87% of its tests with no summary, failed test or
+  error: exit 255, or exit 1 since `vitest-overlap.mjs` turns a child killed by a signal into 1.
+  Ten runs have died this way since 2026-10-15. The six on Node 24.21.0 (teitou, studio, msb-uai)
+  led to `--no-sparkplug` in `vitest.config.ts` (2026-10-19) on the reading that this was
+  nodejs/node#62393, fixed in 24.22.0. That reading is wrong or incomplete: four more died on teitou
+  under 24.22.0 at commits carrying the flag (`616e9305`, `bc02182f`, `672d462f` on 10-19;
+  `ac750755` at d7e74ede1 on 10-22), out of 229 teitou runs since, against none in 344 runs on the
+  other nodes. teitou kept `~/Library/Logs/DiagnosticReports/node-2026-10-22-085334.ips` for the
+  last: `EXC_BAD_ACCESS` at address 0, the PC itself 0, in a `WorkerThread` running promise
+  builtins, while another worker isolate sat in `MarkCompactCollector::ProcessEphemerons` and the
+  `V8Worker` threads in `ConcurrentMarking`. So the vitest config comment saying the crash is gone
+  in 24.22.0 is false. Not yet tried: whether teitou's load (it also hosts `weasel-dev`) or its
+  larger worker count is what makes it the only node still crashing, a `vmMemoryLimit` that recycles
+  workers before their heaps grow, or another V8 flag. The flag's original removal condition (a
+  Node 26 release carrying backport `fb0d0ca289`, nodejs/node#65753) no longer settles anything.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no

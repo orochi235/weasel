@@ -21,7 +21,8 @@ import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { selection } from './scripts/lib/fleet-tree.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 
-// Sparkplug code segfaults V8's GC in worker isolates below Node 24.22.0 (nodejs/node#62393).
+// Sparkplug code segfaults V8's GC in worker isolates (nodejs/node#62393); workers still crash on
+// 24.22.0 with this set, see docs/TODO.md.
 // Workers spawned after this inherit the flag; NODE_OPTIONS refuses it.
 v8.setFlagsFromString('--no-sparkplug');
 
