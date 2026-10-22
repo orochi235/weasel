@@ -106,6 +106,7 @@ describe('layoutRuns — justify', () => {
     const pose = {
       x: 0, y: 0, width: 100, height: 100, text: 'AB AB AB',
       style: { fontFamily: 'inter', fontSize: 32, align: 'justify' as const, wrap: true },
+      fill: { paint: { kind: 'solid' as const, color: '#000' } },
     };
     const { laid } = layoutTextPose(pose);
     const painted = paintRuns(laid, textPoseLayoutInput(pose).runs);

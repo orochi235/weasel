@@ -190,10 +190,10 @@ describe('kit:text painter — rich runs', () => {
       expect(text.runs[0].fill).toEqual({ paint: solid('#7fb069') });
     });
 
-    it('falls back to the default black with no data.fill', () => {
+    it('paints no glyph fill with no data.fill', () => {
       const [cmd] = paintText({ text: 'hi' });
       const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
-      expect(text.runs[0].fill).toEqual({ paint: { kind: 'solid', color: '#000' } });
+      expect(text.runs[0].fill ?? null).toBeNull();
     });
 
     it('a run fill overrides the node fill', () => {

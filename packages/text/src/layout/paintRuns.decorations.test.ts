@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
-import { resolveTextStyle } from '../textStyle';
+import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
 import { stubFetch, registerFixture, registerTallFont, RUN_PLAIN } from './testing/fontFixtures';
 
 beforeEach(() => {
@@ -203,7 +203,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('reaches layout through resolveRuns, additively over the node style', async () => {
     await registerFixture('inter', [{}]);
-    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, underline: true });
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, underline: true }, { fill: DEFAULT_TEXT_FILL });
     const out = layoutAndPaint(resolveRuns([{ text: 'A' }], style), OPTS);
     expect(out.decorations.map((d) => d.kind)).toEqual(['underline']);
   });

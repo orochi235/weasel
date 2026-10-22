@@ -49,13 +49,15 @@ const SQUARES: OutlineFace = {
     : cp === 66 ? 'M0 -0.5L0 0L0.5 0L0.5 -0.5Z' : null),
 };
 
+const INK = { paint: { kind: 'solid', color: '#000' } } as const;
+
 const text = (s: string, style: TextOutlineSource['style'] = {}): TextOutlineSource => ({
-  text: s, style: { fontFamily: 'outline-inter', fontSize: 100, ...style },
+  text: s, style: { fontFamily: 'outline-inter', fontSize: 100, ...style }, fill: INK,
 });
 
 /** Where the laid-out text's first baseline sits in world space. */
 function baseline(src: TextOutlineSource, pose = POSE): number {
-  const tp: TextPose = { ...pose, text: src.text, style: src.style };
+  const tp: TextPose = { ...pose, text: src.text, style: src.style, fill: INK };
   const { laid, y } = layoutTextPose(tp);
   return y + laid.lines[0].baselineY;
 }
@@ -162,8 +164,8 @@ describe('textToPath', () => {
   it('fills a rule across a glyph wound against it', async () => {
     registerFontOutlines('squares', {}, new ArrayBuffer(4), { parser: () => SQUARES });
     await loadFontOutlines('squares');
-    const src = { text: 'B', style: { fontFamily: 'squares', fontSize: 100, strikethrough: true } };
-    const tp: TextPose = { ...POSE, text: src.text, style: src.style };
+    const src = { text: 'B', style: { fontFamily: 'squares', fontSize: 100, strikethrough: true }, fill: INK };
+    const tp: TextPose = { ...POSE, text: src.text, style: src.style, fill: INK };
     const { laid, x, y } = layoutTextPose(tp);
     const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     const path = textToPath(src, POSE);
@@ -182,7 +184,7 @@ describe('textToPath', () => {
   it('includes decoration rules, unioned with the glyphs they cross', () => {
     const plain = textToPath(text('p'), POSE);
     const ruled = textToPath(text('p', { underline: true }), POSE);
-    const tp: TextPose = { ...POSE, text: 'p', style: text('p', { underline: true }).style };
+    const tp: TextPose = { ...POSE, text: 'p', style: text('p', { underline: true }).style, fill: INK };
     const { laid, x, y } = layoutTextPose(tp);
     const [rule] = paintRuns(laid, textPoseLayoutInput(tp).runs).decorations;
     expect(rule).toBeDefined();
@@ -213,7 +215,7 @@ describe('textToPath', () => {
     // Same glyph, same placement math: the layout's own glyph record, placed
     // by scale-and-translate, has the extraction's bounds.
     const src = text('H');
-    const tp: TextPose = { ...POSE, text: src.text, style: src.style };
+    const tp: TextPose = { ...POSE, text: src.text, style: src.style, fill: INK };
     const { laid, x, y } = layoutTextPose(tp);
     const g = paintRuns(laid, textPoseLayoutInput(tp).runs).groups[0].glyphs[0];
     const em = boundsOfPath(pathFromD(g.d));
@@ -327,7 +329,7 @@ describe('textToPathsByPaint', () => {
     expect(groups[1]).toMatchObject({ fill: { paint: RED }, stroke: OUTLINE });
   });
 
-  it('gives plain text one group in the default text fill, and outlines unfilled text too', () => {
+  it('gives plain text one group in its fill, and outlines unfilled text too', () => {
     const plain = textToPathsByPaint(text('Hi'), POSE);
     expect(plain).toHaveLength(1);
     expect(plain[0]!.fill).toEqual({ paint: { kind: 'solid', color: '#000' } });

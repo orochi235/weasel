@@ -3,7 +3,7 @@ import { registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
-import { resolveTextStyle } from '../textStyle';
+import { DEFAULT_TEXT_FILL, resolveTextStyle } from '../textStyle';
 import { stubFetch } from './testing/fontFixtures';
 
 beforeEach(() => {
@@ -44,7 +44,7 @@ describe('layoutRuns from a font face alone', () => {
   }
 
   function runsOf(text: string, family: string, fontSize: number): ResolvedRun[] {
-    return resolveRuns([{ text }], resolveTextStyle({ fontFamily: family, fontSize }));
+    return resolveRuns([{ text }], resolveTextStyle({ fontFamily: family, fontSize }, { fill: DEFAULT_TEXT_FILL }));
   }
 
   it('lays out with no atlas registered at all', async () => {
