@@ -175,7 +175,7 @@ describe('scenePickIndex freshness', () => {
       src.candidates!(broadFor);
       return src.candidates!(broadFor)?.map((n) => n.id) ?? null;
     };
-    const rank = (id: string) => scene.renderOrder().indexOf(asNodeId(id));
+    const rank = (id: string) => [...scene.renderOrder()].indexOf(asNodeId(id));
     const byRank = (got: string[] | null) => [...got!].sort((a, b) => rank(a) - rank(b));
     const two = ids({ x: 0, y: 0, width: 40, height: 10 });
     expect(two).toEqual(['n1', 'n0']);

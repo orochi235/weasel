@@ -165,7 +165,7 @@ group('point pick — BVH index vs full walk, node count', (bench) => {
 group('pick index — rebuild after one pose change, node count', (bench) => {
   for (const n of NODE_COUNTS) {
     const scene = scatterScene(n, { shape: 'rect' });
-    const id = scene.renderOrder()[0];
+    const [id] = [...scene.renderOrder()];
     let i = 0;
     bench(`${n} nodes`, () => {
       scene.setPose(id, { x: i++ % 100, y: 0, width: 40, height: 40 });
@@ -181,7 +181,7 @@ group('area pick after every pose change (25% query rect), 10000 nodes', (bench)
   const query = areaQuery(0.5);
   for (const indexed of [true, false]) {
     const scene = scatterScene(10000, { shape: 'rect' });
-    const id = scene.renderOrder()[0];
+    const [id] = [...scene.renderOrder()];
     const src = () => scenePickSource(asAny(scene), indexed ? { index: { descriptor: AUTO_POSE_DESCRIPTOR } } : {});
     let i = 0;
     bench(indexed ? 'indexed' : 'full walk', () => {
