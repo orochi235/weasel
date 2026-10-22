@@ -160,6 +160,7 @@ export function ellipseShape(spec: EllipseTrackSpec): EllipseTrackShape {
   const shape: TrackShape = {
     kind: 'ellipse',
     length,
+    closed: raw === 0,
     at,
     nearest(p, options): TrackNearest {
       const u = footBetween(e, p, 0, sweep, PIECES, true);

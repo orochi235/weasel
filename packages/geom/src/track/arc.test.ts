@@ -34,6 +34,11 @@ describe('arcShape', () => {
   test('equal start and end is a whole circle', () => {
     expect(arcShape({ center: C, radius: 10, start: 45, end: 45 }).length).toBeCloseTo(20 * Math.PI);
   });
+  test('only a whole circle is closed', () => {
+    expect(arcShape({ center: C, radius: 10, start: 45, end: 45 }).closed).toBe(true);
+    expect(arcShape({ center: C, radius: 10, start: 45, end: 405 }).closed).toBe(true);
+    expect(arcShape({ center: C, radius: 10, start: 0, end: 90 }).closed).toBe(false);
+  });
   const bottom = arcShape({ center: C, radius: 100, start: 240, end: 120, direction: 'ccw' });
   test('nearest inside the sweep projects by angle', () => {
     const n = bottom.nearest({ x: 0, y: 150 });

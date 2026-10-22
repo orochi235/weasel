@@ -64,6 +64,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1): TrackRun {
   return {
     kind: shape.kind,
     length: shape.length * Math.abs(span),
+    closed: shape.closed && Math.abs(span) === 1,
     shape,
     from,
     to,

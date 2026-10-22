@@ -45,6 +45,10 @@ describe('ellipseShape', () => {
     close(e.at(1).point, seen(135, 200, 100));
   });
 
+  test('only a whole ellipse is closed', () => {
+    expect(ellipseShape({ center: C, radiusX: 20, radiusY: 10, start: 30, end: 30 }).closed).toBe(true);
+    expect(ellipseShape({ center: C, radiusX: 20, radiusY: 10, start: 0, end: 90 }).closed).toBe(false);
+  });
   test('a fraction is a fraction of the length, not of the angle', () => {
     const e = ellipseShape({ center: C, radiusX: 300, radiusY: 60, start: 0, end: 90 });
     /** The length from `f` to `g`, walked in fine chords. */

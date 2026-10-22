@@ -11,6 +11,10 @@ describe('lineShape', () => {
       normal: { x: 0, y: -1 },
     });
   });
+  test('a line is never closed', () => {
+    expect(line.closed).toBe(false);
+    expect(lineShape({ x: 5, y: 5 }, { x: 5, y: 5 }).closed).toBe(false);
+  });
   test('nearest projects onto the segment and measures the distance', () => {
     expect(line.nearest({ x: 110, y: 50 })).toEqual({ f: 0.5, dist: 30 });
   });

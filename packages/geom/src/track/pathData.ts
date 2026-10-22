@@ -1,6 +1,8 @@
 import type { Point } from '../paths/cubicMath';
 import type { ArcTrackShape } from './arc';
 import type { EllipseTrackShape } from './ellipse';
+import type { PathTrackShape } from './path';
+import { pathToD } from '../paths/pathToD';
 import type { TrackShape } from './shape';
 
 const SAMPLES = 64;
@@ -11,6 +13,7 @@ const num = (v: number): string => {
 };
 const pt = (p: Point): string => `${num(p.x)} ${num(p.y)}`;
 const isArc = (s: TrackShape): s is ArcTrackShape => s.kind === 'arc' && 'arc' in s;
+const isPath = (s: TrackShape): s is PathTrackShape => s.kind === 'path' && 'path' in s;
 const isEllipse = (s: TrackShape): s is EllipseTrackShape => s.kind === 'ellipse' && 'ellipse' in s;
 
 /** Arcs of radii `rx` by `ry` from `a` to `b` turning `turn` radians: one arc, or two halves through `m` for a whole turn. */
@@ -21,8 +24,9 @@ function arcsD(a: Point, b: Point, m: () => Point, rx: number, ry: number, turn:
 }
 
 /** SVG path data for the stretch `from..to` of a shape: a segment for a line, true arcs for an arc or an ellipse, else a
- *  64-step polyline. */
+ *  64-step polyline. A whole path shape is its path's own data. */
 export function trackShapeD(shape: TrackShape, from = 0, to = 1): string {
+  if (isPath(shape) && from === 0 && to === 1) return pathToD(shape.path);
   const a = shape.at(from).point;
   const b = shape.at(to).point;
   if (shape.kind === 'line') return `M ${pt(a)} L ${pt(b)}`;

@@ -17,8 +17,8 @@ export interface TrackNearest {
 
 /** How `nearest` treats a track's ends. */
 export interface TrackNearestOptions {
-  /** Let `f` run on past 0 and 1: a line extends straight, an arc or an ellipse round itself, unwrapped about `about`. A shape
-   *  that cannot extend clamps. `dist` is to the track either way. */
+  /** Let `f` run on past 0 and 1: a line extends straight, an arc, an ellipse or a closed path round itself, unwrapped about
+   *  `about`. A shape that cannot extend clamps. `dist` is to the track either way. */
   open?: boolean;
   /** Where along the track an open arc is unwrapped about, in the same terms as the `f` this `nearest` answers (a
    *  `TrackRun` reads it in reading order): a point is placed on whichever side of it is nearer by angle. Default 0.5,
@@ -26,13 +26,15 @@ export interface TrackNearestOptions {
   about?: number;
 }
 
-/** Which family a track shape belongs to. `'path'` is reserved for a shape over `nearestOnPath`. */
+/** Which family a track shape belongs to. `'path'` is a shape over a measured `Path` (`pathShape`). */
 export type TrackShapeKind = 'line' | 'arc' | 'ellipse' | 'path';
 
 /** A curve a control lies along, addressed by fraction 0..1 of its length. */
 export interface TrackShape {
   readonly kind: TrackShapeKind;
   readonly length: number;
+  /** True when the track's end meets its start: a whole circle or ellipse, or a path that is one closed contour. */
+  readonly closed: boolean;
   /** The station at fraction `f`, clamped to 0..1. */
   at(f: number): TrackStation;
   /** The spot on the track nearest `p`. */
@@ -49,6 +51,7 @@ export function lineShape(from: Point, to: Point): TrackShape {
   return {
     kind: 'line',
     length,
+    closed: false,
     at(f) {
       const t = clamp(f, 0, 1);
       return {

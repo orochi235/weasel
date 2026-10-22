@@ -41,6 +41,7 @@ export function arcShape(spec: ArcTrackSpec): ArcTrackShape {
   const shape: TrackShape = {
     kind: 'arc',
     length,
+    closed: raw === 0,
     at,
     nearest(p, options) {
       const dx = p.x - center.x;
