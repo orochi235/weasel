@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, type NodeId } from '@weasel-js/core';
-import { intersectRayAabb, normalize, quatFromAxisAngle, type Aabb } from '@weasel-js/geom/3d';
+import { intersectRayAabb, normalize, quatFromAxisAngle, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createCamera } from './camera';
 import { createAreaSelect, createNodeAtPoint, screenBoxOf } from './deps';
 import { worldPickIndex } from './pickIndex';
@@ -121,6 +121,40 @@ function scanArea(world: World3d<TestData, TestLayer>, b: ScreenBox): NodeId[] {
   return hits;
 }
 
+/** A world whose nodes are the given boxes, in render order. */
+function boxWorld(boxes: readonly Aabb[]): { world: World3d<TestData, TestLayer>; ids: NodeId[] } {
+  const scene = createScene<TestData, TestLayer, Pose3>({
+    systemLayers: [{ id: 'solids' }],
+    initial: boxes.map(() => ({ kind: 'leaf' as const, layer: 'solids' as const, pose: pose3({ x: 0, y: 0, z: 0 }), data: {} })),
+  });
+  const ids = [...scene.renderOrder()];
+  const byId = new Map(ids.map((id, i) => [id, boxes[i]!]));
+  const vp: Viewport3d = { camera: createCamera({ distance: 10 }), width: WIDTH, height: HEIGHT };
+  return { world: { scene, viewport: () => vp, bounds: (node) => byId.get(node.id)! }, ids };
+}
+
+/** The ray scan: nearest box entered, a tie going to the first in render order. */
+function scanRay(world: World3d<TestData, TestLayer>, ray: Ray, excluded: ReadonlySet<NodeId> | null = null) {
+  let best: NodeId | null = null;
+  let bestT = Infinity;
+  for (const node of world.scene.renderOrderNodes()) {
+    if (excluded?.has(node.id)) continue;
+    const { min, max } = world.bounds!(node);
+    const t = intersectRayAabb(ray, min, max);
+    if (t !== null && t < bestT) {
+      bestT = t;
+      best = node.id;
+    }
+  }
+  return best;
+}
+
+const box = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): Aabb =>
+  ({ min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } });
+
+/** Boxes well clear of every ray these tests cast, to fill the tree out. */
+const filler = (n: number) => Array.from({ length: n }, (_, i) => box(100 + i * 3, 100, 100, 101 + i * 3, 101, 101));
+
 const noSelection = { get: () => [], set: () => {} };
 
 describe('worldPickIndex', () => {
@@ -186,6 +220,81 @@ describe('worldPickIndex', () => {
     const center = { x: WIDTH / 2, y: HEIGHT / 2 };
     expect(createNodeAtPoint(world)(center)).toBe(first);
     expect(createNodeAtPoint(world)(center, [first!])).toBe(second);
+  });
+
+  it('takes a ray through a box edge, as the scan does', () => {
+    const origin = { x: 9.125, y: 7.375, z: -5 };
+    const ray: Ray = { origin, direction: { x: 0.7 - origin.x, y: 0.3 - origin.y, z: 1.3 - origin.z } };
+    const { world, ids } = boxWorld([...filler(20), box(0, 0, 0, 0.7, 0.6, 1.3)]);
+    expect(scanRay(world, ray)).toBe(ids[20]);
+    expect(worldPickIndex(world).nearestOnRay(ray, null)).toBe(ids[20]);
+  });
+
+  it('takes a ray with a denormal direction component, as the scan does', () => {
+    const ray: Ray = { origin: { x: -1e-310, y: -10, z: 0 }, direction: { x: 5e-324, y: 1, z: 0 } };
+    const { world, ids } = boxWorld([...filler(20), box(0, 0, -1, 1, 3e13, 1)]);
+    expect(scanRay(world, ray)).toBe(ids[20]);
+    expect(worldPickIndex(world).nearestOnRay(ray, null)).toBe(ids[20]);
+  });
+
+  it('gives a tie spread across leaves to the first node in render order', () => {
+    // 120 coincident boxes fill many leaves; the filler sits between them in render order.
+    const tied = box(-1, -1, -1, 1, 1, 1);
+    const boxes = [...filler(40), ...Array.from({ length: 120 }, () => tied), ...filler(40)];
+    // A box of its own that the ray enters at the same t, last in render order.
+    boxes.push(box(-0.5, -0.5, -1, 0.5, 0.5, 5));
+    const { world, ids } = boxWorld(boxes);
+    const ray: Ray = { origin: { x: 0, y: 0, z: -10 }, direction: { x: 0, y: 0, z: 1 } };
+    const index = worldPickIndex(world);
+    expect(index.nearestOnRay(ray, null)).toBe(ids[40]);
+    const excluded = new Set(ids.slice(40, 150));
+    expect(index.nearestOnRay(ray, excluded)).toBe(ids[150]);
+    expect(index.nearestOnRay(ray, new Set(ids.slice(40, 160)))).toBe(ids[200]);
+    for (const ex of [null, excluded]) expect(index.nearestOnRay(ray, ex)).toBe(scanRay(world, ray, ex));
+  });
+
+  it('gives a tie at t = 0, with the eye inside two boxes, to the first in render order', () => {
+    const outer = box(-5, -5, -5, 5, 5, 5);
+    const inner = box(-1, -1, -1, 1, 1, 1);
+    const ray: Ray = { origin: { x: 0, y: 0, z: 0 }, direction: { x: 0.3, y: -0.2, z: 1 } };
+    for (const [a, b] of [[outer, inner], [inner, outer]] as const) {
+      const { world, ids } = boxWorld([...filler(60), a, ...filler(60), b]);
+      const index = worldPickIndex(world);
+      expect(index.nearestOnRay(ray, null)).toBe(ids[60]);
+      expect(index.nearestOnRay(ray, new Set([ids[60]!]))).toBe(ids[121]);
+      expect(index.nearestOnRay(ray, null)).toBe(scanRay(world, ray));
+    }
+  });
+
+  it('agrees with the scan for marquees a million units from the origin', () => {
+    const r = mulberry32(0xfa2);
+    const far = 1e6;
+    const scene = randomScene(r, 300);
+    for (const node of scene.renderOrderNodes()) {
+      const { position: p, scale, rotation } = node.pose;
+      scene.setPose(node.id, pose3({ x: p.x + far, y: p.y - far, z: p.z + far }, scale, rotation));
+    }
+    let vp = randomViewport(r);
+    const world: World3d<TestData, TestLayer> = { scene, viewport: () => vp, bounds: fuzzBounds };
+    const area = createAreaSelect(world, noSelection);
+    let hits = 0;
+    for (let q = 0; q < 200; q++) {
+      if (q % 20 === 0) {
+        const base = randomViewport(r);
+        const t = base.camera.target;
+        vp = { ...base, camera: { ...base.camera, target: { x: t.x + far, y: t.y - far, z: t.z + far } } };
+      }
+      // Half the rects start a hair inside a node's screen box, where a plane set too tight shows.
+      const ids = [...scene.renderOrder()];
+      const edge = q % 2 === 1 ? screenBoxOf(world, ids[Math.floor(r() * ids.length)]!, vp) : null;
+      const rect = edge
+        ? { x: edge.x + edge.width - 1e-13 * (1 + Math.abs(edge.x + edge.width)), y: edge.y, width: 50, height: 50 }
+        : randomRect(r);
+      const want = scanArea(world, rect);
+      hits += want.length;
+      expect(area.hitTestArea(rect)).toEqual(want);
+    }
+    expect(hits).toBeGreaterThan(200);
   });
 
   it('reads each node box once until the scene changes', () => {

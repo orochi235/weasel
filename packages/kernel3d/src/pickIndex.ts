@@ -138,6 +138,17 @@ interface Cached {
 
 const CACHE = new WeakMap<object, Cached>();
 
+/** The box grown by a relative epsilon, so rounding in the tree's tests can
+ *  only add candidates for the exact ones to drop. */
+function padded({ min, max }: Aabb): number[] {
+  const m = Math.max(
+    Math.abs(min.x), Math.abs(min.y), Math.abs(min.z),
+    Math.abs(max.x), Math.abs(max.y), Math.abs(max.z),
+  );
+  const e = 1e-9 * (1 + m);
+  return [min.x - e, min.y - e, min.z - e, max.x + e, max.y + e, max.z + e];
+}
+
 function build<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   order: readonly Node3d<TData, TLayer>[],
@@ -146,7 +157,7 @@ function build<TData, TLayer extends string>(
   const entries: [number, number[]][] = [];
   const always: number[] = [];
   boxes.forEach((b, i) => {
-    if (boxValid(b)) entries.push([i, [b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z]]);
+    if (boxValid(b)) entries.push([i, padded(b)]);
     else always.push(i);
   });
   return new BuiltIndex(world, order, boxes, createBvh<number>(3, entries), always);
