@@ -2,7 +2,9 @@
  *  so a query allocates nothing unless a visit re-enters the tree. */
 import { LEAF_SIZE, type BvhTree } from './bvhTree';
 
-export interface HalfSpace { normal: ArrayLike<number>; offset: number } // inside: dot(normal, x) + offset >= 0
+/** A half-space bounded by a plane: a point `x` is inside when
+ *  `dot(normal, x) + offset >= 0`. */
+export interface HalfSpace { normal: ArrayLike<number>; offset: number }
 
 type Visit<K> = (key: K) => boolean | void;
 

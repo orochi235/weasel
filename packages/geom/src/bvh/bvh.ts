@@ -9,6 +9,7 @@ export type { HalfSpace };
 /** Box layout: [min_0..min_{d-1}, max_0..max_{d-1}]. */
 export type BoxN = ArrayLike<number>;
 
+/** A bounding volume hierarchy keyed by `K`, made by {@link createBvh}. */
 export interface Bvh<K> {
   readonly dim: number;
   readonly size: number;
@@ -278,6 +279,8 @@ export function bvhMaxDepth(bvh: Bvh<unknown>): number {
   return (bvh as BvhImpl<unknown>).maxDepth();
 }
 
+/** A BVH over `dim`-dimensional boxes, built top-down from `entries` when
+ *  given. Entries with an invalid box are skipped. */
 export function createBvh<K>(dim: number, entries?: Iterable<readonly [K, BoxN]>): Bvh<K> {
   if (!Number.isInteger(dim) || dim < 1) throw new RangeError(`createBvh: dim must be a positive integer, got ${dim}`);
   const bvh = new BvhImpl<K>(dim);
