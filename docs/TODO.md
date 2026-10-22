@@ -1123,8 +1123,10 @@ only story runner in the repo.
   `checkTree` finds them in agreement: on 2026-10-21 two runs of `feat/no-paint-readers` logged
   `fleet-tree: … match 87199f258` and `match 3e022b9af`, commits of `feat/container-inherit`, with
   the gate green. The commit the run asks for has to reach the node from outside the tree, such as
-  the job's own environment, so a sync cannot rewrite it. Until then, pin concurrent branch runs to
-  different nodes and compare the logged SHA with the branch tip.
+  the job's own environment, so a sync cannot rewrite it. Pinning the two runs to different nodes
+  does not keep them apart: a run pinned to keiei still logged `updated weasel on msb-uai` and
+  shards matching both branches, so the crossing happens on this machine's side. Until it is fixed,
+  run one branch's fleet jobs at a time and compare the logged SHA with the branch tip.
 - **(P2) `onto logs` drops stderr, so a fleet run's log never says why a test failed.** vitest
   writes its failure report to stderr; `onto do` shows it live, but `onto logs <job>` keeps stdout
   only, so a finished job's log holds the failing test's name and nothing else (tested 2026-10-21
