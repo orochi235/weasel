@@ -21,6 +21,8 @@ export class BvhTree<K> {
   private freeNodes: number[] = [];
 
   itemBox: Float64Array;
+  /** Twice each item's box center, `[item * dim + axis]`: what a build splits on. */
+  itemCentroid2: Float64Array;
   itemLeaf: Int32Array;
   keys: (K | undefined)[] = [];
   private itemCap = 0;
@@ -32,6 +34,7 @@ export class BvhTree<K> {
     this.nodeBox = new Float64Array(0);
     this.left = this.right = this.parent = this.leafCount = this.leafItems = this.count = new Int32Array(0);
     this.itemBox = new Float64Array(0);
+    this.itemCentroid2 = new Float64Array(0);
     this.itemLeaf = new Int32Array(0);
     this.growNodes(16);
     this.growItems(16);
@@ -51,6 +54,7 @@ export class BvhTree<K> {
 
   private growItems(cap: number): void {
     this.itemBox = grow(this.itemBox, cap * 2 * this.dim);
+    this.itemCentroid2 = grow(this.itemCentroid2, cap * this.dim);
     this.itemLeaf = grow(this.itemLeaf, cap);
     this.itemCap = cap;
   }
@@ -90,8 +94,10 @@ export class BvhTree<K> {
   }
 
   writeItemBox(i: number, box: ArrayLike<number>): void {
-    const s = 2 * this.dim;
+    const d = this.dim;
+    const s = 2 * d;
     for (let j = 0; j < s; j++) this.itemBox[i * s + j] = box[j];
+    for (let a = 0; a < d; a++) this.itemCentroid2[i * d + a] = box[a] + box[d + a];
   }
 
   /** Recompute `n`'s box and count from its children or items. */
@@ -148,16 +154,16 @@ export class BvhTree<K> {
     else this.right[p] = r;
   }
 
-  private buildRange(idx: Int32Array, lo: number, hi: number, parent: number): number {
+  /** `key` is scratch the length of `idx`, for `select`. */
+  private buildRange(idx: Int32Array, lo: number, hi: number, parent: number, key = new Float64Array(idx.length)): number {
     const n = this.allocNode(parent);
     if (hi - lo <= LEAF_SIZE) {
       for (let k = lo; k < hi; k++) this.placeInLeaf(n, idx[k]);
     } else {
-      const axis = this.longestCentroidAxis(idx, lo, hi);
       const mid = (lo + hi) >> 1;
-      this.select(idx, lo, hi, mid, axis);
-      const l = this.buildRange(idx, lo, mid, n);
-      const r = this.buildRange(idx, mid, hi, n);
+      this.select(idx, key, lo, hi, mid, this.longestCentroidAxis(idx, lo, hi));
+      const l = this.buildRange(idx, lo, mid, n, key);
+      const r = this.buildRange(idx, mid, hi, n, key);
       this.left[n] = l;
       this.right[n] = r;
     }
@@ -177,9 +183,8 @@ export class BvhTree<K> {
     const idx = new Int32Array(LEAF_SIZE + 1);
     for (let k = 0; k < LEAF_SIZE; k++) idx[k] = this.leafItems[base + k];
     idx[LEAF_SIZE] = extra;
-    const axis = this.longestCentroidAxis(idx, 0, idx.length);
     const mid = idx.length >> 1;
-    this.select(idx, 0, idx.length, mid, axis);
+    this.select(idx, new Float64Array(idx.length), 0, idx.length, mid, this.longestCentroidAxis(idx, 0, idx.length));
     this.leafCount[n] = 0;
     const l = this.allocNode(n);
     const r = this.allocNode(n);
@@ -191,20 +196,16 @@ export class BvhTree<K> {
     this.computeBox(r);
   }
 
-  /** Twice the item's centroid on `axis`; only comparisons use it. */
-  private centroid2(item: number, axis: number): number {
-    const o = item * 2 * this.dim;
-    return this.itemBox[o + axis] + this.itemBox[o + this.dim + axis];
-  }
-
   private longestCentroidAxis(idx: Int32Array, lo: number, hi: number): number {
+    const d = this.dim;
+    const cent = this.itemCentroid2;
     let best = 0;
     let bestExt = -1;
     for (let a = 0; a < this.dim; a++) {
       let mn = Infinity;
       let mx = -Infinity;
       for (let k = lo; k < hi; k++) {
-        const c = this.centroid2(idx[k], a);
+        const c = cent[idx[k] * d + a];
         if (c < mn) mn = c;
         if (c > mx) mx = c;
       }
@@ -214,19 +215,25 @@ export class BvhTree<K> {
   }
 
   /** Quickselect: reorder `idx[lo, hi)` so `idx[k]` holds the item whose
-   *  centroid on `axis` ranks k, with smaller ones before it. */
-  private select(idx: Int32Array, lo: number, hi: number, k: number, axis: number): void {
+   *  centroid on `axis` ranks k, with smaller ones before it. The centroids
+   *  are copied into `key` beside `idx` and swapped with it, so the scans read
+   *  memory in order. */
+  private select(idx: Int32Array, key: Float64Array, lo: number, hi: number, k: number, axis: number): void {
+    const d = this.dim;
+    const cent = this.itemCentroid2;
+    for (let m = lo; m < hi; m++) key[m] = cent[idx[m] * d + axis];
     let a = lo;
     let b = hi - 1;
     while (a < b) {
-      const pivot = this.centroid2(idx[(a + b) >> 1], axis);
+      const pivot = key[(a + b) >> 1];
       let i = a;
       let j = b;
       while (i <= j) {
-        while (this.centroid2(idx[i], axis) < pivot) i++;
-        while (this.centroid2(idx[j], axis) > pivot) j--;
+        while (key[i] < pivot) i++;
+        while (key[j] > pivot) j--;
         if (i <= j) {
           const t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+          const u = key[i]; key[i] = key[j]; key[j] = u;
           i++;
           j--;
         }
