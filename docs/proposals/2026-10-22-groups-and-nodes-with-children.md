@@ -185,5 +185,4 @@ A is the smallest change and leaves `container` meaning only "has children".
 3. **A child's `'inherit'` reads its parent, whatever kind** (2026-10-22): the parent's paint if it
    has one, the parent's own source if the parent also says `'inherit'`, and none if the parent has
    none. The child's `'inherit'` is the declaration, so the source needs no rule of its own.
-4. **The clip default** for a node with children and no `clipFromPose`: its own silhouette, as today,
-   or nothing.
+4. **No clip unless declared** (2026-10-22): a node with children and no `clipFromPose` clips nothing.
