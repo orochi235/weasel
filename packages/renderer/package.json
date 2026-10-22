@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/renderer",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "description": "A WebGL2 renderer for draw commands: batched path fills and strokes, MSDF and outline text, images and sprites, gradients, patterns, registered shader programs, and full-screen effects. No scene graph, no React.",
   "weasel": {
     "needs": ["webgl2"]
@@ -39,14 +39,14 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.11.1",
-    "@weasel-js/paint": "1.11.1",
-    "@weasel-js/registry": "1.11.1",
-    "@weasel-js/stroke": "1.11.1",
-    "@weasel-js/text": "1.11.1"
+    "@weasel-js/geom": "1.12.0",
+    "@weasel-js/paint": "1.12.0",
+    "@weasel-js/registry": "1.12.0",
+    "@weasel-js/stroke": "1.12.0",
+    "@weasel-js/text": "1.12.0"
   },
   "peerDependencies": {
-    "@weasel-js/font": "1.11.1"
+    "@weasel-js/font": "1.12.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -1,5 +1,24 @@
 # @weasel-js/animator
 
+## 1.12.0
+
+### Patch Changes
+
+- Updated dependencies [dbd6711]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [94ebd35]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [91a1d84]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

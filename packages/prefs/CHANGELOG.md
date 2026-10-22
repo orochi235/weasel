@@ -1,5 +1,23 @@
 # @weasel-js/prefs
 
+## 1.12.0
+
+### Patch Changes
+
+- Updated dependencies [b571ad6]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [91a1d84]
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/storage@1.12.0
+  - @weasel-js/icons@1.12.0
+  - @weasel-js/quantity@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

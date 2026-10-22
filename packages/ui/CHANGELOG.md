@@ -1,5 +1,164 @@
 # @weasel-js/ui
 
+## 1.12.0
+
+### Patch Changes
+
+- dbd6711: Controls can run along a curve. `@weasel-js/geom` adds track shapes (`lineShape`, `arcShape`), reading runs over them
+  (`trackRun`, whose `nearest` can leave the ends open) and their SVG path data (`trackShapeD`). `@weasel-js/ui` adds
+  `Along`, which sizes an arc from its box and hands it to the controls inside; `Slider`, `DetentSlider` and `Bar`
+  follow it, or a `shape` prop. `TrackCtx` gains a required `shape` field — the value span as a shape — so code that
+  builds a `TrackCtx` itself no longer typechecks until it supplies one. `paintGradientTrack` paints straight tracks
+  only. A menu opened under a button can ask to open above it (`placeMenuUnder`'s `above`, `MenuOpenRequest.above`).
+- c482e73: The Badge Compose lab's Appearance and Type & padding panels stack when the lab is too narrow
+  for them side by side. At about 480px they used to keep two fixed columns, so the variant toggle
+  ran under the font label beside it and the caps toggle ran past its panel's edge.
+- 94ed4c2: A removable `pill` or `plain` `Badge` keeps its remove control on the line of the label's last
+  word. On a line too narrow for both, the control used to wrap alone and sit left of the line's
+  start. A removable `pill` in a flex row also no longer wraps its label when the row has room for
+  it on one line.
+- 9ffd9ca: A curved `Bar` scrolled so an item hangs partly past an end of its run now draws that item sliding on past the end,
+  along the run's end direction. It used to stop at the end with its middle there, sitting up to half its length out of
+  place and closing the gap to its neighbor until it was scrolled wholly past and hidden.
+- 69d135f: `CodeBlock` is now a memoized component, so a parent re-rendering with the same props no longer rebuilds its token spans. The schema editor's export literal, several thousand spans for a node's schema, was rebuilt on every selection in the editor.
+- b571ad6: A node's `fill: 'inherit'` or `stroke: 'inherit'` now takes its nearest enclosing container's fill or stroke whole. If that container inherits too, the lookup keeps going up, and at the root it is none. A container's fill and stroke are only a source: the built-in `kit:shape` and `kit:path` painters no longer paint a container's own fill or stroke, and its interior is no longer hit for picking.
+  
+  The scene's draw wrapper passes the resolved paint to painters as `ctx.inherited` on `NodePaintCtx`, and pickers pass it on `NodeInkCtx`. A painter's memo has to key on it: `nodeMemo` takes an extra reference-compared key for this, and the paint stays the same object while its sources are unchanged. **A custom painter that does not read `ctx.inherited` paints an `'inherit'` field as none.** Pass the field and `ctx?.inherited?.fill` to `resolveFill` (or `resolveStroke`) to pick it up. `diagram:shape` reads it. Readers outside a painter can use `inheritedPaintIn(scene, node)` and `withInheritedPaint(data, inherited)`, and `paintAbove(scene, node)` says what inheriting would paint.
+  
+  SVG import turns a `<g>`'s fill and stroke into its container's, and a child that sets none of them gets `'inherit'`. A gradient, or a child faded further than its group, is still copied onto the child. Export writes a container's paint on its `<g>` and leaves the attribute off a child that inherits a solid one.
+  
+  `SelectionPanel` adds an Inherit choice beside None for a node's fill and stroke, showing the paint it would take. `PaintField` and `PaintInput` offer it when given `inherit` (`{ paint, onInherit }`); their `value` may be `'inherit'`, and `onChange` is unchanged.
+- 13e597d: Text can follow a path. `@weasel-js/geom` adds a `'path'` track shape (`pathShape`), a `side` override on `trackRun`,
+  and `placeAlongRun`, which turns item lengths into places along a run, in `RunOrder` `'reading'` or `'track'`.
+  `TrackShape` gains a required `closed` member, so a shape implemented outside geom has to add it.
+  `runPlaces` and `runLength` moved there from `@weasel-js/ui`, which re-exports `runPlaces` by name, so its curved rows
+  come from geom's placement. `measurePath` takes `keepCorners`. `@weasel-js/text` adds `textClusters`, a line's
+  grapheme clusters as outlines with their advances. `@weasel-js/core` adds the `textAlong` path effect; every effect
+  takes `hideSources`, effect sources can carry a list of items, curved text is derived again when a font loads, a
+  hidden source is edited through its effect, and Delete, Cut and Expand now remove an effect's hidden sources with
+  it. A committed in-place text edit is labeled "Edit text" in history.
+  `@weasel-js/path-tools` adds Text Along Path (Alt+Shift+X), Release and Set Path. `useTextEdit` in
+  `@weasel-js/text-dom` gains `onDraft`.
+  
+  <!-- bump-approved: minor: maintainer — 1.12.0 release requested 2026-10-22 -->
+- 78f29de: Lenses in weaselforge. Alt+L opens the Loupe keymap, and `l` adds a lens: a bubble showing the patch
+  of a story under its reticle, magnified, or rendered with a comparison such as the opposite mode, an
+  arg or a DPR, as Swap, Split or Difference. A lens shows a Live second render or, from the dev
+  server, Pixels captured in headless Chromium; Playwright is a new optional peer of
+  `@weasel-js/forge`, and without it a lens offers Live only. Token, Contrast and pixel-grid readouts
+  sit in the lens chrome, and Alt+Slash opens a panel listing every key binding the workshop
+  registers.
+  
+  Everything below is additive.
+  
+  forge: the shell config takes `capture.allowOrigins`, naming what a capture page may load besides
+  the dev server, and `loupe.modeGlobal`, the global an opposite-mode comparison flips. A global
+  declaration may give `opposite(value, globals)`, the value that comparison flips it to.
+  `<TrialHost>` takes a `copy` prop, which makes the host a second copy of a trial's story, under
+  globals of its own. `@weasel-js/forge/shell` exports `followEdits`, and `@weasel-js/forge/frame`
+  exports `mountCapture`, which mounts a capture page.
+  
+  labkit: the loupe entry gains `<LensOverlay>` (whose `renderReadouts` is handed `LensReadoutProps`),
+  `<LensActions>`, the lens scene and its ops, the `LensSource` contract, `createLoupeKeymap`,
+  `probeUnderLens` and `LENS_REST_MS`. A lab has an `overlay` chrome region, rendered over the trials
+  inside the lab surface, and `useLabEntries` reads the ambient entries installed on the lab, its
+  keymaps among them. Each lab surface gains a `'top'` canvas layer for one tenant above `'over'`,
+  made only while a tenant asks for it; a surface owner offers it by publishing `top` and `claimTop`
+  in its `SurfaceCanvases`. `surface.scope()` takes a list of elements as well as one
+  (`SurfaceScope`).
+  
+  Elsewhere: `@weasel-js/core/json` exports `stableStringify` for Node; paint exports `contrastRatio`
+  and `wcagLevels`; svg exports `specificity`, `compareSpecificity` and `splitTopLevel`; an action's
+  `enabled` may return a reason as text (`ActionUnavailable` in routing, re-exported by core), which
+  the command palette shows as written.
+- c697535: Every binding the kit ships now declares an id, so a binding override names it by that id rather
+  than by its owner and position: `undo.key`, `rect.drag`, `nudge.left.big`, `selection.rotate.handle`,
+  `tool.activate.rect`. The scheme is `<owner>.<role>`, the owner being the action for an action's own
+  binding and the tool or entry for a contribution's (`docs/taxonomy.md`, "binding override"). An
+  override written against a positional id such as `select#3` no longer reaches its binding.
+  
+  An action's `defaultBinding` that was a bare spec is now a one-entry `{ spec, opts: { id } }` array;
+  code reading `defaultBinding` as a spec reads it through `actionBindings`.
+- c2fb65c: Keymaps behind a leader key. `keymapContribution` builds a keymap, whose bindings are live only while
+  it is open, and the leader that opens it: tap the leader for one input, or hold it to keep the keymap
+  open. Escape always closes it; a key it does not bind is ignored, or passed on under the new
+  `gestures.keymapUnbound` kit setting. `<KeymapHint>` lists an open keymap's keys, and `formatShortcut`
+  draws a key inside one as `Loupe ▸ 2`.
+  
+  Bindings can now be rebound or removed by id, on actions and contributions alike:
+  `ActionsRegistry.overrideBindings` and `<SceneCanvas bindingOverrides>`, written as route strings or
+  with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
+  binding editor.
+  
+  `modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+  the key it says; before, either matched nothing.
+  
+  Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
+  registry must implement them.
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- 2e45ddb: The Prefs schema editor keeps a baseline pref paired with its baseline after its key and then its name are edited. The Changes list shows it as moved and renamed rather than removed and added, and its typed key no longer follows the new name.
+- 0276e6e: A rail-layout `PrefsDialog` fits the room it is given. Its settled width of up to 800px is now clamped to the overlay it opens in rather than to the window, so in a contained portal narrower than the window the box no longer runs past its edge. In a narrow window or portal the pane's label and control columns shrink below 140px and 180px, so the fields stay inside the box instead of being cut off at its right edge.
+- 6e29d46: A row scrolled to in `PrefsForm` now stops below its section's sticky heading when the heading's name wraps to more than one line. The rows' `scroll-margin-top` follows the heading's measured height; it used to assume one line, and left the first row under a wrapped heading.
+- e9304f4: Keycaps draw a key's leader path. `formatShortcutParts` now returns `{ leader, keys }`: the keymaps
+  leading to the key, outermost first, each with its label and its leader's chips, then the key's own
+  chips as `KeyLegend`s, so an optional shift arrives marked. `formatShortcut` is built on it, and
+  `SHORTCUT_LEADER_SEPARATOR` is the ` ▸ ` it writes. `KeySequence` takes a `leader` prop and draws each
+  step's label before the keys (`Loupe ▸ 2`). `ShortcutKeys` takes a `shortcut` as data as well as a
+  `legend`, and reads the leader path out of a legend `formatShortcut` wrote; `<KeymapHint>` and the
+  command palette draw through them.
+  
+  Breaking: `formatShortcutParts` used to return a flat `string[]` of key labels. Its `keys` field is
+  that list as `KeyLegend`s; read `.keys.map((k) => k.label)` for the old shape.
+- 08162a9: A press on a `Slider`'s track or curved band focuses the thumb it moves again, so the arrow keys carry on from there.
+  The thumb was looked up by its CSS-module class, which composes a second class, so the selector named two classes
+  and matched nothing: no thumb took focus, straight or curved. The same lookup let a press on a thumb fall through to
+  the track's handler. Thumbs are now found by their `slider` role.
+- Updated dependencies [dbd6711]
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [e9304f4]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [1a72259]
+- Updated dependencies [eec50d7]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/menu@1.12.0
+  - @weasel-js/core@1.12.0
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/svg@1.12.0
+  - @weasel-js/gestures@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/theme@1.12.0
+  - @weasel-js/animator@1.12.0
+  - @weasel-js/prefs@1.12.0
+  - @weasel-js/font@1.12.0
+  - @weasel-js/icons@1.12.0
+  - @weasel-js/modes@1.12.0
+  - @weasel-js/quantity@1.12.0
+  - @weasel-js/registry@1.12.0
+  - @weasel-js/select@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

@@ -1,5 +1,36 @@
 # @weasel-js/geom
 
+## 1.12.0
+
+### Patch Changes
+
+- dbd6711: Controls can run along a curve. `@weasel-js/geom` adds track shapes (`lineShape`, `arcShape`), reading runs over them
+  (`trackRun`, whose `nearest` can leave the ends open) and their SVG path data (`trackShapeD`). `@weasel-js/ui` adds
+  `Along`, which sizes an arc from its box and hands it to the controls inside; `Slider`, `DetentSlider` and `Bar`
+  follow it, or a `shape` prop. `TrackCtx` gains a required `shape` field — the value span as a shape — so code that
+  builds a `TrackCtx` itself no longer typechecks until it supplies one. `paintGradientTrack` paints straight tracks
+  only. A menu opened under a button can ask to open above it (`placeMenuUnder`'s `above`, `MenuOpenRequest.above`).
+- 13e597d: Text can follow a path. `@weasel-js/geom` adds a `'path'` track shape (`pathShape`), a `side` override on `trackRun`,
+  and `placeAlongRun`, which turns item lengths into places along a run, in `RunOrder` `'reading'` or `'track'`.
+  `TrackShape` gains a required `closed` member, so a shape implemented outside geom has to add it.
+  `runPlaces` and `runLength` moved there from `@weasel-js/ui`, which re-exports `runPlaces` by name, so its curved rows
+  come from geom's placement. `measurePath` takes `keepCorners`. `@weasel-js/text` adds `textClusters`, a line's
+  grapheme clusters as outlines with their advances. `@weasel-js/core` adds the `textAlong` path effect; every effect
+  takes `hideSources`, effect sources can carry a list of items, curved text is derived again when a font loads, a
+  hidden source is edited through its effect, and Delete, Cut and Expand now remove an effect's hidden sources with
+  it. A committed in-place text edit is labeled "Edit text" in history.
+  `@weasel-js/path-tools` adds Text Along Path (Alt+Shift+X), Release and Set Path. `useTextEdit` in
+  `@weasel-js/text-dom` gains `onDraft`.
+  
+  <!-- bump-approved: minor: maintainer — 1.12.0 release requested 2026-10-22 -->
+- 94ebd35: Each lens body in `LensOverlay` carries a zoom slider along the bottom of its rim, stopping at every power of two from
+  1× to 64×, the factors the `=` and `-` keys step through. Dragging it sets the factor as those keys do, resizing the
+  reticle with it, and a whole drag is one undo entry; a press on it never moves or selects the body. It lies on an arc
+  on a round body, on an ellipse on a stretched one, and runs straight on a square. A lens's readouts now sit at the top
+  of its interior, clear of the zoom. `@weasel-js/geom` adds `ellipseShape`, an elliptical arc track addressed by
+  fraction of its length, which `trackShapeD` draws as true elliptical arcs; with equal radii it is `arcShape`'s arc.
+  `TrackShapeKind` gains `'ellipse'`, so an exhaustive switch over it no longer typechecks until it handles one.
+
 ## 1.11.1
 
 ### Patch Changes

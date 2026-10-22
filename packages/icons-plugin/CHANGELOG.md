@@ -1,5 +1,13 @@
 # @weasel-js/icons-plugin
 
+## 1.12.0
+
+### Patch Changes
+
+- fb09495: `engines.node` now reads `>=22.12.0`, the floor its `oxc-parser` dependency declares. Node 22
+  releases before 22.12 were never supported; the manifest said they were.
+- @weasel-js/icons@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes
