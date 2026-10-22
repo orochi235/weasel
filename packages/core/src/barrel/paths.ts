@@ -248,7 +248,7 @@ export {
 export { nodeOutline } from '../features/paths/strokeOutline';
 export { DEFAULT_OVERLAY_STYLE } from '../features/paths/anchorMarkers';
 
-// ─── Path effects: live blend, bend along, and repeat along ────────────────
+// ─── Path effects: live blend, bend along, repeat along, and text along ────
 export {
   createPathEffectDerivations,
   PATH_EFFECT,
