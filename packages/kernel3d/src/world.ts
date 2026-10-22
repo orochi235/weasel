@@ -17,6 +17,9 @@ export type Node3d<TData, TLayer extends string> = SceneNode<TData, TLayer, Pose
  * box reproduces that — rotate a cube and it widens.
  *
  * Omitted, a node is a unit cube carried by its pose.
+ *
+ * A function of the node alone; a result that depends on anything else must
+ * come with a scene change, or picks go stale.
  */
 export type NodeBounds<TData, TLayer extends string> = (
   node: Node3d<TData, TLayer>,
