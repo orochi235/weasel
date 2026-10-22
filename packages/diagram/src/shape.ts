@@ -19,6 +19,7 @@ import {
   type PoseDescriptor,
   type Stroke,
   type Fill,
+  type Inherit,
 } from '@weasel-js/core';
 import { outlinePath } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
@@ -46,13 +47,13 @@ export function diagramShape<TPose>(
   return {
     id: opts.id ?? 'diagram:outline',
     matches: (node) => outlineOf(node) !== undefined,
-    paint: (node, pose) => {
+    paint: (node, pose, ctx) => {
       const outline = outlineOf(node);
       if (outline === undefined) return [];
-      const d = node.data as { fill?: Fill | null; stroke?: Stroke | null };
+      const d = node.data as { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null };
       const box = geometry.getBounds(pose);
-      const declaredFill = resolveFill(d.fill);
-      const declaredStroke = resolveStroke(d.stroke);
+      const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
+      const declaredStroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
       const fill = declaredFill && commandFill(declaredFill, box);
       const stroke = declaredStroke && commandStroke(declaredStroke, box);
       const header = headerBox(box, diagramContainerOf(node)?.header);

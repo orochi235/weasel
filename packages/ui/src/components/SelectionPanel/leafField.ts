@@ -1,4 +1,4 @@
-import type { Paint } from '@weasel-js/core';
+import { INHERIT, type Paint } from '@weasel-js/core';
 import { withDrafts } from '../Prefs/commitPolicy';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
@@ -55,10 +55,17 @@ export function nestedPaintValue(ctx: Pick<PropertyRenderContext, 'value' | 'mix
 
 /** {@link nestedPaintValue} as a control: None removes the field. */
 function nestedPaint(ctx: PropertyRenderContext, field: PropertyPaintFieldProps): PropertyPaintFieldProps {
+  const { inherit } = ctx;
+  const each = inherit?.each ?? [];
+  const inheriting = each.filter(Boolean).length;
+  // Some nodes inheriting and some not is Mixed, even where the rest hold no paint.
+  const value = inheriting === 0 ? nestedPaintValue(ctx) : inheriting === each.length ? INHERIT : undefined;
   return {
     ...field,
-    value: nestedPaintValue(ctx),
+    value,
+    mixed: value === undefined,
     unset: false,
+    ...(inherit ? { inherit: { paint: inherit.paint, onInherit: inherit.set } } : {}),
     onChange: (paint) => ctx.setValue(paint ?? undefined),
   };
 }

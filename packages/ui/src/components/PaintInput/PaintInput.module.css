@@ -24,3 +24,20 @@
   align-items: center;
   gap: var(--wzl-space-3);
 }
+
+/* What an inheriting paint paints: shown, not edited — it is the container's. */
+.inherited {
+  display: block;
+  block-size: 18px; /* not-a-control */
+  border-radius: calc(var(--wzl-radius-sm) - var(--wzl-border-w));
+  background-color: var(--wzl-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--wzl-border);
+}
+
+.inherited[data-empty] {
+  background: repeating-conic-gradient(
+      var(--wzl-checker-a) 0% 25%,
+      var(--wzl-checker-b) 0% 50%
+    )
+    50% / var(--wzl-checker-size) var(--wzl-checker-size);
+}

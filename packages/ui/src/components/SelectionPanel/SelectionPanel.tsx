@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
+  paintAbove,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type Scene,
@@ -150,6 +151,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     entryAt: scope.entryAt,
     targets: scope.targets,
     settles,
+    paintAbove: (node) => paintAbove(scene, node as never),
   };
 
   return (

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import type { Paint, PaintKind } from '@weasel-js/core';
+import type { Inherit, Paint, PaintKind } from '@weasel-js/core';
+import type { PaintInherit } from '../PaintInput';
 import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
 
 /** One choice of an enum field. */
@@ -186,12 +187,15 @@ export interface PropertyPaintFieldProps extends FieldBase {
   /** `swatch` (default) opens the editor in a popover, for a narrow slot;
    *  `inline` draws the kind bar and its editor in place. */
   control?: 'swatch' | 'inline';
-  /** `null` is an explicit "no paint"; `undefined` is nothing to show. */
-  value: Paint | null | undefined;
+  /** `null` is an explicit "no paint"; `undefined` is nothing to show;
+   *  `'inherit'` takes the enclosing container's. */
+  value: Paint | Inherit | null | undefined;
   onChange: (next: Paint | null) => void;
   onInput?: (next: Paint | null) => void;
   /** Offer "None". Default `true`. */
   allowNone?: boolean;
+  /** Present, "Inherit" is offered beside "None". */
+  inherit?: PaintInherit;
   /** Restrict the kinds offered. Default: every registered kind. */
   kinds?: readonly PaintKind[];
 }

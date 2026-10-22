@@ -1,1 +1,1 @@
-export { PaintInput, type PaintInputProps } from './PaintInput';
+export { PaintInput, type PaintInherit, type PaintInputProps } from './PaintInput';

@@ -5,10 +5,12 @@ import {
   DialogTrigger,
   Popover as RACPopover,
 } from 'react-aria-components';
-import { usePaintKind, type Paint, type PaintKind } from '@weasel-js/core';
+import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
+import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '../../paintPreview';
 import { PaintInput } from '../PaintInput';
+import { ownPaint } from '../PaintInput/PaintInput';
 import listbox from '../listbox.module.css';
 import s from './PaintField.module.css';
 
@@ -16,8 +18,11 @@ import s from './PaintField.module.css';
  *  the popover and `onChange` once at its end. */
 export interface PaintFieldProps extends OverlayPortalProps {
   /** The paint being edited. `null` is an explicit "no paint"; `undefined` is
-   *  no value to show. */
-  value: Paint | null | undefined;
+   *  no value to show; `'inherit'` takes the enclosing container's. */
+  value: Paint | Inherit | null | undefined;
+  /** Present, "Inherit" is offered; its `paint` is the swatch an inheriting
+   *  field shows. */
+  inherit?: PaintInherit;
   /** Indeterminate presentation: the trigger says "Mixed" and the editor
    *  lights no kind. */
   mixed?: boolean;
@@ -37,8 +42,9 @@ export interface PaintFieldProps extends OverlayPortalProps {
 }
 
 /** What the trigger says it is holding. */
-function kindLabel(paint: Paint | null | undefined, mixed: boolean, label: string | undefined): string {
+function kindLabel(paint: Paint | Inherit | null | undefined, mixed: boolean, label: string | undefined): string {
   if (mixed) return 'Mixed';
+  if (paint === INHERIT) return 'Inherit';
   if (paint === null) return 'None';
   if (paint === undefined) return '—';
   return label ?? (paint.kind ?? 'solid');
@@ -61,8 +67,9 @@ export function PaintField(props: PaintFieldProps): ReactElement {
   } = props;
   const ariaLabel = props['aria-label'];
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
-  const preview = mixed ? undefined : paintPreviewCss(value);
-  const label = usePaintKind(value?.kind)?.label;
+  const shown = value === INHERIT ? props.inherit?.paint : value;
+  const preview = mixed ? undefined : paintPreviewCss(shown);
+  const label = usePaintKind(ownPaint(value)?.kind)?.label;
 
   return (
     <DialogTrigger>
@@ -92,6 +99,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
               unset={unset}
               kinds={kinds}
               allowNone={allowNone}
+              inherit={props.inherit}
               onInput={onInput}
               onChange={onChange}
               aria-label={ariaLabel}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Paint } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
@@ -92,6 +93,22 @@ export interface PropertyRenderContext {
   /** Which live controls write only the value an edit settles on, as the panel's kit settings have it. Absent, the
    *  panel's defaults. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** For a node's fill or stroke, and the paint inside it, which can take the
+   *  enclosing container's instead: see {@link PanelInherit}. Absent for any
+   *  other leaf, and for a selection holding a node with no container. */
+  inherit?: PanelInherit;
+}
+
+/** What a fill or stroke would take from its container, and which of the
+ *  selected nodes take it now. */
+export interface PanelInherit {
+  /** What inheriting paints: `null` for none, `undefined` where the nodes'
+   *  containers paint differently. */
+  paint: Paint | null | undefined;
+  /** Per selected node, in selection order: whether its value is `'inherit'`. */
+  each: readonly boolean[];
+  /** Make every selected node's whole fill or stroke `'inherit'`. */
+  set: () => void;
 }
 
 /**

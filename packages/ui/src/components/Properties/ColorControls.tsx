@@ -72,7 +72,7 @@ const makeInert = (el: HTMLElement | null): void => {
 
 export function PaintControl(p: PropertyPaintFieldProps) {
   if (p.disabled && p.control !== 'inline') {
-    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} disabled onChange={p.onChange} aria-label={p.name} />;
+    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled onChange={p.onChange} aria-label={p.name} />;
   }
   const Editor = p.control === 'inline' ? PaintInput : PaintField;
   const editor = (
@@ -83,6 +83,7 @@ export function PaintControl(p: PropertyPaintFieldProps) {
       unset={p.unset}
       kinds={p.kinds}
       allowNone={p.allowNone}
+      inherit={p.inherit}
       onChange={p.onChange}
       onInput={p.onInput}
       aria-label={p.name}

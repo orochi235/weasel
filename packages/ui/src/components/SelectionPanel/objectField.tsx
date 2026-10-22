@@ -71,6 +71,8 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     hiddenAt: ctx.hiddenAt,
     entryAt: ctx.entryAt,
     settles: ctx.settles,
+    // Inherit replaces the whole fill or stroke, and the paint is where it is offered.
+    ...(key === 'paint' && ctx.inherit ? { inherit: ctx.inherit } : {}),
   };
 }
 

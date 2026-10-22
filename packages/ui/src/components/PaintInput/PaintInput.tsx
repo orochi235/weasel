@@ -10,6 +10,8 @@ import {
   usePaintKind,
   usePaintKinds,
   withAlpha01,
+  INHERIT,
+  type Inherit,
   type Paint,
   type PaintKind,
   type PaintKindEntry,
@@ -21,6 +23,7 @@ import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { PatternPicker } from '../PatternPicker';
+import { paintPreviewCss } from '../../paintPreview';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import s from './PaintInput.module.css';
 
@@ -50,11 +53,16 @@ function solidFromField(color: string): Paint {
 
 /** A paint's own discriminant. The solid member leaves `kind` off, and an
  *  explicit `null` is the absence of paint rather than an unknown one. */
-function kindOf(paint: Paint | null | undefined): PaintKind | null {
+function kindOf(paint: Paint | Inherit | null | undefined): PaintKind | null {
   if (paint === null) return NONE;
   if (paint === undefined) return null;
+  if (paint === INHERIT) return INHERIT;
   return paint.kind ?? 'solid';
 }
+
+/** `value` when it is a paint of its own. */
+export const ownPaint = (value: Paint | Inherit | null | undefined): Paint | null | undefined =>
+  (value === INHERIT ? undefined : value);
 
 function segment(id: string, label: string, ref: IconRef | undefined): ToggleBarItem<PaintKind> {
   return ref
@@ -76,22 +84,32 @@ function firstOfSegment(entries: readonly PaintKindEntry[]): Map<string, PaintKi
 }
 
 function segmentItems(
-  firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean,
+  firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean, allowInherit: boolean,
 ): readonly ToggleBarItem<PaintKind>[] {
   return [
     ...(allowNone ? [segment(NONE, 'None', icon('core:paintNone'))] : []),
+    ...(allowInherit ? [segment(INHERIT, 'Inherit', undefined)] : []),
     ...[...firstOf].map(([id, entry]) => segment(
       id, entry.family?.label ?? entry.label, entry.family ? entry.family.icon : entry.icon,
     )),
   ];
 }
 
+/** An "Inherit" choice for a paint control: what it paints, and what picking it does. */
+export interface PaintInherit {
+  /** `null` for none, `undefined` where that is not one paint. */
+  paint: Paint | null | undefined;
+  onInherit: () => void;
+}
+
 /** Props for {@link PaintInput}. `onInput` fires throughout a gesture and
  *  `onChange` once at its end. */
 export interface PaintInputProps {
   /** The paint being edited. `null` is an explicit "no paint"; `undefined`
-   *  is no value to show. */
-  value: Paint | null | undefined;
+   *  is no value to show; `'inherit'` takes the enclosing container's. */
+  value: Paint | Inherit | null | undefined;
+  /** Present, "Inherit" is offered beside "None". */
+  inherit?: PaintInherit;
   /** Indeterminate presentation: no kind lit, and the body withheld because
    *  there is no single paint to show. */
   mixed?: boolean;
@@ -126,9 +144,12 @@ export interface PaintInputProps {
  */
 export function PaintInput(props: PaintInputProps): ReactElement {
   const {
-    value, mixed = false, unset = false, kinds, allowNone = true,
+    value: given, mixed = false, unset = false, kinds, allowNone = true,
     subject, onInput, onChange, className,
   } = props;
+  const inheriting = given === INHERIT;
+  const value = ownPaint(given);
+  const { inherit } = props;
   const ariaLabel = props['aria-label'];
 
   // Per-segment memory, so linear → solid → linear comes back with its stops.
@@ -145,22 +166,28 @@ export function PaintInput(props: PaintInputProps): ReactElement {
     (entry) => kinds === undefined || kinds.includes(entry.id),
   );
   // A paint lights its family's segment when its kind has one.
-  const ownKind = kindOf(value);
+  const ownKind = kindOf(given);
   const active = mixed || ownKind === null ? null : valueKind?.family?.id ?? ownKind;
   if (value != null && active !== null) remembered.set(active, value);
   const firstOf = firstOfSegment(entries);
-  const items = segmentItems(firstOf, allowNone);
+  const items = segmentItems(firstOf, allowNone, inherit !== undefined);
 
   /** The color a switch seeds from: whatever the current paint shows. */
+  const shown = inheriting ? inherit?.paint : value;
+  const shownKind = usePaintKind(shown?.kind);
   const currentColor = useCallback((): string => {
-    if (value == null) return FALLBACK_COLOR;
-    return valueKind?.colorOf(value) ?? FALLBACK_COLOR;
-  }, [value, valueKind]);
+    if (shown == null) return FALLBACK_COLOR;
+    return shownKind?.colorOf(shown) ?? FALLBACK_COLOR;
+  }, [shown, shownKind]);
 
   const switchKind = (kind: PaintKind): void => {
     if (kind === active) return;
     if (kind === NONE) {
       onChange(null);
+      return;
+    }
+    if (kind === INHERIT) {
+      inherit?.onInherit();
       return;
     }
     const seen = remembered.get(kind);
@@ -189,9 +216,37 @@ export function PaintInput(props: PaintInputProps): ReactElement {
         ariaLabel="Paint kind"
         onChange={(kind) => kind && switchKind(kind)}
       />
-      {renderBody()}
+      {!mixed && inheriting ? <InheritedSwatch paint={inherit?.paint} /> : (
+        <PaintBody
+          value={value}
+          mixed={mixed}
+          valueKind={valueKind}
+          currentColor={currentColor}
+          onInput={onInput}
+          onChange={onChange}
+          ariaLabel={ariaLabel}
+        />
+      )}
     </div>
   );
+}
+
+/** Props for {@link PaintBody}: what {@link PaintInput} shows under its kind bar. */
+interface PaintBodyProps {
+  value: Paint | null | undefined;
+  mixed: boolean;
+  valueKind: ReturnType<typeof usePaintKind>;
+  /** The color a pattern seeds from. */
+  currentColor: () => string;
+  onInput?: (next: Paint | null) => void;
+  onChange: (next: Paint | null) => void;
+  ariaLabel?: string;
+}
+
+/** The editor for whichever kind the bar has lit. */
+function PaintBody(props: PaintBodyProps): ReactElement | null {
+  const { value, mixed, valueKind, currentColor, onInput, onChange, ariaLabel } = props;
+  return renderBody();
 
   /** A solid's alpha rides its swatch; every other kind has no one color to
    *  carry it, so its `opacity` gets the same slider under the body. */
@@ -261,4 +316,21 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       />
     );
   }
+}
+
+/** What an inheriting paint shows: the container's paint, which is edited there. */
+function InheritedSwatch({ paint }: { paint: Paint | null | undefined }): ReactElement {
+  const preview = paintPreviewCss(paint);
+  const name = paint === undefined ? 'Inherits mixed paints'
+    : paint === null ? 'Inherits no paint'
+      : `Inherits ${paint.kind === undefined || paint.kind === 'solid' ? (paint as { color: string }).color : paint.kind}`;
+  return (
+    <span
+      className={s.inherited}
+      role="img"
+      aria-label={name}
+      title={name}
+      {...(preview ? { style: { background: preview } } : { 'data-empty': '' })}
+    />
+  );
 }

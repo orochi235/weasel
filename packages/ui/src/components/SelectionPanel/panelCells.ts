@@ -10,7 +10,8 @@ import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { MIXED, aggregateLeaf, aggregateValue, nodeLeafValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
 import { leafAcross } from './nodeBounds';
-import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import type { PanelInherit, PropertyRenderContext, PropertyRenderer } from './renderContext';
+import { INHERIT, type InheritedPaint } from '@weasel-js/core';
 import { renderBuiltin } from './renderLeaf';
 
 /** What every leaf of one panel reads, whichever row it sits in. */
@@ -31,6 +32,23 @@ export interface PanelCellScope {
   targets?: PrefAliasTargets;
   /** Which live controls write only the value an edit settles on. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** What an `'inherit'` fill and stroke on a node would take from its containers. */
+  paintAbove?: (node: AnyNode) => InheritedPaint;
+}
+
+/** The leaves whose value can be `'inherit'`, and the paint each takes. */
+const INHERITS: Readonly<Record<string, keyof InheritedPaint>> = { 'data.fill': 'fill', 'data.stroke': 'stroke' };
+
+function inheritOf(panelLeaf: PanelLeaf, scope: PanelCellScope): PanelInherit | undefined {
+  const field = INHERITS[panelLeaf.path];
+  const { nodes, paintAbove } = scope;
+  if (field === undefined || paintAbove === undefined || nodes.some((n) => n.parent == null)) return undefined;
+  const paints = nodes.map((n) => paintAbove(n)[field]?.paint ?? null);
+  return {
+    paint: paints.every((p) => p === paints[0]) ? paints[0] : undefined,
+    each: nodes.map((n) => nodeValueAt(n, panelLeaf.path) === INHERIT),
+    set: () => scope.commit(panelLeaf, () => INHERIT),
+  };
 }
 
 function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
@@ -63,8 +81,12 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
     ...(entryAt ? { entryAt } : {}),
     ...(scope.settles ? { settles: scope.settles } : {}),
+    ...withInherit(inheritOf(panelLeaf, scope)),
   };
 }
+
+const withInherit = (inherit: PanelInherit | undefined): Pick<PropertyRenderContext, 'inherit'> =>
+  (inherit ? { inherit } : {});
 
 function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope, surface: LeafSurface): LeafCell {
   const { renderers, selectionKey } = scope;

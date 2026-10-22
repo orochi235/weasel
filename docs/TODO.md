@@ -355,11 +355,20 @@ Priority tags:
 
 ## Rendering & paint
 
-- **(P1) Let a node's fill or stroke inherit its container's** (2026-10-21). A field is a paint, none or
-  `INHERIT` (`Fill` in `paint/src/paint.ts`), but only a derived part may say `INHERIT` today. A node's
-  `data.fill` / `data.stroke` taking its enclosing container's, the property panel's Inherit choice, and SVG
-  import reading a `<g fill>` as inherit are still to build; until then import resolves the SVG cascade and
-  writes each child's fill on it.
+- **(P2) Readers that still read an `'inherit'` fill or stroke as none** (2026-10-21). Painters, picking,
+  drawn bounds, the panel, SVG, the text editor, booleans and WeaselDraw's export resolve it against
+  the node's containers. These do not yet:
+  - a path effect's source (`features/pathEffects/readSource.ts`): `readEffectSource` gets a
+    `DerivedDep` and no scene, so an inheriting source lends its effect no paint;
+  - every registered painter that does not read `ctx.inherited` (`diagram:shape` does); and
+    `diagram:shape` still paints a diagram container's own fill, where the kit's painters paint no
+    container's — whether a diagram node with children counts as a group is open (2026-10-21);
+  - the drag ghost (`usePreviewGhostLayer`) resolves against the scene's container, so a container's
+    fill edited mid-gesture reaches its members only when the gesture commits;
+  - the headless cull (`defaultPaintBounds`) gives up on a node with an inherited stroke, since it
+    has no scene to measure it by.
+
+  The panel's Inherit segment is a text label among icons; it wants a glyph (`docs/icons.md`).
 
 - **(P2) A lab nested under another surface owner has no `top` buffer unless that owner offers one**
   (2026-10-21). A `<Lab>` with a surface owner above it takes that owner's `SurfaceCanvases`
