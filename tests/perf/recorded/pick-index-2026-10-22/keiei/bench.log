@@ -24,18 +24,18 @@ Tracked exports:
   - packages/paint/src/resolvePaint.ts > INHERIT
   - packages/geom/src/index.ts > poseLinearOf
   - packages/geom/src/poseFrame.ts > poseLinearOf
-  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
-  - packages/geom/src/index.ts > poseFrameOf
-  - packages/geom/src/poseFrame.ts > poseFrameOf
   - packages/core/src/core/scene/effectivePose.ts > effectivePose
   - packages/core/src/canvas/derivedPath.ts > showsComputedPath
   - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
   - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
   - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/canvas/pickReach.ts > reaches
   - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
   - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
   - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
-  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
   - packages/core/src/core/geometry/regionHit.ts > regionTakes
   - packages/geom/src/index.ts > boxContainsBox
   - packages/geom/src/box.ts > boxContainsBox
@@ -82,8 +82,8 @@ Tracked exports:
   - packages/paint/src/index.ts > INHERIT
   - packages/paint/src/resolvePaint.ts > INHERIT
   - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
-  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
   - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
   - packages/core/src/core/scene/effectivePose.ts > effectivePose
   - packages/core/src/canvas/derivedPath.ts > showsComputedPath
   - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
@@ -201,6 +201,9 @@ Tracked exports:
   - packages/geom/src/box.ts > boxContainsBox
   - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
   - packages/geom/src/bvh/bvhTree.ts > LEAF_SIZE
+  - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
+  - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
 
 [90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick — BVH index vs full walk, 10000 nodes by query-rect size
 [22m[39m[33m[1mBenchmark Warning[22m[39m
@@ -282,6 +285,7 @@ Tracked exports:
   - packages/core/src/canvas/scenePickReads.ts > sceneParentsOf
   - packages/core/src/canvas/planeClips.ts > clipCarrier
   - packages/core/src/canvas/pickIndex/scenePickIndex.ts > indexedCandidates
+  - packages/core/src/canvas/NodeShape.ts > getNodeShapes
   - packages/core/src/core/scene/nodeMemo.ts > nodeMemoGeneration
   - packages/stroke/src/index.ts > markerGeneration
   - packages/stroke/src/strokeMarkers.ts > markerGeneration
@@ -295,15 +299,10 @@ This can make results unreliable because export getters add overhead.
 See https://vitest.dev/guide/benchmarking#module-runner-overhead
 
 Tracked exports:
+  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
   - packages/paint/src/index.ts > INHERIT
   - packages/paint/src/resolvePaint.ts > INHERIT
-  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
-  - packages/geom/src/index.ts > poseLinearOf
-  - packages/geom/src/poseFrame.ts > poseLinearOf
-  - packages/geom/src/index.ts > poseFrameOf
-  - packages/geom/src/poseFrame.ts > poseFrameOf
   - packages/core/src/canvas/nodeShapes/poseBox.ts > paintsPose
-  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isRectPose
   - packages/core/src/core/geometry/autoPoseDescriptor.ts > AUTO_POSE_DESCRIPTOR
   - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
   - packages/core/src/canvas/pickIndex/nodeBroadBox.ts > nodeBroadBox
@@ -312,81 +311,109 @@ Tracked exports:
   - packages/core/src/canvas/NodeShape.ts > findShapeInk
   - packages/core/src/canvas/nodeShapes/memo.ts > derivesPath
   - packages/core/src/core/scene/nodeMemo.ts > nodeMemo
-  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
   - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
   - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+
+[90mstderr[2m | tests/perf/bench/hit-test.bench.ts[2m > [22m[2marea pick after every pose change (25% query rect), 10000 nodes
+[22m[39m[33m[1mBenchmark Warning[22m[39m
+Benchmark [1m"area pick after every pose change (25% query rect), 10000 nodes"[22m accessed module export getters too many times.
+
+This can make results unreliable because export getters add overhead.
+See https://vitest.dev/guide/benchmarking#module-runner-overhead
+
+Tracked exports:
+  - packages/paint/src/index.ts > INHERIT
+  - packages/paint/src/resolvePaint.ts > INHERIT
+  - packages/geom/src/index.ts > poseLinearOf
+  - packages/geom/src/poseFrame.ts > poseLinearOf
+  - packages/core/src/core/scene/effectivePose.ts > effectivePose
+  - packages/core/src/canvas/derivedPath.ts > showsComputedPath
+  - packages/core/src/core/scene/inheritedPaint.ts > inheritsPaint
+  - packages/core/src/canvas/pickReach.ts > reaches
+  - packages/core/src/interactions/actions/resize/geometry.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/poseDescriptor.ts > poseDescriptorForNode
+  - packages/core/src/core/geometry/regionHit.ts > regionBoundsOf
   - packages/core/src/core/geometry/poseDescriptor.ts > visualBoundsViaDescriptor
   - packages/core/src/core/geometry/unionBounds.ts > axisAlignedBounds
-  - packages/core/src/core/geometry/autoPoseDescriptor.ts > isPathLike
+  - packages/core/src/core/geometry/poseDescriptor.ts > RECT_POSE_DESCRIPTOR
+  - packages/geom/src/index.ts > poseFrameOf
+  - packages/geom/src/poseFrame.ts > poseFrameOf
+  - packages/core/src/core/geometry/regionHit.ts > regionTakes
 
- [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/hit-test.bench.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 58500[2mms[22m[39m
-   [33m[2m✓[22m[39m hitTestArea — rect poses, node count (25% query rect)[33m 3818[2mms[22m[39m
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/hit-test.bench.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 60614[2mms[22m[39m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, node count (25% query rect)[33m 3794[2mms[22m[39m
      [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     100 nodes    [34m36,978.67[39m  [36m0.0250[39m  [36m0.2145[39m  [36m0.0273[39m  [36m0.0271[39m  [36m0.0364[39m  [36m0.0390[39m  [36m0.1398[39m  [2m±0.19%[22m  [2m  36591[22m[1m[32m   fastest[39m[22m
-     1000 nodes   [34m 3,066.81[39m  [36m0.3150[39m  [36m0.4938[39m  [36m0.3269[39m  [36m0.3296[39m  [36m0.4449[39m  [36m0.4570[39m  [36m0.4740[39m  [2m±0.20%[22m  [2m   3059[22m
-     10000 nodes  [34m   314.85[39m  [36m3.0395[39m  [36m3.7003[39m  [36m3.1801[39m  [36m3.2229[39m  [36m3.6282[39m  [36m3.6508[39m  [36m3.6928[39m  [2m±0.40%[22m  [2m    315[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m hitTestArea — rect poses, query-rect size (1000 nodes)[33m 3775[2mms[22m[39m
+     100 nodes    [34m34,860.71[39m  [36m0.0262[39m  [36m0.2182[39m  [36m0.0289[39m  [36m0.0288[39m  [36m0.0386[39m  [36m0.0396[39m  [36m0.1460[39m  [2m±0.18%[22m  [2m  34559[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 3,101.97[39m  [36m0.3137[39m  [36m0.5173[39m  [36m0.3232[39m  [36m0.3247[39m  [36m0.4393[39m  [36m0.4486[39m  [36m0.4791[39m  [2m±0.20%[22m  [2m   3094[22m
+     10000 nodes  [34m   337.52[39m  [36m2.8835[39m  [36m3.4994[39m  [36m2.9659[39m  [36m2.9810[39m  [36m3.3348[39m  [36m3.3705[39m  [36m3.4588[39m  [2m±0.35%[22m  [2m    338[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — rect poses, query-rect size (1000 nodes)[33m 3776[2mms[22m[39m
      [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     1% area (16 hits)      [34m47,980.19[39m  [36m0.0192[39m  [36m0.2027[39m  [36m0.0210[39m  [36m0.0210[39m  [36m0.0286[39m  [36m0.0292[39m  [36m0.0540[39m  [2m±0.17%[22m  [2m  47507[22m[1m[32m   fastest[39m[22m
-     25% area (289 hits)    [34m 3,080.26[39m  [36m0.3129[39m  [36m0.5440[39m  [36m0.3255[39m  [36m0.3285[39m  [36m0.4439[39m  [36m0.4583[39m  [36m0.4766[39m  [2m±0.20%[22m  [2m   3073[22m
-     100% area (1000 hits)  [34m   897.95[39m  [36m1.0671[39m  [36m1.3870[39m  [36m1.1154[39m  [36m1.1257[39m  [36m1.2824[39m  [36m1.3033[39m  [36m1.3512[39m  [2m±0.27%[22m  [2m    897[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, node count (25% query rect)[33m 3848[2mms[22m[39m
+     1% area (16 hits)      [34m49,616.73[39m  [36m0.0188[39m  [36m0.2343[39m  [36m0.0203[39m  [36m0.0202[39m  [36m0.0277[39m  [36m0.0282[39m  [36m0.0469[39m  [2m±0.18%[22m  [2m  49143[22m[1m[32m   fastest[39m[22m
+     25% area (289 hits)    [34m 3,456.07[39m  [36m0.2751[39m  [36m0.4948[39m  [36m0.2903[39m  [36m0.2930[39m  [36m0.4046[39m  [36m0.4111[39m  [36m0.4509[39m  [2m±0.21%[22m  [2m   3446[22m
+     100% area (1000 hits)  [34m 1,066.44[39m  [36m0.9123[39m  [36m1.2407[39m  [36m0.9387[39m  [36m0.9449[39m  [36m1.0808[39m  [36m1.0968[39m  [36m1.1317[39m  [2m±0.21%[22m  [2m   1066[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, node count (25% query rect)[33m 3818[2mms[22m[39m
      [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     100 nodes    [34m34,976.01[39m  [36m0.0267[39m  [36m0.2059[39m  [36m0.0289[39m  [36m0.0289[39m  [36m0.0390[39m  [36m0.0409[39m  [36m0.1450[39m  [2m±0.20%[22m  [2m  34595[22m[1m[32m   fastest[39m[22m
-     1000 nodes   [34m 2,845.00[39m  [36m0.3397[39m  [36m0.5319[39m  [36m0.3524[39m  [36m0.3567[39m  [36m0.4760[39m  [36m0.4940[39m  [36m0.5212[39m  [2m±0.21%[22m  [2m   2838[22m
-     10000 nodes  [34m   286.04[39m  [36m3.3581[39m  [36m4.3292[39m  [36m3.5011[39m  [36m3.5473[39m  [36m3.9550[39m  [36m3.9796[39m  [36m4.2300[39m  [2m±0.46%[22m  [2m    286[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)[33m 3771[2mms[22m[39m
+     100 nodes    [34m36,333.99[39m  [36m0.0253[39m  [36m0.3925[39m  [36m0.0278[39m  [36m0.0275[39m  [36m0.0374[39m  [36m0.0383[39m  [36m0.1483[39m  [2m±0.23%[22m  [2m  35932[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 3,049.81[39m  [36m0.3156[39m  [36m1.2484[39m  [36m0.3293[39m  [36m0.3348[39m  [36m0.4561[39m  [36m0.4779[39m  [36m0.5189[39m  [2m±0.30%[22m  [2m   3037[22m
+     10000 nodes  [34m   326.26[39m  [36m2.9787[39m  [36m4.0605[39m  [36m3.0678[39m  [36m3.0716[39m  [36m3.3611[39m  [36m3.4756[39m  [36m3.8826[39m  [2m±0.34%[22m  [2m    326[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)[33m 3769[2mms[22m[39m
      [1mname                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     1% area (17 hits)      [34m33,354.76[39m  [36m0.0283[39m  [36m0.2032[39m  [36m0.0303[39m  [36m0.0302[39m  [36m0.0407[39m  [36m0.0427[39m  [36m0.1498[39m  [2m±0.19%[22m  [2m  33006[22m[1m[32m   fastest[39m[22m
-     25% area (287 hits)    [34m 2,888.40[39m  [36m0.3324[39m  [36m0.8673[39m  [36m0.3475[39m  [36m0.3530[39m  [36m0.4699[39m  [36m0.4875[39m  [36m0.5825[39m  [2m±0.26%[22m  [2m   2878[22m
-     100% area (1000 hits)  [34m   920.11[39m  [36m1.0390[39m  [36m1.3965[39m  [36m1.0889[39m  [36m1.0989[39m  [36m1.2641[39m  [36m1.2856[39m  [36m1.3789[39m  [2m±0.29%[22m  [2m    919[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m aabbOfPose — the per-node fast-reject itself[33m 9204[2mms[22m[39m
-     [1mname        [22m  [1m           hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     rect pose     [34m10,112,192.38[39m  [36m0.0000[39m  [36m0.0504[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0002[39m  [36m0.0003[39m  [2m±0.05%[22m  [2m9607401[22m[1m[32m   fastest[39m[22m
-     4-gon pose    [34m 1,647,382.47[39m  [36m0.0005[39m  [36m4.4813[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0009[39m  [36m0.0011[39m  [36m0.0064[39m  [2m±0.95%[22m  [2m1549995[22m
-     24-gon pose   [34m   494,753.69[39m  [36m0.0018[39m  [36m0.2660[39m  [36m0.0020[39m  [36m0.0020[39m  [36m0.0028[39m  [36m0.0029[39m  [36m0.0032[39m  [2m±0.18%[22m  [2m 488937[22m
-     256-gon pose  [34m    59,089.95[39m  [36m0.0163[39m  [36m0.2549[39m  [36m0.0171[39m  [36m0.0167[39m  [36m0.0231[39m  [36m0.0233[39m  [36m0.0369[39m  [2m±0.18%[22m  [2m  58617[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m pointInPath — per-node kernel, by vertex count[33m 6958[2mms[22m[39m
+     1% area (17 hits)      [34m34,438.79[39m  [36m0.0277[39m  [36m0.2868[39m  [36m0.0293[39m  [36m0.0291[39m  [36m0.0387[39m  [36m0.0396[39m  [36m0.1462[39m  [2m±0.19%[22m  [2m  34162[22m[1m[32m   fastest[39m[22m
+     25% area (287 hits)    [34m 3,133.71[39m  [36m0.3060[39m  [36m1.0494[39m  [36m0.3213[39m  [36m0.3222[39m  [36m0.4690[39m  [36m0.5223[39m  [36m0.6099[39m  [2m±0.37%[22m  [2m   3112[22m
+     100% area (1000 hits)  [34m 1,078.04[39m  [36m0.9001[39m  [36m1.1783[39m  [36m0.9288[39m  [36m0.9310[39m  [36m1.0770[39m  [36m1.0902[39m  [36m1.1554[39m  [2m±0.23%[22m  [2m   1077[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m aabbOfPose — the per-node fast-reject itself[33m 8807[2mms[22m[39m
+     [1mname        [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     rect pose     [34m9,986,569.42[39m  [36m0.0000[39m  [36m 0.3156[39m  [36m0.0001[39m  [36m0.0001[39m  [36m0.0002[39m  [36m0.0002[39m  [36m0.0003[39m  [2m±0.07%[22m  [2m9504274[22m[1m[32m   fastest[39m[22m
+     4-gon pose    [34m1,647,271.69[39m  [36m0.0005[39m  [36m 0.2152[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0008[39m  [36m0.0009[39m  [36m0.0010[39m  [2m±0.06%[22m  [2m1635677[22m
+     24-gon pose   [34m  484,399.76[39m  [36m0.0019[39m  [36m13.0711[39m  [36m0.0021[39m  [36m0.0021[39m  [36m0.0028[39m  [36m0.0029[39m  [36m0.0031[39m  [2m±3.18%[22m  [2m 469582[22m
+     256-gon pose  [34m   56,052.13[39m  [36m0.0171[39m  [36m 0.2923[39m  [36m0.0180[39m  [36m0.0178[39m  [36m0.0242[39m  [36m0.0245[39m  [36m0.0283[39m  [2m±0.18%[22m  [2m  55628[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pointInPath — per-node kernel, by vertex count[33m 6946[2mms[22m[39m
      [1mname                          [22m  [1m          hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
-     4-gon                           [34m1,601,627.65[39m  [36m0.0005[39m  [36m 0.1750[39m  [36m0.0006[39m  [36m0.0006[39m  [36m0.0009[39m  [36m0.0009[39m  [36m0.0010[39m  [2m±0.19%[22m  [2m1578143[22m[1m[32m   fastest[39m[22m
-     24-gon                          [34m  505,293.54[39m  [36m0.0018[39m  [36m12.9661[39m  [36m0.0021[39m  [36m0.0020[39m  [36m0.0027[39m  [36m0.0028[39m  [36m0.0031[39m  [2m±3.55%[22m  [2m 485836[22m
-     8 cubics (flattened per call)   [34m  137,697.09[39m  [36m0.0069[39m  [36m 0.7200[39m  [36m0.0074[39m  [36m0.0072[39m  [36m0.0100[39m  [36m0.0102[39m  [36m0.0422[39m  [2m±0.34%[22m  [2m 134547[22m
-     256-gon                         [34m   55,704.67[39m  [36m0.0170[39m  [36m 0.5692[39m  [36m0.0182[39m  [36m0.0179[39m  [36m0.0243[39m  [36m0.0248[39m  [36m0.0444[39m  [2m±0.26%[22m  [2m  55007[22m
-     64 cubics (flattened per call)  [34m   39,169.04[39m  [36m0.0244[39m  [36m 1.4228[39m  [36m0.0261[39m  [36m0.0255[39m  [36m0.0345[39m  [36m0.0353[39m  [36m0.1921[39m  [2m±0.43%[22m  [2m  38368[22m[1m[90m   slowest[39m[22m
+     4-gon                           [34m1,541,772.26[39m  [36m0.0005[39m  [36m 0.2680[39m  [36m0.0007[39m  [36m0.0007[39m  [36m0.0009[39m  [36m0.0010[39m  [36m0.0011[39m  [2m±0.22%[22m  [2m1517762[22m[1m[32m   fastest[39m[22m
+     24-gon                          [34m  481,844.48[39m  [36m0.0019[39m  [36m12.2476[39m  [36m0.0022[39m  [36m0.0021[39m  [36m0.0029[39m  [36m0.0030[39m  [36m0.0032[39m  [2m±3.27%[22m  [2m 464670[22m
+     8 cubics (flattened per call)   [34m  135,570.93[39m  [36m0.0070[39m  [36m 0.7142[39m  [36m0.0076[39m  [36m0.0074[39m  [36m0.0102[39m  [36m0.0103[39m  [36m0.0391[39m  [2m±0.37%[22m  [2m 132235[22m
+     256-gon                         [34m   54,052.40[39m  [36m0.0178[39m  [36m 1.0451[39m  [36m0.0187[39m  [36m0.0185[39m  [36m0.0251[39m  [36m0.0253[39m  [36m0.0310[39m  [2m±0.30%[22m  [2m  53477[22m
+     64 cubics (flattened per call)  [34m   38,966.99[39m  [36m0.0247[39m  [36m 1.1783[39m  [36m0.0262[39m  [36m0.0255[39m  [36m0.0346[39m  [36m0.0353[39m  [36m0.1946[39m  [2m±0.42%[22m  [2m  38186[22m[1m[90m   slowest[39m[22m
    [33m[2m✓[22m[39m area pick — BVH index vs full walk, node count (1% query rect)[33m 7686[2mms[22m[39m
      [1mname                  [22m  [1m        hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
-     indexed, 100 nodes      [34m360,481.56[39m  [36m0.0025[39m  [36m 0.2963[39m  [36m0.0028[39m  [36m0.0028[39m  [36m 0.0039[39m  [36m 0.0040[39m  [36m 0.0045[39m  [2m±0.30%[22m  [2m 353753[22m[1m[32m   fastest[39m[22m
-     indexed, 1000 nodes     [34m 46,456.53[39m  [36m0.0207[39m  [36m 0.3163[39m  [36m0.0217[39m  [36m0.0213[39m  [36m 0.0292[39m  [36m 0.0295[39m  [36m 0.0500[39m  [2m±0.25%[22m  [2m  45982[22m
-     full walk, 100 nodes    [34m 11,467.24[39m  [36m0.0838[39m  [36m 3.2936[39m  [36m0.0885[39m  [36m0.0872[39m  [36m 0.1097[39m  [36m 0.1184[39m  [36m 0.3041[39m  [2m±0.87%[22m  [2m  11304[22m
-     indexed, 10000 nodes    [34m  5,413.48[39m  [36m0.1776[39m  [36m 0.4851[39m  [36m0.1858[39m  [36m0.1842[39m  [36m 0.2234[39m  [36m 0.3783[39m  [36m 0.4278[39m  [2m±0.28%[22m  [2m   5383[22m
-     full walk, 1000 nodes   [34m  1,143.57[39m  [36m0.8414[39m  [36m 1.2584[39m  [36m0.8767[39m  [36m0.8818[39m  [36m 1.0865[39m  [36m 1.1237[39m  [36m 1.1942[39m  [2m±0.32%[22m  [2m   1141[22m
-     full walk, 10000 nodes  [34m    111.12[39m  [36m8.7179[39m  [36m10.2867[39m  [36m9.0078[39m  [36m9.1558[39m  [36m10.0455[39m  [36m10.1737[39m  [36m10.2641[39m  [2m±0.61%[22m  [2m    112[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m area pick — BVH index vs full walk, 10000 nodes by query-rect size[33m 7584[2mms[22m[39m
-     [1mname                [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
-     indexed, 1% area      [34m5,391.59[39m  [36m 0.1781[39m  [36m 0.5513[39m  [36m 0.1868[39m  [36m 0.1863[39m  [36m 0.2343[39m  [36m 0.3862[39m  [36m 0.4612[39m  [2m±0.31%[22m  [2m   5353[22m[1m[32m   fastest[39m[22m
-     indexed, 25% area     [34m  316.71[39m  [36m 3.0457[39m  [36m 3.7504[39m  [36m 3.1624[39m  [36m 3.1647[39m  [36m 3.6862[39m  [36m 3.7161[39m  [36m 3.7458[39m  [2m±0.45%[22m  [2m    317[22m
-     full walk, 1% area    [34m  111.85[39m  [36m 8.7387[39m  [36m 9.3244[39m  [36m 8.9441[39m  [36m 9.1344[39m  [36m 9.2873[39m  [36m 9.3042[39m  [36m 9.3203[39m  [2m±0.36%[22m  [2m    112[22m
-     full walk, 25% area   [34m  105.97[39m  [36m 9.0764[39m  [36m11.0396[39m  [36m 9.4504[39m  [36m 9.6286[39m  [36m10.6915[39m  [36m10.8641[39m  [36m11.0045[39m  [2m±0.76%[22m  [2m    106[22m
-     full walk, 100% area  [34m  102.46[39m  [36m 9.4782[39m  [36m10.1739[39m  [36m 9.7636[39m  [36m 9.9631[39m  [36m10.1578[39m  [36m10.1659[39m  [36m10.1723[39m  [2m±0.40%[22m  [2m    103[22m
-     indexed, 100% area    [34m 82.9432[39m  [36m11.6611[39m  [36m13.1600[39m  [36m12.0633[39m  [36m12.2538[39m  [36m12.9814[39m  [36m13.0707[39m  [36m13.1421[39m  [2m±0.53%[22m  [2m     83[22m[1m[90m   slowest[39m[22m
+     indexed, 100 nodes      [34m333,645.76[39m  [36m0.0027[39m  [36m 0.1488[39m  [36m0.0030[39m  [36m0.0030[39m  [36m 0.0041[39m  [36m 0.0043[39m  [36m 0.0046[39m  [2m±0.19%[22m  [2m 329579[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m 46,370.74[39m  [36m0.0207[39m  [36m 0.2179[39m  [36m0.0218[39m  [36m0.0214[39m  [36m 0.0293[39m  [36m 0.0296[39m  [36m 0.0500[39m  [2m±0.18%[22m  [2m  45968[22m
+     full walk, 100 nodes    [34m 11,099.88[39m  [36m0.0869[39m  [36m 2.9507[39m  [36m0.0910[39m  [36m0.0899[39m  [36m 0.1134[39m  [36m 0.1200[39m  [36m 0.2304[39m  [2m±0.66%[22m  [2m  10990[22m
+     indexed, 10000 nodes    [34m  5,691.83[39m  [36m0.1709[39m  [36m 0.3878[39m  [36m0.1764[39m  [36m0.1737[39m  [36m 0.2136[39m  [36m 0.3081[39m  [36m 0.3327[39m  [2m±0.20%[22m  [2m   5670[22m
+     full walk, 1000 nodes   [34m  1,107.19[39m  [36m0.8706[39m  [36m 1.1399[39m  [36m0.9046[39m  [36m0.9108[39m  [36m 1.0694[39m  [36m 1.0867[39m  [36m 1.1049[39m  [2m±0.24%[22m  [2m   1106[22m
+     full walk, 10000 nodes  [34m    106.41[39m  [36m9.0024[39m  [36m17.5432[39m  [36m9.4442[39m  [36m9.4818[39m  [36m10.6371[39m  [36m13.9191[39m  [36m16.8184[39m  [2m±1.75%[22m  [2m    106[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick — BVH index vs full walk, 10000 nodes by query-rect size[33m 7586[2mms[22m[39m
+     [1mname                [22m  [1m      hz[22m  [1m   min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed, 1% area      [34m5,720.91[39m  [36m0.1697[39m  [36m 0.3603[39m  [36m 0.1755[39m  [36m 0.1728[39m  [36m 0.2058[39m  [36m 0.3142[39m  [36m 0.3344[39m  [2m±0.21%[22m  [2m   5699[22m[1m[32m   fastest[39m[22m
+     indexed, 25% area     [34m  293.99[39m  [36m2.7172[39m  [36m11.3063[39m  [36m 3.6125[39m  [36m 3.7098[39m  [36m 8.7103[39m  [36m 9.1396[39m  [36m10.7154[39m  [2m±3.80%[22m  [2m    277[22m
+     full walk, 1% area    [34m  108.08[39m  [36m8.9228[39m  [36m10.5719[39m  [36m 9.2639[39m  [36m 9.3730[39m  [36m10.3799[39m  [36m10.4769[39m  [36m10.5529[39m  [2m±0.70%[22m  [2m    108[22m
+     full walk, 100% area  [34m 95.1884[39m  [36m9.7624[39m  [36m12.7621[39m  [36m10.5733[39m  [36m10.9942[39m  [36m12.6814[39m  [36m12.7217[39m  [36m12.7540[39m  [2m±1.72%[22m  [2m     95[22m
+     indexed, 100% area    [34m 90.6857[39m  [36m9.9362[39m  [36m22.9476[39m  [36m11.2957[39m  [36m12.5000[39m  [36m17.5256[39m  [36m20.2366[39m  [36m22.4054[39m  [2m±3.83%[22m  [2m     89[22m
+     full walk, 25% area   [34m 91.3027[39m  [36m9.2747[39m  [36m25.2153[39m  [36m11.3169[39m  [36m12.3746[39m  [36m20.1880[39m  [36m22.7017[39m  [36m24.7126[39m  [2m±4.46%[22m  [2m     89[22m[1m[90m   slowest[39m[22m
    [33m[2m✓[22m[39m point pick — BVH index vs full walk, node count[33m 8053[2mms[22m[39m
      [1mname                  [22m  [1m        hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
-     indexed, 100 nodes      [34m619,908.97[39m  [36m 0.0014[39m  [36m 0.3180[39m  [36m 0.0017[39m  [36m 0.0016[39m  [36m 0.0023[39m  [36m 0.0024[39m  [36m 0.0027[39m  [2m±0.39%[22m  [2m 603108[22m[1m[32m   fastest[39m[22m
-     indexed, 1000 nodes     [34m331,285.14[39m  [36m 0.0027[39m  [36m 0.1944[39m  [36m 0.0031[39m  [36m 0.0030[39m  [36m 0.0042[39m  [36m 0.0043[39m  [36m 0.0048[39m  [2m±0.18%[22m  [2m 327253[22m
-     indexed, 10000 nodes    [34m 48,369.84[39m  [36m 0.0199[39m  [36m 0.2273[39m  [36m 0.0208[39m  [36m 0.0207[39m  [36m 0.0279[39m  [36m 0.0282[39m  [36m 0.0343[39m  [2m±0.14%[22m  [2m  48031[22m
-     full walk, 100 nodes    [34m  6,237.12[39m  [36m 0.1525[39m  [36m 0.4942[39m  [36m 0.1617[39m  [36m 0.1634[39m  [36m 0.2817[39m  [36m 0.3100[39m  [36m 0.3992[39m  [2m±0.31%[22m  [2m   6184[22m
-     full walk, 1000 nodes   [34m    597.40[39m  [36m 1.6220[39m  [36m 4.5872[39m  [36m 1.6792[39m  [36m 1.6797[39m  [36m 1.8377[39m  [36m 1.8975[39m  [36m 3.7292[39m  [2m±0.67%[22m  [2m    596[22m
-     full walk, 10000 nodes  [34m   55.9560[39m  [36m17.0572[39m  [36m23.1248[39m  [36m17.9559[39m  [36m17.7885[39m  [36m22.7857[39m  [36m22.9552[39m  [36m23.0908[39m  [2m±1.88%[22m  [2m     64[22m[1m[90m   slowest[39m[22m
-   [33m[2m✓[22m[39m pick index — rebuild after one pose change, node count[33m 3801[2mms[22m[39m
-     [1mname       [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
-     100 nodes    [34m8,440.68[39m  [36m 0.1110[39m  [36m 0.4152[39m  [36m 0.1191[39m  [36m 0.1199[39m  [36m 0.1438[39m  [36m 0.1491[39m  [36m 0.3013[39m  [2m±0.21%[22m  [2m   8396[22m[1m[32m   fastest[39m[22m
-     1000 nodes   [34m  765.99[39m  [36m 1.2485[39m  [36m 1.8193[39m  [36m 1.3081[39m  [36m 1.3151[39m  [36m 1.5547[39m  [36m 1.6009[39m  [36m 1.6926[39m  [2m±0.33%[22m  [2m    765[22m
-     10000 nodes  [34m 67.9091[39m  [36m14.4558[39m  [36m16.8569[39m  [36m14.7324[39m  [36m14.7816[39m  [36m16.0602[39m  [36m16.4586[39m  [36m16.7772[39m  [2m±0.55%[22m  [2m     68[22m[1m[90m   slowest[39m[22m
+     indexed, 100 nodes      [34m562,639.52[39m  [36m 0.0015[39m  [36m 0.1926[39m  [36m 0.0018[39m  [36m 0.0018[39m  [36m 0.0025[39m  [36m 0.0026[39m  [36m 0.0030[39m  [2m±0.23%[22m  [2m 552655[22m[1m[32m   fastest[39m[22m
+     indexed, 1000 nodes     [34m302,850.28[39m  [36m 0.0030[39m  [36m 0.1700[39m  [36m 0.0033[39m  [36m 0.0033[39m  [36m 0.0046[39m  [36m 0.0047[39m  [36m 0.0050[39m  [2m±0.17%[22m  [2m 299750[22m
+     indexed, 10000 nodes    [34m 48,365.63[39m  [36m 0.0200[39m  [36m 0.2524[39m  [36m 0.0208[39m  [36m 0.0206[39m  [36m 0.0280[39m  [36m 0.0284[39m  [36m 0.0292[39m  [2m±0.12%[22m  [2m  48120[22m
+     full walk, 100 nodes    [34m  6,138.96[39m  [36m 0.1544[39m  [36m 0.3682[39m  [36m 0.1638[39m  [36m 0.1655[39m  [36m 0.2029[39m  [36m 0.2861[39m  [36m 0.3328[39m  [2m±0.22%[22m  [2m   6107[22m
+     full walk, 1000 nodes   [34m    578.14[39m  [36m 1.6645[39m  [36m 2.1089[39m  [36m 1.7317[39m  [36m 1.7379[39m  [36m 1.9338[39m  [36m 2.0001[39m  [36m 2.0772[39m  [2m±0.29%[22m  [2m    578[22m
+     full walk, 10000 nodes  [34m   55.1171[39m  [36m17.3690[39m  [36m21.0608[39m  [36m18.1804[39m  [36m18.3675[39m  [36m21.0582[39m  [36m21.0595[39m  [36m21.0605[39m  [2m±1.19%[22m  [2m     64[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m pick index — rebuild after one pose change, node count[33m 3806[2mms[22m[39m
+     [1mname       [22m  [1m       hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     100 nodes    [34m12,243.39[39m  [36m0.0739[39m  [36m 0.3233[39m  [36m0.0823[39m  [36m0.0822[39m  [36m 0.1059[39m  [36m 0.1125[39m  [36m 0.2700[39m  [2m±0.22%[22m  [2m  12155[22m[1m[32m   fastest[39m[22m
+     1000 nodes   [34m 1,222.44[39m  [36m0.7834[39m  [36m 1.1678[39m  [36m0.8198[39m  [36m0.8277[39m  [36m 1.0734[39m  [36m 1.1186[39m  [36m 1.1474[39m  [2m±0.29%[22m  [2m   1220[22m
+     10000 nodes  [34m   104.60[39m  [36m9.2088[39m  [36m10.5742[39m  [36m9.5699[39m  [36m9.6965[39m  [36m10.5119[39m  [36m10.5425[39m  [36m10.5678[39m  [2m±0.62%[22m  [2m    105[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m area pick after every pose change (25% query rect), 10000 nodes[33m 2571[2mms[22m[39m
+     [1mname     [22m  [1m    hz[22m  [1m   min[22m  [1m    max[22m  [1m  mean[22m  [1m   p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
+     indexed    [34m106.65[39m  [36m8.8778[39m  [36m10.4442[39m  [36m9.3877[39m  [36m9.5807[39m  [36m 9.9708[39m  [36m10.1938[39m  [36m10.3941[39m  [2m±0.67%[22m  [2m    107[22m[1m[32m   fastest[39m[22m
+     full walk  [34m102.32[39m  [36m9.4738[39m  [36m10.9476[39m  [36m9.7831[39m  [36m9.8547[39m  [36m10.7413[39m  [36m10.8425[39m  [36m10.9266[39m  [2m±0.63%[22m  [2m    103[22m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m10 passed[39m[22m[90m (10)[39m
-[2m   Start at [22m 08:02:58
-[2m   Duration [22m 60.47s[2m (tests 97%, transform 2%, environment 1%, import 1%)[22m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 08:30:35
+[2m   Duration [22m 62.22s[2m (tests 98%, transform 2%)[22m
 
-JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/results/.vitest-bench-0Z58cJ/vitest-bench.json
+JSON report written to /Users/mike/.config/onto/work/weasel/tests/perf/results/.vitest-bench-DL8LGk/vitest-bench.json
 perf result: tests/perf/recorded/pick-index-2026-10-22/keiei/result.json

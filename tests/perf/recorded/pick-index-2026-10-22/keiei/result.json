@@ -5,7 +5,7 @@
     "sha": "33efd3167ec19b2596f6722c5d52638a08b07845",
     "dirty": true
   },
-  "timestamp": "2026-10-22T12:02:57.776Z",
+  "timestamp": "2026-10-22T12:30:34.820Z",
   "machine": {
     "glRenderer": null,
     "softwareGl": null,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.8.2",
     "loadavg": [
-      8.78,
-      6.73,
-      5.99
+      10.24,
+      7.31,
+      6.44
     ]
   },
   "params": {
@@ -35,22 +35,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.026499999999941792,
+          "value": 0.028250000000298314,
           "unit": "ms",
-          "stat": "median of 36591 samples"
+          "stat": "median of 34559 samples"
         },
         "min": {
-          "value": 0.025041999999757536,
+          "value": 0.026208000000224274,
           "unit": "ms",
-          "stat": "min of 36591 samples"
+          "stat": "min of 34559 samples"
         },
         "mean": {
-          "value": 0.02732944172064256,
+          "value": 0.02893617127231815,
           "unit": "ms",
-          "stat": "mean of 36591 samples"
+          "stat": "mean of 34559 samples"
         },
         "rme": {
-          "value": 0.19374293268364084,
+          "value": 0.18187907009543494,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -65,22 +65,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.31991699999980483,
+          "value": 0.3160205000001497,
           "unit": "ms",
-          "stat": "median of 3059 samples"
+          "stat": "median of 3094 samples"
         },
         "min": {
-          "value": 0.31495799999993324,
+          "value": 0.3137499999997999,
           "unit": "ms",
-          "stat": "min of 3059 samples"
+          "stat": "min of 3094 samples"
         },
         "mean": {
-          "value": 0.3269065527950318,
+          "value": 0.32320960892049067,
           "unit": "ms",
-          "stat": "mean of 3059 samples"
+          "stat": "mean of 3094 samples"
         },
         "rme": {
-          "value": 0.2001350931239943,
+          "value": 0.20128751488342722,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -95,22 +95,22 @@
       },
       "metrics": {
         "median": {
-          "value": 3.136790999999903,
+          "value": 2.9301040000000285,
           "unit": "ms",
-          "stat": "median of 315 samples"
+          "stat": "median of 338 samples"
         },
         "min": {
-          "value": 3.0394999999998618,
+          "value": 2.883458999999675,
           "unit": "ms",
-          "stat": "min of 315 samples"
+          "stat": "min of 338 samples"
         },
         "mean": {
-          "value": 3.1800540952380767,
+          "value": 2.96585466863908,
           "unit": "ms",
-          "stat": "mean of 315 samples"
+          "stat": "mean of 338 samples"
         },
         "rme": {
-          "value": 0.40059379350308705,
+          "value": 0.3548780213427144,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -125,22 +125,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.020749999999679858,
+          "value": 0.01991699999962293,
           "unit": "ms",
-          "stat": "median of 47507 samples"
+          "stat": "median of 49143 samples"
         },
         "min": {
-          "value": 0.019249999999374268,
+          "value": 0.01883300000008603,
           "unit": "ms",
-          "stat": "min of 47507 samples"
+          "stat": "min of 49143 samples"
         },
         "mean": {
-          "value": 0.021049591533877185,
+          "value": 0.02034893734611266,
           "unit": "ms",
-          "stat": "mean of 47507 samples"
+          "stat": "mean of 49143 samples"
         },
         "rme": {
-          "value": 0.17487676573616354,
+          "value": 0.17852017257288744,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -155,22 +155,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.31883299999935844,
+          "value": 0.2830839999996897,
           "unit": "ms",
-          "stat": "median of 3073 samples"
+          "stat": "median of 3446 samples"
         },
         "min": {
-          "value": 0.31287499999962165,
+          "value": 0.2751250000001164,
           "unit": "ms",
-          "stat": "min of 3073 samples"
+          "stat": "min of 3446 samples"
         },
         "mean": {
-          "value": 0.3255110074845421,
+          "value": 0.29025219326756035,
           "unit": "ms",
-          "stat": "mean of 3073 samples"
+          "stat": "mean of 3446 samples"
         },
         "rme": {
-          "value": 0.20462045792533956,
+          "value": 0.21142701003517092,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -185,22 +185,22 @@
       },
       "metrics": {
         "median": {
-          "value": 1.1008339999989403,
+          "value": 0.9323540000004868,
           "unit": "ms",
-          "stat": "median of 897 samples"
+          "stat": "median of 1066 samples"
         },
         "min": {
-          "value": 1.067124999999578,
+          "value": 0.912333000000217,
           "unit": "ms",
-          "stat": "min of 897 samples"
+          "stat": "min of 1066 samples"
         },
         "mean": {
-          "value": 1.115431138238564,
+          "value": 0.9387461369606144,
           "unit": "ms",
-          "stat": "mean of 897 samples"
+          "stat": "mean of 1066 samples"
         },
         "rme": {
-          "value": 0.2726551610874403,
+          "value": 0.21147002877580115,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -215,22 +215,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.028083999999580556,
+          "value": 0.027333999998518266,
           "unit": "ms",
-          "stat": "median of 34595 samples"
+          "stat": "median of 35932 samples"
         },
         "min": {
-          "value": 0.026665999999750056,
+          "value": 0.025292000000263215,
           "unit": "ms",
-          "stat": "min of 34595 samples"
+          "stat": "min of 35932 samples"
         },
         "mean": {
-          "value": 0.02890669001301406,
+          "value": 0.027830980741395436,
           "unit": "ms",
-          "stat": "mean of 34595 samples"
+          "stat": "mean of 35932 samples"
         },
         "rme": {
-          "value": 0.1969595364861109,
+          "value": 0.22582280948451572,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -245,22 +245,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.3454170000004524,
+          "value": 0.31966600000123435,
           "unit": "ms",
-          "stat": "median of 2838 samples"
+          "stat": "median of 3037 samples"
         },
         "min": {
-          "value": 0.3397079999995185,
+          "value": 0.3156249999992724,
           "unit": "ms",
-          "stat": "min of 2838 samples"
+          "stat": "min of 3037 samples"
         },
         "mean": {
-          "value": 0.3524251930937364,
+          "value": 0.32932001810995837,
           "unit": "ms",
-          "stat": "mean of 2838 samples"
+          "stat": "mean of 3037 samples"
         },
         "rme": {
-          "value": 0.21234855303368277,
+          "value": 0.3028889184707733,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -275,22 +275,22 @@
       },
       "metrics": {
         "median": {
-          "value": 3.442145499999242,
+          "value": 3.038562499999898,
           "unit": "ms",
-          "stat": "median of 286 samples"
+          "stat": "median of 326 samples"
         },
         "min": {
-          "value": 3.358125000000655,
+          "value": 2.9787089999990712,
           "unit": "ms",
-          "stat": "min of 286 samples"
+          "stat": "min of 326 samples"
         },
         "mean": {
-          "value": 3.5011117762237998,
+          "value": 3.067771987730116,
           "unit": "ms",
-          "stat": "mean of 286 samples"
+          "stat": "mean of 326 samples"
         },
         "rme": {
-          "value": 0.462694929498213,
+          "value": 0.3441467133688664,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -305,22 +305,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.029165999998440384,
+          "value": 0.028791000000637723,
           "unit": "ms",
-          "stat": "median of 33006 samples"
+          "stat": "median of 34162 samples"
         },
         "min": {
-          "value": 0.028333000000202446,
+          "value": 0.02770799999962037,
           "unit": "ms",
-          "stat": "min of 33006 samples"
+          "stat": "min of 34162 samples"
         },
         "mean": {
-          "value": 0.03029799951524446,
+          "value": 0.029272831567235764,
           "unit": "ms",
-          "stat": "mean of 33006 samples"
+          "stat": "mean of 34162 samples"
         },
         "rme": {
-          "value": 0.19168247654105514,
+          "value": 0.18698235727067053,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -335,22 +335,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.3388540000005378,
+          "value": 0.3099999999994907,
           "unit": "ms",
-          "stat": "median of 2878 samples"
+          "stat": "median of 3112 samples"
         },
         "min": {
-          "value": 0.33237499999995634,
+          "value": 0.30604200000016135,
           "unit": "ms",
-          "stat": "min of 2878 samples"
+          "stat": "min of 3112 samples"
         },
         "mean": {
-          "value": 0.3474945555941785,
+          "value": 0.32134788817480714,
           "unit": "ms",
-          "stat": "mean of 2878 samples"
+          "stat": "mean of 3112 samples"
         },
         "rme": {
-          "value": 0.2624370759951626,
+          "value": 0.37380213648987304,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -365,22 +365,22 @@
       },
       "metrics": {
         "median": {
-          "value": 1.0739170000015292,
+          "value": 0.9170000000012806,
           "unit": "ms",
-          "stat": "median of 919 samples"
+          "stat": "median of 1077 samples"
         },
         "min": {
-          "value": 1.0390000000006694,
+          "value": 0.9001250000001164,
           "unit": "ms",
-          "stat": "min of 919 samples"
+          "stat": "min of 1077 samples"
         },
         "mean": {
-          "value": 1.0888818422197715,
+          "value": 0.9287965719590967,
           "unit": "ms",
-          "stat": "mean of 919 samples"
+          "stat": "mean of 1077 samples"
         },
         "rme": {
-          "value": 0.2943306691864791,
+          "value": 0.22557758536298503,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -395,22 +395,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.00008399999933317304,
+          "value": 0.00008400000297115184,
           "unit": "ms",
-          "stat": "median of 9607401 samples"
+          "stat": "median of 9504274 samples"
         },
         "min": {
           "value": 0,
           "unit": "ms",
-          "stat": "min of 9607401 samples"
+          "stat": "min of 9504274 samples"
         },
         "mean": {
-          "value": 0.00010408642722406844,
+          "value": 0.00010521582837376913,
           "unit": "ms",
-          "stat": "mean of 9607401 samples"
+          "stat": "mean of 9504274 samples"
         },
         "rme": {
-          "value": 0.04801179257322248,
+          "value": 0.07020731791919135,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -425,22 +425,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.000583999997616047,
+          "value": 0.0005840000012540258,
           "unit": "ms",
-          "stat": "median of 1549995 samples"
+          "stat": "median of 1635677 samples"
         },
         "min": {
           "value": 0.0004579999986162875,
           "unit": "ms",
-          "stat": "min of 1549995 samples"
+          "stat": "min of 1635677 samples"
         },
         "mean": {
-          "value": 0.0006451635895614691,
+          "value": 0.0006113679204403752,
           "unit": "ms",
-          "stat": "mean of 1549995 samples"
+          "stat": "mean of 1635677 samples"
         },
         "rme": {
-          "value": 0.9549422645344524,
+          "value": 0.06130890338283162,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -455,22 +455,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.001959000001079403,
+          "value": 0.00204200000007404,
           "unit": "ms",
-          "stat": "median of 488937 samples"
+          "stat": "median of 469582 samples"
         },
         "min": {
-          "value": 0.0018329999984416645,
+          "value": 0.0019159999974363018,
           "unit": "ms",
-          "stat": "min of 488937 samples"
+          "stat": "min of 469582 samples"
         },
         "mean": {
-          "value": 0.0020452540327265487,
+          "value": 0.0021295574936893687,
           "unit": "ms",
-          "stat": "mean of 488937 samples"
+          "stat": "mean of 469582 samples"
         },
         "rme": {
-          "value": 0.17731675908070052,
+          "value": 3.178219616958485,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -485,22 +485,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.016625000000203727,
+          "value": 0.017458000002079643,
           "unit": "ms",
-          "stat": "median of 58617 samples"
+          "stat": "median of 55628 samples"
         },
         "min": {
-          "value": 0.016250000000582077,
+          "value": 0.017082999998820014,
           "unit": "ms",
-          "stat": "min of 58617 samples"
+          "stat": "min of 55628 samples"
         },
         "mean": {
-          "value": 0.01706001833939149,
+          "value": 0.0179768362515264,
           "unit": "ms",
-          "stat": "mean of 58617 samples"
+          "stat": "mean of 55628 samples"
         },
         "rme": {
-          "value": 0.17788382086781127,
+          "value": 0.17799807833672263,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -517,20 +517,20 @@
         "median": {
           "value": 0.0006250000005820766,
           "unit": "ms",
-          "stat": "median of 1578143 samples"
+          "stat": "median of 1517762 samples"
         },
         "min": {
           "value": 0.000499999998282874,
           "unit": "ms",
-          "stat": "min of 1578143 samples"
+          "stat": "min of 1517762 samples"
         },
         "mean": {
-          "value": 0.0006336564417787986,
+          "value": 0.0006588651290500671,
           "unit": "ms",
-          "stat": "mean of 1578143 samples"
+          "stat": "mean of 1517762 samples"
         },
         "rme": {
-          "value": 0.19377133184284198,
+          "value": 0.22287588002160807,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -545,22 +545,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.0019579999971028883,
+          "value": 0.00204200000007404,
           "unit": "ms",
-          "stat": "median of 485836 samples"
+          "stat": "median of 464670 samples"
         },
         "min": {
-          "value": 0.001790999998775078,
+          "value": 0.0019159999974363018,
           "unit": "ms",
-          "stat": "min of 485836 samples"
+          "stat": "min of 464670 samples"
         },
         "mean": {
-          "value": 0.0020583096415239615,
+          "value": 0.0021520686982165315,
           "unit": "ms",
-          "stat": "mean of 485836 samples"
+          "stat": "mean of 464670 samples"
         },
         "rme": {
-          "value": 3.5541725572248257,
+          "value": 3.2737376530929194,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -575,22 +575,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.0071250000000873115,
+          "value": 0.007207999999081949,
           "unit": "ms",
-          "stat": "median of 134547 samples"
+          "stat": "median of 132235 samples"
         },
         "min": {
-          "value": 0.006915999998454936,
+          "value": 0.006957999998121522,
           "unit": "ms",
-          "stat": "min of 134547 samples"
+          "stat": "min of 132235 samples"
         },
         "mean": {
-          "value": 0.00743239285156282,
+          "value": 0.007562338072369724,
           "unit": "ms",
-          "stat": "mean of 134547 samples"
+          "stat": "mean of 132235 samples"
         },
         "rme": {
-          "value": 0.34224639638372256,
+          "value": 0.3668396973768151,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -605,22 +605,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.017542000001412816,
+          "value": 0.018166000001656357,
           "unit": "ms",
-          "stat": "median of 55007 samples"
+          "stat": "median of 53477 samples"
         },
         "min": {
-          "value": 0.017040999999153428,
+          "value": 0.017790999998396728,
           "unit": "ms",
-          "stat": "min of 55007 samples"
+          "stat": "min of 53477 samples"
         },
         "mean": {
-          "value": 0.01817981382369445,
+          "value": 0.018699947584942256,
           "unit": "ms",
-          "stat": "mean of 55007 samples"
+          "stat": "mean of 53477 samples"
         },
         "rme": {
-          "value": 0.2604031217927967,
+          "value": 0.3025485442667371,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -635,22 +635,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.024958999994851183,
+          "value": 0.02520899999944959,
           "unit": "ms",
-          "stat": "median of 38368 samples"
+          "stat": "median of 38186 samples"
         },
         "min": {
-          "value": 0.024416000000201166,
+          "value": 0.02470800000082818,
           "unit": "ms",
-          "stat": "min of 38368 samples"
+          "stat": "min of 38186 samples"
         },
         "mean": {
-          "value": 0.026063615799620236,
+          "value": 0.026187743885193723,
           "unit": "ms",
-          "stat": "mean of 38368 samples"
+          "stat": "mean of 38186 samples"
         },
         "rme": {
-          "value": 0.43345261324937295,
+          "value": 0.4153820532583551,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -665,22 +665,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.0027090000003227033,
+          "value": 0.0029580000045825727,
           "unit": "ms",
-          "stat": "median of 353753 samples"
+          "stat": "median of 329579 samples"
         },
         "min": {
-          "value": 0.0025000000023283064,
+          "value": 0.002749999999650754,
           "unit": "ms",
-          "stat": "min of 353753 samples"
+          "stat": "min of 329579 samples"
         },
         "mean": {
-          "value": 0.0028268374656921706,
+          "value": 0.003034176628370142,
           "unit": "ms",
-          "stat": "mean of 353753 samples"
+          "stat": "mean of 329579 samples"
         },
         "rme": {
-          "value": 0.3024319277677486,
+          "value": 0.19014563792516742,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -695,22 +695,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.021207999998296145,
+          "value": 0.021166999998968095,
           "unit": "ms",
-          "stat": "median of 45982 samples"
+          "stat": "median of 45968 samples"
         },
         "min": {
-          "value": 0.02074999999604188,
+          "value": 0.02070800000365125,
           "unit": "ms",
-          "stat": "min of 45982 samples"
+          "stat": "min of 45968 samples"
         },
         "mean": {
-          "value": 0.02174770736375493,
+          "value": 0.021754449160301826,
           "unit": "ms",
-          "stat": "mean of 45982 samples"
+          "stat": "mean of 45968 samples"
         },
         "rme": {
-          "value": 0.2491720883325001,
+          "value": 0.18021569721847422,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -725,22 +725,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.08499999999912689,
+          "value": 0.08800000000337604,
           "unit": "ms",
-          "stat": "median of 11304 samples"
+          "stat": "median of 10990 samples"
         },
         "min": {
-          "value": 0.08383299999695737,
+          "value": 0.08691600000020117,
           "unit": "ms",
-          "stat": "min of 11304 samples"
+          "stat": "min of 10990 samples"
         },
         "mean": {
-          "value": 0.08846480962492227,
+          "value": 0.09099967970883208,
           "unit": "ms",
-          "stat": "mean of 11304 samples"
+          "stat": "mean of 10990 samples"
         },
         "rme": {
-          "value": 0.8672443297896383,
+          "value": 0.6623272328982448,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -755,22 +755,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.18116599999484606,
+          "value": 0.1727919999975711,
           "unit": "ms",
-          "stat": "median of 5383 samples"
+          "stat": "median of 5670 samples"
         },
         "min": {
-          "value": 0.17762499999662396,
+          "value": 0.17087500000343425,
           "unit": "ms",
-          "stat": "min of 5383 samples"
+          "stat": "min of 5670 samples"
         },
         "mean": {
-          "value": 0.18580314267138695,
+          "value": 0.17639747319220572,
           "unit": "ms",
-          "stat": "mean of 5383 samples"
+          "stat": "mean of 5670 samples"
         },
         "rme": {
-          "value": 0.27731788777230093,
+          "value": 0.20495330674818432,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -785,22 +785,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.8648339999999735,
+          "value": 0.8949584999973013,
           "unit": "ms",
-          "stat": "median of 1141 samples"
+          "stat": "median of 1106 samples"
         },
         "min": {
-          "value": 0.8414169999959995,
+          "value": 0.8705829999962589,
           "unit": "ms",
-          "stat": "min of 1141 samples"
+          "stat": "min of 1106 samples"
         },
         "mean": {
-          "value": 0.8766500411919697,
+          "value": 0.904552155515438,
           "unit": "ms",
-          "stat": "mean of 1141 samples"
+          "stat": "mean of 1106 samples"
         },
         "rme": {
-          "value": 0.3165280733004313,
+          "value": 0.24133129699781233,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -815,22 +815,22 @@
       },
       "metrics": {
         "median": {
-          "value": 8.87702100000024,
+          "value": 9.27972900000168,
           "unit": "ms",
-          "stat": "median of 112 samples"
+          "stat": "median of 106 samples"
         },
         "min": {
-          "value": 8.717875000002095,
+          "value": 9.002374999996391,
           "unit": "ms",
-          "stat": "min of 112 samples"
+          "stat": "min of 106 samples"
         },
         "mean": {
-          "value": 9.007821410714053,
+          "value": 9.444183556603576,
           "unit": "ms",
-          "stat": "mean of 112 samples"
+          "stat": "mean of 106 samples"
         },
         "rme": {
-          "value": 0.6072002093002462,
+          "value": 1.7464137430260782,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -845,22 +845,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.18091600000479957,
+          "value": 0.17195799999899464,
           "unit": "ms",
-          "stat": "median of 5353 samples"
+          "stat": "median of 5699 samples"
         },
         "min": {
-          "value": 0.17808299999887822,
+          "value": 0.16970800000126474,
           "unit": "ms",
-          "stat": "min of 5353 samples"
+          "stat": "min of 5699 samples"
         },
         "mean": {
-          "value": 0.186816749299414,
+          "value": 0.1754996715212473,
           "unit": "ms",
-          "stat": "mean of 5353 samples"
+          "stat": "mean of 5699 samples"
         },
         "rme": {
-          "value": 0.3133543058808381,
+          "value": 0.20614420502292258,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -875,22 +875,22 @@
       },
       "metrics": {
         "median": {
-          "value": 3.1087079999997513,
+          "value": 3.47637499999837,
           "unit": "ms",
-          "stat": "median of 317 samples"
+          "stat": "median of 277 samples"
         },
         "min": {
-          "value": 3.045749999997497,
+          "value": 2.717166999995243,
           "unit": "ms",
-          "stat": "min of 317 samples"
+          "stat": "min of 277 samples"
         },
         "mean": {
-          "value": 3.1624473028393996,
+          "value": 3.6125303898913406,
           "unit": "ms",
-          "stat": "mean of 317 samples"
+          "stat": "mean of 277 samples"
         },
         "rme": {
-          "value": 0.45437307076675504,
+          "value": 3.8044702472020493,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -905,52 +905,22 @@
       },
       "metrics": {
         "median": {
-          "value": 8.850228999999672,
+          "value": 9.178125499998714,
           "unit": "ms",
-          "stat": "median of 112 samples"
+          "stat": "median of 108 samples"
         },
         "min": {
-          "value": 8.738707999997132,
+          "value": 8.9228329999969,
           "unit": "ms",
-          "stat": "min of 112 samples"
+          "stat": "min of 108 samples"
         },
         "mean": {
-          "value": 8.94411866071446,
+          "value": 9.263943287036795,
           "unit": "ms",
-          "stat": "mean of 112 samples"
+          "stat": "mean of 108 samples"
         },
         "rme": {
-          "value": 0.3575515524765658,
-          "unit": "%",
-          "stat": "relative margin of error on the mean"
-        }
-      }
-    },
-    {
-      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > full walk, 25% area",
-      "params": {
-        "file": "tests/perf/bench/hit-test.bench.ts",
-        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
-        "name": "full walk, 25% area"
-      },
-      "metrics": {
-        "median": {
-          "value": 9.322916499997518,
-          "unit": "ms",
-          "stat": "median of 106 samples"
-        },
-        "min": {
-          "value": 9.076375000004191,
-          "unit": "ms",
-          "stat": "min of 106 samples"
-        },
-        "mean": {
-          "value": 9.450420160377416,
-          "unit": "ms",
-          "stat": "mean of 106 samples"
-        },
-        "rme": {
-          "value": 0.7614252698316002,
+          "value": 0.6999972815592932,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -965,22 +935,22 @@
       },
       "metrics": {
         "median": {
-          "value": 9.675750000002154,
+          "value": 10.183334000001196,
           "unit": "ms",
-          "stat": "median of 103 samples"
+          "stat": "median of 95 samples"
         },
         "min": {
-          "value": 9.478167000001122,
+          "value": 9.762416000005032,
           "unit": "ms",
-          "stat": "min of 103 samples"
+          "stat": "min of 95 samples"
         },
         "mean": {
-          "value": 9.763605194174417,
+          "value": 10.573321505262987,
           "unit": "ms",
-          "stat": "mean of 103 samples"
+          "stat": "mean of 95 samples"
         },
         "rme": {
-          "value": 0.40313593239924594,
+          "value": 1.7202523939518366,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -995,22 +965,52 @@
       },
       "metrics": {
         "median": {
-          "value": 12.043541999999434,
+          "value": 10.275916999999026,
           "unit": "ms",
-          "stat": "median of 83 samples"
+          "stat": "median of 89 samples"
         },
         "min": {
-          "value": 11.661125000005995,
+          "value": 9.93620799999917,
           "unit": "ms",
-          "stat": "min of 83 samples"
+          "stat": "min of 89 samples"
         },
         "mean": {
-          "value": 12.063310722891208,
+          "value": 11.295748067415762,
           "unit": "ms",
-          "stat": "mean of 83 samples"
+          "stat": "mean of 89 samples"
         },
         "rme": {
-          "value": 0.531022034348805,
+          "value": 3.8308934195110034,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick — BVH index vs full walk, 10000 nodes by query-rect size > full walk, 25% area",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick — BVH index vs full walk, 10000 nodes by query-rect size",
+        "name": "full walk, 25% area"
+      },
+      "metrics": {
+        "median": {
+          "value": 11.595916999998735,
+          "unit": "ms",
+          "stat": "median of 89 samples"
+        },
+        "min": {
+          "value": 9.274708999997529,
+          "unit": "ms",
+          "stat": "min of 89 samples"
+        },
+        "mean": {
+          "value": 11.31694107865148,
+          "unit": "ms",
+          "stat": "mean of 89 samples"
+        },
+        "rme": {
+          "value": 4.455198335841364,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1025,22 +1025,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.0015830000047571957,
+          "value": 0.001750000003085006,
           "unit": "ms",
-          "stat": "median of 603108 samples"
+          "stat": "median of 552655 samples"
         },
         "min": {
-          "value": 0.0014159999991534278,
+          "value": 0.0015419999981531873,
           "unit": "ms",
-          "stat": "min of 603108 samples"
+          "stat": "min of 552655 samples"
         },
         "mean": {
-          "value": 0.001658078695687469,
+          "value": 0.0018094480480578645,
           "unit": "ms",
-          "stat": "mean of 603108 samples"
+          "stat": "mean of 552655 samples"
         },
         "rme": {
-          "value": 0.38781700898970556,
+          "value": 0.22535524295206116,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1055,22 +1055,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.002958999997645151,
+          "value": 0.003250000001571607,
           "unit": "ms",
-          "stat": "median of 327253 samples"
+          "stat": "median of 299750 samples"
         },
         "min": {
-          "value": 0.0027079999999841675,
+          "value": 0.0029580000045825727,
           "unit": "ms",
-          "stat": "min of 327253 samples"
+          "stat": "min of 299750 samples"
         },
         "mean": {
-          "value": 0.003056103577354604,
+          "value": 0.0033361203269342415,
           "unit": "ms",
-          "stat": "mean of 327253 samples"
+          "stat": "mean of 299750 samples"
         },
         "rme": {
-          "value": 0.176500116829629,
+          "value": 0.16681452855026258,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1085,22 +1085,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.02016600000206381,
+          "value": 0.020375000000058208,
           "unit": "ms",
-          "stat": "median of 48031 samples"
+          "stat": "median of 48120 samples"
         },
         "min": {
-          "value": 0.019874999998137355,
+          "value": 0.01995800000440795,
           "unit": "ms",
-          "stat": "min of 48031 samples"
+          "stat": "min of 48120 samples"
         },
         "mean": {
-          "value": 0.02081996502258249,
+          "value": 0.020781683832078842,
           "unit": "ms",
-          "stat": "mean of 48031 samples"
+          "stat": "mean of 48120 samples"
         },
         "rme": {
-          "value": 0.1394842250875038,
+          "value": 0.12269780556929959,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1115,22 +1115,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.15595800000301097,
+          "value": 0.1582909999997355,
           "unit": "ms",
-          "stat": "median of 6184 samples"
+          "stat": "median of 6107 samples"
         },
         "min": {
-          "value": 0.15254100000311155,
+          "value": 0.15437500000552973,
           "unit": "ms",
-          "stat": "min of 6184 samples"
+          "stat": "min of 6107 samples"
         },
         "mean": {
-          "value": 0.1617115803687361,
+          "value": 0.16376381922384087,
           "unit": "ms",
-          "stat": "mean of 6184 samples"
+          "stat": "mean of 6107 samples"
         },
         "rme": {
-          "value": 0.3125139670351469,
+          "value": 0.22208548029077024,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1145,22 +1145,22 @@
       },
       "metrics": {
         "median": {
-          "value": 1.6585624999970605,
+          "value": 1.7121255000020028,
           "unit": "ms",
-          "stat": "median of 596 samples"
+          "stat": "median of 578 samples"
         },
         "min": {
-          "value": 1.6220420000026934,
+          "value": 1.6644589999996242,
           "unit": "ms",
-          "stat": "min of 596 samples"
+          "stat": "min of 578 samples"
         },
         "mean": {
-          "value": 1.6792144127518849,
+          "value": 1.7317189982700434,
           "unit": "ms",
-          "stat": "mean of 596 samples"
+          "stat": "mean of 578 samples"
         },
         "rme": {
-          "value": 0.6731361361293758,
+          "value": 0.2906874203537411,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1175,22 +1175,22 @@
       },
       "metrics": {
         "median": {
-          "value": 17.426854500001355,
+          "value": 17.854082999998354,
           "unit": "ms",
           "stat": "median of 64 samples"
         },
         "min": {
-          "value": 17.057166999999026,
+          "value": 17.369000000006054,
           "unit": "ms",
           "stat": "min of 64 samples"
         },
         "mean": {
-          "value": 17.955883390624884,
+          "value": 18.180441999999744,
           "unit": "ms",
           "stat": "mean of 64 samples"
         },
         "rme": {
-          "value": 1.8762289716303011,
+          "value": 1.1897429076196917,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1205,22 +1205,22 @@
       },
       "metrics": {
         "median": {
-          "value": 0.11891600000308244,
+          "value": 0.07949999999982538,
           "unit": "ms",
-          "stat": "median of 8396 samples"
+          "stat": "median of 12155 samples"
         },
         "min": {
-          "value": 0.11104099999647588,
+          "value": 0.07391699999425327,
           "unit": "ms",
-          "stat": "min of 8396 samples"
+          "stat": "min of 12155 samples"
         },
         "mean": {
-          "value": 0.11911114268695744,
+          "value": 0.08227099934185943,
           "unit": "ms",
-          "stat": "mean of 8396 samples"
+          "stat": "mean of 12155 samples"
         },
         "rme": {
-          "value": 0.2137542942317558,
+          "value": 0.2227004122146244,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1235,22 +1235,22 @@
       },
       "metrics": {
         "median": {
-          "value": 1.2902919999978621,
+          "value": 0.8110000000015134,
           "unit": "ms",
-          "stat": "median of 765 samples"
+          "stat": "median of 1220 samples"
         },
         "min": {
-          "value": 1.2485000000015134,
+          "value": 0.7833750000063446,
           "unit": "ms",
-          "stat": "min of 765 samples"
+          "stat": "min of 1220 samples"
         },
         "mean": {
-          "value": 1.3080527202614458,
+          "value": 0.819808676229466,
           "unit": "ms",
-          "stat": "mean of 765 samples"
+          "stat": "mean of 1220 samples"
         },
         "rme": {
-          "value": 0.3335451073131656,
+          "value": 0.28899023587097133,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }
@@ -1265,22 +1265,82 @@
       },
       "metrics": {
         "median": {
-          "value": 14.635874999999942,
+          "value": 9.529249999999593,
           "unit": "ms",
-          "stat": "median of 68 samples"
+          "stat": "median of 105 samples"
         },
         "min": {
-          "value": 14.455791000000318,
+          "value": 9.20879199999763,
           "unit": "ms",
-          "stat": "min of 68 samples"
+          "stat": "min of 105 samples"
         },
         "mean": {
-          "value": 14.732415397058931,
+          "value": 9.569925409523625,
           "unit": "ms",
-          "stat": "mean of 68 samples"
+          "stat": "mean of 105 samples"
         },
         "rme": {
-          "value": 0.5494837845007895,
+          "value": 0.624412459966138,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick after every pose change (25% query rect), 10000 nodes > indexed",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick after every pose change (25% query rect), 10000 nodes",
+        "name": "indexed"
+      },
+      "metrics": {
+        "median": {
+          "value": 9.445374999995693,
+          "unit": "ms",
+          "stat": "median of 107 samples"
+        },
+        "min": {
+          "value": 8.877791999999317,
+          "unit": "ms",
+          "stat": "min of 107 samples"
+        },
+        "mean": {
+          "value": 9.387681813083997,
+          "unit": "ms",
+          "stat": "mean of 107 samples"
+        },
+        "rme": {
+          "value": 0.674623262908995,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/hit-test.bench.ts > area pick after every pose change (25% query rect), 10000 nodes > full walk",
+      "params": {
+        "file": "tests/perf/bench/hit-test.bench.ts",
+        "group": "area pick after every pose change (25% query rect), 10000 nodes",
+        "name": "full walk"
+      },
+      "metrics": {
+        "median": {
+          "value": 9.70587499999965,
+          "unit": "ms",
+          "stat": "median of 103 samples"
+        },
+        "min": {
+          "value": 9.473750000004657,
+          "unit": "ms",
+          "stat": "min of 103 samples"
+        },
+        "mean": {
+          "value": 9.783084893203778,
+          "unit": "ms",
+          "stat": "mean of 103 samples"
+        },
+        "rme": {
+          "value": 0.6279964461936411,
           "unit": "%",
           "stat": "relative margin of error on the mean"
         }

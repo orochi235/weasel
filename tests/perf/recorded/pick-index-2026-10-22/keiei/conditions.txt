@@ -1,7 +1,7 @@
-start: 2026-10-22T12:02:57Z
-commit: 33efd3167ec19b2596f6722c5d52638a08b07845 dirty-paths: 129
+start: 2026-10-22T12:30:34Z
+commit: 33efd3167ec19b2596f6722c5d52638a08b07845 dirty-paths: 131
 cpu: Apple M2 (8 threads, 24 GB)
 node: v26.8.2
-load before: { 8.78 6.73 5.99 }
-load after: { 8.06 6.77 6.04 }
-end: 2026-10-22T12:03:58Z
+load before: { 10.24 7.31 6.44 }
+load after: { 6.97 7.03 6.41 }
+end: 2026-10-22T12:31:37Z
