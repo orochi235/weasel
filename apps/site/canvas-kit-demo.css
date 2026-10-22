@@ -833,11 +833,6 @@ a:hover { text-decoration: underline; }
   font-size: var(--wzl-font-size-sm);
   font-family: inherit;
 }
-.ckd-release-pkg.is-more {
-  border-style: dashed;
-  color: var(--wzl-fg-subtle);
-}
-
 .ckd-release-pkg.is-filter {
   cursor: pointer;
 }
