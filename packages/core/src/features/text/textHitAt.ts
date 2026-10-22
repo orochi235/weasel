@@ -1,7 +1,8 @@
 import type { Scene } from '../../core/scene/types';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { pathContainsPoint } from '@weasel-js/geom';
+import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { sceneDerivedPathOf, scenePaintedPoseOf } from '../../canvas/derivedPath';
+import { derivedPartsOf } from '../../core/scene/derivedParts';
 import { effectSourceFor } from '../pathEffects/effectSources';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { caretIndexAt, pointInTextPose, type StyledRun, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
@@ -24,8 +25,8 @@ export interface TextReads<TData> {
  * point is taken back through the frame the node is drawn in. The whole box
  * takes the point, padding included; the caret is placed in the inset one.
  *
- * A path effect hiding a text source answers for it where its own glyphs
- * are, with the caret at the end of the text.
+ * A path effect hiding a text source answers for it within the bounds of any
+ * glyph it lays, counters included, with the caret at the end of the text.
  */
 export function textHitAt<TData, TPose extends RectPose>(
   scene: Scene<TData, string, TPose>,
@@ -45,7 +46,7 @@ export function textHitAt<TData, TPose extends RectPose>(
       const text = source === null || scene.isLocked(source) ? undefined : scene.get(source);
       if (text === undefined || !read.isText(text.data)) continue;
       const path = derivedPathOf(node);
-      if (path !== null && pathContainsPoint(path, cx, cy)) return { id: String(source), caret: read.text(text.data).length };
+      if (path !== null && onAGlyph(path, cx, cy)) return { id: String(source), caret: read.text(text.data).length };
       continue;
     }
     const at = paintedPoseOf(node);
@@ -63,4 +64,13 @@ export function textHitAt<TData, TPose extends RectPose>(
     return { id: String(node.id), caret: caretIndexAt(p.x, p.y, pose) };
   }
   return null;
+}
+
+/** Whether `(x, y)` is within the bounds of one of `path`'s parts: a glyph's box, so a stem too thin to land on and the
+ *  hole in an o still take the click. */
+function onAGlyph(path: Path, x: number, y: number): boolean {
+  return (derivedPartsOf(path) ?? [{ path }]).some(({ path: part }) => {
+    const b = boundsOfPath(part);
+    return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
+  });
 }

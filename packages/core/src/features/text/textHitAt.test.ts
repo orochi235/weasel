@@ -39,8 +39,11 @@ beforeEach(() => {
   _resetLayoutCacheForTests();
 });
 
-async function curved(hideSources: boolean) {
-  registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+/** Each glyph a bar with a hole through it, as an O or the bowl of a d has. */
+const RINGS: OutlineFace = { ...BARS, glyphD: () => `${BARS.glyphD(0)} M0.05 -0.45L0.05 -0.05L0.15 -0.05L0.15 -0.45Z` };
+
+async function curved(hideSources: boolean, face = BARS) {
+  registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => face });
   await loadTextOutlines(TEXT);
   return createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
@@ -64,6 +67,12 @@ describe('textHitAt over a text-along node', () => {
     const scene = await curved(true);
     expect(textHitAt(scene, READ, 40, 280)).toBeNull();
     expect(textHitAt(scene, READ, 50, 60)).toBeNull();
+  });
+
+  it("answers in a glyph's counter too, not only on its ink", async () => {
+    const scene = await curved(true, RINGS);
+    expect(textHitAt(scene, READ, 10, 280)).toEqual({ id: 't', caret: 2 });
+    expect(textHitAt(scene, READ, 40, 280)).toBeNull();
   });
 
   it('leaves an effect showing its sources alone', async () => {
