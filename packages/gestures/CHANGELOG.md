@@ -1,5 +1,39 @@
 # @weasel-js/gestures
 
+## 1.12.0
+
+### Patch Changes
+
+- c2fb65c: Keymaps behind a leader key. `keymapContribution` builds a keymap, whose bindings are live only while
+  it is open, and the leader that opens it: tap the leader for one input, or hold it to keep the keymap
+  open. Escape always closes it; a key it does not bind is ignored, or passed on under the new
+  `gestures.keymapUnbound` kit setting. `<KeymapHint>` lists an open keymap's keys, and `formatShortcut`
+  draws a key inside one as `Loupe ▸ 2`.
+  
+  Bindings can now be rebound or removed by id, on actions and contributions alike:
+  `ActionsRegistry.overrideBindings` and `<SceneCanvas bindingOverrides>`, written as route strings or
+  with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
+  binding editor.
+  
+  `modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+  the key it says; before, either matched nothing.
+  
+  Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
+  registry must implement them.
+- e9304f4: Keycaps draw a key's leader path. `formatShortcutParts` now returns `{ leader, keys }`: the keymaps
+  leading to the key, outermost first, each with its label and its leader's chips, then the key's own
+  chips as `KeyLegend`s, so an optional shift arrives marked. `formatShortcut` is built on it, and
+  `SHORTCUT_LEADER_SEPARATOR` is the ` ▸ ` it writes. `KeySequence` takes a `leader` prop and draws each
+  step's label before the keys (`Loupe ▸ 2`). `ShortcutKeys` takes a `shortcut` as data as well as a
+  `legend`, and reads the leader path out of a legend `formatShortcut` wrote; `<KeymapHint>` and the
+  command palette draw through them.
+  
+  Breaking: `formatShortcutParts` used to return a flat `string[]` of key labels. Its `keys` field is
+  that list as `KeyLegend`s; read `.keys.map((k) => k.label)` for the old shape.
+- Updated dependencies [dbd6711]
+- Updated dependencies [c2fb65c]
+  - @weasel-js/menu@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

@@ -1,5 +1,96 @@
 # @weasel-js/forge
 
+## 1.12.0
+
+### Patch Changes
+
+- 78f29de: Lenses in weaselforge. Alt+L opens the Loupe keymap, and `l` adds a lens: a bubble showing the patch
+  of a story under its reticle, magnified, or rendered with a comparison such as the opposite mode, an
+  arg or a DPR, as Swap, Split or Difference. A lens shows a Live second render or, from the dev
+  server, Pixels captured in headless Chromium; Playwright is a new optional peer of
+  `@weasel-js/forge`, and without it a lens offers Live only. Token, Contrast and pixel-grid readouts
+  sit in the lens chrome, and Alt+Slash opens a panel listing every key binding the workshop
+  registers.
+  
+  Everything below is additive.
+  
+  forge: the shell config takes `capture.allowOrigins`, naming what a capture page may load besides
+  the dev server, and `loupe.modeGlobal`, the global an opposite-mode comparison flips. A global
+  declaration may give `opposite(value, globals)`, the value that comparison flips it to.
+  `<TrialHost>` takes a `copy` prop, which makes the host a second copy of a trial's story, under
+  globals of its own. `@weasel-js/forge/shell` exports `followEdits`, and `@weasel-js/forge/frame`
+  exports `mountCapture`, which mounts a capture page.
+  
+  labkit: the loupe entry gains `<LensOverlay>` (whose `renderReadouts` is handed `LensReadoutProps`),
+  `<LensActions>`, the lens scene and its ops, the `LensSource` contract, `createLoupeKeymap`,
+  `probeUnderLens` and `LENS_REST_MS`. A lab has an `overlay` chrome region, rendered over the trials
+  inside the lab surface, and `useLabEntries` reads the ambient entries installed on the lab, its
+  keymaps among them. Each lab surface gains a `'top'` canvas layer for one tenant above `'over'`,
+  made only while a tenant asks for it; a surface owner offers it by publishing `top` and `claimTop`
+  in its `SurfaceCanvases`. `surface.scope()` takes a list of elements as well as one
+  (`SurfaceScope`).
+  
+  Elsewhere: `@weasel-js/core/json` exports `stableStringify` for Node; paint exports `contrastRatio`
+  and `wcagLevels`; svg exports `specificity`, `compareSpecificity` and `splitTopLevel`; an action's
+  `enabled` may return a reason as text (`ActionUnavailable` in routing, re-exported by core), which
+  the command palette shows as written.
+- 2c52cc5: `parseColor` reads `color(srgb …)`, `color(srgb-linear …)`, `oklab()` and `oklch()`, clamping the OK spaces into sRGB. A browser computes every `color-mix()` to `color(srgb …)`, so the workshop's Token readout no longer reports such a color as unreadable.
+  
+  A workshop lens shows the new story after a switch to another one, where it showed "Nothing under the reticle" until something else changed, and a Live lens shows a component's index page. A Pixels lens captures a story whose config holds unset (undefined) args, which it refused as unsendable.
+  
+  A lens body takes resize handles at its corners only. A round body resized into an ellipse clips its view to that ellipse, inside its rim, where the view covered all but two slivers of the rim.
+- 51f79a2: A lens's reticle marks the patch the lens shows: the body's box divided by the factor, in the body's shape, where it was a fixed 16 px circle. It resizes with a new factor and, in the same undo step, with its body. It takes no resize handles. `RETICLE_SIZE` is removed, which breaks any import of it; `reticleAt` places a Follow reticle at its current size.
+  
+  A lens's chrome strip hangs below the reach of its body's handles, so the bottom handles of a selected body take presses again.
+  
+  `<CanvasStack>` sizes its canvases from its layout box and puts any ancestor transform's scale into their backing density. Under a magnifying lens it draws sharp, where it used to enlarge a canvas sized from its scaled client rect. The density is capped at 4096² backing pixels a layer.
+- dcc03c4: A story taller than its trial makes forge's scroller a tab stop, a region named for the trial, so a
+  keyboard can scroll it and the Accessibility panel no longer reports `scrollable-region-focusable`
+  against the workshop. A story that fits leaves the scroller out of the tab order. labkit now exports
+  `useTrialTitle` and `TrialTitleContext`, the enclosing trial's title as its title bar shows it.
+- Updated dependencies [dbd6711]
+- Updated dependencies [c482e73]
+- Updated dependencies [94ed4c2]
+- Updated dependencies [9ffd9ca]
+- Updated dependencies [0996ce6]
+- Updated dependencies [69d135f]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [c9a3b7d]
+- Updated dependencies [1cc3d07]
+- Updated dependencies [78f29de]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [15561be]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [51f79a2]
+- Updated dependencies [94ebd35]
+- Updated dependencies [cef877b]
+- Updated dependencies [24f2495]
+- Updated dependencies [d9fd036]
+- Updated dependencies [f461572]
+- Updated dependencies [2e45ddb]
+- Updated dependencies [0276e6e]
+- Updated dependencies [6e29d46]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [e9304f4]
+- Updated dependencies [08162a9]
+- Updated dependencies [dcc03c4]
+- Updated dependencies [92b8df8]
+- Updated dependencies [91a1d84]
+- Updated dependencies [1a72259]
+- Updated dependencies [eec50d7]
+  - @weasel-js/ui@1.12.0
+  - @weasel-js/core@1.12.0
+  - @weasel-js/svg@1.12.0
+  - @weasel-js/labkit@1.12.0
+  - @weasel-js/theme@1.12.0
+  - @weasel-js/prefs@1.12.0
+  - @weasel-js/icons@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

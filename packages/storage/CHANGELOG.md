@@ -1,5 +1,13 @@
 # @weasel-js/storage
 
+## 1.12.0
+
+### Patch Changes
+
+- 91a1d84: `useVisibleRaf`, `defaultStorage` and the deprecated `cornerPoint` now carry a description, which
+  editors show on hover and the package pages show beside the name.
+- @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

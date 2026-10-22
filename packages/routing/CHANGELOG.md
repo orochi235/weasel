@@ -1,5 +1,109 @@
 # @weasel-js/routing
 
+## 1.12.0
+
+### Patch Changes
+
+- dbd6711: Controls can run along a curve. `@weasel-js/geom` adds track shapes (`lineShape`, `arcShape`), reading runs over them
+  (`trackRun`, whose `nearest` can leave the ends open) and their SVG path data (`trackShapeD`). `@weasel-js/ui` adds
+  `Along`, which sizes an arc from its box and hands it to the controls inside; `Slider`, `DetentSlider` and `Bar`
+  follow it, or a `shape` prop. `TrackCtx` gains a required `shape` field — the value span as a shape — so code that
+  builds a `TrackCtx` itself no longer typechecks until it supplies one. `paintGradientTrack` paints straight tracks
+  only. A menu opened under a button can ask to open above it (`placeMenuUnder`'s `above`, `MenuOpenRequest.above`).
+- f6db995: An action's own binding with no declared id is now `<action>@<n>` for a binding override, where it
+  was `<action>#<n>`; a contribution's stays `<entry>#<n>`. An entry and an action sharing an id no
+  longer answer to one override.
+- 0996ce6: `captureGesture` captures the next click, double click, drag, right click or keystroke as a gesture
+  spec, for a binding editor that rebinds pointer input as well as keys. It tells a click from a drag
+  with the dispatcher's own recognizer and drag threshold, writes the platform's primary modifier as
+  `mod`, and takes every event of what it captures from the page; Escape or an abort resolves `null`.
+  `captureKey` is now `captureGesture` limited to a keystroke.
+- 3716e73: The dev-time route-conflict check and devtools' registry listing now read contribution bindings under
+  their binding overrides, as dispatch does: a binding rebound onto a taken key is reported, and an
+  unbound one is no longer listed or reported. The conflict check runs again when the overrides change.
+  `overriddenBindings` returns a binding list under the overrides in force, and `findScopedConflicts`
+  takes them as `overrides`.
+- 78f29de: Lenses in weaselforge. Alt+L opens the Loupe keymap, and `l` adds a lens: a bubble showing the patch
+  of a story under its reticle, magnified, or rendered with a comparison such as the opposite mode, an
+  arg or a DPR, as Swap, Split or Difference. A lens shows a Live second render or, from the dev
+  server, Pixels captured in headless Chromium; Playwright is a new optional peer of
+  `@weasel-js/forge`, and without it a lens offers Live only. Token, Contrast and pixel-grid readouts
+  sit in the lens chrome, and Alt+Slash opens a panel listing every key binding the workshop
+  registers.
+  
+  Everything below is additive.
+  
+  forge: the shell config takes `capture.allowOrigins`, naming what a capture page may load besides
+  the dev server, and `loupe.modeGlobal`, the global an opposite-mode comparison flips. A global
+  declaration may give `opposite(value, globals)`, the value that comparison flips it to.
+  `<TrialHost>` takes a `copy` prop, which makes the host a second copy of a trial's story, under
+  globals of its own. `@weasel-js/forge/shell` exports `followEdits`, and `@weasel-js/forge/frame`
+  exports `mountCapture`, which mounts a capture page.
+  
+  labkit: the loupe entry gains `<LensOverlay>` (whose `renderReadouts` is handed `LensReadoutProps`),
+  `<LensActions>`, the lens scene and its ops, the `LensSource` contract, `createLoupeKeymap`,
+  `probeUnderLens` and `LENS_REST_MS`. A lab has an `overlay` chrome region, rendered over the trials
+  inside the lab surface, and `useLabEntries` reads the ambient entries installed on the lab, its
+  keymaps among them. Each lab surface gains a `'top'` canvas layer for one tenant above `'over'`,
+  made only while a tenant asks for it; a surface owner offers it by publishing `top` and `claimTop`
+  in its `SurfaceCanvases`. `surface.scope()` takes a list of elements as well as one
+  (`SurfaceScope`).
+  
+  Elsewhere: `@weasel-js/core/json` exports `stableStringify` for Node; paint exports `contrastRatio`
+  and `wcagLevels`; svg exports `specificity`, `compareSpecificity` and `splitTopLevel`; an action's
+  `enabled` may return a reason as text (`ActionUnavailable` in routing, re-exported by core), which
+  the command palette shows as written.
+- 2cf7da4: `keymapContribution` takes an `overlay` and `overlayPosition`, drawn while the keymap is open.
+- 92a0f2d: A keymap's leader triggered without a key can now hold its keymap open:
+  `trigger('keymap.<id>', { hold: true })` keeps it open through any number of
+  inputs until Escape, where a plain `trigger` still opens it for one input.
+  `KEYMAP_HOLD` is the `heldBy` such a level reports.
+- 448065a: A keymap entry's `overlay` now draws while that keymap is the innermost one open, and stops when it
+  closes. Before, `useContributions` assembled overlays without the open keymap, so a keymap's overlay
+  never drew.
+- c697535: Every binding the kit ships now declares an id, so a binding override names it by that id rather
+  than by its owner and position: `undo.key`, `rect.drag`, `nudge.left.big`, `selection.rotate.handle`,
+  `tool.activate.rect`. The scheme is `<owner>.<role>`, the owner being the action for an action's own
+  binding and the tool or entry for a contribution's (`docs/taxonomy.md`, "binding override"). An
+  override written against a positional id such as `select#3` no longer reaches its binding.
+  
+  An action's `defaultBinding` that was a bare spec is now a one-entry `{ spec, opts: { id } }` array;
+  code reading `defaultBinding` as a spec reads it through `actionBindings`.
+- c2fb65c: Keymaps behind a leader key. `keymapContribution` builds a keymap, whose bindings are live only while
+  it is open, and the leader that opens it: tap the leader for one input, or hold it to keep the keymap
+  open. Escape always closes it; a key it does not bind is ignored, or passed on under the new
+  `gestures.keymapUnbound` kit setting. `<KeymapHint>` lists an open keymap's keys, and `formatShortcut`
+  draws a key inside one as `Loupe ▸ 2`.
+  
+  Bindings can now be rebound or removed by id, on actions and contributions alike:
+  `ActionsRegistry.overrideBindings` and `<SceneCanvas bindingOverrides>`, written as route strings or
+  with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
+  binding editor.
+  
+  `modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+  the key it says; before, either matched nothing.
+  
+  Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
+  registry must implement them.
+- Updated dependencies [dbd6711]
+- Updated dependencies [13e597d]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [94ebd35]
+- Updated dependencies [e9304f4]
+- Updated dependencies [91a1d84]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/menu@1.12.0
+  - @weasel-js/gestures@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/prefs@1.12.0
+  - @weasel-js/cursor@1.12.0
+  - @weasel-js/history@1.12.0
+  - @weasel-js/icons@1.12.0
+  - @weasel-js/modes@1.12.0
+  - @weasel-js/quantity@1.12.0
+  - @weasel-js/registry@1.12.0
+  - @weasel-js/select@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

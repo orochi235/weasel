@@ -1,5 +1,189 @@
 # Changelog
 
+## 1.12.0
+
+### Minor Changes
+
+- 13e597d: Text can follow a path. `@weasel-js/geom` adds a `'path'` track shape (`pathShape`), a `side` override on `trackRun`,
+  and `placeAlongRun`, which turns item lengths into places along a run, in `RunOrder` `'reading'` or `'track'`.
+  `TrackShape` gains a required `closed` member, so a shape implemented outside geom has to add it.
+  `runPlaces` and `runLength` moved there from `@weasel-js/ui`, which re-exports `runPlaces` by name, so its curved rows
+  come from geom's placement. `measurePath` takes `keepCorners`. `@weasel-js/text` adds `textClusters`, a line's
+  grapheme clusters as outlines with their advances. `@weasel-js/core` adds the `textAlong` path effect; every effect
+  takes `hideSources`, effect sources can carry a list of items, curved text is derived again when a font loads, a
+  hidden source is edited through its effect, and Delete, Cut and Expand now remove an effect's hidden sources with
+  it. A committed in-place text edit is labeled "Edit text" in history.
+  `@weasel-js/path-tools` adds Text Along Path (Alt+Shift+X), Release and Set Path. `useTextEdit` in
+  `@weasel-js/text-dom` gains `onDraft`.
+  
+  <!-- bump-approved: minor: maintainer — 1.12.0 release requested 2026-10-22 -->
+
+### Patch Changes
+
+- 0996ce6: `captureGesture` captures the next click, double click, drag, right click or keystroke as a gesture
+  spec, for a binding editor that rebinds pointer input as well as keys. It tells a click from a drag
+  with the dispatcher's own recognizer and drag threshold, writes the platform's primary modifier as
+  `mod`, and takes every event of what it captures from the page; Escape or an abort resolves `null`.
+  `captureKey` is now `captureGesture` limited to a keystroke.
+- 3716e73: The dev-time route-conflict check and devtools' registry listing now read contribution bindings under
+  their binding overrides, as dispatch does: a binding rebound onto a taken key is reported, and an
+  unbound one is no longer listed or reported. The conflict check runs again when the overrides change.
+  `overriddenBindings` returns a binding list under the overrides in force, and `findScopedConflicts`
+  takes them as `overrides`.
+- b571ad6: A node's `fill: 'inherit'` or `stroke: 'inherit'` now takes its nearest enclosing container's fill or stroke whole. If that container inherits too, the lookup keeps going up, and at the root it is none. A container's fill and stroke are only a source: the built-in `kit:shape` and `kit:path` painters no longer paint a container's own fill or stroke, and its interior is no longer hit for picking.
+  
+  The scene's draw wrapper passes the resolved paint to painters as `ctx.inherited` on `NodePaintCtx`, and pickers pass it on `NodeInkCtx`. A painter's memo has to key on it: `nodeMemo` takes an extra reference-compared key for this, and the paint stays the same object while its sources are unchanged. **A custom painter that does not read `ctx.inherited` paints an `'inherit'` field as none.** Pass the field and `ctx?.inherited?.fill` to `resolveFill` (or `resolveStroke`) to pick it up. `diagram:shape` reads it. Readers outside a painter can use `inheritedPaintIn(scene, node)` and `withInheritedPaint(data, inherited)`, and `paintAbove(scene, node)` says what inheriting would paint.
+  
+  SVG import turns a `<g>`'s fill and stroke into its container's, and a child that sets none of them gets `'inherit'`. A gradient, or a child faded further than its group, is still copied onto the child. Export writes a container's paint on its `<g>` and leaves the attribute off a child that inherits a solid one.
+  
+  `SelectionPanel` adds an Inherit choice beside None for a node's fill and stroke, showing the paint it would take. `PaintField` and `PaintInput` offer it when given `inherit` (`{ paint, onInherit }`); their `value` may be `'inherit'`, and `onChange` is unchanged.
+- 1cc3d07: Pressing a node inside a selected group no longer selects that node on the press. A drag that starts
+  there moves the group, and a click that ends without a drag selects the node, as a press on one member
+  of a multi-selection already did. It used to select the member on the press, so the drag moved the
+  member alone and left the rest of the group behind.
+  
+  A group here is a container whose pose derives from its children (`dependsOn: 'children'` with a
+  `derivePose`), which is what the `group` action makes in a scene that composes poses by identity. A
+  selected container with a pose of its own, such as a diagram container, still lets a press pick the
+  member out of it.
+- 78f29de: Lenses in weaselforge. Alt+L opens the Loupe keymap, and `l` adds a lens: a bubble showing the patch
+  of a story under its reticle, magnified, or rendered with a comparison such as the opposite mode, an
+  arg or a DPR, as Swap, Split or Difference. A lens shows a Live second render or, from the dev
+  server, Pixels captured in headless Chromium; Playwright is a new optional peer of
+  `@weasel-js/forge`, and without it a lens offers Live only. Token, Contrast and pixel-grid readouts
+  sit in the lens chrome, and Alt+Slash opens a panel listing every key binding the workshop
+  registers.
+  
+  Everything below is additive.
+  
+  forge: the shell config takes `capture.allowOrigins`, naming what a capture page may load besides
+  the dev server, and `loupe.modeGlobal`, the global an opposite-mode comparison flips. A global
+  declaration may give `opposite(value, globals)`, the value that comparison flips it to.
+  `<TrialHost>` takes a `copy` prop, which makes the host a second copy of a trial's story, under
+  globals of its own. `@weasel-js/forge/shell` exports `followEdits`, and `@weasel-js/forge/frame`
+  exports `mountCapture`, which mounts a capture page.
+  
+  labkit: the loupe entry gains `<LensOverlay>` (whose `renderReadouts` is handed `LensReadoutProps`),
+  `<LensActions>`, the lens scene and its ops, the `LensSource` contract, `createLoupeKeymap`,
+  `probeUnderLens` and `LENS_REST_MS`. A lab has an `overlay` chrome region, rendered over the trials
+  inside the lab surface, and `useLabEntries` reads the ambient entries installed on the lab, its
+  keymaps among them. Each lab surface gains a `'top'` canvas layer for one tenant above `'over'`,
+  made only while a tenant asks for it; a surface owner offers it by publishing `top` and `claimTop`
+  in its `SurfaceCanvases`. `surface.scope()` takes a list of elements as well as one
+  (`SurfaceScope`).
+  
+  Elsewhere: `@weasel-js/core/json` exports `stableStringify` for Node; paint exports `contrastRatio`
+  and `wcagLevels`; svg exports `specificity`, `compareSpecificity` and `splitTopLevel`; an action's
+  `enabled` may return a reason as text (`ActionUnavailable` in routing, re-exported by core), which
+  the command palette shows as written.
+- 92a0f2d: A keymap's leader triggered without a key can now hold its keymap open:
+  `trigger('keymap.<id>', { hold: true })` keeps it open through any number of
+  inputs until Escape, where a plain `trigger` still opens it for one input.
+  `KEYMAP_HOLD` is the `heldBy` such a level reports.
+- c697535: Every binding the kit ships now declares an id, so a binding override names it by that id rather
+  than by its owner and position: `undo.key`, `rect.drag`, `nudge.left.big`, `selection.rotate.handle`,
+  `tool.activate.rect`. The scheme is `<owner>.<role>`, the owner being the action for an action's own
+  binding and the tool or entry for a contribution's (`docs/taxonomy.md`, "binding override"). An
+  override written against a positional id such as `select#3` no longer reaches its binding.
+  
+  An action's `defaultBinding` that was a bare spec is now a one-entry `{ spec, opts: { id } }` array;
+  code reading `defaultBinding` as a spec reads it through `actionBindings`.
+- c2fb65c: Keymaps behind a leader key. `keymapContribution` builds a keymap, whose bindings are live only while
+  it is open, and the leader that opens it: tap the leader for one input, or hold it to keep the keymap
+  open. Escape always closes it; a key it does not bind is ignored, or passed on under the new
+  `gestures.keymapUnbound` kit setting. `<KeymapHint>` lists an open keymap's keys, and `formatShortcut`
+  draws a key inside one as `Loupe ▸ 2`.
+  
+  Bindings can now be rebound or removed by id, on actions and contributions alike:
+  `ActionsRegistry.overrideBindings` and `<SceneCanvas bindingOverrides>`, written as route strings or
+  with the new `key()`, `held()` and `unbound()` helpers. `captureKey` reads the next keystroke for a
+  binding editor.
+  
+  `modeShortcutSpec` now reads through `key()`, so a mode shortcut written `'Space'` or `'Esc'` names
+  the key it says; before, either matched nothing.
+  
+  Additive: `ActionsRegistry` gains `overrideBindings` and `bindingOverrides`, so a hand-written
+  registry must implement them.
+- 24f2495: An absent fill or stroke now means none everywhere, read through `resolveFill` and `resolveStroke`. This breaks three things that used to fill in a default:
+  
+  - **A text node built without a `fill` now draws no glyphs.** Write `fill: { paint: solid('#000') }`, or `DEFAULT_TEXT_FILL`, now exported from `@weasel-js/text` and `@weasel-js/core`. `DEFAULT_TEXT_STYLE.fill` is `null`. The text insert, the sticky note and SVG import write black themselves.
+  - **A derived part with no `fill` or `stroke` no longer takes its node's.** Write `INHERIT` (`'inherit'`) for that; `DerivedPart` allows it, and `resolvePartPaint` is the one reading of a part's paint.
+  - **`diagramShape` drops its `defaultFill` and `defaultStroke` options.** An outline paints what its data names; `diagramScene` already writes the default style onto every node. SVG import writes SVG's initial black onto text that names no fill, and SVG export writes `fill="none"` for text that has none.
+  
+  `setFill` and `setStroke` write None as a record with no `paint` rather than `null`, so a stroke keeps its width and dash; a `paint: null` passed when the gesture starts used to be read as no paint given and painted the default color. The selection panel shows a fill or stroke paint as a paint, None or Mixed, never unset; `nestedPaintValue` is that reading. Booleans, Outline Stroke and the character bar read a fill with no paint as unfilled. Core re-exports `resolveFill`, `resolveStroke`, `INHERIT` and their types.
+- d9fd036: `@weasel-js/pdf` rasterizes a group with effects over the group's bounds grown by how far its effects reach, rather than over the whole page, so a small blurred badge no longer costs a full-page bitmap. An `Effect` can now say how far it reaches with the new optional `reach`, in device pixels; `blur` sets it, and `effectsReach` (`@weasel-js/renderer`) adds up a stack's. An effect without one, such as `vignette`, still covers the whole page. The renderer's retained surfaces use the same bound, and `commandsBounds` takes the scale the commands will be drawn at.
+  
+  `screen`-unit paint inside a rasterized group now lands in the PDF where the vector path puts it, in page points rather than raster pixels. `WeaselRenderer.render` takes `screen` in its options, naming what screen space is when it is not the drawing surface, and `renderSceneToPixels` and a raster session's `render` pass it through as `screen`.
+- f461572: `DiagramView` now draws a node's perimeter port labels. A node's `portLabels` are children of its
+  container and sit outside its box, and a container clips its children to its painter's
+  silhouette, so every one of them was clipped away. `buildBody` now gives the container a `clipFromPose` that clips nothing.
+  
+  Core exports that clip as `clipNothing` (from `@weasel-js/core` and `@weasel-js/core/math`),
+  for any container whose children may draw outside it. Every scene's registry carries it under
+  `CLIP_NOTHING`, so a container using it saves and loads with no registry entry of the consumer's.
+  A symmetry group now uses it too, and still saves under `SYMMETRY_CLIP_KEY`.
+- 3bf5edb: Add `resolveFill` and `resolveStroke`, the one answer to what a fill or stroke field paints: absent, `null` and a record with no `paint` are none, a paint with alpha 0 is still a paint, and `INHERIT` (`'inherit'`) takes whatever the caller passes as inherited. `fillHasInk` and `strokeHasInk` now go through them, so `fillHasInk({ paint: null })` is `false` where it used to be `true`.
+- 92b8df8: A node with no `data.fill` now paints no fill. It used to paint gray (`#888`) in the built-in
+  painters and in `svgLeafFromKit`'s export, so a container from Cmd+G drew a gray box behind its
+  members, and a shape inserted without a fill showed up gray. This changes what existing scenes look
+  like: a node that relied on the gray default needs an explicit `fill`. `DEFAULT_SHAPE_FILL` is
+  removed, since nothing falls back to it any more, and `resolveNodeFill` takes no fallback argument.
+  
+  The rect fallback painter no longer matches containers. A container without `clipFromPose` used to
+  take that painter's box as its silhouette and clip its members to it, which cut off the outer half of
+  their strokes, since a group's derived pose leaves stroke width out. A container now paints
+  nothing, even a `data.fill` it declares, and clips nothing; one that should clip says so with
+  `clipFromPose`, and a background behind a group's members is a leaf among them.
+- 91a1d84: `useVisibleRaf`, `defaultStorage` and the deprecated `cornerPoint` now carry a description, which
+  editors show on hover and the package pages show beside the name.
+- eec50d7: Views answer what they show: `SceneCanvasApi.aimOf` and `setAim`, and `<CanvasView aim onAimChange>` for a view that holds its aim and derives its camera from it. `<ViewMarker>`, or a contribution's `markers`, draws one view's aim inside another's frame, and dragging the marker moves that view; `actions={null}` turns marker dragging off. kernel3d answers a frustum aim with `aimOf3d`.
+  
+  `CanvasViewProps` is now a union: `aim` cannot be passed together with `view`, `defaultView`, `onViewChange` or `viewBounds`. Code that writes an interface extending `CanvasViewProps` needs a type alias instead. A `Partial<CanvasViewProps>` spread into `<CanvasView>` no longer type-checks, and `Omit<CanvasViewProps, …>` does not distribute over the union; type either over one of the named halves, `CanvasViewCommonProps` with `CameraHeldViewProps` or `AimHeldViewProps`.
+  
+  `SceneCanvasApi` has two new required members, `aimOf` and `setAim`, so a hand-written fake of it needs both.
+- Updated dependencies [dbd6711]
+- Updated dependencies [f6db995]
+- Updated dependencies [0996ce6]
+- Updated dependencies [3716e73]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2cf7da4]
+- Updated dependencies [92a0f2d]
+- Updated dependencies [448065a]
+- Updated dependencies [c697535]
+- Updated dependencies [c2fb65c]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [929736f]
+- Updated dependencies [d9fd036]
+- Updated dependencies [3bf5edb]
+- Updated dependencies [e9304f4]
+- Updated dependencies [91a1d84]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/routing@1.12.0
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/text@1.12.0
+  - @weasel-js/text-dom@1.12.0
+  - @weasel-js/stroke@1.12.0
+  - @weasel-js/gestures@1.12.0
+  - @weasel-js/renderer@1.12.0
+  - @weasel-js/react@1.12.0
+  - @weasel-js/animator@1.12.0
+  - @weasel-js/prefs@1.12.0
+  - @weasel-js/simulation@1.12.0
+  - @weasel-js/cursor@1.12.0
+  - @weasel-js/font@1.12.0
+  - @weasel-js/history@1.12.0
+  - @weasel-js/icons@1.12.0
+  - @weasel-js/modes@1.12.0
+  - @weasel-js/quantity@1.12.0
+  - @weasel-js/registry@1.12.0
+  - @weasel-js/select@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

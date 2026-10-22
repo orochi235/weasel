@@ -1,5 +1,32 @@
 # @weasel-js/renderer
 
+## 1.12.0
+
+### Patch Changes
+
+- 929736f: `@weasel-js/pdf` draws a group's Porter-Duff `composite` exactly instead of source-over. With a `rasterize` hook, a group whose composite is anything but `source-over` is handed to the hook together with everything the page drew before it, inside the groups it sits in, so the renderer composites it onto its real backdrop; the raster is placed on white paper over the group's bounds, or over the whole page for an operator that clears what the group leaves empty. An isolated group holding such a composite is rasterized whole. The hook's signature is unchanged; without one, a composite is still drawn source-over and reported in `skipped`.
+  
+  `@weasel-js/renderer` exports `leavesUncovered(composite)`, whether an operator leaves the destination as it was wherever the source is empty, and `readsBackdrop(commands)`, whether any group in a list has its own composite.
+- d9fd036: `@weasel-js/pdf` rasterizes a group with effects over the group's bounds grown by how far its effects reach, rather than over the whole page, so a small blurred badge no longer costs a full-page bitmap. An `Effect` can now say how far it reaches with the new optional `reach`, in device pixels; `blur` sets it, and `effectsReach` (`@weasel-js/renderer`) adds up a stack's. An effect without one, such as `vignette`, still covers the whole page. The renderer's retained surfaces use the same bound, and `commandsBounds` takes the scale the commands will be drawn at.
+  
+  `screen`-unit paint inside a rasterized group now lands in the PDF where the vector path puts it, in page points rather than raster pixels. `WeaselRenderer.render` takes `screen` in its options, naming what screen space is when it is not the drawing surface, and `renderSceneToPixels` and a raster session's `render` pass it through as `screen`.
+- Updated dependencies [dbd6711]
+- Updated dependencies [b571ad6]
+- Updated dependencies [13e597d]
+- Updated dependencies [400b393]
+- Updated dependencies [40d87f7]
+- Updated dependencies [78f29de]
+- Updated dependencies [2c52cc5]
+- Updated dependencies [94ebd35]
+- Updated dependencies [24f2495]
+- Updated dependencies [3bf5edb]
+  - @weasel-js/geom@1.12.0
+  - @weasel-js/paint@1.12.0
+  - @weasel-js/text@1.12.0
+  - @weasel-js/stroke@1.12.0
+  - @weasel-js/font@1.12.0
+  - @weasel-js/registry@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes
