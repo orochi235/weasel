@@ -1,6 +1,6 @@
 import type { Scene } from '../../core/scene/types';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathContainsPoint, type Path } from '@weasel-js/geom';
 import { sceneDerivedPathOf, scenePaintedPoseOf } from '../../canvas/derivedPath';
 import { derivedPartsOf } from '../../core/scene/derivedParts';
 import { effectSourceFor } from '../pathEffects/effectSources';
@@ -27,6 +27,8 @@ export interface TextReads<TData> {
  *
  * A path effect hiding a text source answers for it within the bounds of any
  * glyph it lays, counters included, with the caret at the end of the text.
+ * A curved glyph takes a double-click anywhere in its axis-aligned box, wider
+ * than the ink selection picks.
  */
 export function textHitAt<TData, TPose extends RectPose>(
   scene: Scene<TData, string, TPose>,
@@ -69,7 +71,9 @@ export function textHitAt<TData, TPose extends RectPose>(
 /** Whether `(x, y)` is within the bounds of one of `path`'s parts: a glyph's box, so a stem too thin to land on and the
  *  hole in an o still take the click. */
 function onAGlyph(path: Path, x: number, y: number): boolean {
-  return (derivedPartsOf(path) ?? [{ path }]).some(({ path: part }) => {
+  const parts = derivedPartsOf(path);
+  if (parts === undefined) return pathContainsPoint(path, x, y);
+  return parts.some(({ path: part }) => {
     const b = boundsOfPath(part);
     return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
   });
