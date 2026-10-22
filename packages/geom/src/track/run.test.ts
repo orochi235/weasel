@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import type { Point } from '../paths/cubicMath';
+import { pathFromD } from '../paths/pathFromD';
 import { arcShape } from './arc';
+import { pathShape } from './path';
 import { trackRun } from './run';
 import { lineShape } from './shape';
 
@@ -60,6 +62,33 @@ describe('trackRun', () => {
   test('nearest answers in reading order', () => {
     const r = trackRun(arcShape({ center: C, radius: 100, start: 120, end: 240 }));
     expect(r.nearest({ x: -86.6025, y: 50 }).f).toBeCloseTo(0);
+  });
+  test("side 'path' keeps a downward-facing line in the path's own direction", () => {
+    const shape = lineShape({ x: 100, y: 0 }, { x: 0, y: 0 });
+    expect(trackRun(shape).flipped).toBe(true);
+    const r = trackRun(shape, 0, 1, { side: 'path' });
+    expect([r.flipped, r.reversed]).toEqual([false, false]);
+    close(r.at(0).point, { x: 100, y: 0 });
+  });
+  test("side 'flipped' turns an upright run over", () => {
+    const r = trackRun(lineShape({ x: 0, y: 0 }, { x: 100, y: 0 }), 0, 1, { side: 'flipped' });
+    expect([r.flipped, r.reversed]).toEqual([true, true]);
+    close(r.at(0).point, { x: 100, y: 0 });
+    expect(r.at(0.5).angle).toBeCloseTo(180);
+  });
+  test("auto is judged at 'about'", () => {
+    // Out to the right along the top, back to the left along the bottom.
+    const shape = pathShape(pathFromD('M0 0 C 150 0 150 100 0 100'))!;
+    const early = trackRun(shape, 0, 1, { about: 0.25 });
+    const late = trackRun(shape, 0, 1, { about: 0.75 });
+    expect([early.flipped, late.flipped]).toEqual([false, true]);
+  });
+  test('a whole run of a closed shape is closed', () => {
+    const circle = arcShape({ center: C, radius: 100, start: 0, end: 0 });
+    expect(trackRun(circle).closed).toBe(true);
+    expect(trackRun(circle, 1, 0).closed).toBe(true);
+    expect(trackRun(circle, 0, 0.5).closed).toBe(false);
+    expect(trackRun(lineShape(C, { x: 100, y: 0 })).closed).toBe(false);
   });
   describe('an open nearest runs on past the ends', () => {
     const open = { open: true };

@@ -19,17 +19,31 @@ export interface TrackRun extends TrackShape {
   readonly shape: TrackShape;
   readonly from: number;
   readonly to: number;
-  /** True when the shape's normal points down the screen at the run's middle, so items are turned over to stand upright. */
+  /** True when items stand on the shape's normal turned over: under `side: 'auto'`, when that normal points down the screen
+   *  at `about`, so they stand upright. */
   readonly flipped: boolean;
   /** True when reading order runs against the shape's own direction. */
   readonly reversed: boolean;
   at(g: number): TrackPlace;
 }
 
-/** The stretch `from..to` (default the whole shape) as items read it: flipped to stand upright, reversed to read left to right. */
-export function trackRun(shape: TrackShape, from = 0, to = 1): TrackRun {
-  const mid = shape.at((from + to) / 2);
-  const flipped = mid.normal.y > 1e-9;
+/** Which side of a shape a run's items stand on: `'auto'` whichever is upright, `'path'` the shape's own normal, `'flipped'`
+ *  the other. */
+export type TrackSide = 'auto' | 'path' | 'flipped';
+
+export interface TrackRunOptions {
+  /** Default `'auto'`. */
+  side?: TrackSide;
+  /** The shape fraction `'auto'` judges the side at. Default the run's middle, `(from + to) / 2`. */
+  about?: number;
+}
+
+/** The stretch `from..to` (default the whole shape) as items read it: on the side `options.side` picks, reversed to read
+ *  left to right on that side. */
+export function trackRun(shape: TrackShape, from = 0, to = 1, options: TrackRunOptions = {}): TrackRun {
+  const { side = 'auto', about = (from + to) / 2 } = options;
+  const mid = shape.at(about);
+  const flipped = side === 'auto' ? mid.normal.y > 1e-9 : side === 'flipped';
   const sgn = flipped ? -1 : 1;
   const reading = (n: Point): Point => ({ x: -(sgn * n.y), y: sgn * n.x });
   const r0 = reading(mid.normal);
@@ -47,7 +61,7 @@ export function trackRun(shape: TrackShape, from = 0, to = 1): TrackRun {
       point: s.point,
       tangent: dir,
       normal: { x: sgn * s.normal.x, y: sgn * s.normal.y },
-      angle: angle === 0 ? 0 : angle,
+      angle: angle === 0 ? 0 : angle === -180 ? 180 : angle,
     };
   };
 
