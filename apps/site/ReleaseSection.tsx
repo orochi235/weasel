@@ -6,9 +6,6 @@ import num from '@weasel-js/theme/numeric.module.css';
  *  changesets. */
 const UNRELEASED = 'Unreleased';
 
-/** Chips beyond this collapse into a "+N" counter. */
-const MAX_CHIPS = 3;
-
 /**
  * One version of the history. Its entries mount only while it is open: the
  * whole history is tens of thousands of elements, nearly all of them inside
@@ -118,11 +115,9 @@ function Packages({
   selected: readonly string[];
   onToggle: (name: string) => void;
 }) {
-  const shown = names.length <= MAX_CHIPS + 1 ? names : names.slice(0, MAX_CHIPS);
-  const hidden = names.length - shown.length;
   return (
-    <div className="ckd-release-pkgs" title={names.join(', ')}>
-      {shown.map((name) => (
+    <div className="ckd-release-pkgs">
+      {names.map((name) => (
         <button
           key={name}
           type="button"
@@ -133,7 +128,6 @@ function Packages({
           {name}
         </button>
       ))}
-      {hidden > 0 ? <span className="ckd-release-pkg is-more">+{hidden}</span> : null}
     </div>
   );
 }

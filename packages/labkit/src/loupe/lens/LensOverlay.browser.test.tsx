@@ -187,7 +187,7 @@ test('undoes the drag with the lens focused', async () => {
   await waitFor(() => expect(pose('a:body').x).toBe(before.x + 40));
   // The press on a hit box focused the input element around it.
   expect(document.activeElement).toBe(input);
-  await userEvent.keyboard('{Meta>}z{/Meta}');
+  await userEvent.keyboard('{ControlOrMeta>}z{/ControlOrMeta}');
   await waitFor(() => expect(pose('a:body')).toEqual(before));
 });
 
