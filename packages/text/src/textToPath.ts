@@ -5,26 +5,26 @@
  * puts them, with the tier forced on for every glyph whatever its size.
  */
 
-import { paintKey, strokeKey, type Stroke, type Fill } from '@weasel-js/paint';
+import type { Stroke, Fill } from '@weasel-js/paint';
 
+import { loadFontOutlines, resolveFontVariant, type FontStyle } from '@weasel-js/font';
 import {
-  loadFontOutlines, outlineStatus, resolveFontVariant, type FontStyle,
-} from '@weasel-js/font';
-import {
-  PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, poseFrameOf, reversePath,
-  transformPath, type Affine, type PathInWorldPose, type PolygonPath,
+  PATH_L, PATH_M, PATH_Z, poseFrameOf, transformPath, type PathInWorldPose, type PolygonPath,
 } from '@weasel-js/geom';
+import {
+  assertOutlinable, colorGlyphError, concat, paintsOf, placedGlyphOutline,
+} from './glyphOutlines';
 import { lineDecorations } from './layout/decorationMetrics';
 import { layoutRuns } from './layout/layoutRuns';
-import { faceOutlineD, glyphQuad, runFaces } from './layout/paintRuns';
-import { textPoseLayoutInput } from './layout/textPoseLayout';
+import { runFaces } from './layout/paintRuns';
+import { textPoseLayoutInput, type TextPoseLayoutInput } from './layout/textPoseLayout';
 import { verticalAlignOffset, type TextVerticalAlign } from './measure/verticalAlign';
 import type { TextPose } from './pose';
 import type { StyledRun } from './runs';
 import type { ResolvedRun } from './runs/resolveRuns';
-import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
-import { emboldenGlyph } from './syntheticBold';
 import type { TextStyle } from './textStyle';
+
+export { TextOutlinesError, type TextOutlinesFailure } from './glyphOutlines';
 
 /** The fields of a text node's data that decide its glyph geometry, and the
  *  paint `textToPathsByPaint` splits it by. Paint never changes the geometry. */
@@ -63,41 +63,6 @@ export interface TextToPathOptions {
   scale?: number;
 }
 
-/**
- * Why a text node has no outline geometry to give:
- *
- * - `'no-outlines'` — the face that serves it has no outlines registered
- *   (`registerFontOutlines`), so there is no geometry to read.
- * - `'outlines-loading'` — registered but not parsed yet. `loadTextOutlines`
- *   waits for it; the call has already started the load.
- * - `'outlines-failed'` — registered, and the bytes did not load or parse.
- * - `'color-glyph'` — the text holds an emoji, which is a picture in its own
- *   colors with no outline. Nothing a caller registers changes that.
- */
-export type TextOutlinesFailure =
-  | 'no-outlines'
-  | 'color-glyph'
-  | 'outlines-loading'
-  | 'outlines-failed';
-
-/** Thrown by {@link textToPath} when some run of the text has no outline
- *  geometry. Names the run's requested face. */
-export class TextOutlinesError extends Error {
-  readonly reason: TextOutlinesFailure;
-  readonly family: string;
-  readonly weight: number;
-  readonly style: FontStyle;
-
-  constructor(reason: TextOutlinesFailure, family: string, weight: number, style: FontStyle, detail: string) {
-    super(`textToPath: "${family}" ${weight}/${style} — ${detail}`);
-    this.name = 'TextOutlinesError';
-    this.reason = reason;
-    this.family = family;
-    this.weight = weight;
-    this.style = style;
-  }
-}
-
 /** The face every run is set in, before and after variant resolution. */
 function facesOf(runs: readonly ResolvedRun[]): { family: string; weight: number; style: FontStyle }[] {
   const out = new Map<string, { family: string; weight: number; style: FontStyle }>();
@@ -112,64 +77,25 @@ function facesOf(runs: readonly ResolvedRun[]): { family: string; weight: number
   return [...out.values()];
 }
 
-function assertOutlinable(run: ResolvedRun): void {
-  const { fontFamily, fontWeight, fontStyle } = run;
-  const fail = (reason: TextOutlinesFailure, detail: string): never => {
-    throw new TextOutlinesError(reason, fontFamily, fontWeight, fontStyle, detail);
+/** The resolved runs and layout options of `data` set in `box`, every run's
+ *  face checked for outlines first. */
+export function outlineLayoutInput(
+  data: TextOutlineSource,
+  box: { x: number; y: number; width: number; height: number },
+  opts: TextToPathOptions,
+): TextPoseLayoutInput {
+  const textPose: TextPose = {
+    x: box.x, y: box.y, width: box.width, height: box.height,
+    text: data.text,
+    runs: data.runs as StyledRun[] | undefined,
+    style: data.style,
+    verticalAlign: data.verticalAlign,
+    fill: data.fill,
+    stroke: data.stroke,
   };
-  const requested = outlineStatus(fontFamily, fontWeight, fontStyle);
-  if (requested === 'idle' || requested === 'loading') {
-    void loadFontOutlines(fontFamily, { weight: fontWeight, style: fontStyle });
-    fail('outlines-loading', 'its outlines have not loaded yet; await loadTextOutlines first.');
-  }
-  const r = resolveFontVariant(fontFamily, fontWeight, fontStyle);
-  const { family, weight, style } = r.resolved;
-  if (r.source === 'outline') return;
-  const status = outlineStatus(family, weight, style);
-  if (status === null) {
-    fail('no-outlines', `served by ${family} ${weight}/${style}, which has no outlines ` +
-      'registered. Call registerFontOutlines for it.');
-  }
-  if (status === 'idle' || status === 'loading') {
-    void loadFontOutlines(family, { weight, style });
-    fail('outlines-loading', `the outlines of ${family} ${weight}/${style} have not loaded yet; ` +
-      'await loadTextOutlines first.');
-  }
-  if (status === 'failed') {
-    fail('outlines-failed', `the outlines registered for ${family} ${weight}/${style} failed to load.`);
-  }
-}
-
-// Em-space glyph geometry, wound one way, keyed by the outline data itself so a
-// re-registered face cannot serve stale geometry. The cap bounds a document
-// that cycles through many faces.
-const EM_CACHE_LIMIT = 4096;
-const emCache = new Map<string, PolygonPath>();
-
-/** A glyph's em-space path, wound positive so glyphs from faces that disagree
- *  on winding — TrueType against CFF — still fill their overlaps under
- *  `'nonzero'`, and so do the decoration rules drawn across them. */
-function emGlyph(d: string): PolygonPath {
-  let p = emCache.get(d);
-  if (p) return p;
-  p = pathFromD(d);
-  if (pathSignedArea(p) < 0) p = reversePath(p);
-  if (emCache.size >= EM_CACHE_LIMIT) emCache.clear();
-  emCache.set(d, p);
-  return p;
-}
-
-function concat(parts: readonly PolygonPath[]): PolygonPath {
-  let nc = 0, nk = 0;
-  for (const p of parts) { nc += p.commands.length; nk += p.coords.length; }
-  const commands = new Uint8Array(nc);
-  const coords = new Float32Array(nk);
-  let ci = 0, ki = 0;
-  for (const p of parts) {
-    commands.set(p.commands, ci); ci += p.commands.length;
-    coords.set(p.coords, ki); ki += p.coords.length;
-  }
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+  const input = textPoseLayoutInput(textPose, opts.scale ?? 1);
+  for (const run of input.runs) assertOutlinable(run);
+  return input;
 }
 
 function ruleContour(x0: number, y0: number, x1: number, y1: number): PolygonPath {
@@ -192,30 +118,8 @@ function walkOutlines(
   pose: PathInWorldPose,
   opts: TextToPathOptions,
 ): { paints: { fill: Fill | null; stroke?: Stroke }[]; paths: PolygonPath[] } {
-  const textPose: TextPose = {
-    x: pose.x, y: pose.y, width: pose.width, height: pose.height,
-    text: data.text,
-    runs: data.runs as StyledRun[] | undefined,
-    style: data.style,
-    verticalAlign: data.verticalAlign,
-    fill: data.fill,
-    stroke: data.stroke,
-  };
-  const { runs, opts: layoutOpts } = textPoseLayoutInput(textPose, opts.scale ?? 1);
-  for (const run of runs) assertOutlinable(run);
-
-  const paints: { fill: Fill | null; stroke?: Stroke }[] = [];
-  const indexOf = new Map<string, number>();
-  const paintOf = runs.map((run): number => {
-    const key = `${paintKey(run.fill?.paint)}|${strokeKey(run.stroke)}`;
-    let i = indexOf.get(key);
-    if (i === undefined) {
-      i = paints.length;
-      indexOf.set(key, i);
-      paints.push(run.stroke !== undefined ? { fill: run.fill, stroke: run.stroke } : { fill: run.fill });
-    }
-    return i;
-  });
+  const { runs, opts: layoutOpts } = outlineLayoutInput(data, pose, opts);
+  const { paints, paintOf } = paintsOf(runs);
 
   const laid = layoutRuns(runs, layoutOpts);
   const dx = pose.x;
@@ -226,27 +130,9 @@ function walkOutlines(
   for (const line of laid.lines) {
     for (const g of line.glyphs) {
       // Asked before the quad: an emoji still waiting for its bake has none.
-      if (g.glyph?.color) {
-        const { fontFamily, fontWeight, fontStyle } = runs[g.run];
-        throw new TextOutlinesError('color-glyph', fontFamily, fontWeight, fontStyle,
-          'the text holds an emoji, which is drawn in its own colors and has no outline.');
-      }
-      const d = faceOutlineD(g);
-      if (d === null) {
-        // A code point the run's own face lacks escalates to a fallback face,
-        // which the per-run check above never saw.
-        if (glyphQuad(g) !== null) {
-          const { family, weight, style } = g.resolved.resolved;
-          throw new TextOutlinesError('no-outlines', family, weight, style,
-            'a fallback face serving some of the text\'s characters has no outlines registered.');
-        }
-        continue;
-      }
-      const s = g.fontSize;
-      const shear = g.resolved.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
-      // The renderer's placement (`mergeGlyphMeshes`): x = pen + (ex - ey·shear)·s.
-      const m: Affine = [s, 0, -shear * s, s, g.x + dx, g.baselineY + dy];
-      parts[paintOf[g.run]]!.push(transformPath(emboldenGlyph(emGlyph(d), d, g.resolved), m) as PolygonPath);
+      if (g.glyph?.color) throw colorGlyphError(runs[g.run]);
+      const glyph = placedGlyphOutline(g, dx, dy);
+      if (glyph) parts[paintOf[g.run]]!.push(glyph);
     }
     for (const r of lineDecorations(line.glyphs, runs, faceOf, (run) => String(paintOf[run]))) {
       rules[paintOf[r.run]]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));

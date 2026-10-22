@@ -108,6 +108,8 @@ export type { FlagKey, SetFlagResult } from './runs/flagRange';
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
 export { syntheticBoldOffset, emboldenGlyphD } from './syntheticBold';
 export { textToPath, textToPathsByPaint, loadTextOutlines, TextOutlinesError } from './textToPath';
+export { textClusters } from './textClusters';
+export type { TextCluster } from './textClusters';
 export type {
   TextOutlineSource, TextNodeSource, TextPaintPath, TextToPathOptions, TextOutlinesFailure,
 } from './textToPath';

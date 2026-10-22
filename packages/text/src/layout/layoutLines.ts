@@ -185,7 +185,7 @@ export function placeLine(
       drawsInk: e.drawsInk, clusterEnd: e.clusterEnd,
     };
     glyphs.push({
-      run: e.run, cp: e.cp, fontSize: e.fontSize,
+      run: e.run, cell: pos, cp: e.cp, fontSize: e.fontSize,
       resolved: e.resolved, metrics: e.metrics, font: e.font, glyph: e.glyph,
       x: penX,
       // Positive raises, and y grows down, so the shift subtracts.

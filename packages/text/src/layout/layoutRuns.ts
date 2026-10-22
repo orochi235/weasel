@@ -95,6 +95,8 @@ export interface LaidOutCell {
 export interface PlacedGlyph {
   /** Index of its run in the runs laid out. */
   run: number;
+  /** Index in its line's `cells` of the code point it draws. */
+  cell: number;
   cp: number;
   /** The glyph's own size, which small caps sets below its run's. */
   fontSize: number;
