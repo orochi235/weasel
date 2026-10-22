@@ -61,11 +61,15 @@ describe('a node’s inherit takes its container’s paint', () => {
     expect(cmd.fill).toBeUndefined();
   });
 
-  it('gives the container itself no paint of its own, even with a shape or a path to paint', () => {
-    for (const own of [{ shape: 'rect' }, { path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } }]) {
-      const { scene } = setup({ shape: 'rect', fill: INHERIT }, { ...own, fill: RED, stroke: LINE });
-      expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(1);
-    }
+  it('gives a container whose path is its clip no paint of its own', () => {
+    const own = { path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } };
+    const { scene } = setup({ shape: 'rect', fill: INHERIT }, { ...own, fill: RED, stroke: LINE });
+    expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(1);
+  });
+
+  it('paints a container that has a shape, as a bone with child bones does', () => {
+    const { scene } = setup({ shape: 'rect', fill: INHERIT }, { shape: 'rect', fill: RED });
+    expect(pathCommands(buildSceneViewCommands(scene, VIEW, defaultDrawOne))).toHaveLength(2);
   });
 });
 

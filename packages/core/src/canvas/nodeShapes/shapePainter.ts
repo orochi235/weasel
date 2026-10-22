@@ -10,7 +10,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { CONTAINER_INK, inkReach, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { outsetPoseBox, strokedPoseBox } from './strokedBounds';
@@ -38,9 +38,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized: a pure function of `(data, pose)`, and `pathForShape` builds a
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
-  // A container's shape is its clip, and its paint is only what its
-  // children's 'inherit' takes.
-  paint: (node, pose, ctx) => node.kind === 'container' ? [] : withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
+  paint: (node, pose, ctx) => withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as ShapeData;
     const path = pathForShape(d, pose);
     const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
@@ -59,7 +57,6 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return pathForShape(d, pose);
   },
   ink: (node, _pose, ctx) => {
-    if (node.kind === 'container') return CONTAINER_INK;
     const d = node.data as ShapeData;
     return {
       filled: resolveFill(d.fill, ctx?.inherited?.fill) !== null,
