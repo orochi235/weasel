@@ -87,6 +87,12 @@ export interface TextEditCommit {
   style?: TextStyle;
 }
 
+/** What the overlay holds mid-edit, as {@link UseTextEditOptions.onDraft} reports it. */
+export interface TextEditDraft {
+  text: string;
+  runs?: readonly StyledRun[];
+}
+
 /** Options for `useTextEdit`. */
 export interface UseTextEditOptions {
   /** Element the overlay is appended to. Must be `position: relative`/absolute. */
@@ -136,6 +142,14 @@ export interface UseTextEditOptions {
    * (see `setStyle`).
    */
   commit?: (id: string, edit: TextEditCommit) => void;
+  /**
+   * Called on each edit to the overlay's text with what a commit would write
+   * now, `runs` present when runs are in play (see `setRuns`). For a host
+   * whose canvas shows the text somewhere besides the overlay, such as a copy
+   * laid along a path, to follow the typing. Not a commit: a cancel follows
+   * as it would without it.
+   */
+  onDraft?: (id: string, draft: TextEditDraft) => void;
   /**
    * Optional: read the current rich-text runs for `id`. When provided AND
    * returns a non-empty array, the overlay renders the runs as styled

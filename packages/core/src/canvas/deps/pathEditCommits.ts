@@ -11,6 +11,7 @@ import { createDeleteOp } from 'core/ops/delete';
 import { writtenBy } from 'core/ops/writtenBy';
 import type { TransformFollower, TransformPreviewNode } from 'interactions/actions/transformFinish';
 import type { NodeId, Scene } from 'core/scene/types';
+import { sceneDependentsOf } from 'core/scene/dependents';
 import { pathEditPathOf, storeEditablePath } from 'features/paths/editablePath';
 import { withoutShapeGenerator } from 'features/paths/shapeGenerator';
 import {
@@ -27,12 +28,6 @@ export interface Finished {
   others: Map<string, PathEditOther>;
 }
 
-/** The nodes that list `id` in their `dependsOn`, directly or through others. */
-function dependentsOf(sc: AnyScene, id: string): readonly string[] {
-  if (!sc.get(id as NodeId)) return [];
-  return sc.removalClosure([id as NodeId]).filter((d) => d !== id && !sc.ancestorsOf(d).includes(id as NodeId));
-}
-
 /** The scene as an extension's `finishEdit` reads it. */
 export function finishCtx(sc: AnyScene, id: string, extensions: readonly PathEditExtension[]): PathEditFinishCtx {
   return {
@@ -42,7 +37,7 @@ export function finishCtx(sc: AnyScene, id: string, extensions: readonly PathEdi
       return node ? { pose: node.pose, data: node.data, dependsOn: node.dependsOn } : null;
     },
     path: (nid) => pathEditPathOf(sc.get(nid as NodeId) as EditableNode | undefined, extensions),
-    dependents: (nid) => dependentsOf(sc, nid),
+    dependents: (nid) => sceneDependentsOf(sc, nid as NodeId),
   };
 }
 
@@ -138,7 +133,7 @@ function transformOthers(
     node: nodeAfter,
     path: (id) => pathEditPathOf(nodeAfter(id) ?? undefined, extensions),
     before: (id) => pathEditPathOf(sc.get(id as NodeId) as EditableNode | undefined, extensions),
-    dependents: (id) => dependentsOf(sc, id),
+    dependents: (id) => sceneDependentsOf(sc, id as NodeId),
   };
   for (const ext of finishing) {
     const done = ext.finishTransform!(ctx);

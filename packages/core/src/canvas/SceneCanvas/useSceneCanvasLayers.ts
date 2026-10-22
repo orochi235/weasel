@@ -21,6 +21,7 @@ import type { SceneCanvasLayers } from './props';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
 import { usePreviewGhostLayer } from './usePreviewGhostLayer';
 import { useDepartureGhostLayer } from './useDepartureGhostLayer';
+import { useEffectSourcesLayer } from 'features/pathEffects/useEffectSourcesLayer';
 import type { Departures } from '../../animation/departures';
 import { usePoseTransition, type PoseTransitionSeat } from '../../animation/poseTransition';
 import { useSceneSlotLayers } from './useSceneSlotLayers';
@@ -34,7 +35,8 @@ import type { SnapReadoutStyle } from 'features/snap/types';
  * The layer map `<SceneCanvas>` hands `<Canvas>`: the caller's `layers` over
  * the kit defaults, with the scene and selection-overlay slots built, and the
  * canvas's own layers anchored around them. Removed nodes leave just above
- * the scene, the preview ghost above them, the dispatcher's overlay (marquee, lasso) above the ghost, and the
+ * the scene, the preview ghost above them, a selected path effect's hidden sources above that, the dispatcher's
+ * overlay (marquee, lasso) above those, and the
  * anchor overlay above the selection chrome.
  */
 export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: {
@@ -100,6 +102,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({ scene, sceneSlot, dispatcher });
   const departures = usePoseTransition(scene, args.poseTransition);
   const departureLayer = useDepartureGhostLayer({ scene, sceneSlot, departures });
+  const effectSourcesLayer = useEffectSourcesLayer(scene);
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
   const hitRadiusPx = args.selectTool?.handleHitRadius ?? targetSizesPx(targetScale, baseSizes).handle;
@@ -142,14 +145,15 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(args: 
     selectionOverlay: selectionOverlayLayer ? { layer: selectionOverlayLayer } : null,
     departureGhost: { layer: departureLayer, after: 'scene' },
     previewGhost: { layer: previewLayer, after: 'departureGhost' },
-    dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
+    effectSources: { layer: effectSourcesLayer, after: 'previewGhost' },
+    dispatcherOverlay: { layer: dispatcherOverlay, after: 'effectSources' },
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: overlayAnchor } } : {}),
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : overlayAnchor } } : {}),
   }), [
-    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor,
+    merged, sceneLayers, selectionOverlayLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor,
     snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 

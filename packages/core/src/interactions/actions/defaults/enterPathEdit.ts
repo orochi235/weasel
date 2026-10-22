@@ -5,6 +5,8 @@
  * gesture-side hit-test (via `buildAffordanceAt`) and the
  * `pathEditingOverlayLayer` chrome both gate on that id.
  *
+ * A selected path effect hiding its sources edits its path source.
+ *
  * No-op when the selection contains no polygon. The companion
  * `exitPathEditAction` (Escape) clears edit mode.
  */
@@ -13,6 +15,7 @@ import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason, isBody } from '@weasel-js/routing';
+import { effectSourceFor } from 'features/pathEffects/effectSources';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
@@ -30,7 +33,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
     opts: { id: 'enterPathEdit.doubleClick' },
   }],
   eligible: { mode: { in: ['normal', 'isolation'] } },
-  requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt'],
+  requires: ['editAnchors', 'selection', 'nodeAtPoint', 'hitAt', 'scene'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
@@ -46,12 +49,15 @@ export const enterPathEditAction: Action & { requires: string[] } = {
         return;
       }
       const ids = selection.get() as NodeId[];
+      const scene = deps.scene;
       // Use the dep's editability check rather than poking at node.pose
       // directly — the dep knows whether a node has an editable polygon
       // (pose-as-polygon OR data.path) so this picks up both shapes.
       for (const id of ids) {
-        if (editAnchors.getEditablePath(id)) {
-          editAnchors.setEditingId(id);
+        // An effect hiding its path edits that path, except from a double-click on the effect itself: that is its text's.
+        const target = (id !== under && scene ? effectSourceFor(scene, id, 'path') : null) ?? id;
+        if (editAnchors.getEditablePath(target)) {
+          editAnchors.setEditingId(target);
           return;
         }
       }

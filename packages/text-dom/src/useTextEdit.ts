@@ -14,13 +14,13 @@ import {
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
-import { runsToPlainText } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
 import {
-  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, runsCarryStyling, setFlagOverRange,
+  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, setFlagOverRange,
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
+import { overlayDraft } from './overlayDraft';
 import { overlayClipPath, overlayTop, overlayTransform } from './overlayFrame';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
@@ -223,7 +223,6 @@ export function useTextEdit(
     // survives a Cmd-B that turned it off — or when the edit produced
     // styling. A plain-text edit of a plain-text node commits text alone.
     const { getRuns, setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
-    const priorRuns = getRuns?.(id);
     const read = domToRuns(overlay);
     const style = nodeStyleRef.current;
     // Compared untrimmed: a seeded trailing newline reads back the same at
@@ -232,19 +231,14 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const runs = holderRef.current?.trim(read) ?? read;
-    const hadRuns = priorRuns != null && priorRuns.length > 0;
-    const runsInPlay = hadRuns || runsCarryStyling(runs);
-    // Read from the DOM, not `innerText`: a browser applies `text-transform`
-    // to what that reports, and a break stand-in reads back as its `\n`.
-    const text = runsToPlainText(runs);
+    const { text, runs } = overlayDraft(read, holderRef.current, getRuns?.(id));
     holdNodeStyle(null);
     if (commitAll) {
-      commitAll(id, { text, ...(runsInPlay ? { runs } : {}), ...(style ? { style } : {}) });
+      commitAll(id, { text, ...(runs ? { runs } : {}), ...(style ? { style } : {}) });
     } else {
       if (style) setStyle?.(id, style);
       setText?.(id, text);
-      if (setRuns && runsInPlay) setRuns(id, runs);
+      if (setRuns && runs) setRuns(id, runs);
     }
     setEditingId(null);
   }, [editingId, optsRef, holdNodeStyle, setEditingId]);
@@ -437,6 +431,8 @@ export function useTextEdit(
       onEdited: () => {
         holderRef.current?.edited(overlay);
         place();
+        const { onDraft, getRuns } = optsRef.current;
+        onDraft?.(editingId, overlayDraft(domToRuns(overlay), holderRef.current, getRuns?.(editingId)));
       },
     });
 

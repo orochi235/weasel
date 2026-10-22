@@ -2,9 +2,19 @@
  * Which nodes must recompute when a given node's pose changes — the reverse
  * index, plus {@link dependencyIdsOf}, the forward read it is built from.
  */
-import type { NodeId } from './types';
+import type { NodeId, Scene } from './types';
 
 const NONE: readonly NodeId[] = Object.freeze([]);
+
+/** The nodes in `scene` that list `id` in their `dependsOn`, directly or through others, less any inside `id`'s own
+ *  subtree. */
+export function sceneDependentsOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  id: NodeId,
+): readonly NodeId[] {
+  if (!scene.get(id)) return NONE;
+  return scene.removalClosure([id]).filter((d) => d !== id && !scene.ancestorsOf(d).includes(id));
+}
 
 /**
  * The nodes `node`'s geometry derives from: the ids it named, or its own

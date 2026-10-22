@@ -17,6 +17,7 @@ import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
+import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { inheritedPaintIn } from '../../canvas/inheritedPaints';
@@ -176,6 +177,7 @@ export function useSceneTextEdit<
   // The last double-click's target, so the overlay projects through the
   // canvas the edit was opened on.
   const openedOnRef = useRef<EventTarget | null>(null);
+  const drafts = useMemo(() => sceneTextDrafts(sceneRef, optsRef), [sceneRef, optsRef]);
 
   // The canvas's box in container pixels is both the origin its view projects
   // from and the region its glyphs are clipped to.
@@ -204,7 +206,11 @@ export function useSceneTextEdit<
     escape: options.escape,
     fontHold: options.fontHold,
     onStart: (id) => optsRef.current.onStart?.(id),
-    onEnd: (id) => optsRef.current.onEnd?.(id),
+    onEnd: (id) => {
+      drafts.restore(id);
+      optsRef.current.onEnd?.(id);
+    },
+    onDraft: drafts.write,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.text(node.data) : '';
@@ -233,14 +239,11 @@ export function useSceneTextEdit<
       return node ? read.runs(node.data) : undefined;
     },
     commit: (id, { text, runs, style }) => {
+      drafts.settle();
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
       if (!node) return;
-      const { setText, setRuns, setStyle } = optsRef.current;
-      let data = setText ? setText(node.data, text) : { ...node.data, text };
-      if (runs) data = setRuns ? setRuns(data, runs) : { ...data, runs };
-      if (style) data = setStyle ? setStyle(data, style) : { ...data, style };
-      sceneRef.current.update(nid, { data });
+      sceneRef.current.update(nid, { data: editedData(node.data, { text, runs, style }, optsRef.current) });
     },
   });
 

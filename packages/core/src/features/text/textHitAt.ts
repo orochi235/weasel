@@ -1,6 +1,8 @@
 import type { Scene } from '../../core/scene/types';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { scenePaintedPoseOf } from '../../canvas/derivedPath';
+import { pathContainsPoint } from '@weasel-js/geom';
+import { sceneDerivedPathOf, scenePaintedPoseOf } from '../../canvas/derivedPath';
+import { effectSourceFor } from '../pathEffects/effectSources';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { caretIndexAt, pointInTextPose, type StyledRun, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf } from '../../canvas/nodeShapes/textPainter';
@@ -21,6 +23,9 @@ export interface TextReads<TData> {
  * `pointInTextPose` and `caretIndexAt` work in the node's own box, so the
  * point is taken back through the frame the node is drawn in. The whole box
  * takes the point, padding included; the caret is placed in the inset one.
+ *
+ * A path effect hiding a text source answers for it where its own glyphs
+ * are, with the caret at the end of the text.
  */
 export function textHitAt<TData, TPose extends RectPose>(
   scene: Scene<TData, string, TPose>,
@@ -31,10 +36,18 @@ export function textHitAt<TData, TPose extends RectPose>(
   // renderOrder() is back-to-front, so iterate in reverse and stop on the first hit.
   const order = scene.renderOrderNodes();
   const paintedPoseOf = scenePaintedPoseOf(scene);
+  const derivedPathOf = sceneDerivedPathOf(scene);
   for (let i = order.length - 1; i >= 0; i--) {
     const node = order[i];
     if (scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
-    if (!read.isText(node.data)) continue;
+    if (!read.isText(node.data)) {
+      const source = effectSourceFor(scene, node.id, 'text');
+      const text = source === null || scene.isLocked(source) ? undefined : scene.get(source);
+      if (text === undefined || !read.isText(text.data)) continue;
+      const path = derivedPathOf(node);
+      if (path !== null && pathContainsPoint(path, cx, cy)) return { id: String(source), caret: read.text(text.data).length };
+      continue;
+    }
     const at = paintedPoseOf(node);
     const p = worldToLocal(targetTransformOf(at), cx, cy);
     if (!p) continue;
