@@ -28,7 +28,8 @@ export interface TextAlongEffect extends PathEffectOptions {
   /** Text longer than its room is cut at the path's end (`'clip'`), or has the gaps between items squeezed until it
    *  fits (`'fit'`). Default `'clip'`. */
   overflow?: 'clip' | 'fit';
-  /** Which side of the path the glyphs stand on; see `TrackSide`. Default `'auto'`, whichever reads upright. */
+  /** Which side of the path the glyphs stand on; see `TrackSide`. Default `'auto'`, whichever reads upright. Turned over,
+   *  the text keeps the stretch of path it had, and on an open path drops whichever letters fall off it. */
   side?: TrackSide;
 }
 
@@ -49,7 +50,7 @@ export function textAlongParts(effect: TextAlongEffect, items: readonly EffectIt
   const about = closed ? ((c / L) % 1 + 1) % 1 : clamp01(c / L);
   const run = trackRun(shape, 0, 1, { side: effect.side ?? 'auto', about });
   const places = placeAlongRun(run, lengths, {
-    gap, align: 'center', at: readingCenter(run.reversed, c, total, L, closed), shift: finiteOr(effect.shift, 0), wrap: closed,
+    gap, align: 'center', at: run.reversed ? L - c : c, shift: finiteOr(effect.shift, 0), wrap: closed,
   });
   const center = effect.anchor === 'center';
   const out: DerivedPart[] = [];
@@ -84,16 +85,6 @@ function dropped(place: RunPlace, firstStart: number | null, L: number): boolean
   const hair = 1e-9 * Math.max(1, L);
   if (firstStart !== null) return place.center - firstStart >= L - hair;
   return place.center < -hair || place.center > L + hair;
-}
-
-/** Where the text's middle `c` (along the shape) falls along the run. Turned over, text keeps its place on the shape,
- *  except that on an open path it never starts further before the run's start than it did unturned: so text too long
- *  for its room is still cut at its reading end. */
-function readingCenter(reversed: boolean, c: number, total: number, L: number, closed: boolean): number {
-  if (!reversed) return c;
-  if (closed) return L - c;
-  const start = Math.max(L - (c + total / 2), Math.min(c - total / 2, 0));
-  return start + total / 2;
 }
 
 /** How much path the text has before it runs off, from `at`, with `k` of it laid back behind `at`. */

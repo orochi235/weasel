@@ -55,15 +55,24 @@ describe('textAlongParts', () => {
     expect(lay({ align: 'end', start: 0.2 }, 4)).toHaveLength(2);
   });
 
-  it('clip cuts turned-over text at its reading end too, not its start', () => {
+  describe('turned over, text keeps its stretch of an open path and drops what falls off it', () => {
     // Item i is i + 1 tall, so the heights name which items were drawn.
-    const tall = Array.from({ length: 15 }, (_, i): EffectItem => ({
+    const tall = (n: number) => Array.from({ length: n }, (_, i): EffectItem => ({
       length: 10, middle: 0, parts: [{ path: rectPath(0, -(i + 1), 10, i + 1), fill: INK }],
     }));
-    const drawn = centers(textAlongParts({ ...FX, side: 'flipped' }, tall, LINE));
-    expect(drawn.map((c) => Math.round(c.h))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    // Read from the path's end, as a turned-over run reads.
-    expect(drawn[0]!.x).toBeCloseTo(95, 9);
+    const drawn = (effect: Partial<TextAlongEffect>, n: number) =>
+      centers(textAlongParts({ ...FX, ...effect }, tall(n), LINE)).map((c) => ({ x: c.x, h: Math.round(c.h) }));
+
+    it("at start 0.9 both sides show only the path's 90..100, each the letter that falls there", () => {
+      expect(drawn({ side: 'path', start: 0.9 }, 3)).toEqual([{ x: expect.closeTo(95, 9), h: 1 }]);
+      expect(drawn({ side: 'flipped', start: 0.9 }, 3)).toEqual([{ x: expect.closeTo(95, 9), h: 3 }]);
+    });
+
+    it('at start 0, overflowing text turned over loses its reading start', () => {
+      const got = drawn({ side: 'flipped' }, 15);
+      expect(got.map((c) => c.h)).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+      expect(got[0]!.x).toBeCloseTo(95, 9);
+    });
   });
 
   it('fit squeezes them in', () => {
