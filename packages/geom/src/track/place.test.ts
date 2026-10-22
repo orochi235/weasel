@@ -115,13 +115,23 @@ describe('placeAlongRun', () => {
       close(base[0]!.point, { x: 5, y: 0 });
       close(base[1]!.point, { x: 20, y: 0 });
     });
-    test('on a reversed run item 0 sits at the shape start and items stay upright', () => {
+    test('on a reversed run item 0 sits at the shape start', () => {
       expect(back.reversed).toBe(true);
       const places = placeAlongRun(back, [10, 20], { ...opts, order: 'track' });
       close(places[0]!.point, { x: 95, y: 0 });
       close(places[1]!.point, { x: 80, y: 0 });
-      expect(places.map((p) => p.angle)).toEqual([back.at(0.05).angle, back.at(0.2).angle]);
-      expect(places.map((p) => p.angle)).toEqual([0, 0]);
+    });
+    test('on a reversed curve each item stands as the run reads at its own place', () => {
+      const bottom = trackRun(arcShape({ center: C, radius: 100, start: 90, end: 270 }));
+      expect(bottom.reversed).toBe(true);
+      const L = bottom.length;
+      const places = placeAlongRun(bottom, [10, 20], { ...opts, order: 'track' });
+      const at = [bottom.at(1 - 5 / L), bottom.at(1 - 20 / L)];
+      places.forEach((p, i) => {
+        close(p.point, at[i]!.point);
+        expect(p.angle).toBeCloseTo(at[i]!.angle);
+      });
+      expect(places[0]!.angle).not.toBeCloseTo(places[1]!.angle);
     });
     test("past: 'hold' holds at the track's far end", () => {
       const places = placeAlongRun(back, [60, 60, 60], { ...opts, order: 'track', past: 'hold' });
