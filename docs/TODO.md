@@ -1253,22 +1253,13 @@ only story runner in the repo.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
 
-- **(P2) Fleet suite runs still die partway from a V8 segfault in a vitest worker, on Node 24.22.0
-  with `--no-sparkplug` set.** The run stops at 40–87% of its tests with no summary, failed test or
-  error: exit 255, or exit 1 since `vitest-overlap.mjs` turns a child killed by a signal into 1.
-  Ten runs have died this way since 2026-10-15. The six on Node 24.21.0 (teitou, studio, msb-uai)
-  led to `--no-sparkplug` in `vitest.config.ts` (2026-10-19) on the reading that this was
-  nodejs/node#62393, fixed in 24.22.0. That reading is wrong or incomplete: four more died on teitou
-  under 24.22.0 at commits carrying the flag (`616e9305`, `bc02182f`, `672d462f` on 10-19;
-  `ac750755` at d7e74ede1 on 10-22), out of 229 teitou runs since, against none in 344 runs on the
-  other nodes. teitou kept `~/Library/Logs/DiagnosticReports/node-2026-10-22-085334.ips` for the
-  last: `EXC_BAD_ACCESS` at address 0, the PC itself 0, in a `WorkerThread` running promise
-  builtins, while another worker isolate sat in `MarkCompactCollector::ProcessEphemerons` and the
-  `V8Worker` threads in `ConcurrentMarking`. So the vitest config comment saying the crash is gone
-  in 24.22.0 is false. Not yet tried: whether teitou's load (it also hosts `weasel-dev`) or its
-  larger worker count is what makes it the only node still crashing, a `vmMemoryLimit` that recycles
-  workers before their heaps grow, or another V8 flag. The flag's original removal condition (a
-  Node 26 release carrying backport `fb0d0ca289`, nodejs/node#65753) no longer settles anything.
+- **(P3) Drop `--no-sparkplug` from `vitest.config.ts` once it is shown to do nothing.** It went in
+  (2026-10-19) for a worker SIGSEGV taken to be nodejs/node#62393, but every crash report since has a
+  different signature (a jump to address 0 under `PromiseConstructor`), and that one was the vm
+  workers outgrowing their heap: `vmMemoryLimit: '1gb'` fixed it (2026-10-22). Two reports from
+  10-15 and 10-17 (fault `0x89` in `MarkingWorklists::~Local`) are the only ones the flag might
+  have answered. Before removing it, run the jsdom projects under `--stress-flush-code` on teitou
+  without it a few times, as the `fix/vitest-worker-segfault` experiment did.
 
 - **(P3) `onto test --spread` fails a run whose tree moved, where the other commands sync again.**
   onto `f621d8b` makes a launch carry the stamp its own sync was answered with, so a suite can no
