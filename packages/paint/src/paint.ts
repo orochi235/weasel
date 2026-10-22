@@ -121,19 +121,29 @@ export function resolveScreenLength(value: ScreenLength, scale: number): number 
  * Fill style: the paint laid inside an outline. `Stroke`'s sibling, and the
  * same shape: a record holding a `paint`, with room for what belongs to the
  * fill rather than to the paint.
+ *
+ * A fill or stroke field holds one of three things (decided 2026-10-21):
+ *
+ * | State   | Spelling                                   |
+ * |---------|--------------------------------------------|
+ * | a paint | a record with a `paint`                    |
+ * | none    | absent, `null`, or a record with no `paint` |
+ * | inherit | `INHERIT` (`'inherit'`), where the field allows it: the source's field, whole |
+ *
+ * Absent is none everywhere: no reader turns it into a default color, so
+ * whatever makes a node writes the paint it wants. A paint with alpha 0 or
+ * the color `transparent` is a paint, invisible but still grabbable.
+ * `resolveFill` and `resolveStroke` are the one reading of a field.
  */
 export interface Fill {
-  /** Omitted, the fill paints nothing, as a stroke with no paint does. */
+  /** Omitted, the fill paints nothing. */
   paint?: Paint;
 }
 
 /** Stroke style: a Paint plus structural line parameters. */
 export interface Stroke {
-  /**
-   * Omitted, the stroke paints nothing — the same "no paint" a `fill: null`
-   * says for a node's fill. Stored documents can hold a stroke without one,
-   * so every reader has to answer for that rather than throw on it.
-   */
+  /** Omitted, the stroke paints nothing and keeps its width and dash for
+   *  the next paint. The three states a field holds are under {@link Fill}. */
   paint?: Paint;
   /** World units, or `{ px }` for screen pixels — resolved against the
    *  accumulated transform at draw time, so it holds its on-screen thickness
